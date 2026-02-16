@@ -7,6 +7,22 @@ mod common;
 use common::TestServer;
 use serial_test::serial;
 
+/// Ensure the test account has Pro plan (24-month history) for testing
+async fn ensure_pro_plan(pool: &sqlx::PgPool) {
+    sqlx::query(
+        "INSERT INTO monitored_accounts (account_id, enabled, plan_type, export_credits, batch_payment_credits, gas_covered_transactions, created_at, updated_at)
+         VALUES ('webassemblymusic-treasury.sputnik-dao.near', true, 'pro', 10, 100, 2000, NOW(), NOW())
+         ON CONFLICT (account_id) DO UPDATE SET 
+            plan_type = 'pro', 
+            export_credits = 10, 
+            batch_payment_credits = 100, 
+            gas_covered_transactions = 2000",
+    )
+    .execute(pool)
+    .await
+    .expect("Failed to ensure Pro plan for test account");
+}
+
 /// Load webassemblymusic-treasury test data from SQL dump files
 async fn load_test_data() {
     common::load_test_env();
@@ -42,6 +58,10 @@ async fn load_test_data() {
             "✓ Test data already loaded ({} records), historical_prices cleared for fresh sync",
             existing_count
         );
+
+        // Ensure Pro plan is set (even if data already exists)
+        ensure_pro_plan(&pool).await;
+
         pool.close().await;
         return;
     }
@@ -114,15 +134,8 @@ async fn load_test_data() {
             .expect("Failed to load balance change");
     }
 
-    // Add monitored account
-    sqlx::query(
-        "INSERT INTO monitored_accounts (account_id, created_at)
-         VALUES ('webassemblymusic-treasury.sputnik-dao.near', NOW())
-         ON CONFLICT (account_id) DO NOTHING",
-    )
-    .execute(&pool)
-    .await
-    .expect("Failed to add monitored account");
+    // Add monitored account with Pro plan (24-month history for tests)
+    ensure_pro_plan(&pool).await;
 
     // Show summary
     let balance_count: i64 = sqlx::query_scalar(
@@ -218,8 +231,6 @@ async fn test_balance_chart_with_real_data() {
 
     let client = reqwest::Client::new();
 
-    // Test Chart API with specific date range (Dec 1-4, 2025)
-    // Note: Dec 5 is not included because the mock data has a gap (jumps from Dec 4 to Dec 6)
     let response = client
         .get(server.url("/api/balance-history/chart"))
         .query(&[
@@ -407,14 +418,14 @@ async fn test_csv_export_with_real_data() {
 
     let client = reqwest::Client::new();
 
-    // Test CSV Export (using last 2 months to stay within 3-month plan limit)
+    // Test CSV Export
     let response = client
         .get(server.url("/api/balance-history/export"))
         .query(&[
             ("format", "csv"),
             ("accountId", "webassemblymusic-treasury.sputnik-dao.near"),
-            ("startTime", "2025-12-01T00:00:00Z"),
-            ("endTime", "2026-01-31T23:59:59Z"),
+            ("startTime", "2025-06-01T00:00:00Z"),
+            ("endTime", "2026-01-01T00:00:00Z"),
         ])
         .send()
         .await
@@ -452,10 +463,10 @@ async fn test_csv_export_with_real_data() {
         csv_content.lines().take(5).collect::<Vec<_>>().join("\n")
     );
 
-    // Verify CSV structure (now includes new accounting-friendly headers)
+    // Verify CSV structure (new accounting-friendly headers)
     assert!(
         csv_content.contains("date,time,direction,from_address,to_address,asset_symbol,asset_contract_address,amount,balance_after,price_usd,value_usd,transaction_hash,receipt_id"),
-        "CSV should have proper headers with accounting-friendly column names"
+        "CSV should have proper accounting-friendly headers"
     );
 
     // Should NOT include SNAPSHOT or NOT_REGISTERED
@@ -468,14 +479,11 @@ async fn test_csv_export_with_real_data() {
         "CSV should not include NOT_REGISTERED records"
     );
 
-    // Exact row count (1 header + 30 data rows = 31 total)
-    // Note: Row count reduced due to:
-    // 1. Narrower date range (Dec 2025 - Jan 2026 instead of Jun 2025 - Jan 2026)
-    // 2. Swap deposit legs now filtered out (shown as part of swap fulfillment)
+    // Exact row count (1 header + 100 data rows = 101 total) - some swap deposits are filtered out
     let row_count = csv_content.lines().count();
     assert_eq!(
-        row_count, 31,
-        "CSV should have exactly 31 rows (1 header + 30 data rows)"
+        row_count, 101,
+        "CSV should have exactly 101 rows (1 header + 100 data rows)"
     );
 
     // Compare with snapshot (hard assertion for regression testing)
@@ -567,7 +575,7 @@ async fn test_chart_api_intervals() {
         let expected_data: serde_json::Value =
             serde_json::from_str(&existing_snapshot).expect("Failed to parse snapshot");
 
-        // Compare token counts
+        // Compare token counts (may be less due to swap deposit filtering)
         let current_tokens = chart_data.as_object().unwrap().len();
         let expected_tokens = expected_data.as_object().unwrap().len();
         assert_eq!(
