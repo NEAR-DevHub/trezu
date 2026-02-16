@@ -1753,7 +1753,7 @@ pub async fn insert_balance_change_record(
         .map_err(|e| -> GapFillerError { e.to_string().into() })?;
 
     // Extract transaction hash and other details from account changes
-    let (transaction_hashes, raw_data) = if let Some(change) = account_changes.first() {
+    let (mut transaction_hashes, raw_data) = if let Some(change) = account_changes.first() {
         use near_primitives::views::StateChangeCauseView;
 
         let tx_hashes = match &change.cause {
@@ -1881,12 +1881,78 @@ pub async fn insert_balance_change_record(
         }
     };
 
+    // ── Resolve receipt → transaction hash ──────────────────────────────────
+    // For FT tokens: we have receipt_ids and the counterparty (predecessor) — resolve to tx
+    if transaction_hashes.is_empty()
+        && !receipt_ids.is_empty()
+        && final_counterparty != "UNKNOWN"
+        && !final_counterparty.is_empty()
+    {
+        for receipt_id in &receipt_ids {
+            match tx_resolver::resolve_receipt_to_transaction(
+                network,
+                receipt_id,
+                &final_counterparty,
+                block_height,
+            )
+            .await
+            {
+                Ok(result) => {
+                    log::info!(
+                        "Resolved receipt {} → tx {} (via account_changes on {})",
+                        receipt_id,
+                        result.transaction_hash,
+                        final_counterparty
+                    );
+                    transaction_hashes.push(result.transaction_hash);
+                    break;
+                }
+                Err(e) => {
+                    log::debug!(
+                        "Could not resolve receipt {} to transaction: {}",
+                        receipt_id,
+                        e
+                    );
+                }
+            }
+        }
+    }
+
+    // For intents tokens: query account_changes on intents.near to find candidate tx hashes
+    if transaction_hashes.is_empty() && token_id.starts_with("intents.near:") {
+        match block_info::get_account_changes(network, "intents.near", block_height).await {
+            Ok(changes) => {
+                for change in &changes {
+                    use near_primitives::views::StateChangeCauseView;
+                    if let StateChangeCauseView::TransactionProcessing { tx_hash } = &change.cause {
+                        let hash = tx_hash.to_string();
+                        if !transaction_hashes.contains(&hash) {
+                            transaction_hashes.push(hash);
+                        }
+                    }
+                }
+                log::debug!(
+                    "Intents token at block {}: found {} candidate tx hash(es) from account_changes on intents.near",
+                    block_height,
+                    transaction_hashes.len()
+                );
+            }
+            Err(e) => {
+                log::warn!(
+                    "Failed to query account_changes on intents.near at block {}: {}",
+                    block_height,
+                    e
+                );
+            }
+        }
+    }
+
     // Insert the record
     let block_time = block_timestamp_to_datetime(block_timestamp);
 
     sqlx::query!(
         r#"
-        INSERT INTO balance_changes 
+        INSERT INTO balance_changes
         (account_id, token_id, block_height, block_timestamp, block_time, amount, balance_before, balance_after, transaction_hashes, receipt_id, signer_id, receiver_id, counterparty, actions, raw_data)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         ON CONFLICT (account_id, block_height, token_id) DO NOTHING

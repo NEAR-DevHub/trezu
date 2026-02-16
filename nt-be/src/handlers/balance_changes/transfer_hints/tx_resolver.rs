@@ -16,16 +16,14 @@
 //! 5. Return candidate blocks for balance verification
 //!
 //! ## Receipt → Transaction (new)
-//! 1. Call `EXPERIMENTAL_receipt` to get the receipt's signer_id
-//! 2. Scan the block's chunks for transactions signed by that signer
-//! 3. For each candidate transaction, check if it produced our receipt
-//! 4. Return the matching transaction hash
+//! 1. Query `account_changes` on the receipt's predecessor to find `transaction_processing` entries
+//! 2. For each candidate transaction hash, call `EXPERIMENTAL_tx_status` to confirm it produced the receipt
+//! 3. Return the matching transaction hash
 
 use crate::handlers::balance_changes::utils::with_transport_retry;
 use crate::utils::jsonrpc::create_rpc_client;
-use near_api::{Chain, NetworkConfig, Reference};
+use near_api::NetworkConfig;
 use near_jsonrpc_client::{JsonRpcClient, methods};
-use near_jsonrpc_primitives::types::receipts::ReceiptReference;
 use near_primitives::types::{BlockId, BlockReference};
 use near_primitives::views::FinalExecutionOutcomeViewEnum;
 use std::error::Error;
@@ -200,12 +198,16 @@ pub struct ReceiptTransaction {
 
 /// Resolve a receipt_id to its originating transaction hash
 ///
-/// Uses `EXPERIMENTAL_receipt` to fetch the receipt and extract the signer_id,
-/// then scans the block's transactions to find the one that produced this receipt.
+/// Queries `account_changes` on the predecessor account to find `transaction_processing`
+/// entries, then confirms with `EXPERIMENTAL_tx_status` which transaction produced the receipt.
+///
+/// This is much more efficient than chunk scanning (~3-4 RPC calls vs ~70+), and avoids
+/// `EXPERIMENTAL_receipt` which is unreliable on some RPC providers.
 ///
 /// # Arguments
 /// * `network` - NEAR network configuration (archival RPC)
 /// * `receipt_id` - The receipt ID to resolve
+/// * `predecessor_id` - Account that spawned this receipt (checked for transaction_processing)
 /// * `block_height` - The block height where this receipt was executed
 ///
 /// # Returns
@@ -213,167 +215,110 @@ pub struct ReceiptTransaction {
 pub async fn resolve_receipt_to_transaction(
     network: &NetworkConfig,
     receipt_id: &str,
+    predecessor_id: &str,
     block_height: u64,
 ) -> Result<ReceiptTransaction, Box<dyn Error + Send + Sync>> {
     let client = create_rpc_client(network)?;
-
-    // Step 1: Fetch the receipt to get its signer_id
-    let receipt_request = methods::EXPERIMENTAL_receipt::RpcReceiptRequest {
-        receipt_reference: ReceiptReference {
-            receipt_id: receipt_id.parse()?,
-        },
-    };
-
-    let receipt_response = client.call(receipt_request).await?;
-
-    // Extract signer_id from the receipt's action data
-    let signer_id = match &receipt_response.receipt {
-        near_primitives::views::ReceiptEnumView::Action { signer_id, .. } => signer_id.to_string(),
-        _ => {
-            return Err(format!(
-                "Receipt {} is not an action receipt - cannot resolve to transaction",
-                receipt_id
-            )
-            .into());
-        }
-    };
+    let parsed_predecessor: near_primitives::types::AccountId = predecessor_id.parse()?;
 
     log::debug!(
-        "Receipt {} has signer_id: {}, scanning block {} for originating transaction",
+        "Resolving receipt {} to transaction via account_changes on {} near block {}",
         receipt_id,
-        signer_id,
+        predecessor_id,
         block_height
     );
 
-    // Step 2: Scan the block and nearby blocks for transactions from this signer
-    // The receipt may execute in a different block than where the transaction was included,
-    // so we search a small window around the receipt's block
-    let search_start = block_height.saturating_sub(5);
-    let search_end = block_height + 1;
+    // Search the receipt's block and a few blocks before it.
+    // Same-shard receipts can execute in the same block as the transaction,
+    // cross-shard receipts typically execute one block later.
+    let search_start = block_height.saturating_sub(2);
 
-    for search_block in search_start..=search_end {
-        match find_tx_in_block(&client, network, &signer_id, receipt_id, search_block).await {
-            Ok(Some(tx_hash)) => {
-                log::debug!(
-                    "Found originating transaction {} for receipt {} in block {}",
-                    tx_hash,
-                    receipt_id,
-                    search_block
-                );
-                return Ok(ReceiptTransaction {
-                    receipt_id: receipt_id.to_string(),
-                    transaction_hash: tx_hash,
-                    signer_id,
-                });
-            }
-            Ok(None) => continue,
+    for search_block in (search_start..=block_height).rev() {
+        // Query account_changes on the predecessor to find transaction_processing entries
+        let changes_response = match with_transport_retry("account_changes_for_tx", || {
+            let req = methods::EXPERIMENTAL_changes::RpcStateChangesInBlockByTypeRequest {
+                block_reference: BlockReference::BlockId(BlockId::Height(search_block)),
+                state_changes_request:
+                    near_primitives::views::StateChangesRequestView::AccountChanges {
+                        account_ids: vec![parsed_predecessor.clone()],
+                    },
+            };
+            client.call(req)
+        })
+        .await
+        {
+            Ok(resp) => resp,
             Err(e) => {
                 log::debug!(
-                    "Error scanning block {} for receipt {}: {}",
+                    "account_changes on {} at block {} failed: {}",
+                    predecessor_id,
                     search_block,
-                    receipt_id,
                     e
                 );
                 continue;
             }
+        };
+
+        // Collect unique transaction_processing tx hashes
+        let mut tx_hashes = Vec::new();
+        for change in &changes_response.changes {
+            use near_primitives::views::StateChangeCauseView;
+            if let StateChangeCauseView::TransactionProcessing { tx_hash } = &change.cause {
+                let hash_str = tx_hash.to_string();
+                if !tx_hashes.contains(&hash_str) {
+                    tx_hashes.push(hash_str);
+                }
+            }
         }
-    }
 
-    // Step 3: Fallback - try using tx_status with the signer as sender
-    // Some transactions can be found by querying with the signer account
-    log::debug!(
-        "Block scan didn't find tx for receipt {} - trying broader search with signer {}",
-        receipt_id,
-        signer_id
-    );
+        if tx_hashes.is_empty() {
+            continue;
+        }
 
-    // Search chunks of the receipt's block more broadly
-    let block = Chain::block()
-        .at(Reference::AtBlock(block_height))
-        .fetch_from(network)
-        .await?;
+        log::debug!(
+            "Found {} candidate tx hash(es) at block {} on {}: {:?}",
+            tx_hashes.len(),
+            search_block,
+            predecessor_id,
+            tx_hashes
+        );
 
-    for chunk_header in &block.chunks {
-        let chunk_hash_str = chunk_header.chunk_hash.to_string();
-        let chunk_request = methods::chunk::RpcChunkRequest {
-            chunk_reference: methods::chunk::ChunkReference::ChunkHash {
-                chunk_id: chunk_hash_str.parse()?,
-            },
-        };
-
-        let chunk_response = match client.call(chunk_request).await {
-            Ok(chunk) => chunk,
-            Err(_) => continue,
-        };
-
-        // Check ALL transactions in this chunk, not just those from our signer
-        // The receipt may have been created by a cross-contract call
-        for tx_view in &chunk_response.transactions {
-            let tx_hash_str = tx_view.hash.to_string();
-            if has_receipt(
-                &client,
-                &tx_hash_str,
-                tx_view.signer_id.as_ref(),
-                receipt_id,
-            )
-            .await?
-            {
-                return Ok(ReceiptTransaction {
-                    receipt_id: receipt_id.to_string(),
-                    transaction_hash: tx_hash_str,
-                    signer_id: tx_view.signer_id.to_string(),
-                });
+        // Check each candidate tx to see if it produced our receipt
+        for tx_hash in &tx_hashes {
+            match has_receipt(&client, tx_hash, predecessor_id, receipt_id).await {
+                Ok(true) => {
+                    log::debug!(
+                        "Resolved receipt {} to transaction {} (via account_changes on {} at block {})",
+                        receipt_id,
+                        tx_hash,
+                        predecessor_id,
+                        search_block
+                    );
+                    return Ok(ReceiptTransaction {
+                        receipt_id: receipt_id.to_string(),
+                        transaction_hash: tx_hash.clone(),
+                        signer_id: predecessor_id.to_string(),
+                    });
+                }
+                Ok(false) => continue,
+                Err(e) => {
+                    log::debug!(
+                        "Error checking tx {} for receipt {}: {}",
+                        tx_hash,
+                        receipt_id,
+                        e
+                    );
+                    continue;
+                }
             }
         }
     }
 
     Err(format!(
-        "Could not find originating transaction for receipt {} at block {}",
-        receipt_id, block_height
+        "Could not find originating transaction for receipt {} (predecessor={}, block={})",
+        receipt_id, predecessor_id, block_height
     )
     .into())
-}
-
-/// Search a block for transactions from a specific signer that produced a given receipt
-async fn find_tx_in_block(
-    client: &JsonRpcClient,
-    network: &NetworkConfig,
-    signer_id: &str,
-    receipt_id: &str,
-    block_height: u64,
-) -> Result<Option<String>, Box<dyn Error + Send + Sync>> {
-    let block = Chain::block()
-        .at(Reference::AtBlock(block_height))
-        .fetch_from(network)
-        .await?;
-
-    for chunk_header in &block.chunks {
-        let chunk_hash_str = chunk_header.chunk_hash.to_string();
-        let chunk_request = methods::chunk::RpcChunkRequest {
-            chunk_reference: methods::chunk::ChunkReference::ChunkHash {
-                chunk_id: chunk_hash_str.parse()?,
-            },
-        };
-
-        let chunk_response = match client.call(chunk_request).await {
-            Ok(chunk) => chunk,
-            Err(_) => continue,
-        };
-
-        // Look for transactions from our signer
-        for tx_view in &chunk_response.transactions {
-            if tx_view.signer_id.as_str() != signer_id {
-                continue;
-            }
-
-            let tx_hash_str = tx_view.hash.to_string();
-            if has_receipt(client, &tx_hash_str, signer_id, receipt_id).await? {
-                return Ok(Some(tx_hash_str));
-            }
-        }
-    }
-
-    Ok(None)
 }
 
 /// Check if a transaction produced a specific receipt
@@ -539,14 +484,19 @@ mod tests {
 
         // Receipt 4k8fzeY5VkQmRsseapsPBA2mNReroXdjQVpvHkhWURt1 is part of
         // transaction CpctEH17tQgvAT6kTPkCpWtSGtG4WFYS2Urjq9eNNhm5
-        // and executed at block 178148635
+        // signed by petersalomonsen.near (who called act_proposal on the DAO), executed at block 178148635
         let receipt_id = "4k8fzeY5VkQmRsseapsPBA2mNReroXdjQVpvHkhWURt1";
+        let predecessor_id = "petersalomonsen.near";
         let block_height = 178148635;
 
-        let result =
-            resolve_receipt_to_transaction(&state.archival_network, receipt_id, block_height)
-                .await
-                .expect("Should resolve receipt to transaction");
+        let result = resolve_receipt_to_transaction(
+            &state.archival_network,
+            receipt_id,
+            predecessor_id,
+            block_height,
+        )
+        .await
+        .expect("Should resolve receipt to transaction");
 
         println!("Resolved receipt: {:?}", result);
 
