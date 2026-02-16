@@ -60,10 +60,21 @@ const columnHelper = createColumnHelper<GroupedActivity>();
 
 // Helper function to detect if an activity is a staking reward
 const isStakingReward = (activity: RecentActivityType): boolean => {
+    // Must be NEAR token with positive amount
+    if (activity.tokenId !== "near" || parseFloat(activity.amount) <= 0) {
+        return false;
+    }
+
+    // Must have a counterparty that looks like a staking pool
+    if (!activity.counterparty) {
+        return false;
+    }
+
+    const counterparty = activity.counterparty.toLowerCase();
+    // Check if it's a staking pool (ends with pool variants or contains 'pool')
     return (
-        activity.tokenId === "near" &&
-        activity.counterparty !== null &&
-        parseFloat(activity.amount) > 0 // Staking rewards are always positive
+        counterparty.endsWith('.poolv1.near') ||
+        counterparty.endsWith('.pool.near')
     );
 };
 
@@ -503,7 +514,7 @@ export function RecentActivity() {
                         />
                     ) : (
                         <>
-                            <div className="w-full overflow-x-auto px-6">
+                            <div className="w-full overflow-x-auto px-4">
                                 <Table className="table-fixed w-full min-w-full">
                                     <colgroup>
                                         <col />

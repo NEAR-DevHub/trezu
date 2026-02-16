@@ -58,18 +58,21 @@ export interface ActivityAccount {
     counterparty: string | null;
     signerId: string | null;
     receiverId: string | null;
+    swap?: any; // Swap object if this is a swap transaction
 }
 
 /**
  * Determines the sender of a transaction
- * For received payments: show counterparty (the sender)
- * For sent payments: show signerId (the account that initiated the transaction)
+ * For swaps: show "via NEAR Intents"
+ * For received payments: show the counterparty who sent funds
+ * For sent payments: show the signer who initiated the transaction
  * 
- * @param activity - The activity object containing counterparty and signerId
+ * @param activity - The activity object containing counterparty, signerId, and swap info
  * @param isReceived - Whether this is a received payment (amount > 0)
  * @returns The sender account ID or "—" if not available
  */
 export function getFromAccount(activity: ActivityAccount, isReceived: boolean): string {
+    if (activity.swap) return "via NEAR Intents";
     if (isReceived && activity.counterparty) {
         return activity.counterparty;
     }
@@ -78,10 +81,11 @@ export function getFromAccount(activity: ActivityAccount, isReceived: boolean): 
 
 /**
  * Determines the recipient of a transaction
+ * For swaps: show treasury (swaps are always treasury operations)
  * For sent payments: show receiverId (primary), fallback to counterparty, then treasuryId
  * For received payments: show treasuryId (the treasury is always the recipient)
  * 
- * @param activity - The activity object containing receiverId and counterparty
+ * @param activity - The activity object containing receiverId, counterparty, and swap info
  * @param isReceived - Whether this is a received payment (amount > 0)
  * @param treasuryId - The treasury account ID (recipient for received payments)
  * @returns The recipient account ID or "—" if not available
@@ -91,6 +95,7 @@ export function getToAccount(
     isReceived: boolean,
     treasuryId: string | null | undefined
 ): string {
+    if (activity.swap) return treasuryId || "—";
     if (!isReceived) {
         return activity.receiverId || activity.counterparty || treasuryId || "—";
     }

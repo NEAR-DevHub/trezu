@@ -594,22 +594,14 @@ fn transform_to_export_records(
             let is_incoming = change.amount.to_f64().map(|a| a > 0.0).unwrap_or(false);
             let direction = if is_incoming { "in" } else { "out" };
             let from_address = if is_incoming {
-                change
-                    .counterparty
-                    .as_ref()
-                    .map(|s| s.as_str())
-                    .unwrap_or("")
+                change.counterparty.as_deref().unwrap_or("")
             } else {
                 account_id
             };
             let to_address = if is_incoming {
                 account_id
             } else {
-                change
-                    .counterparty
-                    .as_ref()
-                    .map(|s| s.as_str())
-                    .unwrap_or("")
+                change.counterparty.as_deref().unwrap_or("")
             };
 
             // Split date and time

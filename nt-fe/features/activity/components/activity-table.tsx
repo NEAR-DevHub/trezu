@@ -19,6 +19,7 @@ import { Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TokenAmountDisplay } from "@/components/token-display";
 import { TransactionHashCell } from "./transaction-hash-cell";
+import { getFromAccount, getToAccount } from "../utils/history-utils";
 
 interface ActivityTableProps {
     activities: RecentActivity[];
@@ -68,35 +69,6 @@ export function ActivityTable({
         const isReceived = parseFloat(activity.amount) > 0;
         return isReceived ? "Payment Received" : "Payment Send";
     };
-
-    /**
-     * Determines the sender of a transaction
-     * For swaps: show "via NEAR Intents"
-     * For received payments: show the counterparty who sent funds
-     * For sent payments: show the signer who initiated the transaction
-     */
-    const getFromAccount = (activity: RecentActivity, isReceived: boolean) => {
-        if (activity.swap) return "via NEAR Intents";
-        if (isReceived && activity.counterparty) {
-            return activity.counterparty;
-        }
-        return activity.signerId || "—";
-    };
-
-    /**
-     * Determines the recipient of a transaction
-     * For swaps: show treasury (swaps are always treasury operations)
-     * For sent payments: show receiverId (primary), fallback to counterparty, then treasuryId
-     * For received payments: show treasuryId (the treasury is always the recipient)
-     */
-    const getToAccount = (activity: RecentActivity, isReceived: boolean) => {
-        if (activity.swap) return treasuryId || "—";
-        if (!isReceived) {
-            return activity.receiverId || activity.counterparty || treasuryId || "—";
-        }
-        return treasuryId || "—";
-    };
-
 
     if (isLoading) {
         return <TableSkeleton rows={pageSize} columns={5} />;
@@ -206,7 +178,7 @@ export function ActivityTable({
                                         </TableCell>
                                         <TableCell className="min-w-[150px] max-w-[200px]">
                                             <span className="text-sm truncate block">
-                                                {getToAccount(activity, isReceived)}
+                                                {getToAccount(activity, isReceived, treasuryId)}
                                             </span>
                                         </TableCell>
                                         <TableCell className="text-right pr-6">
