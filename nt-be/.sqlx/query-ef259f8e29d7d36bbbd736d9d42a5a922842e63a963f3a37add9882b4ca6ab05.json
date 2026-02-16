@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT \n            account_id,\n            token_symbol,\n            token_name,\n            token_decimals,\n            token_icon\n        FROM counterparties\n        WHERE account_id = ANY($1)\n          AND account_type = 'ft_token'\n          AND token_symbol IS NOT NULL\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "account_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "token_symbol",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "token_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "token_decimals",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 4,
+        "name": "token_icon",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "TextArray"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "ef259f8e29d7d36bbbd736d9d42a5a922842e63a963f3a37add9882b4ca6ab05"
+}

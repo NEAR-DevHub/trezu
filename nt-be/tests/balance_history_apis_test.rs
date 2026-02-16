@@ -7,6 +7,22 @@ mod common;
 use common::TestServer;
 use serial_test::serial;
 
+/// Ensure the test account has Pro plan (24-month history) for testing
+async fn ensure_pro_plan(pool: &sqlx::PgPool) {
+    sqlx::query(
+        "INSERT INTO monitored_accounts (account_id, enabled, plan_type, export_credits, batch_payment_credits, gas_covered_transactions, created_at, updated_at)
+         VALUES ('webassemblymusic-treasury.sputnik-dao.near', true, 'pro', 10, 100, 2000, NOW(), NOW())
+         ON CONFLICT (account_id) DO UPDATE SET 
+            plan_type = 'pro', 
+            export_credits = 10, 
+            batch_payment_credits = 100, 
+            gas_covered_transactions = 2000",
+    )
+    .execute(pool)
+    .await
+    .expect("Failed to ensure Pro plan for test account");
+}
+
 /// Load webassemblymusic-treasury test data from SQL dump files
 async fn load_test_data() {
     common::load_test_env();
@@ -42,6 +58,10 @@ async fn load_test_data() {
             "✓ Test data already loaded ({} records), historical_prices cleared for fresh sync",
             existing_count
         );
+
+        // Ensure Pro plan is set (even if data already exists)
+        ensure_pro_plan(&pool).await;
+
         pool.close().await;
         return;
     }
@@ -114,15 +134,8 @@ async fn load_test_data() {
             .expect("Failed to load balance change");
     }
 
-    // Add monitored account
-    sqlx::query(
-        "INSERT INTO monitored_accounts (account_id, created_at)
-         VALUES ('webassemblymusic-treasury.sputnik-dao.near', NOW())
-         ON CONFLICT (account_id) DO NOTHING",
-    )
-    .execute(&pool)
-    .await
-    .expect("Failed to add monitored account");
+    // Add monitored account with Pro plan (24-month history for tests)
+    ensure_pro_plan(&pool).await;
 
     // Show summary
     let balance_count: i64 = sqlx::query_scalar(
@@ -409,8 +422,9 @@ async fn test_csv_export_with_real_data() {
 
     // Test CSV Export
     let response = client
-        .get(server.url("/api/balance-history/csv"))
+        .get(server.url("/api/balance-history/export"))
         .query(&[
+            ("format", "csv"),
             ("accountId", "webassemblymusic-treasury.sputnik-dao.near"),
             ("startTime", "2025-06-01T00:00:00Z"),
             ("endTime", "2026-01-01T00:00:00Z"),
@@ -451,10 +465,10 @@ async fn test_csv_export_with_real_data() {
         csv_content.lines().take(5).collect::<Vec<_>>().join("\n")
     );
 
-    // Verify CSV structure (now includes price columns)
+    // Verify CSV structure (new accounting-friendly headers)
     assert!(
-        csv_content.contains("block_height,block_time,token_id,token_symbol,counterparty,amount,balance_before,balance_after,price_usd,value_usd,transaction_hashes,receipt_id"),
-        "CSV should have proper headers including price_usd and value_usd columns"
+        csv_content.contains("date,time,direction,from_address,to_address,asset_symbol,asset_contract_address,amount,balance_after,price_usd,value_usd,transaction_hash,receipt_id"),
+        "CSV should have proper accounting-friendly headers"
     );
 
     // Should NOT include SNAPSHOT or NOT_REGISTERED
@@ -467,11 +481,11 @@ async fn test_csv_export_with_real_data() {
         "CSV should not include NOT_REGISTERED records"
     );
 
-    // Exact row count (1 header + 172 data rows = 173 total)
+    // Exact row count (1 header + 100 data rows = 101 total) - some swap deposits are filtered out
     let row_count = csv_content.lines().count();
     assert_eq!(
-        row_count, 173,
-        "CSV should have exactly 173 rows (1 header + 172 data rows)"
+        row_count, 101,
+        "CSV should have exactly 101 rows (1 header + 100 data rows)"
     );
 
     // Compare with snapshot (hard assertion for regression testing)
