@@ -231,6 +231,8 @@ async fn test_balance_chart_with_real_data() {
 
     let client = reqwest::Client::new();
 
+    // Test Chart API with specific date range (Dec 1-4, 2025)
+    // Note: Dec 5 is not included because the mock data has a gap (jumps from Dec 4 to Dec 6)
     let response = client
         .get(server.url("/api/balance-history/chart"))
         .query(&[
@@ -575,7 +577,7 @@ async fn test_chart_api_intervals() {
         let expected_data: serde_json::Value =
             serde_json::from_str(&existing_snapshot).expect("Failed to parse snapshot");
 
-        // Compare token counts (may be less due to swap deposit filtering)
+        // Compare token counts
         let current_tokens = chart_data.as_object().unwrap().len();
         let expected_tokens = expected_data.as_object().unwrap().len();
         assert_eq!(
