@@ -531,7 +531,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
         try {
             await signAndSendDelegateAction(
                 { delegateActions: delegateActions as any, network: "mainnet" },
-                voteStorageBytes,
+                voteStorageBytes.mul(votes.length),
                 treasuryId,
             );
 
