@@ -25,7 +25,7 @@ use crate::config::get_plan_config;
 use crate::handlers::balance_changes::query_builder::{BalanceChangeFilters, build_count_query};
 use crate::handlers::subscription::plans::get_account_plan_info;
 use crate::handlers::token::TokenMetadata;
-use crate::routes::{BalanceChangesQuery, get_balance_changes_internal};
+use crate::routes::{BalanceChangesQuery, EnrichedBalanceChange, get_balance_changes_internal};
 use crate::utils::serde::comma_separated;
 
 #[derive(Debug, Serialize, sqlx::FromRow)]
@@ -324,9 +324,13 @@ async fn handle_export(
     .await
     .map_err(|e| (StatusCode::FORBIDDEN, e.to_string()))?;
 
+    // Format dates as YYYY-MM-DD for cleaner filename
+    let start_date = params.start_time.format("%Y-%m-%d").to_string();
+    let end_date = params.end_time.format("%Y-%m-%d").to_string();
+
     let filename = format!(
-        "balance_changes_{}_{}_to_{}.{}",
-        params.account_id, params.start_time, params.end_time, format
+        "{}_activity_{}_{}.{}",
+        params.account_id, start_date, end_date, format
     );
 
     Ok((filename, data, content_type))
@@ -547,6 +551,111 @@ fn build_export_query(
     }
 }
 
+/// Accounting-friendly export record structure
+#[derive(Debug, Clone)]
+struct ExportRecord {
+    date: String,
+    time: String,
+    direction: String,
+    from_address: String,
+    to_address: String,
+    asset_symbol: String,
+    asset_contract_address: String,
+    amount: f64,
+    balance_after: String,
+    price_usd: Option<f64>,
+    value_usd: Option<f64>,
+    transaction_hash: String,
+    receipt_id: String,
+}
+
+/// Convert enriched balance changes to accounting-friendly export records
+fn transform_to_export_records(
+    enriched_changes: Vec<EnrichedBalanceChange>,
+    account_id: &str,
+) -> Vec<ExportRecord> {
+    enriched_changes
+        .into_iter()
+        .map(|change| {
+            let metadata = change
+                .token_metadata
+                .as_ref()
+                .expect("Metadata should always be present");
+
+            let price = metadata.price;
+            let amount_val = change.amount.abs().to_f64().unwrap_or(0.0);
+            let value_usd = change
+                .amount
+                .abs()
+                .to_f64()
+                .and_then(|a| price.map(|p| a * p));
+
+            // Determine direction and addresses
+            let is_incoming = change.amount.to_f64().map(|a| a > 0.0).unwrap_or(false);
+            let direction = if is_incoming { "in" } else { "out" };
+            let from_address = if is_incoming {
+                change
+                    .counterparty
+                    .as_ref()
+                    .map(|s| s.as_str())
+                    .unwrap_or("")
+            } else {
+                account_id
+            };
+            let to_address = if is_incoming {
+                account_id
+            } else {
+                change
+                    .counterparty
+                    .as_ref()
+                    .map(|s| s.as_str())
+                    .unwrap_or("")
+            };
+
+            // Split date and time
+            let datetime = change.block_time;
+            let date = datetime.format("%Y-%m-%d").to_string();
+            let time = datetime.format("%H:%M:%S UTC").to_string();
+
+            // Use first transaction hash and receipt ID
+            let transaction_hash = change
+                .transaction_hashes
+                .first()
+                .map(|h| h.to_string())
+                .unwrap_or_default();
+
+            let receipt_id = change
+                .receipt_id
+                .first()
+                .map(|r| r.to_string())
+                .unwrap_or_default();
+
+            // Remove "intents.near:" prefix from token_id for cleaner export
+            let asset_contract_address = change
+                .token_id
+                .strip_prefix("intents.near:")
+                .unwrap_or(&change.token_id)
+                .to_string();
+
+            ExportRecord {
+                date,
+                time,
+                direction: direction.to_string(),
+                from_address: from_address.to_string(),
+                to_address: to_address.to_string(),
+                asset_symbol: metadata.symbol.clone(),
+                asset_contract_address,
+                amount: amount_val,
+                balance_after: change.balance_after.to_string(),
+                price_usd: price,
+                value_usd,
+                transaction_hash,
+                receipt_id,
+            }
+        })
+        .collect()
+}
+
 /// Generate CSV from enriched balance changes
 async fn generate_csv(
     state: &Arc<AppState>,
@@ -564,44 +673,33 @@ async fn generate_csv(
         transaction_types,
     );
     let enriched = get_balance_changes_internal(state, &query).await?;
+    let records = transform_to_export_records(enriched, account_id);
 
     let mut csv = String::new();
 
-    // Header (with price columns)
-    csv.push_str("block_height,block_time,token_id,token_symbol,counterparty,amount,balance_before,balance_after,price_usd,value_usd,transaction_hashes,receipt_id\n");
+    // Header (accounting-friendly format)
+    csv.push_str("date,time,direction,from_address,to_address,asset_symbol,asset_contract_address,amount,balance_after,price_usd,value_usd,transaction_hash,receipt_id\n");
 
     // Rows
-    for change in enriched {
-        let metadata = change
-            .token_metadata
-            .as_ref()
-            .expect("Metadata should always be present");
-        let price = metadata.price.unwrap_or(0.0);
-        let value_usd = change.amount.abs().to_f64().map(|a| a * price);
-
-        let tx_hashes = change.transaction_hashes.join(",");
-        let receipt_ids = change.receipt_id.join(",");
-        let price_str = if metadata.price.is_some() {
-            format!("{}", price)
-        } else {
-            String::new()
-        };
-        let value_str = value_usd.map(|v| format!("{}", v)).unwrap_or_default();
+    for record in records {
+        let price_str = record.price_usd.map(|p| p.to_string()).unwrap_or_default();
+        let value_str = record.value_usd.map(|v| v.to_string()).unwrap_or_default();
 
         csv.push_str(&format!(
-            "{},{},{},{},{},{},{},{},{},{},{},{}\n",
-            change.block_height,
-            change.block_time.to_rfc3339(),
-            change.token_id,
-            metadata.symbol,
-            change.counterparty.unwrap_or_default(),
-            change.amount,
-            change.balance_before,
-            change.balance_after,
+            "{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
+            record.date,
+            record.time,
+            record.direction,
+            record.from_address,
+            record.to_address,
+            record.asset_symbol,
+            record.asset_contract_address,
+            record.amount,
+            record.balance_after,
             price_str,
             value_str,
-            tx_hashes,
-            receipt_ids
+            record.transaction_hash,
+            record.receipt_id
         ));
     }
 
@@ -625,37 +723,26 @@ async fn generate_json(
         transaction_types,
     );
     let enriched = get_balance_changes_internal(state, &query).await?;
+    let records = transform_to_export_records(enriched, account_id);
 
-    // Convert to JSON-friendly format with string representations for decimals
-    let json_records: Vec<serde_json::Value> = enriched
+    // Convert to JSON-friendly format
+    let json_records: Vec<serde_json::Value> = records
         .into_iter()
-        .map(|change| {
-            // Metadata should always be present since include_metadata=true
-            let metadata = change
-                .token_metadata
-                .as_ref()
-                .expect("Metadata should always be present");
-            let price = metadata.price;
-            let value_usd = change
-                .amount
-                .abs()
-                .to_f64()
-                .and_then(|a| price.map(|p| a * p));
-            let receipt_ids = change.receipt_id.join(",");
-
+        .map(|record| {
             serde_json::json!({
-                "block_height": change.block_height,
-                "block_time": change.block_time.to_rfc3339(),
-                "token_id": change.token_id,
-                "token_symbol": metadata.symbol,
-                "counterparty": change.counterparty.unwrap_or_default(),
-                "amount": change.amount.to_string(),
-                "balance_before": change.balance_before.to_string(),
-                "balance_after": change.balance_after.to_string(),
-                "price_usd": price,
-                "value_usd": value_usd,
-                "transaction_hashes": change.transaction_hashes,
-                "receipt_id": receipt_ids,
+                "date": record.date,
+                "time": record.time,
+                "direction": record.direction,
+                "from_address": record.from_address,
+                "to_address": record.to_address,
+                "asset_symbol": record.asset_symbol,
+                "asset_contract_address": record.asset_contract_address,
+                "amount": record.amount,
+                "balance_after": record.balance_after,
+                "price_usd": record.price_usd,
+                "value_usd": record.value_usd,
+                "transaction_hash": record.transaction_hash,
+                "receipt_id": record.receipt_id,
             })
         })
         .collect();
@@ -680,6 +767,7 @@ async fn generate_xlsx(
         transaction_types,
     );
     let enriched = get_balance_changes_internal(state, &query).await?;
+    let records = transform_to_export_records(enriched, account_id);
 
     // Create workbook
     let mut workbook = Workbook::new();
@@ -693,17 +781,18 @@ async fn generate_xlsx(
 
     // Write headers
     let headers = vec![
-        "Block Height",
-        "Block Time",
-        "Token ID",
-        "Token Symbol",
-        "Counterparty",
+        "Date",
+        "Time",
+        "Direction",
+        "From Address",
+        "To Address",
+        "Asset Symbol",
+        "Asset Contract Address",
         "Amount",
-        "Balance Before",
         "Balance After",
         "Price USD",
         "Value USD",
-        "Transaction Hashes",
+        "Transaction Hash",
         "Receipt ID",
     ];
 
@@ -713,43 +802,31 @@ async fn generate_xlsx(
 
     // Write data rows
     let mut row = 1u32;
-    for change in enriched {
-        // Metadata should always be present since include_metadata=true
-        let metadata = change
-            .token_metadata
-            .as_ref()
-            .expect("Metadata should always be present");
-        let price = metadata.price;
-        let value_usd = change
-            .amount
-            .abs()
-            .to_f64()
-            .and_then(|a| price.map(|p| a * p));
-        let receipt_ids = change.receipt_id.join(",");
+    for record in records {
+        worksheet.write(row, 0, record.date)?;
+        worksheet.write(row, 1, record.time)?;
+        worksheet.write(row, 2, record.direction)?;
+        worksheet.write(row, 3, record.from_address)?;
+        worksheet.write(row, 4, record.to_address)?;
+        worksheet.write(row, 5, record.asset_symbol)?;
+        worksheet.write(row, 6, record.asset_contract_address)?;
+        worksheet.write(row, 7, record.amount)?;
+        worksheet.write(row, 8, record.balance_after)?;
 
-        worksheet.write(row, 0, change.block_height)?;
-        worksheet.write(row, 1, change.block_time.to_rfc3339())?;
-        worksheet.write(row, 2, &change.token_id)?;
-        worksheet.write(row, 3, &metadata.symbol)?;
-        worksheet.write(row, 4, change.counterparty.unwrap_or_default())?;
-        worksheet.write(row, 5, change.amount.to_string())?;
-        worksheet.write(row, 6, change.balance_before.to_string())?;
-        worksheet.write(row, 7, change.balance_after.to_string())?;
-
-        if let Some(p) = price {
-            worksheet.write(row, 8, p)?;
-        } else {
-            worksheet.write(row, 8, "")?;
-        }
-
-        if let Some(value) = value_usd {
-            worksheet.write(row, 9, value)?;
+        if let Some(p) = record.price_usd {
+            worksheet.write(row, 9, p)?;
         } else {
             worksheet.write(row, 9, "")?;
         }
 
-        worksheet.write(row, 10, change.transaction_hashes.join(","))?;
-        worksheet.write(row, 11, &receipt_ids)?;
+        if let Some(value) = record.value_usd {
+            worksheet.write(row, 10, value)?;
+        } else {
+            worksheet.write(row, 10, "")?;
+        }
+
+        worksheet.write(row, 11, record.transaction_hash)?;
+        worksheet.write(row, 12, record.receipt_id)?;
 
         row += 1;
     }
@@ -1208,11 +1285,6 @@ pub async fn get_recent_activity(
     let token_ids: Option<Vec<String>> = if let Some(ref symbol) = params.token_symbol {
         match crate::handlers::token::search_token_by_symbol(&state, symbol).await {
             Ok(addresses) => {
-                log::info!(
-                    "Found {} token addresses for symbol '{}'",
-                    addresses.len(),
-                    symbol
-                );
                 if addresses.is_empty() {
                     None
                 } else {
@@ -1236,11 +1308,6 @@ pub async fn get_recent_activity(
     let exclude_token_ids: Option<Vec<String>> = if let Some(ref symbol) = params.token_symbol_not {
         match crate::handlers::token::search_token_by_symbol(&state, symbol).await {
             Ok(addresses) => {
-                log::info!(
-                    "Found {} token addresses to exclude for symbol '{}'",
-                    addresses.len(),
-                    symbol
-                );
                 if addresses.is_empty() {
                     None
                 } else {
@@ -1264,6 +1331,13 @@ pub async fn get_recent_activity(
     // Build query filters for total count (need to count before USD filtering)
     let count_date_cutoff_str: Option<String> = date_cutoff.map(|dt| dt.to_rfc3339());
 
+    // For recent activity, "incoming" should include staking rewards
+    let transaction_types_for_query = match params.transaction_type.as_deref() {
+        Some("incoming") => Some(vec!["incoming".to_string(), "staking_rewards".to_string()]),
+        Some(other) => Some(vec![other.to_string()]),
+        None => None,
+    };
+
     let filters = BalanceChangeFilters {
         account_id: params.account_id.clone(),
         date_cutoff,
@@ -1275,7 +1349,7 @@ pub async fn get_recent_activity(
             .map(|dt| dt.with_timezone(&Utc)),
         token_ids: token_ids.clone(),
         exclude_token_ids: exclude_token_ids.clone(),
-        transaction_types: params.transaction_type.as_ref().map(|t| vec![t.clone()]),
+        transaction_types: transaction_types_for_query.clone(),
         min_amount: None,
         max_amount: None,
     };
@@ -1324,7 +1398,7 @@ pub async fn get_recent_activity(
         end_time: end_date.map(|s| s.to_string()),
         token_ids: token_ids.clone(),
         exclude_token_ids: exclude_token_ids.clone(),
-        transaction_types: params.transaction_type.as_ref().map(|t| vec![t.clone()]),
+        transaction_types: transaction_types_for_query,
         min_amount: None,
         max_amount: None,
         include_metadata: Some(true), // ✅ Fetch metadata (includes prices)

@@ -119,11 +119,11 @@ export function ActivityTable({
                     <Table>
                         <TableHeader>
                             <TableRow className="hover:bg-transparent">
-                                <TableHead className="w-[120px] pl-6">TYPE</TableHead>
-                                <TableHead className="min-w-[180px]">TRANSACTION</TableHead>
-                                <TableHead className="min-w-[150px]">FROM</TableHead>
-                                <TableHead className="min-w-[150px]">TO</TableHead>
-                                <TableHead className="text-right pr-6 min-w-[120px]">TRANSACTION</TableHead>
+                                <TableHead className="w-[120px] pl-6 text-xs font-medium uppercase text-muted-foreground">TYPE</TableHead>
+                                <TableHead className="min-w-[180px] text-xs font-medium uppercase text-muted-foreground">TRANSACTION</TableHead>
+                                <TableHead className="min-w-[150px] text-xs font-medium uppercase text-muted-foreground">FROM</TableHead>
+                                <TableHead className="min-w-[150px] text-xs font-medium uppercase text-muted-foreground">TO</TableHead>
+                                <TableHead className="text-right pr-6 min-w-[120px] text-xs font-medium uppercase text-muted-foreground">TRANSACTION</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>

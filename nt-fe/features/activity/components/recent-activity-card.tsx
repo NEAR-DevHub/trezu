@@ -507,7 +507,7 @@ export function RecentActivity() {
                                 <Table className="table-fixed w-full min-w-full">
                                     <colgroup>
                                         <col />
-                                        <col className="w-40 sm:w-52" />
+                                        <col className="w-52 sm:w-60" />
                                     </colgroup>
                                     <TableBody>
                                         {table.getRowModel().rows.map((row) => {
@@ -538,7 +538,7 @@ export function RecentActivity() {
                                                                     key={cell.id}
                                                                     className={cn(
                                                                         "py-3",
-                                                                        idx === 0 ? "pl-0 overflow-hidden" : "pr-0"
+                                                                        idx === 0 ? "pl-3 overflow-hidden pr-0" : "pr-3"
                                                                     )}
                                                                 >
                                                                     {flexRender(
@@ -577,7 +577,7 @@ export function RecentActivity() {
                                                                     </div>
                                                                 </TableCell>
                                                                 <TableCell className="py-3 pr-0 pl-4">
-                                                                    <div className="flex items-center justify-end shrink-0 pr-6">
+                                                                    <div className="flex items-center justify-end shrink-0 pr-10">
                                                                         <div className="flex flex-col items-end gap-0.5">
                                                                             <div className="text-sm sm:text-base whitespace-nowrap font-semibold text-general-success-foreground">
                                                                                 {formatAmount(

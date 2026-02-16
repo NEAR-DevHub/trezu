@@ -91,7 +91,8 @@ pub fn build_where_conditions(filters: &BalanceChangeFilters) -> (Vec<String>, u
 
         for t in types {
             match t.as_str() {
-                "incoming" => type_conditions.push("amount > 0".to_string()),
+                "incoming" => type_conditions
+                    .push("(amount > 0 AND counterparty != 'STAKING_REWARD')".to_string()),
                 "outgoing" => type_conditions.push("amount < 0".to_string()),
                 "staking_rewards" => {
                     type_conditions.push("counterparty = 'STAKING_REWARD'".to_string())

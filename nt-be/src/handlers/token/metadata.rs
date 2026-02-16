@@ -599,26 +599,39 @@ struct NearBlocksSearchResponse {
 }
 
 /// Search for FT token contract addresses by symbol using NearBlocks API
-/// Returns a list of token contract addresses sorted by:
-/// 1. Exact symbol match first
-/// 2. Then by onchain_market_cap (descending)
+///
+/// Returns a list of token contract addresses that exactly match the symbol (case-insensitive)
+/// sorted by onchain_market_cap (descending).
+///
+/// **Important:** This function filters to EXACT symbol matches only, excluding tokens with
+/// the same symbol on different networks/chains. For example, searching for "USDC" returns only:
+/// - eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near (USDC on Ethereum)
+/// - base-0x833589fcd6edb6e08f4c7c32d4f71b54bda02913.omft.near (USDC on Base)
+/// - arbitrum-0xaf88d065e77c8cc2239327c5edb3a432268e5831.omft.near (USDC on Arbitrum)
+///
+/// All of these are returned because they all have the exact symbol "USDC". This allows the
+/// caller to decide whether to use all versions or filter further. The results are sorted by
+/// onchain_market_cap (descending), so the most liquid version appears first.
+///
+/// **Special case for "NEAR" and "WNEAR":** When searching for "NEAR" or "WNEAR", the function
+/// returns hardcoded values `["wrap.near", "near"]` without making an API call, since native NEAR
+/// is not an FT token and these are the canonical NEAR token addresses. Both symbols refer to the
+/// same underlying tokens.
 pub async fn search_token_by_symbol(
     state: &Arc<AppState>,
     symbol: &str,
 ) -> Result<Vec<String>, (StatusCode, String)> {
+    let symbol_upper = symbol.to_uppercase();
+    if symbol_upper == "NEAR" || symbol_upper == "WNEAR" {
+        return Ok(vec!["wrap.near".to_string(), "near".to_string()]);
+    }
+
     let cache_key = format!("search-token-{}", symbol.to_lowercase());
 
     state
         .cache
         .cached(CacheTier::LongTerm, cache_key, async move {
-            let url = format!(
-                "https://api.nearblocks.io/v1/fts/?search={}",
-                if symbol.to_lowercase() == "near" {
-                    "wrap.near"
-                } else {
-                    symbol
-                }
-            );
+            let url = format!("https://api.nearblocks.io/v1/fts/?search={}", symbol);
 
             let response = state
                 .http_client
@@ -650,34 +663,27 @@ pub async fn search_token_by_symbol(
             let mut tokens = search_response.tokens;
             let symbol_upper = symbol.to_uppercase();
 
-            tokens.sort_by(|a, b| {
-                // First, prioritize exact symbol matches
-                let a_exact = a.symbol.to_uppercase() == symbol_upper;
-                let b_exact = b.symbol.to_uppercase() == symbol_upper;
+            // Filter to only exact symbol matches (case-insensitive)
+            tokens.retain(|t| t.symbol.to_uppercase() == symbol_upper);
 
-                match (a_exact, b_exact) {
-                    (true, false) => std::cmp::Ordering::Less,
-                    (false, true) => std::cmp::Ordering::Greater,
-                    _ => {
-                        // If both or neither are exact matches, sort by market cap
-                        let a_cap = a
-                            .onchain_market_cap
-                            .as_ref()
-                            .and_then(|s| s.parse::<f64>().ok())
-                            .unwrap_or(0.0);
-                        let b_cap = b
-                            .onchain_market_cap
-                            .as_ref()
-                            .and_then(|s| s.parse::<f64>().ok())
-                            .unwrap_or(0.0);
-                        b_cap
-                            .partial_cmp(&a_cap)
-                            .unwrap_or(std::cmp::Ordering::Equal)
-                    }
-                }
+            // Sort filtered tokens by market cap (descending)
+            tokens.sort_by(|a, b| {
+                let a_cap = a
+                    .onchain_market_cap
+                    .as_ref()
+                    .and_then(|s| s.parse::<f64>().ok())
+                    .unwrap_or(0.0);
+                let b_cap = b
+                    .onchain_market_cap
+                    .as_ref()
+                    .and_then(|s| s.parse::<f64>().ok())
+                    .unwrap_or(0.0);
+                b_cap
+                    .partial_cmp(&a_cap)
+                    .unwrap_or(std::cmp::Ordering::Equal)
             });
 
-            // Return all contract addresses
+            // Return all contract addresses that exactly match the symbol
             let contract_addresses: Vec<String> =
                 tokens.iter().map(|t| t.contract.clone()).collect();
 
