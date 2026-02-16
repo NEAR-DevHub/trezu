@@ -5,16 +5,16 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/button";
 import Logo from "@/components/logo";
-import { useUserTreasuries } from "@/hooks/use-treasury-queries";
 import { useNear } from "@/stores/near-store";
+import { useTreasury } from "@/hooks/use-treasury";
 
 const CREATE_BANNER_DISMISSED_KEY = "create-banner-dismissed";
 
-export function CreateBanner() {
+export function CreateBanner({ disabled = false }: { disabled?: boolean }) {
     const router = useRouter();
     const { accountId } = useNear();
-    const { data: treasuries = [], isLoading } = useUserTreasuries(accountId);
     const [isDismissed, setIsDismissed] = useState(true);
+    const { isGuestTreasury, isLoading } = useTreasury();
 
     useEffect(() => {
         setIsDismissed(
@@ -22,9 +22,13 @@ export function CreateBanner() {
         );
     }, []);
 
-    const hasMemberTreasury = treasuries.some((t) => t.isMember);
-
-    if (isDismissed || isLoading || hasMemberTreasury || !accountId) {
+    if (
+        isDismissed ||
+        isLoading ||
+        !accountId ||
+        !isGuestTreasury ||
+        disabled
+    ) {
         return null;
     }
 
