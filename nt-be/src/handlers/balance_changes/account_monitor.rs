@@ -544,7 +544,7 @@ mod tests {
             &state.db_pool,
             &network,
             177_000_000,
-            state.transfer_hint_service.as_ref(),
+            state.transfer_hint_service.as_deref(),
             None,
         )
         .await;

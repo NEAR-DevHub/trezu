@@ -63,6 +63,8 @@ pub async fn init_test_state() -> AppState {
 /// but also need a full AppState (e.g. for dirty_monitor which takes AppState).
 #[cfg(test)]
 pub fn build_test_state(db_pool: sqlx::PgPool) -> AppState {
+    use std::sync::Arc;
+
     load_test_env();
 
     let env_vars = crate::utils::env::EnvVars::default();
@@ -126,6 +128,6 @@ pub fn build_test_state(db_pool: sqlx::PgPool) -> AppState {
         env_vars,
         db_pool,
         price_service,
-        transfer_hint_service,
+        transfer_hint_service: transfer_hint_service.map(Arc::new),
     }
 }

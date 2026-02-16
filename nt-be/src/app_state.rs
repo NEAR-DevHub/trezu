@@ -28,7 +28,7 @@ pub struct AppState {
     pub bulk_payment_contract_id: AccountId,
     pub telegram_client: TelegramClient,
     /// Optional transfer hint service for accelerated balance change detection
-    pub transfer_hint_service: Option<TransferHintService>,
+    pub transfer_hint_service: Option<Arc<TransferHintService>>,
 }
 
 /// Builder for constructing AppState instances
@@ -267,7 +267,7 @@ impl AppStateBuilder {
 
         // Create transfer hint service if enabled (and not explicitly provided)
         let transfer_hint_service = if let Some(service) = self.transfer_hint_service {
-            Some(service)
+            Some(Arc::new(service))
         } else if env_vars.transfer_hints_enabled {
             let provider = if let Some(base_url) = &env_vars.transfer_hints_base_url {
                 FastNearProvider::with_base_url(archival_network.clone(), base_url.clone())
@@ -275,7 +275,7 @@ impl AppStateBuilder {
                 FastNearProvider::new(archival_network.clone())
             }
             .with_api_key(&env_vars.fastnear_api_key);
-            Some(TransferHintService::new().with_provider(provider))
+            Some(Arc::new(TransferHintService::new().with_provider(provider)))
         } else {
             None
         };

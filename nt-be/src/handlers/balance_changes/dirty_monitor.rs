@@ -81,7 +81,14 @@ pub async fn run_dirty_monitor(
         );
 
         let handle = tokio::spawn(async move {
-            if let Err(e) = run_dirty_task(&state, &account_id_clone, original_dirty_at).await {
+            if let Err(e) = run_dirty_task(
+                &state,
+                &account_id_clone,
+                original_dirty_at,
+                state.transfer_hint_service.clone(),
+            )
+            .await
+            {
                 log::error!(
                     "[dirty-monitor] Task for {} failed: {}",
                     account_id_clone,
@@ -103,6 +110,7 @@ async fn run_dirty_task(
     state: &AppState,
     account_id: &str,
     original_dirty_at: DateTime<Utc>,
+    transfer_hint_service: Option<Arc<TransferHintService>>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let pool = &state.db_pool;
     let network = &state.archival_network;
@@ -158,11 +166,14 @@ async fn run_dirty_task(
         _ => {}
     }
 
-    // Note: hint_service is not passed to spawned tasks because
-    // TransferHintService is not Clone. Binary search fallback is used instead.
-    // This can be improved later by wrapping the service in Arc in AppState.
-    let total_filled =
-        fill_dirty_account_gaps(pool, network, account_id, up_to_block, None).await?;
+    let total_filled = fill_dirty_account_gaps(
+        pool,
+        network,
+        account_id,
+        up_to_block,
+        transfer_hint_service.as_deref(),
+    )
+    .await?;
 
     log::info!(
         "[dirty-monitor] {} completed: filled {} total gaps",
