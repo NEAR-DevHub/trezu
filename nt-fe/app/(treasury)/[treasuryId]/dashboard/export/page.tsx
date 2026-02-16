@@ -780,7 +780,7 @@ export default function ExportActivityPage() {
                         {/* Export Quota */}
                         <PageCard
                             style={{
-                                backgroundColor: "var(--color-general-tertiary)",
+                                backgroundColor: exportCreditsRemaining === 0 ? "var(--color-general-info-background-faded)" : "var(--color-general-tertiary)",
                             }}
                             className="w-full"
                         >
@@ -829,10 +829,9 @@ export default function ExportActivityPage() {
                                     </span>
                                     <Button
                                         variant={exportCreditsRemaining === 0 ? "default" : "outline"}
-                                        size="sm"
-                                        className="p-3!"
+                                        className="px-2! py-0!"
                                     >
-                                        Upgrade Plan
+                                        Contact Us
                                     </Button>
                                 </div>
                             </div>

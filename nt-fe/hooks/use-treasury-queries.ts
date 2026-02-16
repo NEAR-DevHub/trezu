@@ -292,7 +292,7 @@ export function useRecentActivity(
  */
 export function useExportHistory(
     accountId: string | null | undefined,
-    limit: number = 10,
+    limit: number = 30,
     offset: number = 0,
 ) {
     return useQuery({

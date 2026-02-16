@@ -407,13 +407,14 @@ async fn test_csv_export_with_real_data() {
 
     let client = reqwest::Client::new();
 
-    // Test CSV Export
+    // Test CSV Export (using last 2 months to stay within 3-month plan limit)
     let response = client
-        .get(server.url("/api/balance-history/csv"))
+        .get(server.url("/api/balance-history/export"))
         .query(&[
+            ("format", "csv"),
             ("accountId", "webassemblymusic-treasury.sputnik-dao.near"),
-            ("startTime", "2025-06-01T00:00:00Z"),
-            ("endTime", "2026-01-01T00:00:00Z"),
+            ("startTime", "2025-12-01T00:00:00Z"),
+            ("endTime", "2026-01-31T23:59:59Z"),
         ])
         .send()
         .await
@@ -451,10 +452,10 @@ async fn test_csv_export_with_real_data() {
         csv_content.lines().take(5).collect::<Vec<_>>().join("\n")
     );
 
-    // Verify CSV structure (now includes price columns)
+    // Verify CSV structure (now includes new accounting-friendly headers)
     assert!(
-        csv_content.contains("block_height,block_time,token_id,token_symbol,counterparty,amount,balance_before,balance_after,price_usd,value_usd,transaction_hashes,receipt_id"),
-        "CSV should have proper headers including price_usd and value_usd columns"
+        csv_content.contains("date,time,direction,from_address,to_address,asset_symbol,asset_contract_address,amount,balance_after,price_usd,value_usd,transaction_hash,receipt_id"),
+        "CSV should have proper headers with accounting-friendly column names"
     );
 
     // Should NOT include SNAPSHOT or NOT_REGISTERED
@@ -467,11 +468,14 @@ async fn test_csv_export_with_real_data() {
         "CSV should not include NOT_REGISTERED records"
     );
 
-    // Exact row count (1 header + 172 data rows = 173 total)
+    // Exact row count (1 header + 30 data rows = 31 total)
+    // Note: Row count reduced due to:
+    // 1. Narrower date range (Dec 2025 - Jan 2026 instead of Jun 2025 - Jan 2026)
+    // 2. Swap deposit legs now filtered out (shown as part of swap fulfillment)
     let row_count = csv_content.lines().count();
     assert_eq!(
-        row_count, 173,
-        "CSV should have exactly 173 rows (1 header + 172 data rows)"
+        row_count, 31,
+        "CSV should have exactly 31 rows (1 header + 30 data rows)"
     );
 
     // Compare with snapshot (hard assertion for regression testing)

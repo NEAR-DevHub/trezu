@@ -34,8 +34,8 @@ export function BulkPaymentCreditsDisplay({
     const progressPercentage = isUnlimited
         ? 0
         : batchPaymentCreditLimit
-          ? (creditsUsed / batchPaymentCreditLimit) * 100
-          : (creditsUsed / totalCredits) * 100;
+            ? (creditsUsed / batchPaymentCreditLimit) * 100
+            : (creditsUsed / totalCredits) * 100;
 
     // Format period display
     const periodDisplay = isTrial ? "one-time trial" : "month";
@@ -82,10 +82,9 @@ export function BulkPaymentCreditsDisplay({
                     </span>
                     <Button
                         variant={creditsAvailable === 0 ? "default" : "outline"}
-                        size="sm"
-                        className="p-3!"
+                        className="px-2! py-0!"
                     >
-                        Upgrade Plan
+                        Contact Us
                     </Button>
                 </div>
             )}
