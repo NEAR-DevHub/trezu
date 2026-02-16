@@ -230,10 +230,16 @@ pub async fn resolve_receipt_to_transaction(
     })
     .await?;
 
-    let signer_id = match &receipt_response.receipt {
-        near_primitives::views::ReceiptEnumView::Action { signer_id, .. } => signer_id.to_string(),
+    // For Action receipts, use signer_id directly and search for this receipt.
+    // For Data receipts, find the action receipt that caused the balance change,
+    // then search for that receipt instead (data receipts don't appear in tx outcomes).
+    let (search_receipt_id, signer_id) = match &receipt_response.receipt {
+        near_primitives::views::ReceiptEnumView::Action { signer_id, .. } => {
+            (receipt_id.to_string(), signer_id.to_string())
+        }
         _ => {
-            return Err(format!("Receipt {} is not an action receipt", receipt_id).into());
+            let receiver = receipt_response.receiver_id.to_string();
+            find_action_receipt_at_block(&client, &receiver, block_height).await?
         }
     };
 
@@ -248,6 +254,88 @@ pub async fn resolve_receipt_to_transaction(
 
     // Step 2: Search for TransactionProcessing on the signer's account.
     // The transaction is included at or before the receipt execution block.
+    let mut result = find_transaction_on_signer(
+        &client,
+        &search_receipt_id,
+        &signer_id,
+        &parsed_signer,
+        block_height,
+    )
+    .await?;
+
+    // Return the original receipt_id in the result
+    result.receipt_id = receipt_id.to_string();
+    Ok(result)
+}
+
+/// For a Data receipt, find the Action receipt that caused the balance change at this block
+///
+/// Returns (action_receipt_id, signer_id) — the action receipt can be looked up in tx outcomes
+/// (data receipts don't appear in `receipts_outcome`).
+async fn find_action_receipt_at_block(
+    client: &JsonRpcClient,
+    receiver: &str,
+    block_height: u64,
+) -> Result<(String, String), Box<dyn Error + Send + Sync>> {
+    let parsed_receiver: near_primitives::types::AccountId = receiver.parse()?;
+
+    let changes_response = with_transport_retry("account_changes_for_data_receipt", || {
+        let req = methods::EXPERIMENTAL_changes::RpcStateChangesInBlockByTypeRequest {
+            block_reference: BlockReference::BlockId(BlockId::Height(block_height)),
+            state_changes_request:
+                near_primitives::views::StateChangesRequestView::AccountChanges {
+                    account_ids: vec![parsed_receiver.clone()],
+                },
+        };
+        client.call(req)
+    })
+    .await?;
+
+    // Find receipt hashes from receipt_processing causes — these are the action receipts
+    use near_primitives::views::StateChangeCauseView;
+    let mut seen = Vec::new();
+    for change in &changes_response.changes {
+        if let StateChangeCauseView::ReceiptProcessing { receipt_hash } = &change.cause {
+            let hash_str = receipt_hash.to_string();
+            if seen.contains(&hash_str) {
+                continue;
+            }
+            seen.push(hash_str);
+
+            // Fetch this receipt to get its signer_id
+            let receipt_response = with_transport_retry("receipt_for_data_receipt_signer", || {
+                let req = methods::EXPERIMENTAL_receipt::RpcReceiptRequest {
+                    receipt_reference: ReceiptReference {
+                        receipt_id: *receipt_hash,
+                    },
+                };
+                client.call(req)
+            })
+            .await?;
+
+            if let near_primitives::views::ReceiptEnumView::Action { signer_id, .. } =
+                &receipt_response.receipt
+            {
+                return Ok((receipt_hash.to_string(), signer_id.to_string()));
+            }
+        }
+    }
+
+    Err(format!(
+        "Could not find action receipt for data receipt at block {} on {}",
+        block_height, receiver
+    )
+    .into())
+}
+
+/// Search for TransactionProcessing on a signer's account to find the originating transaction
+async fn find_transaction_on_signer(
+    client: &JsonRpcClient,
+    receipt_id: &str,
+    signer_id: &str,
+    parsed_signer: &near_primitives::types::AccountId,
+    block_height: u64,
+) -> Result<ReceiptTransaction, Box<dyn Error + Send + Sync>> {
     let search_start = block_height.saturating_sub(5);
 
     for search_block in (search_start..=block_height).rev() {
@@ -299,9 +387,9 @@ pub async fn resolve_receipt_to_transaction(
             tx_hashes
         );
 
-        // Step 3: Confirm which transaction produced our receipt
+        // Confirm which transaction produced our receipt
         for tx_hash in &tx_hashes {
-            match has_receipt(&client, tx_hash, &signer_id, receipt_id).await {
+            match has_receipt(client, tx_hash, signer_id, receipt_id).await {
                 Ok(true) => {
                     log::debug!(
                         "Resolved receipt {} to transaction {} (via account_changes on {} at block {})",
@@ -313,7 +401,7 @@ pub async fn resolve_receipt_to_transaction(
                     return Ok(ReceiptTransaction {
                         receipt_id: receipt_id.to_string(),
                         transaction_hash: tx_hash.clone(),
-                        signer_id: signer_id.clone(),
+                        signer_id: signer_id.to_string(),
                     });
                 }
                 Ok(false) => continue,
@@ -514,6 +602,62 @@ mod tests {
         assert_eq!(result.receipt_id, receipt_id, "Receipt ID should match");
         assert_eq!(
             result.transaction_hash, "CpctEH17tQgvAT6kTPkCpWtSGtG4WFYS2Urjq9eNNhm5",
+            "Should resolve to the correct originating transaction"
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_resolve_meta_transaction_receipt() {
+        let state = init_test_state().await;
+
+        // Receipt 2nLMJS4s43ou8sXjNL84y4Vxnnt5tRKK8nomsxthrwfi is a meta-transaction
+        // signed by treasury-factory.near (relayer) on behalf of olskik.near
+        let receipt_id = "2nLMJS4s43ou8sXjNL84y4Vxnnt5tRKK8nomsxthrwfi";
+        let block_height = 185258323;
+
+        let result =
+            resolve_receipt_to_transaction(&state.archival_network, receipt_id, block_height)
+                .await
+                .expect("Should resolve meta-transaction receipt");
+
+        println!("Resolved meta-tx receipt: {:?}", result);
+
+        assert_eq!(result.receipt_id, receipt_id);
+        assert_eq!(
+            result.signer_id, "treasury-factory.near",
+            "Signer should be the relayer (treasury-factory.near), not the user"
+        );
+        assert!(
+            !result.transaction_hash.is_empty(),
+            "Should resolve to a transaction hash"
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_resolve_data_receipt_wrap_near() {
+        let state = init_test_state().await;
+
+        // Receipt 5JeCG66x51314NzRXzky8kRqS5bXwBGWxJmLXFw4xieh is a Data receipt
+        // from wrap.near to testing-astradao.sputnik-dao.near at block 185175857.
+        // The actual action receipt (on_proposal_callback) was signed by megha19.near,
+        // originating from tx 3NV19q2Gnef1rAdeDa6HA6PxwXwJzv4aAm4s61rkSNCC at block 185175854.
+        let receipt_id = "5JeCG66x51314NzRXzky8kRqS5bXwBGWxJmLXFw4xieh";
+        let block_height = 185175857;
+
+        let result =
+            resolve_receipt_to_transaction(&state.archival_network, receipt_id, block_height)
+                .await
+                .expect("Should resolve data receipt");
+
+        println!("Resolved data receipt: {:?}", result);
+
+        assert_eq!(result.receipt_id, receipt_id);
+        assert_eq!(
+            result.signer_id, "megha19.near",
+            "Signer should be megha19.near who called act_proposal"
+        );
+        assert_eq!(
+            result.transaction_hash, "3NV19q2Gnef1rAdeDa6HA6PxwXwJzv4aAm4s61rkSNCC",
             "Should resolve to the correct originating transaction"
         );
     }
