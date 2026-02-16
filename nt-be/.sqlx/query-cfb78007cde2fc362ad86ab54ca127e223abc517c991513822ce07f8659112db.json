@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT account_id\n        FROM counterparties\n        WHERE UPPER(token_symbol) = UPPER($1)\n          AND account_type = 'ft_token'\n        ORDER BY discovered_at DESC\n        LIMIT 10\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "account_id",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "cfb78007cde2fc362ad86ab54ca127e223abc517c991513822ce07f8659112db"
+}

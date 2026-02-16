@@ -59,7 +59,7 @@ export function CreditsQuotaDisplay({
     return (
         <div
             className={cn(
-                "space-y-2 border-b-[0.2px] pb-4",
+                "space-y-2 border-b pb-4",
                 isDepleted
                     ? "border-general-info-border"
                     : "border-general-unofficial-border",
@@ -84,7 +84,7 @@ export function CreditsQuotaDisplay({
             </div>
 
             {!isFree && resetDate && isDepleted && (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                     Limit will reset on {resetDate}
                 </p>
             )}
