@@ -42,6 +42,13 @@ async fn load_test_data() {
 
     println!("Loading testing-astradao test data...");
 
+    // Advance the sequence past any existing IDs to avoid primary key collisions
+    // (other test suites may have inserted rows with hardcoded IDs)
+    sqlx::query("SELECT setval('balance_changes_id_seq', GREATEST(nextval('balance_changes_id_seq'), COALESCE((SELECT MAX(id) FROM balance_changes), 0) + 1))")
+        .execute(&pool)
+        .await
+        .expect("Failed to advance sequence");
+
     // Read and execute SQL dump
     let sql = std::fs::read_to_string("tests/test_data/testing_astradao_balance_changes.sql")
         .expect("Failed to read testing_astradao_balance_changes.sql");
