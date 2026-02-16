@@ -200,6 +200,8 @@ export function TreasurySelector({
                                             </span>
                                             <TreasuryBalance
                                                 daoId={treasury.daoId}
+                                                className="text-xs"
+                                                skeletonClassName="size-4"
                                             />
                                         </div>
                                     </div>
