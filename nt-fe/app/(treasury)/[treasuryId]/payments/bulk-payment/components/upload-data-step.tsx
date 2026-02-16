@@ -629,18 +629,9 @@ export function UploadDataStep({
 
                 {/* Credits Display */}
                 <PageCard
-                    style={
-                        availableCredits === 0
-                            ? {
-                                border: "1px solid var(--general-success-foreground)",
-                                background:
-                                    "var(--general-success-background-faded)",
-                            }
-                            : {
-                                backgroundColor:
-                                    "var(--color-general-tertiary)",
-                            }
-                    }
+                    style={{
+                        backgroundColor: availableCredits === 0 ? "var(--color-general-info-background-faded)" : "var(--color-general-tertiary)",
+                    }}
                     className="w-full"
                 >
                     {subscription && (
@@ -655,6 +646,6 @@ export function UploadDataStep({
                     )}
                 </PageCard>
             </div>
-        </div>
+        </div >
     );
 }
