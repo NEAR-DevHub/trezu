@@ -84,6 +84,7 @@ interface NearStore {
     ) => Promise<{ signatureData: SignedMessage; signedData: string }>;
     signAndSendDelegateAction: (
         params: SignDelegateActionParams,
+        storageBytes: Big,
         treasuryId: string,
     ) => Promise<boolean>;
     createProposal: (
@@ -371,7 +372,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
 
     signAndSendDelegateAction: async (
         params: SignDelegateActionParams,
-        treasuryId: string,
+        storageBytes: Big,
     ): Promise<boolean> => {
         const state = get();
         if (!isFullyAuthenticated(state)) {
@@ -388,8 +389,8 @@ export const useNearStore = create<NearStore>((set, get) => ({
         // Relay each signed delegate action to the backend for gas-sponsored submission
         for (const signedAction of result.signedDelegateActions) {
             const relayResult = await relayDelegateAction(
-                treasuryId,
                 signedAction,
+                storageBytes,
             );
             if (!relayResult.success) {
                 throw new Error(
@@ -431,12 +432,6 @@ export const useNearStore = create<NearStore>((set, get) => ({
             receiverId: params.treasuryId,
             actions: [
                 {
-                    type: "Transfer",
-                    params: {
-                        deposit: Big(10).pow(19).mul(storageBytes).toFixed(0),
-                    },
-                } as ConnectorAction,
-                {
                     type: "FunctionCall",
                     params: {
                         methodName: "add_proposal",
@@ -463,6 +458,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
         try {
             await get().signAndSendDelegateAction(
                 { delegateActions, network: "mainnet" },
+                storageBytes,
                 params.treasuryId,
             );
             if (showToast) {
@@ -528,24 +524,14 @@ export const useNearStore = create<NearStore>((set, get) => ({
         const delegateActions = [
             {
                 receiverId: treasuryId,
-                actions: [
-                    {
-                        type: "Transfer",
-                        params: {
-                            deposit: Big(10)
-                                .pow(19)
-                                .mul(voteStorageBytes.mul(votes.length))
-                                .toFixed(0),
-                        },
-                    } as ConnectorAction,
-                    ...votesActions,
-                ],
+                actions: votesActions,
             },
         ];
 
         try {
             await signAndSendDelegateAction(
                 { delegateActions: delegateActions as any, network: "mainnet" },
+                voteStorageBytes,
                 treasuryId,
             );
 
