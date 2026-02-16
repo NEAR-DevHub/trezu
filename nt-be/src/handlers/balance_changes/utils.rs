@@ -6,10 +6,14 @@ use sqlx::types::chrono::{DateTime, Utc};
 use std::future::Future;
 use tokio::time::{Duration, sleep};
 
-const MAX_TRANSPORT_RETRIES: u32 = 3;
+const MAX_TRANSPORT_RETRIES: u32 = 5;
 
 /// Check if an error is a transient transport/network error that should be retried
 pub fn is_transport_error(err_debug: &str) -> bool {
+    // Don't retry 422 — these are permanent "block unavailable" errors
+    if err_debug.contains("422") {
+        return false;
+    }
     err_debug.contains("TransportError")
         || err_debug.contains("SendError")
         || err_debug.contains("DispatchGone")
@@ -17,12 +21,16 @@ pub fn is_transport_error(err_debug: &str) -> bool {
         || err_debug.contains("error sending request")
         || err_debug.contains("connection")
         || err_debug.contains("timed out")
+        || err_debug.contains("429")
+        || err_debug.contains("Too Many Requests")
+        || err_debug.contains("LIMIT_EXCEEDED")
 }
 
-/// Retry an async operation on transient transport errors with exponential backoff.
+/// Retry an async operation on transient errors with exponential backoff.
 ///
-/// Retries up to 3 times with delays of 200ms, 400ms, 800ms.
-/// Non-transport errors are returned immediately without retrying.
+/// Retries up to 5 times with delays of 500ms, 1s, 2s, 4s, 8s.
+/// Covers transport errors (connection, timeout) and rate limiting (429).
+/// Non-transient errors are returned immediately without retrying.
 pub async fn with_transport_retry<T, E, F, Fut>(label: &str, mut make_call: F) -> Result<T, E>
 where
     F: FnMut() -> Fut,
@@ -31,9 +39,9 @@ where
 {
     for attempt in 0..=MAX_TRANSPORT_RETRIES {
         if attempt > 0 {
-            let delay_ms = 200 * 2u64.pow(attempt - 1);
+            let delay_ms = 500 * 2u64.pow(attempt - 1);
             log::warn!(
-                "{}: transport error, retrying in {}ms (attempt {}/{})",
+                "{}: transient error, retrying in {}ms (attempt {}/{})",
                 label,
                 delay_ms,
                 attempt + 1,

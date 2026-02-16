@@ -855,11 +855,17 @@ pub async fn seed_initial_balance(
         return Ok(None);
     }
 
-    // Get current balance
-    let current_balance =
-        balance::get_balance_at_block(pool, network, account_id, token_id, current_block)
-            .await
-            .map_err(|e| -> GapFillerError { e.to_string().into() })?;
+    // Get current balance (with fallback for unavailable blocks)
+    let current_balance = balance::get_balance_at_block_with_fallback(
+        pool,
+        network,
+        account_id,
+        token_id,
+        current_block,
+        10,
+    )
+    .await
+    .map_err(|e| -> GapFillerError { e.to_string().into() })?;
 
     log::info!(
         "Current balance for {}/{} at block {}: {}",
@@ -977,11 +983,17 @@ async fn fill_gap_to_present(
         return Ok(None); // No records exist
     };
 
-    // Get current balance at up_to_block
-    let current_balance =
-        balance::get_balance_at_block(pool, network, account_id, token_id, up_to_block)
-            .await
-            .map_err(|e| -> GapFillerError { e.to_string().into() })?;
+    // Get current balance at up_to_block (with fallback for unavailable blocks)
+    let current_balance = balance::get_balance_at_block_with_fallback(
+        pool,
+        network,
+        account_id,
+        token_id,
+        up_to_block,
+        10,
+    )
+    .await
+    .map_err(|e| -> GapFillerError { e.to_string().into() })?;
 
     // If balance hasn't changed, no gap
     if current_balance == latest.balance_after {
