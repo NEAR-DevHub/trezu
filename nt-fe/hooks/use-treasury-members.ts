@@ -1,11 +1,6 @@
 import { useMemo } from "react";
 import { useTreasuryPolicy } from "./use-treasury-queries";
 
-interface Member {
-    accountId: string;
-    roles: string[];
-}
-
 /**
  * Hook to extract and return unique members from treasury policy roles
  * @param treasuryId - The treasury ID to fetch members for
@@ -41,7 +36,7 @@ export function useTreasuryMembers(treasuryId: string | null | undefined) {
             accountId,
             roles: Array.from(rolesSet),
         })).sort((a, b) =>
-            a.accountId.toLowerCase().localeCompare(b.accountId.toLowerCase())
+            a.accountId.toLowerCase().localeCompare(b.accountId.toLowerCase()),
         );
     }, [policy]);
 

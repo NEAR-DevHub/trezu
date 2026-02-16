@@ -2,7 +2,7 @@ mod common;
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
-use nt_be::handlers::balance_changes::dirty_monitor::run_dirty_monitor;
+use nt_be::handlers::balance_changes::dirty_monitor::run_dirty_monitor_at_block;
 use nt_be::routes::create_routes;
 use sqlx::PgPool;
 use std::collections::HashMap;
@@ -67,9 +67,13 @@ async fn test_dirty_monitor_discovers_intents_tokens(pool: PgPool) -> sqlx::Resu
     .await?;
     assert_eq!(count, 0, "Should have no intents token records initially");
 
+    // Run dirty monitor at a fixed block to keep the test deterministic.
+    // This block keeps the known deposit (185171271) within the 600k lookback window.
+    let fixed_up_to_block = 185_500_000;
+
     // Run the dirty monitor — it will spawn a task for the dirty account
     let mut active_tasks: HashMap<String, JoinHandle<()>> = HashMap::new();
-    run_dirty_monitor(&state, &mut active_tasks).await;
+    run_dirty_monitor_at_block(&state, &mut active_tasks, fixed_up_to_block).await;
 
     assert_eq!(
         active_tasks.len(),
@@ -110,8 +114,24 @@ async fn test_dirty_monitor_discovers_intents_tokens(pool: PgPool) -> sqlx::Resu
         "Dirty monitor should have discovered intents token and created balance records"
     );
 
-    // Verify the exact BTC deposit at block 185171271
-    // Real data: 0.00374124 BTC deposited, balance 0 -> 0.00374124
+    // Verify chain consistency for discovered intents token records.
+    // This is stable even as chain head advances over time.
+    use bigdecimal::BigDecimal;
+    use std::str::FromStr;
+    for pair in records.windows(2) {
+        let prev = &pair[0];
+        let next = &pair[1];
+        assert_eq!(
+            BigDecimal::from_str(&prev.balance_after).unwrap(),
+            BigDecimal::from_str(&next.balance_before).unwrap(),
+            "Balance chain must be continuous between blocks {} and {}",
+            prev.block_height,
+            next.block_height
+        );
+    }
+
+    // Verify the exact BTC deposit at block 185171271.
+    // With fixed up_to_block, this remains within historical lookback deterministically.
     let btc_deposit = sqlx::query!(
         r#"
         SELECT block_height, block_time,
@@ -139,8 +159,6 @@ async fn test_dirty_monitor_discovers_intents_tokens(pool: PgPool) -> sqlx::Resu
         btc_deposit.counterparty
     );
 
-    use bigdecimal::BigDecimal;
-    use std::str::FromStr;
     assert_eq!(
         BigDecimal::from_str(&btc_deposit.balance_before).unwrap(),
         BigDecimal::from_str("0").unwrap(),

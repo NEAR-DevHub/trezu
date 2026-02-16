@@ -254,7 +254,7 @@ export function Sidebar({ onClose }: SidebarProps) {
                     })}
                 </nav>
 
-                <CreateBanner />
+                <CreateBanner disabled={isReduced} />
 
                 <div
                     className={cn(

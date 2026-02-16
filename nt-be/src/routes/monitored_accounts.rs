@@ -120,6 +120,23 @@ pub async fn add_monitored_account(
             )
         })?;
 
+        sqlx::query!(
+            r#"
+            UPDATE daos
+            SET is_dirty = true
+            WHERE dao_id = $1
+            "#,
+            &payload.account_id
+        )
+        .execute(&state.db_pool)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "error": format!("Database error: {}", e) })),
+            )
+        })?;
+
         return Ok(Json(AddAccountResponse {
             account_id: account.account_id,
             enabled: account.enabled,

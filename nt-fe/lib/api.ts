@@ -1144,8 +1144,8 @@ function signedDelegateToBase64(
 }
 
 export async function relayDelegateAction(
-    treasuryId: string,
     signedDelegateAction: SignDelegateActionResult,
+    storageBytes: Big,
 ): Promise<RelayDelegateActionResponse> {
     const url = `${BACKEND_API_BASE}/relay/delegate-action`;
     const base64Encoded = signedDelegateToBase64(
@@ -1153,7 +1153,10 @@ export async function relayDelegateAction(
     );
     const response = await axios.post<RelayDelegateActionResponse>(
         url,
-        { treasuryId, signedDelegateAction: base64Encoded },
+        {
+            signedDelegateAction: base64Encoded,
+            storageBytes: storageBytes.toFixed(0),
+        },
         { withCredentials: true },
     );
     return response.data;

@@ -43,7 +43,7 @@ export function useUserTreasuriesWithOptions(
                 includeHidden: options?.includeHidden ?? false,
             }),
         enabled: !!accountId,
-        staleTime: 1000 * 60 * 5, // 5 minutes
+        staleTime: 10 * 1000, // 10 seconds
     });
 }
 
