@@ -432,15 +432,20 @@ async fn has_receipt(
     sender_account_id: &str,
     target_receipt_id: &str,
 ) -> Result<bool, Box<dyn Error + Send + Sync>> {
-    let tx_request = methods::tx::RpcTransactionStatusRequest {
-        transaction_info: methods::tx::TransactionInfo::TransactionId {
-            tx_hash: tx_hash.parse()?,
-            sender_account_id: sender_account_id.parse()?,
-        },
-        wait_until: near_primitives::views::TxExecutionStatus::Final,
-    };
+    let parsed_tx_hash: near_primitives::hash::CryptoHash = tx_hash.parse()?;
+    let parsed_sender: near_primitives::types::AccountId = sender_account_id.parse()?;
 
-    let tx_response = client.call(tx_request).await?;
+    let tx_response = with_transport_retry("has_receipt_tx_status", || {
+        let req = methods::tx::RpcTransactionStatusRequest {
+            transaction_info: methods::tx::TransactionInfo::TransactionId {
+                tx_hash: parsed_tx_hash,
+                sender_account_id: parsed_sender.clone(),
+            },
+            wait_until: near_primitives::views::TxExecutionStatus::Final,
+        };
+        client.call(req)
+    })
+    .await?;
 
     let receipts_outcome = match &tx_response.final_execution_outcome {
         Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcome(outcome)) => {
