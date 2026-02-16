@@ -5,6 +5,7 @@
 //! of the next record for the same account and token.
 
 use sqlx::PgPool;
+use sqlx::types::chrono::{DateTime, Utc};
 
 #[cfg(test)]
 use super::utils::block_timestamp_to_datetime;
@@ -73,6 +74,71 @@ pub async fn find_gaps(
     .bind(account_id)
     .bind(token_id)
     .bind(up_to_block)
+    .fetch_all(pool)
+    .await?;
+
+    Ok(gaps)
+}
+
+/// A gap detected within a time range, including block times for display
+#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TimeRangeGap {
+    pub start_block: i64,
+    pub end_block: i64,
+    pub start_block_time: DateTime<Utc>,
+    pub end_block_time: DateTime<Utc>,
+    pub balance_after_previous: bigdecimal::BigDecimal,
+    pub balance_before_next: bigdecimal::BigDecimal,
+}
+
+/// Find gaps in the balance change chain within a time range.
+///
+/// Filters records by `block_time` within `[from, to]`, then uses
+/// the LAG window function to find discontinuities.
+pub async fn find_gaps_in_time_range(
+    pool: &PgPool,
+    account_id: &str,
+    token_id: &str,
+    from: DateTime<Utc>,
+    to: DateTime<Utc>,
+) -> Result<Vec<TimeRangeGap>, sqlx::Error> {
+    let gaps = sqlx::query_as::<_, TimeRangeGap>(
+        r#"
+        WITH balance_chain AS (
+            SELECT
+                block_height,
+                block_time,
+                balance_before,
+                balance_after,
+                LAG(block_height) OVER w as prev_block_height,
+                LAG(block_time) OVER w as prev_block_time,
+                LAG(balance_after) OVER w as prev_balance_after
+            FROM balance_changes
+            WHERE account_id = $1
+              AND token_id = $2
+              AND block_time >= $3
+              AND block_time <= $4
+              AND counterparty != 'STAKING_SNAPSHOT'
+            WINDOW w AS (PARTITION BY account_id, token_id ORDER BY block_height)
+        )
+        SELECT
+            prev_block_height as start_block,
+            block_height as end_block,
+            prev_block_time as start_block_time,
+            block_time as end_block_time,
+            prev_balance_after as balance_after_previous,
+            balance_before as balance_before_next
+        FROM balance_chain
+        WHERE prev_block_height IS NOT NULL
+          AND balance_before != prev_balance_after
+        ORDER BY block_height
+        "#,
+    )
+    .bind(account_id)
+    .bind(token_id)
+    .bind(from)
+    .bind(to)
     .fetch_all(pool)
     .await?;
 

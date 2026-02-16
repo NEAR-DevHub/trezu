@@ -92,9 +92,9 @@ async fn test_completeness_api() {
     let server = TestServer::start().await;
     let client = reqwest::Client::new();
 
-    // Call the completeness endpoint
+    // Call the completeness endpoint with a wide time range covering all test data
     let url = server.url(&format!(
-        "/api/balance-history/completeness?accountId={}",
+        "/api/balance-history/completeness?accountId={}&from=2020-01-01T00:00:00Z&to=2026-12-31T23:59:59Z",
         ACCOUNT_ID
     ));
     let response = client
@@ -112,110 +112,33 @@ async fn test_completeness_api() {
 
     // Verify top-level structure
     assert_eq!(body["accountId"], ACCOUNT_ID);
-    assert!(
-        body["lastSyncedAt"].is_string(),
-        "lastSyncedAt should be present"
-    );
+    assert!(body["from"].is_string(), "from should be present");
+    assert!(body["to"].is_string(), "to should be present");
 
     let tokens = body["tokens"]
         .as_array()
         .expect("tokens should be an array");
 
-    // We expect all 15 token types from the test data
+    // We expect all token types from the test data
     assert!(
         tokens.len() >= 13,
         "Expected at least 13 tokens, got {}",
         tokens.len()
     );
 
-    // Build a map for easy assertion
-    let token_map: std::collections::HashMap<&str, &serde_json::Value> = tokens
-        .iter()
-        .map(|t| (t["tokenId"].as_str().unwrap(), t))
-        .collect();
-
     println!("Completeness response tokens:");
     for t in tokens {
         println!(
-            "  {} - hasGaps: {}, gapCount: {}, reachesBeginning: {}",
-            t["tokenId"], t["hasGaps"], t["gapCount"], t["reachesBeginning"]
+            "  {} - hasGaps: {}, gapCount: {}",
+            t["tokenId"], t["hasGaps"], t["gapCount"]
         );
     }
-
-    // ---- NEAR token ----
-    // Earliest record is a SNAPSHOT at block 112390151 with balance_before = 0
-    // For NEAR, balance_before == 0 means we've reached account creation
-    let near = token_map
-        .get("near")
-        .expect("near token should be in response");
-    assert_eq!(
-        near["reachesBeginning"], true,
-        "NEAR should reach beginning (earliest balance_before=0)"
-    );
-
-    // ---- FT tokens ----
-    // USDC (17208628f84f...): earliest SNAPSHOT has balance_before > 0 → does NOT reach beginning
-    let usdc_token = "17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1";
-    let usdc = token_map
-        .get(usdc_token)
-        .expect("USDC token should be in response");
-    assert_eq!(
-        usdc["reachesBeginning"], false,
-        "USDC should not reach beginning (earliest balance_before > 0)"
-    );
-
-    // wrap.near: earliest SNAPSHOT has balance_before > 0 → does NOT reach beginning
-    let wrap = token_map
-        .get("wrap.near")
-        .expect("wrap.near should be in response");
-    assert_eq!(
-        wrap["reachesBeginning"], false,
-        "wrap.near should not reach beginning (earliest balance_before > 0)"
-    );
-
-    // ---- Intents tokens ----
-    // intents.near:nep141:wrap.near: earliest is SNAPSHOT with balance_before=0
-    // But counterparty=SNAPSHOT, so reaches_beginning=false (backward walk still has SNAPSHOT at boundary)
-    let intents_wrap = token_map
-        .get("intents.near:nep141:wrap.near")
-        .expect("intents wrap token should be in response");
-    assert_eq!(
-        intents_wrap["reachesBeginning"], false,
-        "Intents wrap.near should not reach beginning (earliest is SNAPSHOT)"
-    );
-
-    // intents.near:nep141:eth.omft.near: earliest has balance_before=0, counterparty=UNKNOWN
-    // UNKNOWN != SNAPSHOT, so reaches_beginning=true
-    let intents_eth = token_map
-        .get("intents.near:nep141:eth.omft.near")
-        .expect("intents ETH token should be in response");
-    assert_eq!(
-        intents_eth["reachesBeginning"], true,
-        "Intents ETH should reach beginning (balance_before=0, counterparty=UNKNOWN)"
-    );
-
-    // intents.near:nep141:sol.omft.near: same pattern as ETH
-    let intents_sol = token_map
-        .get("intents.near:nep141:sol.omft.near")
-        .expect("intents SOL token should be in response");
-    assert_eq!(
-        intents_sol["reachesBeginning"], true,
-        "Intents SOL should reach beginning (balance_before=0, counterparty=UNKNOWN)"
-    );
-
-    // intents.near:nep141:arb-... USDC: earliest has balance_before=0, counterparty=UNKNOWN
-    let intents_arb_usdc = token_map
-        .get("intents.near:nep141:arb-0xaf88d065e77c8cc2239327c5edb3a432268e5831.omft.near")
-        .expect("intents ARB USDC token should be in response");
-    assert_eq!(
-        intents_arb_usdc["reachesBeginning"], true,
-        "Intents ARB USDC should reach beginning (balance_before=0, counterparty=UNKNOWN)"
-    );
 
     // ---- Consistency checks ----
     for t in tokens {
         let has_gaps = t["hasGaps"].as_bool().unwrap();
         let gap_count = t["gapCount"].as_u64().unwrap();
+        let gaps = t["gaps"].as_array().unwrap();
 
         // has_gaps should be consistent with gap_count
         assert_eq!(
@@ -224,5 +147,35 @@ async fn test_completeness_api() {
             "hasGaps should match gapCount > 0 for token {}",
             t["tokenId"]
         );
+
+        // gaps array length should match gap_count
+        assert_eq!(
+            gaps.len() as u64,
+            gap_count,
+            "gaps array length should match gapCount for token {}",
+            t["tokenId"]
+        );
+
+        // Each gap should have the expected fields
+        for gap in gaps {
+            assert!(gap["startBlock"].is_number(), "gap should have startBlock");
+            assert!(gap["endBlock"].is_number(), "gap should have endBlock");
+            assert!(
+                gap["startBlockTime"].is_string(),
+                "gap should have startBlockTime"
+            );
+            assert!(
+                gap["endBlockTime"].is_string(),
+                "gap should have endBlockTime"
+            );
+            assert!(
+                gap["balanceAfterPrevious"].is_string(),
+                "gap should have balanceAfterPrevious"
+            );
+            assert!(
+                gap["balanceBeforeNext"].is_string(),
+                "gap should have balanceBeforeNext"
+            );
+        }
     }
 }

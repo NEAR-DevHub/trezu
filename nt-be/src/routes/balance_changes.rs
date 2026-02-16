@@ -545,32 +545,21 @@ async fn get_current_block_height(
 #[serde(rename_all = "camelCase")]
 pub struct CompletenessQuery {
     pub account_id: String,
+    /// Start of the time range (ISO 8601)
+    pub from: DateTime<Utc>,
+    /// End of the time range (ISO 8601)
+    pub to: DateTime<Utc>,
 }
 
 pub async fn get_completeness(
     State(state): State<Arc<AppState>>,
     Query(params): Query<CompletenessQuery>,
 ) -> Result<Json<completeness::CompletenessResponse>, (StatusCode, Json<Value>)> {
-    // Get current block height for gap detection
-    let up_to_block = match get_current_block_height(&state.network).await {
-        Ok(height) => height as i64,
-        Err(e) => {
-            log::error!("Failed to get current block height: {}", e);
-            return Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(serde_json::json!({
-                    "error": "Failed to get current block height",
-                    "details": e.to_string()
-                })),
-            ));
-        }
-    };
-
     match completeness::check_completeness(
         &state.db_pool,
-        &state.archival_network,
         &params.account_id,
-        up_to_block,
+        params.from,
+        params.to,
     )
     .await
     {
