@@ -59,7 +59,7 @@ pub struct DetectedSwap {
     /// Balance change ID for fulfillment leg
     pub fulfillment_balance_change_id: i64,
     /// Receipt ID for fulfillment
-    pub fulfillment_receipt_id: String,
+    pub fulfillment_receipt_id: Option<String>,
 }
 
 /// Response from the Intents Explorer API
@@ -268,7 +268,7 @@ pub async fn detect_swaps_from_api(
             matched_deposit_ids.insert(deposit.id);
         }
 
-        let fulfillment_receipt = fulfillment.receipt_ids.first().cloned().unwrap_or_default();
+        let fulfillment_receipt = fulfillment.receipt_ids.first().cloned();
 
         swaps.push(DetectedSwap {
             solver_transaction_hash: fulfillment_tx.clone(),
@@ -325,12 +325,15 @@ pub async fn store_detected_swaps(
                 received_amount,
                 block_height
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-            ON CONFLICT (account_id, fulfillment_receipt_id) DO UPDATE SET
+            ON CONFLICT (account_id, solver_transaction_hash) DO UPDATE SET
                 sent_token_id = EXCLUDED.sent_token_id,
                 sent_amount = EXCLUDED.sent_amount,
                 deposit_balance_change_id = EXCLUDED.deposit_balance_change_id,
                 deposit_receipt_id = EXCLUDED.deposit_receipt_id,
-                solver_transaction_hash = EXCLUDED.solver_transaction_hash
+                fulfillment_receipt_id = EXCLUDED.fulfillment_receipt_id,
+                fulfillment_balance_change_id = EXCLUDED.fulfillment_balance_change_id,
+                received_token_id = EXCLUDED.received_token_id,
+                received_amount = EXCLUDED.received_amount
             "#,
             swap.account_id,
             swap.solver_transaction_hash,
