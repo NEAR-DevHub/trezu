@@ -4,6 +4,7 @@ import {
     isTrialPlan,
 } from "@/lib/subscription-api";
 import { Button } from "@/components/button";
+import { CreditsQuotaDisplay } from "@/components/credits-quota-display";
 
 interface BulkPaymentCreditsDisplayProps {
     credits: {
@@ -27,15 +28,9 @@ export function BulkPaymentCreditsDisplay({
         subscription.planConfig,
     );
     const isTrial = isTrialPlan(subscription.planConfig);
+    const isFree = subscription.planType === "free";
 
     const isUnlimited = batchPaymentCreditLimit === null;
-
-    // Calculate progress percentage
-    const progressPercentage = isUnlimited
-        ? 0
-        : batchPaymentCreditLimit
-            ? (creditsUsed / batchPaymentCreditLimit) * 100
-            : (creditsUsed / totalCredits) * 100;
 
     // Format period display
     const periodDisplay = isTrial ? "one-time trial" : "month";
@@ -45,7 +40,7 @@ export function BulkPaymentCreditsDisplay({
             {/* Header */}
             <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Bulk Payments</h3>
-                <span className="text-sm font-medium border-2 py-1 px-2 rounded-lg">
+                <span className="text-sm font-medium border py-1 px-2 rounded-lg border-general-border bg-general-unofficial-outline">
                     {isUnlimited
                         ? "Unlimited"
                         : `${batchPaymentCreditLimit || totalCredits} / ${periodDisplay}`}
@@ -54,24 +49,14 @@ export function BulkPaymentCreditsDisplay({
 
             {/* Credits Display - Only show if not unlimited */}
             {!isUnlimited && (
-                <div className="space-y-2 border-b-[0.2px] border-general-unofficial-border pb-4">
-                    <div className="flex items-center justify-between text-sm">
-                        <span className="font-semibold">
-                            {creditsAvailable} Available
-                        </span>
-                        <span className="text-muted-foreground text-xs">
-                            {creditsUsed} Used
-                        </span>
-                    </div>
-
-                    {/* Progress bar */}
-                    <div className="w-full h-2 bg-general-unofficial-accent rounded-full overflow-hidden">
-                        <div
-                            className="h-full bg-foreground transition-all"
-                            style={{ width: `${progressPercentage}%` }}
-                        />
-                    </div>
-                </div>
+                <CreditsQuotaDisplay
+                    creditsAvailable={creditsAvailable}
+                    creditsUsed={creditsUsed}
+                    creditsTotal={batchPaymentCreditLimit || totalCredits}
+                    creditsResetAt={subscription.creditsResetAt}
+                    isFree={isFree}
+                    isUnlimited={isUnlimited}
+                />
             )}
 
             {/* Upgrade CTA - Only show if not unlimited */}
@@ -81,8 +66,9 @@ export function BulkPaymentCreditsDisplay({
                         Looking for more flexibility?
                     </span>
                     <Button
-                        variant={creditsAvailable === 0 ? "default" : "outline"}
-                        className="px-2! py-0!"
+                        variant="default"
+                        className="px-2! py-3!"
+                        size='sm'
                     >
                         Contact Us
                     </Button>

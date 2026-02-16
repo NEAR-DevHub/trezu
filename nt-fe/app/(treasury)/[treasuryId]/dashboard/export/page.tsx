@@ -38,6 +38,7 @@ import { Download, Loader2 } from "lucide-react";
 import { User } from "@/components/user";
 import { FormattedDate } from "@/components/formatted-date";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CreditsQuotaDisplay } from "@/components/credits-quota-display";
 import {
     useReactTable,
     getCoreRowModel,
@@ -467,6 +468,8 @@ export default function ExportActivityPage() {
     const exportCreditsRemaining = planDetails?.exportCredits ?? 0;
     const exportCreditsTotal = planDetails?.planConfig?.limits?.monthlyExportCredits ?? planDetails?.planConfig?.limits?.trialExportCredits ?? 0;
     const exportCreditsUsed = Math.max(0, exportCreditsTotal - exportCreditsRemaining);
+    const isFreeExportPlan = planDetails?.planType === "free";
+    const isUnlimitedExport = planDetails?.planConfig?.limits?.monthlyExportCredits === null;
 
     // Show loading skeleton
     if (planLoading) {
@@ -788,7 +791,7 @@ export default function ExportActivityPage() {
                                 {/* Header */}
                                 <div className="flex items-center justify-between">
                                     <h3 className="text-lg font-semibold">Export Quota</h3>
-                                    <span className="text-sm font-medium border-2 py-1 px-2 rounded-lg">
+                                    <span className="text-sm font-medium border py-1 px-2 rounded-lg border-general-border bg-general-unofficial-outline">
                                         {planDetails?.planConfig?.limits?.monthlyExportCredits === null
                                             ? "Unlimited"
                                             : `${exportCreditsTotal} / month`
@@ -797,43 +800,32 @@ export default function ExportActivityPage() {
                                 </div>
 
                                 {/* Credits Display */}
-                                <div className="space-y-2 border-b-[0.2px] border-general-unofficial-border pb-4">
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="font-semibold">
-                                            {exportCreditsRemaining} Available
-                                        </span>
-                                        <span className="text-muted-foreground text-xs">
-                                            {exportCreditsUsed} Used
-                                        </span>
-                                    </div>
+                                {!isUnlimitedExport && (
+                                    <CreditsQuotaDisplay
+                                        creditsAvailable={exportCreditsRemaining}
+                                        creditsUsed={exportCreditsUsed}
+                                        creditsTotal={exportCreditsTotal}
+                                        creditsResetAt={planDetails?.creditsResetAt}
+                                        isFree={isFreeExportPlan}
+                                        isUnlimited={isUnlimitedExport}
+                                    />
+                                )}
 
-                                    {/* Progress bar */}
-                                    <div className="w-full h-2 bg-general-unofficial-accent rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full bg-foreground transition-all"
-                                            style={{
-                                                width: planDetails?.planConfig?.limits?.monthlyExportCredits === null
-                                                    ? "0%"
-                                                    : exportCreditsTotal === 0
-                                                        ? "0%"
-                                                        : `${Math.min(100, (exportCreditsUsed / exportCreditsTotal) * 100)}%`
-                                            }}
-                                        />
+                                {/* Upgrade CTA - Only show if not unlimited */}
+                                {!isUnlimitedExport && (
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm text-secondary-foreground">
+                                            Looking for more flexibility?
+                                        </span>
+                                        <Button
+                                            variant="default"
+                                            className="px-2! py-3!"
+                                            size='sm'
+                                        >
+                                            Contact Us
+                                        </Button>
                                     </div>
-                                </div>
-
-                                {/* Upgrade CTA */}
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm text-secondary-foreground">
-                                        Looking for more flexibility?
-                                    </span>
-                                    <Button
-                                        variant={exportCreditsRemaining === 0 ? "default" : "outline"}
-                                        className="px-2! py-0!"
-                                    >
-                                        Contact Us
-                                    </Button>
-                                </div>
+                                )}
                             </div>
                         </PageCard>
                     </div>

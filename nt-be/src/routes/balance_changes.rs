@@ -8,6 +8,7 @@ use serde_json::Value;
 use sqlx::query_as;
 use sqlx::types::BigDecimal;
 use sqlx::types::chrono::{DateTime, Utc};
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use crate::AppState;
@@ -42,8 +43,8 @@ pub struct BalanceChangesQuery {
     pub min_amount: Option<f64>, // Minimum amount in decimal-adjusted format (e.g., 1.5 NEAR)
     pub max_amount: Option<f64>, // Maximum amount in decimal-adjusted format (e.g., 100 USDC)
 
-    // Metadata
-    pub include_metadata: Option<bool>, // default: false (enrich with token metadata + prices)
+    pub include_metadata: Option<bool>, // default: false (enrich with token metadata like symbol, name, decimals, icon)
+    pub include_prices: Option<bool>, // default: false (fetch historical USD prices for transaction dates from DB; if missing, returns None)
 }
 
 #[derive(Debug, Serialize, sqlx::FromRow)]
@@ -252,7 +253,7 @@ pub async fn get_balance_changes_internal(
         })
         .collect();
 
-    // Conditionally enrich with metadata (includes prices)
+    // Conditionally enrich with metadata
     if params.include_metadata.unwrap_or(false) {
         // Collect token IDs and fetch metadata with fallbacks
         let token_ids: Vec<String> = enriched_changes
@@ -265,6 +266,50 @@ pub async fn get_balance_changes_internal(
         // Attach metadata to each change
         for change in &mut enriched_changes {
             change.token_metadata = metadata_map.get(&change.token_id).cloned();
+        }
+    }
+
+    // Conditionally enrich with historical prices
+    if params.include_prices.unwrap_or(false) {
+        // Group changes by token_id and collect unique dates
+        let mut token_dates: HashMap<String, HashSet<chrono::NaiveDate>> = HashMap::new();
+
+        for change in &enriched_changes {
+            token_dates
+                .entry(change.token_id.clone())
+                .or_default()
+                .insert(change.block_time.date_naive());
+        }
+
+        // Fetch prices for each token
+        let mut all_prices: HashMap<String, HashMap<chrono::NaiveDate, f64>> = HashMap::new();
+
+        for (token_id, dates) in token_dates {
+            let dates_vec: Vec<chrono::NaiveDate> = dates.into_iter().collect();
+            match state
+                .price_service
+                .get_prices_batch(&token_id, &dates_vec)
+                .await
+            {
+                Ok(prices) => {
+                    all_prices.insert(token_id, prices);
+                }
+                Err(e) => {
+                    log::warn!("Failed to fetch prices for {}: {}", token_id, e);
+                }
+            }
+        }
+
+        // Attach prices to metadata
+        for change in &mut enriched_changes {
+            if let Some(ref mut metadata) = change.token_metadata {
+                let change_date = change.block_time.date_naive();
+                if let Some(token_prices) = all_prices.get(&change.token_id)
+                    && let Some(&price) = token_prices.get(&change_date)
+                {
+                    metadata.price = Some(price);
+                }
+            }
         }
     }
 
