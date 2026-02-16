@@ -1753,6 +1753,7 @@ pub async fn resolve_missing_tx_hashes(
             WHERE account_id = $1
               AND transaction_hashes = '{}'
               AND counterparty NOT IN ('SNAPSHOT', 'STAKING_SNAPSHOT', 'STAKING_REWARD')
+              AND amount != 0
             ORDER BY block_height DESC
             LIMIT 1
             OFFSET $2

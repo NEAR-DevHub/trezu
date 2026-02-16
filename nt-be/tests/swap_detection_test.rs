@@ -86,7 +86,7 @@ async fn test_store_detected_swaps(pool: PgPool) -> sqlx::Result<()> {
         received_amount: sqlx::types::BigDecimal::from(10),
         fulfillment_block_height: 171108241,
         fulfillment_balance_change_id: bc_id.0,
-        fulfillment_receipt_id: "8k8oSLc2fzQUgnrefNGkmX9Nrwmg4szzuTBg5xm7QtfD".to_string(),
+        fulfillment_receipt_id: Some("8k8oSLc2fzQUgnrefNGkmX9Nrwmg4szzuTBg5xm7QtfD".to_string()),
     };
 
     println!("\n=== Store Detected Swaps Test ===");
