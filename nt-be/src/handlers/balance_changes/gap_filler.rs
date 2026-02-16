@@ -1217,8 +1217,8 @@ async fn fill_gap_to_past(
     };
 
     let Some(block_height) = change_block else {
-        log::warn!(
-            "Balance {} existed before block {} - cannot find origin within lookback window for {}/{}. Consider inserting SNAPSHOT at boundary.",
+        log::info!(
+            "Balance {} existed before block {} - cannot find origin within lookback window for {}/{}. Inserting SNAPSHOT at boundary.",
             target_balance,
             start_block,
             account_id,

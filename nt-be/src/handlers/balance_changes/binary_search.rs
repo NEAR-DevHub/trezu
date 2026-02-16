@@ -66,7 +66,19 @@ pub async fn find_balance_change_block(
         let mid = left + (right - left) / 2;
 
         let mid_balance =
-            balance::get_balance_at_block(pool, network, account_id, token_id, mid).await?;
+            match balance::get_balance_at_block(pool, network, account_id, token_id, mid).await {
+                Ok(b) => b,
+                Err(e) => {
+                    let err_str = e.to_string();
+                    if err_str.contains("UnknownBlock") {
+                        // Block doesn't exist (never produced) — skip it
+                        log::debug!("Block {} not available during binary search, skipping", mid);
+                        left = mid + 1;
+                        continue;
+                    }
+                    return Err(e);
+                }
+            };
 
         if &mid_balance == expected_balance {
             // Found a match - check if there's an earlier one
