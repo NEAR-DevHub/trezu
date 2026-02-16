@@ -32,39 +32,39 @@
   "intents.near:nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1": [
     {
       "balance": "0",
-      "price_usd": 0.999794,
+      "priceUsd": 0.999794,
       "timestamp": "2025-06-01T00:00:00+00:00",
-      "value_usd": 0.0
+      "valueUsd": 0.0
     },
     {
       "balance": "0",
-      "price_usd": 0.99986,
+      "priceUsd": 0.99986,
       "timestamp": "2025-07-01T00:00:00+00:00",
-      "value_usd": 0.0
+      "valueUsd": 0.0
     },
     {
       "balance": "0",
-      "price_usd": 0.999809,
+      "priceUsd": 0.999809,
       "timestamp": "2025-08-01T00:00:00+00:00",
-      "value_usd": 0.0
+      "valueUsd": 0.0
     },
     {
       "balance": "0",
-      "price_usd": 0.999787,
+      "priceUsd": 0.999787,
       "timestamp": "2025-09-01T00:00:00+00:00",
-      "value_usd": 0.0
+      "valueUsd": 0.0
     },
     {
       "balance": "0",
-      "price_usd": 0.999802,
+      "priceUsd": 0.999802,
       "timestamp": "2025-10-01T00:00:00+00:00",
-      "value_usd": 0.0
+      "valueUsd": 0.0
     },
     {
-      "balance": "129",
-      "price_usd": 0.9997091897202338,
+      "balance": "0",
+      "priceUsd": 0.9997091897202338,
       "timestamp": "2025-11-01T00:00:00+00:00",
-      "value_usd": 128.96248547391016
+      "valueUsd": 0.0
     },
     {
       "balance": "119",
@@ -74,39 +74,39 @@
   "intents.near:nep141:base-0x833589fcd6edb6e08f4c7c32d4f71b54bda02913.omft.near": [
     {
       "balance": "0",
-      "price_usd": 0.999794,
+      "priceUsd": 0.999794,
       "timestamp": "2025-06-01T00:00:00+00:00",
-      "value_usd": 0.0
+      "valueUsd": 0.0
     },
     {
       "balance": "0",
-      "price_usd": 0.99986,
+      "priceUsd": 0.99986,
       "timestamp": "2025-07-01T00:00:00+00:00",
-      "value_usd": 0.0
+      "valueUsd": 0.0
     },
     {
       "balance": "0",
-      "price_usd": 0.999809,
+      "priceUsd": 0.999809,
       "timestamp": "2025-08-01T00:00:00+00:00",
-      "value_usd": 0.0
+      "valueUsd": 0.0
     },
     {
       "balance": "0",
-      "price_usd": 0.999787,
+      "priceUsd": 0.999787,
       "timestamp": "2025-09-01T00:00:00+00:00",
-      "value_usd": 0.0
+      "valueUsd": 0.0
     },
     {
       "balance": "0",
-      "price_usd": 0.999802,
+      "priceUsd": 0.999802,
       "timestamp": "2025-10-01T00:00:00+00:00",
-      "value_usd": 0.0
+      "valueUsd": 0.0
     },
     {
       "balance": "0",
-      "price_usd": 0.9997091897202338,
+      "priceUsd": 0.9997091897202338,
       "timestamp": "2025-11-01T00:00:00+00:00",
-      "value_usd": 0.0
+      "valueUsd": 0.0
     },
     {
       "balance": "9.99998000",
@@ -120,191 +120,107 @@
     },
     {
       "balance": "0",
-      "price_usd": 105660.0,
+      "priceUsd": 105660.0,
       "timestamp": "2025-07-01T00:00:00+00:00",
-      "value_usd": 0.0
+      "valueUsd": 0.0
     },
     {
       "balance": "0",
-      "price_usd": 115702.0,
+      "priceUsd": 115702.0,
       "timestamp": "2025-08-01T00:00:00+00:00",
-      "value_usd": 0.0
+      "valueUsd": 0.0
     },
     {
-      "balance": "0.00477858",
-      "price_usd": 108224.0,
+      "balance": "0",
+      "priceUsd": 108224.0,
       "timestamp": "2025-09-01T00:00:00+00:00",
-      "value_usd": 517.15704192
+      "valueUsd": 0.0
     },
     {
-      "balance": "0.00544253",
-      "price_usd": 114041.0,
+      "balance": "0.00566984",
+      "priceUsd": 114041.0,
       "timestamp": "2025-10-01T00:00:00+00:00",
-      "value_usd": 620.67156373
+      "valueUsd": 646.59422344
     },
     {
-      "balance": "0.00544253",
-      "price_usd": 109561.48280504582,
+      "balance": "0.00566984",
+      "priceUsd": 109561.48280504582,
       "timestamp": "2025-11-01T00:00:00+00:00",
-      "value_usd": 596.291657010946
+      "valueUsd": 621.1960776673609
     },
     {
-      "balance": "0.00544253",
-      "price_usd": 90391.73507015778,
+      "balance": "0.00566984",
+      "priceUsd": 90391.73507015778,
       "timestamp": "2025-12-01T00:00:00+00:00",
-      "value_usd": 491.95972987138583
-    }
-  ],
-  "intents.near:nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near": [
-    {
-      "balance": "0",
-      "price_usd": 0.999794,
-      "timestamp": "2025-06-01T00:00:00+00:00",
-      "value_usd": 0.0
-    },
-    {
-      "balance": "0",
-      "price_usd": 0.99986,
-      "timestamp": "2025-07-01T00:00:00+00:00",
-      "value_usd": 0.0
-    },
-    {
-      "balance": "0",
-      "price_usd": 0.999809,
-      "timestamp": "2025-08-01T00:00:00+00:00",
-      "value_usd": 0.0
-    },
-    {
-      "balance": "0",
-      "price_usd": 0.999787,
-      "timestamp": "2025-09-01T00:00:00+00:00",
-      "value_usd": 0.0
-    },
-    {
-      "balance": "0",
-      "price_usd": 0.999802,
-      "timestamp": "2025-10-01T00:00:00+00:00",
-      "value_usd": 0.0
-    },
-    {
-      "balance": "124.83302000",
-      "price_usd": 0.9997091897202338,
-      "timestamp": "2025-11-01T00:00:00+00:00",
-      "value_usd": 124.79671727452974
-    },
-    {
-      "balance": "124.83302000",
-      "timestamp": "2025-12-01T00:00:00+00:00"
+      "valueUsd": 512.5066751701834
     }
   ],
   "intents.near:nep141:eth.omft.near": [
     {
       "balance": "0.0050",
-      "price_usd": 2531.61,
+      "priceUsd": 2531.61,
       "timestamp": "2025-06-01T00:00:00+00:00",
-      "value_usd": 12.65805
+      "valueUsd": 12.65805
     },
     {
       "balance": "0.0050",
-      "price_usd": 2405.71,
+      "priceUsd": 2405.71,
       "timestamp": "2025-07-01T00:00:00+00:00",
-      "value_usd": 12.02855
+      "valueUsd": 12.02855
     },
     {
       "balance": "0.0050",
-      "price_usd": 3696.63,
+      "priceUsd": 3696.63,
       "timestamp": "2025-08-01T00:00:00+00:00",
-      "value_usd": 18.48315
+      "valueUsd": 18.48315
     },
     {
       "balance": "0.0050",
-      "price_usd": 4389.71,
+      "priceUsd": 4389.71,
       "timestamp": "2025-09-01T00:00:00+00:00",
-      "value_usd": 21.94855
+      "valueUsd": 21.94855
     },
     {
-      "balance": "0.03501508842977613200",
-      "price_usd": 4145.44,
+      "balance": "0.01192523612546735600",
+      "priceUsd": 4145.44,
       "timestamp": "2025-10-01T00:00:00+00:00",
-      "value_usd": 145.15294818033115
+      "valueUsd": 49.43535084395739
     },
     {
-      "balance": "0.03501508842977613200",
-      "price_usd": 3846.418915544534,
+      "balance": "0.01192523612546735600",
+      "priceUsd": 3846.418915544534,
       "timestamp": "2025-11-01T00:00:00+00:00",
-      "value_usd": 134.68269846575546
+      "valueUsd": 45.86945380533265
     },
     {
-      "balance": "0.03501508842977613200",
-      "timestamp": "2025-12-01T00:00:00+00:00"
-    }
-  ],
-  "intents.near:nep141:sol-5ce3bf3a31af18be40ba30f721101b4341690186.omft.near": [
-    {
-      "balance": "0",
-      "price_usd": 0.999794,
-      "timestamp": "2025-06-01T00:00:00+00:00",
-      "value_usd": 0.0
-    },
-    {
-      "balance": "0",
-      "price_usd": 0.99986,
-      "timestamp": "2025-07-01T00:00:00+00:00",
-      "value_usd": 0.0
-    },
-    {
-      "balance": "0",
-      "price_usd": 0.999809,
-      "timestamp": "2025-08-01T00:00:00+00:00",
-      "value_usd": 0.0
-    },
-    {
-      "balance": "0",
-      "price_usd": 0.999787,
-      "timestamp": "2025-09-01T00:00:00+00:00",
-      "value_usd": 0.0
-    },
-    {
-      "balance": "0",
-      "price_usd": 0.999802,
-      "timestamp": "2025-10-01T00:00:00+00:00",
-      "value_usd": 0.0
-    },
-    {
-      "balance": "22.54364600",
-      "price_usd": 0.9997091897202338,
-      "timestamp": "2025-11-01T00:00:00+00:00",
-      "value_usd": 22.53709007599979
-    },
-    {
-      "balance": "22.54364600",
+      "balance": "0.01192523612546735600",
       "timestamp": "2025-12-01T00:00:00+00:00"
     }
   ],
   "intents.near:nep141:sol.omft.near": [
     {
       "balance": "0",
-      "price_usd": 156.84,
+      "priceUsd": 156.84,
       "timestamp": "2025-06-01T00:00:00+00:00",
-      "value_usd": 0.0
+      "valueUsd": 0.0
     },
     {
       "balance": "0",
-      "price_usd": 154.91,
+      "priceUsd": 154.91,
       "timestamp": "2025-07-01T00:00:00+00:00",
-      "value_usd": 0.0
+      "valueUsd": 0.0
     },
     {
       "balance": "0",
-      "price_usd": 162.77,
+      "priceUsd": 162.77,
       "timestamp": "2025-08-01T00:00:00+00:00",
-      "value_usd": 0.0
+      "valueUsd": 0.0
     },
     {
       "balance": "0",
-      "price_usd": 200.79,
+      "priceUsd": 200.79,
       "timestamp": "2025-09-01T00:00:00+00:00",
-      "value_usd": 0.0
+      "valueUsd": 0.0
     },
     {
       "balance": "0.08342401",
@@ -312,83 +228,83 @@
     },
     {
       "balance": "0.08342401",
-      "price_usd": 187.16156450332545,
+      "priceUsd": 187.16156450332545,
       "timestamp": "2025-11-01T00:00:00+00:00",
-      "value_usd": 15.613768228741067
+      "valueUsd": 15.613768228741067
     },
     {
       "balance": "0.08342401",
-      "price_usd": 133.92215697648876,
+      "priceUsd": 133.92215697648876,
       "timestamp": "2025-12-01T00:00:00+00:00",
-      "value_usd": 11.17232336282817
+      "valueUsd": 11.17232336282817
     }
   ],
   "intents.near:nep141:wrap.near": [
     {
       "balance": "0",
-      "price_usd": 2.46,
+      "priceUsd": 2.46,
       "timestamp": "2025-06-01T00:00:00+00:00",
-      "value_usd": 0.0
+      "valueUsd": 0.0
     },
     {
-      "balance": "0.8000",
+      "balance": "0",
       "timestamp": "2025-07-01T00:00:00+00:00"
     },
     {
-      "balance": "0.8000",
-      "price_usd": 2.42,
+      "balance": "0",
+      "priceUsd": 2.42,
       "timestamp": "2025-08-01T00:00:00+00:00",
-      "value_usd": 1.936
+      "valueUsd": 0.0
     },
     {
-      "balance": "0.8000",
-      "price_usd": 2.34,
+      "balance": "0",
+      "priceUsd": 2.34,
       "timestamp": "2025-09-01T00:00:00+00:00",
-      "value_usd": 1.872
+      "valueUsd": 0.0
     },
     {
-      "balance": "0.8000",
-      "price_usd": 2.63,
+      "balance": "0",
+      "priceUsd": 2.63,
       "timestamp": "2025-10-01T00:00:00+00:00",
-      "value_usd": 2.104
+      "valueUsd": 0.0
     },
     {
-      "balance": "0.8000",
-      "price_usd": 2.0985797929635974,
+      "balance": "0",
+      "priceUsd": 2.0985797929635974,
       "timestamp": "2025-11-01T00:00:00+00:00",
-      "value_usd": 1.678863834370878
+      "valueUsd": 0.0
     },
     {
-      "balance": "0.8000",
-      "price_usd": 1.6283974752736867,
+      "balance": "0",
+      "priceUsd": 1.6283974752736867,
       "timestamp": "2025-12-01T00:00:00+00:00",
-      "value_usd": 1.3027179802189497
+      "valueUsd": 0.0
     }
   ],
   "intents.near:nep141:xrp.omft.near": [
     {
       "balance": "0",
-      "price_usd": 2.18,
+      "priceUsd": 2.18,
       "timestamp": "2025-06-01T00:00:00+00:00",
-      "value_usd": 0.0
+      "valueUsd": 0.0
     },
     {
       "balance": "0",
-      "price_usd": 2.24,
+      "priceUsd": 2.24,
       "timestamp": "2025-07-01T00:00:00+00:00",
-      "value_usd": 0.0
+      "valueUsd": 0.0
     },
     {
       "balance": "0",
-      "price_usd": 2.96,
+      "priceUsd": 2.96,
       "timestamp": "2025-08-01T00:00:00+00:00",
-      "value_usd": 0.0
+      "valueUsd": 0.0
     },
     {
       "balance": "0",
-      "price_usd": 2.78,
+      "priceUsd": 2.78,
       "timestamp": "2025-09-01T00:00:00+00:00",
-      "value_usd": 0.0
+      "valueUsd": 0.0
     },
     {
       "balance": "16.69236700",
@@ -396,57 +312,57 @@
     },
     {
       "balance": "16.69236700",
-      "price_usd": 2.5082013108007506,
+      "priceUsd": 2.5082013108007506,
       "timestamp": "2025-11-01T00:00:00+00:00",
-      "value_usd": 41.8678167897672
+      "valueUsd": 41.8678167897672
     },
     {
       "balance": "16.69236700",
-      "price_usd": 2.159879789488807,
+      "priceUsd": 2.159879789488807,
       "timestamp": "2025-12-01T00:00:00+00:00",
-      "value_usd": 36.05350612202991
+      "valueUsd": 36.05350612202991
     }
   ],
   "near": [
     {
       "balance": "6.0000475289538643",
-      "price_usd": 2.46,
+      "priceUsd": 2.46,
       "timestamp": "2025-06-01T00:00:00+00:00",
-      "value_usd": 14.760116921226505
+      "valueUsd": 14.760116921226505
     },
     {
-      "balance": "11.201090811250766599999996",
+      "balance": "6.0000475289538643",
       "timestamp": "2025-07-01T00:00:00+00:00"
     },
     {
-      "balance": "11.202816887421076699999993",
-      "price_usd": 2.42,
+      "balance": "6.0000475289538643",
+      "priceUsd": 2.42,
       "timestamp": "2025-08-01T00:00:00+00:00",
-      "value_usd": 27.11081686755901
+      "valueUsd": 14.520115020068353
     },
     {
-      "balance": "26.203628781147319699999990",
-      "price_usd": 2.34,
+      "balance": "6.0000475289538643",
+      "priceUsd": 2.34,
       "timestamp": "2025-09-01T00:00:00+00:00",
-      "value_usd": 61.31649134788472
+      "valueUsd": 14.040111217752042
     },
     {
-      "balance": "26.706735845128261599999978",
-      "price_usd": 2.63,
+      "balance": "26.504140362776775699999989",
+      "priceUsd": 2.63,
       "timestamp": "2025-10-01T00:00:00+00:00",
-      "value_usd": 70.23871527268733
+      "valueUsd": 69.70588915410292
     },
     {
-      "balance": "26.406239021248342299999978",
-      "price_usd": 2.0985797929635974,
+      "balance": "26.504140362776775699999989",
+      "priceUsd": 2.0985797929635974,
       "timestamp": "2025-11-01T00:00:00+00:00",
-      "value_usd": 55.415599618158616
+      "valueUsd": 55.62105339519422
     },
     {
-      "balance": "26.606689957078532199999977",
-      "price_usd": 1.6283974752736867,
+      "balance": "26.504140362776775699999989",
+      "priceUsd": 1.6283974752736867,
       "timestamp": "2025-12-01T00:00:00+00:00",
-      "value_usd": 43.32626675149644
+      "valueUsd": 43.15927525104512
     }
   ]
 }
