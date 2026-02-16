@@ -73,7 +73,7 @@ async fn main() {
                     &state_clone.db_pool,
                     &state_clone.archival_network,
                     up_to_block,
-                    state_clone.transfer_hint_service.as_ref(),
+                    state_clone.transfer_hint_service.as_deref(),
                     Some((
                         &state_clone.http_client,
                         &state_clone.env_vars.fastnear_api_key,

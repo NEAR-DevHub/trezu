@@ -32,6 +32,26 @@ pub async fn run_dirty_monitor(
     state: &Arc<AppState>,
     active_tasks: &mut HashMap<String, JoinHandle<()>>,
 ) {
+    run_dirty_monitor_internal(state, active_tasks, None).await;
+}
+
+/// Run one poll cycle of the dirty account monitor up to a fixed block.
+///
+/// This is primarily useful for deterministic integration tests where we need
+/// stable historical behavior regardless of current chain head.
+pub async fn run_dirty_monitor_at_block(
+    state: &Arc<AppState>,
+    active_tasks: &mut HashMap<String, JoinHandle<()>>,
+    up_to_block: i64,
+) {
+    run_dirty_monitor_internal(state, active_tasks, Some(up_to_block)).await;
+}
+
+async fn run_dirty_monitor_internal(
+    state: &Arc<AppState>,
+    active_tasks: &mut HashMap<String, JoinHandle<()>>,
+    fixed_up_to_block: Option<i64>,
+) {
     // 1. Clean up finished tasks
     active_tasks.retain(|account_id, handle| {
         if handle.is_finished() {
@@ -81,7 +101,15 @@ pub async fn run_dirty_monitor(
         );
 
         let handle = tokio::spawn(async move {
-            if let Err(e) = run_dirty_task(&state, &account_id_clone, original_dirty_at).await {
+            if let Err(e) = run_dirty_task(
+                &state,
+                &account_id_clone,
+                original_dirty_at,
+                state.transfer_hint_service.clone(),
+                fixed_up_to_block,
+            )
+            .await
+            {
                 log::error!(
                     "[dirty-monitor] Task for {} failed: {}",
                     account_id_clone,
@@ -103,12 +131,18 @@ async fn run_dirty_task(
     state: &AppState,
     account_id: &str,
     original_dirty_at: DateTime<Utc>,
+    transfer_hint_service: Option<Arc<TransferHintService>>,
+    fixed_up_to_block: Option<i64>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let pool = &state.db_pool;
     let network = &state.archival_network;
 
-    // Get current block height
-    let up_to_block = Chain::block().fetch_from(network).await?.header.height as i64;
+    // Get processing upper bound (fixed for tests or current head for production)
+    let up_to_block = if let Some(block) = fixed_up_to_block {
+        block
+    } else {
+        Chain::block().fetch_from(network).await?.header.height as i64
+    };
 
     // Discover new FT tokens via FastNear before filling gaps, so newly
     // discovered tokens get their gaps filled in this same task.
@@ -158,11 +192,14 @@ async fn run_dirty_task(
         _ => {}
     }
 
-    // Note: hint_service is not passed to spawned tasks because
-    // TransferHintService is not Clone. Binary search fallback is used instead.
-    // This can be improved later by wrapping the service in Arc in AppState.
-    let total_filled =
-        fill_dirty_account_gaps(pool, network, account_id, up_to_block, None).await?;
+    let total_filled = fill_dirty_account_gaps(
+        pool,
+        network,
+        account_id,
+        up_to_block,
+        transfer_hint_service.as_deref(),
+    )
+    .await?;
 
     log::info!(
         "[dirty-monitor] {} completed: filled {} total gaps",

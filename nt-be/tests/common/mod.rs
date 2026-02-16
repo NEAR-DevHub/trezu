@@ -1,7 +1,7 @@
 use near_api::{NetworkConfig, RPCEndpoint, Signer};
 use nt_be::AppState;
 use std::process::{Child, Command};
-use std::sync::Once;
+use std::sync::{Arc, Once};
 use std::time::Duration;
 use tokio::time::sleep;
 use wiremock::{
@@ -115,7 +115,7 @@ pub fn build_test_state(db_pool: sqlx::PgPool) -> AppState {
         env_vars,
         db_pool,
         price_service,
-        transfer_hint_service,
+        transfer_hint_service: transfer_hint_service.map(Arc::new),
     }
 }
 
