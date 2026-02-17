@@ -107,12 +107,6 @@ pub async fn calculate_monthly_outbound_volume(
         .checked_add_months(Months::new(1))
         .unwrap_or_default();
 
-    println!("Start date: {}", start_date);
-    println!("End date: {}", end_date);
-    println!("Account ID: {}", account_id);
-    println!("Year: {}", year);
-    println!("Month: {}", month);
-
     // Query outgoing amounts grouped by token for the specified month
     let outbound_amounts = sqlx::query_as!(
         TokenOutboundAmount,

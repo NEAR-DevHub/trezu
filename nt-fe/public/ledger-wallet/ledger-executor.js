@@ -2,8 +2,6 @@
 // This script provides Ledger device integration for NEAR Protocol transactions
 
 // Import dependencies from CDN
-import TransportWebHID from "https://esm.sh/@ledgerhq/hw-transport-webhid@6.29.4";
-import TransportWebUSB from "https://esm.sh/@ledgerhq/hw-transport-webusb@6.29.4";
 import { baseEncode, baseDecode } from "https://esm.sh/@near-js/utils@0.2.2";
 import {
     Signature,
@@ -11,13 +9,320 @@ import {
     encodeTransaction,
     encodeDelegateAction,
     SignedTransaction,
-    DelegateAction,
     buildDelegateAction,
     SignedDelegate,
     actionCreators,
 } from "https://esm.sh/@near-js/transactions@2.5.1";
 import { PublicKey } from "https://esm.sh/@near-js/crypto@2.5.1";
 import { Buffer } from "https://esm.sh/buffer@6.0.3";
+import LedgerTransport from "https://esm.sh/@ledgerhq/hw-transport@6.29";
+import LedgerTransportWebBle from "https://esm.sh/@ledgerhq/hw-transport-web-ble@6.29";
+import LedgerTransportWebUsb from "https://esm.sh/@ledgerhq/hw-transport-webusb@6.29";
+import LedgerTransportWebHid from "https://esm.sh/@ledgerhq/hw-transport-webhid@6.29";
+
+// Inlined transport/client helpers previously in supportedTransport.js and near-ledger.js
+// TODO: remove after fixing https://github.com/LedgerHQ/ledgerjs/issues/352#issuecomment-615917351
+class LedgerTransportWebBleAndroidFix extends LedgerTransportWebBle {
+    static async open(device, ...args) {
+        if (!navigator.userAgent.includes("Mobi"))
+            return super.open(device, ...args);
+        const getPrimaryServicesOrig = device.gatt?.getPrimaryServices;
+        if (getPrimaryServicesOrig == null) return super.open(device, ...args);
+        device.gatt.getPrimaryServices = async () => {
+            const [service] = await getPrimaryServicesOrig.call(device.gatt);
+            const getCharacteristicOrig = service.getCharacteristic;
+            service.getCharacteristic = async (id) => {
+                const characteristic = await getCharacteristicOrig.call(
+                    service,
+                    id,
+                );
+                if (id === "13d63400-2c97-0004-0002-4c6564676572") {
+                    const writeValueOrig = characteristic.writeValue;
+                    let delayed = false;
+                    characteristic.writeValue = async (data) => {
+                        if (!delayed) {
+                            await new Promise((resolve) =>
+                                setTimeout(resolve, 500),
+                            );
+                            delayed = true;
+                        }
+                        return writeValueOrig.call(characteristic, data);
+                    };
+                }
+                return characteristic;
+            };
+            return [service];
+        };
+        return super.open(device, ...args);
+    }
+}
+
+class LedgerTransportTauri extends LedgerTransport {
+    constructor(deviceName) {
+        super();
+        this.deviceName = deviceName;
+    }
+
+    static async open(deviceName) {
+        return new LedgerTransportTauri(deviceName);
+    }
+
+    async exchange(apdu) {
+        const response = await window.__TAURI__.core.invoke(
+            "send_ledger_command",
+            {
+                ledgerDeviceName: this.deviceName,
+                command: Array.from(apdu),
+            },
+        );
+        return Buffer.from(response);
+    }
+}
+
+let ENABLE_DEBUG_LOGGING = false;
+const debugLog = (...args) => {
+    ENABLE_DEBUG_LOGGING && console.log(...args);
+};
+
+function isIOS() {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    return /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+}
+
+function isFirefox() {
+    return navigator.userAgent.toLowerCase().indexOf("firefox") > -1;
+}
+
+function isSafari() {
+    const userAgent = navigator.userAgent.toLowerCase();
+    return (
+        userAgent.includes("safari") &&
+        !userAgent.includes("chrome") &&
+        !userAgent.includes("chromium")
+    );
+}
+
+async function isWebHidSupported() {
+    try {
+        return await LedgerTransportWebHid.isSupported();
+    } catch (e) {
+        return false;
+    }
+}
+
+async function isWebUsbSupported() {
+    try {
+        return await LedgerTransportWebUsb.isSupported();
+    } catch (e) {
+        return false;
+    }
+}
+
+async function isWebBleSupported() {
+    try {
+        return await LedgerTransportWebBleAndroidFix.isSupported();
+    } catch (e) {
+        return false;
+    }
+}
+
+function setDebugLogging(value) {
+    ENABLE_DEBUG_LOGGING = value;
+}
+
+async function getSupportedTransport(mode) {
+    console.log("Using Ledger mode", JSON.stringify(mode));
+    if (mode === "Disabled") {
+        const err = new Error("Please choose a Ledger connection method.");
+        err.name = "LedgerDisabled";
+        throw err;
+    }
+
+    debugLog(`Attempting to create specific transport: ${mode}`);
+
+    let transport = null;
+    try {
+        if (mode === "WebHID") {
+            const isSupported = await isWebHidSupported();
+            if (!isSupported) {
+                const err = new Error(
+                    "WebHID is not supported in this browser.",
+                );
+                err.name = "WebHIDNotSupported";
+                throw err;
+            }
+            transport = await LedgerTransportWebHid.create();
+        } else if (mode === "WebUSB") {
+            const isSupported = await isWebUsbSupported();
+            if (!isSupported) {
+                let err;
+                if (isIOS()) {
+                    err = new Error("WebUSB is not supported on iOS devices.");
+                    err.name = "WebUSBNotSupportedIOS";
+                } else if (isFirefox()) {
+                    err = new Error("WebUSB is not supported in Firefox.");
+                    err.name = "WebUSBNotSupportedFirefox";
+                } else if (isSafari()) {
+                    err = new Error("WebUSB is not supported in Safari.");
+                    err.name = "WebUSBNotSupportedSafari";
+                } else {
+                    err = new Error("WebUSB is not supported in this browser.");
+                    err.name = "WebUSBNotSupported";
+                }
+                throw err;
+            }
+            transport = await LedgerTransportWebUsb.create();
+        } else if (mode === "WebBLE") {
+            const isSupported = await isWebBleSupported();
+            if (!isSupported) {
+                let err;
+                if (isIOS()) {
+                    err = new Error("WebBLE is not supported on iOS devices.");
+                    err.name = "WebBLENotSupportedIOS";
+                } else if (isFirefox()) {
+                    err = new Error("WebBLE is not supported in Firefox.");
+                    err.name = "WebBLENotSupportedFirefox";
+                } else if (isSafari()) {
+                    err = new Error("WebBLE is not supported in Safari.");
+                    err.name = "WebBLENotSupportedSafari";
+                } else {
+                    err = new Error("WebBLE is not supported in this browser.");
+                    err.name = "WebBLENotSupported";
+                }
+                throw err;
+            }
+            transport = await LedgerTransportWebBleAndroidFix.create();
+        } else if (mode instanceof Object && mode.TauriDevice) {
+            transport = await LedgerTransportTauri.open(mode.TauriDevice);
+        } else {
+            const err = new Error(
+                "Unknown transport mode: " + JSON.stringify(mode),
+            );
+            err.name = "UnknownTransportMode";
+            throw err;
+        }
+
+        if (transport) {
+            debugLog(`Successfully created ${mode} transport!`, transport);
+            return transport;
+        }
+    } catch (err) {
+        console.error(`Failed to create ${mode} transport:`, err);
+        throw err;
+    }
+}
+
+function bip32PathToBytes(path) {
+    const parts = path.split("/");
+    return Buffer.concat(
+        parts
+            .map((part) =>
+                part.endsWith("'")
+                    ? Math.abs(parseInt(part.slice(0, -1))) | 0x80000000
+                    : Math.abs(parseInt(part)),
+            )
+            .map((i32) =>
+                Buffer.from([
+                    (i32 >> 24) & 0xff,
+                    (i32 >> 16) & 0xff,
+                    (i32 >> 8) & 0xff,
+                    i32 & 0xff,
+                ]),
+            ),
+    );
+}
+
+const NEAR_NETWORK_ID = "W".charCodeAt(0);
+const SIGN_TRANSACTION = 2;
+const SIGN_MESSAGE = 7;
+const SIGN_META_TRANSACTION = 8;
+const NEAR_LEDGER_DEFAULT_PATH = "44'/397'/0'/0'/1'";
+
+async function createClient(transport, mode) {
+    return {
+        mode,
+        transport,
+        async getVersion() {
+            const response = await this.transport.send(0x80, 6, 0, 0);
+            const [major, minor, patch] = Array.from(response);
+            return `${major}.${minor}.${patch}`;
+        },
+        async getPublicKey(path) {
+            // NOTE: getVersion call allows to reset state to avoid starting from partially filled buffer
+            await this.getVersion();
+
+            path = path || NEAR_LEDGER_DEFAULT_PATH;
+            const response = await this.transport.send(
+                0x80,
+                4,
+                0,
+                NEAR_NETWORK_ID,
+                bip32PathToBytes(path),
+            );
+            return Buffer.from(response.subarray(0, -2));
+        },
+        async sign(transactionData, path) {
+            const isNep413 =
+                transactionData.length >= 4 &&
+                transactionData[0] === 0x9d &&
+                transactionData[1] === 0x01 &&
+                transactionData[2] === 0x00 &&
+                transactionData[3] === 0x80;
+            if (isNep413) {
+                transactionData = transactionData.slice(4);
+            }
+            const isNep366 =
+                transactionData.length >= 4 &&
+                transactionData[0] === 0x6e &&
+                transactionData[1] === 0x01 &&
+                transactionData[2] === 0x00 &&
+                transactionData[3] === 0x40;
+            if (isNep366) {
+                transactionData = transactionData.slice(4);
+            }
+
+            // NOTE: getVersion call allows to reset state to avoid starting from partially filled buffer
+            const version = await this.getVersion();
+            console.info("Ledger app version:", version);
+            // TODO: Assert compatible versions
+
+            path = path || NEAR_LEDGER_DEFAULT_PATH;
+            transactionData = Buffer.from(transactionData);
+            // 128 - 5 service bytes
+            const CHUNK_SIZE = 123;
+            const allData = Buffer.concat([
+                bip32PathToBytes(path),
+                transactionData,
+            ]);
+            for (
+                let offset = 0;
+                offset < allData.length;
+                offset += CHUNK_SIZE
+            ) {
+                const chunk = Buffer.from(
+                    allData.subarray(offset, offset + CHUNK_SIZE),
+                );
+                const isLastChunk = offset + CHUNK_SIZE >= allData.length;
+                let code = SIGN_TRANSACTION;
+                if (isNep413) {
+                    code = SIGN_MESSAGE;
+                } else if (isNep366) {
+                    code = SIGN_META_TRANSACTION;
+                }
+                const response = await this.transport.send(
+                    0x80,
+                    code,
+                    isLastChunk ? 0x80 : 0,
+                    NEAR_NETWORK_ID,
+                    chunk,
+                );
+                if (isLastChunk) {
+                    return Buffer.from(response.subarray(0, -2));
+                }
+            }
+        },
+    };
+}
 
 // Destructure action creators for convenience
 const {
@@ -33,37 +338,16 @@ const {
     functionCallAccessKey,
 } = actionCreators;
 
-// Ledger APDU constants
-const CLA = 0x80; // Always the same for Ledger
-const P1_LAST = 0x80; // End of Bytes to Sign (finalize)
-const P1_MORE = 0x00; // More bytes coming
-const P1_IGNORE = 0x00;
-const P2_IGNORE = 0x00;
-const CHUNK_SIZE = 250;
-const NETWORK_ID = "W".charCodeAt(0); // 87
-
-// Ledger NEAR instruction codes
-const NEAR_INS = {
-    SIGN_TRANSACTION: 0x02,
-    GET_PUBLIC_KEY: 0x04,
-    GET_WALLET_ID: 0x05,
-    GET_VERSION: 0x06,
-    NEP413_SIGN_MESSAGE: 0x07,
-    NEP366_SIGN_DELEGATE_ACTION: 0x08,
-};
-
 // Ledger OS (BOLOS) constants for app management
 const BOLOS_CLA = 0xb0;
 const BOLOS_INS_GET_APP_NAME = 0x01;
 const BOLOS_INS_QUIT_APP = 0xa7;
+const P1_IGNORE = 0x00;
+const P2_IGNORE = 0x00;
 
 // Ledger app open constants
 const APP_OPEN_CLA = 0xe0;
 const APP_OPEN_INS = 0xd8;
-
-// Select transport based on browser support: prefer WebHID, fall back to WebUSB
-const useWebHID = !!navigator?.hid;
-const Transport = useWebHID ? TransportWebHID : TransportWebUSB;
 
 // Default derivation path for NEAR
 const DEFAULT_DERIVATION_PATH = "44'/397'/0'/0'/1'";
@@ -71,44 +355,214 @@ const DEFAULT_DERIVATION_PATH = "44'/397'/0'/0'/1'";
 // Storage keys
 const STORAGE_KEY_ACCOUNTS = "ledger:accounts";
 const STORAGE_KEY_DERIVATION_PATH = "ledger:derivationPath";
+const STORAGE_KEY_TRANSPORT_MODE = "ledger:transportMode";
 
 /**
- * Converts BIP32-compliant derivation path to a Buffer
- * @param {string} derivationPath - e.g., "44'/397'/0'/0'/1'"
- * @returns {Uint8Array}
+ * Check which transport methods are supported in the current browser
+ * @returns {Promise<{webHID: boolean, webUSB: boolean, webBLE: boolean}>}
  */
-function parseDerivationPath(derivationPath) {
-    const parts = derivationPath.split("/");
-    const buffers = [];
+async function getAvailableTransports() {
+    const results = {
+        webHID: false,
+        webUSB: false,
+        webBLE: false,
+    };
 
-    for (const part of parts) {
-        let value;
-        if (part.endsWith("'")) {
-            value = (Math.abs(parseInt(part.slice(0, -1))) | 0x80000000) >>> 0;
-        } else {
-            value = Math.abs(parseInt(part));
+    // Check WebHID support
+    try {
+        const TransportWebHID = await import(
+            "https://esm.sh/@ledgerhq/hw-transport-webhid@6.29"
+        );
+        results.webHID = await TransportWebHID.default.isSupported();
+    } catch (e) {
+        results.webHID = false;
+    }
+
+    // Check WebUSB support
+    try {
+        const TransportWebUSB = await import(
+            "https://esm.sh/@ledgerhq/hw-transport-webusb@6.29"
+        );
+        results.webUSB = await TransportWebUSB.default.isSupported();
+    } catch (e) {
+        results.webUSB = false;
+    }
+
+    // Check WebBLE support
+    try {
+        const TransportWebBLE = await import(
+            "https://esm.sh/@ledgerhq/hw-transport-web-ble@6.29"
+        );
+        results.webBLE = await TransportWebBLE.default.isSupported();
+    } catch (e) {
+        results.webBLE = false;
+    }
+
+    return results;
+}
+
+/**
+ * Prompt user to select a transport method
+ * @param {Object} availableTransports - Object with webHID, webUSB, webBLE boolean flags
+ * @param {string} currentMode - Currently selected mode (if any)
+ * @returns {Promise<string>} - Selected transport mode ('WebHID', 'WebUSB', or 'WebBLE')
+ */
+async function promptForTransportSelection(
+    availableTransports,
+    currentMode = null,
+) {
+    const hasUSBOption =
+        availableTransports.webHID || availableTransports.webUSB;
+    const hasBluetoothOption = availableTransports.webBLE;
+
+    const resolveTransportMode = (selectedMode) => {
+        if (selectedMode === "BLUETOOTH") {
+            if (availableTransports.webBLE) return "WebBLE";
+            throw new Error("WebBLE is not available for BLUETOOTH selection.");
         }
 
-        buffers.push(
-            new Uint8Array([
-                (value >> 24) & 0xff,
-                (value >> 16) & 0xff,
-                (value >> 8) & 0xff,
-                value & 0xff,
-            ]),
+        if (selectedMode === "USB") {
+            if (availableTransports.webHID) return "WebHID";
+            if (availableTransports.webUSB) return "WebUSB";
+            throw new Error(
+                "No supported USB transport available for USB selection.",
+            );
+        }
+
+        throw new Error(`Unknown transport selection mode: ${selectedMode}`);
+    };
+
+    const availableOptions = [];
+    if (hasUSBOption) availableOptions.push("USB");
+    if (hasBluetoothOption) availableOptions.push("BLUETOOTH");
+
+    if (availableOptions.length === 0) {
+        throw new Error(
+            "No supported Ledger transport methods found in this browser.",
         );
     }
 
-    // Concatenate all buffers
-    const totalLength = buffers.reduce((sum, buf) => sum + buf.length, 0);
-    const result = new Uint8Array(totalLength);
-    let offset = 0;
-    for (const buf of buffers) {
-        result.set(buf, offset);
-        offset += buf.length;
+    if (availableOptions.length === 1) {
+        return resolveTransportMode(availableOptions[0]);
     }
 
-    return result;
+    let currentSelection = null;
+    if (currentMode === "WebBLE") {
+        currentSelection = "BLUETOOTH";
+    } else if (currentMode === "WebHID" || currentMode === "WebUSB") {
+        currentSelection = "USB";
+    }
+
+    // Show UI for selection
+    await window.selector.ui.showIframe();
+
+    const root = document.getElementById("root");
+    root.style.display = "flex";
+
+    function renderUI() {
+        const transportOptions = [
+            {
+                id: "USB",
+                name: "USB",
+                description: "Wired Ledger connection",
+                icon: "🔌",
+                available: hasUSBOption,
+            },
+            {
+                id: "BLUETOOTH",
+                name: "BLUETOOTH",
+                description: "Wireless Ledger connection",
+                icon: "📡",
+                available: hasBluetoothOption,
+            },
+        ];
+
+        const availableOnly = transportOptions.filter((opt) => opt.available);
+
+        root.innerHTML = `
+        <div class="prompt-container" style="max-width: 420px; padding: 24px; box-sizing: border-box;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <div style="font-size: 48px; margin-bottom: 12px;">🔐</div>
+            <h1 style="margin: 0 0 8px 0; font-size: 20px;">Connect Ledger</h1>
+            <p style="margin: 0; color: #aaa; font-size: 13px;">Choose your connection method</p>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+            ${availableOnly
+                .map(
+                    (opt) => `
+              <button
+                class="transport-option"
+                data-mode="${opt.id}"
+                style="width: 100%; padding: 16px; border-radius: 10px;
+                       border: 2px solid ${currentSelection === opt.id ? "#4c8bf5" : "#444"};
+                       background: ${currentSelection === opt.id ? "#1a3a5c" : "#2c2c2c"};
+                       color: #fff; cursor: pointer; text-align: left;
+                       min-height: 88px; transition: border-color 0.2s, background-color 0.2s; box-sizing: border-box;
+                       display: flex; align-items: center; gap: 12px;"
+                onmouseover="this.style.borderColor='#4c8bf5'; this.style.background='#1a3a5c';"
+                onmouseout="this.style.borderColor='${currentSelection === opt.id ? "#4c8bf5" : "#444"}'; this.style.background='${currentSelection === opt.id ? "#1a3a5c" : "#2c2c2c"}';"
+              >
+                <div style="font-size: 32px; flex-shrink: 0;">${opt.icon}</div>
+                <div style="flex: 1;">
+                  <div style="font-weight: 600; font-size: 15px; margin-bottom: 4px;">${opt.name}</div>
+                  <div style="color: #888; font-size: 12px;">${opt.description}</div>
+                </div>
+                <div style="width: 20px; text-align: center; color: #4c8bf5; font-size: 20px; flex-shrink: 0;">
+                  ${currentSelection === opt.id ? "✓" : "&nbsp;"}
+                </div>
+              </button>
+            `,
+                )
+                .join("")}
+          </div>
+
+          <div style="display: flex; gap: 8px; justify-content: flex-end;">
+            <button id="cancelBtn" style="padding: 10px 20px; border-radius: 8px; border: 1px solid #444; background: #444; color: #fff; cursor: pointer; font-size: 14px;">Cancel</button>
+            <button id="continueBtn" style="padding: 10px 20px; border-radius: 8px; border: none; background: #4c8bf5; color: #fff; cursor: pointer; font-size: 14px; font-weight: 500;" ${!currentSelection ? "disabled" : ""}>Continue</button>
+          </div>
+        </div>
+      `;
+    }
+
+    renderUI();
+
+    return new Promise((resolve, reject) => {
+        function setupListeners() {
+            const continueBtn = document.getElementById("continueBtn");
+            const cancelBtn = document.getElementById("cancelBtn");
+            const transportOptions =
+                document.querySelectorAll(".transport-option");
+
+            transportOptions.forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    currentSelection = btn.dataset.mode;
+                    renderUI();
+                    setupListeners();
+                    // Enable continue button
+                    const newContinueBtn =
+                        document.getElementById("continueBtn");
+                    newContinueBtn.disabled = false;
+                    newContinueBtn.style.opacity = "1";
+                });
+            });
+
+            continueBtn.addEventListener("click", () => {
+                if (currentSelection) {
+                    resolve(resolveTransportMode(currentSelection));
+                }
+            });
+
+            cancelBtn.addEventListener("click", () => {
+                root.innerHTML = "";
+                root.style.display = "none";
+                window.selector.ui.hideIframe();
+                reject(new Error("User cancelled transport selection"));
+            });
+        }
+
+        setupListeners();
+    });
 }
 
 /**
@@ -117,21 +571,56 @@ function parseDerivationPath(derivationPath) {
 class LedgerClient {
     constructor() {
         this.transport = null;
+        this.transportMode = null;
+        this.client = null;
     }
 
     isConnected() {
         return this.transport !== null;
     }
 
+    async getStoredTransportMode() {
+        return await window.selector.storage.get(STORAGE_KEY_TRANSPORT_MODE);
+    }
+
+    async setStoredTransportMode(mode) {
+        await window.selector.storage.set(STORAGE_KEY_TRANSPORT_MODE, mode);
+    }
+
     async connect() {
+        // Get available transports
+        const availableTransports = await getAvailableTransports();
+
+        // Get stored preference or prompt for selection
+        let transportMode = await this.getStoredTransportMode();
+
+        // If stored mode is not available, prompt for selection
+        const isStoredModeAvailable =
+            (transportMode === "WebHID" && availableTransports.webHID) ||
+            (transportMode === "WebUSB" && availableTransports.webUSB) ||
+            (transportMode === "WebBLE" && availableTransports.webBLE);
+
+        if (!isStoredModeAvailable) {
+            transportMode = await promptForTransportSelection(
+                availableTransports,
+                transportMode,
+            );
+            await this.setStoredTransportMode(transportMode);
+        }
+
+        this.transportMode = transportMode;
+
         // Request new device (requires user gesture)
-        this.transport = await Transport.create();
+        this.transport = await getSupportedTransport(transportMode);
+        this.client = await createClient(this.transport, transportMode);
         this._setupDisconnectHandler();
     }
 
-    async connectWithDevice(device) {
-        // Connect to a specific already-authorized device
-        this.transport = await Transport.open(device);
+    async connectWithDevice(transportMode) {
+        // Connect using the specified transport mode
+        this.transportMode = transportMode;
+        this.transport = await getSupportedTransport(transportMode);
+        this.client = await createClient(this.transport, transportMode);
         this._setupDisconnectHandler();
     }
 
@@ -141,6 +630,7 @@ class LedgerClient {
                 this.transport.off("disconnect", handleDisconnect);
             }
             this.transport = null;
+            this.client = null;
         };
 
         this.transport.on("disconnect", handleDisconnect);
@@ -153,96 +643,64 @@ class LedgerClient {
 
         await this.transport.close();
         this.transport = null;
+        this.client = null;
     }
 
     async getVersion() {
-        if (!this.transport) {
+        if (!this.client) {
             throw new Error("Device not connected");
         }
 
-        const res = await this.transport.send(
-            CLA,
-            NEAR_INS.GET_VERSION,
-            P1_IGNORE,
-            P2_IGNORE,
-        );
-
-        const [major, minor, patch] = Array.from(res);
-        return `${major}.${minor}.${patch}`;
+        return await this.client.getVersion();
     }
 
     async getPublicKey(derivationPath) {
-        if (!this.transport) {
+        if (!this.client) {
             throw new Error("Device not connected");
         }
 
-        const res = await this.transport.send(
-            CLA,
-            NEAR_INS.GET_PUBLIC_KEY,
-            P2_IGNORE,
-            NETWORK_ID,
-            parseDerivationPath(derivationPath),
-        );
-        const array = new Uint8Array(res.subarray(0, -2));
-
-        return baseEncode(array);
-    }
-
-    async internalSign(data, derivationPath, ins) {
-        if (!this.transport) {
-            throw new Error("Device not connected");
-        }
-
-        // Reset state to avoid starting from partially filled buffer
-        await this.getVersion();
-
-        const pathBuffer = parseDerivationPath(derivationPath);
-        const allData = new Uint8Array(pathBuffer.length + data.length);
-        allData.set(pathBuffer, 0);
-        allData.set(data, pathBuffer.length);
-
-        for (let offset = 0; offset < allData.length; offset += CHUNK_SIZE) {
-            const isLastChunk = offset + CHUNK_SIZE >= allData.length;
-            const chunk = allData.subarray(offset, offset + CHUNK_SIZE);
-
-            const response = await this.transport.send(
-                CLA,
-                ins,
-                isLastChunk ? P1_LAST : P1_MORE,
-                NETWORK_ID,
-                chunk,
-            );
-
-            if (isLastChunk) {
-                return new Uint8Array(response.subarray(0, -2));
-            }
-        }
-
-        throw new Error("Invalid data or derivation path");
+        const publicKeyBuffer = await this.client.getPublicKey(derivationPath);
+        return baseEncode(publicKeyBuffer);
     }
 
     async sign(data, derivationPath) {
-        return this.internalSign(
-            data,
-            derivationPath,
-            NEAR_INS.SIGN_TRANSACTION,
-        );
+        if (!this.client) {
+            throw new Error("Device not connected");
+        }
+
+        return await this.client.sign(data, derivationPath);
     }
 
     async signMessage(data, derivationPath) {
-        return this.internalSign(
-            data,
-            derivationPath,
-            NEAR_INS.NEP413_SIGN_MESSAGE,
+        if (!this.client) {
+            throw new Error("Device not connected");
+        }
+
+        // NEP-413 prefix
+        const NEP413_PREFIX = new Uint8Array([0x9d, 0x01, 0x00, 0x80]);
+        const dataWithPrefix = new Uint8Array(
+            NEP413_PREFIX.length + data.length,
         );
+        dataWithPrefix.set(NEP413_PREFIX, 0);
+        dataWithPrefix.set(data, NEP413_PREFIX.length);
+
+        return await this.client.sign(dataWithPrefix, derivationPath);
     }
 
     async signDelegation(data, derivationPath) {
-        return this.internalSign(
-            data,
-            derivationPath,
-            NEAR_INS.NEP366_SIGN_DELEGATE_ACTION,
+        if (!this.client) {
+            throw new Error("Device not connected");
+        }
+
+        // NEP-366 prefix
+        const NEP366_PREFIX = new Uint8Array([0x6e, 0x01, 0x00, 0x40]);
+        const dataWithPrefix = new Uint8Array(
+            NEP366_PREFIX.length + data.length,
         );
+        dataWithPrefix.set(NEP366_PREFIX, 0);
+        dataWithPrefix.set(data, NEP366_PREFIX.length);
+
+        return await this.client.sign(dataWithPrefix, derivationPath);
     }
 
     /**
@@ -361,26 +819,36 @@ function getLedgerErrorMessage(error) {
 /**
  * Helper function to prompt user to connect Ledger device
  * This shows a button inside the sandbox iframe that provides the user gesture context
- * required by WebHID API
+ * required by WebHID/WebUSB/WebBLE API
  */
 async function promptForLedgerConnect(ledgerClient) {
-    // First check if we already have device access (doesn't require user gesture)
-    const existingDevices = useWebHID
-        ? await navigator?.hid?.getDevices()
-        : await navigator?.usb?.getDevices();
-    const ledgerDevice = existingDevices.find(
-        (d) => d.vendorId === 0x2c97, // Ledger vendor ID
-    );
-
     let initialError = null;
+    let storedMode = null;
+    let canChangeConnectionMethod = false;
 
-    if (ledgerDevice) {
-        // We already have permission, try to connect directly
+    // Try to connect with stored transport mode if available
+    storedMode = await ledgerClient.getStoredTransportMode();
+    if (storedMode) {
         try {
-            await ledgerClient.connectWithDevice(ledgerDevice);
-            // Ensure NEAR app is open
-            await ledgerClient.openNearApplication();
-            return;
+            // Check if we already have device access for this transport
+            let hasExistingDevice = false;
+
+            if (storedMode === "WebHID" && navigator?.hid) {
+                const devices = await navigator.hid.getDevices();
+                hasExistingDevice = devices.some((d) => d.vendorId === 0x2c97);
+            } else if (storedMode === "WebUSB" && navigator?.usb) {
+                const devices = await navigator.usb.getDevices();
+                hasExistingDevice = devices.some((d) => d.vendorId === 0x2c97);
+            } else if (storedMode === "WebBLE" && navigator?.bluetooth) {
+                // WebBLE doesn't have a getDevices method, skip this check
+                hasExistingDevice = false;
+            }
+
+            if (hasExistingDevice) {
+                await ledgerClient.connectWithDevice(storedMode);
+                await ledgerClient.openNearApplication();
+                return;
+            }
         } catch (error) {
             // Connection failed, disconnect to ensure clean state
             if (ledgerClient.isConnected()) {
@@ -401,7 +869,25 @@ async function promptForLedgerConnect(ledgerClient) {
     const root = document.getElementById("root");
     root.style.display = "flex";
 
+    try {
+        const availableTransports = await getAvailableTransports();
+        const selectionOptionsCount =
+            (availableTransports.webHID || availableTransports.webUSB ? 1 : 0) +
+            (availableTransports.webBLE ? 1 : 0);
+        canChangeConnectionMethod = selectionOptionsCount > 1;
+    } catch {
+        canChangeConnectionMethod = false;
+    }
+
     function renderUI(errorMessage = null) {
+        // Transport selection may temporarily hide the root; force it visible here.
+        root.style.display = "flex";
+
+        const connectionInstructions =
+            ledgerClient.transportMode === "WebBLE"
+                ? "Make sure your Ledger Nano X is powered on, Bluetooth is enabled, and the NEAR app is open."
+                : "Make sure your Ledger is connected via USB and the NEAR app is open.";
+
         root.innerHTML = `
         <div class="prompt-container" style="max-width: 400px; padding: 24px; text-align: center;">
           <div style="font-size: 48px; margin-bottom: 16px;">${errorMessage ? "⚠️" : "🔐"}</div>
@@ -415,9 +901,18 @@ async function promptForLedgerConnect(ledgerClient) {
           `
                   : ""
           }
-          <p style="margin-bottom: 24px; color: #aaa;">
-            Make sure your Ledger is connected via USB and the NEAR app is open.
+          <p style="margin-bottom: 16px; color: #aaa;">
+            ${connectionInstructions}
           </p>
+          ${
+              storedMode && canChangeConnectionMethod
+                  ? `
+          <button id="changeMethodBtn" style="background: transparent; border: none; color: #888; font-size: 12px; cursor: pointer; padding: 0; margin-bottom: 16px; text-decoration: underline;">
+            Change connection method
+          </button>
+          `
+                  : ""
+          }
           <div style="display: flex; gap: 8px; justify-content: center;">
             <button id="cancelBtn" style="background: #444;">Cancel</button>
             <button id="connectBtn" style="background: #4c8bf5;">${errorMessage ? "Try Again" : "Connect Ledger"}</button>
@@ -432,6 +927,36 @@ async function promptForLedgerConnect(ledgerClient) {
         function setupListeners() {
             const connectBtn = document.getElementById("connectBtn");
             const cancelBtn = document.getElementById("cancelBtn");
+            const changeMethodBtn = document.getElementById("changeMethodBtn");
+
+            // Handle change connection method
+            if (changeMethodBtn) {
+                changeMethodBtn.addEventListener("click", async () => {
+                    try {
+                        // Show selection UI
+                        const availableTransports =
+                            await getAvailableTransports();
+                        const newMode = await promptForTransportSelection(
+                            availableTransports,
+                            storedMode,
+                        );
+                        await ledgerClient.setStoredTransportMode(newMode);
+                        ledgerClient.transportMode = newMode;
+                        storedMode = newMode;
+                        // Re-render UI with new mode
+                        renderUI();
+                        setupListeners();
+                    } catch (error) {
+                        if (
+                            error.message !==
+                            "User cancelled transport selection"
+                        ) {
+                            renderUI(getLedgerErrorMessage(error));
+                            setupListeners();
+                        }
+                    }
+                });
+            }
 
             connectBtn.addEventListener("click", async () => {
                 // Show loading state
@@ -1018,6 +1543,7 @@ class LedgerWallet {
         }
 
         await window.selector.storage.remove(STORAGE_KEY_ACCOUNTS);
+        await window.selector.storage.remove(STORAGE_KEY_TRANSPORT_MODE);
         await window.selector.storage.remove(STORAGE_KEY_DERIVATION_PATH);
 
         return true;
