@@ -1803,22 +1803,44 @@ pub async fn resolve_missing_tx_hashes(
             }
             hashes
         } else if token_id.starts_with("intents.near:") {
-            // Intents tokens: query account_changes on intents.near
+            // Intents tokens: query account_changes on intents.near, then filter
+            // to only tx hashes whose receipt logs mention the monitored account.
             match block_info::get_account_changes(network, "intents.near", block_height).await {
                 Ok(changes) => {
-                    let mut hashes = Vec::new();
+                    let mut candidates = Vec::new();
                     for change in &changes {
                         use near_primitives::views::StateChangeCauseView;
                         if let StateChangeCauseView::TransactionProcessing { tx_hash } =
                             &change.cause
                         {
                             let hash = tx_hash.to_string();
-                            if !hashes.contains(&hash) {
-                                hashes.push(hash);
+                            if !candidates.contains(&hash) {
+                                candidates.push(hash);
                             }
                         }
                     }
-                    hashes
+                    // Single candidate must be correct; multiple need filtering.
+                    if candidates.len() <= 1 {
+                        candidates
+                    } else {
+                        let mut filtered = Vec::new();
+                        for candidate in &candidates {
+                            match block_info::get_transaction(network, candidate, "intents.near")
+                                .await
+                            {
+                                Ok(tx_response) => {
+                                    if tx_outcome_logs_mention_account(&tx_response, account_id) {
+                                        filtered.push(candidate.clone());
+                                    }
+                                }
+                                Err(_) => {
+                                    // On error, include to avoid losing data
+                                    filtered.push(candidate.clone());
+                                }
+                            }
+                        }
+                        filtered
+                    }
                 }
                 Err(e) => {
                     log::debug!(
@@ -1882,9 +1904,7 @@ fn tx_outcome_logs_mention_account(
     };
 
     let receipts_outcome = match final_outcome {
-        FinalExecutionOutcomeViewEnum::FinalExecutionOutcome(outcome) => {
-            &outcome.receipts_outcome
-        }
+        FinalExecutionOutcomeViewEnum::FinalExecutionOutcome(outcome) => &outcome.receipts_outcome,
         FinalExecutionOutcomeViewEnum::FinalExecutionOutcomeWithReceipt(outcome) => {
             &outcome.final_outcome.receipts_outcome
         }
@@ -2118,8 +2138,7 @@ pub async fn insert_balance_change_record(
                     // Filter candidates: only keep tx hashes whose receipt outcome logs
                     // mention the monitored account_id.
                     for candidate in &candidates {
-                        match block_info::get_transaction(network, candidate, "intents.near")
-                            .await
+                        match block_info::get_transaction(network, candidate, "intents.near").await
                         {
                             Ok(tx_response) => {
                                 let mentions_account =
