@@ -6,7 +6,11 @@ use near_api::{AccountId, Contract, NearToken, Tokens};
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 
-use crate::{AppState, constants::TREASURY_FACTORY_CONTRACT_ID, services::register_new_dao};
+use crate::{
+    AppState,
+    constants::TREASURY_FACTORY_CONTRACT_ID,
+    services::{register_new_dao, register_or_refresh_monitored_account},
+};
 
 pub const TREASURY_CREATE_DEPOSIT_IN_NEAR: u128 = 6;
 
@@ -188,6 +192,11 @@ pub async fn create_treasury(
     if let Err(e) = register_new_dao(&state.db_pool, treasury.as_str()).await {
         log::warn!("Failed to register new DAO in cache: {}", e);
         // Don't fail the request - the DAO will be picked up by the sync service
+    }
+
+    if let Err(e) = register_or_refresh_monitored_account(&state.db_pool, treasury.as_str()).await {
+        log::warn!("Failed to add treasury to monitored accounts: {}", e);
+        // Don't fail the request - treasury can still be added manually later.
     }
 
     // Fetch balance after treasury creation to track the cost

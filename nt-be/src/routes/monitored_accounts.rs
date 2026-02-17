@@ -9,22 +9,8 @@ use sqlx::types::chrono::{DateTime, Utc};
 use std::sync::Arc;
 
 use crate::AppState;
-use crate::config::{PlanType, get_initial_credits};
-use crate::utils::datetime::next_month_start_utc;
-
-#[derive(Debug, Serialize, sqlx::FromRow)]
-pub struct MonitoredAccount {
-    pub account_id: String,
-    pub enabled: bool,
-    pub last_synced_at: Option<DateTime<Utc>>,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
-    pub export_credits: i32,
-    pub batch_payment_credits: i32,
-    pub plan_type: PlanType,
-    pub credits_reset_at: DateTime<Utc>,
-    pub dirty_at: Option<DateTime<Utc>>,
-}
+use crate::config::PlanType;
+use crate::services::{MonitoredAccount, register_or_refresh_monitored_account};
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -80,38 +66,7 @@ pub async fn add_monitored_account(
         ));
     }
 
-    // Check if already exists
-    let existing = sqlx::query_as::<_, MonitoredAccount>(
-        r#"
-        SELECT account_id, enabled, last_synced_at, created_at, updated_at,
-               export_credits, batch_payment_credits, plan_type, credits_reset_at, dirty_at
-        FROM monitored_accounts
-        WHERE account_id = $1
-        "#,
-    )
-    .bind(&payload.account_id)
-    .fetch_optional(&state.db_pool)
-    .await
-    .map_err(|e| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({ "error": format!("Database error: {}", e) })),
-        )
-    })?;
-
-    if let Some(_account) = existing {
-        // Already registered - update dirty_at to trigger priority gap filling
-        let account = sqlx::query_as::<_, MonitoredAccount>(
-            r#"
-            UPDATE monitored_accounts
-            SET dirty_at = NOW(), updated_at = NOW()
-            WHERE account_id = $1
-            RETURNING account_id, enabled, last_synced_at, created_at, updated_at,
-                      export_credits, batch_payment_credits, plan_type, credits_reset_at, dirty_at
-            "#,
-        )
-        .bind(&payload.account_id)
-        .fetch_one(&state.db_pool)
+    let result = register_or_refresh_monitored_account(&state.db_pool, &payload.account_id)
         .await
         .map_err(|e| {
             (
@@ -120,64 +75,7 @@ pub async fn add_monitored_account(
             )
         })?;
 
-        sqlx::query!(
-            r#"
-            UPDATE daos
-            SET is_dirty = true
-            WHERE dao_id = $1
-            "#,
-            &payload.account_id
-        )
-        .execute(&state.db_pool)
-        .await
-        .map_err(|e| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({ "error": format!("Database error: {}", e) })),
-            )
-        })?;
-
-        return Ok(Json(AddAccountResponse {
-            account_id: account.account_id,
-            enabled: account.enabled,
-            last_synced_at: account.last_synced_at,
-            created_at: account.created_at,
-            updated_at: account.updated_at,
-            export_credits: account.export_credits,
-            batch_payment_credits: account.batch_payment_credits,
-            plan_type: account.plan_type,
-            credits_reset_at: account.credits_reset_at,
-            dirty_at: account.dirty_at,
-            is_new_registration: false,
-        }));
-    }
-
-    // New registration - insert with Pro plan and credits (launch promotion)
-    let (export_credits, batch_payment_credits, gas_covered_transactions) =
-        get_initial_credits(PlanType::Plus);
-    let credits_reset_at = next_month_start_utc(Utc::now());
-
-    let account = sqlx::query_as::<_, MonitoredAccount>(
-        r#"
-        INSERT INTO monitored_accounts (account_id, enabled, export_credits, batch_payment_credits, gas_covered_transactions, plan_type, credits_reset_at, dirty_at)
-        VALUES ($1, true, $2, $3, $4, 'plus', $5, NOW())
-        RETURNING account_id, enabled, last_synced_at, created_at, updated_at,
-                  export_credits, batch_payment_credits, plan_type, credits_reset_at, dirty_at
-        "#,
-    )
-    .bind(&payload.account_id)
-    .bind(export_credits)
-    .bind(batch_payment_credits)
-    .bind(gas_covered_transactions)
-    .bind(credits_reset_at)
-    .fetch_one(&state.db_pool)
-    .await
-    .map_err(|e| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({ "error": format!("Database error: {}", e) })),
-        )
-    })?;
+    let account = result.account;
 
     Ok(Json(AddAccountResponse {
         account_id: account.account_id,
@@ -190,7 +88,7 @@ pub async fn add_monitored_account(
         plan_type: account.plan_type,
         credits_reset_at: account.credits_reset_at,
         dirty_at: account.dirty_at,
-        is_new_registration: true,
+        is_new_registration: result.is_new_registration,
     }))
 }
 
