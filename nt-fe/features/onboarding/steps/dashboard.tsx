@@ -1,23 +1,23 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/button"
-import { useTreasury } from "@/hooks/use-treasury"
-import { XIcon } from "lucide-react"
-import { useNextStep } from "nextstepjs"
-import type { Tour } from "nextstepjs"
-import { useState, useEffect } from "react"
+import { Button } from "@/components/button";
+import { useTreasury } from "@/hooks/use-treasury";
+import { XIcon } from "lucide-react";
+import { useNextStep } from "nextstepjs";
+import type { Tour } from "nextstepjs";
+import { useState, useEffect } from "react";
 
 // Tour names
 export const TOUR_NAMES = {
     DASHBOARD: "dashboard",
     INFO_BOX_DISMISSED: "info-box-dismissed",
-} as const
+} as const;
 
 // Local storage keys
 export const LOCAL_STORAGE_KEYS = {
     DASHBOARD_TOUR_DISMISSED: "dashboard-tour-dismissed",
     INFO_BOX_TOUR_DISMISSED: "info-box-tour-dismissed",
-} as const
+} as const;
 
 // Selector IDs
 export const SELECTOR_IDS = {
@@ -28,7 +28,7 @@ export const SELECTOR_IDS = {
     DASHBOARD_STEP_5: "dashboard-step5",
     DASHBOARD_STEP_5_CREATE_TREASURY: "#dashboard-step5-create-treasury",
     HELP_SUPPORT_LINK: "#help-support-link",
-} as const
+} as const;
 
 export const DASHBOARD_TOUR: Tour = {
     tour: TOUR_NAMES.DASHBOARD,
@@ -48,7 +48,9 @@ export const DASHBOARD_TOUR: Tour = {
         {
             icon: null,
             title: "",
-            content: <>Make payment requests whenever you need to send assets.</>,
+            content: (
+                <>Make payment requests whenever you need to send assets.</>
+            ),
             selector: SELECTOR_IDS.DASHBOARD_STEP_2,
             side: "bottom",
             disableInteraction: true,
@@ -84,7 +86,12 @@ export const DASHBOARD_TOUR: Tour = {
         {
             icon: null,
             title: "",
-            content: <>Want to set up a new Treasury? You can do it here in just a few clicks.</>,
+            content: (
+                <>
+                    Want to set up a new Treasury? You can do it here in just a
+                    few clicks.
+                </>
+            ),
             selector: SELECTOR_IDS.DASHBOARD_STEP_5_CREATE_TREASURY,
             side: "right",
             showControls: false,
@@ -94,7 +101,7 @@ export const DASHBOARD_TOUR: Tour = {
             pointerRadius: 8,
         },
     ],
-}
+};
 
 export const INFO_BOX_TOUR: Tour = {
     tour: TOUR_NAMES.INFO_BOX_DISMISSED,
@@ -112,47 +119,70 @@ export const INFO_BOX_TOUR: Tour = {
             pointerRadius: 8,
         },
     ],
-}
+};
 
 export function DashboardTour() {
-    const [isDismissed, setIsDismissed] = useState(true)
-    const { startNextStep } = useNextStep()
+    const [isDismissed, setIsDismissed] = useState(true);
+    const { startNextStep } = useNextStep();
     const { isGuestTreasury, isLoading } = useTreasury();
 
     useEffect(() => {
         if (isGuestTreasury || isLoading) return;
-        setIsDismissed(localStorage.getItem(LOCAL_STORAGE_KEYS.DASHBOARD_TOUR_DISMISSED) === "true")
-    }, [isGuestTreasury])
+        setIsDismissed(
+            localStorage.getItem(
+                LOCAL_STORAGE_KEYS.DASHBOARD_TOUR_DISMISSED,
+            ) === "true",
+        );
+    }, [isGuestTreasury]);
 
     const handleDismiss = () => {
-        localStorage.setItem(LOCAL_STORAGE_KEYS.DASHBOARD_TOUR_DISMISSED, "true")
-        setIsDismissed(true)
-    }
+        localStorage.setItem(
+            LOCAL_STORAGE_KEYS.DASHBOARD_TOUR_DISMISSED,
+            "true",
+        );
+        setIsDismissed(true);
+    };
 
     const handleStartTour = () => {
-        handleDismiss()
-        startNextStep(TOUR_NAMES.DASHBOARD)
-    }
+        handleDismiss();
+        startNextStep(TOUR_NAMES.DASHBOARD);
+    };
 
-    if (isDismissed) return null
+    if (isDismissed || isGuestTreasury || isLoading) return null;
 
     return (
         <div className="fixed max-w-72 flex flex-col gap-0 bottom-8 right-8 z-50 p-3 bg-popover-foreground text-popover rounded-[8px]">
             <div className="flex items-center justify-between pt-0.5 pb-2.5">
-                <h1 className="text-sm font-semibold">Take a quick tour of Treasury</h1>
-                <XIcon className="size-4 cursor-pointer" onClick={handleDismiss} />
+                <h1 className="text-sm font-semibold">
+                    Take a quick tour of Treasury
+                </h1>
+                <XIcon
+                    className="size-4 cursor-pointer"
+                    onClick={handleDismiss}
+                />
             </div>
             <p className="py-2 text-xs">
-                See how to make a deposit, create a request, and set up a new account.
+                See how to make a deposit, create a request, and set up a new
+                account.
             </p>
             <div className="pt-2 flex justify-end gap-1.5">
-                <Button variant="ghost" size="sm" className="text-popover hover:text-popover/90 hover:bg-transparent!" onClick={handleDismiss}>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-popover hover:text-popover/90 hover:bg-transparent!"
+                    onClick={handleDismiss}
+                >
                     No, thanks
                 </Button>
-                <Button variant="default" size="sm" className="bg-popover text-popover-foreground hover:bg-popover/90 hover:text-popover-foreground/90" onClick={handleStartTour}>
+                <Button
+                    variant="default"
+                    size="sm"
+                    className="bg-popover text-popover-foreground hover:bg-popover/90 hover:text-popover-foreground/90"
+                    onClick={handleStartTour}
+                >
                     Let's go
                 </Button>
             </div>
         </div>
-    )
+    );
 }
