@@ -441,7 +441,7 @@ export function ProposalSidebar({
                     <AuthButtonWithProposal
                         proposalKind={proposal.kind}
                         variant="secondary"
-                        className="flex-1"
+                        className="flex gap-1 w-1/2"
                         onClick={() => onVote("Reject")}
                         disabled={isUserVoter}
                         tooltip={isUserVoter ? NO_VOTE_MESSAGE : undefined}
@@ -452,7 +452,7 @@ export function ProposalSidebar({
                     {insufficientBalanceInfo.hasInsufficientBalance ? (
                         <Button
                             variant="default"
-                            className="flex gap-1 flex-1"
+                            className="flex gap-1 w-1/2"
                             onClick={() =>
                                 onDeposit(
                                     insufficientBalanceInfo.tokenSymbol,
@@ -467,7 +467,7 @@ export function ProposalSidebar({
                         <AuthButtonWithProposal
                             proposalKind={proposal.kind}
                             variant="default"
-                            className="flex gap-1 flex-1"
+                            className="flex gap-1 w-1/2"
                             onClick={() => onVote("Approve")}
                             disabled={isUserVoter}
                             tooltip={isUserVoter ? NO_VOTE_MESSAGE : undefined}
