@@ -44,7 +44,7 @@ fn error_response(status: StatusCode, msg: String) -> (StatusCode, Json<RelayRes
     )
 }
 
-const MAX_STORAGE_BYTES: u128 = 1500;
+const MAX_STORAGE_BYTES: u128 = 4000;
 const MAX_SPONSORING: NearToken = NearToken::from_millinear(1200);
 
 /// Relay a signed delegate action (NEP-366 meta-transaction) to the NEAR network.
