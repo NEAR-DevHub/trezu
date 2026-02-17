@@ -32,7 +32,6 @@ pub fn build_where_conditions(filters: &BalanceChangeFilters) -> (Vec<String>, u
         "counterparty != 'SNAPSHOT'".to_string(),
         "counterparty != 'STAKING_SNAPSHOT'".to_string(),
         "counterparty != 'NOT_REGISTERED'".to_string(),
-        "token_id != 'near:total'".to_string(), // Exclude internal aggregate token
         // Exclude swap deposit legs - these are shown as part of the swap fulfillment
         format!(
             "id NOT IN (SELECT deposit_balance_change_id FROM detected_swaps WHERE account_id = $1 AND deposit_balance_change_id IS NOT NULL)"
@@ -179,7 +178,7 @@ mod tests {
 
         let (conditions, param_index) = build_where_conditions(&filters);
 
-        assert_eq!(conditions.len(), 6); // Base conditions: account_id, 3x counterparty filters, near:total filter, swap deposit exclusion subquery
+        assert_eq!(conditions.len(), 5); // Base conditions: account_id, 3x counterparty filters, swap deposit exclusion subquery
         assert_eq!(param_index, 2);
     }
 
@@ -199,7 +198,7 @@ mod tests {
 
         let (conditions, param_index) = build_where_conditions(&filters);
 
-        assert_eq!(conditions.len(), 9); // Base (6) + date (1) + token (1) + txn_type (1)
+        assert_eq!(conditions.len(), 8); // Base (5) + date (1) + token (1) + txn_type (1)
         assert_eq!(param_index, 4); // 1 (account_id) + 1 (date) + 1 (tokens) + starts at 2
         assert!(conditions.contains(&"block_time >= $2".to_string()));
         assert!(conditions.iter().any(|c| c.contains("token_id = ANY($3)")));
