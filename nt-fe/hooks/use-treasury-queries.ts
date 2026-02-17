@@ -81,7 +81,8 @@ export function useBalanceChart(params: BalanceChartRequest | null) {
         ],
         queryFn: () => getBalanceChart(params!),
         enabled: !!params?.accountId,
-        staleTime: 1000 * 60 * 5, // 5 minutes
+        staleTime: 1000 * 5, // 5 seconds (balance chart changes frequently)
+        refetchInterval: 1000 * 5, // Refetch every 5 seconds
     });
 }
 
@@ -99,8 +100,8 @@ export function useTokenBalance(
         queryKey: ["tokenBalance", accountId, tokenId],
         queryFn: () => getTokenBalance(accountId!, tokenId!, network!),
         enabled: !!accountId && !!tokenId && !!network,
-        staleTime: 1000 * 30, // 30 seconds (balances change frequently)
-        refetchInterval: 1000 * 30, // Refetch every 30 seconds
+        staleTime: 1000 * 5, // 5 seconds (balances change frequently)
+        refetchInterval: 1000 * 5, // Refetch every 5 seconds
     });
 }
 
@@ -282,10 +283,33 @@ export function useRecentActivity(
     endDate?: string,
 ) {
     return useQuery({
-        queryKey: ["recentActivity", accountId, limit, offset, minUsdValue, transactionType, tokenSymbol, tokenSymbolNot, startDate, endDate],
-        queryFn: () => getRecentActivity(accountId!, limit, offset, minUsdValue, transactionType, tokenSymbol, tokenSymbolNot, startDate, endDate),
+        queryKey: [
+            "recentActivity",
+            accountId,
+            limit,
+            offset,
+            minUsdValue,
+            transactionType,
+            tokenSymbol,
+            tokenSymbolNot,
+            startDate,
+            endDate,
+        ],
+        queryFn: () =>
+            getRecentActivity(
+                accountId!,
+                limit,
+                offset,
+                minUsdValue,
+                transactionType,
+                tokenSymbol,
+                tokenSymbolNot,
+                startDate,
+                endDate,
+            ),
         enabled: !!accountId,
         staleTime: 1000 * 5, // 5 seconds (activity changes frequently)
+        refetchInterval: 1000 * 5, // Refetch every 5 seconds
     });
 }
 
