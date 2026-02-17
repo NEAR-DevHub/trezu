@@ -32,6 +32,34 @@ import {
     estimateVoteStorage,
 } from "@/lib/sputnik-storage";
 
+/**
+ * Ensures sandboxed iframes get bluetooth permission for Ledger Nano X BLE.
+ * @hot-labs/near-connect doesn't yet include bluetooth in iframe allow attributes,
+ * so we patch it via MutationObserver when iframes are added to the DOM.
+ */
+function ensureBluetoothIframePermission() {
+    if (typeof document === "undefined") return;
+    const observer = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+            for (const node of mutation.addedNodes) {
+                if (
+                    node instanceof HTMLIFrameElement &&
+                    node.getAttribute("sandbox")?.includes("allow-scripts")
+                ) {
+                    const allow = node.getAttribute("allow") || "";
+                    if (!allow.includes("bluetooth")) {
+                        node.setAttribute(
+                            "allow",
+                            allow + (allow ? " " : "") + "bluetooth *;",
+                        );
+                    }
+                }
+            }
+        }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+}
+
 // Fallbacks if WASM estimator fails to load
 const FALLBACK_PROPOSAL_STORAGE_BYTES = Big(500);
 const FALLBACK_VOTE_STORAGE_BYTES = Big(100);
@@ -125,6 +153,8 @@ export const useNearStore = create<NearStore>((set, get) => ({
         }
 
         let newConnector = null;
+
+        ensureBluetoothIframePermission();
 
         try {
             newConnector = new NearConnector({
