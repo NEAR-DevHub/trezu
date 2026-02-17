@@ -1,4 +1,11 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/modal";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from "@/components/modal";
 import { Button } from "@/components/button";
 import { ProposalPermissionKind } from "@/lib/config-utils";
 import { useNear } from "@/stores/near-store";
@@ -14,10 +21,16 @@ interface VoteModalProps {
         proposalId: number;
         kind: ProposalPermissionKind;
     }[];
-    vote: "Approve" | "Reject" | "Remove";
+    vote: "Approve" | "Reject" | "Remove" | "Finalize";
 }
 
-export function VoteModal({ isOpen, onClose, onSuccess, proposalIds, vote }: VoteModalProps) {
+export function VoteModal({
+    isOpen,
+    onClose,
+    onSuccess,
+    proposalIds,
+    vote,
+}: VoteModalProps) {
     const { treasuryId } = useTreasury();
     const { voteProposals } = useNear();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,11 +38,14 @@ export function VoteModal({ isOpen, onClose, onSuccess, proposalIds, vote }: Vot
     const handleVote = async () => {
         setIsSubmitting(true);
         try {
-            await voteProposals(treasuryId ?? "", proposalIds.map(proposal => ({
-                proposalId: proposal.proposalId,
-                vote: vote,
-                proposalKind: proposal.kind,
-            })));
+            await voteProposals(
+                treasuryId ?? "",
+                proposalIds.map((proposal) => ({
+                    proposalId: proposal.proposalId,
+                    vote: vote,
+                    proposalKind: proposal.kind,
+                })),
+            );
             onSuccess?.();
         } catch (error) {
             console.error(`Failed to ${vote.toLowerCase()} proposal:`, error);
@@ -37,7 +53,7 @@ export function VoteModal({ isOpen, onClose, onSuccess, proposalIds, vote }: Vot
             setIsSubmitting(false);
             onClose();
         }
-    }
+    };
 
     const title = vote === "Remove" ? "Remove Request" : "Confirm Your Vote";
     return (
@@ -47,12 +63,20 @@ export function VoteModal({ isOpen, onClose, onSuccess, proposalIds, vote }: Vot
                     <DialogTitle>{title}</DialogTitle>
                 </DialogHeader>
                 <DialogDescription>
-                    You are about to {vote.toLowerCase()} this request. Once confirmed, this action cannot be undone.
+                    You are about to {vote.toLowerCase()} this request. Once
+                    confirmed, this action cannot be undone.
                 </DialogDescription>
                 <DialogFooter>
-                    <Button className="w-full" variant={vote === "Remove" ? "destructive" : "default"} onClick={handleVote} disabled={isSubmitting}>
+                    <Button
+                        className="w-full"
+                        variant={vote === "Remove" ? "destructive" : "default"}
+                        onClick={handleVote}
+                        disabled={isSubmitting}
+                    >
                         {vote === "Remove" ? "Remove" : "Confirm"}
-                        {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                        {isSubmitting && (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        )}
                     </Button>
                 </DialogFooter>
             </DialogContent>

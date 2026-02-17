@@ -513,7 +513,10 @@ export const useNearStore = create<NearStore>((set, get) => ({
                 methodName: "act_proposal",
                 args: {
                     id: vote.proposalId,
-                    action: `Vote${vote.vote}`,
+                    action:
+                        vote.vote === "Finalize"
+                            ? vote.vote
+                            : `Vote${vote.vote}`,
                     proposal: vote.proposalKind,
                 },
                 gas: gas.toString(),

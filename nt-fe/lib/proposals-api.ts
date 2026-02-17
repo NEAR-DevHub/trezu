@@ -14,7 +14,7 @@ export type ProposalStatus =
     | "Moved"
     | "Failed";
 
-export type Vote = "Approve" | "Reject" | "Remove";
+export type Vote = "Approve" | "Reject" | "Remove" | "Finalize";
 
 export interface TransferKind {
     Transfer: {

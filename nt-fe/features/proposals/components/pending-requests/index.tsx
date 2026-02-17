@@ -13,11 +13,16 @@ import { ChevronRight, Check, X, Download, Send } from "lucide-react";
 import Link from "next/link";
 import { ProposalTypeIcon } from "../proposal-type-icon";
 import { TransactionCell } from "../transaction-cell";
-import { getProposalUIKind } from "../../utils/proposal-utils";
+import {
+    EXCHANGE_EXPIRY_MS,
+    getProposalStatus,
+    getProposalUIKind,
+} from "../../utils/proposal-utils";
 import { useProposalInsufficientBalance } from "../../hooks/use-proposal-insufficient-balance";
 import { VoteModal } from "../vote-modal";
 import { useState } from "react";
 import {
+    getApproversAndThreshold,
     getKindFromProposal,
     ProposalPermissionKind,
 } from "@/lib/config-utils";
@@ -26,6 +31,9 @@ import { useNear } from "@/stores/near-store";
 import { DepositModal } from "@/app/(treasury)/[treasuryId]/dashboard/components/deposit-modal";
 import { EmptyState } from "@/components/empty-state";
 import { NotEnoughBalance } from "../not-enough-balance";
+import { Policy } from "@/types/policy";
+import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
+import Big from "big.js";
 
 const MAX_DISPLAYED_REQUESTS = 4;
 
@@ -60,13 +68,15 @@ function PendingRequestsSkeleton() {
 
 interface PendingRequestItemProps {
     proposal: Proposal;
+    policy: Policy;
     treasuryId: string;
-    onVote: (vote: "Approve" | "Reject") => void;
+    onVote: (vote: "Approve" | "Reject" | "Finalize") => void;
     onDeposit: (tokenSymbol?: string, tokenNetwork?: string) => void;
 }
 
 export function PendingRequestItem({
     proposal,
+    policy,
     treasuryId,
     onVote,
     onDeposit,
@@ -78,6 +88,56 @@ export function PendingRequestItem({
     );
     const { accountId } = useNear();
     const isUserVoter = !!proposal.votes[accountId ?? ""];
+
+    const expiresAt = new Date(
+        Big(proposal.submission_time)
+            .add(policy.proposal_period)
+            .div(1000000)
+            .toNumber(),
+    );
+
+    const proposalType = getProposalUIKind(proposal);
+    const isExchangeProposal = proposalType === "Exchange";
+    // For exchange proposals, calculate 24-hour expiration
+    const exchange24HourExpiry = isExchangeProposal
+        ? new Date(
+              Big(proposal.submission_time).div(1000000).toNumber() +
+                  EXCHANGE_EXPIRY_MS,
+          )
+        : null;
+    const status = getProposalStatus(proposal, policy);
+
+    let isExpired = false;
+    switch (status) {
+        case "Expired":
+        case "Pending":
+            // Use 24-hour expiry for exchange proposals, otherwise use policy period
+            let timestamp =
+                isExchangeProposal && exchange24HourExpiry
+                    ? exchange24HourExpiry
+                    : expiresAt;
+            isExpired = timestamp < new Date();
+            break;
+    }
+
+    if (isExpired) {
+        return null;
+    }
+
+    const { requiredVotes } = getApproversAndThreshold(
+        policy,
+        accountId ?? "",
+        proposal.kind,
+        false,
+    );
+    const votesFor = Object.values(proposal.votes).filter(
+        (vote) => vote === "Approve",
+    ).length;
+    const votesAgainst = Object.values(proposal.votes).filter(
+        (vote) => vote === "Reject",
+    ).length;
+    const isApproved =
+        votesFor >= requiredVotes || votesAgainst >= requiredVotes;
 
     return (
         <Link href={`/${treasuryId}/requests/${proposal.id}`}>
@@ -98,58 +158,75 @@ export function PendingRequestItem({
                                 }
                             />
                             <div className="flex gap-3 invisible w-full group-hover:visible transition-opacity duration-300 ease-in-out">
-                                <AuthButtonWithProposal
-                                    proposalKind={proposal.kind}
-                                    variant="secondary"
-                                    className="flex gap-1 flex-1"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        onVote("Reject");
-                                    }}
-                                    tooltip={
-                                        isUserVoter
-                                            ? NO_VOTE_MESSAGE
-                                            : undefined
-                                    }
-                                    disabled={isUserVoter}
-                                >
-                                    <X className="size-3.5" />
-                                    Reject
-                                </AuthButtonWithProposal>
-                                {insufficientBalanceInfo.hasInsufficientBalance ? (
-                                    <Button
-                                        variant="default"
-                                        className="flex gap-1 flex-1"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            onDeposit(
-                                                insufficientBalanceInfo.tokenSymbol,
-                                                insufficientBalanceInfo.tokenNetwork,
-                                            );
-                                        }}
-                                    >
-                                        <Download className="size-3.5" />
-                                        Deposit
-                                    </Button>
-                                ) : (
+                                {isApproved ? (
                                     <AuthButtonWithProposal
                                         proposalKind={proposal.kind}
                                         variant="default"
-                                        className="flex gap-1 flex-1"
+                                        className="flex gap-1 w-full"
                                         onClick={(e) => {
                                             e.preventDefault();
-                                            onVote("Approve");
+                                            onVote("Finalize");
                                         }}
-                                        disabled={isUserVoter}
-                                        tooltip={
-                                            isUserVoter
-                                                ? NO_VOTE_MESSAGE
-                                                : undefined
-                                        }
                                     >
                                         <Check className="size-3.5" />
-                                        Approve
+                                        Finalize
                                     </AuthButtonWithProposal>
+                                ) : (
+                                    <>
+                                        <AuthButtonWithProposal
+                                            proposalKind={proposal.kind}
+                                            variant="secondary"
+                                            className="flex gap-1 w-1/2"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                onVote("Reject");
+                                            }}
+                                            tooltip={
+                                                isUserVoter
+                                                    ? NO_VOTE_MESSAGE
+                                                    : undefined
+                                            }
+                                            disabled={isUserVoter}
+                                        >
+                                            <X className="size-3.5" />
+                                            Reject
+                                        </AuthButtonWithProposal>
+                                        {insufficientBalanceInfo.hasInsufficientBalance ? (
+                                            <Button
+                                                variant="default"
+                                                className="flex gap-1 w-1/2"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    onDeposit(
+                                                        insufficientBalanceInfo.tokenSymbol,
+                                                        insufficientBalanceInfo.tokenNetwork,
+                                                    );
+                                                }}
+                                            >
+                                                <Download className="size-3.5" />
+                                                Deposit
+                                            </Button>
+                                        ) : (
+                                            <AuthButtonWithProposal
+                                                proposalKind={proposal.kind}
+                                                variant="default"
+                                                className="flex gap-1 w-1/2"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    onVote("Approve");
+                                                }}
+                                                disabled={isUserVoter}
+                                                tooltip={
+                                                    isUserVoter
+                                                        ? NO_VOTE_MESSAGE
+                                                        : undefined
+                                                }
+                                            >
+                                                <Check className="size-3.5" />
+                                                Approve
+                                            </AuthButtonWithProposal>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         </div>
@@ -171,7 +248,7 @@ export function PendingRequests() {
         tokenNetwork?: string;
     }>({});
     const [voteInfo, setVoteInfo] = useState<{
-        vote: "Approve" | "Reject" | "Remove";
+        vote: "Approve" | "Reject" | "Remove" | "Finalize";
         proposalIds: { proposalId: number; kind: ProposalPermissionKind }[];
     }>({ vote: "Approve", proposalIds: [] });
     const { data: pendingRequests, isLoading: isRequestsLoading } =
@@ -181,10 +258,11 @@ export function PendingRequests() {
                 voter_votes: `${accountId}:No Voted`,
             }),
         });
+    const { data: policy, isLoading: isPolicyLoading } =
+        useTreasuryPolicy(treasuryId);
+    const isLoading = isRequestsLoading || isPolicyLoading;
 
-    const isLoading = isRequestsLoading;
-
-    if (isLoading) {
+    if (isLoading || !policy) {
         return <PendingRequestsSkeleton />;
     }
 
@@ -228,6 +306,7 @@ export function PendingRequests() {
                                 <PendingRequestItem
                                     key={proposal.id}
                                     proposal={proposal}
+                                    policy={policy}
                                     treasuryId={treasuryId!}
                                     onVote={(vote) => {
                                         setVoteInfo({

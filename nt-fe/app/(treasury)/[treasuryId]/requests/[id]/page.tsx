@@ -60,7 +60,7 @@ export default function RequestPage({ params }: RequestPageProps) {
         tokenNetwork?: string;
     }>({});
     const [voteInfo, setVoteInfo] = useState<{
-        vote: "Approve" | "Reject" | "Remove";
+        vote: "Approve" | "Reject" | "Remove" | "Finalize";
         proposalIds: { proposalId: number; kind: ProposalPermissionKind }[];
     }>({ vote: "Approve", proposalIds: [] });
 

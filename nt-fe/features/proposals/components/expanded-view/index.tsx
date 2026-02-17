@@ -90,7 +90,7 @@ interface ExpandedViewProps {
     proposal: Proposal;
     policy: Policy;
     hideOpenInNewTab?: boolean;
-    onVote: (vote: "Approve" | "Reject" | "Remove") => void;
+    onVote: (vote: "Approve" | "Reject" | "Remove" | "Finalize") => void;
     onDeposit: (tokenSymbol?: string, tokenNetwork?: string) => void;
 }
 
