@@ -51,8 +51,7 @@ const BASELINE_BLOCK_TIMESTAMP: i64 = 1_770_076_800_000_000_000;
 
 /// Token snapshots from https://api.trezu.app/api/balance-changes
 /// Balances at or before BASELINE_BLOCK for webassemblymusic-treasury.sputnik-dao.near
-/// Note: `near` is seeded via insert_snapshot_record (needs real on-chain balance),
-///       `near:total` is excluded (computed value, not gap-fillable)
+/// Note: `near` is seeded via insert_snapshot_record (needs real on-chain balance)
 const TREASURY_TOKEN_SNAPSHOTS: &[(&str, &str)] = &[
     (
         "staking:astro-stakers.poolv1.near",
@@ -90,7 +89,7 @@ const TREASURY_TOKEN_SNAPSHOTS: &[(&str, &str)] = &[
 ];
 
 /// Token snapshots for testing-astradao.sputnik-dao.near
-/// Note: `near` and `near:total` excluded (same reason as above)
+/// Note: `near` excluded (same reason as above)
 const STAKING_TOKEN_SNAPSHOTS: &[(&str, &str)] = &[
     ("staking:figment.poolv1.near", "0.100003532026647260349538"),
     (
