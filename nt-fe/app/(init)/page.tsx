@@ -6,7 +6,7 @@ import { motion } from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/button";
 import Logo from "@/components/logo";
 import { useTreasury } from "@/hooks/use-treasury";
@@ -47,6 +47,8 @@ function GradientTitle() {
 
 export function Content() {
     const router = useRouter();
+    const [isWelcomeImageLoaded, setIsWelcomeImageLoaded] = useState(false);
+    const [isWelcomeImageFailed, setIsWelcomeImageFailed] = useState(false);
     const {
         accountId,
         connect,
@@ -226,7 +228,7 @@ export function Content() {
                     </div>
                     <div className="perspective-distant">
                         <motion.div
-                            className="w-full h-fit rounded-[16px] rounded-r-none"
+                            className="relative w-full h-fit rounded-[16px] rounded-r-none overflow-hidden min-h-[360px]"
                             initial={{ opacity: 0, x: 48, scale: 0.97 }}
                             animate={{ opacity: 1, x: 0, scale: 1 }}
                             transition={{
@@ -236,13 +238,42 @@ export function Content() {
                             }}
                             style={{ transformOrigin: "center bottom" }}
                         >
+                            <motion.div
+                                aria-hidden
+                                className="absolute inset-0 rounded-l-[16px] bg-linear-to-br from-blue-200/50 via-blue-100/40 to-white/40"
+                                initial={{ opacity: 1 }}
+                                animate={{
+                                    opacity:
+                                        isWelcomeImageLoaded &&
+                                        !isWelcomeImageFailed
+                                            ? 0
+                                            : [0.45, 0.75, 0.45],
+                                }}
+                                transition={{
+                                    duration: 1.6,
+                                    repeat:
+                                        isWelcomeImageLoaded &&
+                                        !isWelcomeImageFailed
+                                            ? 0
+                                            : Infinity,
+                                    ease: "easeInOut",
+                                }}
+                            />
                             <Image
                                 src="/welcome.svg"
                                 loading="eager"
                                 alt="welcome"
-                                width={0}
-                                height={0}
-                                className="h-full rounded-l-[16px] w-auto min-w-[calc(100%+200px)]"
+                                priority
+                                width={1000}
+                                height={500}
+                                onLoad={() => setIsWelcomeImageLoaded(true)}
+                                onError={() => setIsWelcomeImageFailed(true)}
+                                className={`h-full rounded-l-[16px] w-auto min-w-[calc(100%+200px)] transition-opacity duration-500 ${
+                                    isWelcomeImageLoaded &&
+                                    !isWelcomeImageFailed
+                                        ? "opacity-100"
+                                        : "opacity-0"
+                                }`}
                             />
                         </motion.div>
                     </div>
