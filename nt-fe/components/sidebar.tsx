@@ -1,15 +1,5 @@
 "use client";
 
-import {
-    ArrowRightLeft,
-    ChartColumn,
-    CreditCard,
-    HelpCircle,
-    type LucideIcon,
-    Send,
-    Settings,
-    Users,
-} from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useProposals } from "@/hooks/use-proposals";
@@ -27,10 +17,18 @@ import { NumberBadge } from "./number-badge";
 import { SponsoredActionsLimitNotice } from "./sponsored-actions-limit-notice";
 import { SupportCenterModal } from "./support-center-modal";
 import { TreasurySelector } from "./treasury-selector";
+import { AnimateIcon, IconProps } from "./animate-ui/icons/icon";
+import { ChartColumn } from "./animate-ui/icons/chart-column";
+import { Send } from "./animate-ui/icons/send";
+import { Users } from "./animate-ui/icons/users";
+import { Settings } from "./animate-ui/icons/settings";
+import { MessageCircleQuestion } from "./animate-ui/icons/message-circle-question";
+import { ArrowUpDown } from "./animate-ui/icons/arrow-up-down";
+import { CreditCard } from "./animate-ui/icons/credit-card";
 
 interface NavLinkProps {
     isActive: boolean;
-    icon: LucideIcon;
+    icon: React.ComponentType<IconProps<"default">>;
     label: string;
     showBadge?: boolean;
     badgeCount?: number;
@@ -50,33 +48,35 @@ function NavLink({
     showLabels = true,
 }: NavLinkProps) {
     return (
-        <Button
-            id={id}
-            variant="link"
-            tooltipContent={!showLabels ? label : undefined}
-            side="right"
-            onClick={onClick}
-            className={cn(
-                "flex relative items-center justify-between gap-3 text-sm font-medium transition-colors",
-                showLabels ? "px-3 py-[5.5px]" : "justify-center",
-                isActive
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-            )}
-        >
-            <div className="flex items-center gap-3">
-                <Icon className="size-5 shrink-0" />
-                {showLabels && label}
-            </div>
-            {showBadge && showLabels && <NumberBadge number={badgeCount} />}
-        </Button>
+        <AnimateIcon animateOnHover="default" asChild>
+            <Button
+                id={id}
+                variant="link"
+                tooltipContent={!showLabels ? label : undefined}
+                side="right"
+                onClick={onClick}
+                className={cn(
+                    "flex relative items-center group justify-between gap-3 text-sm font-medium transition-colors",
+                    showLabels ? "px-3 py-[5.5px]" : "justify-center",
+                    isActive
+                        ? "bg-accent text-accent-foreground"
+                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                )}
+            >
+                <div className="flex items-center gap-3">
+                    <Icon className="size-5 shrink-0" />
+                    {showLabels && label}
+                </div>
+                {showBadge && showLabels && <NumberBadge number={badgeCount} />}
+            </Button>
+        </AnimateIcon>
     );
 }
 
 const topNavLinks: {
     path: string;
     label: string;
-    icon: LucideIcon;
+    icon: React.ComponentType<IconProps<"default">>;
     roleRequired?: boolean;
     id?: string;
 }[] = [
@@ -91,7 +91,9 @@ const topNavLinks: {
     {
         path: "exchange",
         label: "Exchange",
-        icon: ArrowRightLeft,
+        icon: ({ className, ...props }) => (
+            <ArrowUpDown {...props} className={cn(className, "rotate-90")} />
+        ),
         roleRequired: true,
     },
     // { path: "earn", label: "Earn", icon: Database, roleRequired: true },
@@ -101,7 +103,7 @@ const topNavLinks: {
 const bottomNavLinks: {
     path: string;
     label: string;
-    icon: LucideIcon;
+    icon: React.ComponentType<IconProps<"default">>;
     id?: string;
 }[] = [
     { path: "members", label: "Members", icon: Users, id: "dashboard-step4" },
@@ -296,7 +298,7 @@ export function Sidebar({ onClose }: SidebarProps) {
                     <NavLink
                         id="help-support-link"
                         isActive={false}
-                        icon={HelpCircle}
+                        icon={MessageCircleQuestion}
                         label="Help & Support"
                         showLabels={!isReduced}
                         onClick={() => {
