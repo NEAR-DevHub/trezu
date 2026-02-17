@@ -28,6 +28,7 @@ export const ledgerWalletManifest = {
         storage: true,
         usb: true, // Required for Ledger USB
         hid: true, // Required for WebHID protocol
+        bluetooth: true, // Required for Ledger Nano X Bluetooth
         allowsOpen: [],
     },
 };
