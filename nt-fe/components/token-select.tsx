@@ -13,6 +13,7 @@ import { Button } from "./button";
 import { cn, formatBalance } from "@/lib/utils";
 import { ChainIcons } from "@/lib/api";
 import { useAggregatedTokens } from "@/hooks/use-assets";
+import { NEAR_CHAIN_ICONS } from "@/constants/token";
 import { useBridgeTokens } from "@/hooks/use-bridge-tokens";
 import Big from "@/lib/big";
 import { TokenDisplay } from "./token-display-with-network";
@@ -105,6 +106,11 @@ interface TokenSelectProps {
      * Default: "md"
      */
     iconSize?: "sm" | "md" | "lg";
+    /**
+     * Optional filter function to exclude specific tokens from the list.
+     * Return true to include the token, false to exclude it.
+     */
+    filterTokens?: (token: { address: string; symbol: string; network: string; residency?: string }) => boolean;
 }
 
 export default function TokenSelect({
@@ -116,6 +122,7 @@ export default function TokenSelect({
     classNames,
     showOnlyOwnedAssets = false,
     iconSize = "md",
+    filterTokens,
 }: TokenSelectProps) {
     const { treasuryId } = useTreasury();
     const { data: { tokens: treasuryAssets = [] } = {} } = useAssets(
@@ -166,7 +173,7 @@ export default function TokenSelect({
         const mapTreasuryNetwork = (n: any) => ({
             id: n.id,
             name: n.network,
-            chainIcons: n.chainIcons || null,
+            chainIcons: n.chainIcons || (n.id === "near" && n.residency === "Near" ? NEAR_CHAIN_ICONS : null),
             chainId: n.network,
             decimals: n.decimals,
             residency: n.residency,
@@ -195,7 +202,7 @@ export default function TokenSelect({
                         name:
                             treasuryToken.name +
                             (treasuryToken.isAggregated &&
-                            treasuryToken.networks.length > 1
+                                treasuryToken.networks.length > 1
                                 ? ` • ${treasuryToken.networks.length} Networks`
                                 : ""),
                         symbol: treasuryToken.symbol,
@@ -333,6 +340,52 @@ export default function TokenSelect({
             hasAnyBalance: ownedAssets.length > 0,
         };
     }, [assets, search, showOnlyOwnedAssets, aggregatedTreasuryTokens]);
+
+    // Apply custom filter if provided
+    const { yourAssets: filteredYourAssets, otherAssets: filteredOtherAssets, hasAnyBalance: filteredHasAnyBalance } = useMemo(() => {
+        if (!filterTokens) {
+            return { yourAssets, otherAssets, hasAnyBalance };
+        }
+
+        const applyFilter = (assets: typeof yourAssets) =>
+            assets
+                .map((asset) => {
+                    const filteredNetworks = asset.networks.filter((network) =>
+                        filterTokens({
+                            address: network.id,
+                            symbol: asset.symbol!,
+                            network: network.name,
+                            residency: network.residency,
+                        })
+                    );
+
+                    if (filteredNetworks.length === 0) return null;
+
+                    const baseAssetName = asset.assetName || asset.name.split(' • ')[0];
+                    const updatedName =
+                        filteredNetworks.length > 1
+                            ? `${baseAssetName} • ${filteredNetworks.length} Networks`
+                            : baseAssetName;
+
+                    return {
+                        ...asset,
+                        name: updatedName,
+                        networks: filteredNetworks,
+                        networkCount: filteredNetworks.length,
+                    };
+                })
+                .filter((asset): asset is NonNullable<typeof asset> => asset !== null);
+
+        const filteredOwned = applyFilter(yourAssets);
+        const filteredOther: any[] = applyFilter(otherAssets);
+
+        return {
+            yourAssets: filteredOwned,
+            otherAssets: filteredOther,
+            hasAnyBalance: filteredOwned.length > 0,
+        };
+    }, [yourAssets, otherAssets, hasAnyBalance, filterTokens]);
+
 
     const networkItems = useMemo(() => {
         if (!selectedAsset) return [];
@@ -571,7 +624,7 @@ export default function TokenSelect({
                             <ScrollArea className="h-[400px]">
                                 {showOnlyOwnedAssets ? (
                                     <>
-                                        {yourAssets.map((token) => (
+                                        {filteredYourAssets.map((token) => (
                                             <Button
                                                 key={token.id}
                                                 onClick={() =>
@@ -619,7 +672,7 @@ export default function TokenSelect({
                                                     )}
                                             </Button>
                                         ))}
-                                        {yourAssets.length === 0 && (
+                                        {filteredYourAssets.length === 0 && (
                                             <div className="text-center py-8 text-muted-foreground">
                                                 No tokens with balance found
                                             </div>
@@ -627,12 +680,12 @@ export default function TokenSelect({
                                     </>
                                 ) : hasAnyBalance ? (
                                     <>
-                                        {yourAssets.length > 0 && (
+                                        {filteredYourAssets.length > 0 && (
                                             <div className="mb-4">
                                                 <div className="text-xs font-medium text-muted-foreground uppercase px-2 py-2">
                                                     Your Asset
                                                 </div>
-                                                {yourAssets.map((token) => (
+                                                {filteredYourAssets.map((token) => (
                                                     <Button
                                                         key={token.id}
                                                         onClick={() =>
@@ -668,7 +721,7 @@ export default function TokenSelect({
                                                         {token.totalBalance !==
                                                             undefined &&
                                                             token.totalBalance >
-                                                                0 && (
+                                                            0 && (
                                                                 <div className="flex flex-col items-end">
                                                                     <span className="font-semibold">
                                                                         {token.totalBalance.toFixed(
@@ -689,12 +742,12 @@ export default function TokenSelect({
                                             </div>
                                         )}
 
-                                        {otherAssets.length > 0 && (
+                                        {filteredOtherAssets.length > 0 && (
                                             <div>
                                                 <div className="text-xs font-medium text-muted-foreground uppercase px-2 py-2">
                                                     Other Asset
                                                 </div>
-                                                {otherAssets.map((token) => (
+                                                {filteredOtherAssets.map((token) => (
                                                     <Button
                                                         key={token.id}
                                                         onClick={() =>
@@ -734,7 +787,7 @@ export default function TokenSelect({
                                     </>
                                 ) : (
                                     <>
-                                        {otherAssets.map((token) => (
+                                        {filteredOtherAssets.map((token) => (
                                             <Button
                                                 key={token.id}
                                                 onClick={() =>
@@ -767,8 +820,8 @@ export default function TokenSelect({
                                         ))}
                                     </>
                                 )}
-                                {yourAssets.length === 0 &&
-                                    otherAssets.length === 0 && (
+                                {filteredYourAssets.length === 0 &&
+                                    filteredOtherAssets.length === 0 && (
                                         <div className="text-center py-8 text-muted-foreground">
                                             No tokens found
                                         </div>

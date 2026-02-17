@@ -1,6 +1,7 @@
 import { IntentsQuoteResponse } from "@/lib/api";
 import { Token } from "@/components/token-input";
 import { encodeToMarkdown } from "@/lib/utils";
+import { getBatchStorageDepositIsRegistered } from "@/lib/api";
 
 interface ProposalBuilderParams {
   proposalData: IntentsQuoteResponse;
@@ -30,7 +31,8 @@ interface ProposalResult {
 
 interface ExchangeProposalResult {
   proposal: ProposalResult;
-  storageDepositTransaction?: {
+  // All additional transactions needed (storage deposits, registrations, etc.)
+  additionalTransactions?: Array<{
     receiverId: string;
     actions: Array<{
       type: "FunctionCall";
@@ -41,7 +43,7 @@ interface ExchangeProposalResult {
         deposit: string;
       };
     }>;
-  };
+  }>;
 }
 
 /**
@@ -72,12 +74,71 @@ export function buildProposalDescription(
 }
 
 /**
- * Builds the proposal structure for native NEAR swaps
- * Returns the main proposal and a separate storage deposit transaction
+ * Helper to create a storage deposit transaction
  */
-export function buildNativeNEARProposal(params: ProposalBuilderParams): ExchangeProposalResult {
-  const { proposalData, sellToken, receiveToken, slippageTolerance } = params;
+function createStorageDepositTransaction(receiverId: string, accountId: string) {
+  return {
+    receiverId,
+    actions: [
+      {
+        type: "FunctionCall" as const,
+        params: {
+          methodName: "storage_deposit",
+          args: {
+            account_id: accountId,
+            registration_only: true,
+          },
+          gas: "10000000000000", // 10 TGas
+          deposit: "1250000000000000000000", // 0.00125 NEAR for storage
+        },
+      },
+    ],
+  };
+}
+
+/**
+ * Helper to check if a token is an FT token that requires storage deposit
+ */
+function isFTToken(token: Token): boolean {
+  return token.residency === "ft" ||
+    (token.network === "near" && !token.address.startsWith("nep141:"));
+}
+
+/**
+ * Helper to normalize additional transactions array
+ * Returns undefined if empty, otherwise returns the array
+ */
+function normalizeAdditionalTransactions(
+  transactions: ExchangeProposalResult["additionalTransactions"]
+): ExchangeProposalResult["additionalTransactions"] {
+  return transactions && transactions.length > 0 ? transactions : undefined;
+}
+
+/**
+ * Builds the proposal structure for native NEAR swaps
+ * Checks if treasury is registered on wrap.near and only adds storage deposit if needed
+ * Always adds deposit address registration (required for swap execution)
+ */
+export async function buildNativeNEARProposal(params: ProposalBuilderParams): Promise<ExchangeProposalResult> {
+  const { proposalData, sellToken, receiveToken, slippageTolerance, treasuryId } = params;
   const amountInSmallestUnit = proposalData.quote.amountIn;
+
+  const additionalTransactions = [];
+
+  // Check if treasury is registered on wrap.near
+  const registrations = await getBatchStorageDepositIsRegistered([
+    { accountId: treasuryId, tokenId: "wrap.near" }
+  ]);
+
+  const isTreasuryRegistered = registrations.length > 0 && registrations[0].isRegistered;
+
+  // 1. Storage deposit for treasury account on wrap.near (only if not registered)
+  if (!isTreasuryRegistered) {
+    additionalTransactions.push(createStorageDepositTransaction("wrap.near", treasuryId));
+  }
+
+  // 2. Storage deposit for deposit address on wrap.near (always needed)
+  additionalTransactions.push(createStorageDepositTransaction("wrap.near", proposalData.quote.depositAddress));
 
   return {
     proposal: {
@@ -112,23 +173,7 @@ export function buildNativeNEARProposal(params: ProposalBuilderParams): Exchange
         },
       },
     },
-    storageDepositTransaction: {
-      receiverId: "wrap.near",
-      actions: [
-        {
-          type: "FunctionCall",
-          params: {
-            methodName: "storage_deposit",
-            args: {
-              account_id: proposalData.quote.depositAddress,
-              registration_only: true,
-            },
-            gas: "10000000000000", // 10 TGas
-            deposit: "1250000000000000000000", // 0.00125 NEAR for storage
-          },
-        },
-      ],
-    },
+    additionalTransactions: normalizeAdditionalTransactions(additionalTransactions),
   };
 }
 
@@ -136,16 +181,38 @@ export function buildNativeNEARProposal(params: ProposalBuilderParams): Exchange
  * Builds the proposal structure for fungible token swaps
  * - For FT tokens (network === "near"): Use ft_transfer on the token contract
  * - For Intents tokens (network !== "near"): Use mt_transfer on intents.near
- * Returns the main proposal and optionally a separate storage deposit transaction
+ * Checks treasury registration on receive token (if FT) and only adds if needed
+ * Always adds deposit address registration on sell token (if FT, required for swap execution)
  */
-export function buildFungibleTokenProposal(params: ProposalBuilderParams): ExchangeProposalResult {
-  const { proposalData, sellToken, receiveToken, slippageTolerance } = params;
+export async function buildFungibleTokenProposal(params: ProposalBuilderParams): Promise<ExchangeProposalResult> {
+  const { proposalData, sellToken, receiveToken, slippageTolerance, treasuryId } = params;
   const amountInSmallestUnit = proposalData.quote.amountIn;
   const originAsset = sellToken.address;
   const isNearToken = sellToken.network === "near" && !sellToken.address.startsWith("nep141:");
 
+  const additionalTransactions = [];
+
+  // Check if receive token is FT and needs treasury registration
+  const isReceiveFT = isFTToken(receiveToken);
+  let isTreasuryRegisteredOnReceiveToken = false;
+
+  if (isReceiveFT && receiveToken.address) {
+    const registrations = await getBatchStorageDepositIsRegistered([{
+      accountId: treasuryId,
+      tokenId: receiveToken.address
+    }]);
+    isTreasuryRegisteredOnReceiveToken = registrations[0]?.isRegistered || false;
+  }
+
   if (isNearToken) {
-    // For NEAR FT tokens, use ft_transfer on the token contract
+    // For NEAR FT tokens: always add deposit address registration on sell token
+    additionalTransactions.push(createStorageDepositTransaction(sellToken.address, proposalData.quote.depositAddress));
+
+    // Add treasury registration on receive token only if not registered and it's FT
+    if (isReceiveFT && receiveToken.address && !isTreasuryRegisteredOnReceiveToken) {
+      additionalTransactions.push(createStorageDepositTransaction(receiveToken.address, treasuryId));
+    }
+
     return {
       proposal: {
         description: buildProposalDescription(
@@ -173,26 +240,15 @@ export function buildFungibleTokenProposal(params: ProposalBuilderParams): Excha
           },
         },
       },
-      storageDepositTransaction: {
-        receiverId: sellToken.address,
-        actions: [
-          {
-            type: "FunctionCall",
-            params: {
-              methodName: "storage_deposit",
-              args: {
-                account_id: proposalData.quote.depositAddress,
-                registration_only: true,
-              },
-              gas: "10000000000000", // 10 TGas
-              deposit: "1250000000000000000000", // 0.00125 NEAR for storage
-            },
-          },
-        ],
-      },
+      additionalTransactions: normalizeAdditionalTransactions(additionalTransactions),
     };
   } else {
-    // For intents tokens, use mt_transfer on intents.near (no storage deposit needed)
+    // For intents tokens: no deposit address registration needed
+    // Only add treasury registration on receive token if not registered and it's FT
+    if (isReceiveFT && receiveToken.address && !isTreasuryRegisteredOnReceiveToken) {
+      additionalTransactions.push(createStorageDepositTransaction(receiveToken.address, treasuryId));
+    }
+
     return {
       proposal: {
         description: buildProposalDescription(
@@ -221,8 +277,92 @@ export function buildFungibleTokenProposal(params: ProposalBuilderParams): Excha
           },
         },
       },
-      // No storage deposit transaction needed for intents tokens
+      additionalTransactions: normalizeAdditionalTransactions(additionalTransactions),
     };
   }
+}
+
+/**
+ * Builds a proposal for depositing native NEAR to get wNEAR (FT NEAR)
+ * This wraps native NEAR into wNEAR on wrap.near contract
+ */
+export async function buildNEARDepositProposal(params: ProposalBuilderParams): Promise<ExchangeProposalResult> {
+  const { proposalData, sellToken, receiveToken, slippageTolerance, treasuryId } = params;
+  const amountInSmallestUnit = proposalData.quote.amountIn;
+
+  // Check if treasury is registered on wrap.near
+  const registrations = await getBatchStorageDepositIsRegistered([
+    { accountId: treasuryId, tokenId: "wrap.near" }
+  ]);
+  const isTreasuryRegistered = registrations.length > 0 && registrations[0].isRegistered;
+
+  const additionalTransactions = [];
+
+  // Only add storage deposit if not registered
+  if (!isTreasuryRegistered) {
+    additionalTransactions.push(createStorageDepositTransaction("wrap.near", treasuryId));
+  }
+
+  return {
+    proposal: {
+      description: buildProposalDescription(
+        proposalData,
+        sellToken,
+        receiveToken,
+        slippageTolerance
+      ),
+      kind: {
+        FunctionCall: {
+          receiver_id: "wrap.near",
+          actions: [
+            {
+              method_name: "near_deposit",
+              args: Buffer.from(JSON.stringify({})).toString("base64"),
+              deposit: amountInSmallestUnit,
+              gas: "10000000000000", // 10 TGas
+            },
+          ],
+        },
+      },
+    },
+    additionalTransactions: normalizeAdditionalTransactions(additionalTransactions),
+  };
+}
+
+/**
+ * Builds a proposal for withdrawing wNEAR (FT NEAR) to get native NEAR
+ * This unwraps wNEAR on wrap.near contract back to native NEAR
+ */
+export function buildNEARWithdrawProposal(params: ProposalBuilderParams): ExchangeProposalResult {
+  const { proposalData, sellToken, receiveToken, slippageTolerance } = params;
+  const amountInSmallestUnit = proposalData.quote.amountIn;
+
+  return {
+    proposal: {
+      description: buildProposalDescription(
+        proposalData,
+        sellToken,
+        receiveToken,
+        slippageTolerance
+      ),
+      kind: {
+        FunctionCall: {
+          receiver_id: "wrap.near",
+          actions: [
+            {
+              method_name: "near_withdraw",
+              args: Buffer.from(
+                JSON.stringify({
+                  amount: amountInSmallestUnit,
+                })
+              ).toString("base64"),
+              deposit: "1", // 1 yoctoNEAR for storage
+              gas: "150000000000000", // 150 TGas
+            },
+          ],
+        },
+      },
+    },
+  };
 }
 

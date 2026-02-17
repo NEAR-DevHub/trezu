@@ -1,6 +1,47 @@
 import Big from "@/lib/big";
 
 /**
+ * Checks if a token is native NEAR
+ * If residency is provided, it must be "Near"
+ * If residency is not provided, just check address
+ */
+export function isNativeNEAR(address: string, residency?: string): boolean {
+    return address === "near" && (!residency || residency === "Near");
+}
+
+/**
+ * Checks if a token is FT NEAR (wrap.near)
+ * If residency is provided, it must be "Ft"
+ * If residency is not provided, just check address
+ */
+export function isFTNEAR(address: string, residency?: string): boolean {
+    return address === "wrap.near" && (!residency || residency === "Ft");
+}
+
+/**
+ * Checks if this is a NEAR deposit conversion (native NEAR → FT NEAR)
+ */
+export function isNEARDeposit(sellToken: { address: string; residency?: string }, receiveToken: { address: string; residency?: string }): boolean {
+    return isNativeNEAR(sellToken.address, sellToken.residency) &&
+        isFTNEAR(receiveToken.address, receiveToken.residency);
+}
+
+/**
+ * Checks if this is a NEAR withdraw conversion (FT NEAR → native NEAR)
+ */
+export function isNEARWithdraw(sellToken: { address: string; residency?: string }, receiveToken: { address: string; residency?: string }): boolean {
+    return isFTNEAR(sellToken.address, sellToken.residency) &&
+        isNativeNEAR(receiveToken.address, receiveToken.residency);
+}
+
+/**
+ * Checks if this is a NEAR wrap/unwrap conversion (1:1 exchange)
+ */
+export function isNEARWrapConversion(sellToken: { address: string; residency?: string }, receiveToken: { address: string; residency?: string }): boolean {
+    return isNEARDeposit(sellToken, receiveToken) || isNEARWithdraw(sellToken, receiveToken);
+}
+
+/**
  * Formats an asset address for the 1Click Intents API
  * Native NEAR uses "wrap.near", other tokens use their address as-is
  */
@@ -8,8 +49,8 @@ export function formatAssetForIntentsAPI(tokenAddress: string): string {
     return tokenAddress.startsWith("nep")
         ? tokenAddress
         : tokenAddress === "near"
-          ? "nep141:wrap.near"
-          : `nep141:${tokenAddress}`;
+            ? "nep141:wrap.near"
+            : `nep141:${tokenAddress}`;
 }
 
 /**
@@ -67,17 +108,14 @@ export function calculateMarketPriceDifference(
 
     try {
         // Calculate actual token amounts
-        const sellAmount = Big(amountIn).div(Big(10).pow(sellTokenDecimals));
         const receiveAmount = Big(amountOut).div(
             Big(10).pow(receiveTokenDecimals),
         );
 
         // Calculate expected USD value based on market prices
-        const expectedSellUSD = sellAmount.mul(sellTokenPrice);
         const expectedReceiveUSD = receiveAmount.mul(receiveTokenPrice);
 
         // Get actual USD values from quote
-        const actualSellUSD = Big(amountInUsd);
         const actualReceiveUSD = Big(amountOutUsd);
 
         // Calculate the rate difference

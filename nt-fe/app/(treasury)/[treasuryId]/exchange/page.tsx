@@ -38,6 +38,10 @@ import { WarningAlert } from "@/components/warning-alert";
 import { useFormatDate } from "@/components/formatted-date";
 import {
     calculateMarketPriceDifference,
+    isNEARWrapConversion,
+    isNEARDeposit,
+    isNEARWithdraw,
+    isNativeNEAR,
 } from "./utils";
 import { useCountdownTimer } from "./hooks/use-countdown-timer";
 import { useExchangeQuote } from "./hooks/use-exchange-quote";
@@ -47,6 +51,8 @@ import { InfoDisplay } from "@/components/info-display";
 import {
     buildNativeNEARProposal,
     buildFungibleTokenProposal,
+    buildNEARDepositProposal,
+    buildNEARWithdrawProposal,
 } from "./utils/proposal-builder";
 import {
     usePageTour,
@@ -77,6 +83,36 @@ function Step1({ handleNext }: StepProps) {
     const sellAmount = form.watch("sellAmount");
 
     const slippageTolerance = form.watch("slippageTolerance") || 0.5;
+
+    // Check if sell token is wNEAR (FT NEAR with Ft residency, not Intents)
+    const isSellTokenFTNEAR = sellToken.address === "wrap.near" && sellToken.residency === "Ft";
+
+    // Filter function for receive token - hide native NEAR unless FT NEAR is selected
+    const filterReceiveTokens = useMemo(() => {
+        return (token: { address: string; symbol: string; network: string; residency?: string }) => {
+            // Hide native NEAR unless selling FT NEAR (for unwrapping)
+            if (token.address === "near" && token.residency === "Near") {
+                return isSellTokenFTNEAR;
+            }
+            // FT NEAR and Intents NEAR are always visible
+            return true;
+        };
+    }, [isSellTokenFTNEAR]);
+
+    // Reset receive token if it's no longer valid based on filter
+    useEffect(() => {
+        const isReceiveTokenValid = filterReceiveTokens({
+            address: receiveToken.address,
+            symbol: receiveToken.symbol,
+            network: receiveToken.network,
+            residency: receiveToken.residency,
+        });
+
+        if (!isReceiveTokenValid) {
+            // Reset to a default valid token (ETH or first available)
+            form.setValue("receiveToken", ETH_TOKEN);
+        }
+    }, [isSellTokenFTNEAR, receiveToken, filterReceiveTokens, form]);
 
     // Check if tokens are the same
     const areSameTokens = useMemo(() => {
@@ -218,6 +254,9 @@ function Step1({ handleNext }: StepProps) {
                 loading={isLoadingQuote}
                 customValue={quoteData?.quote.amountOutFormatted || ""}
                 dynamicFontSize={true}
+                tokenSelect={{
+                    filterTokens: filterReceiveTokens,
+                }}
             />
 
             {/* Rate and Slippage */}
@@ -319,17 +358,22 @@ function Step2({ handleBack }: StepProps) {
         ? receiveTotal * receiveTokenData.price
         : 0;
 
+    // Check if this is a NEAR ↔ wrap.near conversion (1:1, no price difference)
+    const isWrapConversion = isNEARWrapConversion(sellToken, receiveToken);
+
     const marketPriceDifference = localLiveQuoteData
-        ? calculateMarketPriceDifference(
-            localLiveQuoteData.quote.amountInUsd,
-            localLiveQuoteData.quote.amountOutUsd,
-            localLiveQuoteData.quote.amountIn,
-            localLiveQuoteData.quote.amountOut,
-            sellToken.decimals,
-            receiveToken.decimals,
-            sellTokenData?.price,
-            receiveTokenData?.price,
-        )
+        ? isWrapConversion
+            ? { percentDifference: "0", isFavorable: true, hasMarketData: true }
+            : calculateMarketPriceDifference(
+                localLiveQuoteData.quote.amountInUsd,
+                localLiveQuoteData.quote.amountOutUsd,
+                localLiveQuoteData.quote.amountIn,
+                localLiveQuoteData.quote.amountOut,
+                sellToken.decimals,
+                receiveToken.decimals,
+                sellTokenData?.price,
+                receiveTokenData?.price,
+            )
         : null;
 
     return (
@@ -580,7 +624,7 @@ export default function ExchangePage() {
 
         try {
             const proposalBond = policy?.proposal_bond || "0";
-            const isSellingNativeNEAR = data.sellToken.address === "near";
+            const sellingNativeNEAR = isNativeNEAR(data.sellToken.address, data.sellToken.residency);
 
             const proposalParams = {
                 proposalData: proposalDataFromForm,
@@ -591,17 +635,30 @@ export default function ExchangePage() {
                 proposalBond,
             };
 
-            const result = isSellingNativeNEAR
-                ? buildNativeNEARProposal(proposalParams)
-                : buildFungibleTokenProposal(proposalParams);
+            let result;
 
-            await createProposal("Exchange request submitted", {
+            // Detect NEAR deposit: native NEAR -> FT NEAR (wrap.near)
+            if (isNEARDeposit(data.sellToken, data.receiveToken)) {
+                result = await buildNEARDepositProposal(proposalParams);
+            }
+            // Detect NEAR withdraw: FT NEAR (wrap.near) -> native NEAR
+            else if (isNEARWithdraw(data.sellToken, data.receiveToken)) {
+                result = buildNEARWithdrawProposal(proposalParams);
+            }
+            // Regular exchange: native NEAR to other tokens
+            else if (sellingNativeNEAR) {
+                result = await buildNativeNEARProposal(proposalParams);
+            }
+            // Regular exchange: FT tokens or intents tokens
+            else {
+                result = await buildFungibleTokenProposal(proposalParams);
+            }
+
+            await createProposal('Exchange request submitted', {
                 treasuryId: selectedTreasury,
                 proposal: result.proposal,
                 proposalBond,
-                additionalTransactions: result.storageDepositTransaction
-                    ? [result.storageDepositTransaction]
-                    : undefined,
+                additionalTransactions: result.additionalTransactions,
             });
 
             form.reset();

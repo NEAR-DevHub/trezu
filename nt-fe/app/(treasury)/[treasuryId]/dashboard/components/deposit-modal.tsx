@@ -193,15 +193,15 @@ export function DepositModal({
         setAllNetworks(formattedNetworks);
         setAssetNetworkMap(assetToNetworks);
 
-        // Auto-select asset based on prefillTokenSymbol or default to USDT
-        const targetSymbol = prefillTokenSymbol?.toLowerCase() || "usdt";
+        // Auto-select asset based on prefillTokenSymbol or default to USDC
+        const targetSymbol = prefillTokenSymbol?.toLowerCase() || "usdc";
         const targetAsset = formattedAssets.find(
             (asset) =>
                 asset.symbol?.toLowerCase() === targetSymbol ||
                 // Fallback to USDT if prefill not found
                 (!prefillTokenSymbol &&
-                    (asset.symbol?.toLowerCase() === "usdt" ||
-                        asset.name?.toLowerCase().includes("tether"))),
+                    (asset.symbol?.toLowerCase() === "usdc" ||
+                        asset.name?.toLowerCase().includes("usdc"))),
         );
 
         if (targetAsset) {
@@ -390,9 +390,9 @@ export function DepositModal({
                                                         {selectedAsset.icon?.startsWith(
                                                             "http",
                                                         ) ||
-                                                        selectedAsset.icon?.startsWith(
-                                                            "data:",
-                                                        ) ? (
+                                                            selectedAsset.icon?.startsWith(
+                                                                "data:",
+                                                            ) ? (
                                                             <img
                                                                 src={
                                                                     selectedAsset.icon
@@ -455,9 +455,9 @@ export function DepositModal({
                                                             {selectedNetwork.icon?.startsWith(
                                                                 "http",
                                                             ) ||
-                                                            selectedNetwork.icon?.startsWith(
-                                                                "data:",
-                                                            ) ? (
+                                                                selectedNetwork.icon?.startsWith(
+                                                                    "data:",
+                                                                ) ? (
                                                                 <div className="w-6 h-6 rounded-full object-cover">
                                                                     <img
                                                                         src={
@@ -471,10 +471,9 @@ export function DepositModal({
                                                                 </div>
                                                             ) : (
                                                                 <div
-                                                                    className={`w-6 h-6 rounded-full ${
-                                                                        selectedNetwork.gradient ||
+                                                                    className={`w-6 h-6 rounded-full ${selectedNetwork.gradient ||
                                                                         "bg-linear-to-br from-green-500 to-teal-500"
-                                                                    } flex items-center justify-center text-white text-xs font-bold`}
+                                                                        } flex items-center justify-center text-white text-xs font-bold`}
                                                                 >
                                                                     <span>
                                                                         {
@@ -492,15 +491,15 @@ export function DepositModal({
                                                         {/* Info message for "Other" asset */}
                                                         {selectedAsset?.id ===
                                                             "other" && (
-                                                            <div className="break-all overflow-wrap-anywhere text-wrap mt-2 text-sm text-general-info-foreground">
-                                                                You can deposit
-                                                                any token not
-                                                                listed in the
-                                                                assets, but only
-                                                                via the NEAR
-                                                                network.
-                                                            </div>
-                                                        )}
+                                                                <div className="break-all overflow-wrap-anywhere text-wrap mt-2 text-sm text-general-info-foreground">
+                                                                    You can deposit
+                                                                    any token not
+                                                                    listed in the
+                                                                    assets, but only
+                                                                    via the NEAR
+                                                                    network.
+                                                                </div>
+                                                            )}
                                                     </div>
                                                 ) : (
                                                     <span className="text-muted-foreground text-lg font-normal">

@@ -167,6 +167,76 @@ export function formatNearAmount(
 }
 
 /**
+ * Format a number with smart precision and thousand separators
+ * - For numbers >= 1: shows up to 4 decimals
+ * - For numbers < 1: shows up to 8 significant figures
+ * 
+ * @param value - The value to format (number, string, or Big)
+ * @returns Formatted string with smart precision and thousand separators
+ * 
+ * @example
+ * formatSmartAmount(1234.5678) => "1,234.5678"
+ * formatSmartAmount(0.000123456) => "0.00012346"
+ * formatSmartAmount(0.00000000012) => "0.00000000012"
+ */
+export function formatSmartAmount(value: number | string | Big): string {
+    const num = typeof value === 'number' || typeof value === 'string'
+        ? parseFloat(value.toString())
+        : parseFloat(value.toString());
+
+    // Handle zero
+    if (num === 0) return "0";
+
+    const absNum = Math.abs(num);
+    const absBig = typeof value === 'object' && 'toFixed' in value
+        ? value.abs()
+        : Big(absNum.toString());
+
+    let formatted: string;
+
+    // For numbers >= 1, show up to 4 decimals
+    if (absNum >= 1) {
+        formatted = absBig.toFixed(4).replace(/\.?0+$/, '');
+    } else {
+        // For small numbers, find first significant digit and show up to 8 significant figures
+        const str = absNum.toExponential();
+        const [, exponent] = str.split('e');
+        const exp = Math.abs(parseInt(exponent));
+
+        // Show enough decimals to display ~6-8 significant figures
+        const decimalPlaces = Math.min(exp + 6, 18);
+        formatted = absBig.toFixed(decimalPlaces).replace(/\.?0+$/, '');
+    }
+
+    // Add thousands separator using locale formatting
+    const parts = formatted.split(".");
+    const integerPart = parseInt(parts[0]).toLocaleString();
+    return parts[1] ? `${integerPart}.${parts[1]}` : integerPart;
+}
+
+/**
+ * Format an activity amount with sign (+/-) for display in transaction lists
+ * Uses smart precision: 4 decimals for amounts >= 1, up to 8 significant figures for smaller amounts
+ * NOTE: Expects amount to already be in human-readable format (e.g., "0.000123" NEAR, not yoctoNEAR)
+ * 
+ * @param amount - The amount in human-readable format (positive for received, negative for sent)
+ * @returns Formatted amount with sign and smart precision, e.g., "+1,234.5678" or "-0.000123"
+ */
+export function formatActivityAmount(
+    amount: string,
+): string {
+    const num = parseFloat(amount);
+
+    // Handle zero
+    if (num === 0) return "+0";
+
+    const sign = num >= 0 ? "+" : "-";
+    const formatted = formatSmartAmount(Math.abs(num));
+
+    return `${sign}${formatted}`;
+}
+
+/**
  * Decodes base64 encoded function call arguments
  * @param args - Base64 encoded string
  * @returns Parsed JSON object or null if decoding fails

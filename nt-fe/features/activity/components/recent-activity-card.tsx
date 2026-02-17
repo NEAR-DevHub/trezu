@@ -20,9 +20,8 @@ import {
 import { EmptyState } from "@/components/empty-state";
 import { useRecentActivity } from "@/hooks/use-treasury-queries";
 import { useSubscription } from "@/hooks/use-subscription";
-import { useProposals } from "@/hooks/use-proposals";
 import { useTreasury } from "@/hooks/use-treasury";
-import { cn } from "@/lib/utils";
+import { cn, formatActivityAmount, formatSmartAmount } from "@/lib/utils";
 import { formatHistoryDuration, getFromAccount, getToAccount } from "../utils/history-utils";
 import { useState, useMemo, useEffect } from "react";
 import type { RecentActivity as RecentActivityType } from "@/lib/api";
@@ -53,7 +52,6 @@ import Link from "next/link";
 import { Checkbox } from "@/components/ui/checkbox";
 
 const ITEMS_ON_DASHBOARD = 10;
-const BATCH_SIZE = 25;
 const MAX_ITEMS = 100;
 
 const columnHelper = createColumnHelper<GroupedActivity>();
@@ -141,14 +139,13 @@ export function RecentActivity() {
     const [selectedActivity, setSelectedActivity] = useState<RecentActivityType | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-    const [fetchLimit, setFetchLimit] = useState(BATCH_SIZE);
 
     const {
         data: response,
         isLoading,
     } = useRecentActivity(
         treasuryId,
-        fetchLimit,
+        MAX_ITEMS,
         0,
         hideSmallTransactions ? 1 : undefined,
     );
@@ -163,30 +160,6 @@ export function RecentActivity() {
         () => groupStakingActivities(activities),
         [activities],
     );
-
-    // Dynamically fetch more data if needed
-    useEffect(() => {
-        // Only fetch more if:
-        // 1. We have data
-        // 2. We don't have enough grouped rows
-        // 3. We haven't reached the max limit
-        // 4. We're not currently loading
-        if (
-            !isLoading &&
-            activities.length > 0 &&
-            groupedActivities.length < ITEMS_ON_DASHBOARD &&
-            fetchLimit < MAX_ITEMS &&
-            activities.length >= fetchLimit // We got all the data we asked for
-        ) {
-            const nextLimit = Math.min(fetchLimit + BATCH_SIZE, MAX_ITEMS);
-            setFetchLimit(nextLimit);
-        }
-    }, [activities.length, groupedActivities.length, fetchLimit, isLoading]);
-
-    // Reset fetch limit when filters change
-    useEffect(() => {
-        setFetchLimit(BATCH_SIZE);
-    }, [hideSmallTransactions, treasuryId]);
 
     // Take only the first ITEMS_ON_DASHBOARD after grouping
     const displayedActivities = useMemo(
@@ -209,28 +182,6 @@ export function RecentActivity() {
     const handleActivityClick = (activity: RecentActivityType) => {
         setSelectedActivity(activity);
         setIsModalOpen(true);
-    };
-
-    const formatAmount = (amount: string, decimals: number) => {
-        const num = parseFloat(amount);
-        const absNum = Math.abs(num);
-        const sign = num >= 0 ? "+" : "-";
-
-        const decimalPlaces = absNum >= 1 ? 2 : Math.min(6, decimals);
-
-        return `${sign}${absNum.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: decimalPlaces,
-        })}`;
-    };
-
-    const formatSwapAmount = (amount: string, decimals: number) => {
-        const num = Math.abs(parseFloat(amount));
-        const decimalPlaces = num >= 1 ? 2 : Math.min(6, decimals);
-        return num.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: decimalPlaces,
-        });
     };
 
     const getActivityType = (activity: RecentActivityType) => {
@@ -339,9 +290,8 @@ export function RecentActivity() {
                             <div className="flex items-center justify-end shrink-0">
                                 <div className="flex flex-col items-end gap-0.5">
                                     <div className="text-sm sm:text-base whitespace-nowrap font-semibold text-general-success-foreground">
-                                        {formatAmount(
-                                            grouped.totalAmount,
-                                            grouped.tokenMetadata.decimals,
+                                        {formatActivityAmount(
+                                            grouped.totalAmount
                                         )}{" "}
                                         {grouped.tokenMetadata.symbol}
                                     </div>
@@ -382,9 +332,8 @@ export function RecentActivity() {
                                     {swap.sentAmount &&
                                         swap.sentTokenMetadata ? (
                                         <span className="font-semibold text-general-destructive-foreground">
-                                            {formatSwapAmount(
-                                                swap.sentAmount,
-                                                swap.sentTokenMetadata.decimals,
+                                            {formatSmartAmount(
+                                                swap.sentAmount
                                             )}{" "}
                                             {swap.sentTokenMetadata.symbol}
                                         </span>
@@ -395,9 +344,8 @@ export function RecentActivity() {
                                     )}
                                     <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                                     <span className="font-semibold text-general-success-foreground">
-                                        {formatSwapAmount(
-                                            swap.receivedAmount,
-                                            swap.receivedTokenMetadata.decimals,
+                                        {formatSmartAmount(
+                                            swap.receivedAmount
                                         )}{" "}
                                         {swap.receivedTokenMetadata.symbol}
                                     </span>
@@ -423,9 +371,8 @@ export function RecentActivity() {
                                             : "text-foreground"
                                     )}
                                 >
-                                    {formatAmount(
-                                        activity.amount,
-                                        activity.tokenMetadata.decimals,
+                                    {formatActivityAmount(
+                                        activity.amount
                                     )}{" "}
                                     {activity.tokenMetadata.symbol}
                                 </div>
@@ -591,9 +538,8 @@ export function RecentActivity() {
                                                                     <div className="flex items-center justify-end shrink-0 pr-10">
                                                                         <div className="flex flex-col items-end gap-0.5">
                                                                             <div className="text-sm sm:text-base whitespace-nowrap font-semibold text-general-success-foreground">
-                                                                                {formatAmount(
-                                                                                    activity.amount,
-                                                                                    activity.tokenMetadata.decimals,
+                                                                                {formatActivityAmount(
+                                                                                    activity.amount
                                                                                 )}{" "}
                                                                                 {activity.tokenMetadata.symbol}
                                                                             </div>
