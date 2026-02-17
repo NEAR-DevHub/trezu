@@ -1865,6 +1865,42 @@ pub async fn resolve_missing_tx_hashes(
     Ok(resolved)
 }
 
+/// Check whether any receipt outcome log in a transaction mentions the given account ID.
+///
+/// Used to filter intents.near candidate transaction hashes: since intents.near is a
+/// high-traffic contract, multiple unrelated transactions may modify its state in the
+/// same block. This function verifies that a transaction is actually relevant to a
+/// specific account by searching its execution outcome logs.
+fn tx_outcome_logs_mention_account(
+    tx_response: &near_jsonrpc_client::methods::tx::RpcTransactionResponse,
+    account_id: &str,
+) -> bool {
+    use near_primitives::views::FinalExecutionOutcomeViewEnum;
+
+    let Some(ref final_outcome) = tx_response.final_execution_outcome else {
+        return false;
+    };
+
+    let receipts_outcome = match final_outcome {
+        FinalExecutionOutcomeViewEnum::FinalExecutionOutcome(outcome) => {
+            &outcome.receipts_outcome
+        }
+        FinalExecutionOutcomeViewEnum::FinalExecutionOutcomeWithReceipt(outcome) => {
+            &outcome.final_outcome.receipts_outcome
+        }
+    };
+
+    for receipt_outcome in receipts_outcome {
+        for log in &receipt_outcome.outcome.logs {
+            if log.contains(account_id) {
+                return true;
+            }
+        }
+    }
+
+    false
+}
+
 /// Helper to insert a balance change record at a specific block
 ///
 /// This is exposed for testing purposes to allow direct insertion of records
@@ -2050,24 +2086,71 @@ pub async fn insert_balance_change_record(
         }
     }
 
-    // For intents tokens: query account_changes on intents.near to find candidate tx hashes
+    // For intents tokens: query account_changes on intents.near to find candidate tx hashes,
+    // then filter to only those whose execution outcome logs mention the monitored account.
+    // intents.near is a high-traffic contract — many unrelated transactions modify its state
+    // per block, so we must verify each candidate is actually relevant to this account.
     if transaction_hashes.is_empty() && token_id.starts_with("intents.near:") {
         match block_info::get_account_changes(network, "intents.near", block_height).await {
             Ok(changes) => {
+                let mut candidates: Vec<String> = Vec::new();
                 for change in &changes {
                     use near_primitives::views::StateChangeCauseView;
                     if let StateChangeCauseView::TransactionProcessing { tx_hash } = &change.cause {
                         let hash = tx_hash.to_string();
-                        if !transaction_hashes.contains(&hash) {
-                            transaction_hashes.push(hash);
+                        if !candidates.contains(&hash) {
+                            candidates.push(hash);
                         }
                     }
                 }
                 log::debug!(
                     "Intents token at block {}: found {} candidate tx hash(es) from account_changes on intents.near",
                     block_height,
-                    transaction_hashes.len()
+                    candidates.len()
                 );
+
+                // If there's only one candidate, it must be correct (we know the
+                // balance changed at this block). Only filter when there are multiple
+                // candidates to disambiguate — this avoids unnecessary RPC calls.
+                if candidates.len() == 1 {
+                    transaction_hashes.push(candidates.into_iter().next().unwrap());
+                } else {
+                    // Filter candidates: only keep tx hashes whose receipt outcome logs
+                    // mention the monitored account_id.
+                    for candidate in &candidates {
+                        match block_info::get_transaction(network, candidate, "intents.near")
+                            .await
+                        {
+                            Ok(tx_response) => {
+                                let mentions_account =
+                                    tx_outcome_logs_mention_account(&tx_response, account_id);
+                                if mentions_account {
+                                    log::debug!(
+                                        "Intents tx {} confirmed relevant to {} (found in receipt logs)",
+                                        candidate,
+                                        account_id
+                                    );
+                                    transaction_hashes.push(candidate.clone());
+                                } else {
+                                    log::debug!(
+                                        "Intents tx {} filtered out — no mention of {} in receipt logs",
+                                        candidate,
+                                        account_id
+                                    );
+                                }
+                            }
+                            Err(e) => {
+                                log::warn!(
+                                    "Failed to query transaction {} for intents filtering: {} — including as candidate",
+                                    candidate,
+                                    e
+                                );
+                                // On error, include the candidate to avoid losing data
+                                transaction_hashes.push(candidate.clone());
+                            }
+                        }
+                    }
+                }
             }
             Err(e) => {
                 log::warn!(
