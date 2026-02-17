@@ -16,7 +16,7 @@ import { FormattedDate } from "@/components/formatted-date";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { EmptyState } from "@/components/empty-state";
 import { Clock } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatActivityAmount, formatSmartAmount } from "@/lib/utils";
 import { TokenAmountDisplay } from "@/components/token-display";
 import { TransactionHashCell } from "./transaction-hash-cell";
 import { getFromAccount, getToAccount } from "../utils/history-utils";
@@ -41,28 +41,6 @@ export function ActivityTable({
     const { treasuryId } = useTreasury();
 
     const totalPages = Math.ceil(total / pageSize);
-
-    const formatAmount = (amount: string, decimals: number) => {
-        const num = parseFloat(amount);
-        const absNum = Math.abs(num);
-        const sign = num >= 0 ? "+" : "-";
-
-        const decimalPlaces = absNum >= 1 ? 2 : Math.min(6, decimals);
-
-        return `${sign}${absNum.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: decimalPlaces,
-        })}`;
-    };
-
-    const formatSwapAmount = (amount: string, decimals: number) => {
-        const num = Math.abs(parseFloat(amount));
-        const decimalPlaces = num >= 1 ? 2 : Math.min(6, decimals);
-        return num.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: decimalPlaces,
-        });
-    };
 
     const getTypeLabel = (activity: RecentActivity) => {
         if (activity.swap) return "Swap";
@@ -144,9 +122,8 @@ export function ActivityTable({
                                                 <div className="flex items-center gap-1.5">
                                                     {activity.swap.sentAmount && activity.swap.sentTokenMetadata ? (
                                                         <span className="font-semibold text-general-destructive-foreground whitespace-nowrap">
-                                                            {formatSwapAmount(
-                                                                activity.swap.sentAmount,
-                                                                activity.swap.sentTokenMetadata.decimals,
+                                                            {formatSmartAmount(
+                                                                activity.swap.sentAmount
                                                             )}{" "}
                                                             {activity.swap.sentTokenMetadata.symbol}
                                                         </span>
@@ -155,9 +132,8 @@ export function ActivityTable({
                                                     )}
                                                     <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                                                     <span className="font-semibold text-general-success-foreground whitespace-nowrap">
-                                                        {formatSwapAmount(
-                                                            activity.swap.receivedAmount,
-                                                            activity.swap.receivedTokenMetadata.decimals,
+                                                        {formatSmartAmount(
+                                                            activity.swap.receivedAmount
                                                         )}{" "}
                                                         {activity.swap.receivedTokenMetadata.symbol}
                                                     </span>
@@ -166,7 +142,7 @@ export function ActivityTable({
                                                 <TokenAmountDisplay
                                                     icon={activity.tokenMetadata.icon}
                                                     symbol={activity.tokenMetadata.symbol}
-                                                    amount={formatAmount(activity.amount, activity.tokenMetadata.decimals)}
+                                                    amount={formatActivityAmount(activity.amount)}
                                                     className={isReceived ? "text-general-success-foreground" : "text-foreground"}
                                                 />
                                             )}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Token } from "@/components/token-input";
-import { cn } from "@/lib/utils";
+import { cn, formatSmartAmount } from "@/lib/utils";
 import Big from "@/lib/big";
 
 interface Quote {
@@ -46,12 +46,12 @@ function calculateExchangeRate(
         const usdPerReceiveToken = Big(amountOutUsd)
             .div(receiveAmount)
             .toFixed(2);
-        const sellPerReceive = sellAmount.div(receiveAmount).toFixed(2);
+        const sellPerReceive = formatSmartAmount(sellAmount.div(receiveAmount));
         return `1 ${receiveTokenSymbol} ($${usdPerReceiveToken}) ≈ ${sellPerReceive} ${sellTokenSymbol}`;
     } else {
         // Show: 1 SellToken ($X) ≈ Y ReceiveToken
         const usdPerSellToken = Big(amountInUsd).div(sellAmount).toFixed(2);
-        const receivePerSell = receiveAmount.div(sellAmount).toFixed(2);
+        const receivePerSell = formatSmartAmount(receiveAmount.div(sellAmount));
         return `1 ${sellTokenSymbol} ($${usdPerSellToken}) ≈ ${receivePerSell} ${receiveTokenSymbol}`;
     }
 }
@@ -84,7 +84,7 @@ function calculateDetailedExchangeRate(
                 ? Big(amountOutUsd).div(receiveAmount).toFixed(2)
                 : "0";
         const sellPerReceive = receiveAmount.gt(0)
-            ? sellAmount.div(receiveAmount).toFixed(2)
+            ? formatSmartAmount(sellAmount.div(receiveAmount))
             : "0";
         return `1 ${receiveTokenSymbol} ($${usdPerReceiveToken}) ≈ ${sellPerReceive} ${sellTokenSymbol}`;
     } else {
@@ -94,7 +94,7 @@ function calculateDetailedExchangeRate(
                 ? Big(amountInUsd).div(sellAmount).toFixed(2)
                 : "0";
         const receivePerSell = sellAmount.gt(0)
-            ? receiveAmount.div(sellAmount).toFixed(2)
+            ? formatSmartAmount(receiveAmount.div(sellAmount))
             : "0";
         return `1 ${sellTokenSymbol} ($${usdPerSellToken}) ≈ ${receivePerSell} ${receiveTokenSymbol}`;
     }

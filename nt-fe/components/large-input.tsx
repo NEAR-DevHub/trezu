@@ -100,6 +100,7 @@ export function LargeInput({
                 value={value}
                 className={cn(
                     "h-12 shrink-0 p-0 bg-transparent!",
+                    "transition-[font-size] duration-200 ease-in-out",
                     search && "pl-10",
                     suffix && "pr-2",
                     borderless &&
@@ -110,7 +111,10 @@ export function LargeInput({
             />
             {suffix && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <span className={cn("text-muted-foreground", fontSize)}>
+                    <span className={cn(
+                        "text-muted-foreground transition-[font-size] duration-200 ease-in-out",
+                        fontSize
+                    )}>
                         {suffix}
                     </span>
                 </div>

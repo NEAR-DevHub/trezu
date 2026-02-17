@@ -1,13 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { UseFormReturn } from "react-hook-form";
 import Big from "@/lib/big";
-import { getIntentsQuote, IntentsQuoteResponse } from "@/lib/api";
+import { getIntentsQuote, IntentsQuoteResponse, getTokenMetadata } from "@/lib/api";
 import { Token } from "@/components/token-input";
 import {
     formatAssetForIntentsAPI,
     getRecipientType,
     getUserFriendlyErrorMessage,
     getDepositAndRefundType,
+    isNEARDeposit,
+    isNEARWithdraw,
 } from "../utils";
 
 interface UseExchangeQuoteParams {
@@ -51,6 +53,63 @@ export function useExchangeQuote({
             if (!selectedTreasury) return null;
 
             try {
+                const isDeposit = isNEARDeposit(sellToken, receiveToken);
+                const isWithdraw = isNEARWithdraw(sellToken, receiveToken);
+
+                if (isDeposit || isWithdraw) {
+                    const amountInRaw = Big(sellAmount)
+                        .mul(Big(10).pow(sellToken.decimals))
+                        .toFixed();
+
+                    // Fetch token price for USD calculation
+                    const tokenMetadata = await getTokenMetadata('wrap.near');
+                    const tokenPrice = tokenMetadata?.price || 0;
+                    const amountUsd = (parseFloat(sellAmount) * tokenPrice).toFixed();
+
+                    const mockQuote: IntentsQuoteResponse = {
+                        quote: {
+                            amountIn: amountInRaw,
+                            amountInFormatted: sellAmount,
+                            amountInUsd: amountUsd,
+                            minAmountIn: amountInRaw,
+                            amountOut: amountInRaw,
+                            amountOutFormatted: sellAmount,
+                            amountOutUsd: amountUsd,
+                            minAmountOut: amountInRaw,
+                            timeEstimate: 0,
+                            depositAddress: selectedTreasury,
+                            deadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                            timeWhenInactive: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                        },
+                        quoteRequest: {
+                            swapType: "EXACT_INPUT",
+                            slippageTolerance: 0,
+                            originAsset: isDeposit ? "near" : "wrap.near",
+                            depositType: "DESTINATION_CHAIN",
+                            destinationAsset: isDeposit ? "wrap.near" : "near",
+                            amount: amountInRaw,
+                            refundTo: selectedTreasury,
+                            refundType: "DESTINATION_CHAIN",
+                            recipient: selectedTreasury,
+                            recipientType: "DESTINATION_CHAIN",
+                            deadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                        },
+                        signature: "",
+                        timestamp: new Date().toISOString(),
+                        correlationId: `mock-${Date.now()}`,
+                    };
+
+                    if (isDryRun) {
+                        form.setValue("receiveAmount", sellAmount);
+                        form.clearErrors("receiveAmount");
+                    } else {
+                        form.setValue("proposalData" as any, mockQuote, {
+                            shouldValidate: false,
+                        });
+                    }
+                    return mockQuote;
+                }
+
                 const parsedAmount = Big(sellAmount)
                     .mul(Big(10).pow(sellToken.decimals))
                     .toFixed();
