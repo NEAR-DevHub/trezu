@@ -107,10 +107,6 @@ export function ReviewPaymentsStep({
         Big(0),
     );
 
-    const hasUnregisteredRecipients = paymentData.some(
-        (payment) => payment.isRegistered === false,
-    );
-
     const hasValidationErrors = paymentData.some(
         (payment) => payment.validationError,
     );
@@ -224,19 +220,17 @@ export function ReviewPaymentsStep({
                                 return (
                                     <div
                                         key={index}
-                                        className={`space-y-3 ${
-                                            index < paymentData.length - 1
-                                                ? "border-b border-border pb-4"
-                                                : ""
-                                        }`}
+                                        className={`space-y-3 ${index < paymentData.length - 1
+                                            ? "border-b border-border pb-4"
+                                            : ""
+                                            }`}
                                     >
                                         <div className="flex items-start gap-3">
                                             <div
-                                                className={`flex items-center justify-center w-6 h-6 rounded-full text-sm font-semibold shrink-0 ${
-                                                    payment.validationError
-                                                        ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                                                        : "bg-secondary text-foreground"
-                                                }`}
+                                                className={`flex items-center justify-center w-6 h-6 rounded-full text-sm font-semibold shrink-0 ${payment.validationError
+                                                    ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                                                    : "bg-secondary text-foreground"
+                                                    }`}
                                             >
                                                 {index + 1}
                                             </div>
@@ -249,13 +243,7 @@ export function ReviewPaymentsStep({
                                                                     payment.recipient
                                                                 }
                                                             </span>
-                                                            {payment.isRegistered ===
-                                                                false &&
-                                                                !payment.validationError && (
-                                                                    <span className="px-2 py-1 text-xs font-medium bg-general-warning-background-faded text-general-warning-foreground rounded-full">
-                                                                        Unregistered
-                                                                    </span>
-                                                                )}
+
                                                         </div>
                                                         {payment.validationError && (
                                                             <div className="text-xs text-red-600 dark:text-red-400 mb-2">
@@ -351,29 +339,6 @@ export function ReviewPaymentsStep({
                             className="resize-none"
                         />
                     </div>
-                )}
-
-                {/* Storage Deposit Warning */}
-                {!isValidatingAccounts && hasUnregisteredRecipients && (
-                    <WarningAlert
-                        className="mb-2"
-                        message={
-                            <div>
-                                <h4 className="font-semibold">
-                                    Storage Deposit Required
-                                </h4>
-                                <p>
-                                    A one-time gas fee of 0.0125 NEAR per{" "}
-                                    <span className="font-semibold">
-                                        1 recipient
-                                    </span>{" "}
-                                    is required to create their payment
-                                    contract. You can pay now or continue
-                                    without these recipients.
-                                </p>
-                            </div>
-                        }
-                    />
                 )}
 
                 {/* Submit Button */}
