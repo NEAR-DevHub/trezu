@@ -9,8 +9,10 @@ import { useEffect } from "react";
 import { Button } from "@/components/button";
 import Logo from "@/components/logo";
 import { useTreasury } from "@/hooks/use-treasury";
-import { useUserTreasuries } from "@/hooks/use-treasury-queries";
 import { useNear } from "@/stores/near-store";
+import { QueryProvider } from "@/components/query-provider";
+import { NearInitializer } from "@/components/near-initializer";
+import { AuthProvider } from "@/components/auth-provider";
 
 function GradientTitle() {
     return (
@@ -26,7 +28,7 @@ function GradientTitle() {
     );
 }
 
-export default function AppRedirect() {
+export function Content() {
     const router = useRouter();
     const {
         accountId,
@@ -142,5 +144,16 @@ export default function AppRedirect() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function Page() {
+    return (
+        <QueryProvider>
+            <NearInitializer />
+            <AuthProvider>
+                <Content />
+            </AuthProvider>
+        </QueryProvider>
     );
 }
