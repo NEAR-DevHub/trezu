@@ -3,7 +3,7 @@ use sqlx::PgPool;
 use std::collections::HashSet;
 
 use super::balance::ft::get_balance_at_block as get_ft_balance;
-use super::gap_filler::{fill_gaps_with_hints, insert_snapshot_record};
+use super::gap_filler::{fill_gaps_with_hints, insert_snapshot_record, resolve_missing_tx_hashes};
 use super::staking_rewards::{is_staking_token, track_and_fill_staking_rewards};
 use super::token_discovery::{fetch_fastnear_ft_tokens, snapshot_intents_tokens};
 use super::transfer_hints::TransferHintService;
@@ -121,6 +121,17 @@ pub async fn run_monitor_cycle(
                     errors.push(format!("{}: {}", token_id, e));
                 }
             }
+        }
+
+        // Resolve transaction hashes on records that are missing them
+        match resolve_missing_tx_hashes(pool, network, account_id, 10).await {
+            Ok(count) if count > 0 => {
+                println!("  {}: Resolved {} missing tx hashes", account_id, count);
+            }
+            Err(e) => {
+                eprintln!("  {}: Error resolving missing tx hashes: {}", account_id, e);
+            }
+            _ => {}
         }
 
         // Update last_synced_at even if some tokens had errors

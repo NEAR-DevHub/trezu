@@ -16,7 +16,7 @@ use std::sync::Arc;
 use tokio::task::JoinHandle;
 
 use super::account_monitor::{discover_ft_tokens_from_fastnear, discover_intents_tokens};
-use super::gap_filler::fill_gaps_with_hints;
+use super::gap_filler::{fill_gaps_with_hints, resolve_missing_tx_hashes};
 use super::staking_rewards::is_staking_token;
 use super::swap_detector::{detect_swaps_from_api, store_detected_swaps};
 use super::transfer_hints::TransferHintService;
@@ -206,6 +206,25 @@ async fn run_dirty_task(
         account_id,
         total_filled
     );
+
+    // Resolve missing transaction hashes on existing records
+    match resolve_missing_tx_hashes(pool, network, account_id, 10).await {
+        Ok(count) if count > 0 => {
+            log::info!(
+                "[dirty-monitor] {}: Resolved {} missing tx hashes",
+                account_id,
+                count
+            );
+        }
+        Err(e) => {
+            log::warn!(
+                "[dirty-monitor] {}: Error resolving missing tx hashes: {}",
+                account_id,
+                e
+            );
+        }
+        _ => {}
+    }
 
     // Detect and store swaps using Intents Explorer API
     let intents_api_key = state.env_vars.intents_explorer_api_key.as_deref();

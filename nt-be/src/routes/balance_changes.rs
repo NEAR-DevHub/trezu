@@ -12,6 +12,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use crate::AppState;
+use crate::handlers::balance_changes::completeness;
 use crate::handlers::balance_changes::{gap_filler, query_builder::*};
 use crate::handlers::token::{TokenMetadata, fetch_tokens_with_fallback};
 use crate::utils::serde::comma_separated;
@@ -417,4 +418,40 @@ async fn get_current_block_height(
 ) -> Result<u64, Box<dyn std::error::Error>> {
     let block = near_api::Chain::block().fetch_from_mainnet().await?;
     Ok(block.header.height)
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CompletenessQuery {
+    pub account_id: String,
+    /// Start of the time range (ISO 8601)
+    pub from: DateTime<Utc>,
+    /// End of the time range (ISO 8601)
+    pub to: DateTime<Utc>,
+}
+
+pub async fn get_completeness(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<CompletenessQuery>,
+) -> Result<Json<completeness::CompletenessResponse>, (StatusCode, Json<Value>)> {
+    match completeness::check_completeness(
+        &state.db_pool,
+        &params.account_id,
+        params.from,
+        params.to,
+    )
+    .await
+    {
+        Ok(response) => Ok(Json(response)),
+        Err(e) => {
+            log::error!("Failed to check completeness: {}", e);
+            Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({
+                    "error": "Failed to check completeness",
+                    "details": e.to_string()
+                })),
+            ))
+        }
+    }
 }

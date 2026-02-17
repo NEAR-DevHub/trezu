@@ -168,6 +168,59 @@ Response:
 }
 ```
 
+### Check Balance History Completeness
+
+**GET** `/api/balance-history/completeness`
+
+Check whether the balance history for an account is complete within a time range.
+Useful for verifying that an accounting export CSV has no missing data.
+
+Query parameters:
+- `accountId` (required) - Account to check
+- `from` (required) - Start of time range (ISO 8601, e.g. `2025-01-01T00:00:00Z`)
+- `to` (required) - End of time range (ISO 8601, e.g. `2025-12-31T23:59:59Z`)
+
+Example:
+```bash
+curl "http://localhost:3000/api/balance-history/completeness?accountId=your-account.near&from=2025-01-01T00:00:00Z&to=2025-12-31T23:59:59Z"
+```
+
+Response:
+```json
+{
+  "accountId": "your-account.near",
+  "from": "2025-01-01T00:00:00Z",
+  "to": "2025-12-31T23:59:59Z",
+  "tokens": [
+    {
+      "tokenId": "near",
+      "hasGaps": true,
+      "gapCount": 1,
+      "gaps": [
+        {
+          "startBlock": 180000000,
+          "endBlock": 180500000,
+          "startBlockTime": "2025-03-15T10:00:00Z",
+          "endBlockTime": "2025-03-15T14:30:00Z",
+          "balanceAfterPrevious": "5.0",
+          "balanceBeforeNext": "4.2"
+        }
+      ]
+    },
+    {
+      "tokenId": "usdt.tether-token.near",
+      "hasGaps": false,
+      "gapCount": 0,
+      "gaps": []
+    }
+  ]
+}
+```
+
+A gap indicates that `balanceAfterPrevious` (the balance after the record at `startBlock`) does not
+match `balanceBeforeNext` (the balance before the record at `endBlock`), meaning one or more
+balance changes are missing between those blocks.
+
 ## Development
 
 ### Run Tests

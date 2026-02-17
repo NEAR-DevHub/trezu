@@ -42,21 +42,70 @@ pub async fn get_balance_at_block(
     token_id: &str,
     block_height: u64,
 ) -> Result<bigdecimal::BigDecimal, Box<dyn std::error::Error>> {
-    log::info!(
-        "Get balance at block {} {} {}",
-        account_id,
-        token_id,
-        block_height
-    );
-    if token_id == "NEAR" || token_id == "near" {
-        near::get_balance_at_block(network, account_id, block_height).await
-    } else if token_id.contains(':') {
-        // NEAR Intents format: "contract:token_id"
-        intents::get_balance_at_block(pool, network, account_id, token_id, block_height).await
-    } else {
-        // Fungible token contract address
-        ft::get_balance_at_block(pool, network, account_id, token_id, block_height).await
+    get_balance_at_block_with_fallback(pool, network, account_id, token_id, block_height, 0).await
+}
+
+/// Query balance at a specific block height, falling back to earlier blocks on 422 errors
+///
+/// When `max_block_retries > 0`, retries with previous blocks if the archival RPC
+/// returns 422 (block unavailable). This is useful for non-binary-search callers
+/// where an approximate block is acceptable.
+pub async fn get_balance_at_block_with_fallback(
+    pool: &PgPool,
+    network: &NetworkConfig,
+    account_id: &str,
+    token_id: &str,
+    block_height: u64,
+    max_block_retries: u64,
+) -> Result<bigdecimal::BigDecimal, Box<dyn std::error::Error>> {
+    for offset in 0..=max_block_retries {
+        let current_block = block_height.saturating_sub(offset);
+        log::info!(
+            "Get balance at block {} {} {}",
+            account_id,
+            token_id,
+            current_block
+        );
+        let result = if token_id == "NEAR" || token_id == "near" {
+            near::get_balance_at_block(network, account_id, current_block).await
+        } else if token_id.contains(':') {
+            intents::get_balance_at_block(pool, network, account_id, token_id, current_block).await
+        } else {
+            ft::get_balance_at_block(pool, network, account_id, token_id, current_block).await
+        };
+
+        match result {
+            Ok(balance) => {
+                if offset > 0 {
+                    log::warn!(
+                        "Block {} unavailable for {} {}, used block {} instead (offset: {})",
+                        block_height,
+                        account_id,
+                        token_id,
+                        current_block,
+                        offset
+                    );
+                }
+                return Ok(balance);
+            }
+            Err(e) => {
+                let err_str = e.to_string();
+                if (err_str.contains("422") || err_str.contains("UnknownBlock"))
+                    && offset < max_block_retries
+                {
+                    log::debug!(
+                        "Block {} unavailable for {} {}, trying previous block",
+                        current_block,
+                        account_id,
+                        token_id,
+                    );
+                    continue;
+                }
+                return Err(e);
+            }
+        }
     }
+    unreachable!()
 }
 
 /// Query balance change at a specific block (both before and after)
@@ -77,12 +126,20 @@ pub async fn get_balance_change_at_block(
     token_id: &str,
     block_height: u64,
 ) -> Result<(BigDecimal, BigDecimal), Box<dyn std::error::Error>> {
-    // For now, we query the block and the previous block
-    // In the future, this should be optimized with transaction-specific queries
+    // Query balance at this block and the previous, falling back to earlier blocks on 422
     let balance_after =
-        get_balance_at_block(pool, network, account_id, token_id, block_height).await?;
+        get_balance_at_block_with_fallback(pool, network, account_id, token_id, block_height, 10)
+            .await?;
     let balance_before = if block_height > 0 {
-        get_balance_at_block(pool, network, account_id, token_id, block_height - 1).await?
+        get_balance_at_block_with_fallback(
+            pool,
+            network,
+            account_id,
+            token_id,
+            block_height - 1,
+            10,
+        )
+        .await?
     } else {
         BigDecimal::from(0)
     };

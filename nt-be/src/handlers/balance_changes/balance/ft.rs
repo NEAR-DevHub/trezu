@@ -13,11 +13,8 @@ use crate::handlers::balance_changes::utils::with_transport_retry;
 
 /// Query fungible token balance at a specific block height
 ///
-/// If the RPC returns a 422 error (unprocessable entity), assumes the block doesn't exist
-/// and retries with previous blocks (up to 10 attempts).
-///
-/// Calls ft_balance_of on the contract to get the raw U128 value, then converts it to
-/// decimal-adjusted format using the token's decimals. Also ensures metadata is cached.
+/// Returns an error if the block doesn't exist (UnknownBlock). The caller (binary search)
+/// is responsible for skipping non-existing blocks.
 ///
 /// # Arguments
 /// * `pool` - Database connection pool for storing/retrieving token metadata
@@ -39,78 +36,23 @@ pub async fn get_balance_at_block(
     let decimals = ensure_ft_metadata(pool, network, token_contract).await?;
 
     let token_contract_obj = AccountId::from_str(token_contract)?;
-    let max_retries = 10;
 
-    for offset in 0..=max_retries {
-        let current_block = block_height.saturating_sub(offset);
+    let data: near_api::Data<U128> = with_transport_retry("ft_balance", || {
+        Contract(token_contract_obj.clone())
+            .call_function(
+                "ft_balance_of",
+                serde_json::json!({
+                    "account_id": account_id
+                }),
+            )
+            .read_only()
+            .at(Reference::AtBlock(block_height))
+            .fetch_from(network)
+    })
+    .await?;
 
-        // Call ft_balance_of to get raw U128 value
-        // Use U128 directly in the type signature for automatic deserialization
-        let result: Result<near_api::Data<U128>, _> = with_transport_retry("ft_balance", || {
-            Contract(token_contract_obj.clone())
-                .call_function(
-                    "ft_balance_of",
-                    serde_json::json!({
-                        "account_id": account_id
-                    }),
-                )
-                .read_only()
-                .at(Reference::AtBlock(current_block))
-                .fetch_from(network)
-        })
-        .await;
+    let raw_balance = data.data;
+    let decimal_balance = convert_raw_to_decimal(&raw_balance.0.to_string(), decimals)?;
 
-        match result {
-            Ok(data) => {
-                if offset > 0 {
-                    log::warn!(
-                        "Block {} not available for FT {}, used block {} instead (offset: {})",
-                        block_height,
-                        token_contract,
-                        current_block,
-                        offset
-                    );
-                }
-
-                // Extract U128 value - near_api::types::json::U128 handles both string and number formats
-                let raw_balance = data.data;
-
-                // Convert raw U128 to decimal-adjusted value for storage
-                let decimal_balance = convert_raw_to_decimal(&raw_balance.0.to_string(), decimals)?;
-
-                return Ok(decimal_balance);
-            }
-            Err(e) => {
-                let err_str = e.to_string();
-                // Check if this is a 422 error (unprocessable entity) or block not found error
-                if err_str.contains("422") || err_str.contains("UnknownBlock") {
-                    if offset < max_retries {
-                        log::debug!(
-                            "Block {} not available for FT {} ({}), trying previous block",
-                            current_block,
-                            token_contract,
-                            err_str
-                        );
-                        continue;
-                    } else {
-                        return Err(format!(
-                            "Failed to query FT balance after {} retries: {}",
-                            max_retries, err_str
-                        )
-                        .into());
-                    }
-                } else {
-                    // For other errors, fail immediately
-                    return Err(e.into());
-                }
-            }
-        }
-    }
-
-    Err(format!(
-        "Failed to query FT balance for block {} after {} attempts",
-        block_height,
-        max_retries + 1
-    )
-    .into())
+    Ok(decimal_balance)
 }

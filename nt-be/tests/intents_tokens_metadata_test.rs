@@ -37,6 +37,12 @@ async fn test_intents_tokens_metadata_discovery() {
     .await
     .expect("Failed to clear balance changes");
 
+    // Disable all other monitored accounts so the cycle only processes our test account
+    sqlx::query!("UPDATE monitored_accounts SET enabled = false")
+        .execute(&pool)
+        .await
+        .expect("Failed to disable other accounts");
+
     // Add the monitored account (enabled by default)
     sqlx::query!(
         "INSERT INTO monitored_accounts (account_id, created_at, enabled)

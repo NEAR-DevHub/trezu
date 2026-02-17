@@ -855,11 +855,17 @@ pub async fn seed_initial_balance(
         return Ok(None);
     }
 
-    // Get current balance
-    let current_balance =
-        balance::get_balance_at_block(pool, network, account_id, token_id, current_block)
-            .await
-            .map_err(|e| -> GapFillerError { e.to_string().into() })?;
+    // Get current balance (with fallback for unavailable blocks)
+    let current_balance = balance::get_balance_at_block_with_fallback(
+        pool,
+        network,
+        account_id,
+        token_id,
+        current_block,
+        10,
+    )
+    .await
+    .map_err(|e| -> GapFillerError { e.to_string().into() })?;
 
     log::info!(
         "Current balance for {}/{} at block {}: {}",
@@ -977,11 +983,17 @@ async fn fill_gap_to_present(
         return Ok(None); // No records exist
     };
 
-    // Get current balance at up_to_block
-    let current_balance =
-        balance::get_balance_at_block(pool, network, account_id, token_id, up_to_block)
-            .await
-            .map_err(|e| -> GapFillerError { e.to_string().into() })?;
+    // Get current balance at up_to_block (with fallback for unavailable blocks)
+    let current_balance = balance::get_balance_at_block_with_fallback(
+        pool,
+        network,
+        account_id,
+        token_id,
+        up_to_block,
+        10,
+    )
+    .await
+    .map_err(|e| -> GapFillerError { e.to_string().into() })?;
 
     // If balance hasn't changed, no gap
     if current_balance == latest.balance_after {
@@ -1217,8 +1229,8 @@ async fn fill_gap_to_past(
     };
 
     let Some(block_height) = change_block else {
-        log::warn!(
-            "Balance {} existed before block {} - cannot find origin within lookback window for {}/{}. Consider inserting SNAPSHOT at boundary.",
+        log::info!(
+            "Balance {} existed before block {} - cannot find origin within lookback window for {}/{}. Inserting SNAPSHOT at boundary.",
             target_balance,
             start_block,
             account_id,
@@ -1722,6 +1734,137 @@ async fn resolve_ft_counterparty_from_token_contract(
     .into())
 }
 
+/// Resolve missing transaction hashes on existing balance_changes records.
+///
+/// Processes one record at a time so progress is committed after each update
+/// and the process can be safely interrupted and resumed.
+///
+/// - Records with receipt_ids: uses `resolve_receipt_to_transaction` (fetches receipt
+///   via `EXPERIMENTAL_receipt` to get the on-chain signer, then traces via account_changes).
+/// - Intents tokens without receipt_ids: queries `account_changes` on `intents.near`.
+///
+/// Returns the number of records updated.
+pub async fn resolve_missing_tx_hashes(
+    pool: &PgPool,
+    network: &NetworkConfig,
+    account_id: &str,
+    limit: usize,
+) -> Result<usize, GapFillerError> {
+    let mut resolved = 0usize;
+    let mut attempted = 0usize;
+
+    loop {
+        if attempted >= limit {
+            break;
+        }
+        // Fetch one record at a time so each update is committed before the next
+        let record = sqlx::query!(
+            r#"
+            SELECT token_id as "token_id?", block_height, receipt_id
+            FROM balance_changes
+            WHERE account_id = $1
+              AND transaction_hashes = '{}'
+              AND counterparty NOT IN ('SNAPSHOT', 'STAKING_SNAPSHOT', 'STAKING_REWARD')
+              AND amount != 0
+            ORDER BY block_height DESC
+            LIMIT 1
+            OFFSET $2
+            "#,
+            account_id,
+            attempted as i64,
+        )
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| -> GapFillerError { e.to_string().into() })?;
+
+        let record = match record {
+            Some(r) => r,
+            None => break, // No more records to resolve
+        };
+
+        let block_height = record.block_height as u64;
+        let token_id = record.token_id.as_deref().unwrap_or("");
+
+        let tx_hashes = if !record.receipt_id.is_empty() {
+            // Resolve receipt → transaction via EXPERIMENTAL_receipt + account_changes
+            let mut hashes = Vec::new();
+            for receipt_id in &record.receipt_id {
+                match tx_resolver::resolve_receipt_to_transaction(network, receipt_id, block_height)
+                    .await
+                {
+                    Ok(result) => {
+                        hashes.push(result.transaction_hash);
+                        break;
+                    }
+                    Err(e) => {
+                        log::debug!("Could not resolve receipt {} to tx: {}", receipt_id, e);
+                    }
+                }
+            }
+            hashes
+        } else if token_id.starts_with("intents.near:") {
+            // Intents tokens: query account_changes on intents.near
+            match block_info::get_account_changes(network, "intents.near", block_height).await {
+                Ok(changes) => {
+                    let mut hashes = Vec::new();
+                    for change in &changes {
+                        use near_primitives::views::StateChangeCauseView;
+                        if let StateChangeCauseView::TransactionProcessing { tx_hash } =
+                            &change.cause
+                        {
+                            let hash = tx_hash.to_string();
+                            if !hashes.contains(&hash) {
+                                hashes.push(hash);
+                            }
+                        }
+                    }
+                    hashes
+                }
+                Err(e) => {
+                    log::debug!(
+                        "Failed to query account_changes on intents.near at block {}: {}",
+                        block_height,
+                        e
+                    );
+                    vec![]
+                }
+            }
+        } else {
+            vec![]
+        };
+
+        attempted += 1;
+
+        if !tx_hashes.is_empty() {
+            sqlx::query!(
+                r#"
+                UPDATE balance_changes
+                SET transaction_hashes = $1
+                WHERE account_id = $2 AND block_height = $3 AND token_id = $4
+                "#,
+                &tx_hashes[..],
+                account_id,
+                record.block_height,
+                record.token_id,
+            )
+            .execute(pool)
+            .await
+            .map_err(|e| -> GapFillerError { e.to_string().into() })?;
+
+            resolved += 1;
+            log::info!(
+                "Resolved tx hash for {}/{} at block {}: {:?}",
+                account_id,
+                token_id,
+                block_height,
+                tx_hashes
+            );
+        }
+    }
+
+    Ok(resolved)
+}
+
 /// Helper to insert a balance change record at a specific block
 ///
 /// This is exposed for testing purposes to allow direct insertion of records
@@ -1753,7 +1896,7 @@ pub async fn insert_balance_change_record(
         .map_err(|e| -> GapFillerError { e.to_string().into() })?;
 
     // Extract transaction hash and other details from account changes
-    let (transaction_hashes, raw_data) = if let Some(change) = account_changes.first() {
+    let (mut transaction_hashes, raw_data) = if let Some(change) = account_changes.first() {
         use near_primitives::views::StateChangeCauseView;
 
         let tx_hashes = match &change.cause {
@@ -1881,12 +2024,67 @@ pub async fn insert_balance_change_record(
         }
     };
 
+    // ── Resolve receipt → transaction hash ──────────────────────────────────
+    if transaction_hashes.is_empty() && !receipt_ids.is_empty() {
+        for receipt_id in &receipt_ids {
+            match tx_resolver::resolve_receipt_to_transaction(network, receipt_id, block_height)
+                .await
+            {
+                Ok(result) => {
+                    log::info!(
+                        "Resolved receipt {} → tx {}",
+                        receipt_id,
+                        result.transaction_hash,
+                    );
+                    transaction_hashes.push(result.transaction_hash);
+                    break;
+                }
+                Err(e) => {
+                    log::debug!(
+                        "Could not resolve receipt {} to transaction: {}",
+                        receipt_id,
+                        e
+                    );
+                }
+            }
+        }
+    }
+
+    // For intents tokens: query account_changes on intents.near to find candidate tx hashes
+    if transaction_hashes.is_empty() && token_id.starts_with("intents.near:") {
+        match block_info::get_account_changes(network, "intents.near", block_height).await {
+            Ok(changes) => {
+                for change in &changes {
+                    use near_primitives::views::StateChangeCauseView;
+                    if let StateChangeCauseView::TransactionProcessing { tx_hash } = &change.cause {
+                        let hash = tx_hash.to_string();
+                        if !transaction_hashes.contains(&hash) {
+                            transaction_hashes.push(hash);
+                        }
+                    }
+                }
+                log::debug!(
+                    "Intents token at block {}: found {} candidate tx hash(es) from account_changes on intents.near",
+                    block_height,
+                    transaction_hashes.len()
+                );
+            }
+            Err(e) => {
+                log::warn!(
+                    "Failed to query account_changes on intents.near at block {}: {}",
+                    block_height,
+                    e
+                );
+            }
+        }
+    }
+
     // Insert the record
     let block_time = block_timestamp_to_datetime(block_timestamp);
 
     sqlx::query!(
         r#"
-        INSERT INTO balance_changes 
+        INSERT INTO balance_changes
         (account_id, token_id, block_height, block_timestamp, block_time, amount, balance_before, balance_after, transaction_hashes, receipt_id, signer_id, receiver_id, counterparty, actions, raw_data)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         ON CONFLICT (account_id, block_height, token_id) DO NOTHING
