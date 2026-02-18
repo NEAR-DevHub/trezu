@@ -2,3 +2,4 @@ node_modules
 .claude
 .env
 nt-fe/public/ledger-wallet/*.js
+sandbox/sandbox-init/target

@@ -1,9 +1,8 @@
 use crate::app_state::AppState;
 use near_api::Contract;
 use serde::Deserialize;
-use std::collections::HashSet;
+use sqlx::PgPool;
 use std::sync::Arc;
-use tokio::sync::Mutex;
 
 /// Minimal response type for view_list contract call
 #[derive(Debug, Deserialize)]
@@ -52,34 +51,52 @@ impl PaymentListStatus {
     }
 }
 
-lazy_static::lazy_static! {
-    /// Shared state for tracking pending payment lists
-    /// This is used to avoid querying the contract for every poll
-    static ref PENDING_LISTS: Mutex<HashSet<String>> = Mutex::new(HashSet::new());
+/// Add a list_id to the pending payment lists table for the worker to process.
+/// Uses ON CONFLICT DO NOTHING for idempotency.
+pub async fn add_pending_list(pool: &PgPool, list_id: &str) -> Result<(), sqlx::Error> {
+    log::info!("Adding list {} to payout worker queue", list_id);
+    sqlx::query!(
+        "INSERT INTO pending_payment_lists (list_id) VALUES ($1) ON CONFLICT DO NOTHING",
+        list_id
+    )
+    .execute(pool)
+    .await?;
+    Ok(())
 }
 
-/// Add a list_id to the set of pending lists to be processed by the worker
-pub async fn add_pending_list(list_id: String) {
-    log::info!("Adding list {} to payout worker queue", list_id);
-    let mut pending = PENDING_LISTS.lock().await;
-    pending.insert(list_id);
-    log::info!("Payout worker queue now has {} lists", pending.len());
+/// Remove a list_id from the pending payment lists table.
+async fn remove_pending_list(pool: &PgPool, list_id: &str) {
+    if let Err(e) = sqlx::query!(
+        "DELETE FROM pending_payment_lists WHERE list_id = $1",
+        list_id
+    )
+    .execute(pool)
+    .await
+    {
+        log::error!(
+            "Failed to remove list {} from pending_payment_lists: {}",
+            list_id,
+            e
+        );
+    }
 }
 
 /// Query the bulk payment contract for pending payment lists and process them
 ///
-/// This function checks known pending lists on-chain and calls payout_batch
-/// to process pending payments.
+/// This function reads pending list IDs from the database, checks their on-chain
+/// status, and calls payout_batch for approved lists. Lists are removed from the
+/// database when completed, rejected, or not found on-chain.
 ///
 /// Returns the number of batches processed.
 pub async fn query_and_process_pending_lists(
     state: &Arc<AppState>,
 ) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-    // Get a copy of pending list IDs
-    let list_ids: Vec<String> = {
-        let pending = PENDING_LISTS.lock().await;
-        pending.iter().cloned().collect()
-    };
+    // Get pending list IDs from the database
+    let rows = sqlx::query!("SELECT list_id FROM pending_payment_lists")
+        .fetch_all(&state.db_pool)
+        .await?;
+
+    let list_ids: Vec<String> = rows.into_iter().map(|r| r.list_id).collect();
 
     if list_ids.is_empty() {
         return Ok(0);
@@ -92,7 +109,6 @@ pub async fn query_and_process_pending_lists(
     );
 
     let mut processed_count = 0;
-    let mut completed_lists = Vec::new();
 
     for list_id in &list_ids {
         // First check list status via view call before attempting payout
@@ -122,7 +138,7 @@ pub async fn query_and_process_pending_lists(
                         "List {} is not approved (rejected or unknown status), removing from queue",
                         list_id
                     );
-                    completed_lists.push(list_id.clone());
+                    remove_pending_list(&state.db_pool, list_id).await;
                     continue;
                 }
             }
@@ -130,7 +146,7 @@ pub async fn query_and_process_pending_lists(
                 let err_str = e.to_string();
                 if err_str.contains("not found") {
                     log::info!("List {} not found on-chain, removing from queue", list_id);
-                    completed_lists.push(list_id.clone());
+                    remove_pending_list(&state.db_pool, list_id).await;
                 } else {
                     log::error!("Failed to view list {}: {}", list_id, err_str);
                 }
@@ -165,17 +181,9 @@ pub async fn query_and_process_pending_lists(
                 // Remove list from tracking if it's not found or completed
                 if err_str.contains("not found") || err_str.contains("No pending payments") {
                     log::info!("Removing list {} from worker queue", list_id);
-                    completed_lists.push(list_id.clone());
+                    remove_pending_list(&state.db_pool, list_id).await;
                 }
             }
-        }
-    }
-
-    // Remove completed lists from tracking
-    if !completed_lists.is_empty() {
-        let mut pending = PENDING_LISTS.lock().await;
-        for list_id in completed_lists {
-            pending.remove(&list_id);
         }
     }
 

@@ -18,9 +18,6 @@ use std::time::Duration;
 use tokio::process::{Child, Command};
 use tracing::{error, info, warn};
 
-/// Default sandbox version to use
-const SANDBOX_VERSION: &str = "2.9.0";
-
 /// Get the genesis signer for the sandbox
 fn get_genesis_signer() -> Arc<Signer> {
     let genesis_account = GenesisAccount::default();
@@ -28,85 +25,6 @@ fn get_genesis_signer() -> Arc<Signer> {
         genesis_account.private_key.parse().unwrap(),
     ))
     .unwrap()
-}
-
-/// Download the sandbox binary using the SANDBOX_ARTIFACT_URL if set
-async fn ensure_sandbox_binary() -> Result<PathBuf> {
-    // Check if we have a custom artifact URL (for ARM64 support)
-    let artifact_url = std::env::var("SANDBOX_ARTIFACT_URL").ok();
-
-    let home = dirs_next::home_dir().context("Could not find home directory")?;
-    let bin_dir = home
-        .join(".near")
-        .join(format!("near-sandbox-{}", SANDBOX_VERSION));
-    let bin_path = bin_dir.join("near-sandbox");
-
-    if bin_path.exists() {
-        info!("Sandbox binary already exists at {:?}", bin_path);
-        return Ok(bin_path);
-    }
-
-    std::fs::create_dir_all(&bin_dir)?;
-
-    let url = artifact_url.unwrap_or_else(|| {
-        format!(
-            "https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore/Linux-x86_64/{}/near-sandbox.tar.gz",
-            SANDBOX_VERSION
-        )
-    });
-
-    info!("Downloading sandbox binary from {}", url);
-
-    // Download and extract
-    let response = reqwest::get(&url).await?;
-    let bytes = response.bytes().await?;
-
-    // Extract tar.gz to a temp location first
-    let temp_dir = bin_dir.join("temp_extract");
-    std::fs::create_dir_all(&temp_dir)?;
-
-    let decoder = flate2::read::GzDecoder::new(&bytes[..]);
-    let mut archive = tar::Archive::new(decoder);
-    archive.unpack(&temp_dir)?;
-
-    // Find the near-sandbox binary in the extracted contents
-    // It might be at temp_extract/near-sandbox or temp_extract/Linux-*/near-sandbox
-    let mut found_binary = None;
-    for entry in std::fs::read_dir(&temp_dir)? {
-        let entry = entry?;
-        let path = entry.path();
-
-        if path.is_file() && path.file_name().map(|n| n == "near-sandbox").unwrap_or(false) {
-            found_binary = Some(path);
-            break;
-        } else if path.is_dir() {
-            // Check inside subdirectory
-            let nested_binary = path.join("near-sandbox");
-            if nested_binary.exists() {
-                found_binary = Some(nested_binary);
-                break;
-            }
-        }
-    }
-
-    let extracted_binary =
-        found_binary.context("Could not find near-sandbox binary in archive")?;
-
-    // Move to final location
-    std::fs::rename(&extracted_binary, &bin_path)?;
-
-    // Clean up temp directory
-    let _ = std::fs::remove_dir_all(&temp_dir);
-
-    // Make executable
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(&bin_path, std::fs::Permissions::from_mode(0o755))?;
-    }
-
-    info!("Sandbox binary installed at {:?}", bin_path);
-    Ok(bin_path)
 }
 
 /// Initialize sandbox home directory if not already initialized
@@ -604,9 +522,9 @@ async fn main() -> Result<()> {
         },
     ];
 
-    // Ensure sandbox binary is available
+    // Ensure sandbox binary is available (handles architecture detection automatically)
     info!("Ensuring sandbox binary is available...");
-    let bin_path = ensure_sandbox_binary().await?;
+    let bin_path = near_sandbox::install().context("Failed to install sandbox binary")?;
     info!("Using sandbox binary at {:?}", bin_path);
 
     // Check if this is a fresh install or resuming from persistent storage
