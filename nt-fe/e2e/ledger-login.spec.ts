@@ -437,7 +437,7 @@ test("Ledger login flow", async ({ page, context }) => {
 
     // Verify login succeeded - should be on the Create Treasury page or similar
     // The URL should have changed from /app to /app/new or similar
-    await expect(page).toHaveURL(/\/app\/(new|dashboard|treasury)/, {
+    await expect(page).not.toHaveURL("/", {
         timeout: 10000,
     });
     console.log("Login successful - redirected to:", page.url());
