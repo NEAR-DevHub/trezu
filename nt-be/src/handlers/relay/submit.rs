@@ -1,7 +1,7 @@
 use axum::{Json, extract::State, http::StatusCode};
 use borsh::BorshDeserialize;
 use near_api::{
-    NearToken, Tokens, Transaction,
+    AccountId, NearToken, Tokens, Transaction,
     types::{
         Action,
         json::{Base64VecU8, U128},
@@ -21,6 +21,7 @@ use crate::{
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RelayRequest {
+    pub treasury_id: AccountId,
     pub storage_bytes: U128,
     /// Base64-encoded borsh-serialized SignedDelegateAction
     pub signed_delegate_action: Base64VecU8,
@@ -57,6 +58,16 @@ pub async fn relay_delegate_action(
     auth_user: AuthUser,
     Json(request): Json<RelayRequest>,
 ) -> Result<Json<RelayResponse>, (StatusCode, Json<RelayResponse>)> {
+    auth_user
+        .verify_dao_member(&state.db_pool, request.treasury_id.as_str())
+        .await
+        .map_err(|e| {
+            error_response(
+                StatusCode::FORBIDDEN,
+                format!("Not a DAO policy member: {}", e),
+            )
+        })?;
+
     // Step 1: Decode base64 to bytes
     if request.storage_bytes.0 > MAX_STORAGE_BYTES {
         return Err(error_response(
@@ -76,7 +87,6 @@ pub async fn relay_delegate_action(
             )
         })?;
 
-    let treasury_id = signed_delegate_action.delegate_action.receiver_id.clone();
     // Step 3: Verify sender_id matches authenticated user
     let sender_id = signed_delegate_action.delegate_action.sender_id.to_string();
     if sender_id != auth_user.account_id {
@@ -97,7 +107,7 @@ pub async fn relay_delegate_action(
         WHERE account_id = $1
         "#,
     )
-    .bind(treasury_id.as_str())
+    .bind(request.treasury_id.as_str())
     .fetch_optional(&state.db_pool)
     .await
     .map_err(|e| {
@@ -113,7 +123,7 @@ pub async fn relay_delegate_action(
                 StatusCode::NOT_FOUND,
                 format!(
                     "Treasury '{}' not found in monitored accounts",
-                    treasury_id.as_str()
+                    request.treasury_id.as_str()
                 ),
             ));
         }
@@ -195,7 +205,7 @@ pub async fn relay_delegate_action(
                     RETURNING gas_covered_transactions
                     "#,
                 )
-                .bind(treasury_id.as_str())
+                .bind(request.treasury_id.as_str())
                 .fetch_optional(&state.db_pool)
                 .await;
 
@@ -203,20 +213,20 @@ pub async fn relay_delegate_action(
                     Ok(Some((new_credits,))) => {
                         log::info!(
                             "Decremented gas credits for treasury {}. New balance: {}",
-                            treasury_id.as_str(),
+                            request.treasury_id.as_str(),
                             new_credits
                         );
                     }
                     Ok(None) => {
                         log::warn!(
                             "Treasury {} not found for credit decrement",
-                            treasury_id.as_str()
+                            request.treasury_id.as_str()
                         );
                     }
                     Err(e) => {
                         log::error!(
                             "Failed to decrement gas credits for {}: {}",
-                            treasury_id.as_str(),
+                            request.treasury_id.as_str(),
                             e
                         );
                         // Don't fail - the relay already succeeded

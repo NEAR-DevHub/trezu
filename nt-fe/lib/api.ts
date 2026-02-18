@@ -1174,6 +1174,7 @@ function signedDelegateToBase64(
 }
 
 export async function relayDelegateAction(
+    treasuryId: string,
     signedDelegateAction: SignDelegateActionResult,
     storageBytes: Big,
 ): Promise<RelayDelegateActionResponse> {
@@ -1186,6 +1187,7 @@ export async function relayDelegateAction(
         {
             signedDelegateAction: base64Encoded,
             storageBytes: storageBytes.toFixed(0),
+            treasuryId,
         },
         { withCredentials: true },
     );
@@ -1214,7 +1216,7 @@ export interface ExportHistoryResponse {
 export async function getExportHistory(
     accountId: string,
     limit = 10,
-    offset = 0
+    offset = 0,
 ): Promise<ExportHistoryResponse> {
     const response = await axios.get<ExportHistoryResponse>(
         `${BACKEND_API_BASE}/export-history`,
@@ -1224,7 +1226,7 @@ export async function getExportHistory(
                 limit,
                 offset,
             },
-        }
+        },
     );
     return response.data;
 }

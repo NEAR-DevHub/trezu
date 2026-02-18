@@ -112,9 +112,9 @@ interface NearStore {
         message: string,
     ) => Promise<{ signatureData: SignedMessage; signedData: string }>;
     signAndSendDelegateAction: (
+        treasuryId: string,
         params: SignDelegateActionParams,
         storageBytes: Big,
-        treasuryId: string,
     ) => Promise<boolean>;
     createProposal: (
         toastMessage: string,
@@ -408,6 +408,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
     },
 
     signAndSendDelegateAction: async (
+        treasuryId: string,
         params: SignDelegateActionParams,
         storageBytes: Big,
     ): Promise<boolean> => {
@@ -426,6 +427,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
         // Relay each signed delegate action to the backend for gas-sponsored submission
         for (const signedAction of result.signedDelegateActions) {
             const relayResult = await relayDelegateAction(
+                treasuryId,
                 signedAction,
                 storageBytes,
             );
@@ -494,9 +496,9 @@ export const useNearStore = create<NearStore>((set, get) => ({
 
         try {
             await get().signAndSendDelegateAction(
+                params.treasuryId,
                 { delegateActions, network: "mainnet" },
                 storageBytes,
-                params.treasuryId,
             );
             if (showToast) {
                 toast.success(toastMessage, {
@@ -567,9 +569,9 @@ export const useNearStore = create<NearStore>((set, get) => ({
 
         try {
             await signAndSendDelegateAction(
+                treasuryId,
                 { delegateActions: delegateActions as any, network: "mainnet" },
                 voteStorageBytes.mul(votes.length),
-                treasuryId,
             );
 
             const toastAction =

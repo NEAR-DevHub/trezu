@@ -18,6 +18,7 @@ pub enum AuthError {
     RevokedToken,
     DatabaseError(String),
     InternalError(String),
+    NotDaoMember,
 }
 
 impl std::fmt::Display for AuthError {
@@ -34,6 +35,7 @@ impl std::fmt::Display for AuthError {
             AuthError::RevokedToken => write!(f, "Token has been revoked or expired"),
             AuthError::DatabaseError(msg) => write!(f, "Database error: {}", msg),
             AuthError::InternalError(msg) => write!(f, "Internal error: {}", msg),
+            AuthError::NotDaoMember => write!(f, "Not a DAO policy member"),
         }
     }
 }
@@ -60,6 +62,7 @@ impl IntoResponse for AuthError {
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Internal error".to_string(),
             ),
+            AuthError::NotDaoMember => (StatusCode::FORBIDDEN, self.to_string()),
         };
 
         let body = Json(json!({

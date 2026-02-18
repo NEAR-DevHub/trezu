@@ -13,6 +13,32 @@ pub struct AuthUser {
     pub account_id: String,
 }
 
+impl AuthUser {
+    /// Verify this user is a policy member of the given DAO.
+    ///
+    /// Returns `AuthError::NotDaoMember` (403) if not found in `dao_members`
+    /// with `is_policy_member = true`.
+    pub async fn verify_dao_member(
+        &self,
+        db: &sqlx::PgPool,
+        dao_id: &str,
+    ) -> Result<(), AuthError> {
+        let member = sqlx::query!(
+            r#"
+            SELECT 1 AS ok FROM dao_members
+            WHERE account_id = $1 AND dao_id = $2 AND is_policy_member = true
+            "#,
+            self.account_id,
+            dao_id
+        )
+        .fetch_optional(db)
+        .await
+        .map_err(|e| AuthError::DatabaseError(e.to_string()))?;
+
+        member.map(|_| ()).ok_or(AuthError::NotDaoMember)
+    }
+}
+
 impl FromRequestParts<Arc<AppState>> for AuthUser {
     type Rejection = AuthError;
 
