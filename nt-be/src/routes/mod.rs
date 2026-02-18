@@ -146,6 +146,10 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
             get(handlers::user::check_account_exists::check_account_exists),
         )
         .route(
+            "/api/user/create",
+            post(handlers::user::create::create_user_account),
+        )
+        .route(
             "/api/user/lockup",
             get(handlers::user::lockup::get_user_lockup),
         )

@@ -348,7 +348,7 @@ test("Ledger login flow", async ({ page, context }) => {
         });
     });
 
-    // Navigate to the landing page
+    // Navigate to the app
     await page.goto("/");
     await page.waitForTimeout(1500); // Pause to show the initial page
 
@@ -415,7 +415,9 @@ test("Ledger login flow", async ({ page, context }) => {
     // Handle the "Select Derivation Path" dialog - click Continue with default selection
     const continueBtn = iframe.getByRole("button", { name: /continue/i });
     await expect(continueBtn).toBeVisible({ timeout: 10000 });
-    console.log("Derivation path dialog visible, clicking Continue with default selection");
+    console.log(
+        "Derivation path dialog visible, clicking Continue with default selection",
+    );
     await page.waitForTimeout(1500); // Pause to show the derivation path dialog
     await continueBtn.click();
     console.log("Clicked Continue on derivation path dialog");
@@ -451,7 +453,7 @@ test("Ledger login flow", async ({ page, context }) => {
     // Wait for login to complete
     await page.waitForTimeout(2000);
 
-    // Verify login succeeded - should redirect away from the landing page
+    // Verify login succeeded - should redirect away from the login page
     // to either /app/new (no treasury) or /{treasuryId} (has treasury in sandbox)
     await expect(page).not.toHaveURL("/", {
         timeout: 10000,

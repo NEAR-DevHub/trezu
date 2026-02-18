@@ -31,6 +31,7 @@ import {
     estimateProposalStorage,
     estimateVoteStorage,
 } from "@/lib/sputnik-storage";
+import { setupLedgerSandboxBackendBridge } from "@/src/ledger-wallet/parent-bridge";
 
 /**
  * Ensures sandboxed iframes get bluetooth permission for Ledger Nano X BLE.
@@ -204,6 +205,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                     "bluetooth" in navigator)
             ) {
                 try {
+                    setupLedgerSandboxBackendBridge();
                     await newConnector.registerWallet(ledgerWalletManifest);
                     console.log("Ledger wallet registered successfully");
                 } catch (e) {

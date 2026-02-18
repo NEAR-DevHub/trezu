@@ -1,8 +1,8 @@
 // Ledger Hardware Wallet Executor for hot-connect
 // This script provides Ledger device integration for NEAR Protocol transactions
 
-// Import dependencies from CDN
-import { baseEncode, baseDecode } from "https://esm.sh/@near-js/utils@0.2.2";
+// Import dependencies from npm packages
+import { baseEncode, baseDecode } from "@near-js/utils";
 import {
     Signature,
     createTransaction,
@@ -12,317 +12,10 @@ import {
     buildDelegateAction,
     SignedDelegate,
     actionCreators,
-} from "https://esm.sh/@near-js/transactions@2.5.1";
-import { PublicKey } from "https://esm.sh/@near-js/crypto@2.5.1";
-import { Buffer } from "https://esm.sh/buffer@6.0.3";
-import LedgerTransport from "https://esm.sh/@ledgerhq/hw-transport@6.29";
-import LedgerTransportWebBle from "https://esm.sh/@ledgerhq/hw-transport-web-ble@6.29";
-import LedgerTransportWebUsb from "https://esm.sh/@ledgerhq/hw-transport-webusb@6.29";
-import LedgerTransportWebHid from "https://esm.sh/@ledgerhq/hw-transport-webhid@6.29";
-
-// Inlined transport/client helpers previously in supportedTransport.js and near-ledger.js
-// TODO: remove after fixing https://github.com/LedgerHQ/ledgerjs/issues/352#issuecomment-615917351
-class LedgerTransportWebBleAndroidFix extends LedgerTransportWebBle {
-    static async open(device, ...args) {
-        if (!navigator.userAgent.includes("Mobi"))
-            return super.open(device, ...args);
-        const getPrimaryServicesOrig = device.gatt?.getPrimaryServices;
-        if (getPrimaryServicesOrig == null) return super.open(device, ...args);
-        device.gatt.getPrimaryServices = async () => {
-            const [service] = await getPrimaryServicesOrig.call(device.gatt);
-            const getCharacteristicOrig = service.getCharacteristic;
-            service.getCharacteristic = async (id) => {
-                const characteristic = await getCharacteristicOrig.call(
-                    service,
-                    id,
-                );
-                if (id === "13d63400-2c97-0004-0002-4c6564676572") {
-                    const writeValueOrig = characteristic.writeValue;
-                    let delayed = false;
-                    characteristic.writeValue = async (data) => {
-                        if (!delayed) {
-                            await new Promise((resolve) =>
-                                setTimeout(resolve, 500),
-                            );
-                            delayed = true;
-                        }
-                        return writeValueOrig.call(characteristic, data);
-                    };
-                }
-                return characteristic;
-            };
-            return [service];
-        };
-        return super.open(device, ...args);
-    }
-}
-
-class LedgerTransportTauri extends LedgerTransport {
-    constructor(deviceName) {
-        super();
-        this.deviceName = deviceName;
-    }
-
-    static async open(deviceName) {
-        return new LedgerTransportTauri(deviceName);
-    }
-
-    async exchange(apdu) {
-        const response = await window.__TAURI__.core.invoke(
-            "send_ledger_command",
-            {
-                ledgerDeviceName: this.deviceName,
-                command: Array.from(apdu),
-            },
-        );
-        return Buffer.from(response);
-    }
-}
-
-let ENABLE_DEBUG_LOGGING = false;
-const debugLog = (...args) => {
-    ENABLE_DEBUG_LOGGING && console.log(...args);
-};
-
-function isIOS() {
-    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-    return /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
-}
-
-function isFirefox() {
-    return navigator.userAgent.toLowerCase().indexOf("firefox") > -1;
-}
-
-function isSafari() {
-    const userAgent = navigator.userAgent.toLowerCase();
-    return (
-        userAgent.includes("safari") &&
-        !userAgent.includes("chrome") &&
-        !userAgent.includes("chromium")
-    );
-}
-
-async function isWebHidSupported() {
-    try {
-        return await LedgerTransportWebHid.isSupported();
-    } catch (e) {
-        return false;
-    }
-}
-
-async function isWebUsbSupported() {
-    try {
-        return await LedgerTransportWebUsb.isSupported();
-    } catch (e) {
-        return false;
-    }
-}
-
-async function isWebBleSupported() {
-    try {
-        return await LedgerTransportWebBleAndroidFix.isSupported();
-    } catch (e) {
-        return false;
-    }
-}
-
-function setDebugLogging(value) {
-    ENABLE_DEBUG_LOGGING = value;
-}
-
-async function getSupportedTransport(mode) {
-    console.log("Using Ledger mode", JSON.stringify(mode));
-    if (mode === "Disabled") {
-        const err = new Error("Please choose a Ledger connection method.");
-        err.name = "LedgerDisabled";
-        throw err;
-    }
-
-    debugLog(`Attempting to create specific transport: ${mode}`);
-
-    let transport = null;
-    try {
-        if (mode === "WebHID") {
-            const isSupported = await isWebHidSupported();
-            if (!isSupported) {
-                const err = new Error(
-                    "WebHID is not supported in this browser.",
-                );
-                err.name = "WebHIDNotSupported";
-                throw err;
-            }
-            transport = await LedgerTransportWebHid.create();
-        } else if (mode === "WebUSB") {
-            const isSupported = await isWebUsbSupported();
-            if (!isSupported) {
-                let err;
-                if (isIOS()) {
-                    err = new Error("WebUSB is not supported on iOS devices.");
-                    err.name = "WebUSBNotSupportedIOS";
-                } else if (isFirefox()) {
-                    err = new Error("WebUSB is not supported in Firefox.");
-                    err.name = "WebUSBNotSupportedFirefox";
-                } else if (isSafari()) {
-                    err = new Error("WebUSB is not supported in Safari.");
-                    err.name = "WebUSBNotSupportedSafari";
-                } else {
-                    err = new Error("WebUSB is not supported in this browser.");
-                    err.name = "WebUSBNotSupported";
-                }
-                throw err;
-            }
-            transport = await LedgerTransportWebUsb.create();
-        } else if (mode === "WebBLE") {
-            const isSupported = await isWebBleSupported();
-            if (!isSupported) {
-                let err;
-                if (isIOS()) {
-                    err = new Error("WebBLE is not supported on iOS devices.");
-                    err.name = "WebBLENotSupportedIOS";
-                } else if (isFirefox()) {
-                    err = new Error("WebBLE is not supported in Firefox.");
-                    err.name = "WebBLENotSupportedFirefox";
-                } else if (isSafari()) {
-                    err = new Error("WebBLE is not supported in Safari.");
-                    err.name = "WebBLENotSupportedSafari";
-                } else {
-                    err = new Error("WebBLE is not supported in this browser.");
-                    err.name = "WebBLENotSupported";
-                }
-                throw err;
-            }
-            transport = await LedgerTransportWebBleAndroidFix.create();
-        } else if (mode instanceof Object && mode.TauriDevice) {
-            transport = await LedgerTransportTauri.open(mode.TauriDevice);
-        } else {
-            const err = new Error(
-                "Unknown transport mode: " + JSON.stringify(mode),
-            );
-            err.name = "UnknownTransportMode";
-            throw err;
-        }
-
-        if (transport) {
-            debugLog(`Successfully created ${mode} transport!`, transport);
-            return transport;
-        }
-    } catch (err) {
-        console.error(`Failed to create ${mode} transport:`, err);
-        throw err;
-    }
-}
-
-function bip32PathToBytes(path) {
-    const parts = path.split("/");
-    return Buffer.concat(
-        parts
-            .map((part) =>
-                part.endsWith("'")
-                    ? Math.abs(parseInt(part.slice(0, -1))) | 0x80000000
-                    : Math.abs(parseInt(part)),
-            )
-            .map((i32) =>
-                Buffer.from([
-                    (i32 >> 24) & 0xff,
-                    (i32 >> 16) & 0xff,
-                    (i32 >> 8) & 0xff,
-                    i32 & 0xff,
-                ]),
-            ),
-    );
-}
-
-const NEAR_NETWORK_ID = "W".charCodeAt(0);
-const SIGN_TRANSACTION = 2;
-const SIGN_MESSAGE = 7;
-const SIGN_META_TRANSACTION = 8;
-const NEAR_LEDGER_DEFAULT_PATH = "44'/397'/0'/0'/1'";
-
-async function createClient(transport, mode) {
-    return {
-        mode,
-        transport,
-        async getVersion() {
-            const response = await this.transport.send(0x80, 6, 0, 0);
-            const [major, minor, patch] = Array.from(response);
-            return `${major}.${minor}.${patch}`;
-        },
-        async getPublicKey(path) {
-            // NOTE: getVersion call allows to reset state to avoid starting from partially filled buffer
-            await this.getVersion();
-
-            path = path || NEAR_LEDGER_DEFAULT_PATH;
-            const response = await this.transport.send(
-                0x80,
-                4,
-                0,
-                NEAR_NETWORK_ID,
-                bip32PathToBytes(path),
-            );
-            return Buffer.from(response.subarray(0, -2));
-        },
-        async sign(transactionData, path) {
-            const isNep413 =
-                transactionData.length >= 4 &&
-                transactionData[0] === 0x9d &&
-                transactionData[1] === 0x01 &&
-                transactionData[2] === 0x00 &&
-                transactionData[3] === 0x80;
-            if (isNep413) {
-                transactionData = transactionData.slice(4);
-            }
-            const isNep366 =
-                transactionData.length >= 4 &&
-                transactionData[0] === 0x6e &&
-                transactionData[1] === 0x01 &&
-                transactionData[2] === 0x00 &&
-                transactionData[3] === 0x40;
-            if (isNep366) {
-                transactionData = transactionData.slice(4);
-            }
-
-            // NOTE: getVersion call allows to reset state to avoid starting from partially filled buffer
-            const version = await this.getVersion();
-            console.info("Ledger app version:", version);
-            // TODO: Assert compatible versions
-
-            path = path || NEAR_LEDGER_DEFAULT_PATH;
-            transactionData = Buffer.from(transactionData);
-            // 128 - 5 service bytes
-            const CHUNK_SIZE = 123;
-            const allData = Buffer.concat([
-                bip32PathToBytes(path),
-                transactionData,
-            ]);
-            for (
-                let offset = 0;
-                offset < allData.length;
-                offset += CHUNK_SIZE
-            ) {
-                const chunk = Buffer.from(
-                    allData.subarray(offset, offset + CHUNK_SIZE),
-                );
-                const isLastChunk = offset + CHUNK_SIZE >= allData.length;
-                let code = SIGN_TRANSACTION;
-                if (isNep413) {
-                    code = SIGN_MESSAGE;
-                } else if (isNep366) {
-                    code = SIGN_META_TRANSACTION;
-                }
-                const response = await this.transport.send(
-                    0x80,
-                    code,
-                    isLastChunk ? 0x80 : 0,
-                    NEAR_NETWORK_ID,
-                    chunk,
-                );
-                if (isLastChunk) {
-                    return Buffer.from(response.subarray(0, -2));
-                }
-            }
-        },
-    };
-}
+} from "@near-js/transactions";
+import { PublicKey } from "@near-js/crypto";
+import { Buffer } from "buffer";
+import { getSupportedTransport, createClient } from "./near-ledger.js";
 
 // Destructure action creators for convenience
 const {
@@ -356,6 +49,94 @@ const DEFAULT_DERIVATION_PATH = "44'/397'/0'/0'/1'";
 const STORAGE_KEY_ACCOUNTS = "ledger:accounts";
 const STORAGE_KEY_DERIVATION_PATH = "ledger:derivationPath";
 const STORAGE_KEY_TRANSPORT_MODE = "ledger:transportMode";
+const LEDGER_BRIDGE_REQUEST_TYPE = "trezu:ledger-bridge:request";
+const LEDGER_BRIDGE_RESPONSE_TYPE = "trezu:ledger-bridge:response";
+
+function createBridgeResponse(responsePayload) {
+    return {
+        ok: Boolean(responsePayload?.ok),
+        status:
+            typeof responsePayload?.status === "number"
+                ? responsePayload.status
+                : 500,
+        async json() {
+            if (typeof responsePayload?.body !== "string") {
+                return null;
+            }
+            return JSON.parse(responsePayload.body);
+        },
+        async text() {
+            if (typeof responsePayload?.body !== "string") {
+                return "";
+            }
+            return responsePayload.body;
+        },
+    };
+}
+
+async function fetchViaParentBridge(path, init = {}) {
+    if (typeof window === "undefined" || !window.parent) {
+        throw new Error("Parent bridge is unavailable.");
+    }
+
+    const requestId = `ledger-bridge-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const payload = {
+        path,
+        method: init.method || "GET",
+        headers: init.headers || {},
+        body: typeof init.body === "string" ? init.body : undefined,
+    };
+
+    return await new Promise((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+            window.removeEventListener("message", onBridgeMessage);
+            reject(new Error("Parent bridge timed out."));
+        }, 15000);
+
+        function onBridgeMessage(event) {
+            const data = event.data;
+            if (
+                !data ||
+                data.type !== LEDGER_BRIDGE_RESPONSE_TYPE ||
+                data.id !== requestId
+            ) {
+                return;
+            }
+
+            clearTimeout(timeoutId);
+            window.removeEventListener("message", onBridgeMessage);
+
+            if (data.payload?.error) {
+                reject(new Error(data.payload.error));
+                return;
+            }
+
+            resolve(createBridgeResponse(data.payload));
+        }
+
+        window.addEventListener("message", onBridgeMessage);
+        window.parent.postMessage(
+            {
+                type: LEDGER_BRIDGE_REQUEST_TYPE,
+                id: requestId,
+                payload,
+            },
+            "*",
+        );
+    });
+}
+
+async function fetchBackend(path, init = {}) {
+    try {
+        return await fetchViaParentBridge(path, init);
+    } catch (bridgeError) {
+        console.warn(
+            "Ledger parent bridge unavailable, falling back to direct fetch:",
+            bridgeError,
+        );
+        return await fetch(path, init);
+    }
+}
 
 /**
  * Check which transport methods are supported in the current browser
@@ -370,9 +151,7 @@ async function getAvailableTransports() {
 
     // Check WebHID support
     try {
-        const TransportWebHID = await import(
-            "https://esm.sh/@ledgerhq/hw-transport-webhid@6.29"
-        );
+        const TransportWebHID = await import("@ledgerhq/hw-transport-webhid");
         results.webHID = await TransportWebHID.default.isSupported();
     } catch (e) {
         results.webHID = false;
@@ -380,9 +159,7 @@ async function getAvailableTransports() {
 
     // Check WebUSB support
     try {
-        const TransportWebUSB = await import(
-            "https://esm.sh/@ledgerhq/hw-transport-webusb@6.29"
-        );
+        const TransportWebUSB = await import("@ledgerhq/hw-transport-webusb");
         results.webUSB = await TransportWebUSB.default.isSupported();
     } catch (e) {
         results.webUSB = false;
@@ -390,9 +167,7 @@ async function getAvailableTransports() {
 
     // Check WebBLE support
     try {
-        const TransportWebBLE = await import(
-            "https://esm.sh/@ledgerhq/hw-transport-web-ble@6.29"
-        );
+        const TransportWebBLE = await import("@ledgerhq/hw-transport-web-ble");
         results.webBLE = await TransportWebBLE.default.isSupported();
     } catch (e) {
         results.webBLE = false;
@@ -798,7 +573,7 @@ function getLedgerErrorMessage(error) {
     const errorMsg = error.message || "";
 
     if (errorMsg.includes("0xb005") || errorMsg.includes("UNKNOWN_ERROR")) {
-        return "Please make sure your Ledger device is unlocked and the NEAR app is open. You may need to approve the action on your device.";
+        return "Please make sure your Ledger device is unlocked and the NEAR app is open. Please approve opening app on your Ledger device.";
     }
     if (errorMsg.includes("0x5515") || errorMsg.includes("Locked device")) {
         return "Your Ledger device is locked. Please unlock it and try again.";
@@ -807,7 +582,7 @@ function getLedgerErrorMessage(error) {
         return "NEAR application is not installed on your Ledger device. Please install it using Ledger Live.";
     }
     if (errorMsg.includes("5501") || errorMsg.includes("declined")) {
-        return "You declined to open the NEAR app. Please try again and approve on your device.";
+        return "You declined to open the NEAR app. Please try again and please approve opening app on your device.";
     }
     if (errorMsg.includes("No device selected")) {
         return "No Ledger device was selected. Please try again and select your device.";
@@ -822,46 +597,11 @@ function getLedgerErrorMessage(error) {
  * required by WebHID/WebUSB/WebBLE API
  */
 async function promptForLedgerConnect(ledgerClient) {
-    let initialError = null;
     let storedMode = null;
     let canChangeConnectionMethod = false;
 
-    // Try to connect with stored transport mode if available
+    // Read stored mode first, but always render UI before any Ledger interaction.
     storedMode = await ledgerClient.getStoredTransportMode();
-    if (storedMode) {
-        try {
-            // Check if we already have device access for this transport
-            let hasExistingDevice = false;
-
-            if (storedMode === "WebHID" && navigator?.hid) {
-                const devices = await navigator.hid.getDevices();
-                hasExistingDevice = devices.some((d) => d.vendorId === 0x2c97);
-            } else if (storedMode === "WebUSB" && navigator?.usb) {
-                const devices = await navigator.usb.getDevices();
-                hasExistingDevice = devices.some((d) => d.vendorId === 0x2c97);
-            } else if (storedMode === "WebBLE" && navigator?.bluetooth) {
-                // WebBLE doesn't have a getDevices method, skip this check
-                hasExistingDevice = false;
-            }
-
-            if (hasExistingDevice) {
-                await ledgerClient.connectWithDevice(storedMode);
-                await ledgerClient.openNearApplication();
-                return;
-            }
-        } catch (error) {
-            // Connection failed, disconnect to ensure clean state
-            if (ledgerClient.isConnected()) {
-                try {
-                    await ledgerClient.disconnect();
-                } catch {
-                    // Ignore disconnect errors
-                }
-            }
-            // Show UI with error
-            initialError = getLedgerErrorMessage(error);
-        }
-    }
 
     // Need to request device access - show UI with button for user gesture
     await window.selector.ui.showIframe();
@@ -879,30 +619,50 @@ async function promptForLedgerConnect(ledgerClient) {
         canChangeConnectionMethod = false;
     }
 
+    function isGuidanceMessage(message) {
+        const text = (message || "").toLowerCase();
+        return (
+            text.includes("device is locked") ||
+            text.includes("please unlock") ||
+            text.includes("please approve opening app")
+        );
+    }
+
     function renderUI(errorMessage = null) {
         // Transport selection may temporarily hide the root; force it visible here.
         root.style.display = "flex";
 
+        const showGuidance =
+            Boolean(errorMessage) && isGuidanceMessage(errorMessage);
+        const messageContainerStyles = showGuidance
+            ? "background: #232933; border: 1px solid #33435d;"
+            : "background: #3d2020; border: 1px solid #5c3030;";
+        const messageTextStyles = showGuidance
+            ? "color: #9fc1ff;"
+            : "color: #ff8080;";
+
         const connectionInstructions =
             ledgerClient.transportMode === "WebBLE"
-                ? "Make sure your Ledger Nano X is powered on, Bluetooth is enabled, and the NEAR app is open."
-                : "Make sure your Ledger is connected via USB and the NEAR app is open.";
+                ? "Make sure your Ledger Nano X or newer is powered on, Bluetooth is enabled."
+                : "Make sure your Ledger is connected via USB.";
 
         root.innerHTML = `
         <div class="prompt-container" style="max-width: 400px; padding: 24px; text-align: center;">
-          <div style="font-size: 48px; margin-bottom: 16px;">${errorMessage ? "⚠️" : "🔐"}</div>
-          <h1 style="margin-bottom: 16px;">${errorMessage ? "Connection Failed" : "Connect Ledger"}</h1>
+          <div style="font-size: 48px; margin-bottom: 16px;">${errorMessage ? (showGuidance ? "🔐" : "⚠️") : "🔐"}</div>
+          <h1 style="margin-bottom: 16px;">${errorMessage ? (showGuidance ? "Action Required" : "Connection Failed") : "Connect Ledger"}</h1>
           ${
               errorMessage
                   ? `
-          <div style="background: #3d2020; border: 1px solid #5c3030; border-radius: 8px; padding: 12px; margin-bottom: 16px; text-align: left;">
-            <p style="color: #ff8080; font-size: 13px; margin: 0;">${errorMessage}</p>
+          <div style="${messageContainerStyles} border-radius: 8px; padding: 12px; margin-bottom: 16px; text-align: left;">
+            <p style="${messageTextStyles} font-size: 13px; margin: 0;">${errorMessage}</p>
           </div>
           `
                   : ""
           }
-          <p style="margin-bottom: 16px; color: #aaa;">
+          <p id="connectionInstructions" style="margin-bottom: 12px; color: #aaa;">
             ${connectionInstructions}
+          </p>
+          <p id="connectionStatusMessage" style="margin-bottom: 16px; color: #4c8bf5; font-size: 13px; display: none;">
           </p>
           ${
               storedMode && canChangeConnectionMethod
@@ -921,7 +681,7 @@ async function promptForLedgerConnect(ledgerClient) {
       `;
     }
 
-    renderUI(initialError);
+    renderUI();
 
     return new Promise((resolve, reject) => {
         function setupListeners() {
@@ -962,6 +722,12 @@ async function promptForLedgerConnect(ledgerClient) {
                 // Show loading state
                 connectBtn.disabled = true;
                 connectBtn.textContent = "Connecting...";
+                const statusMessage = document.getElementById(
+                    "connectionStatusMessage",
+                );
+                const instructions = document.getElementById(
+                    "connectionInstructions",
+                );
 
                 try {
                     // Disconnect first to ensure clean state
@@ -974,6 +740,16 @@ async function promptForLedgerConnect(ledgerClient) {
                     }
                     // This click provides the user gesture context for WebHID
                     await ledgerClient.connect();
+                    if (statusMessage) {
+                        statusMessage.textContent =
+                            "Please approve opening app on your Ledger device.";
+                        statusMessage.style.display = "block";
+                    }
+                    if (instructions) {
+                        instructions.textContent =
+                            "Check your Ledger screen and approve opening the NEAR app.";
+                    }
+                    connectBtn.textContent = "Waiting for approval...";
                     // Ensure NEAR app is open
                     await ledgerClient.openNearApplication();
                     // Don't hide iframe - let next UI (derivation path) take over smoothly
@@ -1158,36 +934,86 @@ async function showLedgerApprovalUI(
     const root = document.getElementById("root");
     root.style.display = "flex";
 
-    root.innerHTML = `
-    <div class="prompt-container" style="max-width: 400px; padding: 24px; text-align: center;">
-      <div style="font-size: 48px; margin-bottom: 16px;">🔐</div>
-      <h1 style="margin-bottom: 16px;">${title}</h1>
-      <p style="margin-bottom: 24px; color: #aaa;">${message}</p>
-      <div style="display: flex; justify-content: center;">
-        <div style="width: 24px; height: 24px; border: 3px solid #444; border-top-color: #4c8bf5; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-      </div>
-      <style>
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-      </style>
-    </div>
-  `;
+    function renderLoadingUI() {
+        root.style.display = "flex";
+        root.innerHTML = `
+        <div class="prompt-container" style="max-width: 400px; padding: 24px; text-align: center;">
+          <div style="font-size: 48px; margin-bottom: 16px;">🔐</div>
+          <h1 style="margin-bottom: 16px;">${title}</h1>
+          <p style="margin-bottom: 24px; color: #aaa;">${message}</p>
+          <div style="display: flex; justify-content: center;">
+            <div style="width: 24px; height: 24px; border: 3px solid #444; border-top-color: #4c8bf5; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+          </div>
+          <style>
+            @keyframes spin {
+              to { transform: rotate(360deg); }
+            }
+          </style>
+        </div>
+      `;
+    }
 
-    try {
-        const result = await asyncOperation();
-        if (hideOnSuccess) {
+    function renderErrorUI(errorMessage) {
+        root.style.display = "flex";
+        root.innerHTML = `
+        <div class="prompt-container" style="max-width: 400px; padding: 24px; text-align: center;">
+          <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+          <h1 style="margin-bottom: 12px;">Action Required</h1>
+          <div style="background: #232933; border: 1px solid #33435d; border-radius: 8px; padding: 12px; margin-bottom: 16px; text-align: left;">
+            <p style="color: #9fc1ff; font-size: 13px; margin: 0;">${errorMessage}</p>
+          </div>
+          <p style="margin-bottom: 16px; color: #aaa;">
+            Unlock your Ledger and retry when ready.
+          </p>
+          <div style="display: flex; gap: 8px; justify-content: center;">
+            <button id="approvalCancelBtn" style="background: #444;">Cancel</button>
+            <button id="approvalRetryBtn" style="background: #4c8bf5;">Try Again</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function waitForRetryAction() {
+        return new Promise((resolve, reject) => {
+            const retryBtn = document.getElementById("approvalRetryBtn");
+            const cancelBtn = document.getElementById("approvalCancelBtn");
+
+            if (!retryBtn || !cancelBtn) {
+                reject(new Error("Approval prompt controls are unavailable."));
+                return;
+            }
+
+            retryBtn.addEventListener("click", () => resolve("retry"), {
+                once: true,
+            });
+            cancelBtn.addEventListener("click", () => resolve("cancel"), {
+                once: true,
+            });
+        });
+    }
+
+    while (true) {
+        renderLoadingUI();
+        try {
+            const result = await asyncOperation();
+            if (hideOnSuccess) {
+                root.innerHTML = "";
+                root.style.display = "none";
+                window.selector.ui.hideIframe();
+            }
+            // Don't hide on success - let the next UI take over smoothly
+            return result;
+        } catch (error) {
+            renderErrorUI(getLedgerErrorMessage(error));
+            const action = await waitForRetryAction();
+            if (action === "retry") {
+                continue;
+            }
             root.innerHTML = "";
             root.style.display = "none";
             window.selector.ui.hideIframe();
+            throw new Error("User cancelled");
         }
-        // Don't hide on success - let the next UI take over smoothly
-        return result;
-    } catch (error) {
-        root.innerHTML = "";
-        root.style.display = "none";
-        window.selector.ui.hideIframe();
-        throw error;
     }
 }
 
@@ -1195,8 +1021,13 @@ async function showLedgerApprovalUI(
  * Helper function to show account ID input dialog
  * @param {string} implicitAccountId - Optional implicit account ID for the button
  * @param {Function} onVerify - Optional async function to verify the account (receives accountId, returns true or throws)
+ * @param {Function} onCreateAccount - Optional async function to create account when missing
  */
-async function promptForAccountId(implicitAccountId = "", onVerify = null) {
+async function promptForAccountId(
+    implicitAccountId = "",
+    onVerify = null,
+    onCreateAccount = null,
+) {
     await window.selector.ui.showIframe();
 
     const root = document.getElementById("root");
@@ -1282,9 +1113,35 @@ async function promptForAccountId(implicitAccountId = "", onVerify = null) {
                         window.selector.ui.hideIframe();
                         resolve(accountId);
                     } catch (error) {
-                        // Show error and allow retry
-                        renderUI(error.message, accountId);
-                        setupListeners();
+                        if (
+                            error?.code === "ACCOUNT_CREATION_REQUIRED" &&
+                            onCreateAccount
+                        ) {
+                            try {
+                                const created = await promptForCreateAccount(
+                                    accountId,
+                                    error.message,
+                                    onCreateAccount,
+                                );
+                                if (created) {
+                                    root.innerHTML = "";
+                                    root.style.display = "none";
+                                    window.selector.ui.hideIframe();
+                                    resolve(accountId);
+                                    return;
+                                }
+                                // User cancelled create flow: return to account input without an error toast.
+                                renderUI(null, accountId);
+                                setupListeners();
+                            } catch (createError) {
+                                renderUI(createError.message, accountId);
+                                setupListeners();
+                            }
+                        } else {
+                            // Show error and allow retry
+                            renderUI(error.message, accountId);
+                            setupListeners();
+                        }
                     }
                 } else {
                     root.innerHTML = "";
@@ -1312,6 +1169,88 @@ async function promptForAccountId(implicitAccountId = "", onVerify = null) {
         }
 
         setupListeners();
+    });
+}
+
+/**
+ * Show a confirm/create dialog for accounts that are not ready for Ledger sign-in.
+ * Returns true when account creation succeeds, false when cancelled by user.
+ */
+async function promptForCreateAccount(
+    accountId,
+    reasonMessage,
+    onCreateAccount,
+) {
+    const root = document.getElementById("root");
+    root.style.display = "flex";
+
+    function renderUI(errorMessage = null) {
+        root.innerHTML = `
+        <div class="prompt-container" style="width: min(420px, calc(100vw - 32px)); max-width: 100%; padding: 24px; box-sizing: border-box; overflow-wrap: anywhere; word-break: break-word;">
+          <h1 style="margin-bottom: 12px;">Account Doesn't Exist</h1>
+          <p style="margin-bottom: 12px; color: #aaa; overflow-wrap: anywhere; word-break: break-word;">
+            The provided account does not exist on NEAR blockchain.
+          </p>
+          <p style="margin-bottom: 16px; color: #aaa;">
+            Do you want to create this account now?
+          </p>
+          ${
+              reasonMessage
+                  ? `
+          <div style="background: #232933; border: 1px solid #33435d; border-radius: 8px; padding: 12px; margin-bottom: 12px; text-align: left;">
+            <p style="color: #9fc1ff; font-size: 13px; margin: 0; overflow-wrap: anywhere; word-break: break-word;">Account<br/>${accountId}</p>
+          </div>
+          `
+                  : ""
+          }
+          ${
+              errorMessage
+                  ? `
+          <div style="background: #3d2020; border: 1px solid #5c3030; border-radius: 8px; padding: 12px; margin-bottom: 12px; text-align: left;">
+            <p style="color: #ff8080; font-size: 13px; margin: 0; overflow-wrap: anywhere; word-break: break-word;">${errorMessage}</p>
+          </div>
+          `
+                  : ""
+          }
+          <div style="display: flex; gap: 8px; justify-content: flex-end;">
+            <button id="createAccountCancelBtn" style="background: #444;">Cancel</button>
+            <button id="createAccountConfirmBtn" style="background: #4c8bf5;">Create Account</button>
+          </div>
+        </div>
+      `;
+    }
+
+    renderUI();
+
+    return new Promise((resolve, reject) => {
+        function setupListeners() {
+            const cancelBtn = document.getElementById("createAccountCancelBtn");
+            const createBtn = document.getElementById(
+                "createAccountConfirmBtn",
+            );
+
+            cancelBtn.addEventListener("click", () => {
+                resolve(false);
+            });
+
+            createBtn.addEventListener("click", async () => {
+                createBtn.disabled = true;
+                createBtn.textContent = "Creating...";
+                try {
+                    await onCreateAccount(accountId);
+                    resolve(true);
+                } catch (error) {
+                    renderUI(error.message || "Failed to create account.");
+                    setupListeners();
+                }
+            });
+        }
+
+        try {
+            setupListeners();
+        } catch (error) {
+            reject(error);
+        }
     });
 }
 
@@ -1347,13 +1286,129 @@ async function rpcRequest(network, method, params) {
         throw new Error(json.error.message || "RPC request failed");
     }
 
+    // Some RPC providers return query failures in result.error instead of json.error.
+    if (json.result?.error) {
+        const resultError =
+            typeof json.result.error === "string"
+                ? json.result.error
+                : json.result.error.message ||
+                  JSON.stringify(json.result.error) ||
+                  "RPC request failed";
+        throw new Error(resultError);
+    }
+
     return json.result;
+}
+
+/**
+ * Request backend to create an account with Ledger public key.
+ */
+async function createUserAccountViaBackend(payload) {
+    const response = await fetchBackend("/api/user/create", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            accountId: payload.accountId,
+            publicKey: payload.publicKey,
+        }),
+    });
+
+    let body = null;
+    try {
+        body = await response.json();
+    } catch {
+        body = null;
+    }
+
+    if (!response.ok) {
+        const message =
+            body?.error ||
+            body?.message ||
+            (typeof body === "string" ? body : null) ||
+            "Failed to create account. Please try again.";
+        throw new Error(message);
+    }
+
+    return body;
+}
+
+async function checkAccountExistsViaBackend(accountId) {
+    const response = await fetchBackend(
+        `/api/user/check-account-exists?accountId=${encodeURIComponent(accountId)}`,
+    );
+
+    let body = null;
+    try {
+        body = await response.json();
+    } catch {
+        body = null;
+    }
+
+    if (!response.ok) {
+        const message =
+            body?.error ||
+            body?.message ||
+            (typeof body === "string" ? body : null) ||
+            "Failed to check account existence.";
+        throw new Error(message);
+    }
+
+    if (typeof body?.exists !== "boolean") {
+        throw new Error("Invalid account existence response from backend.");
+    }
+
+    return body.exists;
+}
+
+function isAccountMissingError(errorMessage) {
+    return (
+        errorMessage.includes("account does not exist while viewing") ||
+        errorMessage.includes("does not exist while viewing") ||
+        errorMessage.includes("UnknownAccount")
+    );
+}
+
+async function checkAccountExists(network, accountId) {
+    try {
+        return await checkAccountExistsViaBackend(accountId);
+    } catch (backendError) {
+        console.warn(
+            "Falling back to RPC for account existence check:",
+            backendError,
+        );
+    }
+
+    try {
+        await rpcRequest(network, "query", {
+            request_type: "view_account",
+            finality: "final",
+            account_id: accountId,
+        });
+        return true;
+    } catch (error) {
+        const errorMsg = error?.message || "";
+        if (isAccountMissingError(errorMsg)) {
+            return false;
+        }
+        throw error;
+    }
 }
 
 /**
  * Verify that the public key has full access to the account
  */
 async function verifyAccessKey(network, accountId, publicKey) {
+    const accountExists = await checkAccountExists(network, accountId);
+    if (!accountExists) {
+        const creationRequiredError = new Error(
+            `Account ${accountId} does not exist yet.`,
+        );
+        creationRequiredError.code = "ACCOUNT_CREATION_REQUIRED";
+        throw creationRequiredError;
+    }
+
     try {
         const accessKey = await rpcRequest(network, "query", {
             request_type: "view_access_key",
@@ -1362,18 +1417,43 @@ async function verifyAccessKey(network, accountId, publicKey) {
             public_key: publicKey,
         });
 
+        // Some RPC responses embed query failures in a successful JSON-RPC result.
+        if (accessKey?.error) {
+            const errorMsg =
+                typeof accessKey.error === "string"
+                    ? accessKey.error
+                    : accessKey.error.message ||
+                      JSON.stringify(accessKey.error) ||
+                      "Access key lookup failed.";
+            if (
+                errorMsg.includes("access key") ||
+                isAccountMissingError(errorMsg) ||
+                errorMsg.includes("does not exist")
+            ) {
+                throw new Error(
+                    `Access key not found for account ${accountId}. Please make sure the Ledger public key is registered for this account.`,
+                );
+            }
+            throw new Error(errorMsg);
+        }
+
         // Check if it's a full access key
         if (accessKey.permission !== "FullAccess") {
             throw new Error(
-                "The public key does not have FullAccess permission for this account",
+                "The public key does not have FullAccess permission for this account.",
             );
         }
 
         return true;
     } catch (error) {
-        if (error.message.includes("does not exist")) {
+        const errorMsg = error?.message || "";
+        if (
+            errorMsg.includes("access key") ||
+            isAccountMissingError(errorMsg) ||
+            errorMsg.includes("does not exist")
+        ) {
             throw new Error(
-                `Access key not found for account ${accountId}. Please make sure the account exists and has the Ledger public key registered.`,
+                `Access key not found for account ${accountId}. Please make sure the Ledger public key is registered for this account.`,
             );
         }
         throw error;
@@ -1445,6 +1525,46 @@ class LedgerWallet {
     }
 
     /**
+     * Reconnect Ledger for signing flows without showing the Connect Ledger screen.
+     * This uses the stored transport mode from sign-in.
+     */
+    async _reconnectLedgerForSigning() {
+        const storedMode = await this.ledger.getStoredTransportMode();
+        if (!storedMode) {
+            throw new Error(
+                "Ledger is not connected. Please sign in with Ledger first.",
+            );
+        }
+
+        try {
+            await showLedgerApprovalUI(
+                "Reconnect Ledger",
+                "Please reconnect your Ledger and approve opening app on your Ledger device.",
+                async () => {
+                    // Retry path can re-enter while transport is still connected.
+                    // Reuse existing session to avoid "device is already open" errors.
+                    if (!this.ledger.isConnected()) {
+                        await this.ledger.connectWithDevice(storedMode);
+                    }
+                    await this.ledger.openNearApplication();
+                },
+                false,
+            );
+        } catch (error) {
+            if (this.ledger.isConnected()) {
+                try {
+                    await this.ledger.disconnect();
+                } catch {
+                    // Ignore disconnect errors
+                }
+            }
+            throw new Error(
+                `${getLedgerErrorMessage(error)} Please sign in again if the issue persists.`,
+            );
+        }
+    }
+
+    /**
      * Ensure accounts exist and Ledger is connected. Returns stored accounts.
      */
     async _ensureReady() {
@@ -1453,7 +1573,7 @@ class LedgerWallet {
             throw new Error("No account connected");
         }
         if (!this.ledger.isConnected()) {
-            await promptForLedgerConnect(this.ledger);
+            await this._reconnectLedgerForSigning();
         }
         return accounts;
     }
@@ -1506,11 +1626,22 @@ class LedgerWallet {
             const verifyAccount = async (accountId) => {
                 await verifyAccessKey(network, accountId, publicKey);
             };
+            const createUserAccount = async (accountId) => {
+                await createUserAccountViaBackend({
+                    accountId,
+                    publicKey,
+                    implicitAccountId,
+                    transportMode: this.ledger.transportMode,
+                    derivationPath,
+                    network,
+                });
+            };
 
             // Prompt user for account ID with inline verification
             const accountId = await promptForAccountId(
                 implicitAccountId,
                 verifyAccount,
+                createUserAccount,
             );
 
             // Store the account information
