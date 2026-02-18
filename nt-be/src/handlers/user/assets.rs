@@ -317,7 +317,7 @@ pub async fn get_user_assets(
     let state_clone = state.clone();
     let all_simplified_tokens = state
         .cache
-        .cached(CacheTier::LongTerm, cache_key, async move {
+        .cached(CacheTier::ShortTerm, cache_key, async move {
             // Fetch REF Finance data
             let ref_data_future = async {
                 let tokens_future = fetch_whitelisted_tokens(&state_clone);

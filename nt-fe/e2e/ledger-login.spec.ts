@@ -387,7 +387,25 @@ test("Ledger login flow", async ({ page, context }) => {
     console.log("Clicked Connect Ledger button");
     await page.waitForTimeout(2000); // Pause to show the device connection happening
 
-    // After clicking Connect Ledger:
+    // If both USB and Bluetooth are available (e.g. local Mac with BLE),
+    // the iframe shows a transport chooser. In headless CI (no Bluetooth),
+    // only USB is available and the chooser is auto-skipped.
+    const usbOption = iframe.getByRole("button", { name: /USB/i });
+    if (await usbOption.isVisible().catch(() => false)) {
+        console.log("Transport selection dialog visible, selecting USB");
+        await page.waitForTimeout(1000);
+        await usbOption.click();
+        const transportContinueBtn = iframe.getByRole("button", {
+            name: /continue/i,
+        });
+        await transportContinueBtn.click();
+        console.log("Clicked Continue on transport selection");
+        await page.waitForTimeout(2000);
+    } else {
+        console.log("Transport auto-selected (only USB available)");
+    }
+
+    // After transport selection:
     // 1. GET_APP_AND_VERSION is sent (mock responds with "NEAR" app)
     // 2. "Select Derivation Path" dialog appears
     // 3. User clicks Continue (default Account 2 selected)
@@ -435,8 +453,8 @@ test("Ledger login flow", async ({ page, context }) => {
     // Wait for login to complete
     await page.waitForTimeout(2000);
 
-    // Verify login succeeded - should be on the Create Treasury page or similar
-    // The URL should have changed from /app to /app/new or similar
+    // Verify login succeeded - should redirect away from the login page
+    // to either /app/new (no treasury) or /{treasuryId} (has treasury in sandbox)
     await expect(page).not.toHaveURL("/", {
         timeout: 10000,
     });

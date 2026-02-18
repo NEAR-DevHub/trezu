@@ -16,7 +16,10 @@ export default defineConfig({
 
     use: {
         baseURL: "http://localhost:3000",
-        video: process.env.CI ? "retry-with-video" : "on",
+        video: {
+            mode: process.env.CI ? "on-first-retry" : "on",
+            size: { width: 1280, height: 800 },
+        },
         trace: "on-first-retry",
         screenshot: "only-on-failure",
     },

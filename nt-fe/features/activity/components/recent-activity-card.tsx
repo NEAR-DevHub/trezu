@@ -293,7 +293,7 @@ export function RecentActivity() {
                                         {formatActivityAmount(
                                             grouped.totalAmount
                                         )}{" "}
-                                        {grouped.tokenMetadata.symbol}
+                                        {grouped.tokenMetadata?.symbol ?? grouped.activities[0]?.tokenId}
                                     </div>
                                     <div className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
                                         <FormattedDate
@@ -347,7 +347,7 @@ export function RecentActivity() {
                                         {formatSmartAmount(
                                             swap.receivedAmount
                                         )}{" "}
-                                        {swap.receivedTokenMetadata.symbol}
+                                        {swap.receivedTokenMetadata?.symbol ?? swap.receivedTokenId}
                                     </span>
                                 </div>
                                 <div className="text-sm text-muted-foreground">
@@ -374,7 +374,7 @@ export function RecentActivity() {
                                     {formatActivityAmount(
                                         activity.amount
                                     )}{" "}
-                                    {activity.tokenMetadata.symbol}
+                                    {activity.tokenMetadata?.symbol ?? activity.tokenId}
                                 </div>
                                 <div className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
                                     <FormattedDate
@@ -541,7 +541,7 @@ export function RecentActivity() {
                                                                                 {formatActivityAmount(
                                                                                     activity.amount
                                                                                 )}{" "}
-                                                                                {activity.tokenMetadata.symbol}
+                                                                                {activity.tokenMetadata?.symbol ?? activity.tokenId}
                                                                             </div>
                                                                             <div className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
                                                                                 <FormattedDate

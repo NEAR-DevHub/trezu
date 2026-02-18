@@ -34,11 +34,14 @@ export default function Assets({ tokens, isLoading }: Props) {
 
     const shouldShowLessThanDollar = total > 1 && isThereSomethingToHide;
 
+    // Auto-check "Hide assets <1 USD" on initial load only
+    const [initialized, setInitialized] = useState(false);
     useEffect(() => {
-        if (shouldShowLessThanDollar) {
+        if (!initialized && !isLoading && shouldShowLessThanDollar) {
             setFilterLessThanDollar(true);
+            setInitialized(true);
         }
-    }, [isLoading, aggregatedTokens]);
+    }, [initialized, isLoading, shouldShowLessThanDollar]);
 
     const filteredAssets = useMemo(
         () =>
