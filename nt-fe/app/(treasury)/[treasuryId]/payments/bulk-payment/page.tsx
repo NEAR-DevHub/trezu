@@ -146,7 +146,7 @@ export default function BulkPaymentPage() {
                 recipient: payment.recipient,
                 amount: Big(payment.amount || "0")
                     .times(Big(10).pow(selectedToken.decimals))
-                    .toString(),
+                    .toFixed(0),
             }));
 
             // Generate list_id
