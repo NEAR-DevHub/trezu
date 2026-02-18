@@ -348,8 +348,8 @@ test("Ledger login flow", async ({ page, context }) => {
         });
     });
 
-    // Navigate to the app
-    await page.goto("/app");
+    // Navigate to the landing page
+    await page.goto("/");
     await page.waitForTimeout(1500); // Pause to show the initial page
 
     // Click Connect Wallet button
