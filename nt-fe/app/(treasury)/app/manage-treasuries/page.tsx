@@ -159,7 +159,7 @@ export default function ManageTreasuriesPage() {
 
     useEffect(() => {
         if (!isInitializing && !accountId) {
-            router.push("/app");
+            router.push("/");
         }
     }, [accountId, isInitializing, router]);
 
@@ -173,7 +173,7 @@ export default function ManageTreasuriesPage() {
         <PageComponentLayout
             title="Manage Treasuries"
             description="Control which treasuries appear in your account"
-            backButton="/app"
+            backButton="/"
             hideCollapseButton
         >
             <div className="max-w-[720px] mx-auto">

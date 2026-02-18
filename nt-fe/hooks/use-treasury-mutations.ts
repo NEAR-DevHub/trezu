@@ -84,7 +84,7 @@ export function useHideTreasuryMutation(
                         ),
                     );
                 } else {
-                    navContext.push("/app");
+                    navContext.push("/");
                 }
             }
         },

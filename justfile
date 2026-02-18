@@ -6,12 +6,16 @@ default:
 dev:
     #!/usr/bin/env bash
     trap 'kill 0' SIGINT
-    just dev-backend & just dev-frontend &
+    just dev-backend & just dev-frontend & just dev-ledger &
     wait
 
 # Run backend only
 dev-backend:
     cd nt-be && cargo watch -x "run --bin nt-be"
+
+# Run ledger wallet only
+dev-ledger:
+    cd nt-fe && bun run dev:ledger
 
 # Run frontend only
 dev-frontend:

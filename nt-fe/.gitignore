@@ -45,3 +45,6 @@ next-env.d.ts
 
 # lock files (using bun.lock)
 package-lock.json
+
+# Generated from src/ledger-wallet/
+public/ledger-wallet/*.js

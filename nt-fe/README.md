@@ -39,7 +39,13 @@ When developing locally but connecting to the production backend (https://api.tr
    NEXT_PUBLIC_BACKEND_API_BASE=http://localhost:8888 bun run dev
    ```
 
-3. Open [http://localhost:3000](http://localhost:3000)
+3. **[Optional] Watch Ledger wallet changes** (in a third terminal):
+   ```bash
+   bun run dev:ledger
+   ```
+   This watches `src/ledger-wallet/` for changes and rebuilds automatically.
+
+4. Open [http://localhost:3000](http://localhost:3000)
 
 #### Option 2: Using Local Backend
 
@@ -68,7 +74,9 @@ PROXY_PORT=9000 BACKEND_PROXY_TARGET=https://api.trezu.app bun run proxy
 ## Scripts
 
 - `bun run dev` - Start development server
-- `bun run build` - Build for production
+- `bun run dev:ledger` - Watch and rebuild Ledger wallet on changes
+- `bun run build` - Build for production (includes Ledger wallet)
+- `bun run build:ledger` - Build Ledger wallet only
 - `bun run start` - Start production server
 - `bun run proxy` - Start CORS proxy server
 - `bun run lint` - Run Biome linter
@@ -89,12 +97,35 @@ This application supports Ledger hardware wallets (Nano X, Nano S, Nano S Plus, 
 ### Implementation Details
 
 The Ledger integration uses:
-- WebHID API for device communication
+- WebHID/WebUSB/WebBLE API for device communication
 - NEP-413 message signing standard
+- NEP-366 delegate actions (meta-transactions)
 - Borsh serialization for payload formatting
 - Base64 encoding for signatures
 
-See `public/ledger-executor.js` for the implementation.
+### Build System
+
+The Ledger wallet is built from source files in `src/ledger-wallet/` and bundled into a single file at `public/ledger-wallet/ledger-executor.js`.
+
+**Source Structure:**
+```
+src/ledger-wallet/
+├── index.js              # Main wallet implementation and UI
+├── near-ledger.js        # NEAR Ledger client (signing, key derivation)
+└── supportedTransports.js # Transport layer (WebHID/WebUSB/WebBLE)
+```
+
+**Dependencies Bundled:**
+- `@near-js/utils`, `@near-js/transactions`, `@near-js/crypto`
+- `@ledgerhq/hw-transport-*` (WebHID, WebUSB, WebBLE)
+- `buffer` (Node.js polyfill for browser)
+
+**Build Process:**
+- **Production:** Automatically built before `bun run build` (via `prebuild` hook)
+- **Development:** Run `bun run dev:ledger` to watch for changes and rebuild
+- **Manual:** Run `bun run build:ledger` to build once
+
+The bundler uses esbuild for fast compilation and tree-shaking. Output is an ES module ready to be served from the public directory.
 
 ## Project Structure
 
@@ -108,9 +139,14 @@ nt-fe/
 ├── features/              # Feature-specific components and logic
 ├── hooks/                 # Custom React hooks
 ├── lib/                   # Utility functions and API clients
-├── public/                # Static assets and Ledger executor
+├── public/                # Static assets
+│   └── ledger-wallet/     # Bundled Ledger executor (built from src/)
+├── src/                   # Source files for bundled modules
+│   └── ledger-wallet/     # Ledger wallet implementation (bundled to public/)
 ├── stores/                # Zustand state management
 ├── types/                 # TypeScript type definitions
+├── build-ledger.mjs       # Ledger wallet build script
+├── esbuild-shims.js       # Browser polyfills for build
 └── proxy-server.js        # Development CORS proxy
 
 ```

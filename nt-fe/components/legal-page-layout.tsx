@@ -28,7 +28,7 @@ export function LegalPageLayout({ title, children }: LegalPageLayoutProps) {
             <header className="flex items-center min-h-14 justify-between bg-card px-4 md:px-6 border-b border-border">
                 <div className="flex items-center gap-3">
                     <Link
-                        href="/app"
+                        href="/"
                         className="text-lg font-bold hover:opacity-80"
                     >
                         <Logo />

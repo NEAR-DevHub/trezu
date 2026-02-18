@@ -69,7 +69,7 @@ e2e/
 
 The Ledger login test verifies the UI flow for connecting a Ledger hardware wallet:
 
-1. Navigates to `/app`
+1. Navigates to `/`
 2. Clicks the "Connect Wallet" button
 3. Verifies the wallet selector modal appears
 4. Clicks on the Ledger option to initiate the flow
