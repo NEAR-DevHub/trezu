@@ -1309,10 +1309,10 @@ async function createUserAccountViaBackend(payload) {
         headers: {
             "Content-Type": "application/json",
         },
-        body: {
+        body: JSON.stringify({
             accountId: payload.accountId,
             publicKey: payload.publicKey,
-        },
+        }),
     });
 
     let body = null;
