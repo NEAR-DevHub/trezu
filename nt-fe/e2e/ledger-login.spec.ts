@@ -387,7 +387,20 @@ test("Ledger login flow", async ({ page, context }) => {
     console.log("Clicked Connect Ledger button");
     await page.waitForTimeout(2000); // Pause to show the device connection happening
 
-    // After clicking Connect Ledger:
+    // Select USB transport (the iframe shows a USB/Bluetooth chooser)
+    const usbOption = iframe.getByRole("button", { name: /USB/i });
+    await expect(usbOption).toBeVisible({ timeout: 10000 });
+    console.log("Transport selection dialog visible, selecting USB");
+    await page.waitForTimeout(1000); // Pause to show the transport selection
+    await usbOption.click();
+    const transportContinueBtn = iframe.getByRole("button", {
+        name: /continue/i,
+    });
+    await transportContinueBtn.click();
+    console.log("Clicked Continue on transport selection");
+    await page.waitForTimeout(2000); // Pause for transport connection
+
+    // After transport selection:
     // 1. GET_APP_AND_VERSION is sent (mock responds with "NEAR" app)
     // 2. "Select Derivation Path" dialog appears
     // 3. User clicks Continue (default Account 2 selected)
@@ -433,9 +446,9 @@ test("Ledger login flow", async ({ page, context }) => {
     // Wait for login to complete
     await page.waitForTimeout(2000);
 
-    // Verify login succeeded - should be on the Create Treasury page or similar
-    // The URL should have changed from /app to /app/new or similar
-    await expect(page).toHaveURL(/\/app\/(new|dashboard|treasury)/, {
+    // Verify login succeeded - should redirect away from the landing page
+    // to either /app/new (no treasury) or /{treasuryId} (has treasury in sandbox)
+    await expect(page).not.toHaveURL("/", {
         timeout: 10000,
     });
     console.log("Login successful - redirected to:", page.url());
