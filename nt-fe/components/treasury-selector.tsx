@@ -52,9 +52,12 @@ export function TreasurySelector({
         [treasuries],
     );
 
-    // Auto-register treasury when it's selected/viewed
+    // Auto-register treasury when it's selected/viewed, and re-trigger
+    // the dirty monitor every 30s so recent balance changes are detected.
     React.useEffect(() => {
         open(treasuryId);
+        const interval = setInterval(() => open(treasuryId), 30_000);
+        return () => clearInterval(interval);
     }, [treasuryId, open]);
 
     React.useEffect(() => {
