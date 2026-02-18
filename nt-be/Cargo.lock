@@ -2316,7 +2316,6 @@ dependencies = [
  "futures",
  "hex",
  "jsonwebtoken",
- "lazy_static",
  "log",
  "moka",
  "near-account-id",

@@ -774,6 +774,77 @@ assert.equal(submitResponse.success, true, `Submit must succeed: ${submitRespons
 assert.equal(submitResponse.listId, listId, 'Returned listId must match submitted');
 console.log(`✅ Payment list submitted with ID: ${listId}`);
 
+// Step 9b: Verify worker does NOT call payout_batch while list is still pending
+// The list is submitted but not yet approved. Wait for several worker poll cycles
+// (worker polls every 5s) then scan blocks for any payout_batch transactions.
+console.log('\n🔍 Verifying worker does not call payout_batch on pending list...');
+
+// Get current block height
+const blockBeforeWait = await fetch(CONFIG.SANDBOX_RPC_URL, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ jsonrpc: '2.0', id: 'block-before', method: 'block', params: { finality: 'final' } }),
+}).then(r => r.json());
+const startBlockHeight = blockBeforeWait.result.header.height;
+console.log(`📊 Block height before wait: ${startBlockHeight}`);
+
+// Wait for 3 worker poll cycles (15 seconds) to give the worker time to (incorrectly) act
+await sleep(15000);
+
+// Get block height after wait
+const blockAfterWait = await fetch(CONFIG.SANDBOX_RPC_URL, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ jsonrpc: '2.0', id: 'block-after', method: 'block', params: { finality: 'final' } }),
+}).then(r => r.json());
+const endBlockHeight = blockAfterWait.result.header.height;
+console.log(`📊 Block height after wait: ${endBlockHeight} (${endBlockHeight - startBlockHeight} blocks)`);
+
+// Scan blocks for any payout_batch transactions to the bulk payment contract
+let payoutBatchCallsFound = 0;
+for (let h = startBlockHeight; h <= endBlockHeight; h++) {
+  const chunkResult = await fetch(CONFIG.SANDBOX_RPC_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: `block-${h}`, method: 'block', params: { block_id: h } }),
+  }).then(r => r.json());
+
+  if (!chunkResult.result) continue;
+
+  // Check each chunk for transactions targeting the bulk payment contract
+  for (const chunk of chunkResult.result.chunks) {
+    if (chunk.tx_root === '11111111111111111111111111111111') continue; // empty chunk
+
+    // Fetch the full chunk to see transactions
+    const chunkDetail = await fetch(CONFIG.SANDBOX_RPC_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: `chunk-${chunk.chunk_hash}`, method: 'chunk', params: { chunk_id: chunk.chunk_hash } }),
+    }).then(r => r.json());
+
+    if (!chunkDetail.result || !chunkDetail.result.transactions) continue;
+
+    for (const tx of chunkDetail.result.transactions) {
+      if (tx.receiver_id !== CONFIG.BULK_PAYMENT_CONTRACT_ID) continue;
+
+      // Check if any action is a FunctionCall to payout_batch
+      for (const action of tx.actions) {
+        if (action.FunctionCall && action.FunctionCall.method_name === 'payout_batch') {
+          payoutBatchCallsFound++;
+          console.log(`   ❌ Found payout_batch call at block ${h} from ${tx.signer_id}`);
+        }
+      }
+    }
+  }
+}
+
+assert.equal(
+  payoutBatchCallsFound,
+  0,
+  `Worker must NOT call payout_batch on a pending (non-approved) list. Found ${payoutBatchCallsFound} calls.`
+);
+console.log(`✅ No payout_batch calls found during ${endBlockHeight - startBlockHeight} blocks while list was pending`);
+
 // Step 10: Approve the payment list proposal (already created in Step 8)
 await approveProposal(account, daoAccountId, submitListProposalId);
 

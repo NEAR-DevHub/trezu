@@ -461,7 +461,16 @@ pub async fn submit_list(
 
                     // Step 5: Add list to the payout worker queue for processing
                     // This ensures the worker will poll this list and process payments once approved
-                    super::worker::add_pending_list(request.list_id.clone()).await;
+                    if let Err(e) =
+                        super::worker::add_pending_list(&state.db_pool, &request.list_id).await
+                    {
+                        log::error!(
+                            "Failed to add list {} to payout worker queue: {}",
+                            request.list_id,
+                            e
+                        );
+                        // Don't fail the request - contract submission already succeeded
+                    }
 
                     Ok(Json(SubmitListResponse {
                         success: true,
