@@ -76,8 +76,8 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                     );
                     return (
                         <div className="flex items-center gap-3">
-                            {asset.icon.startsWith("data:image") ||
-                            asset.icon.startsWith("http") ? (
+                            {asset.icon?.startsWith("data:image") ||
+                            asset.icon?.startsWith("http") ? (
                                 <img
                                     src={asset.icon}
                                     alt={asset.symbol}
