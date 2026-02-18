@@ -19,6 +19,7 @@ enum PaymentListStatus {
     Enum {
         Pending: Option<()>,
         Approved: Option<()>,
+        #[allow(dead_code)]
         Rejected: Option<()>,
     },
 }
