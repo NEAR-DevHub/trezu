@@ -30,7 +30,10 @@ impl PaymentListStatus {
             PaymentListStatus::Simple(s) if s == "Approved"
         ) || matches!(
             self,
-            PaymentListStatus::Enum { Approved: Some(_), .. }
+            PaymentListStatus::Enum {
+                Approved: Some(_),
+                ..
+            }
         )
     }
 
@@ -40,7 +43,10 @@ impl PaymentListStatus {
             PaymentListStatus::Simple(s) if s == "Pending"
         ) || matches!(
             self,
-            PaymentListStatus::Enum { Pending: Some(_), .. }
+            PaymentListStatus::Enum {
+                Pending: Some(_),
+                ..
+            }
         )
     }
 }
@@ -156,9 +162,7 @@ pub async fn query_and_process_pending_lists(
                 log::error!("Failed to process batch for list {}: {}", list_id, err_str);
 
                 // Remove list from tracking if it's not found or completed
-                if err_str.contains("not found")
-                    || err_str.contains("No pending payments")
-                {
+                if err_str.contains("not found") || err_str.contains("No pending payments") {
                     log::info!("Removing list {} from worker queue", list_id);
                     completed_lists.push(list_id.clone());
                 }
