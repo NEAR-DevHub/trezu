@@ -387,18 +387,23 @@ test("Ledger login flow", async ({ page, context }) => {
     console.log("Clicked Connect Ledger button");
     await page.waitForTimeout(2000); // Pause to show the device connection happening
 
-    // Select USB transport (the iframe shows a USB/Bluetooth chooser)
+    // If both USB and Bluetooth are available (e.g. local Mac with BLE),
+    // the iframe shows a transport chooser. In headless CI (no Bluetooth),
+    // only USB is available and the chooser is auto-skipped.
     const usbOption = iframe.getByRole("button", { name: /USB/i });
-    await expect(usbOption).toBeVisible({ timeout: 10000 });
-    console.log("Transport selection dialog visible, selecting USB");
-    await page.waitForTimeout(1000); // Pause to show the transport selection
-    await usbOption.click();
-    const transportContinueBtn = iframe.getByRole("button", {
-        name: /continue/i,
-    });
-    await transportContinueBtn.click();
-    console.log("Clicked Continue on transport selection");
-    await page.waitForTimeout(2000); // Pause for transport connection
+    if (await usbOption.isVisible().catch(() => false)) {
+        console.log("Transport selection dialog visible, selecting USB");
+        await page.waitForTimeout(1000);
+        await usbOption.click();
+        const transportContinueBtn = iframe.getByRole("button", {
+            name: /continue/i,
+        });
+        await transportContinueBtn.click();
+        console.log("Clicked Continue on transport selection");
+        await page.waitForTimeout(2000);
+    } else {
+        console.log("Transport auto-selected (only USB available)");
+    }
 
     // After transport selection:
     // 1. GET_APP_AND_VERSION is sent (mock responds with "NEAR" app)
