@@ -4,9 +4,37 @@ import RECENT_ACTIVITY_FIXTURE from "./fixtures/recent-activity.json";
 
 const TREASURY_ID = "webassemblymusic-treasury.sputnik-dao.near";
 const DASHBOARD_URL = `/${TREASURY_ID}`;
+const BACKEND_URL =
+    process.env.BACKEND_URL ||
+    process.env.NEXT_PUBLIC_BACKEND_API_BASE ||
+    "http://localhost:8080";
 
 // Ensure consistent locale for number formatting in chart tooltips
 test.use({ locale: "en-US" });
+
+// Create the DAO in the sandbox via the sputnik-dao.near factory,
+// so server-side getTreasuryConfig() can read its on-chain config.
+test.beforeAll(async () => {
+    const res = await fetch(`${BACKEND_URL}/api/treasury/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            name: "WebAssembly Music Treasury",
+            accountId: TREASURY_ID,
+            paymentThreshold: 1,
+            governors: ["test.near"],
+            financiers: ["test.near"],
+            requestors: ["test.near"],
+        }),
+    });
+    if (res.ok) {
+        console.log(`Created DAO ${TREASURY_ID} in sandbox`);
+    } else {
+        console.log(
+            `DAO creation returned ${res.status} (may already exist)`,
+        );
+    }
+});
 
 // ---------- Helpers (visible in video recordings) ----------
 
