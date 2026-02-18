@@ -20,6 +20,8 @@ interface ChartDataPoint {
 interface BalanceChartProps {
     data?: ChartDataPoint[];
     symbol?: string;
+    onMouseEnter?: () => void;
+    onMouseLeave?: () => void;
 }
 
 const chartConfig = {
@@ -33,7 +35,12 @@ const chartConfig = {
     },
 } satisfies ChartConfig;
 
-export default function BalanceChart({ data = [], symbol }: BalanceChartProps) {
+export default function BalanceChart({
+    data = [],
+    symbol,
+    onMouseEnter,
+    onMouseLeave,
+}: BalanceChartProps) {
     if (data.length === 0) {
         return (
             <div className="h-[180px]">
@@ -63,7 +70,12 @@ export default function BalanceChart({ data = [], symbol }: BalanceChartProps) {
     const tickInterval = calculateInterval(data.length);
 
     return (
-        <ChartContainer config={chartConfig} className="h-56">
+        <ChartContainer
+            config={chartConfig}
+            className="h-56"
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
+        >
             <AreaChart data={data}>
                 <defs>
                     <linearGradient

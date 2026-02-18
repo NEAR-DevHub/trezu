@@ -1,5 +1,5 @@
 import { TreasuryAsset } from "@/lib/api";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import BalanceChart from "./chart";
 import { Button } from "@/components/button";
 import {
@@ -97,7 +97,13 @@ export default function BalanceWithGraph({
     const { treasuryId } = useTreasury();
     const [selectedToken, setSelectedToken] = useState<string>("all");
     const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>("1W");
+    const [isChartHovered, setIsChartHovered] = useState(false);
     const router = useRouter();
+    const handleChartMouseEnter = useCallback(() => setIsChartHovered(true), []);
+    const handleChartMouseLeave = useCallback(
+        () => setIsChartHovered(false),
+        [],
+    );
     // Group tokens by symbol (to handle same token on different networks)
     const groupedTokens = useMemo(() => {
         const grouped = new Map<string, GroupedToken>();
@@ -201,8 +207,19 @@ export default function BalanceWithGraph({
         return params;
     }, [treasuryId, selectedPeriod, selectedTokenGroup]);
 
+    // Freeze chartParams while hovering so that parent re-renders (from other
+    // queries like useAssets) don't change the query key, which would flip
+    // isLoading to true and unmount the chart — destroying the tooltip.
+    const frozenChartParams = useRef(chartParams);
+    if (!isChartHovered) {
+        frozenChartParams.current = chartParams;
+    }
+
     // Fetch balance chart data with USD values
-    const { data: balanceChartData, isLoading } = useBalanceChart(chartParams);
+    const { data: balanceChartData, isLoading } = useBalanceChart(
+        frozenChartParams.current,
+        { pauseRefetch: isChartHovered },
+    );
 
     // Transform chart data for display
     const chartData = useMemo(() => {
@@ -324,6 +341,14 @@ export default function BalanceWithGraph({
         selectedPeriod,
         totalBalanceUSD,
     ]);
+
+    // Freeze chart data while hovering so tooltip isn't lost when parent
+    // re-renders due to other queries (e.g. token balance) refetching.
+    const frozenChartData = useRef(chartData);
+    if (!isChartHovered) {
+        frozenChartData.current = chartData;
+    }
+    const displayChartData = frozenChartData.current;
 
     if (isLoadingTokens) {
         return (
@@ -547,8 +572,10 @@ export default function BalanceWithGraph({
                 </div>
             ) : (
                 <BalanceChart
-                    data={chartData.data}
+                    data={displayChartData.data}
                     symbol={selectedTokenGroup?.symbol}
+                    onMouseEnter={handleChartMouseEnter}
+                    onMouseLeave={handleChartMouseLeave}
                 />
             )}
         </PageCard>
