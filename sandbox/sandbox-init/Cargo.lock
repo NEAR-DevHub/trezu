@@ -1248,6 +1248,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "near-account-id"
+version = "2.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "91f75ff8eee73815c247d0e17f3c0b705f0e993922a5548acd2ad377aeb67fca"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "near-api"
 version = "0.7.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1284,7 +1293,7 @@ dependencies = [
  "bs58",
  "ed25519-dalek",
  "near-abi",
- "near-account-id",
+ "near-account-id 1.1.4",
  "near-gas",
  "near-openapi-types",
  "near-token",
@@ -1332,7 +1341,7 @@ dependencies = [
  "bytes",
  "chrono",
  "futures-core",
- "near-account-id",
+ "near-account-id 1.1.4",
  "near-gas",
  "near-token",
  "progenitor-client",
@@ -1346,14 +1355,15 @@ dependencies = [
 
 [[package]]
 name = "near-sandbox"
-version = "0.2.3"
+version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f991a27f59330e97d47d416899c82077cec0974337f76f7c0e6836776ba71b66"
+checksum = "560af7b69658193e4cfc369d34aa076b8c3f84baba8499cdb1f9ae0a16469678"
 dependencies = [
  "binary-install",
  "fs4",
  "json-patch",
- "near-account-id",
+ "libc",
+ "near-account-id 2.5.0",
  "near-token",
  "serde",
  "serde_json",
@@ -1825,15 +1835,12 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "base64",
- "dirs-next",
- "flate2",
  "near-api",
  "near-gas",
  "near-sandbox",
  "reqwest",
  "serde",
  "serde_json",
- "tar",
  "tokio",
  "tracing",
  "tracing-subscriber",

@@ -55,8 +55,8 @@ const CONFIG = {
   BULK_PAYMENT_CONTRACT_ID: process.env.BULK_PAYMENT_CONTRACT_ID || 'bulk-payment.near',
   
   // Test parameters
-  // Note: 250 is the max before gas limits are exceeded for list deserialization (~156 TGas for storage read)
-  NUM_RECIPIENTS: parseInt(process.env.NUM_RECIPIENTS || '250', 10),
+  // Note: 25 is the max per bulk payment API limit
+  NUM_RECIPIENTS: parseInt(process.env.NUM_RECIPIENTS || '25', 10),
   PAYMENT_AMOUNT: process.env.PAYMENT_AMOUNT || '100000000000000000000000', // 0.1 NEAR per recipient
   
   // Genesis account credentials (default sandbox genesis account from near-sandbox-rs - PUBLIC TEST KEY)
@@ -838,11 +838,10 @@ for (let h = startBlockHeight; h <= endBlockHeight; h++) {
   }
 }
 
-assert.equal(
-  payoutBatchCallsFound,
-  0,
-  `Worker must NOT call payout_batch on a pending (non-approved) list. Found ${payoutBatchCallsFound} calls.`
-);
+if (payoutBatchCallsFound > 0) {
+  console.error(`\n❌ FAILURE: Worker called payout_batch ${payoutBatchCallsFound} time(s) on a pending (non-approved) list!`);
+  process.exit(1);
+}
 console.log(`✅ No payout_batch calls found during ${endBlockHeight - startBlockHeight} blocks while list was pending`);
 
 // Step 10: Approve the payment list proposal (already created in Step 8)

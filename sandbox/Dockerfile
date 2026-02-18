@@ -13,14 +13,8 @@ FROM rust:1.90 AS contract-builder
 
 WORKDIR /build
 
-# Install system dependencies for cargo-near (hidapi requires libudev)
-RUN apt-get update && apt-get install -y \
-    pkg-config \
-    libudev-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install cargo-near for building the contract (requires Rust 1.89)
-RUN cargo install cargo-near --version 0.17.0
+# Install cargo-near via pre-built binary (much faster than cargo install)
+RUN curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/cargo-near/releases/download/cargo-near-v0.17.0/cargo-near-installer.sh | sh
 
 # Install Rust 1.86 toolchain for building the contract
 RUN rustup install 1.86.0 && rustup target add wasm32-unknown-unknown --toolchain 1.86.0

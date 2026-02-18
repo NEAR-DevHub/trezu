@@ -1,0 +1,7 @@
+**/target
+**/node_modules
+.git
+nt-fe
+e2e-tests
+docs
+.github

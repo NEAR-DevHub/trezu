@@ -10,7 +10,7 @@ path = "src/main.rs"
 
 [dependencies]
 # NEAR Sandbox
-near-sandbox = "0.2.2"
+near-sandbox = "0.3.6"
 near-api = "0.7.8"
 near-gas = "0.3"
 
@@ -26,13 +26,6 @@ serde_json = "1.0"
 
 # Base64 decoding
 base64 = "0.22"
-
-# Archive extraction for sandbox binary
-flate2 = "1.0"
-tar = "0.4"
-
-# Directory utilities
-dirs-next = "2.0"
 
 # Utilities
 anyhow = "1.0"
