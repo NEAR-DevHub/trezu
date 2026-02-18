@@ -86,6 +86,10 @@ jobs:
             echo "Attempt $i: Sandbox not ready yet..."
             sleep 5
           done
+        
+      - name: Build ledger wallet
+        working-directory: nt-fe
+        run: bun run build:ledger
 
       - name: Run Playwright tests
         working-directory: nt-fe
