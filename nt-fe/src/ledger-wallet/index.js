@@ -15,7 +15,13 @@ import {
 } from "@near-js/transactions";
 import { PublicKey } from "@near-js/crypto";
 import { Buffer } from "buffer";
-import { getSupportedTransport, createClient } from "./near-ledger.js";
+import {
+    getSupportedTransport,
+    createClient,
+    isWebHidSupported,
+    isWebUsbSupported,
+    isWebBleSupported,
+} from "./near-ledger.js";
 
 // Destructure action creators for convenience
 const {
@@ -143,37 +149,16 @@ async function fetchBackend(path, init = {}) {
  * @returns {Promise<{webHID: boolean, webUSB: boolean, webBLE: boolean}>}
  */
 async function getAvailableTransports() {
-    const results = {
-        webHID: false,
-        webUSB: false,
-        webBLE: false,
+    const [webHID, webUSB, webBLE] = await Promise.all([
+        isWebHidSupported(),
+        isWebUsbSupported(),
+        isWebBleSupported(),
+    ]);
+    return {
+        webHID,
+        webUSB,
+        webBLE,
     };
-
-    // Check WebHID support
-    try {
-        const TransportWebHID = await import("@ledgerhq/hw-transport-webhid");
-        results.webHID = await TransportWebHID.default.isSupported();
-    } catch (e) {
-        results.webHID = false;
-    }
-
-    // Check WebUSB support
-    try {
-        const TransportWebUSB = await import("@ledgerhq/hw-transport-webusb");
-        results.webUSB = await TransportWebUSB.default.isSupported();
-    } catch (e) {
-        results.webUSB = false;
-    }
-
-    // Check WebBLE support
-    try {
-        const TransportWebBLE = await import("@ledgerhq/hw-transport-web-ble");
-        results.webBLE = await TransportWebBLE.default.isSupported();
-    } catch (e) {
-        results.webBLE = false;
-    }
-
-    return results;
 }
 
 /**
