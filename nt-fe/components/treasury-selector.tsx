@@ -152,6 +152,12 @@ export function TreasurySelector({
             </SelectTrigger>
             <SelectContent
                 className="max-w-[250px]"
+                onPointerDown={(e) => {
+                    if (lockSelectOutside) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
+                }}
                 onPointerDownOutside={(e) => {
                     if (lockSelectOutside) {
                         e.preventDefault();

@@ -4,11 +4,11 @@ import { Button } from "@/components/button";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useSidebarStore } from "@/stores/sidebar-store";
-import { useOnboardingStore } from "@/stores/onboarding-store";
 import { XIcon } from "lucide-react";
 import { useNextStep } from "nextstepjs";
 import type { Tour } from "nextstepjs";
 import { useState, useEffect } from "react";
+import { useNear } from "@/stores/near-store";
 
 // Tour names
 export const TOUR_NAMES = {
@@ -133,6 +133,7 @@ export function DashboardTour() {
     const [isDismissed, setIsDismissed] = useState(true);
     const { startNextStep } = useNextStep();
     const { isGuestTreasury, isLoading } = useTreasury();
+    const { accountId } = useNear();
     const isMobile = useMediaQuery("(max-width: 768px)");
     const isSidebarOpen = useSidebarStore((state) => state.isSidebarOpen);
 
@@ -160,7 +161,8 @@ export function DashboardTour() {
         startNextStep(TOUR_NAMES.DASHBOARD);
     };
 
-    if (isDismissed || isGuestTreasury || isLoading || hidden) return null;
+    if (isDismissed || isGuestTreasury || isLoading || hidden || !accountId)
+        return null;
 
     return (
         <div className="fixed max-w-72 flex flex-col gap-0 bottom-8 right-8 z-50 p-3 bg-popover-foreground text-popover rounded-[8px]">
