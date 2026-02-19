@@ -375,7 +375,16 @@ async fn lookup_transaction_hash(
         )
         .await?;
 
-    // Collect unique receipt IDs from ReceiptProcessing causes
+    // Check for TransactionProcessing first — if the transaction was sent
+    // directly to the contract, the tx hash is immediately available.
+    for change in &changes_response.changes {
+        if let StateChangeCauseView::TransactionProcessing { tx_hash } = &change.cause {
+            return Ok(tx_hash.to_string());
+        }
+    }
+
+    // Otherwise collect receipt IDs from ReceiptProcessing causes and resolve
+    // back to the originating transaction (the tx was in a preceding block).
     let mut receipt_ids = Vec::new();
     for change in &changes_response.changes {
         if let StateChangeCauseView::ReceiptProcessing { receipt_hash } = &change.cause {
@@ -386,15 +395,6 @@ async fn lookup_transaction_hash(
         }
     }
 
-    if receipt_ids.is_empty() {
-        return Err(format!(
-            "No receipt processing found on {} at block {}",
-            contract_id, block_height
-        )
-        .into());
-    }
-
-    // Resolve the first receipt back to its originating transaction
     for receipt_id in &receipt_ids {
         match resolve_receipt_to_transaction(network, receipt_id, block_height).await {
             Ok(result) => return Ok(result.transaction_hash),
@@ -410,8 +410,61 @@ async fn lookup_transaction_hash(
     }
 
     Err(format!(
-        "Could not resolve any receipt to a transaction on {} at block {}",
+        "No transaction found for {} at block {}",
         contract_id, block_height
     )
     .into())
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::utils::test_utils::init_test_state;
+    use axum::extract::{Path, State};
+    use std::sync::Arc;
+
+    /// Direct transaction: olskik.near sent payout_batch directly to bulkpayment.near
+    /// at block 182925042. Tests the TransactionProcessing fast path.
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_get_transaction_hash_direct_tx() {
+        let state = init_test_state().await;
+
+        let result = super::get_transaction_hash(
+            State(Arc::new(state)),
+            Path((
+                "d4feb004373547a3e07fb3a54e1ca2b54afbbad789d8e311440f829c51d8b989".to_string(),
+                "olskik.near".to_string(),
+            )),
+        )
+        .await
+        .expect("Should resolve transaction hash");
+
+        assert!(result.success);
+        assert_eq!(
+            result.transaction_hash.as_deref(),
+            Some("8phBuLVXNqiADhTPuTXFNpbKXhNnGeHPC8xoViAX5nVw"),
+        );
+    }
+
+    /// Cross-block transaction: megha19.near called payout_batch, but the receipt
+    /// executed in a later block (186247356). Tests the ReceiptProcessing → resolve path.
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_get_transaction_hash_receipt_in_later_block() {
+        let state = init_test_state().await;
+
+        let result = super::get_transaction_hash(
+            State(Arc::new(state)),
+            Path((
+                "b2e7a99a6b2e78a41c707a0a59400e91695b3c491c22e1b0365d8b0c4e64b996".to_string(),
+                "megha19.near".to_string(),
+            )),
+        )
+        .await
+        .expect("Should resolve transaction hash via receipt resolution");
+
+        assert!(result.success);
+        assert_eq!(
+            result.transaction_hash.as_deref(),
+            Some("6GA6TzTPaGSkbbowgVuL3SH7KKaYcz79ZWetdCLjBgMc"),
+        );
+    }
 }
