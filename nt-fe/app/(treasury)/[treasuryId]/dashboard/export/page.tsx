@@ -752,17 +752,12 @@ export default function ExportActivityPage() {
                                                     {isExporting ? "Exporting..." : "Export"}
                                                 </Button>
                                             ) : (
-
-
                                                 <Button
                                                     disabled
                                                     className="w-full mt-3"
                                                 >
                                                     You don't have permission to export
                                                 </Button>
-
-
-
                                             )}
                                         </div>
                                     </TabsContent>
