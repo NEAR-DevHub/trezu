@@ -94,6 +94,7 @@ function Step1({ handleNext }: StepProps) {
                             variant="ghost"
                             size={isMobile ? "icon" : "default"}
                             className="flex items-center gap-2 border-2"
+                            id="payments-bulk-btn"
                         >
                             <ArrowDownToLine className="w-4 h-4" />
                             <span className="hidden md:block">

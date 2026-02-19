@@ -32,7 +32,9 @@ import {
     estimateVoteStorage,
 } from "@/lib/sputnik-storage";
 import { setupLedgerSandboxBackendBridge } from "@/src/ledger-wallet/parent-bridge";
-
+import BluetoothTransport from "@ledgerhq/hw-transport-web-ble";
+import HidTransport from "@ledgerhq/hw-transport-webhid";
+import UsbTransport from "@ledgerhq/hw-transport-webusb";
 /**
  * Ensures sandboxed iframes get bluetooth permission for Ledger Nano X BLE.
  * @hot-labs/near-connect doesn't yet include bluetooth in iframe allow attributes,
@@ -197,12 +199,10 @@ export const useNearStore = create<NearStore>((set, get) => ({
 
         // Register Ledger wallet after connector is initialized
         newConnector.whenManifestLoaded.then(async () => {
-            // Check if WebHID is supported (not on mobile, requires secure context)
             if (
-                typeof navigator !== "undefined" &&
-                ("hid" in navigator ||
-                    "usb" in navigator ||
-                    "bluetooth" in navigator)
+                (await HidTransport.isSupported()) ||
+                (await UsbTransport.isSupported()) ||
+                (await BluetoothTransport.isSupported())
             ) {
                 try {
                     setupLedgerSandboxBackendBridge();

@@ -16,6 +16,7 @@ import { useOpenTreasury } from "@/hooks/use-open-treasury";
 import { useTreasury } from "@/hooks/use-treasury";
 import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
+import { useOnboardingStore } from "@/stores/onboarding-store";
 import { Button } from "./button";
 import { Tooltip } from "./tooltip";
 import { TreasuryBalance, TreasuryLogo } from "./treasury-info";
@@ -39,6 +40,9 @@ export function TreasurySelector({
     const { open } = useOpenTreasury();
 
     const { isLoading, treasuryId, config, treasuries } = useTreasury();
+    const lockSelectOutside = useOnboardingStore(
+        (state) => state.lockSelectOutside,
+    );
 
     const memberTreasuries = useMemo(
         () => treasuries.filter((treasury) => treasury.isMember),
@@ -146,7 +150,15 @@ export function TreasurySelector({
                     </div>
                 </Tooltip>
             </SelectTrigger>
-            <SelectContent className="max-w-[250px]">
+            <SelectContent
+                className="max-w-[250px]"
+                onPointerDownOutside={(e) => {
+                    if (lockSelectOutside) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
+                }}
+            >
                 {memberTreasuries.length > 0 && (
                     <SelectGroup>
                         <SelectLabel>Member Of</SelectLabel>

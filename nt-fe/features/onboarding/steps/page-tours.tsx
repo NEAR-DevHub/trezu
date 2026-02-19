@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { useNextStep } from "nextstepjs"
-import type { Tour } from "nextstepjs"
-import { useEffect, useCallback, useRef } from "react"
-import { useTreasury } from "@/hooks/use-treasury"
+import { useNextStep } from "nextstepjs";
+import type { Tour } from "nextstepjs";
+import { useEffect, useCallback, useRef } from "react";
+import { useTreasury } from "@/hooks/use-treasury";
 
 // Tour names
 export const PAGE_TOUR_NAMES = {
@@ -11,7 +11,7 @@ export const PAGE_TOUR_NAMES = {
     PAYMENTS_PENDING: "payments-pending",
     EXCHANGE_SETTINGS: "exchange-settings",
     MEMBERS_PENDING: "members-pending",
-} as const
+} as const;
 
 // Local storage keys
 export const PAGE_TOUR_STORAGE_KEYS = {
@@ -19,7 +19,7 @@ export const PAGE_TOUR_STORAGE_KEYS = {
     PAYMENTS_PENDING_SHOWN: "payments-pending-tour-shown",
     EXCHANGE_SETTINGS_SHOWN: "exchange-settings-tour-shown",
     MEMBERS_PENDING_SHOWN: "members-pending-tour-shown",
-} as const
+} as const;
 
 // Selector IDs
 export const PAGE_TOUR_SELECTORS = {
@@ -27,7 +27,7 @@ export const PAGE_TOUR_SELECTORS = {
     PAYMENTS_PENDING_BTN: "#payments-pending-btn",
     EXCHANGE_SETTINGS_BTN: "#exchange-settings-btn",
     MEMBERS_PENDING_BTN: "#members-pending-btn",
-} as const
+} as const;
 
 const defaultStepProps = {
     icon: null,
@@ -37,19 +37,24 @@ const defaultStepProps = {
     showSkip: false,
     pointerPadding: 8,
     pointerRadius: 8,
-} as const
+} as const;
 
 export const PAYMENTS_BULK_TOUR: Tour = {
     tour: PAGE_TOUR_NAMES.PAYMENTS_BULK,
     steps: [
         {
             ...defaultStepProps,
-            content: <>Bulk creation is here! Create several requests in just a few steps.</>,
+            content: (
+                <>
+                    Bulk creation is here! Create several requests in just a few
+                    steps.
+                </>
+            ),
             selector: PAGE_TOUR_SELECTORS.PAYMENTS_BULK_BTN,
             side: "bottom",
         },
     ],
-}
+};
 
 export const PAYMENTS_PENDING_TOUR: Tour = {
     tour: PAGE_TOUR_NAMES.PAYMENTS_PENDING,
@@ -58,22 +63,27 @@ export const PAYMENTS_PENDING_TOUR: Tour = {
             ...defaultStepProps,
             content: <>View requests that are pending approval here.</>,
             selector: PAGE_TOUR_SELECTORS.PAYMENTS_PENDING_BTN,
-            side: "bottom",
+            side: "bottom-right",
         },
     ],
-}
+};
 
 export const EXCHANGE_SETTINGS_TOUR: Tour = {
     tour: PAGE_TOUR_NAMES.EXCHANGE_SETTINGS,
     steps: [
         {
             ...defaultStepProps,
-            content: <>Here you can set how much price change you're willing to accept.</>,
+            content: (
+                <>
+                    Here you can set how much price change you're willing to
+                    accept.
+                </>
+            ),
             selector: PAGE_TOUR_SELECTORS.EXCHANGE_SETTINGS_BTN,
-            side: "bottom-left",
+            side: "bottom-right",
         },
     ],
-}
+};
 
 export const MEMBERS_PENDING_TOUR: Tour = {
     tour: PAGE_TOUR_NAMES.MEMBERS_PENDING,
@@ -82,46 +92,46 @@ export const MEMBERS_PENDING_TOUR: Tour = {
             ...defaultStepProps,
             content: <>Click to see active requests waiting for approval.</>,
             selector: PAGE_TOUR_SELECTORS.MEMBERS_PENDING_BTN,
-            side: "bottom",
+            side: "bottom-left",
         },
     ],
-}
+};
 
 /**
  * Hook to trigger a one-time page tour on mount.
  * Checks localStorage and guest status before showing.
  */
 export function usePageTour(tourName: string, storageKey: string) {
-    const { startNextStep } = useNextStep()
-    const { isGuestTreasury, isLoading } = useTreasury()
-    const hasTriggered = useRef(false)
+    const { startNextStep } = useNextStep();
+    const { isGuestTreasury, isLoading } = useTreasury();
+    const hasTriggered = useRef(false);
 
     const triggerTour = useCallback(() => {
-        if (hasTriggered.current) return
-        const alreadyShown = localStorage.getItem(storageKey) === "true"
-        if (alreadyShown) return
+        if (hasTriggered.current) return;
+        const alreadyShown = localStorage.getItem(storageKey) === "true";
+        if (alreadyShown) return;
 
-        hasTriggered.current = true
-        localStorage.setItem(storageKey, "true")
-        startNextStep(tourName)
-    }, [storageKey, tourName, startNextStep])
+        hasTriggered.current = true;
+        localStorage.setItem(storageKey, "true");
+        startNextStep(tourName);
+    }, [storageKey, tourName, startNextStep]);
 
     // Auto-trigger on mount (with delay for DOM readiness)
     useEffect(() => {
-        if (isGuestTreasury || isLoading) return
+        if (isGuestTreasury || isLoading) return;
 
-        const alreadyShown = localStorage.getItem(storageKey) === "true"
-        if (alreadyShown) return
+        const alreadyShown = localStorage.getItem(storageKey) === "true";
+        if (alreadyShown) return;
 
         const timeout = setTimeout(() => {
-            triggerTour()
-        }, 500)
+            triggerTour();
+        }, 500);
 
-        return () => clearTimeout(timeout)
-    }, [isGuestTreasury, isLoading, storageKey, triggerTour])
+        return () => clearTimeout(timeout);
+    }, [isGuestTreasury, isLoading, storageKey, triggerTour]);
 
     // Return triggerTour for manual triggering (e.g., after form submit)
-    return { triggerTour }
+    return { triggerTour };
 }
 
 /**
@@ -129,21 +139,21 @@ export function usePageTour(tourName: string, storageKey: string) {
  * Used for the payments pending tour which triggers after form submission.
  */
 export function useManualPageTour(tourName: string, storageKey: string) {
-    const { startNextStep } = useNextStep()
-    const { isGuestTreasury } = useTreasury()
+    const { startNextStep } = useNextStep();
+    const { isGuestTreasury } = useTreasury();
 
     const triggerTour = useCallback(() => {
-        if (isGuestTreasury) return
+        if (isGuestTreasury) return;
 
-        const alreadyShown = localStorage.getItem(storageKey) === "true"
-        if (alreadyShown) return
+        const alreadyShown = localStorage.getItem(storageKey) === "true";
+        if (alreadyShown) return;
 
-        localStorage.setItem(storageKey, "true")
+        localStorage.setItem(storageKey, "true");
         // Delay to let DOM update after form reset
         setTimeout(() => {
-            startNextStep(tourName)
-        }, 500)
-    }, [isGuestTreasury, storageKey, tourName, startNextStep])
+            startNextStep(tourName);
+        }, 500);
+    }, [isGuestTreasury, storageKey, tourName, startNextStep]);
 
-    return { triggerTour }
+    return { triggerTour };
 }

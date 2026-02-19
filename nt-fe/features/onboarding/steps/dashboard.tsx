@@ -1,7 +1,10 @@
 "use client";
 
 import { Button } from "@/components/button";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { useTreasury } from "@/hooks/use-treasury";
+import { useSidebarStore } from "@/stores/sidebar-store";
+import { useOnboardingStore } from "@/stores/onboarding-store";
 import { XIcon } from "lucide-react";
 import { useNextStep } from "nextstepjs";
 import type { Tour } from "nextstepjs";
@@ -40,6 +43,7 @@ export const DASHBOARD_TOUR: Tour = {
             selector: SELECTOR_IDS.DASHBOARD_STEP_1,
             side: "bottom-left",
             disableInteraction: true,
+            blockKeyboardControl: true,
             showControls: false,
             showSkip: false,
             pointerPadding: 8,
@@ -55,6 +59,7 @@ export const DASHBOARD_TOUR: Tour = {
             side: "bottom",
             disableInteraction: true,
             showControls: false,
+            blockKeyboardControl: true,
             showSkip: false,
             pointerPadding: 8,
             pointerRadius: 8,
@@ -67,6 +72,7 @@ export const DASHBOARD_TOUR: Tour = {
             side: "bottom-right",
             showControls: false,
             disableInteraction: true,
+            blockKeyboardControl: true,
             showSkip: false,
             pointerPadding: 8,
             pointerRadius: 8,
@@ -79,6 +85,7 @@ export const DASHBOARD_TOUR: Tour = {
             side: "right",
             showControls: false,
             disableInteraction: true,
+            blockKeyboardControl: true,
             showSkip: false,
             pointerPadding: 8,
             pointerRadius: 8,
@@ -96,6 +103,7 @@ export const DASHBOARD_TOUR: Tour = {
             side: "right",
             showControls: false,
             disableInteraction: true,
+            blockKeyboardControl: true,
             showSkip: false,
             pointerPadding: 8,
             pointerRadius: 8,
@@ -125,13 +133,17 @@ export function DashboardTour() {
     const [isDismissed, setIsDismissed] = useState(true);
     const { startNextStep } = useNextStep();
     const { isGuestTreasury, isLoading } = useTreasury();
+    const isMobile = useMediaQuery("(max-width: 768px)");
+    const isSidebarOpen = useSidebarStore((state) => state.isSidebarOpen);
+
+    const hidden = isMobile && isSidebarOpen;
 
     useEffect(() => {
         if (isGuestTreasury || isLoading) return;
         setIsDismissed(
             localStorage.getItem(
                 LOCAL_STORAGE_KEYS.DASHBOARD_TOUR_DISMISSED,
-            ) === "true",
+            ) === "false",
         );
     }, [isGuestTreasury]);
 
@@ -148,7 +160,7 @@ export function DashboardTour() {
         startNextStep(TOUR_NAMES.DASHBOARD);
     };
 
-    if (isDismissed || isGuestTreasury || isLoading) return null;
+    if (isDismissed || isGuestTreasury || isLoading || hidden) return null;
 
     return (
         <div className="fixed max-w-72 flex flex-col gap-0 bottom-8 right-8 z-50 p-3 bg-popover-foreground text-popover rounded-[8px]">
