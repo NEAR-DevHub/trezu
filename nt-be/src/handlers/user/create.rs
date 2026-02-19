@@ -7,8 +7,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::AppState;
 
-pub const USER_CREATE_DEPOSIT: NearToken = NearToken::from_micronear(1820);
-
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateUserRequest {
@@ -55,7 +53,8 @@ pub async fn create_user_account(
     match account_id.get_account_type() {
         AccountType::NamedAccount => {
             Account::create_account(account_id.clone())
-                .fund_myself(state.signer_id.clone(), USER_CREATE_DEPOSIT)
+                // Account creation requires Transfer action, but it allows 0 deposit.
+                .fund_myself(state.signer_id.clone(), NearToken::from_yoctonear(0))
                 .with_public_key(public_key)
                 .with_signer(state.signer.clone())
                 .send_to(&state.network)
@@ -73,7 +72,8 @@ pub async fn create_user_account(
         AccountType::NearImplicitAccount => {
             Tokens::account(state.signer_id.clone())
                 .send_to(account_id.clone())
-                .near(USER_CREATE_DEPOSIT)
+                // Account creation requires Transfer action, but it allows 0 deposit.
+                .near(NearToken::from_yoctonear(0))
                 .with_signer(state.signer.clone())
                 .send_to(&state.network)
                 .await
