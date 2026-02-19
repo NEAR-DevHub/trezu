@@ -174,6 +174,7 @@ pub async fn relay_delegate_action(
             )
         })?;
 
+    // Step 1: Decode and deserialize SignedDelegateAction
     let signed_delegate_action =
         SignedDelegateAction::try_from_slice(&request.signed_delegate_action.0).map_err(|e| {
             error_response(
@@ -182,7 +183,7 @@ pub async fn relay_delegate_action(
             )
         })?;
 
-    // Step 3: Verify sender_id matches authenticated user
+    // Step 2: Verify sender_id matches authenticated user
     let sender_id = signed_delegate_action.delegate_action.sender_id.to_string();
     if sender_id != auth_user.account_id {
         return Err(error_response(
@@ -194,7 +195,7 @@ pub async fn relay_delegate_action(
         ));
     }
 
-    // Step 4: Check gas-covered transaction credits
+    // Step 3: Check gas-covered transaction credits
     let credits_result = sqlx::query_as::<_, (i32, PlanType)>(
         r#"
         SELECT gas_covered_transactions, plan_type
@@ -233,8 +234,8 @@ pub async fn relay_delegate_action(
         }
     }
 
-    // Step 5: Build and send the wrapping transaction
-    // Per NEP-366, the relayer sends a transaction to the delegate action's sender_id
+    // Step 4: Validate allowed receiver contract and sponsorship limits
+    // Per NEP-366, the relayer sends a transaction to the delegate action's sender_id.
     let receiver_id = signed_delegate_action.delegate_action.sender_id.clone();
     let action_receiver_id = signed_delegate_action.delegate_action.receiver_id.clone();
 
@@ -286,6 +287,7 @@ pub async fn relay_delegate_action(
         ));
     }
 
+    // Step 5: For Sputnik DAOs only, top up near balance for storage before executing delegate action.
     if should_balance_storage {
         if request.storage_bytes.0 > MAX_STORAGE_BYTES {
             return Err(error_response(
@@ -318,6 +320,7 @@ pub async fn relay_delegate_action(
             })?;
     }
 
+    // Step 6: Submit the wrapped delegate action transaction.
     let execution_result = Transaction::construct(state.signer_id.clone(), receiver_id)
         .add_action(Action::Delegate(Box::new(signed_delegate_action)))
         .with_signer(state.signer.clone())
@@ -327,7 +330,7 @@ pub async fn relay_delegate_action(
     match execution_result {
         Ok(result) => match result.into_result() {
             Ok(_) => {
-                // Step 6: Decrement gas-covered transaction credits
+                // Step 7: Decrement gas-covered transaction credits
                 let db_result = sqlx::query_as::<_, (i32,)>(
                     r#"
                     UPDATE monitored_accounts
