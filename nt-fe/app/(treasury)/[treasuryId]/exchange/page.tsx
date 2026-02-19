@@ -279,19 +279,19 @@ function Step1({ handleNext }: StepProps) {
             )}
 
             <div className="rounded-lg border bg-card p-0 overflow-hidden">
-                <Button
-                    type="button"
+                <CreateRequestButton
                     onClick={handleContinue}
-                    variant="default"
-                    className="w-full h-10 rounded-none font-medium"
+                    className="w-full h-10 rounded-none"
+                    permissions={[{ kind: "call", action: "AddProposal" }]}
                     disabled={areSameTokens || !hasValidAmount || !quoteData}
-                >
-                    {areSameTokens
-                        ? "Tokens must be different"
-                        : !hasValidAmount
-                            ? "Enter an amount to exchange "
-                            : "Review Exchange"}
-                </Button>
+                    idleMessage={
+                        areSameTokens
+                            ? "Tokens must be different"
+                            : !hasValidAmount
+                                ? "Enter an amount to exchange"
+                                : "Review Exchange"
+                    }
+                />
             </div>
 
             <div className="flex justify-center items-center gap-2 text-sm text-muted-foreground">

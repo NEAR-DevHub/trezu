@@ -19,6 +19,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool};
 use std::collections::HashMap;
 use std::sync::Arc;
+use urlencoding::encode;
 
 use crate::AppState;
 use crate::config::get_plan_config;
@@ -244,15 +245,15 @@ pub async fn export_balance(
 /// Build file URL for export with all filter parameters
 fn build_export_file_url(params: &ExportRequest, format: &str) -> String {
     let mut url = format!(
-        "/api/balance-history/export?format={}&account_id={}&start_time={}&end_time={}",
+        "/api/balance-history/export?format={}&accountId={}&startTime={}&endTime={}",
         format,
-        params.account_id,
-        params.start_time.to_rfc3339(),
-        params.end_time.to_rfc3339()
+        encode(&params.account_id),
+        encode(&params.start_time.to_rfc3339()),
+        encode(&params.end_time.to_rfc3339())
     );
 
     if let Some(ref token_ids) = params.token_ids {
-        url.push_str(&format!("&token_ids={}", token_ids.join(",")));
+        url.push_str(&format!("&tokenIds={}", encode(&token_ids.join(","))));
     }
 
     if let Some(ref transaction_types) = params.transaction_types
@@ -260,8 +261,8 @@ fn build_export_file_url(params: &ExportRequest, format: &str) -> String {
         && !transaction_types.contains(&"all".to_string())
     {
         url.push_str(&format!(
-            "&transaction_types={}",
-            transaction_types.join(",")
+            "&transactionTypes={}",
+            encode(&transaction_types.join(","))
         ));
     }
 
@@ -1163,21 +1164,39 @@ async fn create_export_record(
         return Err("Insufficient export credits".into());
     }
 
-    // Decrement credits
-    sqlx::query(
+    // Check if an identical export already exists
+    let existing_export: Option<i64> = sqlx::query_scalar(
         r#"
+        SELECT id
+        FROM export_history
+        WHERE account_id = $1 AND file_url = $2
+        LIMIT 1
+        "#,
+    )
+    .bind(&request.account_id)
+    .bind(&request.file_url)
+    .fetch_optional(&mut *tx)
+    .await?;
+
+    let export_id = if let Some(existing_id) = existing_export {
+        // Export already exists - don't charge credits, just return existing ID
+        existing_id
+    } else {
+        // New export - decrement credits and create record
+        sqlx::query(
+            r#"
         UPDATE monitored_accounts
         SET export_credits = export_credits - 1
         WHERE account_id = $1
         "#,
-    )
-    .bind(&request.account_id)
-    .execute(&mut *tx)
-    .await?;
+        )
+        .bind(&request.account_id)
+        .execute(&mut *tx)
+        .await?;
 
-    // Insert export history record
-    let export_id: i64 = sqlx::query_scalar(
-        r#"
+        // Insert export history record
+        let new_id: i64 = sqlx::query_scalar(
+            r#"
         INSERT INTO export_history (
             account_id,
             generated_by,
@@ -1187,13 +1206,16 @@ async fn create_export_record(
         ) VALUES ($1, $2, $3, $4, 'completed')
         RETURNING id
         "#,
-    )
-    .bind(&request.account_id)
-    .bind(&request.generated_by)
-    .bind(&request.email)
-    .bind(&request.file_url)
-    .fetch_one(&mut *tx)
-    .await?;
+        )
+        .bind(&request.account_id)
+        .bind(&request.generated_by)
+        .bind(&request.email)
+        .bind(&request.file_url)
+        .fetch_one(&mut *tx)
+        .await?;
+
+        new_id
+    };
 
     // Commit transaction
     tx.commit().await?;
