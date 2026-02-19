@@ -2,9 +2,18 @@ import { Buffer } from "buffer";
 import {
     getSupportedTransport,
     setDebugLogging,
+    isWebHidSupported,
+    isWebUsbSupported,
+    isWebBleSupported,
 } from "./supportedTransports.js";
 
-export { getSupportedTransport, setDebugLogging };
+export {
+    getSupportedTransport,
+    setDebugLogging,
+    isWebHidSupported,
+    isWebUsbSupported,
+    isWebBleSupported,
+};
 
 function bip32PathToBytes(path) {
     const parts = path.split("/");

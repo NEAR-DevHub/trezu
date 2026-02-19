@@ -85,7 +85,7 @@ function isSafari() {
     );
 }
 
-async function isWebHidSupported() {
+export async function isWebHidSupported() {
     try {
         const isSupported = await LedgerTransportWebHid.isSupported();
         return isSupported;
@@ -94,7 +94,7 @@ async function isWebHidSupported() {
     }
 }
 
-async function isWebUsbSupported() {
+export async function isWebUsbSupported() {
     try {
         const isSupported = await LedgerTransportWebUsb.isSupported();
         return isSupported;
@@ -103,7 +103,7 @@ async function isWebUsbSupported() {
     }
 }
 
-async function isWebBleSupported() {
+export async function isWebBleSupported() {
     try {
         const isSupported = await LedgerTransportWebBleAndroidFix.isSupported();
         return isSupported;
