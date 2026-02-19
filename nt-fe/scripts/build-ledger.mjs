@@ -9,10 +9,10 @@ const __dirname = dirname(__filename);
 const isWatch = process.argv.includes('--watch');
 
 const config = {
-  entryPoints: [resolve(__dirname, 'src/ledger-wallet/index.js')],
+  entryPoints: [resolve(__dirname, '../src/ledger-wallet/index.js')],
   bundle: true,
   format: 'esm',
-  outfile: resolve(__dirname, 'public/ledger-wallet/ledger-executor.js'),
+  outfile: resolve(__dirname, '../public/ledger-wallet/ledger-executor.js'),
   platform: 'browser',
   target: ['es2020'],
   sourcemap: isWatch ? 'inline' : false,
@@ -22,7 +22,7 @@ const config = {
   define: {
     'process.env.NODE_ENV': isWatch ? '"development"' : '"production"',
   },
-  inject: [resolve(__dirname, 'esbuild-shims.js')],
+  inject: [resolve(__dirname, '../esbuild-shims.js')],
   banner: {
     js: '// Ledger Hardware Wallet Executor - Bundled with esbuild\n',
   },

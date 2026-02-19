@@ -2,8 +2,8 @@ import { Policy } from "@/types/policy";
 import axios from "axios";
 import Big from "@/lib/big";
 import { Balance, BalanceRaw, transformBalance } from "./balance";
-import { SignDelegateActionResult } from "@hot-labs/near-connect/build/types";
 import { encodeSignedDelegate } from "@near-js/transactions";
+import { SignDelegateActionResult } from "@hot-labs/near-connect";
 
 const BACKEND_API_BASE = `${process.env.NEXT_PUBLIC_BACKEND_API_BASE}/api`;
 
