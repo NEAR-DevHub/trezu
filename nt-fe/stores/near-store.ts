@@ -372,12 +372,14 @@ export const useNearStore = create<NearStore>((set, get) => ({
                     isAuthenticated: true,
                     hasAcceptedTerms: user.termsAccepted,
                     user,
+                    walletAccountId: user.accountId,
                 });
             } else {
                 set({
                     isAuthenticated: false,
                     hasAcceptedTerms: false,
                     user: null,
+                    walletAccountId: null,
                 });
             }
         } catch (error) {
