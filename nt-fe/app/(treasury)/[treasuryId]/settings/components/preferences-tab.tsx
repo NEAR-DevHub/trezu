@@ -49,7 +49,7 @@ export function PreferencesTab() {
     if (typeof window === "undefined") {
       return {
         timeFormat: "12",
-        autoTimezone: false,
+        autoTimezone: true,
         timezone: null,
       };
     }
@@ -63,9 +63,10 @@ export function PreferencesTab() {
       console.error("Failed to load preferences:", error);
     }
 
+    // Default to auto-detect timezone if no preferences stored
     return {
       timeFormat: "12",
-      autoTimezone: false,
+      autoTimezone: true,
       timezone: null,
     };
   };
