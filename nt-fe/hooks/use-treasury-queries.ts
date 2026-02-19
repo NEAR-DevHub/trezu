@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import {
     getUserTreasuries,
     getTreasuryConfig,
@@ -69,7 +69,10 @@ export function useTreasuryConfig(
  * Fetches historical balance snapshots at specified intervals
  * Supports filtering by specific tokens or all tokens
  */
-export function useBalanceChart(params: BalanceChartRequest | null) {
+export function useBalanceChart(
+    params: BalanceChartRequest | null,
+    options?: { pauseRefetch?: boolean },
+) {
     return useQuery({
         queryKey: [
             "balanceChart",
@@ -82,7 +85,8 @@ export function useBalanceChart(params: BalanceChartRequest | null) {
         queryFn: () => getBalanceChart(params!),
         enabled: !!params?.accountId,
         staleTime: 1000 * 5, // 5 seconds (balance chart changes frequently)
-        refetchInterval: 1000 * 5, // Refetch every 5 seconds
+        refetchInterval: options?.pauseRefetch ? false : 1000 * 5, // Pause refetch on hover to preserve tooltip
+        placeholderData: keepPreviousData, // Show previous data while fetching new query key to avoid loading flicker
     });
 }
 
