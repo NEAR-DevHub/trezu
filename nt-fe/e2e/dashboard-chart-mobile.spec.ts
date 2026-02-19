@@ -222,4 +222,104 @@ test("dashboard chart x-axis labels should not overlap on mobile with 3M period"
         overlaps,
         `X-axis labels overlap on mobile (375px) with 3M period: ${JSON.stringify(overlaps)}`,
     ).toHaveLength(0);
+
+    // Assert mobile uses short date format (e.g. "Nov 21", not "11/21/2025")
+    for (const tick of tickBoundingBoxes) {
+        expect(tick.text).toMatch(
+            /^[A-Z][a-z]{2} \d{1,2}$|^Now$/,
+        );
+    }
+});
+
+test("dashboard chart x-axis labels should not overlap on desktop with 3M period", async ({
+    page,
+}) => {
+    test.setTimeout(60_000);
+
+    // Override to desktop viewport
+    await page.setViewportSize({ width: 1280, height: 800 });
+
+    await setupMocks(page);
+    await page.goto(DASHBOARD_URL);
+
+    // Wait for the chart to render
+    const chartContainer = page.locator("[data-slot='chart']").first();
+    await chartContainer
+        .locator("svg")
+        .first()
+        .waitFor({ state: "visible", timeout: 15_000 });
+
+    // On desktop, the time period selector is a ToggleGroup (hidden on mobile)
+    const btn3M = page.locator(".hidden.md\\:flex").getByText("3M");
+    await btn3M.click();
+
+    // Wait for chart to re-render with 3M data
+    await chartContainer
+        .locator("svg")
+        .first()
+        .waitFor({ state: "visible", timeout: 10_000 });
+    await page.waitForTimeout(1000);
+
+    // Collect bounding boxes of all x-axis tick labels
+    const tickBoundingBoxes = await page.evaluate(() => {
+        const xAxisGroup = document.querySelector(".recharts-xAxis");
+        if (!xAxisGroup) return [];
+
+        const ticks = xAxisGroup.querySelectorAll(
+            ".recharts-cartesian-axis-tick text",
+        );
+        return Array.from(ticks).map((tick) => {
+            const rect = tick.getBoundingClientRect();
+            return {
+                left: rect.left,
+                right: rect.right,
+                text: tick.textContent || "",
+            };
+        });
+    });
+
+    expect(tickBoundingBoxes.length).toBeGreaterThan(0);
+    console.log(
+        `Found ${tickBoundingBoxes.length} x-axis tick labels:`,
+        tickBoundingBoxes.map((t) => t.text),
+    );
+
+    await page.screenshot({
+        path: "test-results/dashboard-chart-desktop-3m.png",
+        fullPage: false,
+    });
+
+    const overlaps: Array<{
+        label1: string;
+        label2: string;
+        overlapPx: number;
+    }> = [];
+    for (let i = 1; i < tickBoundingBoxes.length; i++) {
+        const prev = tickBoundingBoxes[i - 1];
+        const curr = tickBoundingBoxes[i];
+        const overlapPx = prev.right - curr.left;
+        if (overlapPx > 1) {
+            overlaps.push({
+                label1: prev.text,
+                label2: curr.text,
+                overlapPx: Math.round(overlapPx),
+            });
+        }
+    }
+
+    if (overlaps.length > 0) {
+        console.log("Overlapping labels detected:", overlaps);
+    }
+
+    expect(
+        overlaps,
+        `X-axis labels overlap on desktop (1280px) with 3M period: ${JSON.stringify(overlaps)}`,
+    ).toHaveLength(0);
+
+    // Assert desktop uses full locale date format (e.g. "11/21/2025", not "Nov 21")
+    for (const tick of tickBoundingBoxes) {
+        expect(tick.text).toMatch(
+            /^\d{1,2}\/\d{1,2}\/\d{4}$|^Now$/,
+        );
+    }
 });

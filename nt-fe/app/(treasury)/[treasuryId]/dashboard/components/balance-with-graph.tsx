@@ -69,6 +69,15 @@ const formatTimestampForPeriod = (
                 day: "numeric",
                 month: "short",
             });
+        case "3M":
+            // Mobile: short "Nov 21", Desktop: full locale date
+            if (typeof window !== "undefined" && window.innerWidth < 768) {
+                return date.toLocaleDateString("en-US", {
+                    day: "numeric",
+                    month: "short",
+                });
+            }
+            return date.toLocaleDateString();
         case "1Y":
             // Show month and year: "Mar '25"
             const month = date.toLocaleDateString("en-US", { month: "short" });
