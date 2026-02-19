@@ -448,9 +448,10 @@ export function DepositModal({
                                             variant="unstyled"
                                             className="w-full text-left cursor-pointer hover:opacity-80 h-auto justify-start p-0! mt-1"
                                         >
-                                            <div className="w-full flex items-center justify-between py-1">
+                                            <div className="w-full flex flex-col gap-0 py-1">
                                                 {selectedNetwork ? (
-                                                    <div>
+                                                    <>
+                                                        <div className="flex items-center justify-between">
                                                         <div className="flex items-center gap-2">
                                                             {selectedNetwork.icon?.startsWith(
                                                                 "http",
@@ -487,11 +488,13 @@ export function DepositModal({
                                                                     selectedNetwork.name
                                                                 }
                                                             </span>
+                                                            </div>
+                                                            <ChevronDown className="w-5 h-5" />
                                                         </div>
                                                         {/* Info message for "Other" asset */}
                                                         {selectedAsset?.id ===
                                                             "other" && (
-                                                                <div className="break-all overflow-wrap-anywhere text-wrap mt-2 text-sm text-general-info-foreground">
+                                                                <div className="break-all overflow-wrap-anywhere text-wrap mt-2 text-xs text-general-info-foreground">
                                                                     You can deposit
                                                                     any token not
                                                                     listed in the
@@ -500,13 +503,15 @@ export function DepositModal({
                                                                     network.
                                                                 </div>
                                                             )}
-                                                    </div>
+                                                    </>
                                                 ) : (
+                                                    <div className="flex items-center justify-between">
                                                     <span className="text-muted-foreground text-lg font-normal">
                                                         Select Network
                                                     </span>
+                                                        <ChevronDown className="w-5 h-5" />
+                                                    </div>
                                                 )}
-                                                <ChevronDown className="w-5 h-5" />
                                             </div>
                                         </Button>
                                         <FormMessage />
@@ -565,7 +570,7 @@ export function DepositModal({
                                     <div className="flex gap-3">
                                         {/* QR Code */}
                                         <div className="shrink-0">
-                                            <div className="w-40 h-40 rounded-lg flex items-center justify-center p-2">
+                                            <div className="w-24 h-24 sm:w-40 sm:h-40 rounded-lg flex items-center justify-center p-2">
                                                 <QRCode
                                                     value={depositAddress}
                                                     size={112}
@@ -584,7 +589,7 @@ export function DepositModal({
                                                 Address
                                             </label>
                                             <div className="rounded-lg flex justify-between gap-2">
-                                                <code className="font-mono break-all">
+                                                <code className="font-mono break-all text-xs sm:text-sm">
                                                     {depositAddress}
                                                 </code>
                                                 <CopyButton

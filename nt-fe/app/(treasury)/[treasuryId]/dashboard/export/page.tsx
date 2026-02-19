@@ -39,7 +39,6 @@ import { User } from "@/components/user";
 import { FormattedDate } from "@/components/formatted-date";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CreditsQuotaDisplay } from "@/components/credits-quota-display";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
     useReactTable,
     getCoreRowModel,
@@ -178,37 +177,19 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
                                     Generating
                                 </div>
                             ) : item.status === "completed" ? (
-                                isMember && accountId ? (
-                                    <Button
-                                        variant="link"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDownload(item);
-                                        }}
-                                        className="p-0!"
-                                    >
-                                        <Download className="w-4 h-4" />
-                                        Download
-                                    </Button>
-                                ) : (
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <span className="inline-block">
-                                                <Button
-                                                    variant="link"
-                                                    disabled
-                                                    className="p-0!"
-                                                >
-                                                    <Download className="w-4 h-4" />
-                                                    Download
-                                                </Button>
-                                            </span>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p>You don't have permission to download the file.</p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                )
+                                <Button
+                                    variant="link"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDownload(item);
+                                    }}
+                                    className="p-0!"
+                                    disabled={!isMember || !accountId}
+                                    tooltipContent={!isMember || !accountId ? "You don't have permission to download the file." : undefined}
+                                >
+                                    <Download className="w-4 h-4" />
+                                    Download
+                                </Button>
                             ) : item.status === "expired" ? (
                                 <div className="text-muted-foreground text-sm px-3 py-1.5">
                                     Expired
@@ -738,27 +719,24 @@ export default function ExportActivityPage() {
                                             /> */}
 
                                             {/* Export Button */}
-                                            {isMember && accountId ? (
-                                                <Button
-                                                    onClick={handleExport}
-                                                    disabled={
-                                                        !dateRange.from ||
-                                                        !dateRange.to ||
-                                                        isExporting ||
-                                                        !canGenerateExport
-                                                    }
-                                                    className="w-full mt-3"
-                                                >
-                                                    {isExporting ? "Exporting..." : "Export"}
-                                                </Button>
-                                            ) : (
-                                                <Button
-                                                    disabled
-                                                    className="w-full mt-3"
-                                                >
-                                                    You don't have permission to export
-                                                </Button>
-                                            )}
+                                            <Button
+                                                onClick={handleExport}
+                                                disabled={
+                                                    !dateRange.from ||
+                                                    !dateRange.to ||
+                                                    isExporting ||
+                                                    !canGenerateExport ||
+                                                    !isMember ||
+                                                    !accountId
+                                                }
+                                                className="w-full mt-3"
+                                            >
+                                                {!isMember || !accountId
+                                                    ? "You don't have permission to export"
+                                                    : isExporting
+                                                        ? "Exporting..."
+                                                        : "Export"}
+                                            </Button>
                                         </div>
                                     </TabsContent>
 

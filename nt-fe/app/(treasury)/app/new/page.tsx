@@ -71,6 +71,24 @@ const treasuryFormSchema = z
 
 type TreasuryFormValues = z.infer<typeof treasuryFormSchema>;
 
+/**
+ * Helper to clear form errors before updating field value
+ * Ensures errors disappear immediately when user starts typing
+ */
+function createClearErrorsOnChange<T>(
+    form: ReturnType<typeof useFormContext<TreasuryFormValues>>,
+    fieldName: string,
+    hasError: boolean,
+    onChange: (value: T) => void,
+) {
+    return (value: T) => {
+        if (hasError) {
+            form.clearErrors(fieldName as any);
+        }
+        onChange(value);
+    };
+}
+
 function Step1({ handleNext }: StepProps) {
     const form = useFormContext<TreasuryFormValues>();
 
@@ -101,7 +119,15 @@ function Step1({ handleNext }: StepProps) {
                             placeholder="My Treasury"
                             value={field.value}
                             onChange={(e) => {
-                                field.onChange(e);
+                                // Clear errors and update field
+                                createClearErrorsOnChange(
+                                    form,
+                                    "details.treasuryName",
+                                    !!fieldState.error,
+                                    field.onChange,
+                                )(e);
+
+                                // Auto-generate account name from treasury name
                                 const generatedHandle = e.target.value
                                     .toLowerCase()
                                     .replace(/[^a-z0-9-]/g, "-")
@@ -113,6 +139,8 @@ function Step1({ handleNext }: StepProps) {
                                         "details.accountName",
                                         generatedHandle,
                                     );
+                                    // Also clear account name errors when auto-generating
+                                    form.clearErrors("details.accountName");
                                 }
                             }}
                         />
@@ -133,7 +161,7 @@ function Step1({ handleNext }: StepProps) {
                 render={({ field, fieldState }) => (
                     <InputBlock
                         title="Account Name"
-                        info="This is your account’s unique name. It will be used in your Treasury URL and shown in transactions to identify who sent the payment. Choose a short, recognizable name for your account."
+                        info="This is your account's unique name. It will be used in your Treasury URL and shown in transactions to identify who sent the payment. Choose a short, recognizable name for your account."
                         invalid={!!fieldState.error}
                     >
                         <LargeInput
@@ -146,7 +174,13 @@ function Step1({ handleNext }: StepProps) {
                                     .toLowerCase()
                                     .replace(/[^a-z0-9_-]/g, "")
                                     .slice(0, 64);
-                                field.onChange(input);
+                                // Clear errors and update field
+                                createClearErrorsOnChange(
+                                    form,
+                                    "details.accountName",
+                                    !!fieldState.error,
+                                    field.onChange,
+                                )(input);
                             }}
                         />
                         {fieldState.error ? (

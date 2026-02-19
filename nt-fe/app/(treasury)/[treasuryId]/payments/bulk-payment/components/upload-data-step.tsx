@@ -70,6 +70,8 @@ export function UploadDataStep({
             return;
         }
 
+        // Clear any previous errors when uploading a new file
+        setDataErrors(null);
         setUploadedFile(file);
 
         const reader = new FileReader();

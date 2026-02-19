@@ -357,7 +357,7 @@ export function GeneralTab() {
                       key={color}
                       type="button"
                       onClick={() => handleColorChange(color)}
-                      className={`h-8 w-8 rounded-full transition-all hover:scale-110 ${field.value === color
+                      className={`h-8 w-8 rounded-full transition-all hover:scale-110 cursor-pointer ${field.value === color
                         ? "ring-2 ring-offset-2 ring-offset-background ring-primary"
                         : ""
                         } ${color === "#000000" ? "bg-black dark:bg-white" : ""}`}
