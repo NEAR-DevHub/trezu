@@ -19,7 +19,7 @@ class LedgerTransportWebBleAndroidFix extends LedgerTransportWebBle {
                     service,
                     id,
                 );
-                if (id === "13d63400-2c97-0004-0002-4c6564676572") {
+                if (String(id).endsWith("-0002-4c6564676572")) {
                     const writeValueOrig = characteristic.writeValue;
                     let delayed = false;
                     characteristic.writeValue = async (data) => {
