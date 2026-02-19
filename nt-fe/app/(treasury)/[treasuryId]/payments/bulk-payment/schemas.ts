@@ -24,6 +24,7 @@ export const bulkPaymentFormSchema = z.object({
   csvData: z.string().nullable(),
   pasteDataInput: z.string(),
   activeTab: z.enum(["upload", "paste"]),
+  uploadedFileName: z.string().nullable(),
 });
 
 export type BulkPaymentFormValues = z.infer<typeof bulkPaymentFormSchema>;

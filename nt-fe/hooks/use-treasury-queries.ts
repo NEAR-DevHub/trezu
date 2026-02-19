@@ -205,13 +205,18 @@ export function useProfile(accountId: string | null | undefined) {
  * Query hook to get batch payment details by batch ID
  * Fetches from backend which queries the batch payment contract and caches the result
  * Returns batch payment info including token, submitter, status, and list of payments
+ * @param refetchInterval - Optional interval in ms to refetch data (e.g., when waiting for payment status updates)
  */
-export function useBatchPayment(batchId: string | null | undefined) {
+export function useBatchPayment(
+    batchId: string | null | undefined,
+    refetchInterval?: number | false,
+) {
     return useQuery({
         queryKey: ["batchPayment", batchId],
         queryFn: () => getBatchPayment(batchId!),
         enabled: !!batchId,
         staleTime: 1000 * 60 * 5, // 5 minutes (batch payment data doesn't change frequently once created)
+        refetchInterval, // Enable interval refetching if provided
     });
 }
 

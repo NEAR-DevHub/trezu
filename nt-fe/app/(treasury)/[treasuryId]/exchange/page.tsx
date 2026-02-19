@@ -286,8 +286,8 @@ function Step1({ handleNext }: StepProps) {
                     disabled={areSameTokens || !hasValidAmount || !quoteData}
                     idleMessage={
                         areSameTokens
-                            ? "Tokens must be different"
-                            : !hasValidAmount
+                        ? "Tokens must be different"
+                        : !hasValidAmount
                                 ? "Enter an amount to exchange"
                                 : "Review Exchange"
                     }

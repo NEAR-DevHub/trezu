@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useFormContext } from "react-hook-form";
 import { PageCard } from "@/components/card";
 import { Button } from "@/components/button";
@@ -56,6 +56,15 @@ export function UploadDataStep({
     const csvData = form.watch("csvData");
     const pasteDataInput = form.watch("pasteDataInput");
     const activeTab = form.watch("activeTab");
+    const uploadedFileName = form.watch("uploadedFileName");
+
+    // Restore uploaded file state when navigating back
+    useEffect(() => {
+        if (uploadedFileName && !uploadedFile) {
+            const file = new File([""], uploadedFileName, { type: "text/csv" });
+            setUploadedFile(file);
+        }
+    }, [uploadedFileName, uploadedFile]);
 
     const handleFileUpload = (file: File) => {
         if (file.type !== "text/csv" && !file.name.endsWith(".csv")) {
@@ -73,6 +82,9 @@ export function UploadDataStep({
         // Clear any previous errors when uploading a new file
         setDataErrors(null);
         setUploadedFile(file);
+
+        // Store the filename in form state
+        form.setValue("uploadedFileName", file.name);
 
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -497,6 +509,10 @@ export function UploadDataStep({
                                                                 );
                                                                 form.setValue(
                                                                     "csvData",
+                                                                    null,
+                                                                );
+                                                                form.setValue(
+                                                                    "uploadedFileName",
                                                                     null,
                                                                 );
                                                                 setDataErrors(

@@ -631,7 +631,9 @@ export async function getProfile(
     }
 }
 
-export type PaymentStatus = { Paid: {}; Pending: {}; Failed: {} };
+export type PaymentStatus =
+    | "Pending"
+    | { Paid: { block_height: number } };
 
 export interface BatchPayment {
     recipient: string;

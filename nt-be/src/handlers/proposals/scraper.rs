@@ -402,16 +402,24 @@ pub struct BulkPayment {
     pub batch_id: String,
 }
 
+/// Payment status in a batch payment list
+#[derive(Deserialize, Serialize, Clone, Debug)]
+#[serde(rename_all = "PascalCase")]
+pub enum BatchPaymentStatus {
+    Pending,
+    Paid { block_height: u64 },
+}
+
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct BatchPayment {
     pub recipient: AccountId,
     pub amount: String,
-    pub status: serde_json::Value,
+    pub status: BatchPaymentStatus,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
 pub struct BatchPaymentResponse {
+    #[serde(alias = "tokenId")]
     pub token_id: String, // supports Intents format (nep141:xxx)
     pub submitter: AccountId,
     pub status: String,
