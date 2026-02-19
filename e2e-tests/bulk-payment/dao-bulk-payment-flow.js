@@ -104,19 +104,20 @@ function generateImplicitAccountId(index) {
  * 1. Sorts object keys alphabetically
  * 2. Sorts payments by recipient
  */
-function generateListId(submitterId, tokenId, payments) {
+function generateListId(submitterId, tokenId, payments, timestamp) {
   // Sort payments by recipient for deterministic ordering (must match API)
   const sortedPayments = [...payments].sort((a, b) => a.recipient.localeCompare(b.recipient));
-  
+
   // Create canonical JSON with alphabetically sorted keys (matches Rust serde_json)
-  // Key order: payments, submitter, token_id (alphabetical)
+  // Key order: payments, submitter, timestamp, token_id (alphabetical)
   // Payment key order: amount, recipient (alphabetical)
   const canonical = JSON.stringify({
     payments: sortedPayments.map(p => ({ amount: p.amount, recipient: p.recipient })),
     submitter: submitterId,
+    timestamp: timestamp,
     token_id: tokenId,
   });
-  
+
   return createHash('sha256').update(canonical).digest('hex');
 }
 
@@ -711,7 +712,9 @@ console.log(`   - ${nonExistentNamedRecipients.length} non-existent named accoun
 console.log(`💰 Total payment amount: ${formatNEAR(totalPaymentAmount.toString())} NEAR`);
 
 // Step 7: Generate list_id (64-char hex SHA-256 hash)
-const listId = generateListId(daoAccountId, 'native', payments);
+// Timestamp allows the same payment list to be submitted multiple times
+const timestamp = Date.now();
+const listId = generateListId(daoAccountId, 'native', payments, timestamp);
 console.log(`\n🔑 Generated list_id: ${listId}`);
 assert.equal(listId.length, 64, 'list_id must be 64 characters');
 assert.match(listId, /^[0-9a-f]{64}$/, 'list_id must be hex-encoded');
@@ -720,6 +723,7 @@ assert.match(listId, /^[0-9a-f]{64}$/, 'list_id must be hex-encoded');
 console.log('\n🔒 Testing API rejection with mismatched hash...');
 const wrongHashResponse = await apiRequest('/api/bulk-payment/submit-list', 'POST', {
   listId: listId,
+  timestamp,
   submitterId: daoAccountId,
   daoContractId: daoAccountId,
   tokenId: 'native',
@@ -728,7 +732,7 @@ const wrongHashResponse = await apiRequest('/api/bulk-payment/submit-list', 'POS
 }, true); // expectError = true
 
 assert.equal(wrongHashResponse.success, false, 'Submit with wrong hash must fail');
-assert.ok(wrongHashResponse.error.includes('does not match computed hash'), 
+assert.ok(wrongHashResponse.error.includes('does not match computed hash'),
   `Error should mention hash mismatch: ${wrongHashResponse.error}`);
 console.log(`✅ API correctly rejected tampered payload: ${wrongHashResponse.error}`);
 
@@ -736,6 +740,7 @@ console.log(`✅ API correctly rejected tampered payload: ${wrongHashResponse.er
 console.log('\n🔒 Testing API rejection without DAO proposal...');
 const rejectResponse = await apiRequest('/api/bulk-payment/submit-list', 'POST', {
   listId: listId,
+  timestamp,
   submitterId: daoAccountId,
   daoContractId: daoAccountId,
   tokenId: 'native',
@@ -743,7 +748,7 @@ const rejectResponse = await apiRequest('/api/bulk-payment/submit-list', 'POST',
 }, true); // expectError = true
 
 assert.equal(rejectResponse.success, false, 'Submit without DAO proposal must fail');
-assert.ok(rejectResponse.error.includes('No pending DAO proposal found'), 
+assert.ok(rejectResponse.error.includes('No pending DAO proposal found'),
   `Error should mention missing DAO proposal: ${rejectResponse.error}`);
 console.log(`✅ API correctly rejected submission: ${rejectResponse.error}`);
 
@@ -764,6 +769,7 @@ const submitListProposalId = await createProposal(
 console.log('\n📤 Submitting payment list via API...');
 const submitResponse = await apiRequest('/api/bulk-payment/submit-list', 'POST', {
   listId: listId,
+  timestamp,
   submitterId: daoAccountId,
   daoContractId: daoAccountId,
   tokenId: 'native',
