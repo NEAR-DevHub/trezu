@@ -24,6 +24,7 @@ pub struct PaymentInput {
 #[serde(rename_all = "camelCase")]
 pub struct SubmitListRequest {
     pub list_id: String,
+    pub timestamp: u64,
     pub submitter_id: String,
     pub dao_contract_id: String,
     pub token_id: String,
@@ -40,7 +41,13 @@ pub struct SubmitListResponse {
 }
 
 /// Compute the SHA-256 hash of the payment list for verification
-fn compute_list_hash(submitter_id: &str, token_id: &str, payments: &[PaymentInput]) -> String {
+/// Includes timestamp to allow the same payment list to be submitted multiple times
+fn compute_list_hash(
+    submitter_id: &str,
+    token_id: &str,
+    payments: &[PaymentInput],
+    timestamp: u64,
+) -> String {
     // Sort payments by recipient for deterministic hashing
     let mut sorted_payments: Vec<_> = payments
         .iter()
@@ -61,6 +68,7 @@ fn compute_list_hash(submitter_id: &str, token_id: &str, payments: &[PaymentInpu
     let canonical = serde_json::json!({
         "payments": sorted_payments,
         "submitter": submitter_id,
+        "timestamp": timestamp,
         "token_id": token_id,
     });
 
@@ -275,8 +283,12 @@ pub async fn submit_list(
     }
 
     // Step 1: Verify the list_id matches the computed hash
-    let computed_hash =
-        compute_list_hash(&request.submitter_id, &request.token_id, &request.payments);
+    let computed_hash = compute_list_hash(
+        &request.submitter_id,
+        &request.token_id,
+        &request.payments,
+        request.timestamp,
+    );
 
     if request.list_id != computed_hash {
         return Err((
@@ -522,10 +534,11 @@ mod tests {
             },
         ];
 
-        let hash1 = compute_list_hash("testdao.sputnik-dao.near", "native", &payments);
+        let timestamp = 1234567890;
+        let hash1 = compute_list_hash("testdao.sputnik-dao.near", "native", &payments, timestamp);
 
         // Same inputs should produce the same hash
-        let hash2 = compute_list_hash("testdao.sputnik-dao.near", "native", &payments);
+        let hash2 = compute_list_hash("testdao.sputnik-dao.near", "native", &payments, timestamp);
         assert_eq!(hash1, hash2);
 
         // Different order should produce the same hash (sorted by recipient)
@@ -539,8 +552,17 @@ mod tests {
                 amount: "1000000000000000000000000".to_string(),
             },
         ];
-        let hash3 = compute_list_hash("testdao.sputnik-dao.near", "native", &payments_reversed);
+        let hash3 = compute_list_hash(
+            "testdao.sputnik-dao.near",
+            "native",
+            &payments_reversed,
+            timestamp,
+        );
         assert_eq!(hash1, hash3);
+
+        // Different timestamp should produce different hash
+        let hash4 = compute_list_hash("testdao.sputnik-dao.near", "native", &payments, 9876543210);
+        assert_ne!(hash1, hash4);
 
         // Hash should be 64 characters (SHA-256 hex)
         assert_eq!(hash1.len(), 64);

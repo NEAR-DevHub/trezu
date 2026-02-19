@@ -14,11 +14,13 @@ export const MAX_RECIPIENTS_PER_BULK_PAYMENT = 25;
 /**
  * Generate a deterministic list_id (SHA-256 hash of canonical JSON)
  * Must match the backend's hash calculation
+ * Includes timestamp to allow the same payment list to be submitted multiple times
  */
 export async function generateListId(
     submitterId: string,
     tokenId: string,
     payments: Array<{ recipient: string; amount: string }>,
+    timestamp: number,
 ): Promise<string> {
     // Sort payments by recipient for deterministic ordering (must match API)
     const sortedPayments = [...payments].sort((a, b) =>
@@ -32,6 +34,7 @@ export async function generateListId(
             recipient: p.recipient,
         })),
         submitter: submitterId,
+        timestamp: timestamp,
         token_id: tokenId,
     });
 
@@ -51,6 +54,7 @@ export async function generateListId(
  */
 export async function submitPaymentList(params: {
     listId: string;
+    timestamp: number;
     submitterId: string;
     daoContractId: string;
     tokenId: string;
@@ -61,6 +65,7 @@ export async function submitPaymentList(params: {
             `${BACKEND_API_BASE}/api/bulk-payment/submit-list`,
             {
                 listId: params.listId,
+                timestamp: params.timestamp,
                 submitterId: params.submitterId,
                 daoContractId: params.daoContractId,
                 tokenId: params.tokenId,

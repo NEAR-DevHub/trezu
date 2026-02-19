@@ -150,11 +150,15 @@ export default function BulkPaymentPage() {
                     .toFixed(0),
             }));
 
-            // Generate list_id
+            // Generate timestamp for unique list_id
+            const timestamp = Date.now();
+
+            // Generate list_id with timestamp
             const listId = await generateListId(
                 selectedTreasury,
                 tokenIdForHash,
                 payments,
+                timestamp,
             );
 
             // Build proposal description
@@ -297,6 +301,7 @@ export default function BulkPaymentPage() {
             try {
                 const submitResult = await submitPaymentList({
                     listId,
+                    timestamp,
                     submitterId: selectedTreasury,
                     daoContractId: selectedTreasury,
                     tokenId: tokenIdForHash,
