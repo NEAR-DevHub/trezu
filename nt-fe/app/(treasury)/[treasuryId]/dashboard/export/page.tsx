@@ -39,6 +39,7 @@ import { User } from "@/components/user";
 import { FormattedDate } from "@/components/formatted-date";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CreditsQuotaDisplay } from "@/components/credits-quota-display";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
     useReactTable,
     getCoreRowModel,
@@ -85,9 +86,9 @@ function parseDateRangeFromUrl(fileUrl: string): { startDate: string; endDate: s
         // Extract query params from the URL string
         const queryString = fileUrl.includes('?') ? fileUrl.split('?')[1] : '';
 
-        // Manually extract start_time and end_time to avoid URLSearchParams treating + as space
-        const startMatch = queryString.match(/start_time=([^&]+)/);
-        const endMatch = queryString.match(/end_time=([^&]+)/);
+        // Manually extract startTime and endTime (camelCase format)
+        const startMatch = queryString.match(/startTime=([^&]+)/);
+        const endMatch = queryString.match(/endTime=([^&]+)/);
 
         if (startMatch && endMatch) {
             const startTime = decodeURIComponent(startMatch[1]);
@@ -105,17 +106,17 @@ function parseDateRangeFromUrl(fileUrl: string): { startDate: string; endDate: s
 }
 
 function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
+    const { isGuestTreasury } = useTreasury();
+    const { accountId } = useNear();
+    const isMember = !isGuestTreasury;
+
     const handleDownload = useCallback((item: ExportHistoryItem) => {
         try {
             const url = new URL(item.fileUrl, BACKEND_API_BASE);
             const fullUrl = `${BACKEND_API_BASE}${url.pathname}${url.search}`;
 
-            const link = document.createElement("a");
-            link.href = fullUrl;
-            link.download = "";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            // Open in new tab
+            window.open(fullUrl, '_blank', 'noopener,noreferrer');
         } catch (error) {
             console.error("Download error:", error);
             toast.error("Failed to download export");
@@ -177,17 +178,37 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
                                     Generating
                                 </div>
                             ) : item.status === "completed" ? (
-                                <Button
-                                    variant="link"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDownload(item);
-                                    }}
-                                    className="p-0!"
-                                >
-                                    <Download className="w-4 h-4" />
-                                    Download
-                                </Button>
+                                isMember && accountId ? (
+                                    <Button
+                                        variant="link"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDownload(item);
+                                        }}
+                                        className="p-0!"
+                                    >
+                                        <Download className="w-4 h-4" />
+                                        Download
+                                    </Button>
+                                ) : (
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <span className="inline-block">
+                                                <Button
+                                                    variant="link"
+                                                    disabled
+                                                    className="p-0!"
+                                                >
+                                                    <Download className="w-4 h-4" />
+                                                    Download
+                                                </Button>
+                                            </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>You don't have permission to download the file.</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                )
                             ) : item.status === "expired" ? (
                                 <div className="text-muted-foreground text-sm px-3 py-1.5">
                                     Expired
@@ -202,7 +223,7 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
                 },
             }),
         ],
-        [handleDownload],
+        [handleDownload, isMember, accountId],
     );
 
     const table = useReactTable({
@@ -269,13 +290,14 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
 export default function ExportActivityPage() {
     const router = useRouter();
     const queryClient = useQueryClient();
-    const { treasuryId } = useTreasury();
+    const { treasuryId, isGuestTreasury } = useTreasury();
     const { accountId } = useNear();
     const { data: planDetails, isLoading: planLoading } = useSubscription(treasuryId);
     const { data: exportHistoryData, refetch: refetchHistory } = useExportHistory(treasuryId);
     const { data: assetsData } = useAssets(treasuryId, { onlyPositiveBalance: false });
     const aggregatedTokens = useAggregatedTokens(assetsData?.tokens || []);
 
+    const isMember = !isGuestTreasury;
     const [isExporting, setIsExporting] = useState(false);
     const [currentTab, setCurrentTab] = useState<string>("generate");
 
@@ -716,18 +738,27 @@ export default function ExportActivityPage() {
                                             /> */}
 
                                             {/* Export Button */}
-                                            <Button
-                                                onClick={handleExport}
-                                                disabled={
-                                                    !dateRange.from ||
-                                                    !dateRange.to ||
-                                                    isExporting ||
-                                                    !canGenerateExport
-                                                }
-                                                className="w-full mt-3"
-                                            >
-                                                {isExporting ? "Exporting..." : "Export"}
-                                            </Button>
+                                            {isMember && accountId ? (
+                                                <Button
+                                                    onClick={handleExport}
+                                                    disabled={
+                                                        !dateRange.from ||
+                                                        !dateRange.to ||
+                                                        isExporting ||
+                                                        !canGenerateExport
+                                                    }
+                                                    className="w-full mt-3"
+                                                >
+                                                    {isExporting ? "Exporting..." : "Export"}
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    disabled
+                                                    className="w-full mt-3"
+                                                >
+                                                    You don't have permission to export
+                                                </Button>
+                                            )}
                                         </div>
                                     </TabsContent>
 
