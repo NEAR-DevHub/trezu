@@ -467,4 +467,25 @@ mod tests {
             Some("6GA6TzTPaGSkbbowgVuL3SH7KKaYcz79ZWetdCLjBgMc"),
         );
     }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_get_transaction_hash_megdev() {
+        let state = init_test_state().await;
+
+        let result = super::get_transaction_hash(
+            State(Arc::new(state)),
+            Path((
+                "0db7b48145f57efac4e8da1327062685597daf4bb144c0366518f9f1feaac184".to_string(),
+                "megdev.near".to_string(),
+            )),
+        )
+        .await
+        .expect("Should resolve transaction hash");
+
+        assert!(result.success);
+        assert_eq!(
+            result.transaction_hash.as_deref(),
+            Some("6LbWKVUNxQvSFVe1JuRgRiXxFbNmutcZjgqqoDoDBWGL"),
+        );
+    }
 }
