@@ -1,7 +1,7 @@
 use axum::{Json, extract::State, http::StatusCode};
 use borsh::BorshDeserialize;
 use near_api::{
-    AccountId, NearToken, Tokens, Transaction,
+    AccountId, Contract, NearToken, Tokens, Transaction,
     types::{
         Action,
         json::{Base64VecU8, U128},
@@ -10,12 +10,17 @@ use near_api::{
     },
 };
 use serde::{Deserialize, Serialize};
-use std::{ops::Deref, sync::Arc};
+use serde_json::Value;
+use std::{collections::HashSet, ops::Deref, sync::Arc};
 
 use crate::{
     AppState,
     auth::AuthUser,
     config::plans::{PlanType, has_gas_covered_credits},
+    handlers::{
+        intents::supported_tokens::fetch_supported_tokens_data,
+        user::assets::fetch_whitelisted_tokens,
+    },
 };
 
 #[derive(Debug, Deserialize)]
@@ -47,6 +52,107 @@ fn error_response(status: StatusCode, msg: String) -> (StatusCode, Json<RelayRes
 
 const MAX_STORAGE_BYTES: u128 = 4000;
 const MAX_SPONSORING: NearToken = NearToken::from_millinear(1200);
+// We need to multiply the buffer by 25 because this is the bulk payment limit for single transaction
+// This is worse case scenario where all bulk payments recipients are not registered in the token contract
+const TOKEN_STORAGE_BUFFER: NearToken = NearToken::from_micronear(1250).saturating_mul(25);
+const SPUTNIK_DAO_SUFFIX: &str = ".sputnik-dao.near";
+
+fn extract_nep141_contract(asset_id: &str) -> Option<&str> {
+    asset_id.strip_prefix("nep141:")
+}
+
+fn extract_intents_whitelist_contracts(supported_tokens: &Value) -> HashSet<String> {
+    let mut contracts = HashSet::new();
+    let Some(tokens) = supported_tokens.get("tokens").and_then(Value::as_array) else {
+        return contracts;
+    };
+
+    for token in tokens {
+        let is_nep141 = token
+            .get("standard")
+            .and_then(Value::as_str)
+            .map(|standard| standard == "nep141")
+            .unwrap_or(false);
+        if !is_nep141 {
+            continue;
+        }
+
+        for field in ["intents_token_id", "defuse_asset_identifier"] {
+            if let Some(asset_id) = token.get(field).and_then(Value::as_str)
+                && let Some(contract_id) = extract_nep141_contract(asset_id)
+            {
+                contracts.insert(contract_id.to_string());
+            }
+        }
+    }
+
+    contracts
+}
+
+async fn fetch_allowed_receiver_contracts(
+    state: &Arc<AppState>,
+    treasury_id: &AccountId,
+) -> Result<HashSet<String>, (StatusCode, Json<RelayResponse>)> {
+    let mut allowed_contracts = HashSet::new();
+    allowed_contracts.insert(treasury_id.to_string());
+
+    let supported_tokens = fetch_supported_tokens_data(state)
+        .await
+        .map_err(|(_, msg)| {
+            error_response(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to fetch intents whitelist: {}", msg),
+            )
+        })?;
+    allowed_contracts.extend(extract_intents_whitelist_contracts(&supported_tokens));
+
+    let ref_whitelist = fetch_whitelisted_tokens(state).await.map_err(|(_, msg)| {
+        error_response(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to fetch ref whitelist: {}", msg),
+        )
+    })?;
+    allowed_contracts.extend(ref_whitelist);
+
+    Ok(allowed_contracts)
+}
+
+async fn fetch_treasury_deposit_bond(
+    state: &Arc<AppState>,
+    treasury_id: &AccountId,
+) -> Result<NearToken, (StatusCode, Json<RelayResponse>)> {
+    let policy = Contract(treasury_id.clone())
+        .call_function("get_policy", ())
+        .read_only::<serde_json::Value>()
+        .fetch_from(&state.network)
+        .await
+        .map_err(|e| {
+            error_response(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to fetch DAO policy: {}", e),
+            )
+        })?
+        .data;
+
+    let deposit_bond_raw = policy
+        .get("proposal_bond")
+        .and_then(Value::as_str)
+        .ok_or_else(|| {
+            error_response(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "DAO policy is missing proposal_bond".to_string(),
+            )
+        })?;
+
+    let deposit_bond_yocto = deposit_bond_raw.parse::<u128>().map_err(|e| {
+        error_response(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Invalid proposal_bond in DAO policy: {}", e),
+        )
+    })?;
+
+    Ok(NearToken::from_yoctonear(deposit_bond_yocto))
+}
 
 /// Relay a signed delegate action (NEP-366 meta-transaction) to the NEAR network.
 ///
@@ -67,17 +173,6 @@ pub async fn relay_delegate_action(
                 format!("Not a DAO policy member: {}", e),
             )
         })?;
-
-    // Step 1: Decode base64 to bytes
-    if request.storage_bytes.0 > MAX_STORAGE_BYTES {
-        return Err(error_response(
-            StatusCode::BAD_REQUEST,
-            format!(
-                "Storage bytes must be less than {} bytes",
-                MAX_STORAGE_BYTES
-            ),
-        ));
-    }
 
     let signed_delegate_action =
         SignedDelegateAction::try_from_slice(&request.signed_delegate_action.0).map_err(|e| {
@@ -141,6 +236,20 @@ pub async fn relay_delegate_action(
     // Step 5: Build and send the wrapping transaction
     // Per NEP-366, the relayer sends a transaction to the delegate action's sender_id
     let receiver_id = signed_delegate_action.delegate_action.sender_id.clone();
+    let action_receiver_id = signed_delegate_action.delegate_action.receiver_id.clone();
+
+    let allowed_contracts = fetch_allowed_receiver_contracts(&state, &request.treasury_id).await?;
+    if !allowed_contracts.contains(action_receiver_id.as_str()) {
+        return Err(error_response(
+            StatusCode::FORBIDDEN,
+            format!(
+                "Contract '{}' is not allowed for relayed actions",
+                action_receiver_id
+            ),
+        ));
+    }
+
+    let should_balance_storage = action_receiver_id.as_str().ends_with(SPUTNIK_DAO_SUFFIX);
 
     let storage_cost = STORAGE_COST_PER_BYTE.saturating_mul(request.storage_bytes.0);
     let deposits = signed_delegate_action
@@ -156,35 +265,58 @@ pub async fn relay_delegate_action(
             }
         });
 
-    if deposits.saturating_add(storage_cost) > MAX_SPONSORING {
+    let deposit_bond = fetch_treasury_deposit_bond(&state, &request.treasury_id).await?;
+    let max_deposit = deposit_bond.saturating_add(TOKEN_STORAGE_BUFFER);
+    let (paid, limit) = if should_balance_storage {
+        (
+            deposits.saturating_add(storage_cost),
+            max_deposit.saturating_add(storage_cost).min(MAX_SPONSORING),
+        )
+    } else {
+        (deposits, max_deposit.min(MAX_SPONSORING))
+    };
+
+    if paid > limit {
         return Err(error_response(
             StatusCode::BAD_REQUEST,
             format!(
-                "Total deposits must be less than {} millinear",
-                MAX_SPONSORING.as_millinear()
+                "Total deposit exceeds sponsorship limit of {} millinear",
+                limit.as_millinear()
             ),
         ));
     }
 
-    Tokens::account(state.signer_id.clone())
-        .send_to(receiver_id.clone())
-        .near(storage_cost)
-        .with_signer(state.signer.clone())
-        .send_to(&state.network)
-        .await
-        .map_err(|e| {
-            error_response(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to send storage top-up transaction: {}", e),
-            )
-        })?
-        .into_result()
-        .map_err(|e| {
-            error_response(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to send storage top-up transaction: {}", e),
-            )
-        })?;
+    if should_balance_storage {
+        if request.storage_bytes.0 > MAX_STORAGE_BYTES {
+            return Err(error_response(
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "Storage bytes must be less than {} bytes",
+                    MAX_STORAGE_BYTES
+                ),
+            ));
+        }
+
+        Tokens::account(state.signer_id.clone())
+            .send_to(receiver_id.clone())
+            .near(storage_cost)
+            .with_signer(state.signer.clone())
+            .send_to(&state.network)
+            .await
+            .map_err(|e| {
+                error_response(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Failed to send storage top-up transaction: {}", e),
+                )
+            })?
+            .into_result()
+            .map_err(|e| {
+                error_response(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Failed to send storage top-up transaction: {}", e),
+                )
+            })?;
+    }
 
     let execution_result = Transaction::construct(state.signer_id.clone(), receiver_id)
         .add_action(Action::Delegate(Box::new(signed_delegate_action)))
