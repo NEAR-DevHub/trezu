@@ -150,6 +150,7 @@ pub async fn get_balance_chart(
         max_amount: None,
         include_metadata: Some(false), // Chart doesn't need metadata
         include_prices: Some(true),    // Chart needs prices for USD values
+        exclude_near_dust: false,
     };
 
     let enriched_changes = get_balance_changes_internal(&state, &query)
@@ -574,6 +575,7 @@ fn build_export_query(
         max_amount: None,
         include_metadata: Some(true), // Export needs metadata (symbol, contract)
         include_prices: Some(true),   // Export needs prices (USD values)
+        exclude_near_dust: false,
     }
 }
 
@@ -1391,6 +1393,7 @@ pub async fn get_recent_activity(
         transaction_types: transaction_types_for_query.clone(),
         min_amount: None,
         max_amount: None,
+        exclude_near_dust: true,
     };
 
     // Count query
@@ -1442,6 +1445,7 @@ pub async fn get_recent_activity(
         max_amount: None,
         include_metadata: Some(true),
         include_prices: Some(true),
+        exclude_near_dust: true,
     };
 
     let enriched_changes = get_balance_changes_internal(&state, &balance_query)
