@@ -110,7 +110,10 @@ export function TreasurySelector({
             value={treasuryId}
             open={isOpen}
             onValueChange={handleTreasuryChange}
-            onOpenChange={onOpenChange}
+            onOpenChange={(open) => {
+                if (!open && lockSelectOutside) return;
+                onOpenChange?.(open);
+            }}
         >
             <SelectTrigger
                 id="dashboard-step5"
@@ -150,21 +153,7 @@ export function TreasurySelector({
                     </div>
                 </Tooltip>
             </SelectTrigger>
-            <SelectContent
-                className="max-w-[250px]"
-                onPointerDown={(e) => {
-                    if (lockSelectOutside) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                    }
-                }}
-                onPointerDownOutside={(e) => {
-                    if (lockSelectOutside) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                    }
-                }}
-            >
+            <SelectContent className="max-w-[250px]">
                 {memberTreasuries.length > 0 && (
                     <SelectGroup>
                         <SelectLabel>Member Of</SelectLabel>
