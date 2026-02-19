@@ -1007,11 +1007,13 @@ async function showLedgerApprovalUI(
  * @param {string} implicitAccountId - Optional implicit account ID for the button
  * @param {Function} onVerify - Optional async function to verify the account (receives accountId, returns true or throws)
  * @param {Function} onCreateAccount - Optional async function to create account when missing
+ * @param {boolean} hideOnSuccess - Whether to hide iframe on success
  */
 async function promptForAccountId(
     implicitAccountId = "",
     onVerify = null,
     onCreateAccount = null,
+    hideOnSuccess = true,
 ) {
     await window.selector.ui.showIframe();
 
@@ -1068,6 +1070,15 @@ async function promptForAccountId(
     renderUI();
 
     return new Promise((resolve, reject) => {
+        function closeOnSuccess() {
+            if (!hideOnSuccess) {
+                return;
+            }
+            root.innerHTML = "";
+            root.style.display = "none";
+            window.selector.ui.hideIframe();
+        }
+
         function setupListeners() {
             const input = document.getElementById("accountIdInput");
             const confirmBtn = document.getElementById("confirmBtn");
@@ -1093,9 +1104,7 @@ async function promptForAccountId(
 
                     try {
                         await onVerify(accountId);
-                        root.innerHTML = "";
-                        root.style.display = "none";
-                        window.selector.ui.hideIframe();
+                        closeOnSuccess();
                         resolve(accountId);
                     } catch (error) {
                         if (
@@ -1109,9 +1118,7 @@ async function promptForAccountId(
                                     onCreateAccount,
                                 );
                                 if (created) {
-                                    root.innerHTML = "";
-                                    root.style.display = "none";
-                                    window.selector.ui.hideIframe();
+                                    closeOnSuccess();
                                     resolve(accountId);
                                     return;
                                 }
@@ -1129,9 +1136,7 @@ async function promptForAccountId(
                         }
                     }
                 } else {
-                    root.innerHTML = "";
-                    root.style.display = "none";
-                    window.selector.ui.hideIframe();
+                    closeOnSuccess();
                     resolve(accountId);
                 }
             });
@@ -1495,6 +1500,41 @@ function buildNearActions(actions) {
 }
 
 /**
+ * Build a borsh-serialized NEP-413 payload for message signing.
+ */
+function buildNep413Payload(message, recipient, nonce) {
+    const messageBytes = new TextEncoder().encode(message);
+    const recipientBytes = new TextEncoder().encode(recipient);
+
+    const payloadSize =
+        4 + messageBytes.length + 32 + 4 + recipientBytes.length + 1;
+    const payload = new Uint8Array(payloadSize);
+    const view = new DataView(payload.buffer);
+    let offset = 0;
+
+    // Write message (length-prefixed string)
+    view.setUint32(offset, messageBytes.length, true);
+    offset += 4;
+    payload.set(messageBytes, offset);
+    offset += messageBytes.length;
+
+    // Write nonce (32 fixed bytes)
+    payload.set(nonce, offset);
+    offset += 32;
+
+    // Write recipient (length-prefixed string)
+    view.setUint32(offset, recipientBytes.length, true);
+    offset += 4;
+    payload.set(recipientBytes, offset);
+    offset += recipientBytes.length;
+
+    // Write callback_url (Option<String> = None)
+    payload[offset] = 0;
+
+    return payload;
+}
+
+/**
  * Main Ledger Wallet implementation
  */
 class LedgerWallet {
@@ -1580,69 +1620,119 @@ class LedgerWallet {
     }
 
     /**
+     * Core sign-in flow used by signIn and signInAndSignMessage.
+     * Does not hide the iframe on success; caller controls final UI transition.
+     */
+    async _performSignInFlow(params) {
+        // Prompt user to connect Ledger (provides user gesture for WebHID)
+        await promptForLedgerConnect(this.ledger);
+
+        // Let user select derivation path
+        const defaultDerivationPath = await this.getDerivationPath();
+        const derivationPath = await promptForDerivationPath(
+            defaultDerivationPath,
+        );
+
+        // Get public key from Ledger (requires user approval on device)
+        const publicKeyString = await showLedgerApprovalUI(
+            "Approve on Ledger",
+            "Please approve the request on your Ledger device to share your public key.",
+            () => this.ledger.getPublicKey(derivationPath),
+        );
+        const publicKey = `ed25519:${publicKeyString}`;
+
+        // Calculate implicit account ID (hex-encoded public key bytes)
+        const publicKeyBytes = baseDecode(publicKeyString);
+        const implicitAccountId = Buffer.from(publicKeyBytes).toString("hex");
+
+        // Verification function to check account access
+        const network = params?.network || "mainnet";
+        const verifyAccount = async (accountId) => {
+            await verifyAccessKey(network, accountId, publicKey);
+        };
+        const createUserAccount = async (accountId) => {
+            await createUserAccountViaBackend({
+                accountId,
+                publicKey,
+                implicitAccountId,
+                transportMode: this.ledger.transportMode,
+                derivationPath,
+                network,
+            });
+        };
+
+        // Keep iframe mounted so follow-up prompts can transition smoothly.
+        const accountId = await promptForAccountId(
+            implicitAccountId,
+            verifyAccount,
+            createUserAccount,
+            false,
+        );
+
+        // Store the account information
+        const accounts = [{ accountId, publicKey }];
+        await window.selector.storage.set(
+            STORAGE_KEY_ACCOUNTS,
+            JSON.stringify(accounts),
+        );
+        await window.selector.storage.set(
+            STORAGE_KEY_DERIVATION_PATH,
+            derivationPath,
+        );
+
+        return { accounts, derivationPath };
+    }
+
+    /**
      * Sign in with Ledger device
      */
     async signIn(params) {
         try {
-            // Prompt user to connect Ledger (provides user gesture for WebHID)
-            await promptForLedgerConnect(this.ledger);
-
-            // Let user select derivation path
-            const defaultDerivationPath = await this.getDerivationPath();
-            const derivationPath = await promptForDerivationPath(
-                defaultDerivationPath,
-            );
-
-            // Get public key from Ledger (requires user approval on device)
-            const publicKeyString = await showLedgerApprovalUI(
-                "Approve on Ledger",
-                "Please approve the request on your Ledger device to share your public key.",
-                () => this.ledger.getPublicKey(derivationPath),
-            );
-            const publicKey = `ed25519:${publicKeyString}`;
-
-            // Calculate implicit account ID (hex-encoded public key bytes)
-            const publicKeyBytes = baseDecode(publicKeyString);
-            const implicitAccountId =
-                Buffer.from(publicKeyBytes).toString("hex");
-
-            // Verification function to check account access
-            const network = params?.network || "mainnet";
-            const verifyAccount = async (accountId) => {
-                await verifyAccessKey(network, accountId, publicKey);
-            };
-            const createUserAccount = async (accountId) => {
-                await createUserAccountViaBackend({
-                    accountId,
-                    publicKey,
-                    implicitAccountId,
-                    transportMode: this.ledger.transportMode,
-                    derivationPath,
-                    network,
-                });
-            };
-
-            // Prompt user for account ID with inline verification
-            const accountId = await promptForAccountId(
-                implicitAccountId,
-                verifyAccount,
-                createUserAccount,
-            );
-
-            // Store the account information
-            const accounts = [{ accountId, publicKey }];
-            await window.selector.storage.set(
-                STORAGE_KEY_ACCOUNTS,
-                JSON.stringify(accounts),
-            );
-            await window.selector.storage.set(
-                STORAGE_KEY_DERIVATION_PATH,
-                derivationPath,
-            );
-
+            const { accounts } = await this._performSignInFlow(params);
+            window.selector.ui.hideIframe();
             return accounts;
         } catch (error) {
             // Disconnect on error
+            if (this.ledger.isConnected()) {
+                await this.ledger.disconnect();
+            }
+            throw error;
+        }
+    }
+
+    /**
+     * Sign in and sign a message in one unified flow (NEP-413)
+     */
+    async signInAndSignMessage(params) {
+        try {
+            const { accounts, derivationPath } =
+                await this._performSignInFlow(params);
+
+            const { message, recipient, nonce } = params.messageParams;
+            const payload = buildNep413Payload(
+                message,
+                recipient || "",
+                nonce || new Uint8Array(32),
+            );
+
+            const signature = await showLedgerApprovalUI(
+                "Sign Message",
+                "Please review and approve the message signing on your Ledger device.",
+                () => this.ledger.signMessage(payload, derivationPath),
+                true,
+            );
+
+            const signatureBase64 = btoa(String.fromCharCode(...signature));
+
+            return accounts.map((account) => ({
+                ...account,
+                signedMessage: {
+                    accountId: account.accountId,
+                    publicKey: account.publicKey,
+                    signature: signatureBase64,
+                },
+            }));
+        } catch (error) {
             if (this.ledger.isConnected()) {
                 await this.ledger.disconnect();
             }

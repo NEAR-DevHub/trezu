@@ -12,10 +12,7 @@ import { ProposalPermissionKind } from "@/lib/config-utils";
 import { toast } from "sonner";
 import Big from "@/lib/big";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-    ledgerWalletManifest,
-    meteorWalletManifest,
-} from "@/lib/wallet-manifests";
+import { ledgerWalletManifest } from "@/lib/wallet-manifests";
 import {
     getAuthChallenge,
     authLogin,
@@ -37,6 +34,8 @@ import {
     isWebUsbSupported,
     isWebBleSupported,
 } from "@/src/ledger-wallet/near-ledger";
+import manifests from "@hot-labs/near-connect/repository/manifest.json";
+
 /**
  * Ensures sandboxed iframes get bluetooth permission for Ledger Nano X BLE.
  * @hot-labs/near-connect doesn't yet include bluetooth in iframe allow attributes,
@@ -88,6 +87,9 @@ interface Vote {
     proposalKind: ProposalPermissionKind;
 }
 
+const LOGIN_MESSAGE = "Login to Trezu";
+const LOGIN_RECIPIENT = "Trezu App";
+
 interface NearStore {
     // Wallet state
     connector: NearConnector | null;
@@ -95,6 +97,7 @@ interface NearStore {
     isInitializing: boolean;
 
     // Auth state
+    nonce: string | null;
     isAuthenticated: boolean;
     hasAcceptedTerms: boolean;
     isAuthenticating: boolean;
@@ -103,7 +106,7 @@ interface NearStore {
 
     // Wallet actions
     init: () => Promise<NearConnector | undefined>;
-    connect: () => Promise<boolean>;
+    connect: () => Promise<void>;
     disconnect: () => Promise<void>;
 
     // Auth actions
@@ -144,6 +147,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
     isInitializing: true,
 
     // Auth state
+    nonce: null,
     isAuthenticated: false,
     hasAcceptedTerms: false,
     isAuthenticating: false,
@@ -163,6 +167,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
 
         try {
             newConnector = new NearConnector({
+                manifest: manifests as any,
                 network: "mainnet",
                 footerBranding: {
                     icon: "/favicon_dark.svg",
@@ -171,7 +176,8 @@ export const useNearStore = create<NearStore>((set, get) => ({
                     heading: "More wallets coming soon",
                 },
                 features: {
-                    signDelegateAction: true,
+                    signDelegateActions: true,
+                    signInAndSignMessage: true,
                 },
             });
         } catch (err) {
@@ -192,8 +198,64 @@ export const useNearStore = create<NearStore>((set, get) => ({
 
         newConnector.on(
             "wallet:signIn",
-            ({ accounts }: EventMap["wallet:signIn"]) => {
-                set({ walletAccountId: accounts[0]?.accountId ?? null });
+            async ({ accounts, wallet, source }: EventMap["wallet:signIn"]) => {
+                const { nonce } = get();
+                if (source !== "signIn" || nonce === null) {
+                    return;
+                }
+                const nonceBytes = Uint8Array.from(atob(nonce ?? ""), (c) =>
+                    c.charCodeAt(0),
+                );
+                const signatureData = await wallet.signMessage({
+                    message: LOGIN_MESSAGE,
+                    recipient: LOGIN_RECIPIENT,
+                    nonce: nonceBytes,
+                });
+                const loginResponse = await authLogin({
+                    accountId: accounts[0]?.accountId ?? "",
+                    publicKey: accounts[0]?.publicKey ?? "",
+                    signature: signatureData.signature,
+                    message: LOGIN_MESSAGE,
+                    nonce: nonce ?? "",
+                    recipient: LOGIN_RECIPIENT,
+                });
+                set({
+                    walletAccountId: accounts[0]?.accountId ?? null,
+                    isAuthenticated: true,
+                    hasAcceptedTerms: loginResponse.termsAccepted,
+                    user: {
+                        accountId: loginResponse.accountId,
+                        termsAccepted: loginResponse.termsAccepted,
+                    },
+                    nonce: null,
+                    isAuthenticating: false,
+                });
+            },
+        );
+
+        newConnector.on(
+            "wallet:signInAndSignMessage",
+            async ({ accounts }: EventMap["wallet:signInAndSignMessage"]) => {
+                const result = accounts[0];
+                const loginResponse = await authLogin({
+                    accountId: result.signedMessage.accountId,
+                    publicKey: result.signedMessage.publicKey ?? "",
+                    signature: result.signedMessage.signature,
+                    message: LOGIN_MESSAGE,
+                    nonce: get().nonce ?? "",
+                    recipient: LOGIN_RECIPIENT,
+                });
+                set({
+                    walletAccountId: result.accountId,
+                    isAuthenticated: true,
+                    hasAcceptedTerms: loginResponse.termsAccepted,
+                    user: {
+                        accountId: loginResponse.accountId,
+                        termsAccepted: loginResponse.termsAccepted,
+                    },
+                    isAuthenticating: false,
+                    nonce: null,
+                });
             },
         );
 
@@ -214,28 +276,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                     console.warn("Failed to register Ledger wallet:", e);
                 }
             }
-            console.log("Registering Meteor wallet");
-            // Currently, there is a bug in hot wallet connector where it filters wallets by feature flag: signDelegateAction but it should filter out by
-            // signDelegateActions. So I have to register it manually with the feature flag: signDelegateAction.
-            await newConnector.registerWallet(meteorWalletManifest);
-            console.log("Meteor wallet registered successfully");
         });
-
-        try {
-            const wallet = await newConnector.wallet();
-            const accounts = await wallet.getAccounts();
-            const accountId = accounts[0]?.accountId;
-            if (accountId) {
-                set({ walletAccountId: accountId });
-            }
-        } catch (e) {
-            // Silently handle errors - common cases:
-            // - No existing wallet connection found
-            // - Ledger wallet requires user gesture to reconnect (WebHID restriction)
-            if (e instanceof Error && e.message.includes("user gesture")) {
-                console.log("Ledger requires user interaction to reconnect");
-            }
-        }
 
         set({ isInitializing: false });
         return newConnector;
@@ -245,66 +286,29 @@ export const useNearStore = create<NearStore>((set, get) => ({
         const { connector, init } = get();
         const newConnector = connector ?? (await init());
         if (!newConnector) {
-            return false;
+            throw new Error("Failed to initialize connector");
         }
 
         set({ isAuthenticating: true, authError: null });
 
         try {
-            // Connect wallet first
-            await newConnector.connect();
-
-            // Get the account ID after connection
-            const wallet = await newConnector.wallet();
-            const accounts = await wallet.getAccounts();
-            const accountId = accounts[0]?.accountId;
-
-            if (!accountId) {
-                set({ isAuthenticating: false });
-                return false;
-            }
-
-            set({ walletAccountId: accountId });
-
             // Get challenge from backend
-            const { nonce } = await getAuthChallenge(accountId);
+            const { nonce } = await getAuthChallenge();
 
+            set({ nonce });
             // Decode base64 nonce to Uint8Array
             const nonceBytes = Uint8Array.from(atob(nonce), (c) =>
                 c.charCodeAt(0),
             );
 
             // Sign the message with wallet
-            const message = "Login to Trezu";
-            const recipient = "Trezu App";
-
-            const signedMessage = await wallet.signMessage({
-                message,
-                recipient,
-                nonce: nonceBytes,
-            });
-
-            // Send signature to backend for verification
-            const loginResponse = await authLogin({
-                accountId: accountId,
-                publicKey: signedMessage.publicKey,
-                signature: signedMessage.signature,
-                message,
-                nonce,
-                recipient,
-            });
-
-            set({
-                isAuthenticated: true,
-                hasAcceptedTerms: loginResponse.termsAccepted,
-                user: {
-                    accountId: loginResponse.accountId,
-                    termsAccepted: loginResponse.termsAccepted,
+            await newConnector.connect({
+                signMessageParams: {
+                    message: LOGIN_MESSAGE,
+                    recipient: LOGIN_RECIPIENT,
+                    nonce: nonceBytes,
                 },
-                isAuthenticating: false,
             });
-
-            return true;
         } catch (error) {
             console.error("Authentication failed:", error);
             set({
@@ -314,7 +318,6 @@ export const useNearStore = create<NearStore>((set, get) => ({
                         ? error.message
                         : "Authentication failed",
             });
-            return false;
         }
     },
 
