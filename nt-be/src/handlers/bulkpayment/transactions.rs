@@ -3,13 +3,13 @@ use axum::{
     extract::{Path, State},
     http::StatusCode,
 };
-use near_api::{Chain, NetworkConfig, Reference};
-use near_jsonrpc_client::methods;
+use near_api::NetworkConfig;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 use crate::{
     AppState,
+    handlers::balance_changes::transfer_hints::tx_resolver::resolve_receipt_to_transaction,
     utils::cache::{CacheKey, CacheTier},
     utils::jsonrpc::create_rpc_client,
 };
@@ -345,50 +345,72 @@ pub async fn get_transaction_hash(
     }
 }
 
-/// Look up the transaction hash by querying the block and finding the transaction
-/// to the bulk payment contract.
+/// Look up the transaction hash by finding receipt processing on the contract
+/// at the given block height, then resolving back to the originating transaction.
+///
+/// The block_height from the contract is where the receipt executed, which may
+/// differ from the block where the transaction was included.
 async fn lookup_transaction_hash(
     network: &NetworkConfig,
     block_height: u64,
     contract_id: &str,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    // Query the block first
-    let block = Chain::block()
-        .at(Reference::AtBlock(block_height))
-        .fetch_from(network)
-        .await?;
+    use near_jsonrpc_client::methods;
+    use near_primitives::types::{BlockId, BlockReference};
+    use near_primitives::views::StateChangeCauseView;
 
     let client = create_rpc_client(network)?;
+    let parsed_contract: near_primitives::types::AccountId = contract_id.parse()?;
 
-    // Search each chunk for transactions to the bulk payment contract
-    for chunk_header in &block.chunks {
-        let chunk_hash_str = chunk_header.chunk_hash.to_string();
-
-        // Query the chunk using near-jsonrpc-client
-        let chunk_request = methods::chunk::RpcChunkRequest {
-            chunk_reference: methods::chunk::ChunkReference::ChunkHash {
-                chunk_id: chunk_hash_str.parse()?,
+    // Find receipt IDs from account changes on the contract at this block
+    let changes_response = client
+        .call(
+            methods::EXPERIMENTAL_changes::RpcStateChangesInBlockByTypeRequest {
+                block_reference: BlockReference::BlockId(BlockId::Height(block_height)),
+                state_changes_request:
+                    near_primitives::views::StateChangesRequestView::AccountChanges {
+                        account_ids: vec![parsed_contract],
+                    },
             },
-        };
+        )
+        .await?;
 
-        let chunk_response = match client.call(chunk_request).await {
-            Ok(chunk) => chunk,
-            Err(e) => {
-                log::warn!("Failed to fetch chunk {}: {}", chunk_hash_str, e);
-                continue;
+    // Collect unique receipt IDs from ReceiptProcessing causes
+    let mut receipt_ids = Vec::new();
+    for change in &changes_response.changes {
+        if let StateChangeCauseView::ReceiptProcessing { receipt_hash } = &change.cause {
+            let hash_str = receipt_hash.to_string();
+            if !receipt_ids.contains(&hash_str) {
+                receipt_ids.push(hash_str);
             }
-        };
+        }
+    }
 
-        // Look for transactions to the bulk payment contract
-        for tx in &chunk_response.transactions {
-            if tx.receiver_id.as_str() == contract_id {
-                return Ok(tx.hash.to_string());
+    if receipt_ids.is_empty() {
+        return Err(format!(
+            "No receipt processing found on {} at block {}",
+            contract_id, block_height
+        )
+        .into());
+    }
+
+    // Resolve the first receipt back to its originating transaction
+    for receipt_id in &receipt_ids {
+        match resolve_receipt_to_transaction(network, receipt_id, block_height).await {
+            Ok(result) => return Ok(result.transaction_hash),
+            Err(e) => {
+                log::debug!(
+                    "Failed to resolve receipt {} to transaction: {}",
+                    receipt_id,
+                    e
+                );
+                continue;
             }
         }
     }
 
     Err(format!(
-        "No transaction to {} found in block {}",
+        "Could not resolve any receipt to a transaction on {} at block {}",
         contract_id, block_height
     )
     .into())
