@@ -70,7 +70,10 @@ function ExpandedViewInternal({ proposal }: InternalExpandedViewProps) {
         case "Batch Payment Request": {
             const batchPaymentRequestData = data as BatchPaymentRequestData;
             return (
-                <BatchPaymentRequestExpanded data={batchPaymentRequestData} />
+                <BatchPaymentRequestExpanded
+                    data={batchPaymentRequestData}
+                    proposal={proposal}
+                />
             );
         }
         case "Exchange": {

@@ -19,6 +19,9 @@ import { User } from "@/components/user";
 import Link from "next/link";
 import { ProposalStatusPill } from "../proposal-status-pill";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Proposal } from "@/lib/proposals-api";
+import { getProposalStatus } from "../../utils/proposal-utils";
+import { Policy } from "@/types/policy";
 
 interface PaymentDisplayProps {
     number: number;
@@ -133,17 +136,43 @@ function PaymentDisplay({
 
 interface BatchPaymentRequestExpandedProps {
     data: BatchPaymentRequestData;
+    proposal: Proposal;
 }
 
 export function BatchPaymentRequestExpanded({
     data,
+    proposal,
 }: BatchPaymentRequestExpandedProps) {
+    const [expanded, setExpanded] = useState<number[]>([]);
+
+    // Check if we should auto-refetch
+    // Only refetch if proposal is Executed
+    const proposalStatus = getProposalStatus(proposal, {} as Policy);
+    const isExecuted = proposalStatus === "Executed";
+
+    // First fetch to check if there are pending payments
     const {
         data: batchData,
         isLoading,
         isError,
     } = useBatchPayment(data.batchId);
-    const [expanded, setExpanded] = useState<number[]>([]);
+
+    // Determine if we should auto-refetch based on pending payments
+    const hasPendingPayments = batchData?.payments?.some(
+        (payment) => paymentStatusToText(payment.status) === "Pending"
+    );
+
+    // Second fetch with refetch interval if needed
+    const shouldAutoRefetch = isExecuted && hasPendingPayments;
+    const {
+        data: liveBatchData,
+    } = useBatchPayment(
+        data.batchId,
+        shouldAutoRefetch ? 5000 : false // 5 seconds when conditions are met
+    );
+
+    // Use live data if auto-refetching, otherwise use initial data
+    const activeBatchData = shouldAutoRefetch ? liveBatchData : batchData;
 
     // Loading state
     if (isLoading) {
@@ -167,7 +196,7 @@ export function BatchPaymentRequestExpanded({
     }
 
     // Error state
-    if (isError || !batchData) {
+    if (isError || !activeBatchData) {
         return (
             <EmptyState
                 icon={SearchX}
@@ -178,7 +207,7 @@ export function BatchPaymentRequestExpanded({
     }
 
     let tokenId = data.tokenId;
-    if (batchData?.tokenId?.toLowerCase() === "native") {
+    if (activeBatchData?.tokenId?.toLowerCase() === "native") {
         tokenId = "near";
     }
 
@@ -191,12 +220,12 @@ export function BatchPaymentRequestExpanded({
         });
     };
 
-    const isAllExpanded = expanded.length === batchData.payments.length;
+    const isAllExpanded = expanded.length === activeBatchData.payments.length;
     const toggleAllExpanded = () => {
         if (isAllExpanded) {
             setExpanded([]);
         } else {
-            setExpanded(batchData.payments.map((_, index) => index));
+            setExpanded(activeBatchData.payments.map((_, index) => index));
         }
     };
 
@@ -216,8 +245,8 @@ export function BatchPaymentRequestExpanded({
             value: (
                 <div className="flex gap-3 items-baseline">
                     <p className="text-sm font-medium">
-                        {batchData.payments.length} recipient
-                        {batchData.payments.length > 1 ? "s" : ""}
+                        {activeBatchData.payments.length} recipient
+                        {activeBatchData.payments.length > 1 ? "s" : ""}
                     </p>
                     <Button
                         variant="ghost"
@@ -230,7 +259,7 @@ export function BatchPaymentRequestExpanded({
             ),
             afterValue: (
                 <div className="flex flex-col gap-1">
-                    {batchData.payments.map((payment, index) => (
+                    {activeBatchData.payments.map((payment, index) => (
                         <PaymentDisplay
                             tokenId={tokenId}
                             number={index + 1}

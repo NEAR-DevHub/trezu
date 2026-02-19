@@ -51,6 +51,7 @@ export default function BulkPaymentPage() {
             csvData: null,
             pasteDataInput: "",
             activeTab: "upload",
+            uploadedFileName: null,
         },
     });
 
