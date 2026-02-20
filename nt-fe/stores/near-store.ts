@@ -35,6 +35,7 @@ import {
     isWebBleSupported,
 } from "@/src/ledger-wallet/near-ledger";
 import manifests from "@hot-labs/near-connect/repository/manifest.json";
+import { APP_WALLET_SETUP_URL } from "@/constants/config";
 
 /**
  * Ensures sandboxed iframes get bluetooth permission for Ledger Nano X BLE.
@@ -171,7 +172,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                 network: "mainnet",
                 footerBranding: {
                     icon: "/favicon_dark.svg",
-                    link: "https://wallet.near.org/",
+                    link: APP_WALLET_SETUP_URL,
                     linkText: "Need a wallet?",
                     heading: "More wallets coming soon",
                 },

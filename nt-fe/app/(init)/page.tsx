@@ -1,7 +1,7 @@
 "use client";
 
 import { GradFlow } from "gradflow";
-import { Loader2 } from "lucide-react";
+import { ArrowUpRight, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -14,6 +14,130 @@ import { useNear } from "@/stores/near-store";
 import { QueryProvider } from "@/components/query-provider";
 import { NearInitializer } from "@/components/near-initializer";
 import { AuthProvider } from "@/components/auth-provider";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/modal";
+import { APP_WALLET_SETUP_URL } from "@/constants/config";
+
+interface WalletSuggestionModalProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+}
+
+interface WalletSuggestionItemProps {
+    name: string;
+    href?: string;
+    description: string;
+    iconUrl: string;
+}
+
+function WalletSuggestionItem({
+    name,
+    href,
+    description,
+    iconUrl,
+}: WalletSuggestionItemProps) {
+    const content = () => {
+        return (
+            <>
+                <div className="flex items-center gap-2">
+                    <Image
+                        src={iconUrl}
+                        alt={name}
+                        width={28}
+                        height={28}
+                        className="rounded-full"
+                    />
+                    <span className="font-semibold text-foreground text-lg">
+                        {name}
+                    </span>
+                    {href && (
+                        <ArrowUpRight className="size-5 group-hover:opacity-100 opacity-0 ml-auto mr-1.5 transition-opacity duration-200" />
+                    )}
+                </div>
+                <span className="text-sm text-muted-foreground pl-9">
+                    {description}
+                </span>
+            </>
+        );
+    };
+    if (href) {
+        return (
+            <Link
+                href={href}
+                target="_blank"
+                className="flex flex-col gap-1 bg-secondary p-3 rounded-lg group"
+                aria-disabled={!href}
+            >
+                {content()}
+            </Link>
+        );
+    }
+    return (
+        <div className="flex flex-col gap-1 bg-secondary p-3 rounded-lg group">
+            {content()}
+        </div>
+    );
+}
+
+function WalletSuggestionModal({
+    open,
+    onOpenChange,
+}: WalletSuggestionModalProps) {
+    const walletSuggestionItems: WalletSuggestionItemProps[] = [
+        {
+            name: "Meteor Wallet",
+            href: "https://meteorwallet.app/",
+            description: "Easiest setup for daily operations",
+            iconUrl: "/wallets/meteor.svg",
+        },
+        {
+            name: "Ledger Wallet",
+            href: "https://ledger.com/",
+            description: "Maximum security (Bluetooth supported)",
+            iconUrl: "/ledger-wallet/ledger-icon.jpeg",
+        },
+        {
+            name: "MyNearWallet",
+            description: "Coming soon",
+            iconUrl: "/wallets/mynearwallet.svg",
+        },
+    ];
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Get a Wallet to Continue</DialogTitle>
+                </DialogHeader>
+                <DialogDescription className="text-foreground">
+                    Trezu uses wallet-based authentication instead of passwords.
+                    Choose an option below to set up your treasury.
+                </DialogDescription>
+                <div className="flex flex-col gap-4 mt-2">
+                    {walletSuggestionItems.map((item) => (
+                        <WalletSuggestionItem key={item.name} {...item} />
+                    ))}
+                </div>
+                <p className="text-sm text-muted-foreground text-center">
+                    Need help getting started?{" "}
+                    <Link
+                        href={APP_WALLET_SETUP_URL}
+                        target="_blank"
+                        className="text-foreground font-medium hover:text-primary/80"
+                    >
+                        View setup guide
+                    </Link>
+                </p>
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 function GradientTitle() {
     return (
@@ -49,6 +173,7 @@ export function Content() {
     const router = useRouter();
     const [isWelcomeImageLoaded, setIsWelcomeImageLoaded] = useState(false);
     const [isWelcomeImageFailed, setIsWelcomeImageFailed] = useState(false);
+    const [isWalletSuggestionOpen, setIsWalletSuggestionOpen] = useState(false);
     const {
         accountId,
         connect,
@@ -153,7 +278,7 @@ export function Content() {
                                             delay: 0.5,
                                         }}
                                     >
-                                        Welcome to your Treasury
+                                        Welcome to Trezu
                                     </motion.h1>
                                 </div>
                                 <div className="overflow-hidden">
@@ -208,16 +333,15 @@ export function Content() {
                                     )}
                                     {buttonText}
                                 </Button>
-                                <p className="text-center text-sm">
-                                    Don't have a wallet?{" "}
-                                    <Link
-                                        href="https://wallet.near.org"
-                                        className="hover:underline"
-                                        target="_blank"
-                                    >
-                                        Create one
-                                    </Link>
-                                </p>
+                                <Button
+                                    variant="link"
+                                    className="font-medium text-sm text-foreground hover:text-foreground/80"
+                                    onClick={() =>
+                                        setIsWalletSuggestionOpen(true)
+                                    }
+                                >
+                                    I don&apos;t have a wallet
+                                </Button>
                             </motion.div>
                         </div>
                     </motion.div>
@@ -279,6 +403,10 @@ export function Content() {
                     </div>
                 </div>
             </div>
+            <WalletSuggestionModal
+                open={isWalletSuggestionOpen}
+                onOpenChange={setIsWalletSuggestionOpen}
+            />
         </div>
     );
 }
