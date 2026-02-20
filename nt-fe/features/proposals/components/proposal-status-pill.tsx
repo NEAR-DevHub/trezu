@@ -14,8 +14,9 @@ export function getStatusColor(status: string | ProposalStatus): string {
         case "Executed":
         case "Paid":
             return "bg-general-success-background-faded text-general-success-foreground";
-        case "Rejected":
         case "Failed":
+            return "bg-general-warning-background-faded text-general-warning-foreground";
+        case "Rejected":
         case "Removed":
             return "bg-general-destructive-background-faded text-general-destructive-foreground";
         case "InProgress":
