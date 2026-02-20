@@ -33,6 +33,7 @@ import { getBatchStorageDepositIsRegistered } from "@/lib/api";
 import { encodeToMarkdown } from "@/lib/utils";
 import { NEAR_TOKEN } from "@/constants/token";
 import { BulkPaymentToast } from "../components/bulk-payment-toast";
+import { trackEvent } from "@/lib/analytics";
 
 export default function BulkPaymentPage() {
     const router = useRouter();
@@ -61,9 +62,21 @@ export default function BulkPaymentPage() {
     const [paymentData, setPaymentData] = useState<BulkPaymentData[]>([]);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
+    const trackReviewStepEnter = (
+        source: "upload_continue" | "edit_save" | "edit_cancel",
+        recipientsCount: number,
+    ) => {
+        trackEvent("bulk_payments_review_step_view", {
+            source,
+            treasury_id: selectedTreasury ?? "",
+            recipients_count: recipientsCount,
+        });
+    };
+
     // Handle continue from upload step
     const handleContinueFromUpload = (payments: BulkPaymentData[]) => {
         setPaymentData(payments);
+        trackReviewStepEnter("upload_continue", payments.length);
         setStep(1); // Move to review step
     };
 
@@ -90,12 +103,14 @@ export default function BulkPaymentPage() {
         setPaymentData(updatedPayments);
 
         // Go back to review step
+        trackReviewStepEnter("edit_save", updatedPayments.length);
         setStep(1);
         setEditingIndex(null);
     };
 
     // Handle cancel edit
     const handleCancelEdit = () => {
+        trackReviewStepEnter("edit_cancel", paymentData.length);
         setStep(1);
         setEditingIndex(null);
     };

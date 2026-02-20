@@ -42,6 +42,7 @@ import { Button } from "@/components/button";
 import { ArrowDownToLine } from "lucide-react";
 import Link from "next/link";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { trackEvent } from "@/lib/analytics";
 
 const paymentFormSchema = z
     .object({
@@ -95,6 +96,12 @@ function Step1({ handleNext }: StepProps) {
                             size={isMobile ? "icon" : "default"}
                             className="flex items-center gap-2 border-2"
                             id="payments-bulk-btn"
+                            onClick={() => {
+                                trackEvent("bulk_payments_click", {
+                                    source: "payments_page",
+                                    treasury_id: treasuryId ?? "",
+                                });
+                            }}
                         >
                             <ArrowDownToLine className="w-4 h-4" />
                             <span className="hidden md:block">

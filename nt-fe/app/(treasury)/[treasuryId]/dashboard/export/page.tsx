@@ -9,14 +9,31 @@ import * as z from "zod";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { PageCard } from "@/components/card";
 import { Button } from "@/components/button";
-import { ArrowLeft, Calendar, Coins, Mail, Clock, FileX, ChevronDown, Info } from "lucide-react";
+import {
+    ArrowLeft,
+    Calendar,
+    Coins,
+    Mail,
+    Clock,
+    FileX,
+    ChevronDown,
+    Info,
+} from "lucide-react";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useNear } from "@/stores/near-store";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useExportHistory } from "@/hooks/use-treasury-queries";
 import { DateTimePicker } from "@/components/datepicker";
 import { Input } from "@/components/input";
-import { FormField, FormMessage, FormControl, FormItem, FormLabel, FormDescription, Form } from "@/components/ui/form";
+import {
+    FormField,
+    FormMessage,
+    FormControl,
+    FormItem,
+    FormLabel,
+    FormDescription,
+    Form,
+} from "@/components/ui/form";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { isTrialPlan } from "@/lib/subscription-api";
 import {
@@ -28,7 +45,12 @@ import {
 import { useAssets, useAggregatedTokens } from "@/hooks/use-assets";
 import { cn } from "@/lib/utils";
 import { endOfDay, startOfDay, subMonths, subDays } from "date-fns";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/underline-tabs";
+import {
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+} from "@/components/underline-tabs";
 import { EmptyState } from "@/components/empty-state";
 import { toast } from "sonner";
 import { formatHistoryDuration } from "@/features/activity";
@@ -37,7 +59,11 @@ import { ExportHistoryItem } from "@/lib/api";
 import { Download, Loader2 } from "lucide-react";
 import { User } from "@/components/user";
 import { FormattedDate } from "@/components/formatted-date";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
 import { CreditsQuotaDisplay } from "@/components/credits-quota-display";
 import {
     useReactTable,
@@ -46,7 +72,15 @@ import {
     createColumnHelper,
     ColumnDef,
 } from "@tanstack/react-table";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/table";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/table";
+import { trackEvent } from "@/lib/analytics";
 
 type DocumentType = "csv" | "json" | "xlsx";
 type TransactionType = "all" | "outgoing" | "incoming" | "staking_rewards";
@@ -69,7 +103,11 @@ const TRANSACTION_TYPES: { value: TransactionType; label: string }[] = [
 ];
 
 const exportFormSchema = z.object({
-    email: z.string().email("Please enter a valid email address").optional().or(z.literal("")),
+    email: z
+        .string()
+        .email("Please enter a valid email address")
+        .optional()
+        .or(z.literal("")),
     documentType: z.enum(["csv", "json", "xlsx"]),
     dateRange: z.object({
         from: z.date(),
@@ -80,10 +118,12 @@ const exportFormSchema = z.object({
 });
 
 // Helper to parse date range from file URL
-function parseDateRangeFromUrl(fileUrl: string): { startDate: string; endDate: string } | null {
+function parseDateRangeFromUrl(
+    fileUrl: string,
+): { startDate: string; endDate: string } | null {
     try {
         // Extract query params from the URL string
-        const queryString = fileUrl.includes('?') ? fileUrl.split('?')[1] : '';
+        const queryString = fileUrl.includes("?") ? fileUrl.split("?")[1] : "";
 
         // Manually extract startTime and endTime (camelCase format)
         const startMatch = queryString.match(/startTime=([^&]+)/);
@@ -95,11 +135,16 @@ function parseDateRangeFromUrl(fileUrl: string): { startDate: string; endDate: s
 
             return {
                 startDate: format(new Date(startTime), "MMM dd, yyyy"),
-                endDate: format(new Date(endTime), "MMM dd, yyyy")
+                endDate: format(new Date(endTime), "MMM dd, yyyy"),
             };
         }
     } catch (error) {
-        console.error("Error parsing date range from URL:", error, "URL:", fileUrl);
+        console.error(
+            "Error parsing date range from URL:",
+            error,
+            "URL:",
+            fileUrl,
+        );
     }
     return null;
 }
@@ -115,7 +160,7 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
             const fullUrl = `${BACKEND_API_BASE}${url.pathname}${url.search}`;
 
             // Open in new tab
-            window.open(fullUrl, '_blank', 'noopener,noreferrer');
+            window.open(fullUrl, "_blank", "noopener,noreferrer");
         } catch (error) {
             console.error("Download error:", error);
             toast.error("Failed to download export");
@@ -147,7 +192,9 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
                     const dateRange = parseDateRangeFromUrl(item.fileUrl);
                     return (
                         <div className="text-sm whitespace-normal">
-                            {dateRange ? `${dateRange.startDate} - ${dateRange.endDate}` : "N/A"}
+                            {dateRange
+                                ? `${dateRange.startDate} - ${dateRange.endDate}`
+                                : "N/A"}
                         </div>
                     );
                 },
@@ -159,7 +206,11 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
                     const item = row.original;
                     return (
                         <div className="min-w-0">
-                            <User accountId={item.generatedBy} size="md" withLink={false} />
+                            <User
+                                accountId={item.generatedBy}
+                                size="md"
+                                withLink={false}
+                            />
                         </div>
                     );
                 },
@@ -185,7 +236,11 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
                                     }}
                                     className="p-0!"
                                     disabled={!isMember || !accountId}
-                                    tooltipContent={!isMember || !accountId ? "You don't have permission to download the file." : undefined}
+                                    tooltipContent={
+                                        !isMember || !accountId
+                                            ? "You don't have permission to download the file."
+                                            : undefined
+                                    }
                                 >
                                     <Download className="w-4 h-4" />
                                     Download
@@ -225,22 +280,23 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
                 </colgroup>
                 <TableHeader>
                     <TableRow className="hover:bg-transparent">
-                        {table.getHeaderGroups().map((headerGroup) => (
+                        {table.getHeaderGroups().map((headerGroup) =>
                             headerGroup.headers.map((header) => (
                                 <TableHead
                                     key={header.id}
                                     className={cn(
                                         "text-xs font-medium uppercase text-muted-foreground",
-                                        header.column.id === "status" && "text-right"
+                                        header.column.id === "status" &&
+                                            "text-right",
                                     )}
                                 >
                                     {flexRender(
                                         header.column.columnDef.header,
-                                        header.getContext()
+                                        header.getContext(),
                                     )}
                                 </TableHead>
-                            ))
-                        ))}
+                            )),
+                        )}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -251,12 +307,13 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
                                     key={cell.id}
                                     className={cn(
                                         "align-top",
-                                        cell.column.id === "status" && "text-right"
+                                        cell.column.id === "status" &&
+                                            "text-right",
                                     )}
                                 >
                                     {flexRender(
                                         cell.column.columnDef.cell,
-                                        cell.getContext()
+                                        cell.getContext(),
                                     )}
                                 </TableCell>
                             ))}
@@ -273,9 +330,13 @@ export default function ExportActivityPage() {
     const queryClient = useQueryClient();
     const { treasuryId, isGuestTreasury } = useTreasury();
     const { accountId } = useNear();
-    const { data: planDetails, isLoading: planLoading } = useSubscription(treasuryId);
-    const { data: exportHistoryData, refetch: refetchHistory } = useExportHistory(treasuryId);
-    const { data: assetsData } = useAssets(treasuryId, { onlyPositiveBalance: false });
+    const { data: planDetails, isLoading: planLoading } =
+        useSubscription(treasuryId);
+    const { data: exportHistoryData, refetch: refetchHistory } =
+        useExportHistory(treasuryId);
+    const { data: assetsData } = useAssets(treasuryId, {
+        onlyPositiveBalance: false,
+    });
     const aggregatedTokens = useAggregatedTokens(assetsData?.tokens || []);
 
     const isMember = !isGuestTreasury;
@@ -284,8 +345,12 @@ export default function ExportActivityPage() {
 
     // Calculate min date based on plan
     const minDate = useMemo(() => {
-        if (!planDetails?.planConfig?.limits?.historyLookupMonths) return undefined;
-        return subMonths(new Date(), planDetails.planConfig.limits.historyLookupMonths);
+        if (!planDetails?.planConfig?.limits?.historyLookupMonths)
+            return undefined;
+        return subMonths(
+            new Date(),
+            planDetails.planConfig.limits.historyLookupMonths,
+        );
     }, [planDetails?.planConfig?.limits?.historyLookupMonths]);
 
     // Calculate default start date: prefer 6 months ago, but not before plan limit
@@ -332,6 +397,12 @@ export default function ExportActivityPage() {
             return;
         }
 
+        trackEvent("export_generate_click", {
+            source: "dashboard_export_page",
+            treasury_id: treasuryId,
+            document_type: documentType,
+        });
+
         setIsExporting(true);
         try {
             const formValues = form.getValues();
@@ -352,11 +423,13 @@ export default function ExportActivityPage() {
             }
 
             // Add tokenIds if specific assets are selected (excluding "all")
-            const specificAssets = selectedAssets.filter(a => a !== "all");
+            const specificAssets = selectedAssets.filter((a) => a !== "all");
             if (specificAssets.length > 0) {
                 const tokenIds: string[] = [];
-                specificAssets.forEach(assetSymbol => {
-                    const token = aggregatedTokens.find((t: any) => t.symbol === assetSymbol);
+                specificAssets.forEach((assetSymbol) => {
+                    const token = aggregatedTokens.find(
+                        (t: any) => t.symbol === assetSymbol,
+                    );
                     if (token) {
                         token.networks.forEach((n: any) => tokenIds.push(n.id));
                     }
@@ -367,8 +440,13 @@ export default function ExportActivityPage() {
             }
 
             // Add transactionTypes if specific types are selected (excluding "all")
-            const specificTypes = selectedTransactionTypes.filter(t => t !== "all");
-            if (specificTypes.length > 0 && specificTypes.length < TRANSACTION_TYPES.length - 1) {
+            const specificTypes = selectedTransactionTypes.filter(
+                (t) => t !== "all",
+            );
+            if (
+                specificTypes.length > 0 &&
+                specificTypes.length < TRANSACTION_TYPES.length - 1
+            ) {
                 params.append("transactionTypes", specificTypes.join(","));
             }
 
@@ -382,7 +460,8 @@ export default function ExportActivityPage() {
 
                 try {
                     const errorJson = JSON.parse(errorText);
-                    errorMessage = errorJson.message || errorJson.error || errorText;
+                    errorMessage =
+                        errorJson.message || errorJson.error || errorText;
                 } catch {
                     errorMessage = errorText || "Export failed";
                 }
@@ -395,7 +474,7 @@ export default function ExportActivityPage() {
             const link = document.createElement("a");
             link.href = downloadUrl;
 
-            const filename = `balance_changes_${treasuryId}_${dateRange.from.toISOString().split('T')[0]}_to_${dateRange.to.toISOString().split('T')[0]}.${documentType}`;
+            const filename = `balance_changes_${treasuryId}_${dateRange.from.toISOString().split("T")[0]}_to_${dateRange.to.toISOString().split("T")[0]}.${documentType}`;
             link.download = filename;
 
             document.body.appendChild(link);
@@ -409,15 +488,20 @@ export default function ExportActivityPage() {
 
             // Refetch subscription data and history
             await Promise.all([
-                queryClient.invalidateQueries({ queryKey: ["subscription", treasuryId] }),
-                refetchHistory()
+                queryClient.invalidateQueries({
+                    queryKey: ["subscription", treasuryId],
+                }),
+                refetchHistory(),
             ]);
 
             // Navigate to history tab
             setCurrentTab("history");
         } catch (error) {
             console.error("Export error:", error);
-            const errorMessage = error instanceof Error ? error.message : "Failed to export data. Please try again.";
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : "Failed to export data. Please try again.";
 
             toast.error("Export failed", {
                 description: errorMessage,
@@ -427,37 +511,52 @@ export default function ExportActivityPage() {
         }
     };
 
-    const historyText = formatHistoryDuration(planDetails?.planConfig?.limits?.historyLookupMonths);
+    const historyText = formatHistoryDuration(
+        planDetails?.planConfig?.limits?.historyLookupMonths,
+    );
 
     const toggleSelection = <T extends string>(
         fieldName: "selectedAssets" | "selectedTransactionTypes",
-        value: T
+        value: T,
     ) => {
         const currentSelection = form.getValues(fieldName);
         if (value === "all") {
             form.setValue(fieldName, ["all"] as any, { shouldValidate: true });
         } else {
             const newSelection = currentSelection.includes(value)
-                ? currentSelection.filter(item => item !== value)
-                : [...currentSelection.filter(item => item !== "all"), value];
+                ? currentSelection.filter((item) => item !== value)
+                : [...currentSelection.filter((item) => item !== "all"), value];
 
-            form.setValue(fieldName, newSelection.length === 0 ? ["all"] : newSelection as any, { shouldValidate: true });
+            form.setValue(
+                fieldName,
+                newSelection.length === 0 ? ["all"] : (newSelection as any),
+                { shouldValidate: true },
+            );
         }
     };
 
-    const toggleAsset = (asset: string) => toggleSelection("selectedAssets", asset);
-    const toggleTransactionType = (type: TransactionType) => toggleSelection("selectedTransactionTypes", type);
+    const toggleAsset = (asset: string) =>
+        toggleSelection("selectedAssets", asset);
+    const toggleTransactionType = (type: TransactionType) =>
+        toggleSelection("selectedTransactionTypes", type);
 
     const getSelectedAssetsLabel = () => {
-        if (selectedAssets.includes("all") || selectedAssets.length === 0) return "All Assets";
+        if (selectedAssets.includes("all") || selectedAssets.length === 0)
+            return "All Assets";
         if (selectedAssets.length === 1) return selectedAssets[0];
         return `${selectedAssets.length} assets selected`;
     };
 
     const getSelectedTypesLabel = () => {
-        if (selectedTransactionTypes.includes("all") || selectedTransactionTypes.length === 0) return "All Types";
+        if (
+            selectedTransactionTypes.includes("all") ||
+            selectedTransactionTypes.length === 0
+        )
+            return "All Types";
         if (selectedTransactionTypes.length === 1) {
-            const type = TRANSACTION_TYPES.find(t => t.value === selectedTransactionTypes[0]);
+            const type = TRANSACTION_TYPES.find(
+                (t) => t.value === selectedTransactionTypes[0],
+            );
             return type?.label || "All Types";
         }
         return `${selectedTransactionTypes.length} types selected`;
@@ -469,10 +568,17 @@ export default function ExportActivityPage() {
     }, [planDetails]);
 
     const exportCreditsRemaining = planDetails?.exportCredits ?? 0;
-    const exportCreditsTotal = planDetails?.planConfig?.limits?.monthlyExportCredits ?? planDetails?.planConfig?.limits?.trialExportCredits ?? 0;
-    const exportCreditsUsed = Math.max(0, exportCreditsTotal - exportCreditsRemaining);
+    const exportCreditsTotal =
+        planDetails?.planConfig?.limits?.monthlyExportCredits ??
+        planDetails?.planConfig?.limits?.trialExportCredits ??
+        0;
+    const exportCreditsUsed = Math.max(
+        0,
+        exportCreditsTotal - exportCreditsRemaining,
+    );
     const isFreeExportPlan = planDetails?.planType === "free";
-    const isUnlimitedExport = planDetails?.planConfig?.limits?.monthlyExportCredits === null;
+    const isUnlimitedExport =
+        planDetails?.planConfig?.limits?.monthlyExportCredits === null;
 
     // Show loading skeleton
     if (planLoading) {
@@ -513,74 +619,114 @@ export default function ExportActivityPage() {
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            onClick={() => router.push(`/${treasuryId}/dashboard`)}
+                                            onClick={() =>
+                                                router.push(
+                                                    `/${treasuryId}/dashboard`,
+                                                )
+                                            }
                                             className="p-0!"
                                         >
                                             <ArrowLeft />
                                         </Button>
 
-                                        <p className="font-semibold mb-1">Export Recent Transactions</p>
+                                        <p className="font-semibold mb-1">
+                                            Export Recent Transactions
+                                        </p>
                                     </div>
                                     <p className="text-sm text-muted-foreground">
-                                        Export generation and downloads are available to team members only.
+                                        Export generation and downloads are
+                                        available to team members only.
                                     </p>
                                 </div>
 
                                 {/* No Credits Alert */}
-                                {exportCreditsRemaining === 0 && planDetails && (
-                                    <Alert variant="info">
-                                        <Info className="h-4 w-4 mt-[2px]" />
-                                        <AlertTitle className="font-semibold">
-                                            You've used all your{" "}
-                                            {isTrialPlan(planDetails.planConfig)
-                                                ? "credits"
-                                                : "exports"}
-                                        </AlertTitle>
-                                        <AlertDescription className="text-general-info-foreground">
-                                            {isTrialPlan(planDetails.planConfig)
-                                                ? "Upgrade your plan to get more and keep going"
-                                                : "Upgrade your plan for more access, or wait until your limits reset next month."}
-                                        </AlertDescription>
-                                    </Alert>
-                                )}
-                                <Tabs value={currentTab} onValueChange={setCurrentTab} className="gap-0">
+                                {exportCreditsRemaining === 0 &&
+                                    planDetails && (
+                                        <Alert variant="info">
+                                            <Info className="h-4 w-4 mt-[2px]" />
+                                            <AlertTitle className="font-semibold">
+                                                You've used all your{" "}
+                                                {isTrialPlan(
+                                                    planDetails.planConfig,
+                                                )
+                                                    ? "credits"
+                                                    : "exports"}
+                                            </AlertTitle>
+                                            <AlertDescription className="text-general-info-foreground">
+                                                {isTrialPlan(
+                                                    planDetails.planConfig,
+                                                )
+                                                    ? "Upgrade your plan to get more and keep going"
+                                                    : "Upgrade your plan for more access, or wait until your limits reset next month."}
+                                            </AlertDescription>
+                                        </Alert>
+                                    )}
+                                <Tabs
+                                    value={currentTab}
+                                    onValueChange={setCurrentTab}
+                                    className="gap-0"
+                                >
                                     <TabsList className="">
-                                        <TabsTrigger value="generate">Generate Export</TabsTrigger>
-                                        <TabsTrigger value="history">History</TabsTrigger>
+                                        <TabsTrigger value="generate">
+                                            Generate Export
+                                        </TabsTrigger>
+                                        <TabsTrigger value="history">
+                                            History
+                                        </TabsTrigger>
                                     </TabsList>
 
-                                    <TabsContent value="generate" className="mt-4">
+                                    <TabsContent
+                                        value="generate"
+                                        className="mt-4"
+                                    >
                                         <div className="space-y-4">
                                             {/* Document Type */}
                                             <div>
-                                                <label className="text-sm font-medium mb-2 block">Document Type</label>
+                                                <label className="text-sm font-medium mb-2 block">
+                                                    Document Type
+                                                </label>
                                                 <div className="flex gap-2">
-                                                    {DOCUMENT_TYPES.map((type) => (
-                                                        <Button
-                                                            key={type.value}
-                                                            variant="unstyled"
-                                                            onClick={() => form.setValue("documentType", type.value, { shouldValidate: true })}
-                                                            className={cn(
-                                                                "flex-1 border",
-                                                                documentType === type.value
-                                                                    ? "bg-secondary"
-                                                                    : ""
-                                                            )}
-                                                            style={{
-                                                                borderColor: documentType === type.value
-                                                                    ? 'var(--general-unofficial-border-5)'
-                                                                    : 'var(--general-unofficial-border-3)',
-                                                            }}
-                                                        >
-                                                            {type.label}
-                                                        </Button>
-                                                    ))}
+                                                    {DOCUMENT_TYPES.map(
+                                                        (type) => (
+                                                            <Button
+                                                                key={type.value}
+                                                                variant="unstyled"
+                                                                onClick={() =>
+                                                                    form.setValue(
+                                                                        "documentType",
+                                                                        type.value,
+                                                                        {
+                                                                            shouldValidate: true,
+                                                                        },
+                                                                    )
+                                                                }
+                                                                className={cn(
+                                                                    "flex-1 border",
+                                                                    documentType ===
+                                                                        type.value
+                                                                        ? "bg-secondary"
+                                                                        : "",
+                                                                )}
+                                                                style={{
+                                                                    borderColor:
+                                                                        documentType ===
+                                                                        type.value
+                                                                            ? "var(--general-unofficial-border-5)"
+                                                                            : "var(--general-unofficial-border-3)",
+                                                                }}
+                                                            >
+                                                                {type.label}
+                                                            </Button>
+                                                        ),
+                                                    )}
                                                 </div>
                                             </div>
 
                                             {/* Time Range */}
                                             <div>
-                                                <label className="text-sm font-medium mb-2 block">Time Range</label>
+                                                <label className="text-sm font-medium mb-2 block">
+                                                    Time Range
+                                                </label>
                                                 <Popover>
                                                     <PopoverTrigger asChild>
                                                         <Button
@@ -589,9 +735,18 @@ export default function ExportActivityPage() {
                                                         >
                                                             <Calendar className="h-4 w-4" />
                                                             <span className="text-sm">
-                                                                {dateRange?.from && dateRange?.to ? (
+                                                                {dateRange?.from &&
+                                                                dateRange?.to ? (
                                                                     <>
-                                                                        {format(dateRange.from, "MMM dd, yyyy")} - {format(dateRange.to, "MMM dd, yyyy")}
+                                                                        {format(
+                                                                            dateRange.from,
+                                                                            "MMM dd, yyyy",
+                                                                        )}{" "}
+                                                                        -{" "}
+                                                                        {format(
+                                                                            dateRange.to,
+                                                                            "MMM dd, yyyy",
+                                                                        )}
                                                                     </>
                                                                 ) : (
                                                                     "Select date range"
@@ -599,24 +754,72 @@ export default function ExportActivityPage() {
                                                             </span>
                                                         </Button>
                                                     </PopoverTrigger>
-                                                    <PopoverContent className="w-auto p-0" align="start">
+                                                    <PopoverContent
+                                                        className="w-auto p-0"
+                                                        align="start"
+                                                    >
                                                         <DateTimePicker
                                                             mode="range"
-                                                            value={dateRange ? { from: dateRange.from, to: dateRange.to } : undefined}
-                                                            onChange={(range: any) => {
-                                                                if (range && typeof range === 'object' && 'from' in range) {
-                                                                    form.setValue("dateRange", {
-                                                                        from: range.from ? startOfDay(range.from) : startOfDay(new Date()),
-                                                                        to: range.to ? endOfDay(range.to) : endOfDay(new Date())
-                                                                    }, { shouldValidate: true });
+                                                            value={
+                                                                dateRange
+                                                                    ? {
+                                                                          from: dateRange.from,
+                                                                          to: dateRange.to,
+                                                                      }
+                                                                    : undefined
+                                                            }
+                                                            onChange={(
+                                                                range: any,
+                                                            ) => {
+                                                                if (
+                                                                    range &&
+                                                                    typeof range ===
+                                                                        "object" &&
+                                                                    "from" in
+                                                                        range
+                                                                ) {
+                                                                    form.setValue(
+                                                                        "dateRange",
+                                                                        {
+                                                                            from: range.from
+                                                                                ? startOfDay(
+                                                                                      range.from,
+                                                                                  )
+                                                                                : startOfDay(
+                                                                                      new Date(),
+                                                                                  ),
+                                                                            to: range.to
+                                                                                ? endOfDay(
+                                                                                      range.to,
+                                                                                  )
+                                                                                : endOfDay(
+                                                                                      new Date(),
+                                                                                  ),
+                                                                        },
+                                                                        {
+                                                                            shouldValidate: true,
+                                                                        },
+                                                                    );
                                                                 } else {
-                                                                    form.setValue("dateRange", {
-                                                                        from: startOfDay(new Date()),
-                                                                        to: endOfDay(new Date())
-                                                                    }, { shouldValidate: true });
+                                                                    form.setValue(
+                                                                        "dateRange",
+                                                                        {
+                                                                            from: startOfDay(
+                                                                                new Date(),
+                                                                            ),
+                                                                            to: endOfDay(
+                                                                                new Date(),
+                                                                            ),
+                                                                        },
+                                                                        {
+                                                                            shouldValidate: true,
+                                                                        },
+                                                                    );
                                                                 }
                                                             }}
-                                                            defaultMonth={defaultMonth}
+                                                            defaultMonth={
+                                                                defaultMonth
+                                                            }
                                                             numberOfMonths={1}
                                                             min={minDate}
                                                             max={new Date()}
@@ -627,10 +830,17 @@ export default function ExportActivityPage() {
 
                                             {/* Asset Selection */}
                                             <div>
-                                                <label className="text-sm font-medium mb-2 block">Asset</label>
+                                                <label className="text-sm font-medium mb-2 block">
+                                                    Asset
+                                                </label>
                                                 <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="outline" className="w-full justify-between bg-transparent! border-2 font-normal">
+                                                    <DropdownMenuTrigger
+                                                        asChild
+                                                    >
+                                                        <Button
+                                                            variant="outline"
+                                                            className="w-full justify-between bg-transparent! border-2 font-normal"
+                                                        >
                                                             <div className="flex items-center gap-2">
                                                                 <Coins className="w-4 h-4" />
                                                                 {getSelectedAssetsLabel()}
@@ -638,57 +848,116 @@ export default function ExportActivityPage() {
                                                             <ChevronDown className="w-4 h-4 opacity-50" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
-                                                    <DropdownMenuContent className="min-w-(--radix-dropdown-menu-trigger-width)" align="start">
+                                                    <DropdownMenuContent
+                                                        className="min-w-(--radix-dropdown-menu-trigger-width)"
+                                                        align="start"
+                                                    >
                                                         <DropdownMenuCheckboxItem
-                                                            checked={selectedAssets.includes("all")}
-                                                            onCheckedChange={() => toggleAsset("all")}
-                                                            onSelect={(e) => e.preventDefault()}
+                                                            checked={selectedAssets.includes(
+                                                                "all",
+                                                            )}
+                                                            onCheckedChange={() =>
+                                                                toggleAsset(
+                                                                    "all",
+                                                                )
+                                                            }
+                                                            onSelect={(e) =>
+                                                                e.preventDefault()
+                                                            }
                                                         >
                                                             <div className="flex items-center">
                                                                 <Coins className="w-4 h-4 mr-2" />
                                                                 All Assets
                                                             </div>
                                                         </DropdownMenuCheckboxItem>
-                                                        {aggregatedTokens.map((token: any) => (
-                                                            <DropdownMenuCheckboxItem
-                                                                key={token.symbol}
-                                                                checked={selectedAssets.includes(token.symbol)}
-                                                                onCheckedChange={() => toggleAsset(token.symbol)}
-                                                                onSelect={(e) => e.preventDefault()}
-                                                            >
-                                                                <div className="flex items-center">
-                                                                    {token.icon && (
-                                                                        <img src={token.icon} alt={token.symbol} className="w-4 h-4 rounded-full mr-2" />
+                                                        {aggregatedTokens.map(
+                                                            (token: any) => (
+                                                                <DropdownMenuCheckboxItem
+                                                                    key={
+                                                                        token.symbol
+                                                                    }
+                                                                    checked={selectedAssets.includes(
+                                                                        token.symbol,
                                                                     )}
-                                                                    {token.symbol}
-                                                                </div>
-                                                            </DropdownMenuCheckboxItem>
-                                                        ))}
+                                                                    onCheckedChange={() =>
+                                                                        toggleAsset(
+                                                                            token.symbol,
+                                                                        )
+                                                                    }
+                                                                    onSelect={(
+                                                                        e,
+                                                                    ) =>
+                                                                        e.preventDefault()
+                                                                    }
+                                                                >
+                                                                    <div className="flex items-center">
+                                                                        {token.icon && (
+                                                                            <img
+                                                                                src={
+                                                                                    token.icon
+                                                                                }
+                                                                                alt={
+                                                                                    token.symbol
+                                                                                }
+                                                                                className="w-4 h-4 rounded-full mr-2"
+                                                                            />
+                                                                        )}
+                                                                        {
+                                                                            token.symbol
+                                                                        }
+                                                                    </div>
+                                                                </DropdownMenuCheckboxItem>
+                                                            ),
+                                                        )}
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </div>
 
                                             {/* Transaction Type */}
                                             <div>
-                                                <label className="text-sm font-medium mb-2 block">Transaction Type</label>
+                                                <label className="text-sm font-medium mb-2 block">
+                                                    Transaction Type
+                                                </label>
                                                 <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="outline" className="w-full justify-between bg-transparent! border-2 font-normal">
+                                                    <DropdownMenuTrigger
+                                                        asChild
+                                                    >
+                                                        <Button
+                                                            variant="outline"
+                                                            className="w-full justify-between bg-transparent! border-2 font-normal"
+                                                        >
                                                             {getSelectedTypesLabel()}
                                                             <ChevronDown className="w-4 h-4 opacity-50" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
-                                                    <DropdownMenuContent className="min-w-(--radix-dropdown-menu-trigger-width)" align="start">
-                                                        {TRANSACTION_TYPES.map((type) => (
-                                                            <DropdownMenuCheckboxItem
-                                                                key={type.value}
-                                                                checked={selectedTransactionTypes.includes(type.value)}
-                                                                onCheckedChange={() => toggleTransactionType(type.value)}
-                                                                onSelect={(e) => e.preventDefault()}
-                                                            >
-                                                                {type.label}
-                                                            </DropdownMenuCheckboxItem>
-                                                        ))}
+                                                    <DropdownMenuContent
+                                                        className="min-w-(--radix-dropdown-menu-trigger-width)"
+                                                        align="start"
+                                                    >
+                                                        {TRANSACTION_TYPES.map(
+                                                            (type) => (
+                                                                <DropdownMenuCheckboxItem
+                                                                    key={
+                                                                        type.value
+                                                                    }
+                                                                    checked={selectedTransactionTypes.includes(
+                                                                        type.value,
+                                                                    )}
+                                                                    onCheckedChange={() =>
+                                                                        toggleTransactionType(
+                                                                            type.value,
+                                                                        )
+                                                                    }
+                                                                    onSelect={(
+                                                                        e,
+                                                                    ) =>
+                                                                        e.preventDefault()
+                                                                    }
+                                                                >
+                                                                    {type.label}
+                                                                </DropdownMenuCheckboxItem>
+                                                            ),
+                                                        )}
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </div>
@@ -734,21 +1003,27 @@ export default function ExportActivityPage() {
                                                 {!isMember || !accountId
                                                     ? "You don't have permission to export"
                                                     : isExporting
-                                                        ? "Exporting..."
-                                                        : "Export"}
+                                                      ? "Exporting..."
+                                                      : "Export"}
                                             </Button>
                                         </div>
                                     </TabsContent>
 
-                                    <TabsContent value="history" className="mt-4">
-                                        {!exportHistoryData || exportHistoryData.data.length === 0 ? (
+                                    <TabsContent
+                                        value="history"
+                                        className="mt-4"
+                                    >
+                                        {!exportHistoryData ||
+                                        exportHistoryData.data.length === 0 ? (
                                             <EmptyState
                                                 icon={FileX}
                                                 title="No exports yet"
                                                 description="Your exported files from the last month will appear here once they're generated."
                                             />
                                         ) : (
-                                            <ExportHistoryTable items={exportHistoryData.data} />
+                                            <ExportHistoryTable
+                                                items={exportHistoryData.data}
+                                            />
                                         )}
                                     </TabsContent>
                                 </Tabs>
@@ -761,16 +1036,20 @@ export default function ExportActivityPage() {
                         {/* Export Requirements */}
                         <PageCard
                             style={{
-                                backgroundColor: "var(--color-general-tertiary)",
+                                backgroundColor:
+                                    "var(--color-general-tertiary)",
                             }}
                             className="gap-2 w-full"
                         >
-                            <h5 className="font-semibold">Export Requirements</h5>
+                            <h5 className="font-semibold">
+                                Export Requirements
+                            </h5>
                             <div className="space-y-3 text-sm">
                                 <div className="flex gap-2.5">
                                     <Calendar className="w-5 h-5 shrink-0 mt-0.5" />
                                     <span>
-                                        You can export data from the {historyText}.
+                                        You can export data from the{" "}
+                                        {historyText}.
                                     </span>
                                 </div>
                                 {/* TODO: Email notification feature to be implemented later */}
@@ -783,7 +1062,8 @@ export default function ExportActivityPage() {
                                 <div className="flex gap-2.5">
                                     <Clock className="w-5 h-5 shrink-0 mt-0.5" />
                                     <span>
-                                        Exported files are available for download for 48 hours.
+                                        Exported files are available for
+                                        download for 48 hours.
                                     </span>
                                 </div>
                             </div>
@@ -792,29 +1072,38 @@ export default function ExportActivityPage() {
                         {/* Export Quota */}
                         <PageCard
                             style={{
-                                backgroundColor: exportCreditsRemaining === 0 ? "var(--color-general-info-background-faded)" : "var(--color-general-tertiary)",
+                                backgroundColor:
+                                    exportCreditsRemaining === 0
+                                        ? "var(--color-general-info-background-faded)"
+                                        : "var(--color-general-tertiary)",
                             }}
                             className="w-full"
                         >
                             <div className="space-y-3">
                                 {/* Header */}
                                 <div className="flex items-center justify-between">
-                                    <h3 className="text-lg font-semibold">Export Quota</h3>
+                                    <h3 className="text-lg font-semibold">
+                                        Export Quota
+                                    </h3>
                                     <span className="text-sm font-medium border py-1 px-2 rounded-lg border-general-border bg-general-unofficial-outline">
-                                        {planDetails?.planConfig?.limits?.monthlyExportCredits === null
+                                        {planDetails?.planConfig?.limits
+                                            ?.monthlyExportCredits === null
                                             ? "Unlimited"
-                                            : `${exportCreditsTotal} / month`
-                                        }
+                                            : `${exportCreditsTotal} / month`}
                                     </span>
                                 </div>
 
                                 {/* Credits Display */}
                                 {!isUnlimitedExport && (
                                     <CreditsQuotaDisplay
-                                        creditsAvailable={exportCreditsRemaining}
+                                        creditsAvailable={
+                                            exportCreditsRemaining
+                                        }
                                         creditsUsed={exportCreditsUsed}
                                         creditsTotal={exportCreditsTotal}
-                                        creditsResetAt={planDetails?.creditsResetAt}
+                                        creditsResetAt={
+                                            planDetails?.creditsResetAt
+                                        }
                                         isFree={isFreeExportPlan}
                                         isUnlimited={isUnlimitedExport}
                                     />
@@ -829,7 +1118,7 @@ export default function ExportActivityPage() {
                                         <Button
                                             variant="default"
                                             className="px-2! py-3!"
-                                            size='sm'
+                                            size="sm"
                                         >
                                             Contact Us
                                         </Button>

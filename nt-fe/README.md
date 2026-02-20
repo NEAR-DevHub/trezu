@@ -154,6 +154,7 @@ nt-fe/
 ## Environment Variables
 
 - `NEXT_PUBLIC_BACKEND_API_BASE` - Backend API base URL (default: http://localhost:8080)
+- `NEXT_PUBLIC_GA_MEASUREMENT_ID` - Google Analytics 4 measurement ID (for example: G-XXXXXXXXXX)
 
 ## Tech Stack
 

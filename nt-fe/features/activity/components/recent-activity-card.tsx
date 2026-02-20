@@ -22,21 +22,27 @@ import { useRecentActivity } from "@/hooks/use-treasury-queries";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useTreasury } from "@/hooks/use-treasury";
 import { cn, formatActivityAmount, formatSmartAmount } from "@/lib/utils";
-import { formatHistoryDuration, getFromAccount, getToAccount } from "../utils/history-utils";
+import {
+    formatHistoryDuration,
+    getFromAccount,
+    getToAccount,
+} from "../utils/history-utils";
 import { useState, useMemo, useEffect } from "react";
 import type { RecentActivity as RecentActivityType } from "@/lib/api";
 
-type GroupedActivity = {
-    type: "single";
-    activity: RecentActivityType;
-} | {
-    type: "grouped";
-    pool: string;
-    activities: RecentActivityType[];
-    totalAmount: string;
-    tokenMetadata: RecentActivityType["tokenMetadata"];
-    blockTime: string; // Most recent time
-};
+type GroupedActivity =
+    | {
+          type: "single";
+          activity: RecentActivityType;
+      }
+    | {
+          type: "grouped";
+          pool: string;
+          activities: RecentActivityType[];
+          totalAmount: string;
+          tokenMetadata: RecentActivityType["tokenMetadata"];
+          blockTime: string; // Most recent time
+      };
 import {
     useReactTable,
     getCoreRowModel,
@@ -49,7 +55,6 @@ import { FormattedDate } from "@/components/formatted-date";
 import { TransactionDetailsModal } from "./transaction-details-modal";
 import { MemberOnlyExportButton } from "@/components/member-only-export-button";
 import Link from "next/link";
-import { Checkbox } from "@/components/ui/checkbox";
 
 const ITEMS_ON_DASHBOARD = 10;
 const MAX_ITEMS = 100;
@@ -71,8 +76,8 @@ const isStakingReward = (activity: RecentActivityType): boolean => {
     const counterparty = activity.counterparty.toLowerCase();
     // Check if it's a staking pool (ends with pool variants or contains 'pool')
     return (
-        counterparty.endsWith('.poolv1.near') ||
-        counterparty.endsWith('.pool.near')
+        counterparty.endsWith(".poolv1.near") ||
+        counterparty.endsWith(".pool.near")
     );
 };
 
@@ -136,14 +141,14 @@ const groupStakingActivities = (
 export function RecentActivity() {
     const { treasuryId } = useTreasury();
     const [hideSmallTransactions, setHideSmallTransactions] = useState(false);
-    const [selectedActivity, setSelectedActivity] = useState<RecentActivityType | null>(null);
+    const [selectedActivity, setSelectedActivity] =
+        useState<RecentActivityType | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+    const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
+        new Set(),
+    );
 
-    const {
-        data: response,
-        isLoading,
-    } = useRecentActivity(
+    const { data: response, isLoading } = useRecentActivity(
         treasuryId,
         MAX_ITEMS,
         0,
@@ -252,8 +257,8 @@ export function RecentActivity() {
                                     isSwap
                                         ? "bg-blue-500/10"
                                         : isReceived
-                                            ? "bg-general-success-background-faded"
-                                            : "bg-general-destructive-background-faded",
+                                          ? "bg-general-success-background-faded"
+                                          : "bg-general-destructive-background-faded",
                                 )}
                             >
                                 {isSwap ? (
@@ -291,9 +296,10 @@ export function RecentActivity() {
                                 <div className="flex flex-col items-end gap-0.5">
                                     <div className="text-sm sm:text-base whitespace-nowrap font-semibold text-general-success-foreground">
                                         {formatActivityAmount(
-                                            grouped.totalAmount
+                                            grouped.totalAmount,
                                         )}{" "}
-                                        {grouped.tokenMetadata?.symbol ?? grouped.activities[0]?.tokenId}
+                                        {grouped.tokenMetadata?.symbol ??
+                                            grouped.activities[0]?.tokenId}
                                     </div>
                                     <div className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
                                         <FormattedDate
@@ -307,7 +313,7 @@ export function RecentActivity() {
                                         "overflow-hidden transition-all shrink-0",
                                         isExpanded
                                             ? "w-6 ml-2"
-                                            : "w-0 group-hover:w-6 group-hover:ml-1"
+                                            : "w-0 group-hover:w-6 group-hover:ml-1",
                                     )}
                                 >
                                     <ChevronRight
@@ -330,11 +336,9 @@ export function RecentActivity() {
                             <div className="text-right">
                                 <div className="flex items-center justify-end gap-1.5">
                                     {swap.sentAmount &&
-                                        swap.sentTokenMetadata ? (
+                                    swap.sentTokenMetadata ? (
                                         <span className="font-semibold text-general-destructive-foreground">
-                                            {formatSmartAmount(
-                                                swap.sentAmount
-                                            )}{" "}
+                                            {formatSmartAmount(swap.sentAmount)}{" "}
                                             {swap.sentTokenMetadata.symbol}
                                         </span>
                                     ) : (
@@ -344,10 +348,9 @@ export function RecentActivity() {
                                     )}
                                     <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                                     <span className="font-semibold text-general-success-foreground">
-                                        {formatSmartAmount(
-                                            swap.receivedAmount
-                                        )}{" "}
-                                        {swap.receivedTokenMetadata?.symbol ?? swap.receivedTokenId}
+                                        {formatSmartAmount(swap.receivedAmount)}{" "}
+                                        {swap.receivedTokenMetadata?.symbol ??
+                                            swap.receivedTokenId}
                                     </span>
                                 </div>
                                 <div className="text-sm text-muted-foreground">
@@ -368,13 +371,12 @@ export function RecentActivity() {
                                         "text-sm sm:text-base whitespace-nowrap font-semibold",
                                         isReceived
                                             ? "text-general-success-foreground"
-                                            : "text-foreground"
+                                            : "text-foreground",
                                     )}
                                 >
-                                    {formatActivityAmount(
-                                        activity.amount
-                                    )}{" "}
-                                    {activity.tokenMetadata?.symbol ?? activity.tokenId}
+                                    {formatActivityAmount(activity.amount)}{" "}
+                                    {activity.tokenMetadata?.symbol ??
+                                        activity.tokenId}
                                 </div>
                                 <div className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
                                     <FormattedDate
@@ -406,9 +408,12 @@ export function RecentActivity() {
             <Card className="gap-3 border-none shadow-none">
                 <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3 px-6">
                     <div className="space-y-1">
-                        <CardTitle className="text-base md:text-lg font-bold">Recent Transactions</CardTitle>
+                        <CardTitle className="text-base md:text-lg font-bold">
+                            Recent Transactions
+                        </CardTitle>
                         <CardDescription>
-                            Sent and received transactions ({historyDescription})
+                            Sent and received transactions ({historyDescription}
+                            )
                         </CardDescription>
                     </div>
                     <div className="flex items-center gap-4">
@@ -470,11 +475,14 @@ export function RecentActivity() {
                                     <TableBody>
                                         {table.getRowModel().rows.map((row) => {
                                             const grouped = row.original;
-                                            const isGroup = grouped.type === "grouped";
+                                            const isGroup =
+                                                grouped.type === "grouped";
                                             const groupId = isGroup
                                                 ? `${grouped.pool}-${grouped.blockTime}`
                                                 : "";
-                                            const isExpanded = isGroup && expandedGroups.has(groupId);
+                                            const isExpanded =
+                                                isGroup &&
+                                                expandedGroups.has(groupId);
 
                                             return (
                                                 <>
@@ -483,77 +491,107 @@ export function RecentActivity() {
                                                         className="group cursor-pointer"
                                                         onClick={() => {
                                                             if (isGroup) {
-                                                                toggleGroup(groupId);
+                                                                toggleGroup(
+                                                                    groupId,
+                                                                );
                                                             } else {
-                                                                handleActivityClick(grouped.activity);
+                                                                handleActivityClick(
+                                                                    grouped.activity,
+                                                                );
                                                             }
                                                         }}
                                                     >
                                                         {row
                                                             .getVisibleCells()
-                                                            .map((cell, idx) => (
-                                                                <TableCell
-                                                                    key={cell.id}
-                                                                    className={cn(
-                                                                        "py-3",
-                                                                        idx === 0 ? "pl-3 overflow-hidden pr-0" : "pr-3"
-                                                                    )}
-                                                                >
-                                                                    {flexRender(
-                                                                        cell.column
-                                                                            .columnDef.cell,
-                                                                        cell.getContext(),
-                                                                    )}
-                                                                </TableCell>
-                                                            ))}
+                                                            .map(
+                                                                (cell, idx) => (
+                                                                    <TableCell
+                                                                        key={
+                                                                            cell.id
+                                                                        }
+                                                                        className={cn(
+                                                                            "py-3",
+                                                                            idx ===
+                                                                                0
+                                                                                ? "pl-3 overflow-hidden pr-0"
+                                                                                : "pr-3",
+                                                                        )}
+                                                                    >
+                                                                        {flexRender(
+                                                                            cell
+                                                                                .column
+                                                                                .columnDef
+                                                                                .cell,
+                                                                            cell.getContext(),
+                                                                        )}
+                                                                    </TableCell>
+                                                                ),
+                                                            )}
                                                     </TableRow>
                                                     {isExpanded &&
-                                                        grouped.activities.map((activity, idx) => (
-                                                            <TableRow
-                                                                key={`${groupId}-sub-${idx}`}
-                                                                className="group cursor-pointer bg-muted/30"
-                                                                onClick={() => handleActivityClick(activity)}
-                                                            >
-                                                                <TableCell className="py-3 pl-8 sm:pl-14 overflow-hidden">
-                                                                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                                                                        <div
-                                                                            className={cn(
-                                                                                "flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full shrink-0",
-                                                                                "bg-general-success-background-faded",
-                                                                            )}
-                                                                        >
-                                                                            <ArrowDownToLine className="h-4 w-4 sm:h-5 sm:w-5 text-general-success-foreground" />
-                                                                        </div>
-                                                                        <div className="min-w-0 flex-1 overflow-hidden">
-                                                                            <div className="text-sm sm:text-base font-semibold truncate">
-                                                                                Staking Rewards
+                                                        grouped.activities.map(
+                                                            (activity, idx) => (
+                                                                <TableRow
+                                                                    key={`${groupId}-sub-${idx}`}
+                                                                    className="group cursor-pointer bg-muted/30"
+                                                                    onClick={() =>
+                                                                        handleActivityClick(
+                                                                            activity,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <TableCell className="py-3 pl-8 sm:pl-14 overflow-hidden">
+                                                                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                                                                            <div
+                                                                                className={cn(
+                                                                                    "flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full shrink-0",
+                                                                                    "bg-general-success-background-faded",
+                                                                                )}
+                                                                            >
+                                                                                <ArrowDownToLine className="h-4 w-4 sm:h-5 sm:w-5 text-general-success-foreground" />
                                                                             </div>
-                                                                            <div className="text-xs sm:text-sm text-muted-foreground font-medium truncate">
-                                                                                from {grouped.pool}
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </TableCell>
-                                                                <TableCell className="py-3 pr-0 pl-4">
-                                                                    <div className="flex items-center justify-end shrink-0 pr-10">
-                                                                        <div className="flex flex-col items-end gap-0.5">
-                                                                            <div className="text-sm sm:text-base whitespace-nowrap font-semibold text-general-success-foreground">
-                                                                                {formatActivityAmount(
-                                                                                    activity.amount
-                                                                                )}{" "}
-                                                                                {activity.tokenMetadata?.symbol ?? activity.tokenId}
-                                                                            </div>
-                                                                            <div className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
-                                                                                <FormattedDate
-                                                                                    date={new Date(activity.blockTime)}
-                                                                                    includeTime
-                                                                                />
+                                                                            <div className="min-w-0 flex-1 overflow-hidden">
+                                                                                <div className="text-sm sm:text-base font-semibold truncate">
+                                                                                    Staking
+                                                                                    Rewards
+                                                                                </div>
+                                                                                <div className="text-xs sm:text-sm text-muted-foreground font-medium truncate">
+                                                                                    from{" "}
+                                                                                    {
+                                                                                        grouped.pool
+                                                                                    }
+                                                                                </div>
                                                                             </div>
                                                                         </div>
-                                                                    </div>
-                                                                </TableCell>
-                                                            </TableRow>
-                                                        ))}
+                                                                    </TableCell>
+                                                                    <TableCell className="py-3 pr-0 pl-4">
+                                                                        <div className="flex items-center justify-end shrink-0 pr-10">
+                                                                            <div className="flex flex-col items-end gap-0.5">
+                                                                                <div className="text-sm sm:text-base whitespace-nowrap font-semibold text-general-success-foreground">
+                                                                                    {formatActivityAmount(
+                                                                                        activity.amount,
+                                                                                    )}{" "}
+                                                                                    {activity
+                                                                                        .tokenMetadata
+                                                                                        ?.symbol ??
+                                                                                        activity.tokenId}
+                                                                                </div>
+                                                                                <div className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+                                                                                    <FormattedDate
+                                                                                        date={
+                                                                                            new Date(
+                                                                                                activity.blockTime,
+                                                                                            )
+                                                                                        }
+                                                                                        includeTime
+                                                                                    />
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ),
+                                                        )}
                                                 </>
                                             );
                                         })}
@@ -561,7 +599,9 @@ export function RecentActivity() {
                                 </Table>
                             </div>
                             <div className="px-6">
-                                <Link href={`/${treasuryId}/dashboard/activity`}>
+                                <Link
+                                    href={`/${treasuryId}/dashboard/activity`}
+                                >
                                     <Button
                                         variant="outline"
                                         className="w-full mt-4 bg-transparent hover:bg-muted/50"

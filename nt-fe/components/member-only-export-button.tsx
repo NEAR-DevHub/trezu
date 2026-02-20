@@ -1,11 +1,16 @@
 "use client";
 
 import { Button } from "@/components/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useNear } from "@/stores/near-store";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useRouter } from "next/navigation";
 import { Upload } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 export function MemberOnlyExportButton() {
     const { treasuryId, isGuestTreasury, isLoading } = useTreasury();
@@ -16,6 +21,10 @@ export function MemberOnlyExportButton() {
 
     const handleClick = () => {
         if (isMember && treasuryId) {
+            trackEvent("export_click", {
+                source: "member_only_export_button",
+                treasury_id: treasuryId,
+            });
             router.push(`/${treasuryId}/dashboard/export`);
         }
     };
@@ -39,9 +48,7 @@ export function MemberOnlyExportButton() {
         return (
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <span className="inline-block">
-                        {button}
-                    </span>
+                    <span className="inline-block">{button}</span>
                 </TooltipTrigger>
                 <TooltipContent>
                     <p>Only treasury members can export data</p>
@@ -52,4 +59,3 @@ export function MemberOnlyExportButton() {
 
     return button;
 }
-

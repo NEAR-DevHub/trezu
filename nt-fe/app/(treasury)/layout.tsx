@@ -7,6 +7,7 @@ import { Toaster } from "@/components/toaster";
 import { TOURS } from "@/features/onboarding/steps";
 import { TourProvider } from "@/features/onboarding/components/tour-provider";
 import { AuthProvider } from "@/components/auth-provider";
+import { GoogleAnalytics } from "@/components/google-analytics";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -74,6 +75,7 @@ export default function RootLayout({
                         <TourProvider>{children}</TourProvider>
                     </AuthProvider>
                     <Toaster />
+                    <GoogleAnalytics />
                 </QueryProvider>
             </body>
         </html>

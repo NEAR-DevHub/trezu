@@ -2,16 +2,23 @@
 
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { PageCard } from "@/components/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/underline-tabs";
+import {
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+} from "@/components/underline-tabs";
 import { useRecentActivity } from "@/hooks/use-treasury-queries";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { ActivityTable } from "@/features/activity";
-import { ProposalFilters as GenericFilters, FilterOption } from "@/features/proposals/components/proposal-filters";
+import {
+    ProposalFilters as GenericFilters,
+    FilterOption,
+} from "@/features/proposals/components/proposal-filters";
 import { Button } from "@/components/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { ListFilter } from "lucide-react";
 import { MemberOnlyExportButton } from "@/components/member-only-export-button";
 import { getHistoryDescription } from "@/features/activity";
@@ -19,7 +26,7 @@ import { subMonths } from "date-fns";
 
 // Constants
 const PAGE_SIZE = 15;
-const FILTER_PANEL_MAX_HEIGHT = '500px';
+const FILTER_PANEL_MAX_HEIGHT = "500px";
 
 function ActivityList({ status }: { status?: "incoming" | "outgoing" }) {
     const { treasuryId } = useTreasury();
@@ -29,11 +36,14 @@ function ActivityList({ status }: { status?: "incoming" | "outgoing" }) {
 
     const page = parseInt(searchParams.get("page") || "0", 10);
 
-    const updatePage = useCallback((newPage: number) => {
-        const params = new URLSearchParams(searchParams.toString());
-        params.set("page", newPage.toString());
-        router.push(`${pathname}?${params.toString()}`);
-    }, [searchParams, router, pathname]);
+    const updatePage = useCallback(
+        (newPage: number) => {
+            const params = new URLSearchParams(searchParams.toString());
+            params.set("page", newPage.toString());
+            router.push(`${pathname}?${params.toString()}`);
+        },
+        [searchParams, router, pathname],
+    );
 
     // Parse filter parameters
     const minUsdValue = searchParams.get("min_usd_value")
@@ -70,7 +80,10 @@ function ActivityList({ status }: { status?: "incoming" | "outgoing" }) {
                 const symbol = parsed.token.symbol;
 
                 if (!symbol) {
-                    console.error("Token filter is missing 'symbol' field:", parsed.token);
+                    console.error(
+                        "Token filter is missing 'symbol' field:",
+                        parsed.token,
+                    );
                 } else {
                     if (parsed.operation === "Is") {
                         tokenSymbol = symbol;
@@ -116,15 +129,19 @@ export default function ActivityPage() {
     const { data: subscriptionData } = useSubscription(treasuryId);
     const [isFiltersOpen, setIsFiltersOpen] = useState(false);
     const [hideSmallTransactions, setHideSmallTransactions] = useState(
-        searchParams.get("min_usd_value") === "1"
+        searchParams.get("min_usd_value") === "1",
     );
 
     const currentTab = searchParams.get("tab") || "all";
 
     // Calculate filter options with date restrictions based on plan
     const activityFilterOptions: FilterOption[] = useMemo(() => {
-        const minDate = subscriptionData?.planConfig?.limits?.historyLookupMonths
-            ? subMonths(new Date(), subscriptionData.planConfig.limits.historyLookupMonths)
+        const minDate = subscriptionData?.planConfig?.limits
+            ?.historyLookupMonths
+            ? subMonths(
+                  new Date(),
+                  subscriptionData.planConfig.limits.historyLookupMonths,
+              )
             : undefined;
 
         return [
@@ -132,49 +149,61 @@ export default function ActivityPage() {
                 id: "created_date",
                 label: "Created Date",
                 minDate,
-                maxDate: new Date()
+                maxDate: new Date(),
             },
             {
                 id: "token",
                 label: "Token",
-                hideAmount: true
+                hideAmount: true,
             },
         ];
     }, [subscriptionData?.planConfig?.limits?.historyLookupMonths]);
 
-    const handleTabChange = useCallback((value: string) => {
-        const params = new URLSearchParams(searchParams.toString());
-        params.set("tab", value);
-        params.delete("page"); // Reset page when changing tabs
-        router.push(`${pathname}?${params.toString()}`);
-    }, [searchParams, router, pathname]);
+    const handleTabChange = useCallback(
+        (value: string) => {
+            const params = new URLSearchParams(searchParams.toString());
+            params.set("tab", value);
+            params.delete("page"); // Reset page when changing tabs
+            router.push(`${pathname}?${params.toString()}`);
+        },
+        [searchParams, router, pathname],
+    );
 
-    const handleHideSmallTransactions = useCallback((checked: boolean) => {
-        setHideSmallTransactions(checked);
-        const params = new URLSearchParams(searchParams.toString());
-        if (checked) {
-            params.set("min_usd_value", "1");
-        } else {
-            params.delete("min_usd_value");
-        }
-        params.delete("page"); // Reset page when filter changes
-        router.push(`${pathname}?${params.toString()}`);
-    }, [searchParams, router, pathname]);
+    const handleHideSmallTransactions = useCallback(
+        (checked: boolean) => {
+            setHideSmallTransactions(checked);
+            const params = new URLSearchParams(searchParams.toString());
+            if (checked) {
+                params.set("min_usd_value", "1");
+            } else {
+                params.delete("min_usd_value");
+            }
+            params.delete("page"); // Reset page when filter changes
+            router.push(`${pathname}?${params.toString()}`);
+        },
+        [searchParams, router, pathname],
+    );
 
     // Check if any filters are active
     const hasActiveFilters = useMemo(() => {
-        const filterParams = ['created_date', 'token', 'min_usd_value'];
-        return filterParams.some(param => searchParams.has(param));
+        const filterParams = ["created_date", "token", "min_usd_value"];
+        return filterParams.some((param) => searchParams.has(param));
     }, [searchParams]);
 
     return (
         <PageComponentLayout
             title="Recent Transactions"
-            description={getHistoryDescription(subscriptionData?.planConfig?.limits?.historyLookupMonths)}
+            description={getHistoryDescription(
+                subscriptionData?.planConfig?.limits?.historyLookupMonths,
+            )}
             backButton={`/${treasuryId}/dashboard`}
         >
             <PageCard className="p-0">
-                <Tabs value={currentTab} onValueChange={handleTabChange} className="gap-0">
+                <Tabs
+                    value={currentTab}
+                    onValueChange={handleTabChange}
+                    className="gap-0"
+                >
                     <div className="flex flex-col md:flex-row gap-4 items-center md:justify-between border-b p-5 pb-3.5">
                         <TabsList className="w-fit border-none">
                             <TabsTrigger value="all">All</TabsTrigger>
@@ -200,7 +229,11 @@ export default function ActivityPage() {
                                 variant="secondary"
                                 className="flex gap-1.5 relative"
                                 onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-                                aria-label={hasActiveFilters ? "Filter (active)" : "Filter"}
+                                aria-label={
+                                    hasActiveFilters
+                                        ? "Filter (active)"
+                                        : "Filter"
+                                }
                             >
                                 <ListFilter className="size-4" />
                                 Filter
@@ -218,12 +251,16 @@ export default function ActivityPage() {
                     <div
                         className="overflow-hidden transition-all duration-500 ease-in-out"
                         style={{
-                            maxHeight: isFiltersOpen ? FILTER_PANEL_MAX_HEIGHT : '0px',
+                            maxHeight: isFiltersOpen
+                                ? FILTER_PANEL_MAX_HEIGHT
+                                : "0px",
                             opacity: isFiltersOpen ? 1 : 0,
                         }}
                     >
                         <div className="py-3 px-4">
-                            <GenericFilters filterOptions={activityFilterOptions} />
+                            <GenericFilters
+                                filterOptions={activityFilterOptions}
+                            />
                         </div>
                     </div>
 
@@ -241,4 +278,3 @@ export default function ActivityPage() {
         </PageComponentLayout>
     );
 }
-

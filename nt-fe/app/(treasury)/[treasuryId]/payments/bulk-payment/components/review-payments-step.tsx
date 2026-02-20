@@ -24,6 +24,7 @@ import { useToken, useTokenBalance } from "@/hooks/use-treasury-queries";
 import { useTreasury } from "@/hooks/use-treasury";
 import { AmountSummary } from "@/components/amount-summary";
 import { CreateRequestButton } from "@/components/create-request-button";
+import { trackEvent } from "@/lib/analytics";
 
 interface ReviewPaymentsStepProps extends StepProps {
     initialPaymentData: BulkPaymentData[];
@@ -96,6 +97,14 @@ export function ReviewPaymentsStep({
     const handleRemoveClick = (index: number, recipient: string) => {
         setRecipientToRemove({ index, recipient });
         setRemoveDialogOpen(true);
+    };
+
+    const handleProceedClick = () => {
+        trackEvent("bulk_payments_submit_click", {
+            source: "bulk_payments_review_step",
+            treasury_id: treasuryId ?? "",
+        });
+        onSubmit();
     };
 
     if (!selectedToken) {
@@ -220,17 +229,19 @@ export function ReviewPaymentsStep({
                                 return (
                                     <div
                                         key={index}
-                                        className={`space-y-3 ${index < paymentData.length - 1
-                                            ? "border-b border-border pb-4"
-                                            : ""
-                                            }`}
+                                        className={`space-y-3 ${
+                                            index < paymentData.length - 1
+                                                ? "border-b border-border pb-4"
+                                                : ""
+                                        }`}
                                     >
                                         <div className="flex items-start gap-3">
                                             <div
-                                                className={`flex items-center justify-center w-6 h-6 rounded-full text-sm font-semibold shrink-0 ${payment.validationError
-                                                    ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                                                    : "bg-secondary text-foreground"
-                                                    }`}
+                                                className={`flex items-center justify-center w-6 h-6 rounded-full text-sm font-semibold shrink-0 ${
+                                                    payment.validationError
+                                                        ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                                                        : "bg-secondary text-foreground"
+                                                }`}
                                             >
                                                 {index + 1}
                                             </div>
@@ -243,7 +254,6 @@ export function ReviewPaymentsStep({
                                                                     payment.recipient
                                                                 }
                                                             </span>
-
                                                         </div>
                                                         {payment.validationError && (
                                                             <div className="text-xs text-red-600 dark:text-red-400 mb-2">
@@ -345,7 +355,7 @@ export function ReviewPaymentsStep({
                 {!isValidatingAccounts && (
                     <CreateRequestButton
                         type="button"
-                        onClick={onSubmit}
+                        onClick={handleProceedClick}
                         disabled={hasValidationErrors}
                         permissions={[{ kind: "call", action: "AddProposal" }]}
                         idleMessage="Confirm and Submit Request"

@@ -23,6 +23,7 @@ import {
     DialogTitle,
 } from "@/components/modal";
 import { APP_WALLET_SETUP_URL } from "@/constants/config";
+import { trackEvent } from "@/lib/analytics";
 
 interface WalletSuggestionModalProps {
     open: boolean;
@@ -336,9 +337,12 @@ export function Content() {
                                 <Button
                                     variant="link"
                                     className="font-medium text-sm text-foreground hover:text-foreground/80"
-                                    onClick={() =>
-                                        setIsWalletSuggestionOpen(true)
-                                    }
+                                    onClick={() => {
+                                        trackEvent("wallet_missing_click", {
+                                            source: "welcome_page",
+                                        });
+                                        setIsWalletSuggestionOpen(true);
+                                    }}
                                 >
                                     I don&apos;t have a wallet
                                 </Button>
