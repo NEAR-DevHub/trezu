@@ -8,7 +8,7 @@ export default function NotFound() {
         <div className="dark relative flex min-h-screen flex-col items-center justify-center bg-black overflow-x-hidden">
             {/* Spotlight beam — trapezoid path matches Figma SVG exactly */}
             <svg
-                className="absolute top-0 left-1/2 h-[50vh] w-1/2 -translate-x-1/2 pointer-events-none select-none"
+                className="absolute top-0 left-1/2 h-[60vh] w-2/3 -translate-x-1/2 pointer-events-none select-none"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 641 649"
                 fill="none"
@@ -68,7 +68,7 @@ export default function NotFound() {
 
             {/* Large 404 background text */}
             <p
-                className="relative -mt-[15vh] font-medium text-neutral-600 whitespace-nowrap pointer-events-none select-none leading-[1.2] tracking-tight"
+                className="relative -mt-[8vh] font-medium text-neutral-600 whitespace-nowrap pointer-events-none select-none leading-[1.2] tracking-tight"
                 style={{ fontSize: "clamp(120px, 23vw, 330px)" }}
             >
                 404
@@ -77,7 +77,7 @@ export default function NotFound() {
             {/* Content card — negative top margin creates overlap with 404 text */}
             <div
                 className={cn(
-                    "relative -mt-[7vw] w-[437px] max-w-[calc(100%-2rem)] overflow-clip rounded-xl p-6",
+                    "relative -mt-[8vw] w-[437px] max-w-[calc(100%-2rem)] overflow-clip rounded-xl p-6",
                     "bg-linear-to-b from-[rgba(39,39,39,0.07)] to-[rgba(40,40,40,0.14)]",
                     "backdrop-blur-[14px]",
                     "flex flex-col items-center gap-6",
