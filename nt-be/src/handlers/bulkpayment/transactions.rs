@@ -10,6 +10,7 @@ use std::sync::Arc;
 use crate::{
     AppState,
     handlers::balance_changes::transfer_hints::tx_resolver::resolve_receipt_to_transaction,
+    handlers::balance_changes::utils::with_transport_retry,
     utils::cache::{CacheKey, CacheTier},
     utils::jsonrpc::create_rpc_client,
 };
@@ -363,17 +364,17 @@ async fn lookup_transaction_hash(
     let parsed_contract: near_primitives::types::AccountId = contract_id.parse()?;
 
     // Find receipt IDs from account changes on the contract at this block
-    let changes_response = client
-        .call(
-            methods::EXPERIMENTAL_changes::RpcStateChangesInBlockByTypeRequest {
-                block_reference: BlockReference::BlockId(BlockId::Height(block_height)),
-                state_changes_request:
-                    near_primitives::views::StateChangesRequestView::AccountChanges {
-                        account_ids: vec![parsed_contract],
-                    },
-            },
-        )
-        .await?;
+    let changes_response = with_transport_retry("lookup_tx_hash_changes", || {
+        let req = methods::EXPERIMENTAL_changes::RpcStateChangesInBlockByTypeRequest {
+            block_reference: BlockReference::BlockId(BlockId::Height(block_height)),
+            state_changes_request:
+                near_primitives::views::StateChangesRequestView::AccountChanges {
+                    account_ids: vec![parsed_contract.clone()],
+                },
+        };
+        client.call(req)
+    })
+    .await?;
 
     // Check for TransactionProcessing first — if the transaction was sent
     // directly to the contract, the tx hash is immediately available.
