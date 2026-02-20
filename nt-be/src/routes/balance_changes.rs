@@ -46,6 +46,9 @@ pub struct BalanceChangesQuery {
 
     pub include_metadata: Option<bool>, // default: false (enrich with token metadata like symbol, name, decimals, icon)
     pub include_prices: Option<bool>, // default: false (fetch historical USD prices for transaction dates from DB; if missing, returns None)
+
+    #[serde(skip)]
+    pub exclude_near_dust: bool, // Filter out tiny NEAR amounts (< 0.01) — not a query param, set internally
 }
 
 #[derive(Debug, Serialize, sqlx::FromRow)]
@@ -168,6 +171,7 @@ pub async fn get_balance_changes_internal(
         transaction_types: params.transaction_types.clone(),
         min_amount: min_amount_raw,
         max_amount: max_amount_raw,
+        exclude_near_dust: params.exclude_near_dust,
     };
 
     // Build SQL query

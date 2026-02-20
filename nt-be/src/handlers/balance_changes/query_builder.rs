@@ -23,6 +23,9 @@ pub struct BalanceChangeFilters {
     // Amount Filtering
     pub min_amount: Option<f64>, // Absolute value, decimal-adjusted
     pub max_amount: Option<f64>, // Absolute value, decimal-adjusted
+
+    // Filter out tiny NEAR amounts (gas/storage noise) — used by recent activity only
+    pub exclude_near_dust: bool,
 }
 
 /// Builds WHERE clause conditions for balance changes queries
@@ -117,6 +120,11 @@ pub fn build_where_conditions(filters: &BalanceChangeFilters) -> (Vec<String>, u
         param_index += 1;
     }
 
+    // Exclude tiny NEAR amounts (gas/storage noise)
+    if filters.exclude_near_dust {
+        conditions.push("NOT (token_id = 'near' AND ABS(amount) < 0.01)".to_string());
+    }
+
     (conditions, param_index)
 }
 
@@ -174,6 +182,7 @@ mod tests {
             transaction_types: None,
             min_amount: None,
             max_amount: None,
+            exclude_near_dust: false,
         };
 
         let (conditions, param_index) = build_where_conditions(&filters);
@@ -194,6 +203,7 @@ mod tests {
             transaction_types: Some(vec!["outgoing".to_string()]),
             min_amount: None,
             max_amount: None,
+            exclude_near_dust: false,
         };
 
         let (conditions, param_index) = build_where_conditions(&filters);
