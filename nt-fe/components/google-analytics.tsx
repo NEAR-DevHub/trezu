@@ -2,7 +2,7 @@
 
 import { usePathname, useSearchParams } from "next/navigation";
 import Script from "next/script";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
@@ -13,7 +13,7 @@ declare global {
     }
 }
 
-export function GoogleAnalytics() {
+function GoogleAnalyticsPageTracker() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const query = searchParams.toString();
@@ -28,6 +28,10 @@ export function GoogleAnalytics() {
         });
     }, [pathname, query]);
 
+    return null;
+}
+
+export function GoogleAnalytics() {
     if (!GA_MEASUREMENT_ID) {
         return null;
     }
@@ -47,6 +51,9 @@ export function GoogleAnalytics() {
                   gtag('config', '${GA_MEASUREMENT_ID}', { send_page_view: false });
                 `}
             </Script>
+            <Suspense fallback={null}>
+                <GoogleAnalyticsPageTracker />
+            </Suspense>
         </>
     );
 }
