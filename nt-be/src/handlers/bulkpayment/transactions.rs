@@ -3,13 +3,14 @@ use axum::{
     extract::{Path, State},
     http::StatusCode,
 };
-use near_api::{Chain, NetworkConfig, Reference};
-use near_jsonrpc_client::methods;
+use near_api::NetworkConfig;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 use crate::{
     AppState,
+    handlers::balance_changes::transfer_hints::tx_resolver::resolve_receipt_to_transaction,
+    handlers::balance_changes::utils::with_transport_retry,
     utils::cache::{CacheKey, CacheTier},
     utils::jsonrpc::create_rpc_client,
 };
@@ -345,51 +346,147 @@ pub async fn get_transaction_hash(
     }
 }
 
-/// Look up the transaction hash by querying the block and finding the transaction
-/// to the bulk payment contract.
+/// Look up the transaction hash by finding receipt processing on the contract
+/// at the given block height, then resolving back to the originating transaction.
+///
+/// The block_height from the contract is where the receipt executed, which may
+/// differ from the block where the transaction was included.
 async fn lookup_transaction_hash(
     network: &NetworkConfig,
     block_height: u64,
     contract_id: &str,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    // Query the block first
-    let block = Chain::block()
-        .at(Reference::AtBlock(block_height))
-        .fetch_from(network)
-        .await?;
+    use near_jsonrpc_client::methods;
+    use near_primitives::types::{BlockId, BlockReference};
+    use near_primitives::views::StateChangeCauseView;
 
     let client = create_rpc_client(network)?;
+    let parsed_contract: near_primitives::types::AccountId = contract_id.parse()?;
 
-    // Search each chunk for transactions to the bulk payment contract
-    for chunk_header in &block.chunks {
-        let chunk_hash_str = chunk_header.chunk_hash.to_string();
-
-        // Query the chunk using near-jsonrpc-client
-        let chunk_request = methods::chunk::RpcChunkRequest {
-            chunk_reference: methods::chunk::ChunkReference::ChunkHash {
-                chunk_id: chunk_hash_str.parse()?,
-            },
+    // Find receipt IDs from account changes on the contract at this block
+    let changes_response = with_transport_retry("lookup_tx_hash_changes", || {
+        let req = methods::EXPERIMENTAL_changes::RpcStateChangesInBlockByTypeRequest {
+            block_reference: BlockReference::BlockId(BlockId::Height(block_height)),
+            state_changes_request:
+                near_primitives::views::StateChangesRequestView::AccountChanges {
+                    account_ids: vec![parsed_contract.clone()],
+                },
         };
+        client.call(req)
+    })
+    .await?;
 
-        let chunk_response = match client.call(chunk_request).await {
-            Ok(chunk) => chunk,
-            Err(e) => {
-                log::warn!("Failed to fetch chunk {}: {}", chunk_hash_str, e);
-                continue;
+    // Check for TransactionProcessing first — if the transaction was sent
+    // directly to the contract, the tx hash is immediately available.
+    for change in &changes_response.changes {
+        if let StateChangeCauseView::TransactionProcessing { tx_hash } = &change.cause {
+            return Ok(tx_hash.to_string());
+        }
+    }
+
+    // Otherwise collect receipt IDs from ReceiptProcessing causes and resolve
+    // back to the originating transaction (the tx was in a preceding block).
+    let mut receipt_ids = Vec::new();
+    for change in &changes_response.changes {
+        if let StateChangeCauseView::ReceiptProcessing { receipt_hash } = &change.cause {
+            let hash_str = receipt_hash.to_string();
+            if !receipt_ids.contains(&hash_str) {
+                receipt_ids.push(hash_str);
             }
-        };
+        }
+    }
 
-        // Look for transactions to the bulk payment contract
-        for tx in &chunk_response.transactions {
-            if tx.receiver_id.as_str() == contract_id {
-                return Ok(tx.hash.to_string());
+    for receipt_id in &receipt_ids {
+        match resolve_receipt_to_transaction(network, receipt_id, block_height).await {
+            Ok(result) => return Ok(result.transaction_hash),
+            Err(e) => {
+                log::debug!(
+                    "Failed to resolve receipt {} to transaction: {}",
+                    receipt_id,
+                    e
+                );
+                continue;
             }
         }
     }
 
     Err(format!(
-        "No transaction to {} found in block {}",
+        "No transaction found for {} at block {}",
         contract_id, block_height
     )
     .into())
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::utils::test_utils::init_test_state;
+    use axum::extract::{Path, State};
+    use std::sync::Arc;
+
+    /// Direct transaction: olskik.near sent payout_batch directly to bulkpayment.near
+    /// at block 182925042. Tests the TransactionProcessing fast path.
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_get_transaction_hash_direct_tx() {
+        let state = init_test_state().await;
+
+        let result = super::get_transaction_hash(
+            State(Arc::new(state)),
+            Path((
+                "d4feb004373547a3e07fb3a54e1ca2b54afbbad789d8e311440f829c51d8b989".to_string(),
+                "olskik.near".to_string(),
+            )),
+        )
+        .await
+        .expect("Should resolve transaction hash");
+
+        assert!(result.success);
+        assert_eq!(
+            result.transaction_hash.as_deref(),
+            Some("8phBuLVXNqiADhTPuTXFNpbKXhNnGeHPC8xoViAX5nVw"),
+        );
+    }
+
+    /// Cross-block transaction: megha19.near called payout_batch, but the receipt
+    /// executed in a later block (186247356). Tests the ReceiptProcessing → resolve path.
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_get_transaction_hash_receipt_in_later_block() {
+        let state = init_test_state().await;
+
+        let result = super::get_transaction_hash(
+            State(Arc::new(state)),
+            Path((
+                "b2e7a99a6b2e78a41c707a0a59400e91695b3c491c22e1b0365d8b0c4e64b996".to_string(),
+                "megha19.near".to_string(),
+            )),
+        )
+        .await
+        .expect("Should resolve transaction hash via receipt resolution");
+
+        assert!(result.success);
+        assert_eq!(
+            result.transaction_hash.as_deref(),
+            Some("6GA6TzTPaGSkbbowgVuL3SH7KKaYcz79ZWetdCLjBgMc"),
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_get_transaction_hash_megdev() {
+        let state = init_test_state().await;
+
+        let result = super::get_transaction_hash(
+            State(Arc::new(state)),
+            Path((
+                "0db7b48145f57efac4e8da1327062685597daf4bb144c0366518f9f1feaac184".to_string(),
+                "megdev.near".to_string(),
+            )),
+        )
+        .await
+        .expect("Should resolve transaction hash");
+
+        assert!(result.success);
+        assert_eq!(
+            result.transaction_hash.as_deref(),
+            Some("6LbWKVUNxQvSFVe1JuRgRiXxFbNmutcZjgqqoDoDBWGL"),
+        );
+    }
 }
