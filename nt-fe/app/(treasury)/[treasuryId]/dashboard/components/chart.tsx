@@ -94,6 +94,23 @@ export default function BalanceChart({
 
     const tickInterval = calculateInterval(data.length, timePeriod);
 
+    // For 1Y, use explicit ticks to show exactly one label per calendar month.
+    // With interval-based skipping, two weekly data points can fall in the same
+    // month (e.g. Oct 3 and Oct 31 both format as "Oct '25"), causing duplicates.
+    const uniqueMonthTicks =
+        timePeriod === "1Y"
+            ? (() => {
+                  const seen = new Set<string>();
+                  return data
+                      .map((d) => d.name)
+                      .filter((name) => {
+                          if (seen.has(name)) return false;
+                          seen.add(name);
+                          return true;
+                      });
+              })()
+            : undefined;
+
     return (
         <ChartContainer
             config={chartConfig}
@@ -126,7 +143,9 @@ export default function BalanceChart({
                     dataKey="name"
                     axisLine={false}
                     tickLine={false}
-                    interval={tickInterval}
+                    {...(uniqueMonthTicks
+                        ? { ticks: uniqueMonthTicks, interval: 0 }
+                        : { interval: tickInterval })}
                     padding={{ left: 20, right: 20 }}
                 />
                 <YAxis
