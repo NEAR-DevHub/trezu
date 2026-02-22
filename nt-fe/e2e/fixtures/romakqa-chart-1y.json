@@ -1,0 +1,962 @@
+{
+  "near": [
+    {
+      "timestamp": "2025-02-21T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 3.47136526402928,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-02-28T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 3.0539228922738313,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-03-07T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 3.0570852387655094,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-03-14T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.5693910265436477,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-03-21T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.74,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-03-28T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 3.01,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-04-04T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.508789243657648,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-04-11T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.004113948975904,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-04-18T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.050526591505429,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-04-25T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.541247734584973,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-05-02T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.542132206509854,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-05-09T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.731876987810295,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-05-16T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.88,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-05-23T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 3.07,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-05-30T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.77,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-06-06T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.257361711422406,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-06-13T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.38,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-06-20T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.1816448489053157,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-06-27T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.0510861893172314,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-07-04T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.27,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-07-11T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.516255358166376,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-07-18T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.82,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-07-25T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.72,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-08-01T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.54,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-08-08T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.65,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-08-15T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.76,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-08-22T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.45,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-08-29T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.54,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-09-05T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.376039168743566,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-09-12T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.75,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-09-19T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 3.19,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-09-26T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.73,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-10-03T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.972236337388255,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-10-10T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.8826841082062313,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-10-17T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.198306604223472,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-10-24T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.2022137666456967,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-10-31T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.0978608393462235,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-11-07T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.091953435375881,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-11-14T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.446725333238667,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-11-21T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.0715607156049107,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-11-28T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.9070450189826709,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-12-05T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.796972230659536,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-12-12T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.6731255143878474,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-12-19T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.4258361333509069,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-12-26T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.4372557077781511,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2026-01-02T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.6261542312149786,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2026-01-09T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.6850039637155123,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2026-01-16T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.7206758932516149,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2026-01-23T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.5116628415074504,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2026-01-30T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.3736157352611968,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2026-02-06T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.975899402021426,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2026-02-13T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.9621933169853752,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2026-02-20T20:06:00+00:00",
+      "balance": "1.045378029856504299999968",
+      "priceUsd": 1.006350639430063,
+      "valueUsd": 1.0520168487922326
+    }
+  ],
+  "wrap.near": [
+    {
+      "timestamp": "2025-02-21T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 3.47136526402928,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-02-28T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 3.0539228922738313,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-03-07T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 3.0570852387655094,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-03-14T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.5693910265436477,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-03-21T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.74,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-03-28T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 3.01,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-04-04T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.508789243657648,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-04-11T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.004113948975904,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-04-18T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.050526591505429,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-04-25T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.541247734584973,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-05-02T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.542132206509854,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-05-09T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.731876987810295,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-05-16T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.88,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-05-23T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 3.07,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-05-30T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.77,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-06-06T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.257361711422406,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-06-13T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.38,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-06-20T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.1816448489053157,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-06-27T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.0510861893172314,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-07-04T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.27,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-07-11T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.516255358166376,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-07-18T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.82,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-07-25T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.72,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-08-01T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.54,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-08-08T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.65,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-08-15T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.76,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-08-22T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.45,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-08-29T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.54,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-09-05T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.376039168743566,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-09-12T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.75,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-09-19T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 3.19,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-09-26T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.73,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-10-03T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.972236337388255,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-10-10T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.8826841082062313,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-10-17T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.198306604223472,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-10-24T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.2022137666456967,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-10-31T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.0978608393462235,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-11-07T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.091953435375881,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-11-14T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.446725333238667,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-11-21T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 2.0715607156049107,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-11-28T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.9070450189826709,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-12-05T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.796972230659536,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-12-12T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.6731255143878474,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-12-19T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.4258361333509069,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-12-26T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.4372557077781511,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2026-01-02T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.6261542312149786,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2026-01-09T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.6850039637155123,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2026-01-16T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.7206758932516149,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2026-01-23T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.5116628415074504,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2026-01-30T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.3736157352611968,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2026-02-06T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.975899402021426,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2026-02-13T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.9621933169853752,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2026-02-20T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.006350639430063,
+      "valueUsd": 0.0
+    }
+  ],
+  "usdt.tether-token.near": [
+    {
+      "timestamp": "2025-02-21T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.000158636774326,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-02-28T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.999055,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-03-07T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.999971,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-03-14T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.99953,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-03-21T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.999414,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-03-28T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.999746,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-04-04T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.999571,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-04-11T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.999411,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-04-18T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.0,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-04-25T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.0,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-05-02T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.0,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-05-09T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.999936,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-05-16T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.0,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-05-23T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.0,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-05-30T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.999939,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-06-06T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.0,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-06-13T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.0,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-06-20T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.000056766218378,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-06-27T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.0,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-07-04T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.0,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-07-11T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.0,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-07-18T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.001,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-07-25T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.0,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-08-01T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.999848,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-08-08T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.0,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-08-15T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.001,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-08-22T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.999777,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-08-29T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.0,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-09-05T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.0,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-09-12T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.0,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-09-19T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.0,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-09-26T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.0,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-10-03T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.0004761901614017,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-10-10T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.0005377869251153,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-10-17T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.0005049822947896,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-10-24T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.000448974206458,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-10-31T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.0001647716758275,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-11-07T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.9996035960143078,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-11-14T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.9995104689032536,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-11-21T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.9989361356415166,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-11-28T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.9999850812390766,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-12-05T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.0002079482235298,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-12-12T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 1.0002166805297723,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-12-19T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.9995602779892988,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2025-12-26T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.999514765533581,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2026-01-02T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.998881792884704,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2026-01-09T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.999180134216334,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2026-01-16T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.99970180044477,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2026-01-23T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.9990727747654404,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2026-01-30T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.9984863044894642,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2026-02-06T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.9981578549679004,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2026-02-13T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.9993787942713236,
+      "valueUsd": 0.0
+    },
+    {
+      "timestamp": "2026-02-20T20:06:00+00:00",
+      "balance": "0",
+      "priceUsd": 0.999610255502074,
+      "valueUsd": 0.0
+    }
+  ]
+}
