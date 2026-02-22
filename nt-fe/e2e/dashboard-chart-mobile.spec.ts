@@ -223,10 +223,10 @@ test("dashboard chart x-axis labels should not overlap on mobile with 3M period"
         `X-axis labels overlap on mobile (375px) with 3M period: ${JSON.stringify(overlaps)}`,
     ).toHaveLength(0);
 
-    // Assert mobile uses short date format (e.g. "Nov 21", not "11/21/2025")
+    // Assert mobile uses month-only format (e.g. "Nov", not "11/21/2025")
     for (const tick of tickBoundingBoxes) {
         expect(tick.text).toMatch(
-            /^[A-Z][a-z]{2} \d{1,2}$|^Now$/,
+            /^[A-Z][a-z]{2}$|^Now$/,
         );
     }
 });
@@ -316,10 +316,10 @@ test("dashboard chart x-axis labels should not overlap on desktop with 3M period
         `X-axis labels overlap on desktop (1280px) with 3M period: ${JSON.stringify(overlaps)}`,
     ).toHaveLength(0);
 
-    // Assert desktop uses short date format (e.g. "Nov 21") for 3M period
+    // Assert desktop uses month-only format (e.g. "Nov") for 3M period
     for (const tick of tickBoundingBoxes) {
         expect(tick.text).toMatch(
-            /^[A-Z][a-z]{2} \d{1,2}$|^Now$/,
+            /^[A-Z][a-z]{2}$|^Now$/,
         );
     }
 });

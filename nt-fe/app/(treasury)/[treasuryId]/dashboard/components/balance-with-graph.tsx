@@ -70,11 +70,8 @@ const formatTimestampForPeriod = (
                 month: "short",
             });
         case "3M":
-            // Short format for all viewports to fit weekly labels
-            return date.toLocaleDateString("en-US", {
-                day: "numeric",
-                month: "short",
-            });
+            // Monthly label: "Nov"
+            return date.toLocaleDateString("en-US", { month: "short" });
         case "1Y":
             // Show month and year: "Mar '25"
             const month = date.toLocaleDateString("en-US", { month: "short" });

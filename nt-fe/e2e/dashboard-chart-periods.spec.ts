@@ -70,21 +70,19 @@ const EXPECTED_POINTS: Record<string, number> = {
 };
 
 // Maximum days between consecutive x-axis labels for each period.
-// These represent what SHOULD be the correct behavior.
 const MAX_LABEL_GAP_DAYS: Record<string, number> = {
     "1W": 2, // daily labels, gap ≤ 2 days
     "1M": 7, // daily labels, gap ≤ 7 days
-    "3M": 10, // 3-month range should use weekly labels (gap ≤ ~10 days)
-    "1Y": 45, // 1-year range should use monthly labels (gap ≤ ~45 days)
+    "3M": 35, // monthly labels, gap ≤ ~35 days
+    "1Y": 95, // quarterly labels (Mar→Jun→Sep→Dec), gap ≤ ~95 days
 };
 
 // Minimum expected time span coverage (in days) for each period.
-// E.g. 3M should cover at least 75 days, 1Y should cover at least 300 days.
 const MIN_SPAN_DAYS: Record<string, number> = {
     "1W": 5,
     "1M": 25,
-    "3M": 75,
-    "1Y": 300,
+    "3M": 55, // ~3 month names (e.g. Nov→Feb parsed as month 1st)
+    "1Y": 250, // 4 quarterly labels span ~9 months (Mar→Dec)
 };
 
 async function setupMocks(page: Page) {
@@ -228,6 +226,21 @@ function parseLabelDate(label: string, referenceDate: Date): Date | null {
         const monthStr = yearMatch[1];
         const year = 2000 + parseInt(yearMatch[2]);
         const date = new Date(`${monthStr} 1, ${year}`);
+        return isNaN(date.getTime()) ? null : date;
+    }
+
+    // "Nov" format (month-only, used by 3M)
+    const monthOnlyMatch = label.match(/^([A-Z][a-z]{2})$/);
+    if (monthOnlyMatch) {
+        const monthStr = monthOnlyMatch[1];
+        let date = new Date(
+            `${monthStr} 1, ${referenceDate.getFullYear()}`,
+        );
+        if (date > referenceDate) {
+            date = new Date(
+                `${monthStr} 1, ${referenceDate.getFullYear() - 1}`,
+            );
+        }
         return isNaN(date.getTime()) ? null : date;
     }
 

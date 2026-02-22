@@ -66,9 +66,6 @@ export default function BalanceChart({
     // Calculate optimal tick interval based on time period.
     // The interval value tells Recharts how many ticks to skip between
     // visible labels (0 = show every label, 6 = show every 7th label).
-    const isMobile =
-        typeof window !== "undefined" && window.innerWidth < 768;
-
     const calculateInterval = (
         length: number,
         period?: TimePeriod,
@@ -80,10 +77,8 @@ export default function BalanceChart({
                 case "1M":
                     return 3; // 30 daily points → ~8 labels, ~4-day gaps
                 case "3M":
-                    // Mobile: biweekly (7 labels), Desktop: weekly (13 labels)
-                    return isMobile ? 12 : 6;
                 case "1Y":
-                    return 3; // 53 weekly points → ~13 labels, ~monthly gaps
+                    return 0; // handled by explicit ticks below
             }
         }
         // Fallback for unknown period
@@ -94,22 +89,33 @@ export default function BalanceChart({
 
     const tickInterval = calculateInterval(data.length, timePeriod);
 
-    // For 1Y, use explicit ticks to show exactly one label per calendar month.
-    // With interval-based skipping, two weekly data points can fall in the same
-    // month (e.g. Oct 3 and Oct 31 both format as "Oct '25"), causing duplicates.
-    const uniqueMonthTicks =
-        timePeriod === "1Y"
-            ? (() => {
-                  const seen = new Set<string>();
-                  return data
-                      .map((d) => d.name)
-                      .filter((name) => {
-                          if (seen.has(name)) return false;
-                          seen.add(name);
-                          return true;
-                      });
-              })()
-            : undefined;
+    // For 3M and 1Y, use explicit ticks to control label density.
+    // 3M: one label per month (deduplicated from 90 daily points).
+    // 1Y: one label per quarter (Mar, Jun, Sep, Dec) from 53 weekly points.
+    const QUARTER_MONTHS = ["Mar", "Jun", "Sep", "Dec"];
+    const explicitTicks = (() => {
+        if (timePeriod === "3M") {
+            const seen = new Set<string>();
+            return data
+                .map((d) => d.name)
+                .filter((name) => {
+                    if (seen.has(name)) return false;
+                    seen.add(name);
+                    return true;
+                });
+        }
+        if (timePeriod === "1Y") {
+            const seen = new Set<string>();
+            return data
+                .map((d) => d.name)
+                .filter((name) => {
+                    if (seen.has(name)) return false;
+                    seen.add(name);
+                    return QUARTER_MONTHS.some((q) => name.startsWith(q));
+                });
+        }
+        return undefined;
+    })();
 
     return (
         <ChartContainer
@@ -143,8 +149,8 @@ export default function BalanceChart({
                     dataKey="name"
                     axisLine={false}
                     tickLine={false}
-                    {...(uniqueMonthTicks
-                        ? { ticks: uniqueMonthTicks, interval: 0 }
+                    {...(explicitTicks
+                        ? { ticks: explicitTicks, interval: 0 }
                         : { interval: tickInterval })}
                     padding={{ left: 20, right: 20 }}
                 />
