@@ -95,7 +95,8 @@ const mockWebHID = `
               responseData = new Uint8Array([...MOCK_PUBLIC_KEY, 0x90, 0x00]);
               break;
             case 0x02: // SIGN_TRANSACTION
-              console.log('[Mock Ledger] SIGN_TRANSACTION');
+            case 0x07: // SIGN_MESSAGE (NEP-413)
+              console.log('[Mock Ledger]', ins === 0x02 ? 'SIGN_TRANSACTION' : 'SIGN_MESSAGE');
               const mockSignature = new Uint8Array(64).fill(0xAB);
               responseData = new Uint8Array([...mockSignature, 0x90, 0x00]);
               break;
@@ -119,37 +120,56 @@ const mockWebHID = `
     }
 
     _sendResponse(data) {
-      // Build Ledger HID response frame
+      // Build Ledger HID response frames.
+      // First frame: channel(2) + tag(1) + seq(2) + length(2) + data (max 57 bytes)
+      // Continuation frames: channel(2) + tag(1) + seq(2) + data (max 59 bytes)
       const responseLength = data.length;
-      const packet = new Uint8Array(64);
-
-      // Channel - echo back the same channel from the request
-      packet[0] = (currentChannel >> 8) & 0xff;
-      packet[1] = currentChannel & 0xff;
-      // Tag
-      packet[2] = TAG_APDU;
-      // Sequence (0 for first packet)
-      packet[3] = 0;
-      packet[4] = 0;
-      // Length
-      packet[5] = (responseLength >> 8) & 0xff;
-      packet[6] = responseLength & 0xff;
-      // Data
-      packet.set(data.slice(0, Math.min(data.length, 57)), 7);
-      
       console.log('[Mock Ledger] Sending response, length:', responseLength);
 
-      // Dispatch input report event using proper HIDInputReportEvent structure
-      const event = new Event('inputreport');
-      event.device = this;
-      event.reportId = 0;
-      event.data = new DataView(packet.buffer);
+      let offset = 0;
+      let seq = 0;
 
-      // Try both methods - property handler and event dispatch
-      if (this.oninputreport) {
-        this.oninputreport(event);
-      }
-      this.dispatchEvent(event);
+      const sendFrame = () => {
+        const packet = new Uint8Array(64);
+        packet[0] = (currentChannel >> 8) & 0xff;
+        packet[1] = currentChannel & 0xff;
+        packet[2] = TAG_APDU;
+        packet[3] = (seq >> 8) & 0xff;
+        packet[4] = seq & 0xff;
+
+        let headerSize;
+        if (seq === 0) {
+          // First frame includes the total response length
+          packet[5] = (responseLength >> 8) & 0xff;
+          packet[6] = responseLength & 0xff;
+          headerSize = 7;
+        } else {
+          headerSize = 5;
+        }
+
+        const maxData = 64 - headerSize;
+        const chunk = data.slice(offset, offset + maxData);
+        packet.set(chunk, headerSize);
+        offset += chunk.length;
+        seq++;
+
+        const event = new Event('inputreport');
+        event.device = this;
+        event.reportId = 0;
+        event.data = new DataView(packet.buffer);
+
+        if (this.oninputreport) {
+          this.oninputreport(event);
+        }
+        this.dispatchEvent(event);
+
+        // Send continuation frames if there's more data
+        if (offset < responseLength) {
+          setTimeout(sendFrame, 10);
+        }
+      };
+
+      sendFrame();
     }
   }
 
@@ -313,8 +333,12 @@ test("Ledger login flow", async ({ page, context }) => {
         },
     );
 
-    // Mock backend auth endpoints since the sandbox doesn't have full auth support
-    // This simulates a successful auth flow with terms already accepted
+    // Mock backend auth endpoints since the sandbox doesn't have full auth support.
+    // IMPORTANT: /api/auth/me must return 401 (unauthenticated) until the login
+    // flow completes, otherwise the app thinks the user is already logged in and
+    // redirects away from the welcome page before we can click "Connect Wallet".
+    let isLoggedIn = false;
+
     await context.route("**/api/auth/challenge", async (route) => {
         console.log("Mocking auth challenge endpoint");
         await route.fulfill({
@@ -326,6 +350,7 @@ test("Ledger login flow", async ({ page, context }) => {
 
     await context.route("**/api/auth/login", async (route) => {
         console.log("Mocking auth login endpoint");
+        isLoggedIn = true;
         await route.fulfill({
             status: 200,
             contentType: "application/json",
@@ -337,15 +362,24 @@ test("Ledger login flow", async ({ page, context }) => {
     });
 
     await context.route("**/api/auth/me", async (route) => {
-        console.log("Mocking auth me endpoint");
-        await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({
-                accountId: "test.near",
-                termsAccepted: true,
-            }),
-        });
+        if (isLoggedIn) {
+            console.log("Mocking auth me endpoint (authenticated)");
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    accountId: "test.near",
+                    termsAccepted: true,
+                }),
+            });
+        } else {
+            console.log("Mocking auth me endpoint (not yet authenticated)");
+            await route.fulfill({
+                status: 401,
+                contentType: "application/json",
+                body: JSON.stringify({ error: "Not authenticated" }),
+            });
+        }
     });
 
     // Navigate to the app
