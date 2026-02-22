@@ -17,9 +17,12 @@ interface ChartDataPoint {
     balanceValue?: number;
 }
 
+type TimePeriod = "1W" | "1M" | "3M" | "1Y";
+
 interface BalanceChartProps {
     data?: ChartDataPoint[];
     symbol?: string;
+    timePeriod?: TimePeriod;
     onMouseEnter?: () => void;
     onMouseLeave?: () => void;
 }
@@ -38,6 +41,7 @@ const chartConfig = {
 export default function BalanceChart({
     data = [],
     symbol,
+    timePeriod,
     onMouseEnter,
     onMouseLeave,
 }: BalanceChartProps) {
@@ -59,15 +63,36 @@ export default function BalanceChart({
         data.reduce((acc, item) => acc + (item.balanceValue || 0), 0) /
         data.length;
 
-    // Calculate optimal interval based on data length
-    // Show ~6-8 ticks for good readability
-    const calculateInterval = (length: number) => {
-        if (length <= 8) return 0; // Show all for small datasets
-        if (length <= 15) return 1; // Every other point
-        return Math.floor(length / 7); // ~7 ticks for larger datasets
+    // Calculate optimal tick interval based on time period.
+    // The interval value tells Recharts how many ticks to skip between
+    // visible labels (0 = show every label, 6 = show every 7th label).
+    const isMobile =
+        typeof window !== "undefined" && window.innerWidth < 768;
+
+    const calculateInterval = (
+        length: number,
+        period?: TimePeriod,
+    ): number => {
+        if (period) {
+            switch (period) {
+                case "1W":
+                    return 0; // 7 daily points → show all
+                case "1M":
+                    return 3; // 30 daily points → ~8 labels, ~4-day gaps
+                case "3M":
+                    // Mobile: biweekly (7 labels), Desktop: weekly (13 labels)
+                    return isMobile ? 12 : 6;
+                case "1Y":
+                    return 3; // 53 weekly points → ~13 labels, ~monthly gaps
+            }
+        }
+        // Fallback for unknown period
+        if (length <= 8) return 0;
+        if (length <= 15) return 1;
+        return Math.floor(length / 7);
     };
 
-    const tickInterval = calculateInterval(data.length);
+    const tickInterval = calculateInterval(data.length, timePeriod);
 
     return (
         <ChartContainer

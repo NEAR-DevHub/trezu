@@ -70,14 +70,11 @@ const formatTimestampForPeriod = (
                 month: "short",
             });
         case "3M":
-            // Mobile: short "Nov 21", Desktop: full locale date
-            if (typeof window !== "undefined" && window.innerWidth < 768) {
-                return date.toLocaleDateString("en-US", {
-                    day: "numeric",
-                    month: "short",
-                });
-            }
-            return date.toLocaleDateString();
+            // Short format for all viewports to fit weekly labels
+            return date.toLocaleDateString("en-US", {
+                day: "numeric",
+                month: "short",
+            });
         case "1Y":
             // Show month and year: "Mar '25"
             const month = date.toLocaleDateString("en-US", { month: "short" });
@@ -583,6 +580,7 @@ export default function BalanceWithGraph({
                 <BalanceChart
                     data={displayChartData.data}
                     symbol={selectedTokenGroup?.symbol}
+                    timePeriod={selectedPeriod}
                     onMouseEnter={handleChartMouseEnter}
                     onMouseLeave={handleChartMouseLeave}
                 />

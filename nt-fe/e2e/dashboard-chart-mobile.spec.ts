@@ -316,10 +316,10 @@ test("dashboard chart x-axis labels should not overlap on desktop with 3M period
         `X-axis labels overlap on desktop (1280px) with 3M period: ${JSON.stringify(overlaps)}`,
     ).toHaveLength(0);
 
-    // Assert desktop uses full locale date format (e.g. "11/21/2025", not "Nov 21")
+    // Assert desktop uses short date format (e.g. "Nov 21") for 3M period
     for (const tick of tickBoundingBoxes) {
         expect(tick.text).toMatch(
-            /^\d{1,2}\/\d{1,2}\/\d{4}$|^Now$/,
+            /^[A-Z][a-z]{2} \d{1,2}$|^Now$/,
         );
     }
 });
