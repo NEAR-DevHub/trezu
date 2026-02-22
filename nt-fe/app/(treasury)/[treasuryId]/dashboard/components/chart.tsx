@@ -66,6 +66,9 @@ export default function BalanceChart({
     // Calculate optimal tick interval based on time period.
     // The interval value tells Recharts how many ticks to skip between
     // visible labels (0 = show every label, 6 = show every 7th label).
+    const isMobile =
+        typeof window !== "undefined" && window.innerWidth < 768;
+
     const calculateInterval = (
         length: number,
         period?: TimePeriod,
@@ -91,10 +94,9 @@ export default function BalanceChart({
 
     // For 3M and 1Y, use explicit ticks to control label density.
     // 3M: one label per month (deduplicated from 90 daily points).
-    // 1Y: one label per quarter (Mar, Jun, Sep, Dec) from 53 weekly points.
-    const QUARTER_MONTHS = ["Mar", "Jun", "Sep", "Dec"];
+    // 1Y: unique months, then interval controls density (quarterly/semi-annual).
     const explicitTicks = (() => {
-        if (timePeriod === "3M") {
+        if (timePeriod === "3M" || timePeriod === "1Y") {
             const seen = new Set<string>();
             return data
                 .map((d) => d.name)
@@ -104,18 +106,14 @@ export default function BalanceChart({
                     return true;
                 });
         }
-        if (timePeriod === "1Y") {
-            const seen = new Set<string>();
-            return data
-                .map((d) => d.name)
-                .filter((name) => {
-                    if (seen.has(name)) return false;
-                    seen.add(name);
-                    return QUARTER_MONTHS.some((q) => name.startsWith(q));
-                });
-        }
         return undefined;
     })();
+
+    // For 1Y unique month ticks (~13), use interval to control density:
+    // Desktop: every 3rd month ≈ quarterly (4-5 labels)
+    // Mobile: every 6th month ≈ semi-annual (2-3 labels)
+    const explicitTickInterval =
+        timePeriod === "1Y" ? (isMobile ? 5 : 2) : 0;
 
     return (
         <ChartContainer
@@ -150,7 +148,7 @@ export default function BalanceChart({
                     axisLine={false}
                     tickLine={false}
                     {...(explicitTicks
-                        ? { ticks: explicitTicks, interval: 0 }
+                        ? { ticks: explicitTicks, interval: explicitTickInterval }
                         : { interval: tickInterval })}
                     padding={{ left: 20, right: 20 }}
                 />
