@@ -36,7 +36,7 @@ interface ErrorMessageProps extends React.ComponentProps<typeof Button> {
 function ErrorMessage({ message, children, ...props }: ErrorMessageProps) {
     return (
         <Tooltip content={message}>
-            <span>
+            <span className="w-full">
                 <Button {...props} disabled>
                     {children}
                 </Button>
@@ -108,7 +108,7 @@ export function AuthButton({
         <>
             {tooltip || tooltipContent ? (
                 <Tooltip content={tooltip || tooltipContent} {...tooltipProps}>
-                    <span>
+                    <span className="w-full">
                         <Button
                             {...props}
                             disabled={disabled}
