@@ -108,7 +108,10 @@ export default function BalanceWithGraph({
     const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>("1W");
     const [isChartHovered, setIsChartHovered] = useState(false);
     const router = useRouter();
-    const handleChartMouseEnter = useCallback(() => setIsChartHovered(true), []);
+    const handleChartMouseEnter = useCallback(
+        () => setIsChartHovered(true),
+        [],
+    );
     const handleChartMouseLeave = useCallback(
         () => setIsChartHovered(false),
         [],
@@ -246,6 +249,7 @@ export default function BalanceWithGraph({
             for (const [tokenId, snapshots] of Object.entries(
                 balanceChartData,
             )) {
+                if (!Array.isArray(snapshots)) continue;
                 for (const snapshot of snapshots) {
                     const existing = timeMap.get(snapshot.timestamp) || {
                         usdValue: 0,
@@ -295,6 +299,7 @@ export default function BalanceWithGraph({
             for (const [tokenIdString, snapshots] of Object.entries(
                 balanceChartData,
             )) {
+                if (!Array.isArray(snapshots)) continue;
                 const isPartOfSelectedTokenGroup =
                     selectedTokenGroup?.tokenIds.includes(tokenIdString);
 
