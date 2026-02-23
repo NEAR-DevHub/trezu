@@ -86,7 +86,16 @@ pub struct SimplifiedToken {
 #[derive(Deserialize, Debug)]
 pub struct FastNearToken {
     pub contract_id: String,
+    #[serde(deserialize_with = "deserialize_u128_or_empty")]
     pub balance: U128,
+}
+
+fn deserialize_u128_or_empty<'de, D>(deserializer: D) -> Result<U128, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    Ok(U128(s.parse::<u128>().unwrap_or(0)))
 }
 
 #[derive(Deserialize, Debug)]
