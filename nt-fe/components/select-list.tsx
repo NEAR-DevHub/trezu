@@ -118,11 +118,11 @@ export function SelectList<T extends SelectListItem>({
                     ) : (
                         <div className="flex-1 text-left">
                             <div className="font-semibold uppercase">
-                                {item.symbol || item.name}
+                                {item.name || item.symbol}
                             </div>
                             {item.symbol && (
                                 <div className="text-sm text-muted-foreground ">
-                                    {item.name}
+                                    {item.symbol}
                                 </div>
                             )}
                         </div>

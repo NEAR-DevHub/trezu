@@ -85,11 +85,17 @@ function Step1({ handleNext }: StepProps) {
     const slippageTolerance = form.watch("slippageTolerance") || 0.5;
 
     // Check if sell token is wNEAR (FT NEAR with Ft residency, not Intents)
-    const isSellTokenFTNEAR = sellToken.address === "wrap.near" && sellToken.residency === "Ft";
+    const isSellTokenFTNEAR =
+        sellToken.address === "wrap.near" && sellToken.residency === "Ft";
 
     // Filter function for receive token - hide native NEAR unless FT NEAR is selected
     const filterReceiveTokens = useMemo(() => {
-        return (token: { address: string; symbol: string; network: string; residency?: string }) => {
+        return (token: {
+            address: string;
+            symbol: string;
+            network: string;
+            residency?: string;
+        }) => {
             // Hide native NEAR unless selling FT NEAR (for unwrapping)
             if (token.address === "near" && token.residency === "Near") {
                 return isSellTokenFTNEAR;
@@ -246,7 +252,7 @@ function Step1({ handleNext }: StepProps) {
 
             {/* Receive Token Input (Read-only) */}
             <TokenInput
-                title="You receive"
+                title="Receive"
                 control={form.control}
                 amountName="receiveAmount"
                 tokenName="receiveToken"
@@ -286,10 +292,10 @@ function Step1({ handleNext }: StepProps) {
                     disabled={areSameTokens || !hasValidAmount || !quoteData}
                     idleMessage={
                         areSameTokens
-                        ? "Tokens must be different"
-                        : !hasValidAmount
-                                ? "Enter an amount to exchange"
-                                : "Review Exchange"
+                            ? "Tokens must be different"
+                            : !hasValidAmount
+                              ? "Enter an amount to exchange"
+                              : "Review Exchange"
                     }
                 />
             </div>
@@ -298,7 +304,11 @@ function Step1({ handleNext }: StepProps) {
                 <span>Powered by</span>
                 <span className="font-semibold flex items-center gap-1">
                     <img
-                        src={theme === "dark" ? "/near-intents-dark.svg" : "/near-intents-light.svg"}
+                        src={
+                            theme === "dark"
+                                ? "/near-intents-dark.svg"
+                                : "/near-intents-light.svg"
+                        }
                         alt="NEAR Intents"
                         className="h-3"
                     />
@@ -365,15 +375,15 @@ function Step2({ handleBack }: StepProps) {
         ? isWrapConversion
             ? { percentDifference: "0", isFavorable: true, hasMarketData: true }
             : calculateMarketPriceDifference(
-                localLiveQuoteData.quote.amountInUsd,
-                localLiveQuoteData.quote.amountOutUsd,
-                localLiveQuoteData.quote.amountIn,
-                localLiveQuoteData.quote.amountOut,
-                sellToken.decimals,
-                receiveToken.decimals,
-                sellTokenData?.price,
-                receiveTokenData?.price,
-            )
+                  localLiveQuoteData.quote.amountInUsd,
+                  localLiveQuoteData.quote.amountOutUsd,
+                  localLiveQuoteData.quote.amountIn,
+                  localLiveQuoteData.quote.amountOut,
+                  sellToken.decimals,
+                  receiveToken.decimals,
+                  sellTokenData?.price,
+                  receiveTokenData?.price,
+              )
         : null;
 
     return (
@@ -461,24 +471,24 @@ function Step2({ handleBack }: StepProps) {
                                 size="sm"
                                 items={[
                                     ...(marketPriceDifference &&
-                                        marketPriceDifference.hasMarketData
+                                    marketPriceDifference.hasMarketData
                                         ? [
-                                            {
-                                                label: "Price Difference",
-                                                value: (
-                                                    <span className="font-medium">
-                                                        {marketPriceDifference.isFavorable
-                                                            ? "+"
-                                                            : ""}
-                                                        {
-                                                            marketPriceDifference.percentDifference
-                                                        }
-                                                        %
-                                                    </span>
-                                                ),
-                                                info: "Difference between the quote rate and the current market rate. Positive values indicate a better rate than market.",
-                                            },
-                                        ]
+                                              {
+                                                  label: "Price Difference",
+                                                  value: (
+                                                      <span className="font-medium">
+                                                          {marketPriceDifference.isFavorable
+                                                              ? "+"
+                                                              : ""}
+                                                          {
+                                                              marketPriceDifference.percentDifference
+                                                          }
+                                                          %
+                                                      </span>
+                                                  ),
+                                                  info: "Difference between the quote rate and the current market rate. Positive values indicate a better rate than market.",
+                                              },
+                                          ]
                                         : []),
                                     {
                                         label: "Estimated Time",
@@ -624,7 +634,10 @@ export default function ExchangePage() {
 
         try {
             const proposalBond = policy?.proposal_bond || "0";
-            const sellingNativeNEAR = isNativeNEAR(data.sellToken.address, data.sellToken.residency);
+            const sellingNativeNEAR = isNativeNEAR(
+                data.sellToken.address,
+                data.sellToken.residency,
+            );
 
             const proposalParams = {
                 proposalData: proposalDataFromForm,
@@ -654,7 +667,7 @@ export default function ExchangePage() {
                 result = await buildFungibleTokenProposal(proposalParams);
             }
 
-            await createProposal('Exchange request submitted', {
+            await createProposal("Exchange request submitted", {
                 treasuryId: selectedTreasury,
                 proposal: result.proposal,
                 proposalBond,

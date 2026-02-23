@@ -13,12 +13,20 @@ interface ButtonPropsWithTooltip extends ButtonProps {
     side?: "top" | "bottom" | "left" | "right";
 }
 
-export function Button({ variant, className: classNameOverride, size, tooltipContent, side, ...props }: ButtonPropsWithTooltip) {
+export function Button({
+    variant,
+    className: classNameOverride,
+    size,
+    tooltipContent,
+    side,
+    ...props
+}: ButtonPropsWithTooltip) {
     const { disabled } = props;
     let className = "";
     switch (variant ?? "default") {
         case "link":
-            className = "hover:no-underline font-semibold text-foreground/80 hover:text-foreground";
+            className =
+                "hover:no-underline font-semibold text-foreground/80 hover:text-foreground";
             break;
         case "ghost":
             className = "hover:bg-muted-foreground/5";
@@ -35,16 +43,38 @@ export function Button({ variant, className: classNameOverride, size, tooltipCon
             break;
         case "lg":
             sizeClassName = "h-13 font-semibold text-lg";
+            break;
         default:
             sizeClassName = "py-[5.5px]! px-5! gap-1.5 rounded-[8px]";
     }
-    const button = <ShadcnButton variant={variant} className={cn(className, sizeClassName, classNameOverride)} size={size} {...props} />;
+    const button = (
+        <ShadcnButton
+            variant={variant}
+            className={cn(className, sizeClassName, classNameOverride)}
+            size={size}
+            {...props}
+        />
+    );
 
     if (tooltipContent) {
         // When disabled, wrap in a span to avoid nested <button> elements (TooltipTrigger renders a button when asChild=false)
-        const triggerChild = disabled ? <span className={cn("inline-flex", classNameOverride)}>{button}</span> : button;
-        return <Tooltip content={tooltipContent} triggerProps={{ asChild: true }} side={side}>{triggerChild}</Tooltip>;
+        const triggerChild = disabled ? (
+            <span className={cn("inline-flex", classNameOverride)}>
+                {button}
+            </span>
+        ) : (
+            button
+        );
+        return (
+            <Tooltip
+                content={tooltipContent}
+                triggerProps={{ asChild: true }}
+                side={side}
+            >
+                {triggerChild}
+            </Tooltip>
+        );
     }
 
     return button;
-};
+}

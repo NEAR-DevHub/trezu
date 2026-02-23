@@ -101,7 +101,7 @@ export function PendingRequestItem({
                                 <AuthButtonWithProposal
                                     proposalKind={proposal.kind}
                                     variant="secondary"
-                                    className="flex gap-1 w-1/2"
+                                    className="flex gap-1 flex-1"
                                     onClick={(e) => {
                                         e.preventDefault();
                                         onVote("Reject");
@@ -119,7 +119,7 @@ export function PendingRequestItem({
                                 {insufficientBalanceInfo.hasInsufficientBalance ? (
                                     <Button
                                         variant="default"
-                                        className="flex gap-1 w-1/2"
+                                        className="flex gap-1 flex-1"
                                         onClick={(e) => {
                                             e.preventDefault();
                                             onDeposit(
@@ -135,7 +135,7 @@ export function PendingRequestItem({
                                     <AuthButtonWithProposal
                                         proposalKind={proposal.kind}
                                         variant="default"
-                                        className="flex gap-1 w-1/2"
+                                        className="flex gap-1 flex-1"
                                         onClick={(e) => {
                                             e.preventDefault();
                                             onVote("Approve");

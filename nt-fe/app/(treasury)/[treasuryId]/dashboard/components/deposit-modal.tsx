@@ -20,6 +20,7 @@ import {
 import { InputBlock } from "@/components/input-block";
 import { WarningAlert } from "@/components/warning-alert";
 import { useThemeStore } from "@/stores/theme-store";
+import { getNetworkDisplayName } from "@/components/token-display";
 
 interface DepositModalProps {
     isOpen: boolean;
@@ -212,7 +213,12 @@ export function DepositModal({
             const availableNetworks = formattedNetworks.filter((n) =>
                 networkIds.includes(n.id),
             );
-            setFilteredNetworks(availableNetworks);
+            setFilteredNetworks(
+                availableNetworks.map((n) => ({
+                    ...n,
+                    name: getNetworkDisplayName(n.name),
+                })),
+            );
 
             if (prefillNetworkId) {
                 const prefillNetwork = availableNetworks.find(
@@ -259,7 +265,12 @@ export function DepositModal({
                 supportedNetworkIds.includes(network.id),
             );
 
-            setFilteredNetworks(availableNetworks);
+            setFilteredNetworks(
+                availableNetworks.map((n) => ({
+                    ...n,
+                    name: getNetworkDisplayName(n.name),
+                })),
+            );
 
             // Auto-select network if only one is available
             if (availableNetworks.length === 1) {
@@ -390,9 +401,9 @@ export function DepositModal({
                                                         {selectedAsset.icon?.startsWith(
                                                             "http",
                                                         ) ||
-                                                            selectedAsset.icon?.startsWith(
-                                                                "data:",
-                                                            ) ? (
+                                                        selectedAsset.icon?.startsWith(
+                                                            "data:",
+                                                        ) ? (
                                                             <img
                                                                 src={
                                                                     selectedAsset.icon
@@ -452,63 +463,64 @@ export function DepositModal({
                                                 {selectedNetwork ? (
                                                     <>
                                                         <div className="flex items-center justify-between">
-                                                        <div className="flex items-center gap-2">
-                                                            {selectedNetwork.icon?.startsWith(
-                                                                "http",
-                                                            ) ||
+                                                            <div className="flex items-center gap-2">
+                                                                {selectedNetwork.icon?.startsWith(
+                                                                    "http",
+                                                                ) ||
                                                                 selectedNetwork.icon?.startsWith(
                                                                     "data:",
                                                                 ) ? (
-                                                                <div className="w-6 h-6 rounded-full object-cover">
-                                                                    <img
-                                                                        src={
-                                                                            selectedNetwork.icon
-                                                                        }
-                                                                        alt={
-                                                                            selectedNetwork.name
-                                                                        }
-                                                                        className="w-full h-full"
-                                                                    />
-                                                                </div>
-                                                            ) : (
-                                                                <div
-                                                                    className={`w-6 h-6 rounded-full ${selectedNetwork.gradient ||
-                                                                        "bg-linear-to-br from-green-500 to-teal-500"
+                                                                    <div className="w-6 h-6 rounded-full object-cover">
+                                                                        <img
+                                                                            src={
+                                                                                selectedNetwork.icon
+                                                                            }
+                                                                            alt={
+                                                                                selectedNetwork.name
+                                                                            }
+                                                                            className="w-full h-full"
+                                                                        />
+                                                                    </div>
+                                                                ) : (
+                                                                    <div
+                                                                        className={`w-6 h-6 rounded-full ${
+                                                                            selectedNetwork.gradient ||
+                                                                            "bg-linear-to-br from-green-500 to-teal-500"
                                                                         } flex items-center justify-center text-white text-xs font-bold`}
-                                                                >
-                                                                    <span>
-                                                                        {
-                                                                            selectedNetwork.icon
-                                                                        }
-                                                                    </span>
-                                                                </div>
-                                                            )}
-                                                            <span className="text-foreground font-medium uppercase">
-                                                                {
-                                                                    selectedNetwork.name
-                                                                }
-                                                            </span>
+                                                                    >
+                                                                        <span>
+                                                                            {
+                                                                                selectedNetwork.icon
+                                                                            }
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                                <span className="text-foreground font-medium">
+                                                                    {getNetworkDisplayName(
+                                                                        selectedNetwork.name,
+                                                                    )}
+                                                                </span>
                                                             </div>
                                                             <ChevronDown className="w-5 h-5" />
                                                         </div>
                                                         {/* Info message for "Other" asset */}
                                                         {selectedAsset?.id ===
                                                             "other" && (
-                                                                <div className="break-all overflow-wrap-anywhere text-wrap mt-2 text-xs text-general-info-foreground">
-                                                                    You can deposit
-                                                                    any token not
-                                                                    listed in the
-                                                                    assets, but only
-                                                                    via the NEAR
-                                                                    network.
-                                                                </div>
-                                                            )}
+                                                            <div className="break-all overflow-wrap-anywhere text-wrap mt-2 text-xs text-general-info-foreground">
+                                                                You can deposit
+                                                                any token not
+                                                                listed in the
+                                                                assets, but only
+                                                                via the NEAR
+                                                                network.
+                                                            </div>
+                                                        )}
                                                     </>
                                                 ) : (
                                                     <div className="flex items-center justify-between">
-                                                    <span className="text-muted-foreground text-lg font-normal">
-                                                        Select Network
-                                                    </span>
+                                                        <span className="text-muted-foreground text-lg font-normal">
+                                                            Select Network
+                                                        </span>
                                                         <ChevronDown className="w-5 h-5" />
                                                     </div>
                                                 )}
@@ -611,7 +623,10 @@ export function DepositModal({
                                         <span>
                                             Only deposit from the{" "}
                                             <strong>
-                                                {selectedNetwork?.name}
+                                                {selectedNetwork &&
+                                                    getNetworkDisplayName(
+                                                        selectedNetwork.name,
+                                                    )}
                                             </strong>{" "}
                                             network. We recommend starting with
                                             a small test transaction to ensure

@@ -224,7 +224,7 @@ export function TreasurySelector({
                 <Button
                     variant="ghost"
                     type="button"
-                    className="w-full justify-start gap-2"
+                    className="w-full justify-start gap-2 px-3.5!"
                     onClick={() => router.push("/app/manage-treasuries")}
                 >
                     <Settings className="size-4" />
@@ -234,7 +234,7 @@ export function TreasurySelector({
                     id="dashboard-step5-create-treasury"
                     variant="ghost"
                     type="button"
-                    className="w-full justify-start gap-2"
+                    className="w-full justify-start gap-2 px-3.5!"
                     onClick={() => router.push("/app/new")}
                 >
                     <span className="text-lg">+</span>

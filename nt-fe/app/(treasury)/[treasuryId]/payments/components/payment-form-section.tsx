@@ -108,18 +108,19 @@ export function PaymentFormSection({
     };
 
     // Check if save button should be disabled
-    const isSaveDisabled = !recipient || !amount || !isRecipientValid || isValidatingRecipient;
+    const isSaveDisabled =
+        !recipient || !amount || !isRecipientValid || isValidatingRecipient;
 
     return (
         <>
             {/* You send section */}
             <InputBlock
-                title="You send"
+                title="Send"
                 invalid={false}
                 topRightContent={
                     showBalance &&
-                        tokenBalanceData &&
-                        selectedToken?.decimals ? (
+                    tokenBalanceData &&
+                    selectedToken?.decimals ? (
                         <div className="flex items-center gap-2">
                             <p className="text-xs text-muted-foreground">
                                 Balance:{" "}
@@ -184,17 +185,17 @@ export function PaymentFormSection({
                     className={cn(
                         "text-muted-foreground text-xs invisible",
                         estimatedUSDValue !== null &&
-                        estimatedUSDValue > 0 &&
-                        "visible",
+                            estimatedUSDValue > 0 &&
+                            "visible",
                     )}
                 >
                     {!isTokenLoading &&
-                        estimatedUSDValue !== null &&
-                        estimatedUSDValue > 0
+                    estimatedUSDValue !== null &&
+                    estimatedUSDValue > 0
                         ? `≈ ${formatCurrency(estimatedUSDValue)}`
                         : isTokenLoading
-                            ? "Loading price..."
-                            : "Invisible"}
+                          ? "Loading price..."
+                          : "Invisible"}
                 </p>
             </InputBlock>
 

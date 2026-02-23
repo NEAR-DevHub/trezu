@@ -9,6 +9,28 @@ interface NetworkIconDisplayProps {
     residency?: string;
 }
 
+const NETWORK_DISPLAY_NAMES: Record<string, string> = {
+    eth: "Ethereum",
+    btc: "Bitcoin",
+    sol: "Solana",
+    arb: "Arbitrum",
+    pol: "Polygon",
+    bsc: "BNB Chain",
+    trx: "Tron",
+    xlm: "Stellar",
+    apt: "Aptos",
+    ada: "Cardano",
+    doge: "Dogecoin",
+    zec: "Zcash",
+    xrp: "XRP",
+    bera: "Berachain",
+    near: "NEAR",
+};
+
+export const getNetworkDisplayName = (name: string): string => {
+    return NETWORK_DISPLAY_NAMES[name.toLowerCase()] ?? name;
+};
+
 const getResidencyLabel = (residency?: string): string => {
     switch (residency) {
         case "Lockup":
@@ -39,6 +61,8 @@ export const NetworkIconDisplay = ({
             : chainIcons.light
         : null;
 
+    const isNEAR = networkName.toLowerCase() === "near";
+
     return (
         <div className="flex items-center gap-3">
             {iconUrl ? (
@@ -52,11 +76,15 @@ export const NetworkIconDisplay = ({
                     {networkName.charAt(0)}
                 </div>
             )}
-            <div className="flex flex-col text-left">
-                <span className="font-semibold capitalize">{networkName}</span>
-                <span className="text-xs text-muted-foreground">
-                    {getResidencyLabel(residency)}
+            <div className="flex gap-2 items-baseline text-left">
+                <span className="font-semibold capitalize">
+                    {getNetworkDisplayName(networkName)}
                 </span>
+                {isNEAR && (
+                    <span className="text-xs text-muted-foreground">
+                        {getResidencyLabel(residency)}
+                    </span>
+                )}
             </div>
         </div>
     );
@@ -142,11 +170,7 @@ export const TokenAmountDisplay = ({
     return (
         <div className="flex items-center gap-2">
             {icon && (
-                <img
-                    src={icon}
-                    alt={symbol}
-                    className="h-6 w-6 rounded-full"
-                />
+                <img src={icon} alt={symbol} className="h-6 w-6 rounded-full" />
             )}
             <div className={className}>
                 {amount} {symbol}

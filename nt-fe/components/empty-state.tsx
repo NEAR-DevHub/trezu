@@ -28,7 +28,9 @@ export function EmptyState({
                 <p className="text-base font-semibold text-foreground">
                     {title}
                 </p>
-                <p className="text-xs text-muted-foreground">{description}</p>
+                <p className="text-xs text-muted-foreground whitespace-pre-wrap">
+                    {description}
+                </p>
             </div>
         </div>
     );

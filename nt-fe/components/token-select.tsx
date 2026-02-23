@@ -110,7 +110,12 @@ interface TokenSelectProps {
      * Optional filter function to exclude specific tokens from the list.
      * Return true to include the token, false to exclude it.
      */
-    filterTokens?: (token: { address: string; symbol: string; network: string; residency?: string }) => boolean;
+    filterTokens?: (token: {
+        address: string;
+        symbol: string;
+        network: string;
+        residency?: string;
+    }) => boolean;
 }
 
 export default function TokenSelect({
@@ -173,7 +178,11 @@ export default function TokenSelect({
         const mapTreasuryNetwork = (n: any) => ({
             id: n.id,
             name: n.network,
-            chainIcons: n.chainIcons || (n.id === "near" && n.residency === "Near" ? NEAR_CHAIN_ICONS : null),
+            chainIcons:
+                n.chainIcons ||
+                (n.id === "near" && n.residency === "Near"
+                    ? NEAR_CHAIN_ICONS
+                    : null),
             chainId: n.network,
             decimals: n.decimals,
             residency: n.residency,
@@ -202,7 +211,7 @@ export default function TokenSelect({
                         name:
                             treasuryToken.name +
                             (treasuryToken.isAggregated &&
-                                treasuryToken.networks.length > 1
+                            treasuryToken.networks.length > 1
                                 ? ` • ${treasuryToken.networks.length} Networks`
                                 : ""),
                         symbol: treasuryToken.symbol,
@@ -342,7 +351,11 @@ export default function TokenSelect({
     }, [assets, search, showOnlyOwnedAssets, aggregatedTreasuryTokens]);
 
     // Apply custom filter if provided
-    const { yourAssets: filteredYourAssets, otherAssets: filteredOtherAssets, hasAnyBalance: filteredHasAnyBalance } = useMemo(() => {
+    const {
+        yourAssets: filteredYourAssets,
+        otherAssets: filteredOtherAssets,
+        hasAnyBalance: filteredHasAnyBalance,
+    } = useMemo(() => {
         if (!filterTokens) {
             return { yourAssets, otherAssets, hasAnyBalance };
         }
@@ -356,12 +369,13 @@ export default function TokenSelect({
                             symbol: asset.symbol!,
                             network: network.name,
                             residency: network.residency,
-                        })
+                        }),
                     );
 
                     if (filteredNetworks.length === 0) return null;
 
-                    const baseAssetName = asset.assetName || asset.name.split(' • ')[0];
+                    const baseAssetName =
+                        asset.assetName || asset.name.split(" • ")[0];
                     const updatedName =
                         filteredNetworks.length > 1
                             ? `${baseAssetName} • ${filteredNetworks.length} Networks`
@@ -374,7 +388,10 @@ export default function TokenSelect({
                         networkCount: filteredNetworks.length,
                     };
                 })
-                .filter((asset): asset is NonNullable<typeof asset> => asset !== null);
+                .filter(
+                    (asset): asset is NonNullable<typeof asset> =>
+                        asset !== null,
+                );
 
         const filteredOwned = applyFilter(yourAssets);
         const filteredOther: any[] = applyFilter(otherAssets);
@@ -385,7 +402,6 @@ export default function TokenSelect({
             hasAnyBalance: filteredOwned.length > 0,
         };
     }, [yourAssets, otherAssets, hasAnyBalance, filterTokens]);
-
 
     const networkItems = useMemo(() => {
         if (!selectedAsset) return [];
@@ -685,60 +701,66 @@ export default function TokenSelect({
                                                 <div className="text-xs font-medium text-muted-foreground uppercase px-2 py-2">
                                                     Your Asset
                                                 </div>
-                                                {filteredYourAssets.map((token) => (
-                                                    <Button
-                                                        key={token.id}
-                                                        onClick={() =>
-                                                            handleTokenClick(
-                                                                token,
-                                                            )
-                                                        }
-                                                        variant="ghost"
-                                                        type="button"
-                                                        className="w-full flex items-center gap-1 py-3 rounded-lg h-auto justify-start pl-1!"
-                                                    >
-                                                        <SelectListIcon
-                                                            icon={token.icon}
-                                                            gradient={
-                                                                token.gradient
+                                                {filteredYourAssets.map(
+                                                    (token) => (
+                                                        <Button
+                                                            key={token.id}
+                                                            onClick={() =>
+                                                                handleTokenClick(
+                                                                    token,
+                                                                )
                                                             }
-                                                            alt={
-                                                                token.symbol ||
-                                                                token.name
-                                                            }
-                                                        />
-                                                        <div className="flex-1 text-left">
-                                                            <div className="font-semibold">
-                                                                {token.symbol ||
-                                                                    token.name}
+                                                            variant="ghost"
+                                                            type="button"
+                                                            className="w-full flex items-center gap-1 py-3 rounded-lg h-auto justify-start pl-1!"
+                                                        >
+                                                            <SelectListIcon
+                                                                icon={
+                                                                    token.icon
+                                                                }
+                                                                gradient={
+                                                                    token.gradient
+                                                                }
+                                                                alt={
+                                                                    token.symbol ||
+                                                                    token.name
+                                                                }
+                                                            />
+                                                            <div className="flex-1 text-left">
+                                                                <div className="font-semibold">
+                                                                    {token.symbol ||
+                                                                        token.name}
+                                                                </div>
+                                                                {token.symbol && (
+                                                                    <div className="text-sm text-muted-foreground">
+                                                                        {
+                                                                            token.name
+                                                                        }
+                                                                    </div>
+                                                                )}
                                                             </div>
-                                                            {token.symbol && (
-                                                                <div className="text-sm text-muted-foreground">
-                                                                    {token.name}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                        {token.totalBalance !==
-                                                            undefined &&
-                                                            token.totalBalance >
-                                                            0 && (
-                                                                <div className="flex flex-col items-end">
-                                                                    <span className="font-semibold">
-                                                                        {token.totalBalance.toFixed(
-                                                                            2,
-                                                                        )}
-                                                                    </span>
-                                                                    <span className="text-sm text-muted-foreground">
-                                                                        ≈$
-                                                                        {token.totalBalanceUSD?.toFixed(
-                                                                            2,
-                                                                        ) ||
-                                                                            "0.00"}
-                                                                    </span>
-                                                                </div>
-                                                            )}
-                                                    </Button>
-                                                ))}
+                                                            {token.totalBalance !==
+                                                                undefined &&
+                                                                token.totalBalance >
+                                                                    0 && (
+                                                                    <div className="flex flex-col items-end">
+                                                                        <span className="font-semibold">
+                                                                            {token.totalBalance.toFixed(
+                                                                                2,
+                                                                            )}
+                                                                        </span>
+                                                                        <span className="text-sm text-muted-foreground">
+                                                                            ≈$
+                                                                            {token.totalBalanceUSD?.toFixed(
+                                                                                2,
+                                                                            ) ||
+                                                                                "0.00"}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                        </Button>
+                                                    ),
+                                                )}
                                             </div>
                                         )}
 
@@ -747,41 +769,47 @@ export default function TokenSelect({
                                                 <div className="text-xs font-medium text-muted-foreground uppercase px-2 py-2">
                                                     Other Asset
                                                 </div>
-                                                {filteredOtherAssets.map((token) => (
-                                                    <Button
-                                                        key={token.id}
-                                                        onClick={() =>
-                                                            handleTokenClick(
-                                                                token,
-                                                            )
-                                                        }
-                                                        variant="ghost"
-                                                        type="button"
-                                                        className="w-full flex items-center gap-1 py-3 rounded-lg h-auto justify-start pl-1!"
-                                                    >
-                                                        <SelectListIcon
-                                                            icon={token.icon}
-                                                            gradient={
-                                                                token.gradient
+                                                {filteredOtherAssets.map(
+                                                    (token) => (
+                                                        <Button
+                                                            key={token.id}
+                                                            onClick={() =>
+                                                                handleTokenClick(
+                                                                    token,
+                                                                )
                                                             }
-                                                            alt={
-                                                                token.symbol ||
-                                                                token.name
-                                                            }
-                                                        />
-                                                        <div className="flex-1 text-left">
-                                                            <div className="font-semibold">
-                                                                {token.symbol ||
-                                                                    token.name}
-                                                            </div>
-                                                            {token.symbol && (
-                                                                <div className="text-sm text-muted-foreground">
-                                                                    {token.name}
+                                                            variant="ghost"
+                                                            type="button"
+                                                            className="w-full flex items-center gap-1 py-3 rounded-lg h-auto justify-start pl-1!"
+                                                        >
+                                                            <SelectListIcon
+                                                                icon={
+                                                                    token.icon
+                                                                }
+                                                                gradient={
+                                                                    token.gradient
+                                                                }
+                                                                alt={
+                                                                    token.symbol ||
+                                                                    token.name
+                                                                }
+                                                            />
+                                                            <div className="flex-1 text-left">
+                                                                <div className="font-semibold">
+                                                                    {token.symbol ||
+                                                                        token.name}
                                                                 </div>
-                                                            )}
-                                                        </div>
-                                                    </Button>
-                                                ))}
+                                                                {token.symbol && (
+                                                                    <div className="text-sm text-muted-foreground">
+                                                                        {
+                                                                            token.name
+                                                                        }
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </Button>
+                                                    ),
+                                                )}
                                             </div>
                                         )}
                                     </>
@@ -832,53 +860,115 @@ export default function TokenSelect({
                 )}
                 {step === "network" && selectedAsset && (
                     <ScrollArea className="h-[400px]">
-                        {networkItems.map((item) => (
-                            <Button
-                                key={item.id}
-                                onClick={() => handleNetworkClick(item)}
-                                variant="ghost"
-                                type="button"
-                                className="w-full flex items-center gap-1 py-3 rounded-lg h-auto justify-start pl-1!"
-                            >
-                                <div className="pl-3 w-full">
-                                    <div className="flex items-center gap-3">
-                                        <NetworkIconDisplay
-                                            chainIcons={item.chainIcons}
-                                            networkName={item.name}
-                                            residency={item.residency}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="flex-1" />
-                                {item.balance &&
-                                    item.decimals !== undefined &&
-                                    item.balance.trim() !== "" &&
-                                    (() => {
-                                        const balanceFormatted = Big(
+                        {(() => {
+                            const networksWithBalance = networkItems.filter(
+                                (item) => {
+                                    if (
+                                        !item.balance ||
+                                        item.balance.trim() === "" ||
+                                        item.decimals === undefined
+                                    )
+                                        return false;
+                                    try {
+                                        return !Big(
                                             formatBalance(
                                                 item.balance,
                                                 item.decimals,
                                             ),
-                                        ).toFixed(2);
-                                        if (Big(balanceFormatted).eq(0))
-                                            return null;
+                                        ).eq(0);
+                                    } catch {
+                                        return false;
+                                    }
+                                },
+                            );
+                            const networksWithoutBalance = networkItems.filter(
+                                (item) => {
+                                    if (
+                                        !item.balance ||
+                                        item.balance.trim() === "" ||
+                                        item.decimals === undefined
+                                    )
+                                        return true;
+                                    try {
+                                        return Big(
+                                            formatBalance(
+                                                item.balance,
+                                                item.decimals,
+                                            ),
+                                        ).eq(0);
+                                    } catch {
+                                        return true;
+                                    }
+                                },
+                            );
 
-                                        return (
-                                            <div className="flex flex-col items-end">
-                                                <span className="font-semibold">
-                                                    {balanceFormatted}
-                                                </span>
-                                                <span className="text-sm text-muted-foreground">
-                                                    ≈$
-                                                    {item.balanceUSD?.toFixed(
-                                                        2,
-                                                    ) || "0.00"}
-                                                </span>
+                            const renderNetworkButton = (
+                                item: NetworkListItem,
+                            ) => (
+                                <Button
+                                    key={item.id}
+                                    onClick={() => handleNetworkClick(item)}
+                                    variant="ghost"
+                                    type="button"
+                                    className="w-full flex items-center gap-1 py-3 rounded-lg h-auto justify-start pl-1!"
+                                >
+                                    <div className="pl-3 w-full">
+                                        <div className="flex items-center gap-3">
+                                            <NetworkIconDisplay
+                                                chainIcons={item.chainIcons}
+                                                networkName={item.name}
+                                                residency={item.residency}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex-1" />
+                                    {networksWithBalance.includes(item) && (
+                                        <div className="flex flex-col items-end">
+                                            <span className="font-semibold">
+                                                {Big(
+                                                    formatBalance(
+                                                        item.balance!,
+                                                        item.decimals!,
+                                                    ),
+                                                ).toFixed(2)}
+                                            </span>
+                                            <span className="text-sm text-muted-foreground">
+                                                ≈$
+                                                {item.balanceUSD?.toFixed(2) ||
+                                                    "0.00"}
+                                            </span>
+                                        </div>
+                                    )}
+                                </Button>
+                            );
+
+                            if (networksWithBalance.length > 0) {
+                                return (
+                                    <>
+                                        <div className="mb-4">
+                                            <div className="text-xs font-medium text-muted-foreground uppercase px-2 py-2">
+                                                Networks with assets
                                             </div>
-                                        );
-                                    })()}
-                            </Button>
-                        ))}
+                                            {networksWithBalance.map(
+                                                renderNetworkButton,
+                                            )}
+                                        </div>
+                                        {networksWithoutBalance.length > 0 && (
+                                            <div className="flex flex-col gap-2">
+                                                <div className="text-xs font-medium text-muted-foreground uppercase px-2 py-2">
+                                                    Supported Networks
+                                                </div>
+                                                {networksWithoutBalance.map(
+                                                    renderNetworkButton,
+                                                )}
+                                            </div>
+                                        )}
+                                    </>
+                                );
+                            }
+
+                            return networkItems.map(renderNetworkButton);
+                        })()}
                     </ScrollArea>
                 )}
             </DialogContent>

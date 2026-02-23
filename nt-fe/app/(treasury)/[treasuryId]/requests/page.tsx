@@ -20,7 +20,7 @@ import {
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { ProposalsTable } from "@/features/proposals";
 import { Button } from "@/components/button";
-import { ArrowRightLeft, ArrowUpRight, ListFilter } from "lucide-react";
+import { ArrowRightLeft, ArrowUpRight, ListFilter, Send } from "lucide-react";
 import Link from "next/link";
 import {
     useTreasuryPolicy,
@@ -37,6 +37,7 @@ import { TableSkeleton } from "@/components/table-skeleton";
 import { Input } from "@/components/input";
 import { useNear } from "@/stores/near-store";
 import { AuthButton } from "@/components/auth-button";
+import { EmptyState } from "@/components/empty-state";
 
 // Constants
 const SEARCH_DEBOUNCE_MS = 300;
@@ -172,13 +173,12 @@ function NoRequestsFound() {
     const router = useRouter();
     return (
         <PageCard className="py-[100px] flex flex-col items-center justify-center w-full h-fit gap-4">
-            <div className="flex flex-col items-center justify-center gap-0.5">
-                <h1 className="font-semibold">Create your first request</h1>
-                <p className="text-xs text-muted-foreground max-w-[300px] text-center">
-                    Requests for payments, exchanges, and other actions will
-                    appear here once created.
-                </p>
-            </div>
+            <EmptyState
+                icon={Send}
+                title="Create your first request"
+                description={`Requests for payments, exchanges, and other actions will\nappear here once created.`}
+                className="py-0"
+            />
             <div className="flex gap-4 w-[300px]">
                 <AuthButton
                     permissionKind="transfer"
