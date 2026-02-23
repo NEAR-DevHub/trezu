@@ -17,11 +17,10 @@ const isEthereumLike = (str: string): boolean => /^0x[0-9a-fA-F]{40}$/.test(str)
 /**
  * Validates NEAR address format (local check only, doesn't verify blockchain existence)
  * 
- * NEAR addresses can be:
- * 1. Implicit accounts (64-char hex): e.g., "98793cd91a3f870fb126f66285808c7e094afcfc4eda8a970f6648cdf0dbd6de"
+ * NEAR addresses can ONLY be:
+ * 1. Implicit accounts (exactly 64-char hex): e.g., "98793cd91a3f870fb126f66285808c7e094afcfc4eda8a970f6648cdf0dbd6de"
  * 2. Named accounts with valid TLD: e.g., "alice.near", "app.alice.near", "bob.aurora", "charlie.tg"
  * 3. Ethereum-like accounts (0x + 40 hex): e.g., "0x85f17cf997934a597031b2e18a9ab6ebd4b9f6a4"
- * 4. Custom account IDs (2-64 chars, no dots): e.g., "some-unique-string", "alice", "bob_123"
  * 
  * @returns null if valid format, error message string if invalid
  */
@@ -36,14 +35,19 @@ function validateNearAddressFormat(address: string): string | null {
     return "Address must be between 2 and 64 characters";
   }
 
-  // Check if it's a valid implicit account (64-char hex)
+  // Check if it's a valid implicit account (exactly 64-char hex)
   if (isHex64(trimmed)) {
     return null;
   }
 
-  // Check if it's an Ethereum-like address
+  // Check if it's an Ethereum-like address (0x + 40 hex chars)
   if (isEthereumLike(trimmed)) {
     return null;
+  }
+
+  // For any other format, it MUST be a named account with a dot and valid TLD
+  if (!trimmed.includes(".")) {
+    return "Named accounts must end with .near, .aurora, or .tg";
   }
 
   // Check for valid characters (lowercase letters, digits, and separators: ., -, _)
@@ -52,14 +56,12 @@ function validateNearAddressFormat(address: string): string | null {
     return "Address can only contain lowercase letters, digits, and separators (., -, _)";
   }
 
-  // If it contains a dot, it must be a named account with valid TLD
-  if (trimmed.includes(".")) {
-    const validTLDs = [".near", ".aurora", ".tg"];
-    const hasValidTLD = validTLDs.some(tld => trimmed.endsWith(tld));
+  // Must have a valid TLD
+  const validTLDs = [".near", ".aurora", ".tg"];
+  const hasValidTLD = validTLDs.some(tld => trimmed.endsWith(tld));
 
-    if (!hasValidTLD) {
-      return "Named accounts must end with .near, .aurora, .tg";
-    }
+  if (!hasValidTLD) {
+    return "Named accounts must end with .near, .aurora, or .tg";
   }
 
   return null;

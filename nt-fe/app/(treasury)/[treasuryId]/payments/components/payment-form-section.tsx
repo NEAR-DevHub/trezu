@@ -119,8 +119,8 @@ export function PaymentFormSection({
                 invalid={false}
                 topRightContent={
                     showBalance &&
-                    tokenBalanceData &&
-                    selectedToken?.decimals ? (
+                        tokenBalanceData &&
+                        selectedToken?.decimals ? (
                         <div className="flex items-center gap-2">
                             <p className="text-xs text-muted-foreground">
                                 Balance:{" "}
@@ -185,17 +185,17 @@ export function PaymentFormSection({
                     className={cn(
                         "text-muted-foreground text-xs invisible",
                         estimatedUSDValue !== null &&
-                            estimatedUSDValue > 0 &&
-                            "visible",
+                        estimatedUSDValue > 0 &&
+                        "visible",
                     )}
                 >
                     {!isTokenLoading &&
-                    estimatedUSDValue !== null &&
-                    estimatedUSDValue > 0
+                        estimatedUSDValue !== null &&
+                        estimatedUSDValue > 0
                         ? `≈ ${formatCurrency(estimatedUSDValue)}`
                         : isTokenLoading
-                          ? "Loading price..."
-                          : "Invisible"}
+                            ? "Loading price..."
+                            : "Invisible"}
                 </p>
             </InputBlock>
 
