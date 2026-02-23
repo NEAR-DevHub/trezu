@@ -60,6 +60,7 @@ import { EmptyState } from "@/components/empty-state";
 import { AuthButton } from "@/components/auth-button";
 import { useRouter } from "next/navigation";
 import { Tooltip } from "@/components/tooltip";
+import { useProposalsInsufficientBalance } from "../hooks/use-proposals-insufficient-balance";
 
 const columnHelper = createColumnHelper<Proposal>();
 
@@ -332,6 +333,7 @@ export function ProposalsTable({
     const [voteInfo, setVoteInfo] = useState<{
         vote: "Approve" | "Reject" | "Remove";
         proposalIds: { proposalId: number; kind: ProposalPermissionKind }[];
+        insufficientBalanceIds?: number[];
     }>({ vote: "Approve", proposalIds: [] });
 
     // Notify parent when selection changes
@@ -340,6 +342,11 @@ export function ProposalsTable({
         const selectedCount = selectedRows.length;
         onSelectionChange?.(selectedCount);
     }, [selectedRows.length, onSelectionChange]);
+
+    const { insufficientBalanceIds } = useProposalsInsufficientBalance(
+        proposals,
+        treasuryId,
+    );
 
     if ((proposals.length === 0 && pageIndex === 0) || total === 0) {
         return withFilters ? (
@@ -386,6 +393,13 @@ export function ProposalsTable({
         .getFilteredSelectedRowModel()
         .rows.map((row) => row.original);
 
+    const selectedInsufficientIds = selectedProposals
+        .map((p) => p.id)
+        .filter((id) => insufficientBalanceIds.has(id));
+
+    const allSelectedHaveInsufficientBalance =
+        selectedCount > 0 && selectedInsufficientIds.length === selectedCount;
+
     const handleBulkVote = async (vote: "Approve" | "Reject") => {
         if (!treasuryId || !accountId) return;
 
@@ -395,6 +409,8 @@ export function ProposalsTable({
                 proposalId: proposal.id,
                 kind: getKindFromProposal(proposal.kind) ?? "call",
             })),
+            insufficientBalanceIds:
+                vote === "Approve" ? selectedInsufficientIds : undefined,
         });
         setIsVoteModalOpen(true);
     };
@@ -417,9 +433,16 @@ export function ProposalsTable({
                                 <X className="h-4 w-4" />
                                 Reject
                             </Button>
+
                             <Button
                                 variant="default"
+                                tooltipContent={
+                                    allSelectedHaveInsufficientBalance
+                                        ? "This request can't be approved because the treasury has insufficient balance."
+                                        : undefined
+                                }
                                 onClick={() => handleBulkVote("Approve")}
+                                disabled={allSelectedHaveInsufficientBalance}
                             >
                                 <Check className="h-4 w-4" />
                                 Approve
@@ -556,6 +579,7 @@ export function ProposalsTable({
                 }}
                 proposalIds={voteInfo.proposalIds}
                 vote={voteInfo.vote}
+                insufficientBalanceProposalIds={voteInfo.insufficientBalanceIds}
             />
             <DepositModal
                 isOpen={isDepositModalOpen}

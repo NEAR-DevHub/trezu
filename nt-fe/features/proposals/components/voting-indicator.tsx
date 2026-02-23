@@ -20,7 +20,9 @@ export function VotingIndicator({ proposal, policy }: VotingIndicatorProps) {
     const status = getProposalStatus(proposal, policy);
 
     const expired = status === "Expired";
-    const total = Object.values(proposal.votes).length;
+    const total = Object.values(proposal.votes).filter(
+        (vote) => vote === "Approve",
+    ).length;
 
     return (
         <div className="flex items-center gap-2">
