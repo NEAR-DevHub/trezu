@@ -412,7 +412,7 @@ pub enum BatchPaymentStatus {
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct BatchPayment {
-    pub recipient: AccountId,
+    pub recipient: String,
     pub amount: String,
     pub status: BatchPaymentStatus,
 }
@@ -1112,5 +1112,41 @@ impl ProposalType for BulkPayment {
 
     fn category_name() -> &'static str {
         "bulk-payment"
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Regression test: `BatchPayment.recipient` was previously typed as `AccountId`,
+    /// which caused deserialization to fail for Solana base58 addresses containing
+    /// uppercase letters (e.g. "6ai1qQ7iFZ56SMztJSSQo5JbQYpEWm3YbenCU1pqvuKQ").
+    ///
+    /// This test calls the real NEAR mainnet RPC to verify that
+    /// `fetch_batch_payment_list` correctly deserializes a batch that contains
+    /// Solana addresses.  The batch was submitted before the contract fix and its
+    /// data lives on mainnet, making it a perfect regression target.
+    #[tokio::test]
+    async fn test_fetch_batch_payment_list_with_solana_recipients() {
+        let network = NetworkConfig::mainnet();
+        let contract_id: AccountId = "bulkpayment.near".parse().unwrap();
+        // This batch contains two Solana recipients and was previously unreachable
+        // via the API due to the AccountId deserialization bug.
+        let batch_id = "41a7f386b9590fc65a483e7789c9b59446356dc569426b423d96bb9f8a648693";
+
+        let result = fetch_batch_payment_list(&network, batch_id, &contract_id).await;
+
+        let response = result.expect("fetch_batch_payment_list should succeed for Solana recipients");
+
+        assert_eq!(response.token_id, "nep141:sol.omft.near");
+        assert_eq!(response.payments.len(), 2);
+        for payment in &response.payments {
+            assert_eq!(
+                payment.recipient,
+                "6ai1qQ7iFZ56SMztJSSQo5JbQYpEWm3YbenCU1pqvuKQ",
+                "Solana base58 address must be returned verbatim"
+            );
+        }
     }
 }

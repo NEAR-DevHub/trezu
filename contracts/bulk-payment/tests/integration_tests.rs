@@ -2007,3 +2007,516 @@ async fn test_bulk_btc_intents_payment() -> Result<(), Box<dyn std::error::Error
 
     Ok(())
 }
+
+// ============================================================================
+// Shared setup helper for omft/intents-based tests
+// ============================================================================
+
+struct IntentsTestEnv {
+    sandbox: near_sandbox::Sandbox,
+    network_config: near_api::NetworkConfig,
+    omft_id: AccountId,
+    intents_id: AccountId,
+    dao_id: AccountId,
+    contract_id: AccountId,
+    contract_signer: std::sync::Arc<near_api::Signer>,
+    submitter_id: AccountId,
+    submitter_signer: std::sync::Arc<near_api::Signer>,
+}
+
+/// Sets up omft.near, intents.near, the bulk-payment contract, and a
+/// submitter account inside a fresh sandbox.  Token-specific setup
+/// (deploy_token, storage_deposit, ft_deposit) is left to each test.
+async fn setup_omft_intents_env(
+    num_records: u64,
+) -> Result<IntentsTestEnv, Box<dyn std::error::Error>> {
+    let make_genesis_account = |id: &str| near_sandbox::GenesisAccount {
+        account_id: id.parse().unwrap(),
+        balance: near_sdk::NearToken::from_near(1000),
+        private_key: near_sandbox::config::DEFAULT_GENESIS_ACCOUNT_PRIVATE_KEY.to_string(),
+        public_key: near_sandbox::config::DEFAULT_GENESIS_ACCOUNT_PUBLIC_KEY.to_string(),
+    };
+
+    let sandbox =
+        near_sandbox::Sandbox::start_sandbox_with_config(near_sandbox::config::SandboxConfig {
+            additional_accounts: vec![
+                make_genesis_account("omft.near"),
+                make_genesis_account("intents.near"),
+                make_genesis_account("dao.near"),
+            ],
+            ..Default::default()
+        })
+        .await?;
+
+    let network_config = near_api::NetworkConfig {
+        network_name: "sandbox".to_string(),
+        rpc_endpoints: vec![near_api::RPCEndpoint::new(
+            sandbox.rpc_addr.parse().unwrap(),
+        )],
+        linkdrop_account_id: None,
+        ..near_api::NetworkConfig::testnet()
+    };
+
+    let omft_id: AccountId = "omft.near".parse().unwrap();
+    let intents_id: AccountId = "intents.near".parse().unwrap();
+    let dao_id: AccountId = "dao.near".parse().unwrap();
+
+    // Import and initialise omft.near
+    import_contract(&sandbox, &network_config, &omft_id, "omft.near").await?;
+    near_api::Contract(omft_id.clone())
+        .call_function(
+            "new",
+            json!({
+                "super_admins": [omft_id.to_string()],
+                "admins": {},
+                "grantees": {
+                    "DAO": [omft_id.to_string()],
+                    "TokenDeployer": [omft_id.to_string()],
+                    "TokenDepositer": [omft_id.to_string()]
+                }
+            }),
+        )?
+        .transaction()
+        .gas(near_sdk::Gas::from_tgas(300))
+        .with_signer(omft_id.clone(), get_genesis_signer())
+        .send_to(&network_config)
+        .await?
+        .assert_success();
+
+    // Import and initialise intents.near
+    import_contract(&sandbox, &network_config, &intents_id, "intents.near").await?;
+    near_api::Contract(intents_id.clone())
+        .call_function(
+            "new",
+            json!({
+                "config": {
+                    "wnear_id": "wrap.near",
+                    "fees": { "fee": 100, "fee_collector": intents_id.to_string() },
+                    "roles": {
+                        "super_admins": [intents_id.to_string()],
+                        "admins": {},
+                        "grantees": {}
+                    }
+                }
+            }),
+        )?
+        .transaction()
+        .gas(near_sdk::Gas::from_tgas(300))
+        .with_signer(intents_id.clone(), get_genesis_signer())
+        .send_to(&network_config)
+        .await?
+        .assert_success();
+
+    // Deploy bulk-payment contract
+    let contract_wasm_path = cargo_near_build::build_with_cli(Default::default())?;
+    let contract_id: AccountId = format!(
+        "bulk-payment.{}",
+        near_sandbox::config::DEFAULT_GENESIS_ACCOUNT
+    )
+    .parse()
+    .unwrap();
+    let contract_signer =
+        create_account(&contract_id, NearToken::from_near(100), &network_config).await;
+    near_api::Contract::deploy(contract_id.clone())
+        .use_code(std::fs::read(contract_wasm_path)?)
+        .with_init_call("new", ())?
+        .with_signer(contract_signer.clone())
+        .send_to(&network_config)
+        .await?
+        .assert_success();
+
+    // Submitter account + storage credits
+    let submitter_id: AccountId = format!(
+        "submitter.{}",
+        near_sandbox::config::DEFAULT_GENESIS_ACCOUNT
+    )
+    .parse()
+    .unwrap();
+    let submitter_signer =
+        create_account(&submitter_id, NearToken::from_near(100), &network_config).await;
+    let storage_cost: NearToken = near_api::Contract(contract_id.clone())
+        .call_function(
+            "calculate_storage_cost",
+            json!({ "num_records": num_records }),
+        )?
+        .read_only()
+        .fetch_from(&network_config)
+        .await?
+        .data;
+    near_api::Contract(contract_id.clone())
+        .call_function("buy_storage", json!({ "num_records": num_records }))?
+        .transaction()
+        .deposit(storage_cost)
+        .with_signer(submitter_id.clone(), submitter_signer.clone())
+        .send_to(&network_config)
+        .await?
+        .assert_success();
+
+    Ok(IntentsTestEnv {
+        sandbox,
+        network_config,
+        omft_id,
+        intents_id,
+        dao_id,
+        contract_id,
+        contract_signer,
+        submitter_id,
+        submitter_signer,
+    })
+}
+
+/// Run the approval + payout loop and verify every payment ends up Paid with
+/// the correct recipient address preserved exactly as submitted.
+async fn approve_and_verify(
+    env: &IntentsTestEnv,
+    list_id: &str,
+    token_id: &str,
+    total_amount: u128,
+    expected_recipients: &[&str],
+) -> Result<(), Box<dyn std::error::Error>> {
+    // Approve via mt_transfer_call
+    near_api::Contract(env.intents_id.clone())
+        .call_function(
+            "mt_transfer_call",
+            json!({
+                "receiver_id": env.contract_id.to_string(),
+                "token_id": token_id,
+                "amount": total_amount.to_string(),
+                "msg": list_id
+            }),
+        )?
+        .transaction()
+        .deposit(NearToken::from_yoctonear(1))
+        .gas(near_sdk::Gas::from_tgas(300))
+        .with_signer(env.dao_id.clone(), get_genesis_signer())
+        .send_to(&env.network_config)
+        .await?
+        .assert_success();
+
+    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+
+    let list: serde_json::Value = near_api::Contract(env.contract_id.clone())
+        .call_function("view_list", json!({ "list_id": list_id }))?
+        .read_only()
+        .fetch_from(&env.network_config)
+        .await?
+        .data;
+    assert_eq!(list["status"], "Approved", "List must be Approved");
+    println!("✓ Payment list approved");
+
+    // Payout loop
+    loop {
+        let result = near_api::Contract(env.contract_id.clone())
+            .call_function("payout_batch", json!({ "list_id": list_id }))?
+            .transaction()
+            .gas(near_sdk::Gas::from_tgas(300))
+            .with_signer(env.contract_id.clone(), env.contract_signer.clone())
+            .send_to(&env.network_config)
+            .await?;
+        let remaining: u64 = result
+            .logs()
+            .iter()
+            .find(|l| l.contains("remaining"))
+            .and_then(|l| l.split_whitespace().rev().nth(1)?.parse().ok())
+            .unwrap_or(0);
+        result.assert_success();
+        if remaining == 0 {
+            break;
+        }
+        tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
+    }
+    println!("✓ All payouts processed");
+
+    // Verify recipients are preserved exactly (key assertion for this fix)
+    let list: serde_json::Value = near_api::Contract(env.contract_id.clone())
+        .call_function("view_list", json!({ "list_id": list_id }))?
+        .read_only()
+        .fetch_from(&env.network_config)
+        .await?
+        .data;
+    let payments_out = list["payments"].as_array().unwrap();
+    assert_eq!(payments_out.len(), expected_recipients.len());
+    for (i, payment) in payments_out.iter().enumerate() {
+        assert_eq!(
+            payment["recipient"].as_str().unwrap(),
+            expected_recipients[i],
+            "Recipient {} must be stored and returned verbatim",
+            i
+        );
+        assert!(
+            payment["status"].get("Paid").is_some(),
+            "Payment {} must be Paid",
+            i
+        );
+    }
+    println!(
+        "✓ All {} recipients verified verbatim after payout",
+        expected_recipients.len()
+    );
+
+    Ok(())
+}
+
+// ============================================================================
+// ETH intents payment test
+// Validates that EIP-55 mixed-case Ethereum addresses (e.g.
+// "0xD7A7486Dba405cBd55FA685Dce53E6E2B755485B") are accepted by
+// submit_list and returned correctly by view_list, both of which
+// previously failed with "invalid character" AccountId errors.
+// ============================================================================
+#[tokio::test]
+async fn test_bulk_eth_intents_payment() -> Result<(), Box<dyn std::error::Error>> {
+    println!("\n{}", "=".repeat(70));
+    println!("BULK ETH INTENTS PAYMENT TEST");
+    println!("{}", "=".repeat(70));
+
+    // EIP-55 checksummed Ethereum addresses — uppercase hex chars are what
+    // caused the original "invalid character 'D' at index 2" AccountId error.
+    let eth_addresses = vec![
+        "0xD7A7486Dba405cBd55FA685Dce53E6E2B755485B",
+        "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
+        "0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db",
+        "0xCA35b7d915458EF540aDe6068dFe2F44E8fa733c",
+        "0x14723A09ACff6D2A60DcdF7aA4AFf308FDDC160C",
+    ];
+    let amount_per_payment = 1_000u128; // wei
+    let total_amount = eth_addresses.len() as u128 * amount_per_payment;
+
+    let env = setup_omft_intents_env(eth_addresses.len() as u64).await?;
+    let _ = &env.sandbox; // keep sandbox alive
+
+    let mainnet_config = near_api::NetworkConfig::mainnet();
+    let eth_metadata: serde_json::Value = near_api::Contract("eth.omft.near".parse().unwrap())
+        .call_function("ft_metadata", json!({}))?
+        .read_only()
+        .fetch_from(&mainnet_config)
+        .await?
+        .data;
+
+    near_api::Contract(env.omft_id.clone())
+        .call_function(
+            "deploy_token",
+            json!({ "token": "eth", "metadata": eth_metadata }),
+        )?
+        .transaction()
+        .gas(near_sdk::Gas::from_tgas(300))
+        .deposit(NearToken::from_near(3))
+        .with_signer(env.omft_id.clone(), get_genesis_signer())
+        .send_to(&env.network_config)
+        .await?
+        .assert_success();
+    println!("✓ ETH token deployed on omft.near");
+
+    near_api::Contract("eth.omft.near".parse().unwrap())
+        .call_function(
+            "storage_deposit",
+            json!({ "account_id": env.intents_id.to_string(), "registration_only": true }),
+        )?
+        .transaction()
+        .gas(near_sdk::Gas::from_tgas(30))
+        .deposit(NearToken::from_yoctonear(1_500_000_000_000_000_000_000))
+        .with_signer(env.intents_id.clone(), get_genesis_signer())
+        .send_to(&env.network_config)
+        .await?
+        .assert_success();
+
+    // Bridge ETH into intents.near for the DAO
+    near_api::Contract(env.omft_id.clone())
+        .call_function(
+            "ft_deposit",
+            json!({
+                "owner_id": env.intents_id.to_string(),
+                "token": "eth",
+                "amount": total_amount.to_string(),
+                "msg": serde_json::to_string(&json!({ "receiver_id": env.dao_id.to_string() }))?,
+                "memo": format!("BRIDGED_FROM:{}", serde_json::to_string(&json!({
+                    "networkType": "eth", "chainId": "1",
+                    "txHash": "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+                }))?)
+            }),
+        )?
+        .transaction()
+        .gas(near_sdk::Gas::from_tgas(300))
+        .deposit(NearToken::from_yoctonear(1_250_000_000_000_000_000_000))
+        .with_signer(env.omft_id.clone(), get_genesis_signer())
+        .send_to(&env.network_config)
+        .await?
+        .assert_success();
+    println!("✓ DAO treasury holds {} wei via intents.near", total_amount);
+
+    // Submit — previously panicked with "invalid character 'D' at index 2"
+    let token_id = "nep141:eth.omft.near";
+    let list_id = test_list_id("eth_intents_payment_test");
+    let payments: Vec<serde_json::Value> = eth_addresses
+        .iter()
+        .map(|addr| json!({ "recipient": addr, "amount": amount_per_payment.to_string() }))
+        .collect();
+
+    near_api::Contract(env.contract_id.clone())
+        .call_function(
+            "submit_list",
+            json!({
+                "list_id": list_id,
+                "token_id": token_id,
+                "payments": payments
+            }),
+        )?
+        .transaction()
+        .with_signer(env.submitter_id.clone(), env.submitter_signer.clone())
+        .send_to(&env.network_config)
+        .await?
+        .assert_success();
+    println!("✓ submit_list accepted EIP-55 ETH addresses (no AccountId error)");
+
+    // view_list — previously failed with the same "invalid character" error
+    let list: serde_json::Value = near_api::Contract(env.contract_id.clone())
+        .call_function("view_list", json!({ "list_id": list_id }))?
+        .read_only()
+        .fetch_from(&env.network_config)
+        .await?
+        .data;
+    for (i, payment) in list["payments"].as_array().unwrap().iter().enumerate() {
+        assert_eq!(
+            payment["recipient"].as_str().unwrap(),
+            eth_addresses[i],
+            "view_list must return ETH address verbatim"
+        );
+    }
+    println!("✓ view_list returned ETH addresses verbatim (no deserialization error)");
+
+    approve_and_verify(&env, &list_id, token_id, total_amount, &eth_addresses).await
+}
+
+// ============================================================================
+// Solana intents payment test
+// Validates that base58 Solana addresses (e.g.
+// "6ai1qQ7iFZ56SMztJSSQo5JbQYpEWm3YbenCU1pqvuKQ") are accepted by
+// submit_list and returned correctly by view_list, both of which
+// previously failed with "invalid character 'Q'" AccountId errors.
+// ============================================================================
+#[tokio::test]
+async fn test_bulk_sol_intents_payment() -> Result<(), Box<dyn std::error::Error>> {
+    println!("\n{}", "=".repeat(70));
+    println!("BULK SOL INTENTS PAYMENT TEST");
+    println!("{}", "=".repeat(70));
+
+    // Real-looking base58 Solana addresses.  The uppercase letters (Q, B, Z,
+    // etc.) are what triggered "invalid character 'Q' at index 5" when
+    // recipient was typed as AccountId.
+    let sol_addresses = vec![
+        "6ai1qQ7iFZ56SMztJSSQo5JbQYpEWm3YbenCU1pqvuKQ", // from user's bug report
+        "7BgBvyjrZX1YKz4oh9mjb8ZScatkkwb8DzFx7LoiVkM3",
+        "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "So11111111111111111111111111111111111111112",
+        "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+    ];
+    let amount_per_payment = 1_000u128; // lamports
+    let total_amount = sol_addresses.len() as u128 * amount_per_payment;
+
+    let env = setup_omft_intents_env(sol_addresses.len() as u64).await?;
+    let _ = &env.sandbox;
+
+    let mainnet_config = near_api::NetworkConfig::mainnet();
+    let sol_metadata: serde_json::Value = near_api::Contract("sol.omft.near".parse().unwrap())
+        .call_function("ft_metadata", json!({}))?
+        .read_only()
+        .fetch_from(&mainnet_config)
+        .await?
+        .data;
+
+    near_api::Contract(env.omft_id.clone())
+        .call_function(
+            "deploy_token",
+            json!({ "token": "sol", "metadata": sol_metadata }),
+        )?
+        .transaction()
+        .gas(near_sdk::Gas::from_tgas(300))
+        .deposit(NearToken::from_near(3))
+        .with_signer(env.omft_id.clone(), get_genesis_signer())
+        .send_to(&env.network_config)
+        .await?
+        .assert_success();
+    println!("✓ SOL token deployed on omft.near");
+
+    near_api::Contract("sol.omft.near".parse().unwrap())
+        .call_function(
+            "storage_deposit",
+            json!({ "account_id": env.intents_id.to_string(), "registration_only": true }),
+        )?
+        .transaction()
+        .gas(near_sdk::Gas::from_tgas(30))
+        .deposit(NearToken::from_yoctonear(1_500_000_000_000_000_000_000))
+        .with_signer(env.intents_id.clone(), get_genesis_signer())
+        .send_to(&env.network_config)
+        .await?
+        .assert_success();
+
+    // Bridge SOL into intents.near for the DAO
+    near_api::Contract(env.omft_id.clone())
+        .call_function(
+            "ft_deposit",
+            json!({
+                "owner_id": env.intents_id.to_string(),
+                "token": "sol",
+                "amount": total_amount.to_string(),
+                "msg": serde_json::to_string(&json!({ "receiver_id": env.dao_id.to_string() }))?,
+                "memo": format!("BRIDGED_FROM:{}", serde_json::to_string(&json!({
+                    "networkType": "sol", "chainId": "mainnet-beta",
+                    "txHash": "5j7s6y3ghUiSGf1bKaqaFVYPNqFPFNn9KTDxvVmutbMX"
+                }))?)
+            }),
+        )?
+        .transaction()
+        .gas(near_sdk::Gas::from_tgas(300))
+        .deposit(NearToken::from_yoctonear(1_250_000_000_000_000_000_000))
+        .with_signer(env.omft_id.clone(), get_genesis_signer())
+        .send_to(&env.network_config)
+        .await?
+        .assert_success();
+    println!(
+        "✓ DAO treasury holds {} lamports via intents.near",
+        total_amount
+    );
+
+    // Submit — previously panicked with "invalid character 'Q' at index 5"
+    let token_id = "nep141:sol.omft.near";
+    let list_id = test_list_id("sol_intents_payment_test");
+    let payments: Vec<serde_json::Value> = sol_addresses
+        .iter()
+        .map(|addr| json!({ "recipient": addr, "amount": amount_per_payment.to_string() }))
+        .collect();
+
+    near_api::Contract(env.contract_id.clone())
+        .call_function(
+            "submit_list",
+            json!({
+                "list_id": list_id,
+                "token_id": token_id,
+                "payments": payments
+            }),
+        )?
+        .transaction()
+        .with_signer(env.submitter_id.clone(), env.submitter_signer.clone())
+        .send_to(&env.network_config)
+        .await?
+        .assert_success();
+    println!("✓ submit_list accepted base58 Solana addresses (no AccountId error)");
+
+    // view_list — previously failed with the same "invalid character" error
+    let list: serde_json::Value = near_api::Contract(env.contract_id.clone())
+        .call_function("view_list", json!({ "list_id": list_id }))?
+        .read_only()
+        .fetch_from(&env.network_config)
+        .await?
+        .data;
+    for (i, payment) in list["payments"].as_array().unwrap().iter().enumerate() {
+        assert_eq!(
+            payment["recipient"].as_str().unwrap(),
+            sol_addresses[i],
+            "view_list must return Solana address verbatim"
+        );
+    }
+    println!("✓ view_list returned Solana addresses verbatim (no deserialization error)");
+
+    approve_and_verify(&env, &list_id, token_id, total_amount, &sol_addresses).await
+}
