@@ -16,6 +16,7 @@ import { InfoDisplay, InfoItem } from "@/components/info-display";
 import { AmountSummary } from "@/components/amount-summary";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TokenAmountDisplay } from "@/components/token-display";
+import { getActivityLabel } from "../utils/history-utils";
 
 interface TransactionDetailsModalProps {
     activity: RecentActivity | null;
@@ -40,24 +41,21 @@ export function TransactionDetailsModal({
 
     const isReceived = parseFloat(activity.amount) > 0;
     const isSwap = !!activity.swap;
-    const transactionType = isSwap
-        ? "Swap"
-        : isReceived
-            ? "Payment received"
-            : "Payment sent";
+    const isFunctionCall = activity.actionKind === "FunctionCall";
+    const transactionType = getActivityLabel(activity);
 
     // Determine From/To based on receiver_id vs treasury account
     const fromAccount = isSwap
         ? "via NEAR Intents"
         : isReceived
-            ? activity.counterparty || activity.signerId || "unknown"
-            : treasuryId;
+          ? activity.counterparty || activity.signerId || "unknown"
+          : treasuryId;
 
     const toAccount = isSwap
         ? treasuryId
         : isReceived
-            ? treasuryId
-            : activity.receiverId || activity.counterparty || "unknown";
+          ? treasuryId
+          : activity.receiverId || activity.counterparty || "unknown";
 
     const formatAmount = (amount: string, decimals?: number) => {
         const num = parseFloat(amount);
@@ -65,7 +63,9 @@ export function TransactionDetailsModal({
         const sign = num >= 0 ? "+" : "-";
 
         const decimalPlaces =
-            absNum >= 1 ? 2 : Math.min(6, decimals || activity.tokenMetadata.decimals);
+            absNum >= 1
+                ? 2
+                : Math.min(6, decimals || activity.tokenMetadata.decimals);
 
         return `${sign}${absNum.toLocaleString(undefined, {
             minimumFractionDigits: 2,
@@ -105,28 +105,47 @@ export function TransactionDetailsModal({
                                 <p className="font-medium text-xs">Swap</p>
                                 <div className="flex items-center justify-center w-full">
                                     {/* Sent Token */}
-                                    {activity.swap.sentAmount && activity.swap.sentTokenMetadata ? (
+                                    {activity.swap.sentAmount &&
+                                    activity.swap.sentTokenMetadata ? (
                                         <div className="flex flex-col items-center gap-2 flex-1">
                                             <img
-                                                src={activity.swap.sentTokenMetadata.icon || ""}
-                                                alt={activity.swap.sentTokenMetadata.symbol}
+                                                src={
+                                                    activity.swap
+                                                        .sentTokenMetadata
+                                                        .icon || ""
+                                                }
+                                                alt={
+                                                    activity.swap
+                                                        .sentTokenMetadata
+                                                        .symbol
+                                                }
                                                 className="size-9 shrink-0 rounded-full"
                                             />
                                             <div className="flex flex-col gap-0.5">
                                                 <p className="text-lg font-semibold text-general-destructive-foreground">
-                                                    -{formatSwapAmount(
-                                                        activity.swap.sentAmount,
-                                                        activity.swap.sentTokenMetadata.decimals,
+                                                    -
+                                                    {formatSwapAmount(
+                                                        activity.swap
+                                                            .sentAmount,
+                                                        activity.swap
+                                                            .sentTokenMetadata
+                                                            .decimals,
                                                     )}{" "}
                                                     <span className="text-muted-foreground font-medium text-xs">
-                                                        {activity.swap.sentTokenMetadata.symbol}
+                                                        {
+                                                            activity.swap
+                                                                .sentTokenMetadata
+                                                                .symbol
+                                                        }
                                                     </span>
                                                 </p>
                                             </div>
                                         </div>
                                     ) : (
                                         <div className="flex-1">
-                                            <span className="text-muted-foreground">?</span>
+                                            <span className="text-muted-foreground">
+                                                ?
+                                            </span>
                                         </div>
                                     )}
 
@@ -136,18 +155,34 @@ export function TransactionDetailsModal({
                                     {/* Received Token */}
                                     <div className="flex flex-col items-center gap-2 flex-1">
                                         <img
-                                            src={activity.swap.receivedTokenMetadata.icon || ""}
-                                            alt={activity.swap.receivedTokenMetadata.symbol}
+                                            src={
+                                                activity.swap
+                                                    .receivedTokenMetadata
+                                                    .icon || ""
+                                            }
+                                            alt={
+                                                activity.swap
+                                                    .receivedTokenMetadata
+                                                    .symbol
+                                            }
                                             className="size-9 shrink-0 rounded-full"
                                         />
                                         <div className="flex flex-col gap-0.5">
                                             <p className="text-lg font-semibold text-general-success-foreground">
-                                                +{formatSwapAmount(
-                                                    activity.swap.receivedAmount,
-                                                    activity.swap.receivedTokenMetadata.decimals,
+                                                +
+                                                {formatSwapAmount(
+                                                    activity.swap
+                                                        .receivedAmount,
+                                                    activity.swap
+                                                        .receivedTokenMetadata
+                                                        .decimals,
                                                 )}{" "}
                                                 <span className="text-muted-foreground font-medium text-xs">
-                                                    {activity.swap.receivedTokenMetadata.symbol}
+                                                    {
+                                                        activity.swap
+                                                            .receivedTokenMetadata
+                                                            .symbol
+                                                    }
                                                 </span>
                                             </p>
                                         </div>
@@ -165,7 +200,8 @@ export function TransactionDetailsModal({
                                 decimals: activity.tokenMetadata.decimals,
                                 name: activity.tokenMetadata.name,
                                 icon: activity.tokenMetadata.icon || "",
-                                network: activity.tokenMetadata.network || "near",
+                                network:
+                                    activity.tokenMetadata.network || "near",
                             }}
                         />
                     )}
@@ -176,7 +212,7 @@ export function TransactionDetailsModal({
                         items={[
                             {
                                 label: "Type",
-                                value: isSwap ? "Swap" : isReceived ? "Received" : "Sent",
+                                value: transactionType,
                             },
                             {
                                 label: "Date",
@@ -189,84 +225,137 @@ export function TransactionDetailsModal({
                             },
                             ...(isSwap && activity.swap
                                 ? [
-                                    ...(activity.swap.sentAmount && activity.swap.sentTokenMetadata
-                                        ? [
-                                            {
-                                                label: "Sent",
-                                                value: (
-                                                    <TokenAmountDisplay
-                                                        icon={activity.swap.sentTokenMetadata.icon}
-                                                        symbol={activity.swap.sentTokenMetadata.symbol}
-                                                        amount={formatSwapAmount(
-                                                            activity.swap.sentAmount,
-                                                            activity.swap.sentTokenMetadata.decimals,
-                                                        )}
+                                      ...(activity.swap.sentAmount &&
+                                      activity.swap.sentTokenMetadata
+                                          ? [
+                                                {
+                                                    label: "Sent",
+                                                    value: (
+                                                        <TokenAmountDisplay
+                                                            icon={
+                                                                activity.swap
+                                                                    .sentTokenMetadata
+                                                                    .icon
+                                                            }
+                                                            symbol={
+                                                                activity.swap
+                                                                    .sentTokenMetadata
+                                                                    .symbol
+                                                            }
+                                                            amount={formatSwapAmount(
+                                                                activity.swap
+                                                                    .sentAmount,
+                                                                activity.swap
+                                                                    .sentTokenMetadata
+                                                                    .decimals,
+                                                            )}
+                                                        />
+                                                    ),
+                                                } as InfoItem,
+                                            ]
+                                          : []),
+                                      {
+                                          label: "Received",
+                                          value: (
+                                              <TokenAmountDisplay
+                                                  icon={
+                                                      activity.swap
+                                                          .receivedTokenMetadata
+                                                          .icon
+                                                  }
+                                                  symbol={
+                                                      activity.swap
+                                                          .receivedTokenMetadata
+                                                          .symbol
+                                                  }
+                                                  amount={formatSwapAmount(
+                                                      activity.swap
+                                                          .receivedAmount,
+                                                      activity.swap
+                                                          .receivedTokenMetadata
+                                                          .decimals,
+                                                  )}
+                                              />
+                                          ),
+                                      } as InfoItem,
+                                  ]
+                                : isFunctionCall && activity.methodName
+                                  ? [
+                                        {
+                                            label: "Method",
+                                            value: activity.methodName,
+                                        } as InfoItem,
+                                        {
+                                            label: "Contract",
+                                            value: (
+                                                <div className="flex items-center gap-1">
+                                                    <span className="max-w-[300px] truncate">
+                                                        {activity.receiverId ||
+                                                            activity.counterparty ||
+                                                            "unknown"}
+                                                    </span>
+                                                    <CopyButton
+                                                        text={
+                                                            activity.receiverId ||
+                                                            activity.counterparty ||
+                                                            ""
+                                                        }
+                                                        variant="ghost"
+                                                        size="icon-sm"
+                                                        tooltipContent="Copy Address"
+                                                        toastMessage="Address copied to clipboard"
                                                     />
-                                                ),
-                                            } as InfoItem,
-                                        ]
-                                        : []),
-                                    {
-                                        label: "Received",
-                                        value: (
-                                            <TokenAmountDisplay
-                                                icon={activity.swap.receivedTokenMetadata.icon}
-                                                symbol={activity.swap.receivedTokenMetadata.symbol}
-                                                amount={formatSwapAmount(
-                                                    activity.swap.receivedAmount,
-                                                    activity.swap.receivedTokenMetadata.decimals,
-                                                )}
-                                            />
-                                        ),
-                                    } as InfoItem,
-                                ]
-                                : [
-                                    {
-                                        label: "From",
-                                        value: (
-                                            <div className="flex items-center gap-1">
-                                                <span className="max-w-[300px] truncate">
-                                                    {fromAccount}
-                                                </span>
-                                                <CopyButton
-                                                    text={fromAccount}
-                                                    variant="ghost"
-                                                    size="icon-sm"
-                                                    tooltipContent="Copy Address"
-                                                    toastMessage="Address copied to clipboard"
-                                                />
-                                            </div>
-                                        ),
-                                    } as InfoItem,
-                                    {
-                                        label: "To",
-                                        value: (
-                                            <div className="flex items-center gap-1">
-                                                <span className="max-w-[300px] truncate">
-                                                    {toAccount}
-                                                </span>
-                                                <CopyButton
-                                                    text={toAccount}
-                                                    toastMessage="Address copied to clipboard"
-                                                    tooltipContent="Copy Address"
-                                                    variant="ghost"
-                                                    size="icon-sm"
-                                                />
-                                            </div>
-                                        ),
-                                    } as InfoItem,
-                                ]),
+                                                </div>
+                                            ),
+                                        } as InfoItem,
+                                    ]
+                                  : [
+                                        {
+                                            label: "From",
+                                            value: (
+                                                <div className="flex items-center gap-1">
+                                                    <span className="max-w-[300px] truncate">
+                                                        {fromAccount}
+                                                    </span>
+                                                    <CopyButton
+                                                        text={fromAccount}
+                                                        variant="ghost"
+                                                        size="icon-sm"
+                                                        tooltipContent="Copy Address"
+                                                        toastMessage="Address copied to clipboard"
+                                                    />
+                                                </div>
+                                            ),
+                                        } as InfoItem,
+                                        {
+                                            label: "To",
+                                            value: (
+                                                <div className="flex items-center gap-1">
+                                                    <span className="max-w-[300px] truncate">
+                                                        {toAccount}
+                                                    </span>
+                                                    <CopyButton
+                                                        text={toAccount}
+                                                        toastMessage="Address copied to clipboard"
+                                                        tooltipContent="Copy Address"
+                                                        variant="ghost"
+                                                        size="icon-sm"
+                                                    />
+                                                </div>
+                                            ),
+                                        } as InfoItem,
+                                    ]),
                             ...(isLoadingTransaction
                                 ? [
-                                    {
-                                        label: "Transaction",
-                                        value: (
-                                            <Skeleton className="h-5 w-[200px]" />
-                                        ),
-                                    } as InfoItem,
-                                ]
+                                      {
+                                          label: "Transaction",
+                                          value: (
+                                              <Skeleton className="h-5 w-[200px]" />
+                                          ),
+                                      } as InfoItem,
+                                  ]
                                 : transactionHash
-                                    ? [
+                                  ? [
                                         {
                                             label: "Transaction",
                                             value: (
@@ -298,7 +387,7 @@ export function TransactionDetailsModal({
                                             ),
                                         } as InfoItem,
                                     ]
-                                    : []),
+                                  : []),
                         ]}
                     />
                 </div>

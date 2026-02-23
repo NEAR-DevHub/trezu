@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT block_height, token_id as \"token_id?\"\n            FROM balance_changes\n            WHERE account_id = $1\n              AND action_kind IS NULL\n              AND counterparty NOT IN ('SNAPSHOT', 'STAKING_SNAPSHOT', 'STAKING_REWARD')\n              AND amount != 0\n            ORDER BY block_height DESC\n            LIMIT 1\n            OFFSET $2\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "block_height",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "token_id?",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      true
+    ]
+  },
+  "hash": "8d92333c77a22e1bf4cdea00c10686ea48bfa1f4a0e3587748545a0a204e4442"
+}

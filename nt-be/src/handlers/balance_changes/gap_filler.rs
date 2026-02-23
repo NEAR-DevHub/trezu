@@ -1329,9 +1329,9 @@ pub async fn insert_snapshot_record(
 
     sqlx::query!(
         r#"
-        INSERT INTO balance_changes 
-        (account_id, token_id, block_height, block_timestamp, block_time, amount, balance_before, balance_after, transaction_hashes, receipt_id, signer_id, receiver_id, counterparty, actions, raw_data)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        INSERT INTO balance_changes
+        (account_id, token_id, block_height, block_timestamp, block_time, amount, balance_before, balance_after, transaction_hashes, receipt_id, signer_id, receiver_id, counterparty, actions, raw_data, action_kind, method_name)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
         ON CONFLICT (account_id, block_height, token_id) DO NOTHING
         "#,
         account_id,
@@ -1348,7 +1348,9 @@ pub async fn insert_snapshot_record(
         None::<String>,
         "SNAPSHOT",
         serde_json::json!({}),
-        serde_json::json!({})
+        serde_json::json!({}),
+        None::<String>,
+        None::<String>
     )
     .execute(pool)
     .await?;
@@ -1414,9 +1416,9 @@ pub async fn insert_unknown_counterparty_record(
 
     sqlx::query!(
         r#"
-        INSERT INTO balance_changes 
-        (account_id, token_id, block_height, block_timestamp, block_time, amount, balance_before, balance_after, transaction_hashes, receipt_id, signer_id, receiver_id, counterparty, actions, raw_data)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        INSERT INTO balance_changes
+        (account_id, token_id, block_height, block_timestamp, block_time, amount, balance_before, balance_after, transaction_hashes, receipt_id, signer_id, receiver_id, counterparty, actions, raw_data, action_kind, method_name)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
         ON CONFLICT (account_id, block_height, token_id) DO NOTHING
         "#,
         account_id,
@@ -1433,7 +1435,9 @@ pub async fn insert_unknown_counterparty_record(
         None::<String>,         // No receiver known
         "UNKNOWN",              // Special counterparty value
         serde_json::json!({}),  // No actions available
-        serde_json::json!({})   // No raw data available
+        serde_json::json!({}),  // No raw data available
+        None::<String>,         // No action_kind available
+        None::<String>          // No method_name available
     )
     .execute(pool)
     .await?;
@@ -1513,8 +1517,8 @@ pub async fn insert_balance_change_with_hint(
     sqlx::query!(
         r#"
         INSERT INTO balance_changes
-        (account_id, token_id, block_height, block_timestamp, block_time, amount, balance_before, balance_after, transaction_hashes, receipt_id, signer_id, receiver_id, counterparty, actions, raw_data)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        (account_id, token_id, block_height, block_timestamp, block_time, amount, balance_before, balance_after, transaction_hashes, receipt_id, signer_id, receiver_id, counterparty, actions, raw_data, action_kind, method_name)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
         ON CONFLICT (account_id, block_height, token_id) DO NOTHING
         "#,
         account_id,
@@ -1531,7 +1535,9 @@ pub async fn insert_balance_change_with_hint(
         None::<String>,         // Receiver not available from hint
         counterparty,
         serde_json::json!({}),
-        serde_json::json!({"source": "transfer_hint", "hint_block": hint.block_height})
+        serde_json::json!({"source": "transfer_hint", "hint_block": hint.block_height}),
+        None::<String>,         // action_kind resolved later via backfill
+        None::<String>          // method_name resolved later via backfill
     )
     .execute(pool)
     .await?;
@@ -1887,6 +1893,104 @@ pub async fn resolve_missing_tx_hashes(
     Ok(resolved)
 }
 
+/// Resolve missing action_kind/method_name on existing balance_changes records.
+///
+/// Processes one record at a time so progress is committed after each update
+/// and the process can be safely interrupted and resumed.
+///
+/// For each record, fetches the block's receipts for the account to determine
+/// the receipt-level action (FunctionCall, Transfer, etc.).
+///
+/// Returns the number of records updated.
+pub async fn resolve_missing_action_kind(
+    pool: &PgPool,
+    network: &NetworkConfig,
+    account_id: &str,
+    limit: usize,
+) -> Result<usize, GapFillerError> {
+    let mut resolved = 0usize;
+    let mut attempted = 0usize;
+
+    loop {
+        if attempted >= limit {
+            break;
+        }
+        // Fetch one record at a time so each update is committed before the next
+        let record = sqlx::query!(
+            r#"
+            SELECT block_height, token_id as "token_id?"
+            FROM balance_changes
+            WHERE account_id = $1
+              AND action_kind IS NULL
+              AND counterparty NOT IN ('SNAPSHOT', 'STAKING_SNAPSHOT', 'STAKING_REWARD')
+              AND amount != 0
+            ORDER BY block_height DESC
+            LIMIT 1
+            OFFSET $2
+            "#,
+            account_id,
+            attempted as i64,
+        )
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| -> GapFillerError { e.to_string().into() })?;
+
+        let record = match record {
+            Some(r) => r,
+            None => break, // No more records to resolve
+        };
+
+        let block_height = record.block_height as u64;
+        let token_id = record.token_id.as_deref().unwrap_or("");
+
+        attempted += 1;
+
+        // Try to get receipts at this block for the account
+        let (action_kind, method_name) =
+            match block_info::get_block_data(network, account_id, block_height).await {
+                Ok(block_data) => extract_action_from_receipts(&block_data.receipts),
+                Err(e) => {
+                    log::debug!(
+                        "Could not fetch block data for action_kind at block {}: {}",
+                        block_height,
+                        e
+                    );
+                    continue;
+                }
+            };
+
+        if let Some(ref kind) = action_kind {
+            sqlx::query!(
+                r#"
+                UPDATE balance_changes
+                SET action_kind = $1, method_name = $2
+                WHERE account_id = $3 AND block_height = $4 AND token_id = $5
+                "#,
+                kind,
+                method_name,
+                account_id,
+                record.block_height,
+                record.token_id,
+            )
+            .execute(pool)
+            .await
+            .map_err(|e| -> GapFillerError { e.to_string().into() })?;
+
+            resolved += 1;
+            log::info!(
+                "Resolved action_kind for {}/{} at block {}: {}/{}",
+                account_id,
+                token_id,
+                block_height,
+                kind,
+                method_name.as_deref().unwrap_or("-")
+            );
+        }
+    }
+
+    Ok(resolved)
+}
+
 /// Check whether any receipt outcome log in a transaction mentions the given account ID.
 ///
 /// Used to filter intents.near candidate transaction hashes: since intents.near is a
@@ -1919,6 +2023,40 @@ fn tx_outcome_logs_mention_account(
     }
 
     false
+}
+
+/// Extract (action_kind, method_name) from a list of receipts at a specific block.
+///
+/// Looks at the first receipt's first action to determine the action type.
+/// Returns ("FunctionCall", Some(method_name)) for function calls,
+/// ("Transfer", None) for transfers, etc.
+fn extract_action_from_receipts(
+    receipts: &[near_primitives::views::ReceiptView],
+) -> (Option<String>, Option<String>) {
+    use near_primitives::views::{ActionView, ReceiptEnumView};
+
+    for receipt in receipts {
+        if let ReceiptEnumView::Action { actions, .. } = &receipt.receipt
+            && let Some(action) = actions.first()
+        {
+            let (kind, method) = match action {
+                ActionView::FunctionCall { method_name, .. } => {
+                    ("FunctionCall".to_string(), Some(method_name.clone()))
+                }
+                ActionView::Transfer { .. } => ("Transfer".to_string(), None),
+                ActionView::DeployContract { .. } => ("DeployContract".to_string(), None),
+                ActionView::CreateAccount => ("CreateAccount".to_string(), None),
+                ActionView::DeleteAccount { .. } => ("DeleteAccount".to_string(), None),
+                ActionView::AddKey { .. } => ("AddKey".to_string(), None),
+                ActionView::DeleteKey { .. } => ("DeleteKey".to_string(), None),
+                ActionView::Stake { .. } => ("Stake".to_string(), None),
+                ActionView::Delegate { .. } => ("Delegate".to_string(), None),
+                _ => ("Other".to_string(), None),
+            };
+            return (Some(kind), method);
+        }
+    }
+    (None, None)
 }
 
 /// Helper to insert a balance change record at a specific block
@@ -2026,59 +2164,77 @@ pub async fn insert_balance_change_record(
 
     // Get receipt data for additional context (if available)
     // Only use this if we don't have signer/receiver from transaction
-    let (final_signer, final_receiver, final_counterparty, receipt_ids) = if signer_id.is_some() {
-        // We have transaction info — get receipt_ids from account's receipts
-        let block_data = block_info::get_block_data(network, account_id, block_height)
-            .await
-            .map_err(|e| -> GapFillerError { e.to_string().into() })?;
-        let receipt_ids: Vec<String> = block_data
-            .receipts
-            .iter()
-            .map(|r| r.receipt_id.to_string())
-            .collect();
-        (signer_id, receiver_id, counterparty, receipt_ids)
-    } else {
-        let block_data = block_info::get_block_data(network, account_id, block_height)
-            .await
-            .map_err(|e| -> GapFillerError { e.to_string().into() })?;
-
-        if let Some(receipt) = block_data.receipts.first() {
+    let (final_signer, final_receiver, final_counterparty, receipt_ids, action_kind, method_name) =
+        if signer_id.is_some() {
+            // We have transaction info — get receipt_ids from account's receipts
+            let block_data = block_info::get_block_data(network, account_id, block_height)
+                .await
+                .map_err(|e| -> GapFillerError { e.to_string().into() })?;
             let receipt_ids: Vec<String> = block_data
                 .receipts
                 .iter()
                 .map(|r| r.receipt_id.to_string())
                 .collect();
+            let (action_kind, method_name) = extract_action_from_receipts(&block_data.receipts);
             (
-                Some(receipt.predecessor_id.to_string()),
-                Some(receipt.receiver_id.to_string()),
-                receipt.predecessor_id.to_string(),
+                signer_id,
+                receiver_id,
+                counterparty,
                 receipt_ids,
+                action_kind,
+                method_name,
             )
-        } else if token_id != "near" && !token_id.starts_with("intents.near:") {
-            // For FT tokens, receipts execute on the token contract, not the monitored account.
-            // Look for ft_transfer/ft_transfer_call receipts on the token contract.
-            // Skip intents tokens — they use a different swap mechanism and their token IDs
-            // are not valid NEAR account IDs.
-            resolve_ft_counterparty_from_token_contract(network, account_id, token_id, block_height)
-                .await?
-        } else if token_id.starts_with("intents.near:") {
-            // Intents tokens use a different swap mechanism — counterparty is resolved
-            // later by the swap detector. Use "UNKNOWN" as placeholder.
-            log::debug!(
-                "Intents token {} at block {} — counterparty will be resolved by swap detector",
-                token_id,
-                block_height
-            );
-            (None, None, "UNKNOWN".to_string(), vec![])
         } else {
-            // If no receipt found for NEAR token, we cannot determine counterparty
-            return Err(format!(
-                "No receipt found for block {} - cannot determine counterparty",
-                block_height
-            )
-            .into());
-        }
-    };
+            let block_data = block_info::get_block_data(network, account_id, block_height)
+                .await
+                .map_err(|e| -> GapFillerError { e.to_string().into() })?;
+
+            if let Some(receipt) = block_data.receipts.first() {
+                let receipt_ids: Vec<String> = block_data
+                    .receipts
+                    .iter()
+                    .map(|r| r.receipt_id.to_string())
+                    .collect();
+                let (action_kind, method_name) = extract_action_from_receipts(&block_data.receipts);
+                (
+                    Some(receipt.predecessor_id.to_string()),
+                    Some(receipt.receiver_id.to_string()),
+                    receipt.predecessor_id.to_string(),
+                    receipt_ids,
+                    action_kind,
+                    method_name,
+                )
+            } else if token_id != "near" && !token_id.starts_with("intents.near:") {
+                // For FT tokens, receipts execute on the token contract, not the monitored account.
+                // Look for ft_transfer/ft_transfer_call receipts on the token contract.
+                // Skip intents tokens — they use a different swap mechanism and their token IDs
+                // are not valid NEAR account IDs.
+                let (s, r, c, rids) = resolve_ft_counterparty_from_token_contract(
+                    network,
+                    account_id,
+                    token_id,
+                    block_height,
+                )
+                .await?;
+                (s, r, c, rids, None, None)
+            } else if token_id.starts_with("intents.near:") {
+                // Intents tokens use a different swap mechanism — counterparty is resolved
+                // later by the swap detector. Use "UNKNOWN" as placeholder.
+                log::debug!(
+                    "Intents token {} at block {} — counterparty will be resolved by swap detector",
+                    token_id,
+                    block_height
+                );
+                (None, None, "UNKNOWN".to_string(), vec![], None, None)
+            } else {
+                // If no receipt found for NEAR token, we cannot determine counterparty
+                return Err(format!(
+                    "No receipt found for block {} - cannot determine counterparty",
+                    block_height
+                )
+                .into());
+            }
+        };
 
     // ── Resolve receipt → transaction hash ──────────────────────────────────
     if transaction_hashes.is_empty() && !receipt_ids.is_empty() {
@@ -2184,11 +2340,14 @@ pub async fn insert_balance_change_record(
     // Insert the record
     let block_time = block_timestamp_to_datetime(block_timestamp);
 
+    let action_kind_log = action_kind.as_deref().unwrap_or("-").to_string();
+    let method_name_log = method_name.as_deref().unwrap_or("-").to_string();
+
     sqlx::query!(
         r#"
         INSERT INTO balance_changes
-        (account_id, token_id, block_height, block_timestamp, block_time, amount, balance_before, balance_after, transaction_hashes, receipt_id, signer_id, receiver_id, counterparty, actions, raw_data)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        (account_id, token_id, block_height, block_timestamp, block_time, amount, balance_before, balance_after, transaction_hashes, receipt_id, signer_id, receiver_id, counterparty, actions, raw_data, action_kind, method_name)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
         ON CONFLICT (account_id, block_height, token_id) DO NOTHING
         "#,
         account_id,
@@ -2205,20 +2364,24 @@ pub async fn insert_balance_change_record(
         final_receiver,
         final_counterparty,
         serde_json::json!({}),
-        raw_data
+        raw_data,
+        action_kind,
+        method_name
     )
     .execute(pool)
     .await?;
 
     log::info!(
-        "Inserted balance change at block {} for {}/{}: {} -> {} (tx_hashes: {:?}, receipts: {})",
+        "Inserted balance change at block {} for {}/{}: {} -> {} (tx_hashes: {:?}, receipts: {}, action: {}/{})",
         block_height,
         account_id,
         token_id,
         balance_before,
         balance_after,
         transaction_hashes,
-        receipt_ids.len()
+        receipt_ids.len(),
+        action_kind_log,
+        method_name_log
     );
 
     Ok(Some(FilledGap {

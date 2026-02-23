@@ -283,6 +283,8 @@ export interface RecentActivity {
     receiptIds: string[];
     valueUsd?: number;
     swap?: SwapInfo;
+    actionKind?: string | null;
+    methodName?: string | null;
 }
 
 export interface RecentActivityResponse {
@@ -631,9 +633,7 @@ export async function getProfile(
     }
 }
 
-export type PaymentStatus =
-    | "Pending"
-    | { Paid: { block_height: number } };
+export type PaymentStatus = "Pending" | { Paid: { block_height: number } };
 
 export interface BatchPayment {
     recipient: string;
