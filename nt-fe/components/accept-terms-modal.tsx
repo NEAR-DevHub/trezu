@@ -53,54 +53,54 @@ export function AcceptTermsModal({ open }: AcceptTermsModalProps) {
 
                 <DialogDescription asChild>
                     <div className="space-y-3 text-sm text-muted-foreground">
-                        <p className="font-medium text-foreground">
-                            Your Privacy at Trezu
-                        </p>
-                        <p>
-                            Trezu is a non-custodial interface. We prioritize
-                            your privacy while ensuring the platform stays
-                            secure and functional.
-                        </p>
-                        <ul className="space-y-2">
+                        <ul className="space-y-4">
                             <li>
-                                <span className="font-medium text-foreground">
-                                    Minimal Data:
-                                </span>{" "}
+                                <p className="text-foreground mb-1">
+                                    Your Privacy at Trezu
+                                </p>
+                                Trezu is a non-custodial interface. We
+                                prioritize your privacy while ensuring the
+                                platform stays secure and functional.
+                            </li>
+                            <li>
+                                <p className="text-foreground mb-1">
+                                    Minimal Data
+                                </p>
                                 We collect limited information, such as public
                                 wallet addresses, IP addresses, and usage
                                 analytics, to operate and improve the Interface.
                             </li>
                             <li>
-                                <span className="font-medium text-foreground">
-                                    No Custody:
-                                </span>{" "}
+                                <p className="text-foreground mb-1">
+                                    No Custody
+                                </p>
                                 We never have access to your private keys,
                                 recovery phrases, or digital assets.
                             </li>
                             <li>
-                                <span className="font-medium text-foreground">
-                                    Public Records:
-                                </span>{" "}
+                                <p className="text-foreground mb-1">
+                                    Public Records
+                                </p>
                                 Remember that all blockchain transactions are
                                 inherently public and are not controlled by us.
                             </li>
                             <li>
-                                <span className="font-medium text-foreground">
-                                    Your Responsibility:
-                                </span>{" "}
+                                <p className="text-foreground mb-1">
+                                    Your Responsibility
+                                </p>
                                 You are solely responsible for monitoring your
                                 wallet activity and securing your credentials.
                             </li>
                             <li>
-                                <span className="font-medium text-foreground">
-                                    Future Updates:
-                                </span>{" "}
+                                <p className="text-foreground mb-1">
+                                    Future Updates
+                                </p>
                                 If you opt-in to future notifications (like
                                 email or Telegram), we will only use that data
                                 to keep you informed.
                             </li>
                         </ul>
-                        <p>
+                        <p className="text-foreground">
                             By connecting your wallet, you acknowledge that you
                             have read and agree to our{" "}
                             <Link
@@ -137,7 +137,7 @@ export function AcceptTermsModal({ open }: AcceptTermsModalProps) {
                     />
                     <Label
                         htmlFor="terms"
-                        className="text-sm inline-block leading-relaxed cursor-pointer"
+                        className="text-sm text-foreground font-normal inline-block leading-relaxed cursor-pointer"
                     >
                         I have read and agree to the{" "}
                         <Link
