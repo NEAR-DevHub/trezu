@@ -221,7 +221,7 @@ fn get_token_decimals(token_id: &str) -> Option<u8> {
             let contract = base_token
                 .defuse_asset_id
                 .split(':')
-                .last()
+                .next_back()
                 .unwrap_or("");
             if contract == normalized {
                 return Some(base_token.decimals);
