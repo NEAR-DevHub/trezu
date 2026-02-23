@@ -85,7 +85,7 @@ export function InfoBox() {
     }
 
     return (
-        <div className="bg-general-tertiary rounded-lg p-5 flex flex-col w-full h-fit gap-5 cursor-pointer hover:bg-general-tertiary/80 transition-colors">
+        <div className="bg-general-tertiary rounded-lg p-5 flex flex-col w-full h-fit gap-5 cursor-pointer">
             <div className="flex flex-col gap-0.5">
                 <div className="flex items-center justify-between">
                     <h1 className="font-semibold">Get more from Trezu</h1>

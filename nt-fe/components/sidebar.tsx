@@ -173,7 +173,8 @@ export function Sidebar({ onClose }: SidebarProps) {
             <div
                 className={cn(
                     "fixed left-0 top-0 z-40 flex gap-2 h-dvh lg:h-screen flex-col bg-card border-r lg:static lg:z-auto overflow-hidden max-lg:pt-[env(safe-area-inset-top)]",
-                    hasInitialized && "transition-all duration-300",
+                    hasInitialized &&
+                        "transition-[width,transform] duration-300",
                     isMobile
                         ? isOpen
                             ? "w-56 translate-x-0"
