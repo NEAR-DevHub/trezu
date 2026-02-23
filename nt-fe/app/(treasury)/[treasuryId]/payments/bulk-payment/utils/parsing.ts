@@ -5,6 +5,8 @@ import {
     isValidNearAddressFormat,
 } from "@/lib/near-validation";
 import { getBatchStorageDepositIsRegistered } from "@/lib/api";
+import { isNearToken, getBlockchainType } from "@/lib/blockchain-utils";
+import { validateAddress } from "@/lib/address-validation";
 import type { BulkPaymentData } from "../schemas";
 import type { TreasuryAsset } from "@/lib/api";
 
@@ -165,18 +167,26 @@ export function parseAmount(amountStr: string): number {
 }
 
 /**
- * Validate recipient address format
+ * Validate recipient address format based on blockchain
  */
-function validateRecipientAddress(address: string): string | null {
+function validateRecipientAddress(
+    address: string,
+    blockchainType: string = "near"
+): string | null {
     if (!address || address.trim() === "") {
         return "Recipient address is required";
     }
 
-    if (!isValidNearAddressFormat(address)) {
-        return "Invalid recipient address.";
+    // For NEAR blockchain, use NEAR-specific validation
+    if (blockchainType === "near") {
+        if (!isValidNearAddressFormat(address)) {
+            return "Invalid NEAR account format";
+        }
+        return null;
     }
 
-    return null;
+    const result = validateAddress(address, blockchainType as any);
+    return result.error || null;
 }
 
 /**
@@ -187,6 +197,7 @@ export function parsePaymentData(
     recipientIdx: number,
     amountIdx: number,
     startRow: number,
+    blockchain: string = "near",
 ): {
     payments: BulkPaymentData[];
     errors: Array<{ row: number; message: string }>;
@@ -244,7 +255,7 @@ export function parsePaymentData(
             continue;
         }
 
-        const validationError = validateRecipientAddress(recipient);
+        const validationError = validateRecipientAddress(recipient, blockchain);
 
         payments.push({
             recipient,
@@ -272,9 +283,8 @@ export function parsePaymentData(
             errors: [
                 {
                     row: 0,
-                    message: `Maximum limit of ${MAX_RECIPIENTS_PER_BULK_PAYMENT} transactions per request. Remove ${
-                        payments.length - MAX_RECIPIENTS_PER_BULK_PAYMENT
-                    } recipients to proceed.`,
+                    message: `Maximum limit of ${MAX_RECIPIENTS_PER_BULK_PAYMENT} transactions per request. Remove ${payments.length - MAX_RECIPIENTS_PER_BULK_PAYMENT
+                        } recipients to proceed.`,
                 },
             ],
         };
@@ -289,6 +299,7 @@ export function parsePaymentData(
 function parseAndValidateData(
     input: string,
     errorPrefix: string,
+    blockchain: string = "near",
 ): {
     payments: BulkPaymentData[];
     errors: Array<{ row: number; message: string }>;
@@ -324,8 +335,8 @@ function parseAndValidateData(
         // Extract data rows (skip header if present)
         const dataRows = rows.slice(startRow);
 
-        // Use unified parser
-        return parsePaymentData(dataRows, recipientIdx, amountIdx, startRow);
+        // Use unified parser with blockchain parameter
+        return parsePaymentData(dataRows, recipientIdx, amountIdx, startRow, blockchain);
     } catch (error) {
         return {
             payments: [],
@@ -345,23 +356,35 @@ function parseAndValidateData(
 /**
  * Parse and validate CSV data
  */
-export function parseAndValidateCsv(csvData: string): {
+export function parseAndValidateCsv(
+    csvData: string,
+    selectedToken?: { network?: string; residency?: string }
+): {
     payments: BulkPaymentData[];
     errors: Array<{ row: number; message: string }>;
 } {
-    return parseAndValidateData(csvData, "CSV data");
+    const blockchain = selectedToken?.network
+        ? getBlockchainType(selectedToken.network)
+        : "near";
+    return parseAndValidateData(csvData, "CSV data", blockchain);
 }
 
 /**
  * Parse and validate paste data
  */
-export function parseAndValidatePasteData(pasteData: string): {
+export function parseAndValidatePasteData(
+    pasteData: string,
+    selectedToken?: { network?: string; residency?: string }
+): {
     payments: BulkPaymentData[];
     errors: Array<{ row: number; message: string }>;
 } {
     // Normalize line breaks
     const normalizedInput = pasteData.replace(/\\n/g, "\n").trim();
-    return parseAndValidateData(normalizedInput, "paste data");
+    const blockchain = selectedToken?.network
+        ? getBlockchainType(selectedToken.network)
+        : "near";
+    return parseAndValidateData(normalizedInput, "paste data", blockchain);
 }
 
 /**
@@ -380,73 +403,86 @@ export function needsStorageDepositCheck(token: {
  */
 export async function validateAccountsAndStorage(
     payments: BulkPaymentData[],
-    selectedToken: { address: string; residency?: string },
+    selectedToken: { address: string; residency?: string; network?: string },
 ): Promise<BulkPaymentData[]> {
-    // Step 1: Validate account existence
-    const accountValidatedPayments = await Promise.all(
-        payments.map(async (payment) => {
-            try {
-                const validationError = await validateNearAddress(
-                    payment.recipient,
-                );
+    const isNear = isNearToken(selectedToken.network, selectedToken.residency);
 
-                return {
-                    ...payment,
-                    validationError: validationError || undefined,
-                };
-            } catch (error) {
-                console.error(`Error validating ${payment.recipient}:`, error);
-                return {
-                    ...payment,
-                    validationError: "Failed to validate account",
-                };
-            }
-        }),
-    );
+    // Step 1: Validate account existence (only for NEAR)
+    if (isNear) {
+        const accountValidatedPayments = await Promise.all(
+            payments.map(async (payment) => {
+                // Skip if already has validation error
+                if (payment.validationError) {
+                    return payment;
+                }
 
-    // Step 2: Check storage registration for FT tokens (only for valid accounts)
-    if (!needsStorageDepositCheck(selectedToken)) {
-        return accountValidatedPayments;
-    }
+                try {
+                    const validationError = await validateNearAddress(
+                        payment.recipient,
+                    );
 
-    // Filter only valid accounts
-    const validAccounts = accountValidatedPayments.filter(
-        (payment) => !payment.validationError,
-    );
-
-    if (validAccounts.length === 0) {
-        return accountValidatedPayments;
-    }
-
-    const tokenId = selectedToken.address;
-
-    const storageRequests = validAccounts.map((payment) => ({
-        accountId: payment.recipient,
-        tokenId: tokenId,
-    }));
-
-    const storageRegistrations =
-        await getBatchStorageDepositIsRegistered(storageRequests);
-
-    const registrationMap = new Map<string, boolean>();
-    storageRegistrations.forEach((reg) => {
-        registrationMap.set(
-            `${reg.accountId}-${reg.tokenId}`,
-            reg.isRegistered,
+                    return {
+                        ...payment,
+                        validationError: validationError || undefined,
+                    };
+                } catch (error) {
+                    console.error(`Error validating ${payment.recipient}:`, error);
+                    return {
+                        ...payment,
+                        validationError: "Failed to validate account",
+                    };
+                }
+            }),
         );
-    });
 
-    return accountValidatedPayments.map((payment) => {
-        if (payment.validationError) {
-            return payment;
+        // Step 2: Check storage registration for FT tokens (only for valid accounts)
+        if (!needsStorageDepositCheck(selectedToken)) {
+            return accountValidatedPayments;
         }
 
-        const key = `${payment.recipient}-${tokenId}`;
-        const isRegistered = registrationMap.get(key) ?? false;
+        // Filter only valid accounts
+        const validAccounts = accountValidatedPayments.filter(
+            (payment) => !payment.validationError,
+        );
 
-        return {
-            ...payment,
-            isRegistered,
-        };
-    });
+        if (validAccounts.length === 0) {
+            return accountValidatedPayments;
+        }
+
+        const tokenId = selectedToken.address;
+
+        const storageRequests = validAccounts.map((payment) => ({
+            accountId: payment.recipient,
+            tokenId: tokenId,
+        }));
+
+        const storageRegistrations =
+            await getBatchStorageDepositIsRegistered(storageRequests);
+
+        const registrationMap = new Map<string, boolean>();
+        storageRegistrations.forEach((reg) => {
+            registrationMap.set(
+                `${reg.accountId}-${reg.tokenId}`,
+                reg.isRegistered,
+            );
+        });
+
+        return accountValidatedPayments.map((payment) => {
+            if (payment.validationError) {
+                return payment;
+            }
+
+            const key = `${payment.recipient}-${tokenId}`;
+            const isRegistered = registrationMap.get(key) ?? false;
+
+            return {
+                ...payment,
+                isRegistered,
+            };
+        });
+    }
+
+    // For non-NEAR tokens, validation was done during CSV parsing
+    // Just return payments as-is
+    return payments;
 }
