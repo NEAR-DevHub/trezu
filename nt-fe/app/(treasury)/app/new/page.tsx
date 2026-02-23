@@ -30,6 +30,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ROLES } from "@/components/role-selector";
 import { Alert } from "@/components/ui/alert";
 import { AlertDescription } from "@/components/alert";
+import { useTreasury } from "@/hooks/use-treasury";
 
 const treasuryFormSchema = z
     .object({
@@ -336,8 +337,9 @@ function Step3({ handleBack }: StepProps) {
             <Alert variant="info">
                 <AlertDescription>
                     <p className="inline-block">
-                        <div className="font-semibold">🎉 No deployment fee</div>
-
+                        <div className="font-semibold">
+                            🎉 No deployment fee
+                        </div>
                         To support new projects, TREZU covers all one-time
                         deployment and network storage fees.
                     </p>
@@ -354,6 +356,7 @@ function Step3({ handleBack }: StepProps) {
 
 export default function NewTreasuryPage() {
     const { accountId, isInitializing } = useNear();
+    const { treasuries } = useTreasury();
     const router = useRouter();
     const queryClient = useQueryClient();
     const [step, setStep] = useState(0);
@@ -430,7 +433,7 @@ export default function NewTreasuryPage() {
             title="Create Treasury"
             hideCollapseButton
             description="Set up a new multisig treasury for your team"
-            backButton="/"
+            backButton={treasuries?.length > 0 ? "/" : undefined}
         >
             <Form {...form}>
                 <form

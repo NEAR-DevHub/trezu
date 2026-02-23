@@ -572,6 +572,9 @@ function getLedgerErrorMessage(error) {
     if (errorMsg.includes("No device selected")) {
         return "No Ledger device was selected. Please try again and select your device.";
     }
+    if (errorMsg.includes("0x6985")) {
+        return "Your declined the request in the Ledger device. Please try again and approve the request on your device.";
+    }
 
     return errorMsg || "An unknown error occurred. Please try again.";
 }
@@ -938,7 +941,8 @@ async function showLedgerApprovalUI(
       `;
     }
 
-    function renderErrorUI(errorMessage) {
+    function renderErrorUI(error) {
+        const errorMessage = getLedgerErrorMessage(error);
         root.style.display = "flex";
         root.innerHTML = `
         <div class="prompt-container" style="max-width: 400px; padding: 24px; text-align: center;">
