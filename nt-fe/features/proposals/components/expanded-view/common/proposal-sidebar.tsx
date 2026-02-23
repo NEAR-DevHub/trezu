@@ -441,7 +441,7 @@ export function ProposalSidebar({
                     <AuthButtonWithProposal
                         proposalKind={proposal.kind}
                         variant="secondary"
-                        className="flex gap-1 w-1/2"
+                        className="flex gap-1 w-full"
                         onClick={() => onVote("Reject")}
                         disabled={isUserVoter}
                         tooltip={isUserVoter ? NO_VOTE_MESSAGE : undefined}
@@ -450,24 +450,26 @@ export function ProposalSidebar({
                         Reject
                     </AuthButtonWithProposal>
                     {insufficientBalanceInfo.hasInsufficientBalance ? (
-                        <Button
-                            variant="default"
-                            className="flex gap-1 w-1/2"
-                            onClick={() =>
-                                onDeposit(
-                                    insufficientBalanceInfo.tokenSymbol,
-                                    insufficientBalanceInfo.tokenNetwork,
-                                )
-                            }
-                        >
-                            <Download className="h-4 w-4 mr-2" />
-                            Deposit
-                        </Button>
+                        <span className="w-full">
+                            <Button
+                                variant="default"
+                                className="flex gap-1 w-full"
+                                onClick={() =>
+                                    onDeposit(
+                                        insufficientBalanceInfo.tokenSymbol,
+                                        insufficientBalanceInfo.tokenNetwork,
+                                    )
+                                }
+                            >
+                                <Download className="h-4 w-4 mr-2" />
+                                Deposit
+                            </Button>
+                        </span>
                     ) : (
                         <AuthButtonWithProposal
                             proposalKind={proposal.kind}
                             variant="default"
-                            className="flex gap-1 w-1/2"
+                            className="flex gap-1 w-full"
                             onClick={() => onVote("Approve")}
                             disabled={isUserVoter}
                             tooltip={isUserVoter ? NO_VOTE_MESSAGE : undefined}

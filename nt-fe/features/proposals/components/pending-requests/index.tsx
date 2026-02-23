@@ -101,7 +101,7 @@ export function PendingRequestItem({
                                 <AuthButtonWithProposal
                                     proposalKind={proposal.kind}
                                     variant="secondary"
-                                    className="flex gap-1 flex-1"
+                                    className="flex gap-1 w-full"
                                     onClick={(e) => {
                                         e.preventDefault();
                                         onVote("Reject");
@@ -117,25 +117,27 @@ export function PendingRequestItem({
                                     Reject
                                 </AuthButtonWithProposal>
                                 {insufficientBalanceInfo.hasInsufficientBalance ? (
-                                    <Button
-                                        variant="default"
-                                        className="flex gap-1 flex-1"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            onDeposit(
-                                                insufficientBalanceInfo.tokenSymbol,
-                                                insufficientBalanceInfo.tokenNetwork,
-                                            );
-                                        }}
-                                    >
-                                        <Download className="size-3.5" />
-                                        Deposit
-                                    </Button>
+                                    <span className="w-full">
+                                        <Button
+                                            variant="default"
+                                            className="flex gap-1 w-full"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                onDeposit(
+                                                    insufficientBalanceInfo.tokenSymbol,
+                                                    insufficientBalanceInfo.tokenNetwork,
+                                                );
+                                            }}
+                                        >
+                                            <Download className="size-3.5" />
+                                            Deposit
+                                        </Button>
+                                    </span>
                                 ) : (
                                     <AuthButtonWithProposal
                                         proposalKind={proposal.kind}
                                         variant="default"
-                                        className="flex gap-1 flex-1"
+                                        className="flex gap-1 w-full"
                                         onClick={(e) => {
                                             e.preventDefault();
                                             onVote("Approve");

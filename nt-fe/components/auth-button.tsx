@@ -119,9 +119,11 @@ export function AuthButton({
                     </span>
                 </Tooltip>
             ) : (
-                <Button {...props} disabled={disabled} onClick={onClick}>
-                    {children}
-                </Button>
+                <span className="w-full">
+                    <Button {...props} disabled={disabled} onClick={onClick}>
+                        {children}
+                    </Button>
+                </span>
             )}
         </>
     );
@@ -216,9 +218,11 @@ export function AuthButtonWithProposal({
                     </span>
                 </Tooltip>
             ) : (
-                <Button {...props} disabled={disabled} onClick={onClick}>
-                    {children}
-                </Button>
+                <span className="w-full">
+                    <Button {...props} disabled={disabled} onClick={onClick}>
+                        {children}
+                    </Button>
+                </span>
             )}
         </>
     );
