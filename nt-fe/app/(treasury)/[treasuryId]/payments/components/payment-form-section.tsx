@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { Button } from "@/components/button";
 import { useToken, useTokenBalance } from "@/hooks/use-treasury-queries";
 import { useTreasury } from "@/hooks/use-treasury";
@@ -8,11 +8,9 @@ import { cn, formatBalance, formatCurrency } from "@/lib/utils";
 import TokenSelect, { SelectedTokenData } from "@/components/token-select";
 import { LargeInput } from "@/components/large-input";
 import { InputBlock } from "@/components/input-block";
-import {
-    validateNearAddress,
-    isValidNearAddressFormat,
-} from "@/lib/near-validation";
-import { totalBalance } from "@/lib/balance";
+import { getBlockchainType } from "@/lib/blockchain-utils";
+import AccountInput from "@/components/account-input";
+import { CreateRequestButton } from "@/components/create-request-button";
 
 interface PaymentFormSectionProps {
     // Token and amount
@@ -28,10 +26,12 @@ interface PaymentFormSectionProps {
     // Options
     tokenLocked?: boolean;
     showBalance?: boolean;
+    validateOnMount?: boolean; // Force validation on mount (for edit screens)
 
     // Actions
     saveButtonText: string;
     onSave: () => void;
+    isSubmitting?: boolean;
 }
 
 export function PaymentFormSection({
@@ -43,12 +43,38 @@ export function PaymentFormSection({
     onRecipientChange,
     tokenLocked = false,
     showBalance = true,
+    validateOnMount = false,
     saveButtonText,
     onSave,
+    isSubmitting = false,
 }: PaymentFormSectionProps) {
     const { treasuryId } = useTreasury();
-    const [recipientError, setRecipientError] = useState<string | undefined>();
-    const [isValidating, setIsValidating] = useState(false);
+    const [isRecipientValid, setIsRecipientValid] = useState(!!recipient);
+    const [isValidatingRecipient, setIsValidatingRecipient] = useState(false);
+    const prevBlockchainTypeRef = useRef<string | null>(null);
+
+    // Determine blockchain type from selected token
+    const blockchainType = useMemo(() => {
+        if (!selectedToken?.network) return "near";
+        return getBlockchainType(selectedToken.network);
+    }, [selectedToken?.network]);
+
+    // Reset recipient address when blockchain type changes
+    useEffect(() => {
+        // Skip on initial mount
+        if (prevBlockchainTypeRef.current === null) {
+            prevBlockchainTypeRef.current = blockchainType;
+            return;
+        }
+
+        // Only clear if blockchain type actually changed
+        if (prevBlockchainTypeRef.current !== blockchainType && recipient) {
+            onRecipientChange("");
+            setIsRecipientValid(false);
+        }
+
+        prevBlockchainTypeRef.current = blockchainType;
+    }, [blockchainType, recipient, onRecipientChange]);
 
     // Get token price for USD estimation
     const { data: tokenData, isLoading: isTokenLoading } = useToken(
@@ -73,62 +99,16 @@ export function PaymentFormSection({
         return Number(amount) * tokenData.price;
     }, [amount, tokenData?.price]);
 
-    // Validate structure only (fast, synchronous)
-    const validateStructure = (address: string): string | undefined => {
-        if (!address || address.trim() === "") {
-            return undefined;
-        }
-
-        if (!isValidNearAddressFormat(address)) {
-            return "Invalid NEAR account format";
-        }
-
-        return undefined;
-    };
-
-    // Full validation (checks blockchain)
-    const validateRecipientFull = async (address: string) => {
-        if (!address || address.trim() === "") {
-            setRecipientError(undefined);
-            return true;
-        }
-
-        setIsValidating(true);
-        try {
-            const error = await validateNearAddress(address);
-            setRecipientError(error || undefined);
-            return !error;
-        } catch (err) {
-            console.error("Validation error:", err);
-            setRecipientError("Failed to validate address");
-            return false;
-        } finally {
-            setIsValidating(false);
-        }
-    };
-
     // Handle save button click
-    const handleSave = async () => {
-        // Validate recipient on blockchain
-        const isValid = await validateRecipientFull(recipient);
-
-        if (isValid) {
+    const handleSave = () => {
+        // Validation is handled by AccountInput component
+        if (isRecipientValid && recipient && amount) {
             onSave();
         }
     };
 
-    // Handle recipient change
-    const handleRecipientChange = (value: string) => {
-        onRecipientChange(value);
-
-        // Validate structure immediately while typing
-        const structureError = validateStructure(value);
-        setRecipientError(structureError);
-    };
-
     // Check if save button should be disabled
-    const isSaveDisabled =
-        !recipient || !amount || isValidating || !!recipientError;
+    const isSaveDisabled = !recipient || !amount || !isRecipientValid || isValidatingRecipient;
 
     return (
         <>
@@ -138,8 +118,8 @@ export function PaymentFormSection({
                 invalid={false}
                 topRightContent={
                     showBalance &&
-                    tokenBalanceData &&
-                    selectedToken?.decimals ? (
+                        tokenBalanceData &&
+                        selectedToken?.decimals ? (
                         <div className="flex items-center gap-2">
                             <p className="text-xs text-muted-foreground">
                                 Balance:{" "}
@@ -204,51 +184,44 @@ export function PaymentFormSection({
                     className={cn(
                         "text-muted-foreground text-xs invisible",
                         estimatedUSDValue !== null &&
-                            estimatedUSDValue > 0 &&
-                            "visible",
+                        estimatedUSDValue > 0 &&
+                        "visible",
                     )}
                 >
                     {!isTokenLoading &&
-                    estimatedUSDValue !== null &&
-                    estimatedUSDValue > 0
+                        estimatedUSDValue !== null &&
+                        estimatedUSDValue > 0
                         ? `≈ ${formatCurrency(estimatedUSDValue)}`
                         : isTokenLoading
-                          ? "Loading price..."
-                          : "Invisible"}
+                            ? "Loading price..."
+                            : "Invisible"}
                 </p>
             </InputBlock>
 
             {/* To section */}
-            <InputBlock title="To" invalid={!!recipientError}>
-                <LargeInput
-                    type="text"
-                    borderless
+            <InputBlock title="To" invalid={!!recipient && !isRecipientValid}>
+                <AccountInput
+                    blockchain={blockchainType}
                     value={recipient}
-                    onChange={(e) => handleRecipientChange(e.target.value)}
-                    placeholder="Recipient address"
-                    disabled={isValidating}
+                    setValue={onRecipientChange}
+                    setIsValid={setIsRecipientValid}
+                    setIsValidating={setIsValidatingRecipient}
+                    borderless
+                    validateOnMount={validateOnMount}
                 />
-                {isValidating ? (
-                    <p className="text-muted-foreground text-xs">
-                        Validating address...
-                    </p>
-                ) : recipientError ? (
-                    <p className="text-destructive text-xs">{recipientError}</p>
-                ) : (
-                    <p className="text-muted-foreground text-xs invisible">
-                        Invisible
-                    </p>
-                )}
             </InputBlock>
 
             {/* Save Button */}
-            <Button
+            <CreateRequestButton
                 onClick={handleSave}
                 disabled={isSaveDisabled}
-                className="w-full"
-            >
-                {isValidating ? "Validating..." : saveButtonText}
-            </Button>
+                isSubmitting={isSubmitting}
+                idleMessage={saveButtonText}
+                permissions={{
+                    kind: "transfer",
+                    action: "AddProposal",
+                }}
+            />
         </>
     );
 }

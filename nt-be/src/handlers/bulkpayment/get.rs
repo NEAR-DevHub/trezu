@@ -28,7 +28,7 @@ pub async fn get_batch_payment(
     let result = state
         .cache
         .clone()
-        .cached_contract_call(CacheTier::LongTerm, cache_key, async move {
+        .cached_contract_call(CacheTier::ShortTerm, cache_key, async move {
             fetch_batch_payment_list(&state.network, &batch_id, &state.bulk_payment_contract_id)
                 .await
         })

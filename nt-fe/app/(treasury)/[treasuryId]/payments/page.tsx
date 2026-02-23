@@ -1,8 +1,6 @@
 "use client";
 
 import { PageCard } from "@/components/card";
-import { RecipientInput } from "@/components/recipient-input";
-import { TokenInput, tokenSchema } from "@/components/token-input";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { useForm, useFormContext } from "react-hook-form";
 import { Form, FormField } from "@/components/ui/form";
@@ -43,6 +41,9 @@ import { ArrowDownToLine } from "lucide-react";
 import Link from "next/link";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { trackEvent } from "@/lib/analytics";
+import { PaymentFormSection } from "./components/payment-form-section";
+import type { SelectedTokenData } from "@/components/token-select";
+import { tokenSchema } from "@/components/token-input";
 
 const paymentFormSchema = z
     .object({
@@ -72,12 +73,14 @@ const paymentFormSchema = z
 function Step1({ handleNext }: StepProps) {
     const form = useFormContext<PaymentFormValues>();
     const { treasuryId } = useTreasury();
-
-    const amount = form.watch("amount");
-    const address = form.watch("address");
     const isMobile = useMediaQuery("(max-width: 768px)");
 
-    const handleContinue = () => {
+    const token = form.watch("token");
+    const amount = form.watch("amount");
+    const address = form.watch("address");
+
+    const handleSave = () => {
+        // Validate and proceed to next step
         form.trigger().then((isValid) => {
             if (isValid && handleNext) {
                 handleNext();
@@ -87,7 +90,7 @@ function Step1({ handleNext }: StepProps) {
 
     return (
         <PageCard>
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center mb-4">
                 <StepperHeader title="New Payment" />
                 <div className="flex items-center gap-2">
                     <Link href={`/${treasuryId}/payments/bulk-payment`}>
@@ -115,31 +118,18 @@ function Step1({ handleNext }: StepProps) {
                     />
                 </div>
             </div>
-            <TokenInput
-                title="You send"
-                control={form.control}
-                amountName="amount"
-                tokenName="token"
-                showInsufficientBalance={true}
-                dynamicFontSize={true}
+
+            <PaymentFormSection
+                selectedToken={token as SelectedTokenData | null}
+                amount={amount}
+                onAmountChange={(newAmount) => form.setValue("amount", newAmount)}
+                onTokenChange={(newToken) => form.setValue("token", newToken)}
+                recipient={address}
+                onRecipientChange={(newAddress) => form.setValue("address", newAddress)}
+                showBalance={true}
+                saveButtonText="Review Payment"
+                onSave={handleSave}
             />
-            <RecipientInput control={form.control} name="address" />
-            <div className="rounded-lg border bg-card p-0 overflow-hidden">
-                <CreateRequestButton
-                    onClick={handleContinue}
-                    className="w-full h-10 rounded-none"
-                    permissions={[
-                        { kind: "transfer", action: "AddProposal" },
-                        { kind: "call", action: "AddProposal" },
-                    ]}
-                    disabled={!amount || !address}
-                    idleMessage={
-                        !amount || !address
-                            ? "Enter amount and address"
-                            : "Review Payment"
-                    }
-                />
-            </div>
         </PageCard>
     );
 }
@@ -246,16 +236,16 @@ const buildIntentProposal = (
 
     const ftWithdrawArgs = isNetworkWithdrawal
         ? {
-              token: tokenContract,
-              receiver_id: tokenContract,
-              amount: parsedAmount,
-              memo: `WITHDRAW_TO:${data.address}`,
-          }
+            token: tokenContract,
+            receiver_id: tokenContract,
+            amount: parsedAmount,
+            memo: `WITHDRAW_TO:${data.address}`,
+        }
         : {
-              token: tokenContract,
-              receiver_id: data.address,
-              amount: parsedAmount,
-          };
+            token: tokenContract,
+            receiver_id: data.address,
+            amount: parsedAmount,
+        };
 
     return {
         FunctionCall: {

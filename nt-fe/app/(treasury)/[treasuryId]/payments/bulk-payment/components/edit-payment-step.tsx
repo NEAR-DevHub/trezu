@@ -90,6 +90,7 @@ export function EditPaymentStep({
                 }
                 tokenLocked={true}
                 showBalance={true}
+                validateOnMount={true}
                 saveButtonText="Save Changes"
                 onSave={handleSave}
             />

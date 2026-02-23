@@ -152,9 +152,9 @@ export function UploadDataStep({
         };
 
         if (activeTab === "upload" && csvData) {
-            result = parseAndValidateCsv(csvData);
+            result = parseAndValidateCsv(csvData, selectedToken);
         } else {
-            result = parseAndValidatePasteData(pasteDataInput);
+            result = parseAndValidatePasteData(pasteDataInput, selectedToken);
         }
 
         if (result.errors.length > 0) {
