@@ -195,7 +195,7 @@ pub async fn create_treasury(
     }
 
     if let Err(e) = register_or_refresh_monitored_account(&state.db_pool, treasury.as_str()).await {
-        log::warn!("Failed to add treasury to monitored accounts: {}", e);
+        log::warn!("Failed to add treasury to monitored accounts: {:?}", e);
         // Don't fail the request - treasury can still be added manually later.
     }
 

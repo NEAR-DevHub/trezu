@@ -10,7 +10,9 @@ use std::sync::Arc;
 
 use crate::AppState;
 use crate::config::PlanType;
-use crate::services::{MonitoredAccount, RegisterMonitoredAccountError, register_or_refresh_monitored_account};
+use crate::services::{
+    MonitoredAccount, RegisterMonitoredAccountError, register_or_refresh_monitored_account,
+};
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
