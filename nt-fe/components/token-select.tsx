@@ -10,7 +10,7 @@ import {
 } from "./modal";
 import { ChevronDown, ChevronLeft } from "lucide-react";
 import { Button } from "./button";
-import { cn, formatBalance } from "@/lib/utils";
+import { cn, formatBalance, formatSmartAmount } from "@/lib/utils";
 import { ChainIcons } from "@/lib/api";
 import { useAggregatedTokens } from "@/hooks/use-assets";
 import { NEAR_CHAIN_ICONS } from "@/constants/token";
@@ -211,7 +211,7 @@ export default function TokenSelect({
                         name:
                             treasuryToken.name +
                             (treasuryToken.isAggregated &&
-                            treasuryToken.networks.length > 1
+                                treasuryToken.networks.length > 1
                                 ? ` • ${treasuryToken.networks.length} Networks`
                                 : ""),
                         symbol: treasuryToken.symbol,
@@ -674,9 +674,7 @@ export default function TokenSelect({
                                                     token.totalBalance > 0 && (
                                                         <div className="flex flex-col items-end">
                                                             <span className="font-semibold">
-                                                                {token.totalBalance.toFixed(
-                                                                    2,
-                                                                )}
+                                                                {formatSmartAmount(token.totalBalance)}
                                                             </span>
                                                             <span className="text-sm text-muted-foreground">
                                                                 ≈$
@@ -742,11 +740,11 @@ export default function TokenSelect({
                                                             {token.totalBalance !==
                                                                 undefined &&
                                                                 token.totalBalance >
-                                                                    0 && (
+                                                                0 && (
                                                                     <div className="flex flex-col items-end">
                                                                         <span className="font-semibold">
-                                                                            {token.totalBalance.toFixed(
-                                                                                2,
+                                                                            {formatSmartAmount(
+                                                                                token.totalBalance,
                                                                             )}
                                                                         </span>
                                                                         <span className="text-sm text-muted-foreground">
@@ -925,12 +923,12 @@ export default function TokenSelect({
                                     {networksWithBalance.includes(item) && (
                                         <div className="flex flex-col items-end">
                                             <span className="font-semibold">
-                                                {Big(
+                                                {formatSmartAmount(
                                                     formatBalance(
                                                         item.balance!,
                                                         item.decimals!,
                                                     ),
-                                                ).toFixed(2)}
+                                                )}
                                             </span>
                                             <span className="text-sm text-muted-foreground">
                                                 ≈$

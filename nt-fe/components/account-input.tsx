@@ -46,116 +46,126 @@ const AccountInput = ({
 
     const isNear = blockchain === "near";
 
-    // Expose validation state to parent
-    useEffect(() => {
-        if (setIsValidatingProp) {
-            setIsValidatingProp(isValidating);
-        }
-    }, [isValidating, setIsValidatingProp]);
-
     // Get blockchain-specific configuration
-    const config = useMemo(() => {
-        const placeholder = getAddressPlaceholder(blockchain);
-        const regex = getAddressPattern(blockchain);
+    const config = useMemo(() => ({
+        placeholder: getAddressPlaceholder(blockchain),
+        regex: getAddressPattern(blockchain),
+    }), [blockchain]);
 
-        return { placeholder, regex };
-    }, [blockchain]);
+    // Wrapper to set isValidating and notify parent
+    const updateValidationState = useCallback((validating: boolean) => {
+        setIsValidating(validating);
+        setIsValidatingProp?.(validating);
+    }, [setIsValidatingProp]);
 
+    // Reset all validation states
+    const resetValidation = useCallback(() => {
+        setValidationError(undefined);
+        setIsValid(false);
+        setHasValidated(false);
+        updateValidationState(false);
+    }, [setIsValid, updateValidationState]);
+
+    // NEAR full validation (format + blockchain check)
     const validateNearFull = useCallback(async (address: string) => {
         if (!address || address.trim() === "") {
-            setValidationError(undefined);
-            setIsValid(false);
-            setHasValidated(false);
+            resetValidation();
             return;
         }
 
-        setIsValidating(true);
+        updateValidationState(true);
         setHasValidated(false); // Reset validation state
         try {
             const error = await validateNearAddress(address);
             setValidationError(error || undefined);
             setIsValid(!error);
-            setHasValidated(true); // Mark as validated
+            setHasValidated(!error); // Only mark as validated if successful
         } catch (err) {
             console.error("NEAR validation error:", err);
             setValidationError("Failed to validate address");
             setIsValid(false);
-            setHasValidated(true);
+            setHasValidated(false);
         } finally {
-            setIsValidating(false);
+            updateValidationState(false);
         }
-    }, [setIsValid]);
+    }, [setIsValid, updateValidationState, resetValidation]);
 
     useEffect(() => {
         const shouldValidate = validateOnMount || hasUserInteractedRef.current;
-        if (!value || !shouldValidate) return;
+
+        if (!shouldValidate) {
+            // Don't validate yet - user hasn't interacted
+            return;
+        }
+
+        if (!value) {
+            resetValidation();
+            return;
+        }
 
         // NEAR validation (async)
         if (isNear) {
-            // Quick format check first
             if (!isValidNearAddressFormat(value)) {
                 setValidationError("Invalid NEAR account format");
                 setIsValid(false);
+                setHasValidated(false);
+                updateValidationState(false);
                 return;
             }
 
-            // Debounce the async blockchain check
             const timeoutId = setTimeout(() => {
                 validateNearFull(value);
-            }, validateOnMount ? 0 : 500); // No debounce on mount
+            }, validateOnMount ? 0 : 500);
 
-            return () => clearTimeout(timeoutId);
+            return () => {
+                clearTimeout(timeoutId);
+                updateValidationState(false);
+            };
         }
 
         // Non-NEAR validation (sync with regex)
         if (config.regex) {
             const isValid = config.regex.test(value);
             setIsValid(isValid);
-            if (!isValid) {
-                const displayName = getBlockchainDisplayName(blockchain);
-                setValidationError(`Please enter a valid ${displayName} address.`);
-            } else {
-                setValidationError(undefined);
-            }
+            setValidationError(isValid ? undefined : `Please enter a valid ${getBlockchainDisplayName(blockchain)} address.`);
         } else {
             // No regex pattern (unknown blockchain) - accept any non-empty address
-            setIsValid(!!value);
+            setIsValid(true);
             setValidationError(undefined);
         }
-    }, [value, blockchain, isNear, config.regex, validateOnMount, setIsValid, validateNearFull]);
+    }, [value, blockchain, isNear, config.regex, validateOnMount, setIsValid, validateNearFull, resetValidation, updateValidationState]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const val = e.target.value;
+        const val = e.target.value.trim();
         setValue(val);
-
-        // Mark that user has interacted
         hasUserInteractedRef.current = true;
 
+        // Immediate validation feedback for NEAR
         if (isNear) {
-            setHasValidated(false); // Reset validation state when value changes
-            if (!val || val.trim() === "") {
-                setValidationError(undefined);
-                setIsValid(false);
+            setHasValidated(false);
+            if (!val) {
+                resetValidation();
             } else if (!isValidNearAddressFormat(val)) {
                 setValidationError("Invalid NEAR account format");
                 setIsValid(false);
+                updateValidationState(false);
             } else {
                 setValidationError(undefined);
-                // Don't set valid yet, wait for blockchain check
+                setIsValid(false); // Wait for blockchain check
             }
             return;
         }
 
-        // For other blockchains: Sync regex validation
+        // Immediate validation feedback for other blockchains
+        if (!val) {
+            resetValidation();
+            return;
+        }
+
         if (config.regex) {
             const isValid = config.regex.test(val);
             setIsValid(isValid);
-            if (!isValid && val) {
-                const displayName = getBlockchainDisplayName(blockchain);
-                setValidationError(`Please enter a valid ${displayName} address.`);
-            } else {
-                setValidationError(undefined);
-            }
+            setValidationError(isValid || !val ? undefined : `Please enter a valid ${getBlockchainDisplayName(blockchain)} address.`);
         } else {
             // No regex pattern (e.g., unknown blockchain) - accept any non-empty address
             setIsValid(!!val);
@@ -171,7 +181,7 @@ const AccountInput = ({
             if (isValidating) return "border-yellow-500"; // Validating
             if (validationError) return "border-red-500"; // Invalid
             // For NEAR, only show green after full validation passes
-            return validationError === undefined && value ? "border-green-500" : "";
+            return hasValidated && !validationError ? "border-green-500" : "";
         }
 
         // For other chains: immediate validation (or accept all if no pattern)
@@ -182,7 +192,7 @@ const AccountInput = ({
 
         const isValid = config.regex.test(value);
         return isValid ? "border-green-500" : "border-red-500";
-    }, [value, isValidating, validationError, config.regex, isNear]);
+    }, [value, isValidating, validationError, hasValidated, config.regex, isNear]);
 
     return (
         <div className="flex flex-col gap-1">
