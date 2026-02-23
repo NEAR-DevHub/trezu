@@ -7,6 +7,7 @@ import { useTreasury } from "@/hooks/use-treasury";
 import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useMemo } from "react";
+import { cn } from "@/lib/utils";
 
 interface AuthButtonProps extends React.ComponentProps<typeof Button> {
     permissionKind: string;
@@ -35,8 +36,8 @@ interface ErrorMessageProps extends React.ComponentProps<typeof Button> {
 function ErrorMessage({ message, children, ...props }: ErrorMessageProps) {
     return (
         <Tooltip content={message}>
-            <span className={props.className}>
-                <Button {...props} className="w-full" disabled>
+            <span>
+                <Button {...props} disabled>
                     {children}
                 </Button>
             </span>
