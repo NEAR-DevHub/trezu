@@ -138,7 +138,7 @@ async fn fetch_whitelisted_tokens_from_rpc(
 }
 
 /// Fetches all Ref Finance tokens and filters them by whitelist
-async fn fetch_whitelisted_tokens(
+pub(crate) async fn fetch_whitelisted_tokens(
     state: &Arc<AppState>,
 ) -> Result<HashSet<String>, (StatusCode, String)> {
     let cache_key = "ref-whitelisted-tokens".to_string();
