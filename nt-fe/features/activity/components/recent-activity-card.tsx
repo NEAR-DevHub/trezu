@@ -24,8 +24,8 @@ import { useTreasury } from "@/hooks/use-treasury";
 import { cn, formatActivityAmount, formatSmartAmount } from "@/lib/utils";
 import {
     formatHistoryDuration,
-    getFromAccount,
-    getToAccount,
+    getActivityLabel,
+    getActivitySubLabel,
 } from "../utils/history-utils";
 import { useState, useMemo, useEffect } from "react";
 import type { RecentActivity as RecentActivityType } from "@/lib/api";
@@ -190,25 +190,11 @@ export function RecentActivity() {
     };
 
     const getActivityType = (activity: RecentActivityType) => {
-        if (activity.swap) return "Swap";
-        const isReceived = parseFloat(activity.amount) > 0;
-        return isReceived ? "Payment Received" : "Payment Sent";
+        return getActivityLabel(activity);
     };
 
     const getActivityFrom = (activity: RecentActivityType) => {
-        if (activity.swap) return "via NEAR Intents";
-
-        const isReceived = parseFloat(activity.amount) > 0;
-
-        // For received payments: show sender
-        if (isReceived) {
-            const from = getFromAccount(activity, isReceived);
-            return from !== "—" ? `from ${from}` : "from unknown";
-        }
-
-        // For sent payments: show recipient
-        const to = getToAccount(activity, isReceived, treasuryId);
-        return to !== "—" ? `to ${to}` : "to unknown";
+        return getActivitySubLabel(activity, treasuryId);
     };
 
     const historyDescription = formatHistoryDuration(historyMonths);

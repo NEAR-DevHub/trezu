@@ -16,7 +16,7 @@ use std::sync::Arc;
 use tokio::task::JoinHandle;
 
 use super::account_monitor::{discover_ft_tokens_from_fastnear, discover_intents_tokens};
-use super::gap_filler::{fill_gaps_with_hints, resolve_missing_tx_hashes};
+use super::gap_filler::{fill_gaps_with_hints, resolve_missing_action_kind, resolve_missing_tx_hashes};
 use super::staking_rewards::is_staking_token;
 use super::swap_detector::{detect_swaps_from_api, store_detected_swaps};
 use super::transfer_hints::TransferHintService;
@@ -219,6 +219,25 @@ async fn run_dirty_task(
         Err(e) => {
             log::warn!(
                 "[dirty-monitor] {}: Error resolving missing tx hashes: {}",
+                account_id,
+                e
+            );
+        }
+        _ => {}
+    }
+
+    // Resolve missing action_kind on existing records
+    match resolve_missing_action_kind(pool, network, account_id, 10).await {
+        Ok(count) if count > 0 => {
+            log::info!(
+                "[dirty-monitor] {}: Resolved {} missing action_kind",
+                account_id,
+                count
+            );
+        }
+        Err(e) => {
+            log::warn!(
+                "[dirty-monitor] {}: Error resolving missing action_kind: {}",
                 account_id,
                 e
             );

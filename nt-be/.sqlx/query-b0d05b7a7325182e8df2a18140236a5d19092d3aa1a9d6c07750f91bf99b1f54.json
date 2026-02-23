@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                UPDATE balance_changes\n                SET action_kind = $1, method_name = $2\n                WHERE account_id = $3 AND block_height = $4 AND token_id = $5\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Varchar",
+        "Text",
+        "Int8",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b0d05b7a7325182e8df2a18140236a5d19092d3aa1a9d6c07750f91bf99b1f54"
+}

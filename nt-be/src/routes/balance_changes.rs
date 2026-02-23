@@ -68,6 +68,8 @@ pub struct BalanceChange {
     pub balance_before: BigDecimal,
     pub balance_after: BigDecimal,
     pub created_at: DateTime<Utc>,
+    pub action_kind: Option<String>,
+    pub method_name: Option<String>,
 }
 
 /// Swap information attached to balance changes
@@ -106,6 +108,10 @@ pub struct EnrichedBalanceChange {
     pub token_metadata: Option<TokenMetadata>, // Only present if include_metadata: true
     #[serde(skip_serializing_if = "Option::is_none")]
     pub swap: Option<SwapInfo>, // Only present for swap transactions
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub action_kind: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub method_name: Option<String>,
 }
 
 /// Internal function to fetch and enrich balance changes
@@ -175,7 +181,7 @@ pub async fn get_balance_changes_internal(
     };
 
     // Build SQL query
-    let select_fields = "id, account_id, block_height, block_time, token_id, receipt_id, transaction_hashes, counterparty, signer_id, receiver_id, amount, balance_before, balance_after, created_at";
+    let select_fields = "id, account_id, block_height, block_time, token_id, receipt_id, transaction_hashes, counterparty, signer_id, receiver_id, amount, balance_before, balance_after, created_at, action_kind, method_name";
     let (query_str, _next_param_idx) = build_select_query(
         &filters,
         select_fields,
@@ -254,6 +260,8 @@ pub async fn get_balance_changes_internal(
                 created_at: change.created_at,
                 token_metadata: None, // Will be populated if include_metadata is true
                 swap: None,           // Swap detection not implemented in this endpoint yet
+                action_kind: change.action_kind,
+                method_name: change.method_name,
             }
         })
         .collect();

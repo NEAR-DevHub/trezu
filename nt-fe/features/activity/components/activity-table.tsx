@@ -19,7 +19,7 @@ import { Clock } from "lucide-react";
 import { cn, formatActivityAmount, formatSmartAmount } from "@/lib/utils";
 import { TokenAmountDisplay } from "@/components/token-display";
 import { TransactionHashCell } from "./transaction-hash-cell";
-import { getFromAccount, getToAccount } from "../utils/history-utils";
+import { getActivityLabel, getFromAccount, getToAccount } from "../utils/history-utils";
 
 interface ActivityTableProps {
     activities: RecentActivity[];
@@ -43,9 +43,7 @@ export function ActivityTable({
     const totalPages = Math.ceil(total / pageSize);
 
     const getTypeLabel = (activity: RecentActivity) => {
-        if (activity.swap) return "Swap";
-        const isReceived = parseFloat(activity.amount) > 0;
-        return isReceived ? "Payment Received" : "Payment Send";
+        return getActivityLabel(activity);
     };
 
     if (isLoading) {

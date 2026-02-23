@@ -59,6 +59,58 @@ export interface ActivityAccount {
     signerId: string | null;
     receiverId: string | null;
     swap?: any; // Swap object if this is a swap transaction
+    actionKind?: string | null;
+    methodName?: string | null;
+    amount?: string;
+}
+
+/**
+ * Get the display label for an activity based on its action kind.
+ *
+ * - Swaps → "Swap"
+ * - FunctionCall → "Function Call"
+ * - Transfer → "Transfer Received" / "Transfer Sent"
+ * - Fallback (no action data) → "Payment Received" / "Payment Sent"
+ */
+export function getActivityLabel(activity: ActivityAccount): string {
+    if (activity.swap) return "Swap";
+    const isReceived = parseFloat(activity.amount ?? "0") > 0;
+
+    if (activity.actionKind === "FunctionCall") {
+        return "Function Call";
+    }
+    if (activity.actionKind === "Transfer") {
+        return isReceived ? "Transfer Received" : "Transfer Sent";
+    }
+    // Fallback for records without action data
+    return "";
+}
+
+/**
+ * Get the sub-label (description line) for an activity.
+ *
+ * - Swaps → "via NEAR Intents"
+ * - FunctionCall → "{methodName} on {contract}"
+ * - Transfer / fallback → "from {sender}" or "to {recipient}"
+ */
+export function getActivitySubLabel(
+    activity: ActivityAccount,
+    treasuryId: string | null | undefined,
+): string {
+    if (activity.swap) return "via NEAR Intents";
+    const isReceived = parseFloat(activity.amount ?? "0") > 0;
+
+    if (activity.actionKind === "FunctionCall" && activity.methodName) {
+        const contract = activity.receiverId || activity.counterparty || "unknown";
+        return `${activity.methodName} on ${contract}`;
+    }
+
+    if (isReceived) {
+        const from = activity.counterparty || activity.signerId || "unknown";
+        return `from ${from}`;
+    }
+    const to = activity.receiverId || activity.counterparty || treasuryId || "unknown";
+    return `to ${to}`;
 }
 
 /**

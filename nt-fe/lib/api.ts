@@ -283,6 +283,8 @@ export interface RecentActivity {
     receiptIds: string[];
     valueUsd?: number;
     swap?: SwapInfo;
+    actionKind?: string | null;
+    methodName?: string | null;
 }
 
 export interface RecentActivityResponse {
