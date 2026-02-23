@@ -479,31 +479,40 @@ export function extractBatchPaymentRequestData(
         throw new Error("Proposal is not a Batch Payment Request proposal");
     }
 
+    let tokenId: string;
+    let totalAmount: string;
+    let batchId: string;
+
     // Handle NEAR payments (approve_list)
     if (action.method_name === "approve_list") {
-        return {
-            tokenId: "NEAR",
-            totalAmount: action.deposit,
-            batchId: args.list_id || "",
-        };
+        tokenId = "NEAR";
+        totalAmount = action.deposit;
+        batchId = args.list_id || "";
     }
-
     // Handle Intents tokens (mt_transfer_call)
     // Token ID is in args.token_id (e.g., "nep141:btc.omft.near")
-    if (action.method_name === "mt_transfer_call") {
-        return {
-            tokenId: args.token_id || functionCall.receiver_id, // Use token_id from args
-            totalAmount: args.amount || "0",
-            batchId: String(args.msg) || "",
-        };
+    else if (action.method_name === "mt_transfer_call") {
+        tokenId = args.token_id || functionCall.receiver_id;
+        totalAmount = args.amount || "0";
+        batchId = String(args.msg) || "";
     }
-
     // Handle FT tokens (ft_transfer_call)
     // Token ID is the contract being called (receiver_id)
+    else {
+        tokenId = functionCall.receiver_id;
+        totalAmount = args.amount || "0";
+        batchId = String(args.msg) || "";
+    }
+
+    // Extract notes and URL from proposal description (same as single payments)
+    const notes = decodeProposalDescription("notes", proposal.description);
+    const title = decodeProposalDescription("title", proposal.description);
+
     return {
-        tokenId: functionCall.receiver_id, // This is the FT contract address
-        totalAmount: args.amount || "0",
-        batchId: String(args.msg) || "",
+        tokenId,
+        totalAmount,
+        batchId,
+        notes: title ? title : notes,
     };
 }
 

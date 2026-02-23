@@ -23,6 +23,7 @@ import { useTreasury } from "@/hooks/use-treasury";
 import { useNear } from "@/stores/near-store";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useExportHistory } from "@/hooks/use-treasury-queries";
+import { APP_CONTACT_US_URL } from "@/constants/config";
 import { DateTimePicker } from "@/components/datepicker";
 import { Input } from "@/components/input";
 import {
@@ -287,7 +288,7 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
                                     className={cn(
                                         "text-xs font-medium uppercase text-muted-foreground",
                                         header.column.id === "status" &&
-                                            "text-right",
+                                        "text-right",
                                     )}
                                 >
                                     {flexRender(
@@ -308,7 +309,7 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
                                     className={cn(
                                         "align-top",
                                         cell.column.id === "status" &&
-                                            "text-right",
+                                        "text-right",
                                     )}
                                 >
                                     {flexRender(
@@ -710,7 +711,7 @@ export default function ExportActivityPage() {
                                                                 style={{
                                                                     borderColor:
                                                                         documentType ===
-                                                                        type.value
+                                                                            type.value
                                                                             ? "var(--general-unofficial-border-5)"
                                                                             : "var(--general-unofficial-border-3)",
                                                                 }}
@@ -736,7 +737,7 @@ export default function ExportActivityPage() {
                                                             <Calendar className="h-4 w-4" />
                                                             <span className="text-sm">
                                                                 {dateRange?.from &&
-                                                                dateRange?.to ? (
+                                                                    dateRange?.to ? (
                                                                     <>
                                                                         {format(
                                                                             dateRange.from,
@@ -763,9 +764,9 @@ export default function ExportActivityPage() {
                                                             value={
                                                                 dateRange
                                                                     ? {
-                                                                          from: dateRange.from,
-                                                                          to: dateRange.to,
-                                                                      }
+                                                                        from: dateRange.from,
+                                                                        to: dateRange.to,
+                                                                    }
                                                                     : undefined
                                                             }
                                                             onChange={(
@@ -774,27 +775,27 @@ export default function ExportActivityPage() {
                                                                 if (
                                                                     range &&
                                                                     typeof range ===
-                                                                        "object" &&
+                                                                    "object" &&
                                                                     "from" in
-                                                                        range
+                                                                    range
                                                                 ) {
                                                                     form.setValue(
                                                                         "dateRange",
                                                                         {
                                                                             from: range.from
                                                                                 ? startOfDay(
-                                                                                      range.from,
-                                                                                  )
+                                                                                    range.from,
+                                                                                )
                                                                                 : startOfDay(
-                                                                                      new Date(),
-                                                                                  ),
+                                                                                    new Date(),
+                                                                                ),
                                                                             to: range.to
                                                                                 ? endOfDay(
-                                                                                      range.to,
-                                                                                  )
+                                                                                    range.to,
+                                                                                )
                                                                                 : endOfDay(
-                                                                                      new Date(),
-                                                                                  ),
+                                                                                    new Date(),
+                                                                                ),
                                                                         },
                                                                         {
                                                                             shouldValidate: true,
@@ -1003,8 +1004,8 @@ export default function ExportActivityPage() {
                                                 {!isMember || !accountId
                                                     ? "You don't have permission to export"
                                                     : isExporting
-                                                      ? "Exporting..."
-                                                      : "Export"}
+                                                        ? "Exporting..."
+                                                        : "Export"}
                                             </Button>
                                         </div>
                                     </TabsContent>
@@ -1014,7 +1015,7 @@ export default function ExportActivityPage() {
                                         className="mt-4"
                                     >
                                         {!exportHistoryData ||
-                                        exportHistoryData.data.length === 0 ? (
+                                            exportHistoryData.data.length === 0 ? (
                                             <EmptyState
                                                 icon={FileX}
                                                 title="No exports yet"
@@ -1119,6 +1120,9 @@ export default function ExportActivityPage() {
                                             variant="default"
                                             className="px-2! py-3!"
                                             size="sm"
+                                            onClick={() => {
+                                                window.open(APP_CONTACT_US_URL, "_blank");
+                                            }}
                                         >
                                             Contact Us
                                         </Button>

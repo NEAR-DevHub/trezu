@@ -68,7 +68,7 @@ export function RoleSelector({
         if (selectedRoles.length === 0) {
             return "Set Role"
         } else if (selectedRoles.length === availableRoles.length) {
-            return "Full Access"
+            return "All Roles"
         }
         const selectedRoleTitles = selectedRoles
             .sort((a, b) => a.localeCompare(b))

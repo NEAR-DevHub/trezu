@@ -275,5 +275,15 @@ export function BatchPaymentRequestExpanded({
         },
     ];
 
-    return <InfoDisplay items={items} />;
+    return (
+        <>
+            <InfoDisplay items={items} />
+            {data.notes && data.notes !== "" && (
+                <div className="flex justify-between gap-2 p-3 pt-0 mt-[-10px]">
+                    <p className="text-sm text-muted-foreground">Notes</p>
+                    <p className="text-sm font-medium">{data.notes}</p>
+                </div>
+            )}
+        </>
+    );
 }

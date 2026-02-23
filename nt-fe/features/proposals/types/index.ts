@@ -177,6 +177,7 @@ export interface BatchPaymentRequestData {
     tokenId: string;
     totalAmount: string;
     batchId: string;
+    notes?: string;
 }
 
 /**
