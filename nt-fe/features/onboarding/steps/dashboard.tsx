@@ -113,6 +113,18 @@ export const DASHBOARD_TOUR: Tour = {
             pointerPadding: 8,
             pointerRadius: 8,
         },
+        {
+            icon: null,
+            title: "",
+            content: (
+                <>Here you can view your treasury's balance and transactions.</>
+            ),
+            side: "bottom-right",
+            showControls: false,
+            disableInteraction: true,
+            blockKeyboardControl: true,
+            showSkip: false,
+        },
     ],
 };
 
@@ -171,14 +183,22 @@ export function WelcomeTooltip() {
         startNextStep(TOUR_NAMES.DASHBOARD);
     };
 
-    if (isWelcomeDismissed || isGuestTreasury || isLoading || hidden || !accountId)
+    if (
+        isWelcomeDismissed ||
+        isGuestTreasury ||
+        isLoading ||
+        hidden ||
+        !accountId
+    )
         return null;
 
     return (
         <div className="fixed max-w-72 flex flex-col gap-0 bottom-8 right-8 z-50 p-3 bg-popover-foreground text-popover rounded-[8px]">
             <div className="flex items-center justify-between pt-0.5 pb-2.5">
                 <h1 className="text-sm font-semibold">
-                    {currentStep === 1 ? "🎉 Welcome!" : "Take a quick tour of Treasury"}
+                    {currentStep === 1
+                        ? "🎉 Welcome!"
+                        : "Take a quick tour of Treasury"}
                 </h1>
                 <XIcon
                     className="size-4 cursor-pointer"
@@ -188,12 +208,14 @@ export function WelcomeTooltip() {
             {currentStep === 1 ? (
                 <>
                     <p className="py-2 text-xs">
-                        Hey there! You can now manage assets across all supported
-                        networks. To get you started, we've sponsored a little NEAR
-                        balance so you can try things out
+                        Hey there! You can now manage assets across all
+                        supported networks. To get you started, we've sponsored
+                        a little NEAR balance so you can try things out
                     </p>
                     <div className="pt-2 flex justify-between items-center">
-                        <span className="text-xs text-popover/70">{currentStep} of 2</span>
+                        <span className="text-xs text-popover/70">
+                            {currentStep} of 2
+                        </span>
                         <Button
                             variant="default"
                             size="sm"
@@ -207,11 +229,13 @@ export function WelcomeTooltip() {
             ) : (
                 <>
                     <p className="py-2 text-xs">
-                        See how to make a deposit, create a request, and set up a new
-                        account.
+                        See how to make a deposit, create a request, and set up
+                        a new account.
                     </p>
                     <div className="pt-2 flex justify-between items-center">
-                        <span className="text-xs text-popover/70">{currentStep} of 2</span>
+                        <span className="text-xs text-popover/70">
+                            {currentStep} of 2
+                        </span>
                         <div className="flex gap-1.5">
                             <Button
                                 variant="ghost"
@@ -239,10 +263,16 @@ export function WelcomeTooltip() {
 
 export function CongratsTooltip() {
     const [isVisible, setIsVisible] = useState(false);
-    const { isGuestTreasury, isLoading: isLoadingGuestTreasury, treasuryId } = useTreasury();
+    const {
+        isGuestTreasury,
+        isLoading: isLoadingGuestTreasury,
+        treasuryId,
+    } = useTreasury();
     const { accountId } = useNear();
     const isMobile = useMediaQuery("(max-width: 768px)");
     const isSidebarOpen = useSidebarStore((state) => state.isSidebarOpen);
+    const { currentTour } = useNextStep();
+    const isTourActive = !!currentTour;
 
     const { data, isLoading: isLoadingAssets } = useAssets(treasuryId);
     const { tokens } = data || { tokens: [] };
@@ -253,7 +283,8 @@ export function CongratsTooltip() {
         },
     );
 
-    const isLoading = isLoadingAssets || isLoadingProposals || isLoadingGuestTreasury;
+    const isLoading =
+        isLoadingAssets || isLoadingProposals || isLoadingGuestTreasury;
     const hidden = isMobile && isSidebarOpen;
 
     useEffect(() => {
@@ -279,7 +310,8 @@ export function CongratsTooltip() {
             return true;
         };
         const hasAssets = tokens.filter(tokenBalanceIsPositive).length > 0;
-        const hasPayments = !!proposals?.proposals?.length && proposals.proposals.length > 0;
+        const hasPayments =
+            !!proposals?.proposals?.length && proposals.proposals.length > 0;
 
         // All steps completed: Create Treasury (always true if user is here) + Add Assets + Create Payment
         const allStepsCompleted = hasAssets && hasPayments;
@@ -292,7 +324,10 @@ export function CongratsTooltip() {
         if (allStepsCompleted && congratsShown !== "true") {
             setIsVisible(true);
             // Mark as shown so it doesn't appear again
-            localStorage.setItem(LOCAL_STORAGE_KEYS.DASHBOARD_TOUR_COMPLETED, "true");
+            localStorage.setItem(
+                LOCAL_STORAGE_KEYS.DASHBOARD_TOUR_COMPLETED,
+                "true",
+            );
         }
     }, [isGuestTreasury, isLoading, tokens, proposals]);
 
@@ -300,23 +335,28 @@ export function CongratsTooltip() {
         setIsVisible(false);
     };
 
-    if (!isVisible || isGuestTreasury || isLoading || hidden || !accountId)
+    if (
+        !isVisible ||
+        isGuestTreasury ||
+        isLoading ||
+        hidden ||
+        !accountId ||
+        isTourActive
+    )
         return null;
 
     return (
         <div className="fixed max-w-72 flex flex-col gap-0 bottom-8 right-8 z-50 p-3 bg-popover-foreground text-popover rounded-[8px]">
             <div className="flex items-center justify-between pt-0.5 pb-2.5">
-                <h1 className="text-sm font-semibold">
-                    🎉 Congrats!
-                </h1>
+                <h1 className="text-sm font-semibold">🎉 Congrats!</h1>
                 <XIcon
                     className="size-4 cursor-pointer"
                     onClick={handleDismiss}
                 />
             </div>
             <p className="py-2 text-xs">
-                You've completed your Treasury setup. Enjoy easy management of your
-                assets.
+                You've completed your Treasury setup. Enjoy easy management of
+                your assets.
             </p>
             <div className="pt-2 flex justify-end">
                 <Button
@@ -331,4 +371,3 @@ export function CongratsTooltip() {
         </div>
     );
 }
-
