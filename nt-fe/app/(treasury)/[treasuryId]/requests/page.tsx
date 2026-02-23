@@ -422,7 +422,7 @@ export default function RequestsPage() {
                     </TabsContent>
                     <TabsContent value="rejected">
                         <ProposalsList
-                            status={["Rejected", "Failed"]}
+                            status={["Rejected"]}
                             onSelectionChange={setSelectedCount}
                         />
                     </TabsContent>
