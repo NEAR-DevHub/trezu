@@ -583,7 +583,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
             );
 
             const toastAction =
-                votes.length === 1
+                votes.length === 1 && votes[0].vote !== "Remove"
                     ? {
                           label: "View Request",
                           onClick: () =>
@@ -592,25 +592,26 @@ export const useNearStore = create<NearStore>((set, get) => ({
                               ),
                       }
                     : undefined;
-            toast.success(
-                `Your vote${votes.length > 1 ? "s" : ""} have been submitted`,
-                {
-                    duration: 10000,
-                    action: toastAction,
-                    classNames: {
-                        toast: "!p-2 !px-4",
-                        actionButton: cn(
-                            !toastAction ? "!hidden" : "",
-                            "!bg-transparent !text-foreground hover:!bg-muted !border-0",
-                        ),
-                        title: cn(
-                            toastAction
-                                ? "!border-r !border-r-border !pr-4"
-                                : "!pr-0",
-                        ),
-                    },
+            const text =
+                votes.length === 1 && votes[0].vote === "Remove"
+                    ? "Your proposal has been removed"
+                    : `Your vote${votes.length > 1 ? "s" : ""} have been submitted`;
+            toast.success(text, {
+                duration: 10000,
+                action: toastAction,
+                classNames: {
+                    toast: "!p-2 !px-4",
+                    actionButton: cn(
+                        !toastAction ? "!hidden" : "",
+                        "!bg-transparent !text-foreground hover:!bg-muted !border-0",
+                    ),
+                    title: cn(
+                        toastAction
+                            ? "!border-r !border-r-border !pr-4"
+                            : "!pr-0",
+                    ),
                 },
-            );
+            });
         } catch (error) {
             console.error("Failed to vote proposals:", error);
             toast.error(`Failed to submit vote${votes.length > 1 ? "s" : ""}`);
