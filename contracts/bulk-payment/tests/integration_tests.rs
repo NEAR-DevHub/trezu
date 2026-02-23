@@ -948,16 +948,6 @@ async fn test_fungible_token_payment() -> Result<(), Box<dyn std::error::Error>>
 }
 
 #[tokio::test]
-async fn test_near_intents_payment() -> Result<(), Box<dyn std::error::Error>> {
-    // Note: This is a placeholder test showing the structure
-    // Full implementation requires deploying wrap.near, omft.near, and intents.near
-    // Similar to the JavaScript example at NEAR-DevHub/near-treasury
-    // For now, this test is marked as ignored until the full contract setup is available
-
-    Ok(())
-}
-
-#[tokio::test]
 async fn test_reject_pending_list() -> Result<(), Box<dyn std::error::Error>> {
     let (_sandbox, network_config, contract_id) = setup_contract().await?;
 
