@@ -1,0 +1,321 @@
+[
+    {
+        "id": "near",
+        "contractId": null,
+        "residency": "Near",
+        "network": "near",
+        "chainName": "Near Protocol",
+        "symbol": "wNEAR",
+        "balance": {
+            "Standard": {
+                "total": "3312679243186641199999968",
+                "locked": "0"
+            }
+        },
+        "decimals": 24,
+        "price": "1.059",
+        "name": "Near",
+        "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/6535.png",
+        "chainIcons": {
+            "dark": "https://near-intents.org/static/icons/network/near.svg",
+            "light": "https://near-intents.org/static/icons/network/near_dark.svg"
+        }
+    },
+    {
+        "id": "near",
+        "contractId": null,
+        "residency": "Staked",
+        "network": "near",
+        "chainName": "Near Protocol",
+        "symbol": "wNEAR",
+        "balance": {
+            "Staked": {
+                "stakedBalance": "1751130993752953413371194",
+                "unstakedBalance": "540000000000000000000013",
+                "canWithdraw": true,
+                "pools": [
+                    {
+                        "poolId": "astro-stakers.poolv1.near",
+                        "stakedBalance": "1161155075820711174840",
+                        "unstakedBalance": "330000000000000000000002",
+                        "canWithdraw": true
+                    },
+                    {
+                        "poolId": "figment.poolv1.near",
+                        "stakedBalance": "122457804529066719294187",
+                        "unstakedBalance": "210000000000000000000008",
+                        "canWithdraw": true
+                    },
+                    {
+                        "poolId": "zavodil.poolv1.near",
+                        "stakedBalance": "212669171763963978955628",
+                        "unstakedBalance": "2",
+                        "canWithdraw": true
+                    },
+                    {
+                        "poolId": "flipside.pool.near",
+                        "stakedBalance": "1000000000000000000000000",
+                        "unstakedBalance": "0",
+                        "canWithdraw": true
+                    },
+                    {
+                        "poolId": "potlock.pool.near",
+                        "stakedBalance": "414842862384102003946539",
+                        "unstakedBalance": "1",
+                        "canWithdraw": true
+                    }
+                ]
+            }
+        },
+        "decimals": 24,
+        "price": "1.059",
+        "name": "Near",
+        "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/6535.png",
+        "chainIcons": {
+            "dark": "https://near-intents.org/static/icons/network/near.svg",
+            "light": "https://near-intents.org/static/icons/network/near_dark.svg"
+        }
+    },
+    {
+        "id": "wrap.near",
+        "contractId": "wrap.near",
+        "residency": "Ft",
+        "network": "near",
+        "chainName": "Near Protocol",
+        "symbol": "wNEAR",
+        "balance": {
+            "Standard": {
+                "total": "1686595000000000000000000",
+                "locked": "0"
+            }
+        },
+        "decimals": 24,
+        "price": "1.059",
+        "name": "Near",
+        "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/6535.png",
+        "chainIcons": {
+            "dark": "https://near-intents.org/static/icons/network/near.svg",
+            "light": "https://near-intents.org/static/icons/network/near_dark.svg"
+        }
+    },
+    {
+        "id": "nep141:wrap.near",
+        "contractId": "wrap.near",
+        "residency": "Intents",
+        "network": "near",
+        "chainName": "Near Protocol",
+        "symbol": "wNEAR",
+        "balance": {
+            "Standard": {
+                "total": "933000761325128490175801",
+                "locked": "0"
+            }
+        },
+        "decimals": 24,
+        "price": "1.059",
+        "name": "Near",
+        "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/6535.png",
+        "chainIcons": {
+            "dark": "https://near-intents.org/static/icons/network/near.svg",
+            "light": "https://near-intents.org/static/icons/network/near_dark.svg"
+        }
+    },
+    {
+        "id": "nep141:gnosis-0x9c58bacc331c9aa871afd802db6379a98e80cedb.omft.near",
+        "contractId": "gnosis-0x9c58bacc331c9aa871afd802db6379a98e80cedb.omft.near",
+        "residency": "Intents",
+        "network": "gnosis",
+        "chainName": "Gnosis",
+        "symbol": "GNO",
+        "balance": {
+            "Standard": {
+                "total": "2417537934556010",
+                "locked": "0"
+            }
+        },
+        "decimals": 18,
+        "price": "120.47",
+        "name": "Gnosis",
+        "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/1659.png",
+        "chainIcons": {
+            "dark": "https://near-intents.org/static/icons/network/gnosis_white.svg",
+            "light": "https://near-intents.org/static/icons/network/gnosis.svg"
+        }
+    },
+    {
+        "id": "nep141:doge.omft.near",
+        "contractId": "doge.omft.near",
+        "residency": "Intents",
+        "network": "dogecoin",
+        "chainName": "Dogecoin",
+        "symbol": "DOGE",
+        "balance": {
+            "Standard": {
+                "total": "122033121",
+                "locked": "0"
+            }
+        },
+        "decimals": 8,
+        "price": "0.099435",
+        "name": "Dogecoin",
+        "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/74.png",
+        "chainIcons": {
+            "dark": "https://near-intents.org/static/icons/network/dogecoin.svg",
+            "light": "https://near-intents.org/static/icons/network/dogecoin.svg"
+        }
+    },
+    {
+        "id": "nep141:sol.omft.near",
+        "contractId": "sol.omft.near",
+        "residency": "Intents",
+        "network": "solana",
+        "chainName": "Solana",
+        "symbol": "SOL",
+        "balance": {
+            "Standard": {
+                "total": "8278170",
+                "locked": "0"
+            }
+        },
+        "decimals": 9,
+        "price": "86.16",
+        "name": "Solana",
+        "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/5426.png",
+        "chainIcons": {
+            "dark": "https://near-intents.org/static/icons/network/solana.svg",
+            "light": "https://near-intents.org/static/icons/network/solana.svg"
+        }
+    },
+    {
+        "id": "nep141:xrp.omft.near",
+        "contractId": "xrp.omft.near",
+        "residency": "Intents",
+        "network": "xrpledger",
+        "chainName": "XRP Ledger",
+        "symbol": "XRP",
+        "balance": {
+            "Standard": {
+                "total": "842173",
+                "locked": "0"
+            }
+        },
+        "decimals": 6,
+        "price": "1.44",
+        "name": "XRP",
+        "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/52.png",
+        "chainIcons": {
+            "dark": "https://near-intents.org/static/icons/network/xrpledger_white.svg",
+            "light": "https://near-intents.org/static/icons/network/xrpledger.svg"
+        }
+    },
+    {
+        "id": "nep141:sol-5ce3bf3a31af18be40ba30f721101b4341690186.omft.near",
+        "contractId": "sol-5ce3bf3a31af18be40ba30f721101b4341690186.omft.near",
+        "residency": "Intents",
+        "network": "solana",
+        "chainName": "Solana",
+        "symbol": "USDC",
+        "balance": {
+            "Standard": {
+                "total": "678573",
+                "locked": "0"
+            }
+        },
+        "decimals": 6,
+        "price": "0.999898",
+        "name": "USD Coin",
+        "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/3408.png",
+        "chainIcons": {
+            "dark": "https://near-intents.org/static/icons/network/solana.svg",
+            "light": "https://near-intents.org/static/icons/network/solana.svg"
+        }
+    },
+    {
+        "id": "nep141:usdt.tether-token.near",
+        "contractId": "usdt.tether-token.near",
+        "residency": "Intents",
+        "network": "near",
+        "chainName": "Near Protocol",
+        "symbol": "USDT",
+        "balance": {
+            "Standard": {
+                "total": "558432",
+                "locked": "0"
+            }
+        },
+        "decimals": 6,
+        "price": "0.999698",
+        "name": "Tether USD",
+        "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/825.png",
+        "chainIcons": {
+            "dark": "https://near-intents.org/static/icons/network/near.svg",
+            "light": "https://near-intents.org/static/icons/network/near_dark.svg"
+        }
+    },
+    {
+        "id": "nep141:sol-c58e6539c2f2e097c251f8edf11f9c03e581f8d4.omft.near",
+        "contractId": "sol-c58e6539c2f2e097c251f8edf11f9c03e581f8d4.omft.near",
+        "residency": "Intents",
+        "network": "solana",
+        "chainName": "Solana",
+        "symbol": "TRUMP",
+        "balance": {
+            "Standard": {
+                "total": "132207",
+                "locked": "0"
+            }
+        },
+        "decimals": 6,
+        "price": "3.5",
+        "name": "OFFICIAL TRUMP",
+        "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/35336.png",
+        "chainIcons": {
+            "dark": "https://near-intents.org/static/icons/network/solana.svg",
+            "light": "https://near-intents.org/static/icons/network/solana.svg"
+        }
+    },
+    {
+        "id": "usdt.tether-token.near",
+        "contractId": "usdt.tether-token.near",
+        "residency": "Ft",
+        "network": "near",
+        "chainName": "Near Protocol",
+        "symbol": "USDT",
+        "balance": {
+            "Standard": {
+                "total": "110000",
+                "locked": "0"
+            }
+        },
+        "decimals": 6,
+        "price": "0.999698",
+        "name": "Tether USD",
+        "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/825.png",
+        "chainIcons": {
+            "dark": "https://near-intents.org/static/icons/network/near.svg",
+            "light": "https://near-intents.org/static/icons/network/near_dark.svg"
+        }
+    },
+    {
+        "id": "nep141:btc.omft.near",
+        "contractId": "btc.omft.near",
+        "residency": "Intents",
+        "network": "bitcoin",
+        "chainName": "Bitcoin",
+        "symbol": "BTC",
+        "balance": {
+            "Standard": {
+                "total": "182",
+                "locked": "0"
+            }
+        },
+        "decimals": 8,
+        "price": "68494",
+        "name": "Bitcoin",
+        "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/1.png",
+        "chainIcons": {
+            "dark": "https://near-intents.org/static/icons/network/btc.svg",
+            "light": "https://near-intents.org/static/icons/network/btc.svg"
+        }
+    }
+]

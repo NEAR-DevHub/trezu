@@ -1,5 +1,7 @@
 node_modules
 .claude
 .env
+.DS_Store
 nt-fe/public/ledger-wallet/*.js
+nt-fe/screenshots/
 sandbox/sandbox-init/target
