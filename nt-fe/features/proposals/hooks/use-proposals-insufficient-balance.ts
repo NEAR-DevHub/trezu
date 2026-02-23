@@ -57,7 +57,11 @@ export function useProposalsInsufficientBalance(
         uniqueTokenIds.forEach((tokenId, index) => {
             const query = tokenMetadataQueries[index];
             if (query.data) {
-                map.set(tokenId, query.data);
+                map.set(tokenId, {
+                    symbol: query.data.symbol,
+                    network: query.data.network || "",
+                    decimals: query.data.decimals,
+                });
             }
         });
         return map;
