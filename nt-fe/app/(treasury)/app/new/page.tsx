@@ -24,11 +24,12 @@ import { Member, MemberInput, memberSchema } from "@/components/member-input";
 import { useNear } from "@/stores/near-store";
 import { ThresholdSlider } from "@/components/threshold";
 import { CircleCheck, Database, UsersRound, Vote } from "lucide-react";
-import { InfoAlert } from "@/components/info-alert";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { ROLES } from "@/components/role-selector";
+import { Alert } from "@/components/ui/alert";
+import { AlertDescription } from "@/components/alert";
 
 const treasuryFormSchema = z
     .object({
@@ -316,10 +317,10 @@ function Step3({ handleBack }: StepProps) {
                     ))}
 
                     <InputBlock invalid={false}>
-                        <div className="flex flex-col gap-1 items-center justify-center">
-                            <CircleCheck className="size-5 text-general-success-foreground" />
-                            <p className="font-semibold text-xl text-muted-foreground">
-                                <span className="line-through">~0.25</span>{" "}
+                        <div className="flex flex-col px-3.5 py-3 gap-1 items-center justify-center">
+                            <CircleCheck className="size-5" />
+                            <p className="font-semibold text-[15px] text-muted-foreground">
+                                <span className="line-through">~0.25 NEAR</span>{" "}
                                 <span className="text-general-success-foreground">
                                     Free
                                 </span>
@@ -327,24 +328,21 @@ function Step3({ handleBack }: StepProps) {
                             <p className="text-xs text-muted-foreground">
                                 Deployment Fee
                             </p>
-                            <p className="text-xs font-medium text-general-success-foreground">
-                                Sponsored by TREASURY
-                            </p>
                         </div>
                     </InputBlock>
                 </div>
             </div>
 
-            <InfoAlert
-                message={
+            <Alert variant="info">
+                <AlertDescription>
                     <p className="inline-block">
-                        To support new projects,{" "}
-                        <span className="font-semibold">TREASURY</span> is
-                        sponsoring the one-time platform and network storage
-                        fees for your Treasury deployment on the NEAR protocol.
+                        <div className="font-semibold">🎉 No deployment fee</div>
+
+                        To support new projects, TREZU covers all one-time
+                        deployment and network storage fees.
                     </p>
-                }
-            />
+                </AlertDescription>
+            </Alert>
 
             <InlineNextButton
                 text="Create Treasury"

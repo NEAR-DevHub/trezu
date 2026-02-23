@@ -168,7 +168,7 @@ export function MemberInput<
                                             ) : (
                                                 <FullAccessTooltip>
                                                     <Pill
-                                                        title={"Full Access"}
+                                                        title={"All Roles"}
                                                         variant="secondary"
                                                     />
                                                 </FullAccessTooltip>

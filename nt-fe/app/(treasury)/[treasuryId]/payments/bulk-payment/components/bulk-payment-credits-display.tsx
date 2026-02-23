@@ -5,6 +5,7 @@ import {
 } from "@/lib/subscription-api";
 import { Button } from "@/components/button";
 import { CreditsQuotaDisplay } from "@/components/credits-quota-display";
+import { APP_CONTACT_US_URL } from "@/constants/config";
 
 interface BulkPaymentCreditsDisplayProps {
     credits: {
@@ -69,6 +70,9 @@ export function BulkPaymentCreditsDisplay({
                         variant="default"
                         className="px-2! py-3!"
                         size='sm'
+                        onClick={() => {
+                            window.open(APP_CONTACT_US_URL, "_blank");
+                        }}
                     >
                         Contact Us
                     </Button>

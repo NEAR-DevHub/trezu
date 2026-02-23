@@ -11,7 +11,7 @@ import { RecentActivity } from "@/features/activity";
 import { OnboardingProgress } from "@/features/onboarding";
 import { DepositModal } from "./components/deposit-modal";
 import { InfoBox } from "@/features/onboarding/components/info-box";
-import { DashboardTour } from "@/features/onboarding/steps/dashboard";
+import { WelcomeTooltip, CongratsTooltip } from "@/features/onboarding/steps/dashboard";
 import { useTreasury } from "@/hooks/use-treasury";
 
 export default function AppPage() {
@@ -53,7 +53,8 @@ export default function AppPage() {
                 isOpen={isDepositModalOpen}
                 onClose={() => setIsDepositModalOpen(false)}
             />
-            <DashboardTour />
+            <WelcomeTooltip />
+            <CongratsTooltip />
         </PageComponentLayout>
     );
 }
