@@ -696,6 +696,97 @@ pub async fn fetch_tokens_with_fallback(
     result
 }
 
+/// Like [`fetch_tokens_with_fallback`] but also enriches every result with live prices from the
+/// Defuse / Ref SDK API.
+///
+/// `fetch_tokens_with_fallback` uses the counterparties table as a fast path which never carries
+/// price information. This wrapper runs the same metadata resolution and then makes a **single**
+/// batch call to `fetch_tokens_metadata` (Defuse/Ref SDK) to attach `price` and
+/// `price_updated_at` to every token that supports it.
+///
+/// Tokens that the Defuse API does not know about keep `price: None` (same behavior as before).
+///
+/// # Arguments
+/// * `state` - Application state
+/// * `token_ids` - List of token IDs (can be mixed defuse IDs and FT contract IDs)
+///
+/// # Returns
+/// * `HashMap<String, TokenMetadata>` - Map of token ID to metadata with prices attached
+pub async fn fetch_tokens_with_defuse_extension(
+    state: &Arc<AppState>,
+    token_ids: &[String],
+) -> HashMap<String, TokenMetadata> {
+    let mut result = fetch_tokens_with_fallback(state, token_ids).await;
+
+    if result.is_empty() {
+        return result;
+    }
+
+    // Build defuse asset IDs for all tokens so we can fetch prices in one batch.
+    // Mapping: defuse_id -> original token_id (so we can put the price back).
+    let transform_to_defuse = |token_id: &str| -> String {
+        if token_id == "near" {
+            "nep141:wrap.near".to_string()
+        } else if let Some(stripped) = token_id.strip_prefix("intents.near:") {
+            stripped.to_string()
+        } else if token_id.starts_with("nep141:") || token_id.starts_with("nep245:") {
+            token_id.to_string()
+        } else {
+            format!("nep141:{}", token_id)
+        }
+    };
+
+    // Build reverse map: defuse_id -> original token_id, preferring canonical IDs.
+    // Priority: "near" > bare contract ID > "intents.near:" prefixed.
+    // This avoids flaky price lookup when e.g. both "near" and "intents.near:nep141:wrap.near"
+    // are present and both map to "nep141:wrap.near".
+    let priority = |id: &str| -> u8 {
+        if id == "near" {
+            0
+        } else if id.starts_with("intents.near:") {
+            2
+        } else {
+            1
+        }
+    };
+    let mut defuse_to_original: HashMap<String, String> = HashMap::new();
+    for id in result.keys() {
+        let defuse_id = transform_to_defuse(id);
+        match defuse_to_original.get(&defuse_id) {
+            Some(existing) if priority(existing) <= priority(id) => {}
+            _ => {
+                defuse_to_original.insert(defuse_id, id.clone());
+            }
+        }
+    }
+    let defuse_ids: Vec<String> = defuse_to_original.keys().cloned().collect();
+
+    match fetch_tokens_metadata(state, &defuse_ids).await {
+        Ok(price_metadata) => {
+            for meta in price_metadata {
+                if meta.price.is_none() {
+                    continue;
+                }
+                if let Some(original_id) = defuse_to_original.get(&meta.token_id)
+                    && let Some(entry) = result.get_mut(original_id)
+                {
+                    // For NEAR, preserve canonical NEAR metadata with the fetched price
+                    entry.price = meta.price;
+                    entry.network = meta.network;
+                    entry.chain_name = meta.chain_name;
+                    entry.chain_icons = meta.chain_icons;
+                    entry.price_updated_at = meta.price_updated_at;
+                }
+            }
+        }
+        Err(e) => {
+            log::warn!("fetch_tokens_with_prices: price enrichment failed: {:?}", e);
+        }
+    }
+
+    result
+}
+
 pub async fn get_token_metadata(
     State(state): State<Arc<AppState>>,
     Query(mut params): Query<TokenMetadataQuery>,
@@ -706,16 +797,19 @@ pub async fn get_token_metadata(
     state
         .cache
         .cached_json(CacheTier::LongTerm, cache_key, async move {
-            let is_near = params.token_id.to_lowercase() == "near" || params.token_id.is_empty();
+            let is_near =
+                params.token_id.eq_ignore_ascii_case("near") || params.token_id.is_empty();
             if is_near {
-                params.token_id = "nep141:wrap.near".to_string();
+                params.token_id = "near".to_string();
+            } else {
+                params.token_id = format!("intents.near:{}", params.token_id);
             }
 
             // Fetch token metadata using the reusable function
-            let tokens = fetch_tokens_metadata(&state_clone, &[params.token_id.clone()]).await?;
+            let tokens =
+                fetch_tokens_with_defuse_extension(&state_clone, &[params.token_id.clone()]).await;
 
-            // Get the first token from the array
-            let wrap_metadata = tokens.first().ok_or_else(|| {
+            let wrap_metadata = tokens.get(&params.token_id).ok_or_else(|| {
                 (
                     StatusCode::NOT_FOUND,
                     format!("Token not found: {}", params.token_id),

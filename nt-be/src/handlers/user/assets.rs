@@ -21,7 +21,7 @@ use crate::{
     constants::{
         INTENTS_CONTRACT_ID, NEAR_ICON, REF_FINANCE_CONTRACT_ID, intents_chains::ChainIcons,
     },
-    handlers::token::{TokenMetadata as TokenMetadataResponse, fetch_tokens_metadata},
+    handlers::token::{TokenMetadata as TokenMetadataResponse, fetch_tokens_with_defuse_extension},
 };
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -246,29 +246,24 @@ async fn fetch_intents_balances(
     Ok(balances.data)
 }
 
-/// Builds intents tokens from token metadata
 fn build_intents_tokens(
     tokens_with_balances: Vec<(String, String)>,
-    tokens_metadata: &[TokenMetadataResponse],
+    metadata_map: &HashMap<String, TokenMetadataResponse>,
 ) -> Vec<(SimplifiedToken, U128)> {
     tokens_with_balances
         .into_iter()
         .filter_map(|(token_id, balance)| {
-            // Find metadata by matching token_id
-            let metadata = tokens_metadata.iter().find(|t| t.token_id == token_id)?;
-
-            // Extract contract_id (remove prefix like "nep141:" if present)
-            let contract_id = if token_id.starts_with("nep141:") {
-                token_id.split(':').nth(1).unwrap_or(&token_id).to_string()
+            let metadata = if token_id == "nep141:wrap.near" {
+                metadata_map.get("near")
             } else {
-                token_id.clone()
-            };
+                metadata_map.get(&format!("intents.near:{}", token_id))
+            }?;
             let balance_raw: U128 = balance.parse::<u128>().unwrap_or(0).into();
 
             Some((
                 SimplifiedToken {
-                    id: metadata.token_id.clone(),
-                    contract_id: Some(contract_id),
+                    id: token_id.clone(),
+                    contract_id: Some(token_id),
                     decimals: metadata.decimals,
                     balance: Balance::Standard {
                         total: balance_raw.0.to_string(),
@@ -386,44 +381,39 @@ pub async fn get_user_assets(
                 })
                 .collect();
 
-            // Collect all unique token IDs that have positive balances
             let mut token_ids_to_fetch: Vec<String> = ref_tokens_with_balances
                 .iter()
-                .map(|(id, _)| format!("nep141:{}", id.clone()))
+                .map(|(id, _)| id.clone())
                 .collect();
-            token_ids_to_fetch.extend(intents_balances.iter().map(|(id, _)| id.clone()));
-            token_ids_to_fetch.push("nep141:wrap.near".to_string());
+            token_ids_to_fetch.extend(
+                intents_balances
+                    .iter()
+                    .map(|(id, _)| format!("intents.near:{}", id)),
+            );
+            token_ids_to_fetch.push("near".to_string());
 
             // Fetch metadata for only tokens with positive balances in a single batch request
-            let tokens_metadata = if !token_ids_to_fetch.is_empty() {
-                fetch_tokens_metadata(&state_clone, &token_ids_to_fetch).await?
+            let metadata_map = if !token_ids_to_fetch.is_empty() {
+                fetch_tokens_with_defuse_extension(&state_clone, &token_ids_to_fetch).await
             } else {
-                Vec::new()
+                HashMap::new()
             };
 
+            // Build a map keyed by defuse asset ID for O(1) lookups
             // Find wrap.near metadata explicitly instead of assuming it's last
-            let near_token_meta = tokens_metadata
-                .iter()
-                .find(|m| m.token_id == "nep141:wrap.near")
-                .cloned()
-                .unwrap_or_else(|| {
-                    eprintln!(
-                        "[User Assets] Warning: wrap.near metadata not found, using fallback"
-                    );
-                    // Fallback metadata if wrap.near is not found
-                    let mut meta = TokenMetadataResponse::create_near_metadata(None, None);
-                    meta.token_id = "nep141:wrap.near".to_string();
-                    meta
-                });
+            let near_token_meta = metadata_map.get("near").cloned().unwrap_or_else(|| {
+                eprintln!("[User Assets] Warning: wrap.near metadata not found, using fallback");
+                let mut meta = TokenMetadataResponse::create_near_metadata(None, None);
+                meta.token_id = "nep141:wrap.near".to_string();
+                meta
+            });
 
-            // Build simplified tokens for REF Finance tokens
+            // Build simplified tokens for REF Finance tokens.
+            // REF token IDs are bare (e.g. "wrap.near"); metadata is keyed as "nep141:wrap.near".
             let mut all_simplified_tokens: Vec<(SimplifiedToken, U128)> = ref_tokens_with_balances
                 .into_iter()
                 .filter_map(|(token_id, balance)| {
-                    let intents_token_id = format!("nep141:{}", token_id.clone());
-                    let token_meta = tokens_metadata
-                        .iter()
-                        .find(|m| m.token_id == intents_token_id)?;
+                    let token_meta = metadata_map.get(&token_id)?;
 
                     let price = token_meta.price.unwrap_or(0.0).to_string();
 
@@ -453,9 +443,7 @@ pub async fn get_user_assets(
                 })
                 .collect();
 
-            // Build intents tokens with metadata
-            let intents_tokens = build_intents_tokens(intents_balances, &tokens_metadata);
-            all_simplified_tokens.extend(intents_tokens);
+            all_simplified_tokens.extend(build_intents_tokens(intents_balances, &metadata_map));
 
             // Add lockup balance if exists
             if let Some(lockup) = lockup_balance {

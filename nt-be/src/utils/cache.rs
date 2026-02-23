@@ -277,7 +277,6 @@ where
     // Cache miss - fetch the data
     let result = fetch_fn.await.map_err(|e| {
         let err: CacheError = e.into();
-        eprintln!("Error fetching data: {}", err);
         let res: (StatusCode, String) = err.into();
         res
     })?;
@@ -322,8 +321,7 @@ where
 {
     // Check cache first
     if let Some(cached_data) = cache.get(&cache_key).await {
-        return serde_json::from_value(cached_data).map_err(|e| {
-            eprintln!("Error deserializing cached data: {}", e);
+        return serde_json::from_value(cached_data).map_err(|_| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Failed to deserialize cached data".to_string(),
@@ -334,14 +332,12 @@ where
     // Cache miss - fetch the data
     let result = fetch_fn.await.map_err(|e| {
         let err: CacheError = e.into();
-        eprintln!("Error fetching data: {}", err);
         let res: (StatusCode, String) = err.into();
         res
     })?;
 
     // Serialize to JSON and store in cache
-    let result_value = serde_json::to_value(&result).map_err(|e| {
-        eprintln!("Error serializing result: {}", e);
+    let result_value = serde_json::to_value(&result).map_err(|_| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             "Failed to serialize result".to_string(),

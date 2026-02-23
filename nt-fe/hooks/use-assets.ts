@@ -86,7 +86,10 @@ export function useAggregatedTokens(
         // Group tokens by symbol
         const grouped = tokens.reduce(
             (acc, token) => {
-                const symbol = token.symbol === "wNEAR" ? "NEAR" : token.symbol;
+                const symbol =
+                    token.symbol === "wNEAR"
+                        ? "NEAR"
+                        : token.symbol.toUpperCase();
                 if (!acc[symbol]) {
                     acc[symbol] = {
                         symbol: symbol,
