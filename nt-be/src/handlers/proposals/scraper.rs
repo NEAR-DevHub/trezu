@@ -1137,14 +1137,14 @@ mod tests {
 
         let result = fetch_batch_payment_list(&network, batch_id, &contract_id).await;
 
-        let response = result.expect("fetch_batch_payment_list should succeed for Solana recipients");
+        let response =
+            result.expect("fetch_batch_payment_list should succeed for Solana recipients");
 
         assert_eq!(response.token_id, "nep141:sol.omft.near");
         assert_eq!(response.payments.len(), 2);
         for payment in &response.payments {
             assert_eq!(
-                payment.recipient,
-                "6ai1qQ7iFZ56SMztJSSQo5JbQYpEWm3YbenCU1pqvuKQ",
+                payment.recipient, "6ai1qQ7iFZ56SMztJSSQo5JbQYpEWm3YbenCU1pqvuKQ",
                 "Solana base58 address must be returned verbatim"
             );
         }
