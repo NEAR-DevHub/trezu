@@ -27,14 +27,17 @@ pub struct BulkPaymentContract {
 
 #[near(serializers = [json])]
 pub struct PaymentInput {
-    pub recipient: AccountId,
+    /// Recipient address. For native NEAR and NEP-141 tokens this is a NEAR AccountId.
+    /// For NEAR Intents (nep141: prefix), this may be an external chain address
+    /// (e.g. an Ethereum address like "0xD7A7..." or a Bitcoin address like "bc1q...").
+    pub recipient: String,
     pub amount: U128,
 }
 
 #[near(serializers = [json, borsh])]
 #[derive(Clone)]
 pub struct PaymentRecord {
-    pub recipient: AccountId,
+    pub recipient: String,
     pub amount: U128,
     pub status: PaymentStatus,
 }
@@ -72,7 +75,7 @@ pub enum ListStatus {
 #[near(serializers = [json])]
 #[derive(Clone)]
 pub struct PaymentTransaction {
-    pub recipient: AccountId,
+    pub recipient: String,
     pub amount: U128,
     pub block_height: u64,
 }
@@ -468,8 +471,11 @@ impl BulkPaymentContract {
                     || list.token_id == "near"
                     || list.token_id == "NEAR"
                 {
-                    // Native NEAR transfer
-                    Promise::new(payment.recipient.clone())
+                    // Native NEAR transfer — recipient must be a valid NEAR AccountId
+                    let recipient: AccountId = payment.recipient.parse().unwrap_or_else(|_| {
+                        env::panic_str("Invalid NEAR account ID for native transfer")
+                    });
+                    Promise::new(recipient)
                         .transfer(NearToken::from_yoctonear(payment.amount.0))
                         .detach();
                 } else {
@@ -853,11 +859,11 @@ mod tests {
 
         let payments = vec![
             PaymentInput {
-                recipient: accounts(1),
+                recipient: accounts(1).to_string(),
                 amount: U128(1_000_000_000_000_000_000_000_000),
             },
             PaymentInput {
-                recipient: accounts(2),
+                recipient: accounts(2).to_string(),
                 amount: U128(2_000_000_000_000_000_000_000_000),
             },
         ];
@@ -886,7 +892,7 @@ mod tests {
         let mut contract = BulkPaymentContract::default();
 
         let payments = vec![PaymentInput {
-            recipient: accounts(1),
+            recipient: accounts(1).to_string(),
             amount: U128(1_000_000_000_000_000_000_000_000),
         }];
 
@@ -911,11 +917,11 @@ mod tests {
 
         let payments = vec![
             PaymentInput {
-                recipient: accounts(1),
+                recipient: accounts(1).to_string(),
                 amount: U128(1_000_000_000_000_000_000_000_000),
             },
             PaymentInput {
-                recipient: accounts(2),
+                recipient: accounts(2).to_string(),
                 amount: U128(2_000_000_000_000_000_000_000_000),
             },
         ];
@@ -952,7 +958,7 @@ mod tests {
         testing_env!(context.build());
 
         let payments = vec![PaymentInput {
-            recipient: accounts(1),
+            recipient: accounts(1).to_string(),
             amount: U128(1_000_000_000_000_000_000_000_000),
         }];
 
@@ -984,7 +990,7 @@ mod tests {
         testing_env!(context.build());
 
         let payments = vec![PaymentInput {
-            recipient: accounts(1),
+            recipient: accounts(1).to_string(),
             amount: U128(1_000_000_000_000_000_000_000_000),
         }];
 
@@ -1016,7 +1022,7 @@ mod tests {
         testing_env!(context.build());
 
         let payments = vec![PaymentInput {
-            recipient: accounts(1),
+            recipient: accounts(1).to_string(),
             amount: U128(1_000_000_000_000_000_000_000_000),
         }];
 
@@ -1047,7 +1053,7 @@ mod tests {
         testing_env!(context.build());
 
         let payments = vec![PaymentInput {
-            recipient: accounts(1),
+            recipient: accounts(1).to_string(),
             amount: U128(1_000_000_000_000_000_000_000_000),
         }];
 
@@ -1082,12 +1088,12 @@ mod tests {
 
         // Submit multiple lists
         let payments1 = vec![PaymentInput {
-            recipient: accounts(1),
+            recipient: accounts(1).to_string(),
             amount: U128(1_000_000_000_000_000_000_000_000),
         }];
 
         let payments2 = vec![PaymentInput {
-            recipient: accounts(2),
+            recipient: accounts(2).to_string(),
             amount: U128(2_000_000_000_000_000_000_000_000),
         }];
 
@@ -1201,11 +1207,11 @@ mod tests {
 
         let payments = vec![
             PaymentInput {
-                recipient: accounts(2),
+                recipient: accounts(2).to_string(),
                 amount: U128(1_000_000_000_000_000_000_000_000),
             },
             PaymentInput {
-                recipient: accounts(3),
+                recipient: accounts(3).to_string(),
                 amount: U128(2_000_000_000_000_000_000_000_000),
             },
         ];
