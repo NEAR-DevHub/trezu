@@ -2036,24 +2036,24 @@ fn extract_action_from_receipts(
     use near_primitives::views::{ActionView, ReceiptEnumView};
 
     for receipt in receipts {
-        if let ReceiptEnumView::Action { actions, .. } = &receipt.receipt {
-            for action in actions {
-                let (kind, method) = match action {
-                    ActionView::FunctionCall { method_name, .. } => {
-                        ("FunctionCall".to_string(), Some(method_name.clone()))
-                    }
-                    ActionView::Transfer { .. } => ("Transfer".to_string(), None),
-                    ActionView::DeployContract { .. } => ("DeployContract".to_string(), None),
-                    ActionView::CreateAccount => ("CreateAccount".to_string(), None),
-                    ActionView::DeleteAccount { .. } => ("DeleteAccount".to_string(), None),
-                    ActionView::AddKey { .. } => ("AddKey".to_string(), None),
-                    ActionView::DeleteKey { .. } => ("DeleteKey".to_string(), None),
-                    ActionView::Stake { .. } => ("Stake".to_string(), None),
-                    ActionView::Delegate { .. } => ("Delegate".to_string(), None),
-                    _ => ("Other".to_string(), None),
-                };
-                return (Some(kind), method);
-            }
+        if let ReceiptEnumView::Action { actions, .. } = &receipt.receipt
+            && let Some(action) = actions.first()
+        {
+            let (kind, method) = match action {
+                ActionView::FunctionCall { method_name, .. } => {
+                    ("FunctionCall".to_string(), Some(method_name.clone()))
+                }
+                ActionView::Transfer { .. } => ("Transfer".to_string(), None),
+                ActionView::DeployContract { .. } => ("DeployContract".to_string(), None),
+                ActionView::CreateAccount => ("CreateAccount".to_string(), None),
+                ActionView::DeleteAccount { .. } => ("DeleteAccount".to_string(), None),
+                ActionView::AddKey { .. } => ("AddKey".to_string(), None),
+                ActionView::DeleteKey { .. } => ("DeleteKey".to_string(), None),
+                ActionView::Stake { .. } => ("Stake".to_string(), None),
+                ActionView::Delegate { .. } => ("Delegate".to_string(), None),
+                _ => ("Other".to_string(), None),
+            };
+            return (Some(kind), method);
         }
     }
     (None, None)
@@ -2164,24 +2164,12 @@ pub async fn insert_balance_change_record(
 
     // Get receipt data for additional context (if available)
     // Only use this if we don't have signer/receiver from transaction
-    let (final_signer, final_receiver, final_counterparty, receipt_ids, action_kind, method_name) = if signer_id.is_some() {
-        // We have transaction info — get receipt_ids from account's receipts
-        let block_data = block_info::get_block_data(network, account_id, block_height)
-            .await
-            .map_err(|e| -> GapFillerError { e.to_string().into() })?;
-        let receipt_ids: Vec<String> = block_data
-            .receipts
-            .iter()
-            .map(|r| r.receipt_id.to_string())
-            .collect();
-        let (action_kind, method_name) = extract_action_from_receipts(&block_data.receipts);
-        (signer_id, receiver_id, counterparty, receipt_ids, action_kind, method_name)
-    } else {
-        let block_data = block_info::get_block_data(network, account_id, block_height)
-            .await
-            .map_err(|e| -> GapFillerError { e.to_string().into() })?;
-
-        if let Some(receipt) = block_data.receipts.first() {
+    let (final_signer, final_receiver, final_counterparty, receipt_ids, action_kind, method_name) =
+        if signer_id.is_some() {
+            // We have transaction info — get receipt_ids from account's receipts
+            let block_data = block_info::get_block_data(network, account_id, block_height)
+                .await
+                .map_err(|e| -> GapFillerError { e.to_string().into() })?;
             let receipt_ids: Vec<String> = block_data
                 .receipts
                 .iter()
@@ -2189,39 +2177,64 @@ pub async fn insert_balance_change_record(
                 .collect();
             let (action_kind, method_name) = extract_action_from_receipts(&block_data.receipts);
             (
-                Some(receipt.predecessor_id.to_string()),
-                Some(receipt.receiver_id.to_string()),
-                receipt.predecessor_id.to_string(),
+                signer_id,
+                receiver_id,
+                counterparty,
                 receipt_ids,
                 action_kind,
                 method_name,
             )
-        } else if token_id != "near" && !token_id.starts_with("intents.near:") {
-            // For FT tokens, receipts execute on the token contract, not the monitored account.
-            // Look for ft_transfer/ft_transfer_call receipts on the token contract.
-            // Skip intents tokens — they use a different swap mechanism and their token IDs
-            // are not valid NEAR account IDs.
-            let (s, r, c, rids) = resolve_ft_counterparty_from_token_contract(network, account_id, token_id, block_height)
-                .await?;
-            (s, r, c, rids, None, None)
-        } else if token_id.starts_with("intents.near:") {
-            // Intents tokens use a different swap mechanism — counterparty is resolved
-            // later by the swap detector. Use "UNKNOWN" as placeholder.
-            log::debug!(
-                "Intents token {} at block {} — counterparty will be resolved by swap detector",
-                token_id,
-                block_height
-            );
-            (None, None, "UNKNOWN".to_string(), vec![], None, None)
         } else {
-            // If no receipt found for NEAR token, we cannot determine counterparty
-            return Err(format!(
-                "No receipt found for block {} - cannot determine counterparty",
-                block_height
-            )
-            .into());
-        }
-    };
+            let block_data = block_info::get_block_data(network, account_id, block_height)
+                .await
+                .map_err(|e| -> GapFillerError { e.to_string().into() })?;
+
+            if let Some(receipt) = block_data.receipts.first() {
+                let receipt_ids: Vec<String> = block_data
+                    .receipts
+                    .iter()
+                    .map(|r| r.receipt_id.to_string())
+                    .collect();
+                let (action_kind, method_name) = extract_action_from_receipts(&block_data.receipts);
+                (
+                    Some(receipt.predecessor_id.to_string()),
+                    Some(receipt.receiver_id.to_string()),
+                    receipt.predecessor_id.to_string(),
+                    receipt_ids,
+                    action_kind,
+                    method_name,
+                )
+            } else if token_id != "near" && !token_id.starts_with("intents.near:") {
+                // For FT tokens, receipts execute on the token contract, not the monitored account.
+                // Look for ft_transfer/ft_transfer_call receipts on the token contract.
+                // Skip intents tokens — they use a different swap mechanism and their token IDs
+                // are not valid NEAR account IDs.
+                let (s, r, c, rids) = resolve_ft_counterparty_from_token_contract(
+                    network,
+                    account_id,
+                    token_id,
+                    block_height,
+                )
+                .await?;
+                (s, r, c, rids, None, None)
+            } else if token_id.starts_with("intents.near:") {
+                // Intents tokens use a different swap mechanism — counterparty is resolved
+                // later by the swap detector. Use "UNKNOWN" as placeholder.
+                log::debug!(
+                    "Intents token {} at block {} — counterparty will be resolved by swap detector",
+                    token_id,
+                    block_height
+                );
+                (None, None, "UNKNOWN".to_string(), vec![], None, None)
+            } else {
+                // If no receipt found for NEAR token, we cannot determine counterparty
+                return Err(format!(
+                    "No receipt found for block {} - cannot determine counterparty",
+                    block_height
+                )
+                .into());
+            }
+        };
 
     // ── Resolve receipt → transaction hash ──────────────────────────────────
     if transaction_hashes.is_empty() && !receipt_ids.is_empty() {

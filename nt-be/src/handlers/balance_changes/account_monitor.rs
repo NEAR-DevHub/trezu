@@ -3,7 +3,10 @@ use sqlx::PgPool;
 use std::collections::HashSet;
 
 use super::balance::ft::get_balance_at_block as get_ft_balance;
-use super::gap_filler::{fill_gaps_with_hints, insert_snapshot_record, resolve_missing_action_kind, resolve_missing_tx_hashes};
+use super::gap_filler::{
+    fill_gaps_with_hints, insert_snapshot_record, resolve_missing_action_kind,
+    resolve_missing_tx_hashes,
+};
 use super::staking_rewards::{is_staking_token, track_and_fill_staking_rewards};
 use super::token_discovery::{fetch_fastnear_ft_tokens, snapshot_intents_tokens};
 use super::transfer_hints::TransferHintService;
@@ -140,7 +143,10 @@ pub async fn run_monitor_cycle(
                 println!("  {}: Resolved {} missing action_kind", account_id, count);
             }
             Err(e) => {
-                eprintln!("  {}: Error resolving missing action_kind: {}", account_id, e);
+                eprintln!(
+                    "  {}: Error resolving missing action_kind: {}",
+                    account_id, e
+                );
             }
             _ => {}
         }

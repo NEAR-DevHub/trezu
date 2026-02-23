@@ -8,4 +8,3 @@ export {
     getFromAccount,
     getToAccount,
 } from "./utils/history-utils";
-

@@ -11,7 +11,7 @@ interface TransactionHashCellProps {
 
 /**
  * Reusable component for displaying transaction hash with receipt search fallback
- * 
+ *
  * Displays a clickable transaction hash link with copy functionality.
  * If no transaction hash is provided, attempts to resolve it from receipt ID.
  */
@@ -51,4 +51,3 @@ export function TransactionHashCell({
         </div>
     );
 }
-
