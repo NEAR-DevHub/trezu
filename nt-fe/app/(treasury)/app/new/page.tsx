@@ -93,6 +93,7 @@ function createClearErrorsOnChange<T>(
 
 function Step1({ handleNext }: StepProps) {
     const form = useFormContext<TreasuryFormValues>();
+    const [accountNameEdited, setAccountNameEdited] = useState(false);
 
     const handleContinue = async () => {
         const isValid = await form.trigger([
@@ -129,18 +130,20 @@ function Step1({ handleNext }: StepProps) {
                                     field.onChange,
                                 )(e);
 
-                                // Auto-generate account name from treasury name
-                                const generatedHandle = e.target.value
-                                    .toLowerCase()
-                                    .replace(/[^a-z0-9-]/g, "-")
-                                    .replace(/-+/g, "-")
-                                    .replace(/^-|-$/g, "")
-                                    .slice(0, 64);
-                                form.setValue(
-                                    "details.accountName",
-                                    generatedHandle,
-                                );
-                                form.clearErrors("details.accountName");
+                                // Auto-generate account name from treasury name only if user hasn't manually edited it
+                                if (!accountNameEdited) {
+                                    const generatedHandle = e.target.value
+                                        .toLowerCase()
+                                        .replace(/[^a-z0-9-]/g, "-")
+                                        .replace(/-+/g, "-")
+                                        .replace(/^-|-$/g, "")
+                                        .slice(0, 64);
+                                    form.setValue(
+                                        "details.accountName",
+                                        generatedHandle,
+                                    );
+                                    form.clearErrors("details.accountName");
+                                }
                             }}
                         />
                         {fieldState.error ? (
@@ -169,17 +172,13 @@ function Step1({ handleNext }: StepProps) {
                             suffix=".sputnik-dao.near"
                             value={field.value}
                             onChange={(e) => {
+                                setAccountNameEdited(true);
                                 const input = e.target.value
                                     .toLowerCase()
                                     .replace(/[^a-z0-9_-]/g, "")
                                     .slice(0, 64);
-                                // Clear errors and update field
-                                createClearErrorsOnChange(
-                                    form,
-                                    "details.accountName",
-                                    !!fieldState.error,
-                                    field.onChange,
-                                )(input);
+                                field.onChange(input);
+                                form.clearErrors("details.accountName");
                             }}
                         />
                         {fieldState.error ? (

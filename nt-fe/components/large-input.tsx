@@ -27,7 +27,15 @@ export function LargeInput({
 }: LargeInputProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const suffixRef = useRef<HTMLSpanElement>(null);
     const [fontSize, setFontSize] = useState("!text-xl");
+    const [suffixWidth, setSuffixWidth] = useState(0);
+
+    useEffect(() => {
+        if (suffixRef.current) {
+            setSuffixWidth(suffixRef.current.offsetWidth + 12); // 12px = right-3 offset
+        }
+    }, [suffix, fontSize]);
 
     useEffect(() => {
         // Skip dynamic font sizing if not enabled
@@ -98,23 +106,26 @@ export function LargeInput({
                 autoCorrect="off"
                 {...props}
                 value={value}
+                style={suffix ? { paddingRight: suffixWidth } : undefined}
                 className={cn(
                     "h-12 shrink-0 p-0 bg-transparent!",
                     "transition-[font-size] duration-200 ease-in-out",
                     search && "pl-10",
-                    suffix && "pr-2",
                     borderless &&
-                    "border-none focus-visible:ring-0 focus-visible:ring-offset-0",
+                        "border-none focus-visible:ring-0 focus-visible:ring-offset-0",
                     className,
                     fontSize, // Apply dynamic font size last so it takes precedence
                 )}
             />
             {suffix && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <span className={cn(
-                        "text-muted-foreground transition-[font-size] duration-200 ease-in-out",
-                        fontSize
-                    )}>
+                    <span
+                        ref={suffixRef}
+                        className={cn(
+                            "text-muted-foreground transition-[font-size] duration-200 ease-in-out",
+                            fontSize,
+                        )}
+                    >
                         {suffix}
                     </span>
                 </div>
