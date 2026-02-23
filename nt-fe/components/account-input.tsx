@@ -46,12 +46,13 @@ const AccountInput = ({
 
     const isNear = blockchain === "near";
 
-    // Expose validation state to parent
-    useEffect(() => {
+    // Wrapper to set isValidating and notify parent
+    const updateValidationState = useCallback((validating: boolean) => {
+        setIsValidating(validating);
         if (setIsValidatingProp) {
-            setIsValidatingProp(isValidating);
+            setIsValidatingProp(validating);
         }
-    }, [isValidating, setIsValidatingProp]);
+    }, [setIsValidatingProp]);
 
     // Get blockchain-specific configuration
     const config = useMemo(() => {
@@ -69,7 +70,7 @@ const AccountInput = ({
             return;
         }
 
-        setIsValidating(true);
+        updateValidationState(true);
         setHasValidated(false); // Reset validation state
         try {
             const error = await validateNearAddress(address);
@@ -82,9 +83,9 @@ const AccountInput = ({
             setIsValid(false);
             setHasValidated(true);
         } finally {
-            setIsValidating(false);
+            updateValidationState(false);
         }
-    }, [setIsValid]);
+    }, [setIsValid, updateValidationState]);
 
     useEffect(() => {
         const shouldValidate = validateOnMount || hasUserInteractedRef.current;
@@ -125,7 +126,7 @@ const AccountInput = ({
     }, [value, blockchain, isNear, config.regex, validateOnMount, setIsValid, validateNearFull]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const val = e.target.value;
+        const val = e.target.value.trim(); // Remove whitespaces
         setValue(val);
 
         // Mark that user has interacted
@@ -133,7 +134,7 @@ const AccountInput = ({
 
         if (isNear) {
             setHasValidated(false); // Reset validation state when value changes
-            if (!val || val.trim() === "") {
+            if (!val || val === "") {
                 setValidationError(undefined);
                 setIsValid(false);
             } else if (!isValidNearAddressFormat(val)) {
