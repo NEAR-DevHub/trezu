@@ -46,7 +46,7 @@ const treasuryFormSchema = z
                     .max(64, "Account name must be less than 64 characters")
                     .regex(
                         /^[a-z0-9-]+$/,
-                        "Account name can only contain lowercase letters, numbers, and hyphens",
+                        "Account name can contain only Latin letters, numbers, and hyphens",
                     ),
                 paymentThreshold: z.number().min(1).max(100),
             })
@@ -136,14 +136,11 @@ function Step1({ handleNext }: StepProps) {
                                     .replace(/-+/g, "-")
                                     .replace(/^-|-$/g, "")
                                     .slice(0, 64);
-                                if (generatedHandle !== field.value) {
-                                    form.setValue(
-                                        "details.accountName",
-                                        generatedHandle,
-                                    );
-                                    // Also clear account name errors when auto-generating
-                                    form.clearErrors("details.accountName");
-                                }
+                                form.setValue(
+                                    "details.accountName",
+                                    generatedHandle,
+                                );
+                                form.clearErrors("details.accountName");
                             }}
                         />
                         {fieldState.error ? (
