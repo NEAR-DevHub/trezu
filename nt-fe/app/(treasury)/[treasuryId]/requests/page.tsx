@@ -57,7 +57,7 @@ function ProposalsList({
     status,
     onSelectionChange,
 }: {
-    status?: ProposalStatus[];
+    status?: ProposalStatus;
     onSelectionChange?: (count: number) => void;
 }) {
     const { treasuryId, config } = useTreasury();
@@ -79,7 +79,10 @@ function ProposalsList({
             "my_vote",
             "search",
         ];
-        return filterParams.some((param) => searchParams.has(param));
+        return (
+            filterParams.some((param) => searchParams.has(param)) ||
+            (status !== "InProgress" && status !== undefined)
+        );
     }, [searchParams]);
 
     const page = parseInt(searchParams.get("page") || "0", 10);
@@ -410,31 +413,31 @@ export default function RequestsPage() {
                     </TabsContent>
                     <TabsContent value="pending">
                         <ProposalsList
-                            status={["InProgress"]}
+                            status="InProgress"
                             onSelectionChange={setSelectedCount}
                         />
                     </TabsContent>
                     <TabsContent value="executed">
                         <ProposalsList
-                            status={["Approved"]}
+                            status="Approved"
                             onSelectionChange={setSelectedCount}
                         />
                     </TabsContent>
                     <TabsContent value="rejected">
                         <ProposalsList
-                            status={["Rejected"]}
+                            status="Rejected"
                             onSelectionChange={setSelectedCount}
                         />
                     </TabsContent>
                     <TabsContent value="expired">
                         <ProposalsList
-                            status={["Expired"]}
+                            status="Expired"
                             onSelectionChange={setSelectedCount}
                         />
                     </TabsContent>
                     <TabsContent value="failed">
                         <ProposalsList
-                            status={["Failed"]}
+                            status="Failed"
                             onSelectionChange={setSelectedCount}
                         />
                     </TabsContent>

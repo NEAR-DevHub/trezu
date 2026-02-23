@@ -370,7 +370,7 @@ export function ProposalsTable({
                         permissionKind="transfer"
                         onClick={() => router.push(`/${treasuryId}/payments`)}
                         permissionAction="AddProposal"
-                        className="gap-1 flex-1"
+                        className="gap-1 w-full"
                     >
                         <ArrowUpRight className="size-3.5" /> Send
                     </AuthButton>
@@ -378,7 +378,7 @@ export function ProposalsTable({
                         permissionKind="call"
                         onClick={() => router.push(`/${treasuryId}/exchange`)}
                         permissionAction="AddProposal"
-                        className="gap-1 flex-1"
+                        className="gap-1 w-full"
                     >
                         <ArrowRightLeft className="size-3.5" /> Exchange
                     </AuthButton>
