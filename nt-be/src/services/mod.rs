@@ -14,7 +14,8 @@ pub use dao_sync::{
 };
 pub use defillama::DeFiLlamaClient;
 pub use monitored_accounts::{
-    MonitoredAccount, RegisterMonitoredAccountResult, register_or_refresh_monitored_account,
+    MonitoredAccount, RegisterMonitoredAccountError, RegisterMonitoredAccountResult,
+    register_or_refresh_monitored_account,
 };
 pub use price_lookup::PriceLookupService;
 pub use price_provider::PriceProvider;

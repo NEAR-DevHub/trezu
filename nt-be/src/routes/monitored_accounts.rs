@@ -10,7 +10,9 @@ use std::sync::Arc;
 
 use crate::AppState;
 use crate::config::PlanType;
-use crate::services::{MonitoredAccount, register_or_refresh_monitored_account};
+use crate::services::{
+    MonitoredAccount, RegisterMonitoredAccountError, register_or_refresh_monitored_account,
+};
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -55,24 +57,20 @@ pub async fn add_monitored_account(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<AddAccountRequest>,
 ) -> Result<Json<AddAccountResponse>, (StatusCode, Json<Value>)> {
-    // Validate that this is a sputnik-dao account to prevent abuse
-    if !payload.account_id.ends_with(".sputnik-dao.near") {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            Json(serde_json::json!({
-                "error": "Only sputnik-dao accounts can be monitored",
-                "message": "Account ID must end with '.sputnik-dao.near'"
-            })),
-        ));
-    }
-
     let result = register_or_refresh_monitored_account(&state.db_pool, &payload.account_id)
         .await
-        .map_err(|e| {
-            (
+        .map_err(|e| match e {
+            RegisterMonitoredAccountError::NotSputnikDao => (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error": "Only sputnik-dao accounts can be monitored",
+                    "message": "Account ID must end with '.sputnik-dao.near'"
+                })),
+            ),
+            RegisterMonitoredAccountError::Db(e) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({ "error": format!("Database error: {}", e) })),
-            )
+            ),
         })?;
 
     let account = result.account;

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Form } from "@/components/ui/form";
 import { PageCard } from "@/components/card";
 import { StepProps, StepperHeader } from "@/components/step-wizard";
 import { PaymentFormSection } from "../../components/payment-form-section";
@@ -25,7 +26,6 @@ interface EditPaymentStepProps extends StepProps {
 }
 
 export function EditPaymentStep({
-    handleBack,
     payment,
     paymentIndex,
     selectedToken,
@@ -39,6 +39,7 @@ export function EditPaymentStep({
         defaultValues: {
             recipient: payment.recipient,
             amount: payment.amount,
+            token: selectedToken,
         },
     });
 
@@ -50,16 +51,14 @@ export function EditPaymentStep({
         try {
             const data = form.getValues();
 
-            // Check storage registration for FT tokens
             let isRegistered = true;
             if (needsStorageDepositCheck(selectedToken)) {
                 try {
-                    const tokenId = selectedToken.address;
                     const storageResult =
                         await getBatchStorageDepositIsRegistered([
                             {
                                 accountId: data.recipient,
-                                tokenId: tokenId,
+                                tokenId: selectedToken.address,
                             },
                         ]);
                     if (storageResult.length > 0) {
@@ -80,20 +79,19 @@ export function EditPaymentStep({
         <PageCard>
             <StepperHeader title="Edit Payment" handleBack={onCancel} />
 
-            <PaymentFormSection
-                selectedToken={selectedToken}
-                amount={form.watch("amount")}
-                onAmountChange={(amount) => form.setValue("amount", amount)}
-                recipient={form.watch("recipient")}
-                onRecipientChange={(recipient) =>
-                    form.setValue("recipient", recipient)
-                }
-                tokenLocked={true}
-                showBalance={true}
-                validateOnMount={true}
-                saveButtonText="Save Changes"
-                onSave={handleSave}
-            />
+            <Form {...form}>
+                <PaymentFormSection
+                    control={form.control}
+                    amountName="amount"
+                    tokenName="token"
+                    recipientName="recipient"
+                    tokenLocked={true}
+                    validateOnMount={true}
+                    saveButtonText="Save Changes"
+                    onSave={handleSave}
+                    isSubmitting={isSaving}
+                />
+            </Form>
         </PageCard>
     );
 }

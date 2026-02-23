@@ -27,6 +27,18 @@ pub struct RegisterMonitoredAccountResult {
     pub is_new_registration: bool,
 }
 
+#[derive(Debug)]
+pub enum RegisterMonitoredAccountError {
+    NotSputnikDao,
+    Db(sqlx::Error),
+}
+
+impl From<sqlx::Error> for RegisterMonitoredAccountError {
+    fn from(e: sqlx::Error) -> Self {
+        Self::Db(e)
+    }
+}
+
 /// Register a monitored account or refresh an existing one.
 ///
 /// - Existing account: updates `dirty_at` and marks DAO as dirty.
@@ -34,7 +46,7 @@ pub struct RegisterMonitoredAccountResult {
 pub async fn register_or_refresh_monitored_account(
     pool: &PgPool,
     account_id: &str,
-) -> Result<RegisterMonitoredAccountResult, sqlx::Error> {
+) -> Result<RegisterMonitoredAccountResult, RegisterMonitoredAccountError> {
     let existing = sqlx::query_scalar!(
         r#"
         SELECT 1 AS "one!"
@@ -45,6 +57,10 @@ pub async fn register_or_refresh_monitored_account(
     )
     .fetch_optional(pool)
     .await?;
+
+    if existing.is_none() && !account_id.ends_with(".sputnik-dao.near") {
+        return Err(RegisterMonitoredAccountError::NotSputnikDao);
+    }
 
     if existing.is_some() {
         let account = sqlx::query_as::<_, MonitoredAccount>(

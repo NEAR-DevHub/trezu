@@ -42,7 +42,6 @@ import Link from "next/link";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { trackEvent } from "@/lib/analytics";
 import { PaymentFormSection } from "./components/payment-form-section";
-import type { SelectedTokenData } from "@/components/token-select";
 import { tokenSchema } from "@/components/token-input";
 
 const paymentFormSchema = z
@@ -74,10 +73,6 @@ function Step1({ handleNext }: StepProps) {
     const form = useFormContext<PaymentFormValues>();
     const { treasuryId } = useTreasury();
     const isMobile = useMediaQuery("(max-width: 768px)");
-
-    const token = form.watch("token");
-    const amount = form.watch("amount");
-    const address = form.watch("address");
 
     const handleSave = () => {
         // Validate and proceed to next step
@@ -120,13 +115,10 @@ function Step1({ handleNext }: StepProps) {
             </div>
 
             <PaymentFormSection
-                selectedToken={token as SelectedTokenData | null}
-                amount={amount}
-                onAmountChange={(newAmount) => form.setValue("amount", newAmount)}
-                onTokenChange={(newToken) => form.setValue("token", newToken)}
-                recipient={address}
-                onRecipientChange={(newAddress) => form.setValue("address", newAddress)}
-                showBalance={true}
+                control={form.control}
+                amountName="amount"
+                tokenName="token"
+                recipientName="address"
                 saveButtonText="Review Payment"
                 onSave={handleSave}
             />
@@ -236,16 +228,16 @@ const buildIntentProposal = (
 
     const ftWithdrawArgs = isNetworkWithdrawal
         ? {
-            token: tokenContract,
-            receiver_id: tokenContract,
-            amount: parsedAmount,
-            memo: `WITHDRAW_TO:${data.address}`,
-        }
+              token: tokenContract,
+              receiver_id: tokenContract,
+              amount: parsedAmount,
+              memo: `WITHDRAW_TO:${data.address}`,
+          }
         : {
-            token: tokenContract,
-            receiver_id: data.address,
-            amount: parsedAmount,
-        };
+              token: tokenContract,
+              receiver_id: data.address,
+              amount: parsedAmount,
+          };
 
     return {
         FunctionCall: {
