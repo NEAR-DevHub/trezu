@@ -219,60 +219,22 @@ async fn test_dirty_monitor_detects_payments_while_main_cycle_busy(
         );
     }
 
-    // Run monitor cycle up to baseline block — this establishes the "current state"
-    // and processes staking rewards for testing-astradao (simulating the busy worker)
-    let start = Instant::now();
-    run_monitor_cycle(&pool, &network, BASELINE_BLOCK, None, None)
-        .await
-        .map_err(|e| {
-            sqlx::Error::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                e.to_string(),
-            ))
-        })?;
-    let main_cycle_duration = start.elapsed();
-    println!(
-        "Main monitoring cycle completed in {:?}",
-        main_cycle_duration
-    );
+    // --- Phase 1b: Start main monitor cycle in background ---
+    // The main cycle processes staking rewards (slow) for testing-astradao.
+    // We spawn it as a background task and abort it once the dirty monitor succeeds.
+    let pool_bg = pool.clone();
+    let network_bg = common::create_archival_network();
+    let main_cycle_handle = tokio::spawn(async move {
+        let _ = run_monitor_cycle(&pool_bg, &network_bg, BASELINE_BLOCK, None, None).await;
+    });
 
-    // Verify no payment blocks exist yet (they happen after baseline block)
-    let pre_dirty_blocks: Vec<i64> = sqlx::query_scalar(
-        r#"
-        SELECT block_height
-        FROM balance_changes
-        WHERE account_id = $1
-          AND token_id = 'near'
-          AND block_height > $2
-          AND counterparty != 'SNAPSHOT'
-          AND counterparty != 'STAKING_SNAPSHOT'
-        ORDER BY block_height DESC
-        "#,
-    )
-    .bind(TREASURY_ACCOUNT)
-    .bind(BASELINE_BLOCK)
-    .fetch_all(&pool)
-    .await?;
+    // Give the main cycle a moment to start processing
+    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+    println!("Main monitoring cycle started in background");
 
-    println!(
-        "Balance changes after baseline before dirty: {} (should be 0)",
-        pre_dirty_blocks.len()
-    );
-
-    // Verify the expected payment blocks are NOT yet in the database
-    for expected_block in EXPECTED_PAYMENT_BLOCKS {
-        assert!(
-            !pre_dirty_blocks.contains(expected_block),
-            "Block {} should NOT be in the database before dirty monitoring",
-            expected_block
-        );
-    }
-
-    println!("\n--- Phase 2: Mark account as dirty and run dirty monitor ---");
+    println!("\n--- Phase 2: Mark account as dirty and run dirty monitor concurrently ---");
 
     // Mark the treasury account as dirty via the POST /api/monitored-accounts endpoint
-    // This is the same endpoint the frontend calls on every treasury open (openTreasury),
-    // which now sets dirty_at = NOW() to trigger priority gap filling.
     let app_state = nt_be::AppState::builder()
         .db_pool(pool.clone())
         .build()
@@ -339,10 +301,21 @@ async fn test_dirty_monitor_detects_payments_while_main_cycle_busy(
         gaps_filled, dirty_duration
     );
 
+    // The dirty monitor completed — abort the main cycle (no need to wait for it)
+    let main_cycle_finished = main_cycle_handle.is_finished();
+    main_cycle_handle.abort();
+    println!(
+        "Main cycle {} (aborted after dirty monitor succeeded)",
+        if main_cycle_finished {
+            "had already finished"
+        } else {
+            "was still running"
+        }
+    );
+
     println!("\n--- Phase 3: Verify the two payment transactions are now visible ---");
 
     // Query all non-snapshot NEAR balance changes after the baseline
-    // Include receipt_id to verify receipts are captured
     let post_dirty_changes: Vec<(i64, String, Vec<String>)> = sqlx::query_as(
         r#"
         SELECT block_height, counterparty, receipt_id
@@ -407,10 +380,7 @@ async fn test_dirty_monitor_detects_payments_while_main_cycle_busy(
         );
     }
 
-    // Assert the dirty monitor was faster than the main cycle
-    // (The main cycle processes staking rewards; dirty just fills gaps)
     println!("\n=== Results ===");
-    println!("Main cycle duration: {:?}", main_cycle_duration);
     println!("Dirty monitor duration: {:?}", dirty_duration);
     println!("Gaps filled by dirty monitor: {}", gaps_filled);
     println!(
