@@ -50,8 +50,8 @@ export default function BalanceChart({
             <div className="h-[180px]">
                 <EmptyState
                     icon={ChartSpline}
-                    title="Loading your balance history"
-                    description="Your balance history is on the way. This might take some time."
+                    title="Nothing to show yet"
+                    description="Add assets to start tracking your portfolio."
                 />
             </div>
         );
@@ -66,13 +66,9 @@ export default function BalanceChart({
     // Calculate optimal tick interval based on time period.
     // The interval value tells Recharts how many ticks to skip between
     // visible labels (0 = show every label, 6 = show every 7th label).
-    const isMobile =
-        typeof window !== "undefined" && window.innerWidth < 768;
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
-    const calculateInterval = (
-        length: number,
-        period?: TimePeriod,
-    ): number => {
+    const calculateInterval = (length: number, period?: TimePeriod): number => {
         if (period) {
             switch (period) {
                 case "1W":
@@ -112,8 +108,7 @@ export default function BalanceChart({
     // For 1Y unique month ticks (~13), use interval to control density:
     // Desktop: every 3rd month ≈ quarterly (4-5 labels)
     // Mobile: every 6th month ≈ semi-annual (2-3 labels)
-    const explicitTickInterval =
-        timePeriod === "1Y" ? (isMobile ? 5 : 2) : 0;
+    const explicitTickInterval = timePeriod === "1Y" ? (isMobile ? 5 : 2) : 0;
 
     return (
         <ChartContainer
@@ -148,7 +143,10 @@ export default function BalanceChart({
                     axisLine={false}
                     tickLine={false}
                     {...(explicitTicks
-                        ? { ticks: explicitTicks, interval: explicitTickInterval }
+                        ? {
+                              ticks: explicitTicks,
+                              interval: explicitTickInterval,
+                          }
                         : { interval: tickInterval })}
                     padding={{ left: 20, right: 20 }}
                 />

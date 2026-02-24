@@ -454,7 +454,7 @@ export function RecentActivity() {
                     ) : activities.length === 0 ? (
                         <EmptyState
                             icon={Clock}
-                            title={"Loading your activity"}
+                            title={"Nothing to show yet"}
                             description={
                                 "Your transactions and actions will appear here once they happen"
                             }
