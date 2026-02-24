@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT list_id FROM pending_payment_lists",
+  "query": "SELECT list_id FROM pending_payment_lists WHERE completed_at IS NULL",
   "describe": {
     "columns": [
       {
@@ -16,5 +16,5 @@
       false
     ]
   },
-  "hash": "f6e898ca6592a4db4d4d1ae942650da7234b060b72c8a9651e2a9b293e40bfa0"
+  "hash": "368c6f6e0d18a1308c3d05fe668bc994da39b213512496ec6c7e3b0e55f4b970"
 }

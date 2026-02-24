@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE pending_payment_lists SET completed_at = NOW() WHERE list_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "fedd876d4cc9d4c68751c46dc311c2d5b38854b465c75c349196d0ba9288a8f2"
+}

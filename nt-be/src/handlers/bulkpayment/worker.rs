@@ -4,10 +4,40 @@ use serde::Deserialize;
 use sqlx::PgPool;
 use std::sync::Arc;
 
-/// Minimal response type for view_list contract call
+/// Response type for view_list contract call
 #[derive(Debug, Deserialize)]
 struct PaymentListView {
     status: PaymentListStatus,
+    payments: Vec<PaymentView>,
+    #[allow(dead_code)]
+    created_at: u64,
+}
+
+#[derive(Debug, Deserialize)]
+struct PaymentView {
+    status: PaymentItemStatus,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+enum PaymentItemStatus {
+    Simple(String),
+    Object(serde_json::Value),
+}
+
+impl PaymentItemStatus {
+    fn is_pending(&self) -> bool {
+        match self {
+            PaymentItemStatus::Simple(s) => s == "Pending",
+            PaymentItemStatus::Object(v) => v.get("Pending").is_some(),
+        }
+    }
+}
+
+impl PaymentListView {
+    fn has_pending_payments(&self) -> bool {
+        self.payments.iter().any(|p| p.status.is_pending())
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -64,17 +94,17 @@ pub async fn add_pending_list(pool: &PgPool, list_id: &str) -> Result<(), sqlx::
     Ok(())
 }
 
-/// Remove a list_id from the pending payment lists table.
-async fn remove_pending_list(pool: &PgPool, list_id: &str) {
+/// Mark a list as completed in the pending payment lists table.
+async fn complete_pending_list(pool: &PgPool, list_id: &str) {
     if let Err(e) = sqlx::query!(
-        "DELETE FROM pending_payment_lists WHERE list_id = $1",
+        "UPDATE pending_payment_lists SET completed_at = NOW() WHERE list_id = $1",
         list_id
     )
     .execute(pool)
     .await
     {
         log::error!(
-            "Failed to remove list {} from pending_payment_lists: {}",
+            "Failed to mark list {} as completed in pending_payment_lists: {}",
             list_id,
             e
         );
@@ -92,7 +122,7 @@ pub async fn query_and_process_pending_lists(
     state: &Arc<AppState>,
 ) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
     // Get pending list IDs from the database
-    let rows = sqlx::query!("SELECT list_id FROM pending_payment_lists")
+    let rows = sqlx::query!("SELECT list_id FROM pending_payment_lists WHERE completed_at IS NULL")
         .fetch_all(&state.db_pool)
         .await?;
 
@@ -138,7 +168,15 @@ pub async fn query_and_process_pending_lists(
                         "List {} is not approved (rejected or unknown status), removing from queue",
                         list_id
                     );
-                    remove_pending_list(&state.db_pool, list_id).await;
+                    complete_pending_list(&state.db_pool, list_id).await;
+                    continue;
+                }
+                if !list.has_pending_payments() {
+                    log::info!(
+                        "List {} has no pending payments (all paid), removing from queue",
+                        list_id
+                    );
+                    complete_pending_list(&state.db_pool, list_id).await;
                     continue;
                 }
             }
@@ -146,7 +184,7 @@ pub async fn query_and_process_pending_lists(
                 let err_str = e.to_string();
                 if err_str.contains("not found") {
                     log::info!("List {} not found on-chain, removing from queue", list_id);
-                    remove_pending_list(&state.db_pool, list_id).await;
+                    complete_pending_list(&state.db_pool, list_id).await;
                 } else {
                     log::error!("Failed to view list {}: {}", list_id, err_str);
                 }
@@ -181,7 +219,7 @@ pub async fn query_and_process_pending_lists(
                 // Remove list from tracking if it's not found or completed
                 if err_str.contains("not found") || err_str.contains("No pending payments") {
                     log::info!("Removing list {} from worker queue", list_id);
-                    remove_pending_list(&state.db_pool, list_id).await;
+                    complete_pending_list(&state.db_pool, list_id).await;
                 }
             }
         }
