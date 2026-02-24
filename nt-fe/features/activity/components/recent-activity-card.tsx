@@ -190,11 +190,20 @@ export function RecentActivity() {
     };
 
     const getActivityType = (activity: RecentActivityType) => {
-        return getActivityLabel(activity);
+        return getActivityLabel({
+            ...activity,
+            tokenSymbol: activity.tokenMetadata?.symbol,
+        });
     };
 
     const getActivityFrom = (activity: RecentActivityType) => {
-        return getActivitySubLabel(activity, treasuryId);
+        return getActivitySubLabel(
+            {
+                ...activity,
+                tokenSymbol: activity.tokenMetadata?.symbol,
+            },
+            treasuryId,
+        );
     };
 
     const historyDescription = formatHistoryDuration(historyMonths);

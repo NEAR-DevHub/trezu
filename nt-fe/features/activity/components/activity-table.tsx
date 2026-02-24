@@ -52,7 +52,10 @@ export function ActivityTable({
     const totalPages = Math.ceil(total / pageSize);
 
     const getTypeLabel = (activity: RecentActivity) => {
-        return getActivityLabel(activity);
+        return getActivityLabel({
+            ...activity,
+            tokenSymbol: activity.tokenMetadata?.symbol,
+        });
     };
 
     if (isLoading) {

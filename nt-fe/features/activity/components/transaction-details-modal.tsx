@@ -42,20 +42,28 @@ export function TransactionDetailsModal({
     const isReceived = parseFloat(activity.amount) > 0;
     const isSwap = !!activity.swap;
     const isFunctionCall = activity.actionKind === "FunctionCall";
-    const transactionType = getActivityLabel(activity);
+    const transactionType = getActivityLabel({
+        ...activity,
+        tokenSymbol: activity.tokenMetadata?.symbol,
+    });
 
     // Determine From/To based on receiver_id vs treasury account
+    // For outgoing: don't show receiver (stored counterparty is often the contract)
+    const knownCounterparty =
+        activity.counterparty && activity.counterparty !== "UNKNOWN"
+            ? activity.counterparty
+            : null;
     const fromAccount = isSwap
         ? "via NEAR Intents"
         : isReceived
-          ? activity.counterparty || activity.signerId || "unknown"
+          ? knownCounterparty || activity.signerId || null
           : treasuryId;
 
     const toAccount = isSwap
         ? treasuryId
         : isReceived
           ? treasuryId
-          : activity.receiverId || activity.counterparty || "unknown";
+          : null;
 
     const formatAmount = (amount: string, decimals?: number) => {
         const num = parseFloat(amount);
@@ -102,7 +110,7 @@ export function TransactionDetailsModal({
                     {isSwap && activity.swap ? (
                         <div className="px-3.5 py-3 rounded-xl bg-muted">
                             <div className="flex flex-col gap-2 p-2 text-xs text-muted-foreground text-center justify-center items-center">
-                                <p className="font-medium text-xs">Swap</p>
+                                <p className="font-medium text-xs">Exchange</p>
                                 <div className="flex items-center justify-center w-full">
                                     {/* Sent Token */}
                                     {activity.swap.sentAmount &&
@@ -310,40 +318,52 @@ export function TransactionDetailsModal({
                                         } as InfoItem,
                                     ]
                                   : [
-                                        {
-                                            label: "From",
-                                            value: (
-                                                <div className="flex items-center gap-1">
-                                                    <span className="max-w-[300px] truncate">
-                                                        {fromAccount}
-                                                    </span>
-                                                    <CopyButton
-                                                        text={fromAccount}
-                                                        variant="ghost"
-                                                        size="icon-sm"
-                                                        tooltipContent="Copy Address"
-                                                        toastMessage="Address copied to clipboard"
-                                                    />
-                                                </div>
-                                            ),
-                                        } as InfoItem,
-                                        {
-                                            label: "To",
-                                            value: (
-                                                <div className="flex items-center gap-1">
-                                                    <span className="max-w-[300px] truncate">
-                                                        {toAccount}
-                                                    </span>
-                                                    <CopyButton
-                                                        text={toAccount}
-                                                        toastMessage="Address copied to clipboard"
-                                                        tooltipContent="Copy Address"
-                                                        variant="ghost"
-                                                        size="icon-sm"
-                                                    />
-                                                </div>
-                                            ),
-                                        } as InfoItem,
+                                        ...(fromAccount
+                                            ? [
+                                                  {
+                                                      label: "From",
+                                                      value: (
+                                                          <div className="flex items-center gap-1">
+                                                              <span className="max-w-[300px] truncate">
+                                                                  {fromAccount}
+                                                              </span>
+                                                              <CopyButton
+                                                                  text={
+                                                                      fromAccount
+                                                                  }
+                                                                  variant="ghost"
+                                                                  size="icon-sm"
+                                                                  tooltipContent="Copy Address"
+                                                                  toastMessage="Address copied to clipboard"
+                                                              />
+                                                          </div>
+                                                      ),
+                                                  } as InfoItem,
+                                              ]
+                                            : []),
+                                        ...(toAccount
+                                            ? [
+                                                  {
+                                                      label: "To",
+                                                      value: (
+                                                          <div className="flex items-center gap-1">
+                                                              <span className="max-w-[300px] truncate">
+                                                                  {toAccount}
+                                                              </span>
+                                                              <CopyButton
+                                                                  text={
+                                                                      toAccount
+                                                                  }
+                                                                  toastMessage="Address copied to clipboard"
+                                                                  tooltipContent="Copy Address"
+                                                                  variant="ghost"
+                                                                  size="icon-sm"
+                                                              />
+                                                          </div>
+                                                      ),
+                                                  } as InfoItem,
+                                              ]
+                                            : []),
                                     ]),
                             ...(isLoadingTransaction
                                 ? [
