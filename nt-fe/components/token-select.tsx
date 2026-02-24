@@ -485,22 +485,6 @@ export default function TokenSelect({
                     });
                 }
             } else {
-                // Bridge/Intents token
-                let _balance:
-                    | { type: "Standard"; total: Big; locked: Big }
-                    | undefined;
-                if (item.balance && item.balance !== "0") {
-                    try {
-                        _balance = {
-                            type: "Standard",
-                            total: Big(item.balance),
-                            locked: Big(0),
-                        };
-                    } catch {
-                        _balance = undefined;
-                    }
-                }
-
                 setSelectedToken({
                     address: item.networkId,
                     symbol: selectedAsset.symbol,
