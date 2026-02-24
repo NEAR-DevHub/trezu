@@ -85,7 +85,7 @@ function Step1({ handleNext }: StepProps) {
 
     return (
         <PageCard>
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex justify-between items-center">
                 <StepperHeader title="New Payment" />
                 <div className="flex items-center gap-2">
                     <Link href={`/${treasuryId}/payments/bulk-payment`}>
