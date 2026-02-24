@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE export_history\n        SET status = 'expired'\n        WHERE status = 'completed'\n          AND created_at < NOW() - INTERVAL '2 days'\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "4a837f99cc4ae91a8ad573fd14758aba70ecb9e6304766a21c58443ecd8675b7"
+}
