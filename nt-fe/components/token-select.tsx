@@ -210,7 +210,7 @@ export default function TokenSelect({
                         name:
                             treasuryToken.name +
                             (treasuryToken.isAggregated &&
-                                treasuryToken.networks.length > 1
+                            treasuryToken.networks.length > 1
                                 ? ` • ${treasuryToken.networks.length} Networks`
                                 : ""),
                         symbol: treasuryToken.symbol,
@@ -325,11 +325,7 @@ export default function TokenSelect({
             .map(
                 (token): TokenListItem => ({
                     id: token.symbol,
-                    name:
-                        token.name +
-                        (token.networks.length > 1
-                            ? ` • ${token.networks.length} Networks`
-                            : ""),
+                    name: token.name,
                     symbol: token.symbol,
                     icon: token.icon,
                     assetId: token.id,
@@ -340,7 +336,7 @@ export default function TokenSelect({
                     totalBalanceUSD: undefined,
                 }),
             )
-            .sort((a, b) => (a.symbol || '').localeCompare(b.symbol || ''));
+            .sort((a, b) => (a.symbol || "").localeCompare(b.symbol || ""));
 
         return {
             yourAssets: ownedAssets,
@@ -646,11 +642,9 @@ export default function TokenSelect({
                                                         {token.symbol ||
                                                             token.name}
                                                     </div>
-                                                    {token.symbol && (
-                                                        <div className="text-sm text-muted-foreground">
-                                                            {token.name}
-                                                        </div>
-                                                    )}
+                                                    <div className="text-sm text-muted-foreground">
+                                                        {`${token.networks.length} Network${token.networks.length > 1 ? "s" : ""}`}
+                                                    </div>
                                                 </div>
                                                 {token.totalBalance !==
                                                     undefined &&
@@ -714,18 +708,14 @@ export default function TokenSelect({
                                                                     {token.symbol ||
                                                                         token.name}
                                                                 </div>
-                                                                {token.symbol && (
-                                                                    <div className="text-sm text-muted-foreground">
-                                                                        {
-                                                                            token.name
-                                                                        }
-                                                                    </div>
-                                                                )}
+                                                                <div className="text-sm text-muted-foreground">
+                                                                    {`${token.networks.length} Network${token.networks.length > 1 ? "s" : ""}`}
+                                                                </div>
                                                             </div>
                                                             {token.totalBalance !==
                                                                 undefined &&
                                                                 token.totalBalance >
-                                                                0 && (
+                                                                    0 && (
                                                                     <div className="flex flex-col items-end">
                                                                         <span className="font-semibold">
                                                                             {formatSmartAmount(
@@ -782,13 +772,9 @@ export default function TokenSelect({
                                                                     {token.symbol ||
                                                                         token.name}
                                                                 </div>
-                                                                {token.symbol && (
-                                                                    <div className="text-sm text-muted-foreground">
-                                                                        {
-                                                                            token.name
-                                                                        }
-                                                                    </div>
-                                                                )}
+                                                                <div className="text-sm text-muted-foreground">
+                                                                    {`${token.networks.length} Network${token.networks.length > 1 ? "s" : ""}`}
+                                                                </div>
                                                             </div>
                                                         </Button>
                                                     ),
@@ -816,11 +802,9 @@ export default function TokenSelect({
                                                 <div className="font-semibold">
                                                     {token.symbol || token.name}
                                                 </div>
-                                                {token.symbol && (
-                                                    <div className="text-sm text-muted-foreground">
-                                                        {token.name}
-                                                    </div>
-                                                )}
+                                                <div className="text-sm text-muted-foreground">
+                                                    {`${token.networks.length} Network${token.networks.length > 1 ? "s" : ""}`}
+                                                </div>
                                             </div>
                                         </Button>
                                     ))

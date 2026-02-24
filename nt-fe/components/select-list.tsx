@@ -58,7 +58,7 @@ export function SelectListIcon({
                 <img
                     src={icon}
                     alt={alt}
-                    className="w-full h-full p-2 rounded-full object-cover"
+                    className={cn("h-full p-2", alt === "NEAR" && "p-3")}
                 />
             </div>
         );

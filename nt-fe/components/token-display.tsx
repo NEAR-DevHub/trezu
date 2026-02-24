@@ -76,7 +76,7 @@ export const NetworkIconDisplay = ({
                     {networkName.charAt(0)}
                 </div>
             )}
-            <div className="flex gap-2 items-baseline text-left">
+            <div className="flex flex-col gap-0 items-baseline text-left">
                 <span className="font-semibold capitalize">
                     {getNetworkDisplayName(networkName)}
                 </span>
