@@ -7,7 +7,7 @@ import { Toaster } from "@/components/toaster";
 import { TourProvider } from "@/features/onboarding/components/tour-provider";
 import { AuthProvider } from "@/components/auth-provider";
 import { GoogleAnalytics } from "@/components/google-analytics";
-import Gleap from "gleap";
+import { GleapWidget } from "@/components/gleap-widget";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -29,8 +29,6 @@ export default function RootLayout({
 }: Readonly<{
     children: React.ReactNode;
 }>) {
-    Gleap.initialize("linZWdHygUIv7pmrByyph1yJHvx1Kdzw");
-
     return (
         <html
             lang="en"
@@ -79,6 +77,7 @@ export default function RootLayout({
                     <Toaster />
                     <GoogleAnalytics />
                 </QueryProvider>
+                <GleapWidget />
             </body>
         </html>
     );
