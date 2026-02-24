@@ -243,16 +243,25 @@ pub async fn get_balance_changes_internal(
     let mut enriched_changes: Vec<EnrichedBalanceChange> = changes
         .into_iter()
         .map(|change| {
-            // Transform staking tokens
-            let (token_id, counterparty) = if change.token_id.starts_with("staking:") {
-                // Extract pool address from "staking:pool.near"
+            // Transform staking tokens: normalise token_id to "near",
+            // replace counterparty with pool address, and tag action_kind
+            // so the frontend can reliably identify staking rewards.
+            let (token_id, counterparty, action_kind) = if change.token_id.starts_with("staking:") {
                 let pool_address = change
                     .token_id
                     .strip_prefix("staking:")
                     .unwrap_or(&change.token_id);
-                ("near".to_string(), Some(pool_address.to_string()))
+                (
+                    "near".to_string(),
+                    Some(pool_address.to_string()),
+                    Some("StakingReward".to_string()),
+                )
             } else {
-                (change.token_id.clone(), change.counterparty.clone())
+                (
+                    change.token_id.clone(),
+                    change.counterparty.clone(),
+                    change.action_kind,
+                )
             };
 
             EnrichedBalanceChange {
@@ -272,7 +281,7 @@ pub async fn get_balance_changes_internal(
                 created_at: change.created_at,
                 token_metadata: None, // Will be populated if include_metadata is true
                 swap: None,           // Swap detection not implemented in this endpoint yet
-                action_kind: change.action_kind,
+                action_kind,
                 method_name: change.method_name,
                 usd_value: change.usd_value,
             }

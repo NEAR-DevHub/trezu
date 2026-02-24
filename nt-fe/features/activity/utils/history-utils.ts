@@ -51,6 +51,8 @@ export function getHistoryDescription(
     return `Sent and received transactions (${duration})`;
 }
 
+const PROPOSAL_METHODS = ["add_proposal", "act_proposal"];
+
 /**
  * Activity type for helper functions
  */
@@ -62,101 +64,116 @@ export interface ActivityAccount {
     actionKind?: string | null;
     methodName?: string | null;
     amount?: string;
+    tokenSymbol?: string;
 }
 
 /**
  * Get the display label for an activity based on its action kind.
  *
- * - Swaps → "Swap"
- * - FunctionCall → "Function Call"
- * - Transfer → "Transfer Received" / "Transfer Sent"
- * - Fallback (no action data) → "Payment Received" / "Payment Sent"
+ * Priority order:
+ * 1. Swaps → "Exchange"
+ * 2. Staking rewards → "Staking Rewards"
+ * 3. Proposal actions → "Proposal Action"
+ * 4. Incoming → "Deposit [TOKEN]"
+ * 5. Outgoing → "Payment Sent"
+ * 6. No action data → "Transaction"
  */
 export function getActivityLabel(activity: ActivityAccount): string {
-    if (activity.swap) return "Swap";
+    if (activity.swap) return "Exchange";
+    if (activity.actionKind === "StakingReward") return "Staking Rewards";
+
+    if (
+        activity.actionKind === "FunctionCall" &&
+        activity.methodName &&
+        PROPOSAL_METHODS.includes(activity.methodName)
+    ) {
+        return "Proposal Action";
+    }
+
     const isReceived = parseFloat(activity.amount ?? "0") > 0;
 
-    if (activity.actionKind === "FunctionCall") {
-        return "Function Call";
+    if (activity.actionKind) {
+        if (isReceived) {
+            const symbol = activity.tokenSymbol || "Token";
+            return `Deposit ${symbol}`;
+        }
+        return "Payment Sent";
     }
-    if (activity.actionKind === "Transfer") {
-        return isReceived ? "Transfer Received" : "Transfer Sent";
-    }
-    // Fallback for records without action data
-    return "";
+
+    // Fallback for records without action data (not backfilled yet)
+    return "Transaction";
 }
 
 /**
  * Get the sub-label (description line) for an activity.
  *
  * - Swaps → "via NEAR Intents"
- * - FunctionCall → "{methodName} on {contract}"
- * - Transfer / fallback → "from {sender}" or "to {recipient}"
+ * - Staking rewards → pool address
+ * - Proposal actions → method name
+ * - Incoming → "from {sender}" (only if known)
+ * - Outgoing → no sub-label (receiver is often a contract, not the actual recipient)
+ * - No action data → empty
  */
 export function getActivitySubLabel(
     activity: ActivityAccount,
-    treasuryId: string | null | undefined,
+    _treasuryId: string | null | undefined,
 ): string {
     if (activity.swap) return "via NEAR Intents";
+
+    if (activity.actionKind === "StakingReward") return "";
+
+    if (
+        activity.actionKind === "FunctionCall" &&
+        activity.methodName &&
+        PROPOSAL_METHODS.includes(activity.methodName)
+    ) {
+        return "";
+    }
+
     const isReceived = parseFloat(activity.amount ?? "0") > 0;
 
-    if (activity.actionKind === "FunctionCall" && activity.methodName) {
-        const contract =
-            activity.receiverId || activity.counterparty || "unknown";
-        return `${activity.methodName} on ${contract}`;
+    if (isReceived) {
+        const from = activity.counterparty || activity.signerId;
+        return from && from !== "UNKNOWN" ? `from ${from}` : "";
     }
 
-    if (isReceived) {
-        const from = activity.counterparty || activity.signerId || "unknown";
-        return `from ${from}`;
-    }
-    const to =
-        activity.receiverId || activity.counterparty || treasuryId || "unknown";
-    return `to ${to}`;
+    // For outgoing: don't show receiver (stored counterparty is often the contract)
+    return "";
 }
 
 /**
  * Determines the sender of a transaction
  * For swaps: show "via NEAR Intents"
- * For received payments: show the counterparty who sent funds
+ * For received payments: show the counterparty who sent funds (if known)
  * For sent payments: show the signer who initiated the transaction
- *
- * @param activity - The activity object containing counterparty, signerId, and swap info
- * @param isReceived - Whether this is a received payment (amount > 0)
- * @returns The sender account ID or "—" if not available
  */
 export function getFromAccount(
     activity: ActivityAccount,
     isReceived: boolean,
 ): string {
     if (activity.swap) return "via NEAR Intents";
-    if (isReceived && activity.counterparty) {
-        return activity.counterparty;
+    const knownCounterparty =
+        activity.counterparty && activity.counterparty !== "UNKNOWN"
+            ? activity.counterparty
+            : null;
+    if (isReceived) {
+        return knownCounterparty || activity.signerId || "—";
     }
     return activity.signerId || "—";
 }
 
 /**
  * Determines the recipient of a transaction
- * For swaps: show treasury (swaps are always treasury operations)
- * For sent payments: show receiverId (primary), fallback to counterparty, then treasuryId
- * For received payments: show treasuryId (the treasury is always the recipient)
- *
- * @param activity - The activity object containing receiverId, counterparty, and swap info
- * @param isReceived - Whether this is a received payment (amount > 0)
- * @param treasuryId - The treasury account ID (recipient for received payments)
- * @returns The recipient account ID or "—" if not available
+ * For swaps: show treasury
+ * For sent payments: don't show receiver (stored counterparty is often the contract, not the actual recipient)
+ * For received payments: show treasuryId
  */
 export function getToAccount(
-    activity: ActivityAccount,
+    _activity: ActivityAccount,
     isReceived: boolean,
     treasuryId: string | null | undefined,
 ): string {
-    if (activity.swap) return treasuryId || "—";
-    if (!isReceived) {
-        return (
-            activity.receiverId || activity.counterparty || treasuryId || "—"
-        );
-    }
-    return treasuryId || "—";
+    if (isReceived) return treasuryId || "—";
+    // For outgoing: don't display receiver
+    return "—";
 }
