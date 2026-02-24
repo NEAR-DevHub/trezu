@@ -301,7 +301,7 @@ pub async fn relay_delegate_action(
         }
 
         Tokens::account(state.signer_id.clone())
-            .send_to(receiver_id.clone())
+            .send_to(request.treasury_id.clone())
             .near(storage_cost)
             .with_signer(state.signer.clone())
             .send_to(&state.network)

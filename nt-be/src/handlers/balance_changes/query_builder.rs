@@ -1,5 +1,7 @@
 use chrono::{DateTime, Utc};
 
+const RELAYER_WHERE_CONDITION: &str = "counterparty != 'sponsor.trezu.near'";
+
 /// Common parameters for filtering balance changes
 #[derive(Debug, Clone)]
 pub struct BalanceChangeFilters {
@@ -35,6 +37,8 @@ pub fn build_where_conditions(filters: &BalanceChangeFilters) -> (Vec<String>, u
         "counterparty != 'SNAPSHOT'".to_string(),
         "counterparty != 'STAKING_SNAPSHOT'".to_string(),
         "counterparty != 'NOT_REGISTERED'".to_string(),
+        "action_kind != 'CreateAccount'".to_string(),
+        RELAYER_WHERE_CONDITION.to_string(),
         // Exclude swap deposit legs - these are shown as part of the swap fulfillment
         format!(
             "id NOT IN (SELECT deposit_balance_change_id FROM detected_swaps WHERE account_id = $1 AND deposit_balance_change_id IS NOT NULL)"
