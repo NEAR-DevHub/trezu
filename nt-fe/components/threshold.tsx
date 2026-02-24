@@ -1,6 +1,6 @@
 "use client";
 
-import { Slider } from "@/components/ui/slider";
+import { Slider } from "@/components/slider";
 import { InputBlock } from "./input-block";
 import { WarningAlert } from "./warning-alert";
 import { InfoAlert } from "./info-alert";
@@ -25,11 +25,10 @@ export function ThresholdSlider({
     // 2. When originalThreshold (prevents labels from changing during drag)
     let array: number[];
     let sliderMin: number;
-    
-    const shouldShowZero = memberCount === 1 || 
-                          memberCount === 2 || 
-                          originalThreshold === 1 
-    
+
+    const shouldShowZero =
+        memberCount === 1 || memberCount === 2 || originalThreshold === 1;
+
     if (memberCount === 1) {
         array = [0, 1];
         sliderMin = 0;
@@ -41,7 +40,7 @@ export function ThresholdSlider({
         array = Array.from({ length: memberCount }, (_, i) => i + 1);
         sliderMin = 1;
     }
-    
+
     const sliderMax = memberCount;
 
     return (
@@ -81,7 +80,7 @@ export function ThresholdSlider({
 
             {/* Warning banner - show when threshold is 1 */}
             {currentThreshold === 1 && (
-                <WarningAlert 
+                <WarningAlert
                     message={`A 1-of-${memberCount} threshold means any single member can execute transactions. This reduces security.`}
                     className="mt-3"
                 />
