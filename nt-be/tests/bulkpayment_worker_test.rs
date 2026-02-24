@@ -15,8 +15,7 @@ use sqlx::PgPool;
 use std::sync::Arc;
 
 /// List on bulkpayment.near with status "Approved" but all payments already "Paid"
-const FULLY_PAID_LIST_ID: &str =
-    "9945024033f352fc2070510dbf3866b959a2b2a1da8a22b3e24b448ec65f64bf";
+const FULLY_PAID_LIST_ID: &str = "9945024033f352fc2070510dbf3866b959a2b2a1da8a22b3e24b448ec65f64bf";
 
 /// Test: worker should NOT call payout_batch for a list with zero pending payments.
 ///
