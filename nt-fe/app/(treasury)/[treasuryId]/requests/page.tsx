@@ -102,7 +102,7 @@ function ProposalsList({
         };
 
         // Add status filter if provided
-        if (status) f.statuses = status;
+        if (status) f.statuses = [status];
 
         return f;
     }, [page, pageSize, searchParams, status, accountId]);

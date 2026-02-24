@@ -34,11 +34,15 @@ export function AmountSummary({
     const { theme } = useThemeStore();
 
     // Get network icon based on theme
-    const networkIcon = showNetworkIcon && token.chainIcons
-        ? (theme === 'light' ? token.chainIcons.light : token.chainIcons.dark)
-        : null;
+    const networkIcon =
+        showNetworkIcon && token.chainIcons
+            ? theme === "light"
+                ? token.chainIcons.light
+                : token.chainIcons.dark
+            : null;
 
-    const totalString = total instanceof Big ? total.toString() : total.toString();
+    const totalString =
+        total instanceof Big ? total.toString() : total.toString();
 
     // Check if icon is a valid image URL
     const isImageIcon = token.icon && (token.icon.startsWith("data:image") || token.icon.startsWith("http"));
@@ -68,7 +72,7 @@ export function AmountSummary({
                     </div>
                 )}
             </div>
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-0.5 max-w-full">
                 <p className="text-lg font-semibold text-foreground break-all">
                     {totalString}{" "}
                     <span className="text-muted-foreground font-medium text-xs">
@@ -76,7 +80,7 @@ export function AmountSummary({
                     </span>
                 </p>
                 {totalUSD && (
-                    <p className="text-xxs text-muted-foreground">
+                    <p className="text-xxs text-muted-foreground break-all">
                         ≈{formatCurrency(totalUSD)}
                     </p>
                 )}
