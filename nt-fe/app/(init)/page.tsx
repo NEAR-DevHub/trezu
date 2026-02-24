@@ -18,7 +18,6 @@ import {
     Dialog,
     DialogContent,
     DialogDescription,
-    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from "@/components/modal";
@@ -46,24 +45,26 @@ function WalletSuggestionItem({
     const content = () => {
         return (
             <>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3.5">
                     <Image
                         src={iconUrl}
                         alt={name}
-                        width={28}
-                        height={28}
-                        className="rounded-full"
+                        width={40}
+                        height={40}
+                        className="rounded-full size-12 md:size-8"
                     />
-                    <span className="font-semibold text-foreground text-lg">
-                        {name}
-                    </span>
+                    <div className="flex flex-col justify-start gap-0">
+                        <span className="font-semibold text-foreground text-lg">
+                            {name}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                            {description}
+                        </span>
+                    </div>
                     {href && (
                         <ArrowUpRight className="size-5 group-hover:opacity-100 opacity-0 ml-auto mr-1.5 transition-opacity duration-200" />
                     )}
                 </div>
-                <span className="text-sm text-muted-foreground pl-9">
-                    {description}
-                </span>
             </>
         );
     };
@@ -100,7 +101,7 @@ function WalletSuggestionModal({
         {
             name: "Ledger Wallet",
             href: "https://ledger.com/",
-            description: "Maximum security (Bluetooth supported)",
+            description: "Maximum security. Bluetooth supported",
             iconUrl: "/ledger-wallet/ledger-icon.jpeg",
         },
         {
