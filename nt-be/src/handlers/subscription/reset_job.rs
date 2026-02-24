@@ -16,7 +16,7 @@ pub async fn expire_old_exports(pool: &PgPool) -> Result<u64, sqlx::Error> {
         UPDATE export_history
         SET status = 'expired'
         WHERE status = 'completed'
-          AND created_at < NOW() - INTERVAL '30 days'
+          AND created_at < NOW() - INTERVAL '2 days'
         "#,
     )
     .execute(pool)
