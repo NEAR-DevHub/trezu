@@ -164,19 +164,19 @@ function Step2({ handleBack }: StepProps) {
                 <div className="flex flex-col gap-2">
                     <p className="font-semibold">Recipient</p>
                     <div className="flex flex-col gap-1 w-full">
-                        <div className="flex justify-between items-center w-full text-xs ">
+                        <div className="flex justify-between items-center gap-2 w-full text-xs ">
                             <p className=" font-semibold">{address}</p>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-5">
                                 <img
                                     src={token.icon}
                                     alt={token.symbol}
                                     className="size-5 rounded-full"
                                 />
                                 <div className="flex flex-col gap-[3px] items-end">
-                                    <p className="text-xs font-semibold">
+                                    <p className="text-xs font-semibold text-wrap break-all">
                                         {amount} {token.symbol}
                                     </p>
-                                    <p className="text-xxs text-muted-foreground">
+                                    <p className="text-xxs text-muted-foreground text-wrap break-all">
                                         ≈ {formatCurrency(estimatedUSDValue)}
                                     </p>
                                 </div>
