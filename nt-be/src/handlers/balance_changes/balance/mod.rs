@@ -67,7 +67,7 @@ pub async fn get_balance_at_block_with_fallback(
             current_block
         );
         let result = if token_id == "NEAR" || token_id == "near" {
-            near::get_balance_at_block(network, account_id, current_block).await
+            near::get_balance_at_block(pool, network, account_id, current_block).await
         } else if token_id.contains(':') {
             intents::get_balance_at_block(pool, network, account_id, token_id, current_block).await
         } else {
