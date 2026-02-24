@@ -75,7 +75,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                         lockedBalance(token.balance).gt(0),
                     );
                     return (
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 pr-6">
                             {asset.icon?.startsWith("data:image") ||
                             asset.icon?.startsWith("http") ? (
                                 <img

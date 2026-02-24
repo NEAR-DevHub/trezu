@@ -52,6 +52,7 @@
         "clsx": "^2.1.1",
         "date-fns": "^4.1.0",
         "geoip-lite": "^1.4.10",
+        "gleap": "^15.2.1",
         "gradflow": "^0.1.0",
         "lucide-react": "^0.562.0",
         "motion": "^12.34.1",
