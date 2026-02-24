@@ -4,7 +4,7 @@ use axum::{
     http::StatusCode,
 };
 use bigdecimal::{BigDecimal, ToPrimitive};
-use near_api::{AccountId, Contract, Tokens, types::json::U128};
+use near_api::{AccountId, Contract, NearToken, Tokens, types::json::U128};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -41,6 +41,8 @@ pub struct TokenBalanceStringResponse {
     pub decimals: u8,
 }
 
+pub const MIN_NEAR_DISPLAY_BALANCE: NearToken = NearToken::from_millinear(1);
+
 /// Fetch NEAR balance for an account
 pub async fn fetch_near_balance(
     state: &Arc<AppState>,
@@ -72,7 +74,13 @@ pub async fn fetch_near_balance(
     let storage_locked = balance.storage_locked.as_yoctonear();
     let deduction = storage_locked.max(paid_near_u128);
     let total = balance.total.as_yoctonear();
-    let available = total.saturating_sub(deduction);
+    let available_raw = total.saturating_sub(deduction);
+    // Display zero if the available balance is below 0.001 NEAR (1 milliNEAR)
+    let available = if available_raw < MIN_NEAR_DISPLAY_BALANCE.as_yoctonear() {
+        0
+    } else {
+        available_raw
+    };
 
     Ok(TokenBalanceResponse {
         account_id: account_id.to_string(),

@@ -299,17 +299,9 @@ export function CongratsTooltip() {
             return; // Don't show congrats if welcome is still active
         }
 
-        // Check if all onboarding steps are completed
-        const tokenBalanceIsPositive = (token: any) => {
-            const tokenBalance = Big(availableBalance(token.balance)).div(
-                Big(10).pow(token.decimals),
-            );
-            if (token.symbol === "NEAR") {
-                return tokenBalance.gt(1);
-            }
-            return true;
-        };
-        const hasAssets = tokens.filter(tokenBalanceIsPositive).length > 0;
+        const hasAssets =
+            tokens.filter((token) => availableBalance(token.balance).gt(0))
+                .length > 0;
         const hasPayments =
             !!proposals?.proposals?.length && proposals.proposals.length > 0;
 

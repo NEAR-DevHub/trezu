@@ -203,16 +203,9 @@ export function OnboardingProgress({
     const isLoading =
         isLoadingAssets || isLoadingProposals || isLoadingGuestTreasury;
 
-    const tokenBalanceIsPositive = (token: TreasuryAsset) => {
-        const tokenBalance = Big(availableBalance(token.balance)).div(
-            Big(10).pow(token.decimals),
-        );
-        if (token.symbol === "NEAR") {
-            return tokenBalance.gt(1);
-        }
-        return true;
-    };
-    const hasAssets = tokens.filter(tokenBalanceIsPositive).length > 0;
+    const hasAssets =
+        tokens.filter((token) => availableBalance(token.balance).gt(0)).length >
+        0;
 
     const steps: OnboardingStep[] = useMemo(() => {
         let activeStep = 1;
