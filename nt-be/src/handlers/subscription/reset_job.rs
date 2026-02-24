@@ -6,9 +6,9 @@ use sqlx::PgPool;
 use crate::config::{PlanType, get_monthly_reset_credits, get_plan_config};
 use crate::utils::datetime::{duration_until_next_utc_midnight, next_month_start_utc};
 
-/// Expire export history records older than 30 days.
+/// Expire export history records older than 2 days.
 ///
-/// Updates status to 'expired' for exports created more than 30 days ago.
+/// Updates status to 'expired' for exports created more than 2 days ago.
 /// Returns number of exports updated.
 pub async fn expire_old_exports(pool: &PgPool) -> Result<u64, sqlx::Error> {
     let result = sqlx::query!(
@@ -210,7 +210,7 @@ pub async fn run_monthly_plan_reset_service(pool: PgPool) {
         match expire_old_exports(&pool).await {
             Ok(expired) if expired > 0 => {
                 log::info!(
-                    "Midnight: expired {} old export(s) (older than 30 days)",
+                    "Midnight: expired {} old export(s) (older than 2 days)",
                     expired
                 );
             }
@@ -431,10 +431,10 @@ mod tests {
                 created_at
             )
             VALUES
-                ('test-account.near', 'test-account.near', '/export/old1', 'completed', NOW() - INTERVAL '35 days'),
-                ('test-account.near', 'test-account.near', '/export/old2', 'completed', NOW() - INTERVAL '31 days'),
-                ('test-account.near', 'test-account.near', '/export/recent', 'completed', NOW() - INTERVAL '15 days'),
-                ('test-account.near', 'test-account.near', '/export/already-expired', 'expired', NOW() - INTERVAL '40 days')
+                ('test-account.near', 'test-account.near', '/export/old1', 'completed', NOW() - INTERVAL '5 days'),
+                ('test-account.near', 'test-account.near', '/export/old2', 'completed', NOW() - INTERVAL '3 days'),
+                ('test-account.near', 'test-account.near', '/export/recent', 'completed', NOW() - INTERVAL '1 day'),
+                ('test-account.near', 'test-account.near', '/export/already-expired', 'expired', NOW() - INTERVAL '10 days')
             "#,
         )
         .execute(&pool)
@@ -444,7 +444,7 @@ mod tests {
         let expired = expire_old_exports(&pool).await?;
         assert_eq!(
             expired, 2,
-            "Expected two exports to be expired (35 and 31 days old)"
+            "Expected two exports to be expired (5 and 3 days old)"
         );
 
         // Verify status updates
