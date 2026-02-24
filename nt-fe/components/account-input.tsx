@@ -136,7 +136,15 @@ const AccountInput = ({
     }, [value, blockchain, isNear, config.regex, validateOnMount, setIsValid, validateNearFull, resetValidation, updateValidationState]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const val = e.target.value.trim();
+        // Remove all whitespace to prevent it from being entered
+        const val = e.target.value.replace(/\s/g, '');
+
+        // If value hasn't changed after removing whitespace, don't update
+        // This prevents validation state reset when user types whitespace
+        if (val === value) {
+            return;
+        }
+
         setValue(val);
         hasUserInteractedRef.current = true;
 
@@ -175,7 +183,8 @@ const AccountInput = ({
 
     // Memoized validation state for border styling
     const validationBorderClass = useMemo(() => {
-        if (!value) return "";
+        const trimmedValue = value?.trim();
+        if (!trimmedValue) return "";
 
         if (isNear) {
             if (isValidating) return "border-yellow-500"; // Validating
@@ -187,10 +196,10 @@ const AccountInput = ({
         // For other chains: immediate validation (or accept all if no pattern)
         if (!config.regex) {
             // No validation pattern - show green if non-empty (unknown blockchain)
-            return value ? "border-green-500" : "";
+            return trimmedValue ? "border-green-500" : "";
         }
 
-        const isValid = config.regex.test(value);
+        const isValid = config.regex.test(trimmedValue);
         return isValid ? "border-green-500" : "border-red-500";
     }, [value, isValidating, validationError, hasValidated, config.regex, isNear]);
 
