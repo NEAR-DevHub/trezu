@@ -247,11 +247,11 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
                                     Download
                                 </Button>
                             ) : item.status === "expired" ? (
-                                <div className="text-muted-foreground text-sm px-3 py-1.5">
+                                <div className="px-3 py-1.5 bg-muted rounded-md text-sm">
                                     Expired
                                 </div>
                             ) : (
-                                <div className="text-red-600 dark:text-red-400 text-sm px-3 py-1.5">
+                                <div className="px-3 py-1.5 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 rounded-md text-sm">
                                     Failed
                                 </div>
                             )}

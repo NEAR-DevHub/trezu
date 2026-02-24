@@ -11,7 +11,7 @@ use sqlx::PgPool;
 use crate::{
     AppState,
     constants::{
-        NEAR_ICON,
+        NEAR_ICON, WRAP_NEAR_ICON,
         intents_chains::{ChainIcons, get_chain_metadata_by_name},
     },
     handlers::proposals::scraper::fetch_ft_metadata,
@@ -61,6 +61,29 @@ impl TokenMetadata {
             symbol: "NEAR".to_string(),
             decimals: 24,
             icon: Some(NEAR_ICON.to_string()),
+            price,
+            price_updated_at,
+            network: Some("near".to_string()),
+            chain_name: Some("Near Protocol".to_string()),
+            chain_icons: get_chain_metadata_by_name("near").map(|m| m.icon),
+        }
+    }
+
+    /// Creates wrap.near (Wrapped NEAR) token metadata with consistent values.
+    ///
+    /// # Arguments
+    /// * `price` - Optional USD price for wrap.near (typically same as NEAR)
+    /// * `price_updated_at` - Optional timestamp when price was updated
+    ///
+    /// # Returns
+    /// TokenMetadata with standardized wrap.near token information
+    pub fn create_wrap_near_metadata(price: Option<f64>, price_updated_at: Option<String>) -> Self {
+        Self {
+            token_id: "wrap.near".to_string(),
+            name: "Wrapped NEAR fungible token".to_string(),
+            symbol: "NEAR".to_string(),
+            decimals: 24,
+            icon: Some(WRAP_NEAR_ICON.to_string()),
             price,
             price_updated_at,
             network: Some("near".to_string()),
@@ -241,22 +264,50 @@ pub async fn fetch_tokens_metadata(
         let chain_name = chain_metadata.as_ref().map(|m| m.name.clone());
         let chain_icons = chain_metadata.map(|m| m.icon);
 
-        metadata_responses.push(TokenMetadata {
-            token_id: token_id.clone(),
-            name: name.clone(),
-            symbol: symbol.clone(),
-            decimals,
-            icon: token.icon.clone(),
-            price: token.price,
-            price_updated_at: token
-                .price_updated_at
-                .as_ref()
-                .or(token.price_updated_at_snake_case.as_ref())
-                .cloned(),
-            network: Some(chain_name_str.clone()),
-            chain_name,
-            chain_icons,
-        });
+        // Special handling for wrap.near - if metadata is incomplete, use complete fallback
+        // Check both "nep141:wrap.near" and "wrap.near" (Ref SDK can return either)
+        let is_wrap_near = token_id == "wrap.near";
+        if is_wrap_near && (token.icon.is_none() || token.price.is_none() || chain_icons.is_none())
+        {
+            eprintln!(
+                "[Metadata] 🔧 {} has incomplete metadata from Ref SDK, using complete fallback",
+                token_id
+            );
+            // Use the complete wrap.near metadata with all fields populated
+            let wrap_near_meta = TokenMetadata::create_wrap_near_metadata(
+                token.price,
+                token
+                    .price_updated_at
+                    .as_ref()
+                    .or(token.price_updated_at_snake_case.as_ref())
+                    .cloned(),
+            );
+            metadata_responses.push(wrap_near_meta);
+        } else {
+            // Provide fallback icon for wrap.near if only icon is missing (but other fields are OK)
+            let icon = if is_wrap_near && token.icon.is_none() {
+                Some(WRAP_NEAR_ICON.to_string())
+            } else {
+                token.icon.clone()
+            };
+
+            metadata_responses.push(TokenMetadata {
+                token_id: token_id.clone(),
+                name: name.clone(),
+                symbol: symbol.clone(),
+                decimals,
+                icon,
+                price: token.price,
+                price_updated_at: token
+                    .price_updated_at
+                    .as_ref()
+                    .or(token.price_updated_at_snake_case.as_ref())
+                    .cloned(),
+                network: Some(chain_name_str.clone()),
+                chain_name,
+                chain_icons,
+            });
+        }
     }
 
     Ok(metadata_responses)
@@ -337,6 +388,12 @@ async fn fetch_nearblocks_ft_metadata(
             // If searching for "near", return NEAR metadata with wrap.near's price
             let metadata = if token_id_str == "near" {
                 TokenMetadata::create_near_metadata(
+                    price,
+                    price.map(|_| chrono::Utc::now().to_rfc3339()),
+                )
+            } else if token_id_str == "wrap.near" {
+                // Always use standardized wrap.near metadata with icon and chainIcons
+                TokenMetadata::create_wrap_near_metadata(
                     price,
                     price.map(|_| chrono::Utc::now().to_rfc3339()),
                 )

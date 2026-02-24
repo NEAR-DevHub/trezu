@@ -185,16 +185,18 @@ pub async fn get_balance_changes_internal(
 
     // Build SQL query
     let select_fields = "id, account_id, block_height, block_time, token_id, receipt_id, transaction_hashes, counterparty, signer_id, receiver_id, amount, balance_before, balance_after, created_at, action_kind, method_name, usd_value";
+
+    // Determine pagination based on whether limit is specified
+    // For exports, limit is None and we want all records
+    // For API queries, limit has a value (default 100, max 1000)
+    let with_pagination = params.limit.is_some() || params.offset.is_some();
+
     let (query_str, _next_param_idx) = build_select_query(
         &filters,
         select_fields,
         "block_height DESC, id DESC",
-        true, // with pagination
+        with_pagination,
     );
-
-    // Bind parameters
-    let limit = params.limit.unwrap_or(100).min(1000);
-    let offset = params.offset.unwrap_or(0);
 
     let mut query = query_as::<_, BalanceChange>(&query_str).bind(&filters.account_id);
 
@@ -224,8 +226,15 @@ pub async fn get_balance_changes_internal(
         query = query.bind(max);
     }
 
-    // Bind pagination
-    query = query.bind(limit).bind(offset);
+    // Bind pagination only if we're using it
+    if with_pagination {
+        let limit = params
+            .limit
+            .expect("limit should be Some when with_pagination is true")
+            .min(1000);
+        let offset = params.offset.unwrap_or(0);
+        query = query.bind(limit).bind(offset);
+    }
 
     // Execute query
     let changes = query.fetch_all(&state.db_pool).await?;
@@ -335,8 +344,13 @@ pub async fn get_balance_changes_internal(
 
 pub async fn get_balance_changes(
     State(state): State<Arc<AppState>>,
-    Query(params): Query<BalanceChangesQuery>,
+    Query(mut params): Query<BalanceChangesQuery>,
 ) -> Result<Json<Vec<EnrichedBalanceChange>>, (StatusCode, Json<Value>)> {
+    // Apply default limit for public API if not specified
+    if params.limit.is_none() {
+        params.limit = Some(100);
+    }
+
     let enriched_changes = get_balance_changes_internal(&state, &params)
         .await
         .map_err(|e| {

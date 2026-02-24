@@ -409,12 +409,10 @@ pub async fn get_user_assets(
             };
 
             // Build a map keyed by defuse asset ID for O(1) lookups
-            // Find wrap.near metadata explicitly instead of assuming it's last
+            // Get NEAR token metadata for native NEAR balance
             let near_token_meta = metadata_map.get("near").cloned().unwrap_or_else(|| {
-                eprintln!("[User Assets] Warning: wrap.near metadata not found, using fallback");
-                let mut meta = TokenMetadataResponse::create_near_metadata(None, None);
-                meta.token_id = "nep141:wrap.near".to_string();
-                meta
+                eprintln!("[User Assets] Warning: NEAR metadata not found, using fallback");
+                TokenMetadataResponse::create_near_metadata(None, None)
             });
 
             // Build simplified tokens for REF Finance tokens.
@@ -422,7 +420,14 @@ pub async fn get_user_assets(
             let mut all_simplified_tokens: Vec<(SimplifiedToken, U128)> = ref_tokens_with_balances
                 .into_iter()
                 .filter_map(|(token_id, balance)| {
-                    let token_meta = metadata_map.get(&token_id)?;
+                    // Try to find metadata with nep141 prefix first, then bare token_id
+                    let metadata_key = format!("nep141:{}", token_id);
+                    let token_meta = metadata_map
+                        .get(&metadata_key)
+                        .or_else(|| metadata_map.get(&token_id))
+                        .cloned();
+
+                    let token_meta = token_meta?;
 
                     let price = token_meta.price.unwrap_or(0.0).to_string();
 

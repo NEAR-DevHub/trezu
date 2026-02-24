@@ -13,7 +13,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use bigdecimal::{BigDecimal, ToPrimitive};
-use chrono::{DateTime, Duration, Months, NaiveDate, Utc};
+use chrono::{DateTime, Months, NaiveDate, Utc};
 use rust_xlsxwriter::{Color, Format, Workbook};
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool};
@@ -886,8 +886,12 @@ async fn validate_export_date_range(
     };
 
     // Calculate the earliest allowed date based on plan
+    // Subtract 1 day to include the boundary (more lenient)
     let history_months = plan_config.limits.history_lookup_months;
-    let earliest_allowed = Utc::now() - Duration::days(history_months as i64 * 30);
+    let earliest_allowed = Utc::now()
+        .checked_sub_months(Months::new(history_months as u32))
+        .unwrap_or(Utc::now())
+        - chrono::Duration::days(1);
 
     // Check if start_time is before the earliest allowed date
     if start_time < earliest_allowed {
@@ -1148,25 +1152,7 @@ async fn create_export_record(
     // Start a transaction
     let mut tx = pool.begin().await?;
 
-    // Check if account has enough credits
-    let credits: Option<i32> = sqlx::query_scalar(
-        r#"
-        SELECT export_credits
-        FROM monitored_accounts
-        WHERE account_id = $1
-        FOR UPDATE
-        "#,
-    )
-    .bind(&request.account_id)
-    .fetch_optional(&mut *tx)
-    .await?;
-
-    let current_credits = credits.unwrap_or(0);
-    if current_credits <= 0 {
-        return Err("Insufficient export credits".into());
-    }
-
-    // Check if an identical export already exists
+    // Check if an identical export already exists FIRST (before checking credits)
     let existing_export: Option<i64> = sqlx::query_scalar(
         r#"
         SELECT id
@@ -1181,10 +1167,28 @@ async fn create_export_record(
     .await?;
 
     let export_id = if let Some(existing_id) = existing_export {
-        // Export already exists - don't charge credits, just return existing ID
+        // Export already exists - don't check or charge credits, just return existing ID
         existing_id
     } else {
-        // New export - decrement credits and create record
+        // New export - check if account has enough credits
+        let credits: Option<i32> = sqlx::query_scalar(
+            r#"
+            SELECT export_credits
+            FROM monitored_accounts
+            WHERE account_id = $1
+            FOR UPDATE
+            "#,
+        )
+        .bind(&request.account_id)
+        .fetch_optional(&mut *tx)
+        .await?;
+
+        let current_credits = credits.unwrap_or(0);
+        if current_credits <= 0 {
+            return Err("Insufficient export credits".into());
+        }
+
+        // Decrement credits
         sqlx::query(
             r#"
         UPDATE monitored_accounts
@@ -1318,8 +1322,15 @@ pub async fn get_recent_activity(
         get_plan_config(crate::config::PlanType::Free)
     };
 
+    // Calculate date cutoff for plan limits
+    // Subtract 1 day to include the boundary (more lenient)
     let history_months = plan_config.limits.history_lookup_months;
-    let date_cutoff = Some(Utc::now() - Duration::days(history_months as i64 * 30));
+    let date_cutoff = Some(
+        Utc::now()
+            .checked_sub_months(Months::new(history_months as u32))
+            .unwrap_or(Utc::now())
+            - chrono::Duration::days(1),
+    );
 
     // Parse user-provided date range filters
     let start_date = params.start_date.as_deref();

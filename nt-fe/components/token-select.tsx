@@ -1,6 +1,16 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { ChevronDown, ChevronLeft } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { NEAR_CHAIN_ICONS } from "@/constants/token";
+import { useAggregatedTokens, useAssets } from "@/hooks/use-assets";
+import { useBridgeTokens } from "@/hooks/use-bridge-tokens";
+import { useTreasury } from "@/hooks/use-treasury";
+import type { ChainIcons } from "@/lib/api";
+import Big from "@/lib/big";
+import { cn, formatBalance, formatSmartAmount } from "@/lib/utils";
+import { Button } from "./button";
+import { Input } from "./input";
 import {
     Dialog,
     DialogContent,
@@ -8,27 +18,16 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "./modal";
-import { ChevronDown, ChevronLeft } from "lucide-react";
-import { Button } from "./button";
-import { cn, formatBalance, formatSmartAmount } from "@/lib/utils";
-import { ChainIcons } from "@/lib/api";
-import { useAggregatedTokens } from "@/hooks/use-assets";
-import { NEAR_CHAIN_ICONS } from "@/constants/token";
-import { useBridgeTokens } from "@/hooks/use-bridge-tokens";
-import Big from "@/lib/big";
-import { TokenDisplay } from "./token-display-with-network";
-import { NetworkIconDisplay } from "./token-display";
-import { Input } from "./input";
 import { SelectListIcon } from "./select-list";
+import { NetworkIconDisplay } from "./token-display";
+import { TokenDisplay } from "./token-display-with-network";
 import { ScrollArea } from "./ui/scroll-area";
-import { useTreasury } from "@/hooks/use-treasury";
-import { useAssets } from "@/hooks/use-assets";
 
 interface SelectListItem {
     id: string;
     name: string;
     symbol?: string;
-    icon: string;
+    icon?: string;
     gradient?: string;
 }
 
@@ -47,7 +46,7 @@ interface Asset {
     id: string;
     name: string;
     symbol: string;
-    icon: string;
+    icon?: string;
     networks: Network[];
 }
 
@@ -156,9 +155,9 @@ export default function TokenSelect({
                 symbol: firstToken.symbol,
                 decimals: firstToken.decimals,
                 name: firstToken.name || firstToken.symbol,
-                icon: firstToken.icon,
+                icon: firstToken.icon || "",
                 network: firstToken.network,
-                chainIcons: firstToken.chainIcons,
+                chainIcons: firstToken.chainIcons || undefined,
                 residency: firstToken.residency,
             });
         }
@@ -215,7 +214,7 @@ export default function TokenSelect({
                                 ? ` • ${treasuryToken.networks.length} Networks`
                                 : ""),
                         symbol: treasuryToken.symbol,
-                        icon: treasuryToken.icon,
+                        icon: treasuryToken.icon || "",
                         assetId: treasuryToken.symbol,
                         assetName: treasuryToken.name,
                         networks:
@@ -289,7 +288,7 @@ export default function TokenSelect({
                             ? ` • ${mergedNetworks.length} Networks`
                             : ""),
                     symbol: treasuryToken.symbol,
-                    icon: treasuryToken.icon,
+                    icon: treasuryToken.icon || bridgeAsset.icon || "",
                     assetId: bridgeAsset.id,
                     assetName: bridgeAsset.name,
                     networks: mergedNetworks,
@@ -341,7 +340,7 @@ export default function TokenSelect({
                     totalBalanceUSD: undefined,
                 }),
             )
-            .sort((a, b) => a.symbol!.localeCompare(b.symbol!));
+            .sort((a, b) => (a.symbol || '').localeCompare(b.symbol || ''));
 
         return {
             yourAssets: ownedAssets,
@@ -479,26 +478,26 @@ export default function TokenSelect({
                         symbol: treasuryToken.symbol,
                         decimals: treasuryToken.decimals,
                         name: treasuryToken.name || treasuryToken.symbol,
-                        icon: treasuryToken.icon,
+                        icon: treasuryToken.icon || "",
                         network: treasuryToken.network,
-                        chainIcons: treasuryToken.chainIcons,
+                        chainIcons: treasuryToken.chainIcons || undefined,
                         residency: treasuryToken.residency,
                     });
                 }
             } else {
                 // Bridge/Intents token
-                let balance:
+                let _balance:
                     | { type: "Standard"; total: Big; locked: Big }
                     | undefined;
                 if (item.balance && item.balance !== "0") {
                     try {
-                        balance = {
+                        _balance = {
                             type: "Standard",
                             total: Big(item.balance),
                             locked: Big(0),
                         };
                     } catch {
-                        balance = undefined;
+                        _balance = undefined;
                     }
                 }
 
@@ -507,7 +506,7 @@ export default function TokenSelect({
                     symbol: selectedAsset.symbol,
                     decimals: item.decimals,
                     name: selectedAsset.name,
-                    icon: selectedAsset.icon,
+                    icon: selectedAsset.icon || "",
                     network: item.networkName,
                     chainIcons: item.chainIcons || undefined,
                     residency: "Intents",
@@ -674,7 +673,9 @@ export default function TokenSelect({
                                                     token.totalBalance > 0 && (
                                                         <div className="flex flex-col items-end">
                                                             <span className="font-semibold">
-                                                                {formatSmartAmount(token.totalBalance)}
+                                                                {formatSmartAmount(
+                                                                    token.totalBalance,
+                                                                )}
                                                             </span>
                                                             <span className="text-sm text-muted-foreground">
                                                                 ≈$
@@ -812,39 +813,33 @@ export default function TokenSelect({
                                         )}
                                     </>
                                 ) : (
-                                    <>
-                                        {filteredOtherAssets.map((token) => (
-                                            <Button
-                                                key={token.id}
-                                                onClick={() =>
-                                                    handleTokenClick(token)
-                                                }
-                                                variant="ghost"
-                                                type="button"
-                                                className="w-full flex items-center gap-1 py-3 rounded-lg h-auto justify-start pl-1!"
-                                            >
-                                                <SelectListIcon
-                                                    icon={token.icon}
-                                                    gradient={token.gradient}
-                                                    alt={
-                                                        token.symbol ||
-                                                        token.name
-                                                    }
-                                                />
-                                                <div className="flex-1 text-left">
-                                                    <div className="font-semibold">
-                                                        {token.symbol ||
-                                                            token.name}
-                                                    </div>
-                                                    {token.symbol && (
-                                                        <div className="text-sm text-muted-foreground">
-                                                            {token.name}
-                                                        </div>
-                                                    )}
+                                    filteredOtherAssets.map((token) => (
+                                        <Button
+                                            key={token.id}
+                                            onClick={() =>
+                                                handleTokenClick(token)
+                                            }
+                                            variant="ghost"
+                                            type="button"
+                                            className="w-full flex items-center gap-1 py-3 rounded-lg h-auto justify-start pl-1!"
+                                        >
+                                            <SelectListIcon
+                                                icon={token.icon}
+                                                gradient={token.gradient}
+                                                alt={token.symbol || token.name}
+                                            />
+                                            <div className="flex-1 text-left">
+                                                <div className="font-semibold">
+                                                    {token.symbol || token.name}
                                                 </div>
-                                            </Button>
-                                        ))}
-                                    </>
+                                                {token.symbol && (
+                                                    <div className="text-sm text-muted-foreground">
+                                                        {token.name}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </Button>
+                                    ))
                                 )}
                                 {filteredYourAssets.length === 0 &&
                                     filteredOtherAssets.length === 0 && (

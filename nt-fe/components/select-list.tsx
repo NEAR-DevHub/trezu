@@ -46,7 +46,7 @@ export function SelectListIcon({
     gradient,
     alt,
 }: {
-    icon: string;
+    icon?: string;
     gradient?: string;
     alt: string;
 }) {
