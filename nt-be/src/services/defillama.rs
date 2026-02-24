@@ -215,14 +215,13 @@ impl DeFiLlamaClient {
         }
 
         if !status.is_success() {
-            let error_text = response.text().await.unwrap_or_default();
+            // Only log the status line — response body can be huge (e.g. CloudFlare 429 HTML with base64 images)
             log::warn!(
-                "DeFiLlama API error for batch price at {}: {} - {}",
+                "DeFiLlama API error for batch price at {}: {}",
                 timestamp,
                 status,
-                error_text
             );
-            return Err(format!("DeFiLlama API error: {} - {}", status, error_text).into());
+            return Err(format!("DeFiLlama API error: {}", status).into());
         }
 
         let data: PricesResponse = response.json().await?;
@@ -312,14 +311,8 @@ impl PriceProvider for DeFiLlamaClient {
         }
 
         if !status.is_success() {
-            let error_text = response.text().await.unwrap_or_default();
-            log::warn!(
-                "DeFiLlama API error for {}: {} - {}",
-                asset_id,
-                status,
-                error_text
-            );
-            return Err(format!("DeFiLlama API error: {} - {}", status, error_text).into());
+            log::warn!("DeFiLlama API error for {}: {}", asset_id, status,);
+            return Err(format!("DeFiLlama API error: {}", status).into());
         }
 
         let data: PricesResponse = response.json().await?;
@@ -372,14 +365,12 @@ impl PriceProvider for DeFiLlamaClient {
         }
 
         if !status.is_success() {
-            let error_text = response.text().await.unwrap_or_default();
             log::warn!(
-                "DeFiLlama API error fetching history for {}: {} - {}",
+                "DeFiLlama API error fetching history for {}: {}",
                 asset_id,
                 status,
-                error_text
             );
-            return Err(format!("DeFiLlama API error: {} - {}", status, error_text).into());
+            return Err(format!("DeFiLlama API error: {}", status).into());
         }
 
         let data: ChartResponse = response.json().await?;

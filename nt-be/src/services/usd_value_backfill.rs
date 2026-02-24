@@ -2,7 +2,10 @@
 //!
 //! This service periodically finds balance_changes rows where usd_value IS NULL,
 //! fetches the USD price at the exact block_time from DefiLlama, and computes
-//! usd_value = abs(amount) / 10^decimals * price.
+//! usd_value = abs(amount) * price.
+//!
+//! Note: amounts in balance_changes are already in human-readable form
+//! (e.g. 0.042 NEAR, not yoctoNEAR), so no division by 10^decimals is needed.
 //!
 //! It processes records in batches, grouping by token to minimise API calls.
 
@@ -15,16 +18,15 @@ use std::time::Duration;
 use super::defillama::DeFiLlamaClient;
 use super::price_lookup::token_id_to_unified_asset_id;
 use super::price_provider::PriceProvider;
-use crate::constants::intents_tokens::{get_defuse_tokens_map, get_tokens_map};
 
 /// How many records to process per cycle
-const BATCH_SIZE: i64 = 100;
+const BATCH_SIZE: i64 = 50;
 
 /// Interval between backfill cycles
-const BACKFILL_INTERVAL_SECS: u64 = 30;
+const BACKFILL_INTERVAL_SECS: u64 = 60;
 
 /// Delay between individual DefiLlama API calls to avoid rate limiting
-const API_CALL_DELAY_MS: u64 = 350;
+const API_CALL_DELAY_MS: u64 = 2000;
 
 /// A balance_changes row that needs usd_value populated
 #[derive(sqlx::FromRow)]
@@ -65,7 +67,7 @@ pub async fn run_usd_value_backfill_service(pool: PgPool, client: DeFiLlamaClien
 }
 
 /// Process one batch of records that need usd_value populated
-async fn backfill_batch(
+pub async fn backfill_batch(
     pool: &PgPool,
     client: &DeFiLlamaClient,
 ) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
@@ -91,8 +93,8 @@ async fn backfill_batch(
         return Ok(0);
     }
 
-    // Build token_id -> (defillama_asset_id, decimals) cache
-    let mut token_info_cache: HashMap<String, Option<(String, u8)>> = HashMap::new();
+    // Build token_id -> defillama_asset_id cache
+    let mut token_info_cache: HashMap<String, Option<String>> = HashMap::new();
     for row in &rows {
         if token_info_cache.contains_key(&row.token_id) {
             continue;
@@ -105,7 +107,6 @@ async fn backfill_batch(
     struct RecordWithInfo {
         id: i64,
         amount: BigDecimal,
-        decimals: u8,
         defillama_asset_id: String,
         timestamp: i64,
     }
@@ -113,11 +114,10 @@ async fn backfill_batch(
     let mut records_with_info: Vec<RecordWithInfo> = Vec::new();
 
     for row in &rows {
-        if let Some(Some((defillama_id, decimals))) = token_info_cache.get(&row.token_id) {
+        if let Some(Some(defillama_id)) = token_info_cache.get(&row.token_id) {
             records_with_info.push(RecordWithInfo {
                 id: row.id,
                 amount: row.amount.clone(),
-                decimals: *decimals,
                 defillama_asset_id: defillama_id.clone(),
                 timestamp: row.block_time.timestamp(),
             });
@@ -145,8 +145,11 @@ async fn backfill_batch(
         let prices = match client.get_prices_at_timestamp(&asset_ids, *timestamp).await {
             Ok(p) => p,
             Err(e) => {
-                log::warn!("DefiLlama price fetch failed at {}: {}", timestamp, e);
-                tokio::time::sleep(Duration::from_millis(API_CALL_DELAY_MS)).await;
+                let msg = e.to_string();
+                let short = if msg.len() > 120 { &msg[..120] } else { &msg };
+                log::warn!("DefiLlama price fetch failed at {}: {}", timestamp, short);
+                // Back off longer on errors (likely rate limited)
+                tokio::time::sleep(Duration::from_secs(5)).await;
                 continue;
             }
         };
@@ -154,7 +157,7 @@ async fn backfill_batch(
         // Update each record in this timestamp group
         for rec in recs {
             if let Some(&price) = prices.get(&rec.defillama_asset_id) {
-                let usd_value = compute_usd_value(&rec.amount, rec.decimals, price);
+                let usd_value = compute_usd_value(&rec.amount, price);
 
                 if let Some(val) = usd_value {
                     sqlx::query("UPDATE balance_changes SET usd_value = $1 WHERE id = $2")
@@ -173,70 +176,21 @@ async fn backfill_batch(
     Ok(updated)
 }
 
-/// Resolve a token_id to its DefiLlama asset ID and decimals
-fn resolve_token_info(token_id: &str, client: &DeFiLlamaClient) -> Option<(String, u8)> {
-    let decimals = get_token_decimals(token_id)?;
+/// Resolve a token_id to its DefiLlama asset ID
+fn resolve_token_info(token_id: &str, client: &DeFiLlamaClient) -> Option<String> {
     let unified_id = token_id_to_unified_asset_id(token_id)?;
-    let defillama_id = client.translate_asset_id(&unified_id)?;
-    Some((defillama_id, decimals))
+    client.translate_asset_id(&unified_id)
 }
 
-/// Get the decimal precision for a token_id
-fn get_token_decimals(token_id: &str) -> Option<u8> {
-    // Native NEAR
-    if token_id == "near" {
-        return Some(24);
-    }
-
-    // Staking pools (staked NEAR)
-    if token_id.starts_with("staking:") {
-        return Some(24);
-    }
-
-    // Normalize: strip "intents.near:" prefix if present
-    let normalized = if let Some(stripped) = token_id.strip_prefix("intents.near:") {
-        stripped
-    } else {
-        token_id
-    };
-
-    // Look up in defuse tokens map (exact match)
-    let defuse_map = get_defuse_tokens_map();
-    if let Some(base_token) = defuse_map.get(normalized) {
-        return Some(base_token.decimals);
-    }
-
-    // Search for a defuse_asset_id that ends with this token contract
-    // e.g., "wrap.near" matches "nep141:wrap.near"
-    for (defuse_asset_id, base_token) in defuse_map.iter() {
-        if defuse_asset_id.ends_with(&format!(":{}", normalized)) {
-            return Some(base_token.decimals);
-        }
-    }
-
-    // Try to find via unified tokens map as a fallback
-    let tokens_map = get_tokens_map();
-    for unified_token in tokens_map.values() {
-        for base_token in &unified_token.grouped_tokens {
-            let contract = base_token
-                .defuse_asset_id
-                .split(':')
-                .next_back()
-                .unwrap_or("");
-            if contract == normalized {
-                return Some(base_token.decimals);
-            }
-        }
-    }
-
-    None
-}
-
-/// Compute the USD value from raw amount, decimals, and per-token price
+/// Compute the USD value from a human-readable amount and per-token price
 ///
-/// usd_value = abs(amount) / 10^decimals * price
-fn compute_usd_value(amount: &BigDecimal, decimals: u8, price: f64) -> Option<BigDecimal> {
-    use bigdecimal::FromPrimitive;
+/// usd_value = abs(amount) * price
+///
+/// Note: `amount` in balance_changes is already in human-readable form
+/// (e.g. 0.042 NEAR, not 42000000000000000000000 yoctoNEAR),
+/// so no division by 10^decimals is needed.
+fn compute_usd_value(amount: &BigDecimal, price: f64) -> Option<BigDecimal> {
+    use std::str::FromStr;
 
     let abs_amount = if amount < &BigDecimal::from(0) {
         -amount
@@ -244,11 +198,11 @@ fn compute_usd_value(amount: &BigDecimal, decimals: u8, price: f64) -> Option<Bi
         amount.clone()
     };
 
-    let divisor = BigDecimal::from_f64(10_f64.powi(decimals as i32))?;
-    let decimal_amount = &abs_amount / &divisor;
-    let price_bd = BigDecimal::from_f64(price)?;
+    // Convert price via its string representation to avoid f64 → BigDecimal precision explosion
+    // (e.g. f64 0.98 is internally 0.97999999999999998223..., but formats as "0.98")
+    let price_bd = BigDecimal::from_str(&price.to_string()).ok()?;
 
-    Some(decimal_amount * price_bd)
+    Some(abs_amount * price_bd)
 }
 
 #[cfg(test)]
@@ -257,64 +211,49 @@ mod tests {
     use bigdecimal::ToPrimitive;
 
     #[test]
-    fn test_get_token_decimals_near() {
-        assert_eq!(get_token_decimals("near"), Some(24));
-    }
-
-    #[test]
-    fn test_get_token_decimals_staking() {
-        assert_eq!(
-            get_token_decimals("staking:astro-stakers.poolv1.near"),
-            Some(24)
-        );
-    }
-
-    #[test]
-    fn test_get_token_decimals_intents_btc() {
-        assert_eq!(
-            get_token_decimals("intents.near:nep141:btc.omft.near"),
-            Some(8)
-        );
-    }
-
-    #[test]
-    fn test_get_token_decimals_intents_usdc() {
-        // USDC on NEAR has 6 decimals
-        assert_eq!(
-            get_token_decimals(
-                "intents.near:nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1"
-            ),
-            Some(6)
-        );
-    }
-
-    #[test]
-    fn test_get_token_decimals_wrap_near() {
-        assert_eq!(get_token_decimals("wrap.near"), Some(24));
-    }
-
-    #[test]
-    fn test_get_token_decimals_unknown() {
-        assert_eq!(get_token_decimals("totally-unknown-token.near"), None);
-    }
-
-    #[test]
     fn test_compute_usd_value() {
-        // 1.5 NEAR (24 decimals) at $3.00
-        let amount = BigDecimal::from(1_500_000_000_000_000_000_000_000_i128);
-        let result = compute_usd_value(&amount, 24, 3.0);
-        assert!(result.is_some());
-        let val = result.unwrap().to_f64().unwrap();
-        assert!((val - 4.5).abs() < 0.001, "Expected ~4.5, got {}", val);
+        // 1.5 NEAR at $3.00 -> $4.50 (amount is human-readable, not yoctoNEAR)
+        use std::str::FromStr;
+        let amount = BigDecimal::from_str("1.5").unwrap();
+        let result = compute_usd_value(&amount, 3.0).unwrap();
+        let val = result.to_f64().unwrap();
+        assert_eq!(val, 4.5, "1.5 NEAR at $3.00 = $4.50");
     }
 
     #[test]
     fn test_compute_usd_value_negative_amount() {
-        // -2 USDC (6 decimals) at $1.00 -> should be positive $2.00
-        let amount = BigDecimal::from(-2_000_000_i64);
-        let result = compute_usd_value(&amount, 6, 1.0);
-        assert!(result.is_some());
-        let val = result.unwrap().to_f64().unwrap();
-        assert!((val - 2.0).abs() < 0.001, "Expected ~2.0, got {}", val);
+        // -2 USDC at $1.00 -> $2.00 (amount is human-readable)
+        use std::str::FromStr;
+        let amount = BigDecimal::from_str("-2.0").unwrap();
+        let result = compute_usd_value(&amount, 1.0).unwrap();
+        let val = result.to_f64().unwrap();
+        assert_eq!(val, 2.0, "-2 USDC at $1.00 = $2.00");
+    }
+
+    #[test]
+    fn test_compute_usd_value_small_near_amount() {
+        // Real-world case: 0.0000599348488061 NEAR at $0.98
+        // Expected: 0.0000599348488061 * 0.98 = 0.00005873615182997800
+        use std::str::FromStr;
+        let amount = BigDecimal::from_str("0.0000599348488061").unwrap();
+        let result = compute_usd_value(&amount, 0.98).unwrap();
+        let val = result.to_f64().unwrap();
+        let expected = 0.0000599348488061 * 0.98;
+        assert!(
+            (val - expected).abs() < 1e-18,
+            "Expected {}, got {}",
+            expected,
+            val
+        );
+    }
+
+    #[test]
+    fn test_compute_usd_value_btc() {
+        // 0.005 BTC at $95,000 -> $475.00 (amount is human-readable)
+        use std::str::FromStr;
+        let amount = BigDecimal::from_str("0.005").unwrap();
+        let result = compute_usd_value(&amount, 95_000.0).unwrap();
+        let val = result.to_f64().unwrap();
+        assert_eq!(val, 475.0, "0.005 BTC at $95,000 = $475.00");
     }
 }
