@@ -1,4 +1,5 @@
 use axum::{Json, extract::State, http::StatusCode};
+use bigdecimal::BigDecimal;
 use borsh::BorshDeserialize;
 use near_api::{
     AccountId, Contract, NearToken, Tokens, Transaction,
@@ -330,17 +331,25 @@ pub async fn relay_delegate_action(
     match execution_result {
         Ok(result) => match result.into_result() {
             Ok(_) => {
-                // Step 7: Decrement gas-covered transaction credits
+                // Step 7: Decrement gas-covered credits and accumulate paid_near in one query
+                let near_spent = if should_balance_storage {
+                    storage_cost.saturating_add(deposits)
+                } else {
+                    deposits
+                };
+                let near_spent_yocto: BigDecimal = near_spent.as_yoctonear().into();
                 let db_result = sqlx::query_as::<_, (i32,)>(
                     r#"
                     UPDATE monitored_accounts
                     SET gas_covered_transactions = GREATEST(gas_covered_transactions - 1, 0),
+                        paid_near = paid_near + $2,
                         updated_at = NOW()
                     WHERE account_id = $1
                     RETURNING gas_covered_transactions
                     "#,
                 )
                 .bind(request.treasury_id.as_str())
+                .bind(near_spent_yocto)
                 .fetch_optional(&state.db_pool)
                 .await;
 

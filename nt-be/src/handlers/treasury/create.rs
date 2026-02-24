@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use axum::{Json, extract::State};
 use base64::{Engine, prelude::BASE64_STANDARD};
+use bigdecimal::BigDecimal;
 use near_api::{AccountId, Contract, NearToken, Tokens};
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
@@ -197,6 +198,30 @@ pub async fn create_treasury(
     if let Err(e) = register_or_refresh_monitored_account(&state.db_pool, treasury.as_str()).await {
         log::warn!("Failed to add treasury to monitored accounts: {:?}", e);
         // Don't fail the request - treasury can still be added manually later.
+    }
+
+    // Record NEAR spent on treasury creation
+    let creation_cost: BigDecimal = NearToken::from_near(TREASURY_CREATE_DEPOSIT_IN_NEAR)
+        .as_yoctonear()
+        .into();
+    if let Err(e) = sqlx::query(
+        r#"
+        UPDATE monitored_accounts
+        SET paid_near = paid_near + $2,
+            updated_at = NOW()
+        WHERE account_id = $1
+        "#,
+    )
+    .bind(treasury.as_str())
+    .bind(creation_cost)
+    .execute(&state.db_pool)
+    .await
+    {
+        log::warn!(
+            "Failed to update paid_near for {}: {}",
+            treasury.as_str(),
+            e
+        );
     }
 
     // Fetch balance after treasury creation to track the cost

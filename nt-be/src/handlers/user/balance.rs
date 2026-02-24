@@ -3,6 +3,7 @@ use axum::{
     extract::{Query, State},
     http::StatusCode,
 };
+use bigdecimal::{BigDecimal, ToPrimitive};
 use near_api::{AccountId, Contract, Tokens, types::json::U128};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -45,24 +46,39 @@ pub async fn fetch_near_balance(
     state: &Arc<AppState>,
     account_id: AccountId,
 ) -> Result<TokenBalanceResponse, String> {
-    let balance = Tokens::account(account_id.clone())
+    let balance_future = Tokens::account(account_id.clone())
         .near_balance()
-        .fetch_from(&state.network)
-        .await
-        .map_err(|e| {
-            eprintln!("Error fetching NEAR balance for {}: {}", account_id, e);
-            format!("Failed to fetch NEAR balance: {}", e)
-        })?;
+        .fetch_from(&state.network);
+
+    let paid_near_future = sqlx::query_scalar::<_, BigDecimal>(
+        "SELECT paid_near FROM monitored_accounts WHERE account_id = $1",
+    )
+    .bind(account_id.as_str())
+    .fetch_optional(&state.db_pool);
+
+    let (balance_result, paid_near_result) = tokio::join!(balance_future, paid_near_future);
+
+    let balance = balance_result.map_err(|e| {
+        eprintln!("Error fetching NEAR balance for {}: {}", account_id, e);
+        format!("Failed to fetch NEAR balance: {}", e)
+    })?;
+
+    let paid_near_u128 = paid_near_result
+        .ok()
+        .flatten()
+        .and_then(|v: BigDecimal| v.to_u128())
+        .unwrap_or(0);
+
+    let storage_locked = balance.storage_locked.as_yoctonear();
+    let deduction = storage_locked.max(paid_near_u128);
+    let total = balance.total.as_yoctonear();
+    let available = total.saturating_sub(deduction);
 
     Ok(TokenBalanceResponse {
         account_id: account_id.to_string(),
         token_id: "near".to_string(),
-        balance: balance
-            .total
-            .saturating_sub(balance.storage_locked)
-            .as_yoctonear()
-            .into(),
-        locked_balance: Some(balance.storage_locked.as_yoctonear().into()),
+        balance: available.into(),
+        locked_balance: Some(storage_locked.into()),
         decimals: 24,
     })
 }
