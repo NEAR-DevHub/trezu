@@ -21,4 +21,4 @@ pub use monitored_accounts::{
 pub use price_lookup::PriceLookupService;
 pub use price_provider::PriceProvider;
 pub use price_sync::{run_price_sync_service, sync_all_prices_now};
-pub use usd_value_backfill::run_usd_value_backfill_service;
+pub use usd_value_backfill::{backfill_batch, run_usd_value_backfill_service};
