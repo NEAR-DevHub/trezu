@@ -386,14 +386,8 @@ async fn fetch_nearblocks_ft_metadata(
             let price = token.price.as_ref().and_then(|p| p.parse::<f64>().ok());
 
             // If searching for "near", return NEAR metadata with wrap.near's price
-            let metadata = if token_id_str == "near" {
+            let metadata = if token_id_str == "near" || token_id_str == "wrap.near" {
                 TokenMetadata::create_near_metadata(
-                    price,
-                    price.map(|_| chrono::Utc::now().to_rfc3339()),
-                )
-            } else if token_id_str == "wrap.near" {
-                // Always use standardized wrap.near metadata with icon and chainIcons
-                TokenMetadata::create_wrap_near_metadata(
                     price,
                     price.map(|_| chrono::Utc::now().to_rfc3339()),
                 )
