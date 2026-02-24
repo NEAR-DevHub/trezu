@@ -1,5 +1,9 @@
 use chrono::{DateTime, Utc};
 
+/// The relayer account that sponsors users with NEAR for storage deposits.
+/// Transactions from/to this account are hidden from users in all activity views.
+pub const RELAYER_ACCOUNT: &str = "sponsor.trezu.near";
+
 const RELAYER_WHERE_CONDITION: &str = "counterparty != 'sponsor.trezu.near'";
 
 /// Common parameters for filtering balance changes

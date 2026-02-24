@@ -23,7 +23,9 @@ use urlencoding::encode;
 
 use crate::AppState;
 use crate::config::get_plan_config;
-use crate::handlers::balance_changes::query_builder::{BalanceChangeFilters, build_count_query};
+use crate::handlers::balance_changes::query_builder::{
+    BalanceChangeFilters, RELAYER_ACCOUNT, build_count_query,
+};
 use crate::handlers::subscription::plans::get_account_plan_info;
 use crate::handlers::token::TokenMetadata;
 use crate::routes::{BalanceChangesQuery, EnrichedBalanceChange, get_balance_changes_internal};
@@ -137,6 +139,26 @@ pub async fn get_balance_chart(
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    // Compute interval timestamps up front so we can pass them to SQL for the
+    // sponsor totals query — one cumulative sum per chart point, no per-snapshot scanning.
+    let interval_timestamps: Vec<DateTime<Utc>> = {
+        let mut ts = params.start_time;
+        let mut out = Vec::new();
+        while ts < params.end_time {
+            out.push(ts);
+            ts = params.interval.increment(ts);
+        }
+        out
+    };
+
+    // For each interval timestamp, fetch the cumulative sponsored NEAR amount up to
+    // that point. We hide sponsor.trezu.near deposits and CreateAccount amounts from
+    // users, so the chart subtracts them to show the balance without our top-ups.
+    let sponsor_totals =
+        load_sponsor_totals_per_interval(&state.db_pool, &params.account_id, &interval_timestamps)
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
     let query = BalanceChangesQuery {
         account_id: params.account_id.clone(),
         limit: None,
@@ -178,9 +200,9 @@ pub async fn get_balance_chart(
     let mut snapshots = calculate_snapshots(
         changes,
         prior_balances,
-        params.start_time,
+        sponsor_totals,
+        interval_timestamps,
         params.end_time,
-        &params.interval,
     );
 
     // Enrich snapshots with price data
@@ -379,6 +401,49 @@ struct BalanceChange {
     receipt_id: Vec<String>,
 }
 
+/// For each interval timestamp, return the cumulative sponsored NEAR amount up to that point.
+///
+/// We hide two categories from users:
+/// 1. `counterparty = 'sponsor.trezu.near'` — storage deposit top-ups
+/// 2. `action_kind = 'CreateAccount'` — account creation deposits
+///
+/// The timestamps are the chart interval points computed in the caller. One SQL query
+/// returns one row per timestamp with the cumulative SUM up to and including that moment.
+async fn load_sponsor_totals_per_interval(
+    pool: &PgPool,
+    account_id: &str,
+    interval_timestamps: &[DateTime<Utc>],
+) -> Result<HashMap<DateTime<Utc>, BigDecimal>, Box<dyn std::error::Error>> {
+    if interval_timestamps.is_empty() {
+        return Ok(HashMap::new());
+    }
+
+    let rows = sqlx::query!(
+        r#"
+        SELECT
+            t.ts as "ts!",
+            COALESCE(SUM(bc.amount), 0) as "cumulative_amount!"
+        FROM unnest($3::timestamptz[]) AS t(ts)
+        LEFT JOIN balance_changes bc
+            ON  bc.account_id = $2
+            AND bc.token_id = 'near'
+            AND bc.block_time <= t.ts
+            AND (bc.counterparty = $1 OR bc.action_kind = 'CreateAccount')
+        GROUP BY t.ts
+        "#,
+        RELAYER_ACCOUNT,
+        account_id,
+        interval_timestamps as &[DateTime<Utc>],
+    )
+    .fetch_all(pool)
+    .await?;
+
+    Ok(rows
+        .into_iter()
+        .map(|r| (r.ts, r.cumulative_amount))
+        .collect())
+}
+
 /// Load the most recent balance for each token before start_time
 ///
 /// Note: This function contains intentionally duplicated SQL queries for compile-time safety.
@@ -441,14 +506,16 @@ async fn load_prior_balances(
 /// Note: This function contains intentionally duplicated SQL queries for compile-time safety.
 /// We use sqlx::query! macro which requires compile-time verification against the database schema.
 /// The alternative (runtime sqlx::query()) would lose type safety. If you edit one query, ensure
-/// you update the other. The compiler will catch mismatches in return types.
-/// Calculate balance snapshots at regular intervals
+/// Calculate balance snapshots at regular intervals.
+///
+/// For NEAR, each snapshot subtracts the precomputed cumulative sponsored amount
+/// for that interval point so the chart reflects the balance without our top-ups.
 fn calculate_snapshots(
     changes: Vec<BalanceChange>,
     prior_balances: HashMap<String, BigDecimal>,
-    start_time: DateTime<Utc>,
+    sponsor_totals: HashMap<DateTime<Utc>, BigDecimal>,
+    interval_timestamps: Vec<DateTime<Utc>>,
     end_time: DateTime<Utc>,
-    interval: &Interval,
 ) -> HashMap<String, Vec<BalanceSnapshot>> {
     // Group changes by token
     let mut by_token: HashMap<String, Vec<&BalanceChange>> = HashMap::new();
@@ -464,25 +531,39 @@ fn calculate_snapshots(
         by_token.entry(token_id.clone()).or_default();
     }
 
+    let zero = BigDecimal::from(0);
     let mut result: HashMap<String, Vec<BalanceSnapshot>> = HashMap::new();
 
     for (token_id, token_changes) in by_token {
         let mut snapshots = Vec::new();
-        let mut current_time = start_time;
 
         // Get the starting balance for this token
         let starting_balance = prior_balances
             .get(&token_id)
             .cloned()
-            .unwrap_or_else(|| BigDecimal::from(0));
+            .unwrap_or_else(|| zero.clone());
 
-        while current_time < end_time {
-            // Find the most recent balance_after before or at current_time
+        for &current_time in &interval_timestamps {
+            if current_time >= end_time {
+                break;
+            }
+
+            // Most recent balance_after at or before this interval point
             let balance = token_changes
                 .iter()
                 .rfind(|c| c.block_time <= current_time)
                 .map(|c| c.balance_after.clone())
-                .unwrap_or_else(|| starting_balance.clone()); // Use starting balance if no changes yet
+                .unwrap_or_else(|| starting_balance.clone());
+
+            // For NEAR, subtract the precomputed cumulative sponsored amount so the
+            // chart shows the balance the user would have without our top-ups.
+            let balance = if token_id == "near" {
+                let sponsored = sponsor_totals.get(&current_time).unwrap_or(&zero).clone();
+                let adjusted = balance - sponsored;
+                adjusted.max(zero.clone())
+            } else {
+                balance
+            };
 
             snapshots.push(BalanceSnapshot {
                 timestamp: current_time.to_rfc3339(),
@@ -490,8 +571,6 @@ fn calculate_snapshots(
                 price_usd: None,
                 value_usd: None,
             });
-
-            current_time = interval.increment(current_time);
         }
 
         result.insert(token_id, snapshots);
