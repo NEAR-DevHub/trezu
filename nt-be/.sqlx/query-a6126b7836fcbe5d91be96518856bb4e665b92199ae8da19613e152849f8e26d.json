@@ -1,0 +1,30 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            t.ts as \"ts!\",\n            COALESCE(SUM(bc.amount), 0) as \"cumulative_amount!\"\n        FROM unnest($3::timestamptz[]) AS t(ts)\n        LEFT JOIN balance_changes bc\n            ON  bc.account_id = $2\n            AND bc.token_id = 'near'\n            AND bc.block_time <= t.ts\n            AND (bc.counterparty = $1 OR bc.action_kind = 'CreateAccount')\n        GROUP BY t.ts\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "ts!",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 1,
+        "name": "cumulative_amount!",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "TimestamptzArray"
+      ]
+    },
+    "nullable": [
+      null,
+      null
+    ]
+  },
+  "hash": "a6126b7836fcbe5d91be96518856bb4e665b92199ae8da19613e152849f8e26d"
+}
