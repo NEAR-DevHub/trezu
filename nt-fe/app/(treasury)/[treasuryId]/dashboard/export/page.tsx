@@ -24,7 +24,7 @@ import { useNear } from "@/stores/near-store";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useExportHistory } from "@/hooks/use-treasury-queries";
 import { APP_CONTACT_US_URL } from "@/constants/config";
-import { DateTimePicker } from "@/components/datepicker";
+import { DateTimePicker, DEFAULT_DATE_PRESETS } from "@/components/datepicker";
 import { Input } from "@/components/input";
 import {
     FormField,
@@ -247,11 +247,11 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
                                     Download
                                 </Button>
                             ) : item.status === "expired" ? (
-                                <div className="text-muted-foreground text-sm px-3 py-1.5">
+                                <div className="px-3 py-1.5 bg-muted rounded-md text-sm">
                                     Expired
                                 </div>
                             ) : (
-                                <div className="text-red-600 dark:text-red-400 text-sm px-3 py-1.5">
+                                <div className="px-3 py-1.5 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 rounded-md text-sm">
                                     Failed
                                 </div>
                             )}
@@ -333,8 +333,16 @@ export default function ExportActivityPage() {
     const { accountId } = useNear();
     const { data: planDetails, isLoading: planLoading } =
         useSubscription(treasuryId);
+
+    // Calculate date for 1 month ago (for fetching export history)
+    const exportHistoryFromDate = useMemo(() => {
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+        return oneMonthAgo.toISOString();
+    }, []);
+
     const { data: exportHistoryData, refetch: refetchHistory } =
-        useExportHistory(treasuryId);
+        useExportHistory(treasuryId, exportHistoryFromDate);
     const { data: assetsData } = useAssets(treasuryId, {
         onlyPositiveBalance: false,
     });
@@ -354,13 +362,45 @@ export default function ExportActivityPage() {
         );
     }, [planDetails?.planConfig?.limits?.historyLookupMonths]);
 
-    // Calculate default start date: prefer 6 months ago, but not before plan limit
+    // Default start date: use the plan's history limit
     const defaultStartDate = useMemo(() => {
-        const sixMonthsAgo = subMonths(new Date(), 6);
-        if (!minDate) return sixMonthsAgo;
-        // If 6 months ago is before the plan limit, use the plan limit instead
-        return sixMonthsAgo < minDate ? minDate : sixMonthsAgo;
+        return minDate || subMonths(new Date(), 6);
     }, [minDate]);
+
+    // Create custom date presets based on plan's history limit
+    const datePresets = useMemo(() => {
+        const historyMonths = planDetails?.planConfig?.limits?.historyLookupMonths;
+        const presets = [...DEFAULT_DATE_PRESETS];
+
+        if (historyMonths) {
+            // Add year-based presets based on plan
+            const years = Math.floor(historyMonths / 12);
+
+            if (years >= 1) {
+                // Add "Last 1 year" preset
+                presets.push({
+                    label: 'Last 1 year',
+                    value: {
+                        from: subMonths(startOfDay(new Date()), 12),
+                        to: endOfDay(new Date()),
+                    },
+                });
+            }
+
+            if (years >= 2) {
+                // Add "Last 2 years" preset
+                presets.push({
+                    label: 'Last 2 years',
+                    value: {
+                        from: subMonths(startOfDay(new Date()), 24),
+                        to: endOfDay(new Date()),
+                    },
+                });
+            }
+        }
+
+        return presets;
+    }, [planDetails?.planConfig?.limits?.historyLookupMonths]);
 
     const form = useForm<z.infer<typeof exportFormSchema>>({
         resolver: zodResolver(exportFormSchema),
@@ -824,6 +864,7 @@ export default function ExportActivityPage() {
                                                             numberOfMonths={1}
                                                             min={minDate}
                                                             max={new Date()}
+                                                            presets={datePresets}
                                                         />
                                                     </PopoverContent>
                                                 </Popover>

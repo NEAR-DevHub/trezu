@@ -13,7 +13,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use bigdecimal::{BigDecimal, ToPrimitive};
-use chrono::{DateTime, Duration, Months, NaiveDate, Utc};
+use chrono::{DateTime, Months, NaiveDate, Utc};
 use rust_xlsxwriter::{Color, Format, Workbook};
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool};
@@ -886,8 +886,12 @@ async fn validate_export_date_range(
     };
 
     // Calculate the earliest allowed date based on plan
+    // Subtract 1 day to include the boundary (more lenient)
     let history_months = plan_config.limits.history_lookup_months;
-    let earliest_allowed = Utc::now() - Duration::days(history_months as i64 * 30);
+    let earliest_allowed = Utc::now()
+        .checked_sub_months(Months::new(history_months as u32))
+        .unwrap_or(Utc::now())
+        - chrono::Duration::days(1);
 
     // Check if start_time is before the earliest allowed date
     if start_time < earliest_allowed {
@@ -1073,6 +1077,7 @@ pub struct ExportHistoryQuery {
     pub account_id: String,
     pub limit: Option<i64>,
     pub offset: Option<i64>,
+    pub from_date: Option<String>, // ISO 8601 date string
 }
 
 #[derive(Debug, Serialize)]
@@ -1090,21 +1095,43 @@ pub async fn get_export_history(
     let limit = params.limit.unwrap_or(10).min(100);
     let offset = params.offset.unwrap_or(0);
 
+    // Parse from_date if provided
+    let from_date = if let Some(ref date_str) = params.from_date {
+        Some(
+            DateTime::parse_from_rfc3339(date_str)
+                .map(|dt| dt.with_timezone(&Utc))
+                .map_err(|e| {
+                    (
+                        StatusCode::BAD_REQUEST,
+                        format!("Invalid date format: {}", e),
+                    )
+                })?,
+        )
+    } else {
+        None
+    };
+
+    // Build WHERE clause
+    let where_clause = if from_date.is_some() {
+        "WHERE account_id = $1 AND created_at >= $2"
+    } else {
+        "WHERE account_id = $1"
+    };
+
     // Get total count
-    let total = sqlx::query_scalar::<_, i64>(
-        r#"
-        SELECT COUNT(*)
-        FROM export_history
-        WHERE account_id = $1
-        "#,
-    )
-    .bind(&params.account_id)
-    .fetch_one(&state.db_pool)
-    .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let total_query = format!("SELECT COUNT(*) FROM export_history {}", where_clause);
+    let mut total_query_builder =
+        sqlx::query_scalar::<_, i64>(&total_query).bind(&params.account_id);
+    if let Some(date) = from_date {
+        total_query_builder = total_query_builder.bind(date);
+    }
+    let total = total_query_builder
+        .fetch_one(&state.db_pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     // Get export history records
-    let data = sqlx::query_as::<_, ExportHistoryItem>(
+    let data_query = format!(
         r#"
         SELECT 
             id,
@@ -1116,17 +1143,27 @@ pub async fn get_export_history(
             error_message,
             created_at
         FROM export_history
-        WHERE account_id = $1
+        {}
         ORDER BY created_at DESC
-        LIMIT $2 OFFSET $3
+        LIMIT ${}
+        OFFSET ${}
         "#,
-    )
-    .bind(&params.account_id)
-    .bind(limit)
-    .bind(offset)
-    .fetch_all(&state.db_pool)
-    .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        where_clause,
+        if from_date.is_some() { "3" } else { "2" },
+        if from_date.is_some() { "4" } else { "3" }
+    );
+
+    let mut data_query_builder =
+        sqlx::query_as::<_, ExportHistoryItem>(&data_query).bind(&params.account_id);
+    if let Some(date) = from_date {
+        data_query_builder = data_query_builder.bind(date);
+    }
+    let data = data_query_builder
+        .bind(limit)
+        .bind(offset)
+        .fetch_all(&state.db_pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     Ok(Json(ExportHistoryResponse { data, total }))
 }
@@ -1148,25 +1185,7 @@ async fn create_export_record(
     // Start a transaction
     let mut tx = pool.begin().await?;
 
-    // Check if account has enough credits
-    let credits: Option<i32> = sqlx::query_scalar(
-        r#"
-        SELECT export_credits
-        FROM monitored_accounts
-        WHERE account_id = $1
-        FOR UPDATE
-        "#,
-    )
-    .bind(&request.account_id)
-    .fetch_optional(&mut *tx)
-    .await?;
-
-    let current_credits = credits.unwrap_or(0);
-    if current_credits <= 0 {
-        return Err("Insufficient export credits".into());
-    }
-
-    // Check if an identical export already exists
+    // Check if an identical export already exists FIRST (before checking credits)
     let existing_export: Option<i64> = sqlx::query_scalar(
         r#"
         SELECT id
@@ -1181,10 +1200,28 @@ async fn create_export_record(
     .await?;
 
     let export_id = if let Some(existing_id) = existing_export {
-        // Export already exists - don't charge credits, just return existing ID
+        // Export already exists - don't check or charge credits, just return existing ID
         existing_id
     } else {
-        // New export - decrement credits and create record
+        // New export - check if account has enough credits
+        let credits: Option<i32> = sqlx::query_scalar(
+            r#"
+            SELECT export_credits
+            FROM monitored_accounts
+            WHERE account_id = $1
+            FOR UPDATE
+            "#,
+        )
+        .bind(&request.account_id)
+        .fetch_optional(&mut *tx)
+        .await?;
+
+        let current_credits = credits.unwrap_or(0);
+        if current_credits <= 0 {
+            return Err("Insufficient export credits".into());
+        }
+
+        // Decrement credits
         sqlx::query(
             r#"
         UPDATE monitored_accounts
@@ -1318,8 +1355,15 @@ pub async fn get_recent_activity(
         get_plan_config(crate::config::PlanType::Free)
     };
 
+    // Calculate date cutoff for plan limits
+    // Subtract 1 day to include the boundary (more lenient)
     let history_months = plan_config.limits.history_lookup_months;
-    let date_cutoff = Some(Utc::now() - Duration::days(history_months as i64 * 30));
+    let date_cutoff = Some(
+        Utc::now()
+            .checked_sub_months(Months::new(history_months as u32))
+            .unwrap_or(Utc::now())
+            - chrono::Duration::days(1),
+    );
 
     // Parse user-provided date range filters
     let start_date = params.start_date.as_deref();

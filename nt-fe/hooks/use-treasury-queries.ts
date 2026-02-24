@@ -328,12 +328,11 @@ export function useRecentActivity(
  */
 export function useExportHistory(
     accountId: string | null | undefined,
-    limit: number = 30,
-    offset: number = 0,
+    fromDate?: string, // ISO date string to filter exports from this date onwards
 ) {
     return useQuery({
-        queryKey: ["exportHistory", accountId, limit, offset],
-        queryFn: () => getExportHistory(accountId!, limit, offset),
+        queryKey: ["exportHistory", accountId, fromDate],
+        queryFn: () => getExportHistory(accountId!, fromDate),
         enabled: !!accountId,
         staleTime: Infinity,
     });

@@ -25,15 +25,15 @@ export const TokenDisplay = ({ symbol, icon, chainIcons, iconSize = "md" }: Toke
     };
 
     const networkIcon = getNetworkIcon();
-    const isImageIcon = icon.startsWith("data:image") || icon.startsWith("http");
+    const isImageIcon = icon && (icon.startsWith("data:image") || icon.startsWith("http"));
 
     return (
         <div className="relative flex">
             {isImageIcon ? (
                 <img src={icon} alt={symbol} className={cn("rounded-full shrink-0", iconSizeClasses[iconSize])} />
             ) : (
-                <div className={cn("rounded-full bg-blue-600 flex items-center justify-center text-xs shrink-0", iconSizeClasses[iconSize])}>
-                    {icon}
+                <div className={cn("rounded-full bg-gradient-cyan-blue flex items-center justify-center text-xs text-white font-semibold shrink-0", iconSizeClasses[iconSize])}>
+                    {icon || symbol.charAt(0).toUpperCase()}
                 </div>
             )}
             {networkIcon && (

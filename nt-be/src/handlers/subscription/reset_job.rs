@@ -6,6 +6,25 @@ use sqlx::PgPool;
 use crate::config::{PlanType, get_monthly_reset_credits, get_plan_config};
 use crate::utils::datetime::{duration_until_next_utc_midnight, next_month_start_utc};
 
+/// Expire export history records older than 2 days.
+///
+/// Updates status to 'expired' for exports created more than 2 days ago.
+/// Returns number of exports updated.
+pub async fn expire_old_exports(pool: &PgPool) -> Result<u64, sqlx::Error> {
+    let result = sqlx::query!(
+        r#"
+        UPDATE export_history
+        SET status = 'expired'
+        WHERE status = 'completed'
+          AND created_at < NOW() - INTERVAL '2 days'
+        "#,
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(result.rows_affected())
+}
+
 /// Reset monthly credits for accounts whose reset time is due.
 ///
 /// Returns number of accounts updated.
@@ -173,6 +192,7 @@ pub async fn run_monthly_plan_reset_service(pool: PgPool) {
 
         tokio::time::sleep(sleep_for).await;
 
+        // Reset monthly credits
         match reset_due_monthly_plan_credits(&pool).await {
             Ok(updated) if updated > 0 => {
                 log::info!(
@@ -183,6 +203,20 @@ pub async fn run_monthly_plan_reset_service(pool: PgPool) {
             Ok(_) => {}
             Err(e) => {
                 log::error!("Midnight reset failed: {}", e);
+            }
+        }
+
+        // Expire old exports
+        match expire_old_exports(&pool).await {
+            Ok(expired) if expired > 0 => {
+                log::info!(
+                    "Midnight: expired {} old export(s) (older than 2 days)",
+                    expired
+                );
+            }
+            Ok(_) => {}
+            Err(e) => {
+                log::error!("Midnight export expiration failed: {}", e);
             }
         }
     }
@@ -362,6 +396,97 @@ mod tests {
             account.credits_reset_at.to_rfc3339(),
             "2026-07-01T00:00:00+00:00"
         );
+
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn test_expire_old_exports(pool: PgPool) -> sqlx::Result<()> {
+        // Insert monitored account first
+        sqlx::query!(
+            r#"
+            INSERT INTO monitored_accounts (
+                account_id,
+                enabled,
+                export_credits,
+                batch_payment_credits,
+                gas_covered_transactions,
+                plan_type,
+                credits_reset_at
+            )
+            VALUES ('test-account.near', true, 10, 10, 10, 'plus', NOW() + INTERVAL '1 month')
+            "#,
+        )
+        .execute(&pool)
+        .await?;
+
+        // Insert test export history records
+        sqlx::query!(
+            r#"
+            INSERT INTO export_history (
+                account_id,
+                generated_by,
+                file_url,
+                status,
+                created_at
+            )
+            VALUES
+                ('test-account.near', 'test-account.near', '/export/old1', 'completed', NOW() - INTERVAL '5 days'),
+                ('test-account.near', 'test-account.near', '/export/old2', 'completed', NOW() - INTERVAL '3 days'),
+                ('test-account.near', 'test-account.near', '/export/recent', 'completed', NOW() - INTERVAL '1 day'),
+                ('test-account.near', 'test-account.near', '/export/already-expired', 'expired', NOW() - INTERVAL '10 days')
+            "#,
+        )
+        .execute(&pool)
+        .await?;
+
+        // Run expiration
+        let expired = expire_old_exports(&pool).await?;
+        assert_eq!(
+            expired, 2,
+            "Expected two exports to be expired (5 and 3 days old)"
+        );
+
+        // Verify status updates
+        let statuses = sqlx::query!(
+            r#"
+            SELECT file_url, status
+            FROM export_history
+            WHERE account_id = 'test-account.near'
+            ORDER BY file_url
+            "#,
+        )
+        .fetch_all(&pool)
+        .await?;
+
+        assert_eq!(statuses.len(), 4);
+
+        // already-expired should remain expired
+        let already_expired = statuses
+            .iter()
+            .find(|s| s.file_url == "/export/already-expired")
+            .unwrap();
+        assert_eq!(already_expired.status, "expired");
+
+        // old1 and old2 should now be expired
+        let old1 = statuses
+            .iter()
+            .find(|s| s.file_url == "/export/old1")
+            .unwrap();
+        assert_eq!(old1.status, "expired");
+
+        let old2 = statuses
+            .iter()
+            .find(|s| s.file_url == "/export/old2")
+            .unwrap();
+        assert_eq!(old2.status, "expired");
+
+        // recent should still be completed
+        let recent = statuses
+            .iter()
+            .find(|s| s.file_url == "/export/recent")
+            .unwrap();
+        assert_eq!(recent.status, "completed");
 
         Ok(())
     }

@@ -179,7 +179,7 @@ export default function BulkPaymentPage() {
             // Build proposal description
             const description = encodeToMarkdown({
                 proposal_action: "bulk-payment",
-                title: comment || "Bulk Payment Request",
+                notes: comment || "",
                 recipients: paymentData.length,
                 contract: selectedToken.symbol,
                 amount: totalAmount.toFixed(),
