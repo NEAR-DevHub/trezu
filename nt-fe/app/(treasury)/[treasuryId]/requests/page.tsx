@@ -38,6 +38,7 @@ import { Input } from "@/components/input";
 import { useNear } from "@/stores/near-store";
 import { AuthButton } from "@/components/auth-button";
 import { EmptyState } from "@/components/empty-state";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 // Constants
 const SEARCH_DEBOUNCE_MS = 300;
@@ -324,43 +325,52 @@ export default function RequestsPage() {
                     {selectedCount === 0 && (
                         <>
                             <div className="flex flex-col md:flex-row gap-4 items-center md:justify-between border-b p-5 pb-3.5">
-                                <TabsList className="w-fit border-none">
-                                    <TabsTrigger value="all">All</TabsTrigger>
-                                    <TabsTrigger
-                                        value="pending"
-                                        className="flex gap-2.5"
-                                    >
-                                        Pending
-                                        {!!proposals?.proposals?.length &&
-                                            proposals?.proposals?.length >
-                                                0 && (
-                                                <NumberBadge
-                                                    number={
-                                                        proposals?.proposals
-                                                            ?.length
-                                                    }
-                                                    variant="secondary"
-                                                />
-                                            )}
-                                    </TabsTrigger>
-                                    <TabsTrigger value="executed">
-                                        Executed
-                                    </TabsTrigger>
-                                    <TabsTrigger value="rejected">
-                                        Rejected
-                                    </TabsTrigger>
-                                    <TabsTrigger value="expired">
-                                        Expired
-                                    </TabsTrigger>
-                                    <TabsTrigger value="failed">
-                                        Failed
-                                    </TabsTrigger>
-                                </TabsList>
+                                <ScrollArea className="w-full">
+                                    <TabsList className="border-none">
+                                        <TabsTrigger value="all">
+                                            All
+                                        </TabsTrigger>
+                                        <TabsTrigger
+                                            value="pending"
+                                            className="flex gap-2.5"
+                                        >
+                                            Pending
+                                            {!!proposals?.proposals?.length &&
+                                                proposals?.proposals?.length >
+                                                    0 && (
+                                                    <NumberBadge
+                                                        number={
+                                                            proposals?.proposals
+                                                                ?.length
+                                                        }
+                                                        variant="secondary"
+                                                    />
+                                                )}
+                                        </TabsTrigger>
+                                        <TabsTrigger value="executed">
+                                            Executed
+                                        </TabsTrigger>
+                                        <TabsTrigger value="rejected">
+                                            Rejected
+                                        </TabsTrigger>
+                                        <TabsTrigger value="expired">
+                                            Expired
+                                        </TabsTrigger>
+                                        <TabsTrigger value="failed">
+                                            Failed
+                                        </TabsTrigger>
+                                    </TabsList>
+                                    <ScrollBar
+                                        orientation="horizontal"
+                                        hidden
+                                    />
+                                </ScrollArea>
+
                                 <div className="flex items-center gap-2">
                                     <Input
                                         type="text"
                                         placeholder="Search request by name or ID"
-                                        className="w-64"
+                                        className="max-w-64 w-full"
                                         search
                                         value={searchValue}
                                         onChange={(e) =>
