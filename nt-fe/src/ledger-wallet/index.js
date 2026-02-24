@@ -230,7 +230,7 @@ async function promptForTransportSelection(
             },
             {
                 id: "BLUETOOTH",
-                name: "BLUETOOTH",
+                name: "Bluetooth",
                 description: "Wireless Ledger connection",
                 icon: "📡",
                 available: hasBluetoothOption,
@@ -240,46 +240,44 @@ async function promptForTransportSelection(
         const availableOnly = transportOptions.filter((opt) => opt.available);
 
         root.innerHTML = `
-        <div class="prompt-container" style="max-width: 420px; padding: 24px; box-sizing: border-box;">
-          <div style="text-align: center; margin-bottom: 20px;">
-            <div style="font-size: 48px; margin-bottom: 12px;">🔐</div>
-            <h1 style="margin: 0 0 8px 0; font-size: 20px;">Connect Ledger</h1>
-            <p style="margin: 0; color: #aaa; font-size: 13px;">Choose your connection method</p>
-          </div>
-
-          <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
-            ${availableOnly
-                .map(
-                    (opt) => `
-              <button
-                class="transport-option"
-                data-mode="${opt.id}"
-                style="width: 100%; padding: 16px; border-radius: 10px;
-                       border: 2px solid ${currentSelection === opt.id ? "#4c8bf5" : "#444"};
-                       background: ${currentSelection === opt.id ? "#1a3a5c" : "#2c2c2c"};
-                       color: #fff; cursor: pointer; text-align: left;
-                       min-height: 88px; transition: border-color 0.2s, background-color 0.2s; box-sizing: border-box;
-                       display: flex; align-items: center; gap: 12px;"
-                onmouseover="this.style.borderColor='#4c8bf5'; this.style.background='#1a3a5c';"
-                onmouseout="this.style.borderColor='${currentSelection === opt.id ? "#4c8bf5" : "#444"}'; this.style.background='${currentSelection === opt.id ? "#1a3a5c" : "#2c2c2c"}';"
-              >
-                <div style="font-size: 32px; flex-shrink: 0;">${opt.icon}</div>
-                <div style="flex: 1;">
-                  <div style="font-weight: 600; font-size: 15px; margin-bottom: 4px;">${opt.name}</div>
-                  <div style="color: #888; font-size: 12px;">${opt.description}</div>
-                </div>
-                <div style="width: 20px; text-align: center; color: #4c8bf5; font-size: 20px; flex-shrink: 0;">
-                  ${currentSelection === opt.id ? "✓" : "&nbsp;"}
-                </div>
-              </button>
-            `,
-                )
-                .join("")}
-          </div>
-
-          <div style="display: flex; gap: 8px; justify-content: flex-end;">
-            <button id="cancelBtn" style="padding: 10px 20px; border-radius: 8px; border: 1px solid #444; background: #444; color: #fff; cursor: pointer; font-size: 14px;">Cancel</button>
-            <button id="continueBtn" style="padding: 10px 20px; border-radius: 8px; border: none; background: #4c8bf5; color: #fff; cursor: pointer; font-size: 14px; font-weight: 500;" ${!currentSelection ? "disabled" : ""}>Continue</button>
+        <div style="display:flex; flex-direction:column; width:100%; height:100%; background:#000; border-radius:24px; overflow:hidden; text-align:left;">
+          <div style="flex:1; padding:24px; display:flex; flex-direction:column; gap:32px; overflow:auto;">
+            <div style="display:flex; flex-direction:column; gap:12px; padding-top:20px;">
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-family:Geist,sans-serif; font-weight:600; font-size:24px; line-height:1.2; letter-spacing:-0.48px; color:#fafafa;">Connect Ledger</span>
+                <button id="cancelBtn" style="background:transparent; border:none; cursor:pointer; padding:4px; display:flex; align-items:center; justify-content:center;">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L13 13M13 1L1 13" stroke="#fafafa" stroke-width="1.5" stroke-linecap="round"/></svg>
+                </button>
+              </div>
+              <p style="font-family:Geist,sans-serif; font-size:16px; font-weight:400; color:#a3a3a3; line-height:1.5; margin:0;">
+                Before continuing, please ensure the <strong style="color:#fafafa; font-weight:600;">NEAR app</strong> is installed.
+              </p>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              ${availableOnly
+                  .map(
+                      (opt) => `
+                <button
+                  class="transport-option"
+                  data-mode="${opt.id}"
+                  style="width:100%; padding:12px; border-radius:12px;
+                         border:1px solid ${currentSelection === opt.id ? "#a6a6a6" : "#313131"};
+                         background:#1a1a1a; cursor:pointer; text-align:left;
+                         display:flex; align-items:center; gap:12px; box-sizing:border-box;"
+                >
+                  <div style="width:40px; height:40px; border-radius:8px; background:#2a2a2a; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:16px;">${opt.icon}</div>
+                  <div style="flex:1; min-width:0;">
+                    <div style="font-family:Geist,sans-serif; font-weight:600; font-size:16px; color:#f5f5f5; line-height:1.5;">${opt.name}</div>
+                    <div style="font-family:Geist,sans-serif; font-size:12px; font-weight:400; color:#a3a3a3; line-height:1.5;">${opt.description}</div>
+                  </div>
+                </button>
+              `,
+                  )
+                  .join("")}
+              <div style="padding:32px 0 0 0;">
+                <button id="continueBtn" ${!currentSelection ? "disabled" : ""} style="width:100%; padding:9.5px 24px; border-radius:8px; border:none; background:${currentSelection ? "#f5f5f5" : "rgba(255,255,255,0.05)"}; color:${currentSelection ? "#0a0a0a" : "#a3a3a3"}; cursor:${currentSelection ? "pointer" : "not-allowed"}; font-family:Geist,sans-serif; font-size:14px; font-weight:500; letter-spacing:0.07px; ${!currentSelection ? "border:1px solid #404040;" : ""}">Continue</button>
+              </div>
+            </div>
           </div>
         </div>
       `;
@@ -558,12 +556,16 @@ function getLedgerErrorMessage(error) {
     const errorMsg = error.message || "";
 
     if (errorMsg.includes("0xb005") || errorMsg.includes("UNKNOWN_ERROR")) {
-        return "Please make sure your Ledger device is unlocked and the NEAR app is open. Please approve opening app on your Ledger device.";
+        return "Please approve opening the NEAR app on your Ledger device.";
     }
     if (errorMsg.includes("0x5515") || errorMsg.includes("Locked device")) {
         return "Your Ledger device is locked. Please unlock it and try again.";
     }
-    if (errorMsg.includes("6807") || errorMsg.includes("missing")) {
+    if (
+        errorMsg.includes("6807") ||
+        errorMsg.includes("NEAR application is missing") ||
+        errorMsg.includes("not installed")
+    ) {
         return "NEAR application is not installed on your Ledger device. Please install it using Ledger Live.";
     }
     if (errorMsg.includes("5501") || errorMsg.includes("declined")) {
@@ -579,6 +581,27 @@ function getLedgerErrorMessage(error) {
     return errorMsg || "An unknown error occurred. Please try again.";
 }
 
+function isGuidanceMessage(message) {
+    const text = (message || "").toLowerCase();
+    return (
+        text.includes("locked") ||
+        text.includes("unlock") ||
+        text.includes("approve opening") ||
+        text.includes("approve the request")
+    );
+}
+
+function alertBox(message) {
+    console.log("message", message);
+    const guidance = isGuidanceMessage(message);
+    console.log("guidance", guidance);
+    const bg = guidance ? "#0a1628" : "#290606";
+    const color = guidance ? "#93c5fd" : "#ef4444";
+    return `<div style="padding:12px; border-radius:12px; background:${bg};">
+        <p style="font-family:Geist,sans-serif; font-size:12px; color:${color}; line-height:1.5; margin:0; overflow-wrap:anywhere; word-break:break-word;">${message}</p>
+      </div>`;
+}
+
 /**
  * Helper function to prompt user to connect Ledger device
  * This shows a button inside the sandbox iframe that provides the user gesture context
@@ -586,7 +609,6 @@ function getLedgerErrorMessage(error) {
  */
 async function promptForLedgerConnect(ledgerClient) {
     let storedMode = null;
-    let canChangeConnectionMethod = false;
 
     // Read stored mode first, but always render UI before any Ledger interaction.
     storedMode = await ledgerClient.getStoredTransportMode();
@@ -597,73 +619,114 @@ async function promptForLedgerConnect(ledgerClient) {
     const root = document.getElementById("root");
     root.style.display = "flex";
 
+    let availableTransports = { webHID: true, webUSB: true, webBLE: true };
     try {
-        const availableTransports = await getAvailableTransports();
-        const selectionOptionsCount =
-            (availableTransports.webHID || availableTransports.webUSB ? 1 : 0) +
-            (availableTransports.webBLE ? 1 : 0);
-        canChangeConnectionMethod = selectionOptionsCount > 1;
+        availableTransports = await getAvailableTransports();
     } catch {
-        canChangeConnectionMethod = false;
-    }
-
-    function isGuidanceMessage(message) {
-        const text = (message || "").toLowerCase();
-        return (
-            text.includes("device is locked") ||
-            text.includes("please unlock") ||
-            text.includes("please approve opening app")
-        );
+        // Availability check failed — assume all supported
     }
 
     function renderUI(errorMessage = null) {
         // Transport selection may temporarily hide the root; force it visible here.
         root.style.display = "flex";
 
-        const showGuidance =
-            Boolean(errorMessage) && isGuidanceMessage(errorMessage);
-        const messageContainerStyles = showGuidance
-            ? "background: #232933; border: 1px solid #33435d;"
-            : "background: #3d2020; border: 1px solid #5c3030;";
-        const messageTextStyles = showGuidance
-            ? "color: #9fc1ff;"
-            : "color: #ff8080;";
+        const usbAvailable =
+            availableTransports.webHID || availableTransports.webUSB;
+        const bleAvailable = availableTransports.webBLE;
+        const usbLastUsed = storedMode === "WebHID" || storedMode === "WebUSB";
+        const bleLastUsed = storedMode === "WebBLE";
 
-        const connectionInstructions =
-            ledgerClient.transportMode === "WebBLE"
-                ? "Make sure your Ledger Nano X or newer is powered on, Bluetooth is enabled."
-                : "Make sure your Ledger is connected via USB.";
+        const transportButtons = [
+            {
+                id: "usbBtn",
+                icon: "🔌",
+                label: "USB",
+                description: "Wired Ledger connection",
+                available: usbAvailable,
+                lastUsed: usbLastUsed,
+                unsupportedReason: usbAvailable
+                    ? null
+                    : "WebHID and WebUSB are not supported in this browser. Try Chrome or Edge.",
+            },
+            {
+                id: "bleBtn",
+                icon: "📡",
+                label: "Bluetooth",
+                description: "Wireless Ledger connection",
+                available: bleAvailable,
+                lastUsed: bleLastUsed,
+                unsupportedReason: bleAvailable
+                    ? null
+                    : "Web Bluetooth is not supported in this browser. Try Chrome on desktop.",
+            },
+        ];
 
         root.innerHTML = `
-        <div class="prompt-container" style="max-width: 400px; padding: 24px; text-align: center;">
-          <div style="font-size: 48px; margin-bottom: 16px;">${errorMessage ? (showGuidance ? "🔐" : "⚠️") : "🔐"}</div>
-          <h1 style="margin-bottom: 16px;">${errorMessage ? (showGuidance ? "Action Required" : "Connection Failed") : "Connect Ledger"}</h1>
-          ${
-              errorMessage
-                  ? `
-          <div style="${messageContainerStyles} border-radius: 8px; padding: 12px; margin-bottom: 16px; text-align: left;">
-            <p style="${messageTextStyles} font-size: 13px; margin: 0;">${errorMessage}</p>
+        <style>
+          .ledger-transport-btn { position: relative; }
+          .ledger-tooltip {
+            display: none; position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+            background: #1a1a1a; border: 1px solid #313131; border-radius: 8px;
+            padding: 8px 10px; font-family: Geist, sans-serif; font-size: 12px; color: #a3a3a3;
+            white-space: normal; width: 220px; z-index: 10; pointer-events: none; line-height: 1.5;
+          }
+          .ledger-transport-btn:hover .ledger-tooltip { display: block; }
+          @keyframes ledger-connect-spin { to { transform: rotate(360deg); } }
+        </style>
+        <div style="display:flex; flex-direction:column; width:100%; height:100%; background:#000; border-radius:24px; overflow:hidden; text-align:left;">
+          <div style="flex:1; padding:24px; display:flex; flex-direction:column; gap:32px; overflow:auto;">
+            <div style="display:flex; flex-direction:column; gap:12px; padding-top:20px;">
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-family:Geist,sans-serif; font-weight:600; font-size:24px; line-height:1.2; letter-spacing:-0.48px; color:#fafafa;">Connect Ledger</span>
+                <button id="cancelBtn" style="background:transparent; border:none; cursor:pointer; padding:4px; display:flex; align-items:center; justify-content:center;">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L13 13M13 1L1 13" stroke="#fafafa" stroke-width="1.5" stroke-linecap="round"/></svg>
+                </button>
+              </div>
+              <p style="font-family:Geist,sans-serif; font-size:16px; font-weight:400; color:#a3a3a3; line-height:1.5; margin:0;">
+                Before continuing, please ensure the <strong style="color:#fafafa; font-weight:600;">NEAR app</strong> is installed.
+              </p>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              ${transportButtons
+                  .map(
+                      (t) => `
+              <div class="ledger-transport-btn" style="position:relative;">
+                <button id="${t.id}" ${!t.available ? "disabled" : ""} style="width:100%; padding:12px; border-radius:12px; border:1px solid #313131; background:#1a1a1a; display:flex; align-items:center; gap:12px; cursor:${t.available ? "pointer" : "not-allowed"}; opacity:${t.available ? "1" : "0.4"}; text-align:left; box-sizing:border-box;">
+                  <div style="width:40px; height:40px; border-radius:8px; background:#2a2a2a; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:16px;">${t.icon}</div>
+                  <div style="flex:1;">
+                    <div style="font-family:Geist,sans-serif; font-weight:600; font-size:16px; color:#f5f5f5; line-height:1.5;">${t.label}</div>
+                    <div style="font-family:Geist,sans-serif; font-size:12px; color:#a3a3a3; line-height:1.5;">${t.description}</div>
+                  </div>
+                  ${t.lastUsed ? `<div style="padding:3px 8px; border-radius:8px; background:#262626; font-family:Geist,sans-serif; font-size:12px; font-weight:500; color:#f5f5f5; white-space:nowrap; flex-shrink:0;">Last used</div>` : ""}
+                </button>
+                ${t.unsupportedReason ? `<div class="ledger-tooltip">⚠️ ${t.unsupportedReason}</div>` : ""}
+              </div>
+              `,
+                  )
+                  .join("")}
+              ${errorMessage ? alertBox(errorMessage) : ""}
+              <div style="padding-top:32px;">
+                <button id="closeBtn" style="width:100%; padding:9.5px 24px; border-radius:8px; border:1px solid #404040; background:rgba(255,255,255,0.05); color:#fafafa; cursor:pointer; font-family:Geist,sans-serif; font-size:14px; font-weight:500; letter-spacing:0.07px; box-sizing:border-box;">Close</button>
+              </div>
+            </div>
           </div>
-          `
-                  : ""
-          }
-          <p id="connectionInstructions" style="margin-bottom: 12px; color: #aaa;">
-            ${connectionInstructions}
-          </p>
-          <p id="connectionStatusMessage" style="margin-bottom: 16px; color: #4c8bf5; font-size: 13px; display: none;">
-          </p>
-          ${
-              storedMode && canChangeConnectionMethod
-                  ? `
-          <button id="changeMethodBtn" style="background: transparent; border: none; color: #888; font-size: 12px; cursor: pointer; padding: 0; margin-bottom: 16px; text-decoration: underline;">
-            Change connection method
-          </button>
-          `
-                  : ""
-          }
-          <div style="display: flex; gap: 8px; justify-content: center;">
-            <button id="cancelBtn" style="background: #444;">Cancel</button>
-            <button id="connectBtn" style="background: #4c8bf5;">${errorMessage ? "Try Again" : "Connect Ledger"}</button>
+        </div>
+      `;
+    }
+
+    function renderConnectingUI(statusMessage) {
+        root.style.display = "flex";
+        root.innerHTML = `
+        <style>@keyframes ledger-connect-spin { to { transform: rotate(360deg); } }</style>
+        <div style="display:flex; flex-direction:column; width:100%; height:100%; background:#000; border-radius:24px; overflow:hidden; text-align:left;">
+          <div style="flex:1; padding:24px; display:flex; flex-direction:column; gap:32px;">
+            <div style="display:flex; flex-direction:column; gap:12px; padding-top:20px;">
+              <span style="font-family:Geist,sans-serif; font-weight:600; font-size:24px; line-height:1.2; letter-spacing:-0.48px; color:#fafafa;">Connect Ledger</span>
+              <p style="font-family:Geist,sans-serif; font-size:16px; font-weight:400; color:#a3a3a3; line-height:1.5; margin:0;">${statusMessage}</p>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:center; padding:22.5px 0;">
+              <div style="width:44px; height:44px; border:3px solid #313131; border-top-color:#fafafa; border-radius:50%; animation:ledger-connect-spin 1s linear infinite;"></div>
+            </div>
           </div>
         </div>
       `;
@@ -672,90 +735,63 @@ async function promptForLedgerConnect(ledgerClient) {
     renderUI();
 
     return new Promise((resolve, reject) => {
-        function setupListeners() {
-            const connectBtn = document.getElementById("connectBtn");
-            const cancelBtn = document.getElementById("cancelBtn");
-            const changeMethodBtn = document.getElementById("changeMethodBtn");
-
-            // Handle change connection method
-            if (changeMethodBtn) {
-                changeMethodBtn.addEventListener("click", async () => {
+        async function handleConnect(transportMode) {
+            try {
+                if (ledgerClient.isConnected()) {
                     try {
-                        // Show selection UI
-                        const availableTransports =
-                            await getAvailableTransports();
-                        const newMode = await promptForTransportSelection(
-                            availableTransports,
-                            storedMode,
-                        );
-                        await ledgerClient.setStoredTransportMode(newMode);
-                        ledgerClient.transportMode = newMode;
-                        storedMode = newMode;
-                        // Re-render UI with new mode
-                        renderUI();
-                        setupListeners();
-                    } catch (error) {
-                        if (
-                            error.message !==
-                            "User cancelled transport selection"
-                        ) {
-                            renderUI(getLedgerErrorMessage(error));
-                            setupListeners();
-                        }
+                        await ledgerClient.disconnect();
+                    } catch {
+                        // Ignore disconnect errors
                     }
+                }
+                renderConnectingUI("Connecting to your Ledger device…");
+                await ledgerClient.connectWithDevice(transportMode);
+                await ledgerClient.setStoredTransportMode(transportMode);
+                storedMode = transportMode;
+                renderConnectingUI(
+                    "Please approve opening the NEAR app on your Ledger device.",
+                );
+                await ledgerClient.openNearApplication();
+                resolve();
+            } catch (error) {
+                if (ledgerClient.isConnected()) {
+                    try {
+                        await ledgerClient.disconnect();
+                    } catch {
+                        // Ignore disconnect errors
+                    }
+                }
+                renderUI(getLedgerErrorMessage(error));
+                setupListeners();
+            }
+        }
+
+        function setupListeners() {
+            const cancelBtn = document.getElementById("cancelBtn");
+            const closeBtn = document.getElementById("closeBtn");
+            const usbBtn = document.getElementById("usbBtn");
+            const bleBtn = document.getElementById("bleBtn");
+
+            if (usbBtn) {
+                usbBtn.addEventListener("click", () => {
+                    const mode = availableTransports.webHID
+                        ? "WebHID"
+                        : "WebUSB";
+                    handleConnect(mode);
                 });
             }
 
-            connectBtn.addEventListener("click", async () => {
-                // Show loading state
-                connectBtn.disabled = true;
-                connectBtn.textContent = "Connecting...";
-                const statusMessage = document.getElementById(
-                    "connectionStatusMessage",
-                );
-                const instructions = document.getElementById(
-                    "connectionInstructions",
-                );
+            if (bleBtn) {
+                bleBtn.addEventListener("click", () => {
+                    handleConnect("WebBLE");
+                });
+            }
 
-                try {
-                    // Disconnect first to ensure clean state
-                    if (ledgerClient.isConnected()) {
-                        try {
-                            await ledgerClient.disconnect();
-                        } catch {
-                            // Ignore disconnect errors
-                        }
-                    }
-                    // This click provides the user gesture context for WebHID
-                    await ledgerClient.connect();
-                    if (statusMessage) {
-                        statusMessage.textContent =
-                            "Please approve opening app on your Ledger device.";
-                        statusMessage.style.display = "block";
-                    }
-                    if (instructions) {
-                        instructions.textContent =
-                            "Check your Ledger screen and approve opening the NEAR app.";
-                    }
-                    connectBtn.textContent = "Waiting for approval...";
-                    // Ensure NEAR app is open
-                    await ledgerClient.openNearApplication();
-                    // Don't hide iframe - let next UI (derivation path) take over smoothly
-                    resolve();
-                } catch (error) {
-                    // Disconnect on failure to ensure clean state
-                    if (ledgerClient.isConnected()) {
-                        try {
-                            await ledgerClient.disconnect();
-                        } catch {
-                            // Ignore disconnect errors
-                        }
-                    }
-                    // Show error in UI and allow retry
-                    const friendlyError = getLedgerErrorMessage(error);
-                    renderUI(friendlyError);
-                    setupListeners();
-                }
+            closeBtn.addEventListener("click", () => {
+                root.innerHTML = "";
+                root.style.display = "none";
+                window.selector.ui.hideIframe();
+                reject(new Error("User cancelled"));
             });
 
             cancelBtn.addEventListener("click", () => {
@@ -783,72 +819,62 @@ async function promptForDerivationPath(currentPath = DEFAULT_DERIVATION_PATH) {
 
     let showCustom = false;
 
+    const pathOptions = [
+        { label: "Account 1", path: "44'/397'/0'/0'/0'" },
+        { label: "Account 2", path: "44'/397'/0'/0'/1'" },
+        { label: "Account 3", path: "44'/397'/0'/0'/2'" },
+    ];
+
     function renderUI() {
         root.innerHTML = `
-        <div class="prompt-container" style="max-width: 380px; padding: 20px; box-sizing: border-box; overflow: hidden;">
-          <h1 style="margin: 0 0 12px 0; font-size: 18px;">Select Derivation Path</h1>
-          <p style="margin: 0 0 12px 0; color: #aaa; font-size: 13px;">
-            Choose which account index to use from your Ledger device.
-          </p>
-          <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px;">
-            <button
-              id="path0Btn"
-              class="path-btn"
-              data-path="44'/397'/0'/0'/0'"
-              style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid ${currentPath === "44'/397'/0'/0'/0'" ? "#4c8bf5" : "#444"};
-                     background: ${currentPath === "44'/397'/0'/0'/0'" ? "#1a3a5c" : "#2c2c2c"}; color: #fff; font-size: 13px; text-align: left; cursor: pointer; box-sizing: border-box;"
-            >
-              <span style="font-weight: 500;">Account 1</span>
-              <span style="color: #888; font-size: 11px; font-family: monospace; display: block; margin-top: 2px;">44'/397'/0'/0'/0'</span>
-            </button>
-            <button
-              id="path1Btn"
-              class="path-btn"
-              data-path="44'/397'/0'/0'/1'"
-              style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid ${currentPath === "44'/397'/0'/0'/1'" ? "#4c8bf5" : "#444"};
-                     background: ${currentPath === "44'/397'/0'/0'/1'" ? "#1a3a5c" : "#2c2c2c"}; color: #fff; font-size: 13px; text-align: left; cursor: pointer; box-sizing: border-box;"
-            >
-              <span style="font-weight: 500;">Account 2</span>
-              <span style="color: #888; font-size: 11px; font-family: monospace; display: block; margin-top: 2px;">44'/397'/0'/0'/1'</span>
-            </button>
-            <button
-              id="path2Btn"
-              class="path-btn"
-              data-path="44'/397'/0'/0'/2'"
-              style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid ${currentPath === "44'/397'/0'/0'/2'" ? "#4c8bf5" : "#444"};
-                     background: ${currentPath === "44'/397'/0'/0'/2'" ? "#1a3a5c" : "#2c2c2c"}; color: #fff; font-size: 13px; text-align: left; cursor: pointer; box-sizing: border-box;"
-            >
-              <span style="font-weight: 500;">Account 3</span>
-              <span style="color: #888; font-size: 11px; font-family: monospace; display: block; margin-top: 2px;">44'/397'/0'/0'/2'</span>
-            </button>
-          </div>
-          <div style="margin-bottom: 12px;">
-            <button
-              id="toggleCustomBtn"
-              style="background: transparent; border: none; color: #888; font-size: 12px; cursor: pointer; padding: 0; text-decoration: underline;"
-            >
-              ${showCustom ? "Hide" : "Use"} custom path
-            </button>
-            ${
-                showCustom
-                    ? `
-            <div style="margin-top: 10px;">
+        <div style="display:flex; flex-direction:column; width:100%; height:100%; background:#000; border-radius:24px; overflow:hidden; text-align:left;">
+          <div style="flex:1; padding:24px; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden;">
+            <div style="display:flex; flex-direction:column; gap:12px; padding-top:20px;">
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-family:Geist,sans-serif; font-weight:600; font-size:24px; line-height:1.2; letter-spacing:-0.48px; color:#fafafa;">Select Derivation Path</span>
+                <button id="cancelBtn" style="background:transparent; border:none; cursor:pointer; padding:4px; display:flex; align-items:center; justify-content:center;">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L13 13M13 1L1 13" stroke="#fafafa" stroke-width="1.5" stroke-linecap="round"/></svg>
+                </button>
+              </div>
+              <p style="font-family:Geist,sans-serif; font-size:16px; font-weight:400; color:#a3a3a3; line-height:1.5; margin:0;">
+                Choose account index to use from your Ledger.
+              </p>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:16px; flex:1; padding-top:32px;">
+              ${pathOptions
+                  .map(
+                      (opt) => `
+                <button
+                  class="path-btn"
+                  data-path="${opt.path}"
+                  style="width:100%; padding:12px; border-radius:12px; border:1px solid ${currentPath === opt.path ? "#a6a6a6" : "#313131"}; background:#1a1a1a; cursor:pointer; text-align:left; box-sizing:border-box;"
+                >
+                  <div style="font-family:Geist,sans-serif; font-weight:600; font-size:16px; color:#f5f5f5; line-height:1.5;">${opt.label}</div>
+                  <div style="font-family:Geist,sans-serif; font-size:12px; color:#a3a3a3; line-height:1.5;">${opt.path}</div>
+                </button>
+              `,
+                  )
+                  .join("")}
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px; padding-top:16px;">
+              <button id="toggleCustomBtn" style="background:transparent; border:none; color:#a3a3a3; font-family:Geist,sans-serif; font-size:14px; font-weight:500; cursor:pointer; padding:9.5px 24px; border-radius:8px; width:100%;">
+                Use custom path
+              </button>
+              ${
+                  showCustom
+                      ? `
               <input
                 type="text"
                 id="customPathInput"
                 value="${currentPath}"
                 placeholder="44'/397'/0'/0'/0'"
-                style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #444;
-                       background: #2c2c2c; color: #fff; font-size: 12px; font-family: monospace; box-sizing: border-box;"
+                style="width:100%; padding:12px; border-radius:12px; border:1px solid #a6a6a6; background:#1a1a1a; color:#fafafa; font-family:Geist,sans-serif; font-size:12px; box-sizing:border-box; outline:none;"
               />
+              `
+                      : ""
+              }
+              <button id="confirmBtn" style="width:100%; padding:9.5px 24px; border-radius:8px; border:none; background:#f5f5f5; color:#0a0a0a; cursor:pointer; font-family:Geist,sans-serif; font-size:14px; font-weight:500; letter-spacing:0.07px;">Continue</button>
             </div>
-            `
-                    : ""
-            }
-          </div>
-          <div style="display: flex; gap: 8px; justify-content: flex-end;">
-            <button id="cancelBtn" style="background: #444;">Cancel</button>
-            <button id="confirmBtn" style="background: #4c8bf5;">Continue</button>
           </div>
         </div>
       `;
@@ -925,18 +951,19 @@ async function showLedgerApprovalUI(
     function renderLoadingUI() {
         root.style.display = "flex";
         root.innerHTML = `
-        <div class="prompt-container" style="max-width: 400px; padding: 24px; text-align: center;">
-          <div style="font-size: 48px; margin-bottom: 16px;">🔐</div>
-          <h1 style="margin-bottom: 16px;">${title}</h1>
-          <p style="margin-bottom: 24px; color: #aaa;">${message}</p>
-          <div style="display: flex; justify-content: center;">
-            <div style="width: 24px; height: 24px; border: 3px solid #444; border-top-color: #4c8bf5; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        <div style="display:flex; flex-direction:column; width:100%; height:100%; background:#000; border-radius:24px; overflow:hidden; text-align:left;">
+          <div style="flex:1; padding:24px; display:flex; flex-direction:column; gap:32px; overflow:auto;">
+            <div style="display:flex; flex-direction:column; gap:12px; padding-top:20px;">
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-family:Geist,sans-serif; font-weight:600; font-size:24px; line-height:1.2; letter-spacing:-0.48px; color:#fafafa;">${title}</span>
+              </div>
+              <p style="font-family:Geist,sans-serif; font-size:16px; font-weight:400; color:#a3a3a3; line-height:1.5; margin:0;">${message}</p>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:center; padding:22.5px 0;">
+              <div style="width:44px; height:44px; border:3px solid #313131; border-top-color:#fafafa; border-radius:50%; animation:ledger-spin 1s linear infinite;"></div>
+              <style>@keyframes ledger-spin { to { transform: rotate(360deg); } }</style>
+            </div>
           </div>
-          <style>
-            @keyframes spin {
-              to { transform: rotate(360deg); }
-            }
-          </style>
         </div>
       `;
     }
@@ -945,18 +972,21 @@ async function showLedgerApprovalUI(
         const errorMessage = getLedgerErrorMessage(error);
         root.style.display = "flex";
         root.innerHTML = `
-        <div class="prompt-container" style="max-width: 400px; padding: 24px; text-align: center;">
-          <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
-          <h1 style="margin-bottom: 12px;">Action Required</h1>
-          <div style="background: #232933; border: 1px solid #33435d; border-radius: 8px; padding: 12px; margin-bottom: 16px; text-align: left;">
-            <p style="color: #9fc1ff; font-size: 13px; margin: 0;">${errorMessage}</p>
-          </div>
-          <p style="margin-bottom: 16px; color: #aaa;">
-            Unlock your Ledger and retry when ready.
-          </p>
-          <div style="display: flex; gap: 8px; justify-content: center;">
-            <button id="approvalCancelBtn" style="background: #444;">Cancel</button>
-            <button id="approvalRetryBtn" style="background: #4c8bf5;">Try Again</button>
+        <div style="display:flex; flex-direction:column; width:100%; height:100%; background:#000; border-radius:24px; overflow:hidden; text-align:left;">
+          <div style="flex:1; padding:24px; display:flex; flex-direction:column; gap:32px; overflow:auto;">
+            <div style="display:flex; flex-direction:column; gap:12px; padding-top:20px;">
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-family:Geist,sans-serif; font-weight:600; font-size:24px; line-height:1.2; letter-spacing:-0.48px; color:#fafafa;">${title}</span>
+              </div>
+              <p style="font-family:Geist,sans-serif; font-size:16px; font-weight:400; color:#a3a3a3; line-height:1.5; margin:0;">${message}</p>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              ${alertBox(errorMessage)}
+              <div style="display:flex; flex-direction:column; gap:8px; padding-top:16px;">
+                <button id="approvalCancelBtn" style="width:100%; padding:9.5px 24px; border-radius:8px; border:1px solid #404040; background:rgba(255,255,255,0.05); color:#fafafa; cursor:pointer; font-family:Geist,sans-serif; font-size:14px; font-weight:500;">Cancel</button>
+                <button id="approvalRetryBtn" style="width:100%; padding:9.5px 24px; border-radius:8px; border:none; background:#f5f5f5; color:#0a0a0a; cursor:pointer; font-family:Geist,sans-serif; font-size:14px; font-weight:500;">Try Again</button>
+              </div>
+            </div>
           </div>
         </div>
       `;
@@ -993,7 +1023,7 @@ async function showLedgerApprovalUI(
             // Don't hide on success - let the next UI take over smoothly
             return result;
         } catch (error) {
-            renderErrorUI(getLedgerErrorMessage(error));
+            renderErrorUI(error);
             const action = await waitForRetryAction();
             if (action === "retry") {
                 continue;
@@ -1026,46 +1056,44 @@ async function promptForAccountId(
 
     function renderUI(errorMessage = null, currentValue = "") {
         root.innerHTML = `
-        <div class="prompt-container" style="max-width: 400px; padding: 24px;">
-          <h1 style="margin-bottom: 16px;">Enter Account ID</h1>
-          <p style="margin-bottom: 16px; color: #aaa;">
-            Ledger provides your public key. Please enter the NEAR account ID
-            that this key has full access to.
-          </p>
-          ${
-              errorMessage
-                  ? `
-          <div style="background: #3d2020; border: 1px solid #5c3030; border-radius: 8px; padding: 12px; margin-bottom: 12px; text-align: left;">
-            <p style="color: #ff8080; font-size: 13px; margin: 0;">${errorMessage}</p>
-          </div>
-          `
-                  : ""
-          }
-          <input
-            type="text"
-            id="accountIdInput"
-            placeholder="example.near"
-            value="${currentValue}"
-            style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid ${errorMessage ? "#5c3030" : "#444"};
-                   background: #2c2c2c; color: #fff; font-size: 14px; margin-bottom: 8px;"
-          />
-          ${
-              implicitAccountId
-                  ? `
-          <button
-            id="useImplicitBtn"
-            style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #555;
-                   background: transparent; color: #aaa; font-size: 12px; margin-bottom: 16px;
-                   cursor: pointer; text-align: left;"
-          >
-            Use implicit account: <span style="color: #4c8bf5; font-family: monospace;">${implicitAccountId.slice(0, 12)}...${implicitAccountId.slice(-8)}</span>
-          </button>
-          `
-                  : ""
-          }
-          <div style="display: flex; gap: 8px; justify-content: flex-end;">
-            <button id="cancelBtn" style="background: #444;">Cancel</button>
-            <button id="confirmBtn" style="background: #4c8bf5;">Confirm</button>
+        <div style="display:flex; flex-direction:column; width:100%; height:100%; background:#000; border-radius:24px; overflow:hidden; text-align:left;">
+          <div style="flex:1; padding:24px; display:flex; flex-direction:column; gap:32px; overflow:auto;">
+            <div style="display:flex; flex-direction:column; gap:12px; padding-top:20px;">
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-family:Geist,sans-serif; font-weight:600; font-size:24px; line-height:1.2; letter-spacing:-0.48px; color:#fafafa;">Enter Account ID</span>
+                <button id="cancelBtn" style="background:transparent; border:none; cursor:pointer; padding:4px; display:flex; align-items:center; justify-content:center;">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L13 13M13 1L1 13" stroke="#fafafa" stroke-width="1.5" stroke-linecap="round"/></svg>
+                </button>
+              </div>
+              <p style="font-family:Geist,sans-serif; font-size:16px; font-weight:400; color:#a3a3a3; line-height:1.5; margin:0;">
+                Ledger provides your public key. Please enter the NEAR account ID that this key has access to.
+              </p>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              ${errorMessage ? alertBox(errorMessage) : ""}
+              <input
+                type="text"
+                id="accountIdInput"
+                placeholder="example.near"
+                value="${currentValue}"
+                style="width:100%; padding:12px; border-radius:12px; border:1px solid ${errorMessage ? "#ef4444" : "#a6a6a6"}; background:#1a1a1a; color:#fafafa; font-family:Geist,sans-serif; font-size:12px; box-sizing:border-box; outline:none;"
+              />
+              ${
+                  implicitAccountId
+                      ? `
+              <button
+                id="useImplicitBtn"
+                style="width:100%; padding:12px; border-radius:12px; border:1px solid #313131; background:#1a1a1a; cursor:pointer; text-align:left; box-sizing:border-box;"
+              >
+                <span style="font-family:Geist,sans-serif; font-size:12px; color:#a3a3a3;">Use implicit account: </span><span style="font-family:Geist,sans-serif; font-size:12px; color:#f5f5f5;">${implicitAccountId.slice(0, 12)}...${implicitAccountId.slice(-8)}</span>
+              </button>
+              `
+                      : ""
+              }
+              <div style="padding-top:${implicitAccountId ? "16px" : "32px"};">
+                <button id="confirmBtn" style="width:100%; padding:9.5px 24px; border-radius:8px; border:none; background:#f5f5f5; color:#0a0a0a; cursor:pointer; font-family:Geist,sans-serif; font-size:14px; font-weight:500; letter-spacing:0.07px;">Confirm</button>
+              </div>
+            </div>
           </div>
         </div>
       `;
@@ -1179,36 +1207,23 @@ async function promptForCreateAccount(
     root.style.display = "flex";
 
     function renderUI(errorMessage = null) {
+        const alertMessage = errorMessage || reasonMessage;
         root.innerHTML = `
-        <div class="prompt-container" style="width: min(420px, calc(100vw - 32px)); max-width: 100%; padding: 24px; box-sizing: border-box; overflow-wrap: anywhere; word-break: break-word;">
-          <h1 style="margin-bottom: 12px;">Account Doesn't Exist</h1>
-          <p style="margin-bottom: 12px; color: #aaa; overflow-wrap: anywhere; word-break: break-word;">
-            The provided account does not exist on NEAR blockchain.
-          </p>
-          <p style="margin-bottom: 16px; color: #aaa;">
-            Do you want to create this account now?
-          </p>
-          ${
-              reasonMessage
-                  ? `
-          <div style="background: #232933; border: 1px solid #33435d; border-radius: 8px; padding: 12px; margin-bottom: 12px; text-align: left;">
-            <p style="color: #9fc1ff; font-size: 13px; margin: 0; overflow-wrap: anywhere; word-break: break-word;">Account<br/>${accountId}</p>
-          </div>
-          `
-                  : ""
-          }
-          ${
-              errorMessage
-                  ? `
-          <div style="background: #3d2020; border: 1px solid #5c3030; border-radius: 8px; padding: 12px; margin-bottom: 12px; text-align: left;">
-            <p style="color: #ff8080; font-size: 13px; margin: 0; overflow-wrap: anywhere; word-break: break-word;">${errorMessage}</p>
-          </div>
-          `
-                  : ""
-          }
-          <div style="display: flex; gap: 8px; justify-content: flex-end;">
-            <button id="createAccountCancelBtn" style="background: #444;">Cancel</button>
-            <button id="createAccountConfirmBtn" style="background: #4c8bf5;">Create Account</button>
+        <div style="display:flex; flex-direction:column; width:100%; height:100%; background:#000; border-radius:24px; overflow:hidden; text-align:left;">
+          <div style="flex:1; padding:24px; display:flex; flex-direction:column; gap:32px; overflow:auto;">
+            <div style="display:flex; flex-direction:column; gap:12px; padding-top:20px;">
+              <span style="font-family:Geist,sans-serif; font-weight:600; font-size:24px; line-height:1.2; letter-spacing:-0.48px; color:#fafafa;">Account Doesn't Exist</span>
+              <p style="font-family:Geist,sans-serif; font-size:16px; font-weight:400; color:#a3a3a3; line-height:1.5; margin:0; overflow-wrap:anywhere; word-break:break-word;">
+                The account <strong style="color:#fafafa;">${accountId}</strong> does not exist on NEAR blockchain. Do you want to create it now?
+              </p>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              ${alertMessage ? alertBox(alertMessage) : ""}
+              <div style="display:flex; flex-direction:column; gap:8px; padding-top:${alertMessage ? "0" : "16px"};">
+                <button id="createAccountCancelBtn" style="width:100%; padding:9.5px 24px; border-radius:8px; border:1px solid #404040; background:rgba(255,255,255,0.05); color:#fafafa; cursor:pointer; font-family:Geist,sans-serif; font-size:14px; font-weight:500;">Cancel</button>
+                <button id="createAccountConfirmBtn" style="width:100%; padding:9.5px 24px; border-radius:8px; border:none; background:#f5f5f5; color:#0a0a0a; cursor:pointer; font-family:Geist,sans-serif; font-size:14px; font-weight:500;">Create Account</button>
+              </div>
+            </div>
           </div>
         </div>
       `;
