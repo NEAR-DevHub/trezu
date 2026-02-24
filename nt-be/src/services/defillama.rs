@@ -169,6 +169,79 @@ impl DeFiLlamaClient {
         }
     }
 
+    /// Fetch USD prices for multiple assets at an exact Unix timestamp
+    ///
+    /// Uses the DeFiLlama `/prices/historical/{timestamp}/{coins}` endpoint
+    /// with comma-separated asset IDs for batch efficiency.
+    ///
+    /// # Arguments
+    /// * `asset_ids` - DeFiLlama asset IDs (e.g., "coingecko:bitcoin", "coingecko:near")
+    /// * `timestamp` - Unix timestamp (seconds since epoch)
+    ///
+    /// # Returns
+    /// A map from asset_id to USD price for each asset that had data
+    pub async fn get_prices_at_timestamp(
+        &self,
+        asset_ids: &[String],
+        timestamp: i64,
+    ) -> Result<HashMap<String, f64>, Box<dyn std::error::Error + Send + Sync>> {
+        if asset_ids.is_empty() {
+            return Ok(HashMap::new());
+        }
+
+        let coins_param = asset_ids.join(",");
+        let url = format!(
+            "{}/prices/historical/{}/{}",
+            self.base_url, timestamp, coins_param
+        );
+
+        log::debug!(
+            "Fetching prices from DeFiLlama at timestamp {} for {} assets",
+            timestamp,
+            asset_ids.len()
+        );
+
+        let response = self
+            .http_client
+            .get(&url)
+            .header("accept", "application/json")
+            .send()
+            .await?;
+
+        let status = response.status();
+
+        if status == reqwest::StatusCode::NOT_FOUND {
+            return Ok(HashMap::new());
+        }
+
+        if !status.is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            log::warn!(
+                "DeFiLlama API error for batch price at {}: {} - {}",
+                timestamp,
+                status,
+                error_text
+            );
+            return Err(format!("DeFiLlama API error: {} - {}", status, error_text).into());
+        }
+
+        let data: PricesResponse = response.json().await?;
+
+        let prices: HashMap<String, f64> = data
+            .coins
+            .into_iter()
+            .map(|(id, coin)| (id, coin.price))
+            .collect();
+
+        log::debug!(
+            "DeFiLlama: Got {} prices at timestamp {}",
+            prices.len(),
+            timestamp
+        );
+
+        Ok(prices)
+    }
+
     /// Convert a symbol to DeFiLlama asset ID
     ///
     /// For known symbols, returns the coingecko:{id} format.
