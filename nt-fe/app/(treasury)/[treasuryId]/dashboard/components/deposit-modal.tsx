@@ -664,16 +664,16 @@ export function DepositModal({
                                         <CircleCheck className="h-4 w-4 shrink-0 mt-0.5" />
                                         <span>
                                             Only deposit{" "}
-                                            <strong className="text-foreground">
+                                            <span className="text-foreground">
                                                 {selectedAsset?.symbol}
-                                            </strong>{" "}
+                                            </span>{" "}
                                             from the{" "}
-                                            <strong className="text-foreground capitalize">
+                                            <span className="text-foreground capitalize">
                                                 {selectedNetwork &&
                                                     getNetworkDisplayName(
                                                         selectedNetwork.name,
                                                     )}
-                                            </strong>{" "}
+                                            </span>{" "}
                                             network. We recommend starting with
                                             a small test transaction to ensure
                                             everything works correctly before
@@ -686,13 +686,13 @@ export function DepositModal({
                                             <CircleCheck className="h-4 w-4 shrink-0 mt-0.5" />
                                             <span>
                                                 Minimum deposit is{" "}
-                                                <strong className="text-foreground">
+                                                <span className="text-foreground font-semibold">
                                                     {formatBalance(
                                                         selectedBridgeNetwork.minDepositAmount,
                                                         selectedBridgeNetwork.decimals
                                                     )}{" "}
                                                     {selectedAsset?.symbol}
-                                                </strong>
+                                                </span>
                                             </span>
                                         </div>
                                     )}
