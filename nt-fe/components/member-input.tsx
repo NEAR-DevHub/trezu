@@ -19,6 +19,7 @@ import { ROLES, RoleSelector } from "./role-selector";
 import { Pill } from "./pill";
 import { Plus, Trash2 } from "lucide-react";
 import { Tooltip } from "./tooltip";
+import { cn } from "@/lib/utils";
 
 export const memberSchema = z
     .array(
@@ -106,7 +107,14 @@ export function MemberInput<
                 {fields.map((field, index) => (
                     <div
                         key={field.id}
-                        className={`flex px-3.5 first:pt-3 not-first:pt-2 last:pb-3 flex-col gap-0 focus-within:bg-general-tertiary hover:bg-general-tertiary transition-colors ${!hideAddButton || index < fields.length - 1 ? "border-b border-muted-foreground/10" : ""}`}
+                        className={cn(
+                            "flex px-3.5 first:rounded-t-xl first:pt-3 not-first:pt-2 last:pb-3 flex-col gap-0",
+                            !disableAllInputs &&
+                                (!lockedFirstMember || index !== 0) &&
+                                "focus-within:bg-general-tertiary hover:bg-general-tertiary transition-colors",
+                            (!hideAddButton || index < fields.length - 1) &&
+                                "border-b border-muted-foreground/10",
+                        )}
                     >
                         <div className="flex justify-between items-center">
                             <p className="text-xs text-muted-foreground">
@@ -234,7 +242,7 @@ export function MemberInput<
                     <Button
                         variant={"ghost"}
                         type="button"
-                        className="w-full justify-start"
+                        className="w-full justify-start rounded-t-none rounded-b-xl pl-3.5!"
                         onClick={() =>
                             append({
                                 accountId: "",
