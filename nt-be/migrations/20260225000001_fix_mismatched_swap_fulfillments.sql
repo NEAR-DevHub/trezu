@@ -19,7 +19,7 @@ WHERE ds.fulfillment_balance_change_id = bc.id
 -- Mark all accounts that have detected_swaps as dirty so they get re-processed.
 -- This is a lightweight operation since only monitored accounts with swaps are affected.
 UPDATE monitored_accounts
-SET is_dirty = true
+SET dirty_at = NOW()
 WHERE account_id IN (SELECT DISTINCT account_id FROM detected_swaps)
    OR account_id IN (
        SELECT DISTINCT account_id FROM balance_changes
