@@ -41,6 +41,8 @@ pub fn build_where_conditions(filters: &BalanceChangeFilters) -> (Vec<String>, u
         "counterparty != 'SNAPSHOT'".to_string(),
         "counterparty != 'STAKING_SNAPSHOT'".to_string(),
         "counterparty != 'NOT_REGISTERED'".to_string(),
+        // Exclude zero-change records (internal gap-filler bookkeeping)
+        "(amount != 0 OR balance_before != balance_after)".to_string(),
         "(action_kind IS NULL OR action_kind != 'CreateAccount')".to_string(),
         RELAYER_WHERE_CONDITION.to_string(),
         // Exclude swap deposit legs - these are shown as part of the swap fulfillment
@@ -195,7 +197,7 @@ mod tests {
 
         let (conditions, param_index) = build_where_conditions(&filters);
 
-        assert_eq!(conditions.len(), 7); // Base conditions: account_id, SNAPSHOT, STAKING_SNAPSHOT, NOT_REGISTERED, CreateAccount, relayer, swap deposit exclusion
+        assert_eq!(conditions.len(), 8); // Base conditions: account_id, SNAPSHOT, STAKING_SNAPSHOT, NOT_REGISTERED, zero-change, CreateAccount, relayer, swap deposit exclusion
         assert_eq!(param_index, 2);
     }
 
@@ -216,7 +218,7 @@ mod tests {
 
         let (conditions, param_index) = build_where_conditions(&filters);
 
-        assert_eq!(conditions.len(), 10); // Base (7) + date (1) + token (1) + txn_type (1)
+        assert_eq!(conditions.len(), 11); // Base (8) + date (1) + token (1) + txn_type (1)
         assert_eq!(param_index, 4); // 1 (account_id) + 1 (date) + 1 (tokens) + starts at 2
         assert!(conditions.contains(&"block_time >= $2".to_string()));
         assert!(conditions.iter().any(|c| c.contains("token_id = ANY($3)")));
