@@ -40,7 +40,7 @@ export const memberSchema = z
             ) {
                 ctx.addIssue({
                     code: "custom",
-                    message: "Address already exists",
+                    message: "Address is already a member",
                     path: [`${index + 1}.accountId`],
                 });
             }
@@ -66,11 +66,14 @@ interface MemberInputProps<
     mode?: MemberInputMode;
     availableRoles?: readonly Role[];
     name: TMemberPath extends ArrayPath<TFieldValues>
-    ? PathValue<TFieldValues, TMemberPath> extends MembersArray
-    ? TMemberPath
-    : never
-    : never;
-    getDisabledRoles?: (accountId: string, currentRoles: string[]) => { roleId: string; reason: string }[];
+        ? PathValue<TFieldValues, TMemberPath> extends MembersArray
+            ? TMemberPath
+            : never
+        : never;
+    getDisabledRoles?: (
+        accountId: string,
+        currentRoles: string[],
+    ) => { roleId: string; reason: string }[];
 }
 
 export function MemberInput<
@@ -98,12 +101,12 @@ export function MemberInput<
     const defaultRoles = isOnboarding ? ["requestor"] : [];
 
     return (
-        <InputBlock invalid={false}>
-            <div className="flex flex-col gap-4">
+        <InputBlock invalid={false} className="p-0">
+            <div className="flex flex-col">
                 {fields.map((field, index) => (
                     <div
                         key={field.id}
-                        className={`flex flex-col gap-0 ${!hideAddButton || index < fields.length - 1 ? "border-b border-muted-foreground/10" : ""}`}
+                        className={`flex px-3.5 first:pt-3 not-first:pt-2 last:pb-3 flex-col gap-0 focus-within:bg-general-tertiary hover:bg-general-tertiary transition-colors ${!hideAddButton || index < fields.length - 1 ? "border-b border-muted-foreground/10" : ""}`}
                     >
                         <div className="flex justify-between items-center">
                             <p className="text-xs text-muted-foreground">
@@ -140,10 +143,16 @@ export function MemberInput<
                                 }
                                 render={({ field }) => {
                                     const form = useFormContext();
-                                    const accountId = form.watch(`${name}.${index}.accountId`);
-                                    const disabledRoles = getDisabledRoles && accountId
-                                        ? getDisabledRoles(accountId, field.value || [])
-                                        : [];
+                                    const accountId = form.watch(
+                                        `${name}.${index}.accountId`,
+                                    );
+                                    const disabledRoles =
+                                        getDisabledRoles && accountId
+                                            ? getDisabledRoles(
+                                                  accountId,
+                                                  field.value || [],
+                                              )
+                                            : [];
 
                                     return (
                                         <>
@@ -153,17 +162,26 @@ export function MemberInput<
                                                     onRolesChange={(roles) => {
                                                         field.onChange(roles);
                                                     }}
-                                                    availableRoles={availableRoles}
-                                                    disabledRoles={disabledRoles}
+                                                    availableRoles={
+                                                        availableRoles
+                                                    }
+                                                    disabledRoles={
+                                                        disabledRoles
+                                                    }
                                                 />
-                                            ) : index > 0 || !lockedFirstMember ? (
+                                            ) : index > 0 ||
+                                              !lockedFirstMember ? (
                                                 <RoleSelector
                                                     selectedRoles={field.value}
                                                     onRolesChange={(roles) => {
                                                         field.onChange(roles);
                                                     }}
-                                                    availableRoles={availableRoles}
-                                                    disabledRoles={disabledRoles}
+                                                    availableRoles={
+                                                        availableRoles
+                                                    }
+                                                    disabledRoles={
+                                                        disabledRoles
+                                                    }
                                                 />
                                             ) : (
                                                 <FullAccessTooltip>
@@ -216,21 +234,21 @@ export function MemberInput<
                     <Button
                         variant={"ghost"}
                         type="button"
-                        className="w-fit"
+                        className="w-full justify-start"
                         onClick={() =>
                             append({
                                 accountId: "",
                                 roles: defaultRoles,
                             } as TMemberPath extends ArrayPath<TFieldValues>
                                 ? PathValue<
-                                    TFieldValues,
-                                    TMemberPath
-                                > extends Member
-                                ? PathValue<
-                                    TFieldValues,
-                                    TMemberPath
-                                >[number]
-                                : never
+                                      TFieldValues,
+                                      TMemberPath
+                                  > extends Member
+                                    ? PathValue<
+                                          TFieldValues,
+                                          TMemberPath
+                                      >[number]
+                                    : never
                                 : never)
                         }
                     >

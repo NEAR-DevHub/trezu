@@ -35,6 +35,8 @@ export function Input({
                 autoCorrect="off"
                 className={cn(
                     "bg-muted border-0",
+                    !props.disabled &&
+                        "hover:bg-general-tertiary focus-within:bg-general-tertiary transition-colors",
                     search && "pl-8",
                     showClear && "pr-8",
                     className,

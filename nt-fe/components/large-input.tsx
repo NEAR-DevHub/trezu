@@ -108,7 +108,7 @@ export function LargeInput({
                 value={value}
                 style={suffix ? { paddingRight: suffixWidth } : undefined}
                 className={cn(
-                    "h-12 shrink-0 p-0 bg-transparent!",
+                    "h-12 shrink-0 p-0",
                     "transition-[font-size] duration-200 ease-in-out",
                     search && "pl-10",
                     borderless &&

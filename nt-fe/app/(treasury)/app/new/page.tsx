@@ -116,6 +116,7 @@ function Step1({ handleNext }: StepProps) {
                     <InputBlock
                         title="Treasury Name"
                         invalid={!!fieldState.error}
+                        interactive
                     >
                         <LargeInput
                             borderless
@@ -163,6 +164,7 @@ function Step1({ handleNext }: StepProps) {
                 render={({ field, fieldState }) => (
                     <InputBlock
                         title="Account Name"
+                        interactive
                         info="This is your account's unique name. It will be used in your Treasury URL and shown in transactions to identify who sent the payment. Choose a short, recognizable name for your account."
                         invalid={!!fieldState.error}
                     >

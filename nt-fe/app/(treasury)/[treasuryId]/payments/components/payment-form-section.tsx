@@ -99,7 +99,11 @@ export function PaymentFormSection<
                 dynamicFontSize={true}
             />
 
-            <InputBlock title="To" invalid={!!recipient && !isRecipientValid}>
+            <InputBlock
+                interactive
+                title="To"
+                invalid={!!recipient && !isRecipientValid}
+            >
                 <AccountInput
                     blockchain={blockchainType}
                     value={recipient}

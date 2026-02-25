@@ -469,7 +469,8 @@ export default function BalanceWithGraph({
                         <ToggleGroup
                             type="single"
                             size="sm"
-                            variant={"outline"}
+                            variant={"default"}
+                            className="border border-input"
                             disabled={
                                 isLoadingTokens ||
                                 isLoading ||
@@ -481,7 +482,11 @@ export default function BalanceWithGraph({
                             }
                         >
                             {TIME_PERIODS.map((e) => (
-                                <ToggleGroupItem key={e} value={e}>
+                                <ToggleGroupItem
+                                    key={e}
+                                    value={e}
+                                    className="hover:text-foreground"
+                                >
                                     {e}
                                 </ToggleGroupItem>
                             ))}

@@ -137,6 +137,7 @@ export function TokenInput<
             name={amountName}
             render={({ field, fieldState }) => (
                 <InputBlock
+                    interactive={!readOnly}
                     title={title}
                     invalid={!!fieldState.error}
                     topRightContent={

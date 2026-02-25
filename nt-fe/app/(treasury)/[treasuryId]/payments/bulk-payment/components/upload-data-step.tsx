@@ -368,10 +368,11 @@ export function UploadDataStep({
                                                 {!uploadedFile ? (
                                                     <>
                                                         <div
-                                                            className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors ${isDragging
-                                                                ? "border-primary bg-primary/5"
-                                                                : "border-border bg-muted"
-                                                                }`}
+                                                            className={`border-2 border-dashed hover:bg-general-tertiary focus-within:bg-general-tertiary transition-colors rounded-lg p-4 text-center ${
+                                                                isDragging
+                                                                    ? "border-primary bg-primary/5"
+                                                                    : "border-border bg-muted"
+                                                            }`}
                                                             onDrop={handleDrop}
                                                             onDragOver={
                                                                 handleDragOver
@@ -466,21 +467,23 @@ export function UploadDataStep({
                                                     </>
                                                 ) : (
                                                     <div
-                                                        className={`rounded-lg p-4 flex items-center justify-between ${dataErrors &&
+                                                        className={`rounded-lg p-4 flex items-center justify-between ${
+                                                            dataErrors &&
                                                             dataErrors.length >
-                                                            0
-                                                            ? "bg-destructive/10 border border-destructive"
-                                                            : "bg-muted/50"
-                                                            }`}
+                                                                0
+                                                                ? "bg-destructive/10 border border-destructive"
+                                                                : "bg-muted/50"
+                                                        }`}
                                                     >
                                                         <div className="flex items-center gap-3">
                                                             <FileText
-                                                                className={`w-5 h-5 ${dataErrors &&
+                                                                className={`w-5 h-5 ${
+                                                                    dataErrors &&
                                                                     dataErrors.length >
-                                                                    0
-                                                                    ? "text-destructive"
-                                                                    : "text-primary"
-                                                                    }`}
+                                                                        0
+                                                                        ? "text-destructive"
+                                                                        : "text-primary"
+                                                                }`}
                                                             />
                                                             <div>
                                                                 <p className="text-sm font-medium">
@@ -519,12 +522,13 @@ export function UploadDataStep({
                                                                     null,
                                                                 );
                                                             }}
-                                                            className={`h-8 w-8 ${dataErrors &&
+                                                            className={`h-8 w-8 ${
+                                                                dataErrors &&
                                                                 dataErrors.length >
-                                                                0
-                                                                ? "text-destructive hover:text-destructive/80"
-                                                                : "text-muted-foreground hover:text-foreground"
-                                                                }`}
+                                                                    0
+                                                                    ? "text-destructive hover:text-destructive/80"
+                                                                    : "text-muted-foreground hover:text-foreground"
+                                                            }`}
                                                         >
                                                             <X className="w-4 h-4" />
                                                         </Button>
@@ -558,18 +562,20 @@ export function UploadDataStep({
                                                         if (
                                                             dataErrors &&
                                                             dataErrors.length >
-                                                            0
+                                                                0
                                                         ) {
                                                             setDataErrors(null);
                                                         }
                                                     }}
+                                                    borderless
                                                     placeholder={`alice.near, 100.00\nbob.near, 100.00\ncharlie.near, 100.00`}
                                                     rows={8}
-                                                    className={`resize-none font-mono text-sm bg-muted focus:outline-none ${dataErrors &&
+                                                    className={`resize-none font-mono text-sm bg-muted focus:outline-none ${
+                                                        dataErrors &&
                                                         dataErrors.length > 0
-                                                        ? "border-2 border-destructive focus:border-destructive"
-                                                        : ""
-                                                        }`}
+                                                            ? "border-2 border-destructive focus:border-destructive"
+                                                            : ""
+                                                    }`}
                                                     disabled={
                                                         availableCredits === 0
                                                     }
@@ -648,7 +654,10 @@ export function UploadDataStep({
                 {/* Credits Display */}
                 <PageCard
                     style={{
-                        backgroundColor: availableCredits === 0 ? "var(--color-general-info-background-faded)" : "var(--color-general-tertiary)",
+                        backgroundColor:
+                            availableCredits === 0
+                                ? "var(--color-general-info-background-faded)"
+                                : "var(--color-general-tertiary)",
                     }}
                     className="w-full"
                 >
@@ -664,6 +673,6 @@ export function UploadDataStep({
                     )}
                 </PageCard>
             </div>
-        </div >
+        </div>
     );
 }

@@ -45,7 +45,7 @@ export function ThresholdSlider({
 
     return (
         <div className="space-y-2">
-            <InputBlock invalid={false}>
+            <InputBlock invalid={false} interactive>
                 <div className="flex items-center justify-between text-sm mb-2">
                     {array.map((num) => (
                         <span
