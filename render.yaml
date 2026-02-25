@@ -3,7 +3,7 @@ services:
   - type: web
     name: near-treasury-backend
     runtime: rust
-    plan: starter
+    plan: standard
     rootDir: nt-be
     buildCommand: unset DATABASE_URL && cargo build --release --bin nt-be
     startCommand: ./target/release/nt-be
