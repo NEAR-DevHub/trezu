@@ -1,6 +1,7 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { ExpandedView } from "@/features/proposals";
 import { useProposal } from "@/hooks/use-proposals";
@@ -44,13 +45,39 @@ function RequestPageSkeleton() {
 export default function RequestPage({ params }: RequestPageProps) {
     const { id } = use(params);
     const { treasuryId } = useTreasury();
+    const queryClient = useQueryClient();
+    const cachedSubmissionTime = useMemo(() => {
+        const cachedQueries = queryClient.getQueriesData({
+            queryKey: ["proposals", treasuryId],
+        });
+
+        for (const [, queryData] of cachedQueries) {
+            const proposals = (
+                queryData as
+                    | { proposals?: { id: number; submission_time?: string }[] }
+                    | undefined
+            )?.proposals;
+            if (!proposals?.length) continue;
+
+            const matchedProposal = proposals.find(
+                (cachedProposal) => String(cachedProposal.id) === id,
+            );
+            if (matchedProposal?.submission_time) {
+                return matchedProposal.submission_time;
+            }
+        }
+
+        return null;
+    }, [id, queryClient, treasuryId]);
     const { data: proposal, isLoading: isLoadingProposal } = useProposal(
         treasuryId,
         id,
     );
+    const submissionTime = proposal?.submission_time ?? cachedSubmissionTime;
+    const canLoadPolicy = !!treasuryId && !!submissionTime;
     const { data: policy, isLoading: isLoadingPolicy } = useTreasuryPolicy(
-        treasuryId,
-        proposal?.submission_time,
+        canLoadPolicy ? treasuryId : null,
+        submissionTime,
     );
 
     const [isVoteModalOpen, setIsVoteModalOpen] = useState(false);
@@ -64,7 +91,7 @@ export default function RequestPage({ params }: RequestPageProps) {
         proposalIds: { proposalId: number; kind: ProposalPermissionKind }[];
     }>({ vote: "Approve", proposalIds: [] });
 
-    if (isLoadingProposal || isLoadingPolicy) {
+    if (isLoadingProposal || (canLoadPolicy && isLoadingPolicy)) {
         return (
             <PageComponentLayout
                 title={`Request #${id}`}
@@ -76,7 +103,11 @@ export default function RequestPage({ params }: RequestPageProps) {
         );
     }
 
-    if (!proposal || !policy) {
+    if (!proposal) {
+        redirect(`/${treasuryId}/requests`);
+    }
+
+    if (!policy) {
         redirect(`/${treasuryId}/requests`);
     }
 
