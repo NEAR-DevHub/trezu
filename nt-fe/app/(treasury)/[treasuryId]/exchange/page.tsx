@@ -19,7 +19,7 @@ import { useSearchParams } from "next/navigation";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useNear } from "@/stores/near-store";
 import { useThemeStore } from "@/stores/theme-store";
-import { cn, formatBalance } from "@/lib/utils";
+import { cn, formatBalance, formatSmartAmount } from "@/lib/utils";
 import { NEAR_TOKEN } from "@/constants/token";
 import { CreateRequestButton } from "@/components/create-request-button";
 import { ArrowDown, ChevronRight, Loader2 } from "lucide-react";
@@ -543,7 +543,8 @@ function Step2({ handleBack }: StepProps) {
                                             </span>
                                         ),
                                     },
-                                    {
+                                    // Don't show Widget Fee for NEAR ↔ wNEAR conversions
+                                    ...(!isWrapConversion ? [{
                                         label: "Widget Fee",
                                         value: (() => {
                                             // Calculate fee: amountIn * 0.35% = amountIn * 0.0035
@@ -551,10 +552,10 @@ function Step2({ handleBack }: StepProps) {
                                             const amountIn = Number(localLiveQuoteData.quote.amountInFormatted) || 0;
                                             const feeAmount = amountIn * (feePercentage / 100);
 
-                                            return `${feePercentage}% / ${feeAmount.toFixed(6)} ${sellToken.symbol}`;
+                                            return `${feePercentage}% / ${formatSmartAmount(feeAmount)} ${sellToken.symbol}`;
                                         })(),
                                         info: "The fee applied here is charged by Trezu for operating this widget. It is automatically included in the quote."
-                                    },
+                                    }] : []),
                                 ]}
                             />
                         </div>
