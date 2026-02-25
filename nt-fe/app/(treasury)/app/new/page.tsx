@@ -274,6 +274,26 @@ function Step2({ handleBack, handleNext }: StepProps) {
         m.roles.includes("governance"),
     ).length;
 
+    useEffect(() => {
+        const currentPayment = form.getValues("details.paymentThreshold");
+        if (currentPayment > financialMembers) {
+            form.setValue(
+                "details.paymentThreshold",
+                Math.max(1, financialMembers),
+            );
+        }
+    }, [financialMembers]);
+
+    useEffect(() => {
+        const currentGovernance = form.getValues("details.governanceThreshold");
+        if (currentGovernance > governanceMembers) {
+            form.setValue(
+                "details.governanceThreshold",
+                Math.max(1, governanceMembers),
+            );
+        }
+    }, [governanceMembers]);
+
     return (
         <PageCard>
             <StepperHeader
