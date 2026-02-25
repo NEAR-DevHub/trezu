@@ -41,7 +41,7 @@ pub fn build_where_conditions(filters: &BalanceChangeFilters) -> (Vec<String>, u
         "counterparty != 'SNAPSHOT'".to_string(),
         "counterparty != 'STAKING_SNAPSHOT'".to_string(),
         "counterparty != 'NOT_REGISTERED'".to_string(),
-        "action_kind != 'CreateAccount'".to_string(),
+        "(action_kind IS NULL OR action_kind != 'CreateAccount')".to_string(),
         RELAYER_WHERE_CONDITION.to_string(),
         // Exclude swap deposit legs - these are shown as part of the swap fulfillment
         format!(
