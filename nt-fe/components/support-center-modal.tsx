@@ -9,12 +9,12 @@ import {
 import {
     APP_DEMO_URL,
     APP_DOCS_URL,
-    APP_LEARN_URL,
+    APP_ACTIVE_TREASURY,
     APP_TWITTER_URL,
-    APP_SUPPORT_URL,
 } from "@/constants/config";
 import Link from "next/link";
 import { CirclePlay, Eye, File, Headphones } from "lucide-react";
+import Gleap from "gleap";
 
 function XIcon({ className }: { className?: string }) {
     return (
@@ -28,23 +28,50 @@ interface SupportItemProps {
     icon: React.ReactNode;
     title: string;
     description: string;
-    href: string;
+    href?: string;
+    onClick?: () => void;
+    closeModal?: () => void;
 }
 
-function SupportItem({ icon, title, description, href }: SupportItemProps) {
-    return (
-        <Link
-            href={href}
-            target="_blank"
-            className="flex bg-secondary items-center gap-2 p-2 rounded-6 hover:bg-general-tertiary transition-colors"
-        >
+function SupportItem({
+    icon,
+    title,
+    description,
+    href,
+    onClick,
+    closeModal,
+}: SupportItemProps) {
+    const className =
+        "flex bg-secondary items-center gap-2 p-2 rounded-6 hover:bg-general-tertiary transition-colors";
+    const content = (
+        <>
             <div className="shrink-0 text-foreground">{icon}</div>
-            <div className="flex flex-col min-w-0">
+            <div className="flex flex-col min-w-0 items-start">
                 <span className="text-sm text-foreground">{title}</span>
                 <span className="text-sm text-muted-foreground">
                     {description}
                 </span>
             </div>
+        </>
+    );
+
+    if (onClick) {
+        return (
+            <button
+                className={className}
+                onClick={() => {
+                    onClick();
+                    closeModal?.();
+                }}
+            >
+                {content}
+            </button>
+        );
+    }
+
+    return (
+        <Link href={href!} target="_blank" className={className}>
+            {content}
         </Link>
     );
 }
@@ -52,20 +79,20 @@ function SupportItem({ icon, title, description, href }: SupportItemProps) {
 const resourceItems: SupportItemProps[] = [
     {
         icon: <Eye className="size-5" />,
-        title: "See Active Treasuries",
-        description: "Explore and see other accounts in action",
-        href: APP_LEARN_URL,
+        title: "See Active Treasury",
+        description: "Explore and see other account in action.",
+        href: APP_ACTIVE_TREASURY,
     },
     {
         icon: <CirclePlay className="size-5" />,
         title: "View Demo",
-        description: "Watch the demo to explore how the Treasury works",
+        description: "Watch the demo to explore how the Treasury works.",
         href: APP_DEMO_URL,
     },
     {
         icon: <XIcon className="size-5" />,
         title: "Follow Us on X",
-        description: "Follow Us on X for updates, releases and insights",
+        description: "Follow Us on X for updates, releases and insights.",
         href: APP_TWITTER_URL,
     },
 ];
@@ -74,14 +101,16 @@ const supportItems: SupportItemProps[] = [
     {
         icon: <File className="size-5" />,
         title: "App Docs",
-        description: "Learn all features in the docs",
+        description: "Learn all features in the docs.",
         href: APP_DOCS_URL,
     },
     {
         icon: <Headphones className="size-5" />,
         title: "Product Support",
-        description: "Get help from our support team",
-        href: APP_SUPPORT_URL,
+        description: "Get help from our support team.",
+        onClick: () => {
+            Gleap.open();
+        },
     },
 ];
 
@@ -121,7 +150,11 @@ export function SupportCenterModal({
                         </span>
                         <div className="flex flex-col gap-3">
                             {supportItems.map((item) => (
-                                <SupportItem key={item.title} {...item} />
+                                <SupportItem
+                                    key={item.title}
+                                    {...item}
+                                    closeModal={() => onOpenChange(false)}
+                                />
                             ))}
                         </div>
                     </div>

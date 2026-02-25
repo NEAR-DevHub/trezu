@@ -1,6 +1,10 @@
 "use client";
 
-import { APP_DEMO_URL, APP_DOCS_URL, APP_LEARN_URL } from "@/constants/config";
+import {
+    APP_DEMO_URL,
+    APP_DOCS_URL,
+    APP_ACTIVE_TREASURY,
+} from "@/constants/config";
 import Link from "next/link";
 import { CirclePlay, Eye, File, X } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -38,9 +42,9 @@ function InfoItem({ icon, title, description, href }: InfoItemProps) {
 const infoItems: InfoItemProps[] = [
     {
         icon: <Eye className="size-4" />,
-        title: "See Active Treasuries",
-        description: "Explore and see other accounts in action.",
-        href: APP_LEARN_URL,
+        title: "See Active Treasury",
+        description: "Explore and see other account in action.",
+        href: APP_ACTIVE_TREASURY,
     },
     {
         icon: <File className="size-4" />,

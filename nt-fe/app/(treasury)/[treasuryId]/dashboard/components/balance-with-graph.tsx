@@ -406,6 +406,11 @@ export default function BalanceWithGraph({
                             <SelectTrigger
                                 size="sm"
                                 className="min-w-[140px] w-full"
+                                disabled={
+                                    isLoadingTokens ||
+                                    isLoading ||
+                                    chartData.data.length === 0
+                                }
                             >
                                 <SelectValue>
                                     {selectedToken === "all" ? (
@@ -465,6 +470,11 @@ export default function BalanceWithGraph({
                             type="single"
                             size="sm"
                             variant={"outline"}
+                            disabled={
+                                isLoadingTokens ||
+                                isLoading ||
+                                chartData.data.length === 0
+                            }
                             value={selectedPeriod}
                             onValueChange={(e) =>
                                 e && setSelectedPeriod(e as TimePeriod)

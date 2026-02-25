@@ -126,16 +126,18 @@ function WalletSuggestionModal({
                         <WalletSuggestionItem key={item.name} {...item} />
                     ))}
                 </div>
-                <p className="text-sm text-muted-foreground text-center">
-                    Need help getting started?{" "}
-                    <Link
-                        href={APP_WALLET_SETUP_URL}
-                        target="_blank"
-                        className="text-foreground font-medium hover:text-primary/80"
-                    >
-                        View setup guide
-                    </Link>
-                </p>
+                {APP_WALLET_SETUP_URL && (
+                    <p className="text-sm text-muted-foreground text-center">
+                        Need help getting started?{" "}
+                        <Link
+                            href={APP_WALLET_SETUP_URL}
+                            target="_blank"
+                            className="text-foreground font-medium hover:text-primary/80"
+                        >
+                            View setup guide
+                        </Link>
+                    </p>
+                )}
             </DialogContent>
         </Dialog>
     );

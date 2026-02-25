@@ -388,7 +388,6 @@ export function ReviewPaymentsStep({
                             type="button"
                             variant="destructive"
                             className="w-full"
-                            size="lg"
                             onClick={() =>
                                 recipientToRemove &&
                                 handleRemovePayment(recipientToRemove.index)

@@ -113,18 +113,6 @@ export const DASHBOARD_TOUR: Tour = {
             pointerPadding: 8,
             pointerRadius: 8,
         },
-        {
-            icon: null,
-            title: "",
-            content: (
-                <>Here you can view your treasury's balance and transactions.</>
-            ),
-            side: "bottom-right",
-            showControls: false,
-            disableInteraction: true,
-            blockKeyboardControl: true,
-            showSkip: false,
-        },
     ],
 };
 
@@ -208,9 +196,8 @@ export function WelcomeTooltip() {
             {currentStep === 1 ? (
                 <>
                     <p className="py-2 text-xs">
-                        Hey there! You can now manage assets across all
-                        supported networks. To get you started, we've sponsored
-                        a little NEAR balance so you can try things out
+                        Hey there! Your Trezu is ready - start building your
+                        portfolio by adding assets from supported networks.{" "}
                     </p>
                     <div className="pt-2 flex justify-between items-center">
                         <span className="text-xs text-popover/70">
