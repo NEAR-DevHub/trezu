@@ -48,3 +48,6 @@ package-lock.json
 
 # Generated from src/ledger-wallet/
 public/ledger-wallet/*.js
+
+# Sentry Config File
+.env.sentry-build-plugin
