@@ -235,10 +235,23 @@ pub async fn detect_swaps_from_api(
             continue;
         };
 
-        // Find the receive (positive) record that matches the destination asset
+        // Find the receive (positive) record that matches the destination asset.
+        // Exclude records whose token matches the origin asset (e.g. USDC fee refunds)
+        // since the fulfillment should be the destination token (e.g. SOL).
+        let origin_intents_token = format!("intents.near:{}", api_tx.origin_asset);
         let fulfillment_record = matching_records
             .iter()
-            .find(|r| r.is_positive() && r.token_id_str().starts_with(INTENTS_PREFIX));
+            .find(|r| {
+                r.is_positive()
+                    && r.token_id_str().starts_with(INTENTS_PREFIX)
+                    && r.token_id_str() != origin_intents_token
+            })
+            .or_else(|| {
+                // Fallback: if no non-origin match (e.g. same-token bridge), pick any positive intents record
+                matching_records
+                    .iter()
+                    .find(|r| r.is_positive() && r.token_id_str().starts_with(INTENTS_PREFIX))
+            });
 
         let Some(fulfillment) = fulfillment_record else {
             log::debug!(
