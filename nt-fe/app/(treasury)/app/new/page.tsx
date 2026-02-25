@@ -9,6 +9,7 @@ import {
     StepWizard,
     InlineNextButton,
 } from "@/components/step-wizard";
+import { Button } from "@/components/button";
 import { Form, FormField, FormMessage } from "@/components/ui/form";
 import { LargeInput } from "@/components/large-input";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,14 +23,12 @@ import {
 } from "@/lib/api";
 import { Member, MemberInput, memberSchema } from "@/components/member-input";
 import { useNear } from "@/stores/near-store";
-import { ThresholdSlider } from "@/components/threshold";
-import { CircleCheck, Database, UsersRound, Vote } from "lucide-react";
+import { Database, Minus, Plus, UsersRound, Vote } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { ROLES } from "@/components/role-selector";
-import { Alert } from "@/components/ui/alert";
-import { AlertDescription } from "@/components/alert";
+import { Alert, AlertDescription } from "@/components/alert";
 import { useTreasury } from "@/hooks/use-treasury";
 
 const treasuryFormSchema = z
@@ -49,6 +48,7 @@ const treasuryFormSchema = z
                         "Account name can contain only Latin letters, numbers, and hyphens",
                     ),
                 paymentThreshold: z.number().min(1).max(100),
+                governanceThreshold: z.number().min(1).max(100),
             })
             .refine(
                 async (data) => {
@@ -199,6 +199,55 @@ function Step1({ handleNext }: StepProps) {
     );
 }
 
+function Threshold({
+    title,
+    description,
+    value,
+    onChange,
+    max,
+}: {
+    title: string;
+    description: string;
+    value: number;
+    onChange: (v: number) => void;
+    max: number;
+}) {
+    const canDecrement = value > 1;
+    const canIncrement = value < max;
+
+    return (
+        <div className="flex items-center gap-4">
+            <div className="flex flex-col flex-1 min-w-0">
+                <h3 className="font-medium text-sm">{title}</h3>
+                <p className="text-sm text-muted-foreground">{description}</p>
+            </div>
+            <div className="flex items-center gap-4 shrink-0">
+                <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon-sm"
+                    onClick={() => onChange(value - 1)}
+                    disabled={!canDecrement}
+                >
+                    <Minus className="size-4 text-secondary-foreground" />
+                </Button>
+                <span className="text-sm w-[21px] text-center">
+                    {value}/{max}
+                </span>
+                <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon-sm"
+                    onClick={() => onChange(value + 1)}
+                    disabled={!canIncrement}
+                >
+                    <Plus className="size-4 text-secondary-foreground" />
+                </Button>
+            </div>
+        </div>
+    );
+}
+
 function Step2({ handleBack, handleNext }: StepProps) {
     const form = useFormContext<TreasuryFormValues>();
 
@@ -212,6 +261,9 @@ function Step2({ handleBack, handleNext }: StepProps) {
     const { members } = form.watch();
     const financialMembers = members.filter((m: Member) =>
         m.roles.includes("financial"),
+    ).length;
+    const governanceMembers = members.filter((m: Member) =>
+        m.roles.includes("governance"),
     ).length;
 
     return (
@@ -228,29 +280,42 @@ function Step2({ handleBack, handleNext }: StepProps) {
                     mode="onboarding"
                     name={`members` as ArrayPath<TreasuryFormValues>}
                 />
-
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-3">
                     <div className="flex flex-col gap-1">
-                        <h3 className="font-semibold">
-                            Payment-Related Voting Threshold
-                        </h3>
+                        <h3 className="font-semibold">Voting Threshold</h3>
                         <p className="text-sm text-muted-foreground">
-                            Select how many Financial votes are required to
-                            approve payment-related requests. This setting can
-                            be changed at any time.
+                            Set how many votes are required to approve requests:
                         </p>
                     </div>
-                    <FormField
-                        control={form.control}
-                        name="details.paymentThreshold"
-                        render={({ field }) => (
-                            <ThresholdSlider
-                                currentThreshold={field.value}
-                                memberCount={financialMembers}
-                                onValueChange={field.onChange}
-                            />
-                        )}
-                    />
+
+                    <div className="flex flex-col gap-4">
+                        <FormField
+                            control={form.control}
+                            name="details.paymentThreshold"
+                            render={({ field }) => (
+                                <Threshold
+                                    title="Financial"
+                                    description="Approving payment & exchange requests."
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    max={financialMembers}
+                                />
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="details.governanceThreshold"
+                            render={({ field }) => (
+                                <Threshold
+                                    title="Governance"
+                                    description="Approving settings, members, and voting configuration."
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    max={governanceMembers}
+                                />
+                            )}
+                        />
+                    </div>
                 </div>
                 <InlineNextButton
                     text="Review Treasury"
@@ -268,7 +333,11 @@ const VISUAL = [
     },
     {
         icon: <Vote className="size-5 text-foreground" />,
-        title: "Threshold",
+        title: "Financial Threshold",
+    },
+    {
+        icon: <Vote className="size-5 text-foreground" />,
+        title: "Governance Threshold",
     },
 ] as const;
 
@@ -279,8 +348,13 @@ function Step3({ handleBack }: StepProps) {
     const financialMembers = members.filter((m: Member) =>
         m.roles.includes("financial"),
     ).length;
-    const threshold = details.paymentThreshold;
-    const thresholdVisual = `${threshold}/${financialMembers}`;
+    const governanceMembers = members.filter((m: Member) =>
+        m.roles.includes("governance"),
+    ).length;
+    const financialThreshold = details.paymentThreshold;
+    const governanceThreshold = details.governanceThreshold;
+    const financialThresholdVisual = `${financialThreshold}/${financialMembers}`;
+    const governanceThresholdVisual = `${governanceThreshold}/${governanceMembers}`;
 
     return (
         <PageCard>
@@ -303,7 +377,11 @@ function Step3({ handleBack }: StepProps) {
                     </div>
                 </InputBlock>
                 <div className="grid md:grid-cols-3 grid-cols-1 gap-2">
-                    {[members.length, thresholdVisual].map((item, index) => (
+                    {[
+                        members.length,
+                        financialThresholdVisual,
+                        governanceThresholdVisual,
+                    ].map((item, index) => (
                         <InputBlock invalid={false} key={index}>
                             <div className="flex flex-col px-3.5 py-3 gap-1 items-center justify-center">
                                 {VISUAL[index].icon}
@@ -314,27 +392,12 @@ function Step3({ handleBack }: StepProps) {
                             </div>
                         </InputBlock>
                     ))}
-
-                    <InputBlock invalid={false}>
-                        <div className="flex flex-col px-3.5 py-3 gap-1 items-center justify-center">
-                            <CircleCheck className="size-5" />
-                            <p className="font-semibold text-[15px] text-muted-foreground">
-                                <span className="line-through">~0.25 NEAR</span>{" "}
-                                <span className="text-general-success-foreground">
-                                    Free
-                                </span>
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                                Deployment Fee
-                            </p>
-                        </div>
-                    </InputBlock>
                 </div>
             </div>
 
             <Alert variant="info">
                 <AlertDescription>
-                    <p className="inline-block">
+                    <p className="inline-block text-xs">
                         <div className="font-semibold">
                             🎉 No deployment fee
                         </div>
@@ -363,6 +426,7 @@ export default function NewTreasuryPage() {
         defaultValues: {
             details: {
                 paymentThreshold: 1,
+                governanceThreshold: 1,
                 treasuryName: "",
                 accountName: "",
             },
@@ -403,6 +467,7 @@ export default function NewTreasuryPage() {
                 name: data.details.treasuryName,
                 accountId: `${data.details.accountName}.sputnik-dao.near`,
                 paymentThreshold: data.details.paymentThreshold,
+                governanceThreshold: data.details.governanceThreshold,
                 governors,
                 financiers,
                 requestors,

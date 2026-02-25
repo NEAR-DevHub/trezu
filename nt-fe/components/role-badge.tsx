@@ -1,36 +1,50 @@
 import { Tooltip } from "@/components/tooltip";
 import { getRoleDescription } from "@/lib/role-utils";
 import { formatRoleName } from "@/components/role-name";
+import { cva } from "class-variance-authority";
 
 interface RoleBadgeProps {
-  role: string;
-  variant?: "pill" | "rounded";
-  showTooltip?: boolean;
+    role: string;
+    variant?: "pill" | "rounded";
+    style?: "default" | "secondary";
+    showTooltip?: boolean;
 }
 
-export function RoleBadge({ role, variant = "pill", showTooltip = true }: RoleBadgeProps) {
-  const description = getRoleDescription(role);
-  const displayName = formatRoleName(role);
+const styles = cva("px-3 py-1 text-sm font-medium capitalize", {
+    variants: {
+        variant: {
+            pill: "rounded-full",
+            rounded: "rounded-md",
+        },
+        style: {
+            default: "bg-muted text-foreground",
+            secondary: "bg-card text-card-foreground",
+        },
+    },
+    defaultVariants: {
+        variant: "pill",
+        style: "default",
+    },
+});
 
-  const badge = (
-    <span
-      className={`px-3 py-1 bg-muted text-foreground text-sm font-medium ${variant === "pill" ? "rounded-full" : "rounded-md"
-        }`}
-    >
-      {displayName}
-    </span>
-  );
+export function RoleBadge({
+    role,
+    variant = "pill",
+    style = "default",
+    showTooltip = true,
+}: RoleBadgeProps) {
+    const description = getRoleDescription(role);
+    const displayName = formatRoleName(role);
 
-  // If we have description and tooltip is enabled, wrap in tooltip
-  if (showTooltip && description) {
-    return (
-      <Tooltip content={description}>
-        {badge}
-      </Tooltip>
+    const badge = (
+        <span className={styles({ variant, style })}>{displayName}</span>
     );
-  }
 
-  // No description or tooltip disabled, just return the badge
-  return badge;
+    // If we have description and tooltip is enabled, wrap in tooltip
+    if (showTooltip && description) {
+        return <Tooltip content={description}>{badge}</Tooltip>;
+    }
+
+    // No description or tooltip disabled, just return the badge
+    return badge;
 }
-

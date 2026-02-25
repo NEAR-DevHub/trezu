@@ -11,15 +11,13 @@ import {
     PathValue,
     useFieldArray,
     useFormContext,
-    useWatch,
 } from "react-hook-form";
 import z from "zod";
 import { AccountIdInput, accountIdSchema } from "./account-id-input";
 import { ROLES, RoleSelector } from "./role-selector";
-import { Pill } from "./pill";
 import { Plus, Trash2 } from "lucide-react";
-import { Tooltip } from "./tooltip";
 import { cn } from "@/lib/utils";
+import { RoleBadge } from "./role-badge";
 
 export const memberSchema = z
     .array(
@@ -99,7 +97,7 @@ export function MemberInput<
     const showCreatorLabel = isOnboarding;
     const hideAddButton = isEditMode;
     const disableAllInputs = isEditMode;
-    const defaultRoles = isOnboarding ? ["requestor"] : [];
+    const defaultRoles: string[] = [];
 
     return (
         <InputBlock invalid={false} className="p-0">
@@ -192,12 +190,14 @@ export function MemberInput<
                                                     }
                                                 />
                                             ) : (
-                                                <FullAccessTooltip>
-                                                    <Pill
-                                                        title={"All Roles"}
-                                                        variant="secondary"
+                                                ROLES.map((role) => (
+                                                    <RoleBadge
+                                                        key={role.id}
+                                                        role={role.id}
+                                                        variant="pill"
+                                                        style="secondary"
                                                     />
-                                                </FullAccessTooltip>
+                                                ))
                                             )}
                                         </>
                                     );
@@ -266,30 +266,5 @@ export function MemberInput<
                 )}
             </div>
         </InputBlock>
-    );
-}
-
-interface FullAccessTooltipProps {
-    children: React.ReactNode;
-}
-
-export function FullAccessTooltip({ children }: FullAccessTooltipProps) {
-    return (
-        <Tooltip
-            content={
-                <div className="space-y-3">
-                    {ROLES.map((role) => (
-                        <div key={role.title}>
-                            <p className="font-semibold mb-1">{role.title}</p>
-                            <p className="text-xs">{role.description}</p>
-                        </div>
-                    ))}
-                </div>
-            }
-            triggerProps={{ asChild: false }}
-            contentProps={{ className: "max-w-[320px]", side: "right" }}
-        >
-            {children}
-        </Tooltip>
     );
 }

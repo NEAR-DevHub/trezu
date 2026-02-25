@@ -21,6 +21,7 @@ pub struct CreateTreasuryRequest {
     pub name: String,
     pub account_id: AccountId,
     pub payment_threshold: u8,
+    pub governance_threshold: u8,
     pub governors: Vec<AccountId>,
     pub financiers: Vec<AccountId>,
     pub requestors: Vec<AccountId>,
@@ -36,6 +37,12 @@ fn prepare_args(payload: CreateTreasuryRequest) -> Result<serde_json::Value, ser
       "weight_kind": "RoleWeight",
       "quorum": "0",
       "threshold": "1",
+    });
+
+    let governance_threshold = serde_json::json!({
+      "weight_kind": "RoleWeight",
+      "quorum": "0",
+      "threshold": payload.governance_threshold.to_string(),
     });
 
     let payment_threshold = serde_json::json!({
@@ -90,20 +97,20 @@ fn prepare_args(payload: CreateTreasuryRequest) -> Result<serde_json::Value, ser
               "policy_update_parameters:*",
             ],
             "vote_policy": {
-              "config": one_required_vote.clone(),
-              "policy": one_required_vote.clone(),
-              "add_member_to_role": one_required_vote.clone(),
-              "remove_member_from_role": one_required_vote.clone(),
-              "upgrade_self": one_required_vote.clone(),
-              "upgrade_remote": one_required_vote.clone(),
-              "set_vote_token": one_required_vote.clone(),
-              "add_bounty": one_required_vote.clone(),
-              "bounty_done": one_required_vote.clone(),
-              "factory_info_update": one_required_vote.clone(),
-              "policy_add_or_update_role": one_required_vote.clone(),
-              "policy_remove_role": one_required_vote.clone(),
-              "policy_update_default_vote_policy": one_required_vote.clone(),
-              "policy_update_parameters": one_required_vote.clone(),
+              "config": governance_threshold.clone(),
+              "policy": governance_threshold.clone(),
+              "add_member_to_role": governance_threshold.clone(),
+              "remove_member_from_role": governance_threshold.clone(),
+              "upgrade_self": governance_threshold.clone(),
+              "upgrade_remote": governance_threshold.clone(),
+              "set_vote_token": governance_threshold.clone(),
+              "add_bounty": governance_threshold.clone(),
+              "bounty_done": governance_threshold.clone(),
+              "factory_info_update": governance_threshold.clone(),
+              "policy_add_or_update_role": governance_threshold.clone(),
+              "policy_remove_role": governance_threshold.clone(),
+              "policy_update_default_vote_policy": governance_threshold.clone(),
+              "policy_update_parameters": governance_threshold.clone(),
             },
           },
           {

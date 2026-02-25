@@ -44,7 +44,7 @@ export function Button({
         case "lg":
             sizeClassName = "h-13 font-semibold text-lg";
             break;
-        default:
+        case "default":
             sizeClassName = "py-[5.5px]! px-5! gap-1.5 rounded-[8px]";
     }
     const button = (

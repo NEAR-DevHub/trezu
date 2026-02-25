@@ -735,6 +735,7 @@ export interface CreateTreasuryRequest {
     name: string;
     accountId: string;
     paymentThreshold: number;
+    governanceThreshold: number;
     governors: string[];
     financiers: string[];
     requestors: string[];
