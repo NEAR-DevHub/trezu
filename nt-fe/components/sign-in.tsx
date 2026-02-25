@@ -87,13 +87,13 @@ export function SignIn() {
                     <ChevronDown className="h-4 w-4 text-muted-foreground hidden sm:inline" />
                 </button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-48 p-0">
+            <PopoverContent align="end" className="w-48 p-1">
                 <div className="px-3 py-2">
                     <Address address={signedAccountId} />
                 </div>
                 <Link
                     href="/terms"
-                    className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors"
+                    className="flex items-center rounded-6 gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors"
                     onClick={() => setIsOpen(false)}
                 >
                     <FileText className="h-4 w-4" />
@@ -101,7 +101,7 @@ export function SignIn() {
                 </Link>
                 <Link
                     href="/privacy"
-                    className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors"
+                    className="flex items-center rounded-6 gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors"
                     onClick={() => setIsOpen(false)}
                 >
                     <FileText className="h-4 w-4" />
@@ -109,7 +109,7 @@ export function SignIn() {
                 </Link>
                 <div className="border-t border-border dark:border-general-border">
                     <button
-                        className="flex items-center gap-2 px-3 py-2 text-sm w-full hover:bg-muted transition-colors"
+                        className="flex items-center rounded-6 gap-2 px-3 py-2 text-sm w-full hover:bg-muted transition-colors"
                         onClick={() => {
                             disconnect();
                             setIsOpen(false);
