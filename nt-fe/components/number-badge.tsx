@@ -1,12 +1,41 @@
 import { cn } from "@/lib/utils";
+import { cva } from "class-variance-authority";
 
-export function NumberBadge({ number, variant = "default" }: { number: number, variant?: "default" | "secondary" }) {
-    const variants = {
-        default: "bg-orange-500 text-white",
-        secondary: "bg-muted text-muted-foreground",
-    }
+const styles = cva(
+    "flex items-center justify-center rounded-[8px] text-xs font-semibold",
+    {
+        variants: {
+            variant: {
+                default: "bg-orange-500 text-white",
+                secondary: "bg-muted text-muted-foreground",
+                accent: "bg-general-unofficial-border text-foreground",
+            },
+            sizes: {
+                default: "size-5 px-2 py-[3px]",
+                sm: "size-4 px-1 py-px",
+            },
+        },
+        defaultVariants: {
+            variant: "default",
+            sizes: "default",
+        },
+    },
+);
+
+export function NumberBadge({
+    number,
+    variant = "default",
+    sizes = "default",
+}: {
+    number: number;
+    variant?: "default" | "secondary" | "accent";
+    sizes?: "default" | "sm";
+}) {
     return (
-        <span aria-label={`${number} pending requests`} className={cn("flex size-5 items-center justify-center rounded-[8px] px-2 py-[3px] text-xs font-semibold", variants[variant])}>
+        <span
+            aria-label={`${number} pending requests`}
+            className={styles({ variant, sizes })}
+        >
             {number}
         </span>
     );

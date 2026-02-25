@@ -15,7 +15,6 @@ import {
 import { hasPermission } from "@/lib/config-utils";
 import { useProposals } from "@/hooks/use-proposals";
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { encodeToMarkdown } from "@/lib/utils";
 import { MemberModal } from "./components/modals/member-modal";
 import { PreviewModal } from "./components/modals/preview-modal";
@@ -243,10 +242,16 @@ export default function MembersPage() {
 
     // Check for URL parameters to pre-fill add member modal
     useEffect(() => {
-        const memberParam = searchParams.get('member');
-        const rolesParam = searchParams.get('roles');
+        const memberParam = searchParams.get("member");
+        const rolesParam = searchParams.get("roles");
 
-        if (memberParam && canAddMember && !isAddMemberModalOpen && availableRoles.length > 0 && !hasProcessedUrlParams.current) {
+        if (
+            memberParam &&
+            canAddMember &&
+            !isAddMemberModalOpen &&
+            availableRoles.length > 0 &&
+            !hasProcessedUrlParams.current
+        ) {
             // Mark as processed
             hasProcessedUrlParams.current = true;
 
@@ -254,27 +259,40 @@ export default function MembersPage() {
             let rolesToAdd: string[] = [];
 
             if (rolesParam) {
-                const requestedRoles = rolesParam.split(',').map(r => r.trim()).filter(Boolean);
+                const requestedRoles = rolesParam
+                    .split(",")
+                    .map((r) => r.trim())
+                    .filter(Boolean);
 
                 // Match requested roles with actual policy role names (case-insensitive)
                 rolesToAdd = requestedRoles
-                    .map(requestedRole => {
+                    .map((requestedRole) => {
                         return availableRoles.find(
-                            policyRole => policyRole.name.toLowerCase() === requestedRole.toLowerCase()
+                            (policyRole) =>
+                                policyRole.name.toLowerCase() ===
+                                requestedRole.toLowerCase(),
                         )?.name;
                     })
                     .filter((role): role is string => role !== undefined);
             }
 
             // Set form values and open modal (even if no valid roles found, just add the account)
-            form.setValue('members', [{
-                accountId: memberParam,
-                roles: rolesToAdd
-            }]);
+            form.setValue("members", [
+                {
+                    accountId: memberParam,
+                    roles: rolesToAdd,
+                },
+            ]);
 
             setIsAddMemberModalOpen(true);
         }
-    }, [searchParams, canAddMember, isAddMemberModalOpen, form, availableRoles]);
+    }, [
+        searchParams,
+        canAddMember,
+        isAddMemberModalOpen,
+        form,
+        availableRoles,
+    ]);
 
     // Use member validation hook - use existingMembers
     const { canModifyMember, canDeleteBulk, canRemoveRoleFromMember } =
@@ -291,7 +309,8 @@ export default function MembersPage() {
             const disabledRoles: { roleId: string; reason: string }[] = [];
 
             // Special check for nearn-io.near account
-            const isNearnIoAccount = accountId.toLowerCase() === NEARN_IO_ACCOUNT.toLowerCase();
+            const isNearnIoAccount =
+                accountId.toLowerCase() === NEARN_IO_ACCOUNT.toLowerCase();
 
             if (isNearnIoAccount) {
                 // For nearn-io accounts, use priority-based role selection
@@ -300,29 +319,35 @@ export default function MembersPage() {
 
                 // Step 1: Check if any roles have :AddProposal
                 const rolesWithAddProposal = availableRoles.filter((role) =>
-                    role.permissions.some((perm) => perm.includes(':AddProposal'))
+                    role.permissions.some((perm) =>
+                        perm.includes(":AddProposal"),
+                    ),
                 );
 
                 // Step 2: If no :AddProposal roles, check for :* roles
-                const rolesWithFullWildcard = rolesWithAddProposal.length === 0
-                    ? availableRoles.filter((role) =>
-                        role.permissions.some((perm) => perm === ':*')
-                    )
-                    : [];
+                const rolesWithFullWildcard =
+                    rolesWithAddProposal.length === 0
+                        ? availableRoles.filter((role) =>
+                              role.permissions.some((perm) => perm === ":*"),
+                          )
+                        : [];
 
                 // Determine which roles are allowed based on priority
-                const allowedRoles = rolesWithAddProposal.length > 0
-                    ? rolesWithAddProposal
-                    : rolesWithFullWildcard;
+                const allowedRoles =
+                    rolesWithAddProposal.length > 0
+                        ? rolesWithAddProposal
+                        : rolesWithFullWildcard;
 
                 // Disable all roles that are not in the allowed list
                 availableRoles.forEach((role) => {
-                    const isAllowed = allowedRoles.some((allowedRole) => allowedRole.name === role.name);
+                    const isAllowed = allowedRoles.some(
+                        (allowedRole) => allowedRole.name === role.name,
+                    );
 
                     if (!isAllowed) {
                         disabledRoles.push({
                             roleId: role.name,
-                            reason: 'You can only add the Requestor role for this member, as they are responsible for creating payment requests from NEARN.',
+                            reason: "You can only add the Requestor role for this member, as they are responsible for creating payment requests from NEARN.",
                         });
                     }
                 });
@@ -331,7 +356,9 @@ export default function MembersPage() {
             }
 
             // Check if this is edit mode (member already exists in existingMembers)
-            const isEditMode = existingMembers.some(m => m.accountId === accountId);
+            const isEditMode = existingMembers.some(
+                (m) => m.accountId === accountId,
+            );
 
             // For add mode, skip the role validation checks
             if (!isEditMode) {
@@ -361,7 +388,9 @@ export default function MembersPage() {
                 const newRoles = formMember.roles || [];
 
                 // Find original member to see what they had before
-                const originalMember = existingMembers.find(m => m.accountId === memberId);
+                const originalMember = existingMembers.find(
+                    (m) => m.accountId === memberId,
+                );
                 if (!originalMember) return;
 
                 // Remove member from roles they no longer have
@@ -386,8 +415,14 @@ export default function MembersPage() {
                 const membersWithRoleAfterEdits = finalRoleMembersMap.get(role);
 
                 // If removing this role from current member would leave role empty
-                if (membersWithRoleAfterEdits && membersWithRoleAfterEdits.size === 1 && membersWithRoleAfterEdits.has(accountId)) {
-                    const hasGovernance = role.toLowerCase().includes("governance") || role.toLowerCase().includes("admin");
+                if (
+                    membersWithRoleAfterEdits &&
+                    membersWithRoleAfterEdits.size === 1 &&
+                    membersWithRoleAfterEdits.has(accountId)
+                ) {
+                    const hasGovernance =
+                        role.toLowerCase().includes("governance") ||
+                        role.toLowerCase().includes("admin");
                     const reason = hasGovernance
                         ? `You can't remove the ${role} role from this member. After all your changes, they would be the only ${role} member, and without this role you won't be able to manage team members or configure voting.`
                         : `You can't remove the ${role} role from this member. After all your changes, they would be the only person assigned to this role.`;
@@ -703,22 +738,22 @@ export default function MembersPage() {
             const membersToRemove =
                 selectedMembers.length > 0
                     ? selectedMembers.map((accountId) => {
-                        const member = existingMembers.find(
-                            (m) => m.accountId === accountId,
-                        );
-                        return {
-                            member: accountId,
-                            roles: member?.roles || [],
-                        };
-                    })
+                          const member = existingMembers.find(
+                              (m) => m.accountId === accountId,
+                          );
+                          return {
+                              member: accountId,
+                              roles: member?.roles || [],
+                          };
+                      })
                     : memberToDelete
-                        ? [
+                      ? [
                             {
                                 member: memberToDelete.accountId,
                                 roles: memberToDelete.roles,
                             },
                         ]
-                        : [];
+                      : [];
 
             if (membersToRemove.length === 0) return;
 
@@ -729,7 +764,7 @@ export default function MembersPage() {
                 updatedPolicy,
                 summary,
                 "Update Policy - Remove Member" +
-                (membersToRemove.length > 1 ? "s" : ""),
+                    (membersToRemove.length > 1 ? "s" : ""),
                 `Member removal request created successfully`,
             );
 
@@ -898,11 +933,11 @@ export default function MembersPage() {
                                 checked={
                                     selectedMembers.length ===
                                         existingMembers.length &&
-                                        existingMembers.length > 0
+                                    existingMembers.length > 0
                                         ? true
                                         : selectedMembers.length > 0
-                                            ? "indeterminate"
-                                            : false
+                                          ? "indeterminate"
+                                          : false
                                 }
                                 onCheckedChange={handleToggleAll}
                             />
@@ -921,7 +956,10 @@ export default function MembersPage() {
                 <TableBody>
                     {members.map((member) => {
                         const deleteValidation = canModifyMember(member);
-                        const editValidation = canModifyMember(member, member.roles); // Pass roles to trigger edit check
+                        const editValidation = canModifyMember(
+                            member,
+                            member.roles,
+                        ); // Pass roles to trigger edit check
 
                         return (
                             <TableRow key={member.accountId} className="group">
@@ -940,6 +978,7 @@ export default function MembersPage() {
                                         accountId={member.accountId}
                                         size="md"
                                         withLink={false}
+                                        withHoverCard={true}
                                     />
                                 </TableCell>
                                 <TableCell>
@@ -980,7 +1019,9 @@ export default function MembersPage() {
                                                     editValidation.canModify ||
                                                     !editValidation.reason ||
                                                     !canAddMember,
-                                                contentProps: { className: "max-w-[280px]" }
+                                                contentProps: {
+                                                    className: "max-w-[280px]",
+                                                },
                                             }}
                                         >
                                             <Pencil className="w-4 h-4" />
@@ -1008,7 +1049,9 @@ export default function MembersPage() {
                                                     deleteValidation.canModify ||
                                                     !deleteValidation.reason ||
                                                     !canAddMember,
-                                                contentProps: { className: "max-w-[280px]" }
+                                                contentProps: {
+                                                    className: "max-w-[280px]",
+                                                },
                                             }}
                                         >
                                             <Trash2 className="w-4 h-4" />
@@ -1138,13 +1181,17 @@ export default function MembersPage() {
                     setMembersBeingEdited([]);
 
                     // Clear URL parameters if they exist
-                    const memberParam = searchParams.get('member');
-                    const rolesParam = searchParams.get('roles');
+                    const memberParam = searchParams.get("member");
+                    const rolesParam = searchParams.get("roles");
                     if (memberParam || rolesParam) {
-                        const params = new URLSearchParams(searchParams.toString());
-                        params.delete('member');
-                        params.delete('roles');
-                        router.replace(`/${treasuryId}/members${params.toString() ? '?' + params.toString() : ''}`);
+                        const params = new URLSearchParams(
+                            searchParams.toString(),
+                        );
+                        params.delete("member");
+                        params.delete("roles");
+                        router.replace(
+                            `/${treasuryId}/members${params.toString() ? "?" + params.toString() : ""}`,
+                        );
                     }
                 }}
                 form={form}
@@ -1219,8 +1266,8 @@ export default function MembersPage() {
                 members={
                     selectedMembers.length > 0
                         ? existingMembers.filter((m) =>
-                            selectedMembers.includes(m.accountId),
-                        )
+                              selectedMembers.includes(m.accountId),
+                          )
                         : undefined
                 }
                 onConfirm={handleDeleteMembersSubmit}
@@ -1228,11 +1275,11 @@ export default function MembersPage() {
                     const membersToDelete =
                         selectedMembers.length > 0
                             ? existingMembers.filter((m) =>
-                                selectedMembers.includes(m.accountId),
-                            )
+                                  selectedMembers.includes(m.accountId),
+                              )
                             : memberToDelete
-                                ? [memberToDelete]
-                                : [];
+                              ? [memberToDelete]
+                              : [];
 
                     if (membersToDelete.length === 0) return undefined;
 

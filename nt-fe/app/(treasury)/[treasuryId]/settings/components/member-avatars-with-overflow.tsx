@@ -2,8 +2,18 @@
 
 import { useState, useRef, useEffect } from "react";
 import { User } from "@/components/user";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
@@ -38,10 +48,15 @@ export function MemberAvatarsWithOverflow({
             const firstAvatarWidth = 40; // First avatar has no negative margin
 
             const availableWidth = containerWidth - buttonWidth;
-            const calculatedCount = Math.floor((availableWidth - firstAvatarWidth) / avatarWidth) + 1;
+            const calculatedCount =
+                Math.floor((availableWidth - firstAvatarWidth) / avatarWidth) +
+                1;
 
             // Ensure we show at least 4 avatars and not more than total
-            const finalCount = Math.max(4, Math.min(calculatedCount, members.length));
+            const finalCount = Math.max(
+                4,
+                Math.min(calculatedCount, members.length),
+            );
             setVisibleCount(finalCount);
         };
 
@@ -58,7 +73,9 @@ export function MemberAvatarsWithOverflow({
         };
     }, [members.length]);
 
-    const visibleMembers = members.slice(0, visibleCount);
+    const visibleMembers = members
+        .sort((a, b) => a.localeCompare(b))
+        .slice(0, visibleCount);
     const hiddenMembers = members.slice(visibleCount); // Only members not shown
     const remainingCount = totalCount - visibleCount;
     const hasMore = remainingCount > 0;
@@ -108,7 +125,10 @@ export function MemberAvatarsWithOverflow({
     );
 
     return (
-        <div ref={containerRef} className={cn("flex items-center w-full", className)}>
+        <div
+            ref={containerRef}
+            className={cn("flex items-center w-full", className)}
+        >
             {/* Visible member avatars */}
             {visibleMembers.map((member) => (
                 <div key={member} className="-ml-2 first:ml-0">
@@ -134,7 +154,8 @@ export function MemberAvatarsWithOverflow({
                                     onMouseEnter={() => setOpen(true)}
                                     onMouseLeave={() => setOpen(false)}
                                 >
-                                    +{remainingCount} member{remainingCount !== 1 ? "s" : ""}
+                                    +{remainingCount} member
+                                    {remainingCount !== 1 ? "s" : ""}
                                 </button>
                             </PopoverTrigger>
                             <PopoverContent
@@ -143,7 +164,6 @@ export function MemberAvatarsWithOverflow({
                                 onMouseEnter={() => setOpen(true)}
                                 onMouseLeave={() => setOpen(false)}
                             >
-
                                 <HiddenMembersList />
                             </PopoverContent>
                         </Popover>
@@ -154,7 +174,8 @@ export function MemberAvatarsWithOverflow({
                         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                             <DialogTrigger asChild>
                                 <button className="ml-2 text-sm text-muted-foreground hover:text-foreground transition-colors focus:outline-none">
-                                    +{remainingCount} member{remainingCount !== 1 ? "s" : ""}
+                                    +{remainingCount} member
+                                    {remainingCount !== 1 ? "s" : ""}
                                 </button>
                             </DialogTrigger>
                             <DialogContent
@@ -188,4 +209,3 @@ export function MemberAvatarsWithOverflow({
         </div>
     );
 }
-
