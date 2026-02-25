@@ -540,6 +540,7 @@ export default function BalanceWithGraph({
                     permissionAction="AddProposal"
                     className="w-full text-xs md:text-base"
                     id="dashboard-step3"
+                    onClick={() => router.push(`/${treasuryId}/exchange`)}
                 >
                     <ArrowLeftRight className="md:size-4 size-3" /> Exchange
                 </AuthButton>
