@@ -1264,6 +1264,21 @@ async fn fill_gap_to_past(
         }
     };
 
+    // If binary search returned the start_block itself, the balance was already at the
+    // target value at the lookback boundary. We can't determine whether a change happened
+    // at this exact block or earlier, so insert a SNAPSHOT to mark the boundary.
+    // (Same logic as seed_initial_balance when block_height == start_block.)
+    if block_height == start_block {
+        log::info!(
+            "Balance {} existed at lookback boundary block {} for {}/{} - inserting SNAPSHOT",
+            target_balance,
+            start_block,
+            account_id,
+            token_id
+        );
+        return insert_snapshot_record(pool, network, account_id, token_id, start_block).await;
+    }
+
     // Try to insert the new record
     // If it fails with "No receipt found", insert a SNAPSHOT instead at the lookback boundary
     match insert_balance_change_record(pool, network, account_id, token_id, block_height).await {
