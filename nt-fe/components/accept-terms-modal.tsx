@@ -16,6 +16,7 @@ import { useNear } from "@/stores/near-store";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { ScrollArea } from "./ui/scroll-area";
+import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from "@/constants/config";
 
 interface AcceptTermsModalProps {
     open: boolean;
@@ -124,7 +125,7 @@ export function AcceptTermsModal({ open }: AcceptTermsModalProps) {
                         >
                             I have read and agree to the{" "}
                             <Link
-                                href="/terms"
+                                href={TERMS_OF_SERVICE_URL}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-primary underline underline-offset-4 hover:text-primary/80"
@@ -133,7 +134,7 @@ export function AcceptTermsModal({ open }: AcceptTermsModalProps) {
                             </Link>{" "}
                             and{" "}
                             <Link
-                                href="/privacy"
+                                href={PRIVACY_POLICY_URL}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-primary underline underline-offset-4 hover:text-primary/80"

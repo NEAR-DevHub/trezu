@@ -12,6 +12,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { Address } from "./address";
+import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from "@/constants/config";
 
 export function SignIn() {
     const {
@@ -92,7 +93,9 @@ export function SignIn() {
                     <Address address={signedAccountId} />
                 </div>
                 <Link
-                    href="/terms"
+                    href={TERMS_OF_SERVICE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="flex items-center rounded-6 gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors"
                     onClick={() => setIsOpen(false)}
                 >
@@ -100,7 +103,9 @@ export function SignIn() {
                     Terms of Service
                 </Link>
                 <Link
-                    href="/privacy"
+                    href={PRIVACY_POLICY_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="flex items-center rounded-6 gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors"
                     onClick={() => setIsOpen(false)}
                 >
