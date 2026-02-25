@@ -13,6 +13,7 @@ import { EmptyState } from "@/components/empty-state";
 
 interface ChartDataPoint {
     name: string;
+    fullDate?: string;
     usdValue?: number;
     balanceValue?: number;
 }
@@ -72,9 +73,11 @@ export default function BalanceChart({
         if (period) {
             switch (period) {
                 case "1W":
-                    return 0; // 7 daily points → show all
+                    // 7 daily points: show every other on mobile (3-4 labels), all on desktop
+                    return isMobile ? 1 : 0;
                 case "1M":
-                    return 3; // 30 daily points → ~8 labels, ~4-day gaps
+                    // 30 daily points: ~5 labels on mobile, ~8 on desktop
+                    return isMobile ? 6 : 3;
                 case "3M":
                 case "1Y":
                     return 0; // handled by explicit ticks below
@@ -113,7 +116,7 @@ export default function BalanceChart({
     return (
         <ChartContainer
             config={chartConfig}
-            className="h-56"
+            className="h-56 w-full min-w-0"
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
         >
@@ -171,6 +174,12 @@ export default function BalanceChart({
                     content={
                         <ChartTooltipContent
                             className="bg-card text-foreground border-border shadow-md"
+                            labelFormatter={(_, payload) => {
+                                const point = payload?.[0]?.payload as
+                                    | ChartDataPoint
+                                    | undefined;
+                                return point?.fullDate ?? point?.name ?? "";
+                            }}
                             formatter={(value, name) => {
                                 const num = Number(value);
                                 const color =

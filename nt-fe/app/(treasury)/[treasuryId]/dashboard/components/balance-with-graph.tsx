@@ -82,6 +82,20 @@ const formatTimestampForPeriod = (
     }
 };
 
+// Full date for tooltip label when axis label is abbreviated (3M/1Y)
+const formatFullDateForPeriod = (
+    timestamp: string,
+    period: TimePeriod,
+): string | undefined => {
+    if (period !== "3M" && period !== "1Y") return undefined;
+    const date = new Date(timestamp);
+    return date.toLocaleDateString("en-US", {
+        day: "numeric",
+        month: "short",
+        year: "2-digit",
+    });
+};
+
 interface GroupedToken {
     symbol: string;
     tokens: TreasuryAsset[];
@@ -240,9 +254,7 @@ export default function BalanceWithGraph({
                 { usdValue: number; hasUSD: boolean }
             >();
 
-            for (const [tokenId, snapshots] of Object.entries(
-                balanceChartData,
-            )) {
+            for (const [, snapshots] of Object.entries(balanceChartData)) {
                 if (!Array.isArray(snapshots)) continue;
                 for (const snapshot of snapshots) {
                     const existing = timeMap.get(snapshot.timestamp) || {
@@ -267,12 +279,17 @@ export default function BalanceWithGraph({
                 )
                 .map(([timestamp, { usdValue }]) => ({
                     name: formatTimestampForPeriod(timestamp, selectedPeriod),
+                    fullDate: formatFullDateForPeriod(
+                        timestamp,
+                        selectedPeriod,
+                    ),
                     usdValue: usdValue,
                 }));
 
             if (data.length > 0) {
                 data.push({
                     name: "Now",
+                    fullDate: undefined,
                     usdValue: Number(totalBalanceUSD),
                 });
             }
@@ -329,12 +346,17 @@ export default function BalanceWithGraph({
                 )
                 .map(([timestamp, { usdValue, balanceValue, hasUSD }]) => ({
                     name: formatTimestampForPeriod(timestamp, selectedPeriod),
+                    fullDate: formatFullDateForPeriod(
+                        timestamp,
+                        selectedPeriod,
+                    ),
                     usdValue: hasUSD ? usdValue : undefined,
                     balanceValue: balanceValue,
                 }));
             if (data.length > 0) {
                 data.push({
                     name: "Now",
+                    fullDate: undefined,
                     usdValue: Number(selectedTokenGroup?.totalBalanceUSD),
                     balanceValue:
                         selectedTokenGroup?.totalBalance.toNumber() || 0,
