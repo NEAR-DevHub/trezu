@@ -518,6 +518,14 @@ pub async fn classify_proposal_swap_deposits(
         // No existing intents row — create a new row for unfulfilled swaps.
         let received_amount = BigDecimal::from_str(&exchange_info.amount_out).unwrap_or_default();
 
+        // Normalize received_token_id: proposal descriptions use "nep141:sol.omft.near"
+        // but the frontend needs "intents.near:nep141:..." to resolve token metadata.
+        let received_token_id = if exchange_info.token_out_symbol.starts_with("nep141:") {
+            format!("intents.near:{}", exchange_info.token_out_symbol)
+        } else {
+            exchange_info.token_out_symbol.clone()
+        };
+
         let result = sqlx::query!(
             r#"
             INSERT INTO detected_swaps (
@@ -545,7 +553,7 @@ pub async fn classify_proposal_swap_deposits(
             deposit.id,
             Some(token_id),
             Some(deposit.amount.abs()),
-            exchange_info.token_out_symbol,
+            received_token_id,
             received_amount,
             deposit.block_height,
         )

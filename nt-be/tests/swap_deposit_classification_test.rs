@@ -296,10 +296,12 @@ async fn test_swap_detection_without_intents_api(pool: PgPool) -> sqlx::Result<(
         "Should use proposal-deposit prefix: {}",
         row.solver_transaction_hash
     );
-    // received_token_id comes from the proposal's Token Out Address field
+    // received_token_id comes from the proposal's Token Out Address field,
+    // normalized with "intents.near:" prefix so the frontend can resolve metadata
     assert!(
-        !row.received_token_id.is_empty(),
-        "Should have a received_token_id from the proposal"
+        row.received_token_id.starts_with("intents.near:nep141:"),
+        "Should have intents.near: prefixed received_token_id, got: {}",
+        row.received_token_id
     );
     println!(
         "  received_token_id = '{}', solver_tx = '{}'",
