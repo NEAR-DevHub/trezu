@@ -621,15 +621,13 @@ export default function BalanceWithGraph({
                     <Skeleton className="h-50 w-full" />
                 </div>
             ) : (
-                <div className="w-full overflow-hidden">
-                    <BalanceChart
-                        data={displayChartData.data}
-                        symbol={selectedTokenGroup?.symbol}
-                        timePeriod={selectedPeriod}
-                        onMouseEnter={handleChartMouseEnter}
-                        onMouseLeave={handleChartMouseLeave}
-                    />
-                </div>
+                <BalanceChart
+                    data={displayChartData.data}
+                    symbol={selectedTokenGroup?.symbol}
+                    timePeriod={selectedPeriod}
+                    onMouseEnter={handleChartMouseEnter}
+                    onMouseLeave={handleChartMouseLeave}
+                />
             )}
         </PageCard>
     );

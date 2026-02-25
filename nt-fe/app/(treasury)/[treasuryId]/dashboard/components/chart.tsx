@@ -116,11 +116,11 @@ export default function BalanceChart({
     return (
         <ChartContainer
             config={chartConfig}
-            className="h-56 w-full min-w-0 overflow-hidden aspect-auto!"
+            className="h-56 w-full min-w-0"
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
         >
-            <AreaChart data={data} margin={{ left: 0, right: 0 }}>
+            <AreaChart data={data}>
                 <defs>
                     <linearGradient
                         id="fillValue"
@@ -151,8 +151,7 @@ export default function BalanceChart({
                             interval: explicitTickInterval,
                         }
                         : { interval: tickInterval })}
-                    padding={{ left: isMobile ? 10 : 20, right: isMobile ? 10 : 20 }}
-                />
+                    padding={{ left: 20, right: 20 }} />
                 <YAxis
                     yAxisId="usd"
                     hide
