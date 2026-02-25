@@ -1081,11 +1081,11 @@ export default function ExportActivityPage() {
                                 backgroundColor:
                                     "var(--color-general-tertiary)",
                             }}
-                            className="gap-2 w-full"
+                            className="gap-3 w-full"
                         >
-                            <h5 className="font-semibold">
+                            <p className="font-semibold">
                                 Export Requirements
-                            </h5>
+                            </p>
                             <div className="space-y-3 text-sm">
                                 <div className="flex gap-2.5">
                                     <Calendar className="w-5 h-5 shrink-0 mt-0.5" />
@@ -1124,7 +1124,7 @@ export default function ExportActivityPage() {
                             <div className="space-y-3">
                                 {/* Header */}
                                 <div className="flex items-center justify-between">
-                                    <h3 className="text-lg font-semibold">
+                                    <h3 className="font-semibold">
                                         Export Quota
                                     </h3>
                                     <span className="text-sm font-medium border py-1 px-2 rounded-lg border-general-border bg-general-unofficial-outline">

@@ -18,8 +18,9 @@ import {
     DialogFooter,
 } from "@/components/modal";
 import type { BulkPaymentFormValues, BulkPaymentData } from "../schemas";
-import { formatBalance } from "@/lib/utils";
+import { formatBalance, formatSmartAmount } from "@/lib/utils";
 import { validateAccountsAndStorage } from "../utils";
+import { validateMinimumWithdrawal } from "@/lib/payment-validation";
 import { useToken, useTokenBalance } from "@/hooks/use-treasury-queries";
 import { useTreasury } from "@/hooks/use-treasury";
 import { AmountSummary } from "@/components/amount-summary";
@@ -74,8 +75,40 @@ export function ReviewPaymentsStep({
                     paymentData,
                     selectedToken,
                 );
-                setPaymentData(validatedPayments);
-                onPaymentDataChange(validatedPayments);
+
+                // Add minimum withdrawal validation
+                const paymentsWithMinValidation = validatedPayments.map(
+                    (payment) => {
+                        // Check minimum withdrawal amount
+                        const minWithdrawalError = validateMinimumWithdrawal(
+                            payment.amount,
+                            selectedToken.minWithdrawalAmount,
+                            selectedToken.decimals,
+                            selectedToken.symbol,
+                        );
+
+                        // Combine errors if both exist
+                        if (payment.validationError && minWithdrawalError) {
+                            return {
+                                ...payment,
+                                validationError: `${payment.validationError}; ${minWithdrawalError}`,
+                            };
+                        }
+
+                        // Use whichever error exists
+                        if (minWithdrawalError) {
+                            return {
+                                ...payment,
+                                validationError: minWithdrawalError,
+                            };
+                        }
+
+                        return payment;
+                    },
+                );
+
+                setPaymentData(paymentsWithMinValidation);
+                onPaymentDataChange(paymentsWithMinValidation);
                 setValidationComplete(true);
             } finally {
                 setIsValidatingAccounts(false);
@@ -152,7 +185,7 @@ export function ReviewPaymentsStep({
             >
                 {/* Total Summary */}
                 <AmountSummary
-                    total={totalAmount}
+                    total={formatSmartAmount(totalAmount)}
                     totalUSD={totalUSDValue.toNumber()}
                     token={selectedToken}
                 />
@@ -229,19 +262,17 @@ export function ReviewPaymentsStep({
                                 return (
                                     <div
                                         key={index}
-                                        className={`space-y-3 ${
-                                            index < paymentData.length - 1
-                                                ? "border-b border-border pb-4"
-                                                : ""
-                                        }`}
+                                        className={`space-y-3 ${index < paymentData.length - 1
+                                            ? "border-b border-border pb-4"
+                                            : ""
+                                            }`}
                                     >
                                         <div className="flex items-start gap-3">
                                             <div
-                                                className={`flex items-center justify-center w-6 h-6 rounded-full text-sm font-semibold shrink-0 ${
-                                                    payment.validationError
-                                                        ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                                                        : "bg-secondary text-foreground"
-                                                }`}
+                                                className={`flex items-center justify-center w-6 h-6 rounded-full text-sm font-semibold shrink-0 ${payment.validationError
+                                                    ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                                                    : "bg-secondary text-foreground"
+                                                    }`}
                                             >
                                                 {index + 1}
                                             </div>
@@ -279,9 +310,9 @@ export function ReviewPaymentsStep({
                                                                 />
                                                                 <div className="text-right">
                                                                     <div className="text-sm font-semibold">
-                                                                        {
+                                                                        {formatSmartAmount(
                                                                             payment.amount
-                                                                        }{" "}
+                                                                        )}{" "}
                                                                         {
                                                                             selectedToken.symbol
                                                                         }

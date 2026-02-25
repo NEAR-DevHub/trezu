@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, CircleCheck } from "lucide-react";
 import QRCode from "react-qr-code";
 import { SelectModal } from "./select-modal";
 import { fetchDepositAddress } from "@/lib/bridge-api";
@@ -18,9 +18,9 @@ import {
     DialogTitle,
 } from "@/components/modal";
 import { InputBlock } from "@/components/input-block";
-import { WarningAlert } from "@/components/warning-alert";
 import { useThemeStore } from "@/stores/theme-store";
 import { getNetworkDisplayName } from "@/components/token-display";
+import { formatBalance } from "@/lib/utils";
 
 interface DepositModalProps {
     isOpen: boolean;
@@ -110,6 +110,21 @@ export function DepositModal({
 
     const { data: bridgeAssets = [], isLoading: isLoadingAssets } =
         useBridgeTokens(isOpen);
+
+    // Get the selected network's bridge data to access min amounts
+    const selectedBridgeNetwork = useMemo(() => {
+        if (!selectedAsset || !selectedNetwork) return null;
+
+        const bridgeAsset = bridgeAssets.find(
+            (asset) => asset.id === selectedAsset.id
+        );
+
+        if (!bridgeAsset) return null;
+
+        return bridgeAsset.networks.find(
+            (network) => network.chainId === selectedNetwork.id
+        );
+    }, [selectedAsset, selectedNetwork, bridgeAssets]);
 
     useEffect(() => {
         if (!isOpen || !bridgeAssets.length) return;
@@ -363,6 +378,33 @@ export function DepositModal({
         onClose();
     }, [form, onClose]);
 
+    // Helper function to format address with bold first and last 6 characters
+    const formatAddress = (address: string) => {
+        // Check if it's a NEAR network (treasury address) - don't apply bold formatting
+        const isNearNetwork = selectedNetwork?.id.toLowerCase().includes("near");
+
+        if (isNearNetwork) {
+            return <span>{address}</span>;
+        }
+
+        if (address.length <= 12) {
+            return <span className="font-bold">{address}</span>;
+        }
+
+        const first6 = address.slice(0, 6);
+        const middle = address.slice(6, -6);
+        const last6 = address.slice(-6);
+
+        return (
+            <>
+                <span className="font-bold">{first6}</span>
+                <span>{middle}</span>
+                <span className="font-bold">{last6}</span>
+            </>
+        );
+    };
+
+
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
             <DialogContent className="sm:max-w-xl">
@@ -401,9 +443,9 @@ export function DepositModal({
                                                         {selectedAsset.icon?.startsWith(
                                                             "http",
                                                         ) ||
-                                                        selectedAsset.icon?.startsWith(
-                                                            "data:",
-                                                        ) ? (
+                                                            selectedAsset.icon?.startsWith(
+                                                                "data:",
+                                                            ) ? (
                                                             <img
                                                                 src={
                                                                     selectedAsset.icon
@@ -467,9 +509,9 @@ export function DepositModal({
                                                                 {selectedNetwork.icon?.startsWith(
                                                                     "http",
                                                                 ) ||
-                                                                selectedNetwork.icon?.startsWith(
-                                                                    "data:",
-                                                                ) ? (
+                                                                    selectedNetwork.icon?.startsWith(
+                                                                        "data:",
+                                                                    ) ? (
                                                                     <div className="w-6 h-6 rounded-full object-cover">
                                                                         <img
                                                                             src={
@@ -483,10 +525,9 @@ export function DepositModal({
                                                                     </div>
                                                                 ) : (
                                                                     <div
-                                                                        className={`w-6 h-6 rounded-full ${
-                                                                            selectedNetwork.gradient ||
+                                                                        className={`w-6 h-6 rounded-full ${selectedNetwork.gradient ||
                                                                             "bg-linear-to-br from-green-500 to-teal-500"
-                                                                        } flex items-center justify-center text-white text-xs font-bold`}
+                                                                            } flex items-center justify-center text-white text-xs font-bold`}
                                                                     >
                                                                         <span>
                                                                             {
@@ -506,15 +547,15 @@ export function DepositModal({
                                                         {/* Info message for "Other" asset */}
                                                         {selectedAsset?.id ===
                                                             "other" && (
-                                                            <div className="break-all overflow-wrap-anywhere text-wrap mt-2 text-xs text-general-info-foreground">
-                                                                You can deposit
-                                                                any token not
-                                                                listed in the
-                                                                assets, but only
-                                                                via the NEAR
-                                                                network.
-                                                            </div>
-                                                        )}
+                                                                <div className="break-all overflow-wrap-anywhere text-wrap mt-2 text-xs text-general-info-foreground">
+                                                                    You can deposit
+                                                                    any token not
+                                                                    listed in the
+                                                                    assets, but only
+                                                                    via the NEAR
+                                                                    network.
+                                                                </div>
+                                                            )}
                                                     </>
                                                 ) : (
                                                     <div className="flex items-center justify-between">
@@ -602,7 +643,7 @@ export function DepositModal({
                                             </label>
                                             <div className="rounded-lg flex justify-between gap-2">
                                                 <code className="font-mono break-all text-xs sm:text-sm">
-                                                    {depositAddress}
+                                                    {formatAddress(depositAddress)}
                                                 </code>
                                                 <CopyButton
                                                     text={depositAddress}
@@ -617,12 +658,17 @@ export function DepositModal({
                                     </div>
                                 </div>
 
-                                {/* Warning Message */}
-                                <WarningAlert
-                                    message={
+                                {/* Warning Messages with CircleCheck Icons */}
+                                <div className="space-y-2 mt-4">
+                                    <div className="flex gap-2 items-start text-sm text-muted-foreground">
+                                        <CircleCheck className="h-4 w-4 shrink-0 mt-0.5" />
                                         <span>
-                                            Only deposit from the{" "}
-                                            <strong>
+                                            Only deposit{" "}
+                                            <strong className="text-foreground">
+                                                {selectedAsset?.symbol}
+                                            </strong>{" "}
+                                            from the{" "}
+                                            <strong className="text-foreground capitalize">
                                                 {selectedNetwork &&
                                                     getNetworkDisplayName(
                                                         selectedNetwork.name,
@@ -633,8 +679,24 @@ export function DepositModal({
                                             everything works correctly before
                                             sending the full amount.
                                         </span>
-                                    }
-                                />
+                                    </div>
+
+                                    {selectedBridgeNetwork?.minDepositAmount && (
+                                        <div className="flex gap-2 items-start text-sm text-muted-foreground">
+                                            <CircleCheck className="h-4 w-4 shrink-0 mt-0.5" />
+                                            <span>
+                                                Minimum deposit is{" "}
+                                                <strong className="text-foreground">
+                                                    {formatBalance(
+                                                        selectedBridgeNetwork.minDepositAmount,
+                                                        selectedBridgeNetwork.decimals
+                                                    )}{" "}
+                                                    {selectedAsset?.symbol}
+                                                </strong>
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
 

@@ -40,7 +40,7 @@ export function BulkPaymentCreditsDisplay({
         <div className="space-y-3">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Bulk Payments</h3>
+                <p className="font-semibold">Bulk Payments</p>
                 <span className="text-sm font-medium border py-1 px-2 rounded-lg border-general-border bg-general-unofficial-outline">
                     {isUnlimited
                         ? "Unlimited"

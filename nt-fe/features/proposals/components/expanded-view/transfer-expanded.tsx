@@ -4,16 +4,21 @@ import { User } from "@/components/user";
 import { PaymentRequestData } from "../../types/index";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
+import { useToken } from "@/hooks/use-treasury-queries";
 
 interface TransferExpandedProps {
   data: PaymentRequestData;
 }
 
 export function TransferExpanded({ data }: TransferExpandedProps) {
+  // Get token metadata to check network
+  const { data: tokenData } = useToken(data.tokenId);
+  const isNearNetwork = tokenData?.network?.toLowerCase() === "near";
+
   const infoItems: InfoItem[] = [
     {
       label: "Recipient",
-      value: <User accountId={data.receiver} />
+      value: <User accountId={data.receiver} withLink={isNearNetwork} withName={isNearNetwork} />
     },
     {
       label: "Amount",

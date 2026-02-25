@@ -14,6 +14,7 @@ import { TokenInput, Token } from "@/components/token-input";
 import AccountInput from "@/components/account-input";
 import { CreateRequestButton } from "@/components/create-request-button";
 import { getBlockchainType } from "@/lib/blockchain-utils";
+import { validateMinimumWithdrawal } from "@/lib/payment-validation";
 
 interface PaymentFormSectionProps<
     TFieldValues extends FieldValues = FieldValues,
@@ -22,10 +23,10 @@ interface PaymentFormSectionProps<
     control: Control<TFieldValues>;
     amountName: Path<TFieldValues>;
     tokenName: TTokenPath extends Path<TFieldValues>
-        ? PathValue<TFieldValues, TTokenPath> extends Token
-            ? TTokenPath
-            : never
-        : never;
+    ? PathValue<TFieldValues, TTokenPath> extends Token
+    ? TTokenPath
+    : never
+    : never;
     recipientName: Path<TFieldValues>;
 
     tokenLocked?: boolean;
@@ -50,18 +51,55 @@ export function PaymentFormSection<
     onSave,
     isSubmitting = false,
 }: PaymentFormSectionProps<TFieldValues, TTokenPath>) {
-    const { setValue } = useFormContext<TFieldValues>();
+    const { setValue, setError, clearErrors } = useFormContext<TFieldValues>();
     const [isRecipientValid, setIsRecipientValid] = useState(false);
     const [isValidatingRecipient, setIsValidatingRecipient] = useState(false);
     const prevBlockchainTypeRef = useRef<string | null>(null);
+    const prevTokenAddressRef = useRef<string | undefined>(undefined);
 
     const token = useWatch({ control, name: tokenName }) as Token | null;
     const recipient = useWatch({ control, name: recipientName }) as string;
+    const amount = useWatch({ control, name: amountName }) as string;
 
     const blockchainType = useMemo(() => {
         if (!token?.network) return "near";
         return getBlockchainType(token.network);
     }, [token?.network]);
+
+    // Reset amount when token changes
+    useEffect(() => {
+        // If we have a previous token and it's different from current, reset amount
+        if (prevTokenAddressRef.current && token && prevTokenAddressRef.current !== token.address) {
+            setValue(amountName, "" as PathValue<TFieldValues, Path<TFieldValues>>);
+            clearErrors(amountName);
+        }
+
+        // Update ref to current token address
+        prevTokenAddressRef.current = token?.address;
+    }, [token?.address, amountName, setValue, clearErrors]);
+
+    // Validate amount against minimum withdrawal for intents tokens
+    useEffect(() => {
+        // Always clear the error first when token or amount changes
+        clearErrors(amountName);
+
+        // Only validate if we have both amount and token
+        if (!amount || !token) return;
+
+        const error = validateMinimumWithdrawal(
+            amount,
+            token.minWithdrawalAmount,
+            token.decimals,
+            token.symbol
+        );
+
+        if (error) {
+            setError(amountName, {
+                type: "manual",
+                message: error,
+            });
+        }
+    }, [amount, token, amountName, setError, clearErrors]);
 
     // On first render, pre-seed validity for edit screens with a filled value
     useEffect(() => {

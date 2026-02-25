@@ -8,6 +8,8 @@ export interface BridgeNetwork {
     chainIcons: ChainIcons | null;
     chainId: string;
     decimals: number;
+    minDepositAmount?: string;
+    minWithdrawalAmount?: string;
 }
 
 export interface BridgeAsset {
@@ -49,6 +51,8 @@ export function useBridgeTokens(enabled: boolean = true) {
                             chainIcons: network.chainIcons || null,
                             chainId: network.chainId,
                             decimals: network.decimals,
+                            minDepositAmount: network.minDepositAmount,
+                            minWithdrawalAmount: network.minWithdrawalAmount,
                         })),
                     };
                 },

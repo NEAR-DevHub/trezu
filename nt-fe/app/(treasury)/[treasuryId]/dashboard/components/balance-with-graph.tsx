@@ -540,6 +540,7 @@ export default function BalanceWithGraph({
                     permissionAction="AddProposal"
                     className="w-full text-xs md:text-base"
                     id="dashboard-step3"
+                    onClick={() => router.push(`/${treasuryId}/exchange`)}
                 >
                     <ArrowLeftRight className="md:size-4 size-3" /> Exchange
                 </AuthButton>
@@ -620,13 +621,15 @@ export default function BalanceWithGraph({
                     <Skeleton className="h-50 w-full" />
                 </div>
             ) : (
-                <BalanceChart
-                    data={displayChartData.data}
-                    symbol={selectedTokenGroup?.symbol}
-                    timePeriod={selectedPeriod}
-                    onMouseEnter={handleChartMouseEnter}
-                    onMouseLeave={handleChartMouseLeave}
-                />
+                <div className="w-full overflow-hidden">
+                    <BalanceChart
+                        data={displayChartData.data}
+                        symbol={selectedTokenGroup?.symbol}
+                        timePeriod={selectedPeriod}
+                        onMouseEnter={handleChartMouseEnter}
+                        onMouseLeave={handleChartMouseLeave}
+                    />
+                </div>
             )}
         </PageCard>
     );

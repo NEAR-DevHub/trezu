@@ -40,6 +40,8 @@ interface Network {
     decimals: number;
     residency?: string;
     lockedBalance?: string;
+    minWithdrawalAmount?: string;
+    minDepositAmount?: string;
 }
 
 interface Asset {
@@ -60,6 +62,8 @@ export interface SelectedTokenData {
     network: string;
     chainIcons?: ChainIcons;
     residency?: string;
+    minWithdrawalAmount?: string; // Raw amount in smallest unit
+    minDepositAmount?: string; // Raw amount in smallest unit
 }
 
 // List item types (for display only)
@@ -82,6 +86,8 @@ interface NetworkListItem extends SelectListItem {
     balanceUSD?: number;
     residency?: string;
     lockedBalance?: string;
+    minWithdrawalAmount?: string;
+    minDepositAmount?: string;
 }
 
 interface TokenSelectProps {
@@ -210,7 +216,7 @@ export default function TokenSelect({
                         name:
                             treasuryToken.name +
                             (treasuryToken.isAggregated &&
-                            treasuryToken.networks.length > 1
+                                treasuryToken.networks.length > 1
                                 ? ` • ${treasuryToken.networks.length} Networks`
                                 : ""),
                         symbol: treasuryToken.symbol,
@@ -258,6 +264,8 @@ export default function TokenSelect({
                             chainId: bridgeNetwork.chainId,
                             decimals: bridgeNetwork.decimals,
                             residency: treasuryNetwork?.residency,
+                            minWithdrawalAmount: bridgeNetwork.minWithdrawalAmount,
+                            minDepositAmount: bridgeNetwork.minDepositAmount,
                             lockedBalance:
                                 treasuryNetwork?.balance.type === "Standard"
                                     ? treasuryNetwork.balance.locked.toFixed(0)
@@ -421,6 +429,8 @@ export default function TokenSelect({
                     balanceUSD,
                     residency: network.residency,
                     lockedBalance: network.lockedBalance,
+                    minWithdrawalAmount: network.minWithdrawalAmount,
+                    minDepositAmount: network.minDepositAmount,
                 };
             },
         );
@@ -490,6 +500,8 @@ export default function TokenSelect({
                     network: item.networkName,
                     chainIcons: item.chainIcons || undefined,
                     residency: "Intents",
+                    minWithdrawalAmount: item.minWithdrawalAmount,
+                    minDepositAmount: item.minDepositAmount,
                 });
             }
 
@@ -715,7 +727,7 @@ export default function TokenSelect({
                                                             {token.totalBalance !==
                                                                 undefined &&
                                                                 token.totalBalance >
-                                                                    0 && (
+                                                                0 && (
                                                                     <div className="flex flex-col items-end">
                                                                         <span className="font-semibold">
                                                                             {formatSmartAmount(
