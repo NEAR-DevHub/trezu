@@ -42,7 +42,7 @@ function InfoItem({ icon, title, description, href }: InfoItemProps) {
 const infoItems: InfoItemProps[] = [
     {
         icon: <Eye className="size-4" />,
-        title: "See Active Treasury",
+        title: "See Demo Trezu",
         description: "Explore and see other account in action.",
         href: APP_ACTIVE_TREASURY,
     },
