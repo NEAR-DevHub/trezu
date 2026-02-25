@@ -518,26 +518,30 @@ export default function BalanceWithGraph({
             </div>
 
             <div className="grid grid-cols-3 gap-2 md:gap-4">
-                <Button onClick={onDepositClick} id="dashboard-step1">
-                    <Download className="size-4" /> Deposit
+                <Button
+                    onClick={onDepositClick}
+                    id="dashboard-step1"
+                    className="text-xs md:text-base"
+                >
+                    <Download className="md:size-4 size-3" /> Deposit
                 </Button>
                 <AuthButton
                     permissionKind="transfer"
                     permissionAction="AddProposal"
-                    className="w-full"
+                    className="w-full text-xs md:text-base"
                     id="dashboard-step2"
                     onClick={() => router.push(`/${treasuryId}/payments`)}
                 >
-                    <ArrowUpRightIcon className="size-4" />
+                    <ArrowUpRightIcon className="md:size-4 size-3" />
                     Send
                 </AuthButton>
                 <AuthButton
                     permissionKind="call"
                     permissionAction="AddProposal"
-                    className="w-full"
+                    className="w-full text-xs md:text-base"
                     id="dashboard-step3"
                 >
-                    <ArrowLeftRight className="size-4" /> Exchange
+                    <ArrowLeftRight className="md:size-4 size-3" /> Exchange
                 </AuthButton>
                 {/*<AuthButton permissionKind="call" permissionAction="AddProposal" className="w-full">
                     <Database className="size-4" /> Earn

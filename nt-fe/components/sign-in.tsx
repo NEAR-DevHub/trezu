@@ -58,7 +58,7 @@ export function SignIn() {
                 ) : (
                     <>
                         <LogIn className="h-4 w-4" />
-                        Connect Wallet
+                        Connect <span className="hidden md:inline">Wallet</span>
                     </>
                 )}
             </Button>
