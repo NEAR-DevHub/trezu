@@ -57,7 +57,6 @@ pub async fn get_bridge_tokens(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Invalid format".to_string(),
             ))?;
-            log::info!("all_tokens: {:?}", all_tokens);
 
             let nep141_tokens: Vec<&Value> = all_tokens
                 .iter()

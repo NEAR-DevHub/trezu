@@ -255,8 +255,7 @@ export function parsePaymentData(
             continue;
         }
 
-        // Validate amount is not too large (JavaScript safe integer limit)
-        // This prevents Big.js from failing with extremely large numbers
+        // Validate amount is not too large
         if (parsedAmountValue > Number.MAX_SAFE_INTEGER) {
             errors.push({
                 row: actualRowNumber,
