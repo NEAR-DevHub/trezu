@@ -327,26 +327,44 @@ export function RecentActivity() {
 
                     if (activity.swap) {
                         const swap = activity.swap;
+                        const isDeposit = swap.swapRole === "deposit";
                         return (
                             <div className="text-right">
                                 <div className="flex items-center justify-end gap-1.5">
-                                    {swap.sentAmount &&
-                                    swap.sentTokenMetadata ? (
-                                        <span className="font-semibold text-general-destructive-foreground">
-                                            {formatSmartAmount(swap.sentAmount)}{" "}
-                                            {swap.sentTokenMetadata.symbol}
-                                        </span>
+                                    {isDeposit ? (
+                                        <>
+                                            {swap.sentAmount &&
+                                            swap.sentTokenMetadata ? (
+                                                <span className="font-semibold text-general-destructive-foreground">
+                                                    {formatSmartAmount(swap.sentAmount)}{" "}
+                                                    {swap.sentTokenMetadata.symbol}
+                                                </span>
+                                            ) : (
+                                                <span className="font-semibold text-muted-foreground">
+                                                    ?
+                                                </span>
+                                            )}
+                                            <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                            <span className="font-semibold text-muted-foreground">
+                                                {swap.receivedTokenMetadata?.symbol ??
+                                                    swap.receivedTokenId}
+                                            </span>
+                                        </>
                                     ) : (
-                                        <span className="font-semibold text-muted-foreground">
-                                            ?
-                                        </span>
+                                        <>
+                                            {swap.sentTokenMetadata ? (
+                                                <span className="font-semibold text-muted-foreground">
+                                                    {swap.sentTokenMetadata.symbol}
+                                                </span>
+                                            ) : null}
+                                            <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                            <span className="font-semibold text-general-success-foreground">
+                                                {formatSmartAmount(swap.receivedAmount)}{" "}
+                                                {swap.receivedTokenMetadata?.symbol ??
+                                                    swap.receivedTokenId}
+                                            </span>
+                                        </>
                                     )}
-                                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                    <span className="font-semibold text-general-success-foreground">
-                                        {formatSmartAmount(swap.receivedAmount)}{" "}
-                                        {swap.receivedTokenMetadata?.symbol ??
-                                            swap.receivedTokenId}
-                                    </span>
                                 </div>
                                 <div className="text-sm text-muted-foreground">
                                     <FormattedDate

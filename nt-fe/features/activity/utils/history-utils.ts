@@ -81,7 +81,7 @@ export interface ActivityAccount {
 export function getActivityLabel(activity: ActivityAccount): string {
     if (activity.swap) {
         return activity.swap.swapRole === "deposit"
-            ? "Exchange"
+            ? "Exchange Request"
             : "Exchange Fulfillment";
     }
     if (activity.actionKind === "StakingReward") return "Staking Rewards";

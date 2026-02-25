@@ -20,7 +20,9 @@ use super::gap_filler::{
     fill_gaps_with_hints, resolve_missing_action_kind, resolve_missing_tx_hashes,
 };
 use super::staking_rewards::is_staking_token;
-use super::swap_detector::{detect_swaps_from_api, store_detected_swaps};
+use super::swap_detector::{
+    classify_proposal_swap_deposits, detect_swaps_from_api, store_detected_swaps,
+};
 use super::transfer_hints::TransferHintService;
 use crate::AppState;
 
@@ -280,6 +282,25 @@ async fn run_dirty_task(
                 e
             );
         }
+    }
+
+    // Classify DAO proposal-based swap deposits (handles unfulfilled swaps too)
+    match classify_proposal_swap_deposits(pool, network, account_id).await {
+        Ok(count) if count > 0 => {
+            log::info!(
+                "[dirty-monitor] {}: Classified {} proposal swap deposits",
+                account_id,
+                count
+            );
+        }
+        Err(e) => {
+            log::warn!(
+                "[dirty-monitor] {}: Error classifying proposal swap deposits: {}",
+                account_id,
+                e
+            );
+        }
+        _ => {}
     }
 
     // Conditional clear: only clear if dirty_at hasn't changed since we started
