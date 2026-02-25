@@ -1,5 +1,5 @@
 export const APP_DOCS_URL = "https://docs.trezu.org/";
-export const APP_DEMO_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+export const APP_DEMO_URL = "https://youtu.be/KIQeS2Y0AWY";
 export const APP_ACTIVE_TREASURY =
     "https://trezu.app/trezu-demo.sputnik-dao.near";
 export const APP_TWITTER_URL = "https://x.com/TrezuApp";
