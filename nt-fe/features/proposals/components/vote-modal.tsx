@@ -7,21 +7,18 @@ import {
     DialogFooter,
 } from "@/components/modal";
 import { Button } from "@/components/button";
-import { ProposalPermissionKind } from "@/lib/config-utils";
 import { useNear } from "@/stores/near-store";
 import { useTreasury } from "@/hooks/use-treasury";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { InfoAlert } from "@/components/info-alert";
+import { Proposal } from "@/lib/proposals-api";
 
 interface VoteModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess?: () => void;
-    proposalIds: {
-        proposalId: number;
-        kind: ProposalPermissionKind;
-    }[];
+    proposals: Proposal[];
     vote: "Approve" | "Reject" | "Remove";
     insufficientBalanceProposalIds?: number[];
 }
@@ -30,7 +27,7 @@ export function VoteModal({
     isOpen,
     onClose,
     onSuccess,
-    proposalIds,
+    proposals,
     vote,
     insufficientBalanceProposalIds,
 }: VoteModalProps) {
@@ -41,16 +38,16 @@ export function VoteModal({
     const handleVote = async () => {
         setIsSubmitting(true);
         const insufficientSet = new Set(insufficientBalanceProposalIds ?? []);
-        const votableProposals = proposalIds.filter(
-            (p) => !insufficientSet.has(p.proposalId),
+        const votableProposals = proposals.filter(
+            (p) => !insufficientSet.has(p.id),
         );
         try {
             await voteProposals(
                 treasuryId ?? "",
                 votableProposals.map((proposal) => ({
-                    proposalId: proposal.proposalId,
+                    proposalId: proposal.id,
                     vote: vote,
-                    proposalKind: proposal.kind,
+                    proposal: proposal,
                 })),
             );
             onSuccess?.();
@@ -63,7 +60,7 @@ export function VoteModal({
     };
 
     const title = vote === "Remove" ? "Remove Request" : "Confirm Your Vote";
-    const isBulk = proposalIds.length > 1;
+    const isBulk = proposals.length > 1;
     const hasInsufficientBalance =
         vote === "Approve" &&
         insufficientBalanceProposalIds &&

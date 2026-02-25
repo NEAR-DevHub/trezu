@@ -13,7 +13,7 @@ import {
     getKindFromProposal,
     ProposalPermissionKind,
 } from "@/lib/config-utils";
-import { ProposalKind } from "@/lib/proposals-api";
+import { Proposal } from "@/lib/proposals-api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageCard } from "@/components/card";
 import { redirect } from "next/navigation";
@@ -88,8 +88,8 @@ export default function RequestPage({ params }: RequestPageProps) {
     }>({});
     const [voteInfo, setVoteInfo] = useState<{
         vote: "Approve" | "Reject" | "Remove";
-        proposalIds: { proposalId: number; kind: ProposalPermissionKind }[];
-    }>({ vote: "Approve", proposalIds: [] });
+        proposals: Proposal[];
+    }>({ vote: "Approve", proposals: [] });
 
     if (isLoadingProposal || (canLoadPolicy && isLoadingPolicy)) {
         return (
@@ -124,15 +124,7 @@ export default function RequestPage({ params }: RequestPageProps) {
                 onVote={(vote) => {
                     setVoteInfo({
                         vote,
-                        proposalIds: [
-                            {
-                                proposalId: proposal?.id ?? 0,
-                                kind:
-                                    getKindFromProposal(
-                                        proposal?.kind as ProposalKind,
-                                    ) ?? "call",
-                            },
-                        ],
+                        proposals: proposal ? [proposal] : [],
                     });
                     setIsVoteModalOpen(true);
                 }}
@@ -144,7 +136,7 @@ export default function RequestPage({ params }: RequestPageProps) {
             <VoteModal
                 isOpen={isVoteModalOpen}
                 onClose={() => setIsVoteModalOpen(false)}
-                proposalIds={voteInfo.proposalIds}
+                proposals={voteInfo.proposals}
                 vote={voteInfo.vote}
             />
             <DepositModal

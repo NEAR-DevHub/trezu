@@ -145,10 +145,10 @@ export function ProposalsTable({
                         const content = !isPending
                             ? "Proposal is not pending."
                             : !canVote
-                              ? "You don't have permission to vote on this request."
-                              : isVoted
-                                ? "You already voted on this request."
-                                : "";
+                                ? "You don't have permission to vote on this request."
+                                : isVoted
+                                    ? "You already voted on this request."
+                                    : "";
 
                         return (
                             <Tooltip content={content}>
@@ -332,9 +332,9 @@ export function ProposalsTable({
     }>({});
     const [voteInfo, setVoteInfo] = useState<{
         vote: "Approve" | "Reject" | "Remove";
-        proposalIds: { proposalId: number; kind: ProposalPermissionKind }[];
+        proposals: Proposal[];
         insufficientBalanceIds?: number[];
-    }>({ vote: "Approve", proposalIds: [] });
+    }>({ vote: "Approve", proposals: [] });
 
     // Notify parent when selection changes
     let selectedRows = table.getFilteredSelectedRowModel().rows;
@@ -405,10 +405,7 @@ export function ProposalsTable({
 
         setVoteInfo({
             vote,
-            proposalIds: selectedProposals.map((proposal) => ({
-                proposalId: proposal.id,
-                kind: getKindFromProposal(proposal.kind) ?? "call",
-            })),
+            proposals: selectedProposals,
             insufficientBalanceIds:
                 vote === "Approve" ? selectedInsufficientIds : undefined,
         });
@@ -463,10 +460,10 @@ export function ProposalsTable({
                                             {header.isPlaceholder
                                                 ? null
                                                 : flexRender(
-                                                      header.column.columnDef
-                                                          .header,
-                                                      header.getContext(),
-                                                  )}
+                                                    header.column.columnDef
+                                                        .header,
+                                                    header.getContext(),
+                                                )}
                                         </TableHead>
                                     ))}
                                 </TableRow>
@@ -519,21 +516,7 @@ export function ProposalsTable({
                                                     onVote={(vote) => {
                                                         setVoteInfo({
                                                             vote,
-                                                            proposalIds: [
-                                                                {
-                                                                    proposalId:
-                                                                        row
-                                                                            .original
-                                                                            .id,
-                                                                    kind:
-                                                                        getKindFromProposal(
-                                                                            row
-                                                                                .original
-                                                                                .kind,
-                                                                        ) ??
-                                                                        "call",
-                                                                },
-                                                            ],
+                                                            proposals: [row.original],
                                                         });
                                                         setIsVoteModalOpen(
                                                             true,
@@ -577,7 +560,7 @@ export function ProposalsTable({
                     table.setRowSelection({});
                     onSelectionChange?.(0);
                 }}
-                proposalIds={voteInfo.proposalIds}
+                proposals={voteInfo.proposals}
                 vote={voteInfo.vote}
                 insufficientBalanceProposalIds={voteInfo.insufficientBalanceIds}
             />

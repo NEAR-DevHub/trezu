@@ -174,8 +174,8 @@ export function PendingRequests() {
     }>({});
     const [voteInfo, setVoteInfo] = useState<{
         vote: "Approve" | "Reject" | "Remove";
-        proposalIds: { proposalId: number; kind: ProposalPermissionKind }[];
-    }>({ vote: "Approve", proposalIds: [] });
+        proposals: Proposal[];
+    }>({ vote: "Approve", proposals: [] });
     const { data: pendingRequests, isLoading: isRequestsLoading } =
         useProposals(treasuryId, {
             statuses: ["InProgress"],
@@ -234,15 +234,7 @@ export function PendingRequests() {
                                     onVote={(vote) => {
                                         setVoteInfo({
                                             vote,
-                                            proposalIds: [
-                                                {
-                                                    proposalId: proposal.id,
-                                                    kind:
-                                                        getKindFromProposal(
-                                                            proposal.kind,
-                                                        ) ?? "call",
-                                                },
-                                            ],
+                                            proposals: [proposal],
                                         });
                                         setIsVoteModalOpen(true);
                                     }}
@@ -267,7 +259,7 @@ export function PendingRequests() {
             <VoteModal
                 isOpen={isVoteModalOpen}
                 onClose={() => setIsVoteModalOpen(false)}
-                proposalIds={voteInfo.proposalIds}
+                proposals={voteInfo.proposals}
                 vote={voteInfo.vote}
             />
             <DepositModal
