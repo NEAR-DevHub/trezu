@@ -1,4 +1,4 @@
-import { useBatchPayment } from "@/hooks/use-treasury-queries";
+import { useBatchPayment, useToken } from "@/hooks/use-treasury-queries";
 import { useBulkPaymentTransactionHash } from "@/hooks/use-bulk-payment-transactions";
 import { BatchPaymentRequestData } from "../../types/index";
 import { InfoDisplay, InfoItem } from "@/components/info-display";
@@ -58,10 +58,14 @@ function PaymentDisplay({
         ? `https://nearblocks.io/txns/${transactionHash}`
         : null;
 
+    // Get token metadata to check network
+    const { data: tokenData } = useToken(tokenId);
+    const isNearNetwork = tokenData?.network?.toLowerCase() === "near";
+
     let items: InfoItem[] = [
         {
             label: "Recipient",
-            value: <User accountId={payment.recipient} />,
+            value: <User accountId={payment.recipient} withLink={isNearNetwork} withName={isNearNetwork} />,
         },
         {
             label: "Amount",

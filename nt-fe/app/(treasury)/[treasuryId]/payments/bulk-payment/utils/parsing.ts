@@ -9,6 +9,7 @@ import { isNearToken, getBlockchainType } from "@/lib/blockchain-utils";
 import { validateAddress } from "@/lib/address-validation";
 import type { BulkPaymentData } from "../schemas";
 import type { TreasuryAsset } from "@/lib/api";
+import Big from "@/lib/big";
 
 /**
  * Common Papa Parse configuration
@@ -126,13 +127,14 @@ export function detectHeaderAndGetConfig(data: string[] | string[][]): {
 
 /**
  * Parse amount string handling different formats and decimal separators
+ * Returns a normalized string that can be safely used with Big.js
  */
-export function parseAmount(amountStr: string): number {
+export function parseAmount(amountStr: string): string {
     // Remove spaces, currency symbols, and underscores (used as thousand separators)
     let normalized = amountStr.trim().replace(/[$€£¥_\s]/g, "");
 
     // Handle empty or invalid input
-    if (!normalized) return NaN;
+    if (!normalized) return "";
 
     // Handle different decimal separators
     const hasComma = normalized.includes(",");
@@ -163,7 +165,7 @@ export function parseAmount(amountStr: string): number {
     }
     // If only dot, keep as-is (standard format)
 
-    return parseFloat(normalized);
+    return normalized;
 }
 
 /**
@@ -244,13 +246,31 @@ export function parsePaymentData(
             continue;
         }
 
-        const parsedAmountValue = parseAmount(amountStr);
+        const parsedAmountStr = parseAmount(amountStr);
 
-        // Validate amount is a valid number
-        if (isNaN(parsedAmountValue) || parsedAmountValue <= 0) {
+        // Validate amount is a valid number using Big.js
+        let parsedAmount: Big;
+        try {
+            if (!parsedAmountStr) {
+                throw new Error("Empty amount");
+            }
+            parsedAmount = Big(parsedAmountStr);
+
+            // Validate amount is positive
+            if (parsedAmount.lte(0)) {
+                throw new Error("Amount must be greater than 0");
+            }
+
+            // Validate amount doesn't exceed JavaScript's safe integer limit
+            const MAX_SAFE = Big(Number.MAX_SAFE_INTEGER);
+            if (parsedAmount.gt(MAX_SAFE)) {
+                throw new Error("Amount is too large");
+            }
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "Invalid amount";
             errors.push({
                 row: actualRowNumber,
-                message: `Invalid amount: ${amountStr}`,
+                message: `${errorMessage}`,
             });
             continue;
         }
@@ -259,7 +279,7 @@ export function parsePaymentData(
 
         payments.push({
             recipient,
-            amount: String(parsedAmountValue),
+            amount: parsedAmountStr, // Store as string to preserve precision
             validationError: validationError || undefined,
         });
     }

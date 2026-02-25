@@ -29,6 +29,8 @@ export const tokenSchema = z.object({
     network: z.string(),
     chainIcons: z.any().optional(),
     residency: z.string().optional(),
+    minWithdrawalAmount: z.string().optional(),
+    minDepositAmount: z.string().optional(),
 });
 
 export type Token = z.infer<typeof tokenSchema>;
@@ -41,10 +43,10 @@ interface TokenInputProps<
     title?: string;
     amountName: Path<TFieldValues>;
     tokenName: TTokenPath extends Path<TFieldValues>
-        ? PathValue<TFieldValues, TTokenPath> extends Token
-            ? TTokenPath
-            : never
-        : never;
+    ? PathValue<TFieldValues, TTokenPath> extends Token
+    ? TTokenPath
+    : never
+    : never;
     tokenSelect?: {
         disabled?: boolean;
         locked?: boolean;
@@ -176,9 +178,9 @@ export function TokenInput<
                                                             .toFixed(
                                                                 token.decimals,
                                                             ) as PathValue<
-                                                            TFieldValues,
-                                                            Path<TFieldValues>
-                                                        >,
+                                                                TFieldValues,
+                                                                Path<TFieldValues>
+                                                            >,
                                                     );
                                                 }
                                             }}
@@ -202,20 +204,20 @@ export function TokenInput<
                                         readOnly
                                             ? undefined
                                             : (e) =>
-                                                  field.onChange(
-                                                      e.target.value.replace(
-                                                          /^0+(?=\d)/,
-                                                          "",
-                                                      ),
-                                                  )
+                                                field.onChange(
+                                                    e.target.value.replace(
+                                                        /^0+(?=\d)/,
+                                                        "",
+                                                    ),
+                                                )
                                     }
                                     onBlur={readOnly ? undefined : field.onBlur}
                                     value={
                                         loading
                                             ? "..."
                                             : customValue !== undefined
-                                              ? customValue
-                                              : field.value.toString()
+                                                ? customValue
+                                                : field.value.toString()
                                     }
                                     placeholder="0"
                                     className={cn(
@@ -250,17 +252,17 @@ export function TokenInput<
                             className={cn(
                                 "text-muted-foreground text-xs invisible truncate",
                                 estimatedUSDValue !== null &&
-                                    estimatedUSDValue > 0 &&
-                                    "visible",
+                                estimatedUSDValue > 0 &&
+                                "visible",
                             )}
                         >
                             {!isTokenLoading &&
-                            estimatedUSDValue !== null &&
-                            estimatedUSDValue > 0
+                                estimatedUSDValue !== null &&
+                                estimatedUSDValue > 0
                                 ? `≈ ${formatCurrency(estimatedUSDValue)}`
                                 : isTokenLoading
-                                  ? "Loading price..."
-                                  : "Invisible"}
+                                    ? "Loading price..."
+                                    : "Invisible"}
                         </p>
                         {hasInsufficientBalance && (
                             <p className="text-general-info-foreground text-sm mt-2">

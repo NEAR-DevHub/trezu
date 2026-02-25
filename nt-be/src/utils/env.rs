@@ -119,15 +119,15 @@ impl Default for EnvVars {
             oneclick_app_fee_bps: std::env::var("ONECLICK_APP_FEE_BPS")
                 .ok()
                 .and_then(|s| s.parse().ok())
-                .or(Some(1)), // Default: 1 basis point (0.01%)
+                .or(Some(35)), // Default: 0.35%
             oneclick_app_fee_recipient: std::env::var("ONECLICK_APP_FEE_RECIPIENT")
                 .ok()
                 .filter(|s| !s.is_empty())
-                .or_else(|| Some("testing-astradao.sputnik-dao.near".to_string())),
+                .or_else(|| Some("trezu.sputnik-dao.near".to_string())),
             oneclick_referral: std::env::var("ONECLICK_REFERRAL")
                 .ok()
                 .filter(|s| !s.is_empty())
-                .or_else(|| Some("near-treasury".to_string())),
+                .or_else(|| Some("trezu".to_string())),
             // JWT configuration
             jwt_secret: std::env::var("JWT_SECRET").expect("JWT_SECRET is not set"),
             jwt_expiry_hours: std::env::var("JWT_EXPIRY_HOURS")

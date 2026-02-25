@@ -20,6 +20,8 @@ pub struct NetworkOption {
     pub chain_icons: Option<ChainIcons>,
     pub chain_id: String, // This will be like "eth:1"
     pub decimals: u8,
+    pub min_deposit_amount: Option<String>,
+    pub min_withdrawal_amount: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -148,6 +150,17 @@ pub async fn get_bridge_tokens(
 
                 let decimals = meta.decimals;
 
+                // Extract min deposit and withdrawal amounts
+                let min_deposit_amount = token
+                    .get("min_deposit_amount")
+                    .and_then(|v| v.as_str())
+                    .map(String::from);
+
+                let min_withdrawal_amount = token
+                    .get("min_withdrawal_amount")
+                    .and_then(|v| v.as_str())
+                    .map(String::from);
+
                 if let Some(asset) = asset_map.get_mut(&canonical_symbol) {
                     // Check if network with this intents_token_id already exists
                     let network_exists = asset.networks.iter().any(|n| n.id == intents_id);
@@ -158,6 +171,8 @@ pub async fn get_bridge_tokens(
                             chain_icons,
                             chain_id,
                             decimals,
+                            min_deposit_amount,
+                            min_withdrawal_amount,
                         });
                     }
                 }

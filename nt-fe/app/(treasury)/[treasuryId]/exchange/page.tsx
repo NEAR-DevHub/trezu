@@ -19,7 +19,7 @@ import { useSearchParams } from "next/navigation";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useNear } from "@/stores/near-store";
 import { useThemeStore } from "@/stores/theme-store";
-import { cn, formatBalance } from "@/lib/utils";
+import { cn, formatBalance, formatSmartAmount } from "@/lib/utils";
 import { NEAR_TOKEN } from "@/constants/token";
 import { CreateRequestButton } from "@/components/create-request-button";
 import { ArrowDown, ChevronRight, Loader2 } from "lucide-react";
@@ -294,8 +294,8 @@ function Step1({ handleNext }: StepProps) {
                         areSameTokens
                             ? "Tokens must be different"
                             : !hasValidAmount
-                              ? "Enter an amount to exchange"
-                              : "Review Exchange"
+                                ? "Enter an amount to exchange"
+                                : "Review Exchange"
                     }
                 />
             </div>
@@ -375,15 +375,15 @@ function Step2({ handleBack }: StepProps) {
         ? isWrapConversion
             ? { percentDifference: "0", isFavorable: true, hasMarketData: true }
             : calculateMarketPriceDifference(
-                  localLiveQuoteData.quote.amountInUsd,
-                  localLiveQuoteData.quote.amountOutUsd,
-                  localLiveQuoteData.quote.amountIn,
-                  localLiveQuoteData.quote.amountOut,
-                  sellToken.decimals,
-                  receiveToken.decimals,
-                  sellTokenData?.price,
-                  receiveTokenData?.price,
-              )
+                localLiveQuoteData.quote.amountInUsd,
+                localLiveQuoteData.quote.amountOutUsd,
+                localLiveQuoteData.quote.amountIn,
+                localLiveQuoteData.quote.amountOut,
+                sellToken.decimals,
+                receiveToken.decimals,
+                sellTokenData?.price,
+                receiveTokenData?.price,
+            )
         : null;
 
     return (
@@ -471,24 +471,24 @@ function Step2({ handleBack }: StepProps) {
                                 size="sm"
                                 items={[
                                     ...(marketPriceDifference &&
-                                    marketPriceDifference.hasMarketData
+                                        marketPriceDifference.hasMarketData
                                         ? [
-                                              {
-                                                  label: "Price Difference",
-                                                  value: (
-                                                      <span className="font-medium">
-                                                          {marketPriceDifference.isFavorable
-                                                              ? "+"
-                                                              : ""}
-                                                          {
-                                                              marketPriceDifference.percentDifference
-                                                          }
-                                                          %
-                                                      </span>
-                                                  ),
-                                                  info: "Difference between the quote rate and the current market rate. Positive values indicate a better rate than market.",
-                                              },
-                                          ]
+                                            {
+                                                label: "Price Difference",
+                                                value: (
+                                                    <span className="font-medium">
+                                                        {marketPriceDifference.isFavorable
+                                                            ? "+"
+                                                            : ""}
+                                                        {
+                                                            marketPriceDifference.percentDifference
+                                                        }
+                                                        %
+                                                    </span>
+                                                ),
+                                                info: "Difference between the quote rate and the current market rate. Positive values indicate a better rate than market.",
+                                            },
+                                        ]
                                         : []),
                                     {
                                         label: "Estimated Time",
@@ -543,6 +543,19 @@ function Step2({ handleBack }: StepProps) {
                                             </span>
                                         ),
                                     },
+                                    // Don't show Widget Fee for NEAR ↔ wNEAR conversions
+                                    ...(!isWrapConversion ? [{
+                                        label: "Widget Fee",
+                                        value: (() => {
+                                            // Calculate fee: amountIn * 0.35% = amountIn * 0.0035
+                                            const feePercentage = 0.35;
+                                            const amountIn = Number(localLiveQuoteData.quote.amountInFormatted) || 0;
+                                            const feeAmount = amountIn * (feePercentage / 100);
+
+                                            return `${feePercentage}% / ${formatSmartAmount(feeAmount)} ${sellToken.symbol}`;
+                                        })(),
+                                        info: "The fee applied here is charged by Trezu for operating this widget. It is automatically included in the quote."
+                                    }] : []),
                                 ]}
                             />
                         </div>
