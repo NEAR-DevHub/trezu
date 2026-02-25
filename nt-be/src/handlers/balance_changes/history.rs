@@ -1520,7 +1520,7 @@ pub async fn get_recent_activity(
         transaction_types: transaction_types_for_query.clone(),
         min_amount: None,
         max_amount: None,
-        exclude_near_dust: true,
+        exclude_near_dust: false,
     };
 
     // Count query
@@ -1572,7 +1572,7 @@ pub async fn get_recent_activity(
         max_amount: None,
         include_metadata: Some(true),
         include_prices: Some(true),
-        exclude_near_dust: true,
+        exclude_near_dust: false,
     };
 
     let enriched_changes = get_balance_changes_internal(&state, &balance_query)

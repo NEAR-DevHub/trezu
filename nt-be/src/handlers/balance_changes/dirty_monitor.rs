@@ -322,7 +322,7 @@ pub async fn fill_dirty_account_gaps(
     hint_service: Option<&TransferHintService>,
 ) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
     // Get all tokens for this account (excluding staking tokens)
-    let tokens: Vec<String> = sqlx::query_scalar(
+    let mut tokens: Vec<String> = sqlx::query_scalar(
         r#"
         SELECT DISTINCT token_id
         FROM balance_changes
@@ -333,6 +333,12 @@ pub async fn fill_dirty_account_gaps(
     .bind(account_id)
     .fetch_all(pool)
     .await?;
+
+    // Always ensure NEAR is in the tokens list - it may not be tracked yet
+    // even if other tokens (like FT or intents tokens) have already been discovered
+    if !tokens.contains(&"near".to_string()) {
+        tokens.push("near".to_string());
+    }
 
     let mut total_filled = 0;
 
