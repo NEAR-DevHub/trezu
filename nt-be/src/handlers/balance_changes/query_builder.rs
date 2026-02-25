@@ -195,7 +195,7 @@ mod tests {
 
         let (conditions, param_index) = build_where_conditions(&filters);
 
-        assert_eq!(conditions.len(), 5); // Base conditions: account_id, 3x counterparty filters, swap deposit exclusion subquery
+        assert_eq!(conditions.len(), 7); // Base conditions: account_id, SNAPSHOT, STAKING_SNAPSHOT, NOT_REGISTERED, CreateAccount, relayer, swap deposit exclusion
         assert_eq!(param_index, 2);
     }
 
@@ -216,7 +216,7 @@ mod tests {
 
         let (conditions, param_index) = build_where_conditions(&filters);
 
-        assert_eq!(conditions.len(), 8); // Base (5) + date (1) + token (1) + txn_type (1)
+        assert_eq!(conditions.len(), 10); // Base (7) + date (1) + token (1) + txn_type (1)
         assert_eq!(param_index, 4); // 1 (account_id) + 1 (date) + 1 (tokens) + starts at 2
         assert!(conditions.contains(&"block_time >= $2".to_string()));
         assert!(conditions.iter().any(|c| c.contains("token_id = ANY($3)")));
