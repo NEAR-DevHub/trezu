@@ -199,6 +199,10 @@ function Step1({ handleNext }: StepProps) {
     );
 }
 
+const MORE_MEMBERS_NEEDED =
+    "You need more members to modify voting settings. Add another member to configure voting.";
+const MINIMUM_NEEDED = "Minimum one approval vote required.";
+
 function Threshold({
     title,
     description,
@@ -228,6 +232,7 @@ function Threshold({
                     size="icon-sm"
                     onClick={() => onChange(value - 1)}
                     disabled={!canDecrement}
+                    tooltipContent={canDecrement ? undefined : MINIMUM_NEEDED}
                 >
                     <Minus className="size-4 text-secondary-foreground" />
                 </Button>
@@ -240,6 +245,9 @@ function Threshold({
                     size="icon-sm"
                     onClick={() => onChange(value + 1)}
                     disabled={!canIncrement}
+                    tooltipContent={
+                        canIncrement ? undefined : MORE_MEMBERS_NEEDED
+                    }
                 >
                     <Plus className="size-4 text-secondary-foreground" />
                 </Button>
