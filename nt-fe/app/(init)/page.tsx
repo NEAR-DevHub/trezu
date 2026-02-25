@@ -21,8 +21,9 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/modal";
-import { APP_WALLET_SETUP_URL } from "@/constants/config";
+import { APP_WALLET_SETUP_URL, LANDING_PAGE } from "@/constants/config";
 import { trackEvent } from "@/lib/analytics";
+import { cn } from "@/lib/utils";
 
 interface WalletSuggestionModalProps {
     open: boolean;
@@ -34,6 +35,7 @@ interface WalletSuggestionItemProps {
     href?: string;
     description: string;
     iconUrl: string;
+    disabled?: boolean;
 }
 
 function WalletSuggestionItem({
@@ -41,11 +43,17 @@ function WalletSuggestionItem({
     href,
     description,
     iconUrl,
+    disabled,
 }: WalletSuggestionItemProps) {
     const content = () => {
         return (
             <>
-                <div className="flex items-center gap-3.5">
+                <div
+                    className={cn(
+                        "flex items-center gap-3.5",
+                        disabled && "opacity-50",
+                    )}
+                >
                     <Image
                         src={iconUrl}
                         alt={name}
@@ -108,6 +116,7 @@ function WalletSuggestionModal({
             name: "MyNearWallet",
             description: "Coming soon",
             iconUrl: "/wallets/mynearwallet.svg",
+            disabled: true,
         },
     ];
 
@@ -257,7 +266,9 @@ export function Content() {
                                 delay: 0.42,
                             }}
                         >
-                            <Logo size="lg" />
+                            <Link href={LANDING_PAGE}>
+                                <Logo size="lg" />
+                            </Link>
                         </motion.div>
                         <div className="flex w-full flex-col items-center justify-center gap-6">
                             <div className="flex w-full flex-col gap-2 text-center">

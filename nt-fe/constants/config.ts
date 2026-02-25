@@ -5,5 +5,6 @@ export const APP_ACTIVE_TREASURY =
 export const APP_TWITTER_URL = "https://x.com/TrezuApp";
 export const APP_CONTACT_US_URL = "https://trezu.org/contact-us";
 export const LOCKUP_NO_WHITELIST_ACCOUNT_ID = "lockup-no-whitelist.near";
+export const LANDING_PAGE = "https://trezu.org";
 
 export const APP_WALLET_SETUP_URL = undefined;

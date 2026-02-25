@@ -11,10 +11,12 @@ import {
     APP_DOCS_URL,
     APP_ACTIVE_TREASURY,
     APP_TWITTER_URL,
+    LANDING_PAGE,
 } from "@/constants/config";
 import Link from "next/link";
-import { CirclePlay, Eye, File, Headphones } from "lucide-react";
+import { CirclePlay, Eye, File, Globe, Headphones } from "lucide-react";
 import Gleap from "gleap";
+import Logo from "./logo";
 
 function XIcon({ className }: { className?: string }) {
     return (
@@ -42,7 +44,7 @@ function SupportItem({
     closeModal,
 }: SupportItemProps) {
     const className =
-        "flex bg-secondary items-center gap-2 p-2 rounded-6 hover:bg-general-tertiary transition-colors";
+        "flex bg-secondary items-center gap-3 p-2 rounded-6 hover:bg-general-tertiary transition-colors";
     const content = (
         <>
             <div className="shrink-0 text-foreground">{icon}</div>
@@ -78,6 +80,12 @@ function SupportItem({
 
 const resourceItems: SupportItemProps[] = [
     {
+        icon: <Logo size="sm" variant="icon" />,
+        title: "Trezu Page",
+        description: "Visit the Trezu website for more information.",
+        href: LANDING_PAGE,
+    },
+    {
         icon: <Eye className="size-5" />,
         title: "See Demo Trezu",
         description: "Explore and see other account in action.",
@@ -92,7 +100,7 @@ const resourceItems: SupportItemProps[] = [
     {
         icon: <XIcon className="size-5" />,
         title: "Follow Us on X",
-        description: "Follow Us on X for updates, releases and insights.",
+        description: "Get updates, releases and insights.",
         href: APP_TWITTER_URL,
     },
 ];

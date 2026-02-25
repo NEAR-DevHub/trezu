@@ -20,8 +20,29 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-    title: "Trezu - Treasury Dashboard",
-    description: "Manage your treasury with cross-chain multisig security",
+    title: {
+        default: "Dashboard | Trezu",
+        template: "%s | Trezu",
+    },
+    description:
+        "Manage your team's capital in minutes from a single dashboard without ever giving up your keys.",
+    openGraph: {
+        title: "Trezu | One multisig. Any crypto. Total control.",
+        description:
+            "Manage your team's capital in minutes from a single dashboard without ever giving up your keys.",
+        images: [
+            "https://framerusercontent.com/assets/3H8WN4PxElLu7XMiyq7jbNMH8es.png",
+        ],
+    },
+    twitter: {
+        card: "summary_large_image",
+        title: "Trezu | One multisig. Any crypto. Total control.",
+        description:
+            "Manage your team's capital in minutes from a single dashboard without ever giving up your keys.",
+        images: [
+            "https://framerusercontent.com/assets/3H8WN4PxElLu7XMiyq7jbNMH8es.png",
+        ],
+    },
 };
 
 export default function RootLayout({
