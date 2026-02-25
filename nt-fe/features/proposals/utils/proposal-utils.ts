@@ -294,6 +294,9 @@ export function getProposalStatus(
 export function getProposalRequiredFunds(
     proposal: Proposal,
 ): { tokenId: string; amount: string } | null {
+    if (typeof proposal.kind === "string") {
+        return null;
+    }
     // Transfer proposal
     if ("Transfer" in proposal.kind) {
         const transfer = proposal.kind.Transfer;
