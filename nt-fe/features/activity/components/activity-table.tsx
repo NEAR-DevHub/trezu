@@ -143,7 +143,7 @@ export function ActivityTable({
                                             </div>
                                         </TableCell>
                                         <TableCell className="min-w-[180px]">
-                                            {isSwap && activity.swap ? (
+                                            {isSwap && activity.swap && activity.swap.swapRole === "deposit" ? (
                                                 <div className="flex items-center gap-1.5">
                                                     {activity.swap.sentAmount &&
                                                     activity.swap
@@ -164,6 +164,22 @@ export function ActivityTable({
                                                             ?
                                                         </span>
                                                     )}
+                                                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                                    <span className="font-semibold text-muted-foreground whitespace-nowrap">
+                                                        {
+                                                            activity.swap
+                                                                .receivedTokenMetadata
+                                                                .symbol
+                                                        }
+                                                    </span>
+                                                </div>
+                                            ) : isSwap && activity.swap && activity.swap.swapRole === "fulfillment" ? (
+                                                <div className="flex items-center gap-1.5">
+                                                    {activity.swap.sentTokenMetadata ? (
+                                                        <span className="font-semibold text-muted-foreground whitespace-nowrap">
+                                                            {activity.swap.sentTokenMetadata.symbol}
+                                                        </span>
+                                                    ) : null}
                                                     <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                                                     <span className="font-semibold text-general-success-foreground whitespace-nowrap">
                                                         {formatSmartAmount(

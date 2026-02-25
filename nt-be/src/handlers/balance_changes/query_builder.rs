@@ -45,10 +45,6 @@ pub fn build_where_conditions(filters: &BalanceChangeFilters) -> (Vec<String>, u
         "(amount != 0 OR balance_before != balance_after)".to_string(),
         "(action_kind IS NULL OR action_kind != 'CreateAccount')".to_string(),
         RELAYER_WHERE_CONDITION.to_string(),
-        // Exclude swap deposit legs - these are shown as part of the swap fulfillment
-        format!(
-            "id NOT IN (SELECT deposit_balance_change_id FROM detected_swaps WHERE account_id = $1 AND deposit_balance_change_id IS NOT NULL)"
-        ),
     ];
 
     let mut param_index = 2;
@@ -132,7 +128,7 @@ pub fn build_where_conditions(filters: &BalanceChangeFilters) -> (Vec<String>, u
 
     // Exclude tiny NEAR amounts (gas/storage noise)
     if filters.exclude_near_dust {
-        conditions.push("NOT (token_id = 'near' AND ABS(amount) < 0.01)".to_string());
+        conditions.push("NOT (token_id = 'near' AND ABS(amount) < 0.09)".to_string());
     }
 
     (conditions, param_index)
@@ -197,7 +193,7 @@ mod tests {
 
         let (conditions, param_index) = build_where_conditions(&filters);
 
-        assert_eq!(conditions.len(), 8); // Base conditions: account_id, SNAPSHOT, STAKING_SNAPSHOT, NOT_REGISTERED, zero-change, CreateAccount, relayer, swap deposit exclusion
+        assert_eq!(conditions.len(), 7); // Base conditions: account_id, SNAPSHOT, STAKING_SNAPSHOT, NOT_REGISTERED, zero-change, CreateAccount, relayer
         assert_eq!(param_index, 2);
     }
 
@@ -218,7 +214,7 @@ mod tests {
 
         let (conditions, param_index) = build_where_conditions(&filters);
 
-        assert_eq!(conditions.len(), 11); // Base (8) + date (1) + token (1) + txn_type (1)
+        assert_eq!(conditions.len(), 10); // Base (7) + date (1) + token (1) + txn_type (1)
         assert_eq!(param_index, 4); // 1 (account_id) + 1 (date) + 1 (tokens) + starts at 2
         assert!(conditions.contains(&"block_time >= $2".to_string()));
         assert!(conditions.iter().any(|c| c.contains("token_id = ANY($3)")));

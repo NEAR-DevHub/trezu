@@ -253,16 +253,43 @@ pub async fn detect_swaps_from_api(
         let sent_token_id = format!("intents.near:{}", api_tx.origin_asset);
         let sent_amount = BigDecimal::from_str(&api_tx.amount_in_formatted).ok();
 
-        // Try to find a matching deposit for exclusion from activity list
-        // Use origin_asset to narrow the match to the correct token
-        let matching_deposit = deposits
+        // Try to find a matching deposit balance change.
+        // The deposit can be either:
+        // 1. An intents-prefixed negative transfer (intents.near:nep141:contract.near)
+        // 2. A raw FT transfer to the deposit address (e.g. DAO ft_transfer via proposal)
+        //    In this case token_id is the raw contract address, and the deposit
+        //    tx hash is near_tx_hashes[0] (the first hash in the intents API response).
+        let raw_token_id = api_tx
+            .origin_asset
+            .strip_prefix("nep141:")
+            .unwrap_or(&api_tx.origin_asset);
+
+        // First try: match intents-prefixed deposits
+        let mut matching_deposit = deposits
             .iter()
             .filter(|d| {
                 !matched_deposit_ids.contains(&d.id)
                     && d.block_height < fulfillment.block_height
                     && d.token_id_str() == sent_token_id
             })
-            .max_by_key(|d| d.block_height);
+            .max_by_key(|d| d.block_height)
+            .copied();
+
+        // Second try: match by deposit tx hash + raw token ID
+        if matching_deposit.is_none()
+            && let Some(deposit_tx) = api_tx.near_tx_hashes.first()
+            && let Some(deposit_records) = tx_to_records.get(deposit_tx)
+        {
+            matching_deposit = deposit_records
+                .iter()
+                .filter(|d| {
+                    !matched_deposit_ids.contains(&d.id)
+                        && d.is_negative()
+                        && d.token_id_str() == raw_token_id
+                })
+                .max_by_key(|d| d.block_height)
+                .copied();
+        }
 
         if let Some(deposit) = matching_deposit {
             matched_deposit_ids.insert(deposit.id);
@@ -357,6 +384,251 @@ pub async fn store_detected_swaps(
     }
 
     Ok(inserted)
+}
+
+/// Classify DAO proposal-based swap deposits by inspecting proposal descriptions.
+///
+/// For balance changes with method_name='on_proposal_callback' that aren't already
+/// linked in detected_swaps, this fetches the transaction to extract the proposal ID,
+/// then fetches the proposal and checks if it's an asset-exchange.
+///
+/// This handles both fulfilled swaps (where the intents API didn't link the deposit)
+/// and unfulfilled swaps (where no intents API data exists yet).
+pub async fn classify_proposal_swap_deposits(
+    pool: &PgPool,
+    network: &near_api::NetworkConfig,
+    account_id: &str,
+) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    use crate::handlers::proposals::scraper::{AssetExchangeInfo, ProposalType, fetch_proposal};
+
+    // Find on_proposal_callback balance changes not yet linked as deposits in detected_swaps
+    let unlinked_deposits = sqlx::query!(
+        r#"
+        SELECT bc.id, bc.account_id, bc.block_height, bc.token_id,
+               bc.amount, bc.transaction_hashes, bc.signer_id, bc.receipt_id
+        FROM balance_changes bc
+        WHERE bc.account_id = $1
+          AND bc.method_name = 'on_proposal_callback'
+          AND bc.amount < 0
+          AND NOT EXISTS (
+              SELECT 1 FROM detected_swaps ds
+              WHERE ds.account_id = bc.account_id
+                AND ds.deposit_balance_change_id = bc.id
+          )
+        ORDER BY bc.block_height DESC
+        LIMIT 20
+        "#,
+        account_id
+    )
+    .fetch_all(pool)
+    .await?;
+
+    if unlinked_deposits.is_empty() {
+        return Ok(0);
+    }
+
+    log::info!(
+        "[swap-classify] {}: Found {} unlinked on_proposal_callback deposits to check",
+        account_id,
+        unlinked_deposits.len()
+    );
+
+    let dao_account_id: near_api::AccountId = account_id.parse()?;
+    let mut classified = 0;
+
+    for deposit in &unlinked_deposits {
+        let tx_hash = match deposit.transaction_hashes.first() {
+            Some(h) => h.clone(),
+            None => continue,
+        };
+        let signer_id = match &deposit.signer_id {
+            Some(s) => s.clone(),
+            None => account_id.to_string(),
+        };
+
+        // Extract proposal ID from the transaction
+        let proposal_id = match extract_proposal_id(network, &tx_hash, &signer_id).await {
+            Some(id) => id,
+            None => {
+                log::debug!(
+                    "[swap-classify] Could not extract proposal ID from tx {} for {}",
+                    tx_hash,
+                    account_id
+                );
+                continue;
+            }
+        };
+
+        // Fetch proposal from DAO contract
+        let proposal = match fetch_proposal(network, &dao_account_id, proposal_id).await {
+            Ok(p) => p,
+            Err(e) => {
+                log::debug!(
+                    "[swap-classify] Failed to fetch proposal {} for {}: {}",
+                    proposal_id,
+                    account_id,
+                    e
+                );
+                continue;
+            }
+        };
+
+        // Check if it's an asset-exchange proposal
+        let Some(exchange_info) = AssetExchangeInfo::from_proposal(&proposal) else {
+            continue;
+        };
+
+        let deposit_receipt_id = deposit.receipt_id.first().cloned();
+        let token_id = deposit.token_id.clone().unwrap_or_default();
+
+        // First, try to link to an existing intents API row that has NULL deposit_balance_change_id.
+        // Match by account + sent token (intents-prefixed version) + amount.
+        let intents_token_id = format!("intents.near:nep141:{}", token_id);
+        let linked = sqlx::query!(
+            r#"
+            UPDATE detected_swaps
+            SET deposit_balance_change_id = $1,
+                deposit_receipt_id = $2
+            WHERE account_id = $3
+              AND deposit_balance_change_id IS NULL
+              AND sent_token_id = $4
+              AND sent_amount = $5
+            "#,
+            deposit.id,
+            deposit_receipt_id,
+            account_id,
+            intents_token_id,
+            deposit.amount.abs(),
+        )
+        .execute(pool)
+        .await;
+
+        if let Ok(r) = &linked
+            && r.rows_affected() > 0
+        {
+            classified += 1;
+            log::info!(
+                "[swap-classify] {}: Linked deposit bc_id={} to existing intents swap",
+                account_id,
+                deposit.id
+            );
+            continue;
+        }
+
+        // No existing intents row — create a new row for unfulfilled swaps.
+        let received_amount = BigDecimal::from_str(&exchange_info.amount_out).unwrap_or_default();
+
+        // Normalize received_token_id: proposal descriptions use "nep141:sol.omft.near"
+        // but the frontend needs "intents.near:nep141:..." to resolve token metadata.
+        let received_token_id = if exchange_info.token_out_symbol.starts_with("nep141:") {
+            format!("intents.near:{}", exchange_info.token_out_symbol)
+        } else {
+            exchange_info.token_out_symbol.clone()
+        };
+
+        let result = sqlx::query!(
+            r#"
+            INSERT INTO detected_swaps (
+                account_id,
+                solver_transaction_hash,
+                deposit_receipt_id,
+                deposit_balance_change_id,
+                fulfillment_receipt_id,
+                fulfillment_balance_change_id,
+                sent_token_id,
+                sent_amount,
+                received_token_id,
+                received_amount,
+                block_height
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            ON CONFLICT (account_id, solver_transaction_hash) DO UPDATE SET
+                deposit_balance_change_id = COALESCE(detected_swaps.deposit_balance_change_id, EXCLUDED.deposit_balance_change_id),
+                deposit_receipt_id = COALESCE(detected_swaps.deposit_receipt_id, EXCLUDED.deposit_receipt_id)
+            "#,
+            account_id,
+            format!("proposal-deposit-{}", tx_hash),
+            deposit_receipt_id,
+            Some(deposit.id),
+            None::<String>,
+            deposit.id,
+            Some(token_id),
+            Some(deposit.amount.abs()),
+            received_token_id,
+            received_amount,
+            deposit.block_height,
+        )
+        .execute(pool)
+        .await;
+
+        match result {
+            Ok(r) if r.rows_affected() > 0 => {
+                classified += 1;
+                log::info!(
+                    "[swap-classify] {}: Classified proposal {} as asset-exchange deposit (bc_id={})",
+                    account_id,
+                    proposal_id,
+                    deposit.id
+                );
+            }
+            Err(e) => {
+                log::debug!(
+                    "[swap-classify] {}: Error inserting proposal swap for bc_id={}: {}",
+                    account_id,
+                    deposit.id,
+                    e
+                );
+            }
+            _ => {}
+        }
+    }
+
+    Ok(classified)
+}
+
+/// Extract proposal ID from a transaction by inspecting act_proposal args.
+/// Handles both direct FunctionCall and Delegate-wrapped actions.
+async fn extract_proposal_id(
+    network: &near_api::NetworkConfig,
+    tx_hash: &str,
+    signer_id: &str,
+) -> Option<u64> {
+    use crate::handlers::balance_changes::block_info::get_transaction;
+
+    let tx_response = get_transaction(network, tx_hash, signer_id).await.ok()?;
+    let outcome = tx_response.final_execution_outcome?.into_outcome();
+    let transaction = &outcome.transaction;
+
+    fn extract_from_action(action: &near_primitives::views::ActionView) -> Option<u64> {
+        if let near_primitives::views::ActionView::FunctionCall {
+            method_name, args, ..
+        } = action
+            && method_name == "act_proposal"
+        {
+            let json: serde_json::Value = serde_json::from_slice(args).ok()?;
+            return json.get("id").and_then(|v| v.as_u64());
+        }
+        None
+    }
+
+    for action in &transaction.actions {
+        if let Some(id) = extract_from_action(action) {
+            return Some(id);
+        }
+        if let near_primitives::views::ActionView::Delegate {
+            delegate_action, ..
+        } = action
+        {
+            for inner in &delegate_action.actions {
+                if let near_primitives::action::Action::FunctionCall(fc) = inner.clone().into()
+                    && fc.method_name == "act_proposal"
+                {
+                    let json: serde_json::Value = serde_json::from_slice(&fc.args).ok()?;
+                    return json.get("id").and_then(|v| v.as_u64());
+                }
+            }
+        }
+    }
+    None
 }
 
 #[cfg(test)]

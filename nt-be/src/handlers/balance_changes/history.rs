@@ -1383,6 +1383,8 @@ pub struct SwapInfo {
     pub received_amount: BigDecimal,
     pub received_token_metadata: TokenMetadata,
     pub solver_transaction_hash: String,
+    /// "deposit" for the outgoing leg, "fulfillment" for the incoming leg
+    pub swap_role: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -1588,12 +1590,13 @@ pub async fn get_recent_activity(
             )
         })?;
 
-    // Look up detected swaps for fulfillment IDs on this page
+    // Look up detected swaps for both fulfillment and deposit IDs on this page
     let change_ids: Vec<i64> = enriched_changes.iter().map(|c| c.id).collect();
 
     #[derive(Debug)]
     struct SwapRecord {
         fulfillment_balance_change_id: i64,
+        deposit_balance_change_id: Option<i64>,
         sent_token_id: Option<String>,
         sent_amount: Option<BigDecimal>,
         received_token_id: String,
@@ -1607,6 +1610,7 @@ pub async fn get_recent_activity(
             r#"
             SELECT
                 fulfillment_balance_change_id,
+                deposit_balance_change_id,
                 sent_token_id,
                 sent_amount,
                 received_token_id,
@@ -1614,7 +1618,8 @@ pub async fn get_recent_activity(
                 solver_transaction_hash
             FROM detected_swaps
             WHERE account_id = $1
-              AND fulfillment_balance_change_id = ANY($2)
+              AND (fulfillment_balance_change_id = ANY($2)
+                   OR deposit_balance_change_id = ANY($2))
             "#,
             &params.account_id,
             &change_ids,
@@ -1626,11 +1631,15 @@ pub async fn get_recent_activity(
         vec![]
     };
 
-    // Build swap lookup map
-    let swap_map: std::collections::HashMap<i64, SwapRecord> = swap_records
-        .into_iter()
-        .map(|s| (s.fulfillment_balance_change_id, s))
-        .collect();
+    // Build swap lookup map: balance_change_id -> (role, index into swap_records)
+    let mut swap_map: std::collections::HashMap<i64, (&str, usize)> =
+        std::collections::HashMap::new();
+    for (i, record) in swap_records.iter().enumerate() {
+        swap_map.insert(record.fulfillment_balance_change_id, ("fulfillment", i));
+        if let Some(deposit_id) = record.deposit_balance_change_id {
+            swap_map.insert(deposit_id, ("deposit", i));
+        }
+    }
 
     // Helper function to resolve metadata for a token_id
     fn resolve_swap_metadata(
@@ -1664,11 +1673,11 @@ pub async fn get_recent_activity(
 
     // Collect unique swap token IDs that are not already in enriched_changes
     let mut swap_token_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
-    for swap in swap_map.values() {
-        if let Some(ref sent_token_id) = swap.sent_token_id {
+    for record in &swap_records {
+        if let Some(ref sent_token_id) = record.sent_token_id {
             swap_token_ids.insert(sent_token_id.clone());
         }
-        swap_token_ids.insert(swap.received_token_id.clone());
+        swap_token_ids.insert(record.received_token_id.clone());
     }
 
     // Build metadata map from enriched changes (which already have metadata)
@@ -1722,8 +1731,9 @@ pub async fn get_recent_activity(
                 }
             }
 
-            // Check if this change has swap info
-            let swap = swap_map.get(&change.id).map(|s| {
+            // Check if this change has swap info (as fulfillment or deposit leg)
+            let swap = swap_map.get(&change.id).map(|(role, idx)| {
+                let s = &swap_records[*idx];
                 let sent_token_metadata = s
                     .sent_token_id
                     .as_ref()
@@ -1739,6 +1749,7 @@ pub async fn get_recent_activity(
                     received_amount: s.received_amount.clone(),
                     received_token_metadata,
                     solver_transaction_hash: s.solver_transaction_hash.clone(),
+                    swap_role: role.to_string(),
                 }
             });
 

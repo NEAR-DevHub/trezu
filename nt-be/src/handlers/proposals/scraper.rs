@@ -875,11 +875,17 @@ impl ProposalType for AssetExchangeInfo {
                 }
 
                 // Extract token_out from description
-                let token_out_symbol =
-                    extract_from_description(&proposal.description, "tokenOut").unwrap_or_default();
+                // Try both old format ("tokenOut") and new 1Click format ("Token Out Address")
+                let token_out_symbol = extract_from_description(&proposal.description, "tokenOut")
+                    .or_else(|| {
+                        extract_from_description(&proposal.description, "Token Out Address")
+                    })
+                    .unwrap_or_default();
 
                 // Extract amount_out from description
+                // Try both old format ("amountOut") and new 1Click format ("Amount Out")
                 let amount_out = extract_from_description(&proposal.description, "amountOut")
+                    .or_else(|| extract_from_description(&proposal.description, "Amount Out"))
                     .unwrap_or_else(|| "0".to_string());
                 if proposal.id == 457 {
                     println!("json_args: {:?}", json_args);

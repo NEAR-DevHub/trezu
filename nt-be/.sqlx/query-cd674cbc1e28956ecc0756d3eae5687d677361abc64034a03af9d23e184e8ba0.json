@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT bc.id, bc.account_id, bc.block_height, bc.token_id,\n               bc.amount, bc.transaction_hashes, bc.signer_id, bc.receipt_id\n        FROM balance_changes bc\n        WHERE bc.account_id = $1\n          AND bc.method_name = 'on_proposal_callback'\n          AND bc.amount < 0\n          AND NOT EXISTS (\n              SELECT 1 FROM detected_swaps ds\n              WHERE ds.account_id = bc.account_id\n                AND ds.deposit_balance_change_id = bc.id\n          )\n        ORDER BY bc.block_height DESC\n        LIMIT 20\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "account_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "block_height",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "token_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "amount",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 5,
+        "name": "transaction_hashes",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 6,
+        "name": "signer_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "receipt_id",
+        "type_info": "TextArray"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "cd674cbc1e28956ecc0756d3eae5687d677361abc64034a03af9d23e184e8ba0"
+}
