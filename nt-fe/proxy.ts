@@ -86,11 +86,12 @@ export function proxy(request: NextRequest) {
 /**
  * Run proxy on all routes except:
  * - /blocked (the blocked page itself)
+ * - /crash-report (Sentry proxy)
  * - /_next/static, /_next/image, /_next/data (Next.js internals)
  * - Static files with common extensions
  */
 export const config = {
   matcher: [
-    "/((?!blocked|_next/static|_next/image|_next/data|favicon\\.ico|.*\\.svg$|.*\\.png$|.*\\.jpg$|.*\\.webp$).*)",
+    "/((?!blocked|crash-report|_next/static|_next/image|_next/data|favicon\\.ico|.*\\.svg$|.*\\.png$|.*\\.jpg$|.*\\.webp$).*)",
   ],
 };
