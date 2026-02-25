@@ -7,8 +7,8 @@ import {
     ConnectorAction,
     SignDelegateActionParams,
 } from "@hot-labs/near-connect";
-import { Vote as ProposalVote } from "@/lib/proposals-api";
-import { ProposalPermissionKind } from "@/lib/config-utils";
+import { Proposal, Vote as ProposalVote } from "@/lib/proposals-api";
+import { ProposalPermissionKind, getKindFromProposal } from "@/lib/config-utils";
 import { toast } from "sonner";
 import Big from "@/lib/big";
 import { useQueryClient } from "@tanstack/react-query";
@@ -85,7 +85,7 @@ export interface CreateProposalParams {
 interface Vote {
     proposalId: number;
     vote: ProposalVote;
-    proposalKind: ProposalPermissionKind;
+    proposal: Proposal;
 }
 
 const LOGIN_MESSAGE = "Login to Trezu";
@@ -561,7 +561,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                 args: {
                     id: vote.proposalId,
                     action: `Vote${vote.vote}`,
-                    proposal: vote.proposalKind,
+                    proposal: vote.proposal.kind,
                 },
                 gas: gas.toString(),
                 deposit: "0",
@@ -585,12 +585,12 @@ export const useNearStore = create<NearStore>((set, get) => ({
             const toastAction =
                 votes.length === 1 && votes[0].vote !== "Remove"
                     ? {
-                          label: "View Request",
-                          onClick: () =>
-                              window.open(
-                                  `/${treasuryId}/requests/${votes[0].proposalId}`,
-                              ),
-                      }
+                        label: "View Request",
+                        onClick: () =>
+                            window.open(
+                                `/${treasuryId}/requests/${votes[0].proposalId}`,
+                            ),
+                    }
                     : undefined;
             const text =
                 votes.length === 1 && votes[0].vote === "Remove"
@@ -710,9 +710,10 @@ export const useNear = () => {
             "add_member_to_role",
             "remove_member_from_role",
         ];
-        const hasPolicyVote = votes.some((v) =>
-            policyKinds.includes(v.proposalKind),
-        );
+        const hasPolicyVote = votes.some((v) => {
+            const kind = getKindFromProposal(v.proposal.kind);
+            return kind && policyKinds.includes(kind);
+        });
         if (hasPolicyVote) {
             await markDaoDirty(treasuryId);
         }
