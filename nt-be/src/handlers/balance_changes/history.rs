@@ -179,20 +179,39 @@ pub async fn get_balance_chart(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    // Convert EnrichedBalanceChange back to BalanceChange for calculate_snapshots
+    // Convert EnrichedBalanceChange back to BalanceChange for calculate_snapshots.
+    // IMPORTANT: restore the original staking token_id (staking:<pool>) instead of
+    // the display-transformed "near". The staking remapping in get_balance_changes_internal
+    // is for UI display only; mixing staking rows under "near" corrupts the snapshot
+    // logic because staking balance_after values (~0.001) are picked up instead of the
+    // real NEAR balance when staking block_heights are higher than real NEAR changes.
     let changes: Vec<BalanceChange> = enriched_changes
         .into_iter()
-        .map(|change| BalanceChange {
-            block_height: change.block_height,
-            block_time: change.block_time,
-            token_id: change.token_id,
-            token_symbol: None, // Not needed for chart calculations
-            counterparty: change.counterparty.unwrap_or_default(),
-            amount: change.amount,
-            balance_before: change.balance_before,
-            balance_after: change.balance_after,
-            transaction_hashes: change.transaction_hashes,
-            receipt_id: change.receipt_id, // Already Vec<String>
+        .map(|change| {
+            let token_id = if change.action_kind.as_deref() == Some("StakingReward") {
+                // counterparty was set to the pool address by the remapping; reconstruct
+                // the original staking:<pool> token_id so calculate_snapshots keeps these
+                // in a separate series from real NEAR.
+                if let Some(ref pool) = change.counterparty {
+                    format!("staking:{}", pool)
+                } else {
+                    change.token_id
+                }
+            } else {
+                change.token_id
+            };
+            BalanceChange {
+                block_height: change.block_height,
+                block_time: change.block_time,
+                token_id,
+                token_symbol: None, // Not needed for chart calculations
+                counterparty: change.counterparty.unwrap_or_default(),
+                amount: change.amount,
+                balance_before: change.balance_before,
+                balance_after: change.balance_after,
+                transaction_hashes: change.transaction_hashes,
+                receipt_id: change.receipt_id,
+            }
         })
         .collect();
 
