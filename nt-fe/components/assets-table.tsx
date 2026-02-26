@@ -44,6 +44,7 @@ import { EarningDetailsModal } from "./earning-details-modal";
 import { Tooltip } from "./tooltip";
 import { useTreasury } from "@/hooks/use-treasury";
 import { AuthButton } from "./auth-button";
+import { useRouter } from "next/navigation";
 
 const columnHelper = createColumnHelper<AggregatedAsset>();
 
@@ -63,6 +64,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
     const [selectedStakingNetwork, setSelectedStakingNetwork] =
         useState<TreasuryAsset | null>(null);
     const [isStakingModalOpen, setIsStakingModalOpen] = useState(false);
+    const router = useRouter();
 
     // Define columns
     const columns = useMemo<ColumnDef<AggregatedAsset, any>[]>(
@@ -401,44 +403,39 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                                                                 )}
                                                                             </div>
                                                                             <div className="absolute inset-0 flex gap-1 justify-end items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                                <Link
-                                                                                    href={`/${treasuryId}/payments?token=${tokenParam}`}
-                                                                                    onClick={(
-                                                                                        e,
-                                                                                    ) =>
-                                                                                        e.stopPropagation()
-                                                                                    }
-                                                                                >
+                                                                                <div className="size-8">
                                                                                     <AuthButton
                                                                                         permissionKind="transfer"
                                                                                         permissionAction="AddProposal"
                                                                                         variant="ghost"
                                                                                         size="icon"
-                                                                                        className="h-8 w-8"
                                                                                         tooltipContent="Send"
+                                                                                        onClick={() => {
+                                                                                            router.push(
+                                                                                                `/${treasuryId}/payments?token=${tokenParam}`,
+                                                                                            );
+                                                                                        }}
                                                                                     >
                                                                                         <ArrowUpRight className="size-4 text-primary" />
                                                                                     </AuthButton>
-                                                                                </Link>
-                                                                                <Link
-                                                                                    href={`/${treasuryId}/exchange?sellToken=${tokenParam}`}
-                                                                                    onClick={(
-                                                                                        e,
-                                                                                    ) =>
-                                                                                        e.stopPropagation()
-                                                                                    }
-                                                                                >
+                                                                                </div>
+
+                                                                                <div className="size-8">
                                                                                     <AuthButton
                                                                                         permissionKind="call"
                                                                                         permissionAction="AddProposal"
                                                                                         variant="ghost"
                                                                                         size="icon"
-                                                                                        className="h-8 w-8"
                                                                                         tooltipContent="Exchange"
+                                                                                        onClick={() => {
+                                                                                            router.push(
+                                                                                                `/${treasuryId}/exchange?sellToken=${tokenParam}`,
+                                                                                            );
+                                                                                        }}
                                                                                     >
                                                                                         <ArrowLeftRight className="size-4 text-primary" />
                                                                                     </AuthButton>
-                                                                                </Link>
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                     </TableCell>

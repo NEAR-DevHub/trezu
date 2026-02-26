@@ -37,7 +37,6 @@ import {
     isWebUsbSupported,
     isWebBleSupported,
 } from "@/src/ledger-wallet/near-ledger";
-import manifests from "@hot-labs/near-connect/repository/manifest.json";
 import { APP_WALLET_SETUP_URL } from "@/constants/config";
 
 /**
@@ -171,7 +170,6 @@ export const useNearStore = create<NearStore>((set, get) => ({
 
         try {
             newConnector = new NearConnector({
-                manifest: manifests as any,
                 network: "mainnet",
                 footerBranding: {
                     icon: "/favicon_dark.svg",

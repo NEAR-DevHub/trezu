@@ -7,7 +7,6 @@
         "dev:ledger": "node scripts/build-ledger.mjs --watch",
         "prebuild": "node scripts/build-ledger.mjs",
         "build": "next build",
-        "postinstall": "node scripts/build-near-connect.js",
         "build:ledger": "node scripts/build-ledger.mjs",
         "start": "next start",
         "lint": "biome check",
@@ -20,7 +19,7 @@
     },
     "dependencies": {
         "@hookform/resolvers": "^5.2.2",
-        "@hot-labs/near-connect": "github:azbang/near-connect#main",
+        "@hot-labs/near-connect": "^0.10.0",
         "@near-js/transactions": "^2.5.1",
         "@radix-ui/react-checkbox": "^1.3.3",
         "@radix-ui/react-collapsible": "^1.1.12",
