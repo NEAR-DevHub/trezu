@@ -81,20 +81,20 @@ function SupportItem({
 const resourceItems: SupportItemProps[] = [
     {
         icon: <LogoInlined className="size-5" />,
-        title: "Trezu Page",
-        description: "Visit the Trezu website for more information.",
+        title: "Trezu Website",
+        description: "Get more information and read blogposts.",
         href: LANDING_PAGE,
     },
     {
         icon: <Eye className="size-5" />,
         title: "See Demo Trezu",
-        description: "Explore and see other account in action.",
+        description: "Explore and see demo account in action.",
         href: APP_ACTIVE_TREASURY,
     },
     {
         icon: <CirclePlay className="size-5" />,
         title: "View Demo",
-        description: "Watch the demo to explore how the Treasury works.",
+        description: "Watch the video to explore how the Trezu works.",
         href: APP_DEMO_URL,
     },
     {
