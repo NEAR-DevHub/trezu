@@ -82,7 +82,7 @@ const resourceItems: SupportItemProps[] = [
     {
         icon: <LogoInlined className="size-5" />,
         title: "Trezu Website",
-        description: "Get more information and read blogposts.",
+        description: "Get more information and read blog posts.",
         href: LANDING_PAGE,
     },
     {
