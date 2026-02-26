@@ -14,9 +14,9 @@ import {
     LANDING_PAGE,
 } from "@/constants/config";
 import Link from "next/link";
-import { CirclePlay, Eye, File, Globe, Headphones } from "lucide-react";
+import { CirclePlay, Eye, File, Headphones } from "lucide-react";
 import Gleap from "gleap";
-import Logo from "./logo";
+import { LogoInlined } from "./logo";
 
 function XIcon({ className }: { className?: string }) {
     return (
@@ -80,7 +80,7 @@ function SupportItem({
 
 const resourceItems: SupportItemProps[] = [
     {
-        icon: <Logo size="sm" variant="icon" />,
+        icon: <LogoInlined className="size-5" />,
         title: "Trezu Page",
         description: "Visit the Trezu website for more information.",
         href: LANDING_PAGE,

@@ -20,6 +20,30 @@ const sizeClasses = cva("w-auto", {
     },
 });
 
+interface LogoInlinedProps {
+    className?: string;
+}
+
+export function LogoInlined({ className }: LogoInlinedProps) {
+    return (
+        <svg
+            className={className}
+            viewBox="0 0 32 32"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+        >
+            <path
+                d="M14.8682 3H27.8682L14.8682 17H2.86816L14.8682 3Z"
+                className="fill-foreground"
+            />
+            <path
+                d="M14.8682 17H27.8682L14.8682 30V17Z"
+                className="fill-foreground"
+            />
+        </svg>
+    );
+}
+
 export default function Logo({ size = "md", variant = "full" }: LogoProps) {
     const className = sizeClasses({ size });
 
