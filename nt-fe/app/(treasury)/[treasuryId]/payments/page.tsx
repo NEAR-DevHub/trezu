@@ -338,7 +338,7 @@ export default function PaymentsPage() {
                 !data.isRegistered && !isNEAR && !isSelectedTokenIntents;
 
             if (needsStorageDeposit) {
-                const depositInYocto = Big(0.125)
+                const depositInYocto = Big(0.00125)
                     .mul(Big(10).pow(24))
                     .toFixed();
                 additionalTransactions.push({

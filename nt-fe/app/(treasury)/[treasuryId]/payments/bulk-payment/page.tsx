@@ -208,7 +208,7 @@ export default function BulkPaymentPage() {
             const additionalTransactions: any[] = [];
             if (needsStorageDepositCheck(selectedToken)) {
                 const gas = "30000000000000";
-                const depositInYocto = Big(0.0125)
+                const depositInYocto = Big(0.00125)
                     .mul(Big(10).pow(24))
                     .toFixed();
 
