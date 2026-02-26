@@ -548,10 +548,12 @@ fn calculate_snapshots(
                 break;
             }
 
-            // Most recent balance_after at or before this interval point
+            // Most recent balance_after at or before this interval point.
+            // Changes are sorted newest-first (block_height DESC), so `find` returns
+            // the most recent change at or before current_time.
             let balance = token_changes
                 .iter()
-                .rfind(|c| c.block_time <= current_time)
+                .find(|c| c.block_time <= current_time)
                 .map(|c| c.balance_after.clone())
                 .unwrap_or_else(|| starting_balance.clone());
 
