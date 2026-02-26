@@ -787,46 +787,44 @@ pub async fn fetch_tokens_with_defuse_extension(
         }
     };
 
-    // Build reverse map: defuse_id -> original token_id, preferring canonical IDs.
-    // Priority: "near" > bare contract ID > "intents.near:" prefixed.
-    // This avoids flaky price lookup when e.g. both "near" and "intents.near:nep141:wrap.near"
-    // are present and both map to "nep141:wrap.near".
-    let priority = |id: &str| -> u8 {
-        if id == "near" {
-            0
-        } else if id.starts_with("intents.near:") {
-            2
-        } else {
-            1
-        }
-    };
-    let mut defuse_to_original: HashMap<String, String> = HashMap::new();
+    // Build reverse map: defuse_id -> all original token IDs.
+    // Multiple aliases can map to the same defuse asset ID (e.g. bare ID and intents.near: prefixed ID),
+    // and all of them should receive enrichment.
+    let mut defuse_to_originals: HashMap<String, Vec<String>> = HashMap::new();
     for id in result.keys() {
         let defuse_id = transform_to_defuse(id);
-        match defuse_to_original.get(&defuse_id) {
-            Some(existing) if priority(existing) <= priority(id) => {}
-            _ => {
-                defuse_to_original.insert(defuse_id, id.clone());
-            }
-        }
+        defuse_to_originals
+            .entry(defuse_id)
+            .or_default()
+            .push(id.clone());
     }
-    let defuse_ids: Vec<String> = defuse_to_original.keys().cloned().collect();
+    let defuse_ids: Vec<String> = defuse_to_originals.keys().cloned().collect();
 
     match fetch_tokens_metadata(state, &defuse_ids).await {
         Ok(price_metadata) => {
             for meta in price_metadata {
-                if meta.price.is_none() {
-                    continue;
-                }
-                if let Some(original_id) = defuse_to_original.get(&meta.token_id)
-                    && let Some(entry) = result.get_mut(original_id)
-                {
-                    // For NEAR, preserve canonical NEAR metadata with the fetched price
-                    entry.price = meta.price;
-                    entry.network = meta.network;
-                    entry.chain_name = meta.chain_name;
-                    entry.chain_icons = meta.chain_icons;
-                    entry.price_updated_at = meta.price_updated_at;
+                if let Some(original_ids) = defuse_to_originals.get(&meta.token_id) {
+                    for original_id in original_ids {
+                        if let Some(entry) = result.get_mut(original_id) {
+                            // Enrich chain fields even when Defuse has no price for the token.
+                            // This fixes counterparties-sourced rows that carry network/chain as None.
+                            if meta.network.is_some() {
+                                entry.network = meta.network.clone();
+                            }
+                            if meta.chain_name.is_some() {
+                                entry.chain_name = meta.chain_name.clone();
+                            }
+                            if meta.chain_icons.is_some() {
+                                entry.chain_icons = meta.chain_icons.clone();
+                            }
+
+                            // Price fields are still optional and only updated when present.
+                            if meta.price.is_some() {
+                                entry.price = meta.price;
+                                entry.price_updated_at = meta.price_updated_at.clone();
+                            }
+                        }
+                    }
                 }
             }
         }
