@@ -32,6 +32,7 @@ pub async fn run_dao_policy_sync_service(pool: PgPool, network: NetworkConfig) {
     tokio::time::sleep(Duration::from_secs(15)).await;
 
     let mut interval = tokio::time::interval(Duration::from_secs(POLICY_SYNC_INTERVAL_SECS));
+    let mut stale_counter: u64 = 0;
 
     loop {
         interval.tick().await;
@@ -45,16 +46,13 @@ pub async fn run_dao_policy_sync_service(pool: PgPool, network: NetworkConfig) {
 
         // Process stale DAOs (low priority, periodic refresh)
         // Only run every 60 seconds to avoid overwhelming with stale processing
-        static mut STALE_COUNTER: u64 = 0;
-        unsafe {
-            STALE_COUNTER += 1;
-            if STALE_COUNTER >= 60 {
-                STALE_COUNTER = 0;
-                match process_stale_daos(&pool, &network).await {
-                    Ok(count) if count > 0 => log::info!("Refreshed {} stale DAOs", count),
-                    Ok(_) => {}
-                    Err(e) => log::error!("Error processing stale DAOs: {}", e),
-                }
+        stale_counter += 1;
+        if stale_counter >= 60 {
+            stale_counter = 0;
+            match process_stale_daos(&pool, &network).await {
+                Ok(count) if count > 0 => log::info!("Refreshed {} stale DAOs", count),
+                Ok(_) => {}
+                Err(e) => log::error!("Error processing stale DAOs: {}", e),
             }
         }
     }
@@ -112,11 +110,12 @@ async fn process_stale_daos(
 ) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
     let stale_daos: Vec<String> = sqlx::query_scalar(
         r#"
-        SELECT dao_id FROM daos
-        WHERE is_dirty = false AND sync_failed = false
-          AND (last_policy_sync_at IS NULL
-               OR last_policy_sync_at < NOW() - INTERVAL '1 hour' * $1)
-        ORDER BY last_policy_sync_at ASC NULLS FIRST
+        SELECT d.dao_id FROM daos d
+        INNER JOIN monitored_accounts ma ON ma.account_id = d.dao_id AND ma.enabled = true
+        WHERE d.is_dirty = false AND d.sync_failed = false
+          AND (d.last_policy_sync_at IS NULL
+               OR d.last_policy_sync_at < NOW() - INTERVAL '1 hour' * $1)
+        ORDER BY d.last_policy_sync_at ASC NULLS FIRST
         LIMIT $2
         "#,
     )

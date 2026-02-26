@@ -7,8 +7,8 @@ use near_api::{Contract, NetworkConfig};
 use sqlx::PgPool;
 use std::time::Duration;
 
-/// Interval between DAO list sync cycles (5 minutes)
-const DAO_LIST_SYNC_INTERVAL_SECS: u64 = 300;
+/// Interval between DAO list sync cycles (30 minutes)
+const DAO_LIST_SYNC_INTERVAL_SECS: u64 = 1800;
 
 /// Sputnik DAO factory contract
 const SPUTNIK_DAO_FACTORY: &str = "sputnik-dao.near";
