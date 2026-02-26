@@ -24,7 +24,7 @@ import type { ChartInterval } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AuthButton } from "@/components/auth-button";
 import Big from "@/lib/big";
-import { totalBalance } from "@/lib/balance";
+import { availableBalance, totalBalance } from "@/lib/balance";
 import { useRouter } from "next/navigation";
 
 interface Props {
@@ -189,7 +189,7 @@ export default function BalanceWithGraph({
         return Array.from(grouped.values()).sort(
             (a, b) => b.totalBalanceUSD - a.totalBalanceUSD,
         );
-    }, [tokens, totalBalanceUSD]);
+    }, [tokens]);
 
     // Get the selected token group
     const selectedTokenGroup =
@@ -287,10 +287,13 @@ export default function BalanceWithGraph({
                 }));
 
             if (data.length > 0) {
+                const nowBalanceUSD = tokens
+                    .filter((t) => t.residency !== "Lockup")
+                    .reduce((sum, t) => sum + t.balanceUSD, 0);
                 data.push({
                     name: "Now",
                     fullDate: undefined,
-                    usdValue: Number(totalBalanceUSD),
+                    usdValue: nowBalanceUSD,
                 });
             }
 
@@ -354,12 +357,29 @@ export default function BalanceWithGraph({
                     balanceValue: balanceValue,
                 }));
             if (data.length > 0) {
+                const nonLockupTokens = (
+                    selectedTokenGroup?.tokens ?? []
+                ).filter((t) => t.residency !== "Lockup");
+                const nowUSD = nonLockupTokens.reduce(
+                    (sum, t) => sum + t.balanceUSD,
+                    0,
+                );
+                const nowBalance = nonLockupTokens.reduce(
+                    (sum, t) =>
+                        sum +
+                        Big(
+                            formatBalance(
+                                availableBalance(t.balance),
+                                t.decimals,
+                            ),
+                        ).toNumber(),
+                    0,
+                );
                 data.push({
                     name: "Now",
                     fullDate: undefined,
-                    usdValue: Number(selectedTokenGroup?.totalBalanceUSD),
-                    balanceValue:
-                        selectedTokenGroup?.totalBalance.toNumber() || 0,
+                    usdValue: nowUSD,
+                    balanceValue: nowBalance,
                 });
             }
             return { data, showUSD: hasAnyUSD };
@@ -369,7 +389,7 @@ export default function BalanceWithGraph({
         selectedToken,
         selectedTokenGroup,
         selectedPeriod,
-        totalBalanceUSD,
+        tokens,
     ]);
 
     // Freeze chart data while hovering so tooltip isn't lost when parent
