@@ -8,7 +8,10 @@ import {
     SignDelegateActionParams,
 } from "@hot-labs/near-connect";
 import { Proposal, Vote as ProposalVote } from "@/lib/proposals-api";
-import { ProposalPermissionKind, getKindFromProposal } from "@/lib/config-utils";
+import {
+    ProposalPermissionKind,
+    getKindFromProposal,
+} from "@/lib/config-utils";
 import { toast } from "sonner";
 import Big from "@/lib/big";
 import { useQueryClient } from "@tanstack/react-query";
@@ -172,7 +175,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                 network: "mainnet",
                 footerBranding: {
                     icon: "/favicon_dark.svg",
-                    link: APP_WALLET_SETUP_URL ?? "wallet.near.org",
+                    link: APP_WALLET_SETUP_URL ?? "https://wallet.near.org",
                     linkText: "Need a wallet?",
                     heading: "More wallets coming soon",
                 },
@@ -585,12 +588,12 @@ export const useNearStore = create<NearStore>((set, get) => ({
             const toastAction =
                 votes.length === 1 && votes[0].vote !== "Remove"
                     ? {
-                        label: "View Request",
-                        onClick: () =>
-                            window.open(
-                                `/${treasuryId}/requests/${votes[0].proposalId}`,
-                            ),
-                    }
+                          label: "View Request",
+                          onClick: () =>
+                              window.open(
+                                  `/${treasuryId}/requests/${votes[0].proposalId}`,
+                              ),
+                      }
                     : undefined;
             const text =
                 votes.length === 1 && votes[0].vote === "Remove"
