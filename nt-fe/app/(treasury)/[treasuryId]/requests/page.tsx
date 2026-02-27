@@ -217,7 +217,7 @@ export default function RequestsPage() {
     const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const [selectedCount, setSelectedCount] = useState(0);
 
-    const currentTab = searchParams.get("tab") || "pending";
+    const currentTab = searchParams.get("tab") || "InProgress";
 
     const handleTabChange = useCallback(
         (value: string) => {
