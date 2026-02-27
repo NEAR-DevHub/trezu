@@ -633,7 +633,7 @@ The enrichment worker can populate all `balance_changes` fields from pipeline da
 
 ### Design concerns to address:
 
-11. **Most receipts won't be balance changes — wasted RPC calls**: The sputnik-dao suffix filter captures ALL receipts involving DAOs — proposals, votes, policy changes, role updates, etc. The vast majority don't change any balance. The enrichment worker checks `balance_before == balance_after` and skips, but that's still 2 RPC calls burned per irrelevant receipt. The worker should classify receipts by action type (Transfer, ft_transfer, etc.) and skip non-financial receipts before making any RPC calls.
+11. **~~Most receipts won't be balance changes~~** — NOT A CONCERN: DAO operations (proposals, votes, policy changes, role updates) all change the available NEAR balance through proposal bonds, storage staking, and gas costs. Most receipts involving a DAO do result in a balance change, so the 2 RPC calls per receipt are not wasted.
 
 12. **Pipeline 1 and Pipeline 2 overlap — define clear ownership**: An FT transfer to a monitored DAO produces both a receipt (Pipeline 1) AND an execution outcome with NEP-141 logs (Pipeline 2). Now that both pipelines filter by monitored accounts, define clear ownership: Pipeline 1 handles NEAR native transfers and staking pool interactions, Pipeline 2 handles FT/intents token balance changes. The enrichment worker should process each pipeline for its designated token types only.
 
