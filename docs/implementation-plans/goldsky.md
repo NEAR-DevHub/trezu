@@ -142,10 +142,9 @@ transforms:
   # The goal is to filter receipts where either the predecessor (sender) or
   # receiver matches a monitored treasury account.
   #
-  # Strategy: Use a suffix filter for *.sputnik-dao.near (covers ~99% of
-  # monitored accounts) plus an explicit exception list for non-sputnik
-  # accounts (e.g., meta-pool-dao-4.near). The exception list only needs
-  # a pipeline redeployment when a rare non-sputnik DAO is added.
+  # Strategy: Use a suffix filter for *.sputnik-dao.near. Non-sputnik
+  # accounts (e.g., meta-pool-dao-4.near) are not handled by Goldsky
+  # pipelines and fall back to the existing binary search path.
   # The backend enrichment worker further filters against the
   # monitored_accounts table to only process registered DAOs.
   treasury_receipts:
@@ -162,9 +161,6 @@ transforms:
       FROM near_receipts
       WHERE predecessor_id LIKE '%.sputnik-dao.near'
          OR receiver_id LIKE '%.sputnik-dao.near'
-         -- Non-sputnik exception list (redeploy pipeline when this changes)
-         OR predecessor_id IN ('meta-pool-dao-4.near')
-         OR receiver_id IN ('meta-pool-dao-4.near')
     primary_key: receipt_id
 
 sinks:
@@ -198,15 +194,14 @@ transforms:
   # NEP-245 (mt_transfer) event logs. These are identified by the standard
   # EVENT_JSON format in receipt outcome logs.
   #
-  # We cannot filter by monitored account at this level because the account
-  # name is embedded inside the JSON log string. The backend enrichment
-  # worker will do the account-level filtering.
+  # Strategy: Filter execution outcomes that are both FT/intents events AND
+  # mention a monitored account. NEP-141/NEP-245 event logs contain full
+  # account IDs (old_owner_id, new_owner_id), so we can filter by the
+  # sputnik-dao.near suffix directly in the log string.
   #
-  # Alternative approaches to evaluate:
-  # 1. If executor_id is available, filter to known FT contract addresses
-  #    (wrap.near, usdt.tether-token.near, etc.) to reduce volume
-  # 2. Use a TypeScript transform to parse EVENT_JSON and filter by account
-  # 3. Filter by receiver_id matching known FT contracts
+  # This keeps the same sputnik-dao suffix strategy as Pipelines 1 & 3,
+  # reducing volume from "all FT events on NEAR" to "FT events involving
+  # sputnik-dao accounts only."
   ft_and_intents_events:
     sql: |
       SELECT
@@ -218,9 +213,11 @@ transforms:
         logs,
         status
       FROM near_outcomes
-      WHERE logs LIKE '%"standard":"nep141"%'
-         OR logs LIKE '%"standard":"nep245"%'
-         OR executor_id = 'intents.near'
+      WHERE (logs LIKE '%"standard":"nep141"%'
+             OR logs LIKE '%"standard":"nep245"%'
+             OR executor_id = 'intents.near')
+        AND (logs LIKE '%sputnik-dao.near%'
+)
     primary_key: id
 
 sinks:
@@ -255,7 +252,7 @@ transforms:
   # This gives us transaction hashes, signers, and method names without
   # needing EXPERIMENTAL_receipt or chunk RPC calls.
   #
-  # Same suffix + exception list strategy as the receipts pipeline.
+  # Same sputnik-dao suffix strategy as the receipts pipeline.
   treasury_transactions:
     sql: |
       SELECT
@@ -269,9 +266,6 @@ transforms:
       FROM near_transactions
       WHERE signer_id LIKE '%.sputnik-dao.near'
          OR receiver_id LIKE '%.sputnik-dao.near'
-         -- Non-sputnik exception list (redeploy pipeline when this changes)
-         OR signer_id IN ('meta-pool-dao-4.near')
-         OR receiver_id IN ('meta-pool-dao-4.near')
     primary_key: transaction_hash
 
 sinks:
@@ -619,14 +613,11 @@ The enrichment worker can populate all `balance_changes` fields from pipeline da
 
 2. **Turbo vs Mirror for NEAR**: The screenshots show NEAR datasets available for Turbo pipelines. Confirm with `goldsky dataset list --chain near` that Turbo is supported. If only Mirror is available, adjust the pipeline configs accordingly (Mirror uses v3 YAML format with the same structure).
 
-3. **~~Dynamic tables for NEAR~~** — RESOLVED: Pipelines use a `LIKE '%.sputnik-dao.near'` suffix filter (covers ~99% of accounts) plus an explicit exception list for non-sputnik DAOs (currently only `meta-pool-dao-4.near`). The backend enrichment worker further filters against the `monitored_accounts` table. Pipeline redeployment is only needed when a rare non-sputnik DAO is added.
+3. **~~Dynamic tables for NEAR~~** — RESOLVED: Pipelines use a `LIKE '%.sputnik-dao.near'` suffix filter which covers all sputnik DAOs without any pipeline redeployment. Non-sputnik accounts (currently only `meta-pool-dao-4.near`) fall back to the existing binary search path. The backend enrichment worker further filters against the `monitored_accounts` table to only process registered DAOs.
 
 4. **Fast Scan / historical backfill**: Can we filter at the source level (`filter` attribute) to speed up initial backfill? This is important for NEAR given the chain has 180M+ blocks.
 
-5. **Volume estimates for FT events pipeline**: Filtering all NEP-141 events across the entire NEAR chain may produce high volume. Need to estimate whether this fits within the Goldsky free tier (1M events). Alternatives:
-   - Filter by known FT contract addresses (wrap.near, usdt.tether-token.near, etc.)
-   - Use TypeScript transform to parse and filter by account in-pipeline
-   - Accept higher volume and post-filter in the backend
+5. **~~Volume estimates for FT events pipeline~~** — RESOLVED: Pipeline 2 now filters by both event standard AND sputnik-dao suffix (`logs LIKE '%sputnik-dao.near%'`). Still worth estimating volume to confirm it fits within Goldsky tier limits.
 
 6. **Staking rewards without explicit transactions**: Staking rewards accumulate silently — they only become visible when someone interacts with the staking pool. Goldsky can tell us when interactions happen, but we may still need periodic epoch-boundary snapshots. Consider keeping a simplified epoch-based staking check (1 RPC call per epoch per pool) alongside the Goldsky approach.
 
@@ -644,11 +635,11 @@ The enrichment worker can populate all `balance_changes` fields from pipeline da
 
 11. **Most receipts won't be balance changes — wasted RPC calls**: The sputnik-dao suffix filter captures ALL receipts involving DAOs — proposals, votes, policy changes, role updates, etc. The vast majority don't change any balance. The enrichment worker checks `balance_before == balance_after` and skips, but that's still 2 RPC calls burned per irrelevant receipt. The worker should classify receipts by action type (Transfer, ft_transfer, etc.) and skip non-financial receipts before making any RPC calls.
 
-12. **Pipeline 1 and Pipeline 2 overlap — double processing**: An FT transfer to a monitored DAO produces both a receipt (Pipeline 1) AND an execution outcome with NEP-141 logs (Pipeline 2). The enrichment worker would process the same balance change twice. The `UNIQUE(account_id, block_height, token_id)` constraint catches it as a DB error, but that's not a clean solution. Need explicit deduplication strategy between pipelines.
+12. **Pipeline 1 and Pipeline 2 overlap — define clear ownership**: An FT transfer to a monitored DAO produces both a receipt (Pipeline 1) AND an execution outcome with NEP-141 logs (Pipeline 2). Now that both pipelines filter by monitored accounts, define clear ownership: Pipeline 1 handles NEAR native transfers and staking pool interactions, Pipeline 2 handles FT/intents token balance changes. The enrichment worker should process each pipeline for its designated token types only.
 
 13. **`determine_account_and_token()` is non-trivial**: A single receipt could affect NEAR balance (if it has a deposit), an FT balance (if it's an ft_transfer callback), or multiple tokens simultaneously. Cross-contract calls can trigger balance changes indirectly — a receipt to contract A might cause A to call ft_transfer on contract B, changing the DAO's FT balance. The receipt alone doesn't tell you which tokens were affected. This function needs careful design.
 
-14. **Pipeline 2 volume may be unworkable**: ALL NEP-141 events on the entire NEAR chain is potentially millions per day. These all land in Postgres, and the enrichment worker has to scan every single one checking if any monitored account appears in the JSON logs. The `indexed_ft_events` table would grow to billions of rows. Consider filtering Pipeline 2 by receiver (the FT contract is called by the DAO) using the same sputnik-dao suffix, rather than filtering by event standard.
+14. **~~Pipeline 2 volume may be unworkable~~** — RESOLVED: Pipeline 2 now filters with `AND logs LIKE '%sputnik-dao.near%'`, reducing volume from "all FT events on NEAR" to "only FT events mentioning sputnik-dao accounts." Same suffix strategy as Pipelines 1 and 3.
 
 15. **No backfill strategy beyond `start_at: earliest`**: All pipelines start from the earliest NEAR block (~180M+ blocks). But the existing `balance_changes` table already has historical data. Should we start from a recent block (`max(block_height)` in balance_changes) and rely on existing data for history? Or backfill from the beginning, duplicating work?
 
