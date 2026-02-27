@@ -2,12 +2,7 @@
 
 import { PageCard } from "@/components/card";
 import { PageComponentLayout } from "@/components/page-component-layout";
-import {
-    Tabs,
-    TabsContent,
-    TabsList,
-    TabsTrigger,
-} from "@/components/underline-tabs";
+import { TabsContent } from "@/components/underline-tabs";
 import { useProposals } from "@/hooks/use-proposals";
 import { useTreasury } from "@/hooks/use-treasury";
 import { getProposals, ProposalStatus } from "@/lib/proposals-api";
@@ -21,11 +16,7 @@ import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { ProposalsTable } from "@/features/proposals";
 import { Button } from "@/components/button";
 import { ArrowRightLeft, ArrowUpRight, ListFilter, Send } from "lucide-react";
-import Link from "next/link";
-import {
-    useTreasuryPolicy,
-    useTreasuryConfig,
-} from "@/hooks/use-treasury-queries";
+import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
 import { useQueryClient } from "@tanstack/react-query";
 import {
     ProposalFilters as ProposalFiltersComponent,
@@ -34,11 +25,11 @@ import {
 import { convertUrlParamsToApiFilters } from "@/features/proposals/utils/filter-params-converter";
 import { NumberBadge } from "@/components/number-badge";
 import { TableSkeleton } from "@/components/table-skeleton";
-import { Input } from "@/components/input";
+import { ResponsiveInput } from "@/components/input";
 import { useNear } from "@/stores/near-store";
 import { AuthButton } from "@/components/auth-button";
 import { EmptyState } from "@/components/empty-state";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ResponsiveTabs, TabItem } from "@/components/responsive-tabs";
 
 // Constants
 const SEARCH_DEBOUNCE_MS = 300;
@@ -232,7 +223,7 @@ export default function RequestsPage() {
         (value: string) => {
             const params = new URLSearchParams(searchParams.toString());
             params.set("tab", value);
-            params.delete("page"); // Reset page when changing tabs
+            params.delete("page");
             router.push(`${pathname}?${params.toString()}`);
         },
         [searchParams, router, pathname],
@@ -242,12 +233,10 @@ export default function RequestsPage() {
         (value: string) => {
             setSearchValue(value);
 
-            // Clear existing timeout
             if (searchTimeoutRef.current) {
                 clearTimeout(searchTimeoutRef.current);
             }
 
-            // Debounce the URL update
             searchTimeoutRef.current = setTimeout(() => {
                 const params = new URLSearchParams(searchParams.toString());
                 if (value.trim()) {
@@ -255,7 +244,7 @@ export default function RequestsPage() {
                 } else {
                     params.delete("search");
                 }
-                params.delete("page"); // Reset page when search changes
+                params.delete("page");
                 router.push(`${pathname}?${params.toString()}`);
             }, SEARCH_DEBOUNCE_MS);
         },
@@ -277,9 +266,7 @@ export default function RequestsPage() {
         };
     }, []);
 
-    // Check if any filters are active
     const hasActiveFilters = useMemo(() => {
-        // Without search as we shouldn't show indicator for search
         const filterParams = [
             "proposers",
             "approvers",
@@ -291,9 +278,30 @@ export default function RequestsPage() {
         ];
         return filterParams.some((param) => searchParams.has(param));
     }, [searchParams]);
+
     const isSearchActive = useMemo(() => {
         return searchParams.has("search");
     }, [searchParams]);
+
+    const pendingCount = proposals?.proposals?.length;
+
+    const tabs: TabItem[] = [
+        { value: "All", label: "All" },
+        {
+            value: "InProgress",
+            label: "Pending",
+            trigger:
+                !!pendingCount &&
+                pendingCount > 0 &&
+                currentTab !== "InProgress" ? (
+                    <NumberBadge number={pendingCount} variant="secondary" />
+                ) : undefined,
+        },
+        { value: "Approved", label: "Executed" },
+        { value: "Rejected", label: "Rejected" },
+        { value: "Expired", label: "Expired" },
+        { value: "Failed", label: "Failed" },
+    ];
 
     // Only show "No Requests Found" if there are no proposals AND no filters are active
     if (
@@ -311,147 +319,77 @@ export default function RequestsPage() {
         );
     }
 
+    const tabContents = tabs.map(({ value }) => (
+        <TabsContent key={value} value={value}>
+            <ProposalsList
+                status={value === "All" ? undefined : (value as ProposalStatus)}
+                onSelectionChange={setSelectedCount}
+            />
+        </TabsContent>
+    ));
+
+    const actions = (
+        <>
+            <ResponsiveInput
+                type="text"
+                placeholder="Search request by name or ID"
+                className="max-w-64"
+                search
+                value={searchValue}
+                onChange={(e) => handleSearchChange(e.target.value)}
+            />
+
+            <Button
+                variant="secondary"
+                size="icon"
+                className="relative md:w-auto md:px-3 md:gap-1.5"
+                onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+                aria-label={hasActiveFilters ? "Filter (active)" : "Filter"}
+            >
+                <ListFilter className="size-4" />
+                <span className="hidden md:inline">Filter</span>
+                {hasActiveFilters && (
+                    <span
+                        className="absolute top-1 right-1.5 size-2 rounded-full bg-general-info-foreground"
+                        aria-hidden="true"
+                    />
+                )}
+            </Button>
+        </>
+    );
+
+    const filterPanel = selectedCount === 0 && (
+        <div
+            className="overflow-hidden transition-all duration-500 ease-in-out"
+            style={{
+                maxHeight: isFiltersOpen ? FILTER_PANEL_MAX_HEIGHT : "0px",
+                opacity: isFiltersOpen ? 1 : 0,
+            }}
+        >
+            <div className="py-3 px-4">
+                <ProposalFiltersComponent
+                    filterOptions={PROPOSAL_FILTER_OPTIONS}
+                />
+            </div>
+        </div>
+    );
+
     return (
         <PageComponentLayout
             title="Requests"
             description="View and manage all pending multisig requests"
         >
             <PageCard className="p-0">
-                <Tabs
+                <ResponsiveTabs
+                    tabs={tabs}
                     value={currentTab}
                     onValueChange={handleTabChange}
-                    className="gap-0"
+                    actions={actions}
+                    hideHeader={selectedCount > 0}
                 >
-                    {selectedCount === 0 && (
-                        <>
-                            <div className="flex flex-col md:flex-row gap-4 items-center md:justify-between border-b p-5 pb-3.5">
-                                <ScrollArea className="w-full">
-                                    <TabsList className="border-none">
-                                        <TabsTrigger value="all">
-                                            All
-                                        </TabsTrigger>
-                                        <TabsTrigger
-                                            value="pending"
-                                            className="flex gap-2.5"
-                                        >
-                                            Pending
-                                            {!!proposals?.proposals?.length &&
-                                                proposals?.proposals?.length >
-                                                    0 && (
-                                                    <NumberBadge
-                                                        number={
-                                                            proposals?.proposals
-                                                                ?.length
-                                                        }
-                                                        variant="secondary"
-                                                    />
-                                                )}
-                                        </TabsTrigger>
-                                        <TabsTrigger value="executed">
-                                            Executed
-                                        </TabsTrigger>
-                                        <TabsTrigger value="rejected">
-                                            Rejected
-                                        </TabsTrigger>
-                                        <TabsTrigger value="expired">
-                                            Expired
-                                        </TabsTrigger>
-                                        <TabsTrigger value="failed">
-                                            Failed
-                                        </TabsTrigger>
-                                    </TabsList>
-                                    <ScrollBar
-                                        orientation="horizontal"
-                                        hidden
-                                    />
-                                </ScrollArea>
-
-                                <div className="flex justify-end items-center gap-2 w-full">
-                                    <Input
-                                        type="text"
-                                        placeholder="Search request by name or ID"
-                                        className="max-w-80 w-full"
-                                        search
-                                        value={searchValue}
-                                        onChange={(e) =>
-                                            handleSearchChange(e.target.value)
-                                        }
-                                    />
-                                    <Button
-                                        variant="secondary"
-                                        className="flex gap-1.5 relative"
-                                        onClick={() =>
-                                            setIsFiltersOpen(!isFiltersOpen)
-                                        }
-                                        aria-label={
-                                            hasActiveFilters
-                                                ? "Filter (active)"
-                                                : "Filter"
-                                        }
-                                    >
-                                        <ListFilter className="size-4" />
-                                        Filter
-                                        {hasActiveFilters && (
-                                            <span
-                                                className="absolute top-1 right-1.5 size-2 rounded-full bg-general-info-foreground"
-                                                aria-hidden="true"
-                                            />
-                                        )}
-                                    </Button>
-                                </div>
-                            </div>
-
-                            <div
-                                className="overflow-hidden transition-all duration-500 ease-in-out"
-                                style={{
-                                    maxHeight: isFiltersOpen
-                                        ? FILTER_PANEL_MAX_HEIGHT
-                                        : "0px",
-                                    opacity: isFiltersOpen ? 1 : 0,
-                                }}
-                            >
-                                <div className="py-3 px-4">
-                                    <ProposalFiltersComponent
-                                        filterOptions={PROPOSAL_FILTER_OPTIONS}
-                                    />
-                                </div>
-                            </div>
-                        </>
-                    )}
-                    <TabsContent value="all">
-                        <ProposalsList onSelectionChange={setSelectedCount} />
-                    </TabsContent>
-                    <TabsContent value="pending">
-                        <ProposalsList
-                            status="InProgress"
-                            onSelectionChange={setSelectedCount}
-                        />
-                    </TabsContent>
-                    <TabsContent value="executed">
-                        <ProposalsList
-                            status="Approved"
-                            onSelectionChange={setSelectedCount}
-                        />
-                    </TabsContent>
-                    <TabsContent value="rejected">
-                        <ProposalsList
-                            status="Rejected"
-                            onSelectionChange={setSelectedCount}
-                        />
-                    </TabsContent>
-                    <TabsContent value="expired">
-                        <ProposalsList
-                            status="Expired"
-                            onSelectionChange={setSelectedCount}
-                        />
-                    </TabsContent>
-                    <TabsContent value="failed">
-                        <ProposalsList
-                            status="Failed"
-                            onSelectionChange={setSelectedCount}
-                        />
-                    </TabsContent>
-                </Tabs>
+                    {filterPanel}
+                    {tabContents}
+                </ResponsiveTabs>
             </PageCard>
         </PageComponentLayout>
     );

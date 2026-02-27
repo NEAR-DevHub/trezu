@@ -38,6 +38,7 @@ import { Pagination } from "@/components/pagination";
 import { ProposalStatusPill } from "./proposal-status-pill";
 import { useNear } from "@/stores/near-store";
 import { useTreasury } from "@/hooks/use-treasury";
+import { useResponsiveSidebar } from "@/stores/sidebar-store";
 import {
     getApproversAndThreshold,
     getKindFromProposal,
@@ -90,6 +91,7 @@ export function ProposalsTable({
     const [expanded, setExpanded] = useState<ExpandedState>({});
     const { accountId } = useNear();
     const { treasuryId } = useTreasury();
+    const { isMobile } = useResponsiveSidebar();
     const router = useRouter();
     const formatDate = useFormatDate();
 
@@ -274,10 +276,18 @@ export function ProposalsTable({
                     <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => row.toggleExpanded()}
+                        onClick={() => {
+                            if (isMobile) {
+                                router.push(
+                                    `/${treasuryId}/requests/${row.original.id}`,
+                                );
+                            } else {
+                                row.toggleExpanded();
+                            }
+                        }}
                         className="h-8 w-8 p-0"
                     >
-                        {row.getIsExpanded() ? (
+                        {!isMobile && row.getIsExpanded() ? (
                             <ChevronDown className="h-4 w-4 text-muted-foreground" />
                         ) : (
                             <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -422,7 +432,7 @@ export function ProposalsTable({
         <>
             <div className="flex flex-col pb-3">
                 {selectedCount > 0 && (
-                    <div className="flex items-center justify-between pt-6 pb-4 px-5 border-b">
+                    <div className="flex md:text-base text-sm items-center justify-between py-3.5 px-5 border-b">
                         <span className="font-semibold">
                             {selectedCount}{" "}
                             {selectedCount === 1 ? "Request" : "Requests"}{" "}
@@ -483,7 +493,6 @@ export function ProposalsTable({
                                             row.getIsSelected() && "selected"
                                         }
                                         onClick={(e) => {
-                                            // Don't expand if clicking on checkbox or expand button
                                             const target =
                                                 e.target as HTMLElement;
                                             if (
@@ -495,7 +504,13 @@ export function ProposalsTable({
                                             ) {
                                                 return;
                                             }
-                                            row.toggleExpanded();
+                                            if (isMobile) {
+                                                router.push(
+                                                    `/${treasuryId}/requests/${row.original.id}`,
+                                                );
+                                            } else {
+                                                row.toggleExpanded();
+                                            }
                                         }}
                                         className="cursor-pointer"
                                     >

@@ -2,6 +2,8 @@
 
 import { use, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { ExpandedView } from "@/features/proposals";
 import { useProposal } from "@/hooks/use-proposals";
@@ -9,10 +11,6 @@ import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
 import { useTreasury } from "@/hooks/use-treasury";
 import { VoteModal } from "@/features/proposals/components/vote-modal";
 import { DepositModal } from "@/app/(treasury)/[treasuryId]/dashboard/components/deposit-modal";
-import {
-    getKindFromProposal,
-    ProposalPermissionKind,
-} from "@/lib/config-utils";
 import { Proposal } from "@/lib/proposals-api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageCard } from "@/components/card";
@@ -45,6 +43,7 @@ function RequestPageSkeleton() {
 export default function RequestPage({ params }: RequestPageProps) {
     const { id } = use(params);
     const { treasuryId } = useTreasury();
+    const router = useRouter();
     const queryClient = useQueryClient();
     const cachedSubmissionTime = useMemo(() => {
         const cachedQueries = queryClient.getQueriesData({
@@ -117,6 +116,19 @@ export default function RequestPage({ params }: RequestPageProps) {
             description="Details for Request"
             backButton={`/${treasuryId}/requests`}
         >
+            <button
+                onClick={() => {
+                    if (window?.history?.length && window.history.length > 1) {
+                        router.back();
+                    } else {
+                        router.push(`/${treasuryId}/requests`);
+                    }
+                }}
+                className="flex items-center gap-1 font-medium text-sm text-unofficial-ghost-foreground hover:text-foreground cursor-pointer mb-4"
+            >
+                <ArrowLeft className="size-4" />
+                All Requests
+            </button>
             <ExpandedView
                 proposal={proposal}
                 policy={policy}
