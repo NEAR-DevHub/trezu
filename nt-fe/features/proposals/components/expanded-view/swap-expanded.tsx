@@ -98,7 +98,7 @@ function IntentsSwapExpanded({ data }: SwapExpandedProps) {
     }
 
     expandableItems.push({
-        label: "Minimum Received",
+        label: "Min. Receive",
         value: (
             <Amount
                 amountWithDecimals={minimumReceived.toString()}

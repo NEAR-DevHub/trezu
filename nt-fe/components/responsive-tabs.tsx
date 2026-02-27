@@ -90,7 +90,7 @@ export function ResponsiveTabs({
                 </div>
 
                 {/* Desktop: Underline tab list */}
-                <div className="hidden md:flex w-full overflow-hidden">
+                <div className="hidden md:flex w-full">
                     <TabsList className="border-none">
                         {tabs.map((tab) => (
                             <TabsTrigger

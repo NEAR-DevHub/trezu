@@ -17,7 +17,6 @@ export function Pagination({
 }: PaginationProps) {
     const getPages = () => {
         const pages: (number | string)[] = [];
-        const maxVisible = 3;
 
         if (totalPages <= 7) {
             for (let i = 0; i < totalPages; i++) pages.push(i);
@@ -50,7 +49,10 @@ export function Pagination({
 
     return (
         <div
-            className={cn("flex items-center justify-end space-x-1", className)}
+            className={cn(
+                "flex items-center justify-center sm:justify-end space-x-1",
+                className,
+            )}
         >
             <Button
                 variant="ghost"
@@ -59,10 +61,14 @@ export function Pagination({
                 className="text-muted-foreground hover:text-foreground text-xs gap-1"
             >
                 <ChevronLeft className="h-4 w-4" />
-                Previous
+                <span className="hidden sm:inline">Previous</span>
             </Button>
 
-            <div className="flex items-center space-x-1">
+            <span className="sm:hidden text-sm text-muted-foreground px-1">
+                {pageIndex + 1} / {totalPages}
+            </span>
+
+            <div className="hidden sm:flex items-center space-x-1">
                 {getPages().map((page, i) =>
                     page === "..." ? (
                         <span
@@ -96,7 +102,7 @@ export function Pagination({
                 disabled={pageIndex >= totalPages - 1}
                 className="text-muted-foreground hover:text-foreground text-xs gap-1"
             >
-                Next
+                <span className="hidden sm:inline">Next</span>
                 <ChevronRight className="h-4 w-4" />
             </Button>
         </div>

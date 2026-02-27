@@ -329,12 +329,12 @@ export default function RequestsPage() {
     ));
 
     const actions = (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end w-full gap-2">
             <ResponsiveInput
                 type="text"
                 placeholder="Search request by name or ID"
                 mobilePlaceholder="Search by name or ID"
-                className="max-w-64"
+                className="max-w-72 w-full"
                 search
                 value={searchValue}
                 onChange={(e) => handleSearchChange(e.target.value)}

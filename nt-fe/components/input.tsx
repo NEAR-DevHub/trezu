@@ -31,7 +31,7 @@ export function Input({
     };
 
     return (
-        <div className="relative">
+        <div className={cn("relative w-full", className)}>
             {search && (
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             )}
@@ -130,46 +130,44 @@ export function ResponsiveInput({
     return (
         <>
             {/* Desktop: always visible */}
-            <div className={cn("hidden md:flex", className)}>
-                <Input
-                    value={value}
-                    onChange={handleChange}
-                    placeholder={placeholder}
-                    className="w-full"
-                    search={isSearchIcon}
-                    {...props}
-                />
-            </div>
+            <Input
+                value={value}
+                onChange={handleChange}
+                placeholder={placeholder}
+                className={cn("w-full hidden md:flex", className)}
+                search={isSearchIcon}
+                {...props}
+            />
 
             {/* Mobile: collapsed icon button */}
             {!isOpen && (
-                <div className="flex md:hidden">
-                    <Button
-                        variant="secondary"
-                        size="icon"
-                        aria-label="Open"
-                        onClick={() => setIsOpen(true)}
-                    >
-                        <Icon className="size-4" />
-                    </Button>
-                </div>
+                <Button
+                    variant="secondary"
+                    size="icon"
+                    aria-label="Open"
+                    className="flex md:hidden"
+                    onClick={() => setIsOpen(true)}
+                >
+                    <Icon className="size-4" />
+                </Button>
             )}
 
             {/* Mobile: expanded input inline — X inside the input closes it */}
             {isOpen && (
-                <div className="flex md:hidden flex-1 min-w-0 animate-in fade-in slide-in-from-right-4 duration-200">
-                    <Input
-                        value={value}
-                        onChange={handleChange}
-                        placeholder={mobilePlaceholder ?? placeholder}
-                        className="w-full placeholder:text-xs"
-                        search={isSearchIcon}
-                        showAlwaysClear
-                        onClear={handleClose}
-                        autoFocus
-                        {...props}
-                    />
-                </div>
+                <Input
+                    value={value}
+                    onChange={handleChange}
+                    placeholder={mobilePlaceholder ?? placeholder}
+                    className={cn(
+                        "flex md:hidden flex-1 min-w-0 animate-in fade-in slide-in-from-right-4 duration-200 w-full placeholder:text-xs",
+                        className,
+                    )}
+                    search={isSearchIcon}
+                    showAlwaysClear
+                    onClear={handleClose}
+                    autoFocus
+                    {...props}
+                />
             )}
         </>
     );

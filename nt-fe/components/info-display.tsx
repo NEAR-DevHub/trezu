@@ -89,7 +89,7 @@ export function InfoDisplay({
                         item.subItem && "pl-5",
                     )}
                 >
-                    <div className="flex justify-between items-center flex-wrap">
+                    <div className="flex justify-between items-center flex-wrap gap-2 gap-y-1">
                         <div className="flex items-center gap-1">
                             <p className="text-sm text-muted-foreground">
                                 {item.label}
