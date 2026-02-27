@@ -26,9 +26,12 @@ export function VotingIndicator({ proposal, policy }: VotingIndicatorProps) {
 
     return (
         <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
-                {total} out of {requiredVotes}
-            </span>
+            <div className="flex items-center gap-1.5 bg-secondary px-2 py-0.5 rounded-md w-14 justify-center">
+                <Check className="size-3 text-secondary-foreground stroke-2 shrink-0" />
+                <span className="text-xs font-medium text-secondary-foreground">
+                    {total}/{requiredVotes}
+                </span>
+            </div>
             <div className="flex">
                 {Object.entries(proposal.votes).map(([account, vote]) => {
                     return (

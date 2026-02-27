@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 import { Address } from "@/components/address";
 import { User } from "@/components/user";
 import Link from "next/link";
-import { ProposalStatusPill } from "../proposal-status-pill";
+import { StatusPill } from "../proposal-status-pill";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Proposal } from "@/lib/proposals-api";
 import { getProposalStatus } from "../../utils/proposal-utils";
@@ -32,11 +32,11 @@ interface PaymentDisplayProps {
     batchId: string;
 }
 
-const paymentStatusToText = (status: PaymentStatus): string => {
+const paymentStatusToText = (status: PaymentStatus): "Pending" | "Paid" => {
     if (typeof status === "string") {
         return status;
     }
-    return Object.keys(status)[0];
+    return Object.keys(status)[0] as "Pending" | "Paid";
 };
 
 function PaymentDisplay({
@@ -65,7 +65,13 @@ function PaymentDisplay({
     let items: InfoItem[] = [
         {
             label: "Recipient",
-            value: <User accountId={payment.recipient} withLink={isNearNetwork} withName={isNearNetwork} />,
+            value: (
+                <User
+                    accountId={payment.recipient}
+                    withLink={isNearNetwork}
+                    withName={isNearNetwork}
+                />
+            ),
         },
         {
             label: "Amount",
@@ -82,7 +88,7 @@ function PaymentDisplay({
     if (status !== "Pending") {
         items.push({
             label: "Status",
-            value: <ProposalStatusPill status={status} />,
+            value: <StatusPill status={status} />,
         });
     }
 
@@ -163,16 +169,14 @@ export function BatchPaymentRequestExpanded({
 
     // Determine if we should auto-refetch based on pending payments
     const hasPendingPayments = batchData?.payments?.some(
-        (payment) => paymentStatusToText(payment.status) === "Pending"
+        (payment) => paymentStatusToText(payment.status) === "Pending",
     );
 
     // Second fetch with refetch interval if needed
     const shouldAutoRefetch = isExecuted && hasPendingPayments;
-    const {
-        data: liveBatchData,
-    } = useBatchPayment(
+    const { data: liveBatchData } = useBatchPayment(
         data.batchId,
-        shouldAutoRefetch ? 5000 : false // 5 seconds when conditions are met
+        shouldAutoRefetch ? 5000 : false, // 5 seconds when conditions are met
     );
 
     // Use live data if auto-refetching, otherwise use initial data

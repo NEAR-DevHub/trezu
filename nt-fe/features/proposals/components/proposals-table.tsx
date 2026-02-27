@@ -20,6 +20,7 @@ import {
     Send,
     ArrowUpRight,
     ArrowRightLeft,
+    Info,
 } from "lucide-react";
 import { TransactionCell } from "./transaction-cell";
 import { ExpandedView } from "./expanded-view";
@@ -40,7 +41,6 @@ import { useTreasury } from "@/hooks/use-treasury";
 import {
     getApproversAndThreshold,
     getKindFromProposal,
-    ProposalPermissionKind,
 } from "@/lib/config-utils";
 
 import {
@@ -242,9 +242,14 @@ export function ProposalsTable({
             columnHelper.display({
                 id: "voting",
                 header: () => (
-                    <span className="text-xs font-medium uppercase text-muted-foreground">
-                        Voting
-                    </span>
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium uppercase text-muted-foreground">
+                            Voting
+                        </span>
+                        <Tooltip content="First number shows approvals received. Second number shows approvals required to execute.">
+                            <Info className="size-4 text-muted-foreground" />
+                        </Tooltip>
+                    </div>
                 ),
                 cell: ({ row }) => (
                     <VotingIndicator proposal={row.original} policy={policy} />
@@ -258,7 +263,8 @@ export function ProposalsTable({
                 ),
                 cell: (info) => (
                     <ProposalStatusPill
-                        status={getProposalStatus(info.row.original, policy)}
+                        proposal={info.row.original}
+                        policy={policy}
                     />
                 ),
             }),

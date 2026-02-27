@@ -1,5 +1,5 @@
 import { getKindFromProposal } from "@/lib/config-utils";
-import { Proposal, ProposalStatus } from "@/lib/proposals-api";
+import { Proposal } from "@/lib/proposals-api";
 import { Policy } from "@/types/policy";
 import { ProposalUIKind } from "../types/index";
 import { decodeArgs, decodeProposalDescription } from "@/lib/utils";
