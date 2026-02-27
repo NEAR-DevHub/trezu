@@ -640,6 +640,24 @@ The enrichment worker can populate all `balance_changes` fields from pipeline da
 
 10. **Database impact**: Goldsky writes directly to our Postgres. Consider whether we need a separate database/schema, or if writing to the existing database is fine. Ensure the Goldsky sink user has write access only to the `indexed_*` tables.
 
+### Design concerns to address:
+
+11. **Most receipts won't be balance changes — wasted RPC calls**: The sputnik-dao suffix filter captures ALL receipts involving DAOs — proposals, votes, policy changes, role updates, etc. The vast majority don't change any balance. The enrichment worker checks `balance_before == balance_after` and skips, but that's still 2 RPC calls burned per irrelevant receipt. The worker should classify receipts by action type (Transfer, ft_transfer, etc.) and skip non-financial receipts before making any RPC calls.
+
+12. **Pipeline 1 and Pipeline 2 overlap — double processing**: An FT transfer to a monitored DAO produces both a receipt (Pipeline 1) AND an execution outcome with NEP-141 logs (Pipeline 2). The enrichment worker would process the same balance change twice. The `UNIQUE(account_id, block_height, token_id)` constraint catches it as a DB error, but that's not a clean solution. Need explicit deduplication strategy between pipelines.
+
+13. **`determine_account_and_token()` is non-trivial**: A single receipt could affect NEAR balance (if it has a deposit), an FT balance (if it's an ft_transfer callback), or multiple tokens simultaneously. Cross-contract calls can trigger balance changes indirectly — a receipt to contract A might cause A to call ft_transfer on contract B, changing the DAO's FT balance. The receipt alone doesn't tell you which tokens were affected. This function needs careful design.
+
+14. **Pipeline 2 volume may be unworkable**: ALL NEP-141 events on the entire NEAR chain is potentially millions per day. These all land in Postgres, and the enrichment worker has to scan every single one checking if any monitored account appears in the JSON logs. The `indexed_ft_events` table would grow to billions of rows. Consider filtering Pipeline 2 by receiver (the FT contract is called by the DAO) using the same sputnik-dao suffix, rather than filtering by event standard.
+
+15. **No backfill strategy beyond `start_at: earliest`**: All pipelines start from the earliest NEAR block (~180M+ blocks). But the existing `balance_changes` table already has historical data. Should we start from a recent block (`max(block_height)` in balance_changes) and rely on existing data for history? Or backfill from the beginning, duplicating work?
+
+16. **Enrichment worker needs concurrency**: The pseudocode processes receipts sequentially — one receipt, 2 RPC calls, wait, next. During backfill with thousands of unprocessed receipts, this would be extremely slow. Needs batch/parallel processing similar to how `dirty_monitor.rs` spawns parallel tokio tasks.
+
+17. **Goldsky delivery guarantees**: If a pipeline restarts or replays, it may re-send events. Does the Postgres sink use `INSERT ... ON CONFLICT DO NOTHING` or does it fail on duplicate primary keys? Need to understand exactly-once vs at-least-once semantics.
+
+18. **`SELECT *` alongside named columns in pipeline SQL**: The current pipeline SQL does `SELECT receipt_id, block_height, ..., *` which produces duplicate columns. Should be either `SELECT *` or just the named columns.
+
 ## Implementation Checklist
 
 - [ ] Run `goldsky dataset get near.receipts` / `near.execution_outcomes` / `near.transactions` to get actual schemas
