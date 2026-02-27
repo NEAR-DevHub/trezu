@@ -366,11 +366,11 @@ export default function RequestsPage() {
                                     />
                                 </ScrollArea>
 
-                                <div className="flex items-center gap-2">
+                                <div className="flex justify-end items-center gap-2 w-full">
                                     <Input
                                         type="text"
                                         placeholder="Search request by name or ID"
-                                        className="max-w-64 w-full"
+                                        className="max-w-80 w-full"
                                         search
                                         value={searchValue}
                                         onChange={(e) =>
