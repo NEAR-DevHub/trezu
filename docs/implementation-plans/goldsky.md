@@ -248,9 +248,10 @@ sources:
 transforms:
   # NOTE: Verify schema with `goldsky dataset get near.transactions`
   #
-  # Filter transactions where signer or receiver is a monitored account.
-  # This gives us transaction hashes, signers, and method names without
-  # needing EXPERIMENTAL_receipt or chunk RPC calls.
+  # Filter transactions where receiver is a monitored account.
+  # Sputnik DAO accounts are contracts without full access keys — they
+  # cannot sign transactions. Transactions are always signed by council
+  # members with the DAO as receiver_id.
   #
   # Same sputnik-dao suffix strategy as the receipts pipeline.
   treasury_transactions:
@@ -264,8 +265,7 @@ transforms:
         -- Include actions/method_name if available in schema
         *
       FROM near_transactions
-      WHERE signer_id LIKE '%.sputnik-dao.near'
-         OR receiver_id LIKE '%.sputnik-dao.near'
+      WHERE receiver_id LIKE '%.sputnik-dao.near'
     primary_key: transaction_hash
 
 sinks:
