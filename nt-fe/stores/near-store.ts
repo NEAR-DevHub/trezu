@@ -516,7 +516,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                         label: "View Request",
                         onClick: () =>
                             window.open(
-                                `/${params.treasuryId}/requests?tab=pending`,
+                                `/${params.treasuryId}/requests?tab=InProgress`,
                             ),
                     },
                     classNames: {

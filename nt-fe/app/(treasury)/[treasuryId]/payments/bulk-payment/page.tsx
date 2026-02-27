@@ -337,7 +337,7 @@ export default function BulkPaymentPage() {
                         label: "View Request",
                         onClick: () =>
                             router.push(
-                                `/${selectedTreasury}/requests?tab=pending`,
+                                `/${selectedTreasury}/requests?tab=InProgress`,
                             ),
                     },
                     classNames: {

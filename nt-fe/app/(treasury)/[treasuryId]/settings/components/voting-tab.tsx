@@ -416,7 +416,7 @@ export function VotingTab() {
                         <Button
                             onClick={() =>
                                 router.push(
-                                    `/${treasuryId}/requests?tab=pending`,
+                                    `/${treasuryId}/requests?tab=InProgress`,
                                 )
                             }
                             variant="default"
