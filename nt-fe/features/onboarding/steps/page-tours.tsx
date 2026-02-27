@@ -4,6 +4,7 @@ import { useNextStep } from "nextstepjs";
 import type { Tour } from "nextstepjs";
 import { useEffect, useCallback, useRef } from "react";
 import { useTreasury } from "@/hooks/use-treasury";
+import { useResponsiveSidebar } from "@/stores/sidebar-store";
 
 // Tour names
 export const PAGE_TOUR_NAMES = {
@@ -11,6 +12,7 @@ export const PAGE_TOUR_NAMES = {
     PAYMENTS_PENDING: "payments-pending",
     EXCHANGE_SETTINGS: "exchange-settings",
     MEMBERS_PENDING: "members-pending",
+    GUEST_SAVE: "guest-save",
 } as const;
 
 // Local storage keys
@@ -19,6 +21,7 @@ export const PAGE_TOUR_STORAGE_KEYS = {
     PAYMENTS_PENDING_SHOWN: "payments-pending-tour-shown",
     EXCHANGE_SETTINGS_SHOWN: "exchange-settings-tour-shown",
     MEMBERS_PENDING_SHOWN: "members-pending-tour-shown",
+    GUEST_SAVE_SHOWN: "guest-save-tour-shown",
 } as const;
 
 // Selector IDs
@@ -27,6 +30,7 @@ export const PAGE_TOUR_SELECTORS = {
     PAYMENTS_PENDING_BTN: "#payments-pending-btn",
     EXCHANGE_SETTINGS_BTN: "#exchange-settings-btn",
     MEMBERS_PENDING_BTN: "#members-pending-btn",
+    GUEST_SAVE_BTN: "#guest-save-btn",
 } as const;
 
 const defaultStepProps = {
@@ -96,6 +100,66 @@ export const MEMBERS_PENDING_TOUR: Tour = {
         },
     ],
 };
+
+export const GUEST_SAVE_TOUR: Tour = {
+    tour: PAGE_TOUR_NAMES.GUEST_SAVE,
+    steps: [
+        {
+            ...defaultStepProps,
+            content: (
+                <>You can save this guest treasury to your treasuries list.</>
+            ),
+            selector: PAGE_TOUR_SELECTORS.GUEST_SAVE_BTN,
+            side: "right",
+        },
+    ],
+};
+
+/**
+ * Hook to trigger the guest save tour when a connected user views a guest treasury for the first time.
+ */
+export function useGuestSaveTour(
+    accountId: string | undefined,
+    isSaved: boolean,
+) {
+    const { startNextStep, currentTour } = useNextStep();
+    const { isGuestTreasury, isLoading } = useTreasury();
+    const { isMobile, isSidebarOpen } = useResponsiveSidebar();
+    const hasTriggered = useRef(false);
+
+    useEffect(() => {
+        if (isLoading || !isGuestTreasury || !accountId || isSaved) return;
+        if (currentTour) return;
+        if (isMobile && !isSidebarOpen) return;
+
+        const alreadyShown =
+            localStorage.getItem(PAGE_TOUR_STORAGE_KEYS.GUEST_SAVE_SHOWN) ===
+            "true";
+        if (alreadyShown) return;
+
+        if (hasTriggered.current) return;
+        hasTriggered.current = true;
+
+        const timeout = setTimeout(() => {
+            localStorage.setItem(
+                PAGE_TOUR_STORAGE_KEYS.GUEST_SAVE_SHOWN,
+                "true",
+            );
+            startNextStep(PAGE_TOUR_NAMES.GUEST_SAVE);
+        }, 500);
+
+        return () => clearTimeout(timeout);
+    }, [
+        isLoading,
+        isGuestTreasury,
+        accountId,
+        isSaved,
+        currentTour,
+        startNextStep,
+        isMobile,
+        isSidebarOpen,
+    ]);
+}
 
 /**
  * Hook to trigger a one-time page tour on mount.

@@ -23,7 +23,7 @@ export function Pill({
     side,
     className,
 }: PillProps) {
-    return (
+    const pill = (
         <div
             className={cn(
                 "flex border rounded-md items-center py-[3px] px-2 gap-1.5 w-fit text-xs font-medium text-center",
@@ -31,12 +31,16 @@ export function Pill({
                 className,
             )}
         >
+            {info && <Info className="size-3 shrink-0" />}
             {title}
-            {info && (
-                <Tooltip content={info} side={side}>
-                    <Info className="size-3 shrink-0" />
-                </Tooltip>
-            )}
         </div>
     );
+    if (info) {
+        return (
+            <Tooltip content={info} side={side}>
+                {pill}
+            </Tooltip>
+        );
+    }
+    return pill;
 }

@@ -55,7 +55,7 @@
         "gleap": "^15.2.1",
         "gradflow": "^0.1.0",
         "lucide-react": "^0.562.0",
-        "motion": "^12.34.1",
+        "motion": "^12.34.3",
         "next": "16.0.7",
         "nextstepjs": "^2.2.0",
         "papaparse": "^5.5.3",

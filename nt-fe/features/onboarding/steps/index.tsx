@@ -1,10 +1,11 @@
-import { DASHBOARD_TOUR, INFO_BOX_TOUR } from "./dashboard"
+import { DASHBOARD_TOUR, INFO_BOX_TOUR } from "./dashboard";
 import {
     PAYMENTS_BULK_TOUR,
     PAYMENTS_PENDING_TOUR,
     EXCHANGE_SETTINGS_TOUR,
     MEMBERS_PENDING_TOUR,
-} from "./page-tours"
+    GUEST_SAVE_TOUR,
+} from "./page-tours";
 
 export const TOURS = [
     DASHBOARD_TOUR,
@@ -13,4 +14,5 @@ export const TOURS = [
     PAYMENTS_PENDING_TOUR,
     EXCHANGE_SETTINGS_TOUR,
     MEMBERS_PENDING_TOUR,
-]
+    GUEST_SAVE_TOUR,
+];

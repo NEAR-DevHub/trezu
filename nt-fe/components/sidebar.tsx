@@ -25,6 +25,11 @@ import { Settings } from "./animate-ui/icons/settings";
 import { MessageCircleQuestion } from "./animate-ui/icons/message-circle-question";
 import { ArrowUpDown } from "./animate-ui/icons/arrow-up-down";
 import { CreditCard } from "./animate-ui/icons/credit-card";
+import { Bookmark } from "./animate-ui/icons/bookmark";
+import {
+    PAGE_TOUR_SELECTORS,
+    useGuestSaveTour,
+} from "@/features/onboarding/steps/page-tours";
 
 interface NavLinkProps {
     isActive: boolean;
@@ -141,6 +146,7 @@ export function Sidebar({ onClose }: SidebarProps) {
 
     const isReduced = !isMobile && !isOpen;
     const saveTreasuryMutation = useSaveTreasuryMutation(accountId, treasuryId);
+    useGuestSaveTour(accountId ?? undefined, isSaved ?? false);
 
     // Mark as initialized after first render with mounted state
     useEffect(() => {
@@ -201,19 +207,30 @@ export function Sidebar({ onClose }: SidebarProps) {
                                 <div className="flex gap-2">
                                     <GuestBadge showTooltip side="right" />
                                     {accountId && !isReduced && !isSaved && (
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="w-fit h-6 justify-center gap-2"
-                                            onClick={() =>
-                                                saveTreasuryMutation.mutate()
-                                            }
-                                            disabled={
-                                                saveTreasuryMutation.isPending
-                                            }
+                                        <AnimateIcon
+                                            animateOnHover="default"
+                                            asChild
                                         >
-                                            Save
-                                        </Button>
+                                            <Button
+                                                id={
+                                                    PAGE_TOUR_SELECTORS.GUEST_SAVE_BTN
+                                                }
+                                                variant="outline"
+                                                size="sm"
+                                                className="w-fit h-6 justify-center gap-1.5"
+                                                tooltipContent="Save this guest treasury to your treasuries list."
+                                                side="right"
+                                                onClick={() =>
+                                                    saveTreasuryMutation.mutate()
+                                                }
+                                                disabled={
+                                                    saveTreasuryMutation.isPending
+                                                }
+                                            >
+                                                <Bookmark className="size-3 shrink-0" />
+                                                Save
+                                            </Button>
+                                        </AnimateIcon>
                                     )}
                                 </div>
                             ) : (
