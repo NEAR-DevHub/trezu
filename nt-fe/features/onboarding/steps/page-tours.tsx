@@ -146,7 +146,7 @@ export function useGuestSaveTour(
 
         const alreadyShown =
             localStorage.getItem(PAGE_TOUR_STORAGE_KEYS.GUEST_SAVE_SHOWN) ===
-            "false";
+            "true";
         if (alreadyShown) return;
 
         if (hasTriggered.current) return;
@@ -157,7 +157,6 @@ export function useGuestSaveTour(
                 PAGE_TOUR_STORAGE_KEYS.GUEST_SAVE_SHOWN,
                 "true",
             );
-            console.log("starting tour");
             startNextStep(PAGE_TOUR_NAMES.GUEST_SAVE);
         }, 500);
 
