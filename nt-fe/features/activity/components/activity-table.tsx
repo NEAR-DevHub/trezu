@@ -143,7 +143,10 @@ export function ActivityTable({
                                             </div>
                                         </TableCell>
                                         <TableCell className="min-w-[180px]">
-                                            {isSwap && activity.swap && activity.swap.swapRole === "deposit" ? (
+                                            {isSwap &&
+                                            activity.swap &&
+                                            activity.swap.swapRole ===
+                                                "deposit" ? (
                                                 <div className="flex items-center gap-1.5">
                                                     {activity.swap.sentAmount &&
                                                     activity.swap
@@ -173,11 +176,19 @@ export function ActivityTable({
                                                         }
                                                     </span>
                                                 </div>
-                                            ) : isSwap && activity.swap && activity.swap.swapRole === "fulfillment" ? (
+                                            ) : isSwap &&
+                                              activity.swap &&
+                                              activity.swap.swapRole ===
+                                                  "fulfillment" ? (
                                                 <div className="flex items-center gap-1.5">
-                                                    {activity.swap.sentTokenMetadata ? (
+                                                    {activity.swap
+                                                        .sentTokenMetadata ? (
                                                         <span className="font-semibold text-muted-foreground whitespace-nowrap">
-                                                            {activity.swap.sentTokenMetadata.symbol}
+                                                            {
+                                                                activity.swap
+                                                                    .sentTokenMetadata
+                                                                    .symbol
+                                                            }
                                                         </span>
                                                     ) : null}
                                                     <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -248,7 +259,7 @@ export function ActivityTable({
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                    <div className="pb-4">
+                    <div className="pb-4 pr-4">
                         <Pagination
                             pageIndex={pageIndex}
                             totalPages={totalPages}

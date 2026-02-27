@@ -145,10 +145,10 @@ export function ProposalsTable({
                         const content = !isPending
                             ? "Proposal is not pending."
                             : !canVote
-                                ? "You don't have permission to vote on this request."
-                                : isVoted
-                                    ? "You already voted on this request."
-                                    : "";
+                              ? "You don't have permission to vote on this request."
+                              : isVoted
+                                ? "You already voted on this request."
+                                : "";
 
                         return (
                             <Tooltip content={content}>
@@ -460,10 +460,10 @@ export function ProposalsTable({
                                             {header.isPlaceholder
                                                 ? null
                                                 : flexRender(
-                                                    header.column.columnDef
-                                                        .header,
-                                                    header.getContext(),
-                                                )}
+                                                      header.column.columnDef
+                                                          .header,
+                                                      header.getContext(),
+                                                  )}
                                         </TableHead>
                                     ))}
                                 </TableRow>
@@ -516,7 +516,9 @@ export function ProposalsTable({
                                                     onVote={(vote) => {
                                                         setVoteInfo({
                                                             vote,
-                                                            proposals: [row.original],
+                                                            proposals: [
+                                                                row.original,
+                                                            ],
                                                         });
                                                         setIsVoteModalOpen(
                                                             true,
@@ -546,11 +548,13 @@ export function ProposalsTable({
                 </ScrollArea>
 
                 {onPageChange && (
-                    <Pagination
-                        pageIndex={pageIndex}
-                        totalPages={totalPages}
-                        onPageChange={onPageChange}
-                    />
+                    <div className="pr-2">
+                        <Pagination
+                            pageIndex={pageIndex}
+                            totalPages={totalPages}
+                            onPageChange={onPageChange}
+                        />
+                    </div>
                 )}
             </div>
             <VoteModal
