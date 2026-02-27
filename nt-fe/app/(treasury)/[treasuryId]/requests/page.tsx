@@ -329,10 +329,11 @@ export default function RequestsPage() {
     ));
 
     const actions = (
-        <>
+        <div className="flex items-center gap-2">
             <ResponsiveInput
                 type="text"
                 placeholder="Search request by name or ID"
+                mobilePlaceholder="Search by name or ID"
                 className="max-w-64"
                 search
                 value={searchValue}
@@ -355,7 +356,7 @@ export default function RequestsPage() {
                     />
                 )}
             </Button>
-        </>
+        </div>
     );
 
     const filterPanel = selectedCount === 0 && (

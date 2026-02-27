@@ -69,6 +69,8 @@ interface ResponsiveInputProps extends InputProps {
     onDebouncedChange?: (value: string) => void;
     /** Icon shown on the collapsed mobile button and inside the desktop input. Defaults to Search. */
     icon?: React.ElementType;
+    /** Placeholder text for the mobile expanded input. Falls back to `placeholder` if not provided. */
+    mobilePlaceholder?: string;
 }
 
 /**
@@ -82,6 +84,7 @@ export function ResponsiveInput({
     debounceMs = 0,
     className,
     placeholder,
+    mobilePlaceholder,
     search: _search,
     icon: Icon = Search,
     ...props
@@ -158,8 +161,8 @@ export function ResponsiveInput({
                     <Input
                         value={value}
                         onChange={handleChange}
-                        placeholder={placeholder}
-                        className="w-full"
+                        placeholder={mobilePlaceholder ?? placeholder}
+                        className="w-full placeholder:text-xs"
                         search={isSearchIcon}
                         showAlwaysClear
                         onClear={handleClose}
