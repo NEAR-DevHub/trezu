@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { Tooltip } from "./tooltip";
 
 interface PillProps {
+    id?: string;
     title: string;
     info?: string;
     variant?: "default" | "secondary" | "info";
@@ -17,6 +18,7 @@ const variants = {
 };
 
 export function Pill({
+    id,
     title,
     info,
     variant = "default",
@@ -25,6 +27,7 @@ export function Pill({
 }: PillProps) {
     const pill = (
         <div
+            id={id}
             className={cn(
                 "flex border rounded-md items-center py-[3px] px-2 gap-1.5 w-fit text-xs font-medium text-center",
                 variants[variant],

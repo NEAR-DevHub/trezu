@@ -1,17 +1,24 @@
 import { Pill } from "./pill";
 
 const GUEST_TOOLTIP =
-    "You are a guest of this treasury. You can only view the data. Creating requests, adding members, or making any changes is not allowed because you are not a member of the team.";
+    "You are a guest of this treasury. You can only view the data.";
 
 interface GuestBadgeProps {
     showTooltip?: boolean;
     side?: "top" | "bottom" | "left" | "right";
     compact?: boolean;
+    id?: string;
 }
 
-export function GuestBadge({ showTooltip, side, compact }: GuestBadgeProps) {
+export function GuestBadge({
+    showTooltip,
+    side,
+    compact,
+    id,
+}: GuestBadgeProps) {
     return (
         <Pill
+            id={id}
             title="Guest"
             variant="info"
             info={showTooltip ? GUEST_TOOLTIP : undefined}

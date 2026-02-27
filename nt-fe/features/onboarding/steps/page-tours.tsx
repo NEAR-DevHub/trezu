@@ -30,6 +30,7 @@ export const PAGE_TOUR_SELECTORS = {
     PAYMENTS_PENDING_BTN: "#payments-pending-btn",
     EXCHANGE_SETTINGS_BTN: "#exchange-settings-btn",
     MEMBERS_PENDING_BTN: "#members-pending-btn",
+    GUEST_BADGE: "#guest-badge",
     GUEST_SAVE_BTN: "#guest-save-btn",
 } as const;
 
@@ -107,6 +108,17 @@ export const GUEST_SAVE_TOUR: Tour = {
         {
             ...defaultStepProps,
             content: (
+                <>
+                    You are a guest of this treasury. You can only view the
+                    data.
+                </>
+            ),
+            selector: PAGE_TOUR_SELECTORS.GUEST_BADGE,
+            side: "right",
+        },
+        {
+            ...defaultStepProps,
+            content: (
                 <>You can save this guest treasury to your treasuries list.</>
             ),
             selector: PAGE_TOUR_SELECTORS.GUEST_SAVE_BTN,
@@ -124,17 +136,17 @@ export function useGuestSaveTour(
 ) {
     const { startNextStep, currentTour } = useNextStep();
     const { isGuestTreasury, isLoading } = useTreasury();
-    const { isMobile, isSidebarOpen } = useResponsiveSidebar();
+    const { isSidebarOpen } = useResponsiveSidebar();
     const hasTriggered = useRef(false);
 
     useEffect(() => {
         if (isLoading || !isGuestTreasury || !accountId || isSaved) return;
         if (currentTour) return;
-        if (isMobile && !isSidebarOpen) return;
+        if (!isSidebarOpen) return;
 
         const alreadyShown =
             localStorage.getItem(PAGE_TOUR_STORAGE_KEYS.GUEST_SAVE_SHOWN) ===
-            "true";
+            "false";
         if (alreadyShown) return;
 
         if (hasTriggered.current) return;
@@ -145,6 +157,7 @@ export function useGuestSaveTour(
                 PAGE_TOUR_STORAGE_KEYS.GUEST_SAVE_SHOWN,
                 "true",
             );
+            console.log("starting tour");
             startNextStep(PAGE_TOUR_NAMES.GUEST_SAVE);
         }, 500);
 
@@ -156,7 +169,6 @@ export function useGuestSaveTour(
         isSaved,
         currentTour,
         startNextStep,
-        isMobile,
         isSidebarOpen,
     ]);
 }

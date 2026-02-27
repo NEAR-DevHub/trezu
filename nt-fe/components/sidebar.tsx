@@ -205,16 +205,22 @@ export function Sidebar({ onClose }: SidebarProps) {
                         >
                             {isGuestTreasury && !isLoadingGuestTreasury ? (
                                 <div className="flex gap-2">
-                                    <GuestBadge showTooltip side="right" />
+                                    <GuestBadge
+                                        id={PAGE_TOUR_SELECTORS.GUEST_BADGE.slice(
+                                            1,
+                                        )}
+                                        showTooltip
+                                        side="right"
+                                    />
                                     {accountId && !isReduced && !isSaved && (
                                         <AnimateIcon
                                             animateOnHover="default"
                                             asChild
                                         >
                                             <Button
-                                                id={
-                                                    PAGE_TOUR_SELECTORS.GUEST_SAVE_BTN
-                                                }
+                                                id={PAGE_TOUR_SELECTORS.GUEST_SAVE_BTN.slice(
+                                                    1,
+                                                )}
                                                 variant="outline"
                                                 size="sm"
                                                 className="w-fit h-6 justify-center gap-1.5"
