@@ -13,7 +13,8 @@
       "version": "lts",
       "installYarnUsingApt": false
     },
-    "ghcr.io/devcontainers/features/desktop-lite:1": {}
+    "ghcr.io/devcontainers/features/desktop-lite:1": {},
+    "ghcr.io/devcontainers/features/sshd:1": {}
   },
   "forwardPorts": [6080, 5901, 5432, 5433],
   "portsAttributes": {
