@@ -78,15 +78,14 @@ Replace the scan/binary-search approach with **Goldsky Turbo pipelines** that st
 
 #### 1.1 Add Goldsky agent skills to the repository
 
-Copy the official Goldsky agent skills into the repo for Claude Code / Cursor integration:
+Copy the official Goldsky agent skills into the existing `.agents/skills/` directory (already symlinked from `.claude/skills`):
 
 ```bash
 # Clone the skills repo
-git clone https://github.com/goldsky-io/agent-skills.git /tmp/goldsky-skills
+git clone --depth 1 https://github.com/goldsky-io/agent-skills.git /tmp/goldsky-skills
 
-# Copy skills to .claude/skills/ (for Claude Code)
-mkdir -p .claude/skills
-cp -r /tmp/goldsky-skills/skills/* .claude/skills/
+# Copy skills into the existing agent skills directory
+cp -r /tmp/goldsky-skills/skills/* .agents/skills/
 ```
 
 #### 1.2 Create pipeline YAML directory
@@ -636,7 +635,7 @@ The enrichment worker can populate all `balance_changes` fields from pipeline da
 
 - [x] Run `goldsky dataset get near.receipts` / `near.execution_outcomes` / `near.transactions` to get actual schemas
 - [ ] Create `goldsky/` directory structure in repo  
-- [ ] Copy Goldsky agent skills to `.claude/skills/` (from https://github.com/goldsky-io/agent-skills)
+- [ ] Copy Goldsky agent skills to `.agents/skills/` (from https://github.com/goldsky-io/agent-skills)
 - [ ] Create Postgres secret in Goldsky (`TREASURY_DB_SECRET`)
 - [ ] Write and validate pipeline YAML configs based on actual schemas
 - [ ] Create database migrations for `indexed_near_receipts`, `indexed_ft_events`, `indexed_transactions`
