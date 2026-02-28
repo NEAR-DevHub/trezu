@@ -33,6 +33,10 @@ npm install -g @anthropic-ai/claude-code
 echo "Installing Goldsky CLI..."
 npm install -g @goldskycom/cli
 
+# Install Goldsky Turbo CLI extension for pipeline deployment
+echo "Installing Goldsky Turbo CLI..."
+curl -fsSL https://install-turbo.goldsky.com | sh
+
 # Copy environment files if they don't exist
 if [ ! -f nt-be/.env ]; then
     echo "Creating nt-be/.env from example..."

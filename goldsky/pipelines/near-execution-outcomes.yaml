@@ -7,12 +7,13 @@ sources:
     type: dataset
     dataset_name: near.execution_outcomes
     version: 1.1.0
-    start_at: earliest
+    start_at: latest
 
 transforms:
   # Filter execution outcomes that are both FT/intents events AND mention
   # a sputnik-dao account. NEP-141/NEP-245 event logs contain full account
   # IDs (old_owner_id, new_owner_id), so we can filter by suffix directly.
+  # Note: logs is List(Utf8) so we use array_to_string() to convert for LIKE.
   ft_and_intents_events:
     type: sql
     primary_key: id
@@ -20,7 +21,7 @@ transforms:
       SELECT
         id,
         executor_id,
-        logs,
+        array_to_string(logs, '\n') as logs,
         status,
         transaction_hash,
         signer_id,
@@ -29,10 +30,10 @@ transforms:
         trigger_block_hash,
         trigger_block_timestamp
       FROM near_outcomes
-      WHERE (logs LIKE '%"standard":"nep141"%'
-             OR logs LIKE '%"standard":"nep245"%'
+      WHERE (array_to_string(logs, ' ') LIKE '%"standard":"nep141"%'
+             OR array_to_string(logs, ' ') LIKE '%"standard":"nep245"%'
              OR executor_id = 'intents.near')
-        AND logs LIKE '%sputnik-dao.near%'
+        AND array_to_string(logs, ' ') LIKE '%sputnik-dao.near%'
 
 sinks:
   postgres:
