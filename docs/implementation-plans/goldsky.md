@@ -110,19 +110,22 @@ goldsky/
 
 #### 1.3 Pipeline YAML configurations
 
-**Important**: Before writing pipelines, discover the exact NEAR dataset schemas by running:
-```bash
-goldsky dataset list --chain near
-goldsky dataset get near.receipts
-goldsky dataset get near.execution_outcomes
-goldsky dataset get near.transactions
-```
+**Dataset schemas** (verified via `goldsky dataset get` on Feb 28 2026, all v1.1.0 Turbo):
 
-The dataset schemas will reveal the exact column names and types available for SQL transforms. The pipeline configs below use placeholder column names that **must be verified** against actual schema output.
+- **near.receipts**: `receipt_id`, `predecessor_id`, `receiver_id`, `receipt` (JSON string with full action data), `block_height`, `block_hash`, `block_timestamp`, `priority`
+- **near.execution_outcomes**: `id`, `executor_id`, `logs`, `status`, `transaction_hash`, `signer_id`, `receiver_id`, `trigger_block_height`, `trigger_block_hash`, `trigger_block_timestamp`, `gas_burnt`, `tokens_burnt`, `metadata`, `receipt_ids`, `transaction_id`
+- **near.transactions**: `id`, `hash` (primary key), `signer_id`, `receiver_id`, `actions` (JSON string), `block_height`, `block_hash`, `block_timestamp`, `nonce`, `priority_fee`, `public_key`, `signature`, `has_outcome`, `receipt_outcome_count`
+
+Key findings:
+- All three are Turbo datasets (resolves open question #2)
+- Receipts have a `receipt` JSON field containing full action data (Transfer amounts, FunctionCall method names, args) — resolves the action_kind/method_name concern
+- Execution outcomes include `transaction_hash` and `signer_id` directly — no need for separate transaction resolution
+- Transactions use `hash` as the column name (not `transaction_hash`) and `actions` as a JSON string
+- Timestamps are in milliseconds (not nanoseconds like NEAR RPC)
 
 ##### Pipeline 1: NEAR Receipts (`goldsky/pipelines/near-receipts.yaml`)
 
-This pipeline captures all receipts involving monitored treasury accounts. It provides: NEAR native transfers, function calls to/from treasuries, staking pool interactions.
+This pipeline captures all receipts involving monitored treasury accounts. It provides: NEAR native transfers, function calls to/from treasuries, staking pool interactions. The `receipt` JSON field contains full action data for deriving action_kind, method_name, and counterparty.
 
 ```yaml
 name: treasury-near-receipts
@@ -132,16 +135,10 @@ sources:
   near_receipts:
     type: dataset
     dataset_name: near.receipts
-    version: 1.0.0
+    version: 1.1.0
     start_at: earliest
 
 transforms:
-  # NOTE: Column names below are placeholders — run `goldsky dataset get near.receipts`
-  # to discover the actual schema before implementing.
-  #
-  # The goal is to filter receipts where either the predecessor (sender) or
-  # receiver matches a monitored treasury account.
-  #
   # Strategy: Use a suffix filter for *.sputnik-dao.near. Non-sputnik
   # accounts (e.g., meta-pool-dao-4.near) are not handled by Goldsky
   # pipelines and fall back to the existing binary search path.
@@ -151,13 +148,12 @@ transforms:
     sql: |
       SELECT
         receipt_id,
-        block_height,
-        block_timestamp,
         predecessor_id,
         receiver_id,
-        -- Include action data if available in schema
-        -- (Transfer amounts, function call method names, etc.)
-        *
+        receipt,
+        block_height,
+        block_hash,
+        block_timestamp
       FROM near_receipts
       WHERE predecessor_id LIKE '%.sputnik-dao.near'
          OR receiver_id LIKE '%.sputnik-dao.near'
@@ -174,7 +170,7 @@ sinks:
 
 ##### Pipeline 2: Execution Outcomes (`goldsky/pipelines/near-execution-outcomes.yaml`)
 
-This pipeline captures execution outcomes that contain FT transfer events (NEP-141) and intents multi-token events (NEP-245). Since the monitored account appears inside the JSON event log rather than as a top-level field, we need to capture all FT/intents events and post-filter in the backend.
+This pipeline captures execution outcomes that contain FT transfer events (NEP-141) and intents multi-token events (NEP-245). Filters by both event standard AND sputnik-dao suffix in the logs. Also captures `transaction_hash` and `signer_id` directly — no need for Pipeline 3 to resolve these.
 
 ```yaml
 name: treasury-ft-events
@@ -184,40 +180,31 @@ sources:
   near_outcomes:
     type: dataset
     dataset_name: near.execution_outcomes
-    version: 1.0.0
+    version: 1.1.0
     start_at: earliest
 
 transforms:
-  # NOTE: Column names are placeholders — verify with `goldsky dataset get near.execution_outcomes`
-  #
-  # Strategy: Filter execution outcomes that contain NEP-141 (ft_transfer) or
-  # NEP-245 (mt_transfer) event logs. These are identified by the standard
-  # EVENT_JSON format in receipt outcome logs.
-  #
-  # Strategy: Filter execution outcomes that are both FT/intents events AND
-  # mention a monitored account. NEP-141/NEP-245 event logs contain full
-  # account IDs (old_owner_id, new_owner_id), so we can filter by the
-  # sputnik-dao.near suffix directly in the log string.
-  #
-  # This keeps the same sputnik-dao suffix strategy as Pipelines 1 & 3,
-  # reducing volume from "all FT events on NEAR" to "FT events involving
-  # sputnik-dao accounts only."
+  # Filter execution outcomes that are both FT/intents events AND mention
+  # a sputnik-dao account. NEP-141/NEP-245 event logs contain full account
+  # IDs (old_owner_id, new_owner_id), so we can filter by suffix directly.
   ft_and_intents_events:
     sql: |
       SELECT
         id,
-        block_height,
-        block_timestamp,
-        receipt_id,
         executor_id,
         logs,
-        status
+        status,
+        transaction_hash,
+        signer_id,
+        receiver_id,
+        trigger_block_height,
+        trigger_block_hash,
+        trigger_block_timestamp
       FROM near_outcomes
       WHERE (logs LIKE '%"standard":"nep141"%'
              OR logs LIKE '%"standard":"nep245"%'
              OR executor_id = 'intents.near')
-        AND (logs LIKE '%sputnik-dao.near%'
-)
+        AND logs LIKE '%sputnik-dao.near%'
     primary_key: id
 
 sinks:
@@ -227,12 +214,11 @@ sinks:
     schema: public
     secret_name: TREASURY_DB_SECRET
     from: ft_and_intents_events
-
 ```
 
 ##### Pipeline 3: Transactions metadata (`goldsky/pipelines/near-transactions.yaml`)
 
-For resolving transaction hashes, signers, and method names — enrichment data that the current system fetches via `EXPERIMENTAL_receipt`, chunk lookups, and `tx_status` calls.
+For resolving transaction hashes, signers, and method names. Note: Pipeline 2 (execution_outcomes) already includes `transaction_hash` and `signer_id`, so Pipeline 3 may be optional — it's mainly useful for getting the `actions` JSON with method names for transactions that don't produce FT events.
 
 ```yaml
 name: treasury-near-transactions
@@ -242,31 +228,27 @@ sources:
   near_transactions:
     type: dataset
     dataset_name: near.transactions
-    version: 1.0.0
+    version: 1.1.0
     start_at: earliest
 
 transforms:
-  # NOTE: Verify schema with `goldsky dataset get near.transactions`
-  #
   # Filter transactions where receiver is a monitored account.
   # Sputnik DAO accounts are contracts without full access keys — they
   # cannot sign transactions. Transactions are always signed by council
   # members with the DAO as receiver_id.
-  #
-  # Same sputnik-dao suffix strategy as the receipts pipeline.
   treasury_transactions:
     sql: |
       SELECT
-        transaction_hash,
-        block_height,
-        block_timestamp,
+        hash,
         signer_id,
         receiver_id,
-        -- Include actions/method_name if available in schema
-        *
+        actions,
+        block_height,
+        block_hash,
+        block_timestamp
       FROM near_transactions
       WHERE receiver_id LIKE '%.sputnik-dao.near'
-    primary_key: transaction_hash
+    primary_key: hash
 
 sinks:
   postgres:
@@ -285,17 +267,16 @@ sinks:
 -- Receipts involving monitored treasury accounts, populated by Goldsky pipeline
 CREATE TABLE indexed_near_receipts (
     receipt_id TEXT PRIMARY KEY,
-    block_height BIGINT NOT NULL,
-    block_timestamp BIGINT NOT NULL,
     predecessor_id TEXT NOT NULL,
     receiver_id TEXT NOT NULL,
+    receipt TEXT,              -- JSON string with full action data (Transfer, FunctionCall, etc.)
+    block_height BIGINT NOT NULL,
+    block_hash TEXT,
+    block_timestamp BIGINT NOT NULL,  -- milliseconds (not nanoseconds like NEAR RPC)
 
     -- Enrichment status
     processed BOOLEAN NOT NULL DEFAULT FALSE,
     processed_at TIMESTAMPTZ,
-
-    -- Raw data from Goldsky (schema TBD based on actual dataset output)
-    raw_data JSONB,
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -309,20 +290,24 @@ CREATE INDEX idx_indexed_receipts_receiver ON indexed_near_receipts(receiver_id)
 #### 2.2 New migration: `indexed_ft_events` table
 
 ```sql
--- FT/intents transfer events, populated by Goldsky pipeline
+-- FT/intents transfer events from execution outcomes, populated by Goldsky pipeline
 CREATE TABLE indexed_ft_events (
     id TEXT PRIMARY KEY,
-    block_height BIGINT NOT NULL,
-    block_timestamp BIGINT NOT NULL,
-    receipt_id TEXT,
     executor_id TEXT NOT NULL,
-    logs TEXT,  -- Contains EVENT_JSON with transfer details
+    logs TEXT,                -- Contains EVENT_JSON with transfer details
+    status TEXT,
+    transaction_hash TEXT,    -- Available directly from execution_outcomes dataset
+    signer_id TEXT,
+    receiver_id TEXT,
+    trigger_block_height BIGINT NOT NULL,
+    trigger_block_hash TEXT,
+    trigger_block_timestamp BIGINT NOT NULL,  -- milliseconds
 
     -- Parsed event data (populated by enrichment worker)
-    token_id TEXT,          -- e.g., "wrap.near" or "intents.near:nep141:usdc.near"
-    account_id TEXT,        -- The monitored account involved
-    counterparty TEXT,      -- The other party
-    amount NUMERIC,         -- Transfer amount (parsed from event)
+    token_id TEXT,            -- e.g., "wrap.near" or "intents.near:nep141:usdc.near"
+    account_id TEXT,          -- The monitored account involved
+    counterparty TEXT,        -- The other party
+    amount NUMERIC,           -- Transfer amount (parsed from event)
 
     -- Enrichment status
     processed BOOLEAN NOT NULL DEFAULT FALSE,
@@ -331,7 +316,7 @@ CREATE TABLE indexed_ft_events (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_indexed_ft_block ON indexed_ft_events(block_height DESC);
+CREATE INDEX idx_indexed_ft_block ON indexed_ft_events(trigger_block_height DESC);
 CREATE INDEX idx_indexed_ft_unprocessed ON indexed_ft_events(processed) WHERE processed = FALSE;
 CREATE INDEX idx_indexed_ft_executor ON indexed_ft_events(executor_id);
 CREATE INDEX idx_indexed_ft_account ON indexed_ft_events(account_id);
@@ -342,20 +327,18 @@ CREATE INDEX idx_indexed_ft_account ON indexed_ft_events(account_id);
 ```sql
 -- Transaction metadata for monitored accounts, populated by Goldsky pipeline
 CREATE TABLE indexed_transactions (
-    transaction_hash TEXT PRIMARY KEY,
-    block_height BIGINT NOT NULL,
-    block_timestamp BIGINT NOT NULL,
+    hash TEXT PRIMARY KEY,
     signer_id TEXT NOT NULL,
     receiver_id TEXT NOT NULL,
-
-    -- Raw data from Goldsky
-    raw_data JSONB,
+    actions TEXT,              -- JSON string with action data (method names, args, deposits)
+    block_height BIGINT NOT NULL,
+    block_hash TEXT,
+    block_timestamp BIGINT NOT NULL,  -- milliseconds
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_indexed_tx_block ON indexed_transactions(block_height DESC);
-CREATE INDEX idx_indexed_tx_signer ON indexed_transactions(signer_id);
 CREATE INDEX idx_indexed_tx_receiver ON indexed_transactions(receiver_id);
 ```
 
@@ -603,15 +586,15 @@ The enrichment worker can populate all `balance_changes` fields from pipeline da
 | `actions` | Pipeline 1: full action JSON from `raw_data` |
 | `raw_data` | Pipeline 1: full receipt data as stored by Goldsky |
 
-**Key requirement**: Pipeline 1 (receipts) must include the receipt's action data (action kind, method name, args) in its output. Verify this is available in the `near.receipts` dataset schema — if not, it may need to be JOINed from another dataset or fetched via a single additional RPC call per event.
+**~~Key requirement~~** — RESOLVED: The `near.receipts` dataset includes a `receipt` field containing the full action data as a JSON string (Transfer amounts, FunctionCall method names/args, etc.). No additional RPC calls needed for action_kind or method_name. Additionally, `near.execution_outcomes` includes `transaction_hash` and `signer_id` directly, eliminating the need for separate transaction resolution for FT events.
 
 ## Key Decisions & Open Questions
 
 ### Must investigate before implementation:
 
-1. **NEAR dataset schemas**: Run `goldsky dataset get near.receipts`, `goldsky dataset get near.execution_outcomes`, `goldsky dataset get near.transactions` to discover exact column names, types, and available fields. The SQL transforms in the YAML configs above use placeholder column names.
+1. **~~NEAR dataset schemas~~** — RESOLVED (Feb 28 2026): Schemas verified via `goldsky dataset get`. All three datasets are v1.1.0. Pipeline YAML configs and database migrations updated with actual column names. Key finding: `receipt` field in near.receipts contains full action data as JSON; execution_outcomes includes `transaction_hash` and `signer_id` directly; timestamps are in milliseconds.
 
-2. **Turbo vs Mirror for NEAR**: The screenshots show NEAR datasets available for Turbo pipelines. Confirm with `goldsky dataset list --chain near` that Turbo is supported. If only Mirror is available, adjust the pipeline configs accordingly (Mirror uses v3 YAML format with the same structure).
+2. **~~Turbo vs Mirror for NEAR~~** — RESOLVED: All three datasets confirmed as Turbo (`displayName: "... (turbo)"`).
 
 3. **~~Dynamic tables for NEAR~~** — RESOLVED: Pipelines use a `LIKE '%.sputnik-dao.near'` suffix filter which covers all sputnik DAOs without any pipeline redeployment. Non-sputnik accounts (currently only `meta-pool-dao-4.near`) fall back to the existing binary search path. The backend enrichment worker further filters against the `monitored_accounts` table to only process registered DAOs.
 
@@ -647,11 +630,11 @@ The enrichment worker can populate all `balance_changes` fields from pipeline da
 
 17. **Goldsky delivery guarantees**: If a pipeline restarts or replays, it may re-send events. Does the Postgres sink use `INSERT ... ON CONFLICT DO NOTHING` or does it fail on duplicate primary keys? Need to understand exactly-once vs at-least-once semantics.
 
-18. **`SELECT *` alongside named columns in pipeline SQL**: The current pipeline SQL does `SELECT receipt_id, block_height, ..., *` which produces duplicate columns. Should be either `SELECT *` or just the named columns.
+18. **~~`SELECT *` alongside named columns in pipeline SQL~~** — RESOLVED: Pipeline SQL now uses explicit column lists based on verified schemas.
 
 ## Implementation Checklist
 
-- [ ] Run `goldsky dataset get near.receipts` / `near.execution_outcomes` / `near.transactions` to get actual schemas
+- [x] Run `goldsky dataset get near.receipts` / `near.execution_outcomes` / `near.transactions` to get actual schemas
 - [ ] Create `goldsky/` directory structure in repo  
 - [ ] Copy Goldsky agent skills to `.claude/skills/` (from https://github.com/goldsky-io/agent-skills)
 - [ ] Create Postgres secret in Goldsky (`TREASURY_DB_SECRET`)
