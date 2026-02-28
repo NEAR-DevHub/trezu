@@ -29,6 +29,10 @@ cargo install sqlx-cli --no-default-features --features postgres
 echo "Installing Claude Code CLI..."
 npm install -g @anthropic-ai/claude-code
 
+# Install Goldsky CLI for indexer pipeline management
+echo "Installing Goldsky CLI..."
+npm install -g @goldskycom/cli
+
 # Copy environment files if they don't exist
 if [ ! -f nt-be/.env ]; then
     echo "Creating nt-be/.env from example..."
