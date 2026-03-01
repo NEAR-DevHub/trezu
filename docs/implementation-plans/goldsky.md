@@ -24,49 +24,49 @@ A **single Goldsky Turbo pipeline** (`treasury-dao-outcomes`) streams all releva
 ┌─────────────────────────────────────────────────────┐
 │                 Goldsky Turbo Pipeline                │
 │                                                      │
-│  ┌──────────────────────────────────────────┐       │
-│  │ near.execution_outcomes (v1.1.0 Turbo)   │       │
-│  │ start_at: earliest                        │       │
-│  └─────────────────┬────────────────────────┘       │
-│                    │                                 │
-│          ┌─────────▼──────────┐                     │
-│          │ SQL Transform      │                     │
-│          │ dao_outcomes        │                     │
-│          │                    │                     │
-│          │ Filter:            │                     │
-│          │ - logs mention     │                     │
-│          │   sputnik-dao.near │                     │
-│          │ - OR receiver_id   │                     │
-│          │   LIKE             │                     │
-│          │   %.sputnik-dao    │                     │
-│          │   .near            │                     │
-│          └─────────┬──────────┘                     │
-│                    │                                 │
-│          ┌─────────▼──────────┐                     │
-│          │ Postgres Sink      │                     │
-│          │ indexed_dao_       │                     │
-│          │ outcomes           │                     │
-│          └─────────┬──────────┘                     │
-└────────────────────┼────────────────────────────────┘
-                     │
-            ┌────────▼────────┐
-            │ Treasury26      │
-            │ Backend         │
-            │                 │
-            │ Enrichment      │
-            │ Worker:         │
-            │ - Read from     │
-            │   indexed_dao_  │
-            │   outcomes      │
-            │ - 2 RPC calls   │
-            │   per event     │
-            │   (balance at   │
-            │   block N-1     │
-            │   and block N)  │
-            │ - Insert into   │
-            │   balance_      │
-            │   changes       │
-            └─────────────────┘
+│  near.execution_outcomes → SQL filter → Postgres     │
+│  (sputnik-dao.near in logs OR receiver_id)           │
+└────────────────────┬────────────────────────────────┘
+                     │ writes
+                     ▼
+          ┌─────────────────────┐
+          │   Neon Postgres     │
+          │   (Goldsky sink)    │
+          │                     │
+          │ indexed_dao_outcomes│
+          │ - logs (parsed      │
+          │   locally)          │
+          │ - transaction_hash  │
+          │ - signer_id         │
+          │ - receiver_id       │
+          │ - gas_burnt         │
+          │ - tokens_burnt      │
+          │ - block height/ts   │
+          └──────────┬──────────┘
+                     │ reads (unprocessed rows)
+                     ▼
+          ┌─────────────────────┐        ┌──────────┐
+          │  Enrichment Worker  │───────▶│ NEAR RPC │
+          │                     │◀───────│ (archival)│
+          │ 1. Parse logs       │        └──────────┘
+          │    (no RPC needed)  │  Only 2 calls/event:
+          │ 2. Get balance      │  balance at block N-1
+          │    before/after     │  balance at block N
+          │ 3. Write to app DB  │
+          └──────────┬──────────┘
+                     │ writes
+                     ▼
+          ┌─────────────────────┐
+          │   App Postgres      │
+          │   (Render)          │
+          │                     │
+          │ balance_changes     │──▶ Frontend API
+          └─────────────────────┘
+
+Monitor loop (simplified):
+  1. Run enrichment (Goldsky → balance_changes)
+  2. Check for gaps in balance_changes
+  3. RPC fallback only if gaps found
 ```
 
 ### Why a single pipeline (not 3)
@@ -202,43 +202,61 @@ CREATE INDEX idx_dao_outcomes_tx_hash ON indexed_dao_outcomes(transaction_hash);
 
 ## Remaining Implementation Plan
 
-### Phase 1: Enrichment worker (next)
+### Design principles
+
+1. **Goldsky is the event source** — no more polling RPC to discover balance changes
+2. **No dirty monitor** — the 30-second polling loop is eliminated entirely
+3. **RPC is only a fallback** — for gap filling and for non-sputnik accounts
+4. **Logs are parsed locally** — counterparty, token, transfer details come from Goldsky data, not RPC
+5. **Two databases in v1** — enrichment worker reads from Neon (Goldsky sink), writes to app DB
+
+### Phase 1: Enrichment worker
+
+The enrichment worker connects to **two databases**:
+- **Neon** (read-only): `indexed_dao_outcomes` table populated by Goldsky
+- **App DB** (read-write): `balance_changes` table consumed by the frontend
 
 Create `nt-be/src/handlers/balance_changes/goldsky_enrichment.rs`:
 
 ```rust
-/// Process unprocessed indexed events into balance_changes records
+/// Process unprocessed indexed events into balance_changes records.
+///
+/// Reads from Neon (Goldsky sink) and writes to the app database.
+/// Most fields come directly from Goldsky data — RPC is only needed
+/// for balance_before/balance_after values.
 pub async fn run_enrichment_cycle(
-    pool: &PgPool,
+    neon_pool: &PgPool,    // Neon DB (Goldsky sink)
+    app_pool: &PgPool,     // App DB (balance_changes)
     network: &NetworkConfig,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    // 1. Fetch unprocessed outcomes
+    // 1. Fetch unprocessed outcomes from Neon
     let unprocessed = sqlx::query!(
         "SELECT * FROM indexed_dao_outcomes
          WHERE processed = FALSE
          ORDER BY trigger_block_height ASC LIMIT 100"
-    ).fetch_all(pool).await?;
+    ).fetch_all(neon_pool).await?;
 
     for outcome in unprocessed {
-        // 2. Parse logs to determine token type and accounts involved
+        // 2. Parse logs locally — no RPC needed
+        //    Extracts: account_id, token_id, counterparty, amount
         let events = parse_outcome_events(&outcome);
 
         for event in events {
-            // 3. Get balance before and after — ONLY 2 RPC calls per event
+            // 3. Get balance before and after — the ONLY RPC calls
             let balance_before = get_balance_at_block(
-                pool, network, &event.account_id, &event.token_id,
+                app_pool, network, &event.account_id, &event.token_id,
                 outcome.trigger_block_height - 1
             ).await?;
             let balance_after = get_balance_at_block(
-                pool, network, &event.account_id, &event.token_id,
+                app_pool, network, &event.account_id, &event.token_id,
                 outcome.trigger_block_height
             ).await?;
 
-            // 4. Skip if no actual balance change
             if balance_before == balance_after { continue; }
 
-            // 5. Insert into balance_changes
-            insert_balance_change(pool, BalanceChange {
+            // 4. Insert into balance_changes in app DB
+            //    All metadata comes from Goldsky data — no RPC resolution needed
+            insert_balance_change(app_pool, BalanceChange {
                 account_id: event.account_id,
                 token_id: event.token_id,
                 block_height: outcome.trigger_block_height,
@@ -246,6 +264,7 @@ pub async fn run_enrichment_cycle(
                 balance_before,
                 balance_after,
                 amount: &balance_after - &balance_before,
+                // These all come from Goldsky — no RPC needed:
                 transaction_hashes: vec![outcome.transaction_hash.clone()],
                 signer_id: outcome.signer_id.clone(),
                 receiver_id: outcome.receiver_id.clone(),
@@ -254,70 +273,87 @@ pub async fn run_enrichment_cycle(
             }).await?;
         }
 
-        mark_processed(pool, &outcome.id).await?;
+        // 5. Mark processed in Neon
+        mark_processed(neon_pool, &outcome.id).await?;
     }
     Ok(())
 }
 ```
 
-#### Event parsing
+#### Event parsing (all local, no RPC)
 
-The enrichment worker needs to parse different log formats from `indexed_dao_outcomes`:
+The enrichment worker parses logs from `indexed_dao_outcomes` to extract transfer details:
 
 1. **NEP-141 FT transfers**: `EVENT_JSON:{"standard":"nep141","event":"ft_transfer","data":[{"old_owner_id":"...","new_owner_id":"...","amount":"..."}]}`
+   → Gives us: token_id (executor_id), counterparty, amount
 2. **NEP-245 intents transfers**: `EVENT_JSON:{"standard":"nep245","event":"mt_transfer",...}`
+   → Gives us: token_ids, counterparty, amounts
 3. **wrap.near plain-text**: `Transfer 100000000000000000000000 from alice.near to bob.sputnik-dao.near`
-4. **Receiver-based events** (no log parsing needed): When `receiver_id` is a DAO, the outcome itself tells us about native NEAR transfers, function calls, staking
+   → Gives us: amount, counterparty
+4. **Receiver-based events** (no logs needed): When `receiver_id` is a DAO, the outcome fields (`signer_id`, `receiver_id`, `gas_burnt`, `tokens_burnt`) tell us about native NEAR transfers, function calls, staking
 
-#### Staking rewards handling
+#### What we DON'T need RPC for anymore
 
-Staking rewards don't have explicit transactions — they accumulate silently. Goldsky catches staking pool *interactions* (outcomes where receiver_id is a staking pool), eliminating the binary search for those blocks. But silent reward accumulation between interactions still needs periodic epoch-boundary snapshots (1 RPC call per epoch per pool).
+| Previously needed RPC | Now from Goldsky |
+|---|---|
+| Transaction hash resolution (chunk → receipt → tx) | `transaction_hash` field |
+| Signer discovery | `signer_id` field |
+| Counterparty identification | Parsed from `logs` |
+| Receipt ID | Not needed — we have `transaction_hash` |
+| Transfer amount | Parsed from `logs` |
+| Token contract (who emitted the event) | `executor_id` field |
 
-### Phase 2: Integration with existing system
+#### Staking rewards: the one exception
 
-#### Modify the monitor loop
+Staking rewards accumulate silently — no transaction, no log, no receipt. A staking pool's balance increases when anyone calls `ping`, but the reward itself doesn't produce a log mentioning the DAO. Goldsky catches explicit staking interactions (deposit, withdraw, unstake) but not silent accumulation. May still need a periodic staking balance check (1 RPC call per pool per epoch) — but this is far cheaper than the current binary search approach.
 
-1. **Primary path**: Read from `indexed_dao_outcomes` and run enrichment
-2. **Fallback path**: Keep existing binary search for:
-   - Non-sputnik accounts (e.g., `meta-pool-dao-4.near`)
-   - Edge cases where Goldsky data is delayed
-   - Historical backfill for newly added accounts
+### Phase 2: Simplify the monitor loop
 
-#### Replace deposit checking
+The current monitor does too much: poll for deposits, binary-search for changes, resolve transactions, fill gaps. With Goldsky:
 
-The 30-second polling loop becomes unnecessary — Goldsky streams events and the enrichment worker picks them up.
+**New monitor loop (simplified):**
+1. **Run enrichment** — process new rows from `indexed_dao_outcomes` in Neon
+2. **Check for gaps** — look for missing blocks between known balance changes
+3. **Fill gaps if needed** — use existing binary search as RPC fallback
+4. That's it. No dirty monitor. No deposit polling. No transaction resolution.
 
-#### Replace token discovery
+**What gets removed:**
+- `dirty_monitor.rs` — 30-second polling loop, entirely replaced by Goldsky events
+- `transfer_hints/` module — FastNear hints and tx resolution, replaced by Goldsky fields
+- `gap_filler.rs` — most gap-filling strategies, replaced by enrichment worker. Keep only as RPC fallback
 
-FT tokens appear automatically in `indexed_dao_outcomes` logs when transfers mention a monitored account. Intents tokens appear in NEP-245 events.
+**What gets simplified:**
+- `account_monitor.rs` — main loop becomes: enrich → gap-check → (optional) RPC fallback
+- Token discovery — new tokens appear automatically in Goldsky logs
 
 ### Phase 3: Validation and cutover
 
-1. Run Goldsky enrichment alongside existing binary search
-2. Compare results to verify correctness
+1. Deploy enrichment worker alongside existing system
+2. Compare Goldsky-based balance_changes with binary-search results
 3. Monitor RPC usage reduction
-4. Gradually reduce binary search polling frequency
-5. Once validated, disable binary search for sputnik-dao accounts
+4. Disable dirty monitor and binary search for sputnik-dao accounts
+5. Keep RPC fallback for non-sputnik accounts and gap filling
 
 ## Mapping to existing balance tracking system
 
-### What Goldsky fully replaces
+### What Goldsky fully replaces (can be removed)
 
-| Current module | What it does | Goldsky replacement |
+| Current module | What it does | Why it's no longer needed |
 |---|---|---|
-| `binary_search.rs` | Finds exact block where balance changed (~27 RPC calls) | Pipeline tells us the exact blocks directly |
-| `transfer_hints/fastnear.rs` | FastNear API hints to accelerate gap filling | Pipeline provides the same data natively |
-| `transfer_hints/tx_resolver.rs` | Resolves receipt→transaction via RPC | `transaction_hash` and `signer_id` come directly from execution outcomes |
-| `dirty_monitor.rs` (polling loop) | Polls every 30 seconds | Goldsky streams events — enrichment worker picks up new outcomes as they arrive |
-| `token_discovery.rs` (receipt-based) | Scans counterparties to discover FT contracts | Pipeline surfaces new tokens automatically |
-| `gap_filler.rs` | Multi-strategy gap filling | Replaced by enrichment worker — gaps don't form |
+| `dirty_monitor.rs` | Polls RPC every 30 seconds to detect changes | Goldsky streams events — no polling needed |
+| `binary_search.rs` | Finds exact block of balance change (~27 RPC calls) | Pipeline tells us exact blocks directly |
+| `transfer_hints/fastnear.rs` | FastNear API hints for gap filling | Pipeline provides the same data natively |
+| `transfer_hints/tx_resolver.rs` | Resolves receipt→transaction via RPC | `transaction_hash` comes directly from Goldsky |
+| `gap_filler.rs` | Multi-strategy gap filling | Enrichment worker processes events as they arrive — gaps don't form |
+| `token_discovery.rs` (receipt-based) | Scans counterparties to discover FT contracts | New tokens appear automatically in Goldsky logs |
 
 ### What Goldsky partially replaces
 
 | Current module | What stays | What changes |
 |---|---|---|
-| `staking_rewards.rs` | Epoch-boundary snapshots still needed for silent reward accumulation | Goldsky catches staking pool *interactions*, eliminating binary search for those blocks |
-| `token_discovery.rs` (FastNear balance API) | Initial onboarding still needs `fetch_fastnear_ft_tokens` | New tokens discovered via pipeline events after onboarding |
+| `staking_rewards.rs` | Periodic epoch-boundary snapshots for silent reward accumulation | Goldsky catches explicit staking interactions — no binary search needed for those |
+| `token_discovery.rs` (FastNear balance API) | Initial onboarding still needs `fetch_fastnear_ft_tokens` | Ongoing discovery via pipeline events |
+| `gap_detector.rs` / `completeness.rs` | Gap detection logic | Becomes the only job of the monitor loop — check for gaps, fill via RPC fallback |
 
 ### What stays as-is
 
@@ -326,41 +362,43 @@ FT tokens appear automatically in `indexed_dao_outcomes` logs when transfers men
 | `balance/` module | Still need RPC for `balance_before`/`balance_after` (2 calls per event) |
 | `counterparty.rs` | Still need `ft_metadata` RPC for decimals/symbol/icon |
 | `swap_detector.rs` | Uses Intents Explorer API — unrelated to chain data |
-| `gap_detector.rs` / `completeness.rs` | Database queries — unchanged |
-| `history.rs` / `query_builder.rs` | Export and chart APIs — unchanged |
+| `history.rs` / `query_builder.rs` | Export and chart APIs — database queries, unchanged |
 
-### Populating balance_changes fields from pipeline data
+### Populating balance_changes fields
 
-| Field | Source |
-|---|---|
-| `account_id` | Parsed from logs or derived from `receiver_id` |
-| `block_height` | `trigger_block_height` |
-| `block_timestamp` | `trigger_block_timestamp` |
-| `token_id` | Parsed from logs: `"near"` for native, FT contract for NEP-141, `"intents.near:..."` for NEP-245 |
-| `balance_before` | **RPC call 1**: balance at `trigger_block_height - 1` |
-| `balance_after` | **RPC call 2**: balance at `trigger_block_height` |
-| `amount` | `balance_after - balance_before` |
-| `transaction_hashes` | `transaction_hash` from execution outcome |
-| `signer_id` | `signer_id` from execution outcome |
-| `receiver_id` | `receiver_id` from execution outcome |
-| `counterparty` | Derived: if monitored account is receiver → counterparty is signer, and vice versa |
+| Field | Source | RPC needed? |
+|---|---|---|
+| `account_id` | Parsed from logs or derived from `receiver_id` | No |
+| `block_height` | `trigger_block_height` | No |
+| `block_timestamp` | `trigger_block_timestamp` | No |
+| `token_id` | Parsed from logs: `"near"` for native, FT contract for NEP-141, `"intents.near:..."` for NEP-245 | No |
+| `balance_before` | balance at `trigger_block_height - 1` | **Yes — RPC call 1** |
+| `balance_after` | balance at `trigger_block_height` | **Yes — RPC call 2** |
+| `amount` | `balance_after - balance_before` | No (computed) |
+| `transaction_hashes` | `transaction_hash` from Goldsky | No |
+| `signer_id` | `signer_id` from Goldsky | No |
+| `receiver_id` | `receiver_id` from Goldsky | No |
+| `counterparty` | Parsed from logs or derived from signer/receiver | No |
+
+**RPC is only needed for 2 calls per event** (balance before/after). Everything else comes from Goldsky data.
 
 ## Open Questions
 
-1. **Neon free tier storage (0.5 GB)**: Current data rate is ~25 rows/1K blocks at ~1 KB/row. At ~86.4K blocks/day, that's ~2,160 rows/day (~2 MB/day). The 0.5 GB limit gives us ~250 days before we hit it. The enrichment worker should delete processed rows to keep the table small.
+1. **Neon free tier storage (0.5 GB)**: ~2 MB/day data rate. The enrichment worker should delete processed rows to stay within limits (~250 days without cleanup).
 
-2. **Staking rewards without explicit transactions**: May still need periodic epoch-boundary snapshots. Consider keeping a simplified epoch-based staking check alongside Goldsky.
+2. **Staking rewards**: Silent accumulation has no transaction/log. May need periodic staking balance check (1 RPC call per pool per epoch). Much cheaper than current binary search.
 
-3. **Data freshness / latency**: What is the typical Goldsky NEAR data latency? If >30 seconds, consider keeping optimistic balance checking for the active UI session.
+3. **Data freshness / latency**: What is Goldsky's typical NEAR data latency? Affects how quickly new balance changes appear in the UI.
 
-4. **Enrichment worker concurrency**: The enrichment loop should process events in parallel (batch RPC calls) during backfill to avoid being bottlenecked by sequential RPC.
+4. **Enrichment worker concurrency**: Should batch RPC calls in parallel during backfill to avoid sequential bottleneck.
 
-5. **Goldsky delivery guarantees**: Does the Postgres sink use `INSERT ... ON CONFLICT DO NOTHING` or does it fail on duplicate primary keys? Need to understand exactly-once vs at-least-once semantics.
+5. **Non-sputnik accounts**: `meta-pool-dao-4.near` and other non-sputnik accounts still need the existing RPC-based approach.
 
-6. **Non-sputnik accounts**: `meta-pool-dao-4.near` and other non-sputnik accounts are not covered by the `%.sputnik-dao.near` filter. These continue using the existing binary search path.
+6. **Two-database connection management**: The enrichment worker connects to both Neon and the app DB. Need to configure connection pooling and handle failures on either side gracefully.
 
 ## Implementation Checklist
 
+### Done (pipeline deployment)
 - [x] Verify NEAR dataset schemas via `goldsky dataset get`
 - [x] Add Goldsky agent skills to `.agents/skills/`
 - [x] Add Goldsky CLI + Turbo CLI to devcontainer
@@ -368,14 +406,25 @@ FT tokens appear automatically in `indexed_dao_outcomes` logs when transfers men
 - [x] Create database migration (`nt-be/migrations/20260228000001_create_goldsky_indexed_tables.sql`)
 - [x] Create Goldsky secret (`TREASURY_DB_SECRET`) with Neon Postgres credentials
 - [x] Deploy pipeline and verify data flowing (~3,765+ rows confirmed)
-- [ ] Implement `goldsky_enrichment.rs` module with enrichment worker loop
-- [ ] Implement event log parser (NEP-141 EVENT_JSON, NEP-245, wrap.near plain-text)
-- [ ] Implement staking pool outcome detection
-- [ ] Modify `account_monitor.rs` to read from `indexed_dao_outcomes` as primary source
-- [ ] Add integration tests comparing Goldsky-based results with binary-search results
-- [ ] Monitor RPC usage reduction after deployment
-- [ ] Reduce polling frequency of legacy binary search path
+
+### Next: enrichment worker
+- [ ] Add Neon DB connection config (read-only, separate from app DB)
+- [ ] Implement `goldsky_enrichment.rs` — fetch unprocessed rows from Neon, parse logs, write to app DB
+- [ ] Implement log parser: NEP-141 EVENT_JSON, NEP-245, wrap.near plain-text
+- [ ] RPC calls only for `balance_before`/`balance_after` (2 per event)
+- [ ] Mark rows as processed in Neon after successful enrichment
 - [ ] Implement processed-row cleanup to manage Neon storage
+
+### Next: simplify monitor loop
+- [ ] Remove dirty monitor (30-second polling loop)
+- [ ] Replace main monitor loop: enrich from Goldsky → check for gaps → RPC fallback for gaps only
+- [ ] Remove `transfer_hints/` module (FastNear hints, tx resolution)
+- [ ] Keep binary search only as RPC fallback for gaps and non-sputnik accounts
+
+### Validation
+- [ ] Compare Goldsky-based balance_changes with existing data
+- [ ] Monitor RPC usage reduction
+- [ ] Disable legacy binary search for sputnik-dao accounts
 
 ## Deployment Guide
 
