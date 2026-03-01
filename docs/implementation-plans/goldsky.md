@@ -486,7 +486,7 @@ The current monitor does too much: poll for deposits, binary-search for changes,
 - [ ] Keep RPC-based path for non-sputnik accounts
 
 ### Validation
-- [ ] Compare Goldsky-based balance_changes with existing data
+- [ ] Run existing integration tests against Goldsky-enriched balance_changes — same expected outcomes, different data source
 - [ ] Monitor RPC usage reduction
 - [ ] Disable legacy binary search for sputnik-dao accounts
 
