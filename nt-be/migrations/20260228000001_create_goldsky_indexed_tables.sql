@@ -1,8 +1,11 @@
--- Goldsky Turbo pipeline sink table
+-- Goldsky Turbo pipeline sink table (Neon DB)
 -- Populated directly by a single Goldsky pipeline streaming NEAR execution outcomes.
 -- Captures: FT/MT transfers (NEP-141/245), intents swaps, native NEAR transfers,
 -- function calls, staking — any outcome involving a sputnik-dao account.
--- An enrichment worker processes unprocessed rows into the existing balance_changes table.
+--
+-- This table is a shared event source — consumers track their own progress
+-- independently (e.g., via a goldsky_cursors table in their own database).
+-- No processed/cursor columns here to allow multiple independent consumers.
 
 CREATE TABLE indexed_dao_outcomes (
     id TEXT PRIMARY KEY,
@@ -18,15 +21,10 @@ CREATE TABLE indexed_dao_outcomes (
     trigger_block_hash TEXT,
     trigger_block_timestamp BIGINT NOT NULL,  -- milliseconds (not nanoseconds like NEAR RPC)
 
-    -- Enrichment status
-    processed BOOLEAN NOT NULL DEFAULT FALSE,
-    processed_at TIMESTAMPTZ,
-
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_dao_outcomes_block ON indexed_dao_outcomes(trigger_block_height DESC);
-CREATE INDEX idx_dao_outcomes_unprocessed ON indexed_dao_outcomes(processed) WHERE processed = FALSE;
 CREATE INDEX idx_dao_outcomes_executor ON indexed_dao_outcomes(executor_id);
 CREATE INDEX idx_dao_outcomes_receiver ON indexed_dao_outcomes(receiver_id);
 CREATE INDEX idx_dao_outcomes_tx_hash ON indexed_dao_outcomes(transaction_hash);

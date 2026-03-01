@@ -137,6 +137,7 @@ sinks:
 **Migration**: `nt-be/migrations/20260228000001_create_goldsky_indexed_tables.sql`
 
 ```sql
+-- Neon DB (Goldsky sink) — shared event source, read-only for consumers
 CREATE TABLE indexed_dao_outcomes (
     id TEXT PRIMARY KEY,
     executor_id TEXT NOT NULL,
@@ -151,18 +152,26 @@ CREATE TABLE indexed_dao_outcomes (
     trigger_block_hash TEXT,
     trigger_block_timestamp BIGINT NOT NULL,  -- milliseconds (not nanoseconds like NEAR RPC)
 
-    -- Enrichment status
-    processed BOOLEAN NOT NULL DEFAULT FALSE,
-    processed_at TIMESTAMPTZ,
-
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- No processed/cursor columns — consumers track their own progress independently
 CREATE INDEX idx_dao_outcomes_block ON indexed_dao_outcomes(trigger_block_height DESC);
-CREATE INDEX idx_dao_outcomes_unprocessed ON indexed_dao_outcomes(processed) WHERE processed = FALSE;
 CREATE INDEX idx_dao_outcomes_executor ON indexed_dao_outcomes(executor_id);
 CREATE INDEX idx_dao_outcomes_receiver ON indexed_dao_outcomes(receiver_id);
 CREATE INDEX idx_dao_outcomes_tx_hash ON indexed_dao_outcomes(transaction_hash);
+```
+
+**App DB cursor table** (new migration):
+
+```sql
+-- Tracks enrichment progress per consumer — allows cursor reset without duplicates
+CREATE TABLE goldsky_cursors (
+    consumer_name TEXT PRIMARY KEY,
+    last_processed_id TEXT NOT NULL DEFAULT '',
+    last_processed_block BIGINT NOT NULL DEFAULT 0,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 ```
 
 ### Infrastructure
@@ -213,36 +222,70 @@ CREATE INDEX idx_dao_outcomes_tx_hash ON indexed_dao_outcomes(transaction_hash);
 ### Phase 1: Enrichment worker
 
 The enrichment worker connects to **two databases**:
-- **Neon** (read-only): `indexed_dao_outcomes` table populated by Goldsky
-- **App DB** (read-write): `balance_changes` table consumed by the frontend
+- **Neon** (read-only): `indexed_dao_outcomes` table populated by Goldsky — treated as a shared event source that multiple consumers can read from independently
+- **App DB** (read-write): `balance_changes` table consumed by the frontend, plus cursor tracking
+
+#### Cursor tracking (in app DB, not Neon)
+
+The app DB tracks which Goldsky rows have been processed using a cursor table. This keeps Neon clean as a shared event source — other consumers can independently read from it without interference.
+
+```sql
+-- Tracks enrichment progress per consumer
+CREATE TABLE goldsky_cursors (
+    consumer_name TEXT PRIMARY KEY,          -- e.g., 'balance_enrichment'
+    last_processed_id TEXT NOT NULL,         -- id of last processed indexed_dao_outcomes row
+    last_processed_block BIGINT NOT NULL,    -- block height of last processed row
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+```
+
+The enrichment worker queries Neon for rows after its cursor position:
+
+```sql
+SELECT * FROM indexed_dao_outcomes
+WHERE trigger_block_height > $last_processed_block
+   OR (trigger_block_height = $last_processed_block AND id > $last_processed_id)
+ORDER BY trigger_block_height ASC, id ASC
+LIMIT 100
+```
+
+#### Idempotency
+
+The enrichment worker must be idempotent — if the cursor is reset or replayed, it must not create duplicate `balance_changes` records. This is achieved with `INSERT ... ON CONFLICT DO NOTHING` using the natural key `(account_id, token_id, block_height)` or by checking for existing records before inserting.
 
 Create `nt-be/src/handlers/balance_changes/goldsky_enrichment.rs`:
 
 ```rust
-/// Process unprocessed indexed events into balance_changes records.
+/// Process indexed events into balance_changes records.
 ///
-/// Reads from Neon (Goldsky sink) and writes to the app database.
-/// Most fields come directly from Goldsky data — RPC is only needed
-/// for balance_before/balance_after values.
+/// Reads from Neon (Goldsky sink), writes to the app database.
+/// Cursor tracking is in the app DB — Neon stays read-only.
+/// Idempotent: safe to replay from any cursor position.
 pub async fn run_enrichment_cycle(
-    neon_pool: &PgPool,    // Neon DB (Goldsky sink)
-    app_pool: &PgPool,     // App DB (balance_changes)
+    neon_pool: &PgPool,    // Neon DB (Goldsky sink) — read-only
+    app_pool: &PgPool,     // App DB (balance_changes + cursor)
     network: &NetworkConfig,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    // 1. Fetch unprocessed outcomes from Neon
-    let unprocessed = sqlx::query!(
+    // 1. Get cursor position from app DB
+    let cursor = get_cursor(app_pool, "balance_enrichment").await?;
+
+    // 2. Fetch new outcomes from Neon after cursor
+    let outcomes = sqlx::query!(
         "SELECT * FROM indexed_dao_outcomes
-         WHERE processed = FALSE
-         ORDER BY trigger_block_height ASC LIMIT 100"
+         WHERE trigger_block_height > $1
+            OR (trigger_block_height = $1 AND id > $2)
+         ORDER BY trigger_block_height ASC, id ASC
+         LIMIT 100",
+        cursor.last_processed_block,
+        cursor.last_processed_id,
     ).fetch_all(neon_pool).await?;
 
-    for outcome in unprocessed {
-        // 2. Parse logs locally — no RPC needed
-        //    Extracts: account_id, token_id, counterparty, amount
-        let events = parse_outcome_events(&outcome);
+    for outcome in &outcomes {
+        // 3. Parse logs locally — no RPC needed
+        let events = parse_outcome_events(outcome);
 
         for event in events {
-            // 3. Get balance before and after — the ONLY RPC calls
+            // 4. Get balance before and after — the ONLY RPC calls
             let balance_before = get_balance_at_block(
                 app_pool, network, &event.account_id, &event.token_id,
                 outcome.trigger_block_height - 1
@@ -254,9 +297,8 @@ pub async fn run_enrichment_cycle(
 
             if balance_before == balance_after { continue; }
 
-            // 4. Insert into balance_changes in app DB
-            //    All metadata comes from Goldsky data — no RPC resolution needed
-            insert_balance_change(app_pool, BalanceChange {
+            // 5. Idempotent insert — ON CONFLICT DO NOTHING
+            insert_balance_change_idempotent(app_pool, BalanceChange {
                 account_id: event.account_id,
                 token_id: event.token_id,
                 block_height: outcome.trigger_block_height,
@@ -264,7 +306,6 @@ pub async fn run_enrichment_cycle(
                 balance_before,
                 balance_after,
                 amount: &balance_after - &balance_before,
-                // These all come from Goldsky — no RPC needed:
                 transaction_hashes: vec![outcome.transaction_hash.clone()],
                 signer_id: outcome.signer_id.clone(),
                 receiver_id: outcome.receiver_id.clone(),
@@ -273,8 +314,9 @@ pub async fn run_enrichment_cycle(
             }).await?;
         }
 
-        // 5. Mark processed in Neon
-        mark_processed(neon_pool, &outcome.id).await?;
+        // 6. Advance cursor in app DB after each outcome
+        update_cursor(app_pool, "balance_enrichment",
+            &outcome.id, outcome.trigger_block_height).await?;
     }
     Ok(())
 }
@@ -405,7 +447,7 @@ The current monitor does too much: poll for deposits, binary-search for changes,
 
 ## Open Questions
 
-1. **Neon free tier storage (0.5 GB)**: ~2 MB/day data rate. The enrichment worker should delete processed rows to stay within limits (~250 days without cleanup).
+1. **Neon free tier storage (0.5 GB)**: ~2 MB/day data rate. Since we no longer mark rows as processed in Neon, old rows need a separate cleanup strategy (e.g., a periodic job that deletes rows older than N days, or relying on Goldsky's own retention). ~250 days before hitting the limit without cleanup.
 
 2. **Staking rewards** — RESOLVED: Epoch-boundary gap detection compares staking balance against the last known balance after the most recent explicit interaction (from Goldsky). The difference is the pure reward. 1 RPC call per pool per epoch (~40 calls/day total).
 
@@ -430,12 +472,12 @@ The current monitor does too much: poll for deposits, binary-search for changes,
 
 ### Next: enrichment worker
 - [ ] Add Neon DB connection config (read-only, separate from app DB)
-- [ ] Implement `goldsky_enrichment.rs` — fetch unprocessed rows from Neon, parse logs, write to app DB
+- [ ] Create `goldsky_cursors` migration in app DB for cursor tracking
+- [ ] Implement `goldsky_enrichment.rs` — cursor-based fetch from Neon, parse logs, idempotent write to app DB
 - [ ] Implement log parser: NEP-141 EVENT_JSON, NEP-245, wrap.near plain-text
 - [ ] RPC calls only for `balance_before`/`balance_after` (2 per event)
-- [ ] Mark rows as processed in Neon after successful enrichment
+- [ ] Ensure idempotency: `INSERT ... ON CONFLICT DO NOTHING` so cursor resets don't create duplicates
 - [ ] Implement epoch-boundary staking reward detection (1 RPC/pool/epoch, diff against last interaction)
-- [ ] Implement processed-row cleanup to manage Neon storage
 
 ### Next: simplify monitor loop
 - [ ] Remove dirty monitor (30-second polling loop) from main loop
