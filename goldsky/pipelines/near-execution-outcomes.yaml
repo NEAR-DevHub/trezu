@@ -7,7 +7,7 @@ sources:
     type: dataset
     dataset_name: near.execution_outcomes
     version: 1.1.0
-    start_at: latest
+    start_at: earliest
 
 transforms:
   # Captures ALL execution outcomes relevant to sputnik-dao treasuries:
