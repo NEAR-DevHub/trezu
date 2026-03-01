@@ -10,13 +10,12 @@
 //! Idempotent: uses INSERT ... ON CONFLICT DO UPDATE so replays overwrite
 //! with potentially higher-quality data.
 
-use near_api::NetworkConfig;
-use serde::Deserialize;
-use sqlx::PgPool;
-
 use super::balance::get_balance_change_at_block;
 use super::counterparty::ensure_ft_metadata;
 use super::utils::block_timestamp_to_datetime;
+use near_api::NetworkConfig;
+use serde::Deserialize;
+use sqlx::PgPool;
 
 // ---------------------------------------------------------------------------
 // Neon row struct (runtime query — Neon DB is not managed by sqlx migrations)

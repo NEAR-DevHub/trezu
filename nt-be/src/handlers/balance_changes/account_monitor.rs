@@ -1,5 +1,6 @@
 use near_api::NetworkConfig;
 use sqlx::PgPool;
+use sqlx::types::chrono::{DateTime, Utc};
 use std::collections::HashSet;
 
 use super::balance::ft::get_balance_at_block as get_ft_balance;
@@ -8,22 +9,22 @@ use super::gap_filler::{
     resolve_missing_tx_hashes,
 };
 use super::staking_rewards::{is_staking_token, track_and_fill_staking_rewards};
+use super::swap_detector::{
+    classify_proposal_swap_deposits, detect_swaps_from_api, store_detected_swaps,
+};
 use super::token_discovery::{fetch_fastnear_ft_tokens, snapshot_intents_tokens};
 use super::transfer_hints::TransferHintService;
 
-/// Run one cycle of monitoring for all enabled accounts
+/// Run one maintenance cycle for dirty accounts only.
 ///
-/// This function:
-/// 1. Queries all enabled accounts from monitored_accounts table
-/// 2. For each account:
-///    - Gets all known tokens for that account from balance_changes
-///    - Runs gap filling for each token up to the specified block
-///    - Discovers new FT tokens via FastNear API (if configured)
-///    - Discovers new FT tokens from counterparties in balance changes
-///    - Discovers new intents tokens via mt_tokens_for_owner
-///    - Tracks staking rewards
-///    - Updates last_synced_at timestamp after processing
-/// 3. Handles errors gracefully, continuing with next account if one fails
+/// This replaces the previous `run_monitor_cycle` (which processed ALL enabled accounts
+/// every 30s) and the dirty monitor (which polled every 5s). Instead, a single 5-minute
+/// worker handles dirty accounts: token discovery, gap filling, tx resolution, swap
+/// detection, and staking rewards.
+///
+/// Accounts are marked dirty when:
+/// - A user opens a treasury in the UI
+/// - The Goldsky enrichment worker detects balance chain gaps
 ///
 /// # Arguments
 /// * `pool` - Database connection pool
@@ -31,48 +32,114 @@ use super::transfer_hints::TransferHintService;
 /// * `up_to_block` - Process gaps up to this block height
 /// * `hint_service` - Optional transfer hint service for accelerated gap filling
 /// * `fastnear` - Optional `(http_client, api_key)` for FT token discovery via FastNear balance API
-pub async fn run_monitor_cycle(
+/// * `intents_api_key` - Optional Intents Explorer API key for swap detection
+/// * `intents_api_url` - Intents Explorer API base URL
+pub async fn run_maintenance_cycle(
     pool: &PgPool,
     network: &NetworkConfig,
     up_to_block: i64,
     hint_service: Option<&TransferHintService>,
     fastnear: Option<(&reqwest::Client, &str)>,
+    intents_api_key: Option<&str>,
+    intents_api_url: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    // Get all enabled monitored accounts
-    let accounts = sqlx::query!(
+    // Only process accounts marked dirty
+    let dirty_accounts: Vec<(String, DateTime<Utc>)> = sqlx::query_as(
         r#"
-        SELECT account_id, last_synced_at
+        SELECT account_id, dirty_at
         FROM monitored_accounts
-        WHERE enabled = true
-        ORDER BY 
-            CASE WHEN last_synced_at IS NULL THEN 0 ELSE 1 END,
-            last_synced_at ASC NULLS FIRST
-        "#
+        WHERE dirty_at IS NOT NULL AND enabled = true
+        ORDER BY dirty_at ASC
+        "#,
     )
     .fetch_all(pool)
     .await?;
 
-    if accounts.is_empty() {
-        println!("No enabled accounts to monitor");
+    if dirty_accounts.is_empty() {
         return Ok(());
     }
 
-    println!("Monitoring {} enabled accounts", accounts.len());
+    log::info!(
+        "[maintenance] Processing {} dirty accounts",
+        dirty_accounts.len()
+    );
 
-    for account in accounts {
-        let account_id = &account.account_id;
+    for (account_id, original_dirty_at) in &dirty_accounts {
+        log::info!(
+            "[maintenance] Processing {} (dirty_at: {})",
+            account_id,
+            original_dirty_at
+        );
 
-        // Get all unique tokens for this account
-        // Note: This appears to be an N+1 query pattern, but it's intentional for this use case.
-        // See: https://github.com/NEAR-DevHub/treasury26/pull/17#discussion_r2652866830
-        //
-        // Rationale: This is a background job that processes accounts sequentially, not a web request.
-        // Loading all account-token pairs upfront would:
-        // 1. Hold a large dataset in memory unnecessarily
-        // 2. Not improve performance since we process one account at a time anyway
-        // 3. Make the code more complex
-        //
-        // The query overhead is negligible compared to the RPC calls for filling gaps.
+        // 1. Discover new FT tokens via FastNear
+        if let Some((http_client, api_key)) = fastnear {
+            match discover_ft_tokens_from_fastnear(
+                pool,
+                network,
+                http_client,
+                api_key,
+                account_id,
+                up_to_block,
+            )
+            .await
+            {
+                Ok(count) if count > 0 => {
+                    log::info!(
+                        "[maintenance] {}: Discovered {} new FT tokens via FastNear",
+                        account_id,
+                        count
+                    );
+                }
+                Err(e) => {
+                    log::warn!(
+                        "[maintenance] {}: Error discovering FT tokens via FastNear: {}",
+                        account_id,
+                        e
+                    );
+                }
+                _ => {}
+            }
+        }
+
+        // 2. Discover FT tokens from receipts
+        match discover_ft_tokens_from_receipts(pool, network, account_id, up_to_block).await {
+            Ok(count) if count > 0 => {
+                log::info!(
+                    "[maintenance] {}: Discovered {} new FT tokens from receipts",
+                    account_id,
+                    count
+                );
+            }
+            Err(e) => {
+                log::warn!(
+                    "[maintenance] {}: Error discovering FT tokens from receipts: {}",
+                    account_id,
+                    e
+                );
+            }
+            _ => {}
+        }
+
+        // 3. Discover intents tokens
+        match discover_intents_tokens(pool, network, account_id, up_to_block).await {
+            Ok(count) if count > 0 => {
+                log::info!(
+                    "[maintenance] {}: Discovered {} new intents tokens",
+                    account_id,
+                    count
+                );
+            }
+            Err(e) => {
+                log::warn!(
+                    "[maintenance] {}: Error discovering intents tokens: {}",
+                    account_id,
+                    e
+                );
+            }
+            _ => {}
+        }
+
+        // 4. Fill gaps for all tokens
         let mut tokens: Vec<String> = sqlx::query_scalar(
             r#"
             SELECT DISTINCT token_id
@@ -85,21 +152,13 @@ pub async fn run_monitor_cycle(
         .fetch_all(pool)
         .await?;
 
-        // Always ensure NEAR is in the tokens list - it may not be tracked yet
-        // even if other tokens (like intents tokens) have already been discovered
         if !tokens.contains(&"near".to_string()) {
             tokens.push("near".to_string());
         }
 
-        println!("  {}: Checking {} tokens", account_id, tokens.len());
-
-        let mut processed_tokens = 0;
-        let mut errors = Vec::new();
-
+        let mut total_filled = 0;
         for token_id in &tokens {
-            // Skip staking tokens - they use epoch-based snapshots, not gap filling
             if is_staking_token(token_id) {
-                processed_tokens += 1;
                 continue;
             }
 
@@ -115,150 +174,183 @@ pub async fn run_monitor_cycle(
             {
                 Ok(filled) => {
                     if !filled.is_empty() {
-                        println!("    {}: Filled {} gaps", token_id, filled.len());
+                        log::info!(
+                            "[maintenance] {}/{}: Filled {} gaps",
+                            account_id,
+                            token_id,
+                            filled.len()
+                        );
+                        total_filled += filled.len();
                     }
-                    processed_tokens += 1;
                 }
                 Err(e) => {
-                    eprintln!("    {}: Error filling gaps: {}", token_id, e);
-                    errors.push(format!("{}: {}", token_id, e));
+                    log::error!(
+                        "[maintenance] {}/{}: Error filling gaps: {}",
+                        account_id,
+                        token_id,
+                        e
+                    );
                 }
             }
         }
 
-        // Resolve transaction hashes on records that are missing them
-        match resolve_missing_tx_hashes(pool, network, account_id, 10).await {
-            Ok(count) if count > 0 => {
-                println!("  {}: Resolved {} missing tx hashes", account_id, count);
-            }
-            Err(e) => {
-                eprintln!("  {}: Error resolving missing tx hashes: {}", account_id, e);
-            }
-            _ => {}
+        if total_filled > 0 {
+            log::info!(
+                "[maintenance] {}: Filled {} total gaps across all tokens",
+                account_id,
+                total_filled
+            );
         }
 
-        // Resolve missing action_kind on existing records
-        match resolve_missing_action_kind(pool, network, account_id, 10).await {
+        // 5. Resolve missing transaction hashes
+        match resolve_missing_tx_hashes(pool, network, account_id, 10).await {
             Ok(count) if count > 0 => {
-                println!("  {}: Resolved {} missing action_kind", account_id, count);
+                log::info!(
+                    "[maintenance] {}: Resolved {} missing tx hashes",
+                    account_id,
+                    count
+                );
             }
             Err(e) => {
-                eprintln!(
-                    "  {}: Error resolving missing action_kind: {}",
-                    account_id, e
+                log::warn!(
+                    "[maintenance] {}: Error resolving missing tx hashes: {}",
+                    account_id,
+                    e
                 );
             }
             _ => {}
         }
 
-        // Update last_synced_at even if some tokens had errors
-        if processed_tokens > 0 {
-            sqlx::query!(
-                r#"
-                UPDATE monitored_accounts
-                SET last_synced_at = NOW()
-                WHERE account_id = $1
-                "#,
-                account_id
-            )
-            .execute(pool)
-            .await?;
-
-            println!(
-                "  {}: Updated sync timestamp ({}/{} tokens processed)",
-                account_id,
-                processed_tokens,
-                tokens.len()
-            );
+        // 6. Resolve missing action_kind
+        match resolve_missing_action_kind(pool, network, account_id, 10).await {
+            Ok(count) if count > 0 => {
+                log::info!(
+                    "[maintenance] {}: Resolved {} missing action_kind",
+                    account_id,
+                    count
+                );
+            }
+            Err(e) => {
+                log::warn!(
+                    "[maintenance] {}: Error resolving missing action_kind: {}",
+                    account_id,
+                    e
+                );
+            }
+            _ => {}
         }
 
-        if !errors.is_empty() {
-            eprintln!(
-                "  {}: {} errors occurred: {:?}",
-                account_id,
-                errors.len(),
-                errors
-            );
-        }
-
-        // Discover new FT tokens via FastNear balance API
-        // This catches tokens not found by counterparty-based discovery (e.g., direct
-        // FT deposits from accounts the treasury has never transacted with in NEAR)
-        if let Some((http_client, api_key)) = fastnear {
-            match discover_ft_tokens_from_fastnear(
-                pool,
-                network,
-                http_client,
-                api_key,
-                account_id,
-                up_to_block,
-            )
-            .await
-            {
-                Ok(discovered_count) => {
-                    if discovered_count > 0 {
-                        println!(
-                            "  {}: Discovered {} new FT tokens via FastNear",
-                            account_id, discovered_count
-                        );
+        // 7. Detect and store swaps
+        match detect_swaps_from_api(pool, account_id, intents_api_key, intents_api_url).await {
+            Ok(swaps) => {
+                if !swaps.is_empty() {
+                    match store_detected_swaps(pool, &swaps).await {
+                        Ok(inserted) if inserted > 0 => {
+                            log::info!(
+                                "[maintenance] {}: Detected and stored {} new swaps",
+                                account_id,
+                                inserted
+                            );
+                        }
+                        Err(e) => {
+                            log::error!(
+                                "[maintenance] {}: Error storing detected swaps: {}",
+                                account_id,
+                                e
+                            );
+                        }
+                        _ => {}
                     }
                 }
-                Err(e) => {
-                    eprintln!(
-                        "  {}: Error discovering FT tokens via FastNear: {}",
-                        account_id, e
-                    );
-                }
-            }
-        }
-
-        // Discover new FT tokens from collected receipts
-        match discover_ft_tokens_from_receipts(pool, network, account_id, up_to_block).await {
-            Ok(discovered_count) => {
-                if discovered_count > 0 {
-                    println!(
-                        "  {}: Discovered {} new FT tokens",
-                        account_id, discovered_count
-                    );
-                }
             }
             Err(e) => {
-                eprintln!("  {}: Error discovering FT tokens: {}", account_id, e);
+                log::error!("[maintenance] {}: Error detecting swaps: {}", account_id, e);
             }
         }
 
-        // Discover intents tokens via mt_tokens_for_owner snapshot
-        match discover_intents_tokens(pool, network, account_id, up_to_block).await {
-            Ok(discovered_count) => {
-                if discovered_count > 0 {
-                    println!(
-                        "  {}: Discovered {} new intents tokens",
-                        account_id, discovered_count
-                    );
-                }
+        // 8. Classify DAO proposal-based swap deposits
+        match classify_proposal_swap_deposits(pool, network, account_id).await {
+            Ok(count) if count > 0 => {
+                log::info!(
+                    "[maintenance] {}: Classified {} proposal swap deposits",
+                    account_id,
+                    count
+                );
             }
             Err(e) => {
-                eprintln!("  {}: Error discovering intents tokens: {}", account_id, e);
+                log::warn!(
+                    "[maintenance] {}: Error classifying proposal swap deposits: {}",
+                    account_id,
+                    e
+                );
             }
+            _ => {}
         }
 
-        // Track staking rewards - discover staking pools, create epoch snapshots, and fill gaps
+        // 9. Track staking rewards
         match track_and_fill_staking_rewards(pool, network, account_id, up_to_block).await {
-            Ok(records_created) => {
-                if records_created > 0 {
-                    println!(
-                        "  {}: Created {} staking reward records (snapshots + filled gaps)",
-                        account_id, records_created
-                    );
-                }
+            Ok(records_created) if records_created > 0 => {
+                log::info!(
+                    "[maintenance] {}: Created {} staking reward records",
+                    account_id,
+                    records_created
+                );
             }
             Err(e) => {
-                eprintln!("  {}: Error tracking staking rewards: {}", account_id, e);
+                log::warn!(
+                    "[maintenance] {}: Error tracking staking rewards: {}",
+                    account_id,
+                    e
+                );
+            }
+            _ => {}
+        }
+
+        // 10. Update last_synced_at
+        if let Err(e) = sqlx::query!(
+            "UPDATE monitored_accounts SET last_synced_at = NOW() WHERE account_id = $1",
+            account_id
+        )
+        .execute(pool)
+        .await
+        {
+            log::error!(
+                "[maintenance] {}: Error updating last_synced_at: {}",
+                account_id,
+                e
+            );
+        }
+
+        // 11. Conditional clear: only clear dirty_at if it hasn't changed since we started
+        let result = sqlx::query(
+            "UPDATE monitored_accounts SET dirty_at = NULL WHERE account_id = $1 AND dirty_at = $2",
+        )
+        .bind(account_id)
+        .bind(original_dirty_at)
+        .execute(pool)
+        .await;
+
+        match result {
+            Ok(r) if r.rows_affected() > 0 => {
+                log::info!("[maintenance] {} dirty flag cleared", account_id);
+            }
+            Ok(_) => {
+                log::info!(
+                    "[maintenance] {} dirty flag was re-set during processing, leaving for next cycle",
+                    account_id
+                );
+            }
+            Err(e) => {
+                log::error!(
+                    "[maintenance] {}: Error clearing dirty flag: {}",
+                    account_id,
+                    e
+                );
             }
         }
     }
 
-    println!("Monitor cycle complete");
+    log::info!("[maintenance] Cycle complete");
     Ok(())
 }
 
@@ -280,7 +372,7 @@ async fn discover_ft_tokens_from_receipts(
         r#"
         SELECT DISTINCT counterparty
         FROM balance_changes
-        WHERE account_id = $1 
+        WHERE account_id = $1
           AND token_id = 'near'
           AND counterparty != 'SNAPSHOT'
         ORDER BY counterparty
@@ -529,7 +621,11 @@ pub async fn discover_intents_tokens(
         return Ok(0);
     }
 
-    println!("    Discovered {} new intents tokens", new_tokens.len());
+    log::info!(
+        "[maintenance] {}: Discovered {} new intents tokens",
+        account_id,
+        new_tokens.len()
+    );
 
     // For each new intents token, insert a snapshot record
     let mut seeded_count = 0;
@@ -558,22 +654,93 @@ pub async fn discover_intents_tokens(
     Ok(seeded_count)
 }
 
+/// Fill gaps for all non-staking tokens of an account up to the given block.
+///
+/// This is a utility function used by the maintenance cycle and exposed
+/// for integration testing with controlled block heights.
+pub async fn fill_account_gaps(
+    pool: &PgPool,
+    network: &NetworkConfig,
+    account_id: &str,
+    up_to_block: i64,
+    hint_service: Option<&TransferHintService>,
+) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    let mut tokens: Vec<String> = sqlx::query_scalar(
+        r#"
+        SELECT DISTINCT token_id
+        FROM balance_changes
+        WHERE account_id = $1 AND token_id IS NOT NULL
+        ORDER BY token_id
+        "#,
+    )
+    .bind(account_id)
+    .fetch_all(pool)
+    .await?;
+
+    if !tokens.contains(&"near".to_string()) {
+        tokens.push("near".to_string());
+    }
+
+    let mut total_filled = 0;
+
+    for token_id in &tokens {
+        if is_staking_token(token_id) {
+            continue;
+        }
+
+        match fill_gaps_with_hints(
+            pool,
+            network,
+            account_id,
+            token_id,
+            up_to_block,
+            hint_service,
+        )
+        .await
+        {
+            Ok(filled) => {
+                if !filled.is_empty() {
+                    log::info!(
+                        "[maintenance] {}/{}: Filled {} gaps",
+                        account_id,
+                        token_id,
+                        filled.len()
+                    );
+                    total_filled += filled.len();
+                }
+            }
+            Err(e) => {
+                log::error!(
+                    "[maintenance] {}/{}: Error filling gaps: {}",
+                    account_id,
+                    token_id,
+                    e
+                );
+            }
+        }
+    }
+
+    Ok(total_filled)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_monitor_cycle_with_no_accounts() {
+    async fn test_maintenance_cycle_with_no_dirty_accounts() {
         let state = crate::utils::test_utils::init_test_state().await;
         let network = NetworkConfig::mainnet();
 
-        // Should not error with no accounts
-        let result = run_monitor_cycle(
+        // Should not error with no dirty accounts
+        let result = run_maintenance_cycle(
             &state.db_pool,
             &network,
             177_000_000,
             state.transfer_hint_service.as_deref(),
             None,
+            None,
+            "",
         )
         .await;
         assert!(result.is_ok());

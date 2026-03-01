@@ -1,11 +1,11 @@
-//! End-to-end test for dirty account priority monitoring
+//! End-to-end test for account maintenance gap filling
 //!
 //! Simulates the real-world scenario from 2026-02-03 where two payment transactions
 //! on webassemblymusic-treasury.sputnik-dao.near didn't show up immediately because
 //! the monitoring worker was busy finding staking rewards for testing-astradao.sputnik-dao.near.
 //!
-//! The dirty account mechanism solves this by spawning a parallel task that fills gaps
-//! for the marked account while the main cycle continues processing other accounts.
+//! The maintenance worker (which replaced the old dirty monitor) processes dirty accounts
+//! independently, filling gaps for marked accounts.
 //!
 //! Expected payments from petersalomonsen.near at blocks:
 //! - 183985506
@@ -14,8 +14,7 @@
 mod common;
 
 use bigdecimal::BigDecimal;
-use nt_be::handlers::balance_changes::account_monitor::run_monitor_cycle;
-use nt_be::handlers::balance_changes::dirty_monitor::fill_dirty_account_gaps;
+use nt_be::handlers::balance_changes::account_monitor::fill_account_gaps;
 use nt_be::handlers::balance_changes::gap_filler::insert_snapshot_record;
 use nt_be::handlers::balance_changes::utils::block_timestamp_to_datetime;
 use serde_json::json;
@@ -26,12 +25,11 @@ use std::time::Instant;
 use tower::ServiceExt;
 
 const TREASURY_ACCOUNT: &str = "webassemblymusic-treasury.sputnik-dao.near";
-const STAKING_ACCOUNT: &str = "testing-astradao.sputnik-dao.near";
 
 /// Block before the two payment transactions — the system is "caught up" to here
 const BASELINE_BLOCK: i64 = 183_985_000;
 
-/// Block after the two payment transactions — dirty task should find them by here
+/// Block after the two payment transactions — maintenance task should find them by here
 const DIRTY_UP_TO_BLOCK: i64 = 183_986_000;
 
 /// The expected block heights where payments from petersalomonsen.near occurred
@@ -88,151 +86,101 @@ const TREASURY_TOKEN_SNAPSHOTS: &[(&str, &str)] = &[
     ),
 ];
 
-/// Token snapshots for testing-astradao.sputnik-dao.near
-/// Note: `near` excluded (same reason as above)
-const STAKING_TOKEN_SNAPSHOTS: &[(&str, &str)] = &[
-    ("staking:figment.poolv1.near", "0.100003532026647260349538"),
-    (
-        "staking:bisontrails.poolv1.near",
-        "0.523954777382739780399233",
-    ),
-    (
-        "staking:astro-stakers.poolv1.near",
-        "0.243096488083090812499858",
-    ),
-    (
-        "intents.near:nep141:arb-0xaf88d065e77c8cc2239327c5edb3a432268e5831.omft.near",
-        "0.09978800",
-    ),
-    (
-        "intents.near:nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
-        "2.9100",
-    ),
-];
-
-/// End-to-end test: dirty account priority monitoring detects payment transactions
-/// while the main monitoring cycle is busy with staking rewards.
+/// End-to-end test: maintenance worker detects payment transactions via gap filling.
 ///
 /// Scenario:
-/// 1. Both accounts are registered and monitored
-/// 2. Main monitoring cycle runs up to block 183985000 (before the payments)
-///    - testing-astradao has staking rewards that take a long time
-///    - webassemblymusic-treasury is also synced to this block
-/// 3. Two payment transactions happen on webassemblymusic-treasury between
-///    block 183985000 and 183986000
-/// 4. The dirty API is called for webassemblymusic-treasury
-/// 5. The dirty monitor fills gaps up to block 183986000
-/// 6. The two transactions should now be visible in the database
+/// 1. Treasury account is registered and has token snapshots at BASELINE_BLOCK
+/// 2. Two payment transactions happen between BASELINE_BLOCK and DIRTY_UP_TO_BLOCK
+/// 3. Mark account dirty (simulating user opening the treasury)
+/// 4. Run fill_account_gaps up to DIRTY_UP_TO_BLOCK
+/// 5. The two transactions should now be visible in the database
 #[sqlx::test]
-async fn test_dirty_monitor_detects_payments_while_main_cycle_busy(
-    pool: PgPool,
-) -> sqlx::Result<()> {
+async fn test_maintenance_detects_payments(pool: PgPool) -> sqlx::Result<()> {
     common::load_test_env();
     let network = common::create_archival_network();
 
-    println!("\n=== Dirty Account Priority Monitoring E2E Test ===");
+    println!("\n=== Account Maintenance Gap Filling E2E Test ===");
     println!("Treasury account: {}", TREASURY_ACCOUNT);
-    println!("Staking account:  {}", STAKING_ACCOUNT);
     println!("Baseline block:   {} (before payments)", BASELINE_BLOCK);
     println!("Dirty up-to block: {} (after payments)", DIRTY_UP_TO_BLOCK);
 
-    // --- Setup: register both accounts as monitored ---
+    // --- Setup: register account as monitored ---
 
-    for account_id in &[TREASURY_ACCOUNT, STAKING_ACCOUNT] {
-        sqlx::query(
-            r#"
-            INSERT INTO monitored_accounts (account_id, enabled)
-            VALUES ($1, true)
-            ON CONFLICT (account_id) DO UPDATE SET enabled = true, dirty_at = NULL
-            "#,
-        )
-        .bind(account_id)
+    sqlx::query(
+        r#"
+        INSERT INTO monitored_accounts (account_id, enabled)
+        VALUES ($1, true)
+        ON CONFLICT (account_id) DO UPDATE SET enabled = true, dirty_at = NULL
+        "#,
+    )
+    .bind(TREASURY_ACCOUNT)
+    .execute(&pool)
+    .await?;
+
+    // Clear existing balance changes
+    sqlx::query("DELETE FROM balance_changes WHERE account_id = $1")
+        .bind(TREASURY_ACCOUNT)
         .execute(&pool)
         .await?;
-    }
 
-    // Clear existing balance changes for both accounts
-    for account_id in &[TREASURY_ACCOUNT, STAKING_ACCOUNT] {
-        sqlx::query("DELETE FROM balance_changes WHERE account_id = $1")
-            .bind(account_id)
-            .execute(&pool)
-            .await?;
-    }
-
-    println!("\n--- Phase 1: Seed token snapshots and run main cycle up to baseline ---");
+    println!("\n--- Phase 1: Seed token snapshots ---");
 
     // Seed NEAR balance via RPC (needs real on-chain balance for accurate gap filling)
-    for account_id in [TREASURY_ACCOUNT, STAKING_ACCOUNT] {
-        insert_snapshot_record(&pool, &network, account_id, "near", BASELINE_BLOCK as u64)
-            .await
-            .map_err(|e| {
-                sqlx::Error::Io(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    e.to_string(),
-                ))
-            })?;
-        println!("Seeded NEAR snapshot for {} via RPC", account_id);
-    }
+    insert_snapshot_record(
+        &pool,
+        &network,
+        TREASURY_ACCOUNT,
+        "near",
+        BASELINE_BLOCK as u64,
+    )
+    .await
+    .map_err(|e| {
+        sqlx::Error::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            e.to_string(),
+        ))
+    })?;
+    println!("Seeded NEAR snapshot for {} via RPC", TREASURY_ACCOUNT);
 
     // Seed remaining token snapshots (data from https://api.trezu.app/api/balance-changes)
-    // This ensures the monitor cycle has many tokens to process, simulating a busy worker
     let block_time = block_timestamp_to_datetime(BASELINE_BLOCK_TIMESTAMP);
     let zero = BigDecimal::from(0);
 
-    for (account_id, snapshots) in [
-        (TREASURY_ACCOUNT, TREASURY_TOKEN_SNAPSHOTS),
-        (STAKING_ACCOUNT, STAKING_TOKEN_SNAPSHOTS),
-    ] {
-        for (token_id, balance_str) in snapshots {
-            let balance = BigDecimal::from_str(balance_str).expect("valid balance");
-            sqlx::query(
-                r#"
-                INSERT INTO balance_changes
-                (account_id, token_id, block_height, block_timestamp, block_time,
-                 amount, balance_before, balance_after,
-                 transaction_hashes, receipt_id, counterparty, actions, raw_data)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-                ON CONFLICT (account_id, block_height, token_id) DO NOTHING
-                "#,
-            )
-            .bind(account_id)
-            .bind(*token_id)
-            .bind(BASELINE_BLOCK)
-            .bind(BASELINE_BLOCK_TIMESTAMP)
-            .bind(block_time)
-            .bind(&zero)
-            .bind(&balance)
-            .bind(&balance)
-            .bind(&Vec::<String>::new())
-            .bind(&Vec::<String>::new())
-            .bind("SNAPSHOT")
-            .bind(json!({}))
-            .bind(json!({}))
-            .execute(&pool)
-            .await?;
-        }
-        println!(
-            "Seeded {} token snapshots for {} at block {}",
-            snapshots.len(),
-            account_id,
-            BASELINE_BLOCK
-        );
+    for (token_id, balance_str) in TREASURY_TOKEN_SNAPSHOTS {
+        let balance = BigDecimal::from_str(balance_str).expect("valid balance");
+        sqlx::query(
+            r#"
+            INSERT INTO balance_changes
+            (account_id, token_id, block_height, block_timestamp, block_time,
+             amount, balance_before, balance_after,
+             transaction_hashes, receipt_id, counterparty, actions, raw_data)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+            ON CONFLICT (account_id, block_height, token_id) DO NOTHING
+            "#,
+        )
+        .bind(TREASURY_ACCOUNT)
+        .bind(*token_id)
+        .bind(BASELINE_BLOCK)
+        .bind(BASELINE_BLOCK_TIMESTAMP)
+        .bind(block_time)
+        .bind(&zero)
+        .bind(&balance)
+        .bind(&balance)
+        .bind(&Vec::<String>::new())
+        .bind(&Vec::<String>::new())
+        .bind("SNAPSHOT")
+        .bind(json!({}))
+        .bind(json!({}))
+        .execute(&pool)
+        .await?;
     }
+    println!(
+        "Seeded {} token snapshots at block {}",
+        TREASURY_TOKEN_SNAPSHOTS.len(),
+        BASELINE_BLOCK
+    );
 
-    // --- Phase 1b: Start main monitor cycle in background ---
-    // The main cycle processes staking rewards (slow) for testing-astradao.
-    // We spawn it as a background task and abort it once the dirty monitor succeeds.
-    let pool_bg = pool.clone();
-    let network_bg = common::create_archival_network();
-    let main_cycle_handle = tokio::spawn(async move {
-        let _ = run_monitor_cycle(&pool_bg, &network_bg, BASELINE_BLOCK, None, None).await;
-    });
-
-    // Give the main cycle a moment to start processing
-    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-    println!("Main monitoring cycle started in background");
-
-    println!("\n--- Phase 2: Mark account as dirty and run dirty monitor concurrently ---");
+    println!("\n--- Phase 2: Mark account as dirty and fill gaps ---");
 
     // Mark the treasury account as dirty via the POST /api/monitored-accounts endpoint
     let app_state = nt_be::AppState::builder()
@@ -283,40 +231,24 @@ async fn test_dirty_monitor_detects_payments_while_main_cycle_busy(
         TREASURY_ACCOUNT, body["dirtyAt"]
     );
 
-    // Run dirty gap filling up to the block after the payments
+    // Run gap filling up to the block after the payments
     let start = Instant::now();
-    let gaps_filled =
-        fill_dirty_account_gaps(&pool, &network, TREASURY_ACCOUNT, DIRTY_UP_TO_BLOCK, None)
-            .await
-            .map_err(|e| {
-                sqlx::Error::Io(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    e.to_string(),
-                ))
-            })?;
-    let dirty_duration = start.elapsed();
+    let gaps_filled = fill_account_gaps(&pool, &network, TREASURY_ACCOUNT, DIRTY_UP_TO_BLOCK, None)
+        .await
+        .map_err(|e| {
+            sqlx::Error::Io(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                e.to_string(),
+            ))
+        })?;
+    let duration = start.elapsed();
 
-    println!(
-        "Dirty monitor filled {} gaps in {:?}",
-        gaps_filled, dirty_duration
-    );
-
-    // The dirty monitor completed — abort the main cycle (no need to wait for it)
-    let main_cycle_finished = main_cycle_handle.is_finished();
-    main_cycle_handle.abort();
-    println!(
-        "Main cycle {} (aborted after dirty monitor succeeded)",
-        if main_cycle_finished {
-            "had already finished"
-        } else {
-            "was still running"
-        }
-    );
+    println!("Gap filling filled {} gaps in {:?}", gaps_filled, duration);
 
     println!("\n--- Phase 3: Verify the two payment transactions are now visible ---");
 
     // Query all non-snapshot NEAR balance changes after the baseline
-    let post_dirty_changes: Vec<(i64, String, Vec<String>)> = sqlx::query_as(
+    let post_changes: Vec<(i64, String, Vec<String>)> = sqlx::query_as(
         r#"
         SELECT block_height, counterparty, receipt_id
         FROM balance_changes
@@ -333,11 +265,8 @@ async fn test_dirty_monitor_detects_payments_while_main_cycle_busy(
     .fetch_all(&pool)
     .await?;
 
-    println!(
-        "New balance changes after dirty monitor: {}",
-        post_dirty_changes.len()
-    );
-    for (block, counterparty, receipt_ids) in &post_dirty_changes {
+    println!("New balance changes: {}", post_changes.len());
+    for (block, counterparty, receipt_ids) in &post_changes {
         println!(
             "  Block {}: counterparty={}, receipt_ids={:?}",
             block, counterparty, receipt_ids
@@ -345,13 +274,13 @@ async fn test_dirty_monitor_detects_payments_while_main_cycle_busy(
     }
 
     // Collect all block heights from the new changes
-    let found_blocks: Vec<i64> = post_dirty_changes.iter().map(|(b, _, _)| *b).collect();
+    let found_blocks: Vec<i64> = post_changes.iter().map(|(b, _, _)| *b).collect();
 
     // Assert both expected payment blocks are now in the database
     for expected_block in EXPECTED_PAYMENT_BLOCKS {
         assert!(
             found_blocks.contains(expected_block),
-            "Expected block {} to be found after dirty monitoring.\nFound blocks: {:?}",
+            "Expected block {} to be found after gap filling.\nFound blocks: {:?}",
             expected_block,
             found_blocks
         );
@@ -359,7 +288,7 @@ async fn test_dirty_monitor_detects_payments_while_main_cycle_busy(
 
     // Verify counterparty and exact receipt IDs for each expected payment block
     for (i, &expected_block) in EXPECTED_PAYMENT_BLOCKS.iter().enumerate() {
-        let (block, counterparty, receipt_ids) = post_dirty_changes
+        let (block, counterparty, receipt_ids) = post_changes
             .iter()
             .find(|(b, _, _)| *b == expected_block)
             .unwrap_or_else(|| panic!("Expected block {} not found in results", expected_block));
@@ -381,8 +310,8 @@ async fn test_dirty_monitor_detects_payments_while_main_cycle_busy(
     }
 
     println!("\n=== Results ===");
-    println!("Dirty monitor duration: {:?}", dirty_duration);
-    println!("Gaps filled by dirty monitor: {}", gaps_filled);
+    println!("Gap filling duration: {:?}", duration);
+    println!("Gaps filled: {}", gaps_filled);
     println!(
         "Both expected payment blocks found: {:?}",
         EXPECTED_PAYMENT_BLOCKS

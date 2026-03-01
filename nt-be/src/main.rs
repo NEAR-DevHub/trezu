@@ -25,51 +25,37 @@ async fn main() {
             .expect("Failed to initialize application state"),
     );
 
-    // Spawn background monitoring task
+    // Spawn account maintenance worker (processes dirty accounts every 5 minutes)
+    // Replaces the previous main monitor (30s, all accounts) and dirty monitor (5s poll).
+    // Goldsky enrichment worker is now the primary event source for ongoing monitoring.
     if !state.env_vars.disable_balance_monitoring {
         let state_clone = state.clone();
         tokio::spawn(async move {
             use near_api::Chain;
-            use nt_be::handlers::balance_changes::account_monitor::run_monitor_cycle;
+            use nt_be::handlers::balance_changes::account_monitor::run_maintenance_cycle;
 
-            let interval_seconds = state_clone.env_vars.monitor_interval_seconds;
+            let interval = Duration::from_secs(300); // 5 minutes
 
-            if interval_seconds == 0 {
-                log::info!("Background monitoring disabled (MONITOR_INTERVAL_SECONDS=0)");
-                return;
-            }
+            log::info!("Starting account maintenance worker (5 minute interval)");
 
-            let interval = Duration::from_secs(interval_seconds);
+            // Wait for server to fully start
+            tokio::time::sleep(Duration::from_secs(30)).await;
 
-            log::info!(
-                "Starting background monitoring service (interval: {} seconds)",
-                interval_seconds
-            );
-
-            // Wait a bit before first run to let server fully start
-            tokio::time::sleep(Duration::from_secs(10)).await;
-
-            // Use tokio::time::interval for more accurate timing
             let mut interval_timer = tokio::time::interval(interval);
 
             loop {
                 interval_timer.tick().await;
 
-                log::info!("Running monitoring cycle...");
-
                 // Get current block height from the network
                 let up_to_block = match Chain::block().fetch_from(&state_clone.network).await {
                     Ok(block) => block.header.height as i64,
                     Err(e) => {
-                        log::error!("Failed to get current block height: {}", e);
-                        log::info!("Retrying in {} seconds", interval_seconds);
+                        log::error!("[maintenance] Failed to get current block height: {}", e);
                         continue;
                     }
                 };
 
-                log::info!("Processing up to block {}", up_to_block);
-
-                match run_monitor_cycle(
+                match run_maintenance_cycle(
                     &state_clone.db_pool,
                     &state_clone.archival_network,
                     up_to_block,
@@ -78,18 +64,16 @@ async fn main() {
                         &state_clone.http_client,
                         &state_clone.env_vars.fastnear_api_key,
                     )),
+                    state_clone.env_vars.intents_explorer_api_key.as_deref(),
+                    &state_clone.env_vars.intents_explorer_api_url,
                 )
                 .await
                 {
-                    Ok(()) => {
-                        log::info!("Monitoring cycle completed successfully");
-                    }
+                    Ok(()) => {}
                     Err(e) => {
-                        log::error!("Monitoring cycle failed: {}", e);
+                        log::error!("[maintenance] Cycle failed: {}", e);
                     }
                 }
-
-                log::info!("Next monitoring cycle in {} seconds", interval_seconds);
             }
         });
     }
@@ -150,29 +134,6 @@ async fn main() {
         });
     }
 
-    // Spawn dirty account priority monitoring
-    if !state.env_vars.disable_balance_monitoring {
-        let state_clone = state.clone();
-        tokio::spawn(async move {
-            use nt_be::handlers::balance_changes::dirty_monitor::run_dirty_monitor;
-            use std::collections::HashMap;
-            use tokio::task::JoinHandle;
-
-            log::info!("Starting dirty account priority monitor (5 second poll interval)");
-
-            // Wait a bit before first run to let server fully start
-            tokio::time::sleep(Duration::from_secs(10)).await;
-
-            let mut active_tasks: HashMap<String, JoinHandle<()>> = HashMap::new();
-            let mut interval = tokio::time::interval(Duration::from_secs(5));
-
-            loop {
-                interval.tick().await;
-                run_dirty_monitor(&state_clone, &mut active_tasks).await;
-            }
-        });
-    }
-
     // Spawn Goldsky enrichment worker (reads from Neon DB, writes to app DB)
     if let Some(neon_pool) = &state.neon_pool {
         let neon_pool = neon_pool.clone();
@@ -181,28 +142,33 @@ async fn main() {
         tokio::spawn(async move {
             use nt_be::handlers::balance_changes::goldsky_enrichment::run_enrichment_cycle;
 
-            log::info!("Starting Goldsky enrichment worker (15 second interval)");
+            const BATCH_SIZE: usize = 100;
+            log::info!("Starting Goldsky enrichment worker (15s interval, immediate retry on full batch)");
 
             // Wait for server to fully start
             tokio::time::sleep(Duration::from_secs(10)).await;
 
-            let mut interval = tokio::time::interval(Duration::from_secs(15));
-
             loop {
-                interval.tick().await;
-
-                match run_enrichment_cycle(&neon_pool, &app_pool, &network).await {
-                    Ok(processed) => {
-                        if processed > 0 {
-                            log::info!(
-                                "[goldsky-enrichment] Processed {} outcomes this cycle",
-                                processed
-                            );
+                let should_sleep = {
+                    match run_enrichment_cycle(&neon_pool, &app_pool, &network).await {
+                        Ok(processed) => {
+                            if processed > 0 {
+                                log::info!(
+                                    "[goldsky-enrichment] Processed {} outcomes this cycle",
+                                    processed
+                                );
+                            }
+                            // If batch was full, there's likely more data — skip the sleep
+                            processed < BATCH_SIZE
+                        }
+                        Err(e) => {
+                            log::error!("[goldsky-enrichment] Enrichment cycle failed: {}", e);
+                            true
                         }
                     }
-                    Err(e) => {
-                        log::error!("[goldsky-enrichment] Enrichment cycle failed: {}", e);
-                    }
+                };
+                if should_sleep {
+                    tokio::time::sleep(Duration::from_secs(15)).await;
                 }
             }
         });

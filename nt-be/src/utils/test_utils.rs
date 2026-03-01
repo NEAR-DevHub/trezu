@@ -60,7 +60,7 @@ pub async fn init_test_state() -> AppState {
 /// Initialize app state with a provided database pool.
 ///
 /// Use this in `#[sqlx::test]` tests that receive a pool from the macro
-/// but also need a full AppState (e.g. for dirty_monitor which takes AppState).
+/// but also need a full AppState (e.g. for integration tests that take AppState).
 #[cfg(test)]
 pub fn build_test_state(db_pool: sqlx::PgPool) -> AppState {
     use std::sync::Arc;
