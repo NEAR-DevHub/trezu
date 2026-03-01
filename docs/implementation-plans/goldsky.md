@@ -251,7 +251,7 @@ LIMIT 100
 
 #### Idempotency
 
-The enrichment worker must be idempotent — if the cursor is reset or replayed, it must not create duplicate `balance_changes` records. This is achieved with `INSERT ... ON CONFLICT DO NOTHING` using the natural key `(account_id, token_id, block_height)` or by checking for existing records before inserting.
+The enrichment worker must be idempotent — if the cursor is reset or replayed, it should upsert records using `INSERT ... ON CONFLICT DO UPDATE`. This way, replaying with improved enrichment logic (better log parsing, more accurate counterparty detection) overwrites existing records with higher-quality data. The natural key for conflict detection is `(account_id, token_id, block_height)`.
 
 Create `nt-be/src/handlers/balance_changes/goldsky_enrichment.rs`:
 
@@ -297,8 +297,8 @@ pub async fn run_enrichment_cycle(
 
             if balance_before == balance_after { continue; }
 
-            // 5. Idempotent insert — ON CONFLICT DO NOTHING
-            insert_balance_change_idempotent(app_pool, BalanceChange {
+            // 5. Upsert — ON CONFLICT DO UPDATE for better quality on replay
+            upsert_balance_change(app_pool, BalanceChange {
                 account_id: event.account_id,
                 token_id: event.token_id,
                 block_height: outcome.trigger_block_height,
@@ -476,7 +476,7 @@ The current monitor does too much: poll for deposits, binary-search for changes,
 - [ ] Implement `goldsky_enrichment.rs` — cursor-based fetch from Neon, parse logs, idempotent write to app DB
 - [ ] Implement log parser: NEP-141 EVENT_JSON, NEP-245, wrap.near plain-text
 - [ ] RPC calls only for `balance_before`/`balance_after` (2 per event)
-- [ ] Ensure idempotency: `INSERT ... ON CONFLICT DO NOTHING` so cursor resets don't create duplicates
+- [ ] Ensure idempotency: `INSERT ... ON CONFLICT DO UPDATE` (upsert) so replays overwrite with better quality data
 - [ ] Implement epoch-boundary staking reward detection (1 RPC/pool/epoch, diff against last interaction)
 
 ### Next: simplify monitor loop
