@@ -5,7 +5,7 @@
 
 mod common;
 
-use nt_be::handlers::balance_changes::account_monitor::run_monitor_cycle;
+use nt_be::handlers::balance_changes::account_monitor::run_maintenance_cycle;
 
 /// Test that intents token metadata is discovered during monitoring
 #[tokio::test]
@@ -43,11 +43,11 @@ async fn test_intents_tokens_metadata_discovery() {
         .await
         .expect("Failed to disable other accounts");
 
-    // Add the monitored account (enabled by default)
+    // Add the monitored account (enabled and dirty so maintenance cycle picks it up)
     sqlx::query!(
-        "INSERT INTO monitored_accounts (account_id, created_at, enabled)
-         VALUES ('webassemblymusic-treasury.sputnik-dao.near', NOW(), true)
-         ON CONFLICT (account_id) DO UPDATE SET enabled = true"
+        "INSERT INTO monitored_accounts (account_id, created_at, enabled, dirty_at)
+         VALUES ('webassemblymusic-treasury.sputnik-dao.near', NOW(), true, NOW())
+         ON CONFLICT (account_id) DO UPDATE SET enabled = true, dirty_at = NOW()"
     )
     .execute(&pool)
     .await
@@ -67,7 +67,7 @@ async fn test_intents_tokens_metadata_discovery() {
     let network = common::create_archival_network();
 
     println!("Running monitoring cycle to discover intents tokens and fetch metadata...");
-    run_monitor_cycle(&pool, &network, up_to_block, None, None)
+    run_maintenance_cycle(&pool, &network, up_to_block, None, None, None, "")
         .await
         .expect("Failed to run monitoring cycle");
 

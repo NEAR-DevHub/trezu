@@ -12,6 +12,7 @@
 
 use super::balance::get_balance_change_at_block;
 use super::counterparty::ensure_ft_metadata;
+use super::transfer_hints::tx_resolver::resolve_transaction_blocks;
 use super::utils::block_timestamp_to_datetime;
 use near_api::NetworkConfig;
 use serde::Deserialize;
@@ -468,6 +469,11 @@ pub async fn run_enrichment_cycle(
         let block_time = block_timestamp_to_datetime(block_timestamp_nanos);
         let block_height = outcome.trigger_block_height as u64;
 
+        // Cache tx_status resolution per outcome to avoid redundant RPC calls
+        // when one outcome produces multiple FT events.
+        let mut resolved_ft_blocks: std::collections::HashMap<String, Option<u64>> =
+            std::collections::HashMap::new();
+
         for event in &events {
             // Skip unmonitored accounts — no point calling RPC for accounts nobody tracks
             if !monitored.contains(&event.account_id) {
@@ -488,13 +494,83 @@ pub async fn run_enrichment_cycle(
                 continue;
             }
 
-            // RPC: get balance before and after (the ONLY RPC calls)
+            // For FT events, trigger_block_height is the transaction block, but the actual
+            // FT balance change happens in a later block (NEAR cross-shard receipt processing).
+            // Use experimental_tx_status to find the block where the FT contract executed the receipt.
+            let query_block = if event.token_id != "near"
+                && event.token_id != "NEAR"
+                && outcome.transaction_hash.is_some()
+                && outcome.signer_id.is_some()
+            {
+                // Find receipts that executed on the FT contract (where balance actually changes)
+                let ft_contract = if event.token_id.contains(':') {
+                    // Intents token: executor is intents.near, not the underlying FT contract
+                    event.token_id.split(':').next().unwrap_or(&event.token_id)
+                } else {
+                    &event.token_id
+                };
+
+                // Use cached result if we already resolved this FT contract for this outcome
+                if let Some(cached) = resolved_ft_blocks.get(ft_contract) {
+                    cached.unwrap_or(block_height)
+                } else {
+                    let tx_hash = outcome.transaction_hash.as_ref().unwrap();
+                    let signer = outcome.signer_id.as_ref().unwrap();
+                    let resolved_block = match resolve_transaction_blocks(
+                        network, tx_hash, ft_contract, signer,
+                    )
+                    .await
+                    {
+                        Ok(resolved) if !resolved.receipt_blocks.is_empty() => {
+                            let receipt_block = resolved
+                                .receipt_blocks
+                                .iter()
+                                .map(|rb| rb.block_height)
+                                .max()
+                                .unwrap();
+                            log::debug!(
+                                "[goldsky-enrichment] Resolved FT receipt block {} for tx {} (trigger was {})",
+                                receipt_block,
+                                tx_hash,
+                                block_height,
+                            );
+                            Some(receipt_block)
+                        }
+                        Ok(_) => {
+                            log::debug!(
+                                "[goldsky-enrichment] No receipts on {} for tx {} — using trigger block {}",
+                                ft_contract,
+                                tx_hash,
+                                block_height,
+                            );
+                            None
+                        }
+                        Err(e) => {
+                            log::warn!(
+                                "[goldsky-enrichment] Failed to resolve tx {} for {}: {} — using trigger block {}",
+                                tx_hash,
+                                event.token_id,
+                                e,
+                                block_height,
+                            );
+                            None
+                        }
+                    };
+                    resolved_ft_blocks.insert(ft_contract.to_string(), resolved_block);
+                    resolved_block.unwrap_or(block_height)
+                }
+            } else {
+                // NEAR token or no tx hash — trigger_block_height is correct
+                block_height
+            };
+
+            // RPC: get balance before and after
             let (balance_before, balance_after) = match get_balance_change_at_block(
                 app_pool,
                 network,
                 &event.account_id,
                 &event.token_id,
-                block_height,
+                query_block,
             )
             .await
             {
@@ -504,7 +580,7 @@ pub async fn run_enrichment_cycle(
                         "[goldsky-enrichment] RPC error for {}/{} at block {}: {} — skipping",
                         event.account_id,
                         event.token_id,
-                        block_height,
+                        query_block,
                         e
                     );
                     continue;

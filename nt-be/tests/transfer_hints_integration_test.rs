@@ -12,7 +12,7 @@
 
 mod common;
 
-use nt_be::handlers::balance_changes::account_monitor::run_monitor_cycle;
+use nt_be::handlers::balance_changes::account_monitor::run_maintenance_cycle;
 use nt_be::handlers::balance_changes::gap_filler::{
     HintResolutionStats, find_block_with_hints_tracked, insert_snapshot_record,
 };
@@ -47,9 +47,9 @@ async fn test_near_and_ft_transfers_with_hints(pool: PgPool) -> sqlx::Result<()>
     // Insert account as monitored
     sqlx::query!(
         r#"
-        INSERT INTO monitored_accounts (account_id, enabled)
-        VALUES ($1, true)
-        ON CONFLICT (account_id) DO UPDATE SET enabled = true
+        INSERT INTO monitored_accounts (account_id, enabled, dirty_at)
+        VALUES ($1, true, NOW())
+        ON CONFLICT (account_id) DO UPDATE SET enabled = true, dirty_at = NOW()
         "#,
         account_id
     )
@@ -105,7 +105,7 @@ async fn test_near_and_ft_transfers_with_hints(pool: PgPool) -> sqlx::Result<()>
     println!("\n=== Running Monitor Cycle (single cycle for all tokens) ===");
     let start = Instant::now();
 
-    run_monitor_cycle(&pool, &network, up_to_block, Some(&hint_service), None)
+    run_maintenance_cycle(&pool, &network, up_to_block, Some(&hint_service), None, None, "")
         .await
         .map_err(|e| sqlx::Error::Io(std::io::Error::other(e.to_string())))?;
 
@@ -230,9 +230,9 @@ async fn test_intents_transfers_with_hints(pool: PgPool) -> sqlx::Result<()> {
     // Insert account as monitored
     sqlx::query!(
         r#"
-        INSERT INTO monitored_accounts (account_id, enabled)
-        VALUES ($1, true)
-        ON CONFLICT (account_id) DO UPDATE SET enabled = true
+        INSERT INTO monitored_accounts (account_id, enabled, dirty_at)
+        VALUES ($1, true, NOW())
+        ON CONFLICT (account_id) DO UPDATE SET enabled = true, dirty_at = NOW()
         "#,
         account_id
     )
@@ -304,7 +304,7 @@ async fn test_intents_transfers_with_hints(pool: PgPool) -> sqlx::Result<()> {
     println!("\n=== Running Monitor Cycle ===");
     let start = Instant::now();
 
-    run_monitor_cycle(&pool, &network, up_to_block, Some(&hint_service), None)
+    run_maintenance_cycle(&pool, &network, up_to_block, Some(&hint_service), None, None, "")
         .await
         .map_err(|e| sqlx::Error::Io(std::io::Error::other(e.to_string())))?;
 
@@ -383,9 +383,9 @@ async fn test_shitzu_near_transfers_with_hints(pool: PgPool) -> sqlx::Result<()>
     // Insert account as monitored
     sqlx::query!(
         r#"
-        INSERT INTO monitored_accounts (account_id, enabled)
-        VALUES ($1, true)
-        ON CONFLICT (account_id) DO UPDATE SET enabled = true
+        INSERT INTO monitored_accounts (account_id, enabled, dirty_at)
+        VALUES ($1, true, NOW())
+        ON CONFLICT (account_id) DO UPDATE SET enabled = true, dirty_at = NOW()
         "#,
         account_id
     )
@@ -439,7 +439,7 @@ async fn test_shitzu_near_transfers_with_hints(pool: PgPool) -> sqlx::Result<()>
     println!("\n=== Running Monitor Cycle ===");
     let start = Instant::now();
 
-    run_monitor_cycle(&pool, &network, up_to_block, Some(&hint_service), None)
+    run_maintenance_cycle(&pool, &network, up_to_block, Some(&hint_service), None, None, "")
         .await
         .map_err(|e| sqlx::Error::Io(std::io::Error::other(e.to_string())))?;
 
@@ -538,9 +538,9 @@ async fn test_no_duplicate_block_checks(pool: PgPool) -> sqlx::Result<()> {
     // Clear any existing data and set up monitored account
     sqlx::query!(
         r#"
-        INSERT INTO monitored_accounts (account_id, enabled)
-        VALUES ($1, true)
-        ON CONFLICT (account_id) DO UPDATE SET enabled = true
+        INSERT INTO monitored_accounts (account_id, enabled, dirty_at)
+        VALUES ($1, true, NOW())
+        ON CONFLICT (account_id) DO UPDATE SET enabled = true, dirty_at = NOW()
         "#,
         account_id
     )
@@ -738,9 +738,9 @@ async fn test_hints_strategy_is_used(pool: PgPool) -> sqlx::Result<()> {
     // Clear any existing data and set up monitored account
     sqlx::query!(
         r#"
-        INSERT INTO monitored_accounts (account_id, enabled)
-        VALUES ($1, true)
-        ON CONFLICT (account_id) DO UPDATE SET enabled = true
+        INSERT INTO monitored_accounts (account_id, enabled, dirty_at)
+        VALUES ($1, true, NOW())
+        ON CONFLICT (account_id) DO UPDATE SET enabled = true, dirty_at = NOW()
         "#,
         account_id
     )
