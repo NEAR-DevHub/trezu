@@ -13,7 +13,7 @@ use crate::{
     services::{register_new_dao, register_or_refresh_monitored_account},
 };
 
-pub const TREASURY_CREATE_DEPOSIT_IN_NEAR: u128 = 6;
+pub const TREASURY_CREATE_DEPOSIT: NearToken = NearToken::from_millinear(90);
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -182,7 +182,7 @@ pub async fn create_treasury(
         .call_function("create", args)
         .transaction()
         .max_gas()
-        .deposit(NearToken::from_near(TREASURY_CREATE_DEPOSIT_IN_NEAR))
+        .deposit(TREASURY_CREATE_DEPOSIT)
         .with_signer(state.signer_id.clone(), state.signer.clone())
         .send_to(&state.network)
         .await
@@ -208,9 +208,7 @@ pub async fn create_treasury(
     }
 
     // Record NEAR spent on treasury creation
-    let creation_cost: BigDecimal = NearToken::from_near(TREASURY_CREATE_DEPOSIT_IN_NEAR)
-        .as_yoctonear()
-        .into();
+    let creation_cost: BigDecimal = TREASURY_CREATE_DEPOSIT.as_yoctonear().into();
     if let Err(e) = sqlx::query(
         r#"
         UPDATE monitored_accounts
