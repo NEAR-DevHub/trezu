@@ -324,15 +324,26 @@ pub async fn run_enrichment_cycle(
 
 #### Event parsing (all local, no RPC)
 
-The enrichment worker parses logs from `indexed_dao_outcomes` to extract transfer details:
+Each outcome produces one or more events. There are two distinct paths:
+
+**Path A: Log-based events** (logs mention `sputnik-dao.near`)
+
+The token contract is always `executor_id` — the contract that emitted the log. For example, `wrap.near` emitting a transfer log means `token_id = "wrap.near"` (not `"near"`).
 
 1. **NEP-141 FT transfers**: `EVENT_JSON:{"standard":"nep141","event":"ft_transfer","data":[{"old_owner_id":"...","new_owner_id":"...","amount":"..."}]}`
-   → Gives us: token_id (executor_id), counterparty, amount
+   → `token_id` = `executor_id`, counterparty and amount from log data
 2. **NEP-245 intents transfers**: `EVENT_JSON:{"standard":"nep245","event":"mt_transfer",...}`
-   → Gives us: token_ids, counterparty, amounts
+   → `token_id` = `"intents.near:<token_id from event>"`, counterparty and amounts from log data
 3. **wrap.near plain-text**: `Transfer 100000000000000000000000 from alice.near to bob.sputnik-dao.near`
-   → Gives us: amount, counterparty
-4. **Receiver-based events** (no logs needed): When `receiver_id` is a DAO, the outcome fields (`signer_id`, `receiver_id`, `gas_burnt`, `tokens_burnt`) tell us about native NEAR transfers, function calls, staking
+   → `token_id` = `"wrap.near"`, counterparty and amount from log text
+
+**Path B: Receiver-based events** (`receiver_id` is a DAO)
+
+When `receiver_id` is a DAO, it means someone called a function on the DAO contract (e.g., `act_proposal`, `add_proposal`) or sent NEAR directly. **Only the native NEAR balance is affected.** FT transfers produce their own log-based events (Path A) separately — no need to check FT balances here.
+
+→ `token_id` = `"near"`, `account_id` = `receiver_id`, `counterparty` = `signer_id`
+
+**A single outcome can trigger both paths** — e.g., if a function call on a DAO also emits an FT transfer log. Each path produces independent events.
 
 #### What we DON'T need RPC for in the normal flow
 
@@ -372,8 +383,8 @@ Staking rewards accumulate silently — no transaction, no log, no receipt. A st
 The current monitor does too much: poll for deposits, binary-search for changes, resolve transactions, fill gaps. With Goldsky:
 
 **New monitor loop (simplified):**
-1. **Run enrichment** — process new rows from `indexed_dao_outcomes` in Neon
-2. **Check for gaps** — look for missing blocks between known balance changes
+1. **Run enrichment** — process new rows from `indexed_dao_outcomes` in Neon. Enriches **all** sputnik-dao outcomes, not just monitored accounts. This way if a DAO is added to monitoring later, its history is already enriched.
+2. **Check for gaps** — look for missing blocks between known balance changes. Gap detection runs **only for monitored accounts** (from `monitored_accounts` table).
 3. **Fill gaps if needed** — use existing binary search as RPC fallback
 4. That's it. No dirty monitor. No deposit polling. No transaction resolution.
 
@@ -434,7 +445,7 @@ The current monitor does too much: poll for deposits, binary-search for changes,
 | `account_id` | Parsed from logs or derived from `receiver_id` | No |
 | `block_height` | `trigger_block_height` | No |
 | `block_timestamp` | `trigger_block_timestamp` | No |
-| `token_id` | Parsed from logs: `"near"` for native, FT contract for NEP-141, `"intents.near:..."` for NEP-245 | No |
+| `token_id` | Path B (receiver_id is DAO): `"near"`. Path A (log-based): `executor_id` for NEP-141, `"intents.near:..."` for NEP-245 | No |
 | `balance_before` | balance at `trigger_block_height - 1` | **Yes — RPC call 1** |
 | `balance_after` | balance at `trigger_block_height` | **Yes — RPC call 2** |
 | `amount` | `balance_after - balance_before` | No (computed) |
@@ -447,17 +458,15 @@ The current monitor does too much: poll for deposits, binary-search for changes,
 
 ## Open Questions
 
-1. **Neon free tier storage (0.5 GB)**: ~2 MB/day data rate. Since we no longer mark rows as processed in Neon, old rows need a separate cleanup strategy (e.g., a periodic job that deletes rows older than N days, or relying on Goldsky's own retention). ~250 days before hitting the limit without cleanup.
+1. **Neon free tier storage (0.5 GB)**: ~2 MB/day data rate, ~250 days before hitting the limit. Defer cleanup strategy for now.
 
 2. **Staking rewards** — RESOLVED: Epoch-boundary gap detection compares staking balance against the last known balance after the most recent explicit interaction (from Goldsky). The difference is the pure reward. 1 RPC call per pool per epoch (~40 calls/day total).
 
-3. **Data freshness / latency**: What is Goldsky's typical NEAR data latency? Affects how quickly new balance changes appear in the UI.
+3. **Data freshness / latency**: Trust Goldsky here — assume acceptable latency until proven otherwise.
 
-4. **Enrichment worker concurrency**: Should batch RPC calls in parallel during backfill to avoid sequential bottleneck.
+4. **Enrichment worker concurrency**: Start sequential. Optimize to parallel batching later if needed.
 
 5. **Non-sputnik accounts**: `meta-pool-dao-4.near` and other non-sputnik accounts still need the existing RPC-based approach.
-
-6. **Two-database connection management**: The enrichment worker connects to both Neon and the app DB. Need to configure connection pooling and handle failures on either side gracefully.
 
 ## Implementation Checklist
 
