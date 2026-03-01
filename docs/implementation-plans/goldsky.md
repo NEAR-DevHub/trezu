@@ -292,7 +292,7 @@ The enrichment worker parses logs from `indexed_dao_outcomes` to extract transfe
    → Gives us: amount, counterparty
 4. **Receiver-based events** (no logs needed): When `receiver_id` is a DAO, the outcome fields (`signer_id`, `receiver_id`, `gas_burnt`, `tokens_burnt`) tell us about native NEAR transfers, function calls, staking
 
-#### What we DON'T need RPC for anymore
+#### What we DON'T need RPC for in the normal flow
 
 | Previously needed RPC | Now from Goldsky |
 |---|---|
@@ -302,6 +302,8 @@ The enrichment worker parses logs from `indexed_dao_outcomes` to extract transfe
 | Receipt ID | Not needed — we have `transaction_hash` |
 | Transfer amount | Parsed from `logs` |
 | Token contract (who emitted the event) | `executor_id` field |
+
+**Note:** The existing RPC-based resolution logic (binary search, tx resolution, FastNear hints) is still needed for **on-demand historical backfill** — e.g., when a new DAO is added and needs history beyond Goldsky's ~10-day Kafka retention window. This code stays in the codebase but is no longer part of the main monitor loop. It runs only when explicitly triggered (e.g., account onboarding, manual backfill request).
 
 #### Staking rewards: special handling required
 
@@ -333,10 +335,13 @@ The current monitor does too much: poll for deposits, binary-search for changes,
 3. **Fill gaps if needed** — use existing binary search as RPC fallback
 4. That's it. No dirty monitor. No deposit polling. No transaction resolution.
 
-**What gets removed:**
+**What gets removed from the main loop:**
 - `dirty_monitor.rs` — 30-second polling loop, entirely replaced by Goldsky events
-- `transfer_hints/` module — FastNear hints and tx resolution, replaced by Goldsky fields
-- `gap_filler.rs` — most gap-filling strategies, replaced by enrichment worker. Keep only as RPC fallback
+
+**What moves to on-demand backfill only:**
+- `binary_search.rs` — still needed when onboarding accounts with history beyond Goldsky's ~10-day retention
+- `transfer_hints/` module — FastNear hints and tx resolution for historical backfill
+- `gap_filler.rs` — RPC-based gap filling as fallback
 
 **What gets simplified:**
 - `account_monitor.rs` — main loop becomes: enrich → gap-check → (optional) RPC fallback
@@ -352,16 +357,16 @@ The current monitor does too much: poll for deposits, binary-search for changes,
 
 ## Mapping to existing balance tracking system
 
-### What Goldsky fully replaces (can be removed)
+### What Goldsky replaces in the main loop
 
-| Current module | What it does | Why it's no longer needed |
+| Current module | What it does | New role |
 |---|---|---|
-| `dirty_monitor.rs` | Polls RPC every 30 seconds to detect changes | Goldsky streams events — no polling needed |
-| `binary_search.rs` | Finds exact block of balance change (~27 RPC calls) | Pipeline tells us exact blocks directly |
-| `transfer_hints/fastnear.rs` | FastNear API hints for gap filling | Pipeline provides the same data natively |
-| `transfer_hints/tx_resolver.rs` | Resolves receipt→transaction via RPC | `transaction_hash` comes directly from Goldsky |
-| `gap_filler.rs` | Multi-strategy gap filling | Enrichment worker processes events as they arrive — gaps don't form |
-| `token_discovery.rs` (receipt-based) | Scans counterparties to discover FT contracts | New tokens appear automatically in Goldsky logs |
+| `dirty_monitor.rs` | Polls RPC every 30 seconds to detect changes | **Removed** — Goldsky streams events, no polling needed |
+| `binary_search.rs` | Finds exact block of balance change (~27 RPC calls) | **On-demand only** — kept for historical backfill of new accounts |
+| `transfer_hints/fastnear.rs` | FastNear API hints for gap filling | **On-demand only** — kept for historical backfill |
+| `transfer_hints/tx_resolver.rs` | Resolves receipt→transaction via RPC | **On-demand only** — kept for historical backfill |
+| `gap_filler.rs` | Multi-strategy gap filling | **On-demand only** — kept as RPC fallback for gaps and backfill |
+| `token_discovery.rs` (receipt-based) | Scans counterparties to discover FT contracts | **On-demand only** — new tokens appear automatically in Goldsky logs for ongoing monitoring |
 
 ### What Goldsky partially replaces
 
@@ -433,10 +438,10 @@ The current monitor does too much: poll for deposits, binary-search for changes,
 - [ ] Implement processed-row cleanup to manage Neon storage
 
 ### Next: simplify monitor loop
-- [ ] Remove dirty monitor (30-second polling loop)
+- [ ] Remove dirty monitor (30-second polling loop) from main loop
 - [ ] Replace main monitor loop: enrich from Goldsky → check for gaps → RPC fallback for gaps only
-- [ ] Remove `transfer_hints/` module (FastNear hints, tx resolution)
-- [ ] Keep binary search only as RPC fallback for gaps and non-sputnik accounts
+- [ ] Decouple binary search / transfer hints / gap filler from main loop (keep as on-demand backfill for new accounts)
+- [ ] Keep RPC-based path for non-sputnik accounts
 
 ### Validation
 - [ ] Compare Goldsky-based balance_changes with existing data
