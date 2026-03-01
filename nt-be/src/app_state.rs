@@ -29,6 +29,10 @@ pub struct AppState {
     pub telegram_client: TelegramClient,
     /// Optional transfer hint service for accelerated balance change detection
     pub transfer_hint_service: Option<Arc<TransferHintService>>,
+    /// Optional connection pool to Neon Postgres (Goldsky sink database).
+    /// Used by the enrichment worker to read indexed_dao_outcomes.
+    /// None if NEON_DATABASE_URL is not configured.
+    pub neon_pool: Option<PgPool>,
 }
 
 /// Builder for constructing AppState instances
@@ -64,6 +68,7 @@ pub struct AppStateBuilder {
     bulk_payment_contract_id: Option<AccountId>,
     telegram_client: Option<TelegramClient>,
     transfer_hint_service: Option<TransferHintService>,
+    neon_pool: Option<PgPool>,
 }
 
 impl AppStateBuilder {
@@ -83,6 +88,7 @@ impl AppStateBuilder {
             bulk_payment_contract_id: None,
             telegram_client: None,
             transfer_hint_service: None,
+            neon_pool: None,
         }
     }
 
@@ -155,6 +161,12 @@ impl AppStateBuilder {
     /// Set the transfer hint service
     pub fn transfer_hint_service(mut self, service: TransferHintService) -> Self {
         self.transfer_hint_service = Some(service);
+        self
+    }
+
+    /// Set the Neon database pool (Goldsky sink, read-only)
+    pub fn neon_pool(mut self, neon_pool: PgPool) -> Self {
+        self.neon_pool = Some(neon_pool);
         self
     }
 
@@ -280,6 +292,32 @@ impl AppStateBuilder {
             None
         };
 
+        // Create Neon pool if URL is configured (Goldsky sink, read-only)
+        let neon_pool = if let Some(existing) = self.neon_pool {
+            Some(existing)
+        } else if let Some(neon_url) = &env_vars.neon_database_url {
+            match sqlx::postgres::PgPoolOptions::new()
+                .max_connections(5)
+                .acquire_timeout(Duration::from_secs(5))
+                .connect(neon_url)
+                .await
+            {
+                Ok(pool) => {
+                    log::info!("Connected to Neon database (Goldsky sink)");
+                    Some(pool)
+                }
+                Err(e) => {
+                    log::warn!(
+                        "Failed to connect to Neon database: {} — enrichment worker disabled",
+                        e
+                    );
+                    None
+                }
+            }
+        } else {
+            None
+        };
+
         Ok(AppState {
             http_client: self.http_client.unwrap_or_default(),
             cache: self.cache.unwrap_or_default(),
@@ -294,6 +332,7 @@ impl AppStateBuilder {
             price_service,
             bulk_payment_contract_id,
             transfer_hint_service,
+            neon_pool,
         })
     }
 }

@@ -39,6 +39,8 @@ pub struct EnvVars {
     // Intents Explorer API configuration
     pub intents_explorer_api_key: Option<String>,
     pub intents_explorer_api_url: String,
+    // Goldsky enrichment: Neon Postgres (read-only Goldsky sink)
+    pub neon_database_url: Option<String>,
 }
 
 impl Default for EnvVars {
@@ -147,6 +149,9 @@ impl Default for EnvVars {
                 .filter(|s| !s.is_empty()),
             intents_explorer_api_url: std::env::var("INTENTS_EXPLORER_API_URL")
                 .unwrap_or_else(|_| "https://explorer.near-intents.org/api/v0".to_string()),
+            neon_database_url: std::env::var("NEON_DATABASE_URL")
+                .ok()
+                .filter(|s| !s.is_empty()),
         }
     }
 }

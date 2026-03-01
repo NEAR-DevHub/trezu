@@ -173,6 +173,43 @@ async fn main() {
         });
     }
 
+    // Spawn Goldsky enrichment worker (reads from Neon DB, writes to app DB)
+    if let Some(neon_pool) = &state.neon_pool {
+        let neon_pool = neon_pool.clone();
+        let app_pool = state.db_pool.clone();
+        let network = state.archival_network.clone();
+        tokio::spawn(async move {
+            use nt_be::handlers::balance_changes::goldsky_enrichment::run_enrichment_cycle;
+
+            log::info!("Starting Goldsky enrichment worker (15 second interval)");
+
+            // Wait for server to fully start
+            tokio::time::sleep(Duration::from_secs(10)).await;
+
+            let mut interval = tokio::time::interval(Duration::from_secs(15));
+
+            loop {
+                interval.tick().await;
+
+                match run_enrichment_cycle(&neon_pool, &app_pool, &network).await {
+                    Ok(processed) => {
+                        if processed > 0 {
+                            log::info!(
+                                "[goldsky-enrichment] Processed {} outcomes this cycle",
+                                processed
+                            );
+                        }
+                    }
+                    Err(e) => {
+                        log::error!("[goldsky-enrichment] Enrichment cycle failed: {}", e);
+                    }
+                }
+            }
+        });
+    } else {
+        log::info!("Goldsky enrichment worker disabled (NEON_DATABASE_URL not set)");
+    }
+
     // Spawn DAO list sync service (fetches DAOs from sputnik-dao.near every 5 minutes)
     {
         let pool = state.db_pool.clone();

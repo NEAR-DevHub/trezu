@@ -85,6 +85,25 @@ The original plan proposed 3 pipelines (receipts, execution outcomes, transactio
 
 ## What's Deployed (as of Mar 1 2026)
 
+### Enrichment Worker (Phase 1)
+
+**Files:**
+- `nt-be/src/handlers/balance_changes/goldsky_enrichment.rs` — enrichment worker (parse logs, RPC balance, upsert)
+- `nt-be/src/utils/env.rs` — `NEON_DATABASE_URL` env var
+- `nt-be/src/app_state.rs` — `neon_pool: Option<PgPool>` (max_connections=5)
+- `nt-be/src/main.rs` — spawns worker (15s interval, gated on `neon_pool.is_some()`)
+- `nt-be/migrations/20260301000001_create_goldsky_cursors.sql` — cursor tracking table
+
+**Behavior:**
+- Fetches 100 outcomes per cycle from Neon, parses logs locally (0 RPC)
+- Filters by `monitored_accounts` before calling RPC (skips unmonitored DAOs)
+- 2 RPC calls per event (balance_before + balance_after) for monitored accounts only
+- Always stores the record (no `balance_before == balance_after` skip — these are known events)
+- Cursor advances per-outcome regardless of individual event failures
+- Graceful degradation: disabled when `NEON_DATABASE_URL` is not set
+
+**Note:** The main monitoring service (30s interval, ~100-200 RPC/cycle) and dirty monitor (5s polling) still run concurrently. Disabling them is Phase 2.
+
 ### Pipeline: `treasury-dao-outcomes`
 
 **Config**: `goldsky/pipelines/near-execution-outcomes.yaml`
@@ -253,7 +272,7 @@ LIMIT 100
 
 The enrichment worker must be idempotent — if the cursor is reset or replayed, it should upsert records using `INSERT ... ON CONFLICT DO UPDATE`. This way, replaying with improved enrichment logic (better log parsing, more accurate counterparty detection) overwrites existing records with higher-quality data. The natural key for conflict detection is `(account_id, token_id, block_height)`.
 
-Create `nt-be/src/handlers/balance_changes/goldsky_enrichment.rs`:
+Implemented in `nt-be/src/handlers/balance_changes/goldsky_enrichment.rs`:
 
 ```rust
 /// Process indexed events into balance_changes records.
@@ -265,60 +284,44 @@ pub async fn run_enrichment_cycle(
     neon_pool: &PgPool,    // Neon DB (Goldsky sink) — read-only
     app_pool: &PgPool,     // App DB (balance_changes + cursor)
     network: &NetworkConfig,
-) -> Result<(), Box<dyn std::error::Error>> {
-    // 1. Get cursor position from app DB
+) -> Result<usize, Box<dyn std::error::Error>> {
     let cursor = get_cursor(app_pool, "balance_enrichment").await?;
 
-    // 2. Fetch new outcomes from Neon after cursor
-    let outcomes = sqlx::query!(
-        "SELECT * FROM indexed_dao_outcomes
+    // Only enrich monitored accounts — avoids wasting RPC on unmonitored DAOs
+    let monitored = get_monitored_accounts(app_pool).await?;
+
+    // Fetch next batch from Neon (runtime query — Neon is not managed by sqlx)
+    let outcomes = sqlx::query_as::<_, IndexedDaoOutcome>(
+        "SELECT ... FROM indexed_dao_outcomes
          WHERE trigger_block_height > $1
             OR (trigger_block_height = $1 AND id > $2)
          ORDER BY trigger_block_height ASC, id ASC
          LIMIT 100",
-        cursor.last_processed_block,
-        cursor.last_processed_id,
-    ).fetch_all(neon_pool).await?;
+    ).bind(cursor.last_processed_block).bind(&cursor.last_processed_id)
+     .fetch_all(neon_pool).await?;
 
     for outcome in &outcomes {
-        // 3. Parse logs locally — no RPC needed
         let events = parse_outcome_events(outcome);
 
         for event in events {
-            // 4. Get balance before and after — the ONLY RPC calls
-            let balance_before = get_balance_at_block(
+            // Skip unmonitored accounts — no RPC for accounts nobody tracks
+            if !monitored.contains(&event.account_id) { continue; }
+
+            // Get balance before and after — the ONLY RPC calls (2 per event)
+            let (balance_before, balance_after) = get_balance_change_at_block(
                 app_pool, network, &event.account_id, &event.token_id,
-                outcome.trigger_block_height - 1
-            ).await?;
-            let balance_after = get_balance_at_block(
-                app_pool, network, &event.account_id, &event.token_id,
-                outcome.trigger_block_height
+                outcome.trigger_block_height as u64,
             ).await?;
 
-            if balance_before == balance_after { continue; }
-
-            // 5. Upsert — ON CONFLICT DO UPDATE for better quality on replay
-            upsert_balance_change(app_pool, BalanceChange {
-                account_id: event.account_id,
-                token_id: event.token_id,
-                block_height: outcome.trigger_block_height,
-                block_timestamp: outcome.trigger_block_timestamp,
-                balance_before,
-                balance_after,
-                amount: &balance_after - &balance_before,
-                transaction_hashes: vec![outcome.transaction_hash.clone()],
-                signer_id: outcome.signer_id.clone(),
-                receiver_id: outcome.receiver_id.clone(),
-                counterparty: event.counterparty,
-                ..Default::default()
-            }).await?;
+            // Always store — these are known balance-changing events from Goldsky
+            upsert_balance_change(app_pool, ...).await?;
         }
 
-        // 6. Advance cursor in app DB after each outcome
+        // Advance cursor after each outcome (even if some events failed)
         update_cursor(app_pool, "balance_enrichment",
             &outcome.id, outcome.trigger_block_height).await?;
     }
-    Ok(())
+    Ok(batch_size)
 }
 ```
 
@@ -380,10 +383,15 @@ Staking rewards accumulate silently — no transaction, no log, no receipt. A st
 
 ### Phase 2: Simplify the monitor loop
 
-The current monitor does too much: poll for deposits, binary-search for changes, resolve transactions, fill gaps. With Goldsky:
+The current monitor does too much: poll for deposits, binary-search for changes, resolve transactions, fill gaps. With Goldsky handling event detection, most of this is redundant.
+
+**Current RPC waste (Phase 1 status):**
+- Main monitoring service: ~100-200 RPC calls every 30 seconds, checking all accounts × all tokens for gaps
+- Dirty monitor: ~50-150 RPC calls per dirty task, spawned every 5 seconds when accounts are dirty
+- These run concurrently with the Goldsky enrichment worker, doing redundant work for sputnik-dao accounts
 
 **New monitor loop (simplified):**
-1. **Run enrichment** — process new rows from `indexed_dao_outcomes` in Neon. Enriches **all** sputnik-dao outcomes, not just monitored accounts. This way if a DAO is added to monitoring later, its history is already enriched.
+1. **Run enrichment** — process new rows from `indexed_dao_outcomes` in Neon. Only enriches monitored accounts (RPC is filtered). Cursor still advances past unmonitored outcomes.
 2. **Check for gaps** — look for missing blocks between known balance changes. Gap detection runs **only for monitored accounts** (from `monitored_accounts` table).
 3. **Fill gaps if needed** — use existing binary search as RPC fallback
 4. That's it. No dirty monitor. No deposit polling. No transaction resolution.
@@ -479,24 +487,38 @@ The current monitor does too much: poll for deposits, binary-search for changes,
 - [x] Create Goldsky secret (`TREASURY_DB_SECRET`) with Neon Postgres credentials
 - [x] Deploy pipeline and verify data flowing (~3,765+ rows confirmed)
 
-### Next: enrichment worker
-- [ ] Add Neon DB connection config (read-only, separate from app DB)
-- [ ] Create `goldsky_cursors` migration in app DB for cursor tracking
-- [ ] Implement `goldsky_enrichment.rs` — cursor-based fetch from Neon, parse logs, idempotent write to app DB
-- [ ] Implement log parser: NEP-141 EVENT_JSON, NEP-245, wrap.near plain-text
-- [ ] RPC calls only for `balance_before`/`balance_after` (2 per event)
-- [ ] Ensure idempotency: `INSERT ... ON CONFLICT DO UPDATE` (upsert) so replays overwrite with better quality data
+### Done: enrichment worker (Phase 1)
+- [x] Add `NEON_DATABASE_URL` to `EnvVars` (`nt-be/src/utils/env.rs`)
+- [x] Add `neon_pool: Option<PgPool>` to `AppState` with builder support (`nt-be/src/app_state.rs`)
+- [x] Create `goldsky_cursors` migration in app DB (`nt-be/migrations/20260301000001_create_goldsky_cursors.sql`)
+- [x] Implement `goldsky_enrichment.rs` — cursor-based fetch from Neon, parse logs, idempotent write to app DB
+- [x] Implement log parser: NEP-141 EVENT_JSON, NEP-245 mt_transfer, wrap.near plain-text
+- [x] Handle Goldsky literal `\n` log separators (not real newlines)
+- [x] RPC calls only for `balance_before`/`balance_after` (2 per event)
+- [x] Filter by `monitored_accounts` before RPC — skip unmonitored DAOs (e.g., hot-dao produces thousands of outcomes)
+- [x] Ensure idempotency: `INSERT ... ON CONFLICT DO UPDATE` (upsert) so replays overwrite with better quality data
+- [x] Spawn enrichment worker in `main.rs` (15s interval, gated on `neon_pool.is_some()`)
+- [x] 15 unit tests for log parsing (NEP-141, NEP-245, plain-text, literal `\n`, edge cases)
+- [x] Update sqlx offline query cache (`cargo sqlx prepare`)
+- [x] Verified locally: enrichment worker processes batches, creates balance_changes for monitored accounts
 - [ ] Implement epoch-boundary staking reward detection (1 RPC/pool/epoch, diff against last interaction)
 
-### Next: simplify monitor loop
-- [ ] Remove dirty monitor (30-second polling loop) from main loop
+### Key learnings from enrichment worker implementation
+- **Literal `\n` separators**: Goldsky's `array_to_string(logs, '\n')` produces literal backslash-n (`\n`), not actual newline bytes. Must split on both `'\n'` and `"\\n"`.
+- **hot-dao dominates Neon data**: `hot-dao.sputnik-dao.near` produces thousands of NEP-245 mt_mint/mt_transfer outcomes via `v2_1.omni.hot.tg`. Filtering by `monitored_accounts` before RPC is essential to avoid wasting calls.
+- **Runtime sqlx for Neon queries**: Neon DB is not managed by sqlx migrations, so use `sqlx::query_as::<_, Struct>(sql)` (runtime) instead of `sqlx::query!` (compile-time) for Neon queries.
+- **Path B fires too broadly**: Every outcome where `receiver_id` is a DAO triggers a native NEAR balance check — including governance calls (votes, proposals) that don't move NEAR. This is acceptable because the record is always stored.
+
+### Next: simplify monitor loop (Phase 2)
+- [ ] Remove dirty monitor (30-second polling loop) from main loop — Goldsky events replace it
+- [ ] Remove or reduce main monitoring service (30s interval, ~100-200 RPC calls/cycle) — redundant with Goldsky for ongoing monitoring
 - [ ] Replace main monitor loop: enrich from Goldsky → check for gaps → RPC fallback for gaps only
 - [ ] Decouple binary search / transfer hints / gap filler from main loop (keep as on-demand backfill for new accounts)
 - [ ] Keep RPC-based path for non-sputnik accounts
 
 ### Validation
 - [ ] Run existing integration tests against Goldsky-enriched balance_changes — same expected outcomes, different data source
-- [ ] Monitor RPC usage reduction
+- [ ] Monitor RPC usage reduction (current baseline: ~200-400 RPC calls/minute from main monitor + dirty monitor)
 - [ ] Disable legacy binary search for sputnik-dao accounts
 
 ## Deployment Guide
