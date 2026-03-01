@@ -303,9 +303,25 @@ The enrichment worker parses logs from `indexed_dao_outcomes` to extract transfe
 | Transfer amount | Parsed from `logs` |
 | Token contract (who emitted the event) | `executor_id` field |
 
-#### Staking rewards: the one exception
+#### Staking rewards: special handling required
 
-Staking rewards accumulate silently — no transaction, no log, no receipt. A staking pool's balance increases when anyone calls `ping`, but the reward itself doesn't produce a log mentioning the DAO. Goldsky catches explicit staking interactions (deposit, withdraw, unstake) but not silent accumulation. May still need a periodic staking balance check (1 RPC call per pool per epoch) — but this is far cheaper than the current binary search approach.
+Staking rewards accumulate silently — no transaction, no log, no receipt. A staking pool's balance increases when anyone calls `ping`, but the reward itself doesn't produce a log mentioning the DAO. Goldsky catches explicit staking interactions (`deposit_and_stake`, `unstake`, `withdraw`, `ping`) but not silent accumulation.
+
+**Goal:** One `balance_changes` entry per epoch for staking rewards, distinct from deposit/withdrawal entries.
+
+**How it works with Goldsky:**
+
+1. **Explicit interactions** (deposit, withdraw, unstake) arrive via Goldsky with exact block heights. The enrichment worker processes these normally — `balance_before`/`balance_after` at the exact block gives the precise change. These are tagged as deposits/withdrawals.
+
+2. **Staking rewards** are detected via epoch-boundary gap detection:
+   - At each epoch boundary (~43,200 blocks), query the staking balance (1 RPC call per pool)
+   - Compare against the last known staking balance after the most recent explicit interaction (already in `balance_changes` from step 1)
+   - The difference = pure staking reward, because all explicit changes are already accounted for
+   - If the difference > 0, insert a `balance_changes` entry tagged as `STAKING_REWARD`
+
+3. **Why this is reliable:** Goldsky gives us the exact blocks for every deposit/withdrawal/unstake. So between the last explicit interaction and the epoch boundary, any balance increase must be a reward. No ambiguity.
+
+**RPC cost:** 1 call per staking pool per epoch (~every 12 hours). With ~20 staking pools across all DAOs, that's ~40 RPC calls/day — negligible compared to the current binary search approach.
 
 ### Phase 2: Simplify the monitor loop
 
@@ -351,7 +367,7 @@ The current monitor does too much: poll for deposits, binary-search for changes,
 
 | Current module | What stays | What changes |
 |---|---|---|
-| `staking_rewards.rs` | Periodic epoch-boundary snapshots for silent reward accumulation | Goldsky catches explicit staking interactions — no binary search needed for those |
+| `staking_rewards.rs` | Epoch-boundary reward detection (1 RPC/pool/epoch) | Goldsky gives exact blocks for deposit/withdraw/unstake; epoch-boundary check isolates pure rewards by diffing against last known interaction balance |
 | `token_discovery.rs` (FastNear balance API) | Initial onboarding still needs `fetch_fastnear_ft_tokens` | Ongoing discovery via pipeline events |
 | `gap_detector.rs` / `completeness.rs` | Gap detection logic | Becomes the only job of the monitor loop — check for gaps, fill via RPC fallback |
 
@@ -386,7 +402,7 @@ The current monitor does too much: poll for deposits, binary-search for changes,
 
 1. **Neon free tier storage (0.5 GB)**: ~2 MB/day data rate. The enrichment worker should delete processed rows to stay within limits (~250 days without cleanup).
 
-2. **Staking rewards**: Silent accumulation has no transaction/log. May need periodic staking balance check (1 RPC call per pool per epoch). Much cheaper than current binary search.
+2. **Staking rewards** — RESOLVED: Epoch-boundary gap detection compares staking balance against the last known balance after the most recent explicit interaction (from Goldsky). The difference is the pure reward. 1 RPC call per pool per epoch (~40 calls/day total).
 
 3. **Data freshness / latency**: What is Goldsky's typical NEAR data latency? Affects how quickly new balance changes appear in the UI.
 
@@ -413,6 +429,7 @@ The current monitor does too much: poll for deposits, binary-search for changes,
 - [ ] Implement log parser: NEP-141 EVENT_JSON, NEP-245, wrap.near plain-text
 - [ ] RPC calls only for `balance_before`/`balance_after` (2 per event)
 - [ ] Mark rows as processed in Neon after successful enrichment
+- [ ] Implement epoch-boundary staking reward detection (1 RPC/pool/epoch, diff against last interaction)
 - [ ] Implement processed-row cleanup to manage Neon storage
 
 ### Next: simplify monitor loop
