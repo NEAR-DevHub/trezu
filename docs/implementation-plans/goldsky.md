@@ -63,10 +63,11 @@ A **single Goldsky Turbo pipeline** (`treasury-dao-outcomes`) streams all releva
           │ balance_changes     │──▶ Frontend API
           └─────────────────────┘
 
-Monitor loop (simplified):
-  1. Run enrichment (Goldsky → balance_changes)
-  2. Check for gaps in balance_changes
-  3. RPC fallback only if gaps found
+Two independent workers:
+  Enrichment (15s, or immediate on full batch):
+    Neon → parse logs → RPC balance → app DB
+  Maintenance (5 min, dirty accounts only):
+    Token discovery → gap fill → tx resolution → swaps → staking
 ```
 
 ### Why a single pipeline (not 3)
@@ -102,7 +103,7 @@ The original plan proposed 3 pipelines (receipts, execution outcomes, transactio
 - Cursor advances per-outcome regardless of individual event failures
 - Graceful degradation: disabled when `NEON_DATABASE_URL` is not set
 
-**Note:** The main monitoring service (30s interval, ~100-200 RPC/cycle) and dirty monitor (5s polling) still run concurrently. Disabling them is Phase 2.
+**Note:** As of Phase 2, the main monitoring service and dirty monitor have been removed. The enrichment worker is the primary event source, with a 5-minute maintenance worker handling dirty accounts only.
 
 ### Pipeline: `treasury-dao-outcomes`
 
@@ -381,40 +382,44 @@ Staking rewards accumulate silently — no transaction, no log, no receipt. A st
 
 **RPC cost:** 1 call per staking pool per epoch (~every 12 hours). With ~20 staking pools across all DAOs, that's ~40 RPC calls/day — negligible compared to the current binary search approach.
 
-### Phase 2: Simplify the monitor loop
+### Phase 2: Simplify the monitor loop (DONE)
 
-The current monitor does too much: poll for deposits, binary-search for changes, resolve transactions, fill gaps. With Goldsky handling event detection, most of this is redundant.
+Removed the dirty monitor and main monitor, replaced with two independent workers:
 
-**Current RPC waste (Phase 1 status):**
-- Main monitoring service: ~100-200 RPC calls every 30 seconds, checking all accounts × all tokens for gaps
-- Dirty monitor: ~50-150 RPC calls per dirty task, spawned every 5 seconds when accounts are dirty
-- These run concurrently with the Goldsky enrichment worker, doing redundant work for sputnik-dao accounts
+**1. Goldsky Enrichment Worker (primary event source)**
+- Fully independent — no coupling to maintenance worker or gap detection
+- Reads from Neon → enriches with RPC (2 calls/event) → writes to app DB → advances cursor
+- Skips 15s sleep when batch is full (100 outcomes) to clear backlog faster
+- Only sleeps between cycles when caught up or on error
 
-**New monitor loop (simplified):**
-1. **Run enrichment** — process new rows from `indexed_dao_outcomes` in Neon. Only enriches monitored accounts (RPC is filtered). Cursor still advances past unmonitored outcomes.
-2. **Check for gaps** — look for missing blocks between known balance changes. Gap detection runs **only for monitored accounts** (from `monitored_accounts` table).
-3. **Fill gaps if needed** — use existing binary search as RPC fallback
-4. That's it. No dirty monitor. No deposit polling. No transaction resolution.
+**2. Account Maintenance Worker (5-minute cadence, dirty accounts only)**
+- Replaces both the old main monitor (30s, all accounts) and dirty monitor (5s polling)
+- Only processes accounts where `dirty_at IS NOT NULL AND enabled = true`
+- Handles: token discovery (FastNear + intents + receipts), gap filling with transfer hints, TX hash resolution, action_kind resolution, swap detection, proposal classification, staking rewards
+- Clears `dirty_at` after processing (race-safe: only if dirty_at hasn't changed during processing)
 
-**What gets removed from the main loop:**
-- `dirty_monitor.rs` — 30-second polling loop, entirely replaced by Goldsky events
+**What was removed:**
+- `dirty_monitor.rs` — deleted entirely (677 lines), functionality absorbed into maintenance worker
+- Main monitor 30s polling loop — replaced by 5-min maintenance worker
+- Gap detection coupling in enrichment worker — removed to keep Goldsky worker fully independent
 
-**What moves to on-demand backfill only:**
-- `binary_search.rs` — still needed when onboarding accounts with history beyond Goldsky's ~10-day retention
-- `transfer_hints/` module — FastNear hints and tx resolution for historical backfill
-- `gap_filler.rs` — RPC-based gap filling as fallback
+**Key design decision:** The enrichment worker does NOT flag gaps or mark accounts dirty. Gap detection is the maintenance worker's responsibility. This prevents DB pool contention between the two workers — the enrichment worker stays fast and independent even when the maintenance worker is busy with staking rewards or heavy backfilling.
 
-**What gets simplified:**
-- `account_monitor.rs` — main loop becomes: enrich → gap-check → (optional) RPC fallback
-- Token discovery — new tokens appear automatically in Goldsky logs
+**Files changed:**
+- `nt-be/src/handlers/balance_changes/dirty_monitor.rs` — deleted
+- `nt-be/src/handlers/balance_changes/account_monitor.rs` — rewritten: `run_monitor_cycle` → `run_maintenance_cycle`
+- `nt-be/src/handlers/balance_changes/goldsky_enrichment.rs` — removed gap detection coupling
+- `nt-be/src/handlers/balance_changes/mod.rs` — removed `pub mod dirty_monitor`
+- `nt-be/src/main.rs` — replaced monitor spawns with maintenance worker + independent enrichment worker
+
+**RPC savings:** Main monitor was ~100-200 RPC/30s = ~200-400 RPC/min. New maintenance worker runs every 5 min and only for dirty accounts (typically 0-2). Estimated ~95% RPC reduction from Phase 1 levels.
 
 ### Phase 3: Validation and cutover
 
-1. Deploy enrichment worker alongside existing system
-2. Compare Goldsky-based balance_changes with binary-search results
-3. Monitor RPC usage reduction
-4. Disable dirty monitor and binary search for sputnik-dao accounts
-5. Keep RPC fallback for non-sputnik accounts and gap filling
+1. Monitor RPC usage reduction (baseline: ~200-400 RPC calls/minute → target: <10 RPC/minute steady state)
+2. Verify enrichment worker catches up to latest blocks from Goldsky backlog
+3. Verify maintenance worker correctly processes dirty accounts (token discovery, gaps, swaps)
+4. Keep RPC fallback for non-sputnik accounts and gap filling
 
 ## Mapping to existing balance tracking system
 
@@ -422,7 +427,7 @@ The current monitor does too much: poll for deposits, binary-search for changes,
 
 | Current module | What it does | New role |
 |---|---|---|
-| `dirty_monitor.rs` | Polls RPC every 30 seconds to detect changes | **Removed** — Goldsky streams events, no polling needed |
+| `dirty_monitor.rs` | Polled RPC every 5 seconds for dirty accounts | **Deleted** — functionality merged into 5-min maintenance worker in `account_monitor.rs` |
 | `binary_search.rs` | Finds exact block of balance change (~27 RPC calls) | **On-demand only** — kept for historical backfill of new accounts |
 | `transfer_hints/fastnear.rs` | FastNear API hints for gap filling | **On-demand only** — kept for historical backfill |
 | `transfer_hints/tx_resolver.rs` | Resolves receipt→transaction via RPC | **On-demand only** — kept for historical backfill |
@@ -509,17 +514,20 @@ The current monitor does too much: poll for deposits, binary-search for changes,
 - **Runtime sqlx for Neon queries**: Neon DB is not managed by sqlx migrations, so use `sqlx::query_as::<_, Struct>(sql)` (runtime) instead of `sqlx::query!` (compile-time) for Neon queries.
 - **Path B fires too broadly**: Every outcome where `receiver_id` is a DAO triggers a native NEAR balance check — including governance calls (votes, proposals) that don't move NEAR. This is acceptable because the record is always stored.
 
-### Next: simplify monitor loop (Phase 2)
-- [ ] Remove dirty monitor (30-second polling loop) from main loop — Goldsky events replace it
-- [ ] Remove or reduce main monitoring service (30s interval, ~100-200 RPC calls/cycle) — redundant with Goldsky for ongoing monitoring
-- [ ] Replace main monitor loop: enrich from Goldsky → check for gaps → RPC fallback for gaps only
-- [ ] Decouple binary search / transfer hints / gap filler from main loop (keep as on-demand backfill for new accounts)
-- [ ] Keep RPC-based path for non-sputnik accounts
+### Done: simplify monitor loop (Phase 2)
+- [x] Remove dirty monitor (5s polling loop) — `dirty_monitor.rs` deleted, functionality merged into maintenance worker
+- [x] Remove main monitoring service (30s interval, all accounts) — replaced with 5-min maintenance worker (dirty accounts only)
+- [x] Goldsky enrichment worker fully independent — no gap detection, no dirty flagging, no DB contention
+- [x] Enrichment worker skips sleep on full batch (100 outcomes) for faster backlog catch-up
+- [x] Decouple binary search / transfer hints / gap filler from main loop (on-demand via maintenance worker for dirty accounts)
+- [x] Update integration tests (`intents_spurious_tx_hash_test.rs`, `dirty_monitor_e2e_test.rs`)
+- [x] All 182 unit tests pass, clippy clean
 
-### Validation
-- [ ] Run existing integration tests against Goldsky-enriched balance_changes — same expected outcomes, different data source
-- [ ] Monitor RPC usage reduction (current baseline: ~200-400 RPC calls/minute from main monitor + dirty monitor)
-- [ ] Disable legacy binary search for sputnik-dao accounts
+### Validation (Phase 3)
+- [ ] Verify enrichment worker catches up to latest blocks from Goldsky backlog
+- [ ] Monitor RPC usage reduction (baseline: ~200-400 RPC/min → target: <10 RPC/min steady state)
+- [ ] Run integration tests against Goldsky-enriched data
+- [ ] Keep RPC-based path for non-sputnik accounts
 
 ## Deployment Guide
 
