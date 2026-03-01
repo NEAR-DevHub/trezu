@@ -11,15 +11,12 @@ sources:
 
 transforms:
   # Captures ALL execution outcomes relevant to sputnik-dao treasuries:
-  # 1. FT transfers (NEP-141) mentioning a sputnik-dao account in logs
-  # 2. Multi-token transfers (NEP-245) mentioning a sputnik-dao account
-  # 3. Intents swaps involving sputnik-dao accounts
-  # 4. Any outcome where receiver_id is a sputnik-dao account
-  #    (native NEAR transfers, function calls, staking, etc.)
+  # - Any outcome whose logs mention a sputnik-dao account (FT/MT transfers,
+  #   wrap.near plain-text logs, intents swaps, etc.)
+  # - Any outcome where receiver_id is a sputnik-dao account
+  #   (native NEAR transfers, function calls, staking, etc.)
   #
   # Note: logs is List(Utf8) so we use array_to_string() for LIKE filtering.
-  # action_kind, method_name, and deposit are NOT in execution_outcomes —
-  # the enrichment worker derives those from the receipt via RPC if needed.
   dao_outcomes:
     type: sql
     primary_key: id
@@ -38,15 +35,8 @@ transforms:
         trigger_block_hash,
         trigger_block_timestamp
       FROM near_outcomes
-      WHERE
-        -- FT/MT/intents events mentioning a sputnik-dao account in logs
-        ((array_to_string(logs, ' ') LIKE '%"standard":"nep141"%'
-          OR array_to_string(logs, ' ') LIKE '%"standard":"nep245"%'
-          OR executor_id = 'intents.near')
-         AND array_to_string(logs, ' ') LIKE '%sputnik-dao.near%')
-        -- OR any outcome where the receiver is a DAO
-        -- (captures native NEAR transfers, function calls, staking, etc.)
-        OR receiver_id LIKE '%.sputnik-dao.near'
+      WHERE array_to_string(logs, ' ') LIKE '%sputnik-dao.near%'
+         OR receiver_id LIKE '%.sputnik-dao.near'
 
 sinks:
   postgres:
