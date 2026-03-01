@@ -208,7 +208,7 @@ pub async fn create_treasury(
     }
 
     // Record NEAR spent on treasury creation
-    let creation_cost: BigDecimal = TREASURY_CREATE_DEPOSIT_IN_NEAR.as_yoctonear().into();
+    let creation_cost: BigDecimal = TREASURY_CREATE_DEPOSIT.as_yoctonear().into();
     if let Err(e) = sqlx::query(
         r#"
         UPDATE monitored_accounts
