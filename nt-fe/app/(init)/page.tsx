@@ -435,6 +435,18 @@ export function Content() {
                                                 )}
                                                 Join the Waitlist
                                             </Button>
+                                            <Button
+                                                size="default"
+                                                variant="ghost"
+                                                className="w-full max-w-md"
+                                                asChild
+                                            >
+                                                <Link
+                                                    href={APP_ACTIVE_TREASURY}
+                                                >
+                                                    See Demo Trezu
+                                                </Link>
+                                            </Button>
                                         </>
                                     )
                                 ) : (
