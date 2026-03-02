@@ -1913,10 +1913,11 @@ class LedgerWallet {
      */
     async signAndSendTransactions(params) {
         const results = [];
+        const { transactions, ...transactionParams } = params;
 
         for (const tx of params.transactions) {
             const result = await this.signAndSendTransaction({
-                ...params,
+                ...transactionParams,
                 receiverId: tx.receiverId,
                 actions: tx.actions,
             });
