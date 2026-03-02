@@ -350,6 +350,11 @@ export class MockNearEnv {
             promise_batch_action_add_key_with_function_call() {},
             promise_batch_action_delete_key() {},
             promise_batch_action_delete_account() {},
+            // Newer NEAR host imports used by recent protocol versions.
+            promise_batch_action_deploy_global_contract() {},
+            promise_batch_action_deploy_global_contract_by_account_id() {},
+            promise_batch_action_use_global_contract() {},
+            promise_batch_action_use_global_contract_by_account_id() {},
 
             validator_stake() {},
             validator_total_stake() {},

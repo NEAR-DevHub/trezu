@@ -17,24 +17,15 @@ import { prepareWASM } from "./prepare-wasm";
 type WasmExports = Record<string, (...args: any[]) => any>;
 
 const COUNCIL_MEMBER = "council-member.near";
-const SECOND_COUNCIL = "second-council.near";
 const DAO_ACCOUNT = "test-dao.sputnik-dao.near";
-
-// 0.1 NEAR proposal bond
-const PROPOSAL_BOND = 100_000_000_000_000_000_000_000n;
 
 // Minimal sputnik-dao v2 policy for initialization
 const MINIMAL_POLICY = {
     roles: [
         {
             name: "council",
-            kind: { Group: [COUNCIL_MEMBER, SECOND_COUNCIL] },
-            permissions: [
-                "*:AddProposal",
-                "*:VoteApprove",
-                "*:VoteReject",
-                "*:VoteRemove",
-            ],
+            kind: "Everyone",
+            permissions: ["*:*"],
             vote_policy: {},
         },
     ],
@@ -43,9 +34,9 @@ const MINIMAL_POLICY = {
         quorum: "0",
         threshold: [1, 2],
     },
-    proposal_bond: PROPOSAL_BOND.toString(),
+    proposal_bond: "0",
     proposal_period: "604800000000000",
-    bounty_bond: PROPOSAL_BOND.toString(),
+    bounty_bond: "0",
     bounty_forgiveness_period: "604800000000000",
 };
 
@@ -122,10 +113,13 @@ async function getInstance() {
  *   e.g. { description: "Transfer 10 NEAR", kind: { Transfer: { receiver_id: "bob.near", token_id: "", amount: "10000000000000000000000000" } } }
  * @returns Storage delta in bytes
  */
-export async function estimateProposalStorage(proposal: {
-    description: string;
-    kind: unknown;
-}): Promise<number> {
+export async function estimateProposalStorage(
+    accountId: string,
+    proposal: {
+        description: string;
+        kind: unknown;
+    },
+): Promise<number> {
     const { exports, nearenv, postInitSnapshot } = await getInstance();
 
     // Restore to clean post-init state
@@ -135,9 +129,8 @@ export async function estimateProposalStorage(proposal: {
     const storageBefore = nearenv.getImports().storage_usage() as bigint;
 
     // Call add_proposal as a council member
-    nearenv.setPredecessorAccountId(COUNCIL_MEMBER);
-    nearenv.setSignerAccountId(COUNCIL_MEMBER);
-    nearenv.setAttachedDeposit(PROPOSAL_BOND);
+    nearenv.setPredecessorAccountId(accountId);
+    nearenv.setSignerAccountId(accountId);
     nearenv.setArgs({ proposal });
 
     exports.add_proposal();
@@ -159,6 +152,7 @@ export async function estimateProposalStorage(proposal: {
  * @returns Storage delta in bytes
  */
 export async function estimateVoteStorage(
+    accountId: string,
     proposal?: { description: string; kind: unknown },
     action: string = "VoteApprove",
 ): Promise<number> {
@@ -179,9 +173,8 @@ export async function estimateVoteStorage(
     };
 
     // Create a proposal first
-    nearenv.setPredecessorAccountId(COUNCIL_MEMBER);
-    nearenv.setSignerAccountId(COUNCIL_MEMBER);
-    nearenv.setAttachedDeposit(PROPOSAL_BOND);
+    nearenv.setPredecessorAccountId(accountId);
+    nearenv.setSignerAccountId(accountId);
     nearenv.setArgs({ proposal: defaultProposal });
     exports.add_proposal();
 
@@ -192,10 +185,9 @@ export async function estimateVoteStorage(
     const storageBefore = nearenv.getImports().storage_usage() as bigint;
 
     // Vote as a different council member
-    nearenv.setPredecessorAccountId(SECOND_COUNCIL);
-    nearenv.setSignerAccountId(SECOND_COUNCIL);
-    nearenv.setAttachedDeposit(0n);
-    nearenv.setArgs({ id: proposalId, action });
+    nearenv.setPredecessorAccountId(accountId);
+    nearenv.setSignerAccountId(accountId);
+    nearenv.setArgs({ id: proposalId, action, proposal: defaultProposal.kind });
     exports.act_proposal();
 
     // Measure storage after vote
@@ -212,79 +204,105 @@ export async function runStorageReport(): Promise<Record<string, number>> {
     const results: Record<string, number> = {};
 
     // Transfer proposal (NEAR)
-    results["proposal:Transfer(NEAR)"] = await estimateProposalStorage({
-        description: "Transfer 10 NEAR to bob.near",
-        kind: {
-            Transfer: {
-                receiver_id: "bob.near",
-                token_id: "",
-                amount: "10000000000000000000000000",
+    results["proposal:Transfer(NEAR)"] = await estimateProposalStorage(
+        COUNCIL_MEMBER,
+        {
+            description: "Transfer 10 NEAR to bob.near",
+            kind: {
+                Transfer: {
+                    receiver_id: "bob.near",
+                    token_id: "",
+                    amount: "10000000000000000000000000",
+                },
             },
         },
-    });
+    );
 
     // Transfer proposal (FT)
-    results["proposal:Transfer(FT)"] = await estimateProposalStorage({
-        description: "Transfer 100 USDT",
-        kind: {
-            Transfer: {
-                receiver_id: "bob.near",
-                token_id: "usdt.tether-token.near",
-                amount: "100000000",
+    results["proposal:Transfer(FT)"] = await estimateProposalStorage(
+        COUNCIL_MEMBER,
+        {
+            description: "Transfer 100 USDT",
+            kind: {
+                Transfer: {
+                    receiver_id: "bob.near",
+                    token_id: "usdt.tether-token.near",
+                    amount: "100000000",
+                },
             },
         },
-    });
+    );
 
     // FunctionCall proposal
-    results["proposal:FunctionCall"] = await estimateProposalStorage({
-        description: "Call a contract method",
-        kind: {
-            FunctionCall: {
-                receiver_id: "some-contract.near",
-                actions: [
-                    {
-                        method_name: "do_something",
-                        args: btoa(JSON.stringify({ key: "value" })),
-                        deposit: "0",
-                        gas: "30000000000000",
-                    },
-                ],
+    results["proposal:FunctionCall"] = await estimateProposalStorage(
+        COUNCIL_MEMBER,
+        {
+            description: "Call a contract method",
+            kind: {
+                FunctionCall: {
+                    receiver_id: "some-contract.near",
+                    actions: [
+                        {
+                            method_name: "do_something",
+                            args: btoa(JSON.stringify({ key: "value" })),
+                            deposit: "0",
+                            gas: "30000000000000",
+                        },
+                    ],
+                },
             },
         },
-    });
+    );
 
     // AddMemberToRole proposal
-    results["proposal:AddMemberToRole"] = await estimateProposalStorage({
-        description: "Add new council member",
-        kind: {
-            AddMemberToRole: {
-                member_id: "new-member.near",
-                role: "council",
+    results["proposal:AddMemberToRole"] = await estimateProposalStorage(
+        COUNCIL_MEMBER,
+        {
+            description: "Add new council member",
+            kind: {
+                AddMemberToRole: {
+                    member_id: "new-member.near",
+                    role: "council",
+                },
             },
         },
-    });
+    );
 
     // RemoveMemberFromRole proposal
-    results["proposal:RemoveMemberFromRole"] = await estimateProposalStorage({
-        description: "Remove council member",
+    results["proposal:RemoveMemberFromRole"] = await estimateProposalStorage(
+        COUNCIL_MEMBER,
+        {
+            description: "Remove council member",
+            kind: {
+                RemoveMemberFromRole: {
+                    member_id: "old-member.near",
+                    role: "council",
+                },
+            },
+        },
+    );
+
+    // ChangePolicyAddOrUpdateRole proposal
+    results["proposal:ChangePolicy"] = await estimateProposalStorage(
+        COUNCIL_MEMBER,
+        {
+            description: "Update policy",
+            kind: {
+                ChangePolicy: { policy: MINIMAL_POLICY },
+            },
+        },
+    );
+
+    // Vote
+    results["vote:VoteApprove"] = await estimateVoteStorage(COUNCIL_MEMBER, {
+        description: "Vote approve",
         kind: {
-            RemoveMemberFromRole: {
-                member_id: "old-member.near",
-                role: "council",
+            Vote: {
+                proposal_id: 1,
+                vote: "Approve",
             },
         },
     });
-
-    // ChangePolicyAddOrUpdateRole proposal
-    results["proposal:ChangePolicy"] = await estimateProposalStorage({
-        description: "Update policy",
-        kind: {
-            ChangePolicy: { policy: MINIMAL_POLICY },
-        },
-    });
-
-    // Vote
-    results["vote:VoteApprove"] = await estimateVoteStorage();
 
     return results;
 }

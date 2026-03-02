@@ -470,9 +470,13 @@ export const useNearStore = create<NearStore>((set, get) => ({
 
         let storageBytes: Big;
         try {
-            const estimated = await estimateProposalStorage(params.proposal);
+            const estimated = await estimateProposalStorage(
+                state.walletAccountId ?? "",
+                params.proposal,
+            );
             storageBytes = Big(estimated + 50);
         } catch (e) {
+            console.error("Failed to estimate vote storage:", e);
             storageBytes = FALLBACK_PROPOSAL_STORAGE_BYTES;
         }
 
@@ -548,11 +552,22 @@ export const useNearStore = create<NearStore>((set, get) => ({
 
         let voteStorageBytes: Big;
         try {
-            const action = `Vote${votes[0].vote}`;
-            const estimated = await estimateVoteStorage(undefined, action);
-            voteStorageBytes = Big(estimated + 10);
+            const estimations = await Promise.all(
+                votes.map((vote) =>
+                    estimateVoteStorage(
+                        state.walletAccountId ?? "",
+                        vote.proposal,
+                        `Vote${vote.vote}`,
+                    ),
+                ),
+            );
+            voteStorageBytes = estimations.reduce(
+                (sum, bytes) => sum.add(bytes + 10),
+                Big(0),
+            );
         } catch (e) {
-            voteStorageBytes = FALLBACK_VOTE_STORAGE_BYTES;
+            console.error("Failed to estimate vote storage:", e);
+            voteStorageBytes = FALLBACK_VOTE_STORAGE_BYTES.mul(votes.length);
         }
 
         const votesActions = votes.map((vote) => ({
@@ -580,7 +595,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
             await signAndSendDelegateAction(
                 treasuryId,
                 { delegateActions: delegateActions as any, network: "mainnet" },
-                voteStorageBytes.mul(votes.length),
+                voteStorageBytes,
             );
 
             const toastAction =
