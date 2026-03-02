@@ -6,6 +6,7 @@ import { Separator } from "./ui/separator";
 import { Skeleton } from "./ui/skeleton";
 import { CopyButton } from "./copy-button";
 import { Address } from "./address";
+import { UserAvatar } from "./user-avatar";
 
 interface UserProps {
     accountId: string;
@@ -106,6 +107,20 @@ export function User({
 
     const image = `https://i.near.social/magic/large/https://near.social/magic/img/account/${accountId}`;
 
+    const avatar = (avatarClassName: string) => (
+        <div className="rounded-full flex bg-muted border border-border">
+            {profile?.image ? (
+                <img
+                    src={image}
+                    alt="User Logo"
+                    className={cn("rounded-full shrink-0", avatarClassName)}
+                />
+            ) : (
+                <UserAvatar accountId={accountId} className={avatarClassName} />
+            )}
+        </div>
+    );
+
     const name = profile?.name ? (
         <span className="font-medium truncate max-w-full">{profile.name}</span>
     ) : (
@@ -117,13 +132,7 @@ export function User({
 
     const content = (
         <>
-            <div className="rounded-full flex bg-muted border border-border">
-                <img
-                    src={image}
-                    alt="User Logo"
-                    className={cn("rounded-full shrink-0", sizeClasses[size])}
-                />
-            </div>
+            {avatar(sizeClasses[size])}
             {!iconOnly && (
                 <div className="flex flex-col items-start min-w-0">
                     {withName && name}
