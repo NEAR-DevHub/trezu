@@ -344,6 +344,5 @@ export function useTreasuryCreationStatus() {
         queryKey: ["treasuryCreationStatus"],
         queryFn: getTreasuryCreationStatus,
         staleTime: 30 * 1000,
-        refetchInterval: 60 * 1000,
     });
 }
