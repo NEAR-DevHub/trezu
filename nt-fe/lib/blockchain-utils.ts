@@ -141,7 +141,7 @@ export function requiresCrossChainValidation(chainName?: string, residency?: str
 /**
  * Get the explorer URL for a given blockchain and address
  */
-export function getExplorerAddressUrl(chainName: string, address: string): string {
+export function getExplorerAddressUrl(chainName: string, address: string): string | null {
     const blockchainType = getBlockchainType(chainName);
     const chainLower = chainName.toLowerCase();
 
@@ -210,8 +210,8 @@ export function getExplorerAddressUrl(chainName: string, address: string): strin
 
         case "unknown":
         default:
-            // Return empty string for unknown chains - no link will be shown
-            return "";
+            // Return null for unknown chains - no link will be shown
+            return null;
     }
 }
 
