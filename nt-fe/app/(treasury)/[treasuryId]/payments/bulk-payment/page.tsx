@@ -385,7 +385,7 @@ export default function BulkPaymentPage() {
                 title="Payments"
                 description="Send and receive funds securely"
             >
-                <div className="w-full max-w-[600px] mx-auto px-4">
+                <div className="w-full max-w-[600px] mx-auto">
                     <EditPaymentStep
                         handleBack={handleCancelEdit}
                         payment={payment}
@@ -406,7 +406,7 @@ export default function BulkPaymentPage() {
         >
             <FormProvider {...form}>
                 <div
-                    className={`w-full mx-auto px-4 ${step === 1 ? "max-w-3xl" : "max-w-7xl"}`}
+                    className={`w-full mx-auto ${step === 1 ? "max-w-3xl" : "max-w-7xl"}`}
                 >
                     {/* Step 0: Upload Data */}
                     {step === 0 && (

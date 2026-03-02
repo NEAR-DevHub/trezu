@@ -11,14 +11,14 @@ interface TransferExpandedProps {
 }
 
 export function TransferExpanded({ data }: TransferExpandedProps) {
-  // Get token metadata to check network
+  // Get token metadata to determine blockchain network
   const { data: tokenData } = useToken(data.tokenId);
-  const isNearNetwork = tokenData?.network?.toLowerCase() === "near";
+  const chainName = tokenData?.network || "near";
 
   const infoItems: InfoItem[] = [
     {
       label: "Recipient",
-      value: <User accountId={data.receiver} withLink={isNearNetwork} withName={isNearNetwork} />
+      value: <User accountId={data.receiver} withName={chainName === "near"} chainName={chainName} />
     },
     {
       label: "Amount",

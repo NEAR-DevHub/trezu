@@ -32,17 +32,17 @@ import type { RecentActivity as RecentActivityType } from "@/lib/api";
 
 type GroupedActivity =
     | {
-          type: "single";
-          activity: RecentActivityType;
-      }
+        type: "single";
+        activity: RecentActivityType;
+    }
     | {
-          type: "grouped";
-          pool: string;
-          activities: RecentActivityType[];
-          totalAmount: string;
-          tokenMetadata: RecentActivityType["tokenMetadata"];
-          blockTime: string; // Most recent time
-      };
+        type: "grouped";
+        pool: string;
+        activities: RecentActivityType[];
+        totalAmount: string;
+        tokenMetadata: RecentActivityType["tokenMetadata"];
+        blockTime: string; // Most recent time
+    };
 import {
     useReactTable,
     getCoreRowModel,
@@ -252,8 +252,8 @@ export function RecentActivity() {
                                     isSwap
                                         ? "bg-blue-500/10"
                                         : isReceived
-                                          ? "bg-general-success-background-faded"
-                                          : "bg-general-destructive-background-faded",
+                                            ? "bg-general-success-background-faded"
+                                            : "bg-general-destructive-background-faded",
                                 )}
                             >
                                 {isSwap ? (
@@ -299,7 +299,7 @@ export function RecentActivity() {
                                     <div className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
                                         <FormattedDate
                                             date={new Date(grouped.blockTime)}
-                                            includeTime
+                                            relative
                                         />
                                     </div>
                                 </div>
@@ -334,7 +334,7 @@ export function RecentActivity() {
                                     {isDeposit ? (
                                         <>
                                             {swap.sentAmount &&
-                                            swap.sentTokenMetadata ? (
+                                                swap.sentTokenMetadata ? (
                                                 <span className="font-semibold text-general-destructive-foreground">
                                                     {formatSmartAmount(swap.sentAmount)}{" "}
                                                     {swap.sentTokenMetadata.symbol}
@@ -369,7 +369,7 @@ export function RecentActivity() {
                                 <div className="text-sm text-muted-foreground">
                                     <FormattedDate
                                         date={new Date(activity.blockTime)}
-                                        includeTime
+                                        relative
                                     />
                                 </div>
                             </div>
@@ -394,7 +394,7 @@ export function RecentActivity() {
                                 <div className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
                                     <FormattedDate
                                         date={new Date(activity.blockTime)}
-                                        includeTime
+                                        relative
                                     />
                                 </div>
                             </div>
@@ -596,7 +596,7 @@ export function RecentActivity() {
                                                                                                 activity.blockTime,
                                                                                             )
                                                                                         }
-                                                                                        includeTime
+                                                                                        relative
                                                                                     />
                                                                                 </div>
                                                                             </div>

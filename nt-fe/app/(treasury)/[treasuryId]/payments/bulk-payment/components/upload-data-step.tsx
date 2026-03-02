@@ -535,11 +535,12 @@ export function UploadDataStep({
                                                 {activeTab === "upload" &&
                                                     dataErrors &&
                                                     dataErrors.length > 0 && (
-                                                        <div className="text-sm text-destructive">
-                                                            {
-                                                                dataErrors[0]
-                                                                    .message
-                                                            }
+                                                        <div className="space-y-1 max-h-48 overflow-y-auto">
+                                                            {dataErrors.map((error, idx) => (
+                                                                <div key={idx} className="text-sm text-destructive">
+                                                                    {error.message}
+                                                                </div>
+                                                            ))}
                                                         </div>
                                                     )}
                                             </div>
@@ -566,7 +567,7 @@ export function UploadDataStep({
                                                     borderless
                                                     placeholder={`alice.near, 100.00\nbob.near, 100.00\ncharlie.near, 100.00`}
                                                     rows={8}
-                                                    className={`resize-none font-mono text-sm bg-muted focus:outline-none ${dataErrors &&
+                                                    className={`resize-none font-mono text-sm bg-muted focus:outline-none break-all whitespace-pre-wrap ${dataErrors &&
                                                         dataErrors.length > 0
                                                         ? "border-2 border-destructive focus:border-destructive"
                                                         : ""
@@ -579,11 +580,12 @@ export function UploadDataStep({
                                                 {/* Error Message Below Textarea */}
                                                 {dataErrors &&
                                                     dataErrors.length > 0 && (
-                                                        <div className="text-sm text-destructive">
-                                                            {
-                                                                dataErrors[0]
-                                                                    .message
-                                                            }
+                                                        <div className="space-y-1 max-h-48 overflow-y-auto">
+                                                            {dataErrors.map((error, idx) => (
+                                                                <div key={idx} className="text-sm text-destructive">
+                                                                    {error.message}
+                                                                </div>
+                                                            ))}
                                                         </div>
                                                     )}
                                             </div>

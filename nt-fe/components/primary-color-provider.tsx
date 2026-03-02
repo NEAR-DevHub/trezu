@@ -7,6 +7,14 @@ interface PrimaryColorProviderProps {
   treasuryId?: string;
 }
 
+// Color constants
+const COLORS = {
+  WHITE: "rgb(255, 255, 255)",
+  BLACK: "rgb(0, 0, 0)",
+  DARK_TEXT: "rgb(25, 25, 26)",
+  LIGHT_TEXT: "rgb(250, 250, 250)",
+} as const;
+
 /**
  * Component that dynamically applies the primary color from treasury config
  * to the CSS --primary variable for button colors
@@ -25,12 +33,16 @@ export function PrimaryColorProvider({ treasuryId }: PrimaryColorProviderProps) 
 
         if (isDarkMode) {
           // In dark mode, use white
-          document.documentElement.style.setProperty("--primary", "rgb(255, 255, 255)");
-          document.documentElement.style.setProperty("--primary-foreground", "rgb(25, 25, 26)");
+          document.documentElement.style.setProperty("--primary", COLORS.WHITE);
+          document.documentElement.style.setProperty("--primary-foreground", COLORS.DARK_TEXT);
+          // For white button, text should be dark
+          document.documentElement.style.setProperty("--primary-button-text", COLORS.DARK_TEXT);
         } else {
           // In light mode, use black
-          document.documentElement.style.setProperty("--primary", "rgb(0, 0, 0)");
-          document.documentElement.style.setProperty("--primary-foreground", "rgb(250, 250, 250)");
+          document.documentElement.style.setProperty("--primary", COLORS.BLACK);
+          document.documentElement.style.setProperty("--primary-foreground", COLORS.LIGHT_TEXT);
+          // For black button, text should be white
+          document.documentElement.style.setProperty("--primary-button-text", COLORS.LIGHT_TEXT);
         }
 
         // Listen for theme changes
@@ -39,11 +51,13 @@ export function PrimaryColorProvider({ treasuryId }: PrimaryColorProviderProps) 
             if (mutation.attributeName === "class") {
               const isDarkMode = document.documentElement.classList.contains("dark");
               if (isDarkMode) {
-                document.documentElement.style.setProperty("--primary", "rgb(255, 255, 255)");
-                document.documentElement.style.setProperty("--primary-foreground", "rgb(25, 25, 26)");
+                document.documentElement.style.setProperty("--primary", COLORS.WHITE);
+                document.documentElement.style.setProperty("--primary-foreground", COLORS.DARK_TEXT);
+                document.documentElement.style.setProperty("--primary-button-text", COLORS.DARK_TEXT);
               } else {
-                document.documentElement.style.setProperty("--primary", "rgb(0, 0, 0)");
-                document.documentElement.style.setProperty("--primary-foreground", "rgb(250, 250, 250)");
+                document.documentElement.style.setProperty("--primary", COLORS.BLACK);
+                document.documentElement.style.setProperty("--primary-foreground", COLORS.LIGHT_TEXT);
+                document.documentElement.style.setProperty("--primary-button-text", COLORS.LIGHT_TEXT);
               }
             }
           });
@@ -76,17 +90,24 @@ export function PrimaryColorProvider({ treasuryId }: PrimaryColorProviderProps) 
 
         // Calculate foreground color (white or black based on luminance)
         const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
-        const foregroundColor = luminance > 0.5 ? "rgb(25, 25, 26)" : "rgb(250, 250, 250)";
+        const foregroundColor = luminance > 0.5 ? COLORS.DARK_TEXT : COLORS.LIGHT_TEXT;
 
         document.documentElement.style.setProperty(
           "--primary-foreground",
           foregroundColor
+        );
+
+        // For colored buttons (blue, red, green, etc.), text should always be white
+        document.documentElement.style.setProperty(
+          "--primary-button-text",
+          COLORS.WHITE
         );
       }
     } else {
       // Reset to default when no treasury or no primary color
       document.documentElement.style.removeProperty("--primary");
       document.documentElement.style.removeProperty("--primary-foreground");
+      document.documentElement.style.removeProperty("--primary-button-text");
     }
   }, [treasury]);
 

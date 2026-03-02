@@ -308,25 +308,18 @@ export function PreferencesTab() {
                                                 isLoadingTimezones
                                             }
                                         >
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue>
+                                            <SelectTrigger className="w-full overflow-hidden [&>span]:truncate [&>span]:min-w-0">
+                                                <span className="truncate block min-w-0">
                                                     {isLoadingTimezones ? (
-                                                        <span className="text-muted-foreground">
-                                                            Loading timezones...
-                                                        </span>
+                                                        "Loading timezones..."
                                                     ) : field.value ? (
-                                                        <span>
-                                                            ({field.value.utc}){" "}
-                                                            {field.value.value}
-                                                        </span>
+                                                        `(${field.value.utc}) ${field.value.value}`
                                                     ) : (
-                                                        <span className="text-muted-foreground">
-                                                            Select Timezone
-                                                        </span>
+                                                        "Select Timezone"
                                                     )}
-                                                </SelectValue>
+                                                </span>
                                             </SelectTrigger>
-                                            <SelectContent className="w-full">
+                                            <SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
                                                 <div className="px-2 pb-2 sticky top-0  z-10">
                                                     <Input
                                                         search
@@ -348,7 +341,7 @@ export function PreferencesTab() {
                                                 </div>
                                                 <ScrollArea className="h-[300px]">
                                                     {filteredTimezones.length >
-                                                    0 ? (
+                                                        0 ? (
                                                         filteredTimezones.map(
                                                             (tz) => (
                                                                 <SelectItem
@@ -358,9 +351,12 @@ export function PreferencesTab() {
                                                                     value={
                                                                         tz.name
                                                                     }
+                                                                    className="whitespace-normal"
                                                                 >
-                                                                    ({tz.utc}){" "}
-                                                                    {tz.value}
+                                                                    <span className="block whitespace-normal wrap-break-word">
+                                                                        ({tz.utc}){" "}
+                                                                        {tz.value}
+                                                                    </span>
                                                                 </SelectItem>
                                                             ),
                                                         )

@@ -1,6 +1,6 @@
 "use client";
 
-import { formatUserDate, type FormatUserDateOptions } from "@/lib/utils";
+import { formatUserDate, formatRelativeTime, type FormatUserDateOptions } from "@/lib/utils";
 import { useUserPreferences } from "@/hooks/use-user-preferences";
 
 interface FormattedDateProps extends Omit<FormatUserDateOptions, "timezone" | "timeFormat"> {
@@ -12,6 +12,8 @@ interface FormattedDateProps extends Omit<FormatUserDateOptions, "timezone" | "t
   timeFormat?: "12" | "24";
   /** Additional CSS classes */
   className?: string;
+  /** Use relative time format (e.g., "2 minutes ago", "Yesterday"). Defaults to false. */
+  relative?: boolean;
 }
 
 /**
@@ -23,9 +25,16 @@ export function FormattedDate({
   timezone: overrideTimezone,
   timeFormat: overrideTimeFormat,
   className,
+  relative = false,
   ...options
 }: FormattedDateProps) {
   const preferences = useUserPreferences();
+
+  // If relative time is requested, use formatRelativeTime
+  if (relative) {
+    const relativeTime = formatRelativeTime(date);
+    return <span className={className}>{relativeTime}</span>;
+  }
 
   // Use override values or fall back to user preferences
   // Note: timezone.name contains the IANA timezone (e.g., "Asia/Kolkata")

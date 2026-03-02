@@ -138,3 +138,80 @@ export function requiresCrossChainValidation(chainName?: string, residency?: str
     return blockchainType !== "near" && blockchainType !== "unknown";
 }
 
+/**
+ * Get the explorer URL for a given blockchain and address
+ */
+export function getExplorerAddressUrl(chainName: string, address: string): string {
+    const blockchainType = getBlockchainType(chainName);
+    const chainLower = chainName.toLowerCase();
+
+    switch (blockchainType) {
+        case "near":
+            return `https://nearblocks.io/address/${address}`;
+
+        case "ethereum":
+            // Map specific EVM chains to their explorers
+            if (chainLower === "arbitrum" || chainLower === "arb") {
+                return `https://arbiscan.io/address/${address}`;
+            }
+            if (chainLower === "polygon" || chainLower === "pol") {
+                return `https://polygonscan.com/address/${address}`;
+            }
+            if (chainLower === "bsc" || chainLower === "binance") {
+                return `https://bscscan.com/address/${address}`;
+            }
+            if (chainLower === "optimism") {
+                return `https://optimistic.etherscan.io/address/${address}`;
+            }
+            if (chainLower === "base") {
+                return `https://basescan.org/address/${address}`;
+            }
+            if (chainLower === "avalanche") {
+                return `https://snowtrace.io/address/${address}`;
+            }
+            if (chainLower === "gnosis") {
+                return `https://gnosisscan.io/address/${address}`;
+            }
+            if (chainLower === "aurora") {
+                return `https://explorer.aurora.dev/address/${address}`;
+            }
+            // Default to Ethereum mainnet for unspecified EVM chains
+            return `https://etherscan.io/address/${address}`;
+
+        case "bitcoin":
+            return `https://blockchair.com/bitcoin/address/${address}`;
+
+        case "solana":
+            return `https://solscan.io/address/${address}`;
+
+        case "tron":
+            return `https://tronscan.org/#/address/${address}`;
+
+        case "zcash":
+            return `https://blockchair.com/zcash/address/${address}`;
+
+        case "dogecoin":
+            return `https://blockchair.com/dogecoin/address/${address}`;
+
+        case "xrp":
+            return `https://xrpscan.com/account/${address}`;
+
+        case "stellar":
+            return `https://stellarchain.io/accounts/${address}`;
+
+        case "sui":
+            return `https://suiscan.xyz/mainnet/account/${address}`;
+
+        case "aptos":
+            return `https://aptoscan.com/account/${address}`;
+
+        case "cardano":
+            return `https://cardanoscan.io/address/${address}`;
+
+        case "unknown":
+        default:
+            // Return empty string for unknown chains - no link will be shown
+            return "";
+    }
+}
+

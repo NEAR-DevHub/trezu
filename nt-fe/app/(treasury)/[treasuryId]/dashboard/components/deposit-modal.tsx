@@ -235,6 +235,9 @@ export function DepositModal({
                 })),
             );
 
+            // Determine which network to select
+            let networkToSelect = null;
+
             if (prefillNetworkId) {
                 const prefillNetwork = availableNetworks.find(
                     (n) =>
@@ -244,22 +247,17 @@ export function DepositModal({
                             .includes(prefillNetworkId.toLowerCase()),
                 );
                 if (prefillNetwork) {
-                    form.setValue("network", prefillNetwork);
-                } else if (availableNetworks.length > 0) {
-                    form.setValue("network", availableNetworks[0]);
+                    networkToSelect = prefillNetwork;
                 }
-            } else {
-                // Auto-select NEAR network if available, otherwise first network if only one
-                const nearNetwork = availableNetworks.find(
-                    (n) =>
-                        n.name.toLowerCase() === "near" ||
-                        n.id.toLowerCase().includes("near"),
-                );
-                if (nearNetwork) {
-                    form.setValue("network", nearNetwork);
-                } else if (availableNetworks.length === 1) {
-                    form.setValue("network", availableNetworks[0]);
-                }
+            }
+
+            // If no network selected yet and only one available, auto-select it
+            if (!networkToSelect && availableNetworks.length === 1) {
+                networkToSelect = availableNetworks[0];
+            }
+
+            if (networkToSelect) {
+                form.setValue("network", networkToSelect);
             }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
