@@ -19,6 +19,7 @@ import {
     SearchTokensParams,
     getRecentActivity,
     getExportHistory,
+    getTreasuryCreationStatus,
 } from "@/lib/api";
 
 /**
@@ -335,5 +336,14 @@ export function useExportHistory(
         queryFn: () => getExportHistory(accountId!, fromDate),
         enabled: !!accountId,
         staleTime: Infinity,
+    });
+}
+
+export function useTreasuryCreationStatus() {
+    return useQuery({
+        queryKey: ["treasuryCreationStatus"],
+        queryFn: getTreasuryCreationStatus,
+        staleTime: 30 * 1000,
+        refetchInterval: 60 * 1000,
     });
 }

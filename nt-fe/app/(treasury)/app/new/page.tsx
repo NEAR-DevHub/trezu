@@ -30,6 +30,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ROLES } from "@/components/role-selector";
 import { Alert, AlertDescription } from "@/components/alert";
 import { useTreasury } from "@/hooks/use-treasury";
+import { useTreasuryCreationStatus } from "@/hooks/use-treasury-queries";
+import { CreationDisabledModal } from "@/components/creation-disabled-modal";
 
 const treasuryFormSchema = z
     .object({
@@ -446,6 +448,8 @@ function Step3({ handleBack }: StepProps) {
 export default function NewTreasuryPage() {
     const { accountId, isInitializing } = useNear();
     const { treasuries } = useTreasury();
+    const { data: creationStatus } = useTreasuryCreationStatus();
+    const creationAvailable = creationStatus?.creationAvailable ?? true;
     const router = useRouter();
     const queryClient = useQueryClient();
     const [step, setStep] = useState(0);
@@ -520,35 +524,41 @@ export default function NewTreasuryPage() {
     };
 
     return (
-        <PageComponentLayout
-            title="Create Treasury"
-            hideCollapseButton
-            description="Set up a new multisig treasury for your team"
-            backButton={treasuries?.length > 0 ? "/" : undefined}
-        >
-            <Form {...form}>
-                <form
-                    onSubmit={form.handleSubmit(onSubmit)}
-                    className="flex flex-col gap-4 max-w-[600px] mx-auto"
-                >
-                    <StepWizard
-                        step={step}
-                        onStepChange={setStep}
-                        stepTitles={["Details", "Members", "Review"]}
-                        steps={[
-                            {
-                                component: Step1,
-                            },
-                            {
-                                component: Step2,
-                            },
-                            {
-                                component: Step3,
-                            },
-                        ]}
-                    />
-                </form>
-            </Form>
-        </PageComponentLayout>
+        <>
+            <CreationDisabledModal
+                open={!creationAvailable}
+                onClose={() => router.push("/")}
+            />
+            <PageComponentLayout
+                title="Create Treasury"
+                hideCollapseButton
+                description="Set up a new multisig treasury for your team"
+                backButton={treasuries?.length > 0 ? "/" : undefined}
+            >
+                <Form {...form}>
+                    <form
+                        onSubmit={form.handleSubmit(onSubmit)}
+                        className="flex flex-col gap-4 max-w-[600px] mx-auto"
+                    >
+                        <StepWizard
+                            step={step}
+                            onStepChange={setStep}
+                            stepTitles={["Details", "Members", "Review"]}
+                            steps={[
+                                {
+                                    component: Step1,
+                                },
+                                {
+                                    component: Step2,
+                                },
+                                {
+                                    component: Step3,
+                                },
+                            ]}
+                        />
+                    </form>
+                </Form>
+            </PageComponentLayout>
+        </>
     );
 }
