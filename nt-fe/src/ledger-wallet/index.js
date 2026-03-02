@@ -1799,7 +1799,7 @@ class LedgerWallet {
         const accounts = await this._ensureReady();
         const network = params.network || "mainnet";
         const signerId = accounts[0].accountId;
-        const { receiverId, actions } = params.transactions[0];
+        const { receiverId, actions } = params;
 
         const { accessKey, block } = await this._getAccessKeyAndBlock(
             network,
@@ -1917,7 +1917,8 @@ class LedgerWallet {
         for (const tx of params.transactions) {
             const result = await this.signAndSendTransaction({
                 ...params,
-                transactions: [tx],
+                receiverId: tx.receiverId,
+                actions: tx.actions,
             });
             results.push(result);
         }
