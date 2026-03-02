@@ -54,22 +54,24 @@ function PaymentDisplay({
         isPaid ? payment.recipient : null,
     );
     const transactionHash = txData?.transactionHash;
+
+    // Get token metadata to determine blockchain network for recipient address
+    const { data: tokenData } = useToken(tokenId);
+    const chainName = tokenData?.network || "near";
+
+    // Transaction links are always NEAR (nearblocks)
     const nearBlocksUrl = transactionHash
         ? `https://nearblocks.io/txns/${transactionHash}`
         : null;
-
-    // Get token metadata to check network
-    const { data: tokenData } = useToken(tokenId);
-    const isNearNetwork = tokenData?.network?.toLowerCase() === "near";
 
     let items: InfoItem[] = [
         {
             label: "Recipient",
             value: (
                 <User
+                    withName={chainName === "near"}
                     accountId={payment.recipient}
-                    withLink={isNearNetwork}
-                    withName={isNearNetwork}
+                    chainName={chainName}
                 />
             ),
         },

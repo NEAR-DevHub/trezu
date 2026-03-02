@@ -608,7 +608,8 @@ export default function ExportActivityPage() {
         return credits > 0;
     }, [planDetails]);
 
-    const exportCreditsRemaining = planDetails?.exportCredits ?? 0;
+    const exportCreditsRemaining =
+        planDetails?.exportCredits ?? 0;
     const exportCreditsTotal =
         planDetails?.planConfig?.limits?.monthlyExportCredits ??
         planDetails?.planConfig?.limits?.trialExportCredits ??
@@ -1158,7 +1159,7 @@ export default function ExportActivityPage() {
                                             Looking for more flexibility?
                                         </span>
                                         <Button
-                                            variant="default"
+                                            variant={exportCreditsRemaining === 0 ? "default" : "secondary"}
                                             className="px-2! py-3!"
                                             size="sm"
                                             onClick={() => {

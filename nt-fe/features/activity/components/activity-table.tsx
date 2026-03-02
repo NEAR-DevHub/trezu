@@ -113,8 +113,8 @@ export function ActivityTable({
                                                         isSwap
                                                             ? "bg-blue-500/10"
                                                             : isReceived
-                                                              ? "bg-general-success-background-faded"
-                                                              : "bg-general-destructive-background-faded",
+                                                                ? "bg-general-success-background-faded"
+                                                                : "bg-general-destructive-background-faded",
                                                     )}
                                                 >
                                                     {isSwap ? (
@@ -144,13 +144,13 @@ export function ActivityTable({
                                         </TableCell>
                                         <TableCell className="min-w-[180px]">
                                             {isSwap &&
-                                            activity.swap &&
-                                            activity.swap.swapRole ===
+                                                activity.swap &&
+                                                activity.swap.swapRole ===
                                                 "deposit" ? (
                                                 <div className="flex items-center gap-1.5">
                                                     {activity.swap.sentAmount &&
-                                                    activity.swap
-                                                        .sentTokenMetadata ? (
+                                                        activity.swap
+                                                            .sentTokenMetadata ? (
                                                         <span className="font-semibold text-general-destructive-foreground whitespace-nowrap">
                                                             {formatSmartAmount(
                                                                 activity.swap
@@ -177,9 +177,9 @@ export function ActivityTable({
                                                     </span>
                                                 </div>
                                             ) : isSwap &&
-                                              activity.swap &&
-                                              activity.swap.swapRole ===
-                                                  "fulfillment" ? (
+                                                activity.swap &&
+                                                activity.swap.swapRole ===
+                                                "fulfillment" ? (
                                                 <div className="flex items-center gap-1.5">
                                                     {activity.swap
                                                         .sentTokenMetadata ? (
