@@ -334,20 +334,8 @@ export default function ExportActivityPage() {
     const { data: planDetails, isLoading: planLoading } =
         useSubscription(treasuryId);
 
-    // Calculate date for 1st of current month in UTC (for fetching export history)
-    const exportHistoryFromDate = useMemo(() => {
-        const now = new Date();
-        const firstOfMonthUTC = new Date(Date.UTC(
-            now.getUTCFullYear(),
-            now.getUTCMonth(),
-            1, // 1st day of month
-            0, 0, 0, 0 // midnight UTC
-        ));
-        return firstOfMonthUTC.toISOString();
-    }, []);
-
     const { data: exportHistoryData, refetch: refetchHistory } =
-        useExportHistory(treasuryId, exportHistoryFromDate);
+        useExportHistory(treasuryId);
     const { data: assetsData } = useAssets(treasuryId, {
         onlyPositiveBalance: false,
     });

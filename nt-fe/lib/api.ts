@@ -1219,14 +1219,12 @@ export interface ExportHistoryResponse {
  */
 export async function getExportHistory(
     accountId: string,
-    fromDate?: string, // ISO date string (e.g., "2024-01-01T00:00:00Z")
 ): Promise<ExportHistoryResponse> {
     const response = await axios.get<ExportHistoryResponse>(
         `${BACKEND_API_BASE}/export-history`,
         {
             params: {
                 accountId,
-                ...(fromDate && { fromDate }),
             },
         },
     );
