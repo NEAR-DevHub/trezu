@@ -58,7 +58,19 @@ function DialogContent({ className, children, ...props }: React.ComponentProps<t
         <BaseDialogContent
             {...props}
             showCloseButton={false}
-            className={cn("bg-card p-3.5", className)}
+            className={cn(
+                "bg-card p-3.5",
+                // Mobile: bottom drawer (full width, no margins)
+                "max-w-none! w-full inset-x-0 left-0 right-0 bottom-0 top-auto translate-x-0 translate-y-0 max-h-[85vh] rounded-t-2xl rounded-b-none",
+                "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
+                "data-[state=closed]:zoom-out-100 data-[state=open]:zoom-in-100",
+                // Desktop: centered modal
+                "sm:max-w-lg! sm:inset-x-auto sm:top-[50%] sm:left-[50%] sm:bottom-auto sm:right-auto",
+                "sm:w-full sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-lg",
+                "sm:data-[state=closed]:slide-out-to-bottom-0 sm:data-[state=open]:slide-in-from-bottom-0",
+                "sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95",
+                className
+            )}
         >
             {children}
         </BaseDialogContent>

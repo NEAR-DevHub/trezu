@@ -67,8 +67,8 @@ export function BulkPaymentCreditsDisplay({
                         Looking for more flexibility?
                     </span>
                     <Button
-                        variant="default"
-                        className="px-2! py-3!"
+                        variant={creditsAvailable === 0 ? "default" : "secondary"}
+                        className="p-3"
                         size='sm'
                         onClick={() => {
                             window.open(APP_CONTACT_US_URL, "_blank");

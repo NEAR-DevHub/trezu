@@ -21,7 +21,7 @@ import { PreviewModal } from "./components/modals/preview-modal";
 import { DeleteConfirmationModal } from "./components/modals/delete-confirmation-modal";
 import { User } from "@/components/user";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Pencil, Trash2, Info } from "lucide-react";
+import { Pencil, Trash2, Info, Plus } from "lucide-react";
 import { PageCard } from "@/components/card";
 import { RoleBadge } from "@/components/role-badge";
 import { Tooltip } from "@/components/tooltip";
@@ -328,8 +328,8 @@ export default function MembersPage() {
                 const rolesWithFullWildcard =
                     rolesWithAddProposal.length === 0
                         ? availableRoles.filter((role) =>
-                              role.permissions.some((perm) => perm === ":*"),
-                          )
+                            role.permissions.some((perm) => perm === ":*"),
+                        )
                         : [];
 
                 // Determine which roles are allowed based on priority
@@ -738,22 +738,22 @@ export default function MembersPage() {
             const membersToRemove =
                 selectedMembers.length > 0
                     ? selectedMembers.map((accountId) => {
-                          const member = existingMembers.find(
-                              (m) => m.accountId === accountId,
-                          );
-                          return {
-                              member: accountId,
-                              roles: member?.roles || [],
-                          };
-                      })
+                        const member = existingMembers.find(
+                            (m) => m.accountId === accountId,
+                        );
+                        return {
+                            member: accountId,
+                            roles: member?.roles || [],
+                        };
+                    })
                     : memberToDelete
-                      ? [
+                        ? [
                             {
                                 member: memberToDelete.accountId,
                                 roles: memberToDelete.roles,
                             },
                         ]
-                      : [];
+                        : [];
 
             if (membersToRemove.length === 0) return;
 
@@ -764,7 +764,7 @@ export default function MembersPage() {
                 updatedPolicy,
                 summary,
                 "Update Policy - Remove Member" +
-                    (membersToRemove.length > 1 ? "s" : ""),
+                (membersToRemove.length > 1 ? "s" : ""),
                 `Member removal request created successfully`,
             );
 
@@ -867,7 +867,7 @@ export default function MembersPage() {
                     <TableHeader className="bg-general-tertiary">
                         <TableRow className="hover:bg-transparent">
                             <TableHead className="w-12"></TableHead>
-                            <TableHead>
+                            <TableHead className="w-1/2">
                                 <span className="text-xs font-medium uppercase text-muted-foreground">
                                     Member
                                 </span>
@@ -877,7 +877,7 @@ export default function MembersPage() {
                                     policyRoles={availableRoles}
                                 />
                             </TableHead>
-                            <TableHead className="w-24 pr-6"></TableHead>
+                            <TableHead className="w-24 pr-6 hidden md:table-cell"></TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -895,13 +895,13 @@ export default function MembersPage() {
                                         </div>
                                     </div>
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="pr-6 md:pr-0">
                                     <div className="flex gap-2">
                                         <div className="h-7 bg-muted rounded w-20 animate-pulse" />
                                         <div className="h-7 bg-muted rounded w-24 animate-pulse" />
                                     </div>
                                 </TableCell>
-                                <TableCell className="pr-6">
+                                <TableCell className="pr-6 hidden md:table-cell">
                                     <div className="flex justify-end gap-2">
                                         <div className="w-8 h-8 bg-muted rounded animate-pulse" />
                                         <div className="w-8 h-8 bg-muted rounded animate-pulse" />
@@ -933,16 +933,16 @@ export default function MembersPage() {
                                 checked={
                                     selectedMembers.length ===
                                         existingMembers.length &&
-                                    existingMembers.length > 0
+                                        existingMembers.length > 0
                                         ? true
                                         : selectedMembers.length > 0
-                                          ? "indeterminate"
-                                          : false
+                                            ? "indeterminate"
+                                            : false
                                 }
                                 onCheckedChange={handleToggleAll}
                             />
                         </TableHead>
-                        <TableHead>
+                        <TableHead className="w-1/2">
                             <span className="text-xs font-medium uppercase text-muted-foreground">
                                 Member
                             </span>
@@ -950,7 +950,7 @@ export default function MembersPage() {
                         <TableHead>
                             <PermissionsHeader policyRoles={availableRoles} />
                         </TableHead>
-                        <TableHead className="w-24 pr-6"></TableHead>
+                        <TableHead className="w-24 pr-6 hidden md:table-cell"></TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -981,7 +981,7 @@ export default function MembersPage() {
                                         withHoverCard={true}
                                     />
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="pr-6 md:pr-0">
                                     <div className="flex gap-2">
                                         {sortRolesByOrder(member.roles).map(
                                             (role) => (
@@ -995,8 +995,8 @@ export default function MembersPage() {
                                         )}
                                     </div>
                                 </TableCell>
-                                <TableCell className="pr-6">
-                                    <div className="flex justify-end gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                <TableCell className="pr-6 hidden md:table-cell">
+                                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <AuthButton
                                             permissionKind="policy"
                                             permissionAction="AddProposal"
@@ -1074,15 +1074,15 @@ export default function MembersPage() {
             <PageCard className="gap-0 p-0">
                 {/* Hide header when members are selected */}
                 {!(selectedMembers.length > 0) && (
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 py-3 sm:py-2 px-4 sm:px-6 border-b">
-                        <div className="flex items-center gap-3">
+                    <div className="flex flex-row items-center justify-between gap-3 sm:gap-4 py-3 sm:py-2 px-4 sm:px-6 border-b ">
+                        <div className="flex items-center gap-3 w-max">
                             <StepperHeader title="Active Members" />
                             <NumberBadge
                                 number={existingMembers.length}
                                 variant="secondary"
                             />
                         </div>
-                        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                        <div className="flex items-center gap-2 sm:gap-3">
                             {/* Pending Button - navigates to requests page */}
                             <PendingButton
                                 id="members-pending-btn"
@@ -1091,7 +1091,7 @@ export default function MembersPage() {
 
                             {/* Add New Member Button */}
                             {isLoading ? (
-                                <div className="h-10 w-full sm:w-44 bg-muted rounded-lg animate-pulse" />
+                                <div className="h-9 w-9 sm:w-auto sm:h-9 bg-muted rounded-lg animate-pulse" />
                             ) : (
                                 <AuthButton
                                     permissionKind="policy"
@@ -1099,12 +1099,12 @@ export default function MembersPage() {
                                     balanceCheck={{ withProposalBond: true }}
                                     onClick={handleOpenAddMemberModal}
                                     disabled={hasPendingMemberRequest}
-                                    className="flex items-center justify-center gap-2 text-md flex-1 sm:flex-none"
+                                    size="icon"
+                                    className="sm:w-auto sm:px-4"
+                                    variant="default"
                                 >
-                                    <span className="text-lg">+</span>
-                                    <span className="whitespace-nowrap">
-                                        Add New Member
-                                    </span>
+                                    <Plus className="size-5" />
+                                    <span className="hidden sm:inline">Add New Member</span>
                                 </AuthButton>
                             )}
                         </div>
@@ -1266,8 +1266,8 @@ export default function MembersPage() {
                 members={
                     selectedMembers.length > 0
                         ? existingMembers.filter((m) =>
-                              selectedMembers.includes(m.accountId),
-                          )
+                            selectedMembers.includes(m.accountId),
+                        )
                         : undefined
                 }
                 onConfirm={handleDeleteMembersSubmit}
@@ -1275,11 +1275,11 @@ export default function MembersPage() {
                     const membersToDelete =
                         selectedMembers.length > 0
                             ? existingMembers.filter((m) =>
-                                  selectedMembers.includes(m.accountId),
-                              )
+                                selectedMembers.includes(m.accountId),
+                            )
                             : memberToDelete
-                              ? [memberToDelete]
-                              : [];
+                                ? [memberToDelete]
+                                : [];
 
                     if (membersToDelete.length === 0) return undefined;
 

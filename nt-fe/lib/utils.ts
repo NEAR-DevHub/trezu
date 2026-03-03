@@ -19,6 +19,53 @@ export function formatCurrency(value: number | Big) {
     }).format(typeof value === "number" ? value : Number(value.toString()));
 }
 
+/**
+ * Format a date as relative time (e.g., "2 minutes ago", "Yesterday")
+ * After 1 week, returns static date format (e.g., "Feb 18, 2026")
+ */
+export function formatRelativeTime(date: Date | string | number): string {
+    const dateObj = typeof date === "string" || typeof date === "number" ? new Date(date) : date;
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - dateObj.getTime()) / 1000);
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    const diffInDays = Math.floor(diffInHours / 24);
+    const diffInWeeks = Math.floor(diffInDays / 7);
+
+    // Just now (less than 1 minute)
+    if (diffInSeconds < 60) {
+        return "Just now";
+    }
+
+    // Minutes ago (1-59 minutes)
+    if (diffInMinutes < 60) {
+        return diffInMinutes === 1 ? "1 minute ago" : `${diffInMinutes} minutes ago`;
+    }
+
+    // Hours ago (1-23 hours)
+    if (diffInHours < 24) {
+        return diffInHours === 1 ? "1 hour ago" : `${diffInHours} hours ago`;
+    }
+
+    // Yesterday
+    if (diffInDays === 1) {
+        return "Yesterday";
+    }
+
+    // Days ago (2-6 days)
+    if (diffInDays < 7) {
+        return `${diffInDays} days ago`;
+    }
+
+    // Week ago (exactly 7 days)
+    if (diffInWeeks === 1) {
+        return "1 week ago";
+    }
+
+    // After 1 week: static date format (e.g., "Feb 18, 2026")
+    return format(dateObj, "MMM d, yyyy");
+}
+
 export function formatTimestamp(date: Date) {
     const d = new Date(date);
     d.setHours(0, 0, 0, 0);

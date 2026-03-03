@@ -6,6 +6,7 @@ import { Separator } from "./ui/separator";
 import { Skeleton } from "./ui/skeleton";
 import { CopyButton } from "./copy-button";
 import { Address } from "./address";
+import { getExplorerAddressUrl } from "@/lib/blockchain-utils";
 
 interface UserProps {
     accountId: string;
@@ -14,6 +15,7 @@ interface UserProps {
     size?: "sm" | "md" | "lg";
     withLink?: boolean;
     withHoverCard?: boolean;
+    chainName?: string; // Optional: specify the blockchain network for explorer links
 }
 
 const sizeClasses = {
@@ -93,6 +95,7 @@ export function User({
     withLink = true,
     withName = true,
     withHoverCard = false,
+    chainName = "near", // Default to NEAR for backward compatibility
 }: UserProps) {
     const { data: profile, isLoading } = useProfile(
         withName ? accountId : undefined,
@@ -136,9 +139,11 @@ export function User({
         </>
     );
 
-    const userElement = withLink ? (
+    const explorerUrl = getExplorerAddressUrl(chainName, accountId);
+
+    const userElement = withLink && explorerUrl ? (
         <Link
-            href={`https://nearblocks.io/address/${accountId}`}
+            href={explorerUrl}
             target="_blank"
             className="flex items-center gap-1.5"
         >
