@@ -766,6 +766,36 @@ export async function createTreasury(
     }
 }
 
+export interface TreasuryCreationStatusResponse {
+    creationAvailable: boolean;
+}
+
+/**
+ * Check if treasury creation is available (sufficient signer balance and not disabled)
+ */
+export async function getTreasuryCreationStatus(): Promise<TreasuryCreationStatusResponse | null> {
+    try {
+        const response = await axios.get<TreasuryCreationStatusResponse>(
+            `${BACKEND_API_BASE}/treasury/creation-status`,
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching treasury creation status:", error);
+        return null;
+    }
+}
+
+export interface WhitelistRequestBody {
+    contact: string;
+    accountId?: string;
+}
+
+export async function submitWhitelistRequest(
+    body: WhitelistRequestBody,
+): Promise<void> {
+    await axios.post(`${BACKEND_API_BASE}/treasury/whitelist-request`, body);
+}
+
 export interface NetworkInfo {
     chainId: string;
     chainName: string;

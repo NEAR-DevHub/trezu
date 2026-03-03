@@ -21,7 +21,9 @@ import { Button } from "./button";
 import { Tooltip } from "./tooltip";
 import { TreasuryBalance, TreasuryLogo } from "./treasury-info";
 import { Skeleton } from "./ui/skeleton";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { useTreasuryCreationStatus } from "@/hooks/use-treasury-queries";
+import { CreationDisabledModal } from "./creation-disabled-modal";
 
 interface TreasurySelectorProps {
     reducedMode?: boolean;
@@ -43,6 +45,9 @@ export function TreasurySelector({
     const lockSelectOutside = useOnboardingStore(
         (state) => state.lockSelectOutside,
     );
+    const { data: creationStatus } = useTreasuryCreationStatus();
+    const creationAvailable = creationStatus?.creationAvailable ?? true;
+    const [showLowBalanceModal, setShowLowBalanceModal] = useState(false);
 
     const memberTreasuries = useMemo(
         () => treasuries.filter((treasury) => treasury.isMember),
@@ -106,91 +111,59 @@ export function TreasurySelector({
         : "Select treasury";
 
     return (
-        <Select
-            value={treasuryId}
-            open={isOpen}
-            onValueChange={handleTreasuryChange}
-            onOpenChange={(open) => {
-                if (!open && lockSelectOutside) return;
-                onOpenChange?.(open);
-            }}
-        >
-            <SelectTrigger
-                id="dashboard-step5"
-                className={cn(
-                    "w-full h-fit border-none! ring-0! shadow-none! bg-transparent! hover:bg-muted!",
-                    reducedMode ? "p-0 [&>svg]:hidden" : "px-3 py-1.5",
-                )}
-                disabled={!accountId}
+        <>
+            <Select
+                value={treasuryId}
+                open={isOpen}
+                onValueChange={handleTreasuryChange}
+                onOpenChange={(open) => {
+                    if (!open && lockSelectOutside) return;
+                    onOpenChange?.(open);
+                }}
             >
-                <Tooltip
-                    content="Connect wallet to view treasuries"
-                    disabled={!!accountId}
+                <SelectTrigger
+                    id="dashboard-step5"
+                    className={cn(
+                        "w-full h-fit border-none! ring-0! shadow-none! bg-transparent! hover:bg-muted!",
+                        reducedMode ? "p-0 [&>svg]:hidden" : "px-3 py-1.5",
+                    )}
+                    disabled={!accountId}
                 >
-                    <div
-                        className={cn(
-                            "flex items-center w-full truncate",
-                            reducedMode
-                                ? "justify-center h-7"
-                                : "gap-2 max-w-52 h-9",
-                        )}
+                    <Tooltip
+                        content="Connect wallet to view treasuries"
+                        disabled={!!accountId}
                     >
-                        <TreasuryLogo logo={config?.metadata?.flagLogo} />
-                        {!reducedMode && (
-                            <div className="flex flex-col items-start min-w-0">
-                                <span className="text-xs font-medium truncate max-w-full ">
-                                    {displayName}
-                                </span>
-                                {treasuryId && (
-                                    <TreasuryBalance
-                                        daoId={treasuryId}
-                                        className="text-xs font-medium truncate max-w-full"
-                                        skeletonClassName="h-3 w-20"
-                                    />
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </Tooltip>
-            </SelectTrigger>
-            <SelectContent className="max-w-[250px]">
-                {memberTreasuries.length > 0 && (
-                    <SelectGroup>
-                        <SelectLabel>Member Of</SelectLabel>
-                        {memberTreasuries.map((treasury) => (
-                            <SelectItem
-                                key={treasury.daoId}
-                                value={treasury.daoId}
-                                className=" focus:text-accent-foreground"
-                            >
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <TreasuryLogo
-                                        logo={
-                                            treasury.config.metadata?.flagLogo
-                                        }
-                                    />
-                                    <div className="flex flex-col items-start min-w-0">
-                                        <span className="text-sm font-medium truncate max-w-[170px]">
-                                            {treasury.config?.name ??
-                                                treasury.daoId}
-                                        </span>
+                        <div
+                            className={cn(
+                                "flex items-center w-full truncate",
+                                reducedMode
+                                    ? "justify-center h-7"
+                                    : "gap-2 max-w-52 h-9",
+                            )}
+                        >
+                            <TreasuryLogo logo={config?.metadata?.flagLogo} />
+                            {!reducedMode && (
+                                <div className="flex flex-col items-start min-w-0">
+                                    <span className="text-xs font-medium truncate max-w-full ">
+                                        {displayName}
+                                    </span>
+                                    {treasuryId && (
                                         <TreasuryBalance
-                                            daoId={treasury.daoId}
-                                            className="text-xs"
-                                            skeletonClassName="size-4"
+                                            daoId={treasuryId}
+                                            className="text-xs font-medium truncate max-w-full"
+                                            skeletonClassName="h-3 w-20"
                                         />
-                                    </div>
+                                    )}
                                 </div>
-                            </SelectItem>
-                        ))}
-                    </SelectGroup>
-                )}
-                {savedGuestTreasuries.length > 0 && (
-                    <>
-                        {memberTreasuries.length > 0 && <SelectSeparator />}
+                            )}
+                        </div>
+                    </Tooltip>
+                </SelectTrigger>
+                <SelectContent className="max-w-[250px]">
+                    {memberTreasuries.length > 0 && (
                         <SelectGroup>
-                            <SelectLabel>Guest Accounts</SelectLabel>
-                            {savedGuestTreasuries.map((treasury) => (
+                            <SelectLabel>Member Of</SelectLabel>
+                            {memberTreasuries.map((treasury) => (
                                 <SelectItem
                                     key={treasury.daoId}
                                     value={treasury.daoId}
@@ -218,29 +191,74 @@ export function TreasurySelector({
                                 </SelectItem>
                             ))}
                         </SelectGroup>
-                    </>
-                )}
-                <SelectSeparator />
-                <Button
-                    variant="ghost"
-                    type="button"
-                    className="w-full justify-start gap-2 px-3.5!"
-                    onClick={() => router.push("/app/manage-treasuries")}
-                >
-                    <Settings className="size-4" />
-                    <span>Manage Treasuries</span>
-                </Button>
-                <Button
-                    id="dashboard-step5-create-treasury"
-                    variant="ghost"
-                    type="button"
-                    className="w-full justify-start gap-2 px-3.5!"
-                    onClick={() => router.push("/app/new")}
-                >
-                    <span className="text-lg">+</span>
-                    <span>Create Treasury</span>
-                </Button>
-            </SelectContent>
-        </Select>
+                    )}
+                    {savedGuestTreasuries.length > 0 && (
+                        <>
+                            {memberTreasuries.length > 0 && <SelectSeparator />}
+                            <SelectGroup>
+                                <SelectLabel>Guest Accounts</SelectLabel>
+                                {savedGuestTreasuries.map((treasury) => (
+                                    <SelectItem
+                                        key={treasury.daoId}
+                                        value={treasury.daoId}
+                                        className=" focus:text-accent-foreground"
+                                    >
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <TreasuryLogo
+                                                logo={
+                                                    treasury.config.metadata
+                                                        ?.flagLogo
+                                                }
+                                            />
+                                            <div className="flex flex-col items-start min-w-0">
+                                                <span className="text-sm font-medium truncate max-w-[170px]">
+                                                    {treasury.config?.name ??
+                                                        treasury.daoId}
+                                                </span>
+                                                <TreasuryBalance
+                                                    daoId={treasury.daoId}
+                                                    className="text-xs"
+                                                    skeletonClassName="size-4"
+                                                />
+                                            </div>
+                                        </div>
+                                    </SelectItem>
+                                ))}
+                            </SelectGroup>
+                        </>
+                    )}
+                    <SelectSeparator />
+                    <Button
+                        variant="ghost"
+                        type="button"
+                        className="w-full justify-start gap-2 px-3.5!"
+                        onClick={() => router.push("/app/manage-treasuries")}
+                    >
+                        <Settings className="size-4" />
+                        <span>Manage Treasuries</span>
+                    </Button>
+                    <Button
+                        id="dashboard-step5-create-treasury"
+                        variant="ghost"
+                        type="button"
+                        className="w-full justify-start gap-2 px-3.5!"
+                        onClick={() => {
+                            if (!creationAvailable) {
+                                setShowLowBalanceModal(true);
+                            } else {
+                                router.push("/app/new");
+                            }
+                        }}
+                    >
+                        <span className="text-lg">+</span>
+                        <span>Create Treasury</span>
+                    </Button>
+                </SelectContent>
+            </Select>
+            <CreationDisabledModal
+                open={showLowBalanceModal}
+                onClose={() => setShowLowBalanceModal(false)}
+            />
+        </>
     );
 }
