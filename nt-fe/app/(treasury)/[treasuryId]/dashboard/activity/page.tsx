@@ -2,12 +2,7 @@
 
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { PageCard } from "@/components/card";
-import {
-    Tabs,
-    TabsContent,
-    TabsList,
-    TabsTrigger,
-} from "@/components/underline-tabs";
+import { TabsContent } from "@/components/responsive-tabs";
 import { useRecentActivity } from "@/hooks/use-treasury-queries";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useTreasury } from "@/hooks/use-treasury";
@@ -23,6 +18,7 @@ import { ListFilter } from "lucide-react";
 import { MemberOnlyExportButton } from "@/components/member-only-export-button";
 import { getHistoryDescription } from "@/features/activity";
 import { subMonths } from "date-fns";
+import { ResponsiveTabs, TabItem } from "@/components/responsive-tabs";
 
 // Constants
 const PAGE_SIZE = 15;
@@ -128,9 +124,6 @@ export default function ActivityPage() {
     const pathname = usePathname();
     const { data: subscriptionData } = useSubscription(treasuryId);
     const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-    const [hideSmallTransactions, setHideSmallTransactions] = useState(
-        searchParams.get("min_usd_value") === "1",
-    );
 
     const currentTab = searchParams.get("tab") || "all";
 
@@ -169,26 +162,65 @@ export default function ActivityPage() {
         [searchParams, router, pathname],
     );
 
-    const handleHideSmallTransactions = useCallback(
-        (checked: boolean) => {
-            setHideSmallTransactions(checked);
-            const params = new URLSearchParams(searchParams.toString());
-            if (checked) {
-                params.set("min_usd_value", "1");
-            } else {
-                params.delete("min_usd_value");
-            }
-            params.delete("page"); // Reset page when filter changes
-            router.push(`${pathname}?${params.toString()}`);
-        },
-        [searchParams, router, pathname],
-    );
-
     // Check if any filters are active
     const hasActiveFilters = useMemo(() => {
         const filterParams = ["created_date", "token", "min_usd_value"];
         return filterParams.some((param) => searchParams.has(param));
     }, [searchParams]);
+
+    const tabs: TabItem[] = [
+        { value: "all", label: "All" },
+        { value: "outgoing", label: "Sent" },
+        { value: "incoming", label: "Received" },
+    ];
+
+    const actions = (
+        <div className="flex items-center justify-end gap-2">
+            <Button
+                variant="secondary"
+                size="icon"
+                className="relative md:w-auto md:px-3 md:gap-1.5"
+                onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+                aria-label={hasActiveFilters ? "Filter (active)" : "Filter"}
+            >
+                <ListFilter className="size-4" />
+                <span className="hidden md:inline">Filter</span>
+                {hasActiveFilters && (
+                    <span
+                        className="absolute top-1 right-1.5 size-2 rounded-full bg-general-info-foreground"
+                        aria-hidden="true"
+                    />
+                )}
+            </Button>
+            <MemberOnlyExportButton />
+        </div>
+    );
+
+    const filterPanel = (
+        <div
+            className="overflow-hidden transition-all duration-500 ease-in-out"
+            style={{
+                maxHeight: isFiltersOpen ? FILTER_PANEL_MAX_HEIGHT : "0px",
+                opacity: isFiltersOpen ? 1 : 0,
+            }}
+        >
+            <div className="py-3 px-4">
+                <GenericFilters filterOptions={activityFilterOptions} />
+            </div>
+        </div>
+    );
+
+    const tabContents = tabs.map(({ value }) => (
+        <TabsContent key={value} value={value}>
+            <ActivityList
+                status={
+                    value === "all"
+                        ? undefined
+                        : (value as "incoming" | "outgoing")
+                }
+            />
+        </TabsContent>
+    ));
 
     return (
         <PageComponentLayout
@@ -199,81 +231,15 @@ export default function ActivityPage() {
             backButton={`/${treasuryId}/dashboard`}
         >
             <PageCard className="p-0">
-                <Tabs
+                <ResponsiveTabs
+                    tabs={tabs}
                     value={currentTab}
                     onValueChange={handleTabChange}
-                    className="gap-0"
+                    actions={actions}
                 >
-                    <div className="flex flex-col md:flex-row gap-4 items-center md:justify-between border-b p-5 pb-3.5">
-                        <TabsList className="w-fit border-none">
-                            <TabsTrigger value="all">All</TabsTrigger>
-                            <TabsTrigger value="outgoing">Sent</TabsTrigger>
-                            <TabsTrigger value="incoming">Received</TabsTrigger>
-                        </TabsList>
-                        <div className="flex items-center gap-3">
-                            {/* TODO: Uncomment after price integration */}
-                            {/* <div className="flex items-center gap-2">
-                                <Checkbox
-                                    id="hide-small-transactions"
-                                    checked={hideSmallTransactions}
-                                    onCheckedChange={handleHideSmallTransactions}
-                                />
-                                <label
-                                    htmlFor="hide-small-transactions"
-                                    className="text-sm leading-none cursor-pointer whitespace-nowrap text-muted-foreground"
-                                >
-                                    Hide transactions &lt;1USD
-                                </label>
-                            </div> */}
-                            <Button
-                                variant="secondary"
-                                className="flex gap-1.5 relative"
-                                onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-                                aria-label={
-                                    hasActiveFilters
-                                        ? "Filter (active)"
-                                        : "Filter"
-                                }
-                            >
-                                <ListFilter className="size-4" />
-                                Filter
-                                {hasActiveFilters && (
-                                    <span
-                                        className="absolute top-1 right-1.5 size-2 rounded-full bg-general-info-foreground"
-                                        aria-hidden="true"
-                                    />
-                                )}
-                            </Button>
-                            <MemberOnlyExportButton />
-                        </div>
-                    </div>
-
-                    <div
-                        className="overflow-hidden transition-all duration-500 ease-in-out"
-                        style={{
-                            maxHeight: isFiltersOpen
-                                ? FILTER_PANEL_MAX_HEIGHT
-                                : "0px",
-                            opacity: isFiltersOpen ? 1 : 0,
-                        }}
-                    >
-                        <div className="py-3 px-4">
-                            <GenericFilters
-                                filterOptions={activityFilterOptions}
-                            />
-                        </div>
-                    </div>
-
-                    <TabsContent value="all">
-                        <ActivityList />
-                    </TabsContent>
-                    <TabsContent value="outgoing">
-                        <ActivityList status="outgoing" />
-                    </TabsContent>
-                    <TabsContent value="incoming">
-                        <ActivityList status="incoming" />
-                    </TabsContent>
-                </Tabs>
+                    {filterPanel}
+                    {tabContents}
+                </ResponsiveTabs>
             </PageCard>
         </PageComponentLayout>
     );
