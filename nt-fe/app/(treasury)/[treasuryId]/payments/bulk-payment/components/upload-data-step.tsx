@@ -261,9 +261,9 @@ export function UploadDataStep({
     }
 
     return (
-        <div className="flex flex-wrap justify-center gap-6 w-full">
+        <div className="flex flex-wrap justify-center gap-4 w-full">
             {/* Main Content */}
-            <div className="flex-1 min-w-0 max-w-3xl">
+            <div className="flex-1 max-w-[600px] min-w-[300px]">
                 <PageCard className="gap-2">
                     {/* Header */}
                     <div className="flex flex-col gap-3">
@@ -279,14 +279,15 @@ export function UploadDataStep({
                                         <ArrowLeft />
                                     </Button>
                                 )}
-
-                                <p className="font-semibold mb-1">
-                                    Bulk Payment Requests
-                                </p>
+                                <div className="flex flex-col">
+                                    <p className="font-semibold mb-1">
+                                        Bulk Payment Requests
+                                    </p>
+                                    <p className="text-sm text-muted-foreground">
+                                        Pay multiple recipients with a single proposal.
+                                    </p>
+                                </div>
                             </div>
-                            <p className="text-sm text-muted-foreground">
-                                Pay multiple recipients with a single proposal.
-                            </p>
                         </div>
                         {/* Credit Exhaustion Banner */}
                         {availableCredits === 0 && subscription && (
@@ -567,7 +568,7 @@ export function UploadDataStep({
                                                     borderless
                                                     placeholder={`alice.near, 100.00\nbob.near, 100.00\ncharlie.near, 100.00`}
                                                     rows={8}
-                                                    className={`resize-none font-mono text-sm bg-muted focus:outline-none break-all whitespace-pre-wrap ${dataErrors &&
+                                                    className={`resize-none font-mono text-sm bg-muted focus:outline-none break-all whitespace-pre-wrap min-h-41 ${dataErrors &&
                                                         dataErrors.length > 0
                                                         ? "border-2 border-destructive focus:border-destructive"
                                                         : ""
@@ -610,7 +611,12 @@ export function UploadDataStep({
                             { kind: "transfer", action: "AddProposal" },
                             { kind: "call", action: "AddProposal" },
                         ]}
-                        idleMessage="Continue to Review"
+                        idleMessage={!selectedToken ||
+                            (activeTab === "upload" && !csvData) ||
+                            (activeTab === "paste" && !pasteDataInput.trim())
+                            ? "Select asset and provide payment data"
+                            : "Continue to Review"
+                        }
                     />
                 </PageCard>
             </div>

@@ -671,14 +671,17 @@ export default function ExportActivityPage() {
                                             <ArrowLeft />
                                         </Button>
 
-                                        <p className="font-semibold mb-1">
-                                            Export Recent Transactions
-                                        </p>
+                                        <div className="flex flex-col">
+                                            <p className="font-semibold mb-1">
+                                                Export Recent Transactions
+                                            </p>
+                                            <p className="text-sm text-muted-foreground">
+                                                Export generation and downloads are
+                                                available to team members only.
+                                            </p>
+                                        </div>
                                     </div>
-                                    <p className="text-sm text-muted-foreground">
-                                        Export generation and downloads are
-                                        available to team members only.
-                                    </p>
+
                                 </div>
 
                                 {/* No Credits Alert */}

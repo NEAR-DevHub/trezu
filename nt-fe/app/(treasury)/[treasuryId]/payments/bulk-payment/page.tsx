@@ -419,13 +419,15 @@ export default function BulkPaymentPage() {
 
                     {/* Step 1: Review Payments */}
                     {step === 1 && (
-                        <ReviewPaymentsStep
-                            handleBack={() => setStep(0)}
-                            initialPaymentData={paymentData}
-                            onEditPayment={handleEditPayment}
-                            onPaymentDataChange={setPaymentData}
-                            onSubmit={onSubmit}
-                        />
+                        <div className="max-w-[600px] mx-auto">
+                            <ReviewPaymentsStep
+                                handleBack={() => setStep(0)}
+                                initialPaymentData={paymentData}
+                                onEditPayment={handleEditPayment}
+                                onPaymentDataChange={setPaymentData}
+                                onSubmit={onSubmit}
+                            />
+                        </div>
                     )}
                 </div>
             </FormProvider>
