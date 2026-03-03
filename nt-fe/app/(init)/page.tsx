@@ -31,6 +31,7 @@ import { cn } from "@/lib/utils";
 import { useTreasuryCreationStatus } from "@/hooks/use-treasury-queries";
 import { submitWhitelistRequest } from "@/lib/api";
 import { toast } from "sonner";
+import { Input } from "@/components/input";
 
 interface WalletSuggestionModalProps {
     open: boolean;
@@ -207,7 +208,7 @@ export function Content() {
     } = useNear();
     const { lastTreasuryId, treasuries, isLoading } = useTreasury();
     const { data: creationStatus } = useTreasuryCreationStatus();
-    const creationAvailable = creationStatus?.creationAvailable ?? true;
+    const creationAvailable = creationStatus?.creationAvailable;
 
     const showWhitelist =
         !!accountId &&
@@ -309,7 +310,7 @@ export function Content() {
                             </Link>
                         </motion.div>
                         <div className="flex w-full flex-col items-center justify-center gap-6">
-                            <div className="flex w-full flex-col gap-2 text-center">
+                            <div className="flex w-full flex-col gap-2 text-center max-w-md">
                                 <div className="overflow-hidden">
                                     <motion.h1
                                         className="text-2xl font-semibold"
@@ -332,11 +333,13 @@ export function Content() {
                                         }}
                                     >
                                         {!creationAvailable
-                                            ? "Join the Trezu Waitlist"
+                                            ? submitted
+                                                ? "You're on the list 🎉"
+                                                : "Join the Trezu Waitlist"
                                             : "Welcome to Trezu"}
                                     </motion.h1>
                                 </div>
-                                {creationAvailable && (
+                                {creationAvailable ? (
                                     <div className="overflow-hidden">
                                         <motion.p
                                             className="text-sm text-muted-foreground font-medium"
@@ -362,6 +365,57 @@ export function Content() {
                                             treasury.
                                         </motion.p>
                                     </div>
+                                ) : showWhitelist && !submitted ? (
+                                    <motion.p
+                                        className="text-sm text-muted-foreground font-medium"
+                                        initial={{
+                                            clipPath: "inset(0 100% 0 0)",
+                                            x: -14,
+                                            opacity: 0,
+                                            filter: "blur(8px)",
+                                        }}
+                                        animate={{
+                                            clipPath: "inset(0 0% 0 0)",
+                                            x: 0,
+                                            opacity: 1,
+                                            filter: "blur(0px)",
+                                        }}
+                                        transition={{
+                                            duration: 0.6,
+                                            ease: "easeOut",
+                                            delay: 0.62,
+                                        }}
+                                    >
+                                        We&apos;ve hit today&apos;s treasury
+                                        limit. No worries - try again later or
+                                        leave your contact to join the waitlist.
+                                        We&apos;ll let you know when a spot
+                                        opens.
+                                    </motion.p>
+                                ) : (
+                                    <motion.p
+                                        className="text-sm text-muted-foreground font-medium"
+                                        initial={{
+                                            clipPath: "inset(0 100% 0 0)",
+                                            x: -14,
+                                            opacity: 0,
+                                            filter: "blur(8px)",
+                                        }}
+                                        animate={{
+                                            clipPath: "inset(0 0% 0 0)",
+                                            x: 0,
+                                            opacity: 1,
+                                            filter: "blur(0px)",
+                                        }}
+                                        transition={{
+                                            duration: 0.6,
+                                            ease: "easeOut",
+                                            delay: 0.62,
+                                        }}
+                                    >
+                                        Thanks! We&apos;ll notify you as soon as
+                                        treasury creation becomes available.
+                                    </motion.p>
                                 )}
                             </div>
                             <motion.div
@@ -376,54 +430,37 @@ export function Content() {
                             >
                                 {showWhitelist ? (
                                     submitted ? (
-                                        <>
-                                            <p className="text-2xl font-semibold text-center text-foreground tracking-tight">
-                                                You&apos;re on the list 🎉
-                                            </p>
-                                            <p className="text-sm text-center text-muted-foreground">
-                                                Thanks! We&apos;ll notify you as
-                                                soon as treasury creation
-                                                becomes available.
-                                            </p>
-                                            <Button
-                                                size="default"
-                                                variant="secondary"
-                                                className="w-full max-w-md"
-                                                asChild
-                                            >
-                                                <Link
-                                                    href={APP_ACTIVE_TREASURY}
-                                                >
-                                                    See Demo Trezu
-                                                </Link>
-                                            </Button>
-                                        </>
+                                        <Button
+                                            size="default"
+                                            variant="secondary"
+                                            asChild
+                                            className="w-full max-w-md"
+                                        >
+                                            <Link href={APP_ACTIVE_TREASURY}>
+                                                See Demo Trezu
+                                            </Link>
+                                        </Button>
                                     ) : (
-                                        <>
-                                            <p className="text-sm text-center text-muted-foreground">
-                                                We&apos;ve hit today&apos;s
-                                                treasury limit. No worries - try
-                                                again later or leave your
-                                                contact to join the waitlist.
-                                                We&apos;ll let you know when a
-                                                spot opens.
-                                            </p>
-                                            <input
-                                                type="text"
-                                                placeholder="Email address or Telegram (e.g. @username)"
-                                                value={contact}
-                                                onChange={(e) =>
-                                                    setContact(e.target.value)
-                                                }
-                                                className="w-full max-w-md rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                            />
-                                            <p className="text-xs text-muted-foreground -mt-1">
-                                                We will only use this to notify
-                                                you
-                                            </p>
+                                        <div className="flex flex-col gap-3 w-full max-w-md">
+                                            <div className="flex flex-col gap-2 items-start">
+                                                <Input
+                                                    type="text"
+                                                    placeholder="Email address or Telegram (e.g. @username)"
+                                                    value={contact}
+                                                    onChange={(e) =>
+                                                        setContact(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                />
+                                                <p className="text-xs text-muted-foreground -mt-1">
+                                                    We will only use this to
+                                                    notify you
+                                                </p>
+                                            </div>
                                             <Button
                                                 size="default"
-                                                className="w-full max-w-md"
+                                                className="mt-2"
                                                 onClick={handleWhitelistSubmit}
                                                 disabled={
                                                     isSubmitting ||
@@ -438,7 +475,6 @@ export function Content() {
                                             <Button
                                                 size="default"
                                                 variant="ghost"
-                                                className="w-full max-w-md"
                                                 asChild
                                             >
                                                 <Link
@@ -447,7 +483,7 @@ export function Content() {
                                                     See Demo Trezu
                                                 </Link>
                                             </Button>
-                                        </>
+                                        </div>
                                     )
                                 ) : (
                                     <>
