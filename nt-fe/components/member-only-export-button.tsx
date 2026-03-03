@@ -11,11 +11,13 @@ import { useTreasury } from "@/hooks/use-treasury";
 import { useRouter } from "next/navigation";
 import { Upload } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 export function MemberOnlyExportButton() {
     const { treasuryId, isGuestTreasury, isLoading } = useTreasury();
     const { accountId } = useNear();
     const router = useRouter();
+    const isMobile = useMediaQuery("(max-width: 640px)");
 
     const isMember = !isGuestTreasury;
 
@@ -37,9 +39,11 @@ export function MemberOnlyExportButton() {
             onClick={handleClick}
             disabled={isDisabled}
             className="h-9 px-3"
+            size={isMobile ? "icon" : "default"}
+            tooltipContent="Export"
         >
             <Upload className="h-4 w-4" />
-            Export
+            <span className="hidden sm:inline">Export</span>
         </Button>
     );
 

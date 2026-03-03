@@ -11,8 +11,12 @@ import { RecentActivity } from "@/features/activity";
 import { OnboardingProgress } from "@/features/onboarding";
 import { DepositModal } from "./components/deposit-modal";
 import { InfoBox } from "@/features/onboarding/components/info-box";
-import { WelcomeTooltip, CongratsTooltip } from "@/features/onboarding/steps/dashboard";
+import {
+    WelcomeTooltip,
+    CongratsTooltip,
+} from "@/features/onboarding/steps/dashboard";
 import { useTreasury } from "@/hooks/use-treasury";
+import { CreateBanner } from "@/features/onboarding/components/create-banner";
 
 export default function AppPage() {
     const { treasuryId } = useTreasury();
@@ -31,6 +35,9 @@ export default function AppPage() {
         >
             <div className="flex flex-col lg:flex-row gap-5">
                 <div className="flex flex-col gap-5 lg:w-3/5 w-full">
+                    <div className="lg:hidden">
+                        <CreateBanner />
+                    </div>
                     <OnboardingProgress
                         onDepositClick={() => setIsDepositModalOpen(true)}
                     />

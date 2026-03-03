@@ -38,7 +38,7 @@ export function CreateBanner({ disabled = false }: { disabled?: boolean }) {
     };
 
     return (
-        <div className="bg-secondary rounded-lg p-3 flex flex-col gap-3 mx-3.5">
+        <div className="bg-general-tertiary sm:bg-secondary rounded-lg p-3 flex flex-col gap-3 sm:mx-3.5">
             <div className="flex items-center justify-between pb-1">
                 <Logo size="sm" variant="icon" />
                 <button

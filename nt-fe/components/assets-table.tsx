@@ -41,10 +41,12 @@ import { NetworkDisplay, BalanceCell } from "./token-display";
 import { availableBalance, lockedBalance } from "@/lib/balance";
 import { VestingDetailsModal } from "./vesting-details-modal";
 import { EarningDetailsModal } from "./earning-details-modal";
+import { AssetDetailsModal } from "./asset-details-modal";
 import { Tooltip } from "./tooltip";
 import { useTreasury } from "@/hooks/use-treasury";
 import { AuthButton } from "./auth-button";
 import { useRouter } from "next/navigation";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 const columnHelper = createColumnHelper<AggregatedAsset>();
 
@@ -64,7 +66,12 @@ export function AssetsTable({ aggregatedTokens }: Props) {
     const [selectedStakingNetwork, setSelectedStakingNetwork] =
         useState<TreasuryAsset | null>(null);
     const [isStakingModalOpen, setIsStakingModalOpen] = useState(false);
+    const [selectedAsset, setSelectedAsset] = useState<AggregatedAsset | null>(
+        null,
+    );
+    const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
     const router = useRouter();
+    const isMobile = useMediaQuery("(max-width: 640px)");
 
     // Define columns
     const columns = useMemo<ColumnDef<AggregatedAsset, any>[]>(
@@ -96,7 +103,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                     {isPartiallyLocked && (
                                         <div className="flex gap-1.5 px-1 py-0.5 bg-secondary rounded-[4px] text-secondary-foreground font-medium">
                                             <Lock className="size-2.5 shrink-0 mt-0.5" />
-                                            <span className="text-xxs">
+                                            <span className="hidden sm:inline text-xxs">
                                                 Partially Locked
                                             </span>
                                         </div>
@@ -216,6 +223,10 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                         header.id !== "expand"
                                         ? "text-right text-muted-foreground"
                                         : "text-muted-foreground",
+                                    (header.id === "price" ||
+                                        header.id === "weight" ||
+                                        header.id === "expand") &&
+                                        "hidden sm:table-cell",
                                 )}
                             >
                                 {header.isPlaceholder ? null : header.id ===
@@ -256,12 +267,26 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                     <Fragment key={row.id}>
                         <TableRow
                             onClick={() => {
-                                row.toggleExpanded();
+                                if (isMobile) {
+                                    setSelectedAsset(row.original);
+                                    setIsAssetModalOpen(true);
+                                } else {
+                                    row.toggleExpanded();
+                                }
                             }}
                             className="cursor-pointer"
                         >
                             {row.getVisibleCells().map((cell) => (
-                                <TableCell key={cell.id} className="p-4">
+                                <TableCell
+                                    key={cell.id}
+                                    className={cn(
+                                        "p-4",
+                                        (cell.column.id === "price" ||
+                                            cell.column.id === "weight" ||
+                                            cell.column.id === "expand") &&
+                                            "hidden sm:table-cell",
+                                    )}
+                                >
                                     {flexRender(
                                         cell.column.columnDef.cell,
                                         cell.getContext(),
@@ -772,6 +797,14 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                     setSelectedStakingNetwork(null);
                 }}
                 asset={selectedStakingNetwork ?? null}
+            />
+            <AssetDetailsModal
+                isOpen={isAssetModalOpen}
+                onClose={() => {
+                    setIsAssetModalOpen(false);
+                    setSelectedAsset(null);
+                }}
+                asset={selectedAsset}
             />
         </Table>
     );
