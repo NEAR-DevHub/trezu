@@ -35,7 +35,7 @@ import {
 import { Button } from "@/components/button";
 import { TreasuryAsset } from "@/lib/api";
 import { cn, formatBalance, formatCurrency } from "@/lib/utils";
-import { useAggregatedTokens, AggregatedAsset } from "@/hooks/use-assets";
+import { AggregatedAsset } from "@/hooks/use-assets";
 import Big from "@/lib/big";
 import { NetworkDisplay, BalanceCell } from "./token-display";
 import { availableBalance, lockedBalance } from "@/lib/balance";
@@ -219,14 +219,17 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                             <TableHead
                                 key={header.id}
                                 className={cn(
-                                    header.id !== "symbol" &&
-                                        header.id !== "expand"
-                                        ? "text-right text-muted-foreground"
-                                        : "text-muted-foreground",
+                                    header.id === "symbol" && "pl-0",
+                                    header.id === "totalBalanceUSD" &&
+                                        "pr-0 sm:pr-2",
                                     (header.id === "price" ||
                                         header.id === "weight" ||
                                         header.id === "expand") &&
                                         "hidden sm:table-cell",
+                                    header.id !== "symbol" &&
+                                        header.id !== "expand"
+                                        ? "text-right text-muted-foreground"
+                                        : "text-muted-foreground",
                                 )}
                             >
                                 {header.isPlaceholder ? null : header.id ===
@@ -236,7 +239,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                         size="sm"
                                         onClick={header.column.getToggleSortingHandler()}
                                         className={cn(
-                                            "flex items-center gap-1 px-0 hover:bg-transparent uppercase text-xxs",
+                                            "flex items-center gap-1 px-1! hover:bg-transparent uppercase text-xxs",
                                             header.id !== "symbol"
                                                 ? "ml-auto"
                                                 : "",
@@ -281,6 +284,9 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                     key={cell.id}
                                     className={cn(
                                         "p-4",
+                                        cell.column.id === "symbol" && "pl-0",
+                                        cell.column.id === "totalBalanceUSD" &&
+                                            "pr-0 sm:pr-4",
                                         (cell.column.id === "price" ||
                                             cell.column.id === "weight" ||
                                             cell.column.id === "expand") &&
@@ -815,31 +821,31 @@ export function AssetsTableSkeleton() {
         <Table>
             <TableHeader className="bg-transparent border-t-0">
                 <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-muted-foreground">
+                    <TableHead className="text-muted-foreground pl-0">
                         <Skeleton className="h-4 w-12" />
                     </TableHead>
-                    <TableHead className="text-right text-muted-foreground">
+                    <TableHead className="text-right text-muted-foreground pr-0 sm:pr-2">
                         <Skeleton className="h-4 w-16 ml-auto" />
                     </TableHead>
-                    <TableHead className="text-right text-muted-foreground">
+                    <TableHead className="text-right text-muted-foreground hidden sm:table-cell">
                         <Skeleton className="h-4 w-16 ml-auto" />
                     </TableHead>
-                    <TableHead className="text-right text-muted-foreground">
+                    <TableHead className="text-right text-muted-foreground hidden sm:table-cell">
                         <Skeleton className="h-4 w-16 ml-auto" />
                     </TableHead>
-                    <TableHead className="text-right text-muted-foreground">
+                    <TableHead className="text-right text-muted-foreground hidden sm:table-cell">
                         <Skeleton className="h-4 w-20 ml-auto" />
                     </TableHead>
-                    <TableHead className="text-right text-muted-foreground">
+                    <TableHead className="text-right text-muted-foreground hidden sm:table-cell">
                         <Skeleton className="h-4 w-14 ml-auto" />
                     </TableHead>
-                    <TableHead />
+                    <TableHead className="hidden sm:table-cell" />
                 </TableRow>
             </TableHeader>
             <TableBody>
                 {Array.from({ length: 4 }).map((_, index) => (
                     <TableRow key={index}>
-                        <TableCell className="p-4">
+                        <TableCell className="p-4 pl-0">
                             <div className="flex items-center gap-3">
                                 <Skeleton className="h-10 w-10 rounded-full" />
                                 <div>
@@ -848,34 +854,34 @@ export function AssetsTableSkeleton() {
                                 </div>
                             </div>
                         </TableCell>
-                        <TableCell className="p-4">
+                        <TableCell className="p-4 pr-0 sm:pr-4">
                             <div className="flex flex-col items-end">
                                 <Skeleton className="h-4 w-20 mb-1" />
                                 <Skeleton className="h-3 w-16" />
                             </div>
                         </TableCell>
-                        <TableCell className="p-4">
+                        <TableCell className="p-4 hidden sm:table-cell">
                             <div className="flex flex-col items-end">
                                 <Skeleton className="h-4 w-16 mb-1" />
                                 <Skeleton className="h-3 w-12" />
                             </div>
                         </TableCell>
-                        <TableCell className="p-4">
+                        <TableCell className="p-4 hidden sm:table-cell">
                             <div className="flex flex-col items-end">
                                 <Skeleton className="h-4 w-16 mb-1" />
                                 <Skeleton className="h-3 w-12" />
                             </div>
                         </TableCell>
-                        <TableCell className="p-4">
+                        <TableCell className="p-4 hidden sm:table-cell">
                             <Skeleton className="h-4 w-16 ml-auto" />
                         </TableCell>
-                        <TableCell className="p-4">
+                        <TableCell className="p-4 hidden sm:table-cell">
                             <div className="flex items-center justify-end gap-3">
                                 <Skeleton className="h-2 w-[100px] rounded-full" />
                                 <Skeleton className="h-4 w-12" />
                             </div>
                         </TableCell>
-                        <TableCell className="p-4">
+                        <TableCell className="p-4 hidden sm:table-cell">
                             <Skeleton className="h-8 w-8 rounded" />
                         </TableCell>
                     </TableRow>
