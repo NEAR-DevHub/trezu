@@ -14,7 +14,7 @@ interface PillProps {
 const variants = {
     default: "",
     secondary: "bg-card text-card-foreground",
-    info: "bg-general-info-background-faded border border-general-info-border text-general-info-foreground",
+    info: "bg-general-info-background-faded text-general-info-foreground",
 };
 
 export function Pill({
@@ -29,7 +29,7 @@ export function Pill({
         <div
             id={id}
             className={cn(
-                "flex border rounded-md items-center py-[3px] px-2 gap-1.5 w-fit text-xs font-medium text-center",
+                "flex rounded-md items-center py-[3px] px-2 gap-1.5 w-fit text-xs font-medium text-center",
                 variants[variant],
                 className,
             )}

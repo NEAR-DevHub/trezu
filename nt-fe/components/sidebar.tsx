@@ -280,7 +280,9 @@ export function Sidebar({ onClose }: SidebarProps) {
                     })}
                 </nav>
 
-                <CreateBanner disabled={isReduced} />
+                <div className="hidden lg:block">
+                    <CreateBanner disabled={isReduced} />
+                </div>
 
                 <div
                     className={cn(
