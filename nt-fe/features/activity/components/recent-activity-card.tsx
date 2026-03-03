@@ -7,7 +7,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
     ArrowDownToLine,
@@ -27,7 +27,7 @@ import {
     getActivityLabel,
     getActivitySubLabel,
 } from "../utils/history-utils";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import type { RecentActivity as RecentActivityType } from "@/lib/api";
 
 type GroupedActivity =
@@ -465,6 +465,7 @@ export function RecentActivity() {
                             <Button
                                 variant="outline"
                                 size={isMobile ? "icon" : "default"}
+                                tooltipContent="View all transactions"
                                 className="h-9 px-3"
                             >
                                 <span className="hidden sm:inline">

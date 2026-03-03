@@ -40,7 +40,7 @@ export function MemberOnlyExportButton() {
             disabled={isDisabled}
             className="h-9 px-3"
             size={isMobile ? "icon" : "default"}
-            tooltipContent="Export"
+            tooltipContent="Export transactions"
         >
             <Upload className="h-4 w-4" />
             <span className="hidden sm:inline">Export</span>
