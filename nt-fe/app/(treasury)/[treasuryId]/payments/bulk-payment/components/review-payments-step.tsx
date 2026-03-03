@@ -180,7 +180,7 @@ export function ReviewPaymentsStep({
     }
 
     return (
-        <PageCard>
+        <PageCard className="max-w-[600px] mx-auto">
             <ReviewStep
                 reviewingTitle="Review Your Payment"
                 handleBack={handleBack}
