@@ -181,6 +181,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                     signDelegateActions: true,
                     signInAndSignMessage: true,
                 },
+                excludedWallets: ["intear-wallet"],
             });
         } catch (err) {
             set({ isInitializing: false });
