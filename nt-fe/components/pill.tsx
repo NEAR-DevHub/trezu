@@ -6,14 +6,15 @@ interface PillProps {
     id?: string;
     title: string;
     info?: string;
-    variant?: "default" | "secondary" | "info";
+    variant?: "default" | "card" | "secondary" | "info";
     side?: "top" | "bottom" | "left" | "right";
     className?: string;
 }
 
 const variants = {
     default: "",
-    secondary: "bg-card text-card-foreground",
+    card: "bg-card text-card-foreground",
+    secondary: "bg-secondary text-secondary-foreground",
     info: "bg-general-info-background-faded text-general-info-foreground",
 };
 
