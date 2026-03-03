@@ -243,20 +243,24 @@ export function AssetDetailsModal({ isOpen, onClose, asset }: Props) {
                                                     {network.symbol}
                                                 </div>
                                             </div>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 shrink-0"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setSelectedStakingNetwork(
-                                                        network,
-                                                    );
-                                                    setIsStakingModalOpen(true);
-                                                }}
-                                            >
-                                                <ChevronRight className="size-4 text-primary" />
-                                            </Button>
+                                            <div className="flex gap-1 shrink-0">
+                                                <div className="size-9" />
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedStakingNetwork(
+                                                            network,
+                                                        );
+                                                        setIsStakingModalOpen(
+                                                            true,
+                                                        );
+                                                    }}
+                                                >
+                                                    <ChevronRight className="size-4 text-primary" />
+                                                </Button>
+                                            </div>
                                         </div>
                                     );
                                 })}
@@ -339,7 +343,6 @@ export function AssetDetailsModal({ isOpen, onClose, asset }: Props) {
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        className="h-8 w-8"
                                                         disabled
                                                         tooltipContent="Coming soon"
                                                         onClick={(e) =>
@@ -351,7 +354,6 @@ export function AssetDetailsModal({ isOpen, onClose, asset }: Props) {
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        className="h-8 w-8"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             setSelectedVestingNetwork(
