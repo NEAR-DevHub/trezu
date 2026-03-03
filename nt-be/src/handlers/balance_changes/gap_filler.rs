@@ -689,7 +689,7 @@ pub async fn fill_gaps(
     token_id: &str,
     up_to_block: i64,
 ) -> Result<Vec<FilledGap>, GapFillerError> {
-    fill_gaps_with_hints(pool, network, account_id, token_id, up_to_block, None).await
+    fill_gaps_with_hints(pool, network, account_id, token_id, up_to_block, None, None).await
 }
 
 /// Fill all gaps using transfer hints when available
@@ -715,6 +715,7 @@ pub async fn fill_gaps_with_hints(
     token_id: &str,
     up_to_block: i64,
     hint_service: Option<&TransferHintService>,
+    creation_block: Option<i64>,
 ) -> Result<Vec<FilledGap>, GapFillerError> {
     log::info!(
         "Starting gap detection for {}/{} up to block {} (hints: {})",
@@ -753,6 +754,7 @@ pub async fn fill_gaps_with_hints(
             token_id,
             up_to_block as u64,
             None, // Use default lookback
+            creation_block,
         )
         .await?
         {
@@ -779,7 +781,9 @@ pub async fn fill_gaps_with_hints(
 
     // --- Fill gap to past (virtual start boundary) ---
     // Check if earliest record's balance_before is not 0
-    if let Some(gap_record) = fill_gap_to_past(pool, network, account_id, token_id).await? {
+    if let Some(gap_record) =
+        fill_gap_to_past(pool, network, account_id, token_id, creation_block).await?
+    {
         filled.push(gap_record);
     }
 
@@ -826,6 +830,7 @@ pub async fn fill_gaps_with_hints(
 /// * `token_id` - Token to seed
 /// * `current_block` - Current block height to start from
 /// * `lookback_blocks` - How many blocks to search back (default ~30 days worth)
+/// * `creation_block` - Account creation block (floor for lookback search)
 ///
 /// # Returns
 /// The seeded record, or None if the balance has been 0 throughout the search range
@@ -836,6 +841,7 @@ pub async fn seed_initial_balance(
     token_id: &str,
     current_block: u64,
     lookback_blocks: Option<u64>,
+    creation_block: Option<i64>,
 ) -> Result<Option<FilledGap>, GapFillerError> {
     // Check if there are already records for this account/token
     let existing_count: (i64,) = sqlx::query_as(
@@ -883,7 +889,22 @@ pub async fn seed_initial_balance(
 
     // Default lookback: ~30 days worth of blocks (1 block/sec * 86400 sec/day * 30 days)
     let lookback = lookback_blocks.unwrap_or(2_592_000);
-    let start_block = current_block.saturating_sub(lookback);
+    let mut start_block = current_block.saturating_sub(lookback);
+
+    // If we know the account creation block, never search before it
+    if let Some(creation) = creation_block {
+        let creation = creation as u64;
+        if creation > start_block {
+            log::info!(
+                "Clamping seed lookback from block {} to creation block {} for {}/{}",
+                start_block,
+                creation,
+                account_id,
+                token_id
+            );
+            start_block = creation;
+        }
+    }
 
     log::info!(
         "Searching for balance change from block {} to {}",
@@ -1121,6 +1142,7 @@ async fn fill_gap_to_past(
     network: &NetworkConfig,
     account_id: &str,
     token_id: &str,
+    creation_block: Option<i64>,
 ) -> Result<Option<FilledGap>, GapFillerError> {
     // Get the earliest record
     let earliest_record = sqlx::query!(
@@ -1159,9 +1181,51 @@ async fn fill_gap_to_past(
         return Ok(None);
     }
 
+    // If we know the account creation block and the earliest record is at or before it,
+    // there's no history before account creation to search
+    if let Some(creation) = creation_block {
+        if earliest.block_height <= creation {
+            log::info!(
+                "No gap to past: earliest record at block {} is at/before account creation block {} for {}/{}",
+                earliest.block_height,
+                creation,
+                account_id,
+                token_id
+            );
+            return Ok(None);
+        }
+    }
+
     // Search backwards - use a reasonable lookback (about 7 days to avoid hitting too-old blocks)
     let lookback_blocks: u64 = 600_000; // ~7 days
-    let start_block = (earliest.block_height as u64).saturating_sub(lookback_blocks);
+    let mut start_block = (earliest.block_height as u64).saturating_sub(lookback_blocks);
+
+    // If we know the account creation block, never search before it
+    if let Some(creation) = creation_block {
+        let creation = creation as u64;
+        if creation > start_block {
+            log::info!(
+                "Clamping gap-to-past lookback from block {} to creation block {} for {}/{}",
+                start_block,
+                creation,
+                account_id,
+                token_id
+            );
+            start_block = creation;
+        }
+    }
+
+    // If the clamped start_block is at or past the earliest record, nothing to search
+    if start_block >= earliest.block_height as u64 {
+        log::info!(
+            "No gap to past: search range empty (start {} >= earliest {}) for {}/{}",
+            start_block,
+            earliest.block_height,
+            account_id,
+            token_id
+        );
+        return Ok(None);
+    }
 
     // Check actual balance at the lookback boundary
     let balance_at_start =

@@ -139,7 +139,25 @@ pub async fn run_maintenance_cycle(
             _ => {}
         }
 
-        // 4. Fill gaps for all tokens
+        // 4. Determine account creation block (floor for all lookback searches)
+        let creation_block: Option<i64> = sqlx::query_scalar(
+            "SELECT block_height FROM balance_changes \
+             WHERE account_id = $1 AND action_kind = 'CreateAccount' AND token_id = 'near' \
+             ORDER BY block_height ASC LIMIT 1",
+        )
+        .bind(account_id)
+        .fetch_optional(pool)
+        .await?;
+
+        if let Some(block) = creation_block {
+            log::debug!(
+                "[maintenance] {}: Account creation block: {}",
+                account_id,
+                block
+            );
+        }
+
+        // 5. Fill gaps for all tokens
         let mut tokens: Vec<String> = sqlx::query_scalar(
             r#"
             SELECT DISTINCT token_id
@@ -169,6 +187,7 @@ pub async fn run_maintenance_cycle(
                 token_id,
                 up_to_block,
                 hint_service,
+                creation_block,
             )
             .await
             {
@@ -695,6 +714,7 @@ pub async fn fill_account_gaps(
             token_id,
             up_to_block,
             hint_service,
+            None, // No creation block in utility function
         )
         .await
         {

@@ -179,7 +179,41 @@ async fn test_goldsky_enrichment_trezu_demo(pool: PgPool) {
     .await
     .unwrap();
     let filtered = api_filtered_count(&pool, account_id).await;
-    println!("After maintenance: DB total: {}, API-visible: {}", total.0, filtered);
+    println!("After maintenance 1: DB total: {}, API-visible: {}", total.0, filtered);
+
+    // -----------------------------------------------------------------------
+    // 3b. Run second maintenance cycle to verify creation_block floor optimization
+    //     This should make significantly fewer RPC calls since the account
+    //     creation block is now known (discovered in cycle 1).
+    // -----------------------------------------------------------------------
+    sqlx::query("UPDATE monitored_accounts SET dirty_at = NOW() WHERE account_id = $1")
+        .bind(account_id)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+    println!("\n--- Running maintenance cycle 2 (should be faster with creation block floor) ---");
+    nt_be::handlers::balance_changes::account_monitor::run_maintenance_cycle(
+        &pool,
+        &network,
+        max_block.0,
+        None,
+        Some((&http_client, &env_vars.fastnear_api_key)),
+        env_vars.intents_explorer_api_key.as_deref(),
+        &env_vars.intents_explorer_api_url,
+    )
+    .await
+    .unwrap();
+
+    let total2: (i64,) = sqlx::query_as(
+        "SELECT COUNT(*) FROM balance_changes WHERE account_id = $1",
+    )
+    .bind(account_id)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    let filtered2 = api_filtered_count(&pool, account_id).await;
+    println!("After maintenance 2: DB total: {}, API-visible: {}", total2.0, filtered2);
 
     // -----------------------------------------------------------------------
     // 4. Verify results via the HTTP API layer
