@@ -567,10 +567,10 @@ export function UploadDataStep({
                                                     borderless
                                                     placeholder={`alice.near, 100.00\nbob.near, 100.00\ncharlie.near, 100.00`}
                                                     rows={8}
-                                                    className={`resize-none font-mono text-sm bg-muted focus:outline-none break-all whitespace-pre-wrap ${dataErrors &&
+                                                    className={`resize-none font-mono text-sm focus:outline-none break-all whitespace-pre-wrap ${dataErrors &&
                                                         dataErrors.length > 0
-                                                        ? "border-2 border-destructive focus:border-destructive"
-                                                        : ""
+                                                        ? "border border-destructive bg-destructive/5! focus:border-destructive!"
+                                                        : "bg-muted"
                                                         }`}
                                                     disabled={
                                                         availableCredits === 0
