@@ -5,8 +5,8 @@ import {
     isValidNearAddressFormat,
 } from "@/lib/near-validation";
 import { getBatchStorageDepositIsRegistered } from "@/lib/api";
-import { isNearToken, getBlockchainType } from "@/lib/blockchain-utils";
-import { validateAddress } from "@/lib/address-validation";
+import { isNearToken, getBlockchainType, BlockchainType } from "@/lib/blockchain-utils";
+import { getBlockchainDisplayName, validateAddress } from "@/lib/address-validation";
 import type { BulkPaymentData } from "../schemas";
 import type { TreasuryAsset } from "@/lib/api";
 import Big from "@/lib/big";
@@ -159,14 +159,28 @@ export function extractTokenSymbol(amountStr: string): string | null {
  * - "100" / "100.50" / "100,50"
  * - "100 NEAR" / "100NEAR" / "100 near" (with/without space, case insensitive)
  * - "1,000.50" / "1.000,50" (thousand separators)
- * - "$100" / "€50" (currency symbols)
- * - "+100" / "100.00" (plus sign, trailing zeros)
+ * 
+ * ONLY allows: digits, comma, dot, spaces, and letters (for token symbols)
+ * REJECTS: currency symbols ($, €, etc.), special characters
  */
 export function parseAmount(amountStr: string): {
     amount: string;
     tokenSymbol: string | null;
+    error?: string;
 } {
     const trimmed = amountStr.trim();
+
+    // Check for invalid characters BEFORE processing
+    // Allow: digits (0-9), comma, dot, space, letters (for token symbols), and plus sign at start
+    const invalidChars = trimmed.match(/[^0-9,.\s\+A-Za-z]/g);
+    if (invalidChars) {
+        const uniqueChars = [...new Set(invalidChars)].join(', ');
+        return {
+            amount: "",
+            tokenSymbol: null,
+            error: `Please remove these characters: ${uniqueChars}. Only numbers, commas, and dots are allowed.`
+        };
+    }
 
     // Extract token symbol if present (e.g., "100 NEAR" or "100NEAR")
     const tokenSymbol = extractTokenSymbol(trimmed);
@@ -181,11 +195,11 @@ export function parseAmount(amountStr: string): {
         normalized = normalized.substring(1);
     }
 
-    // Remove spaces, currency symbols, and underscores (used as thousand separators)
-    normalized = normalized.replace(/[$€£¥₹₽¥_\s]/g, "");
+    // Remove spaces and underscores (used as thousand separators)
+    normalized = normalized.replace(/[_\s]/g, "");
 
     // Handle empty or invalid input
-    if (!normalized) return { amount: "", tokenSymbol };
+    if (!normalized) return { amount: "", tokenSymbol, error: "Amount cannot be empty." };
 
     // Handle different decimal separators
     const hasComma = normalized.includes(",");
@@ -221,25 +235,29 @@ export function parseAmount(amountStr: string): {
 
 /**
  * Validate recipient address format based on blockchain
+ * Returns user-friendly error messages with actionable guidance
  */
 function validateRecipientAddress(
     address: string,
     blockchainType: string = "near"
 ): string | null {
     if (!address || address.trim() === "") {
-        return "Recipient address is required";
+        return "Missing recipient address. Please add an address in the first column.";
     }
 
     // For NEAR blockchain, use NEAR-specific validation
     if (blockchainType === "near") {
         if (!isValidNearAddressFormat(address)) {
-            return "Invalid NEAR account format";
+            return `The address "${address}" is not a valid NEAR account.`;
         }
         return null;
     }
 
     const result = validateAddress(address, blockchainType as any);
-    return result.error || null;
+    if (result.error) {
+        return `The address "${address}" is not valid ${getBlockchainDisplayName(blockchainType as BlockchainType)} account.`;
+    }
+    return null;
 }
 
 /**
@@ -274,7 +292,7 @@ export function parsePaymentData(
         if (row.length < 2) {
             errors.push({
                 row: actualRowNumber,
-                message: `Row ${actualRowNumber}: Invalid format. Expected at least 2 columns (recipient, amount)`,
+                message: `Row ${actualRowNumber}: Each row needs two values separated by a comma. Example: alice.near, 100`,
             });
             continue;
         }
@@ -291,7 +309,7 @@ export function parsePaymentData(
         if (!recipient) {
             errors.push({
                 row: actualRowNumber,
-                message: `Row ${actualRowNumber}: Missing recipient address`,
+                message: `Row ${actualRowNumber}: Missing recipient address. Please add an address before the comma.`,
             });
             continue;
         }
@@ -299,12 +317,22 @@ export function parsePaymentData(
         if (!amountStr) {
             errors.push({
                 row: actualRowNumber,
-                message: `Row ${actualRowNumber}: Missing amount`,
+                message: `Row ${actualRowNumber}: Missing amount. Please add a number after the comma. Example: ${recipient}, 100`,
             });
             continue;
         }
 
         const parsedResult = parseAmount(amountStr);
+
+        // Check if parseAmount returned an error (invalid characters)
+        if (parsedResult.error) {
+            errors.push({
+                row: actualRowNumber,
+                message: `Row ${actualRowNumber}: ${parsedResult.error}`,
+            });
+            continue;
+        }
+
         const parsedAmountStr = parsedResult.amount;
         const tokenSymbol = parsedResult.tokenSymbol;
 
@@ -317,34 +345,38 @@ export function parsePaymentData(
         if (expectedTokenSymbol && tokenSymbol && tokenSymbol !== expectedTokenSymbol.toUpperCase()) {
             errors.push({
                 row: actualRowNumber,
-                message: `Row ${actualRowNumber}: Token symbol mismatch. Found "${tokenSymbol}" but expected "${expectedTokenSymbol.toUpperCase()}"`,
+                message: `Row ${actualRowNumber}: You entered "${tokenSymbol}" but ${expectedTokenSymbol.toUpperCase()} is selected above. Either remove the token symbol or select ${tokenSymbol} from the dropdown.`,
             });
             continue;
         }
 
-        // Validate amount is a valid number using Big.js
+        // Validate amount is a valid number
         let parsedAmount: Big;
         try {
             if (!parsedAmountStr) {
-                throw new Error("Invalid amount format");
+                throw new Error(`The amount "${amountStr}" is not a valid number. Please use only numbers and decimals (e.g., 100 or 100.50).`);
             }
             parsedAmount = Big(parsedAmountStr);
 
             // Validate amount is positive
             if (parsedAmount.lte(0)) {
-                throw new Error("Amount must be greater than 0");
+                throw new Error(`The amount must be greater than 0. You entered "${amountStr}".`);
             }
 
-            // Validate amount doesn't exceed JavaScript's safe integer limit
+            // Validate amount doesn't exceed safe limit
             const MAX_SAFE = Big(Number.MAX_SAFE_INTEGER);
             if (parsedAmount.gt(MAX_SAFE)) {
-                throw new Error("Amount is too large");
+                throw new Error(`The amount "${amountStr}" is too large. Please use a smaller number.`);
             }
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : "Invalid amount";
+            // Clean up error message - remove any technical jargon
+            let errorMessage = error instanceof Error ? error.message : "Invalid amount";
+            // Strip technical prefixes like "[big.js]" or "Error:"
+            errorMessage = errorMessage.replace(/^\[.*?\]\s*/, '').replace(/^Error:\s*/i, '');
+
             errors.push({
                 row: actualRowNumber,
-                message: `Row ${actualRowNumber}: ${errorMessage} (received: "${amountStr}")`,
+                message: `Row ${actualRowNumber}: ${errorMessage}`,
             });
             continue;
         }
@@ -353,7 +385,7 @@ export function parsePaymentData(
         if (validationError) {
             errors.push({
                 row: actualRowNumber,
-                message: `Row ${actualRowNumber}: ${validationError} (recipient: "${recipient}")`,
+                message: `Row ${actualRowNumber}: ${validationError}`,
             });
             continue;
         }
@@ -367,9 +399,10 @@ export function parsePaymentData(
 
     // Check if multiple different token symbols were used
     if (tokenSymbolsFound.size > 1) {
+        const symbols = Array.from(tokenSymbolsFound).join(", ");
         errors.push({
             row: 0,
-            message: `Multiple token symbols found: ${Array.from(tokenSymbolsFound).join(", ")}. Please use only one token symbol throughout the file.`,
+            message: `You're using multiple token symbols (${symbols}). Please use only one token type throughout your file, or remove the token symbols and let the selection above determine the token.`,
         });
     }
 
@@ -381,18 +414,19 @@ export function parsePaymentData(
     if (payments.length === 0) {
         return {
             payments: [],
-            errors: [{ row: 0, message: "No valid payment data found. Please ensure your data has the format: recipient, amount" }],
+            errors: [{ row: 0, message: "No payment data found. Please add your payments in this format: recipient, amount" }],
         };
     }
 
     // Check if exceeds maximum recipients limit
     if (payments.length > MAX_RECIPIENTS_PER_BULK_PAYMENT) {
+        const excess = payments.length - MAX_RECIPIENTS_PER_BULK_PAYMENT;
         return {
             payments: [],
             errors: [
                 {
                     row: 0,
-                    message: `Too many transactions: Found ${payments.length} recipients, but maximum allowed is ${MAX_RECIPIENTS_PER_BULK_PAYMENT}. Please remove ${payments.length - MAX_RECIPIENTS_PER_BULK_PAYMENT} recipients to proceed.`,
+                    message: `You have ${payments.length} recipients, but the limit is ${MAX_RECIPIENTS_PER_BULK_PAYMENT} per batch. Please remove ${excess} recipient${excess > 1 ? 's' : ''} or split into multiple batches.`,
                 },
             ],
         };
@@ -419,7 +453,7 @@ function parseAndValidateData(
         if (rows.length === 0) {
             return {
                 payments: [],
-                errors: [{ row: 0, message: "No data provided. Please enter payment data in the format: recipient, amount" }],
+                errors: [{ row: 0, message: "No payment data provided. Please enter your payments in this format: recipient, amount" }],
             };
         }
 
@@ -435,7 +469,7 @@ function parseAndValidateData(
                     {
                         row: 1,
                         message:
-                            "Header row detected but missing required columns. Expected columns: 'Recipient' and 'Amount'",
+                            "We detected a header row, but couldn't find the 'Recipient' and 'Amount' columns. Please use these column names, or remove the header row.",
                     },
                 ],
             };

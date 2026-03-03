@@ -20,6 +20,65 @@ export function formatCurrency(value: number | Big) {
 }
 
 /**
+ * Format token amount with optimal precision based on USD value
+ * Shows enough decimals to represent $0.01 equivalent accurately
+ * 
+ * @param bigIntAmount - Token amount as BigInt (smallest unit)
+ * @param tokenDecimals - Number of decimals for the token (e.g., 18 for ETH, 8 for BTC)
+ * @param tokenPrice - USD price per token (e.g., 60000 for BTC)
+ * @returns Formatted string with thousand separators and optimal decimals
+ * 
+ * @example
+ * // BTC @ $60,000:
+ * formatTokenAmount(50000000n, 8, 60000)    // "0.5" ($30,000)
+ * formatTokenAmount(250000n, 8, 60000)      // "0.0025" ($150)
+ * formatTokenAmount(3333n, 8, 60000)        // "0.00003333" ($2)
+ * 
+ * // ETH @ $3,000:
+ * formatTokenAmount(10000000000000000000n, 18, 3000)  // "10" ($30,000)
+ * formatTokenAmount(50000000000000000n, 18, 3000)     // "0.05" ($150)
+ */
+export function formatTokenAmount(
+    bigIntAmount: bigint | string,
+    tokenDecimals: number,
+    tokenPrice: number
+): string {
+    // Step 1: Convert BigInt to Big decimal number
+    const bigIntValue = typeof bigIntAmount === "string" ? BigInt(bigIntAmount) : bigIntAmount;
+    const divisor = Big(10).pow(tokenDecimals);
+    const tokenAmount = Big(bigIntValue.toString()).div(divisor);
+
+    // Step 2: Determine decimals needed to represent $0.01 equivalent
+    // We need: tokenAmount * price to be accurate within $0.01
+    // Required token precision = $0.01 / tokenPrice
+    const requiredTokenPrecision = Big(0.01).div(tokenPrice);
+
+    // Step 3: Calculate decimals needed: ceil(-log10(requiredTokenPrecision))
+    // Using: -log10(x) = -ln(x) / ln(10)
+    const log10Value = Math.log(Number(requiredTokenPrecision.toString())) / Math.log(10);
+    const decimalsNeeded = Math.max(0, Math.ceil(-log10Value));
+
+    // Cap at token's native decimals (e.g., 18 for ETH, 8 for BTC)
+    const finalDecimals = Math.min(decimalsNeeded, tokenDecimals);
+
+    // Step 4: Format with calculated decimals (truncate, don't round up)
+    // We must never show more tokens than the user will actually receive
+    const multiplier = Big(10).pow(finalDecimals);
+    const truncated = tokenAmount.mul(multiplier).round(0, Big.roundDown).div(multiplier);
+    let formatted = truncated.toFixed(finalDecimals);
+
+    // Remove trailing zeros
+    formatted = formatted.replace(/\.?0+$/, '');
+
+    // Add thousand separators
+    const parts = formatted.split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    formatted = parts.join('.');
+
+    return formatted;
+}
+
+/**
  * Format a date as relative time (e.g., "2 minutes ago", "Yesterday")
  * After 1 week, returns static date format (e.g., "Feb 18, 2026")
  */
