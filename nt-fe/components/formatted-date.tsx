@@ -49,7 +49,10 @@ export function FormattedDate({
   if (relative) {
     const relativeTime = formatRelativeTime(date);
     return (
-      <Tooltip content={formattedDate}>
+      <Tooltip
+        content={formattedDate}
+        triggerProps={{ asChild: false }}
+      >
         <span className={className}>{relativeTime}</span>
       </Tooltip>
     );

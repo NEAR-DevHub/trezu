@@ -21,32 +21,31 @@ export function formatCurrency(value: number | Big) {
 
 /**
  * Format token amount with optimal precision based on USD value
- * Shows enough decimals to represent $0.01 equivalent accurately
+ * Shows enough decimals to represent $0.01 equivalent accurately (truncated, never rounded up)
  * 
- * @param bigIntAmount - Token amount as BigInt (smallest unit)
+ * @param bigIntAmount - Token amount in smallest unit as string (e.g., "30517641175187890330" for 30.517 ETH with 18 decimals)
  * @param tokenDecimals - Number of decimals for the token (e.g., 18 for ETH, 8 for BTC)
  * @param tokenPrice - USD price per token (e.g., 60000 for BTC)
  * @returns Formatted string with thousand separators and optimal decimals
  * 
  * @example
  * // BTC @ $60,000:
- * formatTokenAmount(50000000n, 8, 60000)    // "0.5" ($30,000)
- * formatTokenAmount(250000n, 8, 60000)      // "0.0025" ($150)
- * formatTokenAmount(3333n, 8, 60000)        // "0.00003333" ($2)
+ * formatTokenAmount("50000000", 8, 60000)    // "0.5" ($30,000)
+ * formatTokenAmount("250000", 8, 60000)      // "0.0025" ($150)
+ * formatTokenAmount("3333", 8, 60000)        // "0.00003333" ($2)
  * 
  * // ETH @ $3,000:
- * formatTokenAmount(10000000000000000000n, 18, 3000)  // "10" ($30,000)
- * formatTokenAmount(50000000000000000n, 18, 3000)     // "0.05" ($150)
+ * formatTokenAmount("10000000000000000000", 18, 3000)  // "10" ($30,000)
+ * formatTokenAmount("50000000000000000", 18, 3000)     // "0.05" ($150)
  */
 export function formatTokenAmount(
-    bigIntAmount: bigint | string,
+    bigIntAmount: string,
     tokenDecimals: number,
     tokenPrice: number
 ): string {
-    // Step 1: Convert BigInt to Big decimal number
-    const bigIntValue = typeof bigIntAmount === "string" ? BigInt(bigIntAmount) : bigIntAmount;
+    // Step 1: Convert to Big decimal number
     const divisor = Big(10).pow(tokenDecimals);
-    const tokenAmount = Big(bigIntValue.toString()).div(divisor);
+    const tokenAmount = Big(bigIntAmount).div(divisor);
 
     // Step 2: Determine decimals needed to represent $0.01 equivalent
     // We need: tokenAmount * price to be accurate within $0.01
