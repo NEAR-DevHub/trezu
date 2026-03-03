@@ -119,7 +119,7 @@ function Step1({ handleNext }: StepProps) {
                 amountName="amount"
                 tokenName="token"
                 recipientName="address"
-                saveButtonText="Review Payment"
+                saveButtonText="Enter amount and address"
                 onSave={handleSave}
             />
         </PageCard>
