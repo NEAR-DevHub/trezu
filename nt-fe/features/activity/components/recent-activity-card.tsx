@@ -288,9 +288,9 @@ export function RecentActivity() {
                         const isExpanded = expandedGroups.has(groupId);
 
                         return (
-                            <div className="flex items-center justify-end shrink-0">
-                                <div className="flex flex-col items-end gap-0.5">
-                                    <div className="text-sm sm:text-base whitespace-nowrap font-semibold text-general-success-foreground">
+                            <div className="flex items-center justify-end min-w-0">
+                                <div className="flex flex-col items-end gap-0.5 min-w-0 flex-1">
+                                    <div className="text-sm sm:text-base font-semibold text-general-success-foreground truncate w-full text-right">
                                         {formatActivityAmount(
                                             grouped.totalAmount,
                                         )}{" "}
@@ -329,52 +329,53 @@ export function RecentActivity() {
                     if (activity.swap) {
                         const swap = activity.swap;
                         const isDeposit = swap.swapRole === "deposit";
+                        const sentSymbol =
+                            swap.sentTokenMetadata?.symbol ?? null;
+                        const receivedSymbol =
+                            swap.receivedTokenMetadata?.symbol ??
+                            swap.receivedTokenId;
                         return (
                             <div className="text-right">
-                                <div className="flex items-center justify-end gap-1.5">
+                                <div className="flex items-center justify-end gap-1.5 truncate">
                                     {isDeposit ? (
                                         <>
                                             {swap.sentAmount &&
                                             swap.sentTokenMetadata ? (
-                                                <span className="font-semibold text-general-destructive-foreground">
+                                                <span className="font-semibold text-general-destructive-foreground hidden sm:inline truncate">
                                                     {formatSmartAmount(
                                                         swap.sentAmount,
                                                     )}{" "}
-                                                    {
-                                                        swap.sentTokenMetadata
-                                                            .symbol
-                                                    }
+                                                    {sentSymbol}
                                                 </span>
                                             ) : (
-                                                <span className="font-semibold text-muted-foreground">
+                                                <span className="font-semibold text-muted-foreground hidden sm:inline">
                                                     ?
                                                 </span>
                                             )}
+                                            <span className="font-semibold text-muted-foreground sm:hidden">
+                                                {sentSymbol ?? "?"}
+                                            </span>
                                             <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                            <span className="font-semibold text-muted-foreground">
-                                                {swap.receivedTokenMetadata
-                                                    ?.symbol ??
-                                                    swap.receivedTokenId}
+                                            <span className="font-semibold text-muted-foreground truncate">
+                                                {receivedSymbol}
                                             </span>
                                         </>
                                     ) : (
                                         <>
-                                            {swap.sentTokenMetadata ? (
-                                                <span className="font-semibold text-muted-foreground">
-                                                    {
-                                                        swap.sentTokenMetadata
-                                                            .symbol
-                                                    }
+                                            {sentSymbol ? (
+                                                <span className="font-semibold text-muted-foreground truncate">
+                                                    {sentSymbol}
                                                 </span>
                                             ) : null}
                                             <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                            <span className="font-semibold text-general-success-foreground">
+                                            <span className="font-semibold text-general-success-foreground hidden sm:inline truncate">
                                                 {formatSmartAmount(
                                                     swap.receivedAmount,
                                                 )}{" "}
-                                                {swap.receivedTokenMetadata
-                                                    ?.symbol ??
-                                                    swap.receivedTokenId}
+                                                {receivedSymbol}
+                                            </span>
+                                            <span className="font-semibold text-general-success-foreground sm:hidden truncate">
+                                                {receivedSymbol}
                                             </span>
                                         </>
                                     )}
@@ -390,11 +391,11 @@ export function RecentActivity() {
                     }
 
                     return (
-                        <div className="flex items-center justify-end shrink-0">
-                            <div className="flex flex-col items-end gap-0.5">
+                        <div className="flex items-center justify-end min-w-0">
+                            <div className="flex flex-col items-end gap-0.5 min-w-0 w-full">
                                 <div
                                     className={cn(
-                                        "text-sm sm:text-base whitespace-nowrap font-semibold",
+                                        "text-sm sm:text-base font-semibold truncate w-full text-right",
                                         isReceived
                                             ? "text-general-success-foreground"
                                             : "text-foreground",
@@ -432,7 +433,7 @@ export function RecentActivity() {
     return (
         <>
             <Card className="gap-3 border-none shadow-none">
-                <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3 px-6">
+                <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3 px-4">
                     <div className="space-y-1">
                         <CardTitle className="text-base md:text-lg font-bold">
                             Recent Transactions
@@ -504,11 +505,11 @@ export function RecentActivity() {
                         />
                     ) : (
                         <>
-                            <div className="w-full overflow-x-auto px-4">
+                            <div className="w-full overflow-x-auto px-2">
                                 <Table className="table-fixed w-full min-w-full">
                                     <colgroup>
-                                        <col />
-                                        <col className="w-52 sm:w-60" />
+                                        <col className="w-42 sm:w-52" />
+                                        <col className="min-w-0" />
                                     </colgroup>
                                     <TableBody>
                                         {table.getRowModel().rows.map((row) => {
@@ -548,11 +549,11 @@ export function RecentActivity() {
                                                                             cell.id
                                                                         }
                                                                         className={cn(
-                                                                            "py-3",
+                                                                            "py-2 h-14",
                                                                             idx ===
                                                                                 0
-                                                                                ? "pl-3 overflow-hidden pr-0"
-                                                                                : "pr-3",
+                                                                                ? "pl-0 overflow-hidden pr-0 max-w-0"
+                                                                                : "pr-0 overflow-hidden",
                                                                         )}
                                                                     >
                                                                         {flexRender(
@@ -578,7 +579,7 @@ export function RecentActivity() {
                                                                         )
                                                                     }
                                                                 >
-                                                                    <TableCell className="py-3 pl-8 sm:pl-14 overflow-hidden">
+                                                                    <TableCell className="py-2 h-14 pl-8 sm:pl-14 overflow-hidden max-w-0">
                                                                         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                                                                             <div
                                                                                 className={cn(
@@ -602,10 +603,10 @@ export function RecentActivity() {
                                                                             </div>
                                                                         </div>
                                                                     </TableCell>
-                                                                    <TableCell className="py-3 pr-0 pl-4">
-                                                                        <div className="flex items-center justify-end shrink-0 pr-10">
-                                                                            <div className="flex flex-col items-end gap-0.5">
-                                                                                <div className="text-sm sm:text-base whitespace-nowrap font-semibold text-general-success-foreground">
+                                                                    <TableCell className="py-2 h-14 pr-3 pl-4 overflow-hidden">
+                                                                        <div className="flex items-center justify-end min-w-0">
+                                                                            <div className="flex flex-col items-end gap-0.5 min-w-0 w-full">
+                                                                                <div className="text-sm sm:text-base font-semibold text-general-success-foreground truncate w-full text-right">
                                                                                     {formatActivityAmount(
                                                                                         activity.amount,
                                                                                     )}{" "}
