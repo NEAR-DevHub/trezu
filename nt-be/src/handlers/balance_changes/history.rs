@@ -1212,8 +1212,11 @@ pub async fn get_export_history(
     };
 
     // Build WHERE clause
+    // If from_date is provided, include exports that are either:
+    // 1. Created on or after from_date, OR
+    // 2. Still available (created within last 48 hours, regardless of from_date)
     let where_clause = if from_date.is_some() {
-        "WHERE account_id = $1 AND created_at >= $2"
+        "WHERE account_id = $1 AND (created_at >= $2 OR created_at >= NOW() - INTERVAL '48 hours')"
     } else {
         "WHERE account_id = $1"
     };
