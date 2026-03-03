@@ -2,6 +2,7 @@
 
 import { formatUserDate, formatRelativeTime, type FormatUserDateOptions } from "@/lib/utils";
 import { useUserPreferences } from "@/hooks/use-user-preferences";
+import { Tooltip } from "@/components/tooltip";
 
 interface FormattedDateProps extends Omit<FormatUserDateOptions, "timezone" | "timeFormat"> {
   /** The date to format */
@@ -30,12 +31,6 @@ export function FormattedDate({
 }: FormattedDateProps) {
   const preferences = useUserPreferences();
 
-  // If relative time is requested, use formatRelativeTime
-  if (relative) {
-    const relativeTime = formatRelativeTime(date);
-    return <span className={className}>{relativeTime}</span>;
-  }
-
   // Use override values or fall back to user preferences
   // Note: timezone.name contains the IANA timezone (e.g., "Asia/Kolkata")
   const timezone = overrideTimezone !== undefined
@@ -49,6 +44,19 @@ export function FormattedDate({
     timeFormat,
     ...options,
   });
+
+  // If relative time is requested, show it with formatted date in tooltip
+  if (relative) {
+    const relativeTime = formatRelativeTime(date);
+    return (
+      <Tooltip
+        content={formattedDate}
+        triggerProps={{ asChild: false }}
+      >
+        <span className={className}>{relativeTime}</span>
+      </Tooltip>
+    );
+  }
 
   return <span className={className}>{formattedDate}</span>;
 }

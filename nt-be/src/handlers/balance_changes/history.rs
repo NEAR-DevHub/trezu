@@ -1195,37 +1195,22 @@ pub async fn get_export_history(
     let limit = params.limit.unwrap_or(10).min(100);
     let offset = params.offset.unwrap_or(0);
 
-    // Parse from_date if provided
-    let from_date = if let Some(ref date_str) = params.from_date {
-        Some(
-            DateTime::parse_from_rfc3339(date_str)
-                .map(|dt| dt.with_timezone(&Utc))
-                .map_err(|e| {
-                    (
-                        StatusCode::BAD_REQUEST,
-                        format!("Invalid date format: {}", e),
-                    )
-                })?,
+    // Build WHERE clause - show exports from current month OR still active (within 48 hours)
+    // This filters to:
+    // 1. Exports created on or after 1st of current month, OR
+    // 2. Exports created within last 48 hours (even if from previous month)
+    let where_clause = r#"
+        WHERE account_id = $1 
+        AND (
+            created_at >= DATE_TRUNC('month', NOW()) 
+            OR created_at >= NOW() - INTERVAL '48 hours'
         )
-    } else {
-        None
-    };
-
-    // Build WHERE clause
-    let where_clause = if from_date.is_some() {
-        "WHERE account_id = $1 AND created_at >= $2"
-    } else {
-        "WHERE account_id = $1"
-    };
+    "#;
 
     // Get total count
     let total_query = format!("SELECT COUNT(*) FROM export_history {}", where_clause);
-    let mut total_query_builder =
-        sqlx::query_scalar::<_, i64>(&total_query).bind(&params.account_id);
-    if let Some(date) = from_date {
-        total_query_builder = total_query_builder.bind(date);
-    }
-    let total = total_query_builder
+    let total = sqlx::query_scalar::<_, i64>(&total_query)
+        .bind(&params.account_id)
         .fetch_one(&state.db_pool)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -1245,20 +1230,14 @@ pub async fn get_export_history(
         FROM export_history
         {}
         ORDER BY created_at DESC
-        LIMIT ${}
-        OFFSET ${}
+        LIMIT $2
+        OFFSET $3
         "#,
-        where_clause,
-        if from_date.is_some() { "3" } else { "2" },
-        if from_date.is_some() { "4" } else { "3" }
+        where_clause
     );
 
-    let mut data_query_builder =
-        sqlx::query_as::<_, ExportHistoryItem>(&data_query).bind(&params.account_id);
-    if let Some(date) = from_date {
-        data_query_builder = data_query_builder.bind(date);
-    }
-    let data = data_query_builder
+    let data = sqlx::query_as::<_, ExportHistoryItem>(&data_query)
+        .bind(&params.account_id)
         .bind(limit)
         .bind(offset)
         .fetch_all(&state.db_pool)

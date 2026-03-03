@@ -116,19 +116,6 @@ export default function RequestPage({ params }: RequestPageProps) {
             description="Details for Request"
             backButton={`/${treasuryId}/requests`}
         >
-            <button
-                onClick={() => {
-                    if (window?.history?.length && window.history.length > 1) {
-                        router.back();
-                    } else {
-                        router.push(`/${treasuryId}/requests`);
-                    }
-                }}
-                className="flex items-center gap-1 font-medium text-sm text-unofficial-ghost-foreground hover:text-foreground cursor-pointer mb-4"
-            >
-                <ArrowLeft className="size-4" />
-                All Requests
-            </button>
             <ExpandedView
                 proposal={proposal}
                 policy={policy}

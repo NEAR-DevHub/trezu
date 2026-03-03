@@ -21,9 +21,17 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/modal";
-import { APP_WALLET_SETUP_URL, LANDING_PAGE } from "@/constants/config";
+import {
+    APP_WALLET_SETUP_URL,
+    LANDING_PAGE,
+    APP_ACTIVE_TREASURY,
+} from "@/constants/config";
 import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
+import { useTreasuryCreationStatus } from "@/hooks/use-treasury-queries";
+import { submitWhitelistRequest } from "@/lib/api";
+import { toast } from "sonner";
+import { Input } from "@/components/input";
 
 interface WalletSuggestionModalProps {
     open: boolean;
@@ -187,6 +195,9 @@ export function Content() {
     const [isWelcomeImageLoaded, setIsWelcomeImageLoaded] = useState(false);
     const [isWelcomeImageFailed, setIsWelcomeImageFailed] = useState(false);
     const [isWalletSuggestionOpen, setIsWalletSuggestionOpen] = useState(false);
+    const [contact, setContact] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitted, setSubmitted] = useState(false);
     const {
         accountId,
         connect,
@@ -196,6 +207,15 @@ export function Content() {
         clearError,
     } = useNear();
     const { lastTreasuryId, treasuries, isLoading } = useTreasury();
+    const { data: creationStatus } = useTreasuryCreationStatus();
+    const creationAvailable = creationStatus?.creationAvailable;
+
+    const showWhitelist =
+        !!accountId &&
+        !isLoading &&
+        !isInitializing &&
+        treasuries.length === 0 &&
+        !creationAvailable;
 
     useEffect(() => {
         if (!isLoading && treasuries.length > 0) {
@@ -204,7 +224,8 @@ export function Content() {
             accountId &&
             treasuries.length === 0 &&
             !isLoading &&
-            !isInitializing
+            !isInitializing &&
+            creationAvailable
         ) {
             router.push(`/app/new`);
         }
@@ -215,7 +236,25 @@ export function Content() {
         accountId,
         isInitializing,
         lastTreasuryId,
+        creationAvailable,
     ]);
+
+    const handleWhitelistSubmit = async () => {
+        if (!contact.trim()) return;
+        setIsSubmitting(true);
+        try {
+            await submitWhitelistRequest({
+                contact: contact.trim(),
+                accountId: accountId ?? undefined,
+            });
+            setSubmitted(true);
+        } catch {
+            toast.error("Failed to submit. Please try again.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     const buttonText = isInitializing
         ? "Loading..."
         : isAuthenticating || isLoading
@@ -271,7 +310,7 @@ export function Content() {
                             </Link>
                         </motion.div>
                         <div className="flex w-full flex-col items-center justify-center gap-6">
-                            <div className="flex w-full flex-col gap-2 text-center">
+                            <div className="flex w-full flex-col gap-2 text-center max-w-md">
                                 <div className="overflow-hidden">
                                     <motion.h1
                                         className="text-2xl font-semibold"
@@ -293,10 +332,40 @@ export function Content() {
                                             delay: 0.5,
                                         }}
                                     >
-                                        Welcome to Trezu
+                                        {!creationAvailable
+                                            ? submitted
+                                                ? "You're on the list 🎉"
+                                                : "Join the Trezu Waitlist"
+                                            : "Welcome to Trezu"}
                                     </motion.h1>
                                 </div>
-                                <div className="overflow-hidden">
+                                {creationAvailable ? (
+                                    <div className="overflow-hidden">
+                                        <motion.p
+                                            className="text-sm text-muted-foreground font-medium"
+                                            initial={{
+                                                clipPath: "inset(0 100% 0 0)",
+                                                x: -14,
+                                                opacity: 0,
+                                                filter: "blur(8px)",
+                                            }}
+                                            animate={{
+                                                clipPath: "inset(0 0% 0 0)",
+                                                x: 0,
+                                                opacity: 1,
+                                                filter: "blur(0px)",
+                                            }}
+                                            transition={{
+                                                duration: 0.6,
+                                                ease: "easeOut",
+                                                delay: 0.62,
+                                            }}
+                                        >
+                                            Use your wallet to sign in into your
+                                            treasury.
+                                        </motion.p>
+                                    </div>
+                                ) : showWhitelist && !submitted ? (
                                     <motion.p
                                         className="text-sm text-muted-foreground font-medium"
                                         initial={{
@@ -317,10 +386,37 @@ export function Content() {
                                             delay: 0.62,
                                         }}
                                     >
-                                        Use your wallet to sign in into your
-                                        treasury.
+                                        We&apos;ve hit today&apos;s treasury
+                                        limit. No worries - try again later or
+                                        leave your contact to join the waitlist.
+                                        We&apos;ll let you know when a spot
+                                        opens.
                                     </motion.p>
-                                </div>
+                                ) : (
+                                    <motion.p
+                                        className="text-sm text-muted-foreground font-medium"
+                                        initial={{
+                                            clipPath: "inset(0 100% 0 0)",
+                                            x: -14,
+                                            opacity: 0,
+                                            filter: "blur(8px)",
+                                        }}
+                                        animate={{
+                                            clipPath: "inset(0 0% 0 0)",
+                                            x: 0,
+                                            opacity: 1,
+                                            filter: "blur(0px)",
+                                        }}
+                                        transition={{
+                                            duration: 0.6,
+                                            ease: "easeOut",
+                                            delay: 0.62,
+                                        }}
+                                    >
+                                        Thanks! We&apos;ll notify you as soon as
+                                        treasury creation becomes available.
+                                    </motion.p>
+                                )}
                             </div>
                             <motion.div
                                 className="flex flex-col w-full px-4 lg:px-16 px gap-3 items-center justify-center"
@@ -332,34 +428,100 @@ export function Content() {
                                     delay: 0.74,
                                 }}
                             >
-                                <Button
-                                    size="default"
-                                    className="w-full max-w-md"
-                                    onClick={() => {
-                                        if (authError) clearError();
-                                        connect();
-                                    }}
-                                    disabled={
-                                        isAuthenticating || isInitializing
-                                    }
-                                >
-                                    {(isAuthenticating || isInitializing) && (
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                    )}
-                                    {buttonText}
-                                </Button>
-                                <Button
-                                    variant="link"
-                                    className="font-medium text-sm text-foreground hover:text-foreground/80"
-                                    onClick={() => {
-                                        trackEvent("wallet_missing_click", {
-                                            source: "welcome_page",
-                                        });
-                                        setIsWalletSuggestionOpen(true);
-                                    }}
-                                >
-                                    I don&apos;t have a wallet
-                                </Button>
+                                {showWhitelist ? (
+                                    submitted ? (
+                                        <Button
+                                            size="default"
+                                            variant="secondary"
+                                            asChild
+                                            className="w-full max-w-md"
+                                        >
+                                            <Link href={APP_ACTIVE_TREASURY}>
+                                                See Demo Trezu
+                                            </Link>
+                                        </Button>
+                                    ) : (
+                                        <div className="flex flex-col gap-3 w-full max-w-md">
+                                            <div className="flex flex-col gap-2 items-start">
+                                                <Input
+                                                    type="text"
+                                                    placeholder="Email address or Telegram (e.g. @username)"
+                                                    value={contact}
+                                                    onChange={(e) =>
+                                                        setContact(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                />
+                                                <p className="text-xs text-muted-foreground -mt-1">
+                                                    We will only use this to
+                                                    notify you
+                                                </p>
+                                            </div>
+                                            <Button
+                                                size="default"
+                                                className="mt-2"
+                                                onClick={handleWhitelistSubmit}
+                                                disabled={
+                                                    isSubmitting ||
+                                                    !contact.trim()
+                                                }
+                                            >
+                                                {isSubmitting && (
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                )}
+                                                Join the Waitlist
+                                            </Button>
+                                            <Button
+                                                size="default"
+                                                variant="ghost"
+                                                asChild
+                                            >
+                                                <Link
+                                                    href={APP_ACTIVE_TREASURY}
+                                                >
+                                                    See Demo Trezu
+                                                </Link>
+                                            </Button>
+                                        </div>
+                                    )
+                                ) : (
+                                    <>
+                                        <Button
+                                            size="default"
+                                            className="w-full max-w-md"
+                                            onClick={() => {
+                                                if (authError) clearError();
+                                                connect();
+                                            }}
+                                            disabled={
+                                                isAuthenticating ||
+                                                isInitializing
+                                            }
+                                        >
+                                            {(isAuthenticating ||
+                                                isInitializing) && (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                            )}
+                                            {buttonText}
+                                        </Button>
+                                        <Button
+                                            variant="link"
+                                            className="font-medium text-sm text-foreground hover:text-foreground/80"
+                                            onClick={() => {
+                                                trackEvent(
+                                                    "wallet_missing_click",
+                                                    {
+                                                        source: "welcome_page",
+                                                    },
+                                                );
+                                                setIsWalletSuggestionOpen(true);
+                                            }}
+                                        >
+                                            I don&apos;t have a wallet
+                                        </Button>
+                                    </>
+                                )}
                             </motion.div>
                         </div>
                     </motion.div>

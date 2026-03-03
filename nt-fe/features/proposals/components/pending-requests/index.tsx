@@ -90,14 +90,14 @@ export function PendingRequestItem({
                         withDate={true}
                         textOnly
                     />
-                    <div className="gap-3 grid grid-rows-[0fr] pt-4 w-full group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-in-out">
+                    <div className="gap-3 grid grid-rows-[1fr] sm:grid-rows-[0fr] pt-4 w-full sm:group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-in-out">
                         <div className="overflow-hidden w-full flex flex-col gap-2">
                             <NotEnoughBalance
                                 insufficientBalanceInfo={
                                     insufficientBalanceInfo
                                 }
                             />
-                            <div className="flex gap-3 invisible w-full group-hover:visible transition-opacity duration-300 ease-in-out">
+                            <div className="flex gap-3 w-full sm:invisible sm:group-hover:visible transition-opacity duration-300 ease-in-out">
                                 <AuthButtonWithProposal
                                     proposalKind={proposal.kind}
                                     variant="secondary"

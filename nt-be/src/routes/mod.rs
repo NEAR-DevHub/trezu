@@ -112,6 +112,14 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
             "/api/treasury/create",
             post(handlers::treasury::create::create_treasury)
         )
+        .route(
+            "/api/treasury/creation-status",
+            get(handlers::treasury::creation_status::get_treasury_creation_status)
+        )
+        .route(
+            "/api/treasury/whitelist-request",
+            post(handlers::treasury::whitelist_request::submit_whitelist_request)
+        )
         // User endpoints
         .route(
             "/api/user/balance",

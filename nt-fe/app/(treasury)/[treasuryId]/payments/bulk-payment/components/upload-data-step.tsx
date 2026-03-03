@@ -570,8 +570,8 @@ export function UploadDataStep({
                                                     rows={8}
                                                     className={`resize-none font-mono text-sm bg-muted focus:outline-none break-all whitespace-pre-wrap min-h-41 ${dataErrors &&
                                                         dataErrors.length > 0
-                                                        ? "border-2 border-destructive focus:border-destructive"
-                                                        : ""
+                                                        ? "border border-destructive bg-destructive/5! focus:border-destructive!"
+                                                        : "bg-muted"
                                                         }`}
                                                     disabled={
                                                         availableCredits === 0

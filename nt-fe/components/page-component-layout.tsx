@@ -75,7 +75,7 @@ export function PageComponentLayout({
                                 {title}
                             </h1>
                             {description && (
-                                <span className="hidden md:inline text-xs text-muted-foreground">
+                                <span className="hidden lg:inline text-xs text-muted-foreground">
                                     {description}
                                 </span>
                             )}

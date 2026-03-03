@@ -11,8 +11,8 @@ import { useState, useEffect } from "react";
 import { useNear } from "@/stores/near-store";
 import { useAssets } from "@/hooks/use-assets";
 import { useProposals } from "@/hooks/use-proposals";
-import Big from "@/lib/big";
 import { availableBalance } from "@/lib/balance";
+import { useUiStore } from "@/stores/ui-store";
 
 // Tour names
 export const TOUR_NAMES = {
@@ -142,6 +142,8 @@ export function WelcomeTooltip() {
     const { accountId } = useNear();
     const isMobile = useMediaQuery("(max-width: 768px)");
     const isSidebarOpen = useSidebarStore((state) => state.isSidebarOpen);
+    const pushOverlay = useUiStore((s) => s.pushOverlay);
+    const popOverlay = useUiStore((s) => s.popOverlay);
 
     const hidden = isMobile && isSidebarOpen;
 
@@ -152,6 +154,13 @@ export function WelcomeTooltip() {
         );
         setIsWelcomeDismissed(welcomeDismissed === "true");
     }, [isGuestTreasury, isLoading]);
+
+    useEffect(() => {
+        if (!isWelcomeDismissed) {
+            pushOverlay();
+            return () => popOverlay();
+        }
+    }, [isWelcomeDismissed]);
 
     const handleDismiss = () => {
         localStorage.setItem(LOCAL_STORAGE_KEYS.WELCOME_DISMISSED, "true");
@@ -260,6 +269,8 @@ export function CongratsTooltip() {
     const isSidebarOpen = useSidebarStore((state) => state.isSidebarOpen);
     const { currentTour } = useNextStep();
     const isTourActive = !!currentTour;
+    const pushOverlay = useUiStore((s) => s.pushOverlay);
+    const popOverlay = useUiStore((s) => s.popOverlay);
 
     const { data, isLoading: isLoadingAssets } = useAssets(treasuryId);
     const { tokens } = data || { tokens: [] };
@@ -273,6 +284,13 @@ export function CongratsTooltip() {
     const isLoading =
         isLoadingAssets || isLoadingProposals || isLoadingGuestTreasury;
     const hidden = isMobile && isSidebarOpen;
+
+    useEffect(() => {
+        if (isVisible) {
+            pushOverlay();
+            return () => popOverlay();
+        }
+    }, [isVisible]);
 
     useEffect(() => {
         if (isGuestTreasury || isLoading) return;

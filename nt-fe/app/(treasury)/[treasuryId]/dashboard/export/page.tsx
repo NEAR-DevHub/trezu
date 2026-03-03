@@ -334,15 +334,8 @@ export default function ExportActivityPage() {
     const { data: planDetails, isLoading: planLoading } =
         useSubscription(treasuryId);
 
-    // Calculate date for 1 month ago (for fetching export history)
-    const exportHistoryFromDate = useMemo(() => {
-        const oneMonthAgo = new Date();
-        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-        return oneMonthAgo.toISOString();
-    }, []);
-
     const { data: exportHistoryData, refetch: refetchHistory } =
-        useExportHistory(treasuryId, exportHistoryFromDate);
+        useExportHistory(treasuryId);
     const { data: assetsData } = useAssets(treasuryId, {
         onlyPositiveBalance: false,
     });
@@ -585,7 +578,8 @@ export default function ExportActivityPage() {
         if (selectedAssets.includes("all") || selectedAssets.length === 0)
             return "All Assets";
         if (selectedAssets.length === 1) return selectedAssets[0];
-        return `${selectedAssets.length} assets selected`;
+        // Show comma-separated list: "USDC, USDT, NEAR"
+        return selectedAssets.join(", ");
     };
 
     const getSelectedTypesLabel = () => {
@@ -600,7 +594,14 @@ export default function ExportActivityPage() {
             );
             return type?.label || "All Types";
         }
-        return `${selectedTransactionTypes.length} types selected`;
+        // Show comma-separated list: "Sent, Received"
+        const labels = selectedTransactionTypes
+            .filter((t) => t !== "all")
+            .map((t) => {
+                const type = TRANSACTION_TYPES.find((tt) => tt.value === t);
+                return type?.label || t;
+            });
+        return labels.join(", ");
     };
 
     const canGenerateExport = useMemo(() => {
@@ -887,11 +888,13 @@ export default function ExportActivityPage() {
                                                             variant="outline"
                                                             className="w-full justify-between bg-transparent! border-2 font-normal"
                                                         >
-                                                            <div className="flex items-center gap-2">
-                                                                <Coins className="w-4 h-4" />
-                                                                {getSelectedAssetsLabel()}
+                                                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                                <Coins className="w-4 h-4 shrink-0" />
+                                                                <span className="truncate">
+                                                                    {getSelectedAssetsLabel()}
+                                                                </span>
                                                             </div>
-                                                            <ChevronDown className="w-4 h-4 opacity-50" />
+                                                            <ChevronDown className="w-4 h-4 opacity-50 shrink-0" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent
@@ -972,8 +975,10 @@ export default function ExportActivityPage() {
                                                             variant="outline"
                                                             className="w-full justify-between bg-transparent! border-2 font-normal"
                                                         >
-                                                            {getSelectedTypesLabel()}
-                                                            <ChevronDown className="w-4 h-4 opacity-50" />
+                                                            <span className="truncate flex-1 text-left">
+                                                                {getSelectedTypesLabel()}
+                                                            </span>
+                                                            <ChevronDown className="w-4 h-4 opacity-50 shrink-0 ml-2" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent

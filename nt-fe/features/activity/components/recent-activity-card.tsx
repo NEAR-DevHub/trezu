@@ -32,17 +32,17 @@ import type { RecentActivity as RecentActivityType } from "@/lib/api";
 
 type GroupedActivity =
     | {
-        type: "single";
-        activity: RecentActivityType;
-    }
+          type: "single";
+          activity: RecentActivityType;
+      }
     | {
-        type: "grouped";
-        pool: string;
-        activities: RecentActivityType[];
-        totalAmount: string;
-        tokenMetadata: RecentActivityType["tokenMetadata"];
-        blockTime: string; // Most recent time
-    };
+          type: "grouped";
+          pool: string;
+          activities: RecentActivityType[];
+          totalAmount: string;
+          tokenMetadata: RecentActivityType["tokenMetadata"];
+          blockTime: string; // Most recent time
+      };
 import {
     useReactTable,
     getCoreRowModel,
@@ -55,6 +55,7 @@ import { FormattedDate } from "@/components/formatted-date";
 import { TransactionDetailsModal } from "./transaction-details-modal";
 import { MemberOnlyExportButton } from "@/components/member-only-export-button";
 import Link from "next/link";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 const ITEMS_ON_DASHBOARD = 10;
 const MAX_ITEMS = 100;
@@ -147,7 +148,7 @@ export function RecentActivity() {
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
         new Set(),
     );
-
+    const isMobile = useMediaQuery("(max-width: 640px)");
     const { data: response, isLoading } = useRecentActivity(
         treasuryId,
         MAX_ITEMS,
@@ -252,8 +253,8 @@ export function RecentActivity() {
                                     isSwap
                                         ? "bg-blue-500/10"
                                         : isReceived
-                                            ? "bg-general-success-background-faded"
-                                            : "bg-general-destructive-background-faded",
+                                          ? "bg-general-success-background-faded"
+                                          : "bg-general-destructive-background-faded",
                                 )}
                             >
                                 {isSwap ? (
@@ -334,10 +335,15 @@ export function RecentActivity() {
                                     {isDeposit ? (
                                         <>
                                             {swap.sentAmount &&
-                                                swap.sentTokenMetadata ? (
+                                            swap.sentTokenMetadata ? (
                                                 <span className="font-semibold text-general-destructive-foreground">
-                                                    {formatSmartAmount(swap.sentAmount)}{" "}
-                                                    {swap.sentTokenMetadata.symbol}
+                                                    {formatSmartAmount(
+                                                        swap.sentAmount,
+                                                    )}{" "}
+                                                    {
+                                                        swap.sentTokenMetadata
+                                                            .symbol
+                                                    }
                                                 </span>
                                             ) : (
                                                 <span className="font-semibold text-muted-foreground">
@@ -346,7 +352,8 @@ export function RecentActivity() {
                                             )}
                                             <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                                             <span className="font-semibold text-muted-foreground">
-                                                {swap.receivedTokenMetadata?.symbol ??
+                                                {swap.receivedTokenMetadata
+                                                    ?.symbol ??
                                                     swap.receivedTokenId}
                                             </span>
                                         </>
@@ -354,13 +361,19 @@ export function RecentActivity() {
                                         <>
                                             {swap.sentTokenMetadata ? (
                                                 <span className="font-semibold text-muted-foreground">
-                                                    {swap.sentTokenMetadata.symbol}
+                                                    {
+                                                        swap.sentTokenMetadata
+                                                            .symbol
+                                                    }
                                                 </span>
                                             ) : null}
                                             <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                                             <span className="font-semibold text-general-success-foreground">
-                                                {formatSmartAmount(swap.receivedAmount)}{" "}
-                                                {swap.receivedTokenMetadata?.symbol ??
+                                                {formatSmartAmount(
+                                                    swap.receivedAmount,
+                                                )}{" "}
+                                                {swap.receivedTokenMetadata
+                                                    ?.symbol ??
                                                     swap.receivedTokenId}
                                             </span>
                                         </>
@@ -429,7 +442,7 @@ export function RecentActivity() {
                             )
                         </CardDescription>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
                         {/* TODO: Uncomment after price integration */}
                         {/* <div className="flex items-center gap-2">
                             <Checkbox
@@ -447,6 +460,18 @@ export function RecentActivity() {
                             </label>
                         </div> */}
                         <MemberOnlyExportButton />
+                        <Link href={`/${treasuryId}/dashboard/activity`}>
+                            <Button
+                                variant="outline"
+                                size={isMobile ? "icon" : "default"}
+                                className="h-9 px-3"
+                            >
+                                <span className="hidden sm:inline">
+                                    View All
+                                </span>
+                                <ChevronRight className="h-4 w-4" />
+                            </Button>
+                        </Link>
                     </div>
                 </CardHeader>
                 <CardContent className="px-2">
@@ -610,18 +635,6 @@ export function RecentActivity() {
                                         })}
                                     </TableBody>
                                 </Table>
-                            </div>
-                            <div className="px-6">
-                                <Link
-                                    href={`/${treasuryId}/dashboard/activity`}
-                                >
-                                    <Button
-                                        variant="outline"
-                                        className="w-full mt-4 bg-transparent hover:bg-muted/50"
-                                    >
-                                        View Full Activity
-                                    </Button>
-                                </Link>
                             </div>
                         </>
                     )}

@@ -10,21 +10,31 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { XIcon } from "lucide-react";
+import { useRef } from "react";
+import { useUiStore } from "@/stores/ui-store";
 
-interface DialogHeaderProps extends React.ComponentProps<typeof BaseDialogHeader> {
+interface DialogHeaderProps
+    extends React.ComponentProps<typeof BaseDialogHeader> {
     centerTitle?: boolean;
     closeButton?: boolean;
 }
 
-function DialogHeader({ className, children, centerTitle = false, closeButton = true, ...props }: DialogHeaderProps) {
+function DialogHeader({
+    className,
+    children,
+    centerTitle = false,
+    closeButton = true,
+    ...props
+}: DialogHeaderProps) {
     return (
         <BaseDialogHeader
             {...props}
-            className={cn("border-b border-border px-3 pb-3.5 -mx-3 flex flex-row items-center justify-between text-center gap-4", className)}
+            className={cn(
+                "border-b border-border px-3 pb-3.5 -mx-3 flex flex-row items-center justify-between text-center gap-4",
+                className,
+            )}
         >
-            <div className={cn(centerTitle && "flex-1")}>
-                {children}
-            </div>
+            <div className={cn(centerTitle && "flex-1")}>{children}</div>
             {closeButton && (
                 <BaseDialogClose className="rounded-xs opacity-70 transition-opacity hover:opacity-100 ">
                     <XIcon className="size-4" />
@@ -35,7 +45,10 @@ function DialogHeader({ className, children, centerTitle = false, closeButton = 
     );
 }
 
-function DialogTitle({ className, ...props }: React.ComponentProps<typeof BaseDialogTitle>) {
+function DialogTitle({
+    className,
+    ...props
+}: React.ComponentProps<typeof BaseDialogTitle>) {
     return (
         <BaseDialogTitle
             {...props}
@@ -44,7 +57,10 @@ function DialogTitle({ className, ...props }: React.ComponentProps<typeof BaseDi
     );
 }
 
-function DialogFooter({ className, ...props }: React.ComponentProps<typeof BaseDialogFooter>) {
+function DialogFooter({
+    className,
+    ...props
+}: React.ComponentProps<typeof BaseDialogFooter>) {
     return (
         <BaseDialogFooter
             {...props}
@@ -53,11 +69,39 @@ function DialogFooter({ className, ...props }: React.ComponentProps<typeof BaseD
     );
 }
 
-function DialogContent({ className, children, ...props }: React.ComponentProps<typeof BaseDialogContent>) {
+function DialogContent({
+    className,
+    children,
+    ...props
+}: React.ComponentProps<typeof BaseDialogContent>) {
+    const pushOverlay = useUiStore((s) => s.pushOverlay);
+    const popOverlay = useUiStore((s) => s.popOverlay);
+    const pushed = useRef(false);
+
+    // Track open/close via the `data-state` attribute change on the content element.
+    // We use onAnimationStart which fires when the open animation begins.
+    function handleStateChange(open: boolean) {
+        if (open && !pushed.current) {
+            pushed.current = true;
+            pushOverlay();
+        } else if (!open && pushed.current) {
+            pushed.current = false;
+            popOverlay();
+        }
+    }
+
     return (
         <BaseDialogContent
             {...props}
             showCloseButton={false}
+            onOpenAutoFocus={(e) => {
+                handleStateChange(true);
+                props.onOpenAutoFocus?.(e);
+            }}
+            onCloseAutoFocus={(e) => {
+                handleStateChange(false);
+                props.onCloseAutoFocus?.(e);
+            }}
             className={cn(
                 "bg-card p-3.5",
                 // Mobile: bottom drawer (full width, no margins)
@@ -69,7 +113,7 @@ function DialogContent({ className, children, ...props }: React.ComponentProps<t
                 "sm:w-full sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-lg",
                 "sm:data-[state=closed]:slide-out-to-bottom-0 sm:data-[state=open]:slide-in-from-bottom-0",
                 "sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95",
-                className
+                className,
             )}
         >
             {children}

@@ -45,6 +45,7 @@ import {
 } from "./utils";
 import { useCountdownTimer } from "./hooks/use-countdown-timer";
 import { useExchangeQuote } from "./hooks/use-exchange-quote";
+import { useFormatQuoteAmount } from "./hooks/use-format-quote-amount";
 import { ExchangeSummaryCard } from "./components/exchange-summary-card";
 import { Rate } from "./components/rate";
 import { InfoDisplay } from "@/components/info-display";
@@ -183,6 +184,17 @@ function Step1({ handleNext }: StepProps) {
         receiveToken.network,
     ]);
 
+    const formattedReceiveAmount = useFormatQuoteAmount(
+        quoteData?.quote
+            ? {
+                amountOut: quoteData.quote.amountOut,
+                amountOutFormatted: quoteData.quote.amountOutFormatted,
+                amountOutUsd: quoteData.quote.amountOutUsd,
+                tokenDecimals: receiveToken.decimals,
+            }
+            : null
+    );
+
     const handleContinue = () => {
         form.trigger().then((isValid) => {
             if (isValid && handleNext && quoteData) {
@@ -258,7 +270,7 @@ function Step1({ handleNext }: StepProps) {
                 tokenName="receiveToken"
                 readOnly={true}
                 loading={isLoadingQuote}
-                customValue={quoteData?.quote.amountOutFormatted || ""}
+                customValue={formattedReceiveAmount}
                 dynamicFontSize={true}
                 tokenSelect={{
                     filterTokens: filterReceiveTokens,
@@ -351,15 +363,26 @@ function Step2({ handleBack }: StepProps) {
         localLiveQuoteData?.quote.depositAddress,
     );
 
+    const formattedReceiveAmount = useFormatQuoteAmount(
+        localLiveQuoteData?.quote
+            ? {
+                amountOut: localLiveQuoteData.quote.amountOut,
+                amountOutFormatted: localLiveQuoteData.quote.amountOutFormatted,
+                amountOutUsd: localLiveQuoteData.quote.amountOutUsd,
+                tokenDecimals: receiveToken.decimals,
+            }
+            : null
+    );
+
     const sellTotal = useMemo(() => {
         if (!localLiveQuoteData) return 0;
         return Number(localLiveQuoteData.quote.amountInFormatted) || 0;
     }, [localLiveQuoteData]);
 
     const receiveTotal = useMemo(() => {
-        if (!localLiveQuoteData) return 0;
-        return Number(localLiveQuoteData.quote.amountOutFormatted) || 0;
-    }, [localLiveQuoteData]);
+        if (!localLiveQuoteData || !formattedReceiveAmount) return 0;
+        return Number(formattedReceiveAmount) || 0;
+    }, [localLiveQuoteData, formattedReceiveAmount]);
 
     const estimatedSellUSDValue = sellTokenData?.price
         ? sellTotal * sellTokenData.price
@@ -449,9 +472,7 @@ function Step2({ handleBack }: StepProps) {
                             <ExchangeSummaryCard
                                 title="Receive"
                                 token={receiveToken}
-                                amount={
-                                    localLiveQuoteData.quote.amountOutFormatted
-                                }
+                                amount={formattedReceiveAmount}
                                 usdValue={estimatedReceiveUSDValue}
                             />
                         </div>

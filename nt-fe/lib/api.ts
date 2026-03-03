@@ -766,6 +766,36 @@ export async function createTreasury(
     }
 }
 
+export interface TreasuryCreationStatusResponse {
+    creationAvailable: boolean;
+}
+
+/**
+ * Check if treasury creation is available (sufficient signer balance and not disabled)
+ */
+export async function getTreasuryCreationStatus(): Promise<TreasuryCreationStatusResponse | null> {
+    try {
+        const response = await axios.get<TreasuryCreationStatusResponse>(
+            `${BACKEND_API_BASE}/treasury/creation-status`,
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching treasury creation status:", error);
+        return null;
+    }
+}
+
+export interface WhitelistRequestBody {
+    contact: string;
+    accountId?: string;
+}
+
+export async function submitWhitelistRequest(
+    body: WhitelistRequestBody,
+): Promise<void> {
+    await axios.post(`${BACKEND_API_BASE}/treasury/whitelist-request`, body);
+}
+
 export interface NetworkInfo {
     chainId: string;
     chainName: string;
@@ -1219,14 +1249,12 @@ export interface ExportHistoryResponse {
  */
 export async function getExportHistory(
     accountId: string,
-    fromDate?: string, // ISO date string (e.g., "2024-01-01T00:00:00Z")
 ): Promise<ExportHistoryResponse> {
     const response = await axios.get<ExportHistoryResponse>(
         `${BACKEND_API_BASE}/export-history`,
         {
             params: {
                 accountId,
-                ...(fromDate && { fromDate }),
             },
         },
     );
