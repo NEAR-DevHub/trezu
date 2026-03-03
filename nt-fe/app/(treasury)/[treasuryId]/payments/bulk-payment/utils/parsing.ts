@@ -370,7 +370,7 @@ export function parsePaymentData(
             }
         } catch (error) {
             // Clean up error message - remove any technical jargon
-            let errorMessage = error instanceof Error ? error.message : "Invalid amount";
+            let errorMessage = error instanceof Error ? error.message : "Invalid amount. Please use only numbers and decimals (e.g., 100 or 100.50).";
             // Strip technical prefixes like "[big.js]" or "Error:"
             errorMessage = errorMessage.replace(/^\[.*?\]\s*/, '').replace(/^Error:\s*/i, '');
 
