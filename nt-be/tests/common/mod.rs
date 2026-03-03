@@ -249,6 +249,68 @@ impl TestServer {
         panic!("Server failed to start within timeout");
     }
 
+    /// Start the test server with Goldsky enrichment enabled (NEON_DATABASE_URL set).
+    /// Workers use shortened delays for faster test execution:
+    /// - Enrichment: 3s initial delay, 5s interval
+    /// - Maintenance: 15s initial delay, 30s interval
+    pub async fn start_with_neon(neon_database_url: &str) -> Self {
+        load_test_env();
+
+        let db_url =
+            std::env::var("DATABASE_URL").expect("DATABASE_URL must be set for integration tests");
+
+        // Start mock DeFiLlama server
+        let mock_server = start_mock_defillama_server().await;
+        let mock_uri = mock_server.uri();
+
+        let mut process = Command::new("cargo")
+            .args(["run", "--bin", "nt-be"])
+            .env("PORT", "3001")
+            .env("RUST_LOG", "info")
+            .env("DATABASE_URL", &db_url)
+            .env("NEON_DATABASE_URL", neon_database_url)
+            // Tune worker timings for test: enrichment runs first, maintenance after
+            .env("ENRICHMENT_INITIAL_DELAY_SECONDS", "3")
+            .env("ENRICHMENT_INTERVAL_SECONDS", "10")
+            .env("MAINTENANCE_INITIAL_DELAY_SECONDS", "45")
+            .env("MAINTENANCE_INTERVAL_SECONDS", "60")
+            .env(
+                "SIGNER_KEY",
+                "ed25519:3tgdk2wPraJzT4nsTuf86UX41xgPNk3MHnq8epARMdBNs29AFEztAuaQ7iHddDfXG9F2RzV1XNQYgJyAyoW51UBB",
+            )
+            .env("SIGNER_ID", "sandbox")
+            .env("DEFILLAMA_API_BASE_URL", &mock_uri)
+            .spawn()
+            .expect("Failed to start server");
+
+        let port = 3001;
+
+        let client = reqwest::Client::new();
+        for attempt in 0..60 {
+            if attempt % 10 == 0 && attempt > 0 {
+                println!("Still waiting for server... (attempt {}/60)", attempt);
+            }
+            sleep(Duration::from_millis(500)).await;
+            if let Ok(response) = client
+                .get(format!("http://localhost:{}/api/health", port))
+                .send()
+                .await
+                && response.status().is_success()
+            {
+                println!("Server ready after {} attempts", attempt + 1);
+                return TestServer {
+                    process,
+                    port,
+                    _mock_server: Some(mock_server),
+                };
+            }
+        }
+
+        let _ = process.kill();
+        let _ = process.wait();
+        panic!("Server failed to start within timeout");
+    }
+
     pub fn url(&self, path: &str) -> String {
         format!("http://localhost:{}{}", self.port, path)
     }

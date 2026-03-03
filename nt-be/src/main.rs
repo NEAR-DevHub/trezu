@@ -34,12 +34,24 @@ async fn main() {
             use near_api::Chain;
             use nt_be::handlers::balance_changes::account_monitor::run_maintenance_cycle;
 
-            let interval = Duration::from_secs(300); // 5 minutes
+            let interval_secs = std::env::var("MAINTENANCE_INTERVAL_SECONDS")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(300u64); // default 5 minutes
+            let initial_delay_secs = std::env::var("MAINTENANCE_INITIAL_DELAY_SECONDS")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(30u64);
+            let interval = Duration::from_secs(interval_secs);
 
-            log::info!("Starting account maintenance worker (5 minute interval)");
+            log::info!(
+                "Starting account maintenance worker ({}s interval, {}s initial delay)",
+                interval_secs,
+                initial_delay_secs
+            );
 
             // Wait for server to fully start
-            tokio::time::sleep(Duration::from_secs(30)).await;
+            tokio::time::sleep(Duration::from_secs(initial_delay_secs)).await;
 
             let mut interval_timer = tokio::time::interval(interval);
 
@@ -143,10 +155,22 @@ async fn main() {
             use nt_be::handlers::balance_changes::goldsky_enrichment::run_enrichment_cycle;
 
             const BATCH_SIZE: usize = 100;
-            log::info!("Starting Goldsky enrichment worker (15s interval, immediate retry on full batch)");
+            let enrichment_initial_delay = std::env::var("ENRICHMENT_INITIAL_DELAY_SECONDS")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(10u64);
+            let enrichment_interval = std::env::var("ENRICHMENT_INTERVAL_SECONDS")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(15u64);
+            log::info!(
+                "Starting Goldsky enrichment worker ({}s interval, {}s initial delay)",
+                enrichment_interval,
+                enrichment_initial_delay
+            );
 
             // Wait for server to fully start
-            tokio::time::sleep(Duration::from_secs(10)).await;
+            tokio::time::sleep(Duration::from_secs(enrichment_initial_delay)).await;
 
             loop {
                 let should_sleep = {
@@ -168,7 +192,7 @@ async fn main() {
                     }
                 };
                 if should_sleep {
-                    tokio::time::sleep(Duration::from_secs(15)).await;
+                    tokio::time::sleep(Duration::from_secs(enrichment_interval)).await;
                 }
             }
         });
