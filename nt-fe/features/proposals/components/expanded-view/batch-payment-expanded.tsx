@@ -124,7 +124,7 @@ function PaymentDisplay({
                     />
                     Recipient {number}
                 </div>
-                <div className="flex gap-3 items-baseline text-sm text-muted-foreground">
+                <div className="hidden md:flex gap-3 items-baseline text-sm text-muted-foreground">
                     <Address address={payment.recipient} />
                     <Amount
                         amount={payment.amount.toString()}
