@@ -47,7 +47,7 @@ struct IndexedDaoOutcome {
 // ---------------------------------------------------------------------------
 
 /// A single balance-affecting event parsed from an IndexedDaoOutcome.
-/// One outcome can produce multiple ParsedEvents (Path A + Path B).
+/// One outcome can produce multiple ParsedEvents (Path A + Path B + Path C).
 #[derive(Debug, Clone)]
 struct ParsedEvent {
     account_id: String,
@@ -56,6 +56,10 @@ struct ParsedEvent {
     action_kind: Option<String>,
     #[allow(dead_code)]
     method_name: Option<String>,
+    /// Path C events: trigger_block_height may be 2-3 blocks before the actual
+    /// state change. When true, the enrichment loop scans forward to find the
+    /// correct block.
+    forward_scan: bool,
 }
 
 // ---------------------------------------------------------------------------
@@ -131,7 +135,7 @@ struct EventJson {
 // ---------------------------------------------------------------------------
 
 /// Parse all balance-affecting events from a single IndexedDaoOutcome.
-/// A single outcome can produce events from both Path A (logs) and Path B (receiver).
+/// A single outcome can produce events from Path A (logs), Path B (receiver), and/or Path C (executor).
 fn parse_outcome_events(outcome: &IndexedDaoOutcome) -> Vec<ParsedEvent> {
     let mut events = Vec::new();
 
@@ -141,11 +145,14 @@ fn parse_outcome_events(outcome: &IndexedDaoOutcome) -> Vec<ParsedEvent> {
     }
 
     // Path B: Receiver-based events (receiver_id is a DAO)
-    if let Some(receiver_id) = &outcome.receiver_id
-        && receiver_id.ends_with(".sputnik-dao.near")
-    {
+    let receiver_is_dao = outcome
+        .receiver_id
+        .as_ref()
+        .is_some_and(|r| r.ends_with(".sputnik-dao.near"));
+
+    if receiver_is_dao {
         events.push(ParsedEvent {
-            account_id: receiver_id.clone(),
+            account_id: outcome.receiver_id.clone().unwrap(),
             token_id: "near".to_string(),
             counterparty: outcome
                 .signer_id
@@ -153,6 +160,26 @@ fn parse_outcome_events(outcome: &IndexedDaoOutcome) -> Vec<ParsedEvent> {
                 .unwrap_or_else(|| "UNKNOWN".to_string()),
             action_kind: None,
             method_name: None,
+            forward_scan: false,
+        });
+    }
+
+    // Path C: Executor-based events (DAO executes cross-contract call)
+    // Captures add_proposal / act_proposal outcomes where the DAO is the executor
+    // but the receipt is sent to another contract (e.g., olskik.near).
+    // forward_scan=true because trigger_block_height is typically 2-3 blocks before
+    // the actual NEAR state change (cross-shard receipt processing).
+    if outcome.executor_id.ends_with(".sputnik-dao.near") && !receiver_is_dao {
+        events.push(ParsedEvent {
+            account_id: outcome.executor_id.clone(),
+            token_id: "near".to_string(),
+            counterparty: outcome
+                .receiver_id
+                .clone()
+                .unwrap_or_else(|| "UNKNOWN".to_string()),
+            action_kind: None,
+            method_name: None,
+            forward_scan: true,
         });
     }
 
@@ -223,6 +250,7 @@ fn parse_nep141_event(event: &EventJson, executor_id: &str) -> Vec<ParsedEvent> 
                     counterparty: new_owner.to_string(),
                     action_kind: Some("TRANSFER".to_string()),
                     method_name: None,
+                    forward_scan: false,
                 });
             }
             if new_owner.contains("sputnik-dao.near") {
@@ -232,6 +260,7 @@ fn parse_nep141_event(event: &EventJson, executor_id: &str) -> Vec<ParsedEvent> 
                     counterparty: old_owner.to_string(),
                     action_kind: Some("TRANSFER".to_string()),
                     method_name: None,
+                    forward_scan: false,
                 });
             }
         }
@@ -266,6 +295,7 @@ fn parse_nep245_event(event: &EventJson, executor_id: &str) -> Vec<ParsedEvent> 
                             counterparty: new_owner.to_string(),
                             action_kind: Some("TRANSFER".to_string()),
                             method_name: None,
+                            forward_scan: false,
                         });
                     }
                     if new_owner.contains("sputnik-dao.near") {
@@ -275,6 +305,7 @@ fn parse_nep245_event(event: &EventJson, executor_id: &str) -> Vec<ParsedEvent> 
                             counterparty: old_owner.to_string(),
                             action_kind: Some("TRANSFER".to_string()),
                             method_name: None,
+                            forward_scan: false,
                         });
                     }
                 }
@@ -307,6 +338,7 @@ fn parse_plain_text_transfer(line: &str, executor_id: &str) -> Vec<ParsedEvent> 
                 counterparty: receiver.to_string(),
                 action_kind: Some("TRANSFER".to_string()),
                 method_name: None,
+                forward_scan: false,
             });
         }
         if receiver.contains("sputnik-dao.near") {
@@ -316,6 +348,7 @@ fn parse_plain_text_transfer(line: &str, executor_id: &str) -> Vec<ParsedEvent> 
                 counterparty: sender.to_string(),
                 action_kind: Some("TRANSFER".to_string()),
                 method_name: None,
+                forward_scan: false,
             });
         }
     }
@@ -565,7 +598,7 @@ pub async fn run_enrichment_cycle(
             };
 
             // RPC: get balance before and after
-            let (balance_before, balance_after) = match get_balance_change_at_block(
+            let (mut balance_before, mut balance_after) = match get_balance_change_at_block(
                 app_pool,
                 network,
                 &event.account_id,
@@ -587,6 +620,40 @@ pub async fn run_enrichment_cycle(
                 }
             };
 
+            // Path C forward scan: trigger_block_height for executor_id outcomes
+            // is typically 2-3 blocks before the actual NEAR state change (cross-shard
+            // receipt processing). Scan forward to find the correct block.
+            let mut actual_block = block_height;
+            if event.forward_scan && balance_before == balance_after {
+                for offset in 1..=10u64 {
+                    match get_balance_change_at_block(
+                        app_pool,
+                        network,
+                        &event.account_id,
+                        &event.token_id,
+                        query_block + offset,
+                    )
+                    .await
+                    {
+                        Ok((fb, fa)) if fb != fa => {
+                            log::info!(
+                                "[goldsky-enrichment] Forward scan: {}/{} balance changed at block {} (trigger was {})",
+                                event.account_id,
+                                event.token_id,
+                                query_block + offset,
+                                query_block,
+                            );
+                            balance_before = fb;
+                            balance_after = fa;
+                            actual_block = query_block + offset;
+                            break;
+                        }
+                        Ok(_) => continue,
+                        Err(_) => break,
+                    }
+                }
+            }
+
             let amount = &balance_after - &balance_before;
 
             let transaction_hashes: Vec<String> = outcome
@@ -599,7 +666,7 @@ pub async fn run_enrichment_cycle(
                 app_pool,
                 &event.account_id,
                 &event.token_id,
-                outcome.trigger_block_height,
+                actual_block as i64,
                 block_timestamp_nanos,
                 block_time,
                 &amount,
@@ -849,5 +916,91 @@ mod tests {
         assert_eq!(events[0].account_id, "hot-dao.sputnik-dao.near");
         assert_eq!(events[0].token_id, "v2_1.omni.hot.tg:137_abc");
         assert_eq!(events[0].counterparty, "intents.near");
+    }
+
+    #[test]
+    fn test_parse_executor_only_path_c() {
+        // executor_id is a DAO, receiver_id is NOT — Path C fires
+        let outcome = IndexedDaoOutcome {
+            id: "test-path-c".to_string(),
+            executor_id: "treasury.sputnik-dao.near".to_string(),
+            logs: None,
+            status: Some("{\"SuccessValue\":\"NDg=\"}".to_string()),
+            transaction_hash: Some("tx789".to_string()),
+            signer_id: Some("sponsor.trezu.near".to_string()),
+            receiver_id: Some("olskik.near".to_string()),
+            gas_burnt: Some(1000),
+            tokens_burnt: Some("100".to_string()),
+            trigger_block_height: 188066404,
+            trigger_block_hash: Some("hash".to_string()),
+            trigger_block_timestamp: 1772623617359,
+        };
+
+        let events = parse_outcome_events(&outcome);
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].account_id, "treasury.sputnik-dao.near");
+        assert_eq!(events[0].token_id, "near");
+        assert_eq!(events[0].counterparty, "olskik.near");
+    }
+
+    #[test]
+    fn test_parse_executor_and_receiver_both_dao() {
+        // Both executor_id and receiver_id are DAOs — only Path B, no Path C duplicate
+        let outcome = IndexedDaoOutcome {
+            id: "test-both-dao".to_string(),
+            executor_id: "treasury.sputnik-dao.near".to_string(),
+            logs: None,
+            status: Some("{\"SuccessValue\":\"\"}".to_string()),
+            transaction_hash: Some("tx-both".to_string()),
+            signer_id: Some("sponsor.trezu.near".to_string()),
+            receiver_id: Some("treasury.sputnik-dao.near".to_string()),
+            gas_burnt: Some(500),
+            tokens_burnt: Some("50".to_string()),
+            trigger_block_height: 188066398,
+            trigger_block_hash: Some("hash2".to_string()),
+            trigger_block_timestamp: 1772623613898,
+        };
+
+        let events = parse_outcome_events(&outcome);
+        // Only Path B fires (receiver is DAO), Path C skipped
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].account_id, "treasury.sputnik-dao.near");
+        assert_eq!(events[0].token_id, "near");
+        assert_eq!(events[0].counterparty, "sponsor.trezu.near");
+    }
+
+    #[test]
+    fn test_parse_path_a_and_path_c() {
+        // Executor is a DAO, receiver is NOT a DAO, and logs mention the DAO.
+        // Path A fires (log event) + Path C fires (executor is DAO, receiver isn't).
+        // Path B does NOT fire (receiver isn't a DAO).
+        let outcome = IndexedDaoOutcome {
+            id: "test-a-and-c".to_string(),
+            executor_id: "treasury.sputnik-dao.near".to_string(),
+            logs: Some(
+                r#"EVENT_JSON:{"standard":"nep141","event":"ft_transfer","data":[{"old_owner_id":"treasury.sputnik-dao.near","new_owner_id":"alice.near","amount":"100"}]}"#
+                    .to_string(),
+            ),
+            status: Some("{\"SuccessValue\":\"\"}".to_string()),
+            transaction_hash: Some("tx-ac".to_string()),
+            signer_id: Some("sponsor.trezu.near".to_string()),
+            receiver_id: Some("usdc.near".to_string()),
+            gas_burnt: Some(1000),
+            tokens_burnt: Some("100".to_string()),
+            trigger_block_height: 188000000,
+            trigger_block_hash: Some("hash3".to_string()),
+            trigger_block_timestamp: 1772600000000,
+        };
+
+        let events = parse_outcome_events(&outcome);
+        assert_eq!(events.len(), 2);
+        // Path A: FT transfer from treasury DAO
+        assert_eq!(events[0].account_id, "treasury.sputnik-dao.near");
+        assert_eq!(events[0].token_id, "treasury.sputnik-dao.near");
+        assert_eq!(events[0].counterparty, "alice.near");
+        // Path C: executor DAO gets NEAR event
+        assert_eq!(events[1].account_id, "treasury.sputnik-dao.near");
+        assert_eq!(events[1].token_id, "near");
+        assert_eq!(events[1].counterparty, "usdc.near");
     }
 }
