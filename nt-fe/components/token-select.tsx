@@ -35,6 +35,7 @@ interface SelectListItem {
 interface Network {
     id: string;
     name: string;
+    symbol?: string;
     chainIcons: ChainIcons | null;
     chainId: string;
     decimals: number;
@@ -47,7 +48,6 @@ interface Network {
 interface Asset {
     id: string;
     name: string;
-    symbol: string;
     icon?: string;
     networks: Network[];
 }
@@ -176,7 +176,7 @@ export default function TokenSelect({
             aggregatedTreasuryTokens.map((token) => [token.symbol, token]),
         );
         const bridgeAssetsMap = new Map(
-            assets.map((asset) => [asset.symbol, asset]),
+            assets.map((asset) => [asset.id, asset]),
         );
 
         // Helper function to map treasury network to Network object
@@ -207,7 +207,9 @@ export default function TokenSelect({
                     token.name?.toLowerCase().includes(searchLower),
             )
             .map((treasuryToken): TokenListItem | null => {
-                const bridgeAsset = bridgeAssetsMap.get(treasuryToken.symbol);
+                const bridgeAsset = bridgeAssetsMap.get(
+                    treasuryToken.symbol.toLowerCase(),
+                );
 
                 // Fallback: Treasury-only token (not in bridge API)
                 if (!bridgeAsset) {
@@ -216,7 +218,7 @@ export default function TokenSelect({
                         name:
                             treasuryToken.name +
                             (treasuryToken.isAggregated &&
-                                treasuryToken.networks.length > 1
+                            treasuryToken.networks.length > 1
                                 ? ` • ${treasuryToken.networks.length} Networks`
                                 : ""),
                         symbol: treasuryToken.symbol,
@@ -234,56 +236,99 @@ export default function TokenSelect({
                 }
 
                 // Create lookup maps for treasury networks
-                const treasuryNetworksByIdMap = new Map(
-                    treasuryToken.networks.map((n) => [n.id, n]),
+                // n.id = unified asset id (e.g. "btc"), n.contractId = defuse id (e.g. "nep141:btc.omft.near")
+                // bridgeNetwork.id = defuse id, bridgeNetwork.name = chain name (e.g. "bitcoin")
+                const treasuryNetworksByContractId = new Map(
+                    treasuryToken.networks
+                        .filter((n) => n.contractId)
+                        .map((n) => [n.contractId!, n]),
                 );
-                const treasuryNetworksByChainMap = new Map(
-                    treasuryToken.networks.map((n) => [n.network, n]),
-                );
+                // Chain-name fallback map: only include treasury networks WITHOUT a contractId.
+                // Networks with a contractId must match via contractId; if they don't match,
+                // they fall through as unmatched treasury-only entries (e.g. NEAR Near/Ft/Staked).
+                const treasuryNetworksByChainMap = new Map<
+                    string,
+                    typeof treasuryToken.networks
+                >();
+                for (const n of treasuryToken.networks) {
+                    if (n.contractId) continue;
+                    const existing =
+                        treasuryNetworksByChainMap.get(n.network) ?? [];
+                    existing.push(n);
+                    treasuryNetworksByChainMap.set(n.network, existing);
+                }
 
-                // Track matched treasury networks to avoid duplicates
-                const matchedTreasuryNetworkIds = new Set<string>();
+                // Track matched treasury networks by a unique key to avoid duplicates
+                const treasuryNetworkKey = (n: any): string =>
+                    n.contractId ?? `${n.id}:${n.residency}`;
+                const matchedTreasuryNetworkKeys = new Set<string>();
 
-                // Merge bridge networks with treasury balance data
-                const mergedNetworks = bridgeAsset.networks.map(
-                    (bridgeNetwork) => {
-                        const treasuryNetwork =
-                            treasuryNetworksByIdMap.get(bridgeNetwork.id) ||
-                            treasuryNetworksByChainMap.get(
-                                bridgeNetwork.chainId,
-                            );
+                // Merge bridge networks with treasury balance data.
+                // If multiple treasury entries match a single bridge network (same chain,
+                // different residency), expand into one entry per treasury network.
+                const mergedNetworks: (Network & {
+                    balance?: string;
+                    balanceUSD?: number;
+                })[] = [];
 
-                        if (treasuryNetwork) {
-                            matchedTreasuryNetworkIds.add(treasuryNetwork.id);
-                        }
+                for (const bridgeNetwork of bridgeAsset.networks) {
+                    // Prefer contractId match first (exact), then fall back to chain name
+                    const contractIdMatch = treasuryNetworksByContractId.get(
+                        bridgeNetwork.id,
+                    );
+                    const chainMatches = contractIdMatch
+                        ? [contractIdMatch]
+                        : (treasuryNetworksByChainMap.get(bridgeNetwork.name) ??
+                          []);
 
-                        return {
+                    if (chainMatches.length === 0) {
+                        // No treasury match — bridge-only network
+                        mergedNetworks.push({
                             id: bridgeNetwork.id,
                             name: bridgeNetwork.name,
+                            symbol: bridgeNetwork.symbol,
                             chainIcons: bridgeNetwork.chainIcons,
                             chainId: bridgeNetwork.chainId,
                             decimals: bridgeNetwork.decimals,
-                            residency: treasuryNetwork?.residency,
-                            minWithdrawalAmount: bridgeNetwork.minWithdrawalAmount,
+                            minWithdrawalAmount:
+                                bridgeNetwork.minWithdrawalAmount,
                             minDepositAmount: bridgeNetwork.minDepositAmount,
-                            lockedBalance:
-                                treasuryNetwork?.balance.type === "Standard"
-                                    ? treasuryNetwork.balance.locked.toFixed(0)
-                                    : undefined,
-                            ...(treasuryNetwork && {
+                        });
+                    } else {
+                        for (const treasuryNetwork of chainMatches) {
+                            matchedTreasuryNetworkKeys.add(
+                                treasuryNetworkKey(treasuryNetwork),
+                            );
+                            mergedNetworks.push({
+                                id: bridgeNetwork.id,
+                                name: bridgeNetwork.name,
+                                symbol: bridgeNetwork.symbol,
+                                chainIcons: bridgeNetwork.chainIcons,
+                                chainId: bridgeNetwork.chainId,
+                                decimals: bridgeNetwork.decimals,
+                                residency: treasuryNetwork.residency,
+                                minWithdrawalAmount:
+                                    bridgeNetwork.minWithdrawalAmount,
+                                minDepositAmount:
+                                    bridgeNetwork.minDepositAmount,
+                                lockedBalance:
+                                    treasuryNetwork.balance.type === "Standard"
+                                        ? treasuryNetwork.balance.locked.toFixed(
+                                              0,
+                                          )
+                                        : undefined,
                                 balance: treasuryNetwork.availableBalanceRaw,
                                 balanceUSD: treasuryNetwork.availableBalanceUSD,
-                            }),
-                        } as Network & {
-                            balance?: string;
-                            balanceUSD?: number;
-                        };
-                    },
-                );
+                            });
+                        }
+                    }
+                }
 
-                // Add unmatched treasury networks
+                // Add unmatched treasury networks (not covered by any bridge network)
                 treasuryToken.networks.forEach((tn) => {
-                    if (!matchedTreasuryNetworkIds.has(tn.id)) {
+                    if (
+                        !matchedTreasuryNetworkKeys.has(treasuryNetworkKey(tn))
+                    ) {
                         mergedNetworks.push(mapTreasuryNetwork(tn));
                     }
                 });
@@ -326,15 +371,19 @@ export default function TokenSelect({
         const otherAssetsFiltered = assets
             .filter(
                 (token) =>
-                    !ownedTokensMap.has(token.symbol) &&
-                    (token.symbol.toLowerCase().includes(searchLower) ||
-                        token.name?.toLowerCase().includes(searchLower)),
+                    !ownedTokensMap.has(
+                        token.networks[0]?.symbol ?? token.id.toUpperCase(),
+                    ) &&
+                    (token.id.toLowerCase().includes(searchLower) ||
+                        token.name?.toLowerCase().includes(searchLower) ||
+                        token.networks[0]?.symbol
+                            ?.toLowerCase()
+                            .includes(searchLower)),
             )
             .map(
                 (token): TokenListItem => ({
-                    id: token.symbol,
+                    id: token.id,
                     name: token.name,
-                    symbol: token.symbol,
                     icon: token.icon,
                     assetId: token.id,
                     assetName: token.name,
@@ -369,7 +418,7 @@ export default function TokenSelect({
                     const filteredNetworks = asset.networks.filter((network) =>
                         filterTokens({
                             address: network.id,
-                            symbol: asset.symbol!,
+                            symbol: network.symbol ?? "",
                             network: network.name,
                             residency: network.residency,
                         }),
@@ -418,7 +467,7 @@ export default function TokenSelect({
                 return {
                     id: `${network.chainId}-${idx}`,
                     name: network.name,
-                    symbol: selectedAsset.symbol,
+                    symbol: network.symbol,
                     icon: selectedAsset.icon,
                     networkId: network.id,
                     networkName: network.name,
@@ -457,7 +506,6 @@ export default function TokenSelect({
         setSelectedAsset({
             id: item.assetId,
             name: item.assetName,
-            symbol: item.symbol!,
             icon: item.icon,
             networks: item.networks,
         });
@@ -493,7 +541,7 @@ export default function TokenSelect({
             } else {
                 setSelectedToken({
                     address: item.networkId,
-                    symbol: selectedAsset.symbol,
+                    symbol: item.symbol ?? "",
                     decimals: item.decimals,
                     name: selectedAsset.name,
                     icon: selectedAsset.icon || "",
@@ -600,7 +648,7 @@ export default function TokenSelect({
                         <DialogTitle className="w-full text-center">
                             {step === "token"
                                 ? "Select Asset"
-                                : `Select network for ${selectedAsset?.symbol}`}
+                                : `Select network for ${selectedAsset?.name}`}
                         </DialogTitle>
                     </div>
                 </DialogHeader>
@@ -727,7 +775,7 @@ export default function TokenSelect({
                                                             {token.totalBalance !==
                                                                 undefined &&
                                                                 token.totalBalance >
-                                                                0 && (
+                                                                    0 && (
                                                                     <div className="flex flex-col items-end">
                                                                         <span className="font-semibold">
                                                                             {formatSmartAmount(

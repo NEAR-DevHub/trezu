@@ -5,6 +5,7 @@ import { ChainIcons } from "@/lib/api";
 export interface BridgeNetwork {
     id: string;
     name: string;
+    symbol: string;
     chainIcons: ChainIcons | null;
     chainId: string;
     decimals: number;
@@ -15,7 +16,6 @@ export interface BridgeNetwork {
 export interface BridgeAsset {
     id: string;
     name: string;
-    symbol: string;
     icon: string;
     networks: BridgeNetwork[];
 }
@@ -40,14 +40,16 @@ export function useBridgeTokens(enabled: boolean = true) {
                     return {
                         id: asset.id,
                         name: asset.name || asset.assetName,
-                        symbol:
-                            asset.symbol === "wNEAR" ? "NEAR" : asset.symbol,
                         icon: hasValidIcon
                             ? asset.icon
                             : asset.symbol?.charAt(0) || "?",
                         networks: asset.networks.map((network: any) => ({
                             id: network.id,
                             name: network.name,
+                            symbol:
+                                network.symbol === "wNEAR"
+                                    ? "NEAR"
+                                    : network.symbol,
                             chainIcons: network.chainIcons || null,
                             chainId: network.chainId,
                             decimals: network.decimals,
