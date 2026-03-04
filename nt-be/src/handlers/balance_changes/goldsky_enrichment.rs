@@ -12,7 +12,7 @@
 
 use super::balance::get_balance_change_at_block;
 use super::counterparty::ensure_ft_metadata;
-use super::transfer_hints::tx_resolver::resolve_transaction_blocks;
+use super::transfer_hints::tx_resolver::resolve_all_receipt_block_heights;
 use super::utils::block_timestamp_to_datetime;
 use near_api::NetworkConfig;
 use serde::Deserialize;
@@ -145,6 +145,8 @@ fn parse_outcome_events(outcome: &IndexedDaoOutcome) -> Vec<ParsedEvent> {
     }
 
     // Path B: Receiver-based events (receiver_id is a DAO)
+    // forward_scan=true because cross-shard receipt processing means the NEAR
+    // balance change often lands 1-3 blocks after the trigger block.
     let receiver_is_dao = outcome
         .receiver_id
         .as_ref()
@@ -160,7 +162,7 @@ fn parse_outcome_events(outcome: &IndexedDaoOutcome) -> Vec<ParsedEvent> {
                 .unwrap_or_else(|| "UNKNOWN".to_string()),
             action_kind: None,
             method_name: None,
-            forward_scan: false,
+            forward_scan: true,
         });
     }
 
@@ -269,48 +271,76 @@ fn parse_nep141_event(event: &EventJson, executor_id: &str) -> Vec<ParsedEvent> 
     events
 }
 
-/// Parse NEP-245 mt_transfer event (intents).
+/// Parse NEP-245 mt_transfer / mt_burn events (intents).
 fn parse_nep245_event(event: &EventJson, executor_id: &str) -> Vec<ParsedEvent> {
     let mut events = Vec::new();
-    if event.event != "mt_transfer" {
-        return events;
-    }
 
-    for datum in &event.data {
-        let old_owner = datum.get("old_owner_id").and_then(|v| v.as_str());
-        let new_owner = datum.get("new_owner_id").and_then(|v| v.as_str());
-        let token_ids = datum.get("token_ids").and_then(|v| v.as_array());
+    match event.event.as_str() {
+        "mt_transfer" => {
+            for datum in &event.data {
+                let old_owner = datum.get("old_owner_id").and_then(|v| v.as_str());
+                let new_owner = datum.get("new_owner_id").and_then(|v| v.as_str());
+                let token_ids = datum.get("token_ids").and_then(|v| v.as_array());
 
-        if let (Some(old_owner), Some(new_owner), Some(token_ids)) =
-            (old_owner, new_owner, token_ids)
-        {
-            for token_value in token_ids {
-                if let Some(token_id_str) = token_value.as_str() {
-                    let full_token_id = format!("{}:{}", executor_id, token_id_str);
+                if let (Some(old_owner), Some(new_owner), Some(token_ids)) =
+                    (old_owner, new_owner, token_ids)
+                {
+                    for token_value in token_ids {
+                        if let Some(token_id_str) = token_value.as_str() {
+                            let full_token_id = format!("{}:{}", executor_id, token_id_str);
 
-                    if old_owner.contains("sputnik-dao.near") {
-                        events.push(ParsedEvent {
-                            account_id: old_owner.to_string(),
-                            token_id: full_token_id.clone(),
-                            counterparty: new_owner.to_string(),
-                            action_kind: Some("TRANSFER".to_string()),
-                            method_name: None,
-                            forward_scan: false,
-                        });
-                    }
-                    if new_owner.contains("sputnik-dao.near") {
-                        events.push(ParsedEvent {
-                            account_id: new_owner.to_string(),
-                            token_id: full_token_id,
-                            counterparty: old_owner.to_string(),
-                            action_kind: Some("TRANSFER".to_string()),
-                            method_name: None,
-                            forward_scan: false,
-                        });
+                            if old_owner.contains("sputnik-dao.near") {
+                                events.push(ParsedEvent {
+                                    account_id: old_owner.to_string(),
+                                    token_id: full_token_id.clone(),
+                                    counterparty: new_owner.to_string(),
+                                    action_kind: Some("TRANSFER".to_string()),
+                                    method_name: None,
+                                    forward_scan: false,
+                                });
+                            }
+                            if new_owner.contains("sputnik-dao.near") {
+                                events.push(ParsedEvent {
+                                    account_id: new_owner.to_string(),
+                                    token_id: full_token_id,
+                                    counterparty: old_owner.to_string(),
+                                    action_kind: Some("TRANSFER".to_string()),
+                                    method_name: None,
+                                    forward_scan: false,
+                                });
+                            }
+                        }
                     }
                 }
             }
         }
+        "mt_burn" => {
+            // mt_burn: the DAO's intents balance decreases. Use forward_scan
+            // because the balance change may lag the trigger block by 1-3 blocks.
+            for datum in &event.data {
+                let owner = datum.get("owner_id").and_then(|v| v.as_str());
+                let token_ids = datum.get("token_ids").and_then(|v| v.as_array());
+
+                if let (Some(owner), Some(token_ids)) = (owner, token_ids) {
+                    if owner.contains("sputnik-dao.near") {
+                        for token_value in token_ids {
+                            if let Some(token_id_str) = token_value.as_str() {
+                                let full_token_id = format!("{}:{}", executor_id, token_id_str);
+                                events.push(ParsedEvent {
+                                    account_id: owner.to_string(),
+                                    token_id: full_token_id,
+                                    counterparty: executor_id.to_string(),
+                                    action_kind: Some("BURN".to_string()),
+                                    method_name: None,
+                                    forward_scan: true,
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        _ => {}
     }
 
     events
@@ -487,6 +517,11 @@ pub async fn run_enrichment_cycle(
     let mut last_processed_id = cursor.last_processed_id.clone();
     let mut last_processed_block = cursor.last_processed_block;
 
+    // Cache tx_status receipt blocks per tx_hash across the entire batch to avoid
+    // redundant RPC calls when multiple outcomes share the same transaction.
+    let mut tx_receipt_cache: std::collections::HashMap<String, Vec<u64>> =
+        std::collections::HashMap::new();
+
     for outcome in &outcomes {
         let events = parse_outcome_events(outcome);
 
@@ -502,10 +537,41 @@ pub async fn run_enrichment_cycle(
         let block_time = block_timestamp_to_datetime(block_timestamp_nanos);
         let block_height = outcome.trigger_block_height as u64;
 
-        // Cache tx_status resolution per outcome to avoid redundant RPC calls
-        // when one outcome produces multiple FT events.
-        let mut resolved_ft_blocks: std::collections::HashMap<String, Option<u64>> =
-            std::collections::HashMap::new();
+        // Resolve all receipt block heights from tx_status (cached per tx_hash).
+        // This gives us every block where any receipt in the transaction executed,
+        // so we can check balance at each to find the actual change block.
+        let tx_receipt_blocks: Vec<u64> = if let (Some(tx_hash), Some(signer)) =
+            (&outcome.transaction_hash, &outcome.signer_id)
+        {
+            if let Some(cached) = tx_receipt_cache.get(tx_hash) {
+                cached.clone()
+            } else {
+                let blocks = match resolve_all_receipt_block_heights(network, tx_hash, signer).await
+                {
+                    Ok(blocks) => {
+                        log::debug!(
+                            "[goldsky-enrichment] tx {} receipt blocks: {:?} (trigger was {})",
+                            tx_hash,
+                            blocks,
+                            block_height,
+                        );
+                        blocks
+                    }
+                    Err(e) => {
+                        log::warn!(
+                            "[goldsky-enrichment] Failed to resolve tx {}: {} — using trigger block",
+                            tx_hash,
+                            e,
+                        );
+                        vec![]
+                    }
+                };
+                tx_receipt_cache.insert(tx_hash.clone(), blocks.clone());
+                blocks
+            }
+        } else {
+            vec![]
+        };
 
         for event in &events {
             // Skip unmonitored accounts — no point calling RPC for accounts nobody tracks
@@ -527,135 +593,95 @@ pub async fn run_enrichment_cycle(
                 continue;
             }
 
-            // For FT events, trigger_block_height is the transaction block, but the actual
-            // FT balance change happens in a later block (NEAR cross-shard receipt processing).
-            // Use experimental_tx_status to find the block where the FT contract executed the receipt.
-            let query_block = if event.token_id != "near"
-                && event.token_id != "NEAR"
-                && outcome.transaction_hash.is_some()
-                && outcome.signer_id.is_some()
-            {
-                // Find receipts that executed on the FT contract (where balance actually changes)
-                let ft_contract = if event.token_id.contains(':') {
-                    // Intents token: executor is intents.near, not the underlying FT contract
-                    event.token_id.split(':').next().unwrap_or(&event.token_id)
-                } else {
-                    &event.token_id
-                };
-
-                // Use cached result if we already resolved this FT contract for this outcome
-                if let Some(cached) = resolved_ft_blocks.get(ft_contract) {
-                    cached.unwrap_or(block_height)
-                } else {
-                    let tx_hash = outcome.transaction_hash.as_ref().unwrap();
-                    let signer = outcome.signer_id.as_ref().unwrap();
-                    let resolved_block = match resolve_transaction_blocks(
-                        network,
-                        tx_hash,
-                        ft_contract,
-                        signer,
-                    )
-                    .await
-                    {
-                        Ok(resolved) if !resolved.receipt_blocks.is_empty() => {
-                            let receipt_block = resolved
-                                .receipt_blocks
-                                .iter()
-                                .map(|rb| rb.block_height)
-                                .max()
-                                .unwrap();
-                            log::debug!(
-                                "[goldsky-enrichment] Resolved FT receipt block {} for tx {} (trigger was {})",
-                                receipt_block,
-                                tx_hash,
-                                block_height,
-                            );
-                            Some(receipt_block)
-                        }
-                        Ok(_) => {
-                            log::debug!(
-                                "[goldsky-enrichment] No receipts on {} for tx {} — using trigger block {}",
-                                ft_contract,
-                                tx_hash,
-                                block_height,
-                            );
-                            None
-                        }
-                        Err(e) => {
-                            log::warn!(
-                                "[goldsky-enrichment] Failed to resolve tx {} for {}: {} — using trigger block {}",
-                                tx_hash,
-                                event.token_id,
-                                e,
-                                block_height,
-                            );
-                            None
-                        }
-                    };
-                    resolved_ft_blocks.insert(ft_contract.to_string(), resolved_block);
-                    resolved_block.unwrap_or(block_height)
-                }
-            } else {
-                // NEAR token or no tx hash — trigger_block_height is correct
-                block_height
-            };
-
-            // RPC: get balance before and after
-            let (mut balance_before, mut balance_after) = match get_balance_change_at_block(
-                app_pool,
-                network,
-                &event.account_id,
-                &event.token_id,
-                query_block,
-            )
-            .await
-            {
-                Ok(result) => result,
-                Err(e) => {
-                    log::warn!(
-                        "[goldsky-enrichment] RPC error for {}/{} at block {}: {} — skipping",
-                        event.account_id,
-                        event.token_id,
-                        query_block,
-                        e
-                    );
-                    continue;
-                }
-            };
-
-            // Path C forward scan: trigger_block_height for executor_id outcomes
-            // is typically 2-3 blocks before the actual NEAR state change (cross-shard
-            // receipt processing). Scan forward to find the correct block.
-            let mut actual_block = block_height;
-            if event.forward_scan && balance_before == balance_after {
-                for offset in 1..=10u64 {
+            // Find the block where balance actually changed by checking all receipt blocks
+            // from experimental_tx_status. This replaces both forward scan and MAX-block
+            // heuristics with an exact approach.
+            let (actual_block, balance_before, balance_after) = if !tx_receipt_blocks.is_empty() {
+                let mut found = None;
+                for &block in &tx_receipt_blocks {
                     match get_balance_change_at_block(
                         app_pool,
                         network,
                         &event.account_id,
                         &event.token_id,
-                        query_block + offset,
+                        block,
                     )
                     .await
                     {
-                        Ok((fb, fa)) if fb != fa => {
+                        Ok((bb, ba)) if bb != ba => {
                             log::info!(
-                                "[goldsky-enrichment] Forward scan: {}/{} balance changed at block {} (trigger was {})",
+                                "[goldsky-enrichment] Balance change found: {}/{} at block {} (trigger was {})",
                                 event.account_id,
                                 event.token_id,
-                                query_block + offset,
-                                query_block,
+                                block,
+                                block_height,
                             );
-                            balance_before = fb;
-                            balance_after = fa;
-                            actual_block = query_block + offset;
+                            found = Some((block, bb, ba));
                             break;
                         }
                         Ok(_) => continue,
-                        Err(_) => break,
+                        Err(e) => {
+                            log::debug!(
+                                "[goldsky-enrichment] Balance check at block {} failed: {}",
+                                block,
+                                e,
+                            );
+                            continue;
+                        }
                     }
                 }
-            }
+
+                match found {
+                    Some(result) => result,
+                    None => {
+                        // No change at any receipt block — record at trigger block (amount=0)
+                        match get_balance_change_at_block(
+                            app_pool,
+                            network,
+                            &event.account_id,
+                            &event.token_id,
+                            block_height,
+                        )
+                        .await
+                        {
+                            Ok((bb, ba)) => (block_height, bb, ba),
+                            Err(e) => {
+                                log::warn!(
+                                    "[goldsky-enrichment] RPC error for {}/{} at trigger block {}: {} — skipping",
+                                    event.account_id,
+                                    event.token_id,
+                                    block_height,
+                                    e
+                                );
+                                continue;
+                            }
+                        }
+                    }
+                }
+            } else {
+                // No tx_hash — use trigger block only
+                match get_balance_change_at_block(
+                    app_pool,
+                    network,
+                    &event.account_id,
+                    &event.token_id,
+                    block_height,
+                )
+                .await
+                {
+                    Ok((bb, ba)) => (block_height, bb, ba),
+                    Err(e) => {
+                        log::warn!(
+                            "[goldsky-enrichment] RPC error for {}/{} at block {}: {} — skipping",
+                            event.account_id,
+                            event.token_id,
+                            block_height,
+                            e
+                        );
+                        continue;
+                    }
+                }
+            };
 
             let amount = &balance_after - &balance_before;
 
@@ -693,11 +719,14 @@ pub async fn run_enrichment_cycle(
             }
 
             // N+1 sponsor refund: sponsor call pairs always produce a Transfer
-            // refund receipt at block N+1 (storage deposit refund). Record it now
-            // to avoid maintenance binary-search.
+            // refund receipt at block N+1 (storage deposit refund). This is a system
+            // receipt from a separate transaction, so tx_status won't find it.
             if event.token_id == "near"
-                && !event.forward_scan
                 && outcome.signer_id.as_deref() == Some("sponsor.trezu.near")
+                && outcome
+                    .receiver_id
+                    .as_ref()
+                    .is_some_and(|r| r.ends_with(".sputnik-dao.near"))
             {
                 let refund_block = actual_block + 1;
                 // Map Result to Option to avoid holding non-Send Box<dyn Error> across .await
@@ -1062,5 +1091,41 @@ mod tests {
         assert_eq!(events[1].account_id, "treasury.sputnik-dao.near");
         assert_eq!(events[1].token_id, "near");
         assert_eq!(events[1].counterparty, "usdc.near");
+    }
+
+    #[test]
+    fn test_parse_nep245_mt_burn() {
+        // mt_burn event from intents.near — DAO is the owner_id losing tokens.
+        let outcome = IndexedDaoOutcome {
+            id: "test-mt-burn".to_string(),
+            executor_id: "intents.near".to_string(),
+            logs: Some(
+                r#"EVENT_JSON:{"standard":"nep245","version":"1.0.0","event":"mt_burn","data":[{"owner_id":"treasury.sputnik-dao.near","token_ids":["nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1"],"amounts":["10000000"],"memo":"withdraw"}]}"#
+                    .to_string(),
+            ),
+            status: Some("{\"SuccessReceiptId\":\"abc\"}".to_string()),
+            transaction_hash: Some("tx-burn".to_string()),
+            signer_id: Some("sponsor.trezu.near".to_string()),
+            receiver_id: Some("someone.near".to_string()),
+            gas_burnt: Some(1000),
+            tokens_burnt: Some("100".to_string()),
+            trigger_block_height: 188000000,
+            trigger_block_hash: Some("hash-burn".to_string()),
+            trigger_block_timestamp: 1772600000000,
+        };
+
+        let events = parse_outcome_events(&outcome);
+        // Path A fires for mt_burn (DAO is owner losing tokens)
+        let burn_events: Vec<_> = events
+            .iter()
+            .filter(|e| e.action_kind.as_deref() == Some("BURN"))
+            .collect();
+        assert_eq!(burn_events.len(), 1);
+        assert_eq!(burn_events[0].account_id, "treasury.sputnik-dao.near");
+        assert_eq!(
+            burn_events[0].token_id,
+            "intents.near:nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1"
+        );
+        assert_eq!(burn_events[0].counterparty, "intents.near");
     }
 }

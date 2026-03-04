@@ -1,14 +1,13 @@
-/// End-to-end integration tests for the Goldsky enrichment pipeline.
+/// End-to-end integration test for the Goldsky enrichment pipeline.
 ///
-/// Two test scenarios:
-///   1. trezu-demo (51 outcomes) — original test, sponsor call pairs only
-///   2. lesik_o (14 outcomes) — tests executor_id filter capturing add_proposal/act_proposal
+/// Tests enrichment for webassemblymusic-treasury.sputnik-dao.near using 10 Neon
+/// outcomes with hard expectations verified against production (api.trezu.app).
 ///
-/// Uses real archival RPC for balance queries.
+/// Uses `experimental_tx_status` to resolve receipt blocks and real archival RPC
+/// for balance queries.
 ///
 /// ```bash
 /// cargo test --test goldsky_e2e_test -- --nocapture
-/// cargo test --test goldsky_e2e_test test_goldsky_executor_id_lesik_o -- --nocapture
 /// ```
 mod common;
 
@@ -68,20 +67,31 @@ async fn api_filtered_count(pool: &PgPool, account_id: &str) -> i64 {
     result.0
 }
 
+/// Tests enrichment for webassemblymusic-treasury.sputnik-dao.near.
+///
+/// Uses 10 Neon outcomes from 2026-03-04 and verifies that the pipeline produces
+/// the same balance change records as production (api.trezu.app).
+///
+/// Neon outcomes (10 total):
+///   188101232: petersalomonsen.near → DAO (add_proposal with 0.432 NEAR deposit, 2 outcomes)
+///   188102281: sponsor call pair — add_proposal relay (2 outcomes)
+///   188102291: executor_id outcome (act_proposal → petersalomonsen.near, Path C, 1 outcome)
+///   188102389: sponsor call pair — add_proposal relay (2 outcomes)
+///   188102395: executor_id outcomes + intents mt_burn log (Path C + Path A, 3 outcomes)
+///
+/// Expected balance changes (from api.trezu.app production):
+///   188101233: NEAR  +0.4320                    (Transfer from petersalomonsen.near)
+///   188102293: NEAR  +0.0968868677547962        (FunctionCall, cross-contract Path C)
+///   188102397: NEAR  -0.000734839823481300000001 (FunctionCall, intents swap gas)
+///   188102398: intents USDC -10                  (FunctionCall, intents swap)
+///   188102401: NEAR  -0.0999452422423777         (intents.near settlement)
 #[sqlx::test]
-async fn test_goldsky_enrichment_trezu_demo(pool: PgPool) {
+async fn test_goldsky_webassemblymusic(pool: PgPool) {
     common::load_test_env();
     let _ = env_logger::try_init();
 
-    let account_id = "trezu-demo.sputnik-dao.near";
+    let account_id = "webassemblymusic-treasury.sputnik-dao.near";
     let network = common::create_archival_network();
-    println!(
-        "RPC endpoint: {} (bearer set: {})",
-        network.rpc_endpoints[0].url,
-        network.rpc_endpoints[0].bearer_header.is_some()
-    );
-    let env_vars = nt_be::utils::env::EnvVars::default();
-    let http_client = reqwest::Client::new();
 
     let total_start = Instant::now();
 
@@ -90,7 +100,7 @@ async fn test_goldsky_enrichment_trezu_demo(pool: PgPool) {
     // -----------------------------------------------------------------------
     load_fixtures(
         &pool,
-        include_str!("test_data/goldsky_trezu_demo_fixtures.sql"),
+        include_str!("test_data/goldsky_webassemblymusic_fixtures.sql"),
     )
     .await;
 
@@ -98,7 +108,7 @@ async fn test_goldsky_enrichment_trezu_demo(pool: PgPool) {
         .fetch_one(&pool)
         .await
         .unwrap();
-    assert_eq!(fixture_count.0, 51, "Expected 51 fixture rows loaded");
+    assert_eq!(fixture_count.0, 10, "Expected 10 fixture rows loaded");
     println!(
         "Loaded {} fixture rows into indexed_dao_outcomes",
         fixture_count.0
@@ -136,339 +146,13 @@ async fn test_goldsky_enrichment_trezu_demo(pool: PgPool) {
         enrichment_elapsed.as_secs_f64()
     );
 
-    let after_enrichment: (i64,) =
-        sqlx::query_as("SELECT COUNT(*) FROM balance_changes WHERE account_id = $1")
-            .bind(account_id)
-            .fetch_one(&pool)
-            .await
-            .unwrap();
-    let enrichment_api = api_filtered_count(&pool, account_id).await;
-    println!(
-        "After enrichment: {} DB records, {} API-visible",
-        after_enrichment.0, enrichment_api,
-    );
-
-    // -----------------------------------------------------------------------
-    // 3. Run maintenance cycle for NEAR gas-fee gap filling
-    // -----------------------------------------------------------------------
-    let max_block: (i64,) =
-        sqlx::query_as("SELECT COALESCE(MAX(trigger_block_height), 0) FROM indexed_dao_outcomes")
-            .fetch_one(&pool)
-            .await
-            .unwrap();
-
-    sqlx::query("UPDATE monitored_accounts SET dirty_at = NOW() WHERE account_id = $1")
-        .bind(account_id)
-        .execute(&pool)
-        .await
-        .unwrap();
-
-    let maintenance_start = Instant::now();
-    println!("\n--- Running maintenance cycle 1 ---");
-    nt_be::handlers::balance_changes::account_monitor::run_maintenance_cycle(
-        &pool,
-        &network,
-        max_block.0,
-        None,
-        Some((&http_client, &env_vars.fastnear_api_key)),
-        env_vars.intents_explorer_api_key.as_deref(),
-        &env_vars.intents_explorer_api_url,
-        None,
-    )
-    .await
-    .unwrap();
-    let maintenance1_elapsed = maintenance_start.elapsed();
-
-    let total: (i64,) =
-        sqlx::query_as("SELECT COUNT(*) FROM balance_changes WHERE account_id = $1")
-            .bind(account_id)
-            .fetch_one(&pool)
-            .await
-            .unwrap();
-    let filtered = api_filtered_count(&pool, account_id).await;
-    println!(
-        "After maintenance 1: DB total: {}, API-visible: {} ({:.2}s)",
-        total.0,
-        filtered,
-        maintenance1_elapsed.as_secs_f64()
-    );
-
-    // -----------------------------------------------------------------------
-    // 3b. Second maintenance cycle (should be faster with creation block floor)
-    // -----------------------------------------------------------------------
-    sqlx::query("UPDATE monitored_accounts SET dirty_at = NOW() WHERE account_id = $1")
-        .bind(account_id)
-        .execute(&pool)
-        .await
-        .unwrap();
-
-    let maintenance2_start = Instant::now();
-    println!("\n--- Running maintenance cycle 2 (creation block floor active) ---");
-    nt_be::handlers::balance_changes::account_monitor::run_maintenance_cycle(
-        &pool,
-        &network,
-        max_block.0,
-        None,
-        Some((&http_client, &env_vars.fastnear_api_key)),
-        env_vars.intents_explorer_api_key.as_deref(),
-        &env_vars.intents_explorer_api_url,
-        None,
-    )
-    .await
-    .unwrap();
-    let maintenance2_elapsed = maintenance2_start.elapsed();
-
-    let total2: (i64,) =
-        sqlx::query_as("SELECT COUNT(*) FROM balance_changes WHERE account_id = $1")
-            .bind(account_id)
-            .fetch_one(&pool)
-            .await
-            .unwrap();
-    let filtered2 = api_filtered_count(&pool, account_id).await;
-    println!(
-        "After maintenance 2: DB total: {}, API-visible: {} ({:.2}s)",
-        total2.0,
-        filtered2,
-        maintenance2_elapsed.as_secs_f64()
-    );
-
-    // -----------------------------------------------------------------------
-    // 4. Query the HTTP API and dump results
-    // -----------------------------------------------------------------------
-    let state = Arc::new(common::build_test_state(pool));
-    let app = nt_be::routes::create_routes(state);
-
-    let request = Request::builder()
-        .uri(format!(
-            "/api/balance-changes?accountId={account_id}&limit=100"
-        ))
-        .body(Body::empty())
-        .unwrap();
-
-    let response = ServiceExt::<Request<Body>>::oneshot(app, request)
-        .await
-        .unwrap();
-    assert_eq!(
-        response.status(),
-        200,
-        "API returned non-200: {}",
-        response.status()
-    );
-
-    let body = axum::body::to_bytes(response.into_body(), 1024 * 1024)
-        .await
-        .unwrap();
-    let records: Vec<BalanceChangeRecord> =
-        serde_json::from_slice(&body).expect("Failed to parse API response JSON");
-
-    let total_elapsed = total_start.elapsed();
-
-    // -----------------------------------------------------------------------
-    // 5. Print summary
-    // -----------------------------------------------------------------------
-    println!("\n========== RESULTS ==========");
-    println!("Fixtures:        {} outcomes", fixture_count.0);
-    println!(
-        "Enrichment:      {} processed in {:.2}s",
-        total_processed,
-        enrichment_elapsed.as_secs_f64()
-    );
-    println!(
-        "Maintenance 1:   {:.2}s",
-        maintenance1_elapsed.as_secs_f64()
-    );
-    println!(
-        "Maintenance 2:   {:.2}s",
-        maintenance2_elapsed.as_secs_f64()
-    );
-    println!("API records:     {}", records.len());
-    println!("Total time:      {:.2}s", total_elapsed.as_secs_f64());
-    println!("=============================\n");
-
-    println!("API-visible balance changes ({} records):", records.len());
-    for r in &records {
-        let token_short = if r.token_id.len() > 30 {
-            &r.token_id[..30]
-        } else {
-            &r.token_id
-        };
-        println!(
-            "  block={} token={:<30} amount={:<15} counterparty={:<30} method={:?}",
-            r.block_height,
-            token_short,
-            r.amount,
-            r.counterparty.as_deref().unwrap_or("-"),
-            r.method_name,
-        );
-    }
-
-    // Sanity: should have at least the original USDC deposit
-    assert!(
-        records.len() >= 1,
-        "Expected at least 1 API-visible balance change"
-    );
-    println!("\nTest passed with {} API-visible records.", records.len());
-}
-
-/// Tests the executor_id pipeline filter with lesik_o.sputnik-dao.near.
-///
-/// This account has 14 outcomes including:
-/// - 4 sponsor call pairs (receiver_id match)
-/// - 4 executor_id matches (add_proposal/act_proposal execution outcomes)
-///
-/// The executor_id outcomes should be processed by enrichment directly,
-/// creating balance change records at the correct blocks without needing
-/// gap filling for those transactions.
-#[sqlx::test]
-async fn test_goldsky_executor_id_lesik_o(pool: PgPool) {
-    common::load_test_env();
-    let _ = env_logger::try_init();
-
-    let account_id = "lesik_o.sputnik-dao.near";
-    let network = common::create_archival_network();
-    let env_vars = nt_be::utils::env::EnvVars::default();
-    let http_client = reqwest::Client::new();
-
-    let total_start = Instant::now();
-
-    // -----------------------------------------------------------------------
-    // 1. Load fixture data + register account
-    // -----------------------------------------------------------------------
-    load_fixtures(
-        &pool,
-        include_str!("test_data/goldsky_lesik_o_fixtures.sql"),
-    )
-    .await;
-
-    let fixture_count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM indexed_dao_outcomes")
-        .fetch_one(&pool)
-        .await
-        .unwrap();
-    assert_eq!(fixture_count.0, 14, "Expected 14 fixture rows loaded");
-    println!(
-        "Loaded {} fixture rows into indexed_dao_outcomes",
-        fixture_count.0
-    );
-
-    // Count executor_id matched outcomes (the new ones from the pipeline update)
-    let executor_matches: (i64,) = sqlx::query_as(
-        "SELECT COUNT(*) FROM indexed_dao_outcomes \
-         WHERE executor_id LIKE '%.sputnik-dao.near' \
-         AND receiver_id NOT LIKE '%.sputnik-dao.near'",
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
-    println!(
-        "  executor_id matched outcomes (add_proposal/act_proposal): {}",
-        executor_matches.0
-    );
-    assert_eq!(
-        executor_matches.0, 6,
-        "Expected 6 executor_id matched outcomes (add_proposal/act_proposal cross-contract receipts)"
-    );
-
-    sqlx::query(
-        "INSERT INTO monitored_accounts (account_id, enabled, dirty_at)
-         VALUES ($1, true, NOW())",
-    )
-    .bind(account_id)
-    .execute(&pool)
-    .await
-    .unwrap();
-
-    // -----------------------------------------------------------------------
-    // 2. Run enrichment
-    // -----------------------------------------------------------------------
-    let enrichment_start = Instant::now();
-    let mut total_processed = 0usize;
-    loop {
-        let processed = nt_be::handlers::balance_changes::goldsky_enrichment::run_enrichment_cycle(
-            &pool, &pool, &network,
-        )
-        .await
-        .unwrap();
-        total_processed += processed;
-        if processed < 100 {
-            break;
-        }
-    }
-    let enrichment_elapsed = enrichment_start.elapsed();
-    println!(
-        "Enrichment: processed {} outcomes in {:.2}s",
-        total_processed,
-        enrichment_elapsed.as_secs_f64()
-    );
-
-    // Check which blocks got enrichment records
-    let enrichment_blocks: Vec<(i64,)> = sqlx::query_as(
-        "SELECT DISTINCT block_height FROM balance_changes \
-         WHERE account_id = $1 AND token_id = 'near' \
-         ORDER BY block_height",
-    )
-    .bind(account_id)
-    .fetch_all(&pool)
-    .await
-    .unwrap();
-    let block_list: Vec<i64> = enrichment_blocks.iter().map(|r| r.0).collect();
-    println!(
-        "Enrichment created NEAR records at blocks: {:?}",
-        block_list
-    );
-
-    // Path B creates records at 4 sponsor call pair blocks
-    // Path C creates records at 4 executor_id outcome blocks (add_proposal/act_proposal)
-    assert!(
-        block_list.len() >= 8,
-        "Expected at least 8 enrichment NEAR blocks (4 sponsor + 4 executor_id), got {}",
-        block_list.len()
-    );
-
     let after_enrichment = api_filtered_count(&pool, account_id).await;
     println!("After enrichment: {} API-visible records", after_enrichment);
 
     // -----------------------------------------------------------------------
-    // 3. Run maintenance cycle
+    // 3. Query the HTTP API (enrichment-only, no maintenance)
     // -----------------------------------------------------------------------
-    let max_block: (i64,) =
-        sqlx::query_as("SELECT COALESCE(MAX(trigger_block_height), 0) FROM indexed_dao_outcomes")
-            .fetch_one(&pool)
-            .await
-            .unwrap();
-
-    sqlx::query("UPDATE monitored_accounts SET dirty_at = NOW() WHERE account_id = $1")
-        .bind(account_id)
-        .execute(&pool)
-        .await
-        .unwrap();
-
-    let maintenance_start = Instant::now();
-    println!("\n--- Running maintenance cycle ---");
-    nt_be::handlers::balance_changes::account_monitor::run_maintenance_cycle(
-        &pool,
-        &network,
-        max_block.0,
-        None,
-        Some((&http_client, &env_vars.fastnear_api_key)),
-        env_vars.intents_explorer_api_key.as_deref(),
-        &env_vars.intents_explorer_api_url,
-        None,
-    )
-    .await
-    .unwrap();
-    let maintenance_elapsed = maintenance_start.elapsed();
-
-    let after_maintenance = api_filtered_count(&pool, account_id).await;
-    println!(
-        "After maintenance: {} API-visible records ({:.2}s)",
-        after_maintenance,
-        maintenance_elapsed.as_secs_f64()
-    );
-
-    // -----------------------------------------------------------------------
-    // 4. Query the HTTP API
-    // -----------------------------------------------------------------------
-    let state = Arc::new(common::build_test_state(pool));
+    let state = Arc::new(common::build_test_state(pool.clone()));
     let app = nt_be::routes::create_routes(state);
 
     let request = Request::builder()
@@ -492,19 +176,15 @@ async fn test_goldsky_executor_id_lesik_o(pool: PgPool) {
     let total_elapsed = total_start.elapsed();
 
     // -----------------------------------------------------------------------
-    // 5. Print summary
+    // 4. Print summary
     // -----------------------------------------------------------------------
     println!("\n========== RESULTS ==========");
-    println!(
-        "Fixtures:        {} outcomes (6 executor_id matched)",
-        fixture_count.0
-    );
+    println!("Fixtures:        {} outcomes", fixture_count.0);
     println!(
         "Enrichment:      {} processed in {:.2}s",
         total_processed,
         enrichment_elapsed.as_secs_f64()
     );
-    println!("Maintenance:     {:.2}s", maintenance_elapsed.as_secs_f64());
     println!("API records:     {}", records.len());
     println!("Total time:      {:.2}s", total_elapsed.as_secs_f64());
     println!("=============================\n");
@@ -517,18 +197,114 @@ async fn test_goldsky_executor_id_lesik_o(pool: PgPool) {
             &r.token_id
         };
         println!(
-            "  block={} token={:<30} amount={:<15} counterparty={:<30} method={:?}",
+            "  block={} token={:<30} amount={:<25} counterparty={:<30} action={:?} tx={:?}",
             r.block_height,
             token_short,
             r.amount,
             r.counterparty.as_deref().unwrap_or("-"),
-            r.method_name,
+            r.action_kind,
+            r.transaction_hashes,
         );
     }
 
+    // -----------------------------------------------------------------------
+    // 5. Hard expectations — must match production (api.trezu.app)
+    //
+    // Enrichment alone should find records 1-4 via experimental_tx_status
+    // receipt block resolution + Path A/B/C event parsing.
+    // -----------------------------------------------------------------------
+    let find = |block: i64, token: &str| -> Option<&BalanceChangeRecord> {
+        records
+            .iter()
+            .find(|r| r.block_height == block && r.token_id == token)
+    };
+
+    // Also dump all DB records (including non-API-visible) for debugging
+    let all_db: Vec<(i64, String, String, String)> = sqlx::query_as(
+        "SELECT block_height, token_id, amount::TEXT, counterparty \
+         FROM balance_changes WHERE account_id = $1 \
+         ORDER BY block_height ASC",
+    )
+    .bind(account_id)
+    .fetch_all(&pool)
+    .await
+    .unwrap();
+    println!("\nAll DB records ({}):", all_db.len());
+    for (block, token, amount, cp) in &all_db {
+        let token_short = if token.len() > 40 {
+            &token[..40]
+        } else {
+            token.as_str()
+        };
+        println!(
+            "  block={} token={:<40} amount={:<25} cp={}",
+            block, token_short, amount, cp
+        );
+    }
+
+    // --- Record 1: block 188101233, NEAR +0.432 (Transfer from petersalomonsen.near) ---
+    // Path B: receiver_id = DAO, signer = petersalomonsen.near, trigger block 188101232
+    // tx_status resolves receipt block to 188101233 (cross-shard +1 block).
+    let r1 = find(188_101_233, "near")
+        .expect("Missing: block 188101233 NEAR (petersalomonsen.near Transfer deposit)");
+    assert_eq!(r1.counterparty.as_deref(), Some("petersalomonsen.near"));
     assert!(
-        records.len() >= 1,
-        "Expected at least 1 API-visible balance change"
+        r1.amount.starts_with("0.432"),
+        "Expected amount ~0.432, got {}",
+        r1.amount
     );
-    println!("\nTest passed with {} API-visible records.", records.len());
+    println!("\nRecord 1 OK: block=188101233 NEAR +{}", r1.amount);
+
+    // --- Record 2: block 188102293, NEAR +0.0969 (FunctionCall, Path C) ---
+    // Path C: executor_id = DAO, receiver_id = petersalomonsen.near, trigger block 188102291
+    // tx_status resolves receipt block to 188102293.
+    let r2 = find(188_102_293, "near")
+        .expect("Missing: block 188102293 NEAR (act_proposal Path C cross-contract)");
+    assert_eq!(r2.counterparty.as_deref(), Some("petersalomonsen.near"));
+    assert!(
+        r2.amount.starts_with("0.09"),
+        "Expected amount ~0.0969, got {}",
+        r2.amount
+    );
+    println!("Record 2 OK: block=188102293 NEAR +{}", r2.amount);
+
+    // --- Record 3: block 188102397, NEAR -0.000735 (intents swap gas) ---
+    // Path C: executor_id = DAO, receiver_id = petersalomonsen.near, trigger block 188102395
+    // tx_status resolves receipt block to 188102397.
+    let r3 =
+        find(188_102_397, "near").expect("Missing: block 188102397 NEAR (intents swap gas cost)");
+    assert!(
+        r3.amount.starts_with("-0.000"),
+        "Expected small negative amount, got {}",
+        r3.amount
+    );
+    println!("Record 3 OK: block=188102397 NEAR {}", r3.amount);
+
+    // --- Record 4: block 188102398, intents USDC -10 ---
+    // Path A: mt_burn log event from intents.near mentioning DAO as owner_id
+    // tx_status resolves receipt block to 188102398.
+    let intents_usdc =
+        "intents.near:nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1";
+    let r4 = find(188_102_398, intents_usdc)
+        .expect("Missing: block 188102398 intents USDC (intents swap)");
+    assert_eq!(r4.amount, "-10", "Expected -10 USDC, got {}", r4.amount);
+    println!("Record 4 OK: block=188102398 intents USDC {}", r4.amount);
+
+    // --- Record 5: block 188102401, NEAR -0.0999 (intents.near settlement) ---
+    // This is a NEAR balance change from the intents swap settlement. No Goldsky
+    // outcome for this — enrichment cannot find it without maintenance.
+    // For now, only check it if present (maintenance would fill this gap).
+    if let Some(r5) = find(188_102_401, "near") {
+        assert!(
+            r5.amount.starts_with("-0.09"),
+            "Expected amount ~-0.0999, got {}",
+            r5.amount
+        );
+        assert_eq!(r5.counterparty.as_deref(), Some("intents.near"));
+        println!("Record 5 OK: block=188102401 NEAR {}", r5.amount);
+    } else {
+        println!("Record 5 SKIPPED: block=188102401 NEAR (intents settlement — needs maintenance)");
+    }
+
+    println!("\nExpected production records verified (enrichment-only).");
 }

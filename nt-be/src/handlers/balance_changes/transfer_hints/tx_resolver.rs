@@ -133,6 +133,69 @@ pub async fn resolve_transaction_blocks(
     })
 }
 
+/// Resolve a transaction to get ALL unique receipt block heights, sorted ascending.
+///
+/// Unlike `resolve_transaction_blocks`, this does not filter by executor_id.
+/// Returns every unique block height where any receipt in the transaction executed.
+/// The caller should check balance at each block to find where the actual change occurred.
+pub async fn resolve_all_receipt_block_heights(
+    network: &NetworkConfig,
+    tx_hash: &str,
+    sender_account_id: &str,
+) -> Result<Vec<u64>, Box<dyn Error + Send + Sync>> {
+    let client = create_rpc_client(network)?;
+
+    let parsed_tx_hash: near_primitives::hash::CryptoHash = tx_hash.parse()?;
+    let parsed_sender: near_primitives::types::AccountId = sender_account_id.parse()?;
+
+    let tx_response = with_transport_retry("tx_status_all_receipts", || {
+        let req = methods::tx::RpcTransactionStatusRequest {
+            transaction_info: methods::tx::TransactionInfo::TransactionId {
+                tx_hash: parsed_tx_hash,
+                sender_account_id: parsed_sender.clone(),
+            },
+            wait_until: near_primitives::views::TxExecutionStatus::Final,
+        };
+        client.call(req)
+    })
+    .await?;
+
+    let receipts_outcome = match &tx_response.final_execution_outcome {
+        Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcome(outcome)) => {
+            &outcome.receipts_outcome
+        }
+        Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcomeWithReceipt(outcome)) => {
+            &outcome.final_outcome.receipts_outcome
+        }
+        None => return Err("No final execution outcome in transaction".into()),
+    };
+
+    // Collect unique block hashes
+    let mut unique_block_hashes: Vec<near_primitives::hash::CryptoHash> = Vec::new();
+    for ro in receipts_outcome {
+        if !unique_block_hashes.contains(&ro.block_hash) {
+            unique_block_hashes.push(ro.block_hash);
+        }
+    }
+
+    // Resolve each unique block hash to height
+    let mut heights = Vec::new();
+    for block_hash in unique_block_hashes {
+        let block = with_transport_retry("block_for_receipt", || {
+            let req = methods::block::RpcBlockRequest {
+                block_reference: BlockReference::BlockId(BlockId::Hash(block_hash)),
+            };
+            client.call(req)
+        })
+        .await?;
+        heights.push(block.header.height);
+    }
+
+    heights.sort();
+    heights.dedup();
+    Ok(heights)
+}
+
 /// Find candidate blocks where a balance change may have occurred using tx_status
 ///
 /// This is the main entry point for hint resolution. Given a transaction hash,
@@ -701,6 +764,46 @@ mod tests {
         assert!(
             has_known_receipt,
             "Should contain the known receipt 4k8fzeY5VkQmRsseapsPBA2mNReroXdjQVpvHkhWURt1"
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_resolve_all_receipt_block_heights_intents_swap() {
+        let state = init_test_state().await;
+
+        // Transaction 9noKHxN7Rj7tNhZVfZZbCRu1ZiWSq8cqDr9RAwX1TL7U
+        // act_proposal on webassemblymusic-treasury.sputnik-dao.near
+        // triggering an intents swap (ft_withdraw → mt_burn → ft_transfer → ft_resolve_withdraw)
+        // Signer: sponsor.trezu.near
+        // 11 receipts across 7 unique blocks
+        let tx_hash = "9noKHxN7Rj7tNhZVfZZbCRu1ZiWSq8cqDr9RAwX1TL7U";
+        let sender = "sponsor.trezu.near";
+
+        let blocks = resolve_all_receipt_block_heights(&state.archival_network, tx_hash, sender)
+            .await
+            .expect("Should resolve all receipt block heights");
+
+        println!("All receipt block heights: {:?}", blocks);
+
+        // Should be sorted ascending and deduped
+        assert!(
+            blocks.windows(2).all(|w| w[0] < w[1]),
+            "Blocks should be sorted ascending with no duplicates"
+        );
+
+        // This transaction has receipts across 7 unique blocks
+        assert_eq!(blocks.len(), 7, "Expected 7 unique receipt blocks");
+
+        // Key blocks where webassemblymusic-treasury balance changes:
+        //   188102397: NEAR balance change (gas cost)
+        //   188102398: intents USDC balance change (mt_burn)
+        assert!(
+            blocks.contains(&188102397),
+            "Should contain block 188102397 (NEAR balance change)"
+        );
+        assert!(
+            blocks.contains(&188102398),
+            "Should contain block 188102398 (intents USDC mt_burn)"
         );
     }
 }
