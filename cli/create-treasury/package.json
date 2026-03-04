@@ -1,0 +1,28 @@
+{
+  "name": "create-treasury",
+  "version": "1.0.0",
+  "description": "CLI to create a NEAR Treasury (Sputnik DAO) via near-cli-rs",
+  "type": "module",
+  "bin": {
+    "create-treasury": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc"
+  },
+  "keywords": [
+    "near",
+    "treasury",
+    "dao",
+    "sputnik"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@inquirer/prompts": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  }
+}
