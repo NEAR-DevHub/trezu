@@ -15,8 +15,11 @@ transforms:
   #   wrap.near plain-text logs, intents swaps, etc.)
   # - Any outcome where receiver_id is a sputnik-dao account
   #   (native NEAR transfers, function calls, staking, etc.)
+  # - Any outcome where executor_id is a sputnik-dao account
+  #   (add_proposal, act_proposal — executed by the DAO contract in
+  #   cross-contract receipts from sponsor calls)
   #
-  # Note: logs is List(Utf8) so we use array_to_string() for LIKE filtering.
+  # Note: logs is List(Utf8) at runtime, so use array_to_string() for filtering.
   dao_outcomes:
     type: sql
     primary_key: id
@@ -37,6 +40,7 @@ transforms:
       FROM near_outcomes
       WHERE array_to_string(logs, ' ') LIKE '%sputnik-dao.near%'
          OR receiver_id LIKE '%.sputnik-dao.near'
+         OR executor_id LIKE '%.sputnik-dao.near'
 
 sinks:
   postgres:
