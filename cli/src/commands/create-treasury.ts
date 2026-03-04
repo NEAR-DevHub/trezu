@@ -1,11 +1,6 @@
-#!/usr/bin/env node
 import { spawn } from "child_process";
-import {
-  select,
-  input,
-  number,
-  confirm,
-} from "@inquirer/prompts";
+import { select, input, number, confirm } from "@inquirer/prompts";
+import { promptNetwork, parseAccountIds, slugify } from "../lib/prompts.js";
 
 const DAO_FACTORY_ID = "sputnik-dao.near";
 const DEPOSIT = "0.09NEAR";
@@ -20,23 +15,6 @@ interface TreasuryConfig {
   governors: string[];
   financiers: string[];
   requestors: string[];
-}
-
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
-function parseAccountIds(input: string): string[] {
-  return input
-    .split(",")
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
 }
 
 function buildPolicy(config: TreasuryConfig) {
@@ -179,91 +157,120 @@ function buildCommand(config: TreasuryConfig): string[] {
   ];
 }
 
-async function promptForSigner(): Promise<string> {
-  const signer = await input({
-    message: "Enter your NEAR account ID (will be pre-filled as all roles):",
-    validate: (value) => {
-      if (!value || value.trim().length === 0) {
-        return "Account ID is required";
-      }
-      if (!value.includes(".")) {
-        return "Account ID must be a full account (e.g., account.near or account.testnet)";
-      }
-      return true;
-    },
-  });
-  return signer.trim();
-}
+export async function createTreasury(
+  dryRun: boolean = false,
+  nonInteractive: boolean = false,
+  options: Record<string, string> = {}
+) {
+  console.log("\n🏛️  Create Treasury\n");
 
-async function main() {
-  const args = process.argv.slice(2);
-  const dryRun = args.includes("--dry-run");
+  let network: "testnet" | "mainnet";
+  let signer: string;
+  let name: string;
+  let accountId: string;
+  let paymentThreshold: number;
+  let governanceThreshold: number;
+  let governors: string[];
+  let financiers: string[];
+  let requestors: string[];
 
-  console.log("\n🏛️  NEAR Treasury Creator\n");
+  if (nonInteractive) {
+    if (!options.network) {
+      console.error("Error: --network is required in non-interactive mode");
+      process.exit(1);
+    }
+    if (!options.signer) {
+      console.error("Error: --signer is required in non-interactive mode");
+      process.exit(1);
+    }
+    if (!options.name) {
+      console.error("Error: --name is required in non-interactive mode");
+      process.exit(1);
+    }
+    if (!options["account-id"]) {
+      console.error("Error: --account-id is required in non-interactive mode");
+      process.exit(1);
+    }
 
-  const network = await select({
-    message: "Select network:",
-    choices: [
-      { value: "testnet", name: "Testnet" },
-      { value: "mainnet", name: "Mainnet" },
-    ],
-  });
+    network = options.network as "testnet" | "mainnet";
+    signer = options.signer;
+    name = options.name;
+    accountId = options["account-id"];
+    paymentThreshold = parseInt(options["payment-threshold"] || "1", 10);
+    governanceThreshold = parseInt(options["governance-threshold"] || "2", 10);
+    governors = options.governors ? parseAccountIds(options.governors) : [signer];
+    financiers = options.financiers ? parseAccountIds(options.financiers) : [signer];
+    requestors = options.requestors ? parseAccountIds(options.requestors) : [signer];
+  } else {
+    network = (await promptNetwork()) as "testnet" | "mainnet";
 
-  const signer = await promptForSigner();
+    signer = await input({
+      message: "Enter your NEAR account ID (will be pre-filled as all roles):",
+      validate: (value) => {
+        if (!value || value.trim().length === 0) {
+          return "Account ID is required";
+        }
+        if (!value.includes(".")) {
+          return "Account ID must be a full account (e.g., account.near or account.testnet)";
+        }
+        return true;
+      },
+    });
 
-  const name = await input({
-    message: "Treasury display name:",
-    default: "My Treasury",
-  });
+    name = await input({
+      message: "Treasury display name:",
+      default: "My Treasury",
+    });
 
-  const defaultAccountId = `${slugify(name)}.${DAO_FACTORY_ID}`;
-  const accountId = await input({
-    message: "Treasury account ID:",
-    default: defaultAccountId,
-    validate: (value) => {
-      if (!value.endsWith(`.${DAO_FACTORY_ID}`)) {
-        return `Account ID must end with .${DAO_FACTORY_ID}`;
-      }
-      return true;
-    },
-  });
+    const defaultAccountId = `${slugify(name)}.${DAO_FACTORY_ID}`;
+    accountId = await input({
+      message: "Treasury account ID:",
+      default: defaultAccountId,
+      validate: (value) => {
+        if (!value.endsWith(`.${DAO_FACTORY_ID}`)) {
+          return `Account ID must end with .${DAO_FACTORY_ID}`;
+        }
+        return true;
+      },
+    });
 
-  const paymentThreshold = await number({
-    message: "Payment threshold (votes needed to approve transfers):",
-    default: 1,
-    min: 1,
-  });
+    paymentThreshold = (await number({
+      message: "Payment threshold (votes needed to approve transfers):",
+      default: 1,
+      min: 1,
+    }))!;
 
-  const governanceThreshold = await number({
-    message: "Governance threshold (votes needed for config changes):",
-    default: 2,
-    min: 1,
-  });
+    governanceThreshold = (await number({
+      message: "Governance threshold (votes needed for config changes):",
+      default: 2,
+      min: 1,
+    }))!;
 
-  const governorsInput = await input({
-    message: "Governors (Admin role, full permissions):",
-    default: signer,
-  });
-  const governors = parseAccountIds(governorsInput);
+    const governorsInput = await input({
+      message: "Governors (Admin role, full permissions):",
+      default: signer,
+    });
+    governors = parseAccountIds(governorsInput);
 
-  const financiersInput = await input({
-    message: "Financiers (Approver role, can approve/reject payments):",
-    default: signer,
-  });
-  const financiers = parseAccountIds(financiersInput);
+    const financiersInput = await input({
+      message: "Financiers (Approver role, can approve/reject payments):",
+      default: signer,
+    });
+    financiers = parseAccountIds(financiersInput);
 
-  const requestorsInput = await input({
-    message: "Requestors (can create proposals):",
-    default: signer,
-  });
-  const requestors = parseAccountIds(requestorsInput);
+    const requestorsInput = await input({
+      message: "Requestors (can create proposals):",
+      default: signer,
+    });
+    requestors = parseAccountIds(requestorsInput);
+  }
 
   const config: TreasuryConfig = {
-    network: network as "testnet" | "mainnet",
+    network,
     name,
     accountId,
-    paymentThreshold: paymentThreshold!,
-    governanceThreshold: governanceThreshold!,
+    paymentThreshold,
+    governanceThreshold,
     governors,
     financiers,
     requestors,
@@ -281,14 +288,16 @@ async function main() {
   console.log(`   Deposit:     0.09 NEAR`);
   console.log(`   Gas:         300 Tgas\n`);
 
-  const proceed = await confirm({
-    message: "Create treasury?",
-    default: true,
-  });
+  if (!nonInteractive) {
+    const proceed = await confirm({
+      message: "Create treasury?",
+      default: true,
+    });
 
-  if (!proceed) {
-    console.log("Cancelled.");
-    process.exit(0);
+    if (!proceed) {
+      console.log("Cancelled.");
+      process.exit(0);
+    }
   }
 
   const nearArgs = buildCommand(config);
@@ -319,8 +328,3 @@ async function main() {
     process.exit(code ?? 1);
   });
 }
-
-main().catch((error) => {
-  console.error(`\n❌ Error: ${error.message}`);
-  process.exit(1);
-});

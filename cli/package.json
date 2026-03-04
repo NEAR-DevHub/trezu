@@ -1,10 +1,10 @@
 {
-  "name": "create-treasury",
+  "name": "trezu",
   "version": "1.0.0",
-  "description": "CLI to create a NEAR Treasury (Sputnik DAO) via near-cli-rs",
+  "description": "CLI for NEAR Treasury (Sputnik DAO) operations via near-cli-rs",
   "type": "module",
   "bin": {
-    "create-treasury": "./src/index.ts"
+    "trezu": "./src/index.ts"
   },
   "scripts": {
     "dev": "tsx src/index.ts",
@@ -14,7 +14,8 @@
     "near",
     "treasury",
     "dao",
-    "sputnik"
+    "sputnik",
+    "cli"
   ],
   "license": "MIT",
   "dependencies": {
