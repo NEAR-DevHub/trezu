@@ -82,25 +82,25 @@ const resourceItems: SupportItemProps[] = [
     {
         icon: <LogoInlined className="size-5" />,
         title: "Trezu Website",
-        description: "Get more information and read blog posts.",
+        description: "Learn more about Trezu and read our blog.",
         href: LANDING_PAGE,
     },
     {
         icon: <Eye className="size-5" />,
-        title: "See Demo Trezu",
-        description: "Explore and see demo account in action.",
+        title: "Explore the Trezu Demo",
+        description: "See a live demo account in action.",
         href: APP_ACTIVE_TREASURY,
     },
     {
         icon: <CirclePlay className="size-5" />,
-        title: "View Demo",
-        description: "Watch the video to explore how the Trezu works.",
+        title: "Watch the Demo",
+        description: "Watch a short video showing how Trezu works.",
         href: APP_DEMO_URL,
     },
     {
         icon: <XIcon className="size-5" />,
         title: "Follow Us on X",
-        description: "Get updates, releases and insights.",
+        description: "Stay updated with our latest releases and insights.",
         href: APP_TWITTER_URL,
     },
 ];
@@ -108,14 +108,14 @@ const resourceItems: SupportItemProps[] = [
 const supportItems: SupportItemProps[] = [
     {
         icon: <File className="size-5" />,
-        title: "App Docs",
-        description: "Learn all features in the docs.",
+        title: "Documentation",
+        description: "Learn about all features in the docs.",
         href: APP_DOCS_URL,
     },
     {
         icon: <Headphones className="size-5" />,
         title: "Product Support",
-        description: "Get help from our support team.",
+        description: "Contact our support team for help.",
         onClick: () => {
             Gleap.open();
         },

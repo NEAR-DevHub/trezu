@@ -42,20 +42,20 @@ function InfoItem({ icon, title, description, href }: InfoItemProps) {
 const infoItems: InfoItemProps[] = [
     {
         icon: <Eye className="size-4" />,
-        title: "See Demo Trezu",
-        description: "Explore and see other account in action.",
+        title: "Explore the Trezu Demo",
+        description: "See a live demo account in action.",
         href: APP_ACTIVE_TREASURY,
     },
     {
         icon: <File className="size-4" />,
-        title: "App Docs",
-        description: "Learn all features in the docs.",
+        title: "Documentation",
+        description: "Learn about all features in the docs.",
         href: APP_DOCS_URL,
     },
     {
         icon: <CirclePlay className="size-4" />,
-        title: "View Demo",
-        description: "Watch the demo to explore how the Treasury works.",
+        title: "Watch the Demo",
+        description: "Watch a short video showing how Trezu works.",
         href: APP_DEMO_URL,
     },
 ];
