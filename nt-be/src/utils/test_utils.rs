@@ -130,5 +130,6 @@ pub fn build_test_state(db_pool: sqlx::PgPool) -> AppState {
         price_service,
         transfer_hint_service: transfer_hint_service.map(Arc::new),
         neon_pool: None,
+        neardata_client: None,
     }
 }

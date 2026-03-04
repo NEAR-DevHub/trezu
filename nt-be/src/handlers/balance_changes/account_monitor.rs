@@ -14,6 +14,7 @@ use super::swap_detector::{
 };
 use super::token_discovery::{fetch_fastnear_ft_tokens, snapshot_intents_tokens};
 use super::transfer_hints::TransferHintService;
+use super::transfer_hints::neardata::NeardataClient;
 
 /// Run one maintenance cycle for dirty accounts only.
 ///
@@ -42,6 +43,7 @@ pub async fn run_maintenance_cycle(
     fastnear: Option<(&reqwest::Client, &str)>,
     intents_api_key: Option<&str>,
     intents_api_url: &str,
+    neardata: Option<&NeardataClient>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Only process accounts marked dirty
     let dirty_accounts: Vec<(String, DateTime<Utc>)> = sqlx::query_as(
@@ -188,6 +190,7 @@ pub async fn run_maintenance_cycle(
                 up_to_block,
                 hint_service,
                 creation_block,
+                neardata,
             )
             .await
             {
@@ -683,6 +686,7 @@ pub async fn fill_account_gaps(
     account_id: &str,
     up_to_block: i64,
     hint_service: Option<&TransferHintService>,
+    neardata: Option<&NeardataClient>,
 ) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
     let mut tokens: Vec<String> = sqlx::query_scalar(
         r#"
@@ -715,6 +719,7 @@ pub async fn fill_account_gaps(
             up_to_block,
             hint_service,
             None, // No creation block in utility function
+            neardata,
         )
         .await
         {
@@ -761,6 +766,7 @@ mod tests {
             None,
             None,
             "",
+            None,
         )
         .await;
         assert!(result.is_ok());

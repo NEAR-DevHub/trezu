@@ -88,13 +88,16 @@ async fn test_goldsky_enrichment_trezu_demo(pool: PgPool) {
     // -----------------------------------------------------------------------
     // 1. Load fixture data + register account
     // -----------------------------------------------------------------------
-    load_fixtures(&pool, include_str!("test_data/goldsky_trezu_demo_fixtures.sql")).await;
+    load_fixtures(
+        &pool,
+        include_str!("test_data/goldsky_trezu_demo_fixtures.sql"),
+    )
+    .await;
 
-    let fixture_count: (i64,) =
-        sqlx::query_as("SELECT COUNT(*) FROM indexed_dao_outcomes")
-            .fetch_one(&pool)
-            .await
-            .unwrap();
+    let fixture_count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM indexed_dao_outcomes")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
     assert_eq!(fixture_count.0, 51, "Expected 51 fixture rows loaded");
     println!(
         "Loaded {} fixture rows into indexed_dao_outcomes",
@@ -116,12 +119,11 @@ async fn test_goldsky_enrichment_trezu_demo(pool: PgPool) {
     let enrichment_start = Instant::now();
     let mut total_processed = 0usize;
     loop {
-        let processed =
-            nt_be::handlers::balance_changes::goldsky_enrichment::run_enrichment_cycle(
-                &pool, &pool, &network,
-            )
-            .await
-            .unwrap();
+        let processed = nt_be::handlers::balance_changes::goldsky_enrichment::run_enrichment_cycle(
+            &pool, &pool, &network,
+        )
+        .await
+        .unwrap();
         total_processed += processed;
         if processed < 100 {
             break;
@@ -134,13 +136,12 @@ async fn test_goldsky_enrichment_trezu_demo(pool: PgPool) {
         enrichment_elapsed.as_secs_f64()
     );
 
-    let after_enrichment: (i64,) = sqlx::query_as(
-        "SELECT COUNT(*) FROM balance_changes WHERE account_id = $1",
-    )
-    .bind(account_id)
-    .fetch_one(&pool)
-    .await
-    .unwrap();
+    let after_enrichment: (i64,) =
+        sqlx::query_as("SELECT COUNT(*) FROM balance_changes WHERE account_id = $1")
+            .bind(account_id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
     let enrichment_api = api_filtered_count(&pool, account_id).await;
     println!(
         "After enrichment: {} DB records, {} API-visible",
@@ -150,12 +151,11 @@ async fn test_goldsky_enrichment_trezu_demo(pool: PgPool) {
     // -----------------------------------------------------------------------
     // 3. Run maintenance cycle for NEAR gas-fee gap filling
     // -----------------------------------------------------------------------
-    let max_block: (i64,) = sqlx::query_as(
-        "SELECT COALESCE(MAX(trigger_block_height), 0) FROM indexed_dao_outcomes",
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
+    let max_block: (i64,) =
+        sqlx::query_as("SELECT COALESCE(MAX(trigger_block_height), 0) FROM indexed_dao_outcomes")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
 
     sqlx::query("UPDATE monitored_accounts SET dirty_at = NOW() WHERE account_id = $1")
         .bind(account_id)
@@ -173,22 +173,24 @@ async fn test_goldsky_enrichment_trezu_demo(pool: PgPool) {
         Some((&http_client, &env_vars.fastnear_api_key)),
         env_vars.intents_explorer_api_key.as_deref(),
         &env_vars.intents_explorer_api_url,
+        None,
     )
     .await
     .unwrap();
     let maintenance1_elapsed = maintenance_start.elapsed();
 
-    let total: (i64,) = sqlx::query_as(
-        "SELECT COUNT(*) FROM balance_changes WHERE account_id = $1",
-    )
-    .bind(account_id)
-    .fetch_one(&pool)
-    .await
-    .unwrap();
+    let total: (i64,) =
+        sqlx::query_as("SELECT COUNT(*) FROM balance_changes WHERE account_id = $1")
+            .bind(account_id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
     let filtered = api_filtered_count(&pool, account_id).await;
     println!(
         "After maintenance 1: DB total: {}, API-visible: {} ({:.2}s)",
-        total.0, filtered, maintenance1_elapsed.as_secs_f64()
+        total.0,
+        filtered,
+        maintenance1_elapsed.as_secs_f64()
     );
 
     // -----------------------------------------------------------------------
@@ -210,22 +212,24 @@ async fn test_goldsky_enrichment_trezu_demo(pool: PgPool) {
         Some((&http_client, &env_vars.fastnear_api_key)),
         env_vars.intents_explorer_api_key.as_deref(),
         &env_vars.intents_explorer_api_url,
+        None,
     )
     .await
     .unwrap();
     let maintenance2_elapsed = maintenance2_start.elapsed();
 
-    let total2: (i64,) = sqlx::query_as(
-        "SELECT COUNT(*) FROM balance_changes WHERE account_id = $1",
-    )
-    .bind(account_id)
-    .fetch_one(&pool)
-    .await
-    .unwrap();
+    let total2: (i64,) =
+        sqlx::query_as("SELECT COUNT(*) FROM balance_changes WHERE account_id = $1")
+            .bind(account_id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
     let filtered2 = api_filtered_count(&pool, account_id).await;
     println!(
         "After maintenance 2: DB total: {}, API-visible: {} ({:.2}s)",
-        total2.0, filtered2, maintenance2_elapsed.as_secs_f64()
+        total2.0,
+        filtered2,
+        maintenance2_elapsed.as_secs_f64()
     );
 
     // -----------------------------------------------------------------------
@@ -264,9 +268,19 @@ async fn test_goldsky_enrichment_trezu_demo(pool: PgPool) {
     // -----------------------------------------------------------------------
     println!("\n========== RESULTS ==========");
     println!("Fixtures:        {} outcomes", fixture_count.0);
-    println!("Enrichment:      {} processed in {:.2}s", total_processed, enrichment_elapsed.as_secs_f64());
-    println!("Maintenance 1:   {:.2}s", maintenance1_elapsed.as_secs_f64());
-    println!("Maintenance 2:   {:.2}s", maintenance2_elapsed.as_secs_f64());
+    println!(
+        "Enrichment:      {} processed in {:.2}s",
+        total_processed,
+        enrichment_elapsed.as_secs_f64()
+    );
+    println!(
+        "Maintenance 1:   {:.2}s",
+        maintenance1_elapsed.as_secs_f64()
+    );
+    println!(
+        "Maintenance 2:   {:.2}s",
+        maintenance2_elapsed.as_secs_f64()
+    );
     println!("API records:     {}", records.len());
     println!("Total time:      {:.2}s", total_elapsed.as_secs_f64());
     println!("=============================\n");
@@ -320,15 +334,21 @@ async fn test_goldsky_executor_id_lesik_o(pool: PgPool) {
     // -----------------------------------------------------------------------
     // 1. Load fixture data + register account
     // -----------------------------------------------------------------------
-    load_fixtures(&pool, include_str!("test_data/goldsky_lesik_o_fixtures.sql")).await;
+    load_fixtures(
+        &pool,
+        include_str!("test_data/goldsky_lesik_o_fixtures.sql"),
+    )
+    .await;
 
-    let fixture_count: (i64,) =
-        sqlx::query_as("SELECT COUNT(*) FROM indexed_dao_outcomes")
-            .fetch_one(&pool)
-            .await
-            .unwrap();
+    let fixture_count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM indexed_dao_outcomes")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
     assert_eq!(fixture_count.0, 14, "Expected 14 fixture rows loaded");
-    println!("Loaded {} fixture rows into indexed_dao_outcomes", fixture_count.0);
+    println!(
+        "Loaded {} fixture rows into indexed_dao_outcomes",
+        fixture_count.0
+    );
 
     // Count executor_id matched outcomes (the new ones from the pipeline update)
     let executor_matches: (i64,) = sqlx::query_as(
@@ -363,12 +383,11 @@ async fn test_goldsky_executor_id_lesik_o(pool: PgPool) {
     let enrichment_start = Instant::now();
     let mut total_processed = 0usize;
     loop {
-        let processed =
-            nt_be::handlers::balance_changes::goldsky_enrichment::run_enrichment_cycle(
-                &pool, &pool, &network,
-            )
-            .await
-            .unwrap();
+        let processed = nt_be::handlers::balance_changes::goldsky_enrichment::run_enrichment_cycle(
+            &pool, &pool, &network,
+        )
+        .await
+        .unwrap();
         total_processed += processed;
         if processed < 100 {
             break;
@@ -392,7 +411,10 @@ async fn test_goldsky_executor_id_lesik_o(pool: PgPool) {
     .await
     .unwrap();
     let block_list: Vec<i64> = enrichment_blocks.iter().map(|r| r.0).collect();
-    println!("Enrichment created NEAR records at blocks: {:?}", block_list);
+    println!(
+        "Enrichment created NEAR records at blocks: {:?}",
+        block_list
+    );
 
     // Path B creates records at 4 sponsor call pair blocks
     // Path C creates records at 4 executor_id outcome blocks (add_proposal/act_proposal)
@@ -408,12 +430,11 @@ async fn test_goldsky_executor_id_lesik_o(pool: PgPool) {
     // -----------------------------------------------------------------------
     // 3. Run maintenance cycle
     // -----------------------------------------------------------------------
-    let max_block: (i64,) = sqlx::query_as(
-        "SELECT COALESCE(MAX(trigger_block_height), 0) FROM indexed_dao_outcomes",
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
+    let max_block: (i64,) =
+        sqlx::query_as("SELECT COALESCE(MAX(trigger_block_height), 0) FROM indexed_dao_outcomes")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
 
     sqlx::query("UPDATE monitored_accounts SET dirty_at = NOW() WHERE account_id = $1")
         .bind(account_id)
@@ -431,6 +452,7 @@ async fn test_goldsky_executor_id_lesik_o(pool: PgPool) {
         Some((&http_client, &env_vars.fastnear_api_key)),
         env_vars.intents_explorer_api_key.as_deref(),
         &env_vars.intents_explorer_api_url,
+        None,
     )
     .await
     .unwrap();
@@ -473,8 +495,15 @@ async fn test_goldsky_executor_id_lesik_o(pool: PgPool) {
     // 5. Print summary
     // -----------------------------------------------------------------------
     println!("\n========== RESULTS ==========");
-    println!("Fixtures:        {} outcomes (6 executor_id matched)", fixture_count.0);
-    println!("Enrichment:      {} processed in {:.2}s", total_processed, enrichment_elapsed.as_secs_f64());
+    println!(
+        "Fixtures:        {} outcomes (6 executor_id matched)",
+        fixture_count.0
+    );
+    println!(
+        "Enrichment:      {} processed in {:.2}s",
+        total_processed,
+        enrichment_elapsed.as_secs_f64()
+    );
     println!("Maintenance:     {:.2}s", maintenance_elapsed.as_secs_f64());
     println!("API records:     {}", records.len());
     println!("Total time:      {:.2}s", total_elapsed.as_secs_f64());

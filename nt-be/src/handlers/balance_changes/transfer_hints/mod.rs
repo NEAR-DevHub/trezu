@@ -19,6 +19,7 @@
 //! - `"intents.near:nep141:token"` - NEAR Intents tokens (future support)
 
 pub mod fastnear;
+pub mod neardata;
 pub mod tx_resolver;
 
 use async_trait::async_trait;

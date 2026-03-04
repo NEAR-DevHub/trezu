@@ -125,9 +125,18 @@ async fn test_intents_token_should_not_include_unrelated_tx_hashes(
     );
 
     let network = &state.archival_network;
-    run_maintenance_cycle(&pool, network, fixed_up_to_block, None, None, None, "")
-        .await
-        .expect("Maintenance cycle should succeed");
+    run_maintenance_cycle(
+        &pool,
+        network,
+        fixed_up_to_block,
+        None,
+        None,
+        None,
+        "",
+        None,
+    )
+    .await
+    .expect("Maintenance cycle should succeed");
 
     println!("Maintenance cycle completed");
 

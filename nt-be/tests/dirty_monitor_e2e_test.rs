@@ -233,14 +233,21 @@ async fn test_maintenance_detects_payments(pool: PgPool) -> sqlx::Result<()> {
 
     // Run gap filling up to the block after the payments
     let start = Instant::now();
-    let gaps_filled = fill_account_gaps(&pool, &network, TREASURY_ACCOUNT, DIRTY_UP_TO_BLOCK, None)
-        .await
-        .map_err(|e| {
-            sqlx::Error::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                e.to_string(),
-            ))
-        })?;
+    let gaps_filled = fill_account_gaps(
+        &pool,
+        &network,
+        TREASURY_ACCOUNT,
+        DIRTY_UP_TO_BLOCK,
+        None,
+        None,
+    )
+    .await
+    .map_err(|e| {
+        sqlx::Error::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            e.to_string(),
+        ))
+    })?;
     let duration = start.elapsed();
 
     println!("Gap filling filled {} gaps in {:?}", gaps_filled, duration);

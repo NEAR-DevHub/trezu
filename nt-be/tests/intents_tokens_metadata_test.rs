@@ -67,7 +67,7 @@ async fn test_intents_tokens_metadata_discovery() {
     let network = common::create_archival_network();
 
     println!("Running monitoring cycle to discover intents tokens and fetch metadata...");
-    run_maintenance_cycle(&pool, &network, up_to_block, None, None, None, "")
+    run_maintenance_cycle(&pool, &network, up_to_block, None, None, None, "", None)
         .await
         .expect("Failed to run monitoring cycle");
 

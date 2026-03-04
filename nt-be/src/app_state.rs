@@ -5,7 +5,9 @@ use sqlx::PgPool;
 use std::{sync::Arc, time::Duration};
 
 use crate::{
-    handlers::balance_changes::transfer_hints::{TransferHintService, fastnear::FastNearProvider},
+    handlers::balance_changes::transfer_hints::{
+        TransferHintService, fastnear::FastNearProvider, neardata::NeardataClient,
+    },
     services::{DeFiLlamaClient, PriceLookupService},
     utils::{
         cache::{Cache, CacheKey, CacheTier},
@@ -29,6 +31,9 @@ pub struct AppState {
     pub telegram_client: TelegramClient,
     /// Optional transfer hint service for accelerated balance change detection
     pub transfer_hint_service: Option<Arc<TransferHintService>>,
+    /// Optional neardata.xyz client for accelerated block metadata resolution.
+    /// Replaces multiple RPC calls with a single HTTP call per block.
+    pub neardata_client: Option<NeardataClient>,
     /// Optional connection pool to Neon Postgres (Goldsky sink database).
     /// Used by the enrichment worker to read indexed_dao_outcomes.
     /// None if NEON_DATABASE_URL is not configured.
@@ -292,6 +297,13 @@ impl AppStateBuilder {
             None
         };
 
+        // Create neardata client (uses same FASTNEAR_API_KEY)
+        let neardata_client = if !env_vars.fastnear_api_key.is_empty() {
+            Some(NeardataClient::new().with_api_key(&env_vars.fastnear_api_key))
+        } else {
+            None
+        };
+
         // Create Neon pool if URL is configured (Goldsky sink, read-only)
         let neon_pool = if let Some(existing) = self.neon_pool {
             Some(existing)
@@ -332,6 +344,7 @@ impl AppStateBuilder {
             price_service,
             bulk_payment_contract_id,
             transfer_hint_service,
+            neardata_client,
             neon_pool,
         })
     }
