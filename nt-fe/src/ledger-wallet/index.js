@@ -12,6 +12,7 @@ import {
     buildDelegateAction,
     SignedDelegate,
     actionCreators,
+    encodeSignedDelegate,
 } from "@near-js/transactions";
 import { PublicKey } from "@near-js/crypto";
 import { Buffer } from "buffer";
@@ -1896,16 +1897,10 @@ class LedgerWallet {
                 data: signature,
             }),
         });
-
-        // Delegate hash = SHA-256 of the signed payload (NEP-366 prefix + borsh(DelegateAction))
-        const delegateHash = new Uint8Array(
-            await crypto.subtle.digest("SHA-256", fullEncoded),
+        // to base64
+        return btoa(
+            String.fromCharCode(...encodeSignedDelegate(signedDelegate)),
         );
-
-        return {
-            delegateHash,
-            signedDelegate,
-        };
     }
 
     /**

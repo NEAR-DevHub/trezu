@@ -6,7 +6,7 @@
       "name": "nt-fe",
       "dependencies": {
         "@hookform/resolvers": "^5.2.2",
-        "@hot-labs/near-connect": "^0.10.0",
+        "@hot-labs/near-connect": "github:azbang/near-connect#main",
         "@near-js/transactions": "^2.5.1",
         "@radix-ui/react-checkbox": "^1.3.3",
         "@radix-ui/react-collapsible": "^1.1.12",
@@ -208,7 +208,7 @@
 
     "@hookform/resolvers": ["@hookform/resolvers@5.2.2", "", { "dependencies": { "@standard-schema/utils": "^0.3.0" }, "peerDependencies": { "react-hook-form": "^7.55.0" } }, "sha512-A/IxlMLShx3KjV/HeTcTfaMxdwy690+L/ZADoeaTltLx+CVuzkeVIPuybK3jrRfw7YZnmdKsVVHAlEPIAEUNlA=="],
 
-    "@hot-labs/near-connect": ["@hot-labs/near-connect@0.10.0", "", {}, "sha512-J05rYGrkUtz/eeAwmAGi5b+DzpNGbhA5jEuP9yAtZ4QLSYDZj+w/fmKjTSmv4/A/U9hGDaa5a5MUVlwzifafhg=="],
+    "@hot-labs/near-connect": ["@hot-labs/near-connect@github:azbang/near-connect#0bc308e", {}, "azbang-near-connect-0bc308e"],
 
     "@img/colour": ["@img/colour@1.0.0", "", {}, "sha512-A5P/LfWGFSl6nsckYtjw9da+19jB8hkJ6ACTGcDfEJ0aE+l2n2El7dsVM7UVHZQ9s2lmYMWlrS21YLy2IR1LUw=="],
 
