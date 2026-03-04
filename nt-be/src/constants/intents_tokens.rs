@@ -73,6 +73,9 @@ static TOKENS_MAP_CELL: OnceLock<HashMap<String, UnifiedTokenInfo>> = OnceLock::
 /// Static map of base tokens by defuseAssetId for fast lookup
 static DEFUSE_TOKENS_MAP_CELL: OnceLock<HashMap<String, BaseTokenInfo>> = OnceLock::new();
 
+/// Static map of defuse_asset_id -> unified_asset_id for reverse lookup
+static DEFUSE_TO_UNIFIED_MAP_CELL: OnceLock<HashMap<String, String>> = OnceLock::new();
+
 /// Static map of unified tokens by lowercase symbol for fast lookup
 static SYMBOL_TOKENS_MAP_CELL: OnceLock<HashMap<String, UnifiedTokenInfo>> = OnceLock::new();
 
@@ -122,13 +125,6 @@ pub fn get_symbol_tokens_map() -> &'static HashMap<String, UnifiedTokenInfo> {
     })
 }
 
-/// Find a token by its defuse_asset_id
-pub fn find_token_by_unified_asset_id(unified_asset_id: &str) -> Option<UnifiedTokenInfo> {
-    get_tokens_map()
-        .get(&unified_asset_id.to_lowercase())
-        .cloned()
-}
-
 /// Find a token by its lowercase symbol
 pub fn find_token_by_symbol(symbol: &str) -> Option<UnifiedTokenInfo> {
     get_symbol_tokens_map().get(&symbol.to_lowercase()).cloned()
@@ -137,6 +133,34 @@ pub fn find_token_by_symbol(symbol: &str) -> Option<UnifiedTokenInfo> {
 /// Find a base token by its defuseAssetId (e.g., "nep141:wrap.near" or "nep245:v2_1.omni.hot.tg:137_...")
 pub fn find_token_by_defuse_asset_id(defuse_asset_id: &str) -> Option<&'static BaseTokenInfo> {
     get_defuse_tokens_map().get(defuse_asset_id)
+}
+
+/// Get the map of defuse_asset_id -> unified_asset_id for reverse lookup
+pub fn get_defuse_to_unified_map() -> &'static HashMap<String, String> {
+    DEFUSE_TO_UNIFIED_MAP_CELL.get_or_init(|| {
+        let tokens = load_tokens_from_json().unwrap_or_else(|e| {
+            eprintln!("Failed to load tokens from JSON: {}", e);
+            vec![]
+        });
+
+        let mut map = HashMap::new();
+        for unified_token in tokens {
+            for base_token in &unified_token.grouped_tokens {
+                map.insert(
+                    base_token.defuse_asset_id.clone(),
+                    unified_token.unified_asset_id.clone(),
+                );
+            }
+        }
+        map
+    })
+}
+
+/// Find the unified_asset_id for a given defuse_asset_id
+pub fn find_unified_asset_id(defuse_asset_id: &str) -> Option<&'static str> {
+    get_defuse_to_unified_map()
+        .get(defuse_asset_id)
+        .map(|s| s.as_str())
 }
 
 /// Load tokens from the JSON file as unified tokens
