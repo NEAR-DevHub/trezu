@@ -8,7 +8,7 @@ import {
 } from "@/components/modal";
 import { AggregatedAsset } from "@/hooks/use-assets";
 import { TreasuryAsset } from "@/lib/api";
-import { cn, formatBalance, formatCurrency } from "@/lib/utils";
+import { formatBalance, formatCurrency } from "@/lib/utils";
 import { availableBalance, lockedBalance } from "@/lib/balance";
 import Big from "@/lib/big";
 import { NetworkDisplay, BalanceCell } from "./token-display";
@@ -81,7 +81,7 @@ export function AssetDetailsModal({ isOpen, onClose, asset }: Props) {
             >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>{asset.symbol}</DialogTitle>
+                        <DialogTitle>{asset.name}</DialogTitle>
                     </DialogHeader>
 
                     <div className="flex flex-col">
@@ -147,22 +147,21 @@ export function AssetDetailsModal({ isOpen, onClose, asset }: Props) {
                                                 />
                                             </div>
                                             <div className="text-right shrink-0">
-                                                <div className="text-sm font-medium">
-                                                    {formatCurrency(
-                                                        calculateBalanceUSD(
+                                                <BalanceCell
+                                                    balance={Big(
+                                                        formatBalance(
                                                             available,
-                                                            network.price,
+                                                            network.decimals,
                                                             network.decimals,
                                                         ),
                                                     )}
-                                                </div>
-                                                <div className="text-xxs text-muted-foreground">
-                                                    {formatBalance(
+                                                    symbol={network.symbol}
+                                                    balanceUSD={calculateBalanceUSD(
                                                         available,
+                                                        network.price,
                                                         network.decimals,
-                                                    )}{" "}
-                                                    {network.symbol}
-                                                </div>
+                                                    )}
+                                                />
                                             </div>
                                             <div className="flex gap-1 shrink-0">
                                                 <AuthButton
@@ -226,22 +225,21 @@ export function AssetDetailsModal({ isOpen, onClose, asset }: Props) {
                                                 />
                                             </div>
                                             <div className="text-right shrink-0">
-                                                <div className="text-sm font-medium">
-                                                    {formatCurrency(
-                                                        calculateBalanceUSD(
+                                                <BalanceCell
+                                                    balance={Big(
+                                                        formatBalance(
                                                             available,
-                                                            network.price,
+                                                            network.decimals,
                                                             network.decimals,
                                                         ),
                                                     )}
-                                                </div>
-                                                <div className="text-xxs text-muted-foreground">
-                                                    {formatBalance(
+                                                    symbol={network.symbol}
+                                                    balanceUSD={calculateBalanceUSD(
                                                         available,
+                                                        network.price,
                                                         network.decimals,
-                                                    )}{" "}
-                                                    {network.symbol}
-                                                </div>
+                                                    )}
+                                                />
                                             </div>
                                             <div className="flex gap-1 shrink-0">
                                                 <div className="size-9" />
@@ -322,22 +320,21 @@ export function AssetDetailsModal({ isOpen, onClose, asset }: Props) {
                                                     />
                                                 </div>
                                                 <div className="text-right shrink-0">
-                                                    <div className="text-sm font-medium">
-                                                        {formatCurrency(
-                                                            calculateBalanceUSD(
+                                                    <BalanceCell
+                                                        balance={Big(
+                                                            formatBalance(
                                                                 available,
-                                                                network.price,
+                                                                network.decimals,
                                                                 network.decimals,
                                                             ),
                                                         )}
-                                                    </div>
-                                                    <div className="text-xxs text-muted-foreground">
-                                                        {formatBalance(
+                                                        symbol={network.symbol}
+                                                        balanceUSD={calculateBalanceUSD(
                                                             available,
+                                                            network.price,
                                                             network.decimals,
-                                                        )}{" "}
-                                                        {network.symbol}
-                                                    </div>
+                                                        )}
+                                                    />
                                                 </div>
                                                 <div className="flex gap-1 shrink-0">
                                                     <Button
@@ -379,22 +376,23 @@ export function AssetDetailsModal({ isOpen, onClose, asset }: Props) {
                                                         </Tooltip>
                                                     </div>
                                                     <div className="text-right shrink-0">
-                                                        <div className="text-sm font-medium">
-                                                            {formatCurrency(
-                                                                calculateBalanceUSD(
+                                                        <BalanceCell
+                                                            balance={Big(
+                                                                formatBalance(
                                                                     locked,
-                                                                    network.price,
+                                                                    network.decimals,
                                                                     network.decimals,
                                                                 ),
                                                             )}
-                                                        </div>
-                                                        <div className="text-xxs text-muted-foreground">
-                                                            {formatBalance(
+                                                            symbol={
+                                                                network.symbol
+                                                            }
+                                                            balanceUSD={calculateBalanceUSD(
                                                                 locked,
+                                                                network.price,
                                                                 network.decimals,
-                                                            )}{" "}
-                                                            {network.symbol}
-                                                        </div>
+                                                            )}
+                                                        />
                                                     </div>
                                                 </div>
                                             )}

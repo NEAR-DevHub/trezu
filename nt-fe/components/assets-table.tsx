@@ -76,7 +76,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
     // Define columns
     const columns = useMemo<ColumnDef<AggregatedAsset, any>[]>(
         () => [
-            columnHelper.accessor("symbol", {
+            columnHelper.accessor("id", {
                 header: "Token",
                 cell: (info) => {
                     const asset = info.row.original;
@@ -89,7 +89,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                             asset.icon?.startsWith("http") ? (
                                 <img
                                     src={asset.icon}
-                                    alt={asset.symbol}
+                                    alt={asset.name}
                                     className="h-10 w-10 rounded-full"
                                 />
                             ) : (
@@ -99,7 +99,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                             )}
                             <div>
                                 <div className="font-semibold flex gap-2">
-                                    {asset.symbol}
+                                    {asset.id}
                                     {isPartiallyLocked && (
                                         <div className="flex gap-1.5 px-1 py-0.5 bg-secondary rounded-[4px] text-secondary-foreground font-medium">
                                             <Lock className="size-2.5 shrink-0 mt-0.5" />
@@ -124,7 +124,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                     return (
                         <BalanceCell
                             balance={asset.totalBalance}
-                            symbol={asset.symbol}
+                            symbol={asset.id}
                             balanceUSD={asset.totalBalanceUSD}
                         />
                     );
@@ -196,7 +196,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
         getSortedRowModel: getSortedRowModel(),
         getExpandedRowModel: getExpandedRowModel(),
         enableSortingRemoval: false,
-        getRowId: (row) => row.symbol,
+        getRowId: (row) => row.id,
     });
 
     if (aggregatedTokens.length === 0) {
@@ -219,15 +219,14 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                             <TableHead
                                 key={header.id}
                                 className={cn(
-                                    header.id === "symbol" && "pl-0",
+                                    header.id === "id" && "pl-0",
                                     header.id === "totalBalanceUSD" &&
                                         "pr-0 sm:pr-2",
                                     (header.id === "price" ||
                                         header.id === "weight" ||
                                         header.id === "expand") &&
                                         "hidden sm:table-cell",
-                                    header.id !== "symbol" &&
-                                        header.id !== "expand"
+                                    header.id !== "id" && header.id !== "expand"
                                         ? "text-right text-muted-foreground"
                                         : "text-muted-foreground",
                                 )}
@@ -240,9 +239,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                         onClick={header.column.getToggleSortingHandler()}
                                         className={cn(
                                             "flex items-center gap-1 px-1! hover:bg-transparent uppercase text-xxs",
-                                            header.id !== "symbol"
-                                                ? "ml-auto"
-                                                : "",
+                                            header.id !== "id" ? "ml-auto" : "",
                                         )}
                                     >
                                         {flexRender(
@@ -284,7 +281,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                     key={cell.id}
                                     className={cn(
                                         "p-4",
-                                        cell.column.id === "symbol" && "pl-0",
+                                        cell.column.id === "id" && "pl-0",
                                         cell.column.id === "totalBalanceUSD" &&
                                             "pr-0 sm:pr-4",
                                         (cell.column.id === "price" ||
@@ -396,6 +393,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                                                                 formatBalance(
                                                                                     available,
                                                                                     network.decimals,
+                                                                                    network.decimals,
                                                                                 ),
                                                                             )}
                                                                             symbol={
@@ -419,6 +417,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                                                                         balance={Big(
                                                                                             formatBalance(
                                                                                                 locked,
+                                                                                                network.decimals,
                                                                                                 network.decimals,
                                                                                             ),
                                                                                         )}
@@ -517,6 +516,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                                                                 formatBalance(
                                                                                     available,
                                                                                     network.decimals,
+                                                                                    network.decimals,
                                                                                 ),
                                                                             )}
                                                                             symbol={
@@ -537,6 +537,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                                                                     balance={Big(
                                                                                         formatBalance(
                                                                                             locked,
+                                                                                            network.decimals,
                                                                                             network.decimals,
                                                                                         ),
                                                                                     )}
@@ -703,6 +704,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                                                                 formatBalance(
                                                                                     available,
                                                                                     network.decimals,
+                                                                                    network.decimals,
                                                                                 ),
                                                                             )}
                                                                             symbol={
@@ -723,6 +725,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                                                                     balance={Big(
                                                                                         formatBalance(
                                                                                             locked,
+                                                                                            network.decimals,
                                                                                             network.decimals,
                                                                                         ),
                                                                                     )}

@@ -173,7 +173,7 @@ export default function TokenSelect({
         const searchLower = search.toLowerCase();
 
         const ownedTokensMap = new Map(
-            aggregatedTreasuryTokens.map((token) => [token.symbol, token]),
+            aggregatedTreasuryTokens.map((token) => [token.id, token]),
         );
         const bridgeAssetsMap = new Map(
             assets.map((asset) => [asset.id, asset]),
@@ -203,27 +203,27 @@ export default function TokenSelect({
         const ownedAssets = aggregatedTreasuryTokens
             .filter(
                 (token) =>
-                    token.symbol.toLowerCase().includes(searchLower) ||
+                    token.id.toLowerCase().includes(searchLower) ||
                     token.name?.toLowerCase().includes(searchLower),
             )
             .map((treasuryToken): TokenListItem | null => {
                 const bridgeAsset = bridgeAssetsMap.get(
-                    treasuryToken.symbol.toLowerCase(),
+                    treasuryToken.id.toLowerCase(),
                 );
 
                 // Fallback: Treasury-only token (not in bridge API)
                 if (!bridgeAsset) {
                     return {
-                        id: treasuryToken.symbol,
+                        id: treasuryToken.id,
                         name:
                             treasuryToken.name +
                             (treasuryToken.isAggregated &&
                             treasuryToken.networks.length > 1
                                 ? ` • ${treasuryToken.networks.length} Networks`
                                 : ""),
-                        symbol: treasuryToken.symbol,
+                        symbol: treasuryToken.id,
                         icon: treasuryToken.icon || "",
-                        assetId: treasuryToken.symbol,
+                        assetId: treasuryToken.id,
                         assetName: treasuryToken.name,
                         networks:
                             treasuryToken.networks.map(mapTreasuryNetwork),
@@ -334,13 +334,13 @@ export default function TokenSelect({
                 });
 
                 return {
-                    id: treasuryToken.symbol,
+                    id: treasuryToken.id,
                     name:
                         treasuryToken.name +
                         (mergedNetworks.length > 1
                             ? ` • ${mergedNetworks.length} Networks`
                             : ""),
-                    symbol: treasuryToken.symbol,
+                    symbol: treasuryToken.id,
                     icon: treasuryToken.icon || bridgeAsset.icon || "",
                     assetId: bridgeAsset.id,
                     assetName: bridgeAsset.name,

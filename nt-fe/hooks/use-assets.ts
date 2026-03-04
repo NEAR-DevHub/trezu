@@ -61,7 +61,7 @@ export interface NetworkAsset extends TreasuryAsset {
 }
 
 export interface AggregatedAsset {
-    symbol: string;
+    id: string;
     name: string;
     icon: string;
     totalBalanceUSD: number;
@@ -86,13 +86,9 @@ export function useAggregatedTokens(
         // Group tokens by symbol
         const grouped = tokens.reduce(
             (acc, token) => {
-                const symbol =
-                    token.symbol === "wNEAR"
-                        ? "NEAR"
-                        : token.symbol.toUpperCase();
-                if (!acc[symbol]) {
-                    acc[symbol] = {
-                        symbol: symbol,
+                if (!acc[token.id]) {
+                    acc[token.id] = {
+                        id: token.id.toUpperCase(),
                         name: token.name,
                         icon: token.icon,
                         totalBalanceUSD: 0,
@@ -108,33 +104,38 @@ export function useAggregatedTokens(
 
                 // Normalize token balances (accounting for different decimals)
                 const tokenTotalBalance = Big(
-                    formatBalance(totalBalance(token.balance), token.decimals),
+                    formatBalance(
+                        totalBalance(token.balance),
+                        token.decimals,
+                        token.decimals,
+                    ),
                 );
                 const tokenAvailableBalance = Big(
                     formatBalance(
                         availableBalance(token.balance),
                         token.decimals,
+                        token.decimals,
                     ),
                 );
 
                 // Aggregate total balance
-                acc[symbol].totalBalance =
-                    acc[symbol].totalBalance.add(tokenTotalBalance);
-                acc[symbol].totalBalanceUSD += tokenTotalBalance
+                acc[token.id].totalBalance =
+                    acc[token.id].totalBalance.add(tokenTotalBalance);
+                acc[token.id].totalBalanceUSD += tokenTotalBalance
                     .mul(token.price)
                     .toNumber();
 
                 // Aggregate available balance
-                acc[symbol].availableTotalBalance = acc[
-                    symbol
+                acc[token.id].availableTotalBalance = acc[
+                    token.id
                 ].availableTotalBalance.add(tokenAvailableBalance);
-                acc[symbol].availableTotalBalanceUSD += tokenAvailableBalance
+                acc[token.id].availableTotalBalanceUSD += tokenAvailableBalance
                     .mul(token.price)
                     .toNumber();
 
                 // Track all network instances with computed available balance
                 const availBal = availableBalance(token.balance);
-                acc[symbol].networks.push({
+                acc[token.id].networks.push({
                     ...token,
                     availableBalanceRaw: availBal.toString(),
                     availableBalanceUSD: tokenAvailableBalance

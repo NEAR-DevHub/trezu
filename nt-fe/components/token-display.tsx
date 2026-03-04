@@ -1,5 +1,5 @@
 import { ChainIcons, TreasuryAsset } from "@/lib/api";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatSmartAmount } from "@/lib/utils";
 import { useThemeStore } from "@/stores/theme-store";
 import Big from "@/lib/big";
 
@@ -150,7 +150,7 @@ export const BalanceCell = ({
                 {formatCurrency(balanceUSD)}
             </div>
             <div className="text-xxs text-muted-foreground">
-                {balance.toString()} {symbol}
+                {formatSmartAmount(balance)} {symbol}
             </div>
         </div>
     );
