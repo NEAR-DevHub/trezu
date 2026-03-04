@@ -2,8 +2,6 @@ import { Policy } from "@/types/policy";
 import axios from "axios";
 import Big from "@/lib/big";
 import { Balance, BalanceRaw, transformBalance } from "./balance";
-import { encodeSignedDelegate } from "@near-js/transactions";
-import { SignDelegateActionResult } from "@hot-labs/near-connect";
 
 const BACKEND_API_BASE = `${process.env.NEXT_PUBLIC_BACKEND_API_BASE}/api`;
 
@@ -1184,42 +1182,16 @@ export interface RelayDelegateActionResponse {
     error?: string;
 }
 
-/**
- * Relay a signed delegate action to the backend for gas-sponsored submission.
- * The backend wraps it in a transaction, pays for gas, and decrements credits.
- */
-function signedDelegateToBase64(
-    signedDelegate: SignDelegateActionResult["signedDelegate"],
-): string {
-    let bytes: Uint8Array;
-    const withEncode = signedDelegate as unknown as {
-        encode?: () => Uint8Array;
-    };
-    if (typeof withEncode.encode === "function") {
-        bytes = new Uint8Array(withEncode.encode());
-    } else if (typeof signedDelegate === "string") {
-        bytes = Uint8Array.from(atob(signedDelegate), (c) => c.charCodeAt(0));
-    } else {
-        bytes = encodeSignedDelegate(
-            signedDelegate as Parameters<typeof encodeSignedDelegate>[0],
-        );
-    }
-    return btoa(String.fromCharCode(...bytes));
-}
-
 export async function relayDelegateAction(
     treasuryId: string,
-    signedDelegateAction: SignDelegateActionResult,
+    signedDelegateAction: string,
     storageBytes: Big,
 ): Promise<RelayDelegateActionResponse> {
     const url = `${BACKEND_API_BASE}/relay/delegate-action`;
-    const base64Encoded = signedDelegateToBase64(
-        signedDelegateAction.signedDelegate,
-    );
     const response = await axios.post<RelayDelegateActionResponse>(
         url,
         {
-            signedDelegateAction: base64Encoded,
+            signedDelegateAction: signedDelegateAction,
             storageBytes: storageBytes.toFixed(0),
             treasuryId,
         },

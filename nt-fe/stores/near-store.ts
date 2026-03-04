@@ -5,8 +5,8 @@ import {
     NearConnector,
     SignedMessage,
     ConnectorAction,
-    SignDelegateActionParams,
 } from "@hot-labs/near-connect";
+import manifests from "@hot-labs/near-connect/repository/manifest.json";
 import { Proposal, Vote as ProposalVote } from "@/lib/proposals-api";
 import {
     ProposalPermissionKind,
@@ -26,7 +26,10 @@ import {
 } from "@/lib/auth-api";
 import { markDaoDirty, relayDelegateAction } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { EventMap } from "@hot-labs/near-connect/build/types";
+import {
+    EventMap,
+    SignDelegateActionsParams,
+} from "@hot-labs/near-connect/build/types";
 import {
     estimateProposalStorage,
     estimateVoteStorage,
@@ -123,7 +126,7 @@ interface NearStore {
     ) => Promise<{ signatureData: SignedMessage; signedData: string }>;
     signAndSendDelegateAction: (
         treasuryId: string,
-        params: SignDelegateActionParams,
+        params: SignDelegateActionsParams,
         storageBytes: Big,
     ) => Promise<boolean>;
     createProposal: (
@@ -170,6 +173,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
 
         try {
             newConnector = new NearConnector({
+                manifest: manifests as any,
                 network: "mainnet",
                 footerBranding: {
                     icon: "/favicon_dark.svg",
@@ -181,7 +185,6 @@ export const useNearStore = create<NearStore>((set, get) => ({
                     signDelegateActions: true,
                     signInAndSignMessage: true,
                 },
-                excludedWallets: ["intear-wallet"],
             });
         } catch (err) {
             set({ isInitializing: false });
@@ -419,7 +422,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
 
     signAndSendDelegateAction: async (
         treasuryId: string,
-        params: SignDelegateActionParams,
+        params: SignDelegateActionsParams,
         storageBytes: Big,
     ): Promise<boolean> => {
         const state = get();
@@ -588,14 +591,14 @@ export const useNearStore = create<NearStore>((set, get) => ({
         const delegateActions = [
             {
                 receiverId: treasuryId,
-                actions: votesActions,
+                actions: votesActions as ConnectorAction[],
             },
         ];
 
         try {
             await signAndSendDelegateAction(
                 treasuryId,
-                { delegateActions: delegateActions as any, network: "mainnet" },
+                { delegateActions, network: "mainnet" },
                 voteStorageBytes,
             );
 
