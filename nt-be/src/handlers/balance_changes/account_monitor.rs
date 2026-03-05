@@ -151,11 +151,28 @@ pub async fn run_maintenance_cycle(
         .fetch_optional(pool)
         .await?;
 
-        if let Some(block) = creation_block {
+        // Query maintenance_block_floor (hard stop for how far back maintenance scans)
+        let maintenance_floor: Option<i64> = sqlx::query_scalar(
+            "SELECT maintenance_block_floor FROM monitored_accounts WHERE account_id = $1",
+        )
+        .bind(account_id)
+        .fetch_optional(pool)
+        .await?
+        .flatten();
+
+        // Use the higher of creation_block and maintenance_block_floor as effective floor
+        let effective_floor = match (creation_block, maintenance_floor) {
+            (Some(c), Some(m)) => Some(c.max(m)),
+            (c, m) => c.or(m),
+        };
+
+        if let Some(block) = effective_floor {
             log::debug!(
-                "[maintenance] {}: Account creation block: {}",
+                "[maintenance] {}: Effective block floor: {} (creation={:?}, maintenance={:?})",
                 account_id,
-                block
+                block,
+                creation_block,
+                maintenance_floor,
             );
         }
 
@@ -189,7 +206,7 @@ pub async fn run_maintenance_cycle(
                 token_id,
                 up_to_block,
                 hint_service,
-                creation_block,
+                effective_floor,
                 neardata,
             )
             .await
@@ -680,6 +697,9 @@ pub async fn discover_intents_tokens(
 ///
 /// This is a utility function used by the maintenance cycle and exposed
 /// for integration testing with controlled block heights.
+///
+/// Respects `maintenance_block_floor` from monitored_accounts as a hard stop
+/// for how far back gap filling scans (merged with any creation_block floor).
 pub async fn fill_account_gaps(
     pool: &PgPool,
     network: &NetworkConfig,
@@ -688,6 +708,29 @@ pub async fn fill_account_gaps(
     hint_service: Option<&TransferHintService>,
     neardata: Option<&NeardataClient>,
 ) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    // Query creation_block and maintenance_block_floor for effective floor
+    let creation_block: Option<i64> = sqlx::query_scalar(
+        "SELECT block_height FROM balance_changes \
+         WHERE account_id = $1 AND action_kind = 'CreateAccount' AND token_id = 'near' \
+         ORDER BY block_height ASC LIMIT 1",
+    )
+    .bind(account_id)
+    .fetch_optional(pool)
+    .await?;
+
+    let maintenance_floor: Option<i64> = sqlx::query_scalar(
+        "SELECT maintenance_block_floor FROM monitored_accounts WHERE account_id = $1",
+    )
+    .bind(account_id)
+    .fetch_optional(pool)
+    .await?
+    .flatten();
+
+    let effective_floor = match (creation_block, maintenance_floor) {
+        (Some(c), Some(m)) => Some(c.max(m)),
+        (c, m) => c.or(m),
+    };
+
     let mut tokens: Vec<String> = sqlx::query_scalar(
         r#"
         SELECT DISTINCT token_id
@@ -718,7 +761,7 @@ pub async fn fill_account_gaps(
             token_id,
             up_to_block,
             hint_service,
-            None, // No creation block in utility function
+            effective_floor,
             neardata,
         )
         .await

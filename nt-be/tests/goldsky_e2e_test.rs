@@ -1,7 +1,8 @@
-/// End-to-end integration test for the Goldsky enrichment pipeline.
+/// End-to-end integration tests for balance change indexing.
 ///
-/// Tests enrichment for webassemblymusic-treasury.sputnik-dao.near using 10 Neon
-/// outcomes with hard expectations verified against production (api.trezu.app).
+/// Tests both Goldsky enrichment and maintenance (gap-filling) paths for
+/// webassemblymusic-treasury.sputnik-dao.near, verified against production
+/// (api.trezu.app).
 ///
 /// Uses `experimental_tx_status` to resolve receipt blocks and real archival RPC
 /// for balance queries.
@@ -33,6 +34,17 @@ struct BalanceChangeRecord {
     action_kind: Option<String>,
     method_name: Option<String>,
     transaction_hashes: Vec<String>,
+}
+
+/// Reference record from production (api.trezu.app) for hard assertions.
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ReferenceRecord {
+    block_height: i64,
+    token_id: String,
+    amount: String,
+    counterparty: String,
+    action_kind: Option<String>,
 }
 
 /// Load fixture SQL into indexed_dao_outcomes.
@@ -307,4 +319,280 @@ async fn test_goldsky_webassemblymusic(pool: PgPool) {
     }
 
     println!("\nExpected production records verified (enrichment-only).");
+}
+
+/// Tests maintenance (gap-filling) for webassemblymusic-treasury.sputnik-dao.near.
+///
+/// Unlike the enrichment test, this uses NO Goldsky fixture data. Instead, it
+/// registers the account with `maintenance_block_floor` set to constrain the
+/// scan range, marks it dirty, and runs `run_maintenance_cycle` which discovers
+/// balance changes through the transfer-hints gap-filling pipeline.
+///
+/// Hard-asserts all 5 production records match the reference dataset from
+/// api.trezu.app.
+///
+/// The `maintenance_block_floor` field prevents the default 600k-block lookback,
+/// constraining the scan to ~1200 blocks covering blocks 188101230–188102410.
+#[sqlx::test]
+async fn test_goldsky_maintenance_webassemblymusic(pool: PgPool) {
+    common::load_test_env();
+    let _ = env_logger::try_init();
+
+    let account_id = "webassemblymusic-treasury.sputnik-dao.near";
+    let network = common::create_archival_network();
+
+    let total_start = Instant::now();
+
+    // -----------------------------------------------------------------------
+    // 1. Register account with maintenance_block_floor (no Goldsky fixtures)
+    // -----------------------------------------------------------------------
+    let maintenance_floor: i64 = 188_101_230; // Just before first expected record
+    let up_to_block: i64 = 188_102_410; // Just after last expected record
+
+    sqlx::query(
+        "INSERT INTO monitored_accounts (account_id, enabled, dirty_at, maintenance_block_floor)
+         VALUES ($1, true, NOW(), $2)",
+    )
+    .bind(account_id)
+    .bind(maintenance_floor)
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    println!(
+        "Registered {} with maintenance_block_floor={}, up_to_block={}",
+        account_id, maintenance_floor, up_to_block
+    );
+
+    // -----------------------------------------------------------------------
+    // 2. Run maintenance cycles until convergence (gap-filling only)
+    //
+    // The binary search gap filler finds one split point per gap per cycle,
+    // so multiple cycles are needed to discover all balance changes.
+    // -----------------------------------------------------------------------
+    let maintenance_start = Instant::now();
+    let mut cycle_count = 0;
+    loop {
+        cycle_count += 1;
+
+        // Use total DB record count (not API-filtered) for convergence,
+        // because non-visible records (e.g., sponsor.trezu.near) still
+        // create sub-gaps that subsequent cycles need to fill.
+        let before: (i64,) =
+            sqlx::query_as("SELECT COUNT(*) FROM balance_changes WHERE account_id = $1")
+                .bind(account_id)
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+
+        // Re-mark account as dirty for each cycle
+        sqlx::query("UPDATE monitored_accounts SET dirty_at = NOW() WHERE account_id = $1")
+            .bind(account_id)
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        nt_be::handlers::balance_changes::account_monitor::run_maintenance_cycle(
+            &pool,
+            &network,
+            up_to_block,
+            None, // no hint_service — use raw RPC gap filling
+            None, // no fastnear FT discovery
+            None, // no intents API key
+            "",   // intents API URL (unused)
+            None, // no neardata
+        )
+        .await
+        .unwrap();
+
+        let after: (i64,) =
+            sqlx::query_as("SELECT COUNT(*) FROM balance_changes WHERE account_id = $1")
+                .bind(account_id)
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+
+        println!(
+            "Maintenance cycle {}: {} -> {} total DB records",
+            cycle_count, before.0, after.0
+        );
+
+        // Stop when no new records found, or after safety limit
+        if after.0 == before.0 || cycle_count >= 10 {
+            break;
+        }
+    }
+    let maintenance_elapsed = maintenance_start.elapsed();
+    println!(
+        "Maintenance: {} cycles in {:.2}s",
+        cycle_count,
+        maintenance_elapsed.as_secs_f64()
+    );
+
+    let after_maintenance = api_filtered_count(&pool, account_id).await;
+    println!(
+        "After maintenance: {} API-visible records",
+        after_maintenance
+    );
+
+    // -----------------------------------------------------------------------
+    // 3. Query the HTTP API
+    // -----------------------------------------------------------------------
+    let state = Arc::new(common::build_test_state(pool.clone()));
+    let app = nt_be::routes::create_routes(state);
+
+    let request = Request::builder()
+        .uri(format!(
+            "/api/balance-changes?accountId={account_id}&limit=100"
+        ))
+        .body(Body::empty())
+        .unwrap();
+
+    let response = ServiceExt::<Request<Body>>::oneshot(app, request)
+        .await
+        .unwrap();
+    assert_eq!(response.status(), 200);
+
+    let body = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+        .await
+        .unwrap();
+    let records: Vec<BalanceChangeRecord> =
+        serde_json::from_slice(&body).expect("Failed to parse API response JSON");
+
+    let total_elapsed = total_start.elapsed();
+
+    // -----------------------------------------------------------------------
+    // 4. Print summary
+    // -----------------------------------------------------------------------
+    println!("\n========== MAINTENANCE RESULTS ==========");
+    println!("Maintenance:     {:.2}s", maintenance_elapsed.as_secs_f64());
+    println!("API records:     {}", records.len());
+    println!("Total time:      {:.2}s", total_elapsed.as_secs_f64());
+    println!("=========================================\n");
+
+    println!("API-visible balance changes ({} records):", records.len());
+    for r in &records {
+        let token_short = if r.token_id.len() > 30 {
+            &r.token_id[..30]
+        } else {
+            &r.token_id
+        };
+        println!(
+            "  block={} token={:<30} amount={:<25} counterparty={:<30} action={:?}",
+            r.block_height,
+            token_short,
+            r.amount,
+            r.counterparty.as_deref().unwrap_or("-"),
+            r.action_kind,
+        );
+    }
+
+    // -----------------------------------------------------------------------
+    // 5. Hard expectations — must match production (api.trezu.app)
+    //
+    // Load reference data and assert all 5 records are found with correct
+    // block_height, token_id, amount, and counterparty.
+    // -----------------------------------------------------------------------
+    let reference: Vec<ReferenceRecord> = serde_json::from_str(include_str!(
+        "test_data/goldsky_webassemblymusic_reference.json"
+    ))
+    .expect("Failed to parse reference JSON");
+
+    let find = |block: i64, token: &str| -> Option<&BalanceChangeRecord> {
+        records
+            .iter()
+            .find(|r| r.block_height == block && r.token_id == token)
+    };
+
+    // Dump all DB records for debugging
+    let all_db: Vec<(i64, String, String, String)> = sqlx::query_as(
+        "SELECT block_height, token_id, amount::TEXT, counterparty \
+         FROM balance_changes WHERE account_id = $1 \
+         ORDER BY block_height ASC",
+    )
+    .bind(account_id)
+    .fetch_all(&pool)
+    .await
+    .unwrap();
+    println!("\nAll DB records ({}):", all_db.len());
+    for (block, token, amount, cp) in &all_db {
+        let token_short = if token.len() > 40 {
+            &token[..40]
+        } else {
+            token.as_str()
+        };
+        println!(
+            "  block={} token={:<40} amount={:<25} cp={}",
+            block, token_short, amount, cp
+        );
+    }
+
+    println!("\nVerifying {} reference records:", reference.len());
+    for (i, ref_rec) in reference.iter().enumerate() {
+        let actual = find(ref_rec.block_height, &ref_rec.token_id).unwrap_or_else(|| {
+            panic!(
+                "Missing reference record {}: block={} token={}",
+                i + 1,
+                ref_rec.block_height,
+                ref_rec.token_id
+            )
+        });
+
+        // Amount: use starts_with for NEAR (RPC precision may vary), exact for FT
+        if ref_rec.token_id == "near" {
+            // Match first significant digits (at least 3 chars for sign + digits)
+            let ref_prefix = if ref_rec.amount.starts_with('-') {
+                &ref_rec.amount[..6.min(ref_rec.amount.len())]
+            } else {
+                &ref_rec.amount[..5.min(ref_rec.amount.len())]
+            };
+            assert!(
+                actual.amount.starts_with(ref_prefix),
+                "Record {} (block {}): expected amount starting with '{}', got '{}'",
+                i + 1,
+                ref_rec.block_height,
+                ref_prefix,
+                actual.amount
+            );
+        } else {
+            assert_eq!(
+                actual.amount,
+                ref_rec.amount,
+                "Record {} (block {}): expected amount '{}', got '{}'",
+                i + 1,
+                ref_rec.block_height,
+                ref_rec.amount,
+                actual.amount
+            );
+        }
+
+        // Counterparty
+        assert_eq!(
+            actual.counterparty.as_deref(),
+            Some(ref_rec.counterparty.as_str()),
+            "Record {} (block {}): expected counterparty '{}', got {:?}",
+            i + 1,
+            ref_rec.block_height,
+            ref_rec.counterparty,
+            actual.counterparty
+        );
+
+        println!(
+            "  Record {} OK: block={} token={} amount={} cp={}",
+            i + 1,
+            ref_rec.block_height,
+            if ref_rec.token_id.len() > 20 {
+                &ref_rec.token_id[..20]
+            } else {
+                &ref_rec.token_id
+            },
+            actual.amount,
+            ref_rec.counterparty
+        );
+    }
+
+    println!(
+        "\nAll {} production reference records verified (maintenance-only).",
+        reference.len()
+    );
 }
