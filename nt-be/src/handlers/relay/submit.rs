@@ -59,7 +59,11 @@ const TOKEN_STORAGE_BUFFER: NearToken = NearToken::from_micronear(1250).saturati
 const SPUTNIK_DAO_SUFFIX: &str = ".sputnik-dao.near";
 
 fn extract_intents_contract(asset_id: &str) -> Option<&str> {
-    asset_id.strip_prefix("nep141:").or_else(|| asset_id.strip_prefix("nep245:").and_then(|s| s.split(":").nth(0)))
+    asset_id.strip_prefix("nep141:").or_else(|| {
+        asset_id
+            .strip_prefix("nep245:")
+            .and_then(|s| s.split(":").next())
+    })
 }
 
 fn extract_intents_whitelist_contracts(supported_tokens: &Value) -> HashSet<String> {
