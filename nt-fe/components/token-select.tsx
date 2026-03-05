@@ -371,9 +371,7 @@ export default function TokenSelect({
         const otherAssetsFiltered = assets
             .filter(
                 (token) =>
-                    !ownedTokensMap.has(
-                        token.networks[0]?.symbol ?? token.id.toUpperCase(),
-                    ) &&
+                    !ownedTokensMap.has(token.id) &&
                     (token.id.toLowerCase().includes(searchLower) ||
                         token.name?.toLowerCase().includes(searchLower) ||
                         token.networks[0]?.symbol
