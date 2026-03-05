@@ -35,6 +35,7 @@ use super::transfer_hints::neardata::NeardataClient;
 /// * `fastnear` - Optional `(http_client, api_key)` for FT token discovery via FastNear balance API
 /// * `intents_api_key` - Optional Intents Explorer API key for swap detection
 /// * `intents_api_url` - Intents Explorer API base URL
+#[allow(clippy::too_many_arguments)]
 pub async fn run_maintenance_cycle(
     pool: &PgPool,
     network: &NetworkConfig,

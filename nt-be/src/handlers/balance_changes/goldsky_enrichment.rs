@@ -59,6 +59,7 @@ struct ParsedEvent {
     /// Path C events: trigger_block_height may be 2-3 blocks before the actual
     /// state change. When true, the enrichment loop scans forward to find the
     /// correct block.
+    #[allow(dead_code)]
     forward_scan: bool,
 }
 
@@ -321,20 +322,20 @@ fn parse_nep245_event(event: &EventJson, executor_id: &str) -> Vec<ParsedEvent> 
                 let owner = datum.get("owner_id").and_then(|v| v.as_str());
                 let token_ids = datum.get("token_ids").and_then(|v| v.as_array());
 
-                if let (Some(owner), Some(token_ids)) = (owner, token_ids) {
-                    if owner.contains("sputnik-dao.near") {
-                        for token_value in token_ids {
-                            if let Some(token_id_str) = token_value.as_str() {
-                                let full_token_id = format!("{}:{}", executor_id, token_id_str);
-                                events.push(ParsedEvent {
-                                    account_id: owner.to_string(),
-                                    token_id: full_token_id,
-                                    counterparty: executor_id.to_string(),
-                                    action_kind: Some("BURN".to_string()),
-                                    method_name: None,
-                                    forward_scan: true,
-                                });
-                            }
+                if let (Some(owner), Some(token_ids)) = (owner, token_ids)
+                    && owner.contains("sputnik-dao.near")
+                {
+                    for token_value in token_ids {
+                        if let Some(token_id_str) = token_value.as_str() {
+                            let full_token_id = format!("{}:{}", executor_id, token_id_str);
+                            events.push(ParsedEvent {
+                                account_id: owner.to_string(),
+                                token_id: full_token_id,
+                                counterparty: executor_id.to_string(),
+                                action_kind: Some("BURN".to_string()),
+                                method_name: None,
+                                forward_scan: true,
+                            });
                         }
                     }
                 }

@@ -16,6 +16,12 @@ pub struct NeardataClient {
     api_key: Option<String>,
 }
 
+impl Default for NeardataClient {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl NeardataClient {
     pub fn new() -> Self {
         Self {
@@ -75,20 +81,20 @@ impl NeardataClient {
             // Receipts from chunks: these are the incoming action receipts
             if let Some(chunk) = &shard.chunk {
                 for r in &chunk.receipts {
-                    if r.receiver_id == account_id {
-                        if let Some(action) = &r.receipt.action {
-                            let (action_kind, method_name, deposit) =
-                                extract_action_info(&action.actions);
-                            receipts.push(AccountReceipt {
-                                receipt_id: r.receipt_id.clone(),
-                                predecessor_id: r.predecessor_id.clone(),
-                                receiver_id: r.receiver_id.clone(),
-                                signer_id: action.signer_id.clone(),
-                                action_kind,
-                                method_name,
-                                deposit,
-                            });
-                        }
+                    if r.receiver_id == account_id
+                        && let Some(action) = &r.receipt.action
+                    {
+                        let (action_kind, method_name, deposit) =
+                            extract_action_info(&action.actions);
+                        receipts.push(AccountReceipt {
+                            receipt_id: r.receipt_id.clone(),
+                            predecessor_id: r.predecessor_id.clone(),
+                            receiver_id: r.receiver_id.clone(),
+                            signer_id: action.signer_id.clone(),
+                            action_kind,
+                            method_name,
+                            deposit,
+                        });
                     }
                 }
 
@@ -122,22 +128,22 @@ impl NeardataClient {
                     .as_ref()
                     .map(|eo| eo.outcome.executor_id.as_str())
                     .unwrap_or("");
-                if executor == account_id {
-                    if let Some(tx_hash) = &reo.tx_hash {
-                        // Check if we already have this tx_hash from transactions
-                        if !transactions.iter().any(|t| t.hash == *tx_hash) {
-                            let receipt_id = reo
-                                .execution_outcome
-                                .as_ref()
-                                .map(|eo| eo.id.clone())
-                                .unwrap_or_default();
-                            transactions.push(AccountTransaction {
-                                hash: tx_hash.clone(),
-                                signer_id: String::new(), // not available from execution outcome
-                                receiver_id: String::new(),
-                                receipt_ids: vec![receipt_id],
-                            });
-                        }
+                if executor == account_id
+                    && let Some(tx_hash) = &reo.tx_hash
+                {
+                    // Check if we already have this tx_hash from transactions
+                    if !transactions.iter().any(|t| t.hash == *tx_hash) {
+                        let receipt_id = reo
+                            .execution_outcome
+                            .as_ref()
+                            .map(|eo| eo.id.clone())
+                            .unwrap_or_default();
+                        transactions.push(AccountTransaction {
+                            hash: tx_hash.clone(),
+                            signer_id: String::new(), // not available from execution outcome
+                            receiver_id: String::new(),
+                            receipt_ids: vec![receipt_id],
+                        });
                     }
                 }
             }

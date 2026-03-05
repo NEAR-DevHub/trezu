@@ -726,6 +726,7 @@ pub async fn fill_gaps(
 ///
 /// # Returns
 /// Vector of filled gaps
+#[allow(clippy::too_many_arguments)]
 pub async fn fill_gaps_with_hints(
     pool: &PgPool,
     network: &NetworkConfig,
@@ -863,6 +864,7 @@ pub async fn fill_gaps_with_hints(
 ///
 /// # Returns
 /// The seeded record, or None if the balance has been 0 throughout the search range
+#[allow(clippy::too_many_arguments)]
 pub async fn seed_initial_balance(
     pool: &PgPool,
     network: &NetworkConfig,
@@ -1218,17 +1220,17 @@ async fn fill_gap_to_past(
 
     // If we know the account creation block and the earliest record is at or before it,
     // there's no history before account creation to search
-    if let Some(creation) = creation_block {
-        if earliest.block_height <= creation {
-            log::info!(
-                "No gap to past: earliest record at block {} is at/before account creation block {} for {}/{}",
-                earliest.block_height,
-                creation,
-                account_id,
-                token_id
-            );
-            return Ok(None);
-        }
+    if let Some(creation) = creation_block
+        && earliest.block_height <= creation
+    {
+        log::info!(
+            "No gap to past: earliest record at block {} is at/before account creation block {} for {}/{}",
+            earliest.block_height,
+            creation,
+            account_id,
+            token_id
+        );
+        return Ok(None);
     }
 
     // Search backwards - use a reasonable lookback (about 7 days to avoid hitting too-old blocks)
