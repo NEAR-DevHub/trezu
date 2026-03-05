@@ -1,8 +1,8 @@
 import Big from "@/lib/big";
 import { InputBlock } from "./input-block";
 import { Token } from "./token-input";
-import { formatCurrency, cn } from "@/lib/utils";
-import { useThemeStore } from "@/stores/theme-store";
+import { formatCurrency } from "@/lib/utils";
+import { TokenDisplay } from "./token-display-with-network";
 
 interface AmountSummaryProps {
     total: Big | string;
@@ -31,47 +31,18 @@ export function AmountSummary({
     useInputBlock = true,
     showNetworkIcon = false,
 }: AmountSummaryProps) {
-    const { theme } = useThemeStore();
-
-    // Get network icon based on theme
-    const networkIcon =
-        showNetworkIcon && token.chainIcons
-            ? theme === "light"
-                ? token.chainIcons.light
-                : token.chainIcons.dark
-            : null;
-
     const totalString =
         total instanceof Big ? total.toString() : total.toString();
-
-    // Check if icon is a valid image URL
-    const isImageIcon = token.icon && (token.icon.startsWith("data:image") || token.icon.startsWith("http"));
 
     const content = (
         <div className="flex flex-col gap-2 p-2 text-xs text-muted-foreground text-center justify-center items-center">
             <p className="font-medium text-xs">{title}</p>
-            <div className="relative flex">
-                {isImageIcon ? (
-                    <img
-                        src={token.icon}
-                        alt={token.symbol}
-                        className="size-9 shrink-0 rounded-full"
-                    />
-                ) : (
-                    <div className="size-9 shrink-0 rounded-full bg-gradient-cyan-blue flex items-center justify-center text-white font-semibold">
-                        {token.icon || token.symbol.charAt(0).toUpperCase()}
-                    </div>
-                )}
-                {networkIcon && (
-                    <div className="absolute -right-1 -bottom-1 flex items-center justify-center rounded-full bg-muted border border-border">
-                        <img
-                            src={networkIcon}
-                            alt="network"
-                            className="size-4 shrink-0 p-0.5"
-                        />
-                    </div>
-                )}
-            </div>
+            <TokenDisplay
+                symbol={token.symbol}
+                icon={token.icon || ""}
+                chainIcons={showNetworkIcon ? token.chainIcons : undefined}
+                iconSize="xl"
+            />
             <div className="flex flex-col gap-0.5 max-w-full">
                 <p className="text-lg font-semibold text-foreground break-all">
                     {totalString}{" "}

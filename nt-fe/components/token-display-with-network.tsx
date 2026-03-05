@@ -6,13 +6,21 @@ interface TokenDisplayProps {
     symbol: string;
     icon: string;
     chainIcons?: ChainIcons;
-    iconSize?: "sm" | "md" | "lg";
+    iconSize?: "sm" | "md" | "lg" | "xl";
 }
 
 const iconSizeClasses = {
     sm: "size-4",
     md: "size-5",
     lg: "size-6",
+    xl: "size-9",
+}
+
+const networkIconSizeClasses = {
+    sm: "size-2.5",
+    md: "size-3",
+    lg: "size-3",
+    xl: "size-4",
 }
 
 
@@ -37,11 +45,11 @@ export const TokenDisplay = ({ symbol, icon, chainIcons, iconSize = "md" }: Toke
                 </div>
             )}
             {networkIcon && (
-                <div className="absolute -right-1 -bottom-1 flex items-center justify-center rounded-full bg-muted border-border">
+                <div className="absolute -right-1 -bottom-1 flex items-center justify-center rounded-full bg-muted border border-border">
                     <img
                         src={networkIcon}
                         alt="network"
-                        className="size-3 shrink-0 p-0.5"
+                        className={cn("shrink-0 p-0.5", networkIconSizeClasses[iconSize])}
                     />
                 </div>
             )}
