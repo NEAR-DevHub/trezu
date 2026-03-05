@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
     Control,
     FieldValues,
@@ -54,8 +54,6 @@ export function PaymentFormSection<
     const { setValue, setError, clearErrors } = useFormContext<TFieldValues>();
     const [isRecipientValid, setIsRecipientValid] = useState(false);
     const [isValidatingRecipient, setIsValidatingRecipient] = useState(false);
-    const prevBlockchainTypeRef = useRef<string | null>(null);
-    const prevTokenAddressRef = useRef<string | undefined>(undefined);
 
     const token = useWatch({ control, name: tokenName }) as Token | null;
     const recipient = useWatch({ control, name: recipientName }) as string;
@@ -65,18 +63,6 @@ export function PaymentFormSection<
         if (!token?.network) return "near";
         return getBlockchainType(token.network);
     }, [token?.network]);
-
-    // Reset amount when token changes
-    useEffect(() => {
-        // If we have a previous token and it's different from current, reset amount
-        if (prevTokenAddressRef.current && token && prevTokenAddressRef.current !== token.address) {
-            setValue(amountName, "" as PathValue<TFieldValues, Path<TFieldValues>>);
-            clearErrors(amountName);
-        }
-
-        // Update ref to current token address
-        prevTokenAddressRef.current = token?.address;
-    }, [token?.address, amountName, setValue, clearErrors]);
 
     // Validate amount against minimum withdrawal for intents tokens
     useEffect(() => {
@@ -101,22 +87,6 @@ export function PaymentFormSection<
         }
     }, [amount, token, amountName, setError, clearErrors]);
 
-    // On first render, pre-seed validity for edit screens with a filled value
-    useEffect(() => {
-        if (prevBlockchainTypeRef.current === null) {
-            setIsRecipientValid(!!recipient);
-            prevBlockchainTypeRef.current = blockchainType;
-            return;
-        }
-
-        // Blockchain type changed — clear validity so AccountInput re-validates
-        if (prevBlockchainTypeRef.current !== blockchainType) {
-            setIsRecipientValid(false);
-        }
-
-        prevBlockchainTypeRef.current = blockchainType;
-    }, [blockchainType, recipient]);
-
     const isSaveDisabled =
         !recipient || !isRecipientValid || isValidatingRecipient;
 
@@ -140,9 +110,10 @@ export function PaymentFormSection<
             <InputBlock
                 interactive
                 title="To"
-                invalid={!!recipient && !isRecipientValid}
+                invalid={!!recipient && !isRecipientValid && !isValidatingRecipient}
             >
                 <AccountInput
+                    key={blockchainType}
                     blockchain={blockchainType}
                     value={recipient}
                     setValue={(val) =>
@@ -154,7 +125,7 @@ export function PaymentFormSection<
                     setIsValid={setIsRecipientValid}
                     setIsValidating={setIsValidatingRecipient}
                     borderless
-                    validateOnMount={validateOnMount}
+                    validateOnMount={!!recipient}
                 />
             </InputBlock>
 

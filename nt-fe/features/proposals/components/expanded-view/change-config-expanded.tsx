@@ -48,12 +48,20 @@ export function ChangeConfigExpanded({ data, proposal }: ChangeConfigExpandedPro
     let infoItems: InfoItem[] = [];
 
     const formatValue = (key: string, val: any) => {
-        if (isNullValue(val)) return <span className="text-muted-foreground/50">null</span>;
+        if (isNullValue(val)) return <span className="text-muted-foreground/50">Not set</span>;
         if (key === "primaryColor") {
             return <div className="w-5 h-5 rounded-full border inline-block align-middle" style={{ backgroundColor: val }}></div>;
         }
         if (key === "flagLogo") {
             return <img src={val} alt="Logo" className="w-5 h-5 rounded-md object-cover inline-block align-middle" />;
+        }
+        // Handle objects and arrays
+        if (typeof val === 'object' && val !== null) {
+            return (
+                <pre className="text-xs bg-muted/30 p-2 rounded-md overflow-x-auto max-w-md">
+                    {JSON.stringify(val, null, 2)}
+                </pre>
+            );
         }
         return <span>{String(val)}</span>;
     };
