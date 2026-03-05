@@ -338,28 +338,28 @@ export default function PaymentsPage() {
             const needsStorageDeposit =
                 !data.isRegistered && !isNEAR && !isSelectedTokenIntents;
 
-            if (needsStorageDeposit) {
-                const depositInYocto = Big(0.00125)
-                    .mul(Big(10).pow(24))
-                    .toFixed();
-                additionalTransactions.push({
-                    receiverId: data.token.address,
-                    actions: [
-                        {
-                            type: "FunctionCall",
-                            params: {
-                                methodName: "storage_deposit",
-                                args: {
-                                    account_id: data.address,
-                                    registration_only: true,
-                                } as any,
-                                gas,
-                                deposit: depositInYocto,
-                            },
-                        } as ConnectorAction,
-                    ],
-                });
-            }
+            // if (needsStorageDeposit) {
+            //     const depositInYocto = Big(0.00125)
+            //         .mul(Big(10).pow(24))
+            //         .toFixed();
+            //     additionalTransactions.push({
+            //         receiverId: data.token.address,
+            //         actions: [
+            //             {
+            //                 type: "FunctionCall",
+            //                 params: {
+            //                     methodName: "storage_deposit",
+            //                     args: {
+            //                         account_id: data.address,
+            //                         registration_only: true,
+            //                     } as any,
+            //                     gas,
+            //                     deposit: depositInYocto,
+            //                 },
+            //             } as ConnectorAction,
+            //         ],
+            //     });
+            // }
 
             const parsedAmount = Big(data.amount)
                 .mul(Big(10).pow(data.token.decimals))
