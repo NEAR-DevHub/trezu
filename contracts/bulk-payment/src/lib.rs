@@ -400,7 +400,7 @@ impl BulkPaymentContract {
         );
 
         // Determine gas needed per payment based on token type
-        let gas_per_payment: Gas = if list.token_id.starts_with("nep141:") {
+        let gas_per_payment: Gas = if list.token_id.starts_with("nep141:") || list.token_id.starts_with("nep245:") {
             // NEAR Intents: ft_withdraw cross-contract call
             Gas::from_tgas(50)
         } else if list.token_id == "native" || list.token_id == "near" || list.token_id == "NEAR" {
@@ -440,9 +440,9 @@ impl BulkPaymentContract {
 
                 first_pending_found = true;
 
-                if list.token_id.starts_with("nep141:") {
+                if list.token_id.starts_with("nep141:") || list.token_id.starts_with("nep245:") {
                     // NEAR Intents - call ft_withdraw on intents.near
-                    let token_contract = list.token_id.strip_prefix("nep141:").unwrap();
+                    let token_contract = list.token_id.strip_prefix("nep141:").unwrap_or_else(|| list.token_id.strip_prefix("nep245:").unwrap());
 
                     // PoA tokens require WITHDRAW_TO memo for external chain withdrawals
                     let is_poa_token = token_contract.ends_with(".omft.near");

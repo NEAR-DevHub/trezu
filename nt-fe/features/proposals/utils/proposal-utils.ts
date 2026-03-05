@@ -363,7 +363,12 @@ export function getProposalRequiredFunds(
         if (ftWithdrawAction) {
             const args = decodeArgs(ftWithdrawAction.args);
             if (args?.amount && args?.token) {
-                return { tokenId: `nep141:${args.token}`, amount: args.amount };
+                const tokenId =
+                    args.token.startsWith("nep141:") ||
+                    args.token.startsWith("nep245:")
+                        ? args.token
+                        : `nep141:${args.token}`;
+                return { tokenId, amount: args.amount };
             }
         }
 

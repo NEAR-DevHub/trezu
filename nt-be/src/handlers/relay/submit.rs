@@ -58,8 +58,8 @@ const MAX_SPONSORING: NearToken = NearToken::from_millinear(1200);
 const TOKEN_STORAGE_BUFFER: NearToken = NearToken::from_micronear(1250).saturating_mul(25);
 const SPUTNIK_DAO_SUFFIX: &str = ".sputnik-dao.near";
 
-fn extract_nep141_contract(asset_id: &str) -> Option<&str> {
-    asset_id.strip_prefix("nep141:")
+fn extract_intents_contract(asset_id: &str) -> Option<&str> {
+    asset_id.strip_prefix("nep141:").or_else(|| asset_id.strip_prefix("nep245:").and_then(|s| s.split(":").nth(0)))
 }
 
 fn extract_intents_whitelist_contracts(supported_tokens: &Value) -> HashSet<String> {
@@ -80,7 +80,7 @@ fn extract_intents_whitelist_contracts(supported_tokens: &Value) -> HashSet<Stri
 
         for field in ["intents_token_id", "defuse_asset_identifier"] {
             if let Some(asset_id) = token.get(field).and_then(Value::as_str)
-                && let Some(contract_id) = extract_nep141_contract(asset_id)
+                && let Some(contract_id) = extract_intents_contract(asset_id)
             {
                 contracts.insert(contract_id.to_string());
             }

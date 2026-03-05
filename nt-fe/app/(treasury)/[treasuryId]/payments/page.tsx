@@ -229,16 +229,16 @@ const buildIntentProposal = (
 
     const ftWithdrawArgs = isNetworkWithdrawal
         ? {
-            token: tokenContract,
-            receiver_id: tokenContract,
-            amount: parsedAmount,
-            memo: `WITHDRAW_TO:${data.address}`,
-        }
+              token: tokenContract,
+              receiver_id: tokenContract,
+              amount: parsedAmount,
+              memo: `WITHDRAW_TO:${data.address}`,
+          }
         : {
-            token: tokenContract,
-            receiver_id: data.address,
-            amount: parsedAmount,
-        };
+              token: tokenContract,
+              receiver_id: data.address,
+              amount: parsedAmount,
+          };
 
     return {
         FunctionCall: {
@@ -333,7 +333,8 @@ export default function PaymentsPage() {
                 actions: ConnectorAction[];
             }> = [];
             const isSelectedTokenIntents =
-                data.token.address.startsWith("nep141:");
+                data.token.address.startsWith("nep141:") ||
+                data.token.address.startsWith("nep245:");
 
             const needsStorageDeposit =
                 !data.isRegistered && !isNEAR && !isSelectedTokenIntents;

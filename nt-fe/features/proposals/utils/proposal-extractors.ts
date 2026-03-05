@@ -70,7 +70,11 @@ function extractFTTransferData(
             : args.receiver_id;
 
         return {
-            tokenId: `nep141:${args.token}`,
+            tokenId:
+                args.token.startsWith("nep141:") ||
+                args.token.startsWith("nep245:")
+                    ? args.token
+                    : `nep141:${args.token}`,
             amount: args.amount || "0",
             receiver,
         };
@@ -268,10 +272,10 @@ export function extractVestingData(proposal: Proposal): VestingData {
     const vestingScheduleRaw = args.vesting_schedule?.VestingSchedule;
     const vestingSchedule: VestingSchedule | null = vestingScheduleRaw
         ? {
-            start_timestamp: vestingScheduleRaw.start_timestamp,
-            end_timestamp: vestingScheduleRaw.end_timestamp,
-            cliff_timestamp: vestingScheduleRaw.cliff_timestamp,
-        }
+              start_timestamp: vestingScheduleRaw.start_timestamp,
+              end_timestamp: vestingScheduleRaw.end_timestamp,
+              cliff_timestamp: vestingScheduleRaw.cliff_timestamp,
+          }
         : null;
 
     const whitelistAccountId = args.whitelist_account_id || "";
@@ -313,7 +317,7 @@ export function extractExchangeRequestData(
             a.method_name !== "storage_deposit" &&
             (a.method_name === "mt_transfer" ||
                 a.method_name === "ft_transfer" ||
-                a.method_name === "ft_transfer_call") // Legacy support
+                a.method_name === "ft_transfer_call"), // Legacy support
     );
 
     if (!action) {
@@ -328,10 +332,15 @@ export function extractExchangeRequestData(
     // Extract from description
     // NEW FORMAT: proposals have tokenInAddress and tokenOutAddress
     // LEGACY FORMAT: proposals have tokenIn (symbol), tokenOut (symbol), and destinationNetwork
-    const tokenInSymbol = decodeProposalDescription("tokenIn", proposal.description) || "";
-    const tokenInAddress = decodeProposalDescription("tokenInAddress", proposal.description) || "";
-    const tokenOutSymbol = decodeProposalDescription("tokenOut", proposal.description) || "";
-    const tokenOutAddress = decodeProposalDescription("tokenOutAddress", proposal.description) || "";
+    const tokenInSymbol =
+        decodeProposalDescription("tokenIn", proposal.description) || "";
+    const tokenInAddress =
+        decodeProposalDescription("tokenInAddress", proposal.description) || "";
+    const tokenOutSymbol =
+        decodeProposalDescription("tokenOut", proposal.description) || "";
+    const tokenOutAddress =
+        decodeProposalDescription("tokenOutAddress", proposal.description) ||
+        "";
     const destinationNetwork = decodeProposalDescription(
         "destinationNetwork",
         proposal.description,
@@ -371,17 +380,23 @@ export function extractExchangeRequestData(
     let tokenIn: string;
     let depositAddress: string;
 
-    if (action.method_name === "mt_transfer" || action.method_name === "mt_transfer_call") {
+    if (
+        action.method_name === "mt_transfer" ||
+        action.method_name === "mt_transfer_call"
+    ) {
         // Intents tokens: token_id and depositAddress are in args directly
         tokenIn = args.token_id || "";
         depositAddress = args.receiver_id || "";
-    } else if (action.method_name === "ft_transfer" || action.method_name === "ft_transfer_call") {
+    } else if (
+        action.method_name === "ft_transfer" ||
+        action.method_name === "ft_transfer_call"
+    ) {
         // ft_transfer/ft_transfer_call: depositAddress is directly in receiver_id, tokenIn is the contract being called
         depositAddress = args.receiver_id || "";
 
         // Check if there's a near_deposit action - if so, it's a Native NEAR exchange
         const hasNearDeposit = functionCall.actions.some(
-            (a) => a.method_name === "near_deposit"
+            (a) => a.method_name === "near_deposit",
         );
 
         if (hasNearDeposit && functionCall.receiver_id === "wrap.near") {

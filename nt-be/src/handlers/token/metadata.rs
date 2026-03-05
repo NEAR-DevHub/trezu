@@ -13,6 +13,7 @@ use crate::{
     constants::{
         NEAR_ICON, WRAP_NEAR_ICON,
         intents_chains::{ChainIcons, get_chain_metadata_by_name},
+        intents_tokens::find_token_by_defuse_asset_id,
     },
     handlers::proposals::scraper::fetch_ft_metadata,
     handlers::proxy::external::fetch_proxy_api,
@@ -284,9 +285,11 @@ pub async fn fetch_tokens_metadata(
             );
             metadata_responses.push(wrap_near_meta);
         } else {
-            // Provide fallback icon for wrap.near if only icon is missing (but other fields are OK)
+            // Provide fallback icon: wrap.near → WRAP_NEAR_ICON, others → tokens.json static data
             let icon = if is_wrap_near && token.icon.is_none() {
                 Some(WRAP_NEAR_ICON.to_string())
+            } else if token.icon.is_none() {
+                find_token_by_defuse_asset_id(token_id).map(|t| t.icon.clone())
             } else {
                 token.icon.clone()
             };
@@ -591,6 +594,7 @@ pub async fn fetch_tokens_with_fallback(
         if token_id == "near"
             || token_id.starts_with("intents.near:")
             || token_id.starts_with("nep141:")
+            || token_id.starts_with("nep245:")
         {
             api_tokens.push(token_id.clone());
         } else {
@@ -605,6 +609,8 @@ pub async fn fetch_tokens_with_fallback(
                 "nep141:wrap.near".to_string()
             } else if let Some(stripped) = token_id.strip_prefix("intents.near:") {
                 stripped.to_string()
+            } else if token_id.starts_with("nep141:") || token_id.starts_with("nep245:") {
+                token_id.to_string()
             } else {
                 format!("nep141:{}", token_id)
             }

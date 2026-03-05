@@ -11,6 +11,7 @@ use std::sync::Arc;
 use crate::{
     AppState,
     constants::INTENTS_CONTRACT_ID,
+    handlers::token::fetch_tokens_with_defuse_extension,
     utils::cache::{CacheKey, cached_json},
 };
 
@@ -143,28 +144,23 @@ pub async fn fetch_intents_balance(
         })?
         .data;
 
-    let prefix_less_token_id = token_id
-        .strip_prefix("nep141:")
-        .unwrap_or(&token_id)
-        .parse::<AccountId>()
-        .map_err(|e| {
-            eprintln!("Invalid token ID '{}': {}", token_id, e);
-            format!("Invalid token ID: {}", e)
-        })?;
-    let metadata = Tokens::ft_metadata(prefix_less_token_id)
-        .fetch_from(&state.network)
-        .await
-        .map_err(|e| {
-            eprintln!("Error fetching Intents metadata for {}: {}", token_id, e);
-            format!("Failed to fetch metadata: {}", e)
-        })?;
+    // Use the same metadata path as assets.rs — supports both nep141: and nep245: tokens.
+    // The lookup key is "intents.near:<token_id>" which fetch_tokens_with_defuse_extension
+    // maps to the Defuse/Ref SDK asset ID internally.
+    let lookup_key = format!("intents.near:{}", token_id);
+    let metadata_map =
+        fetch_tokens_with_defuse_extension(state, &[lookup_key.clone()]).await;
+    let decimals = metadata_map
+        .get(&lookup_key)
+        .map(|m| m.decimals)
+        .unwrap_or(18);
 
     Ok(TokenBalanceResponse {
         account_id: account_id.to_string(),
         token_id: token_id.to_string(),
         balance,
         locked_balance: None,
-        decimals: metadata.data.decimals,
+        decimals,
     })
 }
 
@@ -188,7 +184,7 @@ pub async fn get_token_balance(
 
         if is_near {
             fetch_near_balance(&state_clone, account_id.clone()).await
-        } else if token_id.starts_with("nep141:") {
+        } else if token_id.starts_with("nep141:") || token_id.starts_with("nep245:") {
             fetch_intents_balance(&state_clone, account_id.clone(), token_id.to_string()).await
         } else {
             // Parse token_id as AccountId

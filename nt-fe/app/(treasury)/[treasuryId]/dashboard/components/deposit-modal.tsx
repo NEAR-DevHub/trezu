@@ -196,19 +196,13 @@ export function DepositModal({
         setAssetNetworksMap(newAssetNetworksMap);
 
         // Auto-select asset based on prefillTokenSymbol or default to USDC
-        const targetSymbol = prefillTokenSymbol?.toLowerCase() || "usdc";
+        const targetId = prefillTokenSymbol?.toLowerCase() || "usdc";
         const targetAsset = formattedAssets.find(
             (asset) =>
-                asset.networks?.some(
-                    (n: BridgeNetwork) =>
-                        n.symbol?.toLowerCase() === targetSymbol,
-                ) ||
+                asset.id?.toLowerCase() === targetId ||
                 (!prefillTokenSymbol &&
-                    (asset.networks?.some(
-                        (n: BridgeNetwork) =>
-                            n.symbol?.toLowerCase() === "usdc",
-                    ) ||
-                        asset.name?.toLowerCase().includes("usdc"))),
+                    asset.id?.toLowerCase() ===
+                        prefillTokenSymbol?.toLowerCase()),
         );
 
         if (targetAsset) {

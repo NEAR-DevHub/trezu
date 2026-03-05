@@ -54,25 +54,25 @@ pub async fn get_bridge_tokens(
             // Step 1: Fetch supported tokens using existing helper
             let supported = fetch_supported_tokens_data(&state_clone).await?;
 
-            // Step 2: Filter for nep141 tokens only
+            // Step 2: Filter for nep141 and nep245 tokens
             let all_tokens = supported.get("tokens").and_then(|t| t.as_array()).ok_or((
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Invalid format".to_string(),
             ))?;
 
-            let nep141_tokens: Vec<&Value> = all_tokens
+            let supported_tokens: Vec<&Value> = all_tokens
                 .iter()
                 .filter(|t| {
                     t.get("standard")
                         .and_then(|s| s.as_str())
-                        .map(|s| s == "nep141")
+                        .map(|s| s == "nep141" || s == "nep245")
                         .unwrap_or(false)
                 })
                 .collect();
 
             // Step 3: Deduplicate by intents_token_id
             let mut token_map: HashMap<String, &Value> = HashMap::new();
-            for token in nep141_tokens {
+            for token in supported_tokens {
                 if let Some(intents_id) = token.get("intents_token_id").and_then(|id| id.as_str()) {
                     token_map.entry(intents_id.to_string()).or_insert(token);
                 }
