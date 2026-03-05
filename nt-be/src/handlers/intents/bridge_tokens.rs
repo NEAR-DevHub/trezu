@@ -10,8 +10,7 @@ use std::sync::Arc;
 
 use super::supported_tokens::fetch_supported_tokens_data;
 use crate::{
-    AppState,
-    constants::intents_chains::ChainIcons,
+    AppState, constants::intents_chains::ChainIcons,
     handlers::token::metadata::fetch_tokens_with_defuse_extension,
 };
 
@@ -92,13 +91,15 @@ pub async fn get_bridge_tokens(
                 .collect();
 
             // Step 4: Batch fetch token metadata using the unified metadata function
-            let metadata_map = fetch_tokens_with_defuse_extension(&state_clone, &metadata_ids).await;
+            let metadata_map =
+                fetch_tokens_with_defuse_extension(&state_clone, &metadata_ids).await;
 
             // Step 5: Group by unified_asset_id
             let mut asset_map: HashMap<String, AssetOption> = HashMap::new();
 
             for token in tokens {
-                let Some(intents_id) = token.get("intents_token_id").and_then(|id| id.as_str()) else {
+                let Some(intents_id) = token.get("intents_token_id").and_then(|id| id.as_str())
+                else {
                     continue;
                 };
 
@@ -147,13 +148,21 @@ pub async fn get_bridge_tokens(
                 // Prefer tokens.json for asset-level name/icon/symbol (reliable static data)
                 // over Ref SDK metadata which can return broken values for OMFT tokens
                 let unified = get_tokens_map().get(group_key);
-                let asset = asset_map.entry(group_key.to_string()).or_insert_with(|| AssetOption {
-                    id: group_key.to_string(),
-                    asset_name: unified.map(|u| u.symbol.clone()).unwrap_or_else(|| meta.symbol.clone()),
-                    name: unified.map(|u| u.name.clone()).unwrap_or_else(|| meta.name.clone()),
-                    icon: unified.map(|u| Some(u.icon.clone())).unwrap_or_else(|| meta.icon.clone()),
-                    networks: Vec::new(),
-                });
+                let asset = asset_map
+                    .entry(group_key.to_string())
+                    .or_insert_with(|| AssetOption {
+                        id: group_key.to_string(),
+                        asset_name: unified
+                            .map(|u| u.symbol.clone())
+                            .unwrap_or_else(|| meta.symbol.clone()),
+                        name: unified
+                            .map(|u| u.name.clone())
+                            .unwrap_or_else(|| meta.name.clone()),
+                        icon: unified
+                            .map(|u| Some(u.icon.clone()))
+                            .unwrap_or_else(|| meta.icon.clone()),
+                        networks: Vec::new(),
+                    });
 
                 // Check if network with this intents_token_id already exists
                 if !asset.networks.iter().any(|n| n.id == intents_id) {
