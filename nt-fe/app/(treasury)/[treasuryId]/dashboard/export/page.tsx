@@ -1053,9 +1053,11 @@ export default function ExportActivityPage() {
                                             >
                                                 {!isMember || !accountId
                                                     ? "You don't have permission to export"
-                                                    : isExporting
-                                                        ? "Exporting..."
-                                                        : "Export"}
+                                                    : !canGenerateExport
+                                                        ? "You’ve used all your quota"
+                                                        : isExporting
+                                                            ? "Exporting..."
+                                                            : "Export"}
                                             </Button>
                                         </div>
                                     </TabsContent>
