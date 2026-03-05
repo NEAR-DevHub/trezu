@@ -146,10 +146,10 @@ pub fn get_defuse_to_unified_map() -> &'static HashMap<String, String> {
         let mut map = HashMap::new();
         for unified_token in tokens {
             for base_token in &unified_token.grouped_tokens {
-                map.insert(
-                    base_token.defuse_asset_id.clone(),
-                    unified_token.unified_asset_id.clone(),
-                );
+                // or_insert so unified tokens (processed first) take priority
+                // over synthetic entries from standalone base tokens
+                map.entry(base_token.defuse_asset_id.clone())
+                    .or_insert_with(|| unified_token.unified_asset_id.clone());
             }
         }
         map
@@ -163,32 +163,36 @@ pub fn find_unified_asset_id(defuse_asset_id: &str) -> Option<&'static str> {
         .map(|s| s.as_str())
 }
 
-/// Load tokens from the JSON file as unified tokens
+/// Load tokens from the JSON file as unified tokens.
+/// Unified tokens are processed first so they take priority over standalone base tokens
+/// that share the same defuse_asset_id.
 fn load_tokens_from_json() -> Result<Vec<UnifiedTokenInfo>, Box<dyn std::error::Error>> {
     let json_str = include_str!("../../data/tokens.json");
     let tokens_json: TokensJson = serde_json::from_str(json_str)?;
 
-    let mut result = Vec::new();
+    let mut unified_tokens = Vec::new();
+    let mut base_tokens = Vec::new();
 
     for token_info in tokens_json.tokens {
         match token_info {
-            TokenInfo::Base(base) => {
-                // Create a single-entity unified token from a base token
-                let unified = UnifiedTokenInfo {
-                    unified_asset_id: base.symbol.to_lowercase(),
-                    symbol: base.symbol.clone(),
-                    name: base.name.clone(),
-                    icon: base.icon.clone(),
-                    grouped_tokens: vec![base],
-                    tags: None,
-                };
-                result.push(unified);
-            }
-            TokenInfo::Unified(unified) => {
-                // Use the existing unified token as-is
-                result.push(unified);
-            }
+            TokenInfo::Unified(unified) => unified_tokens.push(unified),
+            TokenInfo::Base(base) => base_tokens.push(base),
         }
+    }
+
+    // Unified tokens first so their defuse_asset_id mappings take priority
+    let mut result: Vec<UnifiedTokenInfo> = unified_tokens;
+
+    for base in base_tokens {
+        let unified = UnifiedTokenInfo {
+            unified_asset_id: base.symbol.to_lowercase(),
+            symbol: base.symbol.clone(),
+            name: base.name.clone(),
+            icon: base.icon.clone(),
+            grouped_tokens: vec![base],
+            tags: None,
+        };
+        result.push(unified);
     }
 
     Ok(result)

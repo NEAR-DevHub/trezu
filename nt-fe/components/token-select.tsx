@@ -524,11 +524,15 @@ export default function TokenSelect({
                 // Treasury token
                 const treasuryToken = aggregatedTreasuryTokens
                     .flatMap((t) => t.networks)
-                    .find((n) => n.id === item.networkId);
+                    .find(
+                        (n) =>
+                            n.id === item.networkId &&
+                            n.residency === item.residency,
+                    );
 
                 if (treasuryToken) {
                     setSelectedToken({
-                        address: treasuryToken.id,
+                        address: treasuryToken.contractId ?? treasuryToken.id,
                         symbol: treasuryToken.symbol,
                         decimals: treasuryToken.decimals,
                         name: treasuryToken.name || treasuryToken.symbol,
