@@ -8,6 +8,7 @@ import { Textarea } from "@/components/textarea";
 import { Edit2, Trash2 } from "lucide-react";
 import { StepProps, ReviewStep } from "@/components/step-wizard";
 import { WarningAlert } from "@/components/warning-alert";
+import { TokenDisplay } from "@/components/token-display-with-network";
 import Big from "@/lib/big";
 import {
     Dialog,
@@ -26,7 +27,6 @@ import { useTreasury } from "@/hooks/use-treasury";
 import { AmountSummary } from "@/components/amount-summary";
 import { CreateRequestButton } from "@/components/create-request-button";
 import { trackEvent } from "@/lib/analytics";
-import { useThemeStore } from "@/stores/theme-store";
 
 interface ReviewPaymentsStepProps extends StepProps {
     initialPaymentData: BulkPaymentData[];
@@ -45,7 +45,6 @@ export function ReviewPaymentsStep({
     const form = useFormContext<BulkPaymentFormValues>();
     const selectedToken = form.watch("selectedToken");
     const comment = form.watch("comment");
-    const { theme } = useThemeStore();
 
     const [paymentData, setPaymentData] =
         useState<BulkPaymentData[]>(initialPaymentData);
@@ -308,31 +307,12 @@ export function ReviewPaymentsStep({
                                                     <div className="shrink-0">
                                                         <div className="flex flex-col gap-2 items-end">
                                                             <div className="flex items-center gap-2">
-                                                                <div className="relative flex">
-                                                                    <img
-                                                                        src={
-                                                                            selectedToken.icon ||
-                                                                            ""
-                                                                        }
-                                                                        alt={
-                                                                            selectedToken.symbol
-                                                                        }
-                                                                        className="w-5 h-5 rounded-full"
-                                                                    />
-                                                                    {selectedToken.chainIcons && (
-                                                                        <div className="absolute -right-0.5 -bottom-0.5 flex items-center justify-center rounded-full bg-muted border border-border">
-                                                                            <img
-                                                                                src={
-                                                                                    theme === "light"
-                                                                                        ? selectedToken.chainIcons.light
-                                                                                        : selectedToken.chainIcons.dark
-                                                                                }
-                                                                                alt="network"
-                                                                                className="w-2.5 h-2.5 shrink-0 p-0.5"
-                                                                            />
-                                                                        </div>
-                                                                    )}
-                                                                </div>
+                                                                <TokenDisplay
+                                                                    symbol={selectedToken.symbol}
+                                                                    icon={selectedToken.icon || ""}
+                                                                    chainIcons={selectedToken.chainIcons}
+                                                                    iconSize="md"
+                                                                />
                                                                 <div className="text-right">
                                                                     <div className="text-sm font-semibold whitespace-nowrap">
                                                                         {formatSmartAmount(

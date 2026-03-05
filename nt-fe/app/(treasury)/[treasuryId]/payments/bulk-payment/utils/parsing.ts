@@ -292,7 +292,7 @@ export function parsePaymentData(
         if (row.length < 2) {
             errors.push({
                 row: actualRowNumber,
-                message: `Row ${actualRowNumber}: Each row needs two values separated by a comma. Example: alice.near, 100`,
+                message: `Row ${actualRowNumber}: Each row needs amount and recipient separated by a comma. Example: 100, alice.near`,
             });
             continue;
         }
