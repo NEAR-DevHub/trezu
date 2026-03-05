@@ -35,7 +35,8 @@
     "vscode": {
       "extensions": [
         "rust-lang.rust-analyzer",
-        "vadimcn.vscode-lldb"
+        "vadimcn.vscode-lldb",
+        "ms-ossdata.vscode-pgsql"
       ]
     }
   },
