@@ -611,11 +611,13 @@ export function UploadDataStep({
                             { kind: "transfer", action: "AddProposal" },
                             { kind: "call", action: "AddProposal" },
                         ]}
-                        idleMessage={!selectedToken ||
-                            (activeTab === "upload" && !csvData) ||
-                            (activeTab === "paste" && !pasteDataInput.trim())
-                            ? "Select asset and provide payment data"
-                            : "Continue to Review"
+                        idleMessage={
+                            availableCredits === 0 ? "You’ve used all your limits" :
+                                !selectedToken ||
+                                    (activeTab === "upload" && !csvData) ||
+                                    (activeTab === "paste" && !pasteDataInput.trim())
+                                    ? "Select asset and provide payment data"
+                                    : "Continue to Review"
                         }
                     />
                 </PageCard>
