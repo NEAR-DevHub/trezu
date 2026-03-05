@@ -148,7 +148,8 @@ pub async fn fetch_intents_balance(
     // The lookup key is "intents.near:<token_id>" which fetch_tokens_with_defuse_extension
     // maps to the Defuse/Ref SDK asset ID internally.
     let lookup_key = format!("intents.near:{}", token_id);
-    let metadata_map = fetch_tokens_with_defuse_extension(state, std::slice::from_ref(&lookup_key)).await;
+    let metadata_map =
+        fetch_tokens_with_defuse_extension(state, std::slice::from_ref(&lookup_key)).await;
     let decimals = metadata_map
         .get(&lookup_key)
         .map(|m| m.decimals)
