@@ -19,7 +19,9 @@ use std::sync::Arc;
 use crate::{
     AppState,
     constants::{
-        INTENTS_CONTRACT_ID, NEAR_ICON, REF_FINANCE_CONTRACT_ID, intents_chains::ChainIcons,
+        INTENTS_CONTRACT_ID, NEAR_ICON, REF_FINANCE_CONTRACT_ID,
+        intents_chains::ChainIcons,
+        intents_tokens::{find_token_by_symbol, find_unified_asset_id},
     },
     handlers::token::{TokenMetadata as TokenMetadataResponse, fetch_tokens_with_defuse_extension},
 };
@@ -269,9 +271,12 @@ fn build_intents_tokens(
             }?;
             let balance_raw: U128 = balance.parse::<u128>().unwrap_or(0).into();
 
+            let unified_id = find_unified_asset_id(&token_id)
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| metadata.symbol.to_lowercase());
             Some((
                 SimplifiedToken {
-                    id: token_id.clone(),
+                    id: unified_id,
                     contract_id: Some(token_id),
                     decimals: metadata.decimals,
                     balance: Balance::Standard {
@@ -428,9 +433,13 @@ pub async fn get_user_assets(
 
                     let price = token_meta.price.unwrap_or(0.0).to_string();
 
+                    let unified_id = find_token_by_symbol(&token_meta.symbol)
+                        .map(|u| u.unified_asset_id)
+                        .unwrap_or_else(|| token_meta.symbol.to_lowercase());
+
                     Some((
                         SimplifiedToken {
-                            id: token_id.clone(),
+                            id: unified_id,
                             contract_id: Some(token_id),
                             decimals: token_meta.decimals,
                             balance: Balance::Standard {

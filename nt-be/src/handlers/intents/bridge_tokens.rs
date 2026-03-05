@@ -1,4 +1,7 @@
-use crate::utils::cache::CacheTier;
+use crate::{
+    constants::intents_tokens::{find_unified_asset_id, get_tokens_map},
+    utils::cache::CacheTier,
+};
 use axum::{Json, extract::State, http::StatusCode};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -7,9 +10,8 @@ use std::sync::Arc;
 
 use super::supported_tokens::fetch_supported_tokens_data;
 use crate::{
-    AppState,
-    constants::intents_chains::ChainIcons,
-    handlers::token::metadata::{TokenMetadata, fetch_tokens_metadata},
+    AppState, constants::intents_chains::ChainIcons,
+    handlers::token::metadata::fetch_tokens_with_defuse_extension,
 };
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -17,6 +19,7 @@ use crate::{
 pub struct NetworkOption {
     pub id: String, // This will be the intents_token_id
     pub name: String,
+    pub symbol: String,
     pub chain_icons: Option<ChainIcons>,
     pub chain_id: String, // This will be like "eth:1"
     pub decimals: u8,
@@ -30,7 +33,6 @@ pub struct AssetOption {
     pub id: String,
     pub asset_name: String,
     pub name: String,
-    pub symbol: String,
     pub icon: Option<String>,
     pub networks: Vec<NetworkOption>,
 }
@@ -77,57 +79,39 @@ pub async fn get_bridge_tokens(
             }
 
             let tokens: Vec<&Value> = token_map.values().copied().collect();
-            let defuse_ids: Vec<String> = tokens
+            // Prefix with "intents.near:" so fetch_tokens_with_defuse_extension hits the
+            // counterparties fast path (which stores tokens as "intents.near:nep141:...")
+            let metadata_ids: Vec<String> = tokens
                 .iter()
                 .filter_map(|t| {
                     t.get("intents_token_id")
                         .and_then(|id| id.as_str())
-                        .map(String::from)
+                        .map(|id| format!("intents.near:{}", id))
                 })
                 .collect();
 
-            // Step 4: Batch fetch token metadata using the enriched metadata function
-            let tokens_metadata = fetch_tokens_metadata(&state_clone, &defuse_ids).await?;
+            // Step 4: Batch fetch token metadata using the unified metadata function
+            let metadata_map =
+                fetch_tokens_with_defuse_extension(&state_clone, &metadata_ids).await;
 
-            // Build metadata map for fast lookup
-            let metadata_map: HashMap<String, &TokenMetadata> = tokens_metadata
-                .iter()
-                .map(|meta| (meta.token_id.clone(), meta))
-                .collect();
-
-            // Step 5: Group by canonical symbol
+            // Step 5: Group by unified_asset_id
             let mut asset_map: HashMap<String, AssetOption> = HashMap::new();
 
             for token in tokens {
-                let intents_id = match token.get("intents_token_id").and_then(|id| id.as_str()) {
-                    Some(id) => id,
-                    None => continue,
+                let Some(intents_id) = token.get("intents_token_id").and_then(|id| id.as_str())
+                else {
+                    continue;
                 };
 
-                let meta = match metadata_map.get(intents_id) {
-                    Some(m) => m,
-                    None => continue,
+                // Look up with the "intents.near:" prefix we used when fetching
+                let lookup_key = format!("intents.near:{}", intents_id);
+                let Some(meta) = metadata_map.get(&lookup_key) else {
+                    continue;
                 };
 
                 // Skip if chainName is missing (no valid chain metadata)
-                if meta.chain_name.is_none() {
+                if meta.network.is_none() {
                     continue;
-                }
-
-                let canonical_symbol = meta.symbol.to_uppercase();
-
-                if !asset_map.contains_key(&canonical_symbol) {
-                    asset_map.insert(
-                        canonical_symbol.clone(),
-                        AssetOption {
-                            id: canonical_symbol.to_lowercase(),
-                            asset_name: meta.symbol.clone(),
-                            name: meta.name.clone(),
-                            symbol: meta.symbol.clone(),
-                            icon: meta.icon.clone(),
-                            networks: Vec::new(),
-                        },
-                    );
                 }
 
                 // Derive chain_id from defuse_asset_identifier
@@ -142,13 +126,13 @@ pub async fn get_bridge_tokens(
                     parts.first().unwrap_or(&"").to_string()
                 };
 
+                // Resolve unified_asset_id from tokens.json for proper grouping
+                let group_key = find_unified_asset_id(intents_id)
+                    .map(String::from)
+                    .unwrap_or_else(|| meta.symbol.to_lowercase());
+
                 // Get chain name from metadata
                 let net_name = meta.network.as_ref().or(meta.chain_name.as_ref()).cloned();
-
-                // Get chain icons (both light and dark variants)
-                let chain_icons = meta.chain_icons.clone();
-
-                let decimals = meta.decimals;
 
                 // Extract min deposit and withdrawal amounts
                 let min_deposit_amount = token
@@ -161,27 +145,44 @@ pub async fn get_bridge_tokens(
                     .and_then(|v| v.as_str())
                     .map(String::from);
 
-                if let Some(asset) = asset_map.get_mut(&canonical_symbol) {
-                    // Check if network with this intents_token_id already exists
-                    let network_exists = asset.networks.iter().any(|n| n.id == intents_id);
-                    if !network_exists {
-                        asset.networks.push(NetworkOption {
-                            name: net_name.unwrap_or_default(),
-                            id: intents_id.to_string(), // Use intents_token_id as the network ID
-                            chain_icons,
-                            chain_id,
-                            decimals,
-                            min_deposit_amount,
-                            min_withdrawal_amount,
-                        });
-                    }
+                // Prefer tokens.json for asset-level name/icon/symbol (reliable static data)
+                // over Ref SDK metadata which can return broken values for OMFT tokens
+                let unified = get_tokens_map().get(&group_key);
+                let asset = asset_map
+                    .entry(group_key.clone())
+                    .or_insert_with(|| AssetOption {
+                        id: group_key.clone(),
+                        asset_name: unified
+                            .map(|u| u.symbol.clone())
+                            .unwrap_or_else(|| meta.symbol.clone()),
+                        name: unified
+                            .map(|u| u.name.clone())
+                            .unwrap_or_else(|| meta.name.clone()),
+                        icon: unified
+                            .map(|u| Some(u.icon.clone()))
+                            .unwrap_or_else(|| meta.icon.clone()),
+                        networks: Vec::new(),
+                    });
+
+                // Check if network with this intents_token_id already exists
+                if !asset.networks.iter().any(|n| n.id == intents_id) {
+                    asset.networks.push(NetworkOption {
+                        symbol: meta.symbol.clone(),
+                        name: net_name.unwrap_or_default(),
+                        id: intents_id.to_string(),
+                        chain_icons: meta.chain_icons.clone(),
+                        chain_id,
+                        decimals: meta.decimals,
+                        min_deposit_amount,
+                        min_withdrawal_amount,
+                    });
                 }
             }
 
             let mut assets: Vec<AssetOption> = asset_map.into_values().collect();
 
             // Sort assets by symbol alphabetically
-            assets.sort_by(|a, b| a.symbol.cmp(&b.symbol));
+            assets.sort_by(|a, b| a.id.cmp(&b.id));
 
             // Sort networks within each asset by name alphabetically
             for asset in &mut assets {

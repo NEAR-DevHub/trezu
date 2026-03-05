@@ -86,6 +86,10 @@ pub static CHAIN_METADATA: Lazy<HashMap<String, ChainMetadata>> = Lazy::new(|| {
         ChainMetadata::new("EasyChain", "easychain.svg", "easychain.svg"),
     );
     metadata.insert(
+        "hako".to_string(),
+        ChainMetadata::new("Hako", "hako-dark.svg", "hako-light.svg"),
+    );
+    metadata.insert(
         "aurora".to_string(),
         ChainMetadata::new("Aurora", "aurora.svg", "aurora.svg"),
     );
@@ -152,6 +156,46 @@ pub static CHAIN_METADATA: Lazy<HashMap<String, ChainMetadata>> = Lazy::new(|| {
     metadata.insert(
         "cardano".to_string(),
         ChainMetadata::new("Cardano", "cardano.svg", "cardano.svg"),
+    );
+    metadata.insert(
+        "litecoin".to_string(),
+        ChainMetadata::new("Litecoin", "litecoin_white.svg", "litecoin.svg"),
+    );
+    metadata.insert(
+        "bitcoincash".to_string(),
+        ChainMetadata::new("Bitcoin Cash", "bitcoincash.svg", "bitcoincash.svg"),
+    );
+    metadata.insert(
+        "adi".to_string(),
+        ChainMetadata::new("ADI", "adi.svg", "adi.svg"),
+    );
+    metadata.insert(
+        "starknet".to_string(),
+        ChainMetadata::new("StarkNet", "starknet.svg", "starknet.svg"),
+    );
+    metadata.insert(
+        "plasma".to_string(),
+        ChainMetadata::new("Plasma", "plasma-white.svg", "plasma.svg"),
+    );
+    metadata.insert(
+        "scroll".to_string(),
+        ChainMetadata::new("Scroll", "scroll-white.svg", "scroll.svg"),
+    );
+    metadata.insert(
+        "aleo".to_string(),
+        ChainMetadata::new("Aleo", "aleo-white.svg", "aleo-dark.svg"),
+    );
+    metadata.insert(
+        "monad".to_string(),
+        ChainMetadata::new("Monad", "monad_white.svg", "monad.svg"),
+    );
+    metadata.insert(
+        "layerx".to_string(),
+        ChainMetadata::new("LayerX", "layerx_white.svg", "layerx.svg"),
+    );
+    metadata.insert(
+        "dash".to_string(),
+        ChainMetadata::new("Dash", "dash.svg", "dash.svg"),
     );
 
     metadata

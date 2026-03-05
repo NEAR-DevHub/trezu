@@ -38,12 +38,12 @@ interface SelectOption {
     icon: string;
     gradient?: string;
     networks?: BridgeNetwork[];
+    chainId?: string;
 }
 
 const assetSchema = z.object({
     id: z.string(),
     name: z.string(),
-    symbol: z.string().optional(),
     icon: z.string(),
     gradient: z.string().optional(),
     networks: z.array(z.any()).optional(),
@@ -52,8 +52,10 @@ const assetSchema = z.object({
 const networkSchema = z.object({
     id: z.string(),
     name: z.string(),
+    symbol: z.string().optional(),
     icon: z.string(),
     gradient: z.string().optional(),
+    chainId: z.string().optional(),
 });
 
 const depositFormSchema = z.object({
@@ -95,15 +97,15 @@ export function DepositModal({
         null,
     );
     const [allAssets, setAllAssets] = useState<SelectOption[]>([]);
-    const [allNetworks, setAllNetworks] = useState<SelectOption[]>([]);
+    // Per-asset network lists: asset.id → SelectOption[] (each list is specific to that asset)
+    const [assetNetworksMap, setAssetNetworksMap] = useState<
+        Map<string, SelectOption[]>
+    >(new Map());
     const [filteredNetworks, setFilteredNetworks] = useState<SelectOption[]>(
         [],
     );
     const [depositAddress, setDepositAddress] = useState<string | null>(null);
     const [isLoadingAddress, setIsLoadingAddress] = useState(false);
-    const [assetNetworkMap, setAssetNetworkMap] = useState<
-        Map<string, string[]>
-    >(new Map());
 
     const selectedAsset = form.watch("asset");
     const selectedNetwork = form.watch("network");
@@ -116,13 +118,13 @@ export function DepositModal({
         if (!selectedAsset || !selectedNetwork) return null;
 
         const bridgeAsset = bridgeAssets.find(
-            (asset) => asset.id === selectedAsset.id
+            (asset) => asset.id === selectedAsset.id,
         );
 
         if (!bridgeAsset) return null;
 
         return bridgeAsset.networks.find(
-            (network) => network.chainId === selectedNetwork.id
+            (network) => network.id === selectedNetwork.id,
         );
     }, [selectedAsset, selectedNetwork, bridgeAssets]);
 
@@ -136,13 +138,13 @@ export function DepositModal({
         const otherAsset: SelectOption = {
             id: "other",
             name: "Other",
-            symbol: "OTHER",
             icon: "O",
             gradient: "bg-gradient-cyan-blue",
             networks: [
                 {
-                    id: "near:mainnet",
+                    id: "other:near",
                     name: "Near",
+                    symbol: "Other",
                     chainIcons: null,
                     chainId: "near:mainnet",
                     decimals: 24,
@@ -150,84 +152,70 @@ export function DepositModal({
             ],
         };
 
-        const formattedAssets: SelectOption[] = [
-            ...bridgeAssets.map((asset) => ({
-                id: asset.id,
-                name: asset.name,
-                symbol: asset.symbol,
-                icon: asset.icon,
-                gradient: "bg-gradient-cyan-blue",
-                networks: asset.networks,
-            })),
-        ];
-
-        // Add "Other" at the end
-        formattedAssets.push(otherAsset);
-
-        // Extract all unique networks
-        const networkMap = new Map<string, BridgeNetwork>();
-        const assetToNetworks = new Map<string, string[]>();
-
-        formattedAssets.forEach((asset) => {
-            const networkIds: string[] = [];
-
-            asset.networks?.forEach((network: BridgeNetwork) => {
-                const networkKey = network.chainId;
-                networkIds.push(networkKey);
-
-                // Add to network map
-                if (!networkMap.has(networkKey)) {
-                    networkMap.set(networkKey, network);
-                }
-            });
-
-            // Add to asset→networks map
-            assetToNetworks.set(asset.id, networkIds);
-        });
-
-        // Format networks with theme-aware icons
-        const formattedNetworks: SelectOption[] = Array.from(
-            networkMap.values(),
-        ).map((network) => {
+        // Helper: convert a BridgeNetwork to a SelectOption with theme-aware icon
+        const toNetworkOption = (network: BridgeNetwork): SelectOption => {
             const iconUrl = network.chainIcons
                 ? theme === "dark"
                     ? network.chainIcons.dark
                     : network.chainIcons.light
                 : null;
-
             return {
-                id: network.chainId,
+                id: network.id,
                 name: network.name,
-                symbol: undefined,
+                symbol: network.symbol,
                 icon: iconUrl || network.name.charAt(0),
                 gradient: "bg-linear-to-br from-green-500 to-teal-500",
+                chainId: network.chainId,
+            };
+        };
+
+        // Build per-asset network lists (each asset gets its own dedicated list)
+        const newAssetNetworksMap = new Map<string, SelectOption[]>();
+
+        const formattedAssets: SelectOption[] = bridgeAssets.map((asset) => {
+            const networks = asset.networks.map(toNetworkOption);
+            newAssetNetworksMap.set(asset.id, networks);
+            return {
+                id: asset.id,
+                name: asset.name,
+                symbol: asset.networks[0]?.symbol,
+                icon: asset.icon,
+                gradient: "bg-gradient-cyan-blue",
+                networks: asset.networks,
             };
         });
 
-        // Set all data
+        // Add "Other" at the end
+        formattedAssets.push(otherAsset);
+        newAssetNetworksMap.set(
+            "other",
+            otherAsset.networks!.map(toNetworkOption),
+        );
+
         setAllAssets(formattedAssets);
-        setAllNetworks(formattedNetworks);
-        setAssetNetworkMap(assetToNetworks);
+        setAssetNetworksMap(newAssetNetworksMap);
 
         // Auto-select asset based on prefillTokenSymbol or default to USDC
         const targetSymbol = prefillTokenSymbol?.toLowerCase() || "usdc";
         const targetAsset = formattedAssets.find(
             (asset) =>
-                asset.symbol?.toLowerCase() === targetSymbol ||
-                // Fallback to USDT if prefill not found
+                asset.networks?.some(
+                    (n: BridgeNetwork) =>
+                        n.symbol?.toLowerCase() === targetSymbol,
+                ) ||
                 (!prefillTokenSymbol &&
-                    (asset.symbol?.toLowerCase() === "usdc" ||
+                    (asset.networks?.some(
+                        (n: BridgeNetwork) =>
+                            n.symbol?.toLowerCase() === "usdc",
+                    ) ||
                         asset.name?.toLowerCase().includes("usdc"))),
         );
 
         if (targetAsset) {
             form.setValue("asset", targetAsset);
 
-            // Get networks for the selected asset
-            const networkIds = assetToNetworks.get(targetAsset.id) || [];
-            const availableNetworks = formattedNetworks.filter((n) =>
-                networkIds.includes(n.id),
-            );
+            const availableNetworks =
+                newAssetNetworksMap.get(targetAsset.id) || [];
             setFilteredNetworks(
                 availableNetworks.map((n) => ({
                     ...n,
@@ -235,23 +223,20 @@ export function DepositModal({
                 })),
             );
 
-            // Determine which network to select
-            let networkToSelect = null;
+            let networkToSelect: SelectOption | null = null;
 
             if (prefillNetworkId) {
                 const prefillNetwork = availableNetworks.find(
                     (n) =>
                         n.id === prefillNetworkId ||
+                        n.chainId === prefillNetworkId ||
                         n.name
                             .toLowerCase()
                             .includes(prefillNetworkId.toLowerCase()),
                 );
-                if (prefillNetwork) {
-                    networkToSelect = prefillNetwork;
-                }
+                if (prefillNetwork) networkToSelect = prefillNetwork;
             }
 
-            // If no network selected yet and only one available, auto-select it
             if (!networkToSelect && availableNetworks.length === 1) {
                 networkToSelect = availableNetworks[0];
             }
@@ -272,12 +257,7 @@ export function DepositModal({
 
             setDepositAddress(null);
 
-            // Get networks that support this asset
-            const supportedNetworkIds = assetNetworkMap.get(asset.id) || [];
-            const availableNetworks = allNetworks.filter((network) =>
-                supportedNetworkIds.includes(network.id),
-            );
-
+            const availableNetworks = assetNetworksMap.get(asset.id) || [];
             setFilteredNetworks(
                 availableNetworks.map((n) => ({
                     ...n,
@@ -290,12 +270,12 @@ export function DepositModal({
                 form.setValue("network", availableNetworks[0]);
             } else if (
                 selectedNetwork &&
-                !supportedNetworkIds.includes(selectedNetwork.id)
+                !availableNetworks.some((n) => n.id === selectedNetwork.id)
             ) {
                 form.setValue("network", null);
             }
         },
-        [form, assetNetworkMap, allNetworks, selectedNetwork],
+        [form, assetNetworksMap, selectedNetwork],
     );
 
     // Handle network selection
@@ -319,7 +299,9 @@ export function DepositModal({
             }
 
             // All NEAR networks deposit directly to treasury account ID
-            const isNearNetwork = selectedNetwork.id
+            const isNearNetwork = (
+                selectedNetwork.chainId ?? selectedNetwork.id
+            )
                 .toLowerCase()
                 .includes("near");
             if (isNearNetwork) {
@@ -333,7 +315,7 @@ export function DepositModal({
             try {
                 const result = await fetchDepositAddress(
                     treasuryId,
-                    selectedNetwork.id,
+                    selectedNetwork.chainId ?? selectedNetwork.id,
                 );
 
                 if (result && result.address) {
@@ -379,7 +361,13 @@ export function DepositModal({
     // Helper function to format address with bold first and last 6 characters
     const formatAddress = (address: string) => {
         // Check if it's a NEAR network (treasury address) - don't apply bold formatting
-        const isNearNetwork = selectedNetwork?.id.toLowerCase().includes("near");
+        const isNearNetwork = (
+            selectedNetwork?.chainId ??
+            selectedNetwork?.id ??
+            ""
+        )
+            .toLowerCase()
+            .includes("near");
 
         if (isNearNetwork) {
             return <span>{address}</span>;
@@ -401,7 +389,6 @@ export function DepositModal({
             </>
         );
     };
-
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
@@ -441,15 +428,15 @@ export function DepositModal({
                                                         {selectedAsset.icon?.startsWith(
                                                             "http",
                                                         ) ||
-                                                            selectedAsset.icon?.startsWith(
-                                                                "data:",
-                                                            ) ? (
+                                                        selectedAsset.icon?.startsWith(
+                                                            "data:",
+                                                        ) ? (
                                                             <img
                                                                 src={
                                                                     selectedAsset.icon
                                                                 }
                                                                 alt={
-                                                                    selectedAsset.symbol
+                                                                    selectedAsset.name
                                                                 }
                                                                 className="w-6 h-6 rounded-full object-contain"
                                                             />
@@ -507,9 +494,9 @@ export function DepositModal({
                                                                 {selectedNetwork.icon?.startsWith(
                                                                     "http",
                                                                 ) ||
-                                                                    selectedNetwork.icon?.startsWith(
-                                                                        "data:",
-                                                                    ) ? (
+                                                                selectedNetwork.icon?.startsWith(
+                                                                    "data:",
+                                                                ) ? (
                                                                     <div className="w-6 h-6 rounded-full object-cover">
                                                                         <img
                                                                             src={
@@ -523,9 +510,10 @@ export function DepositModal({
                                                                     </div>
                                                                 ) : (
                                                                     <div
-                                                                        className={`w-6 h-6 rounded-full ${selectedNetwork.gradient ||
+                                                                        className={`w-6 h-6 rounded-full ${
+                                                                            selectedNetwork.gradient ||
                                                                             "bg-linear-to-br from-green-500 to-teal-500"
-                                                                            } flex items-center justify-center text-white text-xs font-bold`}
+                                                                        } flex items-center justify-center text-white text-xs font-bold`}
                                                                     >
                                                                         <span>
                                                                             {
@@ -545,15 +533,15 @@ export function DepositModal({
                                                         {/* Info message for "Other" asset */}
                                                         {selectedAsset?.id ===
                                                             "other" && (
-                                                                <div className="break-all overflow-wrap-anywhere text-wrap mt-2 text-xs text-general-info-foreground">
-                                                                    You can deposit
-                                                                    any token not
-                                                                    listed in the
-                                                                    assets, but only
-                                                                    via the NEAR
-                                                                    network.
-                                                                </div>
-                                                            )}
+                                                            <div className="break-all overflow-wrap-anywhere text-wrap mt-2 text-xs text-general-info-foreground">
+                                                                You can deposit
+                                                                any token not
+                                                                listed in the
+                                                                assets, but only
+                                                                via the NEAR
+                                                                network.
+                                                            </div>
+                                                        )}
                                                     </>
                                                 ) : (
                                                     <div className="flex items-center justify-between">
@@ -641,7 +629,9 @@ export function DepositModal({
                                             </label>
                                             <div className="rounded-lg flex justify-between gap-2">
                                                 <code className="font-mono break-all text-xs sm:text-sm">
-                                                    {formatAddress(depositAddress)}
+                                                    {formatAddress(
+                                                        depositAddress,
+                                                    )}
                                                 </code>
                                                 <CopyButton
                                                     text={depositAddress}
@@ -663,7 +653,7 @@ export function DepositModal({
                                         <span>
                                             Only deposit{" "}
                                             <span className="text-foreground">
-                                                {selectedAsset?.symbol}
+                                                {selectedNetwork?.symbol}
                                             </span>{" "}
                                             from the{" "}
                                             <span className="text-foreground capitalize">
@@ -687,9 +677,9 @@ export function DepositModal({
                                                 <span className="text-foreground font-semibold">
                                                     {formatBalance(
                                                         selectedBridgeNetwork.minDepositAmount,
-                                                        selectedBridgeNetwork.decimals
+                                                        selectedBridgeNetwork.decimals,
                                                     )}{" "}
-                                                    {selectedAsset?.symbol}
+                                                    {selectedNetwork?.symbol}
                                                 </span>
                                             </span>
                                         </div>
