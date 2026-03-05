@@ -271,8 +271,9 @@ fn build_intents_tokens(
             }?;
             let balance_raw: U128 = balance.parse::<u128>().unwrap_or(0).into();
 
-            let unified_id = find_unified_asset_id(&token_id).map(|s| s.to_string())?;
-
+            let unified_id = find_unified_asset_id(&token_id)
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| metadata.symbol.to_lowercase());
             Some((
                 SimplifiedToken {
                     id: unified_id,

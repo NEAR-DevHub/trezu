@@ -127,9 +127,9 @@ pub async fn get_bridge_tokens(
                 };
 
                 // Resolve unified_asset_id from tokens.json for proper grouping
-                let Some(group_key) = find_unified_asset_id(intents_id) else {
-                    continue;
-                };
+                let group_key = find_unified_asset_id(intents_id)
+                    .map(String::from)
+                    .unwrap_or_else(|| meta.symbol.to_lowercase());
 
                 // Get chain name from metadata
                 let net_name = meta.network.as_ref().or(meta.chain_name.as_ref()).cloned();
@@ -147,11 +147,11 @@ pub async fn get_bridge_tokens(
 
                 // Prefer tokens.json for asset-level name/icon/symbol (reliable static data)
                 // over Ref SDK metadata which can return broken values for OMFT tokens
-                let unified = get_tokens_map().get(group_key);
+                let unified = get_tokens_map().get(&group_key);
                 let asset = asset_map
-                    .entry(group_key.to_string())
+                    .entry(group_key.clone())
                     .or_insert_with(|| AssetOption {
-                        id: group_key.to_string(),
+                        id: group_key.clone(),
                         asset_name: unified
                             .map(|u| u.symbol.clone())
                             .unwrap_or_else(|| meta.symbol.clone()),
