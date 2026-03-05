@@ -618,140 +618,129 @@ export const useNear = () => {
         params: CreateProposalParams,
         showToast: boolean = true,
     ) => {
-        try {
-            await storeCreateProposal(params);
-            // Invalidate queries after delay
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            const promises = [
-                queryClient.invalidateQueries({
-                    queryKey: ["proposals", params.treasuryId],
-                }),
-                queryClient.invalidateQueries({
-                    queryKey: ["proposal", params.treasuryId],
-                }),
-            ];
-            await Promise.all(promises);
+        await storeCreateProposal(params);
+        // Invalidate queries after delay
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        const promises = [
+            queryClient.invalidateQueries({
+                queryKey: ["proposals", params.treasuryId],
+            }),
+            queryClient.invalidateQueries({
+                queryKey: ["proposal", params.treasuryId],
+            }),
+        ];
+        await Promise.all(promises);
 
-            // Show toast after invalidation
-            if (showToast) {
-                toast.success(toastMessage, {
-                    duration: 10000,
-                    action: {
-                        label: "View Request",
-                        onClick: () =>
-                            window.open(
-                                `/${params.treasuryId}/requests?tab=InProgress`,
-                            ),
-                    },
-                    classNames: {
-                        toast: "!p-2 !px-4",
-                        actionButton:
-                            "!bg-transparent !text-foreground hover:!bg-muted !border-0",
-                        title: "!border-r !border-r-border !pr-4",
-                    },
-                });
-            }
-        } catch (error) {
-            console.error("Failed to create proposal:", error);
+        // Show toast after invalidation
+        if (showToast) {
+            toast.success(toastMessage, {
+                duration: 10000,
+                action: {
+                    label: "View Request",
+                    onClick: () =>
+                        window.open(
+                            `/${params.treasuryId}/requests?tab=InProgress`,
+                        ),
+                },
+                classNames: {
+                    toast: "!p-2 !px-4",
+                    actionButton:
+                        "!bg-transparent !text-foreground hover:!bg-muted !border-0",
+                    title: "!border-r !border-r-border !pr-4",
+                },
+            });
         }
     };
 
     const voteProposals = async (treasuryId: string, votes: Vote[]) => {
-        try {
-            await storeVoteProposals(treasuryId, votes);
-            // Invalidate queries after delay and show toast simultaneously
-            await new Promise((resolve) => setTimeout(resolve, 2000));
+        await storeVoteProposals(treasuryId, votes);
+        // Invalidate queries after delay and show toast simultaneously
+        await new Promise((resolve) => setTimeout(resolve, 2000));
 
-            // Show toast at the same time as UI updates
-            const toastAction =
-                votes.length === 1 && votes[0].vote !== "Remove"
-                    ? {
-                        label: "View Request",
-                        onClick: () =>
-                            window.open(
-                                `/${treasuryId}/requests/${votes[0].proposalId}`,
-                            ),
-                    }
-                    : undefined;
-            const text =
-                votes.length === 1 && votes[0].vote === "Remove"
-                    ? "Your proposal has been removed"
-                    : `Your vote${votes.length > 1 ? "s" : ""} have been submitted`;
-            toast.success(text, {
-                duration: 10000,
-                action: toastAction,
-                classNames: {
-                    toast: "!p-2 !px-4",
-                    actionButton: cn(
-                        !toastAction ? "!hidden" : "",
-                        "!bg-transparent !text-foreground hover:!bg-muted !border-0",
-                    ),
-                    title: cn(
-                        toastAction
-                            ? "!border-r !border-r-border !pr-4"
-                            : "!pr-0",
-                    ),
-                },
+        // Show toast at the same time as UI updates
+        const toastAction =
+            votes.length === 1 && votes[0].vote !== "Remove"
+                ? {
+                    label: "View Request",
+                    onClick: () =>
+                        window.open(
+                            `/${treasuryId}/requests/${votes[0].proposalId}`,
+                        ),
+                }
+                : undefined;
+        const text =
+            votes.length === 1 && votes[0].vote === "Remove"
+                ? "Your proposal has been removed"
+                : `Your vote${votes.length > 1 ? "s" : ""} have been submitted`;
+        toast.success(text, {
+            duration: 10000,
+            action: toastAction,
+            classNames: {
+                toast: "!p-2 !px-4",
+                actionButton: cn(
+                    !toastAction ? "!hidden" : "",
+                    "!bg-transparent !text-foreground hover:!bg-muted !border-0",
+                ),
+                title: cn(
+                    toastAction
+                        ? "!border-r !border-r-border !pr-4"
+                        : "!pr-0",
+                ),
+            },
+        });
+
+        // Trigger invalidations (UI updates happen as queries refetch)
+        const promises = [
+            queryClient.invalidateQueries({
+                queryKey: ["proposals", treasuryId],
+            }),
+            ...votes.map((vote) =>
+                queryClient.invalidateQueries({
+                    queryKey: [
+                        "proposal",
+                        treasuryId,
+                        vote.proposalId.toString(),
+                    ],
+                }),
+            ),
+            ...votes.map((vote) =>
+                queryClient.invalidateQueries({
+                    queryKey: [
+                        "proposal-transaction",
+                        treasuryId,
+                        vote.proposalId.toString(),
+                    ],
+                }),
+            ),
+        ];
+
+        await Promise.all(promises);
+
+        // Run policy-related invalidations in background
+        (async () => {
+            await queryClient.invalidateQueries({
+                queryKey: ["treasuryPolicy", treasuryId],
+            });
+            await queryClient.invalidateQueries({
+                queryKey: ["treasuryConfig", treasuryId],
+            });
+            await queryClient.invalidateQueries({
+                queryKey: ["userTreasuries", accountId],
             });
 
-            // Trigger invalidations (UI updates happen as queries refetch)
-            const promises = [
-                queryClient.invalidateQueries({
-                    queryKey: ["proposals", treasuryId],
-                }),
-                ...votes.map((vote) =>
-                    queryClient.invalidateQueries({
-                        queryKey: [
-                            "proposal",
-                            treasuryId,
-                            vote.proposalId.toString(),
-                        ],
-                    }),
-                ),
-                ...votes.map((vote) =>
-                    queryClient.invalidateQueries({
-                        queryKey: [
-                            "proposal-transaction",
-                            treasuryId,
-                            vote.proposalId.toString(),
-                        ],
-                    }),
-                ),
+            const policyKinds: ProposalPermissionKind[] = [
+                "policy",
+                "add_member_to_role",
+                "remove_member_from_role",
             ];
-
-            await Promise.all(promises);
-
-            // Run policy-related invalidations in background
-            (async () => {
-                await queryClient.invalidateQueries({
-                    queryKey: ["treasuryPolicy", treasuryId],
-                });
-                await queryClient.invalidateQueries({
-                    queryKey: ["treasuryConfig", treasuryId],
-                });
-                await queryClient.invalidateQueries({
-                    queryKey: ["userTreasuries", accountId],
-                });
-
-                const policyKinds: ProposalPermissionKind[] = [
-                    "policy",
-                    "add_member_to_role",
-                    "remove_member_from_role",
-                ];
-                const hasPolicyVote = votes.some((v) => {
-                    const kind = getKindFromProposal(v.proposal.kind);
-                    return kind && policyKinds.includes(kind);
-                });
-                if (hasPolicyVote) {
-                    await markDaoDirty(treasuryId);
-                }
-            })();
-
-        } catch (error) {
-            console.error("Failed to vote proposals:", error);
-            return;
-        }
-
+            const hasPolicyVote = votes.some((v) => {
+                const kind = getKindFromProposal(v.proposal.kind);
+                return kind && policyKinds.includes(kind);
+            });
+            if (hasPolicyVote) {
+                await markDaoDirty(treasuryId);
+            }
+        })();
     };
 
     return {
