@@ -9,7 +9,7 @@ import {
 import { useNear } from "@/stores/near-store";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useRouter } from "next/navigation";
-import { Upload } from "lucide-react";
+import { FileDown } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { useMediaQuery } from "@/hooks/use-media-query";
 
@@ -42,7 +42,7 @@ export function MemberOnlyExportButton() {
             size={isMobile ? "icon" : "default"}
             tooltipContent="Export transactions"
         >
-            <Upload className="h-4 w-4" />
+            <FileDown className="h-4 w-4" />
             <span className="hidden sm:inline">Export</span>
         </Button>
     );
