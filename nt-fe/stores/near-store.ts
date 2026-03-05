@@ -130,9 +130,7 @@ interface NearStore {
         storageBytes: Big,
     ) => Promise<boolean>;
     createProposal: (
-        toastMessage: string,
         params: CreateProposalParams,
-        showToast: boolean,
     ) => Promise<void>;
     voteProposals: (treasuryId: string, votes: Vote[]) => Promise<void>;
 }
@@ -455,9 +453,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
     },
 
     createProposal: async (
-        toastMessage: string,
         params: CreateProposalParams,
-        showToast: boolean = true,
     ) => {
         const state = get();
         if (!isFullyAuthenticated(state)) {
@@ -517,24 +513,6 @@ export const useNearStore = create<NearStore>((set, get) => ({
                 { delegateActions, network: "mainnet" },
                 storageBytes,
             );
-            if (showToast) {
-                toast.success(toastMessage, {
-                    duration: 10000,
-                    action: {
-                        label: "View Request",
-                        onClick: () =>
-                            window.open(
-                                `/${params.treasuryId}/requests?tab=InProgress`,
-                            ),
-                    },
-                    classNames: {
-                        toast: "!p-2 !px-4",
-                        actionButton:
-                            "!bg-transparent !text-foreground hover:!bg-muted !border-0",
-                        title: "!border-r !border-r-border !pr-4",
-                    },
-                });
-            }
         } catch (error) {
             console.error("Failed to create proposal:", error);
             toast.error("Transaction wasn't approved in your wallet.");
@@ -601,37 +579,6 @@ export const useNearStore = create<NearStore>((set, get) => ({
                 { delegateActions, network: "mainnet" },
                 voteStorageBytes,
             );
-
-            const toastAction =
-                votes.length === 1 && votes[0].vote !== "Remove"
-                    ? {
-                          label: "View Request",
-                          onClick: () =>
-                              window.open(
-                                  `/${treasuryId}/requests/${votes[0].proposalId}`,
-                              ),
-                      }
-                    : undefined;
-            const text =
-                votes.length === 1 && votes[0].vote === "Remove"
-                    ? "Your proposal has been removed"
-                    : `Your vote${votes.length > 1 ? "s" : ""} have been submitted`;
-            toast.success(text, {
-                duration: 10000,
-                action: toastAction,
-                classNames: {
-                    toast: "!p-2 !px-4",
-                    actionButton: cn(
-                        !toastAction ? "!hidden" : "",
-                        "!bg-transparent !text-foreground hover:!bg-muted !border-0",
-                    ),
-                    title: cn(
-                        toastAction
-                            ? "!border-r !border-r-border !pr-4"
-                            : "!pr-0",
-                    ),
-                },
-            });
         } catch (error) {
             console.error("Failed to vote proposals:", error);
             toast.error(`Failed to submit vote${votes.length > 1 ? "s" : ""}`);
@@ -671,72 +618,138 @@ export const useNear = () => {
         params: CreateProposalParams,
         showToast: boolean = true,
     ) => {
-        await storeCreateProposal(toastMessage, params, showToast);
+        try {
+            await storeCreateProposal(params);
+            // Invalidate queries after delay
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            const promises = [
+                queryClient.invalidateQueries({
+                    queryKey: ["proposals", params.treasuryId],
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: ["proposal", params.treasuryId],
+                }),
+            ];
+            await Promise.all(promises);
 
-        // Success: invalidate queries after delay in background
-        (async () => {
-            await new Promise((resolve) => setTimeout(resolve, 5000));
-            await queryClient.invalidateQueries({
-                queryKey: ["proposals", params.treasuryId],
-            });
-            await queryClient.invalidateQueries({
-                queryKey: ["proposal", params.treasuryId],
-            });
-        })();
+            // Show toast after invalidation
+            if (showToast) {
+                toast.success(toastMessage, {
+                    duration: 10000,
+                    action: {
+                        label: "View Request",
+                        onClick: () =>
+                            window.open(
+                                `/${params.treasuryId}/requests?tab=InProgress`,
+                            ),
+                    },
+                    classNames: {
+                        toast: "!p-2 !px-4",
+                        actionButton:
+                            "!bg-transparent !text-foreground hover:!bg-muted !border-0",
+                        title: "!border-r !border-r-border !pr-4",
+                    },
+                });
+            }
+        } catch (error) {
+            console.error("Failed to create proposal:", error);
+        }
     };
 
     const voteProposals = async (treasuryId: string, votes: Vote[]) => {
-        await storeVoteProposals(treasuryId, votes);
-
-        // Success: delay then invalidate
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-        const promises = [
-            queryClient.invalidateQueries({
-                queryKey: ["proposals", treasuryId],
-            }),
-            ...votes.map((vote) =>
+        try {
+            await storeVoteProposals(treasuryId, votes);
+            // Invalidate queries after delay
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+            const promises = [
                 queryClient.invalidateQueries({
-                    queryKey: [
-                        "proposal",
-                        treasuryId,
-                        vote.proposalId.toString(),
-                    ],
+                    queryKey: ["proposals", treasuryId],
                 }),
-            ),
-            ...votes.map((vote) =>
-                queryClient.invalidateQueries({
-                    queryKey: [
-                        "proposal-transaction",
-                        treasuryId,
-                        vote.proposalId.toString(),
-                    ],
-                }),
-            ),
-        ];
-        await Promise.all(promises);
+                ...votes.map((vote) =>
+                    queryClient.invalidateQueries({
+                        queryKey: [
+                            "proposal",
+                            treasuryId,
+                            vote.proposalId.toString(),
+                        ],
+                    }),
+                ),
+                ...votes.map((vote) =>
+                    queryClient.invalidateQueries({
+                        queryKey: [
+                            "proposal-transaction",
+                            treasuryId,
+                            vote.proposalId.toString(),
+                        ],
+                    }),
+                ),
+            ];
 
-        await queryClient.invalidateQueries({
-            queryKey: ["treasuryPolicy", treasuryId],
-        });
-        await queryClient.invalidateQueries({
-            queryKey: ["treasuryConfig", treasuryId],
-        });
-        await queryClient.invalidateQueries({
-            queryKey: ["userTreasuries", accountId],
-        });
+            await Promise.all(promises);
 
-        const policyKinds: ProposalPermissionKind[] = [
-            "policy",
-            "add_member_to_role",
-            "remove_member_from_role",
-        ];
-        const hasPolicyVote = votes.some((v) => {
-            const kind = getKindFromProposal(v.proposal.kind);
-            return kind && policyKinds.includes(kind);
-        });
-        if (hasPolicyVote) {
-            await markDaoDirty(treasuryId);
+            // Run policy-related invalidations in background
+            (async () => {
+                await queryClient.invalidateQueries({
+                    queryKey: ["treasuryPolicy", treasuryId],
+                });
+                await queryClient.invalidateQueries({
+                    queryKey: ["treasuryConfig", treasuryId],
+                });
+                await queryClient.invalidateQueries({
+                    queryKey: ["userTreasuries", accountId],
+                });
+
+                const policyKinds: ProposalPermissionKind[] = [
+                    "policy",
+                    "add_member_to_role",
+                    "remove_member_from_role",
+                ];
+                const hasPolicyVote = votes.some((v) => {
+                    const kind = getKindFromProposal(v.proposal.kind);
+                    return kind && policyKinds.includes(kind);
+                });
+                if (hasPolicyVote) {
+                    await markDaoDirty(treasuryId);
+                }
+            })();
+
+            // Show toast after invalidation
+            const toastAction =
+                votes.length === 1 && votes[0].vote !== "Remove"
+                    ? {
+                        label: "View Request",
+                        onClick: () =>
+                            window.open(
+                                `/${treasuryId}/requests/${votes[0].proposalId}`,
+                            ),
+                    }
+                    : undefined;
+            const text =
+                votes.length === 1 && votes[0].vote === "Remove"
+                    ? "Your proposal has been removed"
+                    : `Your vote${votes.length > 1 ? "s" : ""} have been submitted`;
+            toast.success(text, {
+                duration: 10000,
+                action: toastAction,
+                classNames: {
+                    toast: "!p-2 !px-4",
+                    actionButton: cn(
+                        !toastAction ? "!hidden" : "",
+                        "!bg-transparent !text-foreground hover:!bg-muted !border-0",
+                    ),
+                    title: cn(
+                        toastAction
+                            ? "!border-r !border-r-border !pr-4"
+                            : "!pr-0",
+                    ),
+                },
+            });
+
+        } catch (error) {
+            console.error("Failed to vote proposals:", error);
+            return;
         }
+
     };
 
     return {
