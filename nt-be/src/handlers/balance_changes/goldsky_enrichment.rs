@@ -574,9 +574,11 @@ pub async fn run_enrichment_cycle(
         };
 
         for event in &events {
-            // Skip unmonitored accounts — no point calling RPC for accounts nobody tracks
             if !monitored.contains(&event.account_id) {
-                continue;
+                log::warn!(
+                    "[goldsky-enrichment] Unmonitored account {}",
+                    event.account_id
+                );
             }
 
             // Ensure FT metadata is cached (needed for decimal conversion in RPC balance queries)
