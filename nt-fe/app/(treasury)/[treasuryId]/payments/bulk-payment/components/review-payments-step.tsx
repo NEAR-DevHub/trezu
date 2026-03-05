@@ -8,6 +8,7 @@ import { Textarea } from "@/components/textarea";
 import { Edit2, Trash2 } from "lucide-react";
 import { StepProps, ReviewStep } from "@/components/step-wizard";
 import { WarningAlert } from "@/components/warning-alert";
+import { TokenDisplay } from "@/components/token-display-with-network";
 import Big from "@/lib/big";
 import {
     Dialog,
@@ -178,7 +179,7 @@ export function ReviewPaymentsStep({
     }
 
     return (
-        <PageCard>
+        <PageCard className="max-w-[600px] mx-auto">
             <ReviewStep
                 reviewingTitle="Review Your Payment"
                 handleBack={handleBack}
@@ -188,7 +189,15 @@ export function ReviewPaymentsStep({
                     total={formatSmartAmount(totalAmount)}
                     totalUSD={totalUSDValue.toNumber()}
                     token={selectedToken}
-                />
+                    showNetworkIcon={true}
+                >
+                    <p className="font-normal">to {paymentData.length} {paymentData.length === 1 ? 'recipient' : 'recipients'}</p>
+                    {hasInsufficientBalance && (
+                        <p className="text-general-info-foreground text-sm mt-2 font-normal">
+                            Insufficient tokens. You can submit the request and top up before approval.
+                        </p>
+                    )}
+                </AmountSummary>
 
                 {/* Recipients List */}
                 <div className="space-y-4 mb-2">
@@ -276,11 +285,11 @@ export function ReviewPaymentsStep({
                                             >
                                                 {index + 1}
                                             </div>
-                                            <div className="flex-1">
-                                                <div className="flex justify-between mb-2">
-                                                    <div className="flex flex-col gap-2 justify-between">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-start justify-between gap-3 mb-2">
+                                                    <div className="flex flex-col gap-2 justify-between min-w-0 flex-1 lg:flex-auto">
                                                         <div className="flex gap-2">
-                                                            <span className="font-semibold text-sm text-foreground">
+                                                            <span className="font-semibold text-sm text-foreground truncate lg:break-all">
                                                                 {
                                                                     payment.recipient
                                                                 }
@@ -295,21 +304,17 @@ export function ReviewPaymentsStep({
                                                         )}
                                                     </div>
 
-                                                    <div>
+                                                    <div className="shrink-0">
                                                         <div className="flex flex-col gap-2 items-end">
                                                             <div className="flex items-center gap-2">
-                                                                <img
-                                                                    src={
-                                                                        selectedToken.icon ||
-                                                                        ""
-                                                                    }
-                                                                    alt={
-                                                                        selectedToken.symbol
-                                                                    }
-                                                                    className="w-5 h-5 rounded-full"
+                                                                <TokenDisplay
+                                                                    symbol={selectedToken.symbol}
+                                                                    icon={selectedToken.icon || ""}
+                                                                    chainIcons={selectedToken.chainIcons}
+                                                                    iconSize="md"
                                                                 />
                                                                 <div className="text-right">
-                                                                    <div className="text-sm font-semibold">
+                                                                    <div className="text-sm font-semibold whitespace-nowrap">
                                                                         {formatSmartAmount(
                                                                             payment.amount
                                                                         )}{" "}
@@ -317,7 +322,7 @@ export function ReviewPaymentsStep({
                                                                             selectedToken.symbol
                                                                         }
                                                                     </div>
-                                                                    <div className="text-xs text-muted-foreground">
+                                                                    <div className="text-xs text-muted-foreground whitespace-nowrap">
                                                                         ≈ $
                                                                         {estimatedUSDValue.toFixed(
                                                                             2,

@@ -158,6 +158,7 @@ function Step2({ handleBack }: StepProps) {
                     total={amount}
                     totalUSD={estimatedUSDValue.toNumber()}
                     token={token}
+                    showNetworkIcon={true}
                 >
                     <p>to 1 recipient</p>
                 </AmountSummary>
@@ -228,16 +229,16 @@ const buildIntentProposal = (
 
     const ftWithdrawArgs = isNetworkWithdrawal
         ? {
-              token: tokenContract,
-              receiver_id: tokenContract,
-              amount: parsedAmount,
-              memo: `WITHDRAW_TO:${data.address}`,
-          }
+            token: tokenContract,
+            receiver_id: tokenContract,
+            amount: parsedAmount,
+            memo: `WITHDRAW_TO:${data.address}`,
+        }
         : {
-              token: tokenContract,
-              receiver_id: data.address,
-              amount: parsedAmount,
-          };
+            token: tokenContract,
+            receiver_id: data.address,
+            amount: parsedAmount,
+        };
 
     return {
         FunctionCall: {
