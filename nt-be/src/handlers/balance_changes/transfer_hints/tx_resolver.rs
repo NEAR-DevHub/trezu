@@ -196,6 +196,59 @@ pub async fn resolve_all_receipt_block_heights(
     Ok(heights)
 }
 
+/// Resolve the exact block height for a specific receipt within a transaction.
+///
+/// Calls `tx_status` once, finds the receipt matching `receipt_id`, and resolves
+/// its block hash to a height. Returns `None` if the receipt ID is not found.
+pub async fn resolve_receipt_block_height(
+    network: &NetworkConfig,
+    tx_hash: &str,
+    sender_account_id: &str,
+    receipt_id: &str,
+) -> Result<Option<u64>, Box<dyn Error + Send + Sync>> {
+    let client = create_rpc_client(network)?;
+
+    let parsed_tx_hash: near_primitives::hash::CryptoHash = tx_hash.parse()?;
+    let parsed_sender: near_primitives::types::AccountId = sender_account_id.parse()?;
+
+    let tx_response = with_transport_retry("tx_status", || {
+        let req = methods::tx::RpcTransactionStatusRequest {
+            transaction_info: methods::tx::TransactionInfo::TransactionId {
+                tx_hash: parsed_tx_hash,
+                sender_account_id: parsed_sender.clone(),
+            },
+            wait_until: near_primitives::views::TxExecutionStatus::Final,
+        };
+        client.call(req)
+    })
+    .await?;
+
+    let receipts_outcome = match &tx_response.final_execution_outcome {
+        Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcome(outcome)) => {
+            &outcome.receipts_outcome
+        }
+        Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcomeWithReceipt(outcome)) => {
+            &outcome.final_outcome.receipts_outcome
+        }
+        None => return Err("No final execution outcome in transaction".into()),
+    };
+
+    let block_hash = match receipts_outcome.iter().find(|ro| ro.id.to_string() == receipt_id) {
+        Some(ro) => ro.block_hash,
+        None => return Ok(None),
+    };
+
+    let block = with_transport_retry("block_for_receipt", || {
+        let req = methods::block::RpcBlockRequest {
+            block_reference: BlockReference::BlockId(BlockId::Hash(block_hash)),
+        };
+        client.call(req)
+    })
+    .await?;
+
+    Ok(Some(block.header.height))
+}
+
 /// Find candidate blocks where a balance change may have occurred using tx_status
 ///
 /// This is the main entry point for hint resolution. Given a transaction hash,

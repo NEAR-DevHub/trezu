@@ -12,7 +12,7 @@
 
 use super::balance::get_balance_change_at_block;
 use super::counterparty::ensure_ft_metadata;
-use super::transfer_hints::tx_resolver::resolve_all_receipt_block_heights;
+use super::transfer_hints::tx_resolver::resolve_receipt_block_height;
 use super::utils::block_timestamp_to_datetime;
 use near_api::NetworkConfig;
 use serde::Deserialize;
@@ -518,9 +518,9 @@ pub async fn run_enrichment_cycle(
     let mut last_processed_id = cursor.last_processed_id.clone();
     let mut last_processed_block = cursor.last_processed_block;
 
-    // Cache tx_status receipt blocks per tx_hash across the entire batch to avoid
-    // redundant RPC calls when multiple outcomes share the same transaction.
-    let mut tx_receipt_cache: std::collections::HashMap<String, Vec<u64>> =
+    // Cache resolved block heights per receipt ID to avoid redundant RPC calls
+    // if the same outcome appears more than once in a batch.
+    let mut receipt_block_cache: std::collections::HashMap<String, Option<u64>> =
         std::collections::HashMap::new();
 
     for outcome in &outcomes {
@@ -538,40 +538,41 @@ pub async fn run_enrichment_cycle(
         let block_time = block_timestamp_to_datetime(block_timestamp_nanos);
         let block_height = outcome.trigger_block_height as u64;
 
-        // Resolve all receipt block heights from tx_status (cached per tx_hash).
-        // This gives us every block where any receipt in the transaction executed,
-        // so we can check balance at each to find the actual change block.
-        let tx_receipt_blocks: Vec<u64> = if let (Some(tx_hash), Some(signer)) =
+        // Resolve the exact block height for this receipt using tx_status.
+        // The Goldsky outcome ID is the receipt ID — look it up directly in the
+        // tx's receipts_outcome to get the block where this receipt executed.
+        let receipt_block: Option<u64> = if let (Some(tx_hash), Some(signer)) =
             (&outcome.transaction_hash, &outcome.signer_id)
         {
-            if let Some(cached) = tx_receipt_cache.get(tx_hash) {
-                cached.clone()
+            if let Some(cached) = receipt_block_cache.get(&outcome.id) {
+                *cached
             } else {
-                let blocks = match resolve_all_receipt_block_heights(network, tx_hash, signer).await
-                {
-                    Ok(blocks) => {
-                        log::debug!(
-                            "[goldsky-enrichment] tx {} receipt blocks: {:?} (trigger was {})",
-                            tx_hash,
-                            blocks,
-                            block_height,
-                        );
-                        blocks
-                    }
-                    Err(e) => {
-                        log::warn!(
-                            "[goldsky-enrichment] Failed to resolve tx {}: {} — using trigger block",
-                            tx_hash,
-                            e,
-                        );
-                        vec![]
-                    }
-                };
-                tx_receipt_cache.insert(tx_hash.clone(), blocks.clone());
-                blocks
+                let resolved =
+                    match resolve_receipt_block_height(network, tx_hash, signer, &outcome.id).await
+                    {
+                        Ok(block) => {
+                            log::debug!(
+                                "[goldsky-enrichment] receipt {} → block {:?} (trigger was {})",
+                                outcome.id,
+                                block,
+                                block_height,
+                            );
+                            block
+                        }
+                        Err(e) => {
+                            log::warn!(
+                                "[goldsky-enrichment] Failed to resolve receipt {}: {} — using trigger block",
+                                outcome.id,
+                                e,
+                            );
+                            None
+                        }
+                    };
+                receipt_block_cache.insert(outcome.id.clone(), resolved);
+                resolved
             }
         } else {
-            vec![]
+            None
         };
 
         for event in &events {
@@ -596,95 +597,30 @@ pub async fn run_enrichment_cycle(
                 continue;
             }
 
-            // Find the block where balance actually changed by checking all receipt blocks
-            // from experimental_tx_status. This replaces both forward scan and MAX-block
-            // heuristics with an exact approach.
-            let (actual_block, balance_before, balance_after) = if !tx_receipt_blocks.is_empty() {
-                let mut found = None;
-                for &block in &tx_receipt_blocks {
-                    match get_balance_change_at_block(
-                        app_pool,
-                        network,
-                        &event.account_id,
-                        &event.token_id,
-                        block,
-                    )
-                    .await
-                    {
-                        Ok((bb, ba)) if bb != ba => {
-                            log::info!(
-                                "[goldsky-enrichment] Balance change found: {}/{} at block {} (trigger was {})",
-                                event.account_id,
-                                event.token_id,
-                                block,
-                                block_height,
-                            );
-                            found = Some((block, bb, ba));
-                            break;
-                        }
-                        Ok(_) => continue,
-                        Err(e) => {
-                            log::debug!(
-                                "[goldsky-enrichment] Balance check at block {} failed: {}",
-                                block,
-                                e,
-                            );
-                            continue;
-                        }
-                    }
-                }
-
-                match found {
-                    Some(result) => result,
-                    None => {
-                        // No change at any receipt block — record at trigger block (amount=0)
-                        match get_balance_change_at_block(
-                            app_pool,
-                            network,
-                            &event.account_id,
-                            &event.token_id,
-                            block_height,
-                        )
-                        .await
-                        {
-                            Ok((bb, ba)) => (block_height, bb, ba),
-                            Err(e) => {
-                                log::warn!(
-                                    "[goldsky-enrichment] RPC error for {}/{} at trigger block {}: {} — skipping",
-                                    event.account_id,
-                                    event.token_id,
-                                    block_height,
-                                    e
-                                );
-                                continue;
-                            }
-                        }
-                    }
-                }
-            } else {
-                // No tx_hash — use trigger block only
+            // Use the exact receipt block if resolved, otherwise fall back to trigger block.
+            let check_block = receipt_block.unwrap_or(block_height);
+            let (actual_block, balance_before, balance_after) =
                 match get_balance_change_at_block(
                     app_pool,
                     network,
                     &event.account_id,
                     &event.token_id,
-                    block_height,
+                    check_block,
                 )
                 .await
                 {
-                    Ok((bb, ba)) => (block_height, bb, ba),
+                    Ok((bb, ba)) => (check_block, bb, ba),
                     Err(e) => {
                         log::warn!(
                             "[goldsky-enrichment] RPC error for {}/{} at block {}: {} — skipping",
                             event.account_id,
                             event.token_id,
-                            block_height,
+                            check_block,
                             e
                         );
                         continue;
                     }
-                }
-            };
+                };
 
             let amount = &balance_after - &balance_before;
 
@@ -694,7 +630,7 @@ pub async fn run_enrichment_cycle(
                 .map(|h| vec![h.clone()])
                 .unwrap_or_default();
 
-            if let Err(e) = upsert_balance_change(
+            match upsert_balance_change(
                 app_pool,
                 &event.account_id,
                 &event.token_id,
@@ -712,13 +648,20 @@ pub async fn run_enrichment_cycle(
             )
             .await
             {
-                log::error!(
+                Ok(_) => log::info!(
+                    "[goldsky-enrichment] Upserted {}/{} at block {} amount={}",
+                    event.account_id,
+                    event.token_id,
+                    actual_block,
+                    amount,
+                ),
+                Err(e) => log::error!(
                     "[goldsky-enrichment] Failed to upsert {}/{} at block {}: {}",
                     event.account_id,
                     event.token_id,
                     block_height,
                     e
-                );
+                ),
             }
 
             // N+1 sponsor refund: sponsor call pairs always produce a Transfer
