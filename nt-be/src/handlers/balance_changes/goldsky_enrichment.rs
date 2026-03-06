@@ -547,27 +547,32 @@ pub async fn run_enrichment_cycle(
             if let Some(cached) = receipt_block_cache.get(&outcome.id) {
                 *cached
             } else {
-                let resolved =
-                    match resolve_receipt_block_height(network, tx_hash, signer, &outcome.id).await
-                    {
-                        Ok(block) => {
-                            log::debug!(
-                                "[goldsky-enrichment] receipt {} → block {:?} (trigger was {})",
-                                outcome.id,
-                                block,
-                                block_height,
-                            );
-                            block
-                        }
-                        Err(e) => {
-                            log::warn!(
-                                "[goldsky-enrichment] Failed to resolve receipt {}: {} — using trigger block",
-                                outcome.id,
-                                e,
-                            );
-                            None
-                        }
-                    };
+                let resolved = match resolve_receipt_block_height(
+                    network,
+                    tx_hash,
+                    signer,
+                    &outcome.id,
+                )
+                .await
+                {
+                    Ok(block) => {
+                        log::debug!(
+                            "[goldsky-enrichment] receipt {} → block {:?} (trigger was {})",
+                            outcome.id,
+                            block,
+                            block_height,
+                        );
+                        block
+                    }
+                    Err(e) => {
+                        log::warn!(
+                            "[goldsky-enrichment] Failed to resolve receipt {}: {} — using trigger block",
+                            outcome.id,
+                            e,
+                        );
+                        None
+                    }
+                };
                 receipt_block_cache.insert(outcome.id.clone(), resolved);
                 resolved
             }
@@ -599,28 +604,27 @@ pub async fn run_enrichment_cycle(
 
             // Use the exact receipt block if resolved, otherwise fall back to trigger block.
             let check_block = receipt_block.unwrap_or(block_height);
-            let (actual_block, balance_before, balance_after) =
-                match get_balance_change_at_block(
-                    app_pool,
-                    network,
-                    &event.account_id,
-                    &event.token_id,
-                    check_block,
-                )
-                .await
-                {
-                    Ok((bb, ba)) => (check_block, bb, ba),
-                    Err(e) => {
-                        log::warn!(
-                            "[goldsky-enrichment] RPC error for {}/{} at block {}: {} — skipping",
-                            event.account_id,
-                            event.token_id,
-                            check_block,
-                            e
-                        );
-                        continue;
-                    }
-                };
+            let (actual_block, balance_before, balance_after) = match get_balance_change_at_block(
+                app_pool,
+                network,
+                &event.account_id,
+                &event.token_id,
+                check_block,
+            )
+            .await
+            {
+                Ok((bb, ba)) => (check_block, bb, ba),
+                Err(e) => {
+                    log::warn!(
+                        "[goldsky-enrichment] RPC error for {}/{} at block {}: {} — skipping",
+                        event.account_id,
+                        event.token_id,
+                        check_block,
+                        e
+                    );
+                    continue;
+                }
+            };
 
             let amount = &balance_after - &balance_before;
 

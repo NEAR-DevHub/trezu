@@ -233,7 +233,10 @@ pub async fn resolve_receipt_block_height(
         None => return Err("No final execution outcome in transaction".into()),
     };
 
-    let block_hash = match receipts_outcome.iter().find(|ro| ro.id.to_string() == receipt_id) {
+    let block_hash = match receipts_outcome
+        .iter()
+        .find(|ro| ro.id.to_string() == receipt_id)
+    {
         Some(ro) => ro.block_hash,
         None => return Ok(None),
     };
