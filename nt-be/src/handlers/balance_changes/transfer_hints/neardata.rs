@@ -71,11 +71,19 @@ impl NeardataClient {
         }
 
         let block: NeardataBlock = response.json().await?;
+        Ok(Self::parse_block(block, account_id))
+    }
+
+    /// Parse a neardata block JSON into account-filtered data.
+    /// Separated from fetch for testability.
+    fn parse_block(block: NeardataBlock, account_id: &str) -> NeardataAccountBlock {
+        let block_height = block.block.header.height;
 
         let timestamp_nanos = block.block.header.timestamp as i64;
 
         let mut receipts = Vec::new();
         let mut transactions = Vec::new();
+        let mut execution_outcomes = Vec::new();
 
         for shard in &block.shards {
             // Receipts from chunks: these are the incoming action receipts
@@ -121,40 +129,42 @@ impl NeardataClient {
                 }
             }
 
-            // Receipt execution outcomes: get tx_hash for receipts involving account
+            // Receipt execution outcomes: extract tx_hash, logs, and child receipt_ids
             for reo in &shard.receipt_execution_outcomes {
-                let executor = reo
-                    .execution_outcome
-                    .as_ref()
-                    .map(|eo| eo.outcome.executor_id.as_str())
-                    .unwrap_or("");
-                if executor == account_id
-                    && let Some(tx_hash) = &reo.tx_hash
-                {
-                    // Check if we already have this tx_hash from transactions
-                    if !transactions.iter().any(|t| t.hash == *tx_hash) {
-                        let receipt_id = reo
-                            .execution_outcome
-                            .as_ref()
-                            .map(|eo| eo.id.clone())
-                            .unwrap_or_default();
-                        transactions.push(AccountTransaction {
-                            hash: tx_hash.clone(),
-                            signer_id: String::new(), // not available from execution outcome
-                            receiver_id: String::new(),
-                            receipt_ids: vec![receipt_id],
+                if let Some(eo) = &reo.execution_outcome {
+                    let executor = eo.outcome.executor_id.as_str();
+                    if executor == account_id {
+                        execution_outcomes.push(AccountExecutionOutcome {
+                            receipt_id: eo.id.clone(),
+                            executor_id: executor.to_string(),
+                            logs: eo.outcome.logs.clone(),
+                            receipt_ids: eo.outcome.receipt_ids.clone(),
+                            tx_hash: reo.tx_hash.clone(),
                         });
+
+                        // Also populate transactions from tx_hash if not already present
+                        if let Some(tx_hash) = &reo.tx_hash {
+                            if !transactions.iter().any(|t| t.hash == *tx_hash) {
+                                transactions.push(AccountTransaction {
+                                    hash: tx_hash.clone(),
+                                    signer_id: String::new(),
+                                    receiver_id: String::new(),
+                                    receipt_ids: vec![eo.id.clone()],
+                                });
+                            }
+                        }
                     }
                 }
             }
         }
 
-        Ok(NeardataAccountBlock {
+        NeardataAccountBlock {
             block_height,
             timestamp_nanos,
             receipts,
             transactions,
-        })
+            execution_outcomes,
+        }
     }
 }
 
@@ -166,6 +176,7 @@ pub struct NeardataAccountBlock {
     pub timestamp_nanos: i64,
     pub receipts: Vec<AccountReceipt>,
     pub transactions: Vec<AccountTransaction>,
+    pub execution_outcomes: Vec<AccountExecutionOutcome>,
 }
 
 /// A receipt relevant to the monitored account
@@ -185,6 +196,20 @@ pub struct AccountTransaction {
     pub signer_id: String,
     pub receiver_id: String,
     pub receipt_ids: Vec<String>,
+}
+
+/// An execution outcome for the monitored account
+pub struct AccountExecutionOutcome {
+    /// The receipt ID that was executed
+    pub receipt_id: String,
+    /// The account that executed this receipt
+    pub executor_id: String,
+    /// Log lines emitted during execution
+    pub logs: Vec<String>,
+    /// Child receipt IDs produced by this execution
+    pub receipt_ids: Vec<String>,
+    /// The originating transaction hash
+    pub tx_hash: Option<String>,
 }
 
 // ── Serde types for neardata JSON ───────────────────────────────────────────
@@ -250,7 +275,8 @@ struct ActionBody {
 enum NeardataAction {
     Transfer(TransferAction),
     FunctionCall(FunctionCallAction),
-    Other(()),
+    #[allow(dead_code)]
+    Other(serde_json::Value),
 }
 
 #[derive(Deserialize)]
@@ -313,6 +339,8 @@ struct OutcomeData {
     executor_id: String,
     #[serde(default)]
     receipt_ids: Vec<String>,
+    #[serde(default)]
+    logs: Vec<String>,
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -423,5 +451,250 @@ mod tests {
         let json = r#"{"Data": {"data": null, "data_id": "abc123"}}"#;
         let body: ReceiptBody = serde_json::from_str(json).unwrap();
         assert!(body.action.is_none());
+    }
+
+    // ── Real block tests (live neardata calls) ────────────────────────────
+    //
+    // These tests call mainnet.neardata.xyz to fetch real block data for
+    // webassemblymusic-treasury.sputnik-dao.near and verify that
+    // fetch_account_block_data correctly extracts receipts, execution
+    // outcomes, and the data needed for counterparty resolution.
+
+    const DAO: &str = "webassemblymusic-treasury.sputnik-dao.near";
+
+    fn neardata_client() -> NeardataClient {
+        NeardataClient::from_env()
+    }
+
+    /// Block 188101233: Direct Transfer from petersalomonsen.near → DAO.
+    /// Chunk receipt is an Action/Transfer.  Counterparty = predecessor_id.
+    #[tokio::test]
+    async fn test_block_188101233_transfer() {
+        let result = neardata_client()
+            .fetch_account_block_data(188_101_233, DAO)
+            .await
+            .unwrap();
+
+        assert_eq!(result.block_height, 188_101_233);
+
+        // Action receipt present → counterparty = predecessor_id
+        assert_eq!(result.receipts.len(), 1);
+        assert_eq!(result.receipts[0].receipt_id, "ENGjBrJUYWUKDfPKQZ1xCPX2AXax8F9m9sPA7nCj9TXK");
+        assert_eq!(result.receipts[0].predecessor_id, "petersalomonsen.near");
+        assert_eq!(result.receipts[0].action_kind.as_deref(), Some("TRANSFER"));
+        assert_eq!(result.receipts[0].signer_id, "petersalomonsen.near");
+        assert_eq!(result.receipts[0].deposit.as_deref(), Some("432000000000000000000000"));
+
+        // Execution outcome: no logs, no children
+        assert!(result.execution_outcomes.iter().all(|eo| eo.logs.is_empty()));
+        let eo = result.execution_outcomes.iter()
+            .find(|eo| eo.receipt_id == "ENGjBrJUYWUKDfPKQZ1xCPX2AXax8F9m9sPA7nCj9TXK")
+            .expect("Missing execution outcome for receipt");
+        assert_eq!(eo.tx_hash.as_deref(), Some("E2qj16xcmCcN9uFpxwBYkSLUxpYZ4yoSr4T9a7iRyds7"));
+    }
+
+    /// Block 188102293: FunctionCall (add_proposal) from petersalomonsen.near → DAO.
+    /// Signer is sponsor.trezu.near (sponsored tx).  Counterparty = predecessor_id.
+    #[tokio::test]
+    async fn test_block_188102293_function_call() {
+        let result = neardata_client()
+            .fetch_account_block_data(188_102_293, DAO)
+            .await
+            .unwrap();
+
+        assert_eq!(result.receipts.len(), 1);
+        assert_eq!(result.receipts[0].predecessor_id, "petersalomonsen.near");
+        assert_eq!(result.receipts[0].action_kind.as_deref(), Some("FUNCTION_CALL"));
+        assert_eq!(result.receipts[0].method_name.as_deref(), Some("add_proposal"));
+        // signer_id is the tx-level signer (sponsor), not the predecessor
+        assert_eq!(result.receipts[0].signer_id, "sponsor.trezu.near");
+    }
+
+    /// Block 188102397: FunctionCall (act_proposal) from petersalomonsen.near → DAO.
+    /// DAO executes and spawns 3 child receipts (intents call, callback, refund).
+    /// Counterparty = predecessor_id.
+    #[tokio::test]
+    async fn test_block_188102397_act_proposal() {
+        let result = neardata_client()
+            .fetch_account_block_data(188_102_397, DAO)
+            .await
+            .unwrap();
+
+        assert_eq!(result.receipts.len(), 1);
+        assert_eq!(result.receipts[0].predecessor_id, "petersalomonsen.near");
+        assert_eq!(result.receipts[0].action_kind.as_deref(), Some("FUNCTION_CALL"));
+        assert_eq!(result.receipts[0].method_name.as_deref(), Some("act_proposal"));
+
+        assert!(!result.execution_outcomes.is_empty());
+        let eo = result.execution_outcomes.iter()
+            .find(|eo| eo.receipt_id == "CuLGcwGqeRUS4Vt1SzgUV75prcjzZKXUfo5itdoysFqq")
+            .expect("Missing execution outcome");
+        // 3 child receipts: intents call, on_proposal_callback, sponsor refund
+        assert_eq!(eo.receipt_ids.len(), 3);
+        assert_eq!(eo.tx_hash.as_deref(), Some("9noKHxN7Rj7tNhZVfZZbCRu1ZiWSq8cqDr9RAwX1TL7U"));
+    }
+
+    /// Block 188102398: mt_burn on intents.near — logs mention DAO as owner_id.
+    /// The mt_burn execution outcome is on intents.near, NOT the DAO.
+    /// The DAO does have a chunk receipt here (5chj... self-callback waiting
+    /// to execute at block 188102401), but no execution outcomes yet.
+    #[tokio::test]
+    async fn test_block_188102398_mt_burn_not_on_dao() {
+        let result = neardata_client()
+            .fetch_account_block_data(188_102_398, DAO)
+            .await
+            .unwrap();
+
+        // The DAO has a pending self-callback receipt in the chunk, but the
+        // mt_burn execution outcome belongs to intents.near, not the DAO.
+        assert!(result.execution_outcomes.is_empty());
+        // Chunk receipt 5chj... is the on_proposal_callback (self-call),
+        // it will execute at block 188102401.
+        if !result.receipts.is_empty() {
+            assert_eq!(result.receipts[0].predecessor_id, DAO);
+            assert_eq!(result.receipts[0].receiver_id, DAO);
+        }
+    }
+
+    /// Block 188102398: verify mt_burn logs are captured when filtering for intents.near.
+    #[tokio::test]
+    async fn test_block_188102398_mt_burn_logs_on_intents() {
+        let result = neardata_client()
+            .fetch_account_block_data(188_102_398, "intents.near")
+            .await
+            .unwrap();
+
+        let eo = result.execution_outcomes.iter()
+            .find(|eo| eo.receipt_id == "4rpZjD77YaeE1fvNuPe9vjane4uaX7bBmQm1BYHoBWmP")
+            .expect("Missing mt_burn execution outcome");
+        assert_eq!(eo.logs.len(), 1);
+        assert!(eo.logs[0].contains("mt_burn"));
+        assert!(eo.logs[0].contains(DAO));
+    }
+
+    /// Block 188102401: Data receipt callback — DAO executes on_proposal_callback.
+    /// No Action receipt in chunk (Data receipt from intents.near is filtered out).
+    /// Execution outcome has tx_hash for tx_status fallback → counterparty =
+    /// tx.receiver_id = petersalomonsen.near.
+    #[tokio::test]
+    async fn test_block_188102401_data_receipt_callback() {
+        let result = neardata_client()
+            .fetch_account_block_data(188_102_401, DAO)
+            .await
+            .unwrap();
+
+        // Data receipt filtered out (no Action body) → receipts is empty
+        assert!(result.receipts.is_empty(), "Data receipts should be filtered out");
+
+        // Execution outcome present with tx_hash for tx_status fallback
+        let eo = result.execution_outcomes.iter()
+            .find(|eo| eo.receipt_id == "5chj6XaVkHNy4s6o1eae9HFBE6XrhJ8BsrBzXUKbybKt")
+            .expect("Missing execution outcome for on_proposal_callback");
+        assert_eq!(eo.tx_hash.as_deref(), Some("9noKHxN7Rj7tNhZVfZZbCRu1ZiWSq8cqDr9RAwX1TL7U"));
+        // Child receipts: Transfer to petersalomonsen.near + system refund to sponsor
+        assert_eq!(eo.receipt_ids.len(), 2);
+        assert!(eo.logs.is_empty());
+
+        // tx_hash should be in transactions too
+        assert!(result.transactions.iter().any(|t| t.hash == "9noKHxN7Rj7tNhZVfZZbCRu1ZiWSq8cqDr9RAwX1TL7U"));
+    }
+
+    // ── Counterparty resolution tests ───────────────────────────────────────
+    //
+    // These tests verify the full counterparty resolution logic that the
+    // gap filler uses: neardata for block data, tx_status for Data receipt
+    // callbacks.  They assert counterparty, action_kind, and method_name
+    // match what the Goldsky enrichment pipeline produces.
+
+    /// Resolve counterparty from neardata block data, matching gap filler logic.
+    /// Returns (counterparty, action_kind, method_name).
+    async fn resolve_counterparty(
+        block_height: u64,
+        account_id: &str,
+    ) -> (String, Option<String>, Option<String>) {
+        let nd = neardata_client();
+        let data = nd.fetch_account_block_data(block_height, account_id).await.unwrap();
+
+        if let Some(receipt) = data.receipts.first() {
+            // Action receipt: counterparty = predecessor_id
+            (
+                receipt.predecessor_id.clone(),
+                receipt.action_kind.clone(),
+                receipt.method_name.clone(),
+            )
+        } else if let Some(eo) = data.execution_outcomes.first() {
+            // Data receipt callback: use tx_status to get tx.receiver_id
+            let tx_hash = eo.tx_hash.as_ref().expect("execution outcome should have tx_hash");
+
+            dotenvy::dotenv().ok();
+            let api_key = std::env::var("FASTNEAR_API_KEY")
+                .expect("FASTNEAR_API_KEY must be set");
+            let network = near_api::NetworkConfig {
+                rpc_endpoints: vec![
+                    near_api::RPCEndpoint::new(
+                        "https://archival-rpc.mainnet.fastnear.com/".parse().unwrap(),
+                    )
+                    .with_api_key(api_key),
+                ],
+                ..near_api::NetworkConfig::mainnet()
+            };
+
+            let tx_response =
+                crate::handlers::balance_changes::block_info::get_transaction(
+                    &network, tx_hash, account_id,
+                )
+                .await
+                .unwrap();
+
+            let tx = match tx_response.final_execution_outcome.as_ref().unwrap() {
+                near_primitives::views::FinalExecutionOutcomeViewEnum::FinalExecutionOutcome(o) => {
+                    &o.transaction
+                }
+                near_primitives::views::FinalExecutionOutcomeViewEnum::FinalExecutionOutcomeWithReceipt(o) => {
+                    &o.final_outcome.transaction
+                }
+            };
+            // Path C: tx.receiver_id is the economic counterparty
+            (tx.receiver_id.to_string(), None, None)
+        } else {
+            panic!("No receipts or execution outcomes for {} at block {}", account_id, block_height);
+        }
+    }
+
+    /// Block 188101233: Transfer → counterparty = petersalomonsen.near
+    #[tokio::test]
+    async fn test_resolve_counterparty_188101233_transfer() {
+        let (cp, action, method) = resolve_counterparty(188_101_233, DAO).await;
+        assert_eq!(cp, "petersalomonsen.near");
+        assert_eq!(action.as_deref(), Some("TRANSFER"));
+        assert!(method.is_none());
+    }
+
+    /// Block 188102293: FunctionCall → counterparty = petersalomonsen.near
+    #[tokio::test]
+    async fn test_resolve_counterparty_188102293_function_call() {
+        let (cp, action, method) = resolve_counterparty(188_102_293, DAO).await;
+        assert_eq!(cp, "petersalomonsen.near");
+        assert_eq!(action.as_deref(), Some("FUNCTION_CALL"));
+        assert_eq!(method.as_deref(), Some("add_proposal"));
+    }
+
+    /// Block 188102397: FunctionCall (act_proposal) → counterparty = petersalomonsen.near
+    #[tokio::test]
+    async fn test_resolve_counterparty_188102397_act_proposal() {
+        let (cp, action, method) = resolve_counterparty(188_102_397, DAO).await;
+        assert_eq!(cp, "petersalomonsen.near");
+        assert_eq!(action.as_deref(), Some("FUNCTION_CALL"));
+        assert_eq!(method.as_deref(), Some("act_proposal"));
+    }
+
+    /// Block 188102401: Data receipt callback → tx_status → counterparty = petersalomonsen.near
+    #[tokio::test]
+    async fn test_resolve_counterparty_188102401_data_receipt_callback() {
+        let (cp, action, method) = resolve_counterparty(188_102_401, DAO).await;
+        assert_eq!(cp, "petersalomonsen.near");
+        // Data receipt callback — no action_kind from chunk receipt
+        assert!(action.is_none());
+        assert!(method.is_none());
     }
 }

@@ -2189,10 +2189,11 @@ pub async fn insert_balance_change_record(
             match nd.fetch_account_block_data(block_height, account_id).await {
                 Ok(data) => {
                     log::debug!(
-                        "Neardata resolved block {} for {}: {} receipts, {} transactions",
+                        "Neardata resolved block {} for {}: {} receipts, {} execution_outcomes, {} transactions",
                         block_height,
                         account_id,
                         data.receipts.len(),
+                        data.execution_outcomes.len(),
                         data.transactions.len(),
                     );
                     Some(data)
@@ -2235,14 +2236,23 @@ pub async fn insert_balance_change_record(
             .map(|t| t.hash.clone())
             .collect();
 
-        let receipt_ids: Vec<String> = nd_data
+        // Collect receipt IDs from both chunk receipts and execution outcomes
+        let mut receipt_ids: Vec<String> = nd_data
             .receipts
             .iter()
             .map(|r| r.receipt_id.clone())
             .collect();
+        for eo in &nd_data.execution_outcomes {
+            if !receipt_ids.contains(&eo.receipt_id) {
+                receipt_ids.push(eo.receipt_id.clone());
+            }
+        }
 
         let (signer_id, receiver_id, counterparty, action_kind, method_name) =
             if let Some(receipt) = nd_data.receipts.first() {
+                // Action receipt: predecessor_id is the account that sent the receipt
+                // to the DAO — this is the correct counterparty for direct transfers
+                // and function calls.
                 let counterparty = receipt.predecessor_id.clone();
                 (
                     Some(receipt.signer_id.clone()),
@@ -2251,15 +2261,55 @@ pub async fn insert_balance_change_record(
                     receipt.action_kind.clone(),
                     receipt.method_name.clone(),
                 )
+            } else if let Some(eo) = nd_data.execution_outcomes.first() {
+                // No Action receipt in chunk (Data receipt / callback) — the DAO executed
+                // as a callback from another contract.  Use tx_status to get the
+                // transaction-level receiver_id, matching Goldsky enrichment Path C.
+                let (tx_signer, tx_receiver, counterparty) = if let Some(tx_hash) = &eo.tx_hash {
+                    match block_info::get_transaction(network, tx_hash, account_id).await {
+                        Ok(tx_response) => {
+                            if let Some(ref fo) = tx_response.final_execution_outcome {
+                                use near_primitives::views::FinalExecutionOutcomeViewEnum;
+                                let tx = match fo {
+                                    FinalExecutionOutcomeViewEnum::FinalExecutionOutcome(o) => {
+                                        &o.transaction
+                                    }
+                                    FinalExecutionOutcomeViewEnum::FinalExecutionOutcomeWithReceipt(
+                                        o,
+                                    ) => &o.final_outcome.transaction,
+                                };
+                                let signer = tx.signer_id.to_string();
+                                let receiver = tx.receiver_id.to_string();
+                                // Path C: DAO executed a callback; tx.receiver_id is the
+                                // economic counterparty (e.g. petersalomonsen.near).
+                                // This matches Goldsky enrichment which uses outcome.receiver_id
+                                // (= tx.receiver_id) for Path C events.
+                                (Some(signer), Some(receiver.clone()), receiver)
+                            } else {
+                                (None, None, String::new())
+                            }
+                        }
+                        Err(e) => {
+                            log::warn!(
+                                "tx_status failed for {} at block {}: {} — counterparty unknown",
+                                tx_hash,
+                                block_height,
+                                e
+                            );
+                            (None, None, String::new())
+                        }
+                    }
+                } else {
+                    (None, None, String::new())
+                };
+                (tx_signer, tx_receiver, counterparty, None, None)
             } else {
-                // Neardata found no receipts for this account — fall through to RPC below
-                // by returning an error-like tuple that triggers the "no receipt" error path
+                // No receipts and no execution outcomes
                 log::warn!(
-                    "Neardata block {} has no receipts for {} — will try RPC",
+                    "Neardata block {} has no receipts or execution outcomes for {}",
                     block_height,
                     account_id,
                 );
-                // Use receipt_execution_outcomes tx_hash if we found one
                 if transaction_hashes.is_empty() {
                     return Err(format!(
                         "No receipt found for block {} - cannot determine counterparty",

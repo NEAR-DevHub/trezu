@@ -14,6 +14,7 @@ mod common;
 
 use axum::body::Body;
 use axum::http::Request;
+use nt_be::handlers::balance_changes::transfer_hints::neardata::NeardataClient;
 use sqlx::PgPool;
 use std::sync::Arc;
 use std::time::Instant;
@@ -391,15 +392,16 @@ async fn test_goldsky_maintenance_webassemblymusic(pool: PgPool) {
             .await
             .unwrap();
 
+        let neardata = NeardataClient::from_env();
         nt_be::handlers::balance_changes::account_monitor::run_maintenance_cycle(
             &pool,
             &network,
             up_to_block,
-            None, // no hint_service — use raw RPC gap filling
-            None, // no fastnear FT discovery
-            None, // no intents API key
-            "",   // intents API URL (unused)
-            None, // no neardata
+            None,            // no hint_service — use raw RPC gap filling
+            None,            // no fastnear FT discovery
+            None,            // no intents API key
+            "",              // intents API URL (unused)
+            Some(&neardata), // use neardata for counterparty resolution
         )
         .await
         .unwrap();
