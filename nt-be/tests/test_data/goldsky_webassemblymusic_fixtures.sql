@@ -14,7 +14,7 @@
 --   188102293: NEAR +0.0969 (FunctionCall, act_proposal → cross-contract)
 --   188102397: NEAR -0.0007 (FunctionCall, act_proposal → intents swap gas)
 --   188102398: intents USDC -10 (FunctionCall, intents swap mt_burn)
---   188102401: NEAR -0.0999 (intents.near settlement)
+--   188102401: NEAR -0.0999 (on_proposal_callback → Transfer to petersalomonsen.near)
 
 -- Block 188101232: petersalomonsen.near sends NEAR to DAO (add_proposal)
 INSERT INTO indexed_dao_outcomes (id, executor_id, logs, status, transaction_hash, signer_id, receiver_id, gas_burnt, tokens_burnt, trigger_block_height, trigger_block_hash, trigger_block_timestamp) VALUES ('E2qj16xcmCcN9uFpxwBYkSLUxpYZ4yoSr4T9a7iRyds7', 'petersalomonsen.near', '', '{"SuccessReceiptId":"ENGjBrJUYWUKDfPKQZ1xCPX2AXax8F9m9sPA7nCj9TXK"}', 'E2qj16xcmCcN9uFpxwBYkSLUxpYZ4yoSr4T9a7iRyds7', 'petersalomonsen.near', 'webassemblymusic-treasury.sputnik-dao.near', 223182562500, 22318256250000000000, 188101232, 'HMKfGkb6XF5QpE9GEgsk3YAiiTWqzYuJdYnvcGDwJtan', 1772644991359);

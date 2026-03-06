@@ -302,20 +302,21 @@ async fn test_goldsky_webassemblymusic(pool: PgPool) {
     assert_eq!(r4.amount, "-10", "Expected -10 USDC, got {}", r4.amount);
     println!("Record 4 OK: block=188102398 intents USDC {}", r4.amount);
 
-    // --- Record 5: block 188102401, NEAR -0.0999 (intents.near settlement) ---
-    // This is a NEAR balance change from the intents swap settlement. No Goldsky
-    // outcome for this — enrichment cannot find it without maintenance.
-    // For now, only check it if present (maintenance would fill this gap).
+    // --- Record 5: block 188102401, NEAR -0.0999 (on_proposal_callback → Transfer to petersalomonsen) ---
+    // The DAO's balance drops at 188102401 when on_proposal_callback commits the
+    // outgoing 0.1 NEAR transfer. petersalomonsen.near receives it one block later
+    // (188102402). Path C sets counterparty from the Goldsky receiver_id which is
+    // petersalomonsen.near — verified correct via RPC balance queries.
     if let Some(r5) = find(188_102_401, "near") {
         assert!(
             r5.amount.starts_with("-0.09"),
             "Expected amount ~-0.0999, got {}",
             r5.amount
         );
-        assert_eq!(r5.counterparty.as_deref(), Some("intents.near"));
+        assert_eq!(r5.counterparty.as_deref(), Some("petersalomonsen.near"));
         println!("Record 5 OK: block=188102401 NEAR {}", r5.amount);
     } else {
-        println!("Record 5 SKIPPED: block=188102401 NEAR (intents settlement — needs maintenance)");
+        println!("Record 5 SKIPPED: block=188102401 NEAR (needs Path C outcome to resolve)");
     }
 
     println!("\nExpected production records verified (enrichment-only).");
