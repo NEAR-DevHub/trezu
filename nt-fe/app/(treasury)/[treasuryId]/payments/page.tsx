@@ -73,6 +73,8 @@ function Step1({ handleNext }: StepProps) {
     const form = useFormContext<PaymentFormValues>();
     const { treasuryId } = useTreasury();
     const isMobile = useMediaQuery("(max-width: 768px)");
+    const address = form.watch("address");
+    const amount = form.watch("amount");
 
     const handleSave = () => {
         // Validate and proceed to next step
@@ -82,6 +84,11 @@ function Step1({ handleNext }: StepProps) {
             }
         });
     };
+
+    const isFormFilled = !!amount && Number(amount) > 0 && !!address;
+    const saveButtonText = isFormFilled
+        ? "Review Payment"
+        : "Enter amount and address";
 
     return (
         <PageCard>
@@ -119,7 +126,7 @@ function Step1({ handleNext }: StepProps) {
                 amountName="amount"
                 tokenName="token"
                 recipientName="address"
-                saveButtonText="Enter amount and address"
+                saveButtonText={saveButtonText}
                 onSave={handleSave}
             />
         </PageCard>
@@ -229,16 +236,16 @@ const buildIntentProposal = (
 
     const ftWithdrawArgs = isNetworkWithdrawal
         ? {
-            token: tokenContract,
-            receiver_id: tokenContract,
-            amount: parsedAmount,
-            memo: `WITHDRAW_TO:${data.address}`,
-        }
+              token: tokenContract,
+              receiver_id: tokenContract,
+              amount: parsedAmount,
+              memo: `WITHDRAW_TO:${data.address}`,
+          }
         : {
-            token: tokenContract,
-            receiver_id: data.address,
-            amount: parsedAmount,
-        };
+              token: tokenContract,
+              receiver_id: data.address,
+              amount: parsedAmount,
+          };
 
     return {
         FunctionCall: {

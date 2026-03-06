@@ -2,8 +2,15 @@
 
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { LargeInput } from "./large-input";
-import { getAddressPattern, getAddressPlaceholder, getBlockchainDisplayName } from "@/lib/address-validation";
-import { validateNearAddress, isValidNearAddressFormat } from "@/lib/near-validation";
+import {
+    getAddressPattern,
+    getAddressPlaceholder,
+    getBlockchainDisplayName,
+} from "@/lib/address-validation";
+import {
+    validateNearAddress,
+    isValidNearAddressFormat,
+} from "@/lib/near-validation";
 import type { BlockchainType } from "@/lib/blockchain-utils";
 
 /**
@@ -40,23 +47,31 @@ const AccountInput = ({
     validateOnMount = false,
 }: AccountInputProps) => {
     const [isValidating, setIsValidating] = useState(false);
-    const [validationError, setValidationError] = useState<string | undefined>();
+    const [validationError, setValidationError] = useState<
+        string | undefined
+    >();
     const [hasValidated, setHasValidated] = useState(false); // Track if validation completed
     const hasUserInteractedRef = useRef(false);
 
     const isNear = blockchain === "near";
 
     // Get blockchain-specific configuration
-    const config = useMemo(() => ({
-        placeholder: getAddressPlaceholder(blockchain),
-        regex: getAddressPattern(blockchain),
-    }), [blockchain]);
+    const config = useMemo(
+        () => ({
+            placeholder: getAddressPlaceholder(blockchain),
+            regex: getAddressPattern(blockchain),
+        }),
+        [blockchain],
+    );
 
     // Wrapper to set isValidating and notify parent
-    const updateValidationState = useCallback((validating: boolean) => {
-        setIsValidating(validating);
-        setIsValidatingProp?.(validating);
-    }, [setIsValidatingProp]);
+    const updateValidationState = useCallback(
+        (validating: boolean) => {
+            setIsValidating(validating);
+            setIsValidatingProp?.(validating);
+        },
+        [setIsValidatingProp],
+    );
 
     // Reset all validation states
     const resetValidation = useCallback(() => {
@@ -67,28 +82,31 @@ const AccountInput = ({
     }, [setIsValid, updateValidationState]);
 
     // NEAR full validation (format + blockchain check)
-    const validateNearFull = useCallback(async (address: string) => {
-        if (!address || address.trim() === "") {
-            resetValidation();
-            return;
-        }
+    const validateNearFull = useCallback(
+        async (address: string) => {
+            if (!address || address.trim() === "") {
+                resetValidation();
+                return;
+            }
 
-        updateValidationState(true);
-        setHasValidated(false); // Reset validation state
-        try {
-            const error = await validateNearAddress(address);
-            setValidationError(error || undefined);
-            setIsValid(!error);
-            setHasValidated(!error); // Only mark as validated if successful
-        } catch (err) {
-            console.error("NEAR validation error:", err);
-            setValidationError("Failed to validate address");
-            setIsValid(false);
-            setHasValidated(false);
-        } finally {
-            updateValidationState(false);
-        }
-    }, [setIsValid, updateValidationState, resetValidation]);
+            updateValidationState(true);
+            setHasValidated(false); // Reset validation state
+            try {
+                const error = await validateNearAddress(address);
+                setValidationError(error || undefined);
+                setIsValid(!error);
+                setHasValidated(!error); // Only mark as validated if successful
+            } catch (err) {
+                console.error("NEAR validation error:", err);
+                setValidationError("Failed to validate address");
+                setIsValid(false);
+                setHasValidated(false);
+            } finally {
+                updateValidationState(false);
+            }
+        },
+        [setIsValid, updateValidationState, resetValidation],
+    );
 
     useEffect(() => {
         const shouldValidate = validateOnMount || hasUserInteractedRef.current;
@@ -113,9 +131,12 @@ const AccountInput = ({
                 return;
             }
 
-            const timeoutId = setTimeout(() => {
-                validateNearFull(value);
-            }, validateOnMount ? 0 : 500);
+            const timeoutId = setTimeout(
+                () => {
+                    validateNearFull(value);
+                },
+                validateOnMount ? 0 : 500,
+            );
 
             return () => {
                 clearTimeout(timeoutId);
@@ -127,17 +148,33 @@ const AccountInput = ({
         if (config.regex) {
             const isValid = config.regex.test(value);
             setIsValid(isValid);
-            setValidationError(isValid ? undefined : `Please enter a valid ${getBlockchainDisplayName(blockchain)} address.`);
+            setHasValidated(isValid);
+            setValidationError(
+                isValid
+                    ? undefined
+                    : `Please enter a valid ${getBlockchainDisplayName(blockchain)} address.`,
+            );
         } else {
             // No regex pattern (unknown blockchain) - accept any non-empty address
             setIsValid(true);
+            setHasValidated(true);
             setValidationError(undefined);
         }
-    }, [value, blockchain, isNear, config.regex, validateOnMount, setIsValid, validateNearFull, resetValidation, updateValidationState]);
+    }, [
+        value,
+        blockchain,
+        isNear,
+        config.regex,
+        validateOnMount,
+        setIsValid,
+        validateNearFull,
+        resetValidation,
+        updateValidationState,
+    ]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         // Remove all whitespace to prevent it from being entered
-        const val = e.target.value.replace(/\s/g, '');
+        const val = e.target.value.replace(/\s/g, "");
 
         // If value hasn't changed after removing whitespace, don't update
         // This prevents validation state reset when user types whitespace
@@ -173,10 +210,16 @@ const AccountInput = ({
         if (config.regex) {
             const isValid = config.regex.test(val);
             setIsValid(isValid);
-            setValidationError(isValid || !val ? undefined : `Please enter a valid ${getBlockchainDisplayName(blockchain)} address.`);
+            setHasValidated(isValid);
+            setValidationError(
+                isValid || !val
+                    ? undefined
+                    : `Please enter a valid ${getBlockchainDisplayName(blockchain)} address.`,
+            );
         } else {
             // No regex pattern (e.g., unknown blockchain) - accept any non-empty address
             setIsValid(!!val);
+            setHasValidated(!!val);
             setValidationError(undefined);
         }
     };
@@ -201,7 +244,14 @@ const AccountInput = ({
 
         const isValid = config.regex.test(trimmedValue);
         return isValid ? "border-green-500" : "border-red-500";
-    }, [value, isValidating, validationError, hasValidated, config.regex, isNear]);
+    }, [
+        value,
+        isValidating,
+        validationError,
+        hasValidated,
+        config.regex,
+        isNear,
+    ]);
 
     return (
         <div className="flex flex-col gap-1">
@@ -216,20 +266,14 @@ const AccountInput = ({
             />
             {/* Show validation error or status */}
             {value && validationError && !isValidating && (
-                <p className="text-xs text-destructive">
-                    {validationError}
-                </p>
+                <p className="text-xs text-destructive">{validationError}</p>
             )}
-            {/* Show validation status for NEAR */}
-            {isNear && value && isValidating && (
-                <p className="text-xs text-yellow-600">
-                    Validating address...
-                </p>
+            {/* Show validation status */}
+            {value && isValidating && (
+                <p className="text-xs text-yellow-600">Validating address...</p>
             )}
-            {isNear && value && !isValidating && !validationError && hasValidated && (
-                <p className="text-xs text-green-600">
-                    Valid address
-                </p>
+            {value && !isValidating && !validationError && hasValidated && (
+                <p className="text-xs text-green-600">Valid address</p>
             )}
         </div>
     );

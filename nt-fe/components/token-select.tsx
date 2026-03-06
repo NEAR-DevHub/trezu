@@ -519,12 +519,21 @@ export default function TokenSelect({
                 item.residency && item.residency !== "Intents";
 
             if (isTreasuryToken) {
-                // Treasury token
-                const treasuryToken = aggregatedTreasuryTokens
-                    .flatMap((t) => t.networks)
-                    .find(
+                // Treasury token — prioritize contractId match, fall back to
+                // network name for native tokens that have no contractId (e.g. NEAR)
+                const allTreasuryNetworks = aggregatedTreasuryTokens.flatMap(
+                    (t) => t.networks,
+                );
+                const treasuryToken =
+                    allTreasuryNetworks.find(
                         (n) =>
-                            n.id === item.networkId &&
+                            n.contractId === item.networkId &&
+                            n.residency === item.residency,
+                    ) ??
+                    allTreasuryNetworks.find(
+                        (n) =>
+                            !n.contractId &&
+                            n.network === item.networkName &&
                             n.residency === item.residency,
                     );
 

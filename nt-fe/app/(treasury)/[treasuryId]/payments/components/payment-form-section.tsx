@@ -23,14 +23,13 @@ interface PaymentFormSectionProps<
     control: Control<TFieldValues>;
     amountName: Path<TFieldValues>;
     tokenName: TTokenPath extends Path<TFieldValues>
-    ? PathValue<TFieldValues, TTokenPath> extends Token
-    ? TTokenPath
-    : never
-    : never;
+        ? PathValue<TFieldValues, TTokenPath> extends Token
+            ? TTokenPath
+            : never
+        : never;
     recipientName: Path<TFieldValues>;
 
     tokenLocked?: boolean;
-    validateOnMount?: boolean;
 
     saveButtonText: string;
     onSave: () => void;
@@ -46,7 +45,6 @@ export function PaymentFormSection<
     tokenName,
     recipientName,
     tokenLocked = false,
-    validateOnMount = false,
     saveButtonText,
     onSave,
     isSubmitting = false,
@@ -76,7 +74,7 @@ export function PaymentFormSection<
             amount,
             token.minWithdrawalAmount,
             token.decimals,
-            token.symbol
+            token.symbol,
         );
 
         if (error) {
@@ -110,7 +108,9 @@ export function PaymentFormSection<
             <InputBlock
                 interactive
                 title="To"
-                invalid={!!recipient && !isRecipientValid && !isValidatingRecipient}
+                invalid={
+                    !!recipient && !isRecipientValid && !isValidatingRecipient
+                }
             >
                 <AccountInput
                     key={blockchainType}
