@@ -1,36 +1,86 @@
+"use client";
+
 import { cn } from "@/lib/utils";
-import { Tooltip as TooltipPrimitive, TooltipContent as TooltipContentPrimitive, TooltipTrigger } from "./ui/tooltip";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import {
+    Tooltip as TooltipPrimitive,
+    TooltipContent as TooltipContentPrimitive,
+    TooltipTrigger,
+} from "./ui/tooltip";
 
 export interface TooltipProps {
     disabled?: boolean;
     side?: "top" | "bottom" | "left" | "right";
     children: React.ReactNode;
     content: React.ReactNode;
-    contentProps?: Omit<React.ComponentProps<typeof TooltipContent>, 'children'>;
-    triggerProps?: Omit<React.ComponentProps<typeof TooltipTrigger>, 'children'>;
+    contentProps?: Omit<
+        React.ComponentProps<typeof TooltipContent>,
+        "children"
+    >;
+    triggerProps?: Omit<
+        React.ComponentProps<typeof TooltipTrigger>,
+        "children"
+    >;
 }
 
-
-
-function TooltipContent({ children, className, ...props }: React.ComponentProps<typeof TooltipContentPrimitive>) {
+function TooltipContent({
+    children,
+    className,
+    ...props
+}: React.ComponentProps<typeof TooltipContentPrimitive>) {
     return (
-        <TooltipContentPrimitive className="max-w-56 shadow-md bg-card text-foreground border-border border text-xs" {...props}>
+        <TooltipContentPrimitive
+            className="max-w-56 shadow-md bg-card text-foreground border-border border text-xs"
+            {...props}
+        >
             {children}
         </TooltipContentPrimitive>
     );
 }
 
-function Tooltip({ children, content, contentProps, triggerProps, disabled, side }: TooltipProps) {
+function Tooltip({
+    children,
+    content,
+    contentProps,
+    triggerProps,
+    disabled,
+    side,
+}: TooltipProps) {
     const { className, ...contentPropsRest } = contentProps || {};
+    const isTouchDevice = useMediaQuery("(hover: none)");
+
     if (disabled) {
         return children;
     }
+
+    if (isTouchDevice) {
+        return (
+            <Popover>
+                <PopoverTrigger asChild>{children}</PopoverTrigger>
+                <PopoverContent
+                    side={side}
+                    className={cn(
+                        "w-auto max-w-56 p-2 text-xs bg-card text-foreground border-border border shadow-md",
+                        className,
+                    )}
+                >
+                    {content}
+                </PopoverContent>
+            </Popover>
+        );
+    }
+
     return (
         <TooltipPrimitive disableHoverableContent={disabled}>
             <TooltipTrigger type="button" asChild {...triggerProps}>
                 {children}
             </TooltipTrigger>
-            <TooltipContent side={side} {...contentPropsRest} className={cn("shadow-md", className)}>
+            <TooltipContent
+                side={side}
+                {...contentPropsRest}
+                className={cn("shadow-md", className)}
+            >
                 {content}
             </TooltipContent>
         </TooltipPrimitive>
