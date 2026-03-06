@@ -16,6 +16,40 @@ use super::token_discovery::{fetch_fastnear_ft_tokens, snapshot_intents_tokens};
 use super::transfer_hints::TransferHintService;
 use super::transfer_hints::neardata::NeardataClient;
 
+/// Compute the effective block floor for gap-filling lookback.
+///
+/// Returns the higher of:
+/// - The account's `CreateAccount` block from `balance_changes`
+/// - The `maintenance_block_floor` column from `monitored_accounts`
+///
+/// Used by both `run_maintenance_cycle` and `fill_account_gaps`.
+async fn get_effective_block_floor(
+    pool: &PgPool,
+    account_id: &str,
+) -> Result<Option<i64>, sqlx::Error> {
+    let creation_block: Option<i64> = sqlx::query_scalar(
+        "SELECT block_height FROM balance_changes \
+         WHERE account_id = $1 AND action_kind = 'CreateAccount' AND token_id = 'near' \
+         ORDER BY block_height ASC LIMIT 1",
+    )
+    .bind(account_id)
+    .fetch_optional(pool)
+    .await?;
+
+    let maintenance_floor: Option<i64> = sqlx::query_scalar(
+        "SELECT maintenance_block_floor FROM monitored_accounts WHERE account_id = $1",
+    )
+    .bind(account_id)
+    .fetch_optional(pool)
+    .await?
+    .flatten();
+
+    Ok(match (creation_block, maintenance_floor) {
+        (Some(c), Some(m)) => Some(c.max(m)),
+        (c, m) => c.or(m),
+    })
+}
+
 /// Run one maintenance cycle for dirty accounts only.
 ///
 /// This replaces the previous `run_monitor_cycle` (which processed ALL enabled accounts
@@ -142,38 +176,13 @@ pub async fn run_maintenance_cycle(
             _ => {}
         }
 
-        // 4. Determine account creation block (floor for all lookback searches)
-        let creation_block: Option<i64> = sqlx::query_scalar(
-            "SELECT block_height FROM balance_changes \
-             WHERE account_id = $1 AND action_kind = 'CreateAccount' AND token_id = 'near' \
-             ORDER BY block_height ASC LIMIT 1",
-        )
-        .bind(account_id)
-        .fetch_optional(pool)
-        .await?;
-
-        // Query maintenance_block_floor (hard stop for how far back maintenance scans)
-        let maintenance_floor: Option<i64> = sqlx::query_scalar(
-            "SELECT maintenance_block_floor FROM monitored_accounts WHERE account_id = $1",
-        )
-        .bind(account_id)
-        .fetch_optional(pool)
-        .await?
-        .flatten();
-
-        // Use the higher of creation_block and maintenance_block_floor as effective floor
-        let effective_floor = match (creation_block, maintenance_floor) {
-            (Some(c), Some(m)) => Some(c.max(m)),
-            (c, m) => c.or(m),
-        };
-
+        // 4. Determine effective block floor (creation block ∨ maintenance_block_floor)
+        let effective_floor = get_effective_block_floor(pool, account_id).await?;
         if let Some(block) = effective_floor {
             log::debug!(
-                "[maintenance] {}: Effective block floor: {} (creation={:?}, maintenance={:?})",
+                "[maintenance] {}: Effective block floor: {}",
                 account_id,
                 block,
-                creation_block,
-                maintenance_floor,
             );
         }
 
@@ -709,28 +718,7 @@ pub async fn fill_account_gaps(
     hint_service: Option<&TransferHintService>,
     neardata: Option<&NeardataClient>,
 ) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-    // Query creation_block and maintenance_block_floor for effective floor
-    let creation_block: Option<i64> = sqlx::query_scalar(
-        "SELECT block_height FROM balance_changes \
-         WHERE account_id = $1 AND action_kind = 'CreateAccount' AND token_id = 'near' \
-         ORDER BY block_height ASC LIMIT 1",
-    )
-    .bind(account_id)
-    .fetch_optional(pool)
-    .await?;
-
-    let maintenance_floor: Option<i64> = sqlx::query_scalar(
-        "SELECT maintenance_block_floor FROM monitored_accounts WHERE account_id = $1",
-    )
-    .bind(account_id)
-    .fetch_optional(pool)
-    .await?
-    .flatten();
-
-    let effective_floor = match (creation_block, maintenance_floor) {
-        (Some(c), Some(m)) => Some(c.max(m)),
-        (c, m) => c.or(m),
-    };
+    let effective_floor = get_effective_block_floor(pool, account_id).await?;
 
     let mut tokens: Vec<String> = sqlx::query_scalar(
         r#"

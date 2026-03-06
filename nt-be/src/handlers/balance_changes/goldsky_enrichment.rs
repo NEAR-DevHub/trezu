@@ -1078,4 +1078,84 @@ mod tests {
         );
         assert_eq!(burn_events[0].counterparty, "intents.near");
     }
+
+    // -----------------------------------------------------------------------
+    // Real on-chain log data tests
+    // Verified against webassemblymusic-treasury.sputnik-dao.near transactions
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn test_real_nep141_ft_transfer_incoming_arizcredits() {
+        // Block 187700484, tx 9usX85qKp3fY9cav1X7i8WrmTZ8K9r4qEAvDGLWi8iNK
+        // petersalomonsen.near sends 0.2 arizcredits to DAO
+        let logs = r#"EVENT_JSON:{"standard":"nep141","version":"1.0.0","event":"ft_transfer","data":[{"old_owner_id":"petersalomonsen.near","new_owner_id":"webassemblymusic-treasury.sputnik-dao.near","amount":"200000"}]}"#;
+        let events = parse_log_events(logs, "arizcredits.near");
+        assert_eq!(events.len(), 1);
+        assert_eq!(
+            events[0].account_id,
+            "webassemblymusic-treasury.sputnik-dao.near"
+        );
+        assert_eq!(events[0].token_id, "arizcredits.near");
+        assert_eq!(events[0].counterparty, "petersalomonsen.near");
+        assert_eq!(events[0].action_kind.as_deref(), Some("TRANSFER"));
+    }
+
+    #[test]
+    fn test_real_nep141_ft_transfer_outgoing_usdc() {
+        // Block 188373079, tx 9EehtCBSY4a2szcqFHRoQ1LUUrQkBwJQHiu7m2gmQyEd
+        // DAO sends 1.2 USDC to petersalomonsen.near
+        let logs = r#"EVENT_JSON:{"standard":"nep141","version":"1.0.0","event":"ft_transfer","data":[{"old_owner_id":"webassemblymusic-treasury.sputnik-dao.near","new_owner_id":"petersalomonsen.near","amount":"1200000","memo":"* Title: Payment Request"}]}"#;
+        let events = parse_log_events(
+            logs,
+            "17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+        );
+        assert_eq!(events.len(), 1);
+        assert_eq!(
+            events[0].account_id,
+            "webassemblymusic-treasury.sputnik-dao.near"
+        );
+        assert_eq!(
+            events[0].token_id,
+            "17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1"
+        );
+        assert_eq!(events[0].counterparty, "petersalomonsen.near");
+        assert_eq!(events[0].action_kind.as_deref(), Some("TRANSFER"));
+    }
+
+    #[test]
+    fn test_real_wrap_near_plain_text_incoming() {
+        // Block 187693308, tx 2JfropCvbKY879mi35p4SfV8UYYEXt6HaK1y8q6KruTS
+        // petersalomonsen.near wraps 0.35 NEAR and sends to DAO
+        let logs = "Transfer 350000000000000000000000 from petersalomonsen.near to webassemblymusic-treasury.sputnik-dao.near";
+        let events = parse_log_events(logs, "wrap.near");
+        assert_eq!(events.len(), 1);
+        assert_eq!(
+            events[0].account_id,
+            "webassemblymusic-treasury.sputnik-dao.near"
+        );
+        assert_eq!(events[0].token_id, "wrap.near");
+        assert_eq!(events[0].counterparty, "petersalomonsen.near");
+        assert_eq!(events[0].action_kind.as_deref(), Some("TRANSFER"));
+    }
+
+    #[test]
+    fn test_real_nep245_mt_burn_intents_usdc() {
+        // Block 188102395, tx 9noKHxN7Rj7tNhZVfZZbCRu1ZiWSq8cqDr9RAwX1TL7U
+        // DAO burns 10 USDC via intents swap (from webassemblymusic fixtures)
+        let logs = r#"EVENT_JSON:{"standard":"nep245","version":"1.0.0","event":"mt_burn","data":[{"owner_id":"webassemblymusic-treasury.sputnik-dao.near","token_ids":["nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1"],"amounts":["10000000"],"memo":"withdraw"}]}"#;
+        let events = parse_log_events(logs, "intents.near");
+        assert_eq!(events.len(), 1);
+        assert_eq!(
+            events[0].account_id,
+            "webassemblymusic-treasury.sputnik-dao.near"
+        );
+        assert_eq!(
+            events[0].token_id,
+            "intents.near:nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1"
+        );
+        // Counterparty for mt_burn is the executor (intents.near), since the DAO
+        // is burning tokens held on the intents contract
+        assert_eq!(events[0].counterparty, "intents.near");
+        assert_eq!(events[0].action_kind.as_deref(), Some("BURN"));
+    }
 }

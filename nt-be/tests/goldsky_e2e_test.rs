@@ -307,17 +307,15 @@ async fn test_goldsky_webassemblymusic(pool: PgPool) {
     // outgoing 0.1 NEAR transfer. petersalomonsen.near receives it one block later
     // (188102402). Path C sets counterparty from the Goldsky receiver_id which is
     // petersalomonsen.near — verified correct via RPC balance queries.
-    if let Some(r5) = find(188_102_401, "near") {
-        assert!(
-            r5.amount.starts_with("-0.09"),
-            "Expected amount ~-0.0999, got {}",
-            r5.amount
-        );
-        assert_eq!(r5.counterparty.as_deref(), Some("petersalomonsen.near"));
-        println!("Record 5 OK: block=188102401 NEAR {}", r5.amount);
-    } else {
-        println!("Record 5 SKIPPED: block=188102401 NEAR (needs Path C outcome to resolve)");
-    }
+    let r5 = find(188_102_401, "near")
+        .expect("Missing: block 188102401 NEAR (on_proposal_callback Transfer to petersalomonsen)");
+    assert!(
+        r5.amount.starts_with("-0.09"),
+        "Expected amount ~-0.0999, got {}",
+        r5.amount
+    );
+    assert_eq!(r5.counterparty.as_deref(), Some("petersalomonsen.near"));
+    println!("Record 5 OK: block=188102401 NEAR {}", r5.amount);
 
     println!("\nExpected production records verified (enrichment-only).");
 }
