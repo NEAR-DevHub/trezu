@@ -143,15 +143,15 @@ impl NeardataClient {
                         });
 
                         // Also populate transactions from tx_hash if not already present
-                        if let Some(tx_hash) = &reo.tx_hash {
-                            if !transactions.iter().any(|t| t.hash == *tx_hash) {
-                                transactions.push(AccountTransaction {
-                                    hash: tx_hash.clone(),
-                                    signer_id: String::new(),
-                                    receiver_id: String::new(),
-                                    receipt_ids: vec![eo.id.clone()],
-                                });
-                            }
+                        if let Some(tx_hash) = &reo.tx_hash
+                            && !transactions.iter().any(|t| t.hash == *tx_hash)
+                        {
+                            transactions.push(AccountTransaction {
+                                hash: tx_hash.clone(),
+                                signer_id: String::new(),
+                                receiver_id: String::new(),
+                                receipt_ids: vec![eo.id.clone()],
+                            });
                         }
                     }
                 }
@@ -479,18 +479,34 @@ mod tests {
 
         // Action receipt present → counterparty = predecessor_id
         assert_eq!(result.receipts.len(), 1);
-        assert_eq!(result.receipts[0].receipt_id, "ENGjBrJUYWUKDfPKQZ1xCPX2AXax8F9m9sPA7nCj9TXK");
+        assert_eq!(
+            result.receipts[0].receipt_id,
+            "ENGjBrJUYWUKDfPKQZ1xCPX2AXax8F9m9sPA7nCj9TXK"
+        );
         assert_eq!(result.receipts[0].predecessor_id, "petersalomonsen.near");
         assert_eq!(result.receipts[0].action_kind.as_deref(), Some("TRANSFER"));
         assert_eq!(result.receipts[0].signer_id, "petersalomonsen.near");
-        assert_eq!(result.receipts[0].deposit.as_deref(), Some("432000000000000000000000"));
+        assert_eq!(
+            result.receipts[0].deposit.as_deref(),
+            Some("432000000000000000000000")
+        );
 
         // Execution outcome: no logs, no children
-        assert!(result.execution_outcomes.iter().all(|eo| eo.logs.is_empty()));
-        let eo = result.execution_outcomes.iter()
+        assert!(
+            result
+                .execution_outcomes
+                .iter()
+                .all(|eo| eo.logs.is_empty())
+        );
+        let eo = result
+            .execution_outcomes
+            .iter()
             .find(|eo| eo.receipt_id == "ENGjBrJUYWUKDfPKQZ1xCPX2AXax8F9m9sPA7nCj9TXK")
             .expect("Missing execution outcome for receipt");
-        assert_eq!(eo.tx_hash.as_deref(), Some("E2qj16xcmCcN9uFpxwBYkSLUxpYZ4yoSr4T9a7iRyds7"));
+        assert_eq!(
+            eo.tx_hash.as_deref(),
+            Some("E2qj16xcmCcN9uFpxwBYkSLUxpYZ4yoSr4T9a7iRyds7")
+        );
     }
 
     /// Block 188102293: FunctionCall (add_proposal) from petersalomonsen.near → DAO.
@@ -504,8 +520,14 @@ mod tests {
 
         assert_eq!(result.receipts.len(), 1);
         assert_eq!(result.receipts[0].predecessor_id, "petersalomonsen.near");
-        assert_eq!(result.receipts[0].action_kind.as_deref(), Some("FUNCTION_CALL"));
-        assert_eq!(result.receipts[0].method_name.as_deref(), Some("add_proposal"));
+        assert_eq!(
+            result.receipts[0].action_kind.as_deref(),
+            Some("FUNCTION_CALL")
+        );
+        assert_eq!(
+            result.receipts[0].method_name.as_deref(),
+            Some("add_proposal")
+        );
         // signer_id is the tx-level signer (sponsor), not the predecessor
         assert_eq!(result.receipts[0].signer_id, "sponsor.trezu.near");
     }
@@ -522,16 +544,27 @@ mod tests {
 
         assert_eq!(result.receipts.len(), 1);
         assert_eq!(result.receipts[0].predecessor_id, "petersalomonsen.near");
-        assert_eq!(result.receipts[0].action_kind.as_deref(), Some("FUNCTION_CALL"));
-        assert_eq!(result.receipts[0].method_name.as_deref(), Some("act_proposal"));
+        assert_eq!(
+            result.receipts[0].action_kind.as_deref(),
+            Some("FUNCTION_CALL")
+        );
+        assert_eq!(
+            result.receipts[0].method_name.as_deref(),
+            Some("act_proposal")
+        );
 
         assert!(!result.execution_outcomes.is_empty());
-        let eo = result.execution_outcomes.iter()
+        let eo = result
+            .execution_outcomes
+            .iter()
             .find(|eo| eo.receipt_id == "CuLGcwGqeRUS4Vt1SzgUV75prcjzZKXUfo5itdoysFqq")
             .expect("Missing execution outcome");
         // 3 child receipts: intents call, on_proposal_callback, sponsor refund
         assert_eq!(eo.receipt_ids.len(), 3);
-        assert_eq!(eo.tx_hash.as_deref(), Some("9noKHxN7Rj7tNhZVfZZbCRu1ZiWSq8cqDr9RAwX1TL7U"));
+        assert_eq!(
+            eo.tx_hash.as_deref(),
+            Some("9noKHxN7Rj7tNhZVfZZbCRu1ZiWSq8cqDr9RAwX1TL7U")
+        );
     }
 
     /// Block 188102398: mt_burn on intents.near — logs mention DAO as owner_id.
@@ -564,7 +597,9 @@ mod tests {
             .await
             .unwrap();
 
-        let eo = result.execution_outcomes.iter()
+        let eo = result
+            .execution_outcomes
+            .iter()
             .find(|eo| eo.receipt_id == "4rpZjD77YaeE1fvNuPe9vjane4uaX7bBmQm1BYHoBWmP")
             .expect("Missing mt_burn execution outcome");
         assert_eq!(eo.logs.len(), 1);
@@ -584,19 +619,32 @@ mod tests {
             .unwrap();
 
         // Data receipt filtered out (no Action body) → receipts is empty
-        assert!(result.receipts.is_empty(), "Data receipts should be filtered out");
+        assert!(
+            result.receipts.is_empty(),
+            "Data receipts should be filtered out"
+        );
 
         // Execution outcome present with tx_hash for tx_status fallback
-        let eo = result.execution_outcomes.iter()
+        let eo = result
+            .execution_outcomes
+            .iter()
             .find(|eo| eo.receipt_id == "5chj6XaVkHNy4s6o1eae9HFBE6XrhJ8BsrBzXUKbybKt")
             .expect("Missing execution outcome for on_proposal_callback");
-        assert_eq!(eo.tx_hash.as_deref(), Some("9noKHxN7Rj7tNhZVfZZbCRu1ZiWSq8cqDr9RAwX1TL7U"));
+        assert_eq!(
+            eo.tx_hash.as_deref(),
+            Some("9noKHxN7Rj7tNhZVfZZbCRu1ZiWSq8cqDr9RAwX1TL7U")
+        );
         // Child receipts: Transfer to petersalomonsen.near + system refund to sponsor
         assert_eq!(eo.receipt_ids.len(), 2);
         assert!(eo.logs.is_empty());
 
         // tx_hash should be in transactions too
-        assert!(result.transactions.iter().any(|t| t.hash == "9noKHxN7Rj7tNhZVfZZbCRu1ZiWSq8cqDr9RAwX1TL7U"));
+        assert!(
+            result
+                .transactions
+                .iter()
+                .any(|t| t.hash == "9noKHxN7Rj7tNhZVfZZbCRu1ZiWSq8cqDr9RAwX1TL7U")
+        );
     }
 
     // ── Counterparty resolution tests ───────────────────────────────────────
@@ -613,7 +661,10 @@ mod tests {
         account_id: &str,
     ) -> (String, Option<String>, Option<String>) {
         let nd = neardata_client();
-        let data = nd.fetch_account_block_data(block_height, account_id).await.unwrap();
+        let data = nd
+            .fetch_account_block_data(block_height, account_id)
+            .await
+            .unwrap();
 
         if let Some(receipt) = data.receipts.first() {
             // Action receipt: counterparty = predecessor_id
@@ -624,27 +675,30 @@ mod tests {
             )
         } else if let Some(eo) = data.execution_outcomes.first() {
             // Data receipt callback: use tx_status to get tx.receiver_id
-            let tx_hash = eo.tx_hash.as_ref().expect("execution outcome should have tx_hash");
+            let tx_hash = eo
+                .tx_hash
+                .as_ref()
+                .expect("execution outcome should have tx_hash");
 
             dotenvy::dotenv().ok();
-            let api_key = std::env::var("FASTNEAR_API_KEY")
-                .expect("FASTNEAR_API_KEY must be set");
+            let api_key = std::env::var("FASTNEAR_API_KEY").expect("FASTNEAR_API_KEY must be set");
             let network = near_api::NetworkConfig {
                 rpc_endpoints: vec![
                     near_api::RPCEndpoint::new(
-                        "https://archival-rpc.mainnet.fastnear.com/".parse().unwrap(),
+                        "https://archival-rpc.mainnet.fastnear.com/"
+                            .parse()
+                            .unwrap(),
                     )
                     .with_api_key(api_key),
                 ],
                 ..near_api::NetworkConfig::mainnet()
             };
 
-            let tx_response =
-                crate::handlers::balance_changes::block_info::get_transaction(
-                    &network, tx_hash, account_id,
-                )
-                .await
-                .unwrap();
+            let tx_response = crate::handlers::balance_changes::block_info::get_transaction(
+                &network, tx_hash, account_id,
+            )
+            .await
+            .unwrap();
 
             let tx = match tx_response.final_execution_outcome.as_ref().unwrap() {
                 near_primitives::views::FinalExecutionOutcomeViewEnum::FinalExecutionOutcome(o) => {
@@ -657,7 +711,10 @@ mod tests {
             // Path C: tx.receiver_id is the economic counterparty
             (tx.receiver_id.to_string(), None, None)
         } else {
-            panic!("No receipts or execution outcomes for {} at block {}", account_id, block_height);
+            panic!(
+                "No receipts or execution outcomes for {} at block {}",
+                account_id, block_height
+            );
         }
     }
 
