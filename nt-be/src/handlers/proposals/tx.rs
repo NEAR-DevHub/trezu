@@ -314,8 +314,6 @@ pub async fn search_receipt(
             }
             let data = response.json().await;
 
-            println!("data: {:?}", data);
-
             let data: NearBlocksReceiptSearchResponse = data.map_err(|e| {
                 log::error!("Failed to parse NearBlocks receipt search response: {}", e);
                 (

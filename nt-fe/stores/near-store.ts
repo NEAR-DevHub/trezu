@@ -41,6 +41,7 @@ import {
     isWebBleSupported,
 } from "@/src/ledger-wallet/near-ledger";
 import { APP_WALLET_SETUP_URL } from "@/constants/config";
+import { trackEvent } from "@/lib/analytics";
 
 /**
  * Ensures sandboxed iframes get bluetooth permission for Ledger Nano X BLE.
@@ -129,9 +130,7 @@ interface NearStore {
         params: SignDelegateActionsParams,
         storageBytes: Big,
     ) => Promise<boolean>;
-    createProposal: (
-        params: CreateProposalParams,
-    ) => Promise<void>;
+    createProposal: (params: CreateProposalParams) => Promise<void>;
     voteProposals: (treasuryId: string, votes: Vote[]) => Promise<void>;
 }
 
@@ -362,6 +361,10 @@ export const useNearStore = create<NearStore>((set, get) => ({
                     },
                 });
             }
+            trackEvent("new-wallet-connected", {
+                source: "terms-accepted",
+                account_id: get().walletAccountId ?? undefined,
+            });
         } catch (error) {
             console.error("Failed to accept terms:", error);
             throw error;
@@ -452,9 +455,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
         return true;
     },
 
-    createProposal: async (
-        params: CreateProposalParams,
-    ) => {
+    createProposal: async (params: CreateProposalParams) => {
         const state = get();
         if (!isFullyAuthenticated(state)) {
             toast.error("Please connect wallet and accept terms to continue.");
@@ -661,12 +662,12 @@ export const useNear = () => {
         const toastAction =
             votes.length === 1 && votes[0].vote !== "Remove"
                 ? {
-                    label: "View Request",
-                    onClick: () =>
-                        window.open(
-                            `/${treasuryId}/requests/${votes[0].proposalId}`,
-                        ),
-                }
+                      label: "View Request",
+                      onClick: () =>
+                          window.open(
+                              `/${treasuryId}/requests/${votes[0].proposalId}`,
+                          ),
+                  }
                 : undefined;
         const text =
             votes.length === 1 && votes[0].vote === "Remove"
@@ -682,9 +683,7 @@ export const useNear = () => {
                     "!bg-transparent !text-foreground hover:!bg-muted !border-0",
                 ),
                 title: cn(
-                    toastAction
-                        ? "!border-r !border-r-border !pr-4"
-                        : "!pr-0",
+                    toastAction ? "!border-r !border-r-border !pr-4" : "!pr-0",
                 ),
             },
         });
