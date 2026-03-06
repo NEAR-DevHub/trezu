@@ -22,18 +22,18 @@ export function formatCurrency(value: number | Big) {
 /**
  * Format token amount with optimal precision based on USD value
  * Shows enough decimals to represent $0.01 equivalent accurately (truncated, never rounded up)
- * 
+ *
  * @param bigIntAmount - Token amount in smallest unit as string (e.g., "30517641175187890330" for 30.517 ETH with 18 decimals)
  * @param tokenDecimals - Number of decimals for the token (e.g., 18 for ETH, 8 for BTC)
  * @param tokenPrice - USD price per token (e.g., 60000 for BTC)
  * @returns Formatted string with thousand separators and optimal decimals
- * 
+ *
  * @example
  * // BTC @ $60,000:
  * formatTokenAmount("50000000", 8, 60000)    // "0.5" ($30,000)
  * formatTokenAmount("250000", 8, 60000)      // "0.0025" ($150)
  * formatTokenAmount("3333", 8, 60000)        // "0.00003333" ($2)
- * 
+ *
  * // ETH @ $3,000:
  * formatTokenAmount("10000000000000000000", 18, 3000)  // "10" ($30,000)
  * formatTokenAmount("50000000000000000", 18, 3000)     // "0.05" ($150)
@@ -41,7 +41,7 @@ export function formatCurrency(value: number | Big) {
 export function formatTokenAmount(
     bigIntAmount: string,
     tokenDecimals: number,
-    tokenPrice: number
+    tokenPrice: number,
 ): string {
     // Step 1: Convert to Big decimal number
     const divisor = Big(10).pow(tokenDecimals);
@@ -54,7 +54,8 @@ export function formatTokenAmount(
 
     // Step 3: Calculate decimals needed: ceil(-log10(requiredTokenPrecision))
     // Using: -log10(x) = -ln(x) / ln(10)
-    const log10Value = Math.log(Number(requiredTokenPrecision.toString())) / Math.log(10);
+    const log10Value =
+        Math.log(Number(requiredTokenPrecision.toString())) / Math.log(10);
     const decimalsNeeded = Math.max(0, Math.ceil(-log10Value));
 
     // Cap at token's native decimals (e.g., 18 for ETH, 8 for BTC)
@@ -63,18 +64,71 @@ export function formatTokenAmount(
     // Step 4: Format with calculated decimals (truncate, don't round up)
     // We must never show more tokens than the user will actually receive
     const multiplier = Big(10).pow(finalDecimals);
-    const truncated = tokenAmount.mul(multiplier).round(0, Big.roundDown).div(multiplier);
+    const truncated = tokenAmount
+        .mul(multiplier)
+        .round(0, Big.roundDown)
+        .div(multiplier);
     let formatted = truncated.toFixed(finalDecimals);
 
     // Remove trailing zeros
-    formatted = formatted.replace(/\.?0+$/, '');
+    formatted = formatted.replace(/\.?0+$/, "");
 
     // Add thousand separators
-    const parts = formatted.split('.');
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    formatted = parts.join('.');
+    const parts = formatted.split(".");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    formatted = parts.join(".");
 
     return formatted;
+}
+
+/**
+ * Format a proposal status-based date with relative time.
+ * - Future dates (pending/expiring): "in X minutes/hours/days/months"
+ * - Past dates (executed/rejected/etc): "X minutes/hours/days/months ago"
+ * - After 6 months threshold: absolute date "Mar 12, 2026"
+ *
+ * @param date - The relevant date for the status (expiration, execution, etc.)
+ * @param isFuture - Whether the date is in the future (for pending expiry)
+ * @returns Formatted string
+ */
+export function formatProposalStatusDate(
+    date: Date,
+    isFuture: boolean,
+): string {
+    const now = new Date();
+    const SIX_MONTHS_MS = 6 * 30 * 24 * 60 * 60 * 1000;
+
+    const diffMs = isFuture
+        ? date.getTime() - now.getTime()
+        : now.getTime() - date.getTime();
+
+    // If beyond 6 months, show absolute date
+    if (diffMs > SIX_MONTHS_MS) {
+        return format(date, "MMM d, yyyy");
+    }
+
+    const diffInSeconds = Math.floor(diffMs / 1000);
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    const diffInDays = Math.floor(diffInHours / 24);
+    const diffInMonths = Math.floor(diffInDays / 30);
+
+    let relative: string;
+
+    if (diffInMonths >= 1) {
+        relative = diffInMonths === 1 ? "1 month" : `${diffInMonths} months`;
+    } else if (diffInDays >= 1) {
+        relative = diffInDays === 1 ? "1 day" : `${diffInDays} days`;
+    } else if (diffInHours >= 1) {
+        relative = diffInHours === 1 ? "1 hour" : `${diffInHours} hours`;
+    } else if (diffInMinutes >= 1) {
+        relative =
+            diffInMinutes === 1 ? "1 minute" : `${diffInMinutes} minutes`;
+    } else {
+        relative = "moments";
+    }
+
+    return isFuture ? `in ${relative}` : `${relative} ago`;
 }
 
 /**
@@ -82,9 +136,14 @@ export function formatTokenAmount(
  * After 1 week, returns static date format (e.g., "Feb 18, 2026")
  */
 export function formatRelativeTime(date: Date | string | number): string {
-    const dateObj = typeof date === "string" || typeof date === "number" ? new Date(date) : date;
+    const dateObj =
+        typeof date === "string" || typeof date === "number"
+            ? new Date(date)
+            : date;
     const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - dateObj.getTime()) / 1000);
+    const diffInSeconds = Math.floor(
+        (now.getTime() - dateObj.getTime()) / 1000,
+    );
     const diffInMinutes = Math.floor(diffInSeconds / 60);
     const diffInHours = Math.floor(diffInMinutes / 60);
     const diffInDays = Math.floor(diffInHours / 24);
@@ -97,7 +156,9 @@ export function formatRelativeTime(date: Date | string | number): string {
 
     // Minutes ago (1-59 minutes)
     if (diffInMinutes < 60) {
-        return diffInMinutes === 1 ? "1 minute ago" : `${diffInMinutes} minutes ago`;
+        return diffInMinutes === 1
+            ? "1 minute ago"
+            : `${diffInMinutes} minutes ago`;
     }
 
     // Hours ago (1-23 hours)
@@ -275,42 +336,44 @@ export function formatNearAmount(
  * Format a number with smart precision and thousand separators
  * - For numbers >= 1: shows up to 4 decimals
  * - For numbers < 1: shows up to 8 significant figures
- * 
+ *
  * @param value - The value to format (number, string, or Big)
  * @returns Formatted string with smart precision and thousand separators
- * 
+ *
  * @example
  * formatSmartAmount(1234.5678) => "1,234.5678"
  * formatSmartAmount(0.000123456) => "0.00012346"
  * formatSmartAmount(0.00000000012) => "0.00000000012"
  */
 export function formatSmartAmount(value: number | string | Big): string {
-    const num = typeof value === 'number' || typeof value === 'string'
-        ? parseFloat(value.toString())
-        : parseFloat(value.toString());
+    const num =
+        typeof value === "number" || typeof value === "string"
+            ? parseFloat(value.toString())
+            : parseFloat(value.toString());
 
     // Handle zero
     if (num === 0) return "0";
 
     const absNum = Math.abs(num);
-    const absBig = typeof value === 'object' && 'toFixed' in value
-        ? value.abs()
-        : Big(absNum.toString());
+    const absBig =
+        typeof value === "object" && "toFixed" in value
+            ? value.abs()
+            : Big(absNum.toString());
 
     let formatted: string;
 
     // For numbers >= 1, show up to 4 decimals
     if (absNum >= 1) {
-        formatted = absBig.toFixed(4).replace(/\.?0+$/, '');
+        formatted = absBig.toFixed(4).replace(/\.?0+$/, "");
     } else {
         // For small numbers, find first significant digit and show up to 8 significant figures
         const str = absNum.toExponential();
-        const [, exponent] = str.split('e');
+        const [, exponent] = str.split("e");
         const exp = Math.abs(parseInt(exponent));
 
         // Show enough decimals to display ~6-8 significant figures
         const decimalPlaces = Math.min(exp + 6, 18);
-        formatted = absBig.toFixed(decimalPlaces).replace(/\.?0+$/, '');
+        formatted = absBig.toFixed(decimalPlaces).replace(/\.?0+$/, "");
     }
 
     // Add thousands separator using locale formatting
@@ -323,13 +386,11 @@ export function formatSmartAmount(value: number | string | Big): string {
  * Format an activity amount with sign (+/-) for display in transaction lists
  * Uses smart precision: 4 decimals for amounts >= 1, up to 8 significant figures for smaller amounts
  * NOTE: Expects amount to already be in human-readable format (e.g., "0.000123" NEAR, not yoctoNEAR)
- * 
+ *
  * @param amount - The amount in human-readable format (positive for received, negative for sent)
  * @returns Formatted amount with sign and smart precision, e.g., "+1,234.5678" or "-0.000123"
  */
-export function formatActivityAmount(
-    amount: string,
-): string {
+export function formatActivityAmount(amount: string): string {
     const num = parseFloat(amount);
 
     // Handle zero

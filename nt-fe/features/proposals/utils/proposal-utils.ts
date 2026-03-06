@@ -289,6 +289,63 @@ export function getProposalStatus(
 }
 
 /**
+ * Returns the status-relevant date for a proposal and metadata for display.
+ * - Pending: expiration date (future)
+ * - All others (Executed, Rejected, Failed, Expired, Removed, Moved): submission_time (past)
+ *
+ * Returns { date, isFuture, label } where label is the status verb prefix for non-pending.
+ */
+export function getProposalStatusDateInfo(
+    proposal: Proposal,
+    policy: Policy,
+): { date: Date; isFuture: boolean; label: string } {
+    const submissionTime = parseInt(proposal.submission_time);
+    const uiStatus = getProposalStatus(proposal, policy);
+
+    if (uiStatus === "Pending") {
+        // Expiry = submission_time + proposal_period (nanoseconds → ms)
+        const proposalPeriod = parseInt(policy.proposal_period);
+        // For exchange proposals, use the shorter 24h expiry
+        const proposalType = getProposalUIKind(proposal);
+        const expiryNs =
+            proposalType === "Exchange"
+                ? submissionTime + EXCHANGE_EXPIRY_NS
+                : submissionTime + proposalPeriod;
+        const expiryDate = new Date(expiryNs / 1_000_000);
+        return { date: expiryDate, isFuture: true, label: "Expires" };
+    }
+
+    // For all resolved statuses, use submission_time as a fallback since
+    // the API doesn't provide a separate execution timestamp.
+    const submissionDate = new Date(submissionTime / 1_000_000);
+
+    switch (uiStatus) {
+        case "Executed":
+            return { date: submissionDate, isFuture: false, label: "Created" };
+        case "Rejected":
+            return { date: submissionDate, isFuture: false, label: "Created" };
+        case "Failed":
+            return { date: submissionDate, isFuture: false, label: "Created" };
+        case "Expired": {
+            // Exchange proposals expire after 24h, others after proposal_period
+            const proposalType = getProposalUIKind(proposal);
+            const expiredDate =
+                proposalType === "Exchange"
+                    ? new Date(submissionTime / 1_000_000 + EXCHANGE_EXPIRY_MS)
+                    : new Date(
+                          (submissionTime + parseInt(policy.proposal_period)) /
+                              1_000_000,
+                      );
+            return { date: expiredDate, isFuture: false, label: "Expired" };
+        }
+        case "Removed":
+            return { date: submissionDate, isFuture: false, label: "Removed" };
+        default:
+            return { date: submissionDate, isFuture: false, label: "" };
+    }
+}
+
+/**
  * Helper to extract token ID and amount required for a proposal
  */
 export function getProposalRequiredFunds(
