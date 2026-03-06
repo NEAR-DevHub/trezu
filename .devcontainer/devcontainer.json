@@ -46,10 +46,8 @@
     "storage": "64gb"
   },
   "postCreateCommand": "bash .devcontainer/post-create.sh",
-  "postStartCommand": "bash .devcontainer/post-start.sh",
   "remoteUser": "vscode",
   "containerEnv": {
-    "DATABASE_URL": "postgresql://treasury_test:test_password@localhost:5433/treasury_test_db",
     "RUST_LOG": "info"
   }
 }

@@ -50,6 +50,5 @@ fi
 echo "=== Post-Create Setup Complete ==="
 echo ""
 echo "Next steps:"
-echo "1. Run: bash .devcontainer/post-start.sh  (starts database)"
-echo "2. Run: cd nt-be && cargo test  (run tests)"
-echo "3. Run: claude  (start Claude Code agent)"
+echo "1. Run: cd nt-be && cargo test  (run tests)"
+echo "2. Run: claude  (start Claude Code agent)"
