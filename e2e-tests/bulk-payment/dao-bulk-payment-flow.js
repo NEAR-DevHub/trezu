@@ -443,17 +443,25 @@ async function getLastProposalId(account, daoAccountId) {
  */
 async function approveProposal(account, daoAccountId, proposalId) {
   console.log(`\n✅ Approving proposal ${proposalId}`);
-  
+
+  // Fetch the proposal to get its kind (required by act_proposal in sputnik-dao v3)
+  const proposalData = await account.viewFunction({
+    contractId: daoAccountId,
+    methodName: 'get_proposal',
+    args: { id: proposalId },
+  });
+
   await account.functionCall({
     contractId: daoAccountId,
     methodName: 'act_proposal',
     args: {
       id: proposalId,
       action: 'VoteApprove',
+      proposal: proposalData.kind,
     },
     gas: '300000000000000',
   });
-  
+
   console.log(`✅ Proposal ${proposalId} approved`);
 }
 
