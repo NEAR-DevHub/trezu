@@ -114,12 +114,12 @@ async fn api_filtered_count(pool: &PgPool, account_id: &str) -> i64 {
 
 /// Tests enrichment for webassemblymusic-treasury.sputnik-dao.near.
 ///
-/// Uses 45 Neon outcomes from blocks 188101232–188487545 and verifies that the
+/// Uses 46 Neon outcomes from blocks 188101232–188492987 and verifies that the
 /// pipeline produces correct balance change records.
 ///
 /// Covers: direct transfers, sponsor relay (Delegate meta-tx), act_proposal
 /// execution, USDC ft_transfer, intents swap (mt_burn/mt_transfer), wrap.near
-/// deposit, and a failed wrap.near execution.
+/// deposit, a failed wrap.near execution, and intents mt_mint (NEAR deposit).
 #[sqlx::test]
 async fn test_goldsky_webassemblymusic(pool: PgPool) {
     common::load_test_env();
@@ -143,7 +143,7 @@ async fn test_goldsky_webassemblymusic(pool: PgPool) {
         .fetch_one(&pool)
         .await
         .unwrap();
-    assert_eq!(fixture_count.0, 45, "Expected 45 fixture rows loaded");
+    assert_eq!(fixture_count.0, 46, "Expected 46 fixture rows loaded");
     println!(
         "Loaded {} fixture rows into indexed_dao_outcomes",
         fixture_count.0
@@ -347,6 +347,25 @@ async fn test_goldsky_webassemblymusic(pool: PgPool) {
     );
     assert_eq!(r5.counterparty.as_deref(), Some("petersalomonsen.near"));
     println!("Record 5 OK: block=188102401 NEAR {}", r5.amount);
+
+    // --- Record 6: block ~188492987, intents.near:nep141:wrap.near +1 NEAR (mt_mint deposit) ---
+    // Path A: mt_mint log event from intents.near with owner_id = DAO
+    // The DAO receives 1 NEAR (1000000000000000000000000 yoctoNEAR) as intents wrap.near token.
+    let intents_wrap_near = "intents.near:nep141:wrap.near";
+    let r6 = records
+        .iter()
+        .find(|r| r.token_id == intents_wrap_near)
+        .expect("Missing: intents.near:nep141:wrap.near (mt_mint NEAR deposit)");
+    assert_eq!(r6.counterparty.as_deref(), Some("intents.near"));
+    assert!(
+        r6.amount.starts_with("1"),
+        "Expected ~1 NEAR (intents wrap.near), got {}",
+        r6.amount
+    );
+    println!(
+        "Record 6 OK: block={} intents wrap.near {} (mt_mint)",
+        r6.block_height, r6.amount
+    );
 
     // -----------------------------------------------------------------------
     // 6. Verify action_kind, method_name, and proposal id from tx_status actions

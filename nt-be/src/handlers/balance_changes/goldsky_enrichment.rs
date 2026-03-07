@@ -275,7 +275,7 @@ fn parse_nep141_event(event: &EventJson, executor_id: &str) -> Vec<ParsedEvent> 
     events
 }
 
-/// Parse NEP-245 mt_transfer / mt_burn events (intents).
+/// Parse NEP-245 mt_transfer / mt_mint / mt_burn events (intents).
 fn parse_nep245_event(event: &EventJson, executor_id: &str) -> Vec<ParsedEvent> {
     let mut events = Vec::new();
 
@@ -313,6 +313,32 @@ fn parse_nep245_event(event: &EventJson, executor_id: &str) -> Vec<ParsedEvent> 
                                     forward_scan: false,
                                 });
                             }
+                        }
+                    }
+                }
+            }
+        }
+        "mt_mint" => {
+            // mt_mint: tokens minted to the DAO (e.g. intents deposit).
+            // Use forward_scan because the balance change may lag by 1-3 blocks.
+            for datum in &event.data {
+                let owner = datum.get("owner_id").and_then(|v| v.as_str());
+                let token_ids = datum.get("token_ids").and_then(|v| v.as_array());
+
+                if let (Some(owner), Some(token_ids)) = (owner, token_ids)
+                    && owner.contains("sputnik-dao.near")
+                {
+                    for token_value in token_ids {
+                        if let Some(token_id_str) = token_value.as_str() {
+                            let full_token_id = format!("{}:{}", executor_id, token_id_str);
+                            events.push(ParsedEvent {
+                                account_id: owner.to_string(),
+                                token_id: full_token_id,
+                                counterparty: executor_id.to_string(),
+                                action_kind: Some("MINT".to_string()),
+                                method_name: None,
+                                forward_scan: true,
+                            });
                         }
                     }
                 }
@@ -968,15 +994,31 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_nep245_mt_mint() {
+        let logs = r#"EVENT_JSON:{"standard":"nep245","version":"1.0.0","event":"mt_mint","data":[{"owner_id":"webassemblymusic.sputnik-dao.near","token_ids":["nep141:wrap.near"],"amounts":["5000000000000000000000000"]}]}"#;
+        let events = parse_log_events(logs, "intents.near");
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].account_id, "webassemblymusic.sputnik-dao.near");
+        assert_eq!(events[0].token_id, "intents.near:nep141:wrap.near");
+        assert_eq!(events[0].counterparty, "intents.near");
+        assert_eq!(events[0].action_kind.as_deref(), Some("MINT"));
+        assert!(events[0].forward_scan);
+    }
+
+    #[test]
     fn test_parse_literal_backslash_n_separator() {
         // Goldsky stores log separators as literal "\n" (backslash + n), not real newlines
         let logs = r#"EVENT_JSON:{"standard":"nep245","version":"1.0.0","event":"mt_mint","data":[{"owner_id":"hot-dao.sputnik-dao.near","token_ids":["137_abc"],"amounts":["142"]}]}\nEVENT_JSON:{"standard":"nep245","version":"1.0.0","event":"mt_transfer","data":[{"old_owner_id":"hot-dao.sputnik-dao.near","new_owner_id":"intents.near","token_ids":["137_abc"],"amounts":["142"]}]}"#;
         let events = parse_log_events(logs, "v2_1.omni.hot.tg");
-        // mt_mint is skipped, mt_transfer produces 1 event (old_owner is DAO)
-        assert_eq!(events.len(), 1);
+        // mt_mint produces 1 event (owner is DAO), mt_transfer produces 1 event (old_owner is DAO)
+        assert_eq!(events.len(), 2);
         assert_eq!(events[0].account_id, "hot-dao.sputnik-dao.near");
         assert_eq!(events[0].token_id, "v2_1.omni.hot.tg:137_abc");
-        assert_eq!(events[0].counterparty, "intents.near");
+        assert_eq!(events[0].counterparty, "v2_1.omni.hot.tg");
+        assert_eq!(events[0].action_kind.as_deref(), Some("MINT"));
+        assert_eq!(events[1].account_id, "hot-dao.sputnik-dao.near");
+        assert_eq!(events[1].token_id, "v2_1.omni.hot.tg:137_abc");
+        assert_eq!(events[1].counterparty, "intents.near");
     }
 
     #[test]
