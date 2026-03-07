@@ -12,6 +12,9 @@
 
 use super::balance::get_balance_change_at_block;
 use super::counterparty::ensure_ft_metadata;
+use super::swap_detector::{
+    classify_proposal_swap_deposits, detect_swaps_from_api, store_detected_swaps,
+};
 use super::transfer_hints::tx_resolver::{TxActionInfo, resolve_receipt_block_height};
 use super::utils::block_timestamp_to_datetime;
 use near_api::NetworkConfig;
@@ -478,6 +481,8 @@ pub async fn run_enrichment_cycle(
     neon_pool: &PgPool,
     app_pool: &PgPool,
     network: &NetworkConfig,
+    intents_api_key: Option<&str>,
+    intents_api_url: &str,
 ) -> Result<usize, Box<dyn std::error::Error>> {
     let consumer_name = "balance_enrichment";
     let cursor = get_cursor(app_pool, consumer_name).await?;
@@ -519,6 +524,7 @@ pub async fn run_enrichment_cycle(
 
     let mut last_processed_id = cursor.last_processed_id.clone();
     let mut last_processed_block = cursor.last_processed_block;
+    let mut affected_accounts: std::collections::HashSet<String> = std::collections::HashSet::new();
 
     // Cache resolved (block_height, action_info) per receipt ID to avoid redundant RPC calls
     // if the same outcome appears more than once in a batch.
@@ -675,13 +681,16 @@ pub async fn run_enrichment_cycle(
             )
             .await
             {
-                Ok(_) => log::info!(
-                    "[goldsky-enrichment] Upserted {}/{} at block {} amount={}",
-                    event.account_id,
-                    event.token_id,
-                    actual_block,
-                    amount,
-                ),
+                Ok(_) => {
+                    log::info!(
+                        "[goldsky-enrichment] Upserted {}/{} at block {} amount={}",
+                        event.account_id,
+                        event.token_id,
+                        actual_block,
+                        amount,
+                    );
+                    affected_accounts.insert(event.account_id.clone());
+                }
                 Err(e) => log::error!(
                     "[goldsky-enrichment] Failed to upsert {}/{} at block {}: {}",
                     event.account_id,
@@ -705,6 +714,56 @@ pub async fn run_enrichment_cycle(
         last_processed_block,
     )
     .await?;
+
+    // Run swap detection for accounts that had balance changes upserted
+    for account_id in &affected_accounts {
+        match detect_swaps_from_api(app_pool, account_id, intents_api_key, intents_api_url).await {
+            Ok(swaps) if !swaps.is_empty() => match store_detected_swaps(app_pool, &swaps).await {
+                Ok(inserted) if inserted > 0 => {
+                    log::info!(
+                        "[goldsky-enrichment] Detected and stored {} swaps for {}",
+                        inserted,
+                        account_id
+                    );
+                }
+                Err(e) => {
+                    log::error!(
+                        "[goldsky-enrichment] Error storing swaps for {}: {}",
+                        account_id,
+                        e
+                    );
+                }
+                _ => {}
+            },
+            Err(e) => {
+                log::error!(
+                    "[goldsky-enrichment] Error detecting swaps for {}: {}",
+                    account_id,
+                    e
+                );
+            }
+            _ => {}
+        }
+
+        // Classify DAO proposal-based swap deposits
+        match classify_proposal_swap_deposits(app_pool, network, account_id).await {
+            Ok(count) if count > 0 => {
+                log::info!(
+                    "[goldsky-enrichment] Classified {} proposal swap deposits for {}",
+                    count,
+                    account_id
+                );
+            }
+            Err(e) => {
+                log::warn!(
+                    "[goldsky-enrichment] Error classifying proposal swap deposits for {}: {}",
+                    account_id,
+                    e
+                );
+            }
+            _ => {}
+        }
+    }
 
     log::info!(
         "[goldsky-enrichment] Batch complete: {} outcomes, cursor now at block={}, id={}",

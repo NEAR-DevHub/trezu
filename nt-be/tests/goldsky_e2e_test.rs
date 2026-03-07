@@ -50,6 +50,36 @@ struct ReferenceRecord {
     action_kind: Option<String>,
 }
 
+/// Recent activity response from /api/recent-activity
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RecentActivityResponse {
+    data: Vec<RecentActivityItem>,
+    total: i64,
+}
+
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RecentActivityItem {
+    id: i64,
+    token_id: String,
+    amount: String,
+    swap: Option<SwapInfo>,
+    action_kind: Option<String>,
+    method_name: Option<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SwapInfo {
+    sent_token_id: Option<String>,
+    sent_amount: Option<String>,
+    received_token_id: String,
+    received_amount: String,
+    solver_transaction_hash: String,
+    swap_role: String,
+}
+
 /// Load fixture SQL into indexed_dao_outcomes.
 async fn load_fixtures(pool: &PgPool, fixture_sql: &str) {
     for stmt in fixture_sql.split(';').filter(|s| !s.trim().is_empty()) {
@@ -84,22 +114,12 @@ async fn api_filtered_count(pool: &PgPool, account_id: &str) -> i64 {
 
 /// Tests enrichment for webassemblymusic-treasury.sputnik-dao.near.
 ///
-/// Uses 10 Neon outcomes from 2026-03-04 and verifies that the pipeline produces
-/// the same balance change records as production (api.trezu.app).
+/// Uses 45 Neon outcomes from blocks 188101232–188487545 and verifies that the
+/// pipeline produces correct balance change records.
 ///
-/// Neon outcomes (10 total):
-///   188101232: petersalomonsen.near → DAO (add_proposal with 0.432 NEAR deposit, 2 outcomes)
-///   188102281: sponsor call pair — add_proposal relay (2 outcomes)
-///   188102291: executor_id outcome (act_proposal → petersalomonsen.near, Path C, 1 outcome)
-///   188102389: sponsor call pair — add_proposal relay (2 outcomes)
-///   188102395: executor_id outcomes + intents mt_burn log (Path C + Path A, 3 outcomes)
-///
-/// Expected balance changes (from api.trezu.app production):
-///   188101233: NEAR  +0.4320                    (Transfer from petersalomonsen.near)
-///   188102293: NEAR  +0.0968868677547962        (FunctionCall, cross-contract Path C)
-///   188102397: NEAR  -0.000734839823481300000001 (FunctionCall, intents swap gas)
-///   188102398: intents USDC -10                  (FunctionCall, intents swap)
-///   188102401: NEAR  -0.0999452422423777         (intents.near settlement)
+/// Covers: direct transfers, sponsor relay (Delegate meta-tx), act_proposal
+/// execution, USDC ft_transfer, intents swap (mt_burn/mt_transfer), wrap.near
+/// deposit, and a failed wrap.near execution.
 #[sqlx::test]
 async fn test_goldsky_webassemblymusic(pool: PgPool) {
     common::load_test_env();
@@ -123,7 +143,7 @@ async fn test_goldsky_webassemblymusic(pool: PgPool) {
         .fetch_one(&pool)
         .await
         .unwrap();
-    assert_eq!(fixture_count.0, 10, "Expected 10 fixture rows loaded");
+    assert_eq!(fixture_count.0, 45, "Expected 45 fixture rows loaded");
     println!(
         "Loaded {} fixture rows into indexed_dao_outcomes",
         fixture_count.0
@@ -141,11 +161,19 @@ async fn test_goldsky_webassemblymusic(pool: PgPool) {
     // -----------------------------------------------------------------------
     // 2. Run enrichment cycles until all outcomes are processed
     // -----------------------------------------------------------------------
+    let env_vars = nt_be::utils::env::EnvVars::default();
+    let intents_api_key = env_vars.intents_explorer_api_key.as_deref();
+    let intents_api_url = &env_vars.intents_explorer_api_url;
+
     let enrichment_start = Instant::now();
     let mut total_processed = 0usize;
     loop {
         let processed = nt_be::handlers::balance_changes::goldsky_enrichment::run_enrichment_cycle(
-            &pool, &pool, &network,
+            &pool,
+            &pool,
+            &network,
+            intents_api_key,
+            intents_api_url,
         )
         .await
         .unwrap();
@@ -396,6 +424,105 @@ async fn test_goldsky_webassemblymusic(pool: PgPool) {
     );
 
     println!("\nExpected production records verified (enrichment-only).");
+
+    // -----------------------------------------------------------------------
+    // 7. Verify swap detection via /api/recent-activity
+    //
+    // The enrichment cycle should have detected the intents swap at blocks
+    // 188487531-188487545 (USDC → USDC exchange). The recent-activity API
+    // enriches balance changes with swap info from the detected_swaps table.
+    // -----------------------------------------------------------------------
+    let state2 = Arc::new(common::build_test_state(pool.clone()));
+    let app2 = nt_be::routes::create_routes(state2);
+
+    let request = Request::builder()
+        .uri(format!(
+            "/api/recent-activity?accountId={account_id}&limit=100"
+        ))
+        .body(Body::empty())
+        .unwrap();
+
+    let response = ServiceExt::<Request<Body>>::oneshot(app2, request)
+        .await
+        .unwrap();
+    assert_eq!(response.status(), 200);
+
+    let body = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+        .await
+        .unwrap();
+    let activity: RecentActivityResponse =
+        serde_json::from_slice(&body).expect("Failed to parse recent-activity response");
+
+    println!(
+        "\nRecent activity: {} items (total={})",
+        activity.data.len(),
+        activity.total
+    );
+
+    // Find swap items (items that have swap info)
+    let swap_items: Vec<_> = activity.data.iter().filter(|a| a.swap.is_some()).collect();
+    println!("Swap items found: {}", swap_items.len());
+    for item in &swap_items {
+        let swap = item.swap.as_ref().unwrap();
+        println!(
+            "  token={} amount={} role={} sent={:?}/{:?} recv={}/{}",
+            item.token_id,
+            item.amount,
+            swap.swap_role,
+            swap.sent_token_id,
+            swap.sent_amount,
+            swap.received_token_id,
+            swap.received_amount,
+        );
+    }
+
+    // There should be at least 1 swap detected (the intents USDC exchange)
+    assert!(
+        !swap_items.is_empty(),
+        "Expected at least one swap in recent-activity, but found none"
+    );
+
+    // Find the fulfillment leg of the swap (positive intents token transfer)
+    let fulfillment = swap_items
+        .iter()
+        .find(|a| {
+            a.swap
+                .as_ref()
+                .is_some_and(|s| s.swap_role == "fulfillment")
+        })
+        .expect("Expected a swap fulfillment item in recent-activity");
+    let fulfillment_swap = fulfillment.swap.as_ref().unwrap();
+
+    // Verify swap amounts match production: sent ~20 USDC, received ~19.86 USDC
+    assert_eq!(fulfillment_swap.swap_role, "fulfillment");
+    assert!(
+        fulfillment_swap
+            .sent_amount
+            .as_ref()
+            .is_some_and(|a| a.starts_with("20")),
+        "Expected sent_amount ~20, got {:?}",
+        fulfillment_swap.sent_amount
+    );
+    assert!(
+        fulfillment_swap.received_amount.starts_with("19.85"),
+        "Expected received_amount ~19.85, got {}",
+        fulfillment_swap.received_amount
+    );
+
+    // Find the deposit leg
+    let deposit = swap_items
+        .iter()
+        .find(|a| a.swap.as_ref().is_some_and(|s| s.swap_role == "deposit"));
+    if let Some(deposit_item) = deposit {
+        let deposit_swap = deposit_item.swap.as_ref().unwrap();
+        assert_eq!(deposit_swap.swap_role, "deposit");
+        println!(
+            "\nSwap deposit leg verified: sent={:?} recv={}",
+            deposit_swap.sent_amount, deposit_swap.received_amount
+        );
+    }
+
+    println!("\nSwap detection verified via recent-activity API.");
 }
 
 /// Tests maintenance (gap-filling) for webassemblymusic-treasury.sputnik-dao.near.

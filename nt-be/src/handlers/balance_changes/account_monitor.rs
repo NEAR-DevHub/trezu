@@ -50,16 +50,11 @@ async fn get_effective_block_floor(
     })
 }
 
-/// Run one maintenance cycle for dirty accounts only.
+/// Run one maintenance cycle for all enabled monitored accounts.
 ///
-/// This replaces the previous `run_monitor_cycle` (which processed ALL enabled accounts
-/// every 30s) and the dirty monitor (which polled every 5s). Instead, a single 5-minute
-/// worker handles dirty accounts: token discovery, gap filling, tx resolution, swap
-/// detection, and staking rewards.
-///
-/// Accounts are marked dirty when:
-/// - A user opens a treasury in the UI
-/// - The Goldsky enrichment worker detects balance chain gaps
+/// Handles: token discovery, gap filling, tx resolution, swap detection,
+/// and staking rewards. Accounts marked dirty are prioritised (processed
+/// first) and have their dirty flag cleared after processing.
 ///
 /// # Arguments
 /// * `pool` - Database connection pool
@@ -80,33 +75,29 @@ pub async fn run_maintenance_cycle(
     intents_api_url: &str,
     neardata: Option<&NeardataClient>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    // Only process accounts marked dirty
-    let dirty_accounts: Vec<(String, DateTime<Utc>)> = sqlx::query_as(
+    // Process all enabled accounts; dirty accounts first
+    let accounts: Vec<(String, Option<DateTime<Utc>>)> = sqlx::query_as(
         r#"
         SELECT account_id, dirty_at
         FROM monitored_accounts
-        WHERE dirty_at IS NOT NULL AND enabled = true
-        ORDER BY dirty_at ASC
+        WHERE enabled = true
+        ORDER BY dirty_at DESC NULLS LAST
         "#,
     )
     .fetch_all(pool)
     .await?;
 
-    if dirty_accounts.is_empty() {
+    if accounts.is_empty() {
         return Ok(());
     }
 
     log::info!(
-        "[maintenance] Processing {} dirty accounts",
-        dirty_accounts.len()
+        "[maintenance] Processing {} enabled accounts",
+        accounts.len()
     );
 
-    for (account_id, original_dirty_at) in &dirty_accounts {
-        log::info!(
-            "[maintenance] Processing {} (dirty_at: {})",
-            account_id,
-            original_dirty_at
-        );
+    for (account_id, original_dirty_at) in &accounts {
+        log::info!("[maintenance] Processing {}", account_id);
 
         // 1. Discover new FT tokens via FastNear
         if let Some((http_client, api_key)) = fastnear {
@@ -371,30 +362,32 @@ pub async fn run_maintenance_cycle(
         }
 
         // 11. Conditional clear: only clear dirty_at if it hasn't changed since we started
-        let result = sqlx::query(
-            "UPDATE monitored_accounts SET dirty_at = NULL WHERE account_id = $1 AND dirty_at = $2",
-        )
-        .bind(account_id)
-        .bind(original_dirty_at)
-        .execute(pool)
-        .await;
+        if let Some(dirty_at) = original_dirty_at {
+            let result = sqlx::query(
+                "UPDATE monitored_accounts SET dirty_at = NULL WHERE account_id = $1 AND dirty_at = $2",
+            )
+            .bind(account_id)
+            .bind(dirty_at)
+            .execute(pool)
+            .await;
 
-        match result {
-            Ok(r) if r.rows_affected() > 0 => {
-                log::info!("[maintenance] {} dirty flag cleared", account_id);
-            }
-            Ok(_) => {
-                log::info!(
-                    "[maintenance] {} dirty flag was re-set during processing, leaving for next cycle",
-                    account_id
-                );
-            }
-            Err(e) => {
-                log::error!(
-                    "[maintenance] {}: Error clearing dirty flag: {}",
-                    account_id,
-                    e
-                );
+            match result {
+                Ok(r) if r.rows_affected() > 0 => {
+                    log::info!("[maintenance] {} dirty flag cleared", account_id);
+                }
+                Ok(_) => {
+                    log::info!(
+                        "[maintenance] {} dirty flag was re-set during processing, leaving for next cycle",
+                        account_id
+                    );
+                }
+                Err(e) => {
+                    log::error!(
+                        "[maintenance] {}: Error clearing dirty flag: {}",
+                        account_id,
+                        e
+                    );
+                }
             }
         }
     }

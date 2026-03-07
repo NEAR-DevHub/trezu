@@ -152,6 +152,8 @@ async fn main() {
         let neon_pool = neon_pool.clone();
         let app_pool = state.db_pool.clone();
         let network = state.archival_network.clone();
+        let intents_api_key = state.env_vars.intents_explorer_api_key.clone();
+        let intents_api_url = state.env_vars.intents_explorer_api_url.clone();
         tokio::spawn(async move {
             use nt_be::handlers::balance_changes::goldsky_enrichment::run_enrichment_cycle;
 
@@ -175,7 +177,15 @@ async fn main() {
 
             loop {
                 let should_sleep = {
-                    match run_enrichment_cycle(&neon_pool, &app_pool, &network).await {
+                    match run_enrichment_cycle(
+                        &neon_pool,
+                        &app_pool,
+                        &network,
+                        intents_api_key.as_deref(),
+                        &intents_api_url,
+                    )
+                    .await
+                    {
                         Ok(processed) => {
                             if processed > 0 {
                                 log::info!(
