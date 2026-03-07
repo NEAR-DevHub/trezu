@@ -14,6 +14,7 @@ mod common;
 
 use axum::body::Body;
 use axum::http::Request;
+use base64::Engine;
 use nt_be::handlers::balance_changes::transfer_hints::neardata::NeardataClient;
 use sqlx::PgPool;
 use std::sync::Arc;
@@ -34,6 +35,7 @@ struct BalanceChangeRecord {
     receiver_id: Option<String>,
     action_kind: Option<String>,
     method_name: Option<String>,
+    actions: Option<serde_json::Value>,
     transaction_hashes: Vec<String>,
 }
 
@@ -317,6 +319,81 @@ async fn test_goldsky_webassemblymusic(pool: PgPool) {
     );
     assert_eq!(r5.counterparty.as_deref(), Some("petersalomonsen.near"));
     println!("Record 5 OK: block=188102401 NEAR {}", r5.amount);
+
+    // -----------------------------------------------------------------------
+    // 6. Verify action_kind, method_name, and proposal id from tx_status actions
+    //
+    // The act_proposal records (blocks 188102397-188102401, tx 9noKHxN...) should
+    // have action_kind=FUNCTION_CALL, method_name=act_proposal, and the actions
+    // array should contain the FunctionCall with decodable args including the
+    // proposal id. The add_proposal record (block 188102293) should likewise have
+    // action_kind=FUNCTION_CALL and method_name=add_proposal.
+    // -----------------------------------------------------------------------
+
+    // Record at block 188102401: act_proposal via sponsor Delegate meta-transaction
+    let r5 =
+        find(188_102_401, "near").expect("Missing record at block 188102401 for action assertions");
+    assert_eq!(r5.action_kind.as_deref(), Some("FUNCTION_CALL"));
+    assert_eq!(r5.method_name.as_deref(), Some("act_proposal"));
+
+    // Extract proposal id from the FunctionCall args in the actions array.
+    // For meta-transactions, the FunctionCall is inside the Delegate.
+    let actions = r5.actions.as_ref().expect("actions should be present");
+    let actions_arr = actions.as_array().expect("actions should be an array");
+
+    let func_call = actions_arr
+        .iter()
+        .find_map(|a| a.get("FunctionCall"))
+        .or_else(|| {
+            actions_arr.iter().find_map(|a| {
+                a.get("Delegate")?
+                    .get("delegate_action")?
+                    .get("actions")?
+                    .as_array()?
+                    .iter()
+                    .find_map(|inner| inner.get("FunctionCall"))
+            })
+        })
+        .expect("actions should contain a FunctionCall");
+
+    assert_eq!(
+        func_call.get("method_name").and_then(|v| v.as_str()),
+        Some("act_proposal"),
+    );
+
+    let args_b64 = func_call
+        .get("args")
+        .and_then(|v| v.as_str())
+        .expect("FunctionCall should have args");
+    let args_bytes = base64::engine::general_purpose::STANDARD
+        .decode(args_b64)
+        .expect("args should be valid base64");
+    let args: serde_json::Value =
+        serde_json::from_slice(&args_bytes).expect("args should be valid JSON");
+    let proposal_id = args
+        .get("id")
+        .and_then(|v| v.as_u64())
+        .expect("act_proposal args should contain proposal 'id'");
+    assert_eq!(proposal_id, 56, "Expected proposal id 56");
+    println!(
+        "\nProposal id extracted from act_proposal actions: {}",
+        proposal_id
+    );
+
+    // Record at block 188102293: add_proposal via sponsor Delegate
+    let r2 =
+        find(188_102_293, "near").expect("Missing record at block 188102293 for action assertions");
+    assert_eq!(r2.action_kind.as_deref(), Some("FUNCTION_CALL"));
+    assert_eq!(r2.method_name.as_deref(), Some("add_proposal"));
+
+    // Record at block 188101233: direct Transfer (not Delegate)
+    let r1 =
+        find(188_101_233, "near").expect("Missing record at block 188101233 for action assertions");
+    assert_eq!(r1.action_kind.as_deref(), Some("TRANSFER"));
+    assert!(
+        r1.method_name.is_none(),
+        "Transfer should not have method_name"
+    );
 
     println!("\nExpected production records verified (enrichment-only).");
 }

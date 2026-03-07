@@ -12,7 +12,7 @@
 
 use super::balance::get_balance_change_at_block;
 use super::counterparty::ensure_ft_metadata;
-use super::transfer_hints::tx_resolver::resolve_receipt_block_height;
+use super::transfer_hints::tx_resolver::{TxActionInfo, resolve_receipt_block_height};
 use super::utils::block_timestamp_to_datetime;
 use near_api::NetworkConfig;
 use serde::Deserialize;
@@ -407,6 +407,8 @@ async fn upsert_balance_change(
     receiver_id: Option<&str>,
     counterparty: &str,
     action_kind: Option<&str>,
+    method_name: Option<&str>,
+    actions: &serde_json::Value,
 ) -> Result<(), Box<dyn std::error::Error>> {
     sqlx::query!(
         r#"
@@ -441,10 +443,10 @@ async fn upsert_balance_change(
         signer_id,
         receiver_id,
         counterparty,
-        serde_json::json!({"source": "goldsky"}),
+        actions,
         serde_json::json!({}),
         action_kind,
-        None::<String>, // method_name — not extracted yet
+        method_name,
     )
     .execute(app_pool)
     .await?;
@@ -518,10 +520,12 @@ pub async fn run_enrichment_cycle(
     let mut last_processed_id = cursor.last_processed_id.clone();
     let mut last_processed_block = cursor.last_processed_block;
 
-    // Cache resolved block heights per receipt ID to avoid redundant RPC calls
+    // Cache resolved (block_height, action_info) per receipt ID to avoid redundant RPC calls
     // if the same outcome appears more than once in a batch.
-    let mut receipt_block_cache: std::collections::HashMap<String, Option<u64>> =
-        std::collections::HashMap::new();
+    let mut receipt_block_cache: std::collections::HashMap<
+        String,
+        (Option<u64>, Option<TxActionInfo>),
+    > = std::collections::HashMap::new();
 
     for outcome in &outcomes {
         let events = parse_outcome_events(outcome);
@@ -538,14 +542,17 @@ pub async fn run_enrichment_cycle(
         let block_time = block_timestamp_to_datetime(block_timestamp_nanos);
         let block_height = outcome.trigger_block_height as u64;
 
-        // Resolve the exact block height for this receipt using tx_status.
+        // Resolve the exact block height and transaction action data using tx_status.
         // The Goldsky outcome ID is the receipt ID — look it up directly in the
         // tx's receipts_outcome to get the block where this receipt executed.
-        let receipt_block: Option<u64> = if let (Some(tx_hash), Some(signer)) =
+        let (receipt_block, tx_action_info): (Option<u64>, Option<TxActionInfo>) = if let (
+            Some(tx_hash),
+            Some(signer),
+        ) =
             (&outcome.transaction_hash, &outcome.signer_id)
         {
             if let Some(cached) = receipt_block_cache.get(&outcome.id) {
-                *cached
+                cached.clone()
             } else {
                 let resolved = match resolve_receipt_block_height(
                     network,
@@ -555,14 +562,14 @@ pub async fn run_enrichment_cycle(
                 )
                 .await
                 {
-                    Ok(block) => {
+                    Ok((block, action_info)) => {
                         log::debug!(
                             "[goldsky-enrichment] receipt {} → block {:?} (trigger was {})",
                             outcome.id,
                             block,
                             block_height,
                         );
-                        block
+                        (block, action_info)
                     }
                     Err(e) => {
                         log::warn!(
@@ -570,14 +577,14 @@ pub async fn run_enrichment_cycle(
                             outcome.id,
                             e,
                         );
-                        None
+                        (None, None)
                     }
                 };
-                receipt_block_cache.insert(outcome.id.clone(), resolved);
+                receipt_block_cache.insert(outcome.id.clone(), resolved.clone());
                 resolved
             }
         } else {
-            None
+            (None, None)
         };
 
         for event in &events {
@@ -634,6 +641,20 @@ pub async fn run_enrichment_cycle(
                 .map(|h| vec![h.clone()])
                 .unwrap_or_default();
 
+            // Prefer action_kind / method_name from tx_status, fall back to parsed event
+            let effective_action_kind = tx_action_info
+                .as_ref()
+                .and_then(|info| info.action_kind.as_deref())
+                .or(event.action_kind.as_deref());
+            let effective_method_name = tx_action_info
+                .as_ref()
+                .and_then(|info| info.method_name.as_deref());
+            let effective_actions = tx_action_info
+                .as_ref()
+                .map(|info| &info.actions)
+                .cloned()
+                .unwrap_or(serde_json::json!({"source": "goldsky"}));
+
             match upsert_balance_change(
                 app_pool,
                 &event.account_id,
@@ -648,7 +669,9 @@ pub async fn run_enrichment_cycle(
                 outcome.signer_id.as_deref(),
                 outcome.receiver_id.as_deref(),
                 &event.counterparty,
-                event.action_kind.as_deref(),
+                effective_action_kind,
+                effective_method_name,
+                &effective_actions,
             )
             .await
             {
@@ -667,7 +690,6 @@ pub async fn run_enrichment_cycle(
                     e
                 ),
             }
-
         }
 
         // Advance cursor after each outcome (even if some events failed)

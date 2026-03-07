@@ -30,6 +30,95 @@ use near_primitives::types::{BlockId, BlockReference};
 use near_primitives::views::FinalExecutionOutcomeViewEnum;
 use std::error::Error;
 
+/// Transaction action metadata extracted from tx_status for storage in balance_changes.
+#[derive(Debug, Clone)]
+pub struct TxActionInfo {
+    /// The first FunctionCall's method_name, if any
+    pub method_name: Option<String>,
+    /// High-level action kind string derived from the transaction's first action
+    pub action_kind: Option<String>,
+    /// Full serialized actions from the transaction (ActionView is Serialize)
+    pub actions: serde_json::Value,
+}
+
+/// Extract action info from a `FinalExecutionOutcomeView`.
+///
+/// For meta-transactions (Delegate), looks inside the delegate's inner actions
+/// to find the actual FunctionCall method_name and action_kind.
+fn extract_tx_action_info(
+    outcome: &near_primitives::views::FinalExecutionOutcomeView,
+) -> TxActionInfo {
+    use near_primitives::views::ActionView;
+
+    let actions = &outcome.transaction.actions;
+
+    // Look for FunctionCall in top-level actions first, then inside Delegate
+    let method_name = actions
+        .iter()
+        .find_map(|a| match a {
+            ActionView::FunctionCall { method_name, .. } => Some(method_name.clone()),
+            _ => None,
+        })
+        .or_else(|| {
+            // Check inside Delegate actions (meta-transactions)
+            actions.iter().find_map(|a| match a {
+                ActionView::Delegate {
+                    delegate_action, ..
+                } => delegate_action.actions.iter().find_map(|inner| {
+                    // NonDelegateAction wraps Action; check if it's FunctionCall
+                    let action: near_primitives::action::Action = inner.clone().into();
+                    match action {
+                        near_primitives::action::Action::FunctionCall(fc) => Some(fc.method_name),
+                        _ => None,
+                    }
+                }),
+                _ => None,
+            })
+        });
+
+    // Derive action_kind: for Delegate, use the inner action kind
+    let action_kind = actions.first().map(|a| {
+        match a {
+            ActionView::CreateAccount => "CREATE_ACCOUNT",
+            ActionView::DeployContract { .. } => "DEPLOY_CONTRACT",
+            ActionView::FunctionCall { .. } => "FUNCTION_CALL",
+            ActionView::Transfer { .. } => "TRANSFER",
+            ActionView::Stake { .. } => "STAKE",
+            ActionView::AddKey { .. } => "ADD_KEY",
+            ActionView::DeleteKey { .. } => "DELETE_KEY",
+            ActionView::DeleteAccount { .. } => "DELETE_ACCOUNT",
+            ActionView::Delegate {
+                delegate_action, ..
+            } => {
+                // Use the first inner action's kind for meta-transactions
+                delegate_action
+                    .actions
+                    .first()
+                    .map(|inner| {
+                        let action: near_primitives::action::Action = inner.clone().into();
+                        match action {
+                            near_primitives::action::Action::FunctionCall(_) => "FUNCTION_CALL",
+                            near_primitives::action::Action::Transfer(_) => "TRANSFER",
+                            near_primitives::action::Action::CreateAccount(_) => "CREATE_ACCOUNT",
+                            _ => "DELEGATE",
+                        }
+                    })
+                    .unwrap_or("DELEGATE")
+            }
+            _ => "UNKNOWN",
+        }
+        .to_string()
+    });
+
+    let actions_json = serde_json::to_value(actions).unwrap_or(serde_json::json!([]));
+
+    TxActionInfo {
+        method_name,
+        action_kind,
+        actions: actions_json,
+    }
+}
+
 /// Result of resolving a transaction to find balance change blocks
 #[derive(Debug, Clone)]
 pub struct ResolvedTransaction {
@@ -205,7 +294,7 @@ pub async fn resolve_receipt_block_height(
     tx_hash: &str,
     sender_account_id: &str,
     receipt_id: &str,
-) -> Result<Option<u64>, Box<dyn Error + Send + Sync>> {
+) -> Result<(Option<u64>, Option<TxActionInfo>), Box<dyn Error + Send + Sync>> {
     let client = create_rpc_client(network)?;
 
     let parsed_tx_hash: near_primitives::hash::CryptoHash = tx_hash.parse()?;
@@ -223,13 +312,15 @@ pub async fn resolve_receipt_block_height(
     })
     .await?;
 
-    let receipts_outcome = match &tx_response.final_execution_outcome {
-        Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcome(outcome)) => {
-            &outcome.receipts_outcome
-        }
-        Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcomeWithReceipt(outcome)) => {
-            &outcome.final_outcome.receipts_outcome
-        }
+    let (receipts_outcome, tx_action_info) = match &tx_response.final_execution_outcome {
+        Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcome(outcome)) => (
+            &outcome.receipts_outcome,
+            Some(extract_tx_action_info(outcome)),
+        ),
+        Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcomeWithReceipt(outcome)) => (
+            &outcome.final_outcome.receipts_outcome,
+            Some(extract_tx_action_info(&outcome.final_outcome)),
+        ),
         None => return Err("No final execution outcome in transaction".into()),
     };
 
@@ -238,7 +329,7 @@ pub async fn resolve_receipt_block_height(
         .find(|ro| ro.id.to_string() == receipt_id)
     {
         Some(ro) => ro.block_hash,
-        None => return Ok(None),
+        None => return Ok((None, tx_action_info)),
     };
 
     let block = with_transport_retry("block_for_receipt", || {
@@ -249,7 +340,7 @@ pub async fn resolve_receipt_block_height(
     })
     .await?;
 
-    Ok(Some(block.header.height))
+    Ok((Some(block.header.height), tx_action_info))
 }
 
 /// Find candidate blocks where a balance change may have occurred using tx_status
