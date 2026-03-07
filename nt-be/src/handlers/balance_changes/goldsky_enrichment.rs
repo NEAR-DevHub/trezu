@@ -551,6 +551,8 @@ pub async fn run_enrichment_cycle(
     let mut last_processed_id = cursor.last_processed_id.clone();
     let mut last_processed_block = cursor.last_processed_block;
     let mut affected_accounts: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut swap_candidate_accounts: std::collections::HashSet<String> =
+        std::collections::HashSet::new();
 
     // Cache resolved (block_height, action_info) per receipt ID to avoid redundant RPC calls
     // if the same outcome appears more than once in a batch.
@@ -716,6 +718,9 @@ pub async fn run_enrichment_cycle(
                         amount,
                     );
                     affected_accounts.insert(event.account_id.clone());
+                    if event.token_id.starts_with("intents.near:") {
+                        swap_candidate_accounts.insert(event.account_id.clone());
+                    }
                 }
                 Err(e) => log::error!(
                     "[goldsky-enrichment] Failed to upsert {}/{} at block {}: {}",
@@ -741,8 +746,22 @@ pub async fn run_enrichment_cycle(
     )
     .await?;
 
-    // Run swap detection for accounts that had balance changes upserted
-    for account_id in &affected_accounts {
+    // Run swap detection only for monitored accounts with intents token events
+    // to avoid unnecessary API calls and rate limiting on non-monitored DAOs
+    // (e.g. fee-recipient DAOs that appear in settlement logs)
+    let monitored: std::collections::HashSet<String> = sqlx::query_scalar::<_, String>(
+        "SELECT account_id FROM monitored_accounts WHERE enabled = true",
+    )
+    .fetch_all(app_pool)
+    .await
+    .unwrap_or_default()
+    .into_iter()
+    .collect();
+    let swap_candidates: Vec<_> = swap_candidate_accounts
+        .iter()
+        .filter(|a| monitored.contains(a.as_str()))
+        .collect();
+    for account_id in &swap_candidates {
         match detect_swaps_from_api(app_pool, account_id, intents_api_key, intents_api_url).await {
             Ok(swaps) if !swaps.is_empty() => match store_detected_swaps(app_pool, &swaps).await {
                 Ok(inserted) if inserted > 0 => {
