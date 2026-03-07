@@ -181,7 +181,7 @@ export default function TokenSelect({
 
         // Helper function to map treasury network to Network object
         const mapTreasuryNetwork = (n: any) => ({
-            id: n.id,
+            id: n.contractId ?? n.id,
             name: n.network,
             chainIcons:
                 n.chainIcons ||
