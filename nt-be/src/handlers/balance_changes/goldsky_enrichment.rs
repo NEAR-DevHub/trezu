@@ -668,65 +668,6 @@ pub async fn run_enrichment_cycle(
                 ),
             }
 
-            // N+1 sponsor refund: sponsor call pairs always produce a Transfer
-            // refund receipt at block N+1 (storage deposit refund). This is a system
-            // receipt from a separate transaction, so tx_status won't find it.
-            if event.token_id == "near"
-                && outcome.signer_id.as_deref() == Some("sponsor.trezu.near")
-                && outcome
-                    .receiver_id
-                    .as_ref()
-                    .is_some_and(|r| r.ends_with(".sputnik-dao.near"))
-            {
-                let refund_block = actual_block + 1;
-                // Map Result to Option to avoid holding non-Send Box<dyn Error> across .await
-                let refund_balances = get_balance_change_at_block(
-                    app_pool,
-                    network,
-                    &event.account_id,
-                    &event.token_id,
-                    refund_block,
-                )
-                .await
-                .map_err(|e| {
-                    log::warn!(
-                        "[goldsky-enrichment] N+1 refund check failed for {} at block {}: {}",
-                        event.account_id,
-                        refund_block,
-                        e,
-                    );
-                })
-                .ok()
-                .filter(|(rb, ra)| rb != ra);
-
-                if let Some((rb, ra)) = refund_balances {
-                    let refund_amount = &ra - &rb;
-                    log::info!(
-                        "[goldsky-enrichment] N+1 sponsor refund: {}/{} at block {} amount={}",
-                        event.account_id,
-                        event.token_id,
-                        refund_block,
-                        refund_amount,
-                    );
-                    let _ = upsert_balance_change(
-                        app_pool,
-                        &event.account_id,
-                        &event.token_id,
-                        refund_block as i64,
-                        block_timestamp_nanos + 1_000_000_000, // ~1s later (approximate)
-                        block_time + chrono::Duration::seconds(1),
-                        &refund_amount,
-                        &rb,
-                        &ra,
-                        &[], // refund receipt has no originating tx hash
-                        Some("sponsor.trezu.near"),
-                        Some(&event.account_id),
-                        "sponsor.trezu.near",
-                        Some("TRANSFER"),
-                    )
-                    .await;
-                }
-            }
         }
 
         // Advance cursor after each outcome (even if some events failed)
