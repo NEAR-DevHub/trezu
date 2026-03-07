@@ -346,6 +346,125 @@ async fn import_contract(
     Ok(())
 }
 
+/// Fetch the DAO contract WASM from the mainnet factory and store it in the sandbox factory.
+/// This is required because the factory now uses global contracts — `create()` calls
+/// `get_default_code_hash()` which panics if no code has been stored.
+async fn store_dao_code_in_factory(
+    network_config: &NetworkConfig,
+    factory_id: &AccountId,
+) -> Result<()> {
+    info!("Fetching default DAO code hash from mainnet factory...");
+    let mainnet_config = NetworkConfig::mainnet();
+    let mainnet_rpc_url = mainnet_config.rpc_endpoints[0].url.as_str();
+    let client = reqwest::Client::new();
+
+    // Get default code hash from mainnet factory
+    let hash_request = serde_json::json!({
+        "jsonrpc": "2.0",
+        "id": "1",
+        "method": "query",
+        "params": {
+            "request_type": "call_function",
+            "finality": "final",
+            "account_id": "sputnik-dao.near",
+            "method_name": "get_default_code_hash",
+            "args_base64": base64::engine::general_purpose::STANDARD.encode(b"{}")
+        }
+    });
+
+    let hash_response: serde_json::Value = client
+        .post(mainnet_rpc_url)
+        .json(&hash_request)
+        .send()
+        .await
+        .context("Failed to fetch code hash from mainnet")?
+        .json()
+        .await?;
+
+    let hash_bytes = hash_response["result"]["result"]
+        .as_array()
+        .context("Failed to get code hash result")?;
+    let hash_str: String = hash_bytes
+        .iter()
+        .map(|b| b.as_u64().unwrap() as u8 as char)
+        .collect();
+    let code_hash: String =
+        serde_json::from_str(&hash_str).context("Failed to parse code hash")?;
+    info!("Mainnet default DAO code hash: {}", code_hash);
+
+    // Fetch DAO WASM from mainnet factory via get_code
+    let code_args =
+        serde_json::json!({"code_hash": code_hash});
+    let code_request = serde_json::json!({
+        "jsonrpc": "2.0",
+        "id": "1",
+        "method": "query",
+        "params": {
+            "request_type": "call_function",
+            "finality": "final",
+            "account_id": "sputnik-dao.near",
+            "method_name": "get_code",
+            "args_base64": base64::engine::general_purpose::STANDARD.encode(
+                serde_json::to_vec(&code_args)?
+            )
+        }
+    });
+
+    let code_response: serde_json::Value = client
+        .post(mainnet_rpc_url)
+        .json(&code_request)
+        .send()
+        .await
+        .context("Failed to fetch DAO code from mainnet")?
+        .json()
+        .await?;
+
+    let dao_wasm: Vec<u8> = code_response["result"]["result"]
+        .as_array()
+        .context("Failed to get DAO code result")?
+        .iter()
+        .map(|b| b.as_u64().unwrap() as u8)
+        .collect();
+    info!("Fetched {} bytes of DAO contract code", dao_wasm.len());
+
+    // Call store() on the sandbox factory with the WASM as raw input
+    // store() reads from env::input() and requires 11x storage deposit
+    let storage_deposit = NearToken::from_near(50);
+    info!(
+        "Storing DAO code in sandbox factory (deposit: {} NEAR)...",
+        storage_deposit.as_near()
+    );
+
+    let store_result = near_api::Contract(factory_id.clone())
+        .call_function_raw("store", dao_wasm)
+        .transaction()
+        .gas(NearGas::from_tgas(300))
+        .deposit(storage_deposit)
+        .with_signer(factory_id.clone(), get_genesis_signer())
+        .send_to(network_config)
+        .await
+        .context("Failed to call store() on factory")?;
+    info!("store() result: {:?}", store_result);
+
+    // Set the default code hash
+    info!("Setting default code hash: {}", code_hash);
+    let _ = near_api::Contract(factory_id.clone())
+        .call_function(
+            "set_default_code_hash",
+            serde_json::json!({"code_hash": code_hash}),
+        )
+        .unwrap()
+        .transaction()
+        .gas(NearGas::from_tgas(50))
+        .with_signer(factory_id.clone(), get_genesis_signer())
+        .send_to(network_config)
+        .await
+        .context("Failed to set default code hash")?;
+
+    info!("Successfully stored DAO code and set default code hash");
+    Ok(())
+}
+
 /// Deploy the bulk payment contract from a WASM file
 async fn deploy_bulk_payment_contract(
     network_config: &NetworkConfig,
@@ -591,6 +710,14 @@ async fn main() -> Result<()> {
             .await
         {
             error!("Failed to initialize sputnik-dao.near: {}", e);
+        }
+
+        // Store DAO contract code in the factory (required for global contracts)
+        // Fetch the DAO WASM from mainnet factory's get_code method
+        if let Err(e) =
+            store_dao_code_in_factory(&network_config, &sputnik_dao_id).await
+        {
+            error!("Failed to store DAO code in factory: {}", e);
         }
 
         // Create and deploy bulk payment contract
