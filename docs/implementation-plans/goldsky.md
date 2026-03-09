@@ -90,18 +90,18 @@ The original plan proposed 3 pipelines (receipts, execution outcomes, transactio
 
 **Files:**
 - `nt-be/src/handlers/balance_changes/goldsky_enrichment.rs` — enrichment worker (parse logs, RPC balance, upsert)
-- `nt-be/src/utils/env.rs` — `NEON_DATABASE_URL` env var
+- `nt-be/src/utils/env.rs` — `GOLDSKY_DATABASE_URL` env var
 - `nt-be/src/app_state.rs` — `neon_pool: Option<PgPool>` (max_connections=5)
 - `nt-be/src/main.rs` — spawns worker (15s interval, gated on `neon_pool.is_some()`)
 - `nt-be/migrations/20260301000001_create_goldsky_cursors.sql` — cursor tracking table
 
 **Behavior:**
-- Fetches 100 outcomes per cycle from Neon, parses logs locally (0 RPC)
+- Fetches 100 outcomes per cycle from Goldsky sink DB, parses logs locally (0 RPC)
 - Filters by `monitored_accounts` before calling RPC (skips unmonitored DAOs)
 - 2 RPC calls per event (balance_before + balance_after) for monitored accounts only
 - Always stores the record (no `balance_before == balance_after` skip — these are known events)
 - Cursor advances per-outcome regardless of individual event failures
-- Graceful degradation: disabled when `NEON_DATABASE_URL` is not set
+- Graceful degradation: disabled when `GOLDSKY_DATABASE_URL` is not set
 
 **Note:** As of Phase 2, the main monitoring service and dirty monitor have been removed. The enrichment worker is the primary event source, with a 5-minute maintenance worker handling dirty accounts only.
 
@@ -489,14 +489,14 @@ Removed the dirty monitor and main monitor, replaced with two independent worker
 - [x] Add Goldsky CLI + Turbo CLI to devcontainer
 - [x] Create pipeline YAML config (`goldsky/pipelines/near-execution-outcomes.yaml`)
 - [x] Create database migration (`nt-be/migrations/20260228000001_create_goldsky_indexed_tables.sql`)
-- [x] Create Goldsky secret (`TREASURY_DB_SECRET`) with Neon Postgres credentials
+- [x] Create Goldsky secret (`TREASURY_DB_SECRET`) with Postgres credentials
 - [x] Deploy pipeline and verify data flowing (~3,765+ rows confirmed)
 
 ### Done: enrichment worker (Phase 1)
-- [x] Add `NEON_DATABASE_URL` to `EnvVars` (`nt-be/src/utils/env.rs`)
+- [x] Add `GOLDSKY_DATABASE_URL` to `EnvVars` (`nt-be/src/utils/env.rs`)
 - [x] Add `neon_pool: Option<PgPool>` to `AppState` with builder support (`nt-be/src/app_state.rs`)
 - [x] Create `goldsky_cursors` migration in app DB (`nt-be/migrations/20260301000001_create_goldsky_cursors.sql`)
-- [x] Implement `goldsky_enrichment.rs` — cursor-based fetch from Neon, parse logs, idempotent write to app DB
+- [x] Implement `goldsky_enrichment.rs` — cursor-based fetch from Goldsky sink DB, parse logs, idempotent write to app DB
 - [x] Implement log parser: NEP-141 EVENT_JSON, NEP-245 mt_transfer, wrap.near plain-text
 - [x] Handle Goldsky literal `\n` log separators (not real newlines)
 - [x] RPC calls only for `balance_before`/`balance_after` (2 per event)

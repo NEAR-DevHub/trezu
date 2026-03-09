@@ -250,11 +250,11 @@ impl TestServer {
         panic!("Server failed to start within timeout");
     }
 
-    /// Start the test server with Goldsky enrichment enabled (NEON_DATABASE_URL set).
+    /// Start the test server with Goldsky enrichment enabled (GOLDSKY_DATABASE_URL set).
     /// Workers use shortened delays for faster test execution:
     /// - Enrichment: 3s initial delay, 5s interval
     /// - Maintenance: 15s initial delay, 30s interval
-    pub async fn start_with_neon(neon_database_url: &str) -> Self {
+    pub async fn start_with_goldsky(goldsky_database_url: &str) -> Self {
         load_test_env();
 
         let db_url =
@@ -269,7 +269,7 @@ impl TestServer {
             .env("PORT", "3001")
             .env("RUST_LOG", "info")
             .env("DATABASE_URL", &db_url)
-            .env("NEON_DATABASE_URL", neon_database_url)
+            .env("GOLDSKY_DATABASE_URL", goldsky_database_url)
             // Tune worker timings for test: enrichment runs first, maintenance after
             .env("ENRICHMENT_INITIAL_DELAY_SECONDS", "3")
             .env("ENRICHMENT_INTERVAL_SECONDS", "10")

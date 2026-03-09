@@ -34,9 +34,9 @@ pub struct AppState {
     /// Optional neardata.xyz client for accelerated block metadata resolution.
     /// Replaces multiple RPC calls with a single HTTP call per block.
     pub neardata_client: Option<NeardataClient>,
-    /// Optional connection pool to Neon Postgres (Goldsky sink database).
+    /// Optional connection pool to Goldsky sink Postgres database.
     /// Used by the enrichment worker to read indexed_dao_outcomes.
-    /// None if NEON_DATABASE_URL is not configured.
+    /// None if GOLDSKY_DATABASE_URL is not configured.
     pub neon_pool: Option<PgPool>,
 }
 
@@ -304,23 +304,23 @@ impl AppStateBuilder {
             None
         };
 
-        // Create Neon pool if URL is configured (Goldsky sink, read-only)
+        // Create Goldsky pool if URL is configured (Goldsky sink, read-only)
         let neon_pool = if let Some(existing) = self.neon_pool {
             Some(existing)
-        } else if let Some(neon_url) = &env_vars.neon_database_url {
+        } else if let Some(goldsky_url) = &env_vars.goldsky_database_url {
             match sqlx::postgres::PgPoolOptions::new()
                 .max_connections(5)
                 .acquire_timeout(Duration::from_secs(5))
-                .connect(neon_url)
+                .connect(goldsky_url)
                 .await
             {
                 Ok(pool) => {
-                    log::info!("Connected to Neon database (Goldsky sink)");
+                    log::info!("Connected to Goldsky sink database");
                     Some(pool)
                 }
                 Err(e) => {
                     log::warn!(
-                        "Failed to connect to Neon database: {} — enrichment worker disabled",
+                        "Failed to connect to Goldsky sink database: {} — enrichment worker disabled",
                         e
                     );
                     None

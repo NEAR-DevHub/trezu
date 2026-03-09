@@ -208,7 +208,7 @@ async fn main() {
             }
         });
     } else {
-        log::info!("Goldsky enrichment worker disabled (NEON_DATABASE_URL not set)");
+        log::info!("Goldsky enrichment worker disabled (GOLDSKY_DATABASE_URL not set)");
     }
 
     // Spawn DAO list sync service (fetches DAOs from sputnik-dao.near every 5 minutes)
