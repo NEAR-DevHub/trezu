@@ -10,16 +10,29 @@ sources:
     start_at: earliest
 
 transforms:
-  # Captures ALL execution outcomes relevant to sputnik-dao treasuries:
-  # - Any outcome whose logs mention a sputnik-dao account (FT/MT transfers,
-  #   wrap.near plain-text logs, intents swaps, etc.)
-  # - Any outcome where receiver_id is a sputnik-dao account
-  #   (native NEAR transfers, function calls, staking, etc.)
-  # - Any outcome where executor_id is a sputnik-dao account
-  #   (add_proposal, act_proposal — executed by the DAO contract in
-  #   cross-contract receipts from sponsor calls)
+  # Dynamic lookup table for non-DAO accounts (e.g. meta-pool-dao-4.near).
+  # Add accounts at runtime via SQL:
+  #   INSERT INTO streamling.tracked_accounts (value) VALUES ('meta-pool-dao-4.near');
+  tracked_accounts:
+    type: dynamic_table
+    backend_type: Postgres
+    backend_entity_name: tracked_accounts
+    secret_name: TREZU_RENDER
+
+  # Captures ALL execution outcomes relevant to monitored treasuries:
+  #
+  # Path 1 (sputnik-dao.near — static wildcards):
+  # - Logs mention a sputnik-dao account (FT/MT transfers, wrap.near, swaps)
+  # - receiver_id or executor_id is a sputnik-dao account
+  #
+  # Path 2 (tracked_accounts dynamic table — non-DAO accounts):
+  # - receiver_id or executor_id matches a tracked account
+  # - Logs mention a tracked account (catches FT/MT transfers, intents, etc.)
   #
   # Note: logs is List(Utf8) at runtime, so use array_to_string() for filtering.
+  # Note: Two regex checks extract the first and second .near accounts
+  # mentioned in logs, covering both old_owner_id and new_owner_id in
+  # NEP-141/245 transfer events.
   dao_outcomes:
     type: sql
     primary_key: id
@@ -41,11 +54,17 @@ transforms:
       WHERE array_to_string(logs, ' ') LIKE '%sputnik-dao.near%'
          OR receiver_id LIKE '%.sputnik-dao.near'
          OR executor_id LIKE '%.sputnik-dao.near'
+         OR dynamic_table_check('tracked_accounts', receiver_id)
+         OR dynamic_table_check('tracked_accounts', executor_id)
+         OR dynamic_table_check('tracked_accounts',
+              regexp_extract(array_to_string(logs, ' '), '([a-z0-9_-]+\\.near)', 1))
+         OR dynamic_table_check('tracked_accounts',
+              regexp_extract(array_to_string(logs, ' '), '[a-z0-9_-]+\\.near.*?([a-z0-9_-]+\\.near)', 1))
 
 sinks:
   postgres:
     type: postgres
     table: indexed_dao_outcomes
     schema: public
-    secret_name: TREASURY_DB_SECRET
+    secret_name: TREZU_RENDER
     from: dao_outcomes
