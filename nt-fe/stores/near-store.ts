@@ -6,7 +6,6 @@ import {
     SignedMessage,
     ConnectorAction,
 } from "@hot-labs/near-connect";
-import manifests from "@hot-labs/near-connect/repository/manifest.json";
 import { Proposal, Vote as ProposalVote } from "@/lib/proposals-api";
 import {
     ProposalPermissionKind,
@@ -15,7 +14,6 @@ import {
 import { toast } from "sonner";
 import Big from "@/lib/big";
 import { useQueryClient } from "@tanstack/react-query";
-import { ledgerWalletManifest } from "@/lib/wallet-manifests";
 import {
     getAuthChallenge,
     authLogin,
@@ -170,7 +168,6 @@ export const useNearStore = create<NearStore>((set, get) => ({
 
         try {
             newConnector = new NearConnector({
-                manifest: manifests as any,
                 network: "mainnet",
                 footerBranding: {
                     icon: "/favicon_dark.svg",
@@ -263,24 +260,6 @@ export const useNearStore = create<NearStore>((set, get) => ({
         );
 
         set({ connector: newConnector });
-
-        // Register Ledger wallet after connector is initialized
-        newConnector.whenManifestLoaded.then(async () => {
-            if (
-                (await isWebHidSupported()) ||
-                (await isWebUsbSupported()) ||
-                (await isWebBleSupported())
-            ) {
-                try {
-                    setupLedgerSandboxBackendBridge();
-                    await newConnector.registerWallet(ledgerWalletManifest);
-                    console.log("Ledger wallet registered successfully");
-                } catch (e) {
-                    console.warn("Failed to register Ledger wallet:", e);
-                }
-            }
-        });
-
         set({ isInitializing: false });
         return newConnector;
     },
