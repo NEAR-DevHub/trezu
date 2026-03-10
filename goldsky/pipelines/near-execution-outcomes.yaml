@@ -30,9 +30,10 @@ transforms:
   # - Logs mention a tracked account (catches FT/MT transfers, intents, etc.)
   #
   # Note: logs is List(Utf8) at runtime, so use array_to_string() for filtering.
-  # Note: Two regex checks extract the first and second .near accounts
-  # mentioned in logs, covering both old_owner_id and new_owner_id in
-  # NEP-141/245 transfer events.
+  # Note: Log-based matching for non-DAO accounts uses hardcoded LIKE
+  # patterns because dynamic_table_check + regexp_extract doesn't work
+  # reliably in Turbo streaming SQL. Add LIKE patterns here when new
+  # non-DAO accounts are added to the tracked_accounts table.
   dao_outcomes:
     type: sql
     primary_key: id
@@ -56,10 +57,7 @@ transforms:
          OR executor_id LIKE '%.sputnik-dao.near'
          OR dynamic_table_check('tracked_accounts', receiver_id)
          OR dynamic_table_check('tracked_accounts', executor_id)
-         OR dynamic_table_check('tracked_accounts',
-              regexp_extract(array_to_string(logs, ' '), '([a-z0-9_-]+\\.near)', 1))
-         OR dynamic_table_check('tracked_accounts',
-              regexp_extract(array_to_string(logs, ' '), '[a-z0-9_-]+\\.near.*?([a-z0-9_-]+\\.near)', 1))
+         OR array_to_string(logs, ' ') LIKE '%meta-pool-dao-4.near%'
 
 sinks:
   postgres:
