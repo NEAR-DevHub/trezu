@@ -232,7 +232,7 @@ async fn main() {
         .allow_headers([header::CONTENT_TYPE, header::ACCEPT]);
 
     let app = Router::new()
-        .merge(nt_be::routes::create_routes(state.clone()))
+        .merge(nt_be::routes::create_routes(state.clone()).layer(cors))
         .merge(
             Router::new()
                 .route(
@@ -241,8 +241,7 @@ async fn main() {
                 )
                 .with_state(state)
                 .layer(open_cors),
-        )
-        .layer(cors);
+        );
 
     let port = std::env::var("PORT").unwrap_or_else(|_| "3002".to_string());
     let addr = format!("0.0.0.0:{}", port);
