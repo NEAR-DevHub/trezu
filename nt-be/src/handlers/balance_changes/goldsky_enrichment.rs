@@ -1,10 +1,10 @@
 //! Goldsky Enrichment Worker
 //!
-//! Reads indexed execution outcomes from the Neon database (Goldsky sink)
+//! Reads indexed execution outcomes from the Goldsky sink database
 //! and writes enriched balance_changes records to the app database.
 //!
 //! Architecture:
-//! - Neon DB (read-only): `indexed_dao_outcomes` populated by Goldsky pipeline
+//! - Goldsky sink DB (read-only): `indexed_dao_outcomes` populated by Goldsky pipeline
 //! - App DB (read-write): `balance_changes` + `goldsky_cursors` for progress tracking
 //!
 //! Idempotent: uses INSERT ... ON CONFLICT DO UPDATE so replays overwrite
@@ -22,7 +22,7 @@ use serde::Deserialize;
 use sqlx::PgPool;
 
 // ---------------------------------------------------------------------------
-// Neon row struct (runtime query — Neon DB is not managed by sqlx migrations)
+// Goldsky sink row struct (runtime query — Goldsky DB is not managed by sqlx migrations)
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, sqlx::FromRow)]
@@ -78,6 +78,7 @@ struct Cursor {
 
 async fn get_cursor(
     app_pool: &PgPool,
+    goldsky_pool: &PgPool,
     consumer_name: &str,
 ) -> Result<Cursor, Box<dyn std::error::Error>> {
     let row = sqlx::query_as::<_, (String, i64)>(
@@ -92,10 +93,33 @@ async fn get_cursor(
             last_processed_id: id,
             last_processed_block: block,
         }),
-        None => Ok(Cursor {
-            last_processed_id: String::new(),
-            last_processed_block: 0,
-        }),
+        None => {
+            // No cursor yet — seed from the latest block in the Goldsky sink so we
+            // don't reprocess the entire history on first deploy.
+            let latest: Option<(String, i64)> = sqlx::query_as(
+                "SELECT id, trigger_block_height FROM indexed_dao_outcomes ORDER BY trigger_block_height DESC, id DESC LIMIT 1",
+            )
+            .fetch_optional(goldsky_pool)
+            .await?;
+
+            match latest {
+                Some((id, block)) => {
+                    log::info!(
+                        "[goldsky-enrichment] No cursor found, seeding from latest block {} in Goldsky sink",
+                        block
+                    );
+                    update_cursor(app_pool, consumer_name, &id, block).await?;
+                    Ok(Cursor {
+                        last_processed_id: id,
+                        last_processed_block: block,
+                    })
+                }
+                None => Ok(Cursor {
+                    last_processed_id: String::new(),
+                    last_processed_block: 0,
+                }),
+            }
+        }
     }
 }
 
@@ -498,26 +522,26 @@ async fn get_monitored_accounts(
     Ok(rows.into_iter().map(|(id,)| id).collect())
 }
 
-/// Run one enrichment cycle: fetch unprocessed outcomes from Neon, enrich with RPC,
+/// Run one enrichment cycle: fetch unprocessed outcomes from Goldsky sink, enrich with RPC,
 /// write to app DB.
 ///
 /// Returns the number of outcomes processed (not the number of balance_changes written,
 /// since one outcome can produce multiple events and some may be skipped).
 pub async fn run_enrichment_cycle(
-    neon_pool: &PgPool,
+    goldsky_pool: &PgPool,
     app_pool: &PgPool,
     network: &NetworkConfig,
     intents_api_key: Option<&str>,
     intents_api_url: &str,
 ) -> Result<usize, Box<dyn std::error::Error>> {
     let consumer_name = "balance_enrichment";
-    let cursor = get_cursor(app_pool, consumer_name).await?;
+    let cursor = get_cursor(app_pool, goldsky_pool, consumer_name).await?;
 
     // Only enrich accounts that are being monitored — avoids wasting RPC calls
     // on unmonitored DAOs (e.g., hot-dao produces thousands of outcomes)
     let monitored = get_monitored_accounts(app_pool).await?;
 
-    // Fetch next batch from Neon (runtime query — Neon is not managed by sqlx migrations)
+    // Fetch next batch from Goldsky sink (runtime query — not managed by sqlx migrations)
     let outcomes: Vec<IndexedDaoOutcome> = sqlx::query_as(
         "SELECT id, executor_id, logs, status, transaction_hash, signer_id, receiver_id,
                 gas_burnt, tokens_burnt, trigger_block_height, trigger_block_hash, trigger_block_timestamp
@@ -529,7 +553,7 @@ pub async fn run_enrichment_cycle(
     )
     .bind(cursor.last_processed_block)
     .bind(&cursor.last_processed_id)
-    .fetch_all(neon_pool)
+    .fetch_all(goldsky_pool)
     .await?;
 
     if outcomes.is_empty() {

@@ -147,9 +147,9 @@ async fn main() {
         });
     }
 
-    // Spawn Goldsky enrichment worker (reads from Neon DB, writes to app DB)
-    if let Some(neon_pool) = &state.neon_pool {
-        let neon_pool = neon_pool.clone();
+    // Spawn Goldsky enrichment worker (reads from Goldsky sink DB, writes to app DB)
+    if let Some(goldsky_pool) = &state.goldsky_pool {
+        let goldsky_pool = goldsky_pool.clone();
         let app_pool = state.db_pool.clone();
         let network = state.archival_network.clone();
         let intents_api_key = state.env_vars.intents_explorer_api_key.clone();
@@ -178,7 +178,7 @@ async fn main() {
             loop {
                 let should_sleep = {
                     match run_enrichment_cycle(
-                        &neon_pool,
+                        &goldsky_pool,
                         &app_pool,
                         &network,
                         intents_api_key.as_deref(),

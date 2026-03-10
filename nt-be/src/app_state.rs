@@ -37,7 +37,7 @@ pub struct AppState {
     /// Optional connection pool to Goldsky sink Postgres database.
     /// Used by the enrichment worker to read indexed_dao_outcomes.
     /// None if GOLDSKY_DATABASE_URL is not configured.
-    pub neon_pool: Option<PgPool>,
+    pub goldsky_pool: Option<PgPool>,
 }
 
 /// Builder for constructing AppState instances
@@ -73,7 +73,7 @@ pub struct AppStateBuilder {
     bulk_payment_contract_id: Option<AccountId>,
     telegram_client: Option<TelegramClient>,
     transfer_hint_service: Option<TransferHintService>,
-    neon_pool: Option<PgPool>,
+    goldsky_pool: Option<PgPool>,
 }
 
 impl AppStateBuilder {
@@ -93,7 +93,7 @@ impl AppStateBuilder {
             bulk_payment_contract_id: None,
             telegram_client: None,
             transfer_hint_service: None,
-            neon_pool: None,
+            goldsky_pool: None,
         }
     }
 
@@ -169,9 +169,9 @@ impl AppStateBuilder {
         self
     }
 
-    /// Set the Neon database pool (Goldsky sink, read-only)
-    pub fn neon_pool(mut self, neon_pool: PgPool) -> Self {
-        self.neon_pool = Some(neon_pool);
+    /// Set the Goldsky database pool (Goldsky sink, read-only)
+    pub fn goldsky_pool(mut self, goldsky_pool: PgPool) -> Self {
+        self.goldsky_pool = Some(goldsky_pool);
         self
     }
 
@@ -305,7 +305,7 @@ impl AppStateBuilder {
         };
 
         // Create Goldsky pool if URL is configured (Goldsky sink, read-only)
-        let neon_pool = if let Some(existing) = self.neon_pool {
+        let goldsky_pool = if let Some(existing) = self.goldsky_pool {
             Some(existing)
         } else if let Some(goldsky_url) = &env_vars.goldsky_database_url {
             match sqlx::postgres::PgPoolOptions::new()
@@ -345,7 +345,7 @@ impl AppStateBuilder {
             bulk_payment_contract_id,
             transfer_hint_service,
             neardata_client,
-            neon_pool,
+            goldsky_pool,
         })
     }
 }
