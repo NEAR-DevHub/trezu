@@ -158,6 +158,16 @@ async fn test_goldsky_webassemblymusic(pool: PgPool) {
     .await
     .unwrap();
 
+    // Pre-seed cursor at block 0 so enrichment processes all fixtures
+    // (without this, get_cursor would seed from the latest fixture block)
+    sqlx::query(
+        "INSERT INTO goldsky_cursors (consumer_name, last_processed_id, last_processed_block, updated_at)
+         VALUES ('balance_enrichment', '', 0, NOW())",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
     // -----------------------------------------------------------------------
     // 2. Run enrichment cycles until all outcomes are processed
     // -----------------------------------------------------------------------
