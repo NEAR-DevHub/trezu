@@ -84,7 +84,7 @@ export function PendingRequestItem({
         <Link href={`/${treasuryId}/requests/${proposal.id}`}>
             <PageCard className="flex relative flex-row gap-3.5 justify-between w-full group">
                 <ProposalTypeIcon proposal={proposal} />
-                <div className="flex flex-col w-full gap-px">
+                <div className="flex flex-col items-start w-full gap-px">
                     <span className="leading-none font-semibold">{type}</span>
                     <TransactionCell proposal={proposal} textOnly />
                     <FormattedDate

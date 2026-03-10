@@ -120,7 +120,10 @@ export function FormattedDate(props: FormattedDateProps) {
     );
 
     return tooltipText ? (
-        <Tooltip content={tooltipText} triggerProps={{ asChild: false }}>
+        <Tooltip
+            content={tooltipText}
+            triggerProps={{ asChild: false, className: "py-px flex" }}
+        >
             {content}
         </Tooltip>
     ) : (
