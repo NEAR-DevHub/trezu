@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useProposals } from "@/hooks/use-proposals";
 import { Proposal } from "@/lib/proposals-api";
 import { useTreasury } from "@/hooks/use-treasury";
+import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
 import { ChevronRight, Check, X, Download, Send } from "lucide-react";
 import Link from "next/link";
 import { ProposalTypeIcon } from "../proposal-type-icon";
@@ -17,15 +18,13 @@ import { getProposalUIKind } from "../../utils/proposal-utils";
 import { useProposalInsufficientBalance } from "../../hooks/use-proposal-insufficient-balance";
 import { VoteModal } from "../vote-modal";
 import { useState } from "react";
-import {
-    getKindFromProposal,
-    ProposalPermissionKind,
-} from "@/lib/config-utils";
 import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 import { DepositModal } from "@/app/(treasury)/[treasuryId]/dashboard/components/deposit-modal";
 import { EmptyState } from "@/components/empty-state";
 import { NotEnoughBalance } from "../not-enough-balance";
+import { FormattedDate } from "@/components/formatted-date";
+import { Policy } from "@/types/policy";
 
 const MAX_DISPLAYED_REQUESTS = 4;
 
@@ -60,6 +59,7 @@ function PendingRequestsSkeleton() {
 
 interface PendingRequestItemProps {
     proposal: Proposal;
+    policy: Policy;
     treasuryId: string;
     onVote: (vote: "Approve" | "Reject") => void;
     onDeposit: (tokenSymbol?: string, tokenNetwork?: string) => void;
@@ -67,6 +67,7 @@ interface PendingRequestItemProps {
 
 export function PendingRequestItem({
     proposal,
+    policy,
     treasuryId,
     onVote,
     onDeposit,
@@ -85,10 +86,12 @@ export function PendingRequestItem({
                 <ProposalTypeIcon proposal={proposal} />
                 <div className="flex flex-col w-full gap-px">
                     <span className="leading-none font-semibold">{type}</span>
-                    <TransactionCell
+                    <TransactionCell proposal={proposal} textOnly />
+                    <FormattedDate
                         proposal={proposal}
-                        withDate={true}
-                        textOnly
+                        policy={policy}
+                        relative
+                        className="text-xs text-muted-foreground"
                     />
                     <div className="gap-3 grid grid-rows-[1fr] sm:grid-rows-[0fr] pt-4 w-full sm:group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-in-out">
                         <div className="overflow-hidden w-full flex flex-col gap-2">
@@ -166,6 +169,7 @@ export function PendingRequestItem({
 export function PendingRequests() {
     const { accountId } = useNear();
     const { treasuryId } = useTreasury();
+    const { data: policy } = useTreasuryPolicy(treasuryId);
     const [isVoteModalOpen, setIsVoteModalOpen] = useState(false);
     const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
     const [{ tokenSymbol, tokenNetwork }, setDepositTokenInfo] = useState<{
@@ -230,6 +234,7 @@ export function PendingRequests() {
                                 <PendingRequestItem
                                     key={proposal.id}
                                     proposal={proposal}
+                                    policy={policy!}
                                     treasuryId={treasuryId!}
                                     onVote={(vote) => {
                                         setVoteInfo({

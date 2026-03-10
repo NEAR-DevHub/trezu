@@ -73,7 +73,7 @@ function ActivityList({ status }: { status?: "incoming" | "outgoing" }) {
             const parsed = JSON.parse(tokenFilter);
             // The token filter stores data as: { operation: "Is" | "Is Not", token: { id, symbol, name, icon } }
             if (parsed.token) {
-                const symbol = parsed.token.symbol;
+                const symbol = parsed.token.id;
 
                 if (!symbol) {
                     console.error(
