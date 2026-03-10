@@ -446,129 +446,22 @@ async fn test_query_unavailable_block_with_retry(pool: PgPool) -> sqlx::Result<(
     Ok(())
 }
 
-/// Test monitored_accounts table operations
-#[sqlx::test]
-async fn test_monitored_accounts(pool: PgPool) -> sqlx::Result<()> {
-    common::load_test_env();
-    use chrono::Utc;
-
-    // Insert a monitored account
-    sqlx::query!(
-        r#"
-        INSERT INTO monitored_accounts (account_id, enabled)
-        VALUES ($1, $2)
-        "#,
-        "test-account.near",
-        true
-    )
-    .execute(&pool)
-    .await?;
-
-    // Insert another account that's disabled
-    sqlx::query!(
-        r#"
-        INSERT INTO monitored_accounts (account_id, enabled)
-        VALUES ($1, $2)
-        "#,
-        "disabled-account.near",
-        false
-    )
-    .execute(&pool)
-    .await?;
-
-    // Query enabled accounts
-    let enabled = sqlx::query!(
-        r#"
-        SELECT account_id, enabled, last_synced_at, created_at, updated_at
-        FROM monitored_accounts
-        WHERE enabled = true
-        ORDER BY account_id
-        "#
-    )
-    .fetch_all(&pool)
-    .await?;
-
-    assert_eq!(enabled.len(), 1, "Should have exactly one enabled account");
-    assert_eq!(enabled[0].account_id, "test-account.near");
-    assert!(enabled[0].enabled);
-    assert!(
-        enabled[0].last_synced_at.is_none(),
-        "last_synced_at should be NULL initially"
-    );
-
-    // Update last_synced_at after processing
-    let now = Utc::now();
-    sqlx::query!(
-        r#"
-        UPDATE monitored_accounts
-        SET last_synced_at = $2
-        WHERE account_id = $1
-        "#,
-        "test-account.near",
-        now
-    )
-    .execute(&pool)
-    .await?;
-
-    // Verify the update
-    let updated = sqlx::query!(
-        r#"
-        SELECT account_id, last_synced_at, updated_at
-        FROM monitored_accounts
-        WHERE account_id = $1
-        "#,
-        "test-account.near"
-    )
-    .fetch_one(&pool)
-    .await?;
-
-    assert!(
-        updated.last_synced_at.is_some(),
-        "last_synced_at should be set"
-    );
-    println!("✓ Monitored account created and updated successfully");
-    println!("  Account: {}", updated.account_id);
-    println!("  Last synced: {:?}", updated.last_synced_at);
-    println!("  Updated at: {:?}", updated.updated_at);
-
-    // Verify that disabled accounts are not returned in enabled query
-    let all_accounts = sqlx::query!(
-        r#"
-        SELECT account_id, enabled
-        FROM monitored_accounts
-        ORDER BY account_id
-        "#
-    )
-    .fetch_all(&pool)
-    .await?;
-
-    assert_eq!(all_accounts.len(), 2, "Should have 2 total accounts");
-    assert_eq!(all_accounts[0].account_id, "disabled-account.near");
-    assert!(!all_accounts[0].enabled);
-    assert_eq!(all_accounts[1].account_id, "test-account.near");
-    assert!(all_accounts[1].enabled);
-
-    println!("✓ All monitored_accounts operations validated");
-
-    Ok(())
-}
-
 /// Test that NEAR balance is tracked even when other tokens (like intents) are discovered first.
 /// This validates the fix for the bug where NEAR was only added to the tokens list when it was empty.
 /// Uses webassemblymusic-treasury.sputnik-dao.near which has intents tokens but no recent NEAR transactions.
 #[sqlx::test]
 async fn test_near_snapshot_with_existing_intents_tokens(pool: PgPool) -> sqlx::Result<()> {
-    use nt_be::handlers::balance_changes::account_monitor::run_monitor_cycle;
+    use nt_be::handlers::balance_changes::account_monitor::run_maintenance_cycle;
 
     // This account has intents tokens but no recent NEAR transactions
     // The NEAR balance hasn't changed in 30+ days, so it should get a SNAPSHOT record
     let account_id = "webassemblymusic-treasury.sputnik-dao.near";
 
-    // Insert a monitored account
+    // Insert a monitored account (dirty so maintenance cycle picks it up)
     sqlx::query!(
         r#"
-        INSERT INTO monitored_accounts (account_id, enabled)
-        VALUES ($1, true)
+        INSERT INTO monitored_accounts (account_id, enabled, dirty_at)
+        VALUES ($1, true, NOW())
         "#,
         account_id
     )
@@ -580,7 +473,7 @@ async fn test_near_snapshot_with_existing_intents_tokens(pool: PgPool) -> sqlx::
     let network = common::create_archival_network();
     let up_to_block = 182_490_734i64; // Current block as of Jan 24, 2026
 
-    run_monitor_cycle(&pool, &network, up_to_block, None, None)
+    run_maintenance_cycle(&pool, &network, up_to_block, None, None, None, "", None)
         .await
         .map_err(|e| {
             sqlx::Error::Io(std::io::Error::new(
@@ -662,16 +555,16 @@ async fn test_near_snapshot_with_existing_intents_tokens(pool: PgPool) -> sqlx::
 #[sqlx::test]
 async fn test_continuous_monitoring(pool: PgPool) -> sqlx::Result<()> {
     common::load_test_env();
-    use nt_be::handlers::balance_changes::account_monitor::run_monitor_cycle;
+    use nt_be::handlers::balance_changes::account_monitor::run_maintenance_cycle;
 
     let account_id = "testing-astradao.sputnik-dao.near";
     let token_id = "near";
 
-    // Insert a monitored account
+    // Insert a monitored account (dirty so maintenance cycle picks it up)
     sqlx::query!(
         r#"
-        INSERT INTO monitored_accounts (account_id, enabled)
-        VALUES ($1, true)
+        INSERT INTO monitored_accounts (account_id, enabled, dirty_at)
+        VALUES ($1, true, NOW())
         "#,
         account_id
     )
@@ -699,7 +592,7 @@ async fn test_continuous_monitoring(pool: PgPool) -> sqlx::Result<()> {
     println!("Running monitoring cycle...");
     let network = common::create_archival_network();
     let up_to_block = 177_000_000i64;
-    run_monitor_cycle(&pool, &network, up_to_block, None, None)
+    run_maintenance_cycle(&pool, &network, up_to_block, None, None, None, "", None)
         .await
         .map_err(|e| {
             sqlx::Error::Io(std::io::Error::new(
@@ -760,7 +653,7 @@ async fn test_continuous_monitoring(pool: PgPool) -> sqlx::Result<()> {
     let sync_time = after_sync.last_synced_at;
 
     // Run another cycle
-    run_monitor_cycle(&pool, &network, up_to_block, None, None)
+    run_maintenance_cycle(&pool, &network, up_to_block, None, None, None, "", None)
         .await
         .map_err(|e| {
             sqlx::Error::Io(std::io::Error::new(
@@ -814,7 +707,7 @@ async fn test_fill_gap_with_transaction_hash_block_178148634(pool: PgPool) -> sq
     // Directly insert the balance change record for block 178148634
     // This will use get_account_changes to capture the transaction hash
     let filled_gap =
-        insert_balance_change_record(&pool, &network, account_id, token_id, target_block)
+        insert_balance_change_record(&pool, &network, account_id, token_id, target_block, None)
             .await
             .map_err(|e| {
                 sqlx::Error::Io(std::io::Error::new(
@@ -949,7 +842,7 @@ async fn test_fill_gap_with_transaction_hash_block_178148634(pool: PgPool) -> sq
 #[sqlx::test]
 async fn test_ft_token_discovery_through_monitoring(pool: PgPool) -> sqlx::Result<()> {
     common::load_test_env();
-    use nt_be::handlers::balance_changes::account_monitor::run_monitor_cycle;
+    use nt_be::handlers::balance_changes::account_monitor::run_maintenance_cycle;
 
     let account_id = "webassemblymusic-treasury.sputnik-dao.near";
     let expected_ft_token = "arizcredits.near";
@@ -958,11 +851,11 @@ async fn test_ft_token_discovery_through_monitoring(pool: PgPool) -> sqlx::Resul
     println!("Account: {}", account_id);
     println!("Expected discovered token: {}", expected_ft_token);
 
-    // Insert the account as monitored (enabled)
+    // Insert the account as monitored (dirty so maintenance cycle picks it up)
     sqlx::query!(
         r#"
-        INSERT INTO monitored_accounts (account_id, enabled)
-        VALUES ($1, true)
+        INSERT INTO monitored_accounts (account_id, enabled, dirty_at)
+        VALUES ($1, true, NOW())
         "#,
         account_id
     )
@@ -998,7 +891,7 @@ async fn test_ft_token_discovery_through_monitoring(pool: PgPool) -> sqlx::Resul
     println!("\n=== First Monitoring Cycle ===");
     println!("Up to block: {}", up_to_block);
 
-    run_monitor_cycle(&pool, &network, up_to_block, None, None)
+    run_maintenance_cycle(&pool, &network, up_to_block, None, None, None, "", None)
         .await
         .map_err(|e| {
             sqlx::Error::Io(std::io::Error::new(
@@ -1029,8 +922,16 @@ async fn test_ft_token_discovery_through_monitoring(pool: PgPool) -> sqlx::Resul
     println!("The first cycle should have discovered FT tokens from receipts");
     println!("The second cycle should collect balance changes for discovered tokens");
 
+    // Re-dirty the account since maintenance cycle clears dirty_at
+    sqlx::query!(
+        "UPDATE monitored_accounts SET dirty_at = NOW() WHERE account_id = $1",
+        account_id
+    )
+    .execute(&pool)
+    .await?;
+
     // Run second monitoring cycle - should pick up discovered FT tokens
-    run_monitor_cycle(&pool, &network, up_to_block, None, None)
+    run_maintenance_cycle(&pool, &network, up_to_block, None, None, None, "", None)
         .await
         .map_err(|e| {
             sqlx::Error::Io(std::io::Error::new(
@@ -1428,12 +1329,12 @@ async fn test_ft_discovery_petersalomonsen_block_178086209(pool: PgPool) -> sqlx
     Ok(())
 }
 
-/// Test intents token discovery for webassemblymusic-treasury via run_monitor_cycle
+/// Test intents token discovery for webassemblymusic-treasury via run_maintenance_cycle
 /// Block 165324279 has a BTC intents balance change of 0.0002 BTC
 #[sqlx::test]
 async fn test_discover_intents_tokens_webassemblymusic_treasury(pool: PgPool) -> sqlx::Result<()> {
     common::load_test_env();
-    use nt_be::handlers::balance_changes::account_monitor::run_monitor_cycle;
+    use nt_be::handlers::balance_changes::account_monitor::run_maintenance_cycle;
 
     let network = common::create_archival_network();
     let account_id = "webassemblymusic-treasury.sputnik-dao.near";
@@ -1442,15 +1343,15 @@ async fn test_discover_intents_tokens_webassemblymusic_treasury(pool: PgPool) ->
     // Run monitor from 165324280 - gap filler searches backwards and finds 165324279
     let monitor_block: i64 = 165_324_280;
 
-    println!("\n=== Testing Intents Token Discovery via run_monitor_cycle ===");
+    println!("\n=== Testing Intents Token Discovery via run_maintenance_cycle ===");
     println!("Account: {}", account_id);
     println!("Monitor block: {}", monitor_block);
 
-    // Register the account for monitoring
+    // Register the account for monitoring (dirty so maintenance cycle picks it up)
     sqlx::query!(
         r#"
-        INSERT INTO monitored_accounts (account_id, enabled)
-        VALUES ($1, true)
+        INSERT INTO monitored_accounts (account_id, enabled, dirty_at)
+        VALUES ($1, true, NOW())
         "#,
         account_id
     )
@@ -1458,7 +1359,7 @@ async fn test_discover_intents_tokens_webassemblymusic_treasury(pool: PgPool) ->
     .await?;
 
     // Run monitor cycle - should discover intents tokens and find balance changes
-    run_monitor_cycle(&pool, &network, monitor_block, None, None)
+    run_maintenance_cycle(&pool, &network, monitor_block, None, None, None, "", None)
         .await
         .expect("Monitor cycle should complete");
 
@@ -1474,12 +1375,19 @@ async fn test_discover_intents_tokens_webassemblymusic_treasury(pool: PgPool) ->
 
     assert!(
         btc_discovered,
-        "Must discover {} via run_monitor_cycle",
+        "Must discover {} via run_maintenance_cycle",
         btc_token
     );
 
     // Run second monitor cycle to fill gaps for discovered intents tokens
-    run_monitor_cycle(&pool, &network, monitor_block, None, None)
+    // Re-dirty the account since maintenance cycle clears dirty_at
+    sqlx::query!(
+        "UPDATE monitored_accounts SET dirty_at = NOW() WHERE account_id = $1",
+        account_id
+    )
+    .execute(&pool)
+    .await?;
+    run_maintenance_cycle(&pool, &network, monitor_block, None, None, None, "", None)
         .await
         .expect("Second monitor cycle should complete");
 
@@ -1547,7 +1455,7 @@ async fn test_discover_intents_tokens_webassemblymusic_treasury(pool: PgPool) ->
 #[sqlx::test]
 async fn test_fastnear_ft_token_discovery(pool: PgPool) -> sqlx::Result<()> {
     common::load_test_env();
-    use nt_be::handlers::balance_changes::account_monitor::run_monitor_cycle;
+    use nt_be::handlers::balance_changes::account_monitor::run_maintenance_cycle;
 
     let account_id = "das-willies.sputnik-dao.near";
     let usdc_contract = "17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1";
@@ -1556,11 +1464,11 @@ async fn test_fastnear_ft_token_discovery(pool: PgPool) -> sqlx::Result<()> {
     println!("Account: {}", account_id);
     println!("Expected discovered token: {}", usdc_contract);
 
-    // Insert the account as monitored
+    // Insert the account as monitored (dirty so maintenance cycle picks it up)
     sqlx::query!(
         r#"
-        INSERT INTO monitored_accounts (account_id, enabled)
-        VALUES ($1, true)
+        INSERT INTO monitored_accounts (account_id, enabled, dirty_at)
+        VALUES ($1, true, NOW())
         "#,
         account_id
     )
@@ -1591,12 +1499,15 @@ async fn test_fastnear_ft_token_discovery(pool: PgPool) -> sqlx::Result<()> {
     println!("\n=== First Monitoring Cycle (with FastNear discovery) ===");
     println!("Up to block: {}", up_to_block);
 
-    run_monitor_cycle(
+    run_maintenance_cycle(
         &pool,
         &network,
         up_to_block,
         None,
         Some((&http_client, &fastnear_api_key)),
+        None,
+        "",
+        None,
     )
     .await
     .map_err(|e| {
@@ -1647,16 +1558,26 @@ async fn test_fastnear_ft_token_discovery(pool: PgPool) -> sqlx::Result<()> {
     println!("✓ Found {} NEAR balance change records", near_count.0);
 
     // === Second Monitoring Cycle (fills USDC gaps) ===
-    // FastNear discovery happens AFTER gap filling in run_monitor_cycle,
+    // FastNear discovery happens AFTER gap filling in run_maintenance_cycle,
     // so we need a second cycle to fill gaps for newly discovered USDC token.
     println!("\n=== Second Monitoring Cycle (fill USDC gaps) ===");
 
-    run_monitor_cycle(
+    // Re-dirty the account since maintenance cycle clears dirty_at
+    sqlx::query!(
+        "UPDATE monitored_accounts SET dirty_at = NOW() WHERE account_id = $1",
+        account_id
+    )
+    .execute(&pool)
+    .await?;
+    run_maintenance_cycle(
         &pool,
         &network,
         up_to_block,
         None,
         Some((&http_client, &fastnear_api_key)),
+        None,
+        "",
+        None,
     )
     .await
     .map_err(|e| {

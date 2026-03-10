@@ -1,0 +1,68 @@
+name: treasury-dao-outcomes
+apiVersion: 3
+resource_size: s
+
+sources:
+  near_outcomes:
+    type: dataset
+    dataset_name: near.execution_outcomes
+    version: 1.1.0
+    start_at: earliest
+
+transforms:
+  # Dynamic lookup table for non-DAO accounts (e.g. meta-pool-dao-4.near).
+  # Add accounts at runtime via SQL:
+  #   INSERT INTO streamling.tracked_accounts (value) VALUES ('meta-pool-dao-4.near');
+  tracked_accounts:
+    type: dynamic_table
+    backend_type: Postgres
+    backend_entity_name: tracked_accounts
+    secret_name: TREZU_RENDER
+
+  # Captures ALL execution outcomes relevant to monitored treasuries:
+  #
+  # Path 1 (sputnik-dao.near — static wildcards):
+  # - Logs mention a sputnik-dao account (FT/MT transfers, wrap.near, swaps)
+  # - receiver_id or executor_id is a sputnik-dao account
+  #
+  # Path 2 (tracked_accounts dynamic table — non-DAO accounts):
+  # - receiver_id or executor_id matches a tracked account
+  # - Logs mention a tracked account (catches FT/MT transfers, intents, etc.)
+  #
+  # Note: logs is List(Utf8) at runtime, so use array_to_string() for filtering.
+  # Note: Log-based matching for non-DAO accounts uses hardcoded LIKE
+  # patterns because dynamic_table_check + regexp_extract doesn't work
+  # reliably in Turbo streaming SQL. Add LIKE patterns here when new
+  # non-DAO accounts are added to the tracked_accounts table.
+  dao_outcomes:
+    type: sql
+    primary_key: id
+    sql: |
+      SELECT
+        id,
+        executor_id,
+        array_to_string(logs, '\n') as logs,
+        status,
+        transaction_hash,
+        signer_id,
+        receiver_id,
+        gas_burnt,
+        tokens_burnt,
+        trigger_block_height,
+        trigger_block_hash,
+        trigger_block_timestamp
+      FROM near_outcomes
+      WHERE array_to_string(logs, ' ') LIKE '%sputnik-dao.near%'
+         OR receiver_id LIKE '%.sputnik-dao.near'
+         OR executor_id LIKE '%.sputnik-dao.near'
+         OR dynamic_table_check('tracked_accounts', receiver_id)
+         OR dynamic_table_check('tracked_accounts', executor_id)
+         OR array_to_string(logs, ' ') LIKE '%meta-pool-dao-4.near%'
+
+sinks:
+  postgres:
+    type: postgres
+    table: indexed_dao_outcomes
+    schema: public
+    secret_name: TREZU_RENDER
+    from: dao_outcomes

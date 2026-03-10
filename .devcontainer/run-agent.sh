@@ -6,17 +6,13 @@ set -e
 
 cd /workspaces/treasury26
 
+export DATABASE_URL="postgresql://treasury_test:test_password@localhost:5433/treasury_test_db"
+
 echo "=== Starting Claude Code Agent for Issue #159 ==="
 echo ""
 echo "Task: Distinguish swaps from payments using transaction grouping"
 echo "See: https://github.com/NEAR-DevHub/treasury26/issues/159"
 echo ""
-
-# Ensure database is running
-if ! docker compose -f nt-be/docker-compose.yml ps postgres_test | grep -q "running"; then
-    echo "Starting database..."
-    bash .devcontainer/post-start.sh
-fi
 
 # Run Claude Code with the implementation task
 # Using --dangerously-skip-permissions for automated mode (agent has full access)

@@ -25,51 +25,49 @@ async fn main() {
             .expect("Failed to initialize application state"),
     );
 
-    // Spawn background monitoring task
+    // Spawn account maintenance worker (processes dirty accounts every 5 minutes)
+    // Replaces the previous main monitor (30s, all accounts) and dirty monitor (5s poll).
+    // Goldsky enrichment worker is now the primary event source for ongoing monitoring.
     if !state.env_vars.disable_balance_monitoring {
         let state_clone = state.clone();
         tokio::spawn(async move {
             use near_api::Chain;
-            use nt_be::handlers::balance_changes::account_monitor::run_monitor_cycle;
+            use nt_be::handlers::balance_changes::account_monitor::run_maintenance_cycle;
 
-            let interval_seconds = state_clone.env_vars.monitor_interval_seconds;
-
-            if interval_seconds == 0 {
-                log::info!("Background monitoring disabled (MONITOR_INTERVAL_SECONDS=0)");
-                return;
-            }
-
-            let interval = Duration::from_secs(interval_seconds);
+            let interval_secs = std::env::var("MAINTENANCE_INTERVAL_SECONDS")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(300u64); // default 5 minutes
+            let initial_delay_secs = std::env::var("MAINTENANCE_INITIAL_DELAY_SECONDS")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(30u64);
+            let interval = Duration::from_secs(interval_secs);
 
             log::info!(
-                "Starting background monitoring service (interval: {} seconds)",
-                interval_seconds
+                "Starting account maintenance worker ({}s interval, {}s initial delay)",
+                interval_secs,
+                initial_delay_secs
             );
 
-            // Wait a bit before first run to let server fully start
-            tokio::time::sleep(Duration::from_secs(10)).await;
+            // Wait for server to fully start
+            tokio::time::sleep(Duration::from_secs(initial_delay_secs)).await;
 
-            // Use tokio::time::interval for more accurate timing
             let mut interval_timer = tokio::time::interval(interval);
 
             loop {
                 interval_timer.tick().await;
 
-                log::info!("Running monitoring cycle...");
-
                 // Get current block height from the network
                 let up_to_block = match Chain::block().fetch_from(&state_clone.network).await {
                     Ok(block) => block.header.height as i64,
                     Err(e) => {
-                        log::error!("Failed to get current block height: {}", e);
-                        log::info!("Retrying in {} seconds", interval_seconds);
+                        log::error!("[maintenance] Failed to get current block height: {}", e);
                         continue;
                     }
                 };
 
-                log::info!("Processing up to block {}", up_to_block);
-
-                match run_monitor_cycle(
+                match run_maintenance_cycle(
                     &state_clone.db_pool,
                     &state_clone.archival_network,
                     up_to_block,
@@ -78,18 +76,17 @@ async fn main() {
                         &state_clone.http_client,
                         &state_clone.env_vars.fastnear_api_key,
                     )),
+                    state_clone.env_vars.intents_explorer_api_key.as_deref(),
+                    &state_clone.env_vars.intents_explorer_api_url,
+                    state_clone.neardata_client.as_ref(),
                 )
                 .await
                 {
-                    Ok(()) => {
-                        log::info!("Monitoring cycle completed successfully");
-                    }
+                    Ok(()) => {}
                     Err(e) => {
-                        log::error!("Monitoring cycle failed: {}", e);
+                        log::error!("[maintenance] Cycle failed: {}", e);
                     }
                 }
-
-                log::info!("Next monitoring cycle in {} seconds", interval_seconds);
             }
         });
     }
@@ -150,27 +147,68 @@ async fn main() {
         });
     }
 
-    // Spawn dirty account priority monitoring
-    if !state.env_vars.disable_balance_monitoring {
-        let state_clone = state.clone();
+    // Spawn Goldsky enrichment worker (reads from Goldsky sink DB, writes to app DB)
+    if let Some(goldsky_pool) = &state.goldsky_pool {
+        let goldsky_pool = goldsky_pool.clone();
+        let app_pool = state.db_pool.clone();
+        let network = state.archival_network.clone();
+        let intents_api_key = state.env_vars.intents_explorer_api_key.clone();
+        let intents_api_url = state.env_vars.intents_explorer_api_url.clone();
         tokio::spawn(async move {
-            use nt_be::handlers::balance_changes::dirty_monitor::run_dirty_monitor;
-            use std::collections::HashMap;
-            use tokio::task::JoinHandle;
+            use nt_be::handlers::balance_changes::goldsky_enrichment::run_enrichment_cycle;
 
-            log::info!("Starting dirty account priority monitor (5 second poll interval)");
+            const BATCH_SIZE: usize = 100;
+            let enrichment_initial_delay = std::env::var("ENRICHMENT_INITIAL_DELAY_SECONDS")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(10u64);
+            let enrichment_interval = std::env::var("ENRICHMENT_INTERVAL_SECONDS")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(15u64);
+            log::info!(
+                "Starting Goldsky enrichment worker ({}s interval, {}s initial delay)",
+                enrichment_interval,
+                enrichment_initial_delay
+            );
 
-            // Wait a bit before first run to let server fully start
-            tokio::time::sleep(Duration::from_secs(10)).await;
-
-            let mut active_tasks: HashMap<String, JoinHandle<()>> = HashMap::new();
-            let mut interval = tokio::time::interval(Duration::from_secs(5));
+            // Wait for server to fully start
+            tokio::time::sleep(Duration::from_secs(enrichment_initial_delay)).await;
 
             loop {
-                interval.tick().await;
-                run_dirty_monitor(&state_clone, &mut active_tasks).await;
+                let should_sleep = {
+                    match run_enrichment_cycle(
+                        &goldsky_pool,
+                        &app_pool,
+                        &network,
+                        intents_api_key.as_deref(),
+                        &intents_api_url,
+                    )
+                    .await
+                    {
+                        Ok(processed) => {
+                            if processed > 0 {
+                                log::info!(
+                                    "[goldsky-enrichment] Processed {} outcomes this cycle",
+                                    processed
+                                );
+                            }
+                            // If batch was full, there's likely more data — skip the sleep
+                            processed < BATCH_SIZE
+                        }
+                        Err(e) => {
+                            log::error!("[goldsky-enrichment] Enrichment cycle failed: {}", e);
+                            true
+                        }
+                    }
+                };
+                if should_sleep {
+                    tokio::time::sleep(Duration::from_secs(enrichment_interval)).await;
+                }
             }
         });
+    } else {
+        log::info!("Goldsky enrichment worker disabled (GOLDSKY_DATABASE_URL not set)");
     }
 
     // Spawn DAO list sync service (fetches DAOs from sputnik-dao.near every 5 minutes)

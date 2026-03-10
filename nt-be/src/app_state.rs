@@ -5,7 +5,9 @@ use sqlx::PgPool;
 use std::{sync::Arc, time::Duration};
 
 use crate::{
-    handlers::balance_changes::transfer_hints::{TransferHintService, fastnear::FastNearProvider},
+    handlers::balance_changes::transfer_hints::{
+        TransferHintService, fastnear::FastNearProvider, neardata::NeardataClient,
+    },
     services::{DeFiLlamaClient, PriceLookupService},
     utils::{
         cache::{Cache, CacheKey, CacheTier},
@@ -29,6 +31,13 @@ pub struct AppState {
     pub telegram_client: TelegramClient,
     /// Optional transfer hint service for accelerated balance change detection
     pub transfer_hint_service: Option<Arc<TransferHintService>>,
+    /// Optional neardata.xyz client for accelerated block metadata resolution.
+    /// Replaces multiple RPC calls with a single HTTP call per block.
+    pub neardata_client: Option<NeardataClient>,
+    /// Optional connection pool to Goldsky sink Postgres database.
+    /// Used by the enrichment worker to read indexed_dao_outcomes.
+    /// None if GOLDSKY_DATABASE_URL is not configured.
+    pub goldsky_pool: Option<PgPool>,
 }
 
 /// Builder for constructing AppState instances
@@ -64,6 +73,7 @@ pub struct AppStateBuilder {
     bulk_payment_contract_id: Option<AccountId>,
     telegram_client: Option<TelegramClient>,
     transfer_hint_service: Option<TransferHintService>,
+    goldsky_pool: Option<PgPool>,
 }
 
 impl AppStateBuilder {
@@ -83,6 +93,7 @@ impl AppStateBuilder {
             bulk_payment_contract_id: None,
             telegram_client: None,
             transfer_hint_service: None,
+            goldsky_pool: None,
         }
     }
 
@@ -155,6 +166,12 @@ impl AppStateBuilder {
     /// Set the transfer hint service
     pub fn transfer_hint_service(mut self, service: TransferHintService) -> Self {
         self.transfer_hint_service = Some(service);
+        self
+    }
+
+    /// Set the Goldsky database pool (Goldsky sink, read-only)
+    pub fn goldsky_pool(mut self, goldsky_pool: PgPool) -> Self {
+        self.goldsky_pool = Some(goldsky_pool);
         self
     }
 
@@ -280,6 +297,39 @@ impl AppStateBuilder {
             None
         };
 
+        // Create neardata client (uses same FASTNEAR_API_KEY)
+        let neardata_client = if !env_vars.fastnear_api_key.is_empty() {
+            Some(NeardataClient::new().with_api_key(&env_vars.fastnear_api_key))
+        } else {
+            None
+        };
+
+        // Create Goldsky pool if URL is configured (Goldsky sink, read-only)
+        let goldsky_pool = if let Some(existing) = self.goldsky_pool {
+            Some(existing)
+        } else if let Some(goldsky_url) = &env_vars.goldsky_database_url {
+            match sqlx::postgres::PgPoolOptions::new()
+                .max_connections(5)
+                .acquire_timeout(Duration::from_secs(5))
+                .connect(goldsky_url)
+                .await
+            {
+                Ok(pool) => {
+                    log::info!("Connected to Goldsky sink database");
+                    Some(pool)
+                }
+                Err(e) => {
+                    log::warn!(
+                        "Failed to connect to Goldsky sink database: {} — enrichment worker disabled",
+                        e
+                    );
+                    None
+                }
+            }
+        } else {
+            None
+        };
+
         Ok(AppState {
             http_client: self.http_client.unwrap_or_default(),
             cache: self.cache.unwrap_or_default(),
@@ -294,6 +344,8 @@ impl AppStateBuilder {
             price_service,
             bulk_payment_contract_id,
             transfer_hint_service,
+            neardata_client,
+            goldsky_pool,
         })
     }
 }

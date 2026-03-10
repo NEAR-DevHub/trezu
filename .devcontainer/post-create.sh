@@ -29,6 +29,14 @@ cargo install sqlx-cli --no-default-features --features postgres
 echo "Installing Claude Code CLI..."
 npm install -g @anthropic-ai/claude-code
 
+# Install Goldsky CLI for indexer pipeline management
+echo "Installing Goldsky CLI..."
+npm install -g @goldskycom/cli
+
+# Install Goldsky Turbo CLI extension for pipeline deployment
+echo "Installing Goldsky Turbo CLI..."
+curl -fsSL https://install-turbo.goldsky.com | sh
+
 # Copy environment files if they don't exist
 if [ ! -f nt-be/.env ]; then
     echo "Creating nt-be/.env from example..."
@@ -42,6 +50,5 @@ fi
 echo "=== Post-Create Setup Complete ==="
 echo ""
 echo "Next steps:"
-echo "1. Run: bash .devcontainer/post-start.sh  (starts database)"
-echo "2. Run: cd nt-be && cargo test  (run tests)"
-echo "3. Run: claude  (start Claude Code agent)"
+echo "1. Run: cd nt-be && cargo test  (run tests)"
+echo "2. Run: claude  (start Claude Code agent)"

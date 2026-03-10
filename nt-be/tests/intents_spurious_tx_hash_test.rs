@@ -2,13 +2,11 @@ mod common;
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
-use nt_be::handlers::balance_changes::dirty_monitor::run_dirty_monitor_at_block;
+use nt_be::handlers::balance_changes::account_monitor::run_maintenance_cycle;
 use nt_be::handlers::balance_changes::gap_filler::resolve_missing_tx_hashes;
 use nt_be::routes::create_routes;
 use sqlx::PgPool;
-use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::task::JoinHandle;
 use tower::ServiceExt;
 
 /// Regression test: intents token balance changes should not include unrelated transaction hashes.
@@ -36,9 +34,9 @@ use tower::ServiceExt;
 ///
 /// ## Test approach
 ///
-/// Uses the full dirty monitor flow (same code path as production):
+/// Uses the maintenance cycle flow (same code path as production):
 /// 1. Register account via API (sets dirty_at)
-/// 2. Run `run_dirty_monitor_at_block` which discovers intents tokens and fills gaps
+/// 2. Run `run_maintenance_cycle` which discovers intents tokens and fills gaps
 /// 3. Verify the balance change at block 185177656 only contains the relevant tx hash
 /// 4. Clear tx hashes (simulating the migration) and call `resolve_missing_tx_hashes` directly
 /// 5. Verify re-resolved hashes still only contain the relevant tx hash (not the spurious one)
@@ -81,7 +79,7 @@ async fn test_intents_token_should_not_include_unrelated_tx_hashes(
     .await?;
     assert_eq!(
         pre_existing, 0,
-        "Database should not contain the target record before dirty monitor runs"
+        "Database should not contain the target record before maintenance cycle runs"
     );
 
     // Register the account via the API (POST /api/monitored-accounts) — sets dirty_at = NOW()
@@ -117,28 +115,30 @@ async fn test_intents_token_should_not_include_unrelated_tx_hashes(
         "Account should be marked dirty after API registration"
     );
 
-    // Run dirty monitor at a fixed block to keep the test deterministic.
+    // Run maintenance cycle at a fixed block to keep the test deterministic.
     // Block 185_200_000 keeps the target block (185_177_656) within the 600k lookback window.
     let fixed_up_to_block = 185_200_000;
 
-    println!("Running dirty monitor at block {}...", fixed_up_to_block);
-
-    let mut active_tasks: HashMap<String, JoinHandle<()>> = HashMap::new();
-    run_dirty_monitor_at_block(&state, &mut active_tasks, fixed_up_to_block).await;
-
-    assert_eq!(
-        active_tasks.len(),
-        1,
-        "Should spawn one task for the dirty account"
+    println!(
+        "Running maintenance cycle at block {}...",
+        fixed_up_to_block
     );
 
-    // Wait for the spawned task to complete
-    let handle = active_tasks
-        .remove(account_id)
-        .expect("Task should exist for account");
-    handle.await.expect("Task should not panic");
+    let network = &state.archival_network;
+    run_maintenance_cycle(
+        &pool,
+        network,
+        fixed_up_to_block,
+        None,
+        None,
+        None,
+        "",
+        None,
+    )
+    .await
+    .expect("Maintenance cycle should succeed");
 
-    println!("Dirty monitor task completed");
+    println!("Maintenance cycle completed");
 
     // Verify the intents USDC token was discovered and the target block was filled
     let record = sqlx::query!(
@@ -159,7 +159,9 @@ async fn test_intents_token_should_not_include_unrelated_tx_hashes(
     )
     .fetch_optional(&pool)
     .await?
-    .expect("Dirty monitor should have discovered intents USDC token and filled block 185177656");
+    .expect(
+        "Maintenance cycle should have discovered intents USDC token and filled block 185177656",
+    );
 
     println!(
         "Balance:  {} -> {}",
@@ -233,8 +235,7 @@ async fn test_intents_token_should_not_include_unrelated_tx_hashes(
     );
     println!("Cleared transaction_hashes (simulating migration)");
 
-    // Now call resolve_missing_tx_hashes — the same function the dirty monitor calls
-    let network = &state.archival_network;
+    // Now call resolve_missing_tx_hashes — the same function the maintenance worker calls
     let resolved = resolve_missing_tx_hashes(&pool, network, account_id, 10)
         .await
         .expect("resolve_missing_tx_hashes should succeed");

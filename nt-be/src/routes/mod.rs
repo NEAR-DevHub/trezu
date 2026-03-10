@@ -42,6 +42,19 @@ async fn health_check(
         ));
     }
 
+    // Query Goldsky enrichment cursor if configured
+    let goldsky_cursor_block = if state.goldsky_pool.is_some() {
+        sqlx::query_scalar::<_, i64>(
+            "SELECT last_processed_block FROM goldsky_cursors WHERE consumer_name = 'balance_enrichment'"
+        )
+        .fetch_optional(&state.db_pool)
+        .await
+        .ok()
+        .flatten()
+    } else {
+        None
+    };
+
     Ok(Json(json!({
         "status": "healthy",
         "timestamp": chrono::Utc::now().to_rfc3339(),
@@ -49,6 +62,10 @@ async fn health_check(
             "connected": true,
             "pool_size": pool_size,
             "idle_connections": idle_connections
+        },
+        "goldsky_enrichment": {
+            "enabled": state.goldsky_pool.is_some(),
+            "cursor_block": goldsky_cursor_block
         }
     })))
 }

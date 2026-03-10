@@ -70,6 +70,7 @@ pub struct BalanceChange {
     pub created_at: DateTime<Utc>,
     pub action_kind: Option<String>,
     pub method_name: Option<String>,
+    pub actions: Option<serde_json::Value>,
     pub usd_value: Option<BigDecimal>,
 }
 
@@ -113,6 +114,8 @@ pub struct EnrichedBalanceChange {
     pub action_kind: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub method_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub actions: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub usd_value: Option<BigDecimal>,
 }
@@ -184,7 +187,7 @@ pub async fn get_balance_changes_internal(
     };
 
     // Build SQL query
-    let select_fields = "id, account_id, block_height, block_time, token_id, receipt_id, transaction_hashes, counterparty, signer_id, receiver_id, amount, balance_before, balance_after, created_at, action_kind, method_name, usd_value";
+    let select_fields = "id, account_id, block_height, block_time, token_id, receipt_id, transaction_hashes, counterparty, signer_id, receiver_id, amount, balance_before, balance_after, created_at, action_kind, method_name, actions, usd_value";
 
     // Determine pagination based on whether limit is specified
     // For exports, limit is None and we want all records
@@ -283,6 +286,7 @@ pub async fn get_balance_changes_internal(
                 swap: None,           // Swap detection not implemented in this endpoint yet
                 action_kind,
                 method_name: change.method_name,
+                actions: change.actions,
                 usd_value: change.usd_value,
             }
         })

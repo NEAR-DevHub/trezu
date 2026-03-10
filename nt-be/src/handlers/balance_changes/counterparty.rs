@@ -4,8 +4,9 @@
 //! for decimal conversion.
 
 use crate::constants::intents_tokens;
+use crate::handlers::balance_changes::utils::with_transport_retry;
 use near_api::types::ft::FungibleTokenMetadata;
-use near_api::{AccountId, NetworkConfig, Tokens};
+use near_api::{AccountId, Contract, NetworkConfig, Tokens};
 use sqlx::PgPool;
 use std::str::FromStr;
 
@@ -159,6 +160,77 @@ pub async fn ensure_ft_metadata(
         metadata.symbol,
         decimals,
         actual_contract
+    );
+
+    Ok(decimals)
+}
+
+/// Ensure NEP-245 multi-token metadata exists in counterparties table.
+///
+/// Unlike FT tokens, NEP-245 contracts expose `mt_metadata_base_by_token_id(token_ids)`
+/// to get per-token metadata including decimals. This is used for contracts like
+/// `v2_1.omni.hot.tg` that implement the multi-token standard but not `ft_metadata`.
+///
+/// The full `contract:token` string is used as the cache key, matching how intents tokens
+/// are stored (e.g. `intents.near:nep141:wrap.near`).
+pub async fn ensure_nep245_token_decimals(
+    pool: &PgPool,
+    network: &NetworkConfig,
+    token_id: &str,     // full "contract:token" string, used as cache key
+    contract_str: &str, // part before ':', the NEP-245 contract
+    token: &str,        // part after ':', the token ID within the contract
+) -> Result<u8, Box<dyn std::error::Error>> {
+    if let Some(decimals) = get_ft_decimals(pool, token_id).await? {
+        return Ok(decimals);
+    }
+
+    #[derive(serde::Deserialize)]
+    struct MtBaseTokenMetadata {
+        name: String,
+        symbol: Option<String>,
+        decimals: Option<u8>,
+        icon: Option<String>,
+    }
+
+    let contract_id = AccountId::from_str(contract_str)?;
+    let contract = Contract(contract_id);
+
+    let response = with_transport_retry("mt_metadata_base_by_token_id", || {
+        contract
+            .call_function(
+                "mt_metadata_base_by_token_id",
+                serde_json::json!({ "token_ids": [token] }),
+            )
+            .read_only()
+            .fetch_from(network)
+    })
+    .await?;
+
+    let metadata_list: Vec<Option<MtBaseTokenMetadata>> = response.data;
+    let metadata = metadata_list
+        .into_iter()
+        .flatten()
+        .next()
+        .ok_or_else(|| format!("No NEP-245 metadata returned for token: {}", token_id))?;
+
+    let decimals = metadata.decimals.unwrap_or(0);
+    let ft_metadata = FungibleTokenMetadata {
+        spec: "ft-1.0.0".to_string(),
+        name: metadata.name.clone(),
+        symbol: metadata.symbol.unwrap_or_else(|| contract_str.to_string()),
+        decimals,
+        icon: metadata.icon,
+        reference: None,
+        reference_hash: None,
+    };
+    upsert_ft_counterparty(pool, token_id, &ft_metadata).await?;
+
+    log::info!(
+        "Discovered NEP-245 token: {} with {} decimals (contract: {}, token: {})",
+        metadata.name,
+        decimals,
+        contract_str,
+        token,
     );
 
     Ok(decimals)

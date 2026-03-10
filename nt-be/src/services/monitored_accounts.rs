@@ -20,6 +20,8 @@ pub struct MonitoredAccount {
     pub plan_type: PlanType,
     pub credits_reset_at: DateTime<Utc>,
     pub dirty_at: Option<DateTime<Utc>>,
+    #[sqlx(default)]
+    pub maintenance_block_floor: Option<i64>,
 }
 
 pub struct RegisterMonitoredAccountResult {

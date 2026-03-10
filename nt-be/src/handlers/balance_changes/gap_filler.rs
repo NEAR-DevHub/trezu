@@ -24,7 +24,7 @@ use std::sync::{Arc, Mutex};
 use crate::handlers::balance_changes::{
     balance, binary_search, block_info,
     gap_detector::{self, BalanceGap},
-    transfer_hints::{TransferHint, TransferHintService, tx_resolver},
+    transfer_hints::{TransferHint, TransferHintService, neardata::NeardataClient, tx_resolver},
     utils::block_timestamp_to_datetime,
 };
 
@@ -510,7 +510,7 @@ pub async fn fill_gap(
     network: &NetworkConfig,
     gap: &BalanceGap,
 ) -> Result<FilledGap, GapFillerError> {
-    fill_gap_with_hints(pool, network, gap, None).await
+    fill_gap_with_hints(pool, network, gap, None, None).await
 }
 
 /// Fill a single gap using transfer hints when available
@@ -532,6 +532,7 @@ pub async fn fill_gap_with_hints(
     network: &NetworkConfig,
     gap: &BalanceGap,
     hint_service: Option<&TransferHintService>,
+    neardata: Option<&NeardataClient>,
 ) -> Result<FilledGap, GapFillerError> {
     // Binary search to find the exact block where balance changed
     // Note: gap.expected_balance_before is the balance_before at gap.end_block,
@@ -585,8 +586,15 @@ pub async fn fill_gap_with_hints(
     let hint = hint_result.hint;
 
     // Try to insert the balance change record with receipts
-    match insert_balance_change_record(pool, network, &gap.account_id, &gap.token_id, block_height)
-        .await
+    match insert_balance_change_record(
+        pool,
+        network,
+        &gap.account_id,
+        &gap.token_id,
+        block_height,
+        neardata,
+    )
+    .await
     {
         Ok(Some(result)) => Ok(result),
         Ok(None) => Err(format!(
@@ -689,7 +697,17 @@ pub async fn fill_gaps(
     token_id: &str,
     up_to_block: i64,
 ) -> Result<Vec<FilledGap>, GapFillerError> {
-    fill_gaps_with_hints(pool, network, account_id, token_id, up_to_block, None).await
+    fill_gaps_with_hints(
+        pool,
+        network,
+        account_id,
+        token_id,
+        up_to_block,
+        None,
+        None,
+        None,
+    )
+    .await
 }
 
 /// Fill all gaps using transfer hints when available
@@ -708,6 +726,7 @@ pub async fn fill_gaps(
 ///
 /// # Returns
 /// Vector of filled gaps
+#[allow(clippy::too_many_arguments)]
 pub async fn fill_gaps_with_hints(
     pool: &PgPool,
     network: &NetworkConfig,
@@ -715,6 +734,8 @@ pub async fn fill_gaps_with_hints(
     token_id: &str,
     up_to_block: i64,
     hint_service: Option<&TransferHintService>,
+    creation_block: Option<i64>,
+    neardata: Option<&NeardataClient>,
 ) -> Result<Vec<FilledGap>, GapFillerError> {
     log::info!(
         "Starting gap detection for {}/{} up to block {} (hints: {})",
@@ -753,6 +774,8 @@ pub async fn fill_gaps_with_hints(
             token_id,
             up_to_block as u64,
             None, // Use default lookback
+            creation_block,
+            neardata,
         )
         .await?
         {
@@ -771,6 +794,7 @@ pub async fn fill_gaps_with_hints(
         token_id,
         up_to_block as u64,
         hint_service,
+        neardata,
     )
     .await?
     {
@@ -779,7 +803,16 @@ pub async fn fill_gaps_with_hints(
 
     // --- Fill gap to past (virtual start boundary) ---
     // Check if earliest record's balance_before is not 0
-    if let Some(gap_record) = fill_gap_to_past(pool, network, account_id, token_id).await? {
+    if let Some(gap_record) = fill_gap_to_past(
+        pool,
+        network,
+        account_id,
+        token_id,
+        creation_block,
+        neardata,
+    )
+    .await?
+    {
         filled.push(gap_record);
     }
 
@@ -798,7 +831,8 @@ pub async fn fill_gaps_with_hints(
         );
 
         for gap in &gaps {
-            let filled_gap = fill_gap_with_hints(pool, network, gap, hint_service).await?;
+            let filled_gap =
+                fill_gap_with_hints(pool, network, gap, hint_service, neardata).await?;
             log::info!(
                 "Filled gap at block {} for {}/{}",
                 filled_gap.block_height,
@@ -826,9 +860,11 @@ pub async fn fill_gaps_with_hints(
 /// * `token_id` - Token to seed
 /// * `current_block` - Current block height to start from
 /// * `lookback_blocks` - How many blocks to search back (default ~30 days worth)
+/// * `creation_block` - Account creation block (floor for lookback search)
 ///
 /// # Returns
 /// The seeded record, or None if the balance has been 0 throughout the search range
+#[allow(clippy::too_many_arguments)]
 pub async fn seed_initial_balance(
     pool: &PgPool,
     network: &NetworkConfig,
@@ -836,6 +872,8 @@ pub async fn seed_initial_balance(
     token_id: &str,
     current_block: u64,
     lookback_blocks: Option<u64>,
+    creation_block: Option<i64>,
+    neardata: Option<&NeardataClient>,
 ) -> Result<Option<FilledGap>, GapFillerError> {
     // Check if there are already records for this account/token
     let existing_count: (i64,) = sqlx::query_as(
@@ -883,7 +921,22 @@ pub async fn seed_initial_balance(
 
     // Default lookback: ~30 days worth of blocks (1 block/sec * 86400 sec/day * 30 days)
     let lookback = lookback_blocks.unwrap_or(2_592_000);
-    let start_block = current_block.saturating_sub(lookback);
+    let mut start_block = current_block.saturating_sub(lookback);
+
+    // If we know the account creation block, never search before it
+    if let Some(creation) = creation_block {
+        let creation = creation as u64;
+        if creation > start_block {
+            log::info!(
+                "Clamping seed lookback from block {} to creation block {} for {}/{}",
+                start_block,
+                creation,
+                account_id,
+                token_id
+            );
+            start_block = creation;
+        }
+    }
 
     log::info!(
         "Searching for balance change from block {} to {}",
@@ -936,7 +989,8 @@ pub async fn seed_initial_balance(
 
     // Use the shared insert helper
     let result =
-        insert_balance_change_record(pool, network, account_id, token_id, block_height).await?;
+        insert_balance_change_record(pool, network, account_id, token_id, block_height, neardata)
+            .await?;
 
     if let Some(filled_gap) = &result {
         log::info!(
@@ -963,6 +1017,7 @@ async fn fill_gap_to_present(
     token_id: &str,
     up_to_block: u64,
     hint_service: Option<&TransferHintService>,
+    neardata: Option<&NeardataClient>,
 ) -> Result<Option<FilledGap>, GapFillerError> {
     // Get the latest record
     let latest_record = sqlx::query!(
@@ -1065,7 +1120,9 @@ async fn fill_gap_to_present(
     let block_height = hint_result.block_height;
 
     // Try to insert the balance change record with receipts
-    match insert_balance_change_record(pool, network, account_id, token_id, block_height).await {
+    match insert_balance_change_record(pool, network, account_id, token_id, block_height, neardata)
+        .await
+    {
         Ok(Some(result)) => Ok(Some(result)),
         Ok(None) => Ok(None),
         Err(e) if e.to_string().contains("No receipt found") => {
@@ -1121,6 +1178,8 @@ async fn fill_gap_to_past(
     network: &NetworkConfig,
     account_id: &str,
     token_id: &str,
+    creation_block: Option<i64>,
+    neardata: Option<&NeardataClient>,
 ) -> Result<Option<FilledGap>, GapFillerError> {
     // Get the earliest record
     let earliest_record = sqlx::query!(
@@ -1159,9 +1218,51 @@ async fn fill_gap_to_past(
         return Ok(None);
     }
 
+    // If we know the account creation block and the earliest record is at or before it,
+    // there's no history before account creation to search
+    if let Some(creation) = creation_block
+        && earliest.block_height <= creation
+    {
+        log::info!(
+            "No gap to past: earliest record at block {} is at/before account creation block {} for {}/{}",
+            earliest.block_height,
+            creation,
+            account_id,
+            token_id
+        );
+        return Ok(None);
+    }
+
     // Search backwards - use a reasonable lookback (about 7 days to avoid hitting too-old blocks)
     let lookback_blocks: u64 = 600_000; // ~7 days
-    let start_block = (earliest.block_height as u64).saturating_sub(lookback_blocks);
+    let mut start_block = (earliest.block_height as u64).saturating_sub(lookback_blocks);
+
+    // If we know the account creation block, never search before it
+    if let Some(creation) = creation_block {
+        let creation = creation as u64;
+        if creation > start_block {
+            log::info!(
+                "Clamping gap-to-past lookback from block {} to creation block {} for {}/{}",
+                start_block,
+                creation,
+                account_id,
+                token_id
+            );
+            start_block = creation;
+        }
+    }
+
+    // If the clamped start_block is at or past the earliest record, nothing to search
+    if start_block >= earliest.block_height as u64 {
+        log::info!(
+            "No gap to past: search range empty (start {} >= earliest {}) for {}/{}",
+            start_block,
+            earliest.block_height,
+            account_id,
+            token_id
+        );
+        return Ok(None);
+    }
 
     // Check actual balance at the lookback boundary
     let balance_at_start =
@@ -1266,7 +1367,9 @@ async fn fill_gap_to_past(
 
     // Try to insert the new record
     // If it fails with "No receipt found", insert a SNAPSHOT instead at the lookback boundary
-    match insert_balance_change_record(pool, network, account_id, token_id, block_height).await {
+    match insert_balance_change_record(pool, network, account_id, token_id, block_height, neardata)
+        .await
+    {
         Ok(result) => Ok(result),
         Err(e) if e.to_string().contains("No receipt found") => {
             log::info!(
@@ -2069,6 +2172,7 @@ pub async fn insert_balance_change_record(
     account_id: &str,
     token_id: &str,
     block_height: u64,
+    neardata: Option<&NeardataClient>,
 ) -> Result<Option<FilledGap>, GapFillerError> {
     // Get balance before and after at the change block
     let (balance_before, balance_after) =
@@ -2076,97 +2180,254 @@ pub async fn insert_balance_change_record(
             .await
             .map_err(|e| -> GapFillerError { e.to_string().into() })?;
 
-    // Get block timestamp
-    let block_timestamp = block_info::get_block_timestamp(network, block_height, None)
-        .await
-        .map_err(|e| -> GapFillerError { e.to_string().into() })?;
-
     // Calculate amount
     let amount = &balance_after - &balance_before;
 
-    // Get account changes to find the transaction hash that caused this balance change
-    let account_changes = block_info::get_account_changes(network, account_id, block_height)
-        .await
-        .map_err(|e| -> GapFillerError { e.to_string().into() })?;
-
-    // Extract transaction hash and other details from account changes
-    let (mut transaction_hashes, raw_data) = if let Some(change) = account_changes.first() {
-        use near_primitives::views::StateChangeCauseView;
-
-        let tx_hashes = match &change.cause {
-            StateChangeCauseView::TransactionProcessing { tx_hash } => vec![tx_hash.to_string()],
-            _ => vec![],
-        };
-
-        let raw_data = serde_json::to_value(change).unwrap_or_else(|_| serde_json::json!({}));
-        (tx_hashes, raw_data)
+    // ── Try neardata for metadata (replaces 5-8 RPC calls with 1 HTTP call) ──
+    let neardata_meta = if token_id == "near" || token_id == "NEAR" {
+        if let Some(nd) = neardata {
+            match nd.fetch_account_block_data(block_height, account_id).await {
+                Ok(data) => {
+                    log::debug!(
+                        "Neardata resolved block {} for {}: {} receipts, {} execution_outcomes, {} transactions",
+                        block_height,
+                        account_id,
+                        data.receipts.len(),
+                        data.execution_outcomes.len(),
+                        data.transactions.len(),
+                    );
+                    Some(data)
+                }
+                Err(e) => {
+                    log::warn!(
+                        "Neardata failed for block {}: {} — falling back to RPC",
+                        block_height,
+                        e
+                    );
+                    None
+                }
+            }
+        } else {
+            None
+        }
     } else {
-        (vec![], serde_json::json!({}))
+        None
     };
 
-    // If we have a transaction hash, query the full transaction to get signer and receiver
-    let (signer_id, receiver_id, counterparty) = if let Some(tx_hash) = transaction_hashes.first() {
-        match block_info::get_transaction(network, tx_hash, account_id).await {
-            Ok(tx_response) => {
-                if let Some(ref final_outcome) = tx_response.final_execution_outcome {
-                    // final_outcome is FinalExecutionOutcomeViewEnum
-                    // Need to extract transaction from it
-                    use near_primitives::views::FinalExecutionOutcomeViewEnum;
-                    match final_outcome {
-                        FinalExecutionOutcomeViewEnum::FinalExecutionOutcome(outcome) => {
-                            let tx = &outcome.transaction;
-                            let signer = tx.signer_id.to_string();
-                            let receiver = tx.receiver_id.to_string();
+    // Resolve metadata: neardata path or RPC path
+    let (
+        block_timestamp,
+        mut transaction_hashes,
+        receipt_ids,
+        final_signer,
+        final_receiver,
+        final_counterparty,
+        action_kind,
+        method_name,
+        raw_data,
+    ) = if let Some(nd_data) = neardata_meta {
+        // ── Neardata path: extract all metadata from block data ──
+        let block_timestamp = nd_data.timestamp_nanos;
 
-                            // Counterparty is the receiver when account is signer, or signer when account is receiver
-                            let counterparty = if signer == account_id {
-                                receiver.clone()
+        let mut transaction_hashes: Vec<String> = nd_data
+            .transactions
+            .iter()
+            .filter(|t| !t.hash.is_empty())
+            .map(|t| t.hash.clone())
+            .collect();
+
+        // Collect receipt IDs from both chunk receipts and execution outcomes
+        let mut receipt_ids: Vec<String> = nd_data
+            .receipts
+            .iter()
+            .map(|r| r.receipt_id.clone())
+            .collect();
+        for eo in &nd_data.execution_outcomes {
+            if !receipt_ids.contains(&eo.receipt_id) {
+                receipt_ids.push(eo.receipt_id.clone());
+            }
+        }
+
+        let (signer_id, receiver_id, counterparty, action_kind, method_name) =
+            if let Some(receipt) = nd_data.receipts.first() {
+                // Action receipt: predecessor_id is the account that sent the receipt
+                // to the DAO — this is the correct counterparty for direct transfers
+                // and function calls.
+                let counterparty = receipt.predecessor_id.clone();
+                (
+                    Some(receipt.signer_id.clone()),
+                    Some(receipt.receiver_id.clone()),
+                    counterparty,
+                    receipt.action_kind.clone(),
+                    receipt.method_name.clone(),
+                )
+            } else if let Some(eo) = nd_data.execution_outcomes.first() {
+                // No Action receipt in chunk (Data receipt / callback) — the DAO executed
+                // as a callback from another contract.  Use tx_status to get the
+                // transaction-level receiver_id, matching Goldsky enrichment Path C.
+                let (tx_signer, tx_receiver, counterparty) = if let Some(tx_hash) = &eo.tx_hash {
+                    match block_info::get_transaction(network, tx_hash, account_id).await {
+                        Ok(tx_response) => {
+                            if let Some(ref fo) = tx_response.final_execution_outcome {
+                                use near_primitives::views::FinalExecutionOutcomeViewEnum;
+                                let tx = match fo {
+                                    FinalExecutionOutcomeViewEnum::FinalExecutionOutcome(o) => {
+                                        &o.transaction
+                                    }
+                                    FinalExecutionOutcomeViewEnum::FinalExecutionOutcomeWithReceipt(
+                                        o,
+                                    ) => &o.final_outcome.transaction,
+                                };
+                                let signer = tx.signer_id.to_string();
+                                let receiver = tx.receiver_id.to_string();
+                                // Path C: DAO executed a callback; tx.receiver_id is the
+                                // economic counterparty (e.g. petersalomonsen.near).
+                                // This matches Goldsky enrichment which uses outcome.receiver_id
+                                // (= tx.receiver_id) for Path C events.
+                                (Some(signer), Some(receiver.clone()), receiver)
                             } else {
-                                signer.clone()
-                            };
-
-                            (Some(signer), Some(receiver), counterparty)
+                                (None, None, String::new())
+                            }
                         }
-                        FinalExecutionOutcomeViewEnum::FinalExecutionOutcomeWithReceipt(
-                            outcome,
-                        ) => {
-                            let tx = &outcome.final_outcome.transaction;
-                            let signer = tx.signer_id.to_string();
-                            let receiver = tx.receiver_id.to_string();
-
-                            let counterparty = if signer == account_id {
-                                receiver.clone()
-                            } else {
-                                signer.clone()
-                            };
-
-                            (Some(signer), Some(receiver), counterparty)
+                        Err(e) => {
+                            log::warn!(
+                                "tx_status failed for {} at block {}: {} — counterparty unknown",
+                                tx_hash,
+                                block_height,
+                                e
+                            );
+                            (None, None, String::new())
                         }
                     }
                 } else {
-                    log::warn!("Transaction response has no final_execution_outcome");
                     (None, None, String::new())
-                }
-            }
-            Err(e) => {
+                };
+                (tx_signer, tx_receiver, counterparty, None, None)
+            } else {
+                // No receipts and no execution outcomes
                 log::warn!(
-                    "Failed to query transaction {}: {} - will try receipts",
-                    tx_hash,
-                    e
+                    "Neardata block {} has no receipts or execution outcomes for {}",
+                    block_height,
+                    account_id,
                 );
-                // Fall back to receipt-based logic below
-                (None, None, String::new())
-            }
-        }
-    } else {
-        (None, None, String::new())
-    };
+                if transaction_hashes.is_empty() {
+                    return Err(format!(
+                        "No receipt found for block {} - cannot determine counterparty",
+                        block_height
+                    )
+                    .into());
+                }
+                (None, None, String::new(), None, None)
+            };
 
-    // Get receipt data for additional context (if available)
-    // Only use this if we don't have signer/receiver from transaction
-    let (final_signer, final_receiver, final_counterparty, receipt_ids, action_kind, method_name) =
-        if signer_id.is_some() {
-            // We have transaction info — get receipt_ids from account's receipts
+        // Deduplicate tx_hashes
+        transaction_hashes.dedup();
+
+        (
+            block_timestamp,
+            transaction_hashes,
+            receipt_ids,
+            signer_id,
+            receiver_id,
+            counterparty,
+            action_kind,
+            method_name,
+            serde_json::json!({}),
+        )
+    } else {
+        // ── RPC path: existing logic ──
+
+        // Get block timestamp
+        let block_timestamp = block_info::get_block_timestamp(network, block_height, None)
+            .await
+            .map_err(|e| -> GapFillerError { e.to_string().into() })?;
+
+        // Get account changes to find the transaction hash that caused this balance change
+        let account_changes = block_info::get_account_changes(network, account_id, block_height)
+            .await
+            .map_err(|e| -> GapFillerError { e.to_string().into() })?;
+
+        // Extract transaction hash and other details from account changes
+        let (mut transaction_hashes, raw_data) = if let Some(change) = account_changes.first() {
+            use near_primitives::views::StateChangeCauseView;
+
+            let tx_hashes = match &change.cause {
+                StateChangeCauseView::TransactionProcessing { tx_hash } => {
+                    vec![tx_hash.to_string()]
+                }
+                _ => vec![],
+            };
+
+            let raw_data = serde_json::to_value(change).unwrap_or_else(|_| serde_json::json!({}));
+            (tx_hashes, raw_data)
+        } else {
+            (vec![], serde_json::json!({}))
+        };
+
+        // If we have a transaction hash, query the full transaction to get signer and receiver
+        let (signer_id, receiver_id, counterparty) =
+            if let Some(tx_hash) = transaction_hashes.first() {
+                match block_info::get_transaction(network, tx_hash, account_id).await {
+                    Ok(tx_response) => {
+                        if let Some(ref final_outcome) = tx_response.final_execution_outcome {
+                            use near_primitives::views::FinalExecutionOutcomeViewEnum;
+                            match final_outcome {
+                                FinalExecutionOutcomeViewEnum::FinalExecutionOutcome(outcome) => {
+                                    let tx = &outcome.transaction;
+                                    let signer = tx.signer_id.to_string();
+                                    let receiver = tx.receiver_id.to_string();
+
+                                    let counterparty = if signer == account_id {
+                                        receiver.clone()
+                                    } else {
+                                        signer.clone()
+                                    };
+
+                                    (Some(signer), Some(receiver), counterparty)
+                                }
+                                FinalExecutionOutcomeViewEnum::FinalExecutionOutcomeWithReceipt(
+                                    outcome,
+                                ) => {
+                                    let tx = &outcome.final_outcome.transaction;
+                                    let signer = tx.signer_id.to_string();
+                                    let receiver = tx.receiver_id.to_string();
+
+                                    let counterparty = if signer == account_id {
+                                        receiver.clone()
+                                    } else {
+                                        signer.clone()
+                                    };
+
+                                    (Some(signer), Some(receiver), counterparty)
+                                }
+                            }
+                        } else {
+                            log::warn!("Transaction response has no final_execution_outcome");
+                            (None, None, String::new())
+                        }
+                    }
+                    Err(e) => {
+                        log::warn!(
+                            "Failed to query transaction {}: {} - will try receipts",
+                            tx_hash,
+                            e
+                        );
+                        (None, None, String::new())
+                    }
+                }
+            } else {
+                (None, None, String::new())
+            };
+
+        // Get receipt data for additional context (if available)
+        let (
+            final_signer,
+            final_receiver,
+            final_counterparty,
+            receipt_ids,
+            action_kind,
+            method_name,
+        ) = if signer_id.is_some() {
             let block_data = block_info::get_block_data(network, account_id, block_height)
                 .await
                 .map_err(|e| -> GapFillerError { e.to_string().into() })?;
@@ -2205,10 +2466,6 @@ pub async fn insert_balance_change_record(
                     method_name,
                 )
             } else if token_id != "near" && !token_id.starts_with("intents.near:") {
-                // For FT tokens, receipts execute on the token contract, not the monitored account.
-                // Look for ft_transfer/ft_transfer_call receipts on the token contract.
-                // Skip intents tokens — they use a different swap mechanism and their token IDs
-                // are not valid NEAR account IDs.
                 let (s, r, c, rids) = resolve_ft_counterparty_from_token_contract(
                     network,
                     account_id,
@@ -2218,8 +2475,6 @@ pub async fn insert_balance_change_record(
                 .await?;
                 (s, r, c, rids, None, None)
             } else if token_id.starts_with("intents.near:") {
-                // Intents tokens use a different swap mechanism — counterparty is resolved
-                // later by the swap detector. Use "UNKNOWN" as placeholder.
                 log::debug!(
                     "Intents token {} at block {} — counterparty will be resolved by swap detector",
                     token_id,
@@ -2227,7 +2482,6 @@ pub async fn insert_balance_change_record(
                 );
                 (None, None, "UNKNOWN".to_string(), vec![], None, None)
             } else {
-                // If no receipt found for NEAR token, we cannot determine counterparty
                 return Err(format!(
                     "No receipt found for block {} - cannot determine counterparty",
                     block_height
@@ -2236,31 +2490,44 @@ pub async fn insert_balance_change_record(
             }
         };
 
-    // ── Resolve receipt → transaction hash ──────────────────────────────────
-    if transaction_hashes.is_empty() && !receipt_ids.is_empty() {
-        for receipt_id in &receipt_ids {
-            match tx_resolver::resolve_receipt_to_transaction(network, receipt_id, block_height)
-                .await
-            {
-                Ok(result) => {
-                    log::info!(
-                        "Resolved receipt {} → tx {}",
-                        receipt_id,
-                        result.transaction_hash,
-                    );
-                    transaction_hashes.push(result.transaction_hash);
-                    break;
-                }
-                Err(e) => {
-                    log::debug!(
-                        "Could not resolve receipt {} to transaction: {}",
-                        receipt_id,
-                        e
-                    );
+        // Resolve receipt → transaction hash (RPC path only)
+        if transaction_hashes.is_empty() && !receipt_ids.is_empty() {
+            for receipt_id in &receipt_ids {
+                match tx_resolver::resolve_receipt_to_transaction(network, receipt_id, block_height)
+                    .await
+                {
+                    Ok(result) => {
+                        log::info!(
+                            "Resolved receipt {} → tx {}",
+                            receipt_id,
+                            result.transaction_hash,
+                        );
+                        transaction_hashes.push(result.transaction_hash);
+                        break;
+                    }
+                    Err(e) => {
+                        log::debug!(
+                            "Could not resolve receipt {} to transaction: {}",
+                            receipt_id,
+                            e
+                        );
+                    }
                 }
             }
         }
-    }
+
+        (
+            block_timestamp,
+            transaction_hashes,
+            receipt_ids,
+            final_signer,
+            final_receiver,
+            final_counterparty,
+            action_kind,
+            method_name,
+            raw_data,
+        )
+    };
 
     // For intents tokens: query account_changes on intents.near to find candidate tx hashes,
     // then filter to only those whose execution outcome logs mention the monitored account.
