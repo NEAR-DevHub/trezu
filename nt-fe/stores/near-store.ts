@@ -32,12 +32,6 @@ import {
     estimateProposalStorage,
     estimateVoteStorage,
 } from "@/lib/sputnik-storage";
-import { setupLedgerSandboxBackendBridge } from "@/src/ledger-wallet/parent-bridge";
-import {
-    isWebHidSupported,
-    isWebUsbSupported,
-    isWebBleSupported,
-} from "@/src/ledger-wallet/near-ledger";
 import { APP_WALLET_SETUP_URL } from "@/constants/config";
 import { trackEvent } from "@/lib/analytics";
 

@@ -118,7 +118,7 @@ function WalletSuggestionModal({
             name: "Ledger Wallet",
             href: "https://ledger.com/",
             description: "Maximum security. Bluetooth supported",
-            iconUrl: "/ledger-wallet/ledger-icon.jpeg",
+            iconUrl: "/wallets/ledger.svg",
         },
         {
             name: "MyNearWallet",
@@ -332,14 +332,14 @@ export function Content() {
                                             delay: 0.5,
                                         }}
                                     >
-                                        {!creationAvailable
+                                        {!creationAvailable && accountId
                                             ? submitted
                                                 ? "You're on the list 🎉"
                                                 : "Join the Trezu Waitlist"
                                             : "Welcome to Trezu"}
                                     </motion.h1>
                                 </div>
-                                {creationAvailable ? (
+                                {creationAvailable || !accountId ? (
                                     <div className="overflow-hidden">
                                         <motion.p
                                             className="text-sm text-muted-foreground font-medium"

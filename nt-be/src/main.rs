@@ -4,7 +4,7 @@ use axum::{
 };
 use std::sync::Arc;
 use std::time::Duration;
-use tower_http::cors::{AllowOrigin, CorsLayer};
+use tower_http::cors::{AllowOrigin, Any, CorsLayer};
 
 #[tokio::main]
 async fn main() {
@@ -226,8 +226,22 @@ async fn main() {
         ])
         .allow_credentials(true);
 
+    let open_cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods([Method::POST, Method::OPTIONS])
+        .allow_headers([header::CONTENT_TYPE, header::ACCEPT]);
+
     let app = Router::new()
-        .merge(nt_be::routes::create_routes(state))
+        .merge(nt_be::routes::create_routes(state.clone()))
+        .merge(
+            Router::new()
+                .route(
+                    "/api/user/create",
+                    axum::routing::post(nt_be::handlers::user::create::create_user_account),
+                )
+                .with_state(state)
+                .layer(open_cors),
+        )
         .layer(cors);
 
     let port = std::env::var("PORT").unwrap_or_else(|_| "3002".to_string());

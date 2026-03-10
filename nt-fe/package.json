@@ -4,11 +4,7 @@
     "private": true,
     "scripts": {
         "dev": "next dev",
-        "dev:ledger": "node scripts/build-ledger.mjs --watch",
-        "prebuild": "node scripts/build-ledger.mjs",
         "build": "next build",
-        "build:ledger": "node scripts/build-ledger.mjs",
-        "postinstall": "node scripts/build-near-connect.js",
         "start": "next start",
         "lint": "biome check",
         "format": "biome format --write",
@@ -75,10 +71,6 @@
     },
     "devDependencies": {
         "@biomejs/biome": "2.2.0",
-        "@ledgerhq/hw-transport": "6.29",
-        "@ledgerhq/hw-transport-web-ble": "6.29",
-        "@ledgerhq/hw-transport-webhid": "6.29",
-        "@ledgerhq/hw-transport-webusb": "6.29",
         "@near-js/crypto": "2.5.1",
         "@near-js/utils": "0.2.2",
         "@playwright/test": "^1.58.0",
