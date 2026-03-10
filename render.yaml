@@ -55,7 +55,7 @@ services:
     runtime: image
     plan: starter
     image:
-      url: docker.io/nocodb/nocodb:0.301.2
+      url: docker.io/nocodb/nocodb:0.301.3
     disk: 
       name: nocodb-disk
       mountPath: /usr/app/data/
@@ -80,4 +80,3 @@ databases:
   - name: database
     plan: basic-1gb
     diskSizeGB: 1
-    ipAllowList: [] # No entries in the IP allow list
