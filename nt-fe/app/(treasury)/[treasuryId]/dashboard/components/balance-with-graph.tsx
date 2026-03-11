@@ -139,7 +139,7 @@ export default function BalanceWithGraph({
                 token.residency === "Intents" &&
                 !token.id.startsWith("intents.near:")
             ) {
-                tokenIdsForHistory = [`intents.near:${token.id}`];
+                tokenIdsForHistory = [`intents.near:${token.contractId}`];
             } else if (
                 token.residency === "Staked" &&
                 "staking" in token.balance
@@ -148,7 +148,7 @@ export default function BalanceWithGraph({
                     (p) => `staking:${p.poolId}`,
                 );
             } else {
-                tokenIdsForHistory = [token.id];
+                tokenIdsForHistory = [token.contractId ?? token.id];
             }
 
             if (existing) {
