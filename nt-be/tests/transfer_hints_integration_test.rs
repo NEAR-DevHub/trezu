@@ -114,6 +114,7 @@ async fn test_near_and_ft_transfers_with_hints(pool: PgPool) -> sqlx::Result<()>
         None,
         "",
         None,
+        false,
     )
     .await
     .map_err(|e| sqlx::Error::Io(std::io::Error::other(e.to_string())))?;
@@ -322,6 +323,7 @@ async fn test_intents_transfers_with_hints(pool: PgPool) -> sqlx::Result<()> {
         None,
         "",
         None,
+        false,
     )
     .await
     .map_err(|e| sqlx::Error::Io(std::io::Error::other(e.to_string())))?;
@@ -466,6 +468,7 @@ async fn test_shitzu_near_transfers_with_hints(pool: PgPool) -> sqlx::Result<()>
         None,
         "",
         None,
+        false,
     )
     .await
     .map_err(|e| sqlx::Error::Io(std::io::Error::other(e.to_string())))?;
