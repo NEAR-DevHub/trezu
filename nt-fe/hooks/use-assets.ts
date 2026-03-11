@@ -41,7 +41,6 @@ export function useAssets(
         queryFn: () => getTreasuryAssets(treasuryId!),
         enabled: !!treasuryId,
         staleTime: 1000 * 5, // 5 seconds (assets change frequently)
-        refetchInterval: 1000 * 5, // Refetch every 5 seconds
         select: (data) => {
             return {
                 ...data,
