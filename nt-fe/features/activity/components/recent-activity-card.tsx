@@ -32,17 +32,17 @@ import type { RecentActivity as RecentActivityType } from "@/lib/api";
 
 type GroupedActivity =
     | {
-          type: "single";
-          activity: RecentActivityType;
-      }
+        type: "single";
+        activity: RecentActivityType;
+    }
     | {
-          type: "grouped";
-          pool: string;
-          activities: RecentActivityType[];
-          totalAmount: string;
-          tokenMetadata: RecentActivityType["tokenMetadata"];
-          blockTime: string; // Most recent time
-      };
+        type: "grouped";
+        pool: string;
+        activities: RecentActivityType[];
+        totalAmount: string;
+        tokenMetadata: RecentActivityType["tokenMetadata"];
+        blockTime: string; // Most recent time
+    };
 import {
     useReactTable,
     getCoreRowModel,
@@ -253,8 +253,8 @@ export function RecentActivity() {
                                     isSwap
                                         ? "bg-blue-500/10"
                                         : isReceived
-                                          ? "bg-general-success-background-faded"
-                                          : "bg-general-destructive-background-faded",
+                                            ? "bg-general-success-background-faded"
+                                            : "bg-general-destructive-background-faded",
                                 )}
                             >
                                 {isSwap ? (
@@ -340,7 +340,7 @@ export function RecentActivity() {
                                     {isDeposit ? (
                                         <>
                                             {swap.sentAmount &&
-                                            swap.sentTokenMetadata ? (
+                                                swap.sentTokenMetadata ? (
                                                 <span className="font-semibold text-general-destructive-foreground hidden sm:inline truncate">
                                                     {formatSmartAmount(
                                                         swap.sentAmount,
@@ -463,9 +463,8 @@ export function RecentActivity() {
                         <MemberOnlyExportButton />
                         <Link href={`/${treasuryId}/dashboard/activity`}>
                             <Button
-                                variant="outline"
+                                variant="secondary"
                                 size={isMobile ? "icon" : "default"}
-                                tooltipContent="View all transactions"
                                 className="h-9 px-3"
                             >
                                 <span className="hidden sm:inline">

@@ -35,12 +35,11 @@ export function MemberOnlyExportButton() {
 
     const button = (
         <Button
-            variant="outline"
+            variant="secondary"
             onClick={handleClick}
             disabled={isDisabled}
             className="h-9 px-3"
             size={isMobile ? "icon" : "default"}
-            tooltipContent="Export transactions"
         >
             <FileDown className="h-4 w-4" />
             <span className="hidden sm:inline">Export</span>

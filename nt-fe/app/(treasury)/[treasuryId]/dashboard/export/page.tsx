@@ -803,6 +803,7 @@ export default function ExportActivityPage() {
                                                     <PopoverContent
                                                         className="w-auto p-0"
                                                         align="start"
+                                                        side="bottom"
                                                     >
                                                         <DateTimePicker
                                                             mode="range"
