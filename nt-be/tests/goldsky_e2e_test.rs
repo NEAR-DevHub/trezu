@@ -635,6 +635,7 @@ async fn test_goldsky_maintenance_webassemblymusic(pool: PgPool) {
             None,            // no intents API key
             "",              // intents API URL (unused)
             Some(&neardata), // use neardata for counterparty resolution
+            false,
         )
         .await
         .unwrap();

@@ -74,6 +74,7 @@ pub async fn run_maintenance_cycle(
     intents_api_key: Option<&str>,
     intents_api_url: &str,
     neardata: Option<&NeardataClient>,
+    disable_staking_rewards: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Process all enabled accounts; dirty accounts first
     let accounts: Vec<(String, Option<DateTime<Utc>>)> = sqlx::query_as(
@@ -328,22 +329,24 @@ pub async fn run_maintenance_cycle(
         }
 
         // 9. Track staking rewards
-        match track_and_fill_staking_rewards(pool, network, account_id, up_to_block).await {
-            Ok(records_created) if records_created > 0 => {
-                log::info!(
-                    "[maintenance] {}: Created {} staking reward records",
-                    account_id,
-                    records_created
-                );
+        if !disable_staking_rewards {
+            match track_and_fill_staking_rewards(pool, network, account_id, up_to_block).await {
+                Ok(records_created) if records_created > 0 => {
+                    log::info!(
+                        "[maintenance] {}: Created {} staking reward records",
+                        account_id,
+                        records_created
+                    );
+                }
+                Err(e) => {
+                    log::warn!(
+                        "[maintenance] {}: Error tracking staking rewards: {}",
+                        account_id,
+                        e
+                    );
+                }
+                _ => {}
             }
-            Err(e) => {
-                log::warn!(
-                    "[maintenance] {}: Error tracking staking rewards: {}",
-                    account_id,
-                    e
-                );
-            }
-            _ => {}
         }
 
         // 10. Update last_synced_at
@@ -792,6 +795,7 @@ mod tests {
             None,
             "",
             None,
+            false,
         )
         .await;
         assert!(result.is_ok());

@@ -79,6 +79,7 @@ async fn main() {
                     state_clone.env_vars.intents_explorer_api_key.as_deref(),
                     &state_clone.env_vars.intents_explorer_api_url,
                     state_clone.neardata_client.as_ref(),
+                    state_clone.env_vars.disable_staking_rewards,
                 )
                 .await
                 {

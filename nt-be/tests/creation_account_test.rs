@@ -137,14 +137,24 @@ async fn test_monitor_cycle_creation_account(pool: PgPool) -> sqlx::Result<()> {
     println!("Registered account via POST /api/monitored-accounts");
 
     // Run the monitoring cycle
-    run_maintenance_cycle(&pool, &network, UP_TO_BLOCK, None, None, None, "", None)
-        .await
-        .map_err(|e| {
-            sqlx::Error::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                e.to_string(),
-            ))
-        })?;
+    run_maintenance_cycle(
+        &pool,
+        &network,
+        UP_TO_BLOCK,
+        None,
+        None,
+        None,
+        "",
+        None,
+        false,
+    )
+    .await
+    .map_err(|e| {
+        sqlx::Error::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            e.to_string(),
+        ))
+    })?;
 
     println!("Monitoring cycle completed");
 
