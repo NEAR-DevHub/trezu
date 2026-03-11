@@ -134,6 +134,7 @@ async fn test_intents_token_should_not_include_unrelated_tx_hashes(
         None,
         "",
         None,
+        false,
     )
     .await
     .expect("Maintenance cycle should succeed");

@@ -473,7 +473,7 @@ async fn test_near_snapshot_with_existing_intents_tokens(pool: PgPool) -> sqlx::
     let network = common::create_archival_network();
     let up_to_block = 182_490_734i64; // Current block as of Jan 24, 2026
 
-    run_maintenance_cycle(&pool, &network, up_to_block, None, None, None, "", None)
+    run_maintenance_cycle(&pool, &network, up_to_block, None, None, None, "", None, false)
         .await
         .map_err(|e| {
             sqlx::Error::Io(std::io::Error::new(
@@ -592,7 +592,7 @@ async fn test_continuous_monitoring(pool: PgPool) -> sqlx::Result<()> {
     println!("Running monitoring cycle...");
     let network = common::create_archival_network();
     let up_to_block = 177_000_000i64;
-    run_maintenance_cycle(&pool, &network, up_to_block, None, None, None, "", None)
+    run_maintenance_cycle(&pool, &network, up_to_block, None, None, None, "", None, false)
         .await
         .map_err(|e| {
             sqlx::Error::Io(std::io::Error::new(
@@ -653,7 +653,7 @@ async fn test_continuous_monitoring(pool: PgPool) -> sqlx::Result<()> {
     let sync_time = after_sync.last_synced_at;
 
     // Run another cycle
-    run_maintenance_cycle(&pool, &network, up_to_block, None, None, None, "", None)
+    run_maintenance_cycle(&pool, &network, up_to_block, None, None, None, "", None, false)
         .await
         .map_err(|e| {
             sqlx::Error::Io(std::io::Error::new(
@@ -891,7 +891,7 @@ async fn test_ft_token_discovery_through_monitoring(pool: PgPool) -> sqlx::Resul
     println!("\n=== First Monitoring Cycle ===");
     println!("Up to block: {}", up_to_block);
 
-    run_maintenance_cycle(&pool, &network, up_to_block, None, None, None, "", None)
+    run_maintenance_cycle(&pool, &network, up_to_block, None, None, None, "", None, false)
         .await
         .map_err(|e| {
             sqlx::Error::Io(std::io::Error::new(
@@ -931,7 +931,7 @@ async fn test_ft_token_discovery_through_monitoring(pool: PgPool) -> sqlx::Resul
     .await?;
 
     // Run second monitoring cycle - should pick up discovered FT tokens
-    run_maintenance_cycle(&pool, &network, up_to_block, None, None, None, "", None)
+    run_maintenance_cycle(&pool, &network, up_to_block, None, None, None, "", None, false)
         .await
         .map_err(|e| {
             sqlx::Error::Io(std::io::Error::new(
@@ -1359,7 +1359,7 @@ async fn test_discover_intents_tokens_webassemblymusic_treasury(pool: PgPool) ->
     .await?;
 
     // Run monitor cycle - should discover intents tokens and find balance changes
-    run_maintenance_cycle(&pool, &network, monitor_block, None, None, None, "", None)
+    run_maintenance_cycle(&pool, &network, monitor_block, None, None, None, "", None, false)
         .await
         .expect("Monitor cycle should complete");
 
@@ -1387,7 +1387,7 @@ async fn test_discover_intents_tokens_webassemblymusic_treasury(pool: PgPool) ->
     )
     .execute(&pool)
     .await?;
-    run_maintenance_cycle(&pool, &network, monitor_block, None, None, None, "", None)
+    run_maintenance_cycle(&pool, &network, monitor_block, None, None, None, "", None, false)
         .await
         .expect("Second monitor cycle should complete");
 
@@ -1508,6 +1508,7 @@ async fn test_fastnear_ft_token_discovery(pool: PgPool) -> sqlx::Result<()> {
         None,
         "",
         None,
+        false,
     )
     .await
     .map_err(|e| {
@@ -1578,6 +1579,7 @@ async fn test_fastnear_ft_token_discovery(pool: PgPool) -> sqlx::Result<()> {
         None,
         "",
         None,
+        false,
     )
     .await
     .map_err(|e| {
