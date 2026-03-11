@@ -236,16 +236,16 @@ const buildIntentProposal = (
 
     const ftWithdrawArgs = isNetworkWithdrawal
         ? {
-              token: tokenContract,
-              receiver_id: tokenContract,
-              amount: parsedAmount,
-              memo: `WITHDRAW_TO:${data.address}`,
-          }
+            token: tokenContract,
+            receiver_id: tokenContract,
+            amount: parsedAmount,
+            memo: `WITHDRAW_TO:${data.address}`,
+        }
         : {
-              token: tokenContract,
-              receiver_id: data.address,
-              amount: parsedAmount,
-          };
+            token: tokenContract,
+            receiver_id: data.address,
+            amount: parsedAmount,
+        };
 
     return {
         FunctionCall: {
@@ -328,7 +328,6 @@ export default function PaymentsPage() {
         try {
             const isNEAR = data.token.symbol === "NEAR";
             const description = {
-                title: "Payment Request",
                 notes: data.memo || "",
             };
             const proposalBond = policy?.proposal_bond || "0";
