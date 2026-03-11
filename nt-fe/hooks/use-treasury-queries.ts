@@ -85,8 +85,8 @@ export function useBalanceChart(
         ],
         queryFn: () => getBalanceChart(params!),
         enabled: !!params?.accountId,
-        staleTime: 1000 * 5, // 5 seconds (balance chart changes frequently)
-        refetchInterval: options?.pauseRefetch ? false : 1000 * 5, // Pause refetch on hover to preserve tooltip
+        staleTime: 1000 * 30, // 5 seconds (balance chart changes frequently)
+        refetchInterval: options?.pauseRefetch ? false : 1000 * 30, // Pause refetch on hover to preserve tooltip
         placeholderData: keepPreviousData, // Show previous data while fetching new query key to avoid loading flicker
     });
 }
