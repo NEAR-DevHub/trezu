@@ -335,7 +335,7 @@ export function RecentActivity() {
                             swap.receivedTokenMetadata?.symbol ??
                             swap.receivedTokenId;
                         return (
-                            <div className="text-right">
+                            <div className="flex flex-col items-end">
                                 <div className="flex items-center justify-end gap-1.5 truncate">
                                     {isDeposit ? (
                                         <>
