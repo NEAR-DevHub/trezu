@@ -14,7 +14,7 @@ use sqlx::PgPool;
 use std::collections::HashMap;
 
 use super::price_provider::PriceProvider;
-use crate::constants::intents_tokens::{get_defuse_tokens_map, get_tokens_map};
+use crate::constants::intents_tokens::{get_defuse_to_unified_map, get_defuse_tokens_map};
 
 /// Price lookup service that combines caching with price providers
 ///
@@ -268,17 +268,14 @@ fn normalize_token_id(token_id: &str) -> String {
 }
 
 /// Find the unifiedAssetId for a given defuseAssetId by searching tokens.json
+///
+/// Uses `get_defuse_to_unified_map()` which gives priority to proper unified tokens
+/// over synthetic entries from standalone base tokens (e.g., "aurora" wins over
+/// "aurora (omni)" when both share the same defuseAssetId).
 fn find_unified_asset_id_for_defuse_id(defuse_asset_id: &str) -> Option<String> {
-    let tokens_map = get_tokens_map();
-
-    for (unified_id, unified_token) in tokens_map.iter() {
-        for base_token in &unified_token.grouped_tokens {
-            if base_token.defuse_asset_id == defuse_asset_id {
-                return Some(unified_id.clone());
-            }
-        }
-    }
-    None
+    get_defuse_to_unified_map()
+        .get(defuse_asset_id)
+        .cloned()
 }
 
 #[cfg(test)]
@@ -474,6 +471,13 @@ mod tests {
             token_id_to_unified_asset_id("token.sweat"),
             Some("sweat".to_string()),
             "token.sweat should map to 'sweat' unified asset ID"
+        );
+
+        // AURORA token (factory.bridge.near) should map to "aurora" (not "aurora (omni)")
+        assert_eq!(
+            token_id_to_unified_asset_id("aaaaaa20d9e0e2461697782ef11675f668207961.factory.bridge.near"),
+            Some("aurora".to_string()),
+            "AURORA factory.bridge.near should map to 'aurora' unified asset ID, not 'aurora (omni)'"
         );
     }
 }
