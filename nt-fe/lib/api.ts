@@ -1186,6 +1186,7 @@ export async function relayDelegateAction(
     treasuryId: string,
     signedDelegateAction: string,
     storageBytes: Big,
+    proposalType?: string,
 ): Promise<RelayDelegateActionResponse> {
     const url = `${BACKEND_API_BASE}/relay/delegate-action`;
     const response = await axios.post<RelayDelegateActionResponse>(
@@ -1194,6 +1195,7 @@ export async function relayDelegateAction(
             signedDelegateAction: signedDelegateAction,
             storageBytes: storageBytes.toFixed(0),
             treasuryId,
+            ...(proposalType ? { proposalType } : {}),
         },
         { withCredentials: true },
     );

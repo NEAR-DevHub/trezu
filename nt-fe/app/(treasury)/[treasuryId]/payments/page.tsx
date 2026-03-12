@@ -236,16 +236,16 @@ const buildIntentProposal = (
 
     const ftWithdrawArgs = isNetworkWithdrawal
         ? {
-            token: tokenContract,
-            receiver_id: tokenContract,
-            amount: parsedAmount,
-            memo: `WITHDRAW_TO:${data.address}`,
-        }
+              token: tokenContract,
+              receiver_id: tokenContract,
+              amount: parsedAmount,
+              memo: `WITHDRAW_TO:${data.address}`,
+          }
         : {
-            token: tokenContract,
-            receiver_id: data.address,
-            amount: parsedAmount,
-        };
+              token: tokenContract,
+              receiver_id: data.address,
+              amount: parsedAmount,
+          };
 
     return {
         FunctionCall: {
@@ -383,6 +383,7 @@ export default function PaymentsPage() {
                 },
                 proposalBond,
                 additionalTransactions,
+                proposalType: "payment",
             })
                 .then(() => {
                     form.reset();

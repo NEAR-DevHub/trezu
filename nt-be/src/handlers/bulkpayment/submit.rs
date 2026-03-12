@@ -484,6 +484,13 @@ pub async fn submit_list(
                         // Don't fail the request - contract submission already succeeded
                     }
 
+                    crate::services::platform_metrics::record_event(
+                        &state.db_pool,
+                        &request.dao_contract_id,
+                        "batch_payments_used",
+                    )
+                    .await;
+
                     Ok(Json(SubmitListResponse {
                         success: true,
                         list_id: Some(request.list_id),

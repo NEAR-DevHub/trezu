@@ -384,6 +384,7 @@ export default function VestingPage() {
                 },
             },
             proposalBond,
+            proposalType: "other",
         })
             .then(() => {
                 form.reset();

@@ -285,6 +285,7 @@ export default function BulkPaymentPage() {
                     },
                     proposalBond,
                     additionalTransactions,
+                    proposalType: "payment",
                 },
                 false,
             );
