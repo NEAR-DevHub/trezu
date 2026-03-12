@@ -17,11 +17,12 @@ CREATE INDEX IF NOT EXISTS idx_monitored_accounts_created_by_trezu
 
 
 -- export_history.account_id → monitored_accounts.account_id
+-- ON DELETE CASCADE: account_id is NOT NULL, so SET NULL is invalid.
 ALTER TABLE export_history
     ADD CONSTRAINT fk_export_history_monitored_account
     FOREIGN KEY (account_id)
     REFERENCES monitored_accounts (account_id)
-    ON DELETE SET NULL
+    ON DELETE CASCADE
     DEFERRABLE INITIALLY DEFERRED
     NOT VALID;
 
