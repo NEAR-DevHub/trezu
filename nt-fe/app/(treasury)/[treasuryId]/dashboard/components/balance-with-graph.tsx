@@ -229,9 +229,14 @@ export default function BalanceWithGraph({
             ? null
             : groupedTokens.find((group) => group.symbol === selectedToken);
 
+    // Exclude lockups from displayed total balance USD
     const balance = selectedTokenGroup
-        ? selectedTokenGroup.totalBalanceUSD
-        : totalBalanceUSD;
+        ? selectedTokenGroup.tokens
+              .filter((t) => t.residency !== "Lockup")
+              .reduce((sum, t) => sum + t.balanceUSD, 0)
+        : tokens
+              .filter((t) => t.residency !== "Lockup")
+              .reduce((sum, t) => sum + t.balanceUSD, 0);
 
     // Calculate time range for chart API
     const chartParams = useMemo(() => {
@@ -540,7 +545,7 @@ export default function BalanceWithGraph({
                                         ...(chartExcludedSymbols.length > 0
                                             ? [
                                                   {
-                                                      title: "Excluded from chart",
+                                                      title: "Excluded tokens",
                                                       tokens: chartExcludedSymbols.join(
                                                           ", ",
                                                       ),
@@ -551,7 +556,7 @@ export default function BalanceWithGraph({
                                         ...(partiallyExcludedSymbols.length > 0
                                             ? [
                                                   {
-                                                      title: "Partially included",
+                                                      title: "Partially excluded",
                                                       tokens: partiallyExcludedSymbols.join(
                                                           ", ",
                                                       ),
@@ -563,7 +568,7 @@ export default function BalanceWithGraph({
                                         partiallyExcludedSymbols.length === 0
                                             ? [
                                                   {
-                                                      title: "Excluded from chart",
+                                                      title: "Excluded tokens",
                                                       tokens: "Lockup tokens",
                                                       reason: "Lockup is not supported in the chart.",
                                                   },
@@ -579,7 +584,7 @@ export default function BalanceWithGraph({
                                         )
                                             ? [
                                                   {
-                                                      title: "Partially included",
+                                                      title: "Partially excluded",
                                                       tokens: selectedToken,
                                                       reason: "Lockup balance not counted.",
                                                   },
