@@ -7,6 +7,7 @@ import {
     ArrowUpRightIcon,
     Download,
     Coins,
+    Info,
 } from "lucide-react";
 import {
     Select,
@@ -26,6 +27,37 @@ import { AuthButton } from "@/components/auth-button";
 import Big from "@/lib/big";
 import { availableBalance, totalBalance } from "@/lib/balance";
 import { useRouter } from "next/navigation";
+import { Tooltip } from "@/components/tooltip";
+
+interface ChartCaveatEntry {
+    title: string;
+    tokens: string;
+    reason: string;
+}
+
+function ChartCaveatsTooltip({ entries }: { entries: ChartCaveatEntry[] }) {
+    if (entries.length === 0) return null;
+    return (
+        <Tooltip
+            side="right"
+            content={
+                <div className="space-y-2">
+                    {entries.map((entry) => (
+                        <div key={entry.title}>
+                            <p className="font-medium mb-1">{entry.title}:</p>
+                            <p>{entry.tokens}</p>
+                            <p className="text-muted-foreground mt-1 text-[10px]">
+                                {entry.reason}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+            }
+        >
+            <Info className="size-3 cursor-help" />
+        </Tooltip>
+    );
+}
 
 interface Props {
     totalBalanceUSD: number | Big.Big;
@@ -287,8 +319,29 @@ export default function BalanceWithGraph({
                 }));
 
             if (data.length > 0) {
-                const nowBalanceUSD = tokens
-                    .filter((t) => t.residency !== "Lockup")
+                // Only include tokens whose history token IDs have price data
+                const tokenIdsWithPrices = new Set(
+                    Object.entries(balanceChartData)
+                        .filter(
+                            ([, snapshots]) =>
+                                Array.isArray(snapshots) &&
+                                snapshots.some((s) => s.priceUsd != null),
+                        )
+                        .map(([tokenId]) => tokenId),
+                );
+                const nowBalanceUSD = groupedTokens
+                    .filter(
+                        (group) =>
+                            group.tokens.some(
+                                (t) => t.residency !== "Lockup",
+                            ) &&
+                            group.tokenIds.some((id) =>
+                                tokenIdsWithPrices.has(id),
+                            ),
+                    )
+                    .flatMap((group) =>
+                        group.tokens.filter((t) => t.residency !== "Lockup"),
+                    )
                     .reduce((sum, t) => sum + t.balanceUSD, 0);
                 data.push({
                     name: "Now",
@@ -360,10 +413,22 @@ export default function BalanceWithGraph({
                 const nonLockupTokens = (
                     selectedTokenGroup?.tokens ?? []
                 ).filter((t) => t.residency !== "Lockup");
-                const nowUSD = nonLockupTokens.reduce(
-                    (sum, t) => sum + t.balanceUSD,
-                    0,
+                const selectedTokenIdsWithPrices = new Set(
+                    Object.entries(balanceChartData)
+                        .filter(
+                            ([, snapshots]) =>
+                                Array.isArray(snapshots) &&
+                                snapshots.some((s) => s.priceUsd != null),
+                        )
+                        .map(([tokenId]) => tokenId),
                 );
+                const hasHistoricalPrices =
+                    selectedTokenGroup?.tokenIds.some((id) =>
+                        selectedTokenIdsWithPrices.has(id),
+                    ) ?? false;
+                const nowUSD = hasHistoricalPrices
+                    ? nonLockupTokens.reduce((sum, t) => sum + t.balanceUSD, 0)
+                    : undefined;
                 const nowBalance = nonLockupTokens.reduce(
                     (sum, t) =>
                         sum +
@@ -390,7 +455,42 @@ export default function BalanceWithGraph({
         selectedTokenGroup,
         selectedPeriod,
         tokens,
+        groupedTokens,
     ]);
+
+    // Symbols excluded from the "all tokens" chart USD calculation (those without historical prices)
+    const chartExcludedSymbols = useMemo(() => {
+        if (!balanceChartData) return [];
+        const tokenIdsWithPrices = new Set(
+            Object.entries(balanceChartData)
+                .filter(
+                    ([, snapshots]) =>
+                        Array.isArray(snapshots) &&
+                        snapshots.some((s) => s.priceUsd != null),
+                )
+                .map(([tokenId]) => tokenId),
+        );
+        return groupedTokens
+            .filter(
+                (group) =>
+                    !group.tokenIds.some((id) => tokenIdsWithPrices.has(id)),
+            )
+            .map((group) => group.symbol);
+    }, [balanceChartData, groupedTokens]);
+
+    const hasLockupTokens = tokens.some((t) => t.residency === "Lockup");
+
+    // Symbols that have both included (non-lockup with prices) and excluded (lockup) residencies
+    const partiallyExcludedSymbols = useMemo(() => {
+        if (!hasLockupTokens) return [];
+        return groupedTokens
+            .filter(
+                (group) =>
+                    group.tokens.some((t) => t.residency === "Lockup") &&
+                    group.tokens.some((t) => t.residency !== "Lockup"),
+            )
+            .map((group) => group.symbol);
+    }, [hasLockupTokens, groupedTokens]);
 
     // Freeze chart data while hovering so tooltip isn't lost when parent
     // re-renders due to other queries (e.g. token balance) refetching.
@@ -433,8 +533,62 @@ export default function BalanceWithGraph({
             <div className="mb-6">
                 <div className="flex justify-between gap-4">
                     <div className="flex-1">
-                        <h3 className="text-xs font-medium text-muted-foreground">
+                        <h3 className="text-xs font-medium text-muted-foreground flex items-center gap-1">
                             Total Balance
+                            {selectedToken === "all" ? (
+                                <ChartCaveatsTooltip
+                                    entries={[
+                                        ...(chartExcludedSymbols.length > 0
+                                            ? [
+                                                  {
+                                                      title: "Excluded from chart",
+                                                      tokens: chartExcludedSymbols.join(
+                                                          ", ",
+                                                      ),
+                                                      reason: "No price history. Select a token to see its balance changes.",
+                                                  },
+                                              ]
+                                            : []),
+                                        ...(partiallyExcludedSymbols.length > 0
+                                            ? [
+                                                  {
+                                                      title: "Partially included",
+                                                      tokens: partiallyExcludedSymbols.join(
+                                                          ", ",
+                                                      ),
+                                                      reason: "Lockup balance not counted.",
+                                                  },
+                                              ]
+                                            : []),
+                                        ...(hasLockupTokens &&
+                                        partiallyExcludedSymbols.length === 0
+                                            ? [
+                                                  {
+                                                      title: "Excluded from chart",
+                                                      tokens: "Lockup tokens",
+                                                      reason: "Lockup is not supported in the chart.",
+                                                  },
+                                              ]
+                                            : []),
+                                    ]}
+                                />
+                            ) : (
+                                <ChartCaveatsTooltip
+                                    entries={
+                                        selectedTokenGroup?.tokens.some(
+                                            (t) => t.residency === "Lockup",
+                                        )
+                                            ? [
+                                                  {
+                                                      title: "Partially included",
+                                                      tokens: selectedToken,
+                                                      reason: "Lockup balance not counted.",
+                                                  },
+                                              ]
+                                            : []
+                                    }
+                                />
+                            )}
                         </h3>
                         <p className="text-3xl font-bold mt-2">
                             {formatCurrency(Number(balance))}
