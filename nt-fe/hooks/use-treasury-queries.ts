@@ -70,10 +70,7 @@ export function useTreasuryConfig(
  * Fetches historical balance snapshots at specified intervals
  * Supports filtering by specific tokens or all tokens
  */
-export function useBalanceChart(
-    params: BalanceChartRequest | null,
-    options?: { pauseRefetch?: boolean },
-) {
+export function useBalanceChart(params: BalanceChartRequest | null) {
     return useQuery({
         queryKey: [
             "balanceChart",
@@ -86,7 +83,6 @@ export function useBalanceChart(
         queryFn: () => getBalanceChart(params!),
         enabled: !!params?.accountId,
         staleTime: 1000 * 30, // 5 seconds (balance chart changes frequently)
-        refetchInterval: options?.pauseRefetch ? false : 1000 * 30, // Pause refetch on hover to preserve tooltip
         placeholderData: keepPreviousData, // Show previous data while fetching new query key to avoid loading flicker
     });
 }
@@ -106,7 +102,6 @@ export function useTokenBalance(
         queryFn: () => getTokenBalance(accountId!, tokenId!, network!),
         enabled: !!accountId && !!tokenId && !!network,
         staleTime: 1000 * 5, // 5 seconds (balances change frequently)
-        refetchInterval: 1000 * 5, // Refetch every 5 seconds
     });
 }
 
@@ -170,7 +165,6 @@ export function useToken(tokenId: string | null | undefined) {
         queryFn: () => getTokenMetadata(tokenId!),
         enabled: !!tokenId,
         staleTime: 1000 * 60 * 5, // 5 minutes (token metadata and price)
-        refetchInterval: 1000 * 60 * 5, // Refetch every 5 minutes
     });
 }
 
@@ -319,7 +313,6 @@ export function useRecentActivity(
             ),
         enabled: !!accountId,
         staleTime: 1000 * 5, // 5 seconds (activity changes frequently)
-        refetchInterval: 1000 * 5, // Refetch every 5 seconds
     });
 }
 
@@ -327,9 +320,7 @@ export function useRecentActivity(
  * Hook to fetch export history for an account
  * Only updates when explicitly refetched (after export)
  */
-export function useExportHistory(
-    accountId: string | null | undefined,
-) {
+export function useExportHistory(accountId: string | null | undefined) {
     return useQuery({
         queryKey: ["exportHistory", accountId],
         queryFn: () => getExportHistory(accountId!),

@@ -270,7 +270,6 @@ export default function BalanceWithGraph({
     // Fetch balance chart data with USD values
     const { data: balanceChartData, isLoading } = useBalanceChart(
         frozenChartParams.current,
-        { pauseRefetch: isChartHovered },
     );
 
     // Transform chart data for display
