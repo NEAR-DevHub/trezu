@@ -31,6 +31,12 @@ pub struct RelayRequest {
     pub storage_bytes: U128,
     /// Base64-encoded borsh-serialized SignedDelegateAction
     pub signed_delegate_action: Base64VecU8,
+    /// Optional proposal type hint for metrics. Only set on the actual proposal call,
+    /// NOT on helper calls like storage_deposit.
+    /// "swap" | "payment" | "vote" | any other string → "other_proposals_submitted"
+    /// Absent/null → no metric recorded.
+    #[serde(default)]
+    pub proposal_type: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -375,6 +381,32 @@ pub async fn relay_delegate_action(
                         );
                         // Don't fail - the relay already succeeded
                     }
+                }
+
+                // Record usage metrics in one round-trip.
+                // gas_covered_transactions fires for every relayed action.
+                // The proposal metric only fires when proposalType is explicitly provided.
+                let proposal_metric = match request.proposal_type.as_deref() {
+                    Some("swap") => "swap_proposals",
+                    Some("payment") => "payment_proposals",
+                    Some("vote") => "votes_casted",
+                    Some(_) => "other_proposals_submitted",
+                    None => "",
+                };
+                if proposal_metric.is_empty() {
+                    crate::services::platform_metrics::record_event(
+                        &state.db_pool,
+                        request.treasury_id.as_str(),
+                        "gas_covered_transactions",
+                    )
+                    .await;
+                } else {
+                    crate::services::platform_metrics::record_events(
+                        &state.db_pool,
+                        request.treasury_id.as_str(),
+                        &["gas_covered_transactions", proposal_metric],
+                    )
+                    .await;
                 }
 
                 Ok(Json(RelayResponse {

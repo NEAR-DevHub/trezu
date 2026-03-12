@@ -391,6 +391,13 @@ async fn handle_export(
     .await
     .map_err(|e| (StatusCode::FORBIDDEN, e.to_string()))?;
 
+    crate::services::platform_metrics::record_event(
+        &state.db_pool,
+        &params.account_id,
+        "exports_used",
+    )
+    .await;
+
     // Format dates as YYYY-MM-DD for cleaner filename
     let start_date = params.start_time.format("%Y-%m-%d").to_string();
     let end_date = params.end_time.format("%Y-%m-%d").to_string();

@@ -78,6 +78,8 @@ export interface CreateProposalParams {
         receiverId: string;
         actions: ConnectorAction[];
     }>;
+    /** Metric hint for the backend. "swap" | "payment" | "vote" | "other". Omit for non-tracked proposals. */
+    proposalType?: string;
 }
 
 interface Vote {
@@ -121,6 +123,7 @@ interface NearStore {
         treasuryId: string,
         params: SignDelegateActionsParams,
         storageBytes: Big,
+        proposalType?: string,
     ) => Promise<boolean>;
     createProposal: (params: CreateProposalParams) => Promise<void>;
     voteProposals: (treasuryId: string, votes: Vote[]) => Promise<void>;
@@ -398,6 +401,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
         treasuryId: string,
         params: SignDelegateActionsParams,
         storageBytes: Big,
+        proposalType?: string,
     ): Promise<boolean> => {
         const state = get();
         if (!isFullyAuthenticated(state)) {
@@ -411,12 +415,15 @@ export const useNearStore = create<NearStore>((set, get) => ({
         const wallet = await state.connector.wallet();
         const result = await wallet.signDelegateActions(params);
 
-        // Relay each signed delegate action to the backend for gas-sponsored submission
-        for (const signedAction of result.signedDelegateActions) {
+        // Relay each signed delegate action to the backend for gas-sponsored submission.
+        // proposalType is only passed for the first action (the actual proposal/vote);
+        // subsequent actions are helper calls like storage_deposit.
+        for (let i = 0; i < result.signedDelegateActions.length; i++) {
             const relayResult = await relayDelegateAction(
                 treasuryId,
-                signedAction,
+                result.signedDelegateActions[i],
                 storageBytes,
+                i === 0 ? proposalType : undefined,
             );
             if (!relayResult.success) {
                 throw new Error(
@@ -486,6 +493,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                 params.treasuryId,
                 { delegateActions, network: "mainnet" },
                 storageBytes,
+                params.proposalType,
             );
         } catch (error) {
             console.error("Failed to create proposal:", error);
@@ -552,6 +560,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                 treasuryId,
                 { delegateActions, network: "mainnet" },
                 voteStorageBytes,
+                "vote",
             );
         } catch (error) {
             console.error("Failed to vote proposals:", error);

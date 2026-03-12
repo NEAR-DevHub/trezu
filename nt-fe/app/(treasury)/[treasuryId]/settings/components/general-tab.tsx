@@ -122,6 +122,7 @@ export function GeneralTab() {
                     },
                 },
                 proposalBond: proposalBond,
+                proposalType: "other",
             });
 
             // Refetch proposals to show the newly created proposal
