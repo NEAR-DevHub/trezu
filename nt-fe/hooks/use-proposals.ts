@@ -47,7 +47,6 @@ export function useProposals(
         queryFn: () => getProposals(daoId!, filters),
         enabled: !!daoId,
         staleTime: 1000 * 10, // 10 seconds (proposals can change frequently)
-        refetchInterval: 1000 * 10, // Refetch every 10 seconds
     });
 }
 
@@ -60,7 +59,6 @@ export function useProposal(
         queryFn: () => getProposal(daoId!, proposalId!),
         enabled: !!daoId && !!proposalId,
         staleTime: 1000 * 10, // 10 seconds (proposals can change frequently)
-        refetchInterval: 1000 * 10, // Refetch every 10 seconds
     });
 }
 
