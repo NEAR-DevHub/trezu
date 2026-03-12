@@ -560,7 +560,7 @@ export default function BalanceWithGraph({
                                                       tokens: partiallyExcludedSymbols.join(
                                                           ", ",
                                                       ),
-                                                      reason: "Lockup balance not counted.",
+                                                      reason: "Vesting balance not counted.",
                                                   },
                                               ]
                                             : []),
@@ -569,8 +569,8 @@ export default function BalanceWithGraph({
                                             ? [
                                                   {
                                                       title: "Excluded tokens",
-                                                      tokens: "Lockup tokens",
-                                                      reason: "Lockup is not supported in the chart.",
+                                                      tokens: "Vesting tokens",
+                                                      reason: "Vesting is not supported in the chart.",
                                                   },
                                               ]
                                             : []),
@@ -586,7 +586,7 @@ export default function BalanceWithGraph({
                                                   {
                                                       title: "Partially excluded",
                                                       tokens: selectedToken,
-                                                      reason: "Lockup balance not counted.",
+                                                      reason: "Vesting balance not counted.",
                                                   },
                                               ]
                                             : []
