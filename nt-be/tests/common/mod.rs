@@ -207,7 +207,8 @@ impl TestServer {
         let mock_server = start_mock_defillama_server().await;
         let mock_uri = mock_server.uri();
 
-        // Start the server in the background, pointing to the mock DeFiLlama API
+        // Start the server in the background, pointing to the mock DeFiLlama API.
+        // Clear proxy env vars so the server uses real RPC endpoints (not the test proxy).
         let mut process = Command::new("cargo")
             .args(["run", "--bin", "nt-be"])
             .env("PORT", "3001")
@@ -220,6 +221,11 @@ impl TestServer {
             )
             .env("SIGNER_ID", "sandbox")
             .env("DEFILLAMA_API_BASE_URL", &mock_uri) // Point to mock server
+            .env_remove("NEAR_RPC_URL")
+            .env_remove("NEAR_ARCHIVAL_RPC_URL")
+            .env_remove("TRANSFER_HINTS_BASE_URL")
+            .env_remove("NEARDATA_BASE_URL")
+            .env_remove("INTENTS_EXPLORER_API_URL")
             .spawn()
             .expect("Failed to start server");
 
@@ -284,6 +290,11 @@ impl TestServer {
             )
             .env("SIGNER_ID", "sandbox")
             .env("DEFILLAMA_API_BASE_URL", &mock_uri)
+            .env_remove("NEAR_RPC_URL")
+            .env_remove("NEAR_ARCHIVAL_RPC_URL")
+            .env_remove("TRANSFER_HINTS_BASE_URL")
+            .env_remove("NEARDATA_BASE_URL")
+            .env_remove("INTENTS_EXPLORER_API_URL")
             .spawn()
             .expect("Failed to start server");
 

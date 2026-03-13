@@ -22,12 +22,12 @@ static INIT: Once = Once::new();
 
 /// Load environment files in the correct order for tests
 ///
-/// Loads .env files to ensure required environment variables are available.
-/// Uses plain `from_filename` (not `override`) to avoid changing DATABASE_URL
-/// when sqlx::test macro has already read it at compile time.
+/// Loads `.env` first for base config (API keys etc.), then `.env.test` (no override).
+/// Uses plain `from_filename` (not `override`) to avoid changing DATABASE_URL at runtime,
+/// which would conflict with `#[sqlx::test]` macro that reads DATABASE_URL at compile time.
 ///
-/// NOTE: Integration tests in `tests/` use `tests/common/mod.rs::load_test_env()`
-/// which does override DATABASE_URL for the test database.
+/// NOTE: When recording RPC fixtures, set `DATABASE_URL` to the test database explicitly
+/// (via the recording script) so tests that shortcut via DB data still hit the RPC.
 #[cfg(test)]
 pub fn load_test_env() {
     INIT.call_once(|| {
