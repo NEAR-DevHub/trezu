@@ -24,9 +24,11 @@ impl Default for NeardataClient {
 
 impl NeardataClient {
     pub fn new() -> Self {
+        let base_url = std::env::var("NEARDATA_BASE_URL")
+            .unwrap_or_else(|_| "https://mainnet.neardata.xyz".to_string());
         Self {
             client: Client::new(),
-            base_url: "https://mainnet.neardata.xyz".to_string(),
+            base_url,
             api_key: None,
         }
     }

@@ -77,9 +77,19 @@ pub fn build_test_state(db_pool: sqlx::PgPool) -> AppState {
     let price_service = crate::services::PriceLookupService::new(db_pool.clone(), defillama_client);
 
     // Create network configs first (needed for transfer hint service)
+    // Respects NEAR_RPC_URL / NEAR_ARCHIVAL_RPC_URL env vars for proxy/cache override
+    let rpc_url = env_vars
+        .near_rpc_url
+        .clone()
+        .unwrap_or_else(|| "https://rpc.mainnet.fastnear.com/".to_string());
+    let archival_rpc_url = env_vars
+        .near_archival_rpc_url
+        .clone()
+        .unwrap_or_else(|| "https://archival-rpc.mainnet.fastnear.com/".to_string());
+
     let network = NetworkConfig {
         rpc_endpoints: vec![
-            RPCEndpoint::new("https://rpc.mainnet.fastnear.com/".parse().unwrap())
+            RPCEndpoint::new(rpc_url.parse().unwrap())
                 .with_api_key(env_vars.fastnear_api_key.clone()),
         ],
         ..NetworkConfig::mainnet()
@@ -87,12 +97,8 @@ pub fn build_test_state(db_pool: sqlx::PgPool) -> AppState {
 
     let archival_network = NetworkConfig {
         rpc_endpoints: vec![
-            RPCEndpoint::new(
-                "https://archival-rpc.mainnet.fastnear.com/"
-                    .parse()
-                    .unwrap(),
-            )
-            .with_api_key(env_vars.fastnear_api_key.clone()),
+            RPCEndpoint::new(archival_rpc_url.parse().unwrap())
+                .with_api_key(env_vars.fastnear_api_key.clone()),
         ],
         ..NetworkConfig::mainnet()
     };

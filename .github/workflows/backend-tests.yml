@@ -39,38 +39,15 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Set up Rust
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@stable
       with:
-        toolchain: stable
-        override: true
         components: rustfmt, clippy
 
-    - name: Cache cargo registry
-      uses: actions/cache@v4
+    - name: Cache Rust build artifacts
+      uses: Swatinem/rust-cache@v2
       with:
-        path: ~/.cargo/registry
-        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-registry-
-
-    - name: Cache cargo index
-      uses: actions/cache@v4
-      with:
-        path: ~/.cargo/git
-        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-index-
-
-    - name: Cache cargo build
-      uses: actions/cache@v4
-      with:
-        path: |
-          nt-be/target/debug/deps
-          nt-be/target/debug/build
-          nt-be/target/debug/.fingerprint
-        key: ${{ runner.os }}-cargo-build-deps-${{ hashFiles('nt-be/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-build-deps-
+        workspaces: nt-be
+        cache-on-failure: true
 
     - name: Check formatting
       working-directory: nt-be
@@ -93,7 +70,15 @@ jobs:
         JWT_SECRET=test-jwt-secret-for-ci-testing
         EOF
 
+    - name: Cache sqlx-cli
+      id: cache-sqlx
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/bin/sqlx
+        key: ${{ runner.os }}-sqlx-0.8
+
     - name: Install sqlx-cli
+      if: steps.cache-sqlx.outputs.cache-hit != 'true'
       run: cargo install sqlx-cli --no-default-features --features postgres
 
     - name: Run migrations
@@ -104,8 +89,36 @@ jobs:
       working-directory: nt-be
       run: cargo clippy -- -D warnings
 
+    - name: Extract RPC cache fixtures
+      working-directory: nt-be
+      run: |
+        zstd -d tests/fixtures/rpc_cache.tar.zst -o tests/fixtures/rpc_cache.tar
+        tar -xf tests/fixtures/rpc_cache.tar -C tests/fixtures/
+        echo "Extracted $(ls tests/fixtures/rpc_cache/*.json | wc -l) cached RPC responses"
+
+    - name: Start RPC cache proxy
+      working-directory: nt-be
+      run: |
+        cargo build --bin rpc_cache_proxy
+        CACHE_DIR=tests/fixtures/rpc_cache PORT=18552 \
+          cargo run --bin rpc_cache_proxy &
+        # Wait for proxy to be ready
+        for i in $(seq 1 30); do
+          if curl -s http://127.0.0.1:18552/near-rpc/ > /dev/null 2>&1; then
+            echo "RPC cache proxy ready"
+            break
+          fi
+          sleep 0.5
+        done
+
     - name: Run unit tests
       working-directory: nt-be
+      env:
+        NEAR_RPC_URL: http://127.0.0.1:18552/near-rpc
+        NEAR_ARCHIVAL_RPC_URL: http://127.0.0.1:18552/near-archival
+        TRANSFER_HINTS_BASE_URL: http://127.0.0.1:18552/fastnear-hints
+        NEARDATA_BASE_URL: http://127.0.0.1:18552/neardata
+        INTENTS_EXPLORER_API_URL: http://127.0.0.1:18552/intents-explorer/api/v0
       run: cargo test --lib --bins
 
     - name: Build binary for integration tests
@@ -114,6 +127,12 @@ jobs:
 
     - name: Run integration tests
       working-directory: nt-be
+      env:
+        NEAR_RPC_URL: http://127.0.0.1:18552/near-rpc
+        NEAR_ARCHIVAL_RPC_URL: http://127.0.0.1:18552/near-archival
+        TRANSFER_HINTS_BASE_URL: http://127.0.0.1:18552/fastnear-hints
+        NEARDATA_BASE_URL: http://127.0.0.1:18552/neardata
+        INTENTS_EXPLORER_API_URL: http://127.0.0.1:18552/intents-explorer/api/v0
       run: cargo test --tests
 
     - name: Stop PostgreSQL
