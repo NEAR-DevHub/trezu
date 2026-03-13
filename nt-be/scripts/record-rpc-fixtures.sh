@@ -44,6 +44,9 @@ cleanup() {
 trap cleanup EXIT
 
 echo "==> Running tests through proxy..."
+# Use the test database to avoid shortcutting via dev DB data.
+# Some tests (e.g. binary search) only hit RPC when the DB is empty.
+DATABASE_URL="postgresql://treasury_test:test_password@localhost:5433/treasury_test_db" \
 NEAR_RPC_URL="${PROXY_URL}/near-rpc" \
 NEAR_ARCHIVAL_RPC_URL="${PROXY_URL}/near-archival" \
 TRANSFER_HINTS_BASE_URL="${PROXY_URL}/fastnear-hints" \
