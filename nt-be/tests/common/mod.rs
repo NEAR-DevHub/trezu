@@ -207,10 +207,10 @@ impl TestServer {
         let mock_server = start_mock_defillama_server().await;
         let mock_uri = mock_server.uri();
 
-        // Start the server in the background, pointing to the mock DeFiLlama API.
+        // Start the pre-built server binary directly (not `cargo run`) to avoid
+        // blocking on the cargo build lock when called from within `cargo test`.
         // Clear proxy env vars so the server uses real RPC endpoints (not the test proxy).
-        let mut process = Command::new("cargo")
-            .args(["run", "--bin", "nt-be"])
+        let mut process = Command::new(env!("CARGO_BIN_EXE_nt-be"))
             .env("PORT", "3001")
             .env("RUST_LOG", "info")
             .env("MONITOR_INTERVAL_SECONDS", "0") // Disable background monitoring
@@ -273,8 +273,7 @@ impl TestServer {
         let mock_server = start_mock_defillama_server().await;
         let mock_uri = mock_server.uri();
 
-        let mut process = Command::new("cargo")
-            .args(["run", "--bin", "nt-be"])
+        let mut process = Command::new(env!("CARGO_BIN_EXE_nt-be"))
             .env("PORT", "3001")
             .env("RUST_LOG", "info")
             .env("DATABASE_URL", &db_url)
