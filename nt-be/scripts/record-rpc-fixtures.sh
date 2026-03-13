@@ -56,5 +56,11 @@ INTENTS_EXPLORER_API_URL="${PROXY_URL}/intents-explorer/api/v0" \
 
 CACHED=$(ls -1 "$CACHE_DIR"/*.json 2>/dev/null | wc -l)
 echo ""
-echo "==> Done! ${CACHED} responses cached in ${CACHE_DIR}/"
-echo "==> Commit the fixture files to the repo."
+echo "==> ${CACHED} responses cached in ${CACHE_DIR}/"
+
+echo "==> Compressing fixtures..."
+ARCHIVE="tests/fixtures/rpc_cache.tar"
+tar -cf "$ARCHIVE" -C tests/fixtures rpc_cache
+zstd -f --rm -19 "$ARCHIVE" -o "${ARCHIVE}.zst"
+echo "==> Done! Archive: $(ls -lh "${ARCHIVE}.zst" | awk '{print $5}')"
+echo "==> Commit ${ARCHIVE}.zst to the repo."
