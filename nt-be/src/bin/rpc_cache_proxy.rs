@@ -21,12 +21,7 @@
 //! Without RECORD=1, cache misses return 502 (useful in CI to detect missing fixtures).
 
 use axum::{
-    Router,
-    body::Body,
-    extract::State,
-    http::StatusCode,
-    response::IntoResponse,
-    routing::any,
+    Router, body::Body, extract::State, http::StatusCode, response::IntoResponse, routing::any,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -169,18 +164,18 @@ async fn proxy_handler(
     let cache_path = state.cache_dir.join(format!("{}.json", cache_key));
 
     // Check cache
-    if let Ok(data) = fs::read(&cache_path).await {
-        if let Ok(cached) = serde_json::from_slice::<CachedResponse>(&data) {
-            let status = StatusCode::from_u16(cached.status).unwrap_or(StatusCode::OK);
-            let mut response = axum::response::Response::builder().status(status);
-            for (k, v) in &cached.headers {
-                response = response.header(k.as_str(), v.as_str());
-            }
-            return response
-                .body(Body::from(cached.body))
-                .unwrap()
-                .into_response();
+    if let Ok(data) = fs::read(&cache_path).await
+        && let Ok(cached) = serde_json::from_slice::<CachedResponse>(&data)
+    {
+        let status = StatusCode::from_u16(cached.status).unwrap_or(StatusCode::OK);
+        let mut response = axum::response::Response::builder().status(status);
+        for (k, v) in &cached.headers {
+            response = response.header(k.as_str(), v.as_str());
         }
+        return response
+            .body(Body::from(cached.body))
+            .unwrap()
+            .into_response();
     }
 
     // Cache miss
@@ -228,11 +223,7 @@ async fn proxy_handler(
         Ok(r) => r,
         Err(e) => {
             eprintln!("Upstream error for {}: {}", upstream_url, e);
-            return (
-                StatusCode::BAD_GATEWAY,
-                format!("Upstream error: {}", e),
-            )
-                .into_response();
+            return (StatusCode::BAD_GATEWAY, format!("Upstream error: {}", e)).into_response();
         }
     };
 
@@ -269,10 +260,10 @@ async fn proxy_handler(
             headers: resp_headers.clone(),
             body: resp_body.clone(),
         };
-        if let Ok(json) = serde_json::to_string_pretty(&cached) {
-            if let Err(e) = fs::write(&cache_path, json).await {
-                eprintln!("Failed to write cache file {:?}: {}", cache_path, e);
-            }
+        if let Ok(json) = serde_json::to_string_pretty(&cached)
+            && let Err(e) = fs::write(&cache_path, json).await
+        {
+            eprintln!("Failed to write cache file {:?}: {}", cache_path, e);
         }
     } else {
         eprintln!(
@@ -294,8 +285,7 @@ async fn proxy_handler(
 
 fn find_upstream(path: &str) -> Option<(&'static str, String)> {
     for route in ROUTES {
-        if path.starts_with(route.prefix) {
-            let remaining = &path[route.prefix.len()..];
+        if let Some(remaining) = path.strip_prefix(route.prefix) {
             let remaining = if remaining.is_empty() {
                 "/".to_string()
             } else {

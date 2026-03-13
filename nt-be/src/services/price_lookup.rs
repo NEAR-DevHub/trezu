@@ -273,9 +273,7 @@ fn normalize_token_id(token_id: &str) -> String {
 /// over synthetic entries from standalone base tokens (e.g., "aurora" wins over
 /// "aurora (omni)" when both share the same defuseAssetId).
 fn find_unified_asset_id_for_defuse_id(defuse_asset_id: &str) -> Option<String> {
-    get_defuse_to_unified_map()
-        .get(defuse_asset_id)
-        .cloned()
+    get_defuse_to_unified_map().get(defuse_asset_id).cloned()
 }
 
 #[cfg(test)]
@@ -475,7 +473,9 @@ mod tests {
 
         // AURORA token (factory.bridge.near) should map to "aurora" (not "aurora (omni)")
         assert_eq!(
-            token_id_to_unified_asset_id("aaaaaa20d9e0e2461697782ef11675f668207961.factory.bridge.near"),
+            token_id_to_unified_asset_id(
+                "aaaaaa20d9e0e2461697782ef11675f668207961.factory.bridge.near"
+            ),
             Some("aurora".to_string()),
             "AURORA factory.bridge.near should map to 'aurora' unified asset ID, not 'aurora (omni)'"
         );
