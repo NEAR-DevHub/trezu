@@ -638,7 +638,7 @@ export default function BalanceWithGraph({
                                     )}
                                 </SelectValue>
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="max-h-[300px] overflow-y-auto">
                                 <SelectItem value="all">
                                     <div className="flex items-center gap-2">
                                         <Coins className="size-4" />
