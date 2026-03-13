@@ -2,6 +2,7 @@
 name = "nt-be"
 version = "0.1.0"
 edition = "2024"
+default-run = "nt-be"
 
 [dependencies]
 async-trait = "0.1"
