@@ -180,6 +180,16 @@ async fn proxy_handler(
 
     // Cache miss
     if !state.record {
+        let body_preview = String::from_utf8_lossy(&body_bytes);
+        let body_preview = if body_preview.len() > 200 {
+            format!("{}...", &body_preview[..200])
+        } else {
+            body_preview.to_string()
+        };
+        eprintln!(
+            "CACHE MISS: {} {} key={} body={}",
+            method, remaining_path, cache_key, body_preview
+        );
         return (
             StatusCode::BAD_GATEWAY,
             format!(
