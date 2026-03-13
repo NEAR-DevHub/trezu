@@ -101,7 +101,7 @@ jobs:
       run: |
         cargo build --bin rpc_cache_proxy
         CACHE_DIR=tests/fixtures/rpc_cache PORT=18552 \
-          cargo run --bin rpc_cache_proxy &
+          cargo run --bin rpc_cache_proxy 2>/tmp/rpc_proxy.log &
         # Wait for proxy to be ready
         for i in $(seq 1 30); do
           if curl -s http://127.0.0.1:18552/near-rpc/ > /dev/null 2>&1; then
@@ -134,6 +134,10 @@ jobs:
         NEARDATA_BASE_URL: http://127.0.0.1:18552/neardata
         INTENTS_EXPLORER_API_URL: http://127.0.0.1:18552/intents-explorer/api/v0
       run: cargo test --tests
+
+    - name: Show RPC proxy logs
+      if: always()
+      run: cat /tmp/rpc_proxy.log 2>/dev/null || echo "No proxy logs"
 
     - name: Stop PostgreSQL
       if: always()
