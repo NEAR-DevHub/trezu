@@ -100,6 +100,41 @@ fill_gaps(&pool, &network, account_id, "discovered-token.near", up_to_block).awa
 
 This ensures tests drive implementation through TDD - they fail until the real functionality is complete.
 
+## RPC Fixture Recording
+
+Tests that hit NEAR RPC or external APIs run through a caching proxy in CI. The proxy serves pre-recorded responses from `nt-be/tests/fixtures/rpc_cache.tar.zst`. When you add a test that makes new RPC calls, the CI will fail with a `502 Cache miss` error.
+
+**To record new fixtures:**
+
+```bash
+cd nt-be
+./scripts/record-rpc-fixtures.sh
+```
+
+This starts the proxy in RECORD mode, runs the full test suite through it, compresses the fixtures, and tells you to commit the updated archive. You can also record fixtures for a single test:
+
+```bash
+cd nt-be
+# Start proxy in RECORD mode
+RECORD=1 CACHE_DIR=tests/fixtures/rpc_cache PORT=18552 cargo run --bin rpc_cache_proxy &
+
+# Run your specific test through the proxy
+NEAR_RPC_URL=http://127.0.0.1:18552/near-rpc \
+NEAR_ARCHIVAL_RPC_URL=http://127.0.0.1:18552/near-archival \
+TRANSFER_HINTS_BASE_URL=http://127.0.0.1:18552/fastnear-hints \
+NEARDATA_BASE_URL=http://127.0.0.1:18552/neardata \
+INTENTS_EXPLORER_API_URL=http://127.0.0.1:18552/intents-explorer/api/v0 \
+DATABASE_URL=postgresql://treasury_test:test_password@localhost:5433/treasury_test_db \
+  cargo test --test your_test_name
+
+# Kill proxy, compress, and commit
+kill %1
+tar -cf tests/fixtures/rpc_cache.tar -C tests/fixtures rpc_cache
+zstd -f --rm -19 tests/fixtures/rpc_cache.tar -o tests/fixtures/rpc_cache.tar.zst
+```
+
+**Important:** Use the test database (`DATABASE_URL` pointing to `localhost:5433`) when recording, not the dev database. Some tests skip RPC calls when they find existing data in the database.
+
 ## Pre-Commit Checks
 
 Always run `cargo fmt` and `cargo clippy` before committing. Code that doesn't pass formatting or has clippy warnings should not be committed.
