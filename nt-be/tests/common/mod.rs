@@ -23,22 +23,20 @@ pub fn load_test_env() {
     });
 }
 
-/// Create archival network config for tests with fastnear API key
+/// Create archival network config for tests with fastnear API key.
+/// Respects NEAR_ARCHIVAL_RPC_URL env var for proxy/cache override.
 pub fn create_archival_network() -> NetworkConfig {
     load_test_env();
 
     let fastnear_api_key =
         std::env::var("FASTNEAR_API_KEY").expect("FASTNEAR_API_KEY must be set in .env");
 
-    // Use fastnear archival RPC which supports historical queries
+    let rpc_url = std::env::var("NEAR_ARCHIVAL_RPC_URL")
+        .unwrap_or_else(|_| "https://archival-rpc.mainnet.fastnear.com/".to_string());
+
     NetworkConfig {
         rpc_endpoints: vec![
-            RPCEndpoint::new(
-                "https://archival-rpc.mainnet.fastnear.com/"
-                    .parse()
-                    .unwrap(),
-            )
-            .with_api_key(fastnear_api_key),
+            RPCEndpoint::new(rpc_url.parse().unwrap()).with_api_key(fastnear_api_key),
         ],
         ..NetworkConfig::mainnet()
     }
@@ -65,9 +63,18 @@ pub fn build_test_state(db_pool: sqlx::PgPool) -> AppState {
         nt_be::services::DeFiLlamaClient::with_base_url(http_client.clone(), base_url.clone());
     let price_service = nt_be::services::PriceLookupService::new(db_pool.clone(), defillama_client);
 
+    let rpc_url = env_vars
+        .near_rpc_url
+        .clone()
+        .unwrap_or_else(|| "https://rpc.mainnet.fastnear.com/".to_string());
+    let archival_rpc_url = env_vars
+        .near_archival_rpc_url
+        .clone()
+        .unwrap_or_else(|| "https://archival-rpc.mainnet.fastnear.com/".to_string());
+
     let network = NetworkConfig {
         rpc_endpoints: vec![
-            RPCEndpoint::new("https://rpc.mainnet.fastnear.com/".parse().unwrap())
+            RPCEndpoint::new(rpc_url.parse().unwrap())
                 .with_api_key(env_vars.fastnear_api_key.clone()),
         ],
         ..NetworkConfig::mainnet()
@@ -75,12 +82,8 @@ pub fn build_test_state(db_pool: sqlx::PgPool) -> AppState {
 
     let archival_network = NetworkConfig {
         rpc_endpoints: vec![
-            RPCEndpoint::new(
-                "https://archival-rpc.mainnet.fastnear.com/"
-                    .parse()
-                    .unwrap(),
-            )
-            .with_api_key(env_vars.fastnear_api_key.clone()),
+            RPCEndpoint::new(archival_rpc_url.parse().unwrap())
+                .with_api_key(env_vars.fastnear_api_key.clone()),
         ],
         ..NetworkConfig::mainnet()
     };
@@ -204,9 +207,10 @@ impl TestServer {
         let mock_server = start_mock_defillama_server().await;
         let mock_uri = mock_server.uri();
 
-        // Start the server in the background, pointing to the mock DeFiLlama API
-        let mut process = Command::new("cargo")
-            .args(["run", "--bin", "nt-be"])
+        // Start the pre-built server binary directly (not `cargo run`) to avoid
+        // blocking on the cargo build lock when called from within `cargo test`.
+        // Clear proxy env vars so the server uses real RPC endpoints (not the test proxy).
+        let mut process = Command::new(env!("CARGO_BIN_EXE_nt-be"))
             .env("PORT", "3001")
             .env("RUST_LOG", "info")
             .env("MONITOR_INTERVAL_SECONDS", "0") // Disable background monitoring
@@ -217,6 +221,11 @@ impl TestServer {
             )
             .env("SIGNER_ID", "sandbox")
             .env("DEFILLAMA_API_BASE_URL", &mock_uri) // Point to mock server
+            .env_remove("NEAR_RPC_URL")
+            .env_remove("NEAR_ARCHIVAL_RPC_URL")
+            .env_remove("TRANSFER_HINTS_BASE_URL")
+            .env_remove("NEARDATA_BASE_URL")
+            .env_remove("INTENTS_EXPLORER_API_URL")
             .spawn()
             .expect("Failed to start server");
 
@@ -264,8 +273,7 @@ impl TestServer {
         let mock_server = start_mock_defillama_server().await;
         let mock_uri = mock_server.uri();
 
-        let mut process = Command::new("cargo")
-            .args(["run", "--bin", "nt-be"])
+        let mut process = Command::new(env!("CARGO_BIN_EXE_nt-be"))
             .env("PORT", "3001")
             .env("RUST_LOG", "info")
             .env("DATABASE_URL", &db_url)
@@ -281,6 +289,11 @@ impl TestServer {
             )
             .env("SIGNER_ID", "sandbox")
             .env("DEFILLAMA_API_BASE_URL", &mock_uri)
+            .env_remove("NEAR_RPC_URL")
+            .env_remove("NEAR_ARCHIVAL_RPC_URL")
+            .env_remove("TRANSFER_HINTS_BASE_URL")
+            .env_remove("NEARDATA_BASE_URL")
+            .env_remove("INTENTS_EXPLORER_API_URL")
             .spawn()
             .expect("Failed to start server");
 

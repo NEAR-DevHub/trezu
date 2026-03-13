@@ -1,0 +1,2 @@
+# Only the compressed archive is committed; individual JSON fixtures are extracted at test time
+*.json
