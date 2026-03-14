@@ -236,7 +236,17 @@ const TrezuWallet = async () => {
 
     const getAccounts = async (network: string) => {
         const wallet = getWallet(network);
+
+        if (!wallet.isSignedIn()) {
+            return [];
+        }
+
         const accountId = wallet.getAccountId();
+
+        if (!accountId) {
+            return [];
+        }
+
         return [{ accountId, publicKey: "" }];
     };
 
