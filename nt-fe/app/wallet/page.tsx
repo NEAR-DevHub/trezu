@@ -471,7 +471,15 @@ function WalletPageContent() {
             setError(e.message || "Failed to create proposal");
             setStep("error");
         }
-    }, [connector, selectedDao, transactions, proposalDescription]);
+    }, [
+        connector,
+        selectedDao,
+        transactions,
+        proposalDescription,
+        router,
+        searchParams,
+        action,
+    ]);
 
     const handleProceed = useCallback(async () => {
         if (!selectedDao || proposalIds.length === 0) return;
