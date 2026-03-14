@@ -5,6 +5,7 @@
     "scripts": {
         "dev": "next dev",
         "build": "next build",
+        "postbuild": "cd near-connect && bun install && bun run build",
         "start": "next start",
         "lint": "biome check",
         "format": "biome format --write",
