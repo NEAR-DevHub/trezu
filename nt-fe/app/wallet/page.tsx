@@ -136,30 +136,8 @@ function ProposalPreview({ proposalData }: { proposalData: ProposalData }) {
 }
 
 function sendResultToOpener(data: Record<string, unknown>) {
-    if (!window.opener) {
-        return;
-    }
-
-    try {
-        const searchParams = new URLSearchParams(window.location.search);
-        const callbackUrl = searchParams.get("callbackUrl");
-
-        if (!callbackUrl) {
-            // No callback URL specified; avoid sending sensitive data to an unknown origin.
-            return;
-        }
-
-        const targetOrigin = new URL(callbackUrl).origin;
-
-        // Validate that the opener's origin matches the expected target origin.
-        if (window.opener.origin !== targetOrigin) {
-            return;
-        }
-
-        window.opener.postMessage(data, targetOrigin);
-    } catch {
-        // If anything goes wrong parsing the callback URL, fail closed.
-        return;
+    if (window.opener) {
+        window.opener.postMessage(data, "*");
     }
 }
 
