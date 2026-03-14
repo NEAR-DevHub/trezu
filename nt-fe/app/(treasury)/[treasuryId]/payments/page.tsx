@@ -22,7 +22,7 @@ import { useSearchParams } from "next/navigation";
 import { Textarea } from "@/components/textarea";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useNear } from "@/stores/near-store";
-import { encodeToMarkdown, formatCurrency } from "@/lib/utils";
+import { encodeToMarkdown, formatCurrency, jsonToBase64 } from "@/lib/utils";
 import Big from "@/lib/big";
 import { ConnectorAction } from "@hot-labs/near-connect";
 import { NEAR_TOKEN } from "@/constants/token";
@@ -253,9 +253,7 @@ const buildIntentProposal = (
             actions: [
                 {
                     method_name: "ft_withdraw",
-                    args: Buffer.from(JSON.stringify(ftWithdrawArgs)).toString(
-                        "base64",
-                    ),
+                    args: jsonToBase64(ftWithdrawArgs),
                     deposit: "1",
                     gas: gasForIntentAction,
                 },

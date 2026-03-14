@@ -7,8 +7,28 @@ export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
 
-export function toBase64(json: any) {
-    return Buffer.from(JSON.stringify(json)).toString("base64");
+// Built-in btoa() JS function fails on UTF8 inputs.
+// `Buffer` polyfill brings +30kb to the minified bundle.
+// https://stackoverflow.com/questions/23223718/failed-to-execute-btoa-on-window-the-string-to-be-encoded-contains-characte
+export function jsonToBase64(json: any): string {
+    const uint8Array = new TextEncoder().encode(JSON.stringify(json));
+    let binary = "";
+
+    for (let i = 0; i < uint8Array.length; ++i) {
+        binary += String.fromCharCode(uint8Array[i]);
+    }
+
+    return btoa(binary);
+}
+
+export function base64ToJson(base64: string): any {
+    const binary = atob(base64);
+    const bytes = Uint8Array.from(
+        binary,
+        (char) => char.charCodeAt(0),
+    );
+    const decoded = new TextDecoder().decode(bytes);
+    return JSON.parse(decoded);
 }
 
 export function formatCurrency(value: number | Big) {

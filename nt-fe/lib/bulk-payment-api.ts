@@ -1,4 +1,5 @@
 import axios from "axios";
+import { jsonToBase64 } from "@/lib/utils";
 
 // Bulk Payment Contract Configuration
 export const BULK_PAYMENT_CONTRACT_ID =
@@ -131,9 +132,7 @@ export async function buildApproveListProposal(params: {
                             actions: [
                                 {
                                     method_name: "approve_list",
-                                    args: Buffer.from(
-                                        JSON.stringify({ list_id: listId }),
-                                    ).toString("base64"),
+                                    args: jsonToBase64({ list_id: listId }),
                                     deposit: totalAmount, // Total amount to fund payments
                                     gas: "150000000000000", // 150 TGas
                                 },
@@ -152,14 +151,12 @@ export async function buildApproveListProposal(params: {
         const actions = [
             {
                 method_name: "mt_transfer_call",
-                args: Buffer.from(
-                    JSON.stringify({
-                        receiver_id: BULK_PAYMENT_CONTRACT_ID,
-                        token_id: tokenId, // Full multi-token ID like "nep141:btc.omft.near"
-                        amount: totalAmount,
-                        msg: listId, // list_id as the message
-                    }),
-                ).toString("base64"),
+                args: jsonToBase64({
+                    receiver_id: BULK_PAYMENT_CONTRACT_ID,
+                    token_id: tokenId, // Full multi-token ID like "nep141:btc.omft.near"
+                    amount: totalAmount,
+                    msg: listId, // list_id as the message
+                }),
                 deposit: "1", // 1 yoctoNEAR for mt_transfer_call
                 gas: "150000000000000", // 150 TGas
             },
@@ -187,13 +184,11 @@ export async function buildApproveListProposal(params: {
         const actions = [
             {
                 method_name: "ft_transfer_call",
-                args: Buffer.from(
-                    JSON.stringify({
-                        receiver_id: BULK_PAYMENT_CONTRACT_ID,
-                        amount: totalAmount,
-                        msg: listId, // list_id as the message
-                    }),
-                ).toString("base64"),
+                args: jsonToBase64({
+                    receiver_id: BULK_PAYMENT_CONTRACT_ID,
+                    amount: totalAmount,
+                    msg: listId, // list_id as the message
+                }),
                 deposit: "1", // 1 yoctoNEAR for ft_transfer_call
                 gas: "100000000000000", // 100 TGas
             },
