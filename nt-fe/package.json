@@ -5,7 +5,7 @@
     "scripts": {
         "dev": "next dev",
         "build": "next build",
-        "postbuild": "cd near-connect && npm run build",
+        "postbuild": "bun run --cwd near-connect build",
         "start": "next start",
         "lint": "biome check",
         "format": "biome format --write",
