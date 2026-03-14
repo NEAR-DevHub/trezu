@@ -21,6 +21,16 @@ export function jsonToBase64(json: any): string {
     return btoa(binary);
 }
 
+export function base64ToJson(base64: string): any {
+    const binary = atob(base64);
+    const bytes = Uint8Array.from(
+        binary,
+        (char) => char.charCodeAt(0),
+    );
+    const decoded = new TextDecoder().decode(bytes);
+    return JSON.parse(decoded);
+}
+
 export function formatCurrency(value: number | Big) {
     return new Intl.NumberFormat("en-US", {
         style: "currency",

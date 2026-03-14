@@ -21,7 +21,7 @@ import type {
     PaymentRequestData,
     FunctionCallData,
 } from "@/features/proposals/types/index";
-import { jsonToBase64 } from "@/lib/utils";
+import { jsonToBase64, base64ToJson } from "@/lib/utils";
 
 const BACKEND_API_BASE = `${process.env.NEXT_PUBLIC_BACKEND_API_BASE}/api`;
 
@@ -267,9 +267,7 @@ function WalletPageContent() {
         // Parse transactions if present
         if (transactionsParam) {
             try {
-                const txs = JSON.parse(
-                    atob(transactionsParam),
-                ) as TransactionRequest[];
+                const txs = base64ToJson(transactionsParam) as TransactionRequest[];
                 setTransactions(txs);
             } catch (e) {
                 console.error("Failed to parse transactions:", e);
@@ -446,7 +444,7 @@ function WalletPageContent() {
                         r?.status?.SuccessValue ||
                         r?.transaction_outcome?.outcome?.status?.SuccessValue;
                     if (successValue) {
-                        proposalId = JSON.parse(atob(successValue));
+                        proposalId = base64ToJson(successValue);
                     }
                 } catch {
                     // Cannot determine proposal ID
