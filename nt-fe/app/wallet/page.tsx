@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { NearConnector } from "@hot-labs/near-connect";
-import type { EventMap } from "@hot-labs/near-connect/build/types";
+import type { Network, EventMap } from "@hot-labs/near-connect/build/types";
 import axios from "axios";
 import { extractProposalData } from "@/features/proposals/utils/proposal-extractors";
 import { TransferExpanded } from "@/features/proposals/components/expanded-view/transfer-expanded";
@@ -182,7 +182,7 @@ function WalletPageContent() {
     const router = useRouter();
 
     const action = (searchParams.get("action") || "sign_in") as WalletAction;
-    const network = searchParams.get("network") || "mainnet";
+    const network = (searchParams.get("network") || "mainnet") as Network;
     const callbackUrl = searchParams.get("callbackUrl") || "";
     const transactionsParam = searchParams.get("transactions") || "";
     const signerId = searchParams.get("signerId") || "";
@@ -215,18 +215,12 @@ function WalletPageContent() {
     const [approvalLoading, setApprovalLoading] = useState(false);
     const initRef = useRef(false);
 
-    const searchParams = useSearchParams();
-    const networkParam = searchParams.get("network");
-    const network = networkParam === "testnet" ? "testnet" : "mainnet";
-
     // Initialize NEAR connector
     useEffect(() => {
         if (initRef.current) return;
         initRef.current = true;
 
-        const nc = new NearConnector({
-            network,
-        });
+        const nc = new NearConnector({ network });
 
         nc.on("wallet:signIn", async (t: EventMap["wallet:signIn"]) => {
             const acct = t.accounts[0]?.accountId;

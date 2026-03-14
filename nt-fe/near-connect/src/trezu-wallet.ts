@@ -137,21 +137,10 @@ class TrezuWalletConnector {
       return await this.handlePopup(url, callback);
     }
 
-    const expectedOrigin = new URL(url).origin;
-
     return new Promise<T>((resolve, reject) => {
       let intervalId: ReturnType<typeof setInterval> | undefined;
 
       const handler = (event: MessageEvent) => {
-        // Only accept messages from the Trezu popup window and expected origin
-        if (event.source !== childWindow) {
-          return;
-        }
-
-        if (event.origin !== expectedOrigin) {
-          return;
-        }
-
         const message = event.data as WalletMessage;
         if (!message || !message.type || !message.type.startsWith("trezu:")) return;
 
