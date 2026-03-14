@@ -111,7 +111,6 @@ nt-fe/
 ├── lib/                   # Utility functions and API clients
 ├── stores/                # Zustand state management
 ├── types/                 # TypeScript type definitions
-├── esbuild-shims.js       # Browser polyfills for build
 └── proxy-server.js        # Development CORS proxy
 
 ```

@@ -1,6 +1,5 @@
 import type { ConnectorAction } from "./utils/action";
 import type { SignInParams } from "./utils/types";
-import { Buffer } from "buffer";
 
 const DEFAULT_POPUP_WIDTH = 520;
 const DEFAULT_POPUP_HEIGHT = 700;
@@ -17,6 +16,20 @@ const RPC_URLS: Record<string, string> = {
   // Only mainnet is supported, but we keep it here just in case
   // testnet: "https://rpc.testnet.near.org",
 };
+
+// Built-in btoa() JS function fails on UTF8 inputs.
+// `Buffer` polyfill brings +30kb to the minified bundle.
+// https://stackoverflow.com/questions/23223718/failed-to-execute-btoa-on-window-the-string-to-be-encoded-contains-characte
+function toBase64(txt: string): string {
+  const uint8Array = new TextEncoder().encode(txt);
+  let binary = '';
+
+  for (let i = 0; i < uint8Array.length; ++i) {
+    binary += String.fromCharCode(uint8Array[i]);
+  }
+
+  return btoa(binary);
+}
 
 async function txStatus(rpcUrl: string, txHash: string, signerId: string): Promise<any> {
   const res = await fetch(rpcUrl, {
@@ -94,7 +107,7 @@ class TrezuWalletConnector {
     url.searchParams.set("callbackUrl", window.selector.location);
     url.searchParams.set(
       "transactions",
-      Buffer.from(JSON.stringify(transactions)).toString("base64")
+      toBase64(JSON.stringify(transactions))
     );
     url.searchParams.set("signerId", this.signedAccountId);
 

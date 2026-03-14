@@ -13,7 +13,7 @@ import type {
     PaymentRequestData,
     FunctionCallData,
 } from "@/features/proposals/types/index";
-import { toBase64 } from "@/lib/utils";
+import { jsonToBase64 } from "@/lib/utils";
 
 const BACKEND_API_BASE = `${process.env.NEXT_PUBLIC_BACKEND_API_BASE}/api`;
 
@@ -83,7 +83,7 @@ function translateToProposals(
     if (functionCallActions.length > 0) {
         const actions = functionCallActions.map((a) => ({
             method_name: a.params.methodName,
-            args: toBase64(JSON.stringify(a.params.args)),
+            args: jsonToBase64(a.params.args),
             gas: a.params.gas,
             deposit: a.params.deposit,
         }));

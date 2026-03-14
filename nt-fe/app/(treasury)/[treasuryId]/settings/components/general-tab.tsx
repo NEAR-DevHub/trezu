@@ -17,7 +17,7 @@ import { z } from "zod";
 import { Form, FormField, FormControl, FormItem } from "@/components/ui/form";
 import { toast } from "sonner";
 import { useNear } from "@/stores/near-store";
-import { encodeToMarkdown } from "@/lib/utils";
+import { encodeToMarkdown, jsonToBase64 } from "@/lib/utils";
 import { CreateRequestButton } from "@/components/create-request-button";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -114,9 +114,7 @@ export function GeneralTab() {
                             config: {
                                 name: data.displayName,
                                 purpose: config.purpose,
-                                metadata: Buffer.from(
-                                    JSON.stringify(metadata),
-                                ).toString("base64"),
+                                metadata: jsonToBase64(metadata),
                             },
                         },
                     },

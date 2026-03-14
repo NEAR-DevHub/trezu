@@ -1,6 +1,6 @@
 import { IntentsQuoteResponse } from "@/lib/api";
 import { Token } from "@/components/token-input";
-import { encodeToMarkdown } from "@/lib/utils";
+import { encodeToMarkdown, jsonToBase64 } from "@/lib/utils";
 import { getBatchStorageDepositIsRegistered } from "@/lib/api";
 
 interface ProposalBuilderParams {
@@ -154,18 +154,16 @@ export async function buildNativeNEARProposal(params: ProposalBuilderParams): Pr
           actions: [
             {
               method_name: "near_deposit",
-              args: Buffer.from(JSON.stringify({})).toString("base64"),
+              args: jsonToBase64({}),
               deposit: amountInSmallestUnit,
               gas: "10000000000000", // 10 TGas
             },
             {
               method_name: "ft_transfer",
-              args: Buffer.from(
-                JSON.stringify({
-                  receiver_id: proposalData.quote.depositAddress,
-                  amount: amountInSmallestUnit,
-                })
-              ).toString("base64"),
+              args: jsonToBase64({
+                receiver_id: proposalData.quote.depositAddress,
+                amount: amountInSmallestUnit,
+              }),
               deposit: "1", // 1 yoctoNEAR for storage
               gas: "150000000000000", // 150 TGas
             },
@@ -227,12 +225,10 @@ export async function buildFungibleTokenProposal(params: ProposalBuilderParams):
             actions: [
               {
                 method_name: "ft_transfer",
-                args: Buffer.from(
-                  JSON.stringify({
-                    receiver_id: proposalData.quote.depositAddress,
-                    amount: amountInSmallestUnit,
-                  })
-                ).toString("base64"),
+                args: jsonToBase64({
+                  receiver_id: proposalData.quote.depositAddress,
+                  amount: amountInSmallestUnit,
+                }),
                 deposit: "1", // 1 yoctoNEAR for storage
                 gas: "150000000000000", // 150 TGas
               },
@@ -263,13 +259,11 @@ export async function buildFungibleTokenProposal(params: ProposalBuilderParams):
             actions: [
               {
                 method_name: "mt_transfer",
-                args: Buffer.from(
-                  JSON.stringify({
-                    receiver_id: proposalData.quote.depositAddress,
-                    amount: amountInSmallestUnit,
-                    token_id: originAsset,
-                  })
-                ).toString("base64"),
+                args: jsonToBase64({
+                  receiver_id: proposalData.quote.depositAddress,
+                  amount: amountInSmallestUnit,
+                  token_id: originAsset,
+                }),
                 deposit: "1", // 1 yoctoNEAR
                 gas: "150000000000000", // 150 TGas
               },
@@ -317,7 +311,7 @@ export async function buildNEARDepositProposal(params: ProposalBuilderParams): P
           actions: [
             {
               method_name: "near_deposit",
-              args: Buffer.from(JSON.stringify({})).toString("base64"),
+              args: jsonToBase64({}),
               deposit: amountInSmallestUnit,
               gas: "10000000000000", // 10 TGas
             },
@@ -351,11 +345,9 @@ export function buildNEARWithdrawProposal(params: ProposalBuilderParams): Exchan
           actions: [
             {
               method_name: "near_withdraw",
-              args: Buffer.from(
-                JSON.stringify({
-                  amount: amountInSmallestUnit,
-                })
-              ).toString("base64"),
+              args: jsonToBase64({
+                amount: amountInSmallestUnit,
+              }),
               deposit: "1", // 1 yoctoNEAR for storage
               gas: "150000000000000", // 150 TGas
             },
