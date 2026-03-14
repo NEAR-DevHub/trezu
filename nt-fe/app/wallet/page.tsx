@@ -13,6 +13,7 @@ import type {
     PaymentRequestData,
     FunctionCallData,
 } from "@/features/proposals/types/index";
+import { toBase64 } from "@/lib/utils";
 
 const BACKEND_API_BASE = `${process.env.NEXT_PUBLIC_BACKEND_API_BASE}/api`;
 
@@ -82,7 +83,7 @@ function translateToProposals(
     if (functionCallActions.length > 0) {
         const actions = functionCallActions.map((a) => ({
             method_name: a.params.methodName,
-            args: btoa(JSON.stringify(a.params.args)),
+            args: toBase64(JSON.stringify(a.params.args)),
             gas: a.params.gas,
             deposit: a.params.deposit,
         }));
@@ -135,8 +136,30 @@ function ProposalPreview({ proposalData }: { proposalData: ProposalData }) {
 }
 
 function sendResultToOpener(data: Record<string, unknown>) {
-    if (window.opener) {
-        window.opener.postMessage(data, "*");
+    if (!window.opener) {
+        return;
+    }
+
+    try {
+        const searchParams = new URLSearchParams(window.location.search);
+        const callbackUrl = searchParams.get("callbackUrl");
+
+        if (!callbackUrl) {
+            // No callback URL specified; avoid sending sensitive data to an unknown origin.
+            return;
+        }
+
+        const targetOrigin = new URL(callbackUrl).origin;
+
+        // Validate that the opener's origin matches the expected target origin.
+        if (window.opener.origin !== targetOrigin) {
+            return;
+        }
+
+        window.opener.postMessage(data, targetOrigin);
+    } catch {
+        // If anything goes wrong parsing the callback URL, fail closed.
+        return;
     }
 }
 
@@ -192,13 +215,17 @@ function WalletPageContent() {
     const [approvalLoading, setApprovalLoading] = useState(false);
     const initRef = useRef(false);
 
+    const searchParams = useSearchParams();
+    const networkParam = searchParams.get("network");
+    const network = networkParam === "testnet" ? "testnet" : "mainnet";
+
     // Initialize NEAR connector
     useEffect(() => {
         if (initRef.current) return;
         initRef.current = true;
 
         const nc = new NearConnector({
-            network: "mainnet",
+            network,
         });
 
         nc.on("wallet:signIn", async (t: EventMap["wallet:signIn"]) => {
@@ -249,11 +276,14 @@ function WalletPageContent() {
                 setTransactions(txs);
             } catch (e) {
                 console.error("Failed to parse transactions:", e);
+                setError("Failed to parse the transaction request. Please try again.");
+                setStep("error");
+                return;
             }
         }
 
         setStep("connect");
-    }, [transactionsParam, daoIdParam, proposalIdsParam]);
+    }, [transactionsParam, daoIdParam, proposalIdsParam, network]);
 
     // Fetch treasuries when account is connected
     useEffect(() => {

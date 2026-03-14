@@ -1,5 +1,6 @@
 import type { ConnectorAction } from "./utils/action";
 import type { SignInParams } from "./utils/types";
+import { Buffer } from "buffer";
 
 const DEFAULT_POPUP_WIDTH = 520;
 const DEFAULT_POPUP_HEIGHT = 700;
@@ -91,7 +92,10 @@ class TrezuWalletConnector {
     url.searchParams.set("action", "sign_transactions");
     url.searchParams.set("network", this.network);
     url.searchParams.set("callbackUrl", window.selector.location);
-    url.searchParams.set("transactions", btoa(JSON.stringify(transactions)));
+    url.searchParams.set(
+      "transactions",
+      Buffer.from(JSON.stringify(transactions)).toString("base64")
+    );
     url.searchParams.set("signerId", this.signedAccountId);
 
     return await this.handlePopup(url.toString(), async (data) => {
@@ -133,30 +137,49 @@ class TrezuWalletConnector {
       return await this.handlePopup(url, callback);
     }
 
+    const expectedOrigin = new URL(url).origin;
+
     return new Promise<T>((resolve, reject) => {
+      let intervalId: ReturnType<typeof setInterval> | undefined;
+
       const handler = (event: MessageEvent) => {
+        // Only accept messages from the Trezu popup window and expected origin
+        if (event.source !== childWindow) {
+          return;
+        }
+
+        if (event.origin !== expectedOrigin) {
+          return;
+        }
+
         const message = event.data as WalletMessage;
         if (!message || !message.type || !message.type.startsWith("trezu:")) return;
 
         if (message.type === "trezu:result") {
           if (message.status === "success") {
-            window.removeEventListener("message", handler);
+            cleanup();
             childWindow.close();
             Promise.resolve(callback(message)).then(resolve, reject);
           } else if (message.status === "failure") {
-            window.removeEventListener("message", handler);
+            cleanup();
             childWindow.close();
             reject(new Error(message.errorMessage || "Operation failed"));
           }
         }
       };
 
+      const cleanup = () => {
+        window.removeEventListener("message", handler);
+        if (intervalId !== undefined) {
+          clearInterval(intervalId);
+        }
+      };
+
       window.addEventListener("message", handler);
 
-      const intervalId = setInterval(() => {
+      intervalId = setInterval(() => {
         if (childWindow.closed) {
-          window.removeEventListener("message", handler);
-          clearInterval(intervalId);
+          cleanup();
           reject(new Error("User closed the window"));
         }
       }, POLL_INTERVAL);
@@ -166,25 +189,35 @@ class TrezuWalletConnector {
 
 const wallets: Record<string, TrezuWalletConnector> = {
   mainnet: new TrezuWalletConnector(TREZU_URLS.mainnet, "mainnet"),
-  testnet: new TrezuWalletConnector(TREZU_URLS.testnet, "testnet"),
 };
 
 const TrezuWallet = async () => {
+  const getWallet = (network: string): TrezuWalletConnector => {
+    const wallet = wallets[network];
+    if (!wallet) {
+      throw new Error(`Unsupported network: ${network}`);
+    }
+    return wallet;
+  };
+
   const getAccounts = async (network: string) => {
-    const accountId = wallets[network].getAccountId();
+    const wallet = getWallet(network);
+    const accountId = wallet.getAccountId();
     return [{ accountId, publicKey: "" }];
   };
 
   return {
     async signIn({ network }: SignInParams) {
-      if (!wallets[network].isSignedIn()) {
-        await wallets[network].requestSignIn();
+      const wallet = getWallet(network);
+      if (!wallet.isSignedIn()) {
+        await wallet.requestSignIn();
       }
       return getAccounts(network);
     },
 
     async signOut({ network }: { network: string }) {
-      wallets[network].signOut();
+      const wallet = getWallet(network);
+      wallet.signOut();
     },
 
     async getAccounts({ network }: { network: string }) {
@@ -208,8 +241,9 @@ const TrezuWallet = async () => {
       actions: ConnectorAction[];
       network: string;
     }) {
-      if (!wallets[network].isSignedIn()) throw new Error("Wallet not signed in");
-      return wallets[network].signAndSendTransaction({ receiverId, actions });
+      const wallet = getWallet(network);
+      if (!wallet.isSignedIn()) throw new Error("Wallet not signed in");
+      return wallet.signAndSendTransaction({ receiverId, actions });
     },
 
     async signAndSendTransactions({
@@ -219,8 +253,9 @@ const TrezuWallet = async () => {
       transactions: { receiverId: string; actions: ConnectorAction[] }[];
       network: string;
     }) {
-      if (!wallets[network].isSignedIn()) throw new Error("Wallet not signed in");
-      return wallets[network].signAndSendTransactions(transactions);
+      const wallet = getWallet(network);
+      if (!wallet.isSignedIn()) throw new Error("Wallet not signed in");
+      return wallet.signAndSendTransactions(transactions);
     },
   };
 };
