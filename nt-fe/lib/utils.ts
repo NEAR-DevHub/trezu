@@ -11,14 +11,14 @@ export function cn(...inputs: ClassValue[]) {
 // `Buffer` polyfill brings +30kb to the minified bundle.
 // https://stackoverflow.com/questions/23223718/failed-to-execute-btoa-on-window-the-string-to-be-encoded-contains-characte
 export function jsonToBase64(json: any): string {
-  const uint8Array = new TextEncoder().encode(JSON.stringify(json));
-  let binary = '';
+    const uint8Array = new TextEncoder().encode(JSON.stringify(json));
+    let binary = "";
 
-  for (let i = 0; i < uint8Array.length; ++i) {
-    binary += String.fromCharCode(uint8Array[i]);
-  }
+    for (let i = 0; i < uint8Array.length; ++i) {
+        binary += String.fromCharCode(uint8Array[i]);
+    }
 
-  return btoa(binary);
+    return btoa(binary);
 }
 
 export function formatCurrency(value: number | Big) {

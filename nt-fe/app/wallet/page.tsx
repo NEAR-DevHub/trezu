@@ -1,6 +1,13 @@
 "use client";
 
-import { Suspense, useEffect, useState, useCallback, useRef, useMemo } from "react";
+import {
+    Suspense,
+    useEffect,
+    useState,
+    useCallback,
+    useRef,
+    useMemo,
+} from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { NearConnector } from "@hot-labs/near-connect";
 import type { Network, EventMap } from "@hot-labs/near-connect/build/types";
@@ -20,7 +27,11 @@ const BACKEND_API_BASE = `${process.env.NEXT_PUBLIC_BACKEND_API_BASE}/api`;
 
 interface Treasury {
     daoId: string;
-    config: { name?: string; purpose?: string; metadata?: { flagLogo?: string } };
+    config: {
+        name?: string;
+        purpose?: string;
+        metadata?: { flagLogo?: string };
+    };
     isMember: boolean;
 }
 
@@ -129,9 +140,7 @@ function ProposalPreview({ proposalData }: { proposalData: ProposalData }) {
             return <FunctionCallExpanded data={data as FunctionCallData} />;
         default:
             return (
-                <p className="text-sm text-muted-foreground">
-                    {type} proposal
-                </p>
+                <p className="text-sm text-muted-foreground">{type} proposal</p>
             );
     }
 }
@@ -169,7 +178,14 @@ function WalletPageContent() {
     const proposalIdsParam = searchParams.get("proposalIds") || "";
 
     const [step, setStep] = useState<
-        "loading" | "connect" | "select-treasury" | "confirm-transactions" | "processing" | "waiting-approval" | "done" | "error"
+        | "loading"
+        | "connect"
+        | "select-treasury"
+        | "confirm-transactions"
+        | "processing"
+        | "waiting-approval"
+        | "done"
+        | "error"
     >("loading");
     const [connector, setConnector] = useState<NearConnector | null>(null);
     const [accountId, setAccountId] = useState<string | null>(null);
@@ -208,12 +224,15 @@ function WalletPageContent() {
             }
         });
 
-        nc.on("wallet:signInAndSignMessage", async (t: EventMap["wallet:signInAndSignMessage"]) => {
-            const acct = t.accounts[0]?.accountId;
-            if (acct) {
-                setAccountId(acct);
-            }
-        });
+        nc.on(
+            "wallet:signInAndSignMessage",
+            async (t: EventMap["wallet:signInAndSignMessage"]) => {
+                const acct = t.accounts[0]?.accountId;
+                if (acct) {
+                    setAccountId(acct);
+                }
+            },
+        );
 
         nc.on("wallet:signOut", () => {
             setAccountId(null);
@@ -233,7 +252,10 @@ function WalletPageContent() {
 
         // Restore waiting-approval state from URL if present
         if (daoIdParam && proposalIdsParam) {
-            const ids = proposalIdsParam.split(",").map(Number).filter((n) => !isNaN(n));
+            const ids = proposalIdsParam
+                .split(",")
+                .map(Number)
+                .filter((n) => !isNaN(n));
             if (ids.length > 0) {
                 setSelectedDao(daoIdParam);
                 setProposalIds(ids);
@@ -245,11 +267,15 @@ function WalletPageContent() {
         // Parse transactions if present
         if (transactionsParam) {
             try {
-                const txs = JSON.parse(atob(transactionsParam)) as TransactionRequest[];
+                const txs = JSON.parse(
+                    atob(transactionsParam),
+                ) as TransactionRequest[];
                 setTransactions(txs);
             } catch (e) {
                 console.error("Failed to parse transactions:", e);
-                setError("Failed to parse the transaction request. Please try again.");
+                setError(
+                    "Failed to parse the transaction request. Please try again.",
+                );
                 setStep("error");
                 return;
             }
@@ -269,14 +295,19 @@ function WalletPageContent() {
                 params: { accountId, includeHidden: false },
             })
             .then((res) => {
-                const memberTreasuries = (res.data || []).filter((t) => t.isMember);
+                const memberTreasuries = (res.data || []).filter(
+                    (t) => t.isMember,
+                );
                 setTreasuries(memberTreasuries);
 
                 if (action === "sign_in") {
                     setStep("select-treasury");
                 } else if (action === "sign_transactions") {
                     // If signerId matches a DAO the user is a member of, auto-select it
-                    if (signerId && memberTreasuries.some((t) => t.daoId === signerId)) {
+                    if (
+                        signerId &&
+                        memberTreasuries.some((t) => t.daoId === signerId)
+                    ) {
                         setSelectedDao(signerId);
                         setStep("confirm-transactions");
                     } else {
@@ -336,32 +367,28 @@ function WalletPageContent() {
                     `${BACKEND_API_BASE}/treasury/policy`,
                     { params: { treasuryId: selectedDao } },
                 );
-                proposalBond =
-                    policyRes.data?.proposal_bond || proposalBond;
+                proposalBond = policyRes.data?.proposal_bond || proposalBond;
             } catch {
                 // Fallback: try RPC directly
                 try {
-                    const rpcRes = await fetch(
-                        "https://rpc.mainnet.near.org",
-                        {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                            },
-                            body: JSON.stringify({
-                                jsonrpc: "2.0",
-                                id: "1",
-                                method: "query",
-                                params: {
-                                    request_type: "call_function",
-                                    finality: "final",
-                                    account_id: selectedDao,
-                                    method_name: "get_policy",
-                                    args_base64: btoa("{}"),
-                                },
-                            }),
+                    const rpcRes = await fetch("https://rpc.mainnet.near.org", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
                         },
-                    );
+                        body: JSON.stringify({
+                            jsonrpc: "2.0",
+                            id: "1",
+                            method: "query",
+                            params: {
+                                request_type: "call_function",
+                                finality: "final",
+                                account_id: selectedDao,
+                                method_name: "get_policy",
+                                args_base64: btoa("{}"),
+                            },
+                        }),
+                    });
                     const rpcData = await rpcRes.json();
                     if (rpcData.result?.result) {
                         const policy = JSON.parse(
@@ -480,7 +507,9 @@ function WalletPageContent() {
 
                 if (!proposal || proposal.status === "InProgress") {
                     setApprovalLoading(false);
-                    setError("Proposal is still pending approval. Please wait for the treasury members to vote.");
+                    setError(
+                        "Proposal is still pending approval. Please wait for the treasury members to vote.",
+                    );
                     return;
                 }
 
@@ -491,18 +520,26 @@ function WalletPageContent() {
                         status: "failure",
                         errorMessage: `Proposal was ${proposal.status.toLowerCase()}`,
                     });
-                    setError(`Proposal #${proposalId} was ${proposal.status.toLowerCase()}`);
+                    setError(
+                        `Proposal #${proposalId} was ${proposal.status.toLowerCase()}`,
+                    );
                     setStep("error");
                     return;
                 }
 
                 // Compute date window from submission_time and proposal_period
-                const submissionMs = Number(BigInt(proposal.submission_time) / BigInt(1_000_000));
-                const expirationMs = submissionMs + Number(BigInt(proposalPeriodNs) / BigInt(1_000_000));
+                const submissionMs = Number(
+                    BigInt(proposal.submission_time) / BigInt(1_000_000),
+                );
+                const expirationMs =
+                    submissionMs +
+                    Number(BigInt(proposalPeriodNs) / BigInt(1_000_000));
                 const afterDate = new Date(submissionMs - 24 * 60 * 60 * 1000)
                     .toISOString()
                     .split("T")[0];
-                const beforeDate = new Date(expirationMs + 7 * 24 * 60 * 60 * 1000)
+                const beforeDate = new Date(
+                    expirationMs + 7 * 24 * 60 * 60 * 1000,
+                )
                     .toISOString()
                     .split("T")[0];
 
@@ -535,7 +572,9 @@ function WalletPageContent() {
                 setStep("done");
             } else {
                 setApprovalLoading(false);
-                setError("Proposal is approved but the execution transaction is not yet indexed. Please try again in a moment.");
+                setError(
+                    "Proposal is approved but the execution transaction is not yet indexed. Please try again in a moment.",
+                );
             }
         } catch (e: any) {
             setApprovalLoading(false);

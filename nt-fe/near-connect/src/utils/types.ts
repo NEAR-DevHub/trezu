@@ -1,61 +1,61 @@
 export type Network = "mainnet" | "testnet";
 
 export interface AddFunctionCallKey_AllowMethods_AnyMethod {
-  anyMethod: true;
+    anyMethod: true;
 }
 
 export interface AddFunctionCallKey_AllowMethods_SelectMethods {
-  anyMethod: false;
-  methodNames: string[];
+    anyMethod: false;
+    methodNames: string[];
 }
 
 export type AddFunctionCallKey_AllowMethods =
-  | AddFunctionCallKey_AllowMethods_AnyMethod
-  | AddFunctionCallKey_AllowMethods_SelectMethods;
+    | AddFunctionCallKey_AllowMethods_AnyMethod
+    | AddFunctionCallKey_AllowMethods_SelectMethods;
 
 export interface AddFunctionCallKey_GasAllowance_Unlimited {
-  kind: "unlimited";
+    kind: "unlimited";
 }
 
 export interface AddFunctionCallKey_GasAllowance_Limited {
-  kind: "limited";
-  amount: string;
+    kind: "limited";
+    amount: string;
 }
 
 export type AddFunctionCallKey_GasAllowance =
-  | AddFunctionCallKey_GasAllowance_Unlimited
-  | AddFunctionCallKey_GasAllowance_Limited;
+    | AddFunctionCallKey_GasAllowance_Unlimited
+    | AddFunctionCallKey_GasAllowance_Limited;
 
 export interface AddFunctionCallKeyParams {
-  contractId: string;
-  publicKey: string;
-  allowMethods: AddFunctionCallKey_AllowMethods;
-  gasAllowance?: AddFunctionCallKey_GasAllowance;
+    contractId: string;
+    publicKey: string;
+    allowMethods: AddFunctionCallKey_AllowMethods;
+    gasAllowance?: AddFunctionCallKey_GasAllowance;
 }
 
 export interface SignInParams {
-  network: Network;
-  addFunctionCallKey?: AddFunctionCallKeyParams;
+    network: Network;
+    addFunctionCallKey?: AddFunctionCallKeyParams;
 }
 
 export interface SignMessageDuringSignInParams {
-  message: string;
-  recipient: string;
-  nonce: Uint8Array;
+    message: string;
+    recipient: string;
+    nonce: Uint8Array;
 }
 
 export interface SignedMessage {
-  accountId: string;
-  publicKey: string;
-  signature: string;
+    accountId: string;
+    publicKey: string;
+    signature: string;
 }
 
 export interface AccountWithSignedMessage {
-  accountId: string;
-  publicKey?: string;
-  signedMessage: SignedMessage;
+    accountId: string;
+    publicKey?: string;
+    signedMessage: SignedMessage;
 }
 
 export interface SignInAndSignMessageParams extends SignInParams {
-  messageParams: SignMessageDuringSignInParams;
+    messageParams: SignMessageDuringSignInParams;
 }
