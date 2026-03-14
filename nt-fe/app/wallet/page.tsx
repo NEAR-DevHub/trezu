@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { NearConnector } from "@hot-labs/near-connect";
 import type { Network, EventMap } from "@hot-labs/near-connect/build/types";
 import axios from "axios";
+import Logo from "@/components/logo";
 import { extractProposalData } from "@/features/proposals/utils/proposal-extractors";
 import { TransferExpanded } from "@/features/proposals/components/expanded-view/transfer-expanded";
 import { FunctionCallExpanded } from "@/features/proposals/components/expanded-view/function-call-expanded";
@@ -557,35 +558,7 @@ function WalletPageContent() {
                 {/* Header */}
                 <div className="p-6 border-b border-border bg-muted/30">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <svg
-                                width="24"
-                                height="24"
-                                viewBox="0 0 64 64"
-                                fill="none"
-                            >
-                                <rect
-                                    width="64"
-                                    height="64"
-                                    rx="12"
-                                    fill="#111827"
-                                />
-                                <path
-                                    d="M20 20h24v4H34v20h-4V24H20z"
-                                    fill="#00d4aa"
-                                />
-                            </svg>
-                        </div>
-                        <div>
-                            <h1 className="text-lg font-semibold">
-                                Trezu Wallet
-                            </h1>
-                            <p className="text-sm text-muted-foreground">
-                                {action === "sign_in"
-                                    ? "Sign in as a Trezu treasury"
-                                    : "Create Trezu Proposal"}
-                            </p>
-                        </div>
+                        <Logo size="lg" />
                     </div>
                 </div>
 
