@@ -5,6 +5,17 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   serverExternalPackages: ['thread-stream', 'pino', 'geoip-lite'],
   transpilePackages: ['@hot-labs/near-connect'],
+  headers: async () => {
+    return [
+      // Allow CORS so NEAR Connect can load trezu-wallet.js
+      {
+        source: "/_next/static/:path*",
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: "*" },
+        ],
+      },
+    ]
+  },
 };
 
 export default withSentryConfig(nextConfig, {
