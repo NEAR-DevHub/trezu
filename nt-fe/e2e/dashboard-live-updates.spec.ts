@@ -314,6 +314,33 @@ async function setupMocks(page: Page) {
     };
 }
 
+// ---------- Helpers ----------
+
+/**
+ * Trigger a refetch of assets + recent-activity by invalidating the TanStack
+ * Query cache via window.__queryClient (exposed in non-production builds).
+ * Waits for both responses to arrive before resolving.
+ */
+async function refreshDashboardData(page: Page) {
+    const assetsResponse = page.waitForResponse(
+        (r) => r.url().includes("/api/user/assets") && r.status() === 200,
+        { timeout: 10_000 },
+    );
+    const activityResponse = page.waitForResponse(
+        (r) =>
+            r.url().includes("/api/recent-activity") && r.status() === 200,
+        { timeout: 10_000 },
+    );
+    await page.evaluate(() => {
+        const qc = (window as any).__queryClient;
+        if (qc) {
+            qc.invalidateQueries({ queryKey: ["treasuryAssets"] });
+            qc.invalidateQueries({ queryKey: ["recentActivity"] });
+        }
+    });
+    await Promise.all([assetsResponse, activityResponse]);
+}
+
 // ---------- Test ----------
 
 test("dashboard live updates — deposits appear one by one, checkbox persists", async ({
@@ -356,6 +383,11 @@ test("dashboard live updates — deposits appear one by one, checkbox persists",
         const meta = DEPOSIT_META[i];
         revealNextDeposit();
         await showOverlay(page, meta.overlay);
+
+        // Trigger a manual refetch so the UI picks up the new mock data.
+        // (The app uses staleTime-based caching without a refetchInterval, so
+        // data only refreshes when explicitly invalidated or on remount.)
+        await refreshDashboardData(page);
 
         // Wait for the deposit to appear in recent activity
         const depositEl = page.getByText(meta.assertText).first();

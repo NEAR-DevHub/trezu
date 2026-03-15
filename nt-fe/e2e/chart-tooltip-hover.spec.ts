@@ -49,9 +49,10 @@ const MONITORED_ACCOUNTS_RESPONSE = {
 /**
  * Set up mocks that simulate real-world conditions:
  * - Assets endpoint returns slightly different balances on each refetch
- *   (simulating price/balance fluctuations every 5s)
+ *   (simulating price/balance fluctuations)
  * - This causes parent re-renders that change totalBalanceUSD and tokens,
- *   which was the root cause of the tooltip disappearing.
+ *   which was the root cause of the tooltip disappearing (fixed via
+ *   frozenChartData/frozenChartParams while hovering).
  */
 async function setupMocks(page: Page) {
     let chartFetchCount = 0;
@@ -73,7 +74,7 @@ async function setupMocks(page: Page) {
     });
 
     // Return slightly different NEAR balance on each fetch to simulate
-    // real-world balance fluctuations from useAssets refetchInterval.
+    // real-world balance fluctuations.
     await page.route("**/api/user/assets*", async (route: Route) => {
         assetsFetchCount++;
         const assets = JSON.parse(JSON.stringify(FINAL_ASSETS));
@@ -157,7 +158,27 @@ async function setupMocks(page: Page) {
     };
 }
 
-test("chart tooltip remains visible while hovering during refetch interval", async ({
+/**
+ * Trigger a manual refetch of the given query key via the exposed
+ * window.__queryClient (available in non-production builds).
+ * Returns a promise that resolves once the response arrives.
+ */
+async function invalidateAndWait(
+    page: Page,
+    queryKey: string[],
+    urlPattern: string,
+) {
+    const responsePromise = page.waitForResponse(
+        (r) => r.url().includes(urlPattern) && r.status() === 200,
+        { timeout: 10_000 },
+    );
+    await page.evaluate((key) => {
+        (window as any).__queryClient?.invalidateQueries({ queryKey: key });
+    }, queryKey);
+    await responsePromise;
+}
+
+test("chart tooltip remains visible while hovering during asset refetches", async ({
     page,
 }) => {
     test.setTimeout(60_000);
@@ -175,10 +196,10 @@ test("chart tooltip remains visible while hovering during refetch interval", asy
         .first()
         .waitFor({ state: "visible", timeout: 15_000 });
 
-    // Let initial refetches happen before we start hovering
-    await page.waitForTimeout(2_000);
+    // Let initial fetches settle
+    await page.waitForTimeout(500);
     const fetchCountBeforeHover = getChartFetchCount();
-    const assetsFetchBeforeHover = getAssetsFetchCount();
+    const assetsCountBeforeHover = getAssetsFetchCount();
 
     // Hover over the chart to trigger tooltip
     const box = await chartContainer.boundingBox();
@@ -192,29 +213,36 @@ test("chart tooltip remains visible while hovering during refetch interval", asy
     const tooltip = chartContainer.locator(".recharts-tooltip-wrapper");
     await expect(tooltip).toBeVisible({ timeout: 5_000 });
 
-    // Wait longer than the 5-second refetch interval while still hovering.
-    // During this time, useAssets refetches with changing data, which causes
-    // parent re-renders with new totalBalanceUSD — the original cause of
-    // tooltip disappearing.
-    await page.waitForTimeout(8_000);
+    // Simulate 3 asset refetches while still hovering (parent re-renders with
+    // different balances — the original cause of tooltip disappearing)
+    for (let i = 0; i < 3; i++) {
+        await invalidateAndWait(page, ["treasuryAssets"], "/api/user/assets");
+    }
 
-    // Verify that assets DID refetch during hover (confirming the test
-    // exercises the real-world scenario of parent re-renders).
-    const assetsFetchAfterHover = getAssetsFetchCount();
-    expect(assetsFetchAfterHover).toBeGreaterThan(assetsFetchBeforeHover);
+    // Verify assets DID refetch (confirming the test exercises parent re-renders)
+    expect(getAssetsFetchCount()).toBeGreaterThan(assetsCountBeforeHover);
 
-    // Tooltip should still be visible — this is the core assertion.
+    // CORE ASSERTION: tooltip should still be visible after parent re-renders
     await expect(tooltip).toBeVisible();
 
-    // Verify that no additional chart fetches occurred while hovering
-    const fetchCountAfterHover = getChartFetchCount();
-    expect(fetchCountAfterHover).toBe(fetchCountBeforeHover);
+    // Verify chart did NOT refetch while we only invalidated assets
+    expect(getChartFetchCount()).toBe(fetchCountBeforeHover);
 
     // Move mouse away from chart
     await page.mouse.move(0, 0);
 
-    // After un-hovering, refetch should resume — wait for at least one more fetch
-    await expect
-        .poll(() => getChartFetchCount(), { timeout: 10_000 })
-        .toBeGreaterThan(fetchCountAfterHover);
+    // After un-hovering, verify that invalidating the chart query works normally
+    const chartResponsePromise = page.waitForResponse(
+        (r) =>
+            r.url().includes("/api/balance-history/chart") &&
+            r.status() === 200,
+        { timeout: 10_000 },
+    );
+    await page.evaluate(() => {
+        (window as any).__queryClient?.invalidateQueries({
+            queryKey: ["balanceChart"],
+        });
+    });
+    await chartResponsePromise;
+    expect(getChartFetchCount()).toBeGreaterThan(fetchCountBeforeHover);
 });
