@@ -15,7 +15,6 @@ import { useReceiptSearch } from "@/hooks/use-receipt-search";
 import { InfoDisplay, InfoItem } from "@/components/info-display";
 import { AmountSummary } from "@/components/amount-summary";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TokenAmountDisplay } from "@/components/token-display";
 import { getActivityLabel } from "../utils/history-utils";
 import { ExchangeSummaryCard } from "@/app/(treasury)/[treasuryId]/exchange/components/exchange-summary-card";
 import { formatSmartAmount } from "@/lib/utils";
@@ -105,6 +104,7 @@ export function TransactionDetailsModal({
                                         name: activity.swap.sentTokenMetadata.name,
                                         icon: activity.swap.sentTokenMetadata.icon || "",
                                         network: activity.swap.sentTokenMetadata.network || "near",
+                                        chainIcons: activity.swap.sentTokenMetadata.chainIcons,
                                     }}
                                     amount={formatSmartAmount(
                                         activity.swap.sentAmount,
@@ -129,6 +129,7 @@ export function TransactionDetailsModal({
                                     name: activity.swap.receivedTokenMetadata.name,
                                     icon: activity.swap.receivedTokenMetadata.icon || "",
                                     network: activity.swap.receivedTokenMetadata.network || "near",
+                                    chainIcons: activity.swap.receivedTokenMetadata.chainIcons,
                                 }}
                                 amount={formatSmartAmount(
                                     activity.swap.receivedAmount,
