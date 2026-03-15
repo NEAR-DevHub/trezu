@@ -7,7 +7,7 @@ interface ExchangeSummaryCardProps {
     title: string;
     token: Token;
     amount: string;
-    usdValue: number;
+    usdValue?: number;
 }
 
 /**

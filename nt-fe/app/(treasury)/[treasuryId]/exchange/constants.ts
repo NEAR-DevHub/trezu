@@ -17,3 +17,17 @@ export const ETH_TOKEN = {
     residency: "Intents"
 } satisfies Token;
 
+export const BTC_TOKEN = {
+    address: "nep141:btc.omft.near",
+    symbol: "BTC",
+    decimals: 8,
+    name: "Bitcoin",
+    icon: "https://s2.coinmarketcap.com/static/img/coins/128x128/1.png",
+    network: "bitcoin",
+    chainIcons: {
+        dark: "https://near-intents.org/static/icons/network/btc.svg",
+        light: "https://near-intents.org/static/icons/network/btc.svg"
+    },
+    residency: "Intents",
+} satisfies Token;
+
