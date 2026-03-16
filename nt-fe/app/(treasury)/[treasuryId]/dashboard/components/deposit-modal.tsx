@@ -162,7 +162,6 @@ export function DepositModal({
             return {
                 id: network.id,
                 name: network.name,
-                symbol: network.symbol,
                 icon: iconUrl || network.name.charAt(0),
                 gradient: "bg-linear-to-br from-green-500 to-teal-500",
                 chainId: network.chainId,
@@ -202,7 +201,7 @@ export function DepositModal({
                 asset.id?.toLowerCase() === targetId ||
                 (!prefillTokenSymbol &&
                     asset.id?.toLowerCase() ===
-                        prefillTokenSymbol?.toLowerCase()),
+                    prefillTokenSymbol?.toLowerCase()),
         );
 
         if (targetAsset) {
@@ -422,9 +421,9 @@ export function DepositModal({
                                                         {selectedAsset.icon?.startsWith(
                                                             "http",
                                                         ) ||
-                                                        selectedAsset.icon?.startsWith(
-                                                            "data:",
-                                                        ) ? (
+                                                            selectedAsset.icon?.startsWith(
+                                                                "data:",
+                                                            ) ? (
                                                             <img
                                                                 src={
                                                                     selectedAsset.icon
@@ -488,9 +487,9 @@ export function DepositModal({
                                                                 {selectedNetwork.icon?.startsWith(
                                                                     "http",
                                                                 ) ||
-                                                                selectedNetwork.icon?.startsWith(
-                                                                    "data:",
-                                                                ) ? (
+                                                                    selectedNetwork.icon?.startsWith(
+                                                                        "data:",
+                                                                    ) ? (
                                                                     <div className="w-6 h-6 rounded-full object-cover">
                                                                         <img
                                                                             src={
@@ -504,10 +503,9 @@ export function DepositModal({
                                                                     </div>
                                                                 ) : (
                                                                     <div
-                                                                        className={`w-6 h-6 rounded-full ${
-                                                                            selectedNetwork.gradient ||
+                                                                        className={`w-6 h-6 rounded-full ${selectedNetwork.gradient ||
                                                                             "bg-linear-to-br from-green-500 to-teal-500"
-                                                                        } flex items-center justify-center text-white text-xs font-bold`}
+                                                                            } flex items-center justify-center text-white text-xs font-bold`}
                                                                     >
                                                                         <span>
                                                                             {
@@ -527,15 +525,15 @@ export function DepositModal({
                                                         {/* Info message for "Other" asset */}
                                                         {selectedAsset?.id ===
                                                             "other" && (
-                                                            <div className="break-all overflow-wrap-anywhere text-wrap mt-2 text-xs text-general-info-foreground">
-                                                                You can deposit
-                                                                any token not
-                                                                listed in the
-                                                                assets, but only
-                                                                via the NEAR
-                                                                network.
-                                                            </div>
-                                                        )}
+                                                                <div className="break-all overflow-wrap-anywhere text-wrap mt-2 text-xs text-general-info-foreground">
+                                                                    You can deposit
+                                                                    any token not
+                                                                    listed in the
+                                                                    assets, but only
+                                                                    via the NEAR
+                                                                    network.
+                                                                </div>
+                                                            )}
                                                     </>
                                                 ) : (
                                                     <div className="flex items-center justify-between">
