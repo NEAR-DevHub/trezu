@@ -5,6 +5,7 @@ services:
     runtime: rust
     plan: standard
     rootDir: nt-be
+    branch: main
     buildCommand: unset DATABASE_URL && cargo build --release --bin nt-be
     startCommand: ./target/release/nt-be
     domains:
@@ -36,6 +37,7 @@ services:
     runtime: node
     plan: starter
     rootDir: nt-fe
+    branch: main
     buildCommand: bun install && node ./node_modules/geoip-lite/scripts/updatedb.js license_key=$MAXMIND_LICENSE_KEY && bun run build && cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/
     startCommand: node .next/standalone/server.js
     domains:
@@ -76,7 +78,59 @@ services:
         sync: false
     healthCheckPath: /
 
+  # Staging Backend Service (Rust/Axum)
+  - type: web
+    name: near-treasury-backend-staging
+    runtime: rust
+    plan: standard
+    rootDir: nt-be
+    branch: staging
+    buildCommand: unset DATABASE_URL && cargo build --release --bin nt-be
+    startCommand: ./target/release/nt-be
+    envVars:
+      - key: FASTNEAR_API_KEY
+        sync: false
+      - key: SIGNER_KEY
+        sync: false
+      - key: SIGNER_ID
+        sync: false
+      - key: SPUTNIK_DAO_API_BASE
+        sync: false
+      - key: RUST_LOG
+        value: info
+      - key: PORT
+        value: 10000
+      - key: JWT_SECRET
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: database-staging
+          property: connectionString
+    healthCheckPath: /api/health
+
+  # Staging Frontend Service (Next.js)
+  - type: web
+    name: near-treasury-frontend-staging
+    runtime: node
+    plan: starter
+    rootDir: nt-fe
+    branch: staging
+    buildCommand: bun install && node ./node_modules/geoip-lite/scripts/updatedb.js license_key=$MAXMIND_LICENSE_KEY && bun run build && cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/
+    startCommand: node .next/standalone/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MAXMIND_LICENSE_KEY
+        sync: false
+      - key: NEXT_PUBLIC_BACKEND_API_BASE
+        sync: false
+    healthCheckPath: /
+
 databases:
   - name: database
+    plan: basic-1gb
+    diskSizeGB: 1
+
+  - name: database-staging
     plan: basic-1gb
     diskSizeGB: 1
