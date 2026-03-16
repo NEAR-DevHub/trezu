@@ -35,14 +35,10 @@ export function PrimaryColorProvider({ treasuryId }: PrimaryColorProviderProps) 
           // In dark mode, use white
           document.documentElement.style.setProperty("--primary", COLORS.WHITE);
           document.documentElement.style.setProperty("--primary-foreground", COLORS.DARK_TEXT);
-          // For white button, text should be dark
-          document.documentElement.style.setProperty("--primary-button-text", COLORS.DARK_TEXT);
         } else {
           // In light mode, use black
           document.documentElement.style.setProperty("--primary", COLORS.BLACK);
           document.documentElement.style.setProperty("--primary-foreground", COLORS.LIGHT_TEXT);
-          // For black button, text should be white
-          document.documentElement.style.setProperty("--primary-button-text", COLORS.LIGHT_TEXT);
         }
 
         // Listen for theme changes
@@ -53,11 +49,9 @@ export function PrimaryColorProvider({ treasuryId }: PrimaryColorProviderProps) 
               if (isDarkMode) {
                 document.documentElement.style.setProperty("--primary", COLORS.WHITE);
                 document.documentElement.style.setProperty("--primary-foreground", COLORS.DARK_TEXT);
-                document.documentElement.style.setProperty("--primary-button-text", COLORS.DARK_TEXT);
               } else {
                 document.documentElement.style.setProperty("--primary", COLORS.BLACK);
                 document.documentElement.style.setProperty("--primary-foreground", COLORS.LIGHT_TEXT);
-                document.documentElement.style.setProperty("--primary-button-text", COLORS.LIGHT_TEXT);
               }
             }
           });
@@ -88,18 +82,9 @@ export function PrimaryColorProvider({ treasuryId }: PrimaryColorProviderProps) 
           `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`
         );
 
-        // Calculate foreground color (white or black based on luminance)
-        const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
-        const foregroundColor = luminance > 0.5 ? COLORS.DARK_TEXT : COLORS.LIGHT_TEXT;
-
-        document.documentElement.style.setProperty(
-          "--primary-foreground",
-          foregroundColor
-        );
-
         // For colored buttons (blue, red, green, etc.), text should always be white
         document.documentElement.style.setProperty(
-          "--primary-button-text",
+          "--primary-foreground",
           COLORS.WHITE
         );
       }
@@ -107,7 +92,6 @@ export function PrimaryColorProvider({ treasuryId }: PrimaryColorProviderProps) 
       // Reset to default when no treasury or no primary color
       document.documentElement.style.removeProperty("--primary");
       document.documentElement.style.removeProperty("--primary-foreground");
-      document.documentElement.style.removeProperty("--primary-button-text");
     }
   }, [treasury]);
 

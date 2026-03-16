@@ -21,9 +21,10 @@ pub struct BalanceChangeFilters {
     pub exclude_token_ids: Option<Vec<String>>, // Exclude these
 
     // Transaction Type Filtering (can select multiple)
-    // "incoming" = received payments (amount > 0, includes staking rewards)
+    // "incoming" = received payments (amount > 0, excludes staking rewards)
     // "outgoing" = sent payments (amount < 0)
     // "staking_rewards" = staking rewards only (counterparty = 'STAKING_REWARD')
+    // "exchange" = swap/exchange transactions (token_id contains 'intents.near:')
     pub transaction_types: Option<Vec<String>>,
 
     // Amount Filtering
@@ -32,6 +33,11 @@ pub struct BalanceChangeFilters {
 
     // Filter out tiny NEAR amounts (gas/storage noise) — used by recent activity only
     pub exclude_near_dust: bool,
+
+    // Exclude swaps from incoming/outgoing filters (used by recent activity UI for separate tabs)
+    // When true: incoming/outgoing exclude swaps (they go to "exchange" tab)
+    // When false: incoming/outgoing include swaps (legacy behavior for exports/API)
+    pub exclude_swaps_from_direction: bool,
 }
 
 /// Builds WHERE clause conditions for balance changes queries
@@ -90,7 +96,7 @@ pub fn build_where_conditions(filters: &BalanceChangeFilters) -> (Vec<String>, u
         param_index += 1;
     }
 
-    // Transaction Type Filter (can select multiple: incoming, outgoing, staking_rewards)
+    // Transaction Type Filter (can select multiple: incoming, outgoing, staking_rewards, exchange)
     if let Some(ref types) = filters.transaction_types
         && !types.is_empty()
         && !types.contains(&"all".to_string())
@@ -99,11 +105,42 @@ pub fn build_where_conditions(filters: &BalanceChangeFilters) -> (Vec<String>, u
 
         for t in types {
             match t.as_str() {
-                "incoming" => type_conditions
-                    .push("(amount > 0 AND counterparty != 'STAKING_REWARD')".to_string()),
-                "outgoing" => type_conditions.push("amount < 0".to_string()),
+                "incoming" => {
+                    if filters.exclude_swaps_from_direction {
+                        // Recent activity: exclude swaps (they have separate tab)
+                        // For incoming (amount > 0), only check fulfillment_balance_change_id (the receive leg)
+                        type_conditions.push(format!(
+                            "(amount > 0 AND counterparty != 'STAKING_REWARD' AND NOT EXISTS (SELECT 1 FROM detected_swaps WHERE account_id = '{}' AND fulfillment_balance_change_id = balance_changes.id))",
+                            filters.account_id
+                        ));
+                    } else {
+                        // Export/API: include swaps in incoming
+                        type_conditions
+                            .push("(amount > 0 AND counterparty != 'STAKING_REWARD')".to_string());
+                    }
+                }
+                "outgoing" => {
+                    if filters.exclude_swaps_from_direction {
+                        // Recent activity: exclude swaps (they have separate tab)
+                        // For outgoing (amount < 0), only check deposit_balance_change_id (the send leg)
+                        type_conditions.push(format!(
+                            "(amount < 0 AND NOT EXISTS (SELECT 1 FROM detected_swaps WHERE account_id = '{}' AND deposit_balance_change_id = balance_changes.id))",
+                            filters.account_id
+                        ));
+                    } else {
+                        // Export/API: include swaps in outgoing
+                        type_conditions.push("amount < 0".to_string());
+                    }
+                }
                 "staking_rewards" => {
                     type_conditions.push("counterparty = 'STAKING_REWARD'".to_string())
+                }
+                "exchange" => {
+                    // Check if this balance change is part of a detected swap
+                    type_conditions.push(format!(
+                        "EXISTS (SELECT 1 FROM detected_swaps WHERE account_id = '{}' AND (fulfillment_balance_change_id = balance_changes.id OR deposit_balance_change_id = balance_changes.id))",
+                        filters.account_id
+                    ));
                 }
                 _ => {} // Invalid - ignore
             }
@@ -189,6 +226,7 @@ mod tests {
             min_amount: None,
             max_amount: None,
             exclude_near_dust: false,
+            exclude_swaps_from_direction: false,
         };
 
         let (conditions, param_index) = build_where_conditions(&filters);
@@ -210,6 +248,7 @@ mod tests {
             min_amount: None,
             max_amount: None,
             exclude_near_dust: false,
+            exclude_swaps_from_direction: false,
         };
 
         let (conditions, param_index) = build_where_conditions(&filters);

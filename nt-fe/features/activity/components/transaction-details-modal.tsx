@@ -8,6 +8,8 @@ import {
 } from "@/components/modal";
 import { Button } from "@/components/button";
 import { ExternalLink, ChevronRight } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/modal";
+import { ArrowRight } from "lucide-react";
 import type { RecentActivity } from "@/lib/api";
 import { FormattedDate } from "@/components/formatted-date";
 import { CopyButton } from "@/components/copy-button";
@@ -18,6 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getActivityLabel } from "../utils/history-utils";
 import { ExchangeSummaryCard } from "@/app/(treasury)/[treasuryId]/exchange/components/exchange-summary-card";
 import { formatSmartAmount } from "@/lib/utils";
+import { TransactionHashCell } from "./transaction-hash-cell";
 
 interface TransactionDetailsModalProps {
     activity: RecentActivity | null;
@@ -71,14 +74,6 @@ export function TransactionDetailsModal({
         const sign = num >= 0 ? "+" : "-";
         const formatted = formatSmartAmount(Math.abs(num));
         return `${sign}${formatted}`;
-    };
-
-    const transactionHash = activity.transactionHashes?.length
-        ? activity.transactionHashes[0]
-        : transactionFromReceipt?.[0]?.originatedFromTransactionHash;
-
-    const openInExplorer = (hash: string) => {
-        window.open(`https://nearblocks.io/txns/${hash}`, "_blank");
     };
 
     return (
@@ -289,36 +284,17 @@ export function TransactionDetailsModal({
                                         ),
                                     } as InfoItem,
                                 ]
-                                : transactionHash
+                                : activity.transactionHashes?.length ||
+                                    activity.receiptIds?.length
                                     ? [
                                         {
                                             label: "Transaction",
                                             value: (
-                                                <div className="flex items-center">
-                                                    <span className="font-mono max-w-[200px] truncate">
-                                                        {transactionHash}
-                                                    </span>
-
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon-sm"
-                                                        tooltipContent="Open Link in Explorer"
-                                                        onClick={() =>
-                                                            openInExplorer(
-                                                                transactionHash,
-                                                            )
-                                                        }
-                                                    >
-                                                        <ExternalLink className="h-3 w-3" />
-                                                    </Button>
-                                                    <CopyButton
-                                                        text={transactionHash}
-                                                        toastMessage="Transaction hash copied to clipboard"
-                                                        variant="ghost"
-                                                        size="icon-sm"
-                                                        tooltipContent="Copy Transaction Hash"
-                                                    />
-                                                </div>
+                                                <TransactionHashCell
+                                                    transactionHashes={activity.transactionHashes}
+                                                    receiptIds={activity.receiptIds}
+                                                    className="flex items-center gap-2"
+                                                />
                                             ),
                                         } as InfoItem,
                                     ]

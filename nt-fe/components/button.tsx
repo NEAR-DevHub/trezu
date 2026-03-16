@@ -24,9 +24,6 @@ export function Button({
     const { disabled } = props;
     let className = "";
     switch (variant ?? "default") {
-        case "default":
-            className = "text-primary-button-text";
-            break;
         case "link":
             className =
                 "hover:no-underline font-semibold text-foreground/80 hover:text-foreground";

@@ -38,7 +38,7 @@ pub struct BalanceChangesQuery {
 
     // Transaction Type Filtering (can select multiple)
     #[serde(default, deserialize_with = "comma_separated")]
-    pub transaction_types: Option<Vec<String>>, // "incoming", "outgoing", "staking_rewards"
+    pub transaction_types: Option<Vec<String>>, // "incoming", "outgoing", "staking_rewards", "exchange"
 
     // Amount Filtering (decimal-adjusted, requires single token filter)
     pub min_amount: Option<f64>, // Minimum amount in decimal-adjusted format (e.g., 1.5 NEAR)
@@ -50,6 +50,9 @@ pub struct BalanceChangesQuery {
 
     #[serde(skip)]
     pub exclude_near_dust: bool, // Filter out tiny NEAR amounts (< 0.01) — not a query param, set internally
+
+    #[serde(skip)]
+    pub exclude_swaps_from_direction: bool, // If true, "incoming" and "outgoing" exclude swaps (for UI tabs); if false, include swaps (for exports/API)
 }
 
 #[derive(Debug, Serialize, sqlx::FromRow)]
@@ -186,6 +189,7 @@ pub async fn get_balance_changes_internal(
         min_amount: min_amount_raw,
         max_amount: max_amount_raw,
         exclude_near_dust: params.exclude_near_dust,
+        exclude_swaps_from_direction: params.exclude_swaps_from_direction,
     };
 
     // Build SQL query

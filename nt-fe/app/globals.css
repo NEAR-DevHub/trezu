@@ -13,7 +13,6 @@
     --popover-foreground: rgb(25, 25, 26);
     --primary: rgb(25, 25, 26);
     --primary-foreground: rgb(250, 250, 250);
-    --primary-button-text: var(--primary-foreground);
     --secondary: rgb(245, 245, 245);
     --secondary-foreground: rgb(10, 10, 10);
     --muted: rgb(245, 245, 245);
@@ -97,7 +96,6 @@
     --popover-foreground: rgb(250, 250, 250);
     --primary: rgb(229, 229, 229);
     --primary-foreground: rgb(25, 25, 26);
-    --primary-button-text: var(--primary-foreground);
     --secondary: rgb(38, 38, 38);
     --secondary-foreground: rgb(250, 250, 250);
     --muted: rgb(38, 38, 38);
@@ -179,7 +177,6 @@
     --color-popover-foreground: var(--popover-foreground);
     --color-primary: var(--primary);
     --color-primary-foreground: var(--primary-foreground);
-    --color-primary-button-text: var(--primary-button-text);
     --color-secondary: var(--secondary);
     --color-secondary-foreground: var(--secondary-foreground);
     --color-muted: var(--muted);
