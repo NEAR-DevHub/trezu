@@ -456,7 +456,7 @@ function Step2({ handleBack }: StepProps) {
                         {/* Exchange Summary Cards */}
                         <div className="relative flex justify-center items-center gap-4 mb-6">
                             <ExchangeSummaryCard
-                                title="Sell amount"
+                                title="Sell"
                                 token={sellToken}
                                 amount={
                                     localLiveQuoteData.quote.amountInFormatted
