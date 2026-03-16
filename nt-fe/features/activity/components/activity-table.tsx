@@ -13,7 +13,7 @@ import {
     ArrowDownToLine,
     ArrowUpToLine,
     ArrowRightLeft,
-    ArrowRight,
+    ChevronRight,
     Info,
 } from "lucide-react";
 import { Pagination } from "@/components/pagination";
@@ -30,6 +30,7 @@ import {
     getFromAccount,
     getToAccount,
 } from "../utils/history-utils";
+import { TokenDisplay } from "@/components/token-display-with-network";
 import { Tooltip } from "@/components/tooltip";
 
 interface ActivityTableProps {
@@ -155,10 +156,20 @@ export function ActivityTable({
                                                 activity.swap.swapRole ===
                                                 "deposit" ? (
                                                 <div className="flex items-center gap-1.5">
+                                                    {/* Sent token icon */}
+                                                    {activity.swap.sentTokenMetadata && (
+                                                        <TokenDisplay
+                                                            symbol={activity.swap.sentTokenMetadata.symbol}
+                                                            icon={activity.swap.sentTokenMetadata.icon || ""}
+                                                            chainIcons={activity.swap.sentTokenMetadata.chainIcons}
+                                                            iconSize="sm"
+                                                        />
+                                                    )}
+                                                    {/* Sent amount */}
                                                     {activity.swap.sentAmount &&
                                                         activity.swap
                                                             .sentTokenMetadata ? (
-                                                        <span className="font-semibold text-general-destructive-foreground whitespace-nowrap">
+                                                        <span className="font-semibold text-foreground whitespace-nowrap">
                                                             {formatSmartAmount(
                                                                 activity.swap
                                                                     .sentAmount,
@@ -174,8 +185,17 @@ export function ActivityTable({
                                                             ?
                                                         </span>
                                                     )}
-                                                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                                    <span className="font-semibold text-muted-foreground whitespace-nowrap">
+                                                    {/* Arrow */}
+                                                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                                    {/* Received token icon */}
+                                                    <TokenDisplay
+                                                        symbol={activity.swap.receivedTokenMetadata.symbol}
+                                                        icon={activity.swap.receivedTokenMetadata.icon || ""}
+                                                        chainIcons={activity.swap.receivedTokenMetadata.chainIcons}
+                                                        iconSize="sm"
+                                                    />
+                                                    {/* Received amount with + sign */}
+                                                    <span className="font-semibold text-general-success-foreground whitespace-nowrap">
                                                         {
                                                             activity.swap
                                                                 .receivedTokenMetadata
@@ -188,9 +208,19 @@ export function ActivityTable({
                                                 activity.swap.swapRole ===
                                                 "fulfillment" ? (
                                                 <div className="flex items-center gap-1.5">
+                                                    {/* Sent token icon */}
+                                                    {activity.swap.sentTokenMetadata && (
+                                                        <TokenDisplay
+                                                            symbol={activity.swap.sentTokenMetadata.symbol}
+                                                            icon={activity.swap.sentTokenMetadata.icon || ""}
+                                                            chainIcons={activity.swap.sentTokenMetadata.chainIcons}
+                                                            iconSize="sm"
+                                                        />
+                                                    )}
+                                                    {/* Sent amount */}
                                                     {activity.swap
                                                         .sentTokenMetadata ? (
-                                                        <span className="font-semibold text-muted-foreground whitespace-nowrap">
+                                                        <span className="font-semibold text-foreground whitespace-nowrap">
                                                             {
                                                                 activity.swap
                                                                     .sentTokenMetadata
@@ -198,9 +228,18 @@ export function ActivityTable({
                                                             }
                                                         </span>
                                                     ) : null}
-                                                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                                    {/* Arrow */}
+                                                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                                    {/* Received token icon */}
+                                                    <TokenDisplay
+                                                        symbol={activity.swap.receivedTokenMetadata.symbol}
+                                                        icon={activity.swap.receivedTokenMetadata.icon || ""}
+                                                        chainIcons={activity.swap.receivedTokenMetadata.chainIcons}
+                                                        iconSize="sm"
+                                                    />
+                                                    {/* Received amount with + sign */}
                                                     <span className="font-semibold text-general-success-foreground whitespace-nowrap">
-                                                        {formatSmartAmount(
+                                                        +{formatSmartAmount(
                                                             activity.swap
                                                                 .receivedAmount,
                                                         )}{" "}
@@ -224,11 +263,12 @@ export function ActivityTable({
                                                     amount={formatActivityAmount(
                                                         activity.amount,
                                                     )}
-                                                    className={
+                                                    className={cn(
+                                                        "font-semibold",
                                                         isReceived
                                                             ? "text-general-success-foreground"
                                                             : "text-foreground"
-                                                    }
+                                                    )}
                                                 />
                                             )}
                                         </TableCell>

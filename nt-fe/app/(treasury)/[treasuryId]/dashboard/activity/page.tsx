@@ -15,7 +15,7 @@ import {
 } from "@/features/proposals/components/proposal-filters";
 import { Button } from "@/components/button";
 import { ListFilter } from "lucide-react";
-import { MemberOnlyExportButton } from "@/components/member-only-export-button";
+import { ExportButton } from "@/components/export-button";
 import { getHistoryDescription } from "@/features/activity";
 import { subMonths } from "date-fns";
 import { ResponsiveTabs, TabItem } from "@/components/responsive-tabs";
@@ -195,7 +195,7 @@ export default function ActivityPage() {
                     />
                 )}
             </Button>
-            <MemberOnlyExportButton />
+            <ExportButton />
         </div>
     );
 

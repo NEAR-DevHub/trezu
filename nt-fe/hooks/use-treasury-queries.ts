@@ -129,11 +129,12 @@ export function useTreasuryPolicy(
 export function useStorageDepositIsRegistered(
     accountId: string | null | undefined,
     tokenId: string | null | undefined,
+    enabled: boolean = true,
 ) {
     return useQuery({
         queryKey: ["storageDepositIsRegistered", accountId, tokenId],
         queryFn: () => getStorageDepositIsRegistered(accountId!, tokenId!),
-        enabled: !!accountId && !!tokenId,
+        enabled: enabled && !!accountId && !!tokenId,
         staleTime: 1000 * 60 * 5, // 5 minutes (storage deposits don't change frequently)
     });
 }

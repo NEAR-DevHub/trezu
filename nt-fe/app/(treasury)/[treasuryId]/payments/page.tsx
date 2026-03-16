@@ -141,6 +141,7 @@ function Step2({ handleBack }: StepProps) {
     const { data: storageDepositData } = useStorageDepositIsRegistered(
         address,
         token.address,
+        token.residency === "Ft",
     );
     const { data: tokenData } = useToken(token.address);
 
@@ -236,16 +237,16 @@ const buildIntentProposal = (
 
     const ftWithdrawArgs = isNetworkWithdrawal
         ? {
-              token: tokenContract,
-              receiver_id: tokenContract,
-              amount: parsedAmount,
-              memo: `WITHDRAW_TO:${data.address}`,
-          }
+            token: tokenContract,
+            receiver_id: tokenContract,
+            amount: parsedAmount,
+            memo: `WITHDRAW_TO:${data.address}`,
+        }
         : {
-              token: tokenContract,
-              receiver_id: data.address,
-              amount: parsedAmount,
-          };
+            token: tokenContract,
+            receiver_id: data.address,
+            amount: parsedAmount,
+        };
 
     return {
         FunctionCall: {
