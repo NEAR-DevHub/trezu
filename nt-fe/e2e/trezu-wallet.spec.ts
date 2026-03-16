@@ -1,4 +1,4 @@
-import { test, expect, Route } from "@playwright/test";
+import { test, expect, Page, Route } from "@playwright/test";
 
 /**
  * E2E tests for the Trezu Wallet page (/wallet).
@@ -94,8 +94,10 @@ test.describe("error step", () => {
         await expect(
             page.getByText("Failed to parse the transaction request"),
         ).toBeVisible({ timeout: 10_000 });
-        // "Try again" link resets to connect step
-        await expect(page.getByText("Try again")).toBeVisible();
+        // "Try again" button resets to connect step
+        await expect(
+            page.getByRole("button", { name: "Try again" }),
+        ).toBeVisible();
     });
 
     test("Try again resets to connect step", async ({ page }) => {
@@ -106,7 +108,7 @@ test.describe("error step", () => {
             page.getByText("Failed to parse the transaction request"),
         ).toBeVisible({ timeout: 10_000 });
 
-        await page.getByText("Try again").click();
+        await page.getByRole("button", { name: "Try again" }).click();
 
         await expect(
             page.getByRole("button", { name: "Connect Wallet" }),
@@ -461,25 +463,101 @@ test.describe("cancel button", () => {
 
 // ---------- sign_in with pre-connected wallet ----------
 
-test.describe("sign_in with pre-connected Trezu wallet", () => {
-    /**
-     * Simulate an already-signed-in user by pre-seeding the Trezu wallet's
-     * localStorage key. NearConnector reads this via the trezu-wallet.js
-     * IIFE when calling wallet.getAccounts().
-     *
-     * NOTE: This relies on the trezu-wallet.js script being served at
-     * /_next/static/near-connect/trezu-wallet.js. In CI, run `bun run build`
-     * first; in dev, the script is built by `bun run dev`.
-     */
-    test("shows treasury selection after wallet already connected (select-treasury step)", async ({
+/**
+ * NearConnector sandboxes executor localStorage behind postMessage using a
+ * `${manifest.id}:key` prefix. To simulate a pre-connected wallet we:
+ *  1. Intercept the NearConnect manifest URL and inject a custom "mock-wallet"
+ *     whose executor immediately calls window.selector.ready() with alice.near.
+ *  2. Pre-seed localStorage["mock-wallet:signedAccountId"] = "alice.near" so
+ *     the injected sandboxedLocalStorage carries the account on first load.
+ *  3. Also store localStorage["selected-wallet"] = "mock-wallet" so
+ *     NearConnector's getConnectedWallet() finds the right wallet.
+ */
+const MOCK_MANIFEST_ID = "mock-wallet";
+
+const MOCK_WALLET_EXECUTOR_JS = `(function() {
+  window.selector.ready({
+    async signIn({ network }) {
+      const a = window.sandboxedLocalStorage.getItem('signedAccountId') || '';
+      return a ? [{ accountId: a, publicKey: '' }] : [];
+    },
+    async signOut() {
+      window.sandboxedLocalStorage.removeItem('signedAccountId');
+    },
+    async getAccounts({ network }) {
+      const a = window.sandboxedLocalStorage.getItem('signedAccountId');
+      if (!a) return [];
+      return [{ accountId: a, publicKey: '' }];
+    },
+    async verifyOwner() { throw new Error('Not supported'); },
+    async signMessage()  { throw new Error('Not supported'); },
+    async signAndSendTransaction(p)  { return {}; },
+    async signAndSendTransactions(p) { return []; },
+  });
+})();`;
+
+const MOCK_MANIFEST = {
+    wallets: [
+        {
+            id: MOCK_MANIFEST_ID,
+            name: "Mock Wallet",
+            icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>",
+            website: "https://example.com",
+            description: "Mock wallet for testing",
+            version: "1.0.0",
+            type: "sandbox",
+            executor: "/_near-connect-test/mock-wallet.js",
+            features: {},
+            permissions: { allowsOpen: false },
+        },
+    ],
+};
+
+async function setupMockWallet(page: Page, accountId: string) {
+    // Serve the custom manifest
+    for (const url of [
+        "**/raw.githubusercontent.com/**manifest.json*",
+        "**/cdn.jsdelivr.net/**manifest.json*",
+    ]) {
+        await page.route(url, async (route: Route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify(MOCK_MANIFEST),
+            });
+        });
+    }
+
+    // Serve the mock executor JS
+    await page.route(
+        "**/_near-connect-test/mock-wallet.js*",
+        async (route: Route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/javascript",
+                body: MOCK_WALLET_EXECUTOR_JS,
+            });
+        },
+    );
+
+    // Seed localStorage keys before the page loads
+    await page.addInitScript(
+        ({ walletId, acct }) => {
+            // NearConnector stores the selected wallet id directly
+            localStorage.setItem("selected-wallet", walletId);
+            // Executor sandbox storage is prefixed with manifest.id
+            localStorage.setItem(`${walletId}:signedAccountId`, acct);
+        },
+        { walletId: MOCK_MANIFEST_ID, acct: accountId },
+    );
+}
+
+test.describe("sign_in with pre-connected wallet", () => {
+    test("shows treasury selection when wallet already connected (select-treasury step)", async ({
         page,
     }) => {
-        // Pre-seed Trezu wallet localStorage so NearConnector sees an existing account
-        await page.addInitScript(() => {
-            localStorage.setItem("trezu:signedAccountId", "alice.near");
-        });
+        await setupMockWallet(page, "alice.near");
 
-        // Mock the treasuries endpoint
         await page.route(
             "**/api/user/treasuries*",
             async (route: Route) => {
@@ -510,8 +588,10 @@ test.describe("sign_in with pre-connected Trezu wallet", () => {
     test("clicking a treasury sends success postMessage (sign_in done step)", async ({
         page,
     }) => {
+        await setupMockWallet(page, "alice.near");
+
+        // Mock window.opener to capture postMessage calls
         await page.addInitScript(() => {
-            localStorage.setItem("trezu:signedAccountId", "alice.near");
             (window as any).__walletMessages = [];
             Object.defineProperty(window, "opener", {
                 configurable: true,
