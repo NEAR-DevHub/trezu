@@ -1,6 +1,8 @@
 "use client";
 
 import { CopyButton } from "@/components/copy-button";
+import { Button } from "@/components/button";
+import { ExternalLink } from "lucide-react";
 import { useReceiptSearch } from "@/hooks/use-receipt-search";
 
 interface TransactionHashCellProps {
@@ -31,22 +33,32 @@ export function TransactionHashCell({
 
     if (!transactionHash) return null;
 
+    const explorerUrl = `https://nearblocks.io/txns/${transactionHash}`;
+
     return (
         <div className={className}>
             <a
-                href={`https://nearblocks.io/txns/${transactionHash}`}
+                href={explorerUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm underline hover:no-underline"
             >
                 {transactionHash.slice(0, 12)}...
             </a>
+            <Button
+                variant="ghost"
+                size="icon-sm"
+                tooltipContent="Open in Explorer"
+                onClick={() => window.open(explorerUrl, "_blank")}
+            >
+                <ExternalLink className="h-3 w-3" />
+            </Button>
             <CopyButton
                 text={transactionHash}
                 toastMessage="Transaction hash copied"
-                className="h-6 w-6 p-0"
-                iconClassName="h-3 w-3"
                 variant="ghost"
+                size="icon-sm"
+                tooltipContent="Copy Transaction Hash"
             />
         </div>
     );

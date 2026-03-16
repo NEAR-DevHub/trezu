@@ -14,6 +14,7 @@ import {
     ArrowUpToLine,
     ArrowRightLeft,
     ArrowRight,
+    Info,
 } from "lucide-react";
 import { Pagination } from "@/components/pagination";
 import { useTreasury } from "@/hooks/use-treasury";
@@ -29,6 +30,7 @@ import {
     getFromAccount,
     getToAccount,
 } from "../utils/history-utils";
+import { Tooltip } from "@/components/tooltip";
 
 interface ActivityTableProps {
     activities: RecentActivity[];
@@ -92,7 +94,12 @@ export function ActivityTable({
                                     TO
                                 </TableHead>
                                 <TableHead className="text-right pr-6 min-w-[120px] text-xs font-medium uppercase text-muted-foreground">
-                                    TRANSACTION
+                                    <div className="flex items-center justify-end gap-1">
+                                        TRANSACTION HASH
+                                        <Tooltip content="Unique identifier (hash) of this transaction">
+                                            <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                                        </Tooltip>
+                                    </div>
                                 </TableHead>
                             </TableRow>
                         </TableHeader>

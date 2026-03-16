@@ -173,6 +173,7 @@ pub async fn get_balance_chart(
         include_metadata: Some(false), // Chart doesn't need metadata
         include_prices: Some(true),    // Chart needs prices for USD values
         exclude_near_dust: false,
+        exclude_swaps_from_direction: false, // Balance chart: include swaps
     };
 
     let enriched_changes = get_balance_changes_internal(&state, &query)
@@ -683,6 +684,7 @@ fn build_export_query(
         include_metadata: Some(true), // Export needs metadata (symbol, contract)
         include_prices: Some(true),   // Export needs prices (USD values)
         exclude_near_dust: false,
+        exclude_swaps_from_direction: false, // Export: include swaps in incoming/outgoing
     }
 }
 
@@ -1365,7 +1367,7 @@ pub struct RecentActivityQuery {
     pub limit: Option<i64>,
     pub offset: Option<i64>,
     pub min_usd_value: Option<f64>,
-    pub transaction_type: Option<String>, // "outgoing" | "incoming" | "staking_rewards" (single selection for tabs)
+    pub transaction_type: Option<String>, // "outgoing" | "incoming" | "staking_rewards" | "exchange" (single selection for tabs)
     pub token_symbol: Option<String>,
     pub token_symbol_not: Option<String>,
     pub start_date: Option<String>,
@@ -1508,10 +1510,9 @@ pub async fn get_recent_activity(
     // Build query filters for total count (need to count before USD filtering)
     let count_date_cutoff_str: Option<String> = date_cutoff.map(|dt| dt.to_rfc3339());
 
-    // For recent activity, "incoming" should include staking rewards
+    // For recent activity, "incoming" should exclude staking rewards (shown in separate tab)
     let transaction_types_for_query = match params.transaction_type.as_deref() {
-        Some("incoming") => Some(vec!["incoming".to_string(), "staking_rewards".to_string()]),
-        Some(other) => Some(vec![other.to_string()]),
+        Some(t) => Some(vec![t.to_string()]),
         None => None,
     };
 
@@ -1530,6 +1531,7 @@ pub async fn get_recent_activity(
         min_amount: None,
         max_amount: None,
         exclude_near_dust: true,
+        exclude_swaps_from_direction: true, // Recent activity: exclude swaps from incoming/outgoing (separate tab)
     };
 
     // Count query
@@ -1582,6 +1584,7 @@ pub async fn get_recent_activity(
         include_metadata: Some(true),
         include_prices: Some(true),
         exclude_near_dust: true,
+        exclude_swaps_from_direction: true, // Recent activity: exclude swaps from incoming/outgoing (separate Exchange tab)
     };
 
     let enriched_changes = get_balance_changes_internal(&state, &balance_query)
