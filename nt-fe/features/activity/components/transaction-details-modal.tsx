@@ -6,10 +6,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/modal";
-import { Button } from "@/components/button";
-import { ExternalLink, ChevronRight } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/modal";
-import { ArrowRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import type { RecentActivity } from "@/lib/api";
 import { FormattedDate } from "@/components/formatted-date";
 import { CopyButton } from "@/components/copy-button";

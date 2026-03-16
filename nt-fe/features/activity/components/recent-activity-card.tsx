@@ -53,7 +53,7 @@ import {
 import { Table, TableBody, TableCell, TableRow } from "@/components/table";
 import { FormattedDate } from "@/components/formatted-date";
 import { TransactionDetailsModal } from "./transaction-details-modal";
-import { MemberOnlyExportButton } from "@/components/member-only-export-button";
+import { ExportButton } from "@/components/export-button";
 import Link from "next/link";
 import { useMediaQuery } from "@/hooks/use-media-query";
 
@@ -460,7 +460,7 @@ export function RecentActivity() {
                                 Hide transactions &lt;1USD
                             </label>
                         </div> */}
-                        <MemberOnlyExportButton />
+                        <ExportButton />
                         <Link href={`/${treasuryId}/dashboard/activity`}>
                             <Button
                                 variant="secondary"
