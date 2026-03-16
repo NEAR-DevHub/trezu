@@ -173,7 +173,9 @@ async function invalidateAndWait(
         { timeout: 10_000 },
     );
     await page.evaluate((key) => {
-        (window as any).__queryClient?.invalidateQueries({ queryKey: key });
+        const qc = (window as any).__queryClient;
+        if (!qc) throw new Error("window.__queryClient is not defined — ensure QueryProvider exposes it in non-production builds");
+        qc.invalidateQueries({ queryKey: key });
     }, queryKey);
     await responsePromise;
 }

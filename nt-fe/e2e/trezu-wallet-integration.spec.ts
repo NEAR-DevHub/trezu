@@ -16,7 +16,7 @@
  * post-creation flow (waiting-approval → approved → tx hash) separately.
  */
 
-import { test, expect, BrowserContext, Page } from "@playwright/test";
+import { test, expect, BrowserContext, Page, Route } from "@playwright/test";
 
 /* ------------------------------------------------------------------ */
 /* Constants                                                            */
@@ -24,6 +24,46 @@ import { test, expect, BrowserContext, Page } from "@playwright/test";
 
 const DAO_ID = "webassemblymusic-treasury.sputnik-dao.near";
 const SIGNED_IN_ACCOUNT = "alice.near";
+
+const MOCK_MANIFEST_ID = "mock-wallet";
+
+const MOCK_WALLET_EXECUTOR_JS = `(function() {
+  window.selector.ready({
+    async signIn({ network }) {
+      const a = window.sandboxedLocalStorage.getItem('signedAccountId') || '';
+      return a ? [{ accountId: a, publicKey: '' }] : [];
+    },
+    async signOut() {
+      window.sandboxedLocalStorage.removeItem('signedAccountId');
+    },
+    async getAccounts({ network }) {
+      const a = window.sandboxedLocalStorage.getItem('signedAccountId');
+      if (!a) return [];
+      return [{ accountId: a, publicKey: '' }];
+    },
+    async verifyOwner() { throw new Error('Not supported'); },
+    async signMessage()  { throw new Error('Not supported'); },
+    async signAndSendTransaction(p)  { return {}; },
+    async signAndSendTransactions(p) { return []; },
+  });
+})();`;
+
+const MOCK_MANIFEST = {
+    wallets: [
+        {
+            id: MOCK_MANIFEST_ID,
+            name: "Mock Wallet",
+            icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>",
+            website: "https://example.com",
+            description: "Mock wallet for testing",
+            version: "1.0.0",
+            type: "sandbox",
+            executor: "/_near-connect-test/mock-wallet.js",
+            features: {},
+            permissions: { allowsOpen: false },
+        },
+    ],
+};
 const PROPOSAL_ID = 42;
 const TX_HASH = "7HBqrPAEtBVR5dRHKqtpFBgJqwWnmjXDDvQ3NEAR1abc";
 const DUMMY_DAPP_URL = "/test-dapp.html";
@@ -43,8 +83,35 @@ const TREASURY_RESPONSE = [
     },
 ];
 
-/** Mock backend API routes on the context (applies to all pages including popups). */
+/**
+ * Mock backend API routes + NearConnect manifest/executor on the context
+ * (applies to all pages including popups).
+ */
 async function mockBackendRoutes(context: BrowserContext) {
+    // Serve mock NearConnect manifest so the wallet popup auto-connects
+    for (const url of [
+        "**/raw.githubusercontent.com/**manifest.json*",
+        "**/cdn.jsdelivr.net/**manifest.json*",
+    ]) {
+        await context.route(url, async (route: Route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify(MOCK_MANIFEST),
+            });
+        });
+    }
+    await context.route(
+        "**/_near-connect-test/mock-wallet.js*",
+        async (route: Route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/javascript",
+                body: MOCK_WALLET_EXECUTOR_JS,
+            });
+        },
+    );
+
     await context.route("**/api/user/treasuries*", async (route) => {
         await route.fulfill({
             status: 200,
@@ -98,13 +165,20 @@ async function mockBackendRoutes(context: BrowserContext) {
 }
 
 /**
- * Seed the Trezu wallet "signed-in" account via localStorage.
- * Both the main page and any popup at the same origin share localStorage.
+ * Seed the NearConnector wallet account in localStorage.
+ * Same-origin popups share localStorage, so this pre-connects the mock wallet
+ * for any popup opened after this call.
  */
 async function seedWalletAccount(page: Page, accountId: string) {
-    await page.evaluate((acct) => {
-        window.localStorage.setItem("trezu:signedAccountId", acct);
-    }, accountId);
+    await page.evaluate(
+        ({ walletId, acct }) => {
+            // NearConnector reads this to determine which wallet is selected
+            localStorage.setItem("selected-wallet", walletId);
+            // Executor sandbox storage is prefixed with the manifest id
+            localStorage.setItem(`${walletId}:signedAccountId`, acct);
+        },
+        { walletId: MOCK_MANIFEST_ID, acct: accountId },
+    );
 }
 
 /**
@@ -138,7 +212,7 @@ test.describe("sign_in: connect via Trezu Wallet popup", () => {
         await mockBackendRoutes(context);
         await page.goto(DUMMY_DAPP_URL);
 
-        // Seed wallet account — localStorage is shared across same-origin pages,
+        // Seed mock wallet account — localStorage is shared across same-origin pages,
         // so the wallet popup will also see this and skip the "Connect Wallet" step.
         await seedWalletAccount(page, SIGNED_IN_ACCOUNT);
 
@@ -348,7 +422,8 @@ test.describe("waiting-approval: after DAO votes Approve, dApp receives tx hash"
     }) => {
         test.setTimeout(60_000);
 
-        // Override the proposal route to return InProgress
+        // Set up all base mocks first, then override the proposal route to return InProgress
+        await mockBackendRoutes(context);
         await context.route(
             `**/api/proposal/${DAO_ID}/${PROPOSAL_ID}`,
             async (route) => {

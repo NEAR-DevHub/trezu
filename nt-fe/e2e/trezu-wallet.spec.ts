@@ -20,9 +20,11 @@ import { test, expect, Page, Route } from "@playwright/test";
  *  • waiting-approval   — restored from ?daoId=…&proposalIds=…
  *
  * Full wallet connection (sign_in → treasury list → done) requires the
- * NearConnector to emit a wallet:signIn event. We simulate this by injecting
- * localStorage ("trezu:signedAccountId") before page load and mocking the
- * backend's /api/user/treasuries endpoint.
+ * NearConnector to have a pre-connected wallet. We simulate this by intercepting
+ * the NearConnect manifest (served from GitHub/jsDelivr CDN) to return a custom
+ * mock wallet, seeding localStorage["selected-wallet"] = "mock-wallet" and
+ * localStorage["mock-wallet:signedAccountId"] = accountId before page load, and
+ * mocking the backend's /api/user/treasuries endpoint.
  *
  * postMessage assertions use page.addInitScript to mock window.opener and
  * window.close before the page boots.

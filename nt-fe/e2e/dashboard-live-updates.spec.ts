@@ -333,10 +333,9 @@ async function refreshDashboardData(page: Page) {
     );
     await page.evaluate(() => {
         const qc = (window as any).__queryClient;
-        if (qc) {
-            qc.invalidateQueries({ queryKey: ["treasuryAssets"] });
-            qc.invalidateQueries({ queryKey: ["recentActivity"] });
-        }
+        if (!qc) throw new Error("window.__queryClient is not defined — ensure QueryProvider exposes it in non-production builds");
+        qc.invalidateQueries({ queryKey: ["treasuryAssets"] });
+        qc.invalidateQueries({ queryKey: ["recentActivity"] });
     });
     await Promise.all([assetsResponse, activityResponse]);
 }
