@@ -20,11 +20,11 @@ jobs:
         with:
           fetch-depth: 0
           ref: main
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.RELEASE_GITHUB_TOKEN }}
 
       - name: Validate version format
         run: |
-          if ! echo "${{ inputs.version }}" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+          if ! echo "${{ inputs.version }}" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9._-]+)?$'; then
             echo "Error: version must be in semver format (e.g. 1.1.0)"
             exit 1
           fi
@@ -95,7 +95,7 @@ jobs:
 
       - name: Commit render.yaml update to release branch and open PR
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
         run: |
           BRANCH="release-${{ inputs.version }}"
           git checkout "$BRANCH"
