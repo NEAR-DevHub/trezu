@@ -1,0 +1,117 @@
+name: Cut Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 1.1.0)'
+        required: true
+        type: string
+
+jobs:
+  cut-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate version format
+        run: |
+          if ! echo "${{ inputs.version }}" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Error: version must be in semver format (e.g. 1.1.0)"
+            exit 1
+          fi
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create release branch
+        run: |
+          BRANCH="release-${{ inputs.version }}"
+          if git ls-remote --exit-code --heads origin "$BRANCH"; then
+            echo "Error: branch $BRANCH already exists"
+            exit 1
+          fi
+          git checkout -b "$BRANCH"
+          git push origin "$BRANCH"
+
+      - name: Update render.yaml production branches
+        run: |
+          BRANCH="release-${{ inputs.version }}"
+          # Replace branch in production services (near-treasury-backend and near-treasury-frontend)
+          # These are identified by having a `domains:` block, which staging services lack.
+          python3 - "$BRANCH" <<'EOF'
+          import sys, re
+
+          branch = sys.argv[1]
+          with open("render.yaml") as f:
+              content = f.read()
+
+          # Parse services: split on top-level `- type:` blocks
+          # For each service block that contains a `domains:` key, update its `branch:` line.
+          # Staging services (no `domains:`) are left untouched.
+          def update_production_branches(text, new_branch):
+              lines = text.splitlines(keepends=True)
+              result = []
+              i = 0
+              while i < len(lines):
+                  line = lines[i]
+                  if re.match(r'  - type:', line):
+                      block = [line]
+                      j = i + 1
+                      while j < len(lines) and not re.match(r'  - type:|^databases:', lines[j]):
+                          block.append(lines[j])
+                          j += 1
+                      block_text = "".join(block)
+                      if "domains:" in block_text:
+                          block_text = re.sub(
+                              r'(^\s+branch:\s+).+',
+                              r'\g<1>' + new_branch,
+                              block_text,
+                              flags=re.MULTILINE,
+                          )
+                      result.append(block_text)
+                      i = j
+                  else:
+                      result.append(line)
+                      i += 1
+              return "".join(result)
+
+          updated = update_production_branches(content, branch)
+          with open("render.yaml", "w") as f:
+              f.write(updated)
+
+          print(updated)
+          EOF
+
+      - name: Commit render.yaml update to release branch and open PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="release-${{ inputs.version }}"
+          git checkout "$BRANCH"
+          git add render.yaml
+          if git diff --cached --quiet; then
+            echo "No changes to render.yaml — production branch already set correctly"
+          else
+            git commit -m "chore: point production deployment to $BRANCH"
+            git push origin "$BRANCH"
+          fi
+          gh pr create \
+            --title "chore: point production deployment to $BRANCH" \
+            --body "Automated PR to update render.yaml production branches to \`$BRANCH\`." \
+            --base main \
+            --head "$BRANCH"
+          gh release create "$BRANCH" \
+            --title "v${{ inputs.version }}" \
+            --target "$BRANCH" \
+            --generate-notes
