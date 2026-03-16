@@ -369,7 +369,7 @@ export function RecentActivity() {
                                             ) : null}
                                             <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                                             <span className="font-semibold text-general-success-foreground hidden sm:inline truncate">
-                                                {formatSmartAmount(
+                                                +{formatSmartAmount(
                                                     swap.receivedAmount,
                                                 )}{" "}
                                                 {receivedSymbol}
@@ -508,8 +508,8 @@ export function RecentActivity() {
                             <div className="w-full overflow-x-auto px-2">
                                 <Table className="table-fixed w-full min-w-full">
                                     <colgroup>
-                                        <col className="w-42 sm:w-52" />
-                                        <col className="min-w-0" />
+                                        <col className="w-42 sm:w-52 lg:w-1/2" />
+                                        <col className="min-w-0 lg:w-1/2" />
                                     </colgroup>
                                     <TableBody>
                                         {table.getRowModel().rows.map((row) => {

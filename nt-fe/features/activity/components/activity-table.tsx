@@ -189,7 +189,7 @@ export function ActivityTable({
                                                     />
                                                     {/* Received amount with + sign */}
                                                     <span className="font-semibold text-general-success-foreground whitespace-nowrap">
-                                                        +{
+                                                        {
                                                             activity.swap
                                                                 .receivedTokenMetadata
                                                                 .symbol
