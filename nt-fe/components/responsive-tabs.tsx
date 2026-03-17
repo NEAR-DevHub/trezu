@@ -73,7 +73,6 @@ export function ResponsiveTabs({
                         <SelectTrigger className="border-0 h-auto gap-1.5 font-medium text-sm focus:ring-0 w-auto">
                             <span className="flex items-center gap-1.5">
                                 {currentLabel}
-                                {currentTrigger}
                             </span>
                         </SelectTrigger>
                         <SelectContent align="start">
@@ -81,7 +80,7 @@ export function ResponsiveTabs({
                                 <SelectItem key={tab.value} value={tab.value}>
                                     <span className="flex items-center gap-1.5">
                                         {tab.selectLabel ?? tab.label}
-                                        {tab.trigger}
+                                        {tab.value !== value && tab.trigger}
                                     </span>
                                 </SelectItem>
                             ))}
