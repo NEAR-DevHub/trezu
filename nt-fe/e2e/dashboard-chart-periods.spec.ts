@@ -33,6 +33,7 @@ test.beforeAll(async () => {
             name: "Romakqa Testing Treasury",
             accountId: TREASURY_ID,
             paymentThreshold: 1,
+            governanceThreshold: 1,
             governors: ["test.near"],
             financiers: ["test.near"],
             requestors: ["test.near"],
@@ -352,7 +353,11 @@ test.describe("Dashboard chart time period aggregation (issue #228)", () => {
             ).toBeGreaterThanOrEqual(MIN_SPAN_DAYS[period]);
 
             // Check gaps between consecutive labels
+            // Exclude "Now" from gap checks: it maps to today's date, so its
+            // distance from the last fixture label grows over time and would
+            // cause false failures as fixture data ages.
             const sortedDates = parsedDates
+                .filter((l) => l.text !== "Now")
                 .map((l) => l.date.getTime())
                 .sort((a, b) => a - b);
 
