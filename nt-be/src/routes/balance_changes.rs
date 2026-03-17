@@ -38,7 +38,7 @@ pub struct BalanceChangesQuery {
 
     // Transaction Type Filtering (can select multiple)
     #[serde(default, deserialize_with = "comma_separated")]
-    pub transaction_types: Option<Vec<String>>, // "incoming", "outgoing", "staking_rewards"
+    pub transaction_types: Option<Vec<String>>, // "incoming", "outgoing", "staking_rewards", "exchange"
 
     // Amount Filtering (decimal-adjusted, requires single token filter)
     pub min_amount: Option<f64>, // Minimum amount in decimal-adjusted format (e.g., 1.5 NEAR)
@@ -46,9 +46,13 @@ pub struct BalanceChangesQuery {
 
     pub include_metadata: Option<bool>, // default: false (enrich with token metadata like symbol, name, decimals, icon)
     pub include_prices: Option<bool>, // default: false (fetch historical USD prices for transaction dates from DB; if missing, returns None)
+    pub include_chain_metadata: Option<bool>, // default: false (enrich with chain/network metadata for cross-chain tokens)
 
     #[serde(skip)]
     pub exclude_near_dust: bool, // Filter out tiny NEAR amounts (< 0.01) — not a query param, set internally
+
+    #[serde(skip)]
+    pub exclude_swaps_from_direction: bool, // If true, "incoming" and "outgoing" exclude swaps (for UI tabs); if false, include swaps (for exports/API)
 }
 
 #[derive(Debug, Serialize, sqlx::FromRow)]
@@ -141,36 +145,37 @@ pub async fn get_balance_changes_internal(
 
     // Convert decimal-adjusted min/max amounts to raw token units
     // This only works when filtering by a single token
-    let (min_amount_raw, max_amount_raw) =
-        if params.min_amount.is_some() || params.max_amount.is_some() {
-            // Require single token for min/max amount filtering
-            if let Some(ref tokens) = params.token_ids {
-                if tokens.len() == 1 {
-                    let token_id = &tokens[0];
+    let (min_amount_raw, max_amount_raw) = if params.min_amount.is_some()
+        || params.max_amount.is_some()
+    {
+        // Require single token for min/max amount filtering
+        if let Some(ref tokens) = params.token_ids {
+            if tokens.len() == 1 {
+                let token_id = &tokens[0];
 
-                    // Fetch metadata to get decimals using the helper function
-                    let metadata_map: std::collections::HashMap<String, TokenMetadata> =
-                        fetch_tokens_with_fallback(state, std::slice::from_ref(token_id)).await;
-                    let metadata = metadata_map.get(token_id);
+                // Fetch metadata to get decimals using the helper function
+                let metadata_map: std::collections::HashMap<String, TokenMetadata> =
+                    fetch_tokens_with_fallback(state, std::slice::from_ref(token_id), false).await;
+                let metadata = metadata_map.get(token_id);
 
-                    let decimals = metadata.map(|m| m.decimals).unwrap_or(24); // Default to NEAR decimals
-                    let multiplier = 10_f64.powi(decimals as i32);
+                let decimals = metadata.map(|m| m.decimals).unwrap_or(24); // Default to NEAR decimals
+                let multiplier = 10_f64.powi(decimals as i32);
 
-                    let min_raw = params.min_amount.map(|v| v * multiplier);
-                    let max_raw = params.max_amount.map(|v| v * multiplier);
+                let min_raw = params.min_amount.map(|v| v * multiplier);
+                let max_raw = params.max_amount.map(|v| v * multiplier);
 
-                    (min_raw, max_raw)
-                } else {
-                    // Multiple tokens - can't determine decimals
-                    (None, None)
-                }
+                (min_raw, max_raw)
             } else {
-                // No token filter - can't determine decimals
+                // Multiple tokens - can't determine decimals
                 (None, None)
             }
         } else {
+            // No token filter - can't determine decimals
             (None, None)
-        };
+        }
+    } else {
+        (None, None)
+    };
 
     // Build filters
     let filters = BalanceChangeFilters {
@@ -184,6 +189,7 @@ pub async fn get_balance_changes_internal(
         min_amount: min_amount_raw,
         max_amount: max_amount_raw,
         exclude_near_dust: params.exclude_near_dust,
+        exclude_swaps_from_direction: params.exclude_swaps_from_direction,
     };
 
     // Build SQL query
@@ -300,7 +306,12 @@ pub async fn get_balance_changes_internal(
             .map(|c| c.token_id.clone())
             .collect();
 
-        let metadata_map = fetch_tokens_with_fallback(state, &token_ids).await;
+        let metadata_map = fetch_tokens_with_fallback(
+            state,
+            &token_ids,
+            params.include_chain_metadata.unwrap_or(false),
+        )
+        .await;
 
         // Attach metadata to each change
         for change in &mut enriched_changes {
