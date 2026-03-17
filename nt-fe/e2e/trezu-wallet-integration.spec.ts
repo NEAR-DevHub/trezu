@@ -1,7 +1,7 @@
 /**
  * Integration tests for the Trezu Wallet end-to-end flow.
  *
- * These tests simulate a real external dApp (public/test-dapp.html) that
+ * These tests simulate a real external dApp (e2e/test-dapp.html) that
  * communicates with the Trezu Wallet popup using the same postMessage protocol
  * that the near-connect trezu-wallet.js plugin uses.
  *
@@ -17,6 +17,18 @@
  */
 
 import { test, expect, BrowserContext, Page, Route } from "@playwright/test";
+import * as fs from "fs";
+import * as path from "path";
+import {
+    MOCK_MANIFEST_ID,
+    MOCK_WALLET_EXECUTOR_JS,
+    MOCK_MANIFEST,
+} from "./helpers/mock-wallet";
+
+const TEST_DAPP_HTML = fs.readFileSync(
+    path.join(__dirname, "test-dapp.html"),
+    "utf-8",
+);
 
 /* ------------------------------------------------------------------ */
 /* Constants                                                            */
@@ -25,50 +37,11 @@ import { test, expect, BrowserContext, Page, Route } from "@playwright/test";
 const DAO_ID = "webassemblymusic-treasury.sputnik-dao.near";
 const SIGNED_IN_ACCOUNT = "alice.near";
 
-const MOCK_MANIFEST_ID = "mock-wallet";
-
-const MOCK_WALLET_EXECUTOR_JS = `(function() {
-  window.selector.ready({
-    async signIn({ network }) {
-      const a = window.sandboxedLocalStorage.getItem('signedAccountId') || '';
-      return a ? [{ accountId: a, publicKey: '' }] : [];
-    },
-    async signOut() {
-      window.sandboxedLocalStorage.removeItem('signedAccountId');
-    },
-    async getAccounts({ network }) {
-      const a = window.sandboxedLocalStorage.getItem('signedAccountId');
-      if (!a) return [];
-      return [{ accountId: a, publicKey: '' }];
-    },
-    async verifyOwner() { throw new Error('Not supported'); },
-    async signMessage()  { throw new Error('Not supported'); },
-    async signAndSendTransaction(p)  { return {}; },
-    async signAndSendTransactions(p) { return []; },
-  });
-})();`;
-
-const MOCK_MANIFEST = {
-    wallets: [
-        {
-            id: MOCK_MANIFEST_ID,
-            name: "Mock Wallet",
-            icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>",
-            website: "https://example.com",
-            description: "Mock wallet for testing",
-            version: "1.0.0",
-            type: "sandbox",
-            executor: "/_near-connect-test/mock-wallet.js",
-            features: {},
-            permissions: { allowsOpen: false },
-        },
-    ],
-};
 const PROPOSAL_ID = 42;
 const TX_HASH = "7HBqrPAEtBVR5dRHKqtpFBgJqwWnmjXDDvQ3NEAR1abc";
 const DUMMY_DAPP_URL = "/test-dapp.html";
 
-/** submission_time in nanoseconds (~2026-02-17T00:00:00Z). */
+/** submission_time in nanoseconds (2025-02-18T00:00:00Z). */
 const SUBMISSION_TIME_NS = "1739836800000000000";
 
 /* ------------------------------------------------------------------ */
@@ -111,6 +84,15 @@ async function mockBackendRoutes(context: BrowserContext) {
             });
         },
     );
+
+    // Serve the dummy dApp from e2e/ (not public/) so it's never shipped to prod.
+    await context.route("**/test-dapp.html", async (route) => {
+        await route.fulfill({
+            status: 200,
+            contentType: "text/html",
+            body: TEST_DAPP_HTML,
+        });
+    });
 
     await context.route("**/api/user/treasuries*", async (route) => {
         await route.fulfill({

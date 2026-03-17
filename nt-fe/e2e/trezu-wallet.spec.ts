@@ -1,4 +1,9 @@
 import { test, expect, Page, Route } from "@playwright/test";
+import {
+    MOCK_MANIFEST_ID,
+    MOCK_WALLET_EXECUTOR_JS,
+    MOCK_MANIFEST,
+} from "./helpers/mock-wallet";
 
 /**
  * E2E tests for the Trezu Wallet page (/wallet).
@@ -475,45 +480,6 @@ test.describe("cancel button", () => {
  *  3. Also store localStorage["selected-wallet"] = "mock-wallet" so
  *     NearConnector's getConnectedWallet() finds the right wallet.
  */
-const MOCK_MANIFEST_ID = "mock-wallet";
-
-const MOCK_WALLET_EXECUTOR_JS = `(function() {
-  window.selector.ready({
-    async signIn({ network }) {
-      const a = window.sandboxedLocalStorage.getItem('signedAccountId') || '';
-      return a ? [{ accountId: a, publicKey: '' }] : [];
-    },
-    async signOut() {
-      window.sandboxedLocalStorage.removeItem('signedAccountId');
-    },
-    async getAccounts({ network }) {
-      const a = window.sandboxedLocalStorage.getItem('signedAccountId');
-      if (!a) return [];
-      return [{ accountId: a, publicKey: '' }];
-    },
-    async verifyOwner() { throw new Error('Not supported'); },
-    async signMessage()  { throw new Error('Not supported'); },
-    async signAndSendTransaction(p)  { return {}; },
-    async signAndSendTransactions(p) { return []; },
-  });
-})();`;
-
-const MOCK_MANIFEST = {
-    wallets: [
-        {
-            id: MOCK_MANIFEST_ID,
-            name: "Mock Wallet",
-            icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>",
-            website: "https://example.com",
-            description: "Mock wallet for testing",
-            version: "1.0.0",
-            type: "sandbox",
-            executor: "/_near-connect-test/mock-wallet.js",
-            features: {},
-            permissions: { allowsOpen: false },
-        },
-    ],
-};
 
 async function setupMockWallet(page: Page, accountId: string) {
     // Serve the custom manifest
