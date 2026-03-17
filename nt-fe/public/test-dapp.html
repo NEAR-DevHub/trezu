@@ -84,13 +84,23 @@
         // Use var so Playwright can set window.connectedAs from page.evaluate()
         var connectedAs = null;  // daoId chosen during sign_in
 
+        // Global listener: captures every trezu:result into __lastMessage so
+        // Playwright can assert on it even when the popup is opened directly
+        // (not via a button) and regardless of whether waitForResult resolves
+        // or rejects.
+        window.addEventListener("message", function(event) {
+            var msg = event.data;
+            if (msg && msg.type === "trezu:result") {
+                window.__lastMessage = msg;
+            }
+        });
+
         function setStatus(text) {
             document.getElementById("status").textContent = "Status: " + text;
         }
 
         function showMessage(obj) {
             document.getElementById("messages").textContent = JSON.stringify(obj, null, 2);
-            window.__lastMessage = obj;  // for Playwright assertions
         }
 
         /* ---- connect ---- */

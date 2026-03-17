@@ -324,11 +324,12 @@ test.describe("sign_transactions: FunctionCall (ft_transfer) proposal preview", 
             timeout: 15_000,
         });
 
-        // FunctionCallExpanded renders "Method" row with the method name
-        await expect(popup.locator("text=ft_transfer").first()).toBeVisible();
+        // The wallet interprets ft_transfer (with receiver_id arg) as an INTENTS
+        // transfer and renders the recipient from the args, not the raw method name.
+        await expect(popup.locator("text=alice.near").first()).toBeVisible();
 
-        // "Recipient" row shows the contract address
-        await expect(popup.locator("text=token.near").first()).toBeVisible();
+        // Amount is shown in INTENTS units (unique to FunctionCall / ft_transfer path)
+        await expect(popup.locator("text=INTENTS").first()).toBeVisible();
 
         await popup.click("button:has-text('Cancel')");
 
