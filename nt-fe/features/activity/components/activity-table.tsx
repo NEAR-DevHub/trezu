@@ -169,7 +169,7 @@ export function ActivityTable({
                                                     {activity.swap.sentAmount &&
                                                         activity.swap
                                                             .sentTokenMetadata ? (
-                                                        <span className="font-semibold text-foreground whitespace-nowrap">
+                                                        <span className="font-normal text-foreground whitespace-nowrap">
                                                             {formatSmartAmount(
                                                                 activity.swap
                                                                     .sentAmount,
@@ -181,7 +181,7 @@ export function ActivityTable({
                                                             }
                                                         </span>
                                                     ) : (
-                                                        <span className="font-semibold text-muted-foreground">
+                                                        <span className="font-normal text-muted-foreground">
                                                             ?
                                                         </span>
                                                     )}
@@ -195,7 +195,7 @@ export function ActivityTable({
                                                         iconSize="sm"
                                                     />
                                                     {/* Received amount with + sign */}
-                                                    <span className="font-semibold text-general-success-foreground whitespace-nowrap">
+                                                    <span className="font-normal text-general-success-foreground whitespace-nowrap">
                                                         {
                                                             activity.swap
                                                                 .receivedTokenMetadata
@@ -220,7 +220,7 @@ export function ActivityTable({
                                                     {/* Sent amount */}
                                                     {activity.swap
                                                         .sentTokenMetadata ? (
-                                                        <span className="font-semibold text-foreground whitespace-nowrap">
+                                                        <span className="font-normal text-foreground whitespace-nowrap">
                                                             {
                                                                 activity.swap
                                                                     .sentTokenMetadata
@@ -238,7 +238,7 @@ export function ActivityTable({
                                                         iconSize="sm"
                                                     />
                                                     {/* Received amount with + sign */}
-                                                    <span className="font-semibold text-general-success-foreground whitespace-nowrap">
+                                                    <span className="font-normal text-general-success-foreground whitespace-nowrap">
                                                         +{formatSmartAmount(
                                                             activity.swap
                                                                 .receivedAmount,
@@ -264,7 +264,7 @@ export function ActivityTable({
                                                         activity.amount,
                                                     )}
                                                     className={cn(
-                                                        "font-semibold",
+                                                        "font-normal",
                                                         isReceived
                                                             ? "text-general-success-foreground"
                                                             : "text-foreground"

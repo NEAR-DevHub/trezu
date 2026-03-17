@@ -56,6 +56,7 @@ import { TransactionDetailsModal } from "./transaction-details-modal";
 import { ExportButton } from "@/components/export-button";
 import Link from "next/link";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { StepperHeader } from "@/components/step-wizard";
 
 const ITEMS_ON_DASHBOARD = 10;
 const MAX_ITEMS = 100;
@@ -435,9 +436,7 @@ export function RecentActivity() {
             <Card className="gap-3 border-none shadow-none">
                 <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3 px-4">
                     <div className="space-y-1">
-                        <CardTitle className="text-base md:text-lg font-bold">
-                            Recent Transactions
-                        </CardTitle>
+                    <StepperHeader title="Recent Transactions" />
                         <CardDescription>
                             Sent and received transactions ({historyDescription}
                             )
