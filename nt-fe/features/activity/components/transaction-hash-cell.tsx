@@ -37,14 +37,11 @@ export function TransactionHashCell({
 
     return (
         <div className={className}>
-            <a
-                href={explorerUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm underline hover:no-underline"
+            <div
+                className="text-sm"
             >
                 {transactionHash.slice(0, 12)}...
-            </a>
+            </div>
             <Button
                 variant="ghost"
                 size="icon-sm"
