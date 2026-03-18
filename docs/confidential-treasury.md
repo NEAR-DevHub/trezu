@@ -248,6 +248,107 @@ The `IntentSetAuthByPredecessorId` and `IntentAuthCall` types are interesting fo
 
 #### 1.5 Extend the onboarding with confidential treasury option
 
+---
+
+## PoC Test Strategy: Rust Sandbox Integration Test
+
+### Reference Implementation
+
+The previous treasury client (neardevhub-treasury-dashboard) has a [Playwright E2E test](https://github.com/NEAR-DevHub/neardevhub-treasury-dashboard/blob/staging/playwright-tests/tests/intents/create-1click-exchange-request.spec.js) that demonstrates the full 1click exchange flow in a NEAR sandbox:
+
+1. Deploy sandbox with `intents.near`, `omft.near`, sputnik DAO factory
+2. Create a DAO, fund it with tokens via `ft_deposit`
+3. Create a DAO proposal for an exchange (quote → proposal → approve)
+4. Simulate the intent execution: solver provides liquidity, both sides sign, call `execute_intents`
+5. Verify balances changed
+
+### Adapting for CONFIDENTIAL_INTENTS in Rust
+
+We already have a Rust sandbox setup (`sandbox/sandbox-init`) using `near-sandbox` + `near-api` (not `near-workspaces`). The integration tests in `contracts/bulk-payment/tests/integration_tests.rs` show the patterns for account creation, contract deployment, and DAO interaction.
+
+#### Key insight: no FAR chain sandbox needed
+
+The defuse-frontend (`feat/shield` branch) confirms that the frontend **never talks directly to the FAR chain**. All confidential operations go through just two APIs:
+
+1. **1Click API** (`1click.chaindefuser.com`) — the sole gateway for all confidential operations:
+   - Authentication (JWT via wallet signature)
+   - Confidential balances (`AccountService.getBalances`)
+   - Quotes (`OneClickService.getQuote`)
+   - Intent lifecycle (`generateIntent` → `submitIntent` → `getExecutionStatus`)
+
+2. **Intents Explorer API** (`explorer.near-intents.org/api/v0`) — read-only transaction history:
+   - `GET /transactions-pages?search={account}&page=...&statuses=...`
+
+No direct FAR chain RPC, no WebSockets. So the PoC test only needs a **single NEAR sandbox** plus **mock HTTP servers** for these two APIs.
+
+#### What we need
+
+A Rust integration test that proves the full confidential intent flow works end-to-end:
+
+1. **Shield:** Public NEAR/token → confidential balance (via `CONFIDENTIAL_INTENTS`)
+2. **Private transfer:** Confidential balance → another account on FAR
+3. **Unshield:** Confidential balance → public chain
+
+#### Test setup
+
+**NEAR sandbox** with:
+- `sputnik-dao.near` factory + DAO instance
+- `intents.near` (imported from mainnet)
+- `omft.near` with test tokens (ETH, USDC)
+- **Mock signer contract** (see below)
+
+**Mock HTTP servers** (e.g., `wiremock` or `axum`):
+- Mock 1Click API — returns canned quote/generate-intent/submit-intent responses; validates that request payloads contain `CONFIDENTIAL_INTENTS` types
+- Mock Intents Explorer API — returns canned transaction history
+
+#### v1.signer in sandbox
+
+The real `v1.signer` contract can be imported from mainnet, but **MPC signing won't work** — there are no MPC nodes in sandbox. Options:
+
+1. **Mock signer contract** (recommended) — Deploy a simple contract that mimics the `v1.signer` interface but returns deterministic ed25519 signatures from a known keypair
+2. **Skip the signer, test the payload** — Verify the DAO proposal constructs the correct `FunctionCall` targeting `v1.signer` with right arguments, then test signing separately with a local keypair
+
+#### Recommended PoC test structure
+
+```
+contracts/confidential-intents/
+├── Cargo.toml
+├── src/
+│   └── lib.rs                    # Mock v1.signer contract (returns known signatures)
+└── tests/
+    └── integration_tests.rs      # Full flow test
+```
+
+#### Integration test flow
+
+```rust
+#[tokio::test]
+async fn test_confidential_intent_full_flow() {
+    // 1. Start sandbox, deploy contracts (DAO, intents, omft, mock-signer)
+    //    Start mock 1Click API + Intents Explorer servers
+    // 2. Create DAO with council member
+    // 3. Fund DAO with test tokens (ETH on omft)
+
+    // 4. SHIELD: Create proposal to shield tokens (public → confidential)
+    //    - Get mock quote (depositType: INTENTS, recipientType: CONFIDENTIAL_INTENTS)
+    //    - Proposal kind: FunctionCall to mock-signer with intent payload
+    //    - Approve proposal → mock-signer returns signature
+    //    - Submit signed intent to mock 1Click API
+    //    - Verify: public balance decreased
+
+    // 5. PRIVATE TRANSFER: Create proposal for confidential transfer
+    //    - depositType: CONFIDENTIAL_INTENTS, recipientType: CONFIDENTIAL_INTENTS
+    //    - Same flow: proposal → approve → sign → submit
+
+    // 6. UNSHIELD: Create proposal to unshield back to public
+    //    - depositType: CONFIDENTIAL_INTENTS, recipientType: INTENTS
+    //    - Same flow: proposal → approve → sign → submit
+    //    - Simulate intent execution on intents.near (register deposit key,
+    //      build solver + 1Click intents with NEP-413 sigs, call execute_intents)
+    //    - Verify: public balance increased
+}
+```
+
 ### Backend Tasks (unassigned)
 
 #### 1.2 Backend for getting the balances, keep track of confidential transactions
