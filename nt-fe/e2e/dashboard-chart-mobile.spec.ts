@@ -22,6 +22,7 @@ test.beforeAll(async () => {
             name: "WebAssembly Music Treasury",
             accountId: TREASURY_ID,
             paymentThreshold: 1,
+            governanceThreshold: 1,
             governors: ["test.near"],
             financiers: ["test.near"],
             requestors: ["test.near"],
