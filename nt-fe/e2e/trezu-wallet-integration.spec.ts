@@ -216,9 +216,11 @@ test.describe("sign_in: connect via Trezu Wallet popup", () => {
         });
 
         // dApp received trezu:result with the DAO account
-        const msg = await page.evaluate(
-            () => (window as any).__lastMessage,
-        );
+        const msg = await page
+            .waitForFunction(() => (window as any).__lastMessage, {
+                timeout: 5_000,
+            })
+            .then((h) => h.jsonValue());
         expect(msg).toMatchObject({
             type: "trezu:result",
             status: "success",
@@ -270,9 +272,11 @@ test.describe("sign_transactions: Transfer NEAR proposal preview", () => {
         // Cancel → popup closes and dApp receives failure
         await popup.click("button:has-text('Cancel')");
 
-        const msg = await page.evaluate(
-            () => (window as any).__lastMessage,
-        );
+        const msg = await page
+            .waitForFunction(() => (window as any).__lastMessage, {
+                timeout: 5_000,
+            })
+            .then((h) => h.jsonValue());
         expect(msg).toMatchObject({
             type: "trezu:result",
             status: "failure",
@@ -315,9 +319,11 @@ test.describe("sign_transactions: FunctionCall (ft_transfer) proposal preview", 
 
         await popup.click("button:has-text('Cancel')");
 
-        const msg = await page.evaluate(
-            () => (window as any).__lastMessage,
-        );
+        const msg = await page
+            .waitForFunction(() => (window as any).__lastMessage, {
+                timeout: 5_000,
+            })
+            .then((h) => h.jsonValue());
         expect(msg).toMatchObject({
             type: "trezu:result",
             status: "failure",
@@ -389,9 +395,11 @@ test.describe("waiting-approval: after DAO votes Approve, dApp receives tx hash"
         });
 
         // dApp received the trezu:result with the transaction hash
-        const msg = await page.evaluate(
-            () => (window as any).__lastMessage,
-        );
+        const msg = await page
+            .waitForFunction(() => (window as any).__lastMessage, {
+                timeout: 5_000,
+            })
+            .then((h) => h.jsonValue());
         expect(msg).toMatchObject({
             type: "trezu:result",
             status: "success",
@@ -463,6 +471,7 @@ test.describe("waiting-approval: after DAO votes Approve, dApp receives tx hash"
         );
 
         // Popup stays open; dApp has not received any message
+        // (use evaluate, not waitForFunction — we assert the value is absent)
         const msg = await page.evaluate(
             () => (window as any).__lastMessage,
         );

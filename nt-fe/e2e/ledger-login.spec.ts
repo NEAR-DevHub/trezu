@@ -257,7 +257,7 @@ test("Ledger login flow", async ({ page, context }) => {
             const postData = request.postData();
             const body = postData ? JSON.parse(postData) : {};
 
-            console.log("Intercepting FastNEAR RPC:", body.method);
+            console.log("Intercepting NEAR RPC:", body.method);
 
             let result;
             if (body.method === "query") {
