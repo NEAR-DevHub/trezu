@@ -26,12 +26,20 @@ A treasury is either public or confidential — we don't mix the two. For confid
 
 ### Key Challenge: DAO Signing
 
-The near.com flow assumes synchronous wallet signing via NEP-413 (`wallet.signMessage()`). DAOs don't have wallet keys. The flow for DAOs:
+The near.com flow assumes synchronous wallet signing via NEP-413 (`wallet.signMessage()`). DAOs don't have wallet keys. The flow for DAOs depends on the operation type:
 
-1. Create a DAO proposal that includes the intent payload to sign
-2. DAO members approve the proposal
-3. On execution, the proposal calls `v1.signer` (chain-signatures contract) to produce an MPC signature
-4. The signed intent is submitted to the private intents API
+**Shield (public → private) — proposal does two things:**
+1. DAO members create & approve a proposal
+2. On execution, the proposal:
+   a. Calls `v1.signer` (chain-signatures MPC) to sign the intent payload
+   b. Transfers tokens to the deposit address (on-chain)
+3. Backend submits the signed intent to the 1Click API
+
+**Unshield / Private transfer / Confidential swap — proposal only signs:**
+1. DAO members create & approve a proposal
+2. On execution, the proposal calls `v1.signer` to sign the intent payload
+3. Backend submits the signed intent to the 1Click API
+4. No on-chain token transfer needed (funds already in confidential ledger)
 
 ## Private Intents API
 
@@ -83,23 +91,33 @@ Both headers are sent together — `x-api-key` for API identification, Bearer JW
 
 ### Core Operations
 
-All operations follow: **get quote → generate intent → sign → submit intent → poll status**
+There are two distinct flow patterns depending on whether an **on-chain deposit** is needed:
 
-#### Shield (public → private)
+#### Flow A: Shield (public → private) — requires on-chain deposit
 ```
 depositType: INTENTS
 recipientType: CONFIDENTIAL_INTENTS
 refundType: CONFIDENTIAL_INTENTS
 ```
+1. Get quote → receive `depositAddress`
+2. Generate intent → sign with wallet (NEP-413) → submit signed intent
+3. **Submit on-chain deposit tx** (transfer tokens to `depositAddress`)
+4. Poll execution status
 
-#### Unshield (private → public)
+**DAO flow:** The proposal must include BOTH the `v1.signer` call (to sign the intent) AND a token transfer to the deposit address. The backend submits the signed intent to 1Click API, then the on-chain transfer executes as part of the same proposal.
+
+#### Flow B: Operations with confidential source — API-only, no on-chain tx
+
+When `depositType: CONFIDENTIAL_INTENTS`, funds are already in the confidential ledger. The wallet signature (off-chain) authorizes the movement — **no NEAR transaction hits the chain**.
+
+##### Unshield (private → public)
 ```
 depositType: CONFIDENTIAL_INTENTS
 recipientType: INTENTS
 refundType: CONFIDENTIAL_INTENTS
 ```
 
-#### Private Transfer (private → private, different recipient)
+##### Private Transfer (private → private, different recipient)
 ```
 depositType: CONFIDENTIAL_INTENTS
 recipientType: CONFIDENTIAL_INTENTS
@@ -107,12 +125,19 @@ refundType: CONFIDENTIAL_INTENTS
 recipient: "near:recipient.near"
 ```
 
-#### Confidential Swap (private, token A → token B)
+##### Confidential Swap (private, token A → token B)
 ```
 depositType: CONFIDENTIAL_INTENTS
 recipientType: CONFIDENTIAL_INTENTS
 refundType: CONFIDENTIAL_INTENTS
 ```
+
+**Steps (same for all three):**
+1. Get quote (requires JWT auth)
+2. Generate intent → sign → submit signed intent
+3. Poll execution status
+
+**DAO flow:** The proposal only needs to call `v1.signer` to produce the signature. The backend then submits the signed intent to the 1Click API. No on-chain token movement needed.
 
 ### Quote Request Shape
 ```typescript
