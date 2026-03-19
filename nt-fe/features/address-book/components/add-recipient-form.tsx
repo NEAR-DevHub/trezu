@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { InputBlock } from "@/components/input-block";
 import { LargeInput } from "@/components/large-input";
@@ -9,14 +9,6 @@ import { Button } from "@/components/button";
 import { StepperHeader } from "@/components/step-wizard";
 import { NetworkBadge } from "@/components/network-badge";
 import { getBlockchainType } from "@/lib/blockchain-utils";
-import {
-    getAddressPattern,
-    getBlockchainDisplayName,
-} from "@/lib/address-validation";
-import {
-    validateNearAddress,
-    isValidNearAddressFormat,
-} from "@/lib/near-validation";
 import { useChains } from "../chains";
 import {
     SelectModal,
@@ -47,11 +39,20 @@ function NetworkSelect({
     const { data: chains = [], isLoading } = useChains();
     const [open, setOpen] = useState(false);
 
-    const options = chains.map((c) => ({
-        id: c.key,
-        name: c.name,
-        icon: c.iconLight,
-    }));
+    const selectedType =
+        selected.length > 0 ? getBlockchainType(selected[0]) : null;
+
+    const options = chains
+        .filter(
+            (c) =>
+                selectedType === null ||
+                getBlockchainType(c.key) === selectedType,
+        )
+        .map((c) => ({
+            id: c.key,
+            name: c.name,
+            icon: c.iconLight,
+        }));
 
     const selectedChains = chains.filter((c) => selected.includes(c.key));
 
@@ -191,87 +192,19 @@ export function AddRecipientForm({
 }: AddRecipientFormProps) {
     const [draft, setDraft] = useState<RecipientDraft>(EMPTY_DRAFT);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
+    const [isAddressValid, setIsAddressValid] = useState(false);
     const [isAddressValidating, setIsAddressValidating] = useState(false);
-    const { data: chains = [] } = useChains();
-    // networkErrors: null = valid, string = error message, undefined = not yet validated
-    const [networkErrors, setNetworkErrors] = useState<
-        Record<string, string | null>
-    >({});
-    const nearValidationAbortRef = useRef<AbortController | null>(null);
 
     const blockchainType = useMemo(
         () => getBlockchainType(draft.networks[0] ?? "near"),
         [draft.networks],
     );
 
-    // Validate address against every selected network independently
-    useEffect(() => {
-        setNetworkErrors({});
-        if (!draft.address || draft.networks.length === 0) return;
-
-        const address = draft.address;
-        const networks = draft.networks;
-
-        // Cancel any pending NEAR validation
-        nearValidationAbortRef.current?.abort();
-        const abort = new AbortController();
-        nearValidationAbortRef.current = abort;
-
-        const errors: Record<string, string | null> = {};
-        const nearNetworks: string[] = [];
-
-        for (const networkKey of networks) {
-            const bt = getBlockchainType(networkKey);
-            if (bt === "near") {
-                nearNetworks.push(networkKey);
-                continue;
-            }
-            const pattern = getAddressPattern(bt);
-            if (!pattern) {
-                errors[networkKey] = null; // unknown chain, accept
-            } else {
-                errors[networkKey] = pattern.test(address)
-                    ? null
-                    : `Invalid ${getBlockchainDisplayName(bt)} address`;
-            }
-        }
-
-        setNetworkErrors({ ...errors });
-
-        if (nearNetworks.length === 0) return;
-
-        // Async NEAR validation
-        if (!isValidNearAddressFormat(address)) {
-            const nearError = "Invalid NEAR address format";
-            setNetworkErrors((prev) => ({
-                ...prev,
-                ...Object.fromEntries(nearNetworks.map((k) => [k, nearError])),
-            }));
-            return;
-        }
-
-        validateNearAddress(address).then((error) => {
-            if (abort.signal.aborted) return;
-            setNetworkErrors((prev) => ({
-                ...prev,
-                ...Object.fromEntries(
-                    nearNetworks.map((k) => [k, error ?? null]),
-                ),
-            }));
-        });
-
-        return () => abort.abort();
-    }, [draft.address, draft.networks]);
-
-    const allNetworksValid =
-        draft.networks.length > 0 &&
-        draft.networks.every((k) => networkErrors[k] === null);
-
     const isDraftValid =
         draft.name.trim().length > 0 &&
         draft.networks.length > 0 &&
         draft.address.trim().length > 0 &&
-        allNetworksValid &&
+        isAddressValid &&
         !isAddressValidating;
 
     const commitDraft = () => {
@@ -340,17 +273,14 @@ export function AddRecipientForm({
                         selected={draft.networks}
                         onChange={(networks) => {
                             setDraft((d) => ({ ...d, networks, address: "" }));
+                            setIsAddressValid(false);
                         }}
                     />
                 </InputBlock>
 
                 <InputBlock
                     title="Recipient Address"
-                    invalid={
-                        !!draft.address &&
-                        !allNetworksValid &&
-                        !isAddressValidating
-                    }
+                    invalid={false}
                     interactive
                 >
                     <AccountInput
@@ -360,26 +290,10 @@ export function AddRecipientForm({
                         setValue={(v) =>
                             setDraft((d) => ({ ...d, address: v }))
                         }
-                        setIsValid={() => {}}
+                        setIsValid={setIsAddressValid}
                         setIsValidating={setIsAddressValidating}
                         borderless
                     />
-                    {draft.address &&
-                        !isAddressValidating &&
-                        draft.networks.map((key) => {
-                            const error = networkErrors[key];
-                            if (!error) return null;
-                            const chain = chains.find((c) => c.key === key);
-                            const label = chain?.name ?? key;
-                            return (
-                                <p
-                                    key={key}
-                                    className="text-xs text-destructive"
-                                >
-                                    {label}: {error}
-                                </p>
-                            );
-                        })}
                 </InputBlock>
             </div>
 

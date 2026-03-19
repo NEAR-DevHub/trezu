@@ -1,6 +1,6 @@
 /**
  * Maps chainName from backend to blockchain identifiers for address validation
- * 
+ *
  * This utility helps determine which blockchain validation to use based on the
  * network/chainName provided by the token data
  */
@@ -8,9 +8,15 @@
 export type BlockchainType =
     | "near"
     | "bitcoin"
+    | "bitcoincash"
+    | "litecoin"
+    | "dash"
     | "ethereum"
+    | "starknet"
+    | "aleo"
     | "solana"
     | "tron"
+    | "ton"
     | "zcash"
     | "dogecoin"
     | "xrp"
@@ -34,6 +40,21 @@ export function getBlockchainType(chainName: string): BlockchainType {
     // Bitcoin
     if (chainLower === "bitcoin" || chainLower === "btc") {
         return "bitcoin";
+    }
+
+    // Bitcoin Cash
+    if (chainLower === "bitcoincash" || chainLower === "bch") {
+        return "bitcoincash";
+    }
+
+    // Litecoin
+    if (chainLower === "litecoin" || chainLower === "ltc") {
+        return "litecoin";
+    }
+
+    // Dash
+    if (chainLower === "dash") {
+        return "dash";
     }
 
     // Ethereum and EVM chains
@@ -62,6 +83,9 @@ export function getBlockchainType(chainName: string): BlockchainType {
         "aurora_devnet",
         "layerx",
         "monad",
+        "scroll",
+        "plasma",
+        "adi",
     ]);
     if (evmChains.has(chainLower)) {
         return "ethereum";
@@ -88,7 +112,11 @@ export function getBlockchainType(chainName: string): BlockchainType {
     }
 
     // XRP/Ripple
-    if (chainLower === "xrp" || chainLower === "ripple" || chainLower === "xrpledger") {
+    if (
+        chainLower === "xrp" ||
+        chainLower === "ripple" ||
+        chainLower === "xrpledger"
+    ) {
         return "xrp";
     }
 
@@ -112,12 +140,29 @@ export function getBlockchainType(chainName: string): BlockchainType {
         return "cardano";
     }
 
+    // TON
+    if (chainLower === "ton") {
+        return "ton";
+    }
+
+    // Starknet
+    if (chainLower === "starknet") {
+        return "starknet";
+    }
+
+    // Aleo
+    if (chainLower === "aleo") {
+        return "aleo";
+    }
+
     // Hyperliquid (treat as EVM-compatible for now, though it may need special handling)
     if (chainLower === "hyperliquid") {
         return "ethereum";
     }
 
-    console.log(`⚠️  UNKNOWN BLOCKCHAIN: "${chainName}" - No validation available!`);
+    console.log(
+        `⚠️  UNKNOWN BLOCKCHAIN: "${chainName}" - No validation available!`,
+    );
     return "unknown";
 }
 
@@ -132,7 +177,10 @@ export function isNearToken(chainName?: string, residency?: string): boolean {
 /**
  * Check if a token requires cross-chain address validation
  */
-export function requiresCrossChainValidation(chainName?: string, residency?: string): boolean {
+export function requiresCrossChainValidation(
+    chainName?: string,
+    residency?: string,
+): boolean {
     if (!chainName) return false;
     const blockchainType = getBlockchainType(chainName);
     return blockchainType !== "near" && blockchainType !== "unknown";
@@ -141,7 +189,10 @@ export function requiresCrossChainValidation(chainName?: string, residency?: str
 /**
  * Get the explorer URL for a given blockchain and address
  */
-export function getExplorerAddressUrl(chainName: string, address: string): string | null {
+export function getExplorerAddressUrl(
+    chainName: string,
+    address: string,
+): string | null {
     const blockchainType = getBlockchainType(chainName);
     const chainLower = chainName.toLowerCase();
 
@@ -181,6 +232,24 @@ export function getExplorerAddressUrl(chainName: string, address: string): strin
         case "bitcoin":
             return `https://blockchair.com/bitcoin/address/${address}`;
 
+        case "bitcoincash":
+            return `https://blockchair.com/bitcoin-cash/address/${address}`;
+
+        case "litecoin":
+            return `https://blockchair.com/litecoin/address/${address}`;
+
+        case "dash":
+            return `https://blockchair.com/dash/address/${address}`;
+
+        case "starknet":
+            return `https://starkscan.co/contract/${address}`;
+
+        case "aleo":
+            return `https://explorer.aleo.org/address/${address}`;
+
+        case "ton":
+            return `https://tonscan.org/address/${address}`;
+
         case "solana":
             return `https://solscan.io/address/${address}`;
 
@@ -214,4 +283,3 @@ export function getExplorerAddressUrl(chainName: string, address: string): strin
             return null;
     }
 }
-
