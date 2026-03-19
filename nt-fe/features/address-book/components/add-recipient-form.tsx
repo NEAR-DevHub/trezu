@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { InputBlock } from "@/components/input-block";
 import { LargeInput } from "@/components/large-input";
@@ -8,8 +8,8 @@ import AccountInput from "@/components/account-input";
 import { Button } from "@/components/button";
 import { StepperHeader } from "@/components/step-wizard";
 import { NetworkBadge } from "@/components/network-badge";
-import { getBlockchainType } from "@/lib/blockchain-utils";
 import { useChains } from "../chains";
+import { getCompatibleChains } from "../compatible-chains";
 import {
     SelectModal,
     type SelectOption,
@@ -30,29 +30,26 @@ interface AddRecipientFormProps extends StepProps {
 }
 
 function NetworkSelect({
+    address,
     selected,
     onChange,
+    disabled,
 }: {
+    address: string;
     selected: string[];
     onChange: (networks: string[]) => void;
+    disabled?: boolean;
 }) {
     const { data: chains = [], isLoading } = useChains();
     const [open, setOpen] = useState(false);
 
-    const selectedType =
-        selected.length > 0 ? getBlockchainType(selected[0]) : null;
+    const compatibleChains = getCompatibleChains(address, chains);
 
-    const options = chains
-        .filter(
-            (c) =>
-                selectedType === null ||
-                getBlockchainType(c.key) === selectedType,
-        )
-        .map((c) => ({
-            id: c.key,
-            name: c.name,
-            icon: c.iconLight,
-        }));
+    const options = compatibleChains.map((c) => ({
+        id: c.key,
+        name: c.name,
+        icon: c.iconLight,
+    }));
 
     const selectedChains = chains.filter((c) => selected.includes(c.key));
 
@@ -68,12 +65,15 @@ function NetworkSelect({
         <>
             <button
                 type="button"
-                onClick={() => setOpen(true)}
-                className="flex items-center w-full py-1 focus:outline-none"
+                onClick={() => !disabled && setOpen(true)}
+                disabled={disabled}
+                className="flex items-center w-full py-1 focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed"
             >
                 {selectedChains.length === 0 ? (
                     <span className="text-muted-foreground text-lg">
-                        Select network
+                        {disabled
+                            ? "Enter a valid address first"
+                            : "Select network"}
                     </span>
                 ) : (
                     <div className="flex flex-wrap gap-1.5">
@@ -190,15 +190,11 @@ export function AddRecipientForm({
     recipients,
     onRecipientsChange,
 }: AddRecipientFormProps) {
+    const { data: chains = [] } = useChains();
     const [draft, setDraft] = useState<RecipientDraft>(EMPTY_DRAFT);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [isAddressValid, setIsAddressValid] = useState(false);
     const [isAddressValidating, setIsAddressValidating] = useState(false);
-
-    const blockchainType = useMemo(
-        () => getBlockchainType(draft.networks[0] ?? "near"),
-        [draft.networks],
-    );
 
     const isDraftValid =
         draft.name.trim().length > 0 &&
@@ -206,6 +202,21 @@ export function AddRecipientForm({
         draft.address.trim().length > 0 &&
         isAddressValid &&
         !isAddressValidating;
+
+    const handleAddressChange = (address: string) => {
+        setDraft((d) => ({ ...d, address, networks: [] }));
+        setIsAddressValid(false);
+    };
+
+    const handleAddressValid = (valid: boolean) => {
+        if (!valid) {
+            setIsAddressValid(false);
+            return;
+        }
+        // Only treat as valid if at least one known chain recognises this address
+        const compatible = getCompatibleChains(draft.address, chains);
+        setIsAddressValid(compatible.length > 0);
+    };
 
     const commitDraft = () => {
         if (!isDraftValid) return;
@@ -218,6 +229,7 @@ export function AddRecipientForm({
             onRecipientsChange([...recipients, draft]);
         }
         setDraft(EMPTY_DRAFT);
+        setIsAddressValid(false);
     };
 
     const handleEdit = (index: number) => {
@@ -264,35 +276,33 @@ export function AddRecipientForm({
                 </InputBlock>
 
                 <InputBlock
-                    title="Network"
-                    info="Select the blockchain networks this address is valid for"
-                    invalid={false}
-                    interactive
-                >
-                    <NetworkSelect
-                        selected={draft.networks}
-                        onChange={(networks) => {
-                            setDraft((d) => ({ ...d, networks, address: "" }));
-                            setIsAddressValid(false);
-                        }}
-                    />
-                </InputBlock>
-
-                <InputBlock
                     title="Recipient Address"
                     invalid={false}
                     interactive
                 >
                     <AccountInput
-                        key={blockchainType}
-                        blockchain={blockchainType}
+                        blockchain="unknown"
                         value={draft.address}
-                        setValue={(v) =>
-                            setDraft((d) => ({ ...d, address: v }))
-                        }
-                        setIsValid={setIsAddressValid}
+                        setValue={handleAddressChange}
+                        setIsValid={handleAddressValid}
                         setIsValidating={setIsAddressValidating}
                         borderless
+                    />
+                </InputBlock>
+
+                <InputBlock
+                    title="Network"
+                    info="Networks compatible with this address"
+                    invalid={false}
+                    interactive
+                >
+                    <NetworkSelect
+                        address={draft.address}
+                        selected={draft.networks}
+                        onChange={(networks) =>
+                            setDraft((d) => ({ ...d, networks }))
+                        }
+                        disabled={!isAddressValid}
                     />
                 </InputBlock>
             </div>
