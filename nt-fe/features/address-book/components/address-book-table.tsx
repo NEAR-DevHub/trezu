@@ -74,7 +74,7 @@ export function AddressBookTable({
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead className="w-10 pl-4">
+                        <TableHead className="w-10 pl-4 ">
                             <Checkbox
                                 checked={
                                     someSelected ? "indeterminate" : allSelected
@@ -83,11 +83,11 @@ export function AddressBookTable({
                                 aria-label="Select all"
                             />
                         </TableHead>
-                        <TableHead>RECIPIENT</TableHead>
-                        <TableHead className="w-72">NETWORK</TableHead>
-                        <TableHead className="w-44">ADDED BY</TableHead>
-                        <TableHead className="w-52">NOTE</TableHead>
-                        <TableHead className="w-36">ADDED</TableHead>
+                        <TableHead>Recipient</TableHead>
+                        <TableHead className="w-72">Network</TableHead>
+                        <TableHead className="w-44">Added By</TableHead>
+                        <TableHead className="w-52">Note</TableHead>
+                        <TableHead className="w-36">Added</TableHead>
                         <TableHead className="w-20" />
                     </TableRow>
                 </TableHeader>

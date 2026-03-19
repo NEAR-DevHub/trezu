@@ -1,9 +1,18 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Table, TableBody, TableCell, TableHead, TableHeader as TableHeaderUI, TableRow, TableFooter, TableCaption } from "@/components/ui/table"
+import * as React from "react";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead as TableHeadUI,
+    TableHeader as TableHeaderUI,
+    TableRow,
+    TableFooter,
+    TableCaption,
+} from "@/components/ui/table";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
     return (
@@ -11,7 +20,19 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
             className={cn("border-b border-t bg-general-tertiary", className)}
             {...props}
         />
-    )
+    );
+}
+
+function TableHead({ className, ...props }: React.ComponentProps<"th">) {
+    return (
+        <TableHeadUI
+            className={cn(
+                "text-xs font-medium uppercase text-muted-foreground",
+                className,
+            )}
+            {...props}
+        />
+    );
 }
 
 export {
@@ -23,4 +44,4 @@ export {
     TableRow,
     TableCell,
     TableCaption,
-}
+};

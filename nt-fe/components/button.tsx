@@ -3,8 +3,11 @@ import { Button as ShadcnButton, buttonVariants } from "./ui/button";
 import { VariantProps } from "class-variance-authority";
 import { Tooltip } from "./tooltip";
 
-interface ButtonProps extends React.ComponentProps<typeof ShadcnButton> {
-    variant?: VariantProps<typeof buttonVariants>["variant"];
+type ShadcnVariant = VariantProps<typeof buttonVariants>["variant"];
+
+interface ButtonProps
+    extends Omit<React.ComponentProps<typeof ShadcnButton>, "variant"> {
+    variant?: ShadcnVariant | "outline-destructive";
     size?: VariantProps<typeof buttonVariants>["size"];
 }
 
@@ -34,6 +37,10 @@ export function Button({
         case "outline":
             className = "hover:bg-muted-foreground/5 border";
             break;
+        case "outline-destructive":
+            className =
+                "border text-destructive hover:text-destructive hover:bg-destructive/10";
+            break;
     }
 
     let sizeClassName = "";
@@ -47,9 +54,12 @@ export function Button({
         case "default":
             sizeClassName = "py-[5.5px]! px-5! gap-1.5 rounded-[8px]";
     }
+    const shadcnVariant: ShadcnVariant =
+        variant === "outline-destructive" ? "outline" : variant;
+
     const button = (
         <ShadcnButton
-            variant={variant}
+            variant={shadcnVariant}
             className={cn(className, sizeClassName, classNameOverride)}
             size={size}
             {...props}

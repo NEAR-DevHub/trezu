@@ -1033,7 +1033,7 @@ export default function MembersPage() {
                                             balanceCheck={{
                                                 withProposalBond: true,
                                             }}
-                                            variant="ghost"
+                                            variant="outline-destructive"
                                             size="icon"
                                             onClick={() => {
                                                 setMemberToDelete(member);
@@ -1043,7 +1043,7 @@ export default function MembersPage() {
                                                 hasPendingMemberRequest ||
                                                 !deleteValidation.canModify
                                             }
-                                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                            className="h-8 w-8"
                                             tooltip={deleteValidation.reason}
                                             tooltipProps={{
                                                 disabled:
@@ -1138,14 +1138,14 @@ export default function MembersPage() {
                                         balanceCheck={{
                                             withProposalBond: true,
                                         }}
-                                        variant="outline"
+                                        variant="outline-destructive"
                                         size="sm"
                                         onClick={handleBulkDelete}
                                         disabled={
                                             hasPendingMemberRequest ||
                                             !bulkDeleteValidation.canModify
                                         }
-                                        className="h-9 w-full sm:w-auto text-destructive hover:text-destructive hover:bg-destructive/10"
+                                        className="h-9 w-full sm:w-auto"
                                     >
                                         <Trash2 className="w-4 h-4 mr-1" />
                                         Remove

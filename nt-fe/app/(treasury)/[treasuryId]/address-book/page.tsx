@@ -16,6 +16,7 @@ import {
 } from "@/features/address-book/components/add-recipient-form";
 import { ReviewRecipients } from "@/features/address-book/components/review-recipients";
 import { AddressBookTable } from "@/features/address-book/components/address-book-table";
+import { RemoveRecipientDialog } from "@/features/address-book/components/remove-recipient-dialog";
 import {
     useCreateAddressBookEntries,
     useAddressBook,
@@ -135,6 +136,10 @@ function RecipientsView({ onAdd }: { onAdd: () => void }) {
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [mobileSearchActive, setMobileSearchActive] = useState(false);
+    const [entryToDelete, setEntryToDelete] = useState<AddressBookEntry | null>(
+        null,
+    );
+    const [bulkDeleteCount, setBulkDeleteCount] = useState(0);
     const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const handleSearchChange = useCallback((value: string) => {
@@ -166,13 +171,28 @@ function RecipientsView({ onAdd }: { onAdd: () => void }) {
 
     const hasSelection = selectedIds.size > 0;
 
-    async function handleRemoveSelected() {
-        await deleteEntries.mutateAsync([...selectedIds]);
-        setSelectedIds(new Set());
+    function handleDelete(entry: AddressBookEntry) {
+        setEntryToDelete(entry);
     }
 
-    function handleDelete(entry: AddressBookEntry) {
-        deleteEntries.mutate([entry.id]);
+    function handleRemoveSelected() {
+        setBulkDeleteCount(selectedIds.size);
+    }
+
+    async function handleConfirmDelete() {
+        if (bulkDeleteCount > 0) {
+            await deleteEntries.mutateAsync([...selectedIds]);
+            setSelectedIds(new Set());
+            setBulkDeleteCount(0);
+        } else if (entryToDelete) {
+            await deleteEntries.mutateAsync([entryToDelete.id]);
+            setEntryToDelete(null);
+        }
+    }
+
+    function handleCloseDialog() {
+        setEntryToDelete(null);
+        setBulkDeleteCount(0);
     }
 
     function handleSend(entry: AddressBookEntry) {
@@ -187,7 +207,7 @@ function RecipientsView({ onAdd }: { onAdd: () => void }) {
             <div className="flex flex-row items-center justify-between gap-3 sm:gap-4 py-3 sm:py-2 px-4 sm:px-6 border-b">
                 {hasSelection ? (
                     <>
-                        <span className="font-semibold text-base sm:text-lg">
+                        <span className="font-semibold text-base">
                             {selectedIds.size}{" "}
                             {selectedIds.size === 1
                                 ? "Recipient"
@@ -198,11 +218,11 @@ function RecipientsView({ onAdd }: { onAdd: () => void }) {
                             <AuthButton
                                 permissionKind="any"
                                 permissionAction=""
-                                variant="outline"
+                                variant="outline-destructive"
                                 size="sm"
-                                className="h-9 w-full sm:w-auto text-destructive hover:text-destructive hover:bg-destructive/10"
+                                className="h-9 w-full sm:w-auto"
                                 disabled={deleteEntries.isPending}
-                                onClick={handleRemoveSelected}
+                                onClick={() => handleRemoveSelected()}
                             >
                                 <Trash2 className="w-4 h-4 mr-1" /> Remove
                             </AuthButton>
@@ -285,6 +305,13 @@ function RecipientsView({ onAdd }: { onAdd: () => void }) {
                     onSend={handleSend}
                 />
             )}
+
+            <RemoveRecipientDialog
+                entry={entryToDelete}
+                count={bulkDeleteCount}
+                onConfirm={handleConfirmDelete}
+                onClose={handleCloseDialog}
+            />
         </PageCard>
     );
 }
