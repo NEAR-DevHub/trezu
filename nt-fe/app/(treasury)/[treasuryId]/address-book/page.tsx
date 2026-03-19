@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { PageCard } from "@/components/card";
 import { PageComponentLayout } from "@/components/page-component-layout";
@@ -19,6 +20,7 @@ import {
     useCreateAddressBookEntries,
     useAddressBook,
     useDeleteAddressBookEntries,
+    type AddressBookEntry,
 } from "@/features/address-book";
 import { useTreasury } from "@/hooks/use-treasury";
 import { TableSkeleton } from "@/components/table-skeleton";
@@ -126,6 +128,7 @@ const SEARCH_DEBOUNCE_MS = 300;
 
 function RecipientsView({ onAdd }: { onAdd: () => void }) {
     const { treasuryId } = useTreasury();
+    const router = useRouter();
     const { data: entries = [], isLoading } = useAddressBook(treasuryId);
     const deleteEntries = useDeleteAddressBookEntries(treasuryId);
     const [search, setSearch] = useState("");
@@ -166,6 +169,16 @@ function RecipientsView({ onAdd }: { onAdd: () => void }) {
     async function handleRemoveSelected() {
         await deleteEntries.mutateAsync([...selectedIds]);
         setSelectedIds(new Set());
+    }
+
+    function handleDelete(entry: AddressBookEntry) {
+        deleteEntries.mutate([entry.id]);
+    }
+
+    function handleSend(entry: AddressBookEntry) {
+        router.push(
+            `/${treasuryId}/payments?address=${encodeURIComponent(entry.address)}`,
+        );
     }
 
     return (
@@ -268,6 +281,8 @@ function RecipientsView({ onAdd }: { onAdd: () => void }) {
                     entries={filtered}
                     selectedIds={selectedIds}
                     onSelectionChange={setSelectedIds}
+                    onDelete={handleDelete}
+                    onSend={handleSend}
                 />
             )}
         </PageCard>

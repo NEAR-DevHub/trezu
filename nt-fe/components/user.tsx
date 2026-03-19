@@ -1,4 +1,5 @@
 import { useProfile } from "@/hooks/use-treasury-queries";
+import { useTreasury } from "@/hooks/use-treasury";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { Tooltip, TooltipProps } from "./tooltip";
@@ -196,8 +197,10 @@ export function User({
     withHoverCard = false,
     chainName = "near",
 }: UserProps) {
+    const { treasuryId } = useTreasury();
     const { data: profile, isLoading } = useProfile(
         withName && !nameProp ? accountId : undefined,
+        treasuryId,
     );
 
     if (isLoading) {

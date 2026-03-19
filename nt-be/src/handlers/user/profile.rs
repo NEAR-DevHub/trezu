@@ -7,12 +7,15 @@ use near_api::Contract;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
-use crate::{AppState, utils::cache::CacheTier};
+use crate::{AppState, auth::OptionalAuthUser, utils::cache::CacheTier};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProfileQuery {
     pub account_id: String,
+    /// When provided and the caller is an authenticated DAO member, the address
+    /// book name for this treasury will override the NEAR Social profile name.
+    pub dao_id: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -80,6 +83,7 @@ async fn fetch_profile(state: &Arc<AppState>, account_id: &str) -> Result<Profil
 /// Main handler for single profile endpoint
 pub async fn get_profile(
     State(state): State<Arc<AppState>>,
+    auth: OptionalAuthUser,
     Query(params): Query<ProfileQuery>,
 ) -> Result<Json<ProfileData>, (StatusCode, String)> {
     let account_id = params.account_id.trim().to_string();
@@ -94,7 +98,7 @@ pub async fn get_profile(
     let cache_key = format!("profile:{}", account_id);
     let state_clone = state.clone();
 
-    let profile = state
+    let mut profile = state
         .cache
         .cached(CacheTier::LongTerm, cache_key, async move {
             fetch_profile(&state_clone, &account_id).await.map_err(|e| {
@@ -103,6 +107,25 @@ pub async fn get_profile(
             })
         })
         .await?;
+
+    // If the caller is authenticated and provided a dao_id, check whether the
+    // address has an address book entry in that treasury and use its name.
+    if let (Some(user), Some(dao_id)) = (auth.0, params.dao_id) {
+        if user.verify_dao_member(&state.db_pool, &dao_id).await.is_ok() {
+            let ab_name = sqlx::query_scalar!(
+                "SELECT name FROM address_book WHERE dao_id = $1 AND address = $2",
+                dao_id,
+                params.account_id.trim()
+            )
+            .fetch_optional(&state.db_pool)
+            .await
+            .unwrap_or(None);
+
+            if let Some(name) = ab_name {
+                profile.name = Some(name);
+            }
+        }
+    }
 
     Ok(Json(profile))
 }

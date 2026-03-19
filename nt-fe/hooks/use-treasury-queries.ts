@@ -187,10 +187,13 @@ export function useLockupPool(accountId: string | null | undefined) {
  * Fetches profile information including name, image, description, etc.
  * Data is cached on the backend from social.near contract
  */
-export function useProfile(accountId: string | null | undefined) {
+export function useProfile(
+    accountId: string | null | undefined,
+    daoId?: string,
+) {
     return useQuery({
-        queryKey: ["profile", accountId],
-        queryFn: () => getProfile(accountId!),
+        queryKey: ["profile", accountId, daoId],
+        queryFn: () => getProfile(accountId!, daoId),
         enabled: !!accountId,
         staleTime: 1000 * 60 * 10, // 10 minutes (profile data doesn't change frequently)
     });

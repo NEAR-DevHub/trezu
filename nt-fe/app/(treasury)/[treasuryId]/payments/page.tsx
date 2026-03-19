@@ -297,6 +297,11 @@ export default function PaymentsPage() {
         return NEAR_TOKEN;
     }, [searchParams]);
 
+    const defaultAddress = useMemo(() => {
+        const addressParam = searchParams.get("address");
+        return addressParam ? decodeURIComponent(addressParam) : "";
+    }, [searchParams]);
+
     // Onboarding tours
     usePageTour(
         PAGE_TOUR_NAMES.PAYMENTS_BULK,
@@ -310,17 +315,23 @@ export default function PaymentsPage() {
     const form = useForm<PaymentFormValues>({
         resolver: zodResolver(paymentFormSchema),
         defaultValues: {
-            address: "",
+            address: defaultAddress,
             amount: "",
             memo: "",
             token: defaultToken,
         },
     });
 
-    // Update token when query param changes
+    // Update token/address when query params change
     useEffect(() => {
         form.setValue("token", defaultToken);
     }, [defaultToken, form]);
+
+    useEffect(() => {
+        if (defaultAddress) {
+            form.setValue("address", defaultAddress);
+        }
+    }, [defaultAddress, form]);
 
     const onSubmit = async (data: PaymentFormValues) => {
         try {
