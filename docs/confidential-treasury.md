@@ -26,20 +26,47 @@ A treasury is either public or confidential — we don't mix the two. For confid
 
 ### Key Challenge: DAO Signing
 
-The near.com flow assumes synchronous wallet signing via NEP-413 (`wallet.signMessage()`). DAOs don't have wallet keys. The flow for DAOs depends on the operation type:
+The near.com flow assumes synchronous wallet signing via NEP-413 (`wallet.signMessage()`). DAOs don't have wallet keys. Two types of proposals are needed:
 
-**Shield (public → private) — proposal does two things:**
-1. DAO members create & approve a proposal
-2. On execution, the proposal:
-   a. Calls `v1.signer` (chain-signatures MPC) to sign the intent payload
+#### Proposal Type 1: JWT Authentication (infrequent)
+
+Before the DAO can do any confidential operations, the backend needs a JWT token. This requires a NEP-413 signature from the DAO — which means a DAO proposal.
+
+1. Backend constructs an auth payload (empty intents, `signer_id: "near:mydao.sputnik-dao.near"`)
+2. DAO members create & approve a proposal that calls `v1.signer` to sign this auth payload
+3. Backend receives the MPC signature, calls `UserAuthService.authenticate()` to get JWT
+4. Backend stores the JWT (access + refresh tokens) for this DAO
+
+The refresh token lasts ~7 days, so this only needs to happen once per week (or on first setup). The backend auto-refreshes the access token using the refresh token (refresh when < 60s remaining).
+
+#### Proposal Type 2: Intent Signing (per operation)
+
+Each confidential operation (shield, unshield, transfer, swap) needs its own signed intent:
+
+**Shield (public → private):**
+1. Backend gets quote from 1Click API (no JWT needed for shield quotes)
+2. DAO members create & approve a proposal that:
+   a. Calls `v1.signer` to sign the intent payload
    b. Transfers tokens to the deposit address (on-chain)
-3. Backend submits the signed intent to the 1Click API
+3. Backend submits the signed intent to 1Click API (no JWT needed for submit)
 
-**Unshield / Private transfer / Confidential swap — proposal only signs:**
-1. DAO members create & approve a proposal
-2. On execution, the proposal calls `v1.signer` to sign the intent payload
-3. Backend submits the signed intent to the 1Click API
+**Unshield / Private transfer / Confidential swap:**
+1. Backend gets quote from 1Click API (**JWT required** — reading confidential state)
+2. DAO members create & approve a proposal that calls `v1.signer` to sign the intent payload
+3. Backend submits the signed intent to 1Click API (no JWT needed for submit)
 4. No on-chain token transfer needed (funds already in confidential ledger)
+
+### JWT Token Details
+
+| Aspect | Detail |
+|--------|--------|
+| Access token TTL | Short-lived (from server `expiresIn`), auto-refresh when < 60s left |
+| Refresh token TTL | ~7 days (from server `refreshExpiresIn`) |
+| Storage | Backend stores per-DAO |
+| Needs JWT | `getBalances`, `getUnshieldQuote`, `getPrivateTransferQuote` |
+| No JWT needed | `getShieldQuote`, `generateIntent`, `submitIntent`, `getExecutionStatus` |
+
+The JWT proves account ownership to read confidential state. `submitIntent` doesn't need it because the intent itself is cryptographically signed.
 
 ## Private Intents API
 
