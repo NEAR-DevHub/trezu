@@ -20,6 +20,9 @@ interface SelectModalPropsBase {
     isLoading?: boolean;
     fixNear?: boolean;
     roundIcons?: boolean;
+    renderIcon?: (item: SelectOption) => ReactNode;
+    renderContent?: (item: SelectOption) => ReactNode;
+    renderRight?: (item: SelectOption) => ReactNode;
 }
 
 interface SelectModalSingleProps extends SelectModalPropsBase {
@@ -51,6 +54,9 @@ export function SelectModal({
     multiSelect,
     fixNear,
     roundIcons,
+    renderIcon,
+    renderContent,
+    renderRight,
 }: SelectModalProps) {
     const [searchQuery, setSearchQuery] = useState("");
 
@@ -105,13 +111,16 @@ export function SelectModal({
                         emptyMessage="No results found"
                         fixNear={fixNear}
                         roundIcons={roundIcons}
+                        renderIcon={renderIcon}
+                        renderContent={renderContent}
                         renderRight={
-                            multiSelect
+                            renderRight ??
+                            (multiSelect
                                 ? (item) =>
                                       selectedIds?.includes(item.id) ? (
                                           <Check className="size-4 text-primary shrink-0" />
                                       ) : null
-                                : undefined
+                                : undefined)
                         }
                     />
                 </div>
