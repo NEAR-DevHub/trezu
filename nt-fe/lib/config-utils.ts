@@ -2,97 +2,97 @@ import type { Policy, RoleKind } from "@/types/policy";
 import { ProposalKind } from "./proposals-api";
 
 export type ProposalPermissionKind =
-  | "transfer"
-  | "call"
-  | "policy"
-  | "config"
-  | "add_member_to_role"
-  | "remove_member_from_role"
-  | "upgrade_self"
-  | "upgrade_remote"
-  | "set_staking_contract"
-  | "add_bounty"
-  | "bounty_done"
-  | "vote"
-  | "factory_info_update";
+    | "transfer"
+    | "call"
+    | "policy"
+    | "config"
+    | "add_member_to_role"
+    | "remove_member_from_role"
+    | "upgrade_self"
+    | "upgrade_remote"
+    | "set_staking_contract"
+    | "add_bounty"
+    | "bounty_done"
+    | "vote"
+    | "factory_info_update";
 
+export function getKindFromProposal(
+    proposalKind: ProposalKind,
+): ProposalPermissionKind | undefined {
+    if (typeof proposalKind === "string") {
+        return proposalKind as unknown as ProposalPermissionKind;
+    }
 
-export function getKindFromProposal(proposalKind: ProposalKind): ProposalPermissionKind | undefined {
-  if (typeof proposalKind === "string") {
-    return proposalKind as unknown as ProposalPermissionKind;
-  }
+    if ("Transfer" in proposalKind) {
+        return "transfer";
+    }
 
-  if ('Transfer' in proposalKind) {
-    return "transfer";
-  }
+    if ("FunctionCall" in proposalKind) {
+        return "call";
+    }
 
-  if ('FunctionCall' in proposalKind) {
-    return "call";
-  }
+    if ("ChangePolicy" in proposalKind) {
+        return "policy";
+    }
 
-  if ('ChangePolicy' in proposalKind) {
-    return "policy";
-  }
+    if ("ChangeConfig" in proposalKind) {
+        return "config";
+    }
 
-  if ('ChangeConfig' in proposalKind) {
-    return "config";
-  }
+    if ("ChangePolicyUpdateParameters" in proposalKind) {
+        return "policy";
+    }
 
-  if ('ChangePolicyUpdateParameters' in proposalKind) {
-    return "policy";
-  }
+    if ("AddMemberToRole" in proposalKind) {
+        return "add_member_to_role";
+    }
 
-  if ('AddMemberToRole' in proposalKind) {
-    return "add_member_to_role";
-  }
+    if ("RemoveMemberFromRole" in proposalKind) {
+        return "remove_member_from_role";
+    }
 
-  if ('RemoveMemberFromRole' in proposalKind) {
-    return "remove_member_from_role";
-  }
+    if ("UpgradeSelf" in proposalKind) {
+        return "upgrade_self";
+    }
 
-  if ('UpgradeSelf' in proposalKind) {
-    return "upgrade_self";
-  }
+    if ("UpgradeRemote" in proposalKind) {
+        return "upgrade_remote";
+    }
 
-  if ('UpgradeRemote' in proposalKind) {
-    return "upgrade_remote";
-  }
+    if ("SetStakingContract" in proposalKind) {
+        return "set_staking_contract";
+    }
 
-  if ('SetStakingContract' in proposalKind) {
-    return "set_staking_contract";
-  }
+    if ("AddBounty" in proposalKind) {
+        return "add_bounty";
+    }
 
-  if ('AddBounty' in proposalKind) {
-    return "add_bounty";
-  }
+    if ("BountyDone" in proposalKind) {
+        return "bounty_done";
+    }
 
-  if ('BountyDone' in proposalKind) {
-    return "bounty_done";
-  }
+    if ("Vote" in proposalKind) {
+        return "vote";
+    }
 
-  if ('Vote' in proposalKind) {
-    return "vote";
-  }
+    if ("FactoryInfoUpdate" in proposalKind) {
+        return "factory_info_update";
+    }
 
-  if ('FactoryInfoUpdate' in proposalKind) {
-    return "factory_info_update";
-  }
+    if ("ChangePolicyAddOrUpdateRole" in proposalKind) {
+        return "policy";
+    }
 
-  if ('ChangePolicyAddOrUpdateRole' in proposalKind) {
-    return "policy";
-  }
+    if ("ChangePolicyRemoveRole" in proposalKind) {
+        return "policy";
+    }
 
-  if ('ChangePolicyRemoveRole' in proposalKind) {
-    return "policy";
-  }
+    if ("ChangePolicyUpdateDefaultVotePolicy" in proposalKind) {
+        return "policy";
+    }
 
-  if ('ChangePolicyUpdateDefaultVotePolicy' in proposalKind) {
-    return "policy";
-  }
-
-  return undefined;
+    return undefined;
 }
-
 
 /**
  * Calculates the required number of votes and lists the approvers for a given action kind.
@@ -103,72 +103,84 @@ export function getKindFromProposal(proposalKind: ProposalKind): ProposalPermiss
  * @param isDeleteCheck - Whether to check for delete permissions (VoteRemove) instead of approve/reject
  * @returns Object containing the list of approver accounts and the required vote count
  */
-export function getApproversAndThreshold(daoPolicy: Policy, accountId: string, kindType: ProposalKind | ProposalPermissionKind, isDeleteCheck: boolean) {
-  const kind: ProposalPermissionKind = typeof kindType === "string" ? kindType : getKindFromProposal(kindType)!;
-  const groupWithPermission = (daoPolicy?.roles ?? []).filter((role) => {
-    const permissions = isDeleteCheck
-      ? ["*:*", `${kind}:*`, `${kind}:VoteRemove`, "*:VoteRemove"]
-      : [
-        "*:*",
-        `${kind}:*`,
-        `${kind}:VoteApprove`,
-        `${kind}:VoteReject`,
-        "*:VoteApprove",
-        "*:VoteReject",
-      ];
-    return (role?.permissions ?? []).some((i) => permissions.includes(i));
-  });
-
-  let approversGroup: string[] = [];
-  let ratios: number[] = [];
-  let requiredVotes = null;
-  let everyoneHasAccess = false;
-  // if group kind is everyone, current user will have access
-  groupWithPermission.map((i) => {
-    approversGroup = approversGroup.concat(typeof i.kind === "object" && "Group" in i.kind ? i.kind.Group : []);
-    everyoneHasAccess = typeof i.kind === "string" && i.kind === "Everyone";
-    const votePolicy =
-      Object.values(i?.vote_policy?.[kind] ?? {}).length > 0
-        ? i.vote_policy[kind]
-        : daoPolicy.default_vote_policy;
-    if (votePolicy.weight_kind === "RoleWeight") {
-      if (Array.isArray(votePolicy.threshold)) {
-        ratios = ratios.concat(votePolicy.threshold);
-        ratios = ratios.concat(votePolicy.threshold);
-      } else {
-        requiredVotes = parseFloat(votePolicy.threshold as string);
-      }
-    }
-  });
-
-  let numerator = 0;
-  let denominator = 0;
-
-  if (ratios.length > 0) {
-    ratios.forEach((value, index) => {
-      if (index == 0 || index % 2 === 0) {
-        // Even index -> numerator
-        numerator += value;
-      } else {
-        // Odd index -> denominator
-        denominator += value;
-      }
+export function getApproversAndThreshold(
+    daoPolicy: Policy,
+    accountId: string,
+    kindType: ProposalKind | ProposalPermissionKind,
+    isDeleteCheck: boolean,
+) {
+    const kind: ProposalPermissionKind =
+        typeof kindType === "string"
+            ? kindType
+            : getKindFromProposal(kindType)!;
+    const groupWithPermission = (daoPolicy?.roles ?? []).filter((role) => {
+        const permissions = isDeleteCheck
+            ? ["*:*", `${kind}:*`, `${kind}:VoteRemove`, "*:VoteRemove"]
+            : [
+                  "*:*",
+                  `${kind}:*`,
+                  `${kind}:VoteApprove`,
+                  `${kind}:VoteReject`,
+                  "*:VoteApprove",
+                  "*:VoteReject",
+              ];
+        return (role?.permissions ?? []).some((i) => permissions.includes(i));
     });
-  }
-  const approverAccounts = Array.from(new Set(approversGroup));
 
-  return {
-    // if everyoneHasAccess, current account doesn't change the requiredVotes
-    approverAccounts:
-      everyoneHasAccess && accountId
-        ? [...approverAccounts, accountId]
-        : approverAccounts,
+    let approversGroup: string[] = [];
+    let ratios: number[] = [];
+    let requiredVotes = null;
+    let everyoneHasAccess = false;
+    // if group kind is everyone, current user will have access
+    groupWithPermission.map((i) => {
+        approversGroup = approversGroup.concat(
+            typeof i.kind === "object" && "Group" in i.kind ? i.kind.Group : [],
+        );
+        everyoneHasAccess = typeof i.kind === "string" && i.kind === "Everyone";
+        const votePolicy =
+            Object.values(i?.vote_policy?.[kind] ?? {}).length > 0
+                ? i.vote_policy[kind]
+                : daoPolicy.default_vote_policy;
+        if (votePolicy.weight_kind === "RoleWeight") {
+            if (Array.isArray(votePolicy.threshold)) {
+                ratios = ratios.concat(votePolicy.threshold);
+                ratios = ratios.concat(votePolicy.threshold);
+            } else {
+                requiredVotes = parseFloat(votePolicy.threshold as string);
+            }
+        }
+    });
 
-    requiredVotes:
-      typeof requiredVotes === "number"
-        ? requiredVotes
-        : Math.floor((numerator / denominator) * approverAccounts.length) + 1,
-  };
+    let numerator = 0;
+    let denominator = 0;
+
+    if (ratios.length > 0) {
+        ratios.forEach((value, index) => {
+            if (index == 0 || index % 2 === 0) {
+                // Even index -> numerator
+                numerator += value;
+            } else {
+                // Odd index -> denominator
+                denominator += value;
+            }
+        });
+    }
+    const approverAccounts = Array.from(new Set(approversGroup));
+
+    return {
+        // if everyoneHasAccess, current account doesn't change the requiredVotes
+        approverAccounts:
+            everyoneHasAccess && accountId
+                ? [...approverAccounts, accountId]
+                : approverAccounts,
+
+        requiredVotes:
+            typeof requiredVotes === "number"
+                ? requiredVotes
+                : Math.floor(
+                      (numerator / denominator) * approverAccounts.length,
+                  ) + 1,
+    };
 }
 
 /**
@@ -180,43 +192,62 @@ export function getApproversAndThreshold(daoPolicy: Policy, accountId: string, k
  * @returns true if the user has the permission
  */
 export function hasPermission(
-  policy: Policy | null | undefined,
-  accountId: string,
-  kind: string,
-  action: string
+    policy: Policy | null | undefined,
+    accountId: string,
+    kind: string,
+    action: string,
 ): boolean {
-  if (!policy) return false;
+    if (!policy) return false;
 
-  // Check each role to see if user is in it and has the permission
-  for (const role of policy.roles) {
-    const isInRole = checkRoleMembership(role.kind, accountId);
-    const hasPermission = role.permissions.includes(`${kind}:${action}`) ||
-      role.permissions.includes(`${kind}:*`) ||
-      role.permissions.includes(`*:${action}`) ||
-      role.permissions.includes("*:*");
+    // Check each role to see if user is in it and has the permission
+    for (const role of policy.roles) {
+        const isInRole = checkRoleMembership(role.kind, accountId);
+        const hasPermission =
+            role.permissions.includes(`${kind}:${action}`) ||
+            role.permissions.includes(`${kind}:*`) ||
+            role.permissions.includes(`*:${action}`) ||
+            role.permissions.includes("*:*");
 
-    if (isInRole && hasPermission) {
-      return true;
+        if (isInRole && hasPermission) {
+            return true;
+        }
     }
-  }
 
-  return false;
+    return false;
+}
+
+/**
+ * Check if an account is a member of any role in the policy
+ */
+export function isAnyMember(
+    policy: Policy | null | undefined,
+    accountId: string,
+): boolean {
+    if (!policy || !accountId) return false;
+
+    for (const role of policy.roles) {
+        if (checkRoleMembership(role.kind, accountId)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 /**
  * Check if an account is a member of a role
  */
 function checkRoleMembership(roleKind: RoleKind, accountId: string): boolean {
-  if (typeof roleKind === "string" && roleKind === "Everyone") {
-    return true;
-  }
+    if (typeof roleKind === "string" && roleKind === "Everyone") {
+        return true;
+    }
 
-  if ("Group" in roleKind) {
-    return roleKind.Group.includes(accountId);
-  }
+    if ("Group" in roleKind) {
+        return roleKind.Group.includes(accountId);
+    }
 
-  // Member role requires token balance check - can't determine from policy alone
-  return false;
+    // Member role requires token balance check - can't determine from policy alone
+    return false;
 }
 
 /**
@@ -227,14 +258,14 @@ function checkRoleMembership(roleKind: RoleKind, accountId: string): boolean {
  * @returns true if the user has either "call:AddProposal" or "transfer:AddProposal" permissions
  */
 export function isRequestor(
-  policy: Policy | null | undefined,
-  accountId: string
+    policy: Policy | null | undefined,
+    accountId: string,
 ): boolean {
-  if (!policy || !accountId) return false;
+    if (!policy || !accountId) return false;
 
-  // Check for call:AddProposal or transfer:AddProposal permissions
-  return (
-    hasPermission(policy, accountId, "call", "AddProposal") ||
-    hasPermission(policy, accountId, "transfer", "AddProposal")
-  );
+    // Check for call:AddProposal or transfer:AddProposal permissions
+    return (
+        hasPermission(policy, accountId, "call", "AddProposal") ||
+        hasPermission(policy, accountId, "transfer", "AddProposal")
+    );
 }

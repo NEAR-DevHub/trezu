@@ -26,6 +26,7 @@ import { MessageCircleQuestion } from "./animate-ui/icons/message-circle-questio
 import { ArrowUpDown } from "./animate-ui/icons/arrow-up-down";
 import { CreditCard } from "./animate-ui/icons/credit-card";
 import { Bookmark } from "./animate-ui/icons/bookmark";
+import { ContactRound } from "./animate-ui/icons/contact-round";
 import {
     PAGE_TOUR_SELECTORS,
     useGuestSaveTour,
@@ -111,6 +112,12 @@ const bottomNavLinks: {
     icon: React.ComponentType<IconProps<"default">>;
     id?: string;
 }[] = [
+    {
+        path: "address-book",
+        label: "Address Book",
+        icon: ContactRound,
+        id: "address-book-link",
+    },
     { path: "members", label: "Members", icon: Users, id: "dashboard-step4" },
     { path: "settings", label: "Settings", icon: Settings },
 ];

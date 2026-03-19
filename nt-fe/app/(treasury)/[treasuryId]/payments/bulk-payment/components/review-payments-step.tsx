@@ -18,6 +18,7 @@ import {
     DialogDescription,
     DialogFooter,
 } from "@/components/modal";
+import { NumberBadge } from "@/components/number-badge";
 import type { BulkPaymentFormValues, BulkPaymentData } from "../schemas";
 import { formatBalance, formatSmartAmount } from "@/lib/utils";
 import { validateAccountsAndStorage } from "../utils";
@@ -191,10 +192,14 @@ export function ReviewPaymentsStep({
                     token={selectedToken}
                     showNetworkIcon={true}
                 >
-                    <p className="font-normal">to {paymentData.length} {paymentData.length === 1 ? 'recipient' : 'recipients'}</p>
+                    <p className="font-normal">
+                        to {paymentData.length}{" "}
+                        {paymentData.length === 1 ? "recipient" : "recipients"}
+                    </p>
                     {hasInsufficientBalance && (
                         <p className="text-general-info-foreground text-sm mt-2 font-normal">
-                            Insufficient tokens. You can submit the request and top up before approval.
+                            Insufficient tokens. You can submit the request and
+                            top up before approval.
                         </p>
                     )}
                 </AmountSummary>
@@ -211,9 +216,10 @@ export function ReviewPaymentsStep({
                             {paymentData.map((_, index) => (
                                 <div key={index} className="space-y-3">
                                     <div className="flex items-start gap-3">
-                                        <div className="flex items-center justify-center w-6 h-6 rounded-full text-sm font-semibold shrink-0 bg-secondary text-foreground">
-                                            {index + 1}
-                                        </div>
+                                        <NumberBadge
+                                            number={index + 1}
+                                            variant="secondary"
+                                        />
                                         <div className="flex-1">
                                             <div className="flex justify-between mb-2">
                                                 <div className="flex flex-col gap-2 justify-between flex-1">
@@ -271,20 +277,21 @@ export function ReviewPaymentsStep({
                                 return (
                                     <div
                                         key={index}
-                                        className={`space-y-3 ${index < paymentData.length - 1
-                                            ? "border-b border-border pb-4"
-                                            : ""
-                                            }`}
+                                        className={`space-y-3 ${
+                                            index < paymentData.length - 1
+                                                ? "border-b border-border pb-4"
+                                                : ""
+                                        }`}
                                     >
                                         <div className="flex items-start gap-3">
-                                            <div
-                                                className={`flex items-center justify-center w-6 h-6 rounded-full text-sm font-semibold shrink-0 ${payment.validationError
-                                                    ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                                                    : "bg-secondary text-foreground"
-                                                    }`}
-                                            >
-                                                {index + 1}
-                                            </div>
+                                            <NumberBadge
+                                                number={index + 1}
+                                                variant={
+                                                    payment.validationError
+                                                        ? "error"
+                                                        : "secondary"
+                                                }
+                                            />
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-start justify-between gap-3 mb-2">
                                                     <div className="flex flex-col gap-2 justify-between min-w-0 flex-1 lg:flex-auto">
@@ -308,15 +315,22 @@ export function ReviewPaymentsStep({
                                                         <div className="flex flex-col gap-2 items-end">
                                                             <div className="flex items-center gap-2">
                                                                 <TokenDisplay
-                                                                    symbol={selectedToken.symbol}
-                                                                    icon={selectedToken.icon || ""}
-                                                                    chainIcons={selectedToken.chainIcons}
+                                                                    symbol={
+                                                                        selectedToken.symbol
+                                                                    }
+                                                                    icon={
+                                                                        selectedToken.icon ||
+                                                                        ""
+                                                                    }
+                                                                    chainIcons={
+                                                                        selectedToken.chainIcons
+                                                                    }
                                                                     iconSize="md"
                                                                 />
                                                                 <div className="text-right">
                                                                     <div className="text-sm font-semibold whitespace-nowrap">
                                                                         {formatSmartAmount(
-                                                                            payment.amount
+                                                                            payment.amount,
                                                                         )}{" "}
                                                                         {
                                                                             selectedToken.symbol

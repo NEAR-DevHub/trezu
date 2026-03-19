@@ -1,0 +1,32 @@
+use axum::{Json, extract::State, http::StatusCode};
+use serde::Serialize;
+use std::sync::Arc;
+
+use crate::{AppState, constants::intents_chains::CHAIN_METADATA};
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChainInfo {
+    pub key: String,
+    pub name: String,
+    pub icon_dark: String,
+    pub icon_light: String,
+}
+
+pub async fn get_chains(
+    State(_state): State<Arc<AppState>>,
+) -> Result<Json<Vec<ChainInfo>>, (StatusCode, String)> {
+    let mut chains: Vec<ChainInfo> = CHAIN_METADATA
+        .iter()
+        .map(|(key, meta)| ChainInfo {
+            key: key.clone(),
+            name: meta.name.clone(),
+            icon_dark: meta.icon.dark.clone(),
+            icon_light: meta.icon.light.clone(),
+        })
+        .collect();
+
+    chains.sort_by(|a, b| a.name.cmp(&b.name));
+
+    Ok(Json(chains))
+}

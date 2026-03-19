@@ -2,7 +2,7 @@ use axum::{
     Json, Router,
     extract::State,
     http::StatusCode,
-    routing::{get, patch, post},
+    routing::{delete, get, patch, post},
 };
 use serde_json::{Value, json};
 use std::sync::Arc;
@@ -287,6 +287,18 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
         )
         .route("/api/auth/me", get(auth::handlers::get_me))
         .route("/api/auth/logout", post(auth::handlers::logout))
+        // Chains endpoint
+        .route(
+            "/api/chains",
+            get(handlers::chains::get_chains),
+        )
+        // Address book endpoints
+        .route(
+            "/api/address-book",
+            get(handlers::address_book::list_address_book)
+                .post(handlers::address_book::create_address_book_entries)
+                .delete(handlers::address_book::delete_address_book_entries),
+        )
         // DAO endpoints
         .route(
             "/api/dao/mark-dirty",
