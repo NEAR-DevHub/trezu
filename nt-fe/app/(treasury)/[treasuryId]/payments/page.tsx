@@ -43,6 +43,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { trackEvent } from "@/lib/analytics";
 import { PaymentFormSection } from "./components/payment-form-section";
 import { tokenSchema } from "@/components/token-input";
+import { useAddressBook } from "@/features/address-book";
 
 const paymentFormSchema = z
     .object({
@@ -143,6 +144,11 @@ function Step2({ handleBack }: StepProps) {
         token.address,
     );
     const { data: tokenData } = useToken(token.address);
+    const { treasuryId } = useTreasury();
+    const { data: addressBook = [] } = useAddressBook(treasuryId);
+    const contactName = addressBook.find(
+        (e) => e.address.toLowerCase() === address?.toLowerCase(),
+    )?.name;
 
     useEffect(() => {
         if (storageDepositData !== undefined) {
@@ -173,7 +179,22 @@ function Step2({ handleBack }: StepProps) {
                     <p className="font-semibold">Recipient</p>
                     <div className="flex flex-col gap-1 w-full">
                         <div className="flex justify-between items-center gap-2 w-full text-xs ">
-                            <p className=" font-semibold">{address}</p>
+                            <div className="flex flex-col gap-0.5 min-w-0">
+                                {contactName && (
+                                    <p className="font-semibold">
+                                        {contactName}
+                                    </p>
+                                )}
+                                <p
+                                    className={
+                                        contactName
+                                            ? "text-muted-foreground truncate"
+                                            : "font-semibold"
+                                    }
+                                >
+                                    {address}
+                                </p>
+                            </div>
                             <div className="flex items-center gap-5">
                                 <img
                                     src={token.icon}

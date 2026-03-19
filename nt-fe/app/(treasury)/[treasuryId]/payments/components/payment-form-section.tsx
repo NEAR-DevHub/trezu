@@ -114,26 +114,57 @@ export function PaymentFormSection<
         }
     }, [selectedContact, recipientName, setValue]);
 
+    // Clear selected contact if it's incompatible with the current blockchain
+    useEffect(() => {
+        if (!selectedContact) return;
+        const isCompatible =
+            selectedContact.networks.length === 0 ||
+            selectedContact.networks.some(
+                (key) => getBlockchainType(key) === blockchainType,
+            );
+        if (!isCompatible) {
+            setSelectedContact(null);
+            setValue(
+                recipientName,
+                "" as PathValue<TFieldValues, Path<TFieldValues>>,
+            );
+            setIsRecipientValid(false);
+        }
+    }, [blockchainType, selectedContact, setValue, recipientName]);
+
+    const filteredAddressBook = useMemo(
+        () =>
+            addressBook.filter(
+                (entry) =>
+                    entry.networks.length === 0 ||
+                    entry.networks.some(
+                        (key) => getBlockchainType(key) === blockchainType,
+                    ),
+            ),
+        [addressBook, blockchainType],
+    );
+
     // When recipient is pre-filled (e.g. stepping back from review), check if it matches an address book entry
     useEffect(() => {
-        if (!recipient || selectedContact || addressBook.length === 0) return;
-        const match = addressBook.find(
+        if (!recipient || selectedContact || filteredAddressBook.length === 0)
+            return;
+        const match = filteredAddressBook.find(
             (e) => e.address.toLowerCase() === recipient.toLowerCase(),
         );
         if (match) setSelectedContact(match);
-    }, [recipient, addressBook, selectedContact]);
+    }, [recipient, filteredAddressBook, selectedContact]);
 
-    const showContactButton = addressBook.length > 0;
+    const showContactButton = filteredAddressBook.length > 0;
 
     const contactOptions = useMemo(
         () =>
-            addressBook.map((entry) => ({
+            filteredAddressBook.map((entry) => ({
                 id: entry.id,
                 name: entry.name,
                 symbol: entry.address,
                 icon: "",
             })),
-        [addressBook],
+        [filteredAddressBook],
     );
 
     const isSaveDisabled =
@@ -276,13 +307,17 @@ export function PaymentFormSection<
                 options={contactOptions}
                 searchPlaceholder="Search by name or address"
                 onSelect={(option) => {
-                    const entry = addressBook.find((e) => e.id === option.id);
+                    const entry = filteredAddressBook.find(
+                        (e) => e.id === option.id,
+                    );
                     if (entry) setSelectedContact(entry);
                     setIsContactModalOpen(false);
                 }}
                 renderIcon={() => null}
                 renderContent={(option) => {
-                    const entry = addressBook.find((e) => e.id === option.id);
+                    const entry = filteredAddressBook.find(
+                        (e) => e.id === option.id,
+                    );
                     if (!entry) return null;
                     const entryChains = entry.networks
                         .map((key) => chainMap.get(key))

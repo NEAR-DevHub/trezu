@@ -25,6 +25,7 @@ import { validateAccountsAndStorage } from "../utils";
 import { validateMinimumWithdrawal } from "@/lib/payment-validation";
 import { useToken, useTokenBalance } from "@/hooks/use-treasury-queries";
 import { useTreasury } from "@/hooks/use-treasury";
+import { useAddressBook } from "@/features/address-book";
 import { AmountSummary } from "@/components/amount-summary";
 import { CreateRequestButton } from "@/components/create-request-button";
 import { trackEvent } from "@/lib/analytics";
@@ -58,6 +59,7 @@ export function ReviewPaymentsStep({
     } | null>(null);
 
     const { treasuryId } = useTreasury();
+    const { data: addressBook = [] } = useAddressBook(treasuryId);
     const { data: selectedTokenData } = useToken(selectedToken?.address || "");
     const { data: selectedTokenBalanceData } = useTokenBalance(
         treasuryId,
@@ -295,12 +297,37 @@ export function ReviewPaymentsStep({
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-start justify-between gap-3 mb-2">
                                                     <div className="flex flex-col gap-2 justify-between min-w-0 flex-1 lg:flex-auto">
-                                                        <div className="flex gap-2">
-                                                            <span className="font-semibold text-sm text-foreground truncate lg:break-all">
-                                                                {
-                                                                    payment.recipient
-                                                                }
-                                                            </span>
+                                                        <div className="flex flex-col gap-0.5">
+                                                            {(() => {
+                                                                const contact =
+                                                                    addressBook.find(
+                                                                        (e) =>
+                                                                            e.address.toLowerCase() ===
+                                                                            payment.recipient.toLowerCase(),
+                                                                    );
+                                                                return (
+                                                                    <>
+                                                                        {contact && (
+                                                                            <span className="font-semibold text-sm text-foreground">
+                                                                                {
+                                                                                    contact.name
+                                                                                }
+                                                                            </span>
+                                                                        )}
+                                                                        <span
+                                                                            className={
+                                                                                contact
+                                                                                    ? "text-xs text-muted-foreground truncate lg:break-all"
+                                                                                    : "font-semibold text-sm text-foreground truncate lg:break-all"
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                payment.recipient
+                                                                            }
+                                                                        </span>
+                                                                    </>
+                                                                );
+                                                            })()}
                                                         </div>
                                                         {payment.validationError && (
                                                             <div className="text-xs text-red-600 dark:text-red-400 mb-2">

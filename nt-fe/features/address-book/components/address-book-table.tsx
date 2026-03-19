@@ -85,9 +85,9 @@ export function AddressBookTable({
                         </TableHead>
                         <TableHead>Recipient</TableHead>
                         <TableHead className="w-72">Network</TableHead>
-                        <TableHead className="w-44">Added By</TableHead>
+                        <TableHead className="w-30">Added By</TableHead>
                         <TableHead className="w-52">Note</TableHead>
-                        <TableHead className="w-36">Added</TableHead>
+                        <TableHead className="w-20">Added</TableHead>
                         <TableHead className="w-20" />
                     </TableRow>
                 </TableHeader>
@@ -132,6 +132,7 @@ export function AddressBookTable({
                                             <NetworkBadge
                                                 key={chain.key}
                                                 name={chain.name}
+                                                variant="secondary"
                                                 iconDark={chain.iconDark}
                                                 iconLight={chain.iconLight}
                                             />
