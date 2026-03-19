@@ -288,7 +288,7 @@ The `IntentSetAuthByPredecessorId` and `IntentAuthCall` types are interesting fo
 
 #### 1.4 Create a small script in Rust to transfer within FAR network
 
-#### 1.5 Create a small script in Rust to withdraw to public chains
+#### 1.5 Create a small script in Rust to withdraw to public chains 
 
 ### Megha's Tasks
 
@@ -299,6 +299,101 @@ The `IntentSetAuthByPredecessorId` and `IntentAuthCall` types are interesting fo
 #### 1.4.1 Add a flag to the backend (confidential or not)
 
 #### 1.5 Extend the onboarding with confidential treasury option
+
+---
+
+## Implementation Plan: Live PoC with Playwright + Ledger
+
+### Goal
+
+Demonstrate the full confidential intent flow against the **real 1Click API** on mainnet, using a real DAO (`webassemblymusic-treasury.sputnik-dao.near`), orchestrated via Playwright with Ledger signing. Capture real API payloads as mocks for automated tests.
+
+- **DAO:** `webassemblymusic-treasury.sputnik-dao.near`
+- **Council member:** `petersalomonsen.near` (Ledger)
+- **Token:** `wrap.near` (wNEAR)
+- **Signing:** Full DAO flow with `v1.signer` (MPC chain-signatures)
+- **Sponsoring:** Meta-transactions via backend relayer
+- **Covers tasks:** 1.1, 1.3, 1.4
+
+### Phase 1: Backend — New API handlers
+
+Add three new handlers in `nt-be/src/handlers/intents/`:
+
+| Handler | Endpoint | Proxies to | JWT required? |
+|---------|----------|------------|---------------|
+| `authenticate.rs` | `POST /api/intents/authenticate` | `UserAuthService.authenticate()` | No (produces JWT) |
+| `generate_intent.rs` | `POST /api/intents/generate-intent` | `OneClickService.generateIntent()` | No |
+| `submit_intent.rs` | `POST /api/intents/submit-intent` | `OneClickService.submitIntent()` | No |
+
+Also needed:
+- `GET /api/intents/balances` — proxy to `AccountService.getBalances()` (JWT required, stored per-DAO in backend)
+- JWT storage per-DAO (access + refresh tokens, auto-refresh logic)
+
+### Phase 2: Frontend — Confidential treasury PoC page
+
+A minimal page (e.g., `/confidential-poc`) that demonstrates:
+
+1. **Shield wNEAR** — form to enter amount, creates a DAO proposal (FunctionCall to `v1.signer` + token transfer to deposit address)
+2. **View confidential balance** — calls `/api/intents/balances`
+3. **Private transfer** — form with recipient + amount, creates a DAO proposal (FunctionCall to `v1.signer` only)
+4. **Unshield** — form to unshield back to public, creates DAO proposal
+
+Each step creates a proposal that the user approves with their Ledger.
+
+### Phase 3: Playwright test — interactive flow
+
+```
+e2e-tests/confidential-intents/
+└── shield-transfer-unshield.spec.ts
+```
+
+The test orchestrates the full flow with `page.pause()` breakpoints for Ledger signing:
+
+```
+Step 1: SHIELD (wrap.near → confidential)
+  1. Navigate to /confidential-poc
+  2. Enter shield amount (e.g. 0.1 wNEAR)
+  3. Click "Create Shield Proposal"
+  4. → pause() → user signs proposal creation with Ledger
+  5. Backend gets quote, creates proposal with FunctionCall to v1.signer
+  6. Click "Approve Proposal"
+  7. → pause() → user signs approval with Ledger
+  8. Backend picks up v1.signer result, submits signed intent to 1Click API
+  9. Backend transfers wNEAR to deposit address (meta-tx, sponsored)
+  10. Poll execution status until SUCCESS
+  11. ✅ Save quote + generateIntent + submitIntent payloads as mocks
+
+Step 2: JWT AUTH (one-time, via DAO proposal)
+  1. Click "Authenticate DAO"
+  2. → pause() → user signs auth proposal with Ledger
+  3. → pause() → user signs approval with Ledger
+  4. v1.signer signs auth payload, backend exchanges for JWT
+  5. ✅ JWT stored in backend for this DAO
+
+Step 3: CHECK BALANCE
+  1. Click "View Confidential Balance"
+  2. Backend calls getBalances with stored JWT
+  3. ✅ Verify shielded wNEAR appears
+
+Step 4: PRIVATE TRANSFER (confidential → confidential)
+  1. Enter recipient + amount
+  2. Click "Create Transfer Proposal"
+  3. → pause() → user signs with Ledger (create + approve)
+  4. Backend gets quote (JWT), v1.signer signs intent, backend submits
+  5. ✅ Save payloads as mocks
+
+Step 5: UNSHIELD (confidential → public)
+  1. Enter unshield amount
+  2. Click "Create Unshield Proposal"
+  3. → pause() → user signs with Ledger (create + approve)
+  4. Backend gets quote (JWT), v1.signer signs intent, backend submits
+  5. Poll until SUCCESS
+  6. ✅ Save payloads as mocks, verify wNEAR returned to DAO
+```
+
+### Phase 4: Automated sandbox test with captured mocks
+
+Use the payloads captured in Phase 3 as mock responses for the sandbox integration test (see below). This gives us realistic test data from actual API interactions.
 
 ---
 
