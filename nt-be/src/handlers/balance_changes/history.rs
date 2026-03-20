@@ -1766,17 +1766,6 @@ pub async fn get_recent_activity(
                 }
             });
 
-            // Hide native NEAR "proposal-deposit-" entries — these are the
-            // NEAR→wNEAR conversion side-effects, not the actual swap deposit.
-            // The real deposit is shown via the intents-linked record.
-            if swap.as_ref().is_some_and(|s| {
-                s.swap_role == "deposit"
-                    && change.token_id == "near"
-                    && s.solver_transaction_hash.starts_with("proposal-deposit-")
-            }) {
-                return None;
-            }
-
             Some(RecentActivity {
                 id: change.id,
                 block_time: change.block_time,

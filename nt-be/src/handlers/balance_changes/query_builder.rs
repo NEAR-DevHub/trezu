@@ -151,6 +151,19 @@ pub fn build_where_conditions(filters: &BalanceChangeFilters) -> (Vec<String>, u
         }
     }
 
+    // Exclude native NEAR "proposal-deposit-" entries from recent-activity.
+    // These are NEAR→wNEAR conversion side-effects, not the actual swap deposit.
+    if filters.exclude_swaps_from_direction {
+        conditions.push(format!(
+            "NOT (balance_changes.token_id = 'near' \
+                AND EXISTS (SELECT 1 FROM detected_swaps \
+                    WHERE account_id = '{}' \
+                      AND deposit_balance_change_id = balance_changes.id \
+                      AND solver_transaction_hash LIKE 'proposal-deposit-%%'))",
+            filters.account_id
+        ));
+    }
+
     // Min Amount Filter (absolute value, decimal-adjusted)
     if filters.min_amount.is_some() {
         conditions.push(format!("ABS(amount) >= ${}", param_index));
