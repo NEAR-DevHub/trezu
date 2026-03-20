@@ -243,18 +243,23 @@ async fn test_wnear_swap_deposit_detected_via_enrichment(pool: PgPool) {
     assert_eq!(swap.received_token_id, INTENTS_USDC_TOKEN);
 
     // The deposit leg should also be linked and appear in the Exchange tab
-    let deposit = exchange.data.iter().find(|item| {
-        item.swap
-            .as_ref()
-            .map_or(false, |s| s.swap_role == "deposit")
-    });
+    let deposits: Vec<_> = exchange
+        .data
+        .iter()
+        .filter(|item| {
+            item.swap
+                .as_ref()
+                .map_or(false, |s| s.swap_role == "deposit")
+        })
+        .collect();
 
-    assert!(
-        deposit.is_some(),
-        "Deposit leg should appear in Exchange tab (linked via originChainTxHashes + near/wrap.near alias)"
+    assert_eq!(
+        deposits.len(),
+        1,
+        "Should have exactly 1 deposit entry (not duplicates from sibling balance changes)"
     );
 
-    let deposit = deposit.unwrap();
+    let deposit = deposits[0];
     assert!(
         deposit.amount.starts_with('-'),
         "Deposit amount should be negative (outgoing): {}",
@@ -263,6 +268,13 @@ async fn test_wnear_swap_deposit_detected_via_enrichment(pool: PgPool) {
     assert_eq!(
         deposit.token_id, "near",
         "Deposit token should be 'near' (raw NEAR Transfer)"
+    );
+
+    // Total exchange entries: 1 fulfillment + 1 deposit
+    assert_eq!(
+        exchange.data.len(),
+        2,
+        "Exchange tab should have exactly 2 entries"
     );
 
     println!("\nAll assertions passed!");
