@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, type ReactNode } from "react";
 import {
     useWatch,
     useFieldArray,
@@ -135,11 +135,13 @@ export function RecipientRow({
     index,
     onEdit,
     onRemove,
+    nameBadge,
 }: {
     control: Control<FormValues>;
     index: number;
     onEdit?: () => void;
     onRemove?: () => void;
+    nameBadge?: ReactNode;
 }) {
     const { data: chains = [] } = useChains();
     const name = useWatch({ control, name: `recipients.${index}.name` });
@@ -159,10 +161,17 @@ export function RecipientRow({
                 </div>
                 <div className="flex flex-1 flex-col items-end min-w-0">
                     <div className="flex items-center gap-2 w-full">
-                        <div className="flex flex-1 flex-col gap-0 leading-none min-w-0">
-                            <p className="text-sm font-medium">{name}</p>
-                            <div className="text-xxs text-muted-foreground">
-                                <Address address={address} />
+                        <div className="flex flex-1 items-start gap-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                                <div className="flex flex-1 flex-col gap-0 leading-none min-w-0">
+                                    <p className="text-sm font-medium truncate">
+                                        {name}
+                                    </p>
+                                    <div className="text-xxs text-muted-foreground">
+                                        <Address address={address} />
+                                    </div>
+                                </div>
+                                {nameBadge}
                             </div>
                         </div>
                         <div className="flex flex-wrap gap-1 shrink-0">

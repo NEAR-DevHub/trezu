@@ -1,46 +1,46 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { FileDown, FileUp, Loader2, Plus, Trash2 } from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { AuthButton } from "@/components/auth-button";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { cn } from "@/lib/utils";
 import { PageCard } from "@/components/card";
-import { EmptyState } from "@/components/empty-state";
-import { ResponsiveInput } from "@/components/input";
-import { NumberBadge } from "@/components/number-badge";
 import { PageComponentLayout } from "@/components/page-component-layout";
-import { TableSkeleton } from "@/components/table-skeleton";
-import { Form } from "@/components/ui/form";
-import {
-    type AddressBookEntry,
-    type RecipientDraft,
-    useAddressBook,
-    useCreateAddressBookEntries,
-    useDeleteAddressBookEntries,
-    useExportAddressBook,
-} from "@/features/address-book";
-import { useChains } from "@/features/address-book/chains";
+import { AuthButton } from "@/components/auth-button";
+import { EmptyState } from "@/components/empty-state";
+import { FileDown, FileUp, Loader2, Plus, Trash2 } from "lucide-react";
 import {
     AddRecipientInput,
-    type FormValues,
     formSchema,
+    type FormValues,
 } from "@/features/address-book/components/add-recipient-form";
+import { Form } from "@/components/ui/form";
+import { ReviewRecipients } from "@/features/address-book/components/review-recipients";
 import { AddressBookTable } from "@/features/address-book/components/address-book-table";
+import { RemoveRecipientDialog } from "@/features/address-book/components/remove-recipient-dialog";
 import {
     ImportUploadStep,
     type ParsedRecipient,
 } from "@/features/address-book/components/import-recipients-flow";
-import { RemoveRecipientDialog } from "@/features/address-book/components/remove-recipient-dialog";
-import { ReviewRecipients } from "@/features/address-book/components/review-recipients";
+import {
+    useCreateAddressBookEntries,
+    useAddressBook,
+    useDeleteAddressBookEntries,
+    useExportAddressBook,
+    type RecipientDraft,
+    type AddressBookEntry,
+} from "@/features/address-book";
+import { useChains } from "@/features/address-book/chains";
+import { useTreasury } from "@/hooks/use-treasury";
+import { TableSkeleton } from "@/components/table-skeleton";
+import { ResponsiveInput } from "@/components/input";
+import { NumberBadge } from "@/components/number-badge";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import {
     buildNetworkLookup,
     resolveNetworkName,
 } from "@/features/address-book/utils/resolve-network";
-import { useMediaQuery } from "@/hooks/use-media-query";
-import { useTreasury } from "@/hooks/use-treasury";
-import { cn } from "@/lib/utils";
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
@@ -87,11 +87,13 @@ function AddressBookEmptyState({
 function RecipientFlow({
     mode,
     initialRecipient,
+    existingEntries = [],
     onDone,
     onCancel,
 }: {
     mode: "add" | "import";
     initialRecipient?: RecipientDraft | null;
+    existingEntries?: AddressBookEntry[];
     onDone: () => void;
     onCancel: () => void;
 }) {
@@ -172,20 +174,25 @@ function RecipientFlow({
                     <ReviewRecipients
                         handleBack={() => setStep(0)}
                         control={form.control}
+                        existingEntries={existingEntries}
                         isSubmitting={createEntries.isPending}
                         initialNotes={
                             mode === "import" ? importNotes : undefined
                         }
-                        onSubmit={async (notes) => {
+                        onSubmit={async (notes, includedIndexes) => {
                             if (!treasuryId) return;
                             await createEntries.mutateAsync({
                                 daoId: treasuryId,
-                                entries: recipients.map((r, i) => ({
-                                    name: r.name,
-                                    networks: r.networks,
-                                    address: r.address,
-                                    note: notes[i] || undefined,
-                                })),
+                                entries: includedIndexes.map((index) => {
+                                    const recipient = recipients[index];
+
+                                    return {
+                                        name: recipient.name,
+                                        networks: recipient.networks,
+                                        address: recipient.address,
+                                        note: notes[index] || undefined,
+                                    };
+                                }),
                             });
                             onDone();
                         }}
@@ -535,6 +542,7 @@ export default function AddressBookPage() {
                 <RecipientFlow
                     mode={flowMode}
                     initialRecipient={initialRecipient}
+                    existingEntries={entries ?? []}
                     onDone={handleCloseFlow}
                     onCancel={handleCloseFlow}
                 />
