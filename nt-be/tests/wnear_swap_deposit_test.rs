@@ -119,10 +119,7 @@ async fn query_recent_activity(
         uri.push_str(&format!("&transactionType={tt}"));
     }
 
-    let request = Request::builder()
-        .uri(&uri)
-        .body(Body::empty())
-        .unwrap();
+    let request = Request::builder().uri(&uri).body(Body::empty()).unwrap();
 
     let response = ServiceExt::<Request<Body>>::oneshot(app, request)
         .await
@@ -184,23 +181,25 @@ async fn test_wnear_swap_deposit_detected_via_enrichment(pool: PgPool) {
 
     let mut total_processed = 0usize;
     loop {
-        let processed =
-            nt_be::handlers::balance_changes::goldsky_enrichment::run_enrichment_cycle(
-                &pool,
-                &pool,
-                &network,
-                Some("test_key"),
-                &intents_api_url,
-            )
-            .await
-            .unwrap();
+        let processed = nt_be::handlers::balance_changes::goldsky_enrichment::run_enrichment_cycle(
+            &pool,
+            &pool,
+            &network,
+            Some("test_key"),
+            &intents_api_url,
+        )
+        .await
+        .unwrap();
         total_processed += processed;
         if processed < 100 {
             break;
         }
     }
     println!("Enrichment: processed {} outcomes", total_processed);
-    assert!(total_processed >= 9, "Should process all 9 fixture outcomes");
+    assert!(
+        total_processed >= 9,
+        "Should process all 9 fixture outcomes"
+    );
 
     // -----------------------------------------------------------------------
     // 3. Query the Exchange tab and verify both legs
@@ -244,14 +243,11 @@ async fn test_wnear_swap_deposit_detected_via_enrichment(pool: PgPool) {
     assert_eq!(swap.received_token_id, INTENTS_USDC_TOKEN);
 
     // The deposit leg should also be linked and appear in the Exchange tab
-    let deposit = exchange
-        .data
-        .iter()
-        .find(|item| {
-            item.swap
-                .as_ref()
-                .map_or(false, |s| s.swap_role == "deposit")
-        });
+    let deposit = exchange.data.iter().find(|item| {
+        item.swap
+            .as_ref()
+            .map_or(false, |s| s.swap_role == "deposit")
+    });
 
     assert!(
         deposit.is_some(),
