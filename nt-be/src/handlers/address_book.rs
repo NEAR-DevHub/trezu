@@ -112,7 +112,10 @@ pub async fn list_address_book(
     .await
     .map_err(|e| {
         log::error!("Failed to list address book for {}: {}", params.dao_id, e);
-        (StatusCode::INTERNAL_SERVER_ERROR, "Failed to fetch address book".to_string())
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to fetch address book".to_string(),
+        )
     })?
     .into_iter()
     .map(AddressBookEntry::from)
@@ -127,7 +130,10 @@ pub async fn create_address_book_entries(
     Json(req): Json<CreateAddressBookRequest>,
 ) -> Result<Json<Vec<AddressBookEntry>>, (StatusCode, String)> {
     if req.entries.is_empty() {
-        return Err((StatusCode::BAD_REQUEST, "entries must not be empty".to_string()));
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "entries must not be empty".to_string(),
+        ));
     }
 
     auth_user
@@ -143,7 +149,10 @@ pub async fn create_address_book_entries(
     .await
     .map_err(|e| {
         log::error!("Failed to look up user {}: {}", auth_user.account_id, e);
-        (StatusCode::INTERNAL_SERVER_ERROR, "Failed to look up user".to_string())
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to look up user".to_string(),
+        )
     })?;
 
     let mut created = Vec::with_capacity(req.entries.len());
@@ -167,7 +176,10 @@ pub async fn create_address_book_entries(
         .await
         .map_err(|e| {
             log::error!("Failed to create address book entry: {}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, "Failed to create address book entry".to_string())
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to create address book entry".to_string(),
+            )
         })?;
 
         if let Some(row) = row {
@@ -205,15 +217,15 @@ pub async fn export_address_book(
         .await
         .map_err(|_| (StatusCode::FORBIDDEN, "Not a DAO policy member".to_string()))?;
 
-    let ids: Option<Vec<Uuid>> = params.ids.as_deref().map(|s| {
-        s.split(',').filter_map(|p| p.trim().parse().ok()).collect()
-    });
+    let ids: Option<Vec<Uuid>> = params
+        .ids
+        .as_deref()
+        .map(|s| s.split(',').filter_map(|p| p.trim().parse().ok()).collect());
 
-    if let Some(ref v) = ids {
-        if v.is_empty() {
+    if let Some(ref v) = ids
+        && v.is_empty() {
             return Err((StatusCode::BAD_REQUEST, "ids must not be empty".to_string()));
         }
-    }
 
     let rows: Vec<AddressBookRow> = match ids {
         Some(ids) => sqlx::query_as!(
@@ -233,7 +245,10 @@ pub async fn export_address_book(
         .await
         .map_err(|e| {
             log::error!("Failed to export address book for {}: {}", params.dao_id, e);
-            (StatusCode::INTERNAL_SERVER_ERROR, "Failed to export address book".to_string())
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to export address book".to_string(),
+            )
         })?,
         None => sqlx::query_as!(
             AddressBookRow,
@@ -251,7 +266,10 @@ pub async fn export_address_book(
         .await
         .map_err(|e| {
             log::error!("Failed to export address book for {}: {}", params.dao_id, e);
-            (StatusCode::INTERNAL_SERVER_ERROR, "Failed to export address book".to_string())
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to export address book".to_string(),
+            )
         })?,
     };
 
@@ -282,7 +300,10 @@ pub async fn export_address_book(
     Ok((
         [
             (header::CONTENT_TYPE, "text/csv; charset=utf-8"),
-            (header::CONTENT_DISPOSITION, "attachment; filename=\"address-book.csv\""),
+            (
+                header::CONTENT_DISPOSITION,
+                "attachment; filename=\"address-book.csv\"",
+            ),
         ],
         csv,
     ))
@@ -311,15 +332,24 @@ pub async fn delete_address_book_entries(
     .await
     .map_err(|e| {
         log::error!("Failed to fetch address book entries: {}", e);
-        (StatusCode::INTERNAL_SERVER_ERROR, "Failed to fetch address book entries".to_string())
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to fetch address book entries".to_string(),
+        )
     })?;
 
     if rows.is_empty() {
-        return Err((StatusCode::NOT_FOUND, "No matching address book entries found".to_string()));
+        return Err((
+            StatusCode::NOT_FOUND,
+            "No matching address book entries found".to_string(),
+        ));
     }
 
     if rows.len() > 1 {
-        return Err((StatusCode::BAD_REQUEST, "All entries must belong to the same DAO".to_string()));
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "All entries must belong to the same DAO".to_string(),
+        ));
     }
 
     auth_user
@@ -332,7 +362,10 @@ pub async fn delete_address_book_entries(
         .await
         .map_err(|e| {
             log::error!("Failed to delete address book entries: {}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, "Failed to delete address book entries".to_string())
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to delete address book entries".to_string(),
+            )
         })?;
 
     Ok(StatusCode::NO_CONTENT)
