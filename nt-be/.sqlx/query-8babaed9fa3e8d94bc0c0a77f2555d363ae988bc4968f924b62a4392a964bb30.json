@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE monitored_accounts\n        SET confidential_access_token = $1,\n            confidential_refresh_token = $2,\n            confidential_token_expires_at = $3\n        WHERE account_id = $4\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Timestamptz",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "8babaed9fa3e8d94bc0c0a77f2555d363ae988bc4968f924b62a4392a964bb30"
+}

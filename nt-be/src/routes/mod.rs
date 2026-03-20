@@ -282,6 +282,23 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
             "/api/intents/swap-status",
             get(handlers::intents::swap_status::get_swap_status),
         )
+        // Confidential intents endpoints
+        .route(
+            "/api/intents/authenticate",
+            post(handlers::intents::authenticate::authenticate),
+        )
+        .route(
+            "/api/intents/generate-intent",
+            post(handlers::intents::generate_intent::generate_intent),
+        )
+        .route(
+            "/api/intents/submit-intent",
+            post(handlers::intents::submit_intent::submit_intent),
+        )
+        .route(
+            "/api/intents/balances",
+            get(handlers::intents::balances::get_balances),
+        )
         // Proxy endpoints - catch-all for external API
         .route(
             "/api/proxy/{*path}",
