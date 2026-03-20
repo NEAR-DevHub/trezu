@@ -281,9 +281,10 @@ pub async fn detect_swaps_from_api(
             .strip_prefix("nep141:")
             .unwrap_or(&api_tx.origin_asset);
 
-        // For wrap.near swaps, the balance change may have token_id "near" (raw NEAR transfer)
+        // For wrap.near swaps, the balance change may have token_id "near" or "NEAR"
+        // ("NEAR" is the fallback when token_id is NULL in the DB)
         let deposit_token_aliases: Vec<&str> = if raw_token_id == "wrap.near" {
-            vec!["wrap.near", "near"]
+            vec!["wrap.near", "near", "NEAR"]
         } else {
             vec![raw_token_id]
         };
