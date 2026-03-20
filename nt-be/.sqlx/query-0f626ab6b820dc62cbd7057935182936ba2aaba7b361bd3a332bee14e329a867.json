@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT bc.id, bc.account_id, bc.block_height, bc.token_id,\n               bc.amount, bc.transaction_hashes, bc.signer_id, bc.receipt_id\n        FROM balance_changes bc\n        WHERE bc.account_id = $1\n          AND bc.method_name = 'on_proposal_callback'\n          AND bc.amount < 0\n          AND NOT EXISTS (\n              SELECT 1 FROM detected_swaps ds\n              WHERE ds.account_id = bc.account_id\n                AND ds.deposit_balance_change_id = bc.id\n          )\n        ORDER BY bc.block_height DESC\n        LIMIT 20\n        ",
+  "query": "\n        SELECT bc.id, bc.account_id, bc.block_height, bc.token_id,\n               bc.amount, bc.transaction_hashes, bc.signer_id, bc.receipt_id\n        FROM balance_changes bc\n        WHERE bc.account_id = $1\n          AND bc.method_name IN ('on_proposal_callback', 'act_proposal')\n          AND bc.amount < 0\n          AND NOT EXISTS (\n              SELECT 1 FROM detected_swaps ds\n              WHERE ds.account_id = bc.account_id\n                AND ds.deposit_balance_change_id = bc.id\n          )\n        ORDER BY bc.block_height DESC\n        LIMIT 20\n        ",
   "describe": {
     "columns": [
       {
@@ -60,5 +60,5 @@
       false
     ]
   },
-  "hash": "cd674cbc1e28956ecc0756d3eae5687d677361abc64034a03af9d23e184e8ba0"
+  "hash": "0f626ab6b820dc62cbd7057935182936ba2aaba7b361bd3a332bee14e329a867"
 }
