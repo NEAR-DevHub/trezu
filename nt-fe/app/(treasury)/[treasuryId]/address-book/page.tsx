@@ -9,7 +9,7 @@ import { PageCard } from "@/components/card";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { AuthButton } from "@/components/auth-button";
 import { EmptyState } from "@/components/empty-state";
-import { FileDown, FileUp, Plus, Trash2 } from "lucide-react";
+import { FileDown, FileUp, Loader2, Plus, Trash2 } from "lucide-react";
 import {
     AddRecipientInput,
     formSchema,
@@ -286,10 +286,19 @@ function RecipientsView({
                                 permissionAction=""
                                 variant="secondary"
                                 size={isMobile ? "icon" : "default"}
+                                disabled={exportEntries.isPending}
                                 onClick={handleExport}
                             >
-                                <FileDown className="size-4" />
-                                <span className="hidden sm:inline">Export</span>
+                                {exportEntries.isPending ? (
+                                    <Loader2 className="size-4 animate-spin" />
+                                ) : (
+                                    <FileDown className="size-4" />
+                                )}
+                                <span className="hidden sm:inline">
+                                    {exportEntries.isPending
+                                        ? "Exporting"
+                                        : "Export"}
+                                </span>
                             </AuthButton>
                             <AuthButton
                                 permissionKind="any"
@@ -339,10 +348,19 @@ function RecipientsView({
                                     mobileSearchActive && "hidden sm:flex",
                                 )}
                                 size={isMobile ? "icon" : "default"}
+                                disabled={exportEntries.isPending}
                                 onClick={handleExport}
                             >
-                                <FileDown className="size-4" />
-                                <span className="hidden sm:inline">Export</span>
+                                {exportEntries.isPending ? (
+                                    <Loader2 className="size-4 animate-spin" />
+                                ) : (
+                                    <FileDown className="size-4" />
+                                )}
+                                <span className="hidden sm:inline">
+                                    {exportEntries.isPending
+                                        ? "Exporting"
+                                        : "Export"}
+                                </span>
                             </AuthButton>
                             <AuthButton
                                 permissionKind="any"
