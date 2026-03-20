@@ -199,6 +199,7 @@ export function PaymentFormSection<
             <InputBlock
                 interactive={!selectedContact}
                 title="To"
+                className="relative"
                 invalid={
                     !selectedContact &&
                     !!recipient &&
@@ -252,7 +253,7 @@ export function PaymentFormSection<
                         </div>
                     </div>
                 ) : (
-                    <div className="relative">
+                    <>
                         <AccountInput
                             key={blockchainType}
                             blockchain={blockchainType}
@@ -275,14 +276,14 @@ export function PaymentFormSection<
                             <Button
                                 variant="card"
                                 size="icon-sm"
-                                className="absolute top-0 right-0"
+                                className="absolute top-1/2 -translate-y-1/2 right-3"
                                 onClick={() => setIsContactModalOpen(true)}
                                 type="button"
                             >
                                 <ContactRound className="size-4" />
                             </Button>
                         )}
-                    </div>
+                    </>
                 )}
                 {selectedContact && (
                     <div className="hidden" aria-hidden>

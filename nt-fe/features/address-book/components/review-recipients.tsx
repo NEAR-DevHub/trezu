@@ -4,16 +4,20 @@ import { useState } from "react";
 import { Button } from "@/components/button";
 import { StepperHeader } from "@/components/step-wizard";
 import { Textarea } from "@/components/textarea";
-import { FormValues, RecipientRow } from "./add-recipient-form";
+import {
+    AddRecipientInput,
+    FormValues,
+    RecipientRow,
+} from "./add-recipient-form";
 import type { StepProps } from "@/components/step-wizard";
-import type { RecipientDraft } from "../types";
 import { SummaryBlock } from "@/components/summary-block";
-import { Control, useWatch } from "react-hook-form";
+import { Control, useFieldArray } from "react-hook-form";
 
 interface ReviewRecipientsProps extends StepProps {
     control: Control<FormValues>;
     onSubmit: (notes: Record<number, string>) => void;
     isSubmitting?: boolean;
+    initialNotes?: Record<number, string>;
 }
 
 export function ReviewRecipients({
@@ -21,9 +25,28 @@ export function ReviewRecipients({
     control,
     onSubmit,
     isSubmitting = false,
+    initialNotes,
 }: ReviewRecipientsProps) {
-    const [notes, setNotes] = useState<Record<number, string>>({});
-    const count = useWatch({ control, name: "recipients" }).length;
+    const [notes, setNotes] = useState<Record<number, string>>(
+        initialNotes ?? {},
+    );
+    const [editingIndex, setEditingIndex] = useState<number | null>(null);
+    const { fields, remove } = useFieldArray({ control, name: "recipients" });
+    const count = fields.length;
+    const networkCount = new Set(fields.flatMap((field) => field.networks))
+        .size;
+    if (editingIndex !== null) {
+        return (
+            <AddRecipientInput
+                editOnly
+                control={control}
+                activeIndex={editingIndex}
+                setActiveIndex={setEditingIndex}
+                handleBack={() => setEditingIndex(null)}
+                onReview={() => setEditingIndex(null)}
+            />
+        );
+    }
 
     return (
         <div className="flex flex-col gap-4">
@@ -35,12 +58,48 @@ export function ReviewRecipients({
                     secondRow={
                         <p className="text-2xl font-semibold text-foreground">{`${count} recipient${count !== 1 ? "s" : ""}`}</p>
                     }
+                    // On x different networks
+                    subRow={
+                        count > 1 && (
+                            <p className="text-sm text-muted-foreground">
+                                on {networkCount} different network
+                                {networkCount !== 1 ? "s" : ""}
+                            </p>
+                        )
+                    }
                 />
                 <p className="text-sm font-semibold">Recipients</p>
 
-                {Array.from({ length: count }, (_, i) => i).map((i) => (
-                    <div key={i} className="flex flex-col gap-2">
-                        <RecipientRow control={control} index={i} />
+                {fields.map((field, i) => (
+                    <div key={field.id} className="flex flex-col gap-2">
+                        <RecipientRow
+                            control={control}
+                            index={i}
+                            onEdit={() => setEditingIndex(i)}
+                            onRemove={
+                                count > 1
+                                    ? () => {
+                                          remove(i);
+                                          setNotes((prev) => {
+                                              const next: Record<
+                                                  number,
+                                                  string
+                                              > = {};
+                                              for (const [
+                                                  k,
+                                                  v,
+                                              ] of Object.entries(prev)) {
+                                                  const idx = Number(k);
+                                                  if (idx < i) next[idx] = v;
+                                                  else if (idx > i)
+                                                      next[idx - 1] = v;
+                                              }
+                                              return next;
+                                          });
+                                      }
+                                    : undefined
+                            }
+                        />
                         <Textarea
                             borderless
                             placeholder="Add a note to help identify this recipient (e.g. contractor payment, vesting distribution)."

@@ -170,7 +170,12 @@ export function RecipientRow({
                                 <NetworkBadge
                                     key={c.key}
                                     name={c.name}
-                                    size="sm"
+                                    size={
+                                        recipientChains.length > 3
+                                            ? "icon"
+                                            : "sm"
+                                    }
+                                    iconOnly={recipientChains.length > 3}
                                     variant="secondary"
                                     iconDark={c.iconDark}
                                     iconLight={c.iconLight}
@@ -220,6 +225,8 @@ interface AddRecipientInputProps {
     setActiveIndex: (index: number) => void;
     handleBack?: () => void;
     onReview: () => void;
+    /** When true, only show the form fields + a "Done" button — hides the committed list, "Add Another", stepper header, and "Review Details". */
+    editOnly?: boolean;
 }
 
 export function AddRecipientInput({
@@ -228,6 +235,7 @@ export function AddRecipientInput({
     setActiveIndex,
     handleBack,
     onReview,
+    editOnly = false,
 }: AddRecipientInputProps) {
     const { data: chains = [] } = useChains();
     const [isAddressValid, setIsAddressValid] = useState(false);
@@ -326,7 +334,10 @@ export function AddRecipientInput({
 
     return (
         <div className="flex flex-col gap-4">
-            <StepperHeader title="Add Recipient" handleBack={handleBack} />
+            <StepperHeader
+                title={editOnly ? "Edit Recipient" : "Add Recipient"}
+                handleBack={handleBack}
+            />
 
             <div className="flex flex-col gap-2">
                 <FormField
@@ -399,47 +410,61 @@ export function AddRecipientInput({
                 />
             </div>
 
-            <Button
-                variant="ghost"
-                type="button"
-                className="w-full justify-start rounded-b-xl"
-                disabled={!isActiveValid}
-                tooltipContent={
-                    !isActiveValid
-                        ? "You must fill out all fields to add a recipient."
-                        : undefined
-                }
-                onClick={handleCommit}
-            >
-                <Plus className="size-4 text-foreground" />
-                <span className="text-foreground">Add Another Recipient</span>
-            </Button>
-
-            {fields.length > 0 && (
-                <div className="flex flex-col divide-y">
-                    {fields.map((field, i) =>
-                        i !== activeIndex ? (
-                            <RecipientRow
-                                key={field.id}
-                                index={i}
-                                control={control}
-                                onEdit={() => handleEdit(i)}
-                                onRemove={() => handleRemove(i)}
-                            />
-                        ) : null,
-                    )}
-                </div>
-            )}
-
-            <div className="rounded-lg border bg-card p-0 overflow-hidden">
+            {editOnly ? (
                 <Button
                     className="w-full"
-                    disabled={!canProceed}
+                    disabled={!isActiveValid}
                     onClick={onReview}
                 >
-                    Review Details
+                    Done
                 </Button>
-            </div>
+            ) : (
+                <>
+                    <Button
+                        variant="ghost"
+                        type="button"
+                        className="w-full justify-start rounded-b-xl"
+                        disabled={!isActiveValid}
+                        tooltipContent={
+                            !isActiveValid
+                                ? "You must fill out all fields to add a recipient."
+                                : undefined
+                        }
+                        onClick={handleCommit}
+                    >
+                        <Plus className="size-4 text-foreground" />
+                        <span className="text-foreground">
+                            Add Another Recipient
+                        </span>
+                    </Button>
+
+                    {fields.length > 0 && (
+                        <div className="flex flex-col divide-y">
+                            {fields.map((field, i) =>
+                                i !== activeIndex ? (
+                                    <RecipientRow
+                                        key={field.id}
+                                        index={i}
+                                        control={control}
+                                        onEdit={() => handleEdit(i)}
+                                        onRemove={() => handleRemove(i)}
+                                    />
+                                ) : null,
+                            )}
+                        </div>
+                    )}
+
+                    <div className="rounded-lg border bg-card p-0 overflow-hidden">
+                        <Button
+                            className="w-full"
+                            disabled={!canProceed}
+                            onClick={onReview}
+                        >
+                            Review Details
+                        </Button>
+                    </div>
+                </>
+            )}
         </div>
     );
 }

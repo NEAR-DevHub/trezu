@@ -2,6 +2,7 @@ import { useThemeStore } from "@/stores/theme-store";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { Tooltip } from "@/components/tooltip";
 
 const networkBadgeVariants = cva(
     "inline-flex items-center gap-1 rounded-[8px] font-medium",
@@ -55,7 +56,7 @@ export function NetworkBadge({
     const isMobile = useMediaQuery("(max-width: 768px)");
     const icon = theme === "dark" ? iconDark : iconLight;
     const iconSize = iconSizeMap[isMobile ? "icon" : (size ?? "sm")];
-    return (
+    const badge = (
         <span
             className={cn(networkBadgeVariants({ variant, size }), className)}
         >
@@ -72,4 +73,10 @@ export function NetworkBadge({
             {!iconOnly && <span className="hidden md:block">{name}</span>}
         </span>
     );
+
+    if (iconOnly) {
+        return <Tooltip content={name}>{badge}</Tooltip>;
+    }
+
+    return badge;
 }

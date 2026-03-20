@@ -84,7 +84,7 @@ export function AddressBookTable({
                             />
                         </TableHead>
                         <TableHead>Recipient</TableHead>
-                        <TableHead className="w-72">Network</TableHead>
+                        <TableHead className="w-90">Network</TableHead>
                         <TableHead className="w-30">Added By</TableHead>
                         <TableHead className="w-52">Note</TableHead>
                         <TableHead className="w-20">Added</TableHead>

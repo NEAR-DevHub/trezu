@@ -9,7 +9,6 @@ import { PageCard } from "@/components/card";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { AuthButton } from "@/components/auth-button";
 import { EmptyState } from "@/components/empty-state";
-import { Button } from "@/components/button";
 import { FileDown, FileUp, Plus, Trash2 } from "lucide-react";
 import {
     AddRecipientInput,
@@ -20,6 +19,10 @@ import { Form } from "@/components/ui/form";
 import { ReviewRecipients } from "@/features/address-book/components/review-recipients";
 import { AddressBookTable } from "@/features/address-book/components/address-book-table";
 import { RemoveRecipientDialog } from "@/features/address-book/components/remove-recipient-dialog";
+import {
+    ImportUploadStep,
+    type ParsedRecipient,
+} from "@/features/address-book/components/import-recipients-flow";
 import {
     useCreateAddressBookEntries,
     useAddressBook,
@@ -35,7 +38,13 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
-function AddressBookEmptyState({ onAdd }: { onAdd: () => void }) {
+function AddressBookEmptyState({
+    onAdd,
+    onImport,
+}: {
+    onAdd: () => void;
+    onImport: () => void;
+}) {
     return (
         <PageCard className="py-[100px] flex flex-col items-center justify-center w-full h-fit gap-4">
             <EmptyState
@@ -50,6 +59,7 @@ function AddressBookEmptyState({ onAdd }: { onAdd: () => void }) {
                     permissionAction=""
                     variant="secondary"
                     className="gap-1 shrink w-full"
+                    onClick={onImport}
                 >
                     <FileUp className="size-3.5" /> Import
                 </AuthButton>
@@ -66,18 +76,21 @@ function AddressBookEmptyState({ onAdd }: { onAdd: () => void }) {
     );
 }
 
-// ─── Add flow ─────────────────────────────────────────────────────────────────
+// ─── Add / Import flow (shared stepper) ──────────────────────────────────────
 
-function AddRecipientFlow({
+function RecipientFlow({
+    mode,
     onDone,
     onCancel,
 }: {
+    mode: "add" | "import";
     onDone: () => void;
     onCancel: () => void;
 }) {
     const { treasuryId } = useTreasury();
     const [step, setStep] = useState(0);
     const [activeIndex, setActiveIndex] = useState(0);
+    const [importNotes, setImportNotes] = useState<Record<number, string>>({});
     const createEntries = useCreateAddressBookEntries(treasuryId);
 
     const form = useForm<FormValues>({
@@ -88,7 +101,8 @@ function AddRecipientFlow({
         mode: "onChange",
     });
 
-    const handleReview = () => {
+    // Manual add: filter empty rows → review
+    const handleManualReview = () => {
         const filled = form
             .getValues()
             .recipients.filter((r) => r.name.trim() || r.address.trim());
@@ -96,24 +110,51 @@ function AddRecipientFlow({
         setStep(1);
     };
 
+    // Import: parsed recipients → populate form → review
+    const handleImportReview = (parsed: ParsedRecipient[]) => {
+        const notes: Record<number, string> = {};
+        parsed.forEach((r, i) => {
+            if (r.note) notes[i] = r.note;
+        });
+        setImportNotes(notes);
+        form.reset({
+            recipients: parsed.map((r) => ({
+                name: r.name,
+                address: r.address,
+                networks: r.networks,
+            })),
+        });
+        setStep(1);
+    };
+
     const recipients = form.watch("recipients");
 
     return (
-        <PageCard className="w-full max-w-xl mx-auto flex flex-col gap-4 p-4">
+        <PageCard className="w-full max-w-[600px] mx-auto flex flex-col gap-4 p-4">
             <Form {...form}>
                 {step === 0 ? (
-                    <AddRecipientInput
-                        control={form.control}
-                        activeIndex={activeIndex}
-                        setActiveIndex={setActiveIndex}
-                        handleBack={onCancel}
-                        onReview={handleReview}
-                    />
+                    mode === "add" ? (
+                        <AddRecipientInput
+                            control={form.control}
+                            activeIndex={activeIndex}
+                            setActiveIndex={setActiveIndex}
+                            handleBack={onCancel}
+                            onReview={handleManualReview}
+                        />
+                    ) : (
+                        <ImportUploadStep
+                            handleBack={onCancel}
+                            onReview={handleImportReview}
+                        />
+                    )
                 ) : (
                     <ReviewRecipients
                         handleBack={() => setStep(0)}
                         control={form.control}
                         isSubmitting={createEntries.isPending}
+                        initialNotes={
+                            mode === "import" ? importNotes : undefined
+                        }
                         onSubmit={async (notes) => {
                             if (!treasuryId) return;
                             await createEntries.mutateAsync({
@@ -138,7 +179,13 @@ function AddRecipientFlow({
 
 const SEARCH_DEBOUNCE_MS = 300;
 
-function RecipientsView({ onAdd }: { onAdd: () => void }) {
+function RecipientsView({
+    onAdd,
+    onImport,
+}: {
+    onAdd: () => void;
+    onImport: () => void;
+}) {
     const { treasuryId } = useTreasury();
     const router = useRouter();
     const { data: entries = [], isLoading } = useAddressBook(treasuryId);
@@ -297,17 +344,20 @@ function RecipientsView({ onAdd }: { onAdd: () => void }) {
                                 <FileDown className="size-4" />
                                 <span className="hidden sm:inline">Export</span>
                             </AuthButton>
-                            <Button
+                            <AuthButton
+                                permissionKind="any"
+                                permissionAction=""
                                 variant="secondary"
                                 className={cn(
                                     "gap-1.5",
                                     mobileSearchActive && "hidden sm:flex",
                                 )}
                                 size={isMobile ? "icon" : "default"}
+                                onClick={onImport}
                             >
                                 <FileUp className="size-4" />
                                 <span className="hidden sm:inline">Import</span>
-                            </Button>
+                            </AuthButton>
                             <AuthButton
                                 permissionKind="any"
                                 permissionAction=""
@@ -356,7 +406,7 @@ function RecipientsView({ onAdd }: { onAdd: () => void }) {
 export default function AddressBookPage() {
     const { treasuryId } = useTreasury();
     const { data: entries, isLoading } = useAddressBook(treasuryId);
-    const [adding, setAdding] = useState(false);
+    const [flowMode, setFlowMode] = useState<"add" | "import" | null>(null);
 
     const hasEntries = (entries?.length ?? 0) > 0;
 
@@ -365,15 +415,22 @@ export default function AddressBookPage() {
             title="Address Book"
             description="Manage your saved recipients"
         >
-            {adding ? (
-                <AddRecipientFlow
-                    onDone={() => setAdding(false)}
-                    onCancel={() => setAdding(false)}
+            {flowMode ? (
+                <RecipientFlow
+                    mode={flowMode}
+                    onDone={() => setFlowMode(null)}
+                    onCancel={() => setFlowMode(null)}
                 />
             ) : isLoading || hasEntries ? (
-                <RecipientsView onAdd={() => setAdding(true)} />
+                <RecipientsView
+                    onAdd={() => setFlowMode("add")}
+                    onImport={() => setFlowMode("import")}
+                />
             ) : (
-                <AddressBookEmptyState onAdd={() => setAdding(true)} />
+                <AddressBookEmptyState
+                    onAdd={() => setFlowMode("add")}
+                    onImport={() => setFlowMode("import")}
+                />
             )}
         </PageComponentLayout>
     );
