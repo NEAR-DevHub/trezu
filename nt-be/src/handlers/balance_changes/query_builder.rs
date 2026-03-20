@@ -109,10 +109,13 @@ pub fn build_where_conditions(filters: &BalanceChangeFilters) -> (Vec<String>, u
                     if filters.exclude_swaps_from_direction {
                         // Recent activity: exclude swaps (they have separate tab)
                         // For incoming (amount > 0), only check fulfillment_balance_change_id (the receive leg)
-                        type_conditions.push(format!(
-                            "(amount > 0 AND counterparty != 'STAKING_REWARD' AND NOT EXISTS (SELECT 1 FROM detected_swaps WHERE account_id = '{}' AND fulfillment_balance_change_id = balance_changes.id))",
-                            filters.account_id
-                        ));
+                        type_conditions.push(
+                            "(amount > 0 AND counterparty != 'STAKING_REWARD' \
+                             AND NOT EXISTS (SELECT 1 FROM detected_swaps \
+                                WHERE account_id = $1 \
+                                  AND fulfillment_balance_change_id = balance_changes.id))"
+                                .to_string(),
+                        );
                     } else {
                         // Export/API: include swaps in incoming
                         type_conditions
@@ -123,10 +126,12 @@ pub fn build_where_conditions(filters: &BalanceChangeFilters) -> (Vec<String>, u
                     if filters.exclude_swaps_from_direction {
                         // Recent activity: exclude swaps (they have separate tab)
                         // For outgoing (amount < 0), only check deposit_balance_change_id (the send leg)
-                        type_conditions.push(format!(
-                            "(amount < 0 AND NOT EXISTS (SELECT 1 FROM detected_swaps WHERE account_id = '{}' AND deposit_balance_change_id = balance_changes.id))",
-                            filters.account_id
-                        ));
+                        type_conditions.push(
+                            "(amount < 0 AND NOT EXISTS (SELECT 1 FROM detected_swaps \
+                                WHERE account_id = $1 \
+                                  AND deposit_balance_change_id = balance_changes.id))"
+                                .to_string(),
+                        );
                     } else {
                         // Export/API: include swaps in outgoing
                         type_conditions.push("amount < 0".to_string());
@@ -137,10 +142,13 @@ pub fn build_where_conditions(filters: &BalanceChangeFilters) -> (Vec<String>, u
                 }
                 "exchange" => {
                     // Check if this balance change is part of a detected swap
-                    type_conditions.push(format!(
-                        "EXISTS (SELECT 1 FROM detected_swaps WHERE account_id = '{}' AND (fulfillment_balance_change_id = balance_changes.id OR deposit_balance_change_id = balance_changes.id))",
-                        filters.account_id
-                    ));
+                    type_conditions.push(
+                        "EXISTS (SELECT 1 FROM detected_swaps \
+                            WHERE account_id = $1 \
+                              AND (fulfillment_balance_change_id = balance_changes.id \
+                                   OR deposit_balance_change_id = balance_changes.id))"
+                            .to_string(),
+                    );
                 }
                 _ => {} // Invalid - ignore
             }
@@ -154,14 +162,14 @@ pub fn build_where_conditions(filters: &BalanceChangeFilters) -> (Vec<String>, u
     // Exclude native NEAR "proposal-deposit-" entries from recent-activity.
     // These are NEAR→wNEAR conversion side-effects, not the actual swap deposit.
     if filters.exclude_swaps_from_direction {
-        conditions.push(format!(
+        conditions.push(
             "NOT (balance_changes.token_id = 'near' \
                 AND EXISTS (SELECT 1 FROM detected_swaps \
-                    WHERE account_id = '{}' \
+                    WHERE account_id = $1 \
                       AND deposit_balance_change_id = balance_changes.id \
-                      AND solver_transaction_hash LIKE 'proposal-deposit-%%'))",
-            filters.account_id
-        ));
+                      AND solver_transaction_hash LIKE 'proposal-deposit-%'))"
+                .to_string(),
+        );
     }
 
     // Min Amount Filter (absolute value, decimal-adjusted)
