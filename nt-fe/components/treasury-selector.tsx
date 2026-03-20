@@ -193,7 +193,7 @@ export function TreasurySelector({
                         <>
                             {memberTreasuries.length > 0 && <SelectSeparator />}
                             <SelectGroup>
-                                <SelectLabel>Guest Accounts</SelectLabel>
+                                <SelectLabel>Guest Treasuries</SelectLabel>
                                 {savedGuestTreasuries.map((treasury) => (
                                     <SelectItem
                                         key={treasury.daoId}
