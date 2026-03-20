@@ -4,27 +4,26 @@ import { useState } from "react";
 import { Button } from "@/components/button";
 import { StepperHeader } from "@/components/step-wizard";
 import { Textarea } from "@/components/textarea";
-import { RecipientRow } from "./add-recipient-form";
+import { FormValues, RecipientRow } from "./add-recipient-form";
 import type { StepProps } from "@/components/step-wizard";
-import type { RecipientDraft } from "./add-recipient-form";
-import { AmountSummary } from "@/components/amount-summary";
+import type { RecipientDraft } from "../types";
 import { SummaryBlock } from "@/components/summary-block";
-import { InputBlock } from "@/components/input-block";
+import { Control, useWatch } from "react-hook-form";
 
 interface ReviewRecipientsProps extends StepProps {
-    recipients: RecipientDraft[];
+    control: Control<FormValues>;
     onSubmit: (notes: Record<number, string>) => void;
     isSubmitting?: boolean;
 }
 
 export function ReviewRecipients({
     handleBack,
-    recipients,
+    control,
     onSubmit,
     isSubmitting = false,
 }: ReviewRecipientsProps) {
     const [notes, setNotes] = useState<Record<number, string>>({});
-    const count = recipients.length;
+    const count = useWatch({ control, name: "recipients" }).length;
 
     return (
         <div className="flex flex-col gap-4">
@@ -39,9 +38,9 @@ export function ReviewRecipients({
                 />
                 <p className="text-sm font-semibold">Recipients</p>
 
-                {recipients.map((r, i) => (
+                {Array.from({ length: count }, (_, i) => i).map((i) => (
                     <div key={i} className="flex flex-col gap-2">
-                        <RecipientRow recipient={r} index={i} />
+                        <RecipientRow control={control} index={i} />
                         <Textarea
                             borderless
                             placeholder="Add a note to help identify this recipient (e.g. contractor payment, vesting distribution)."

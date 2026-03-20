@@ -1,6 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import {
+    useWatch,
+    useFieldArray,
+    useFormContext,
+    type Control,
+} from "react-hook-form";
+import { z } from "zod";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { InputBlock } from "@/components/input-block";
 import { LargeInput } from "@/components/large-input";
@@ -14,20 +21,20 @@ import {
     SelectModal,
     type SelectOption,
 } from "@/app/(treasury)/[treasuryId]/dashboard/components/select-modal";
-import type { StepProps } from "@/components/step-wizard";
+import { FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { NumberBadge } from "@/components/number-badge";
 import { Address } from "@/components/address";
+import { recipientSchema } from "../types";
 
-export interface RecipientDraft {
-    name: string;
-    networks: string[];
-    address: string;
-}
+// ─── Form schema ───────────────────────────────────────────────────────────────
 
-interface AddRecipientFormProps extends StepProps {
-    recipients: RecipientDraft[];
-    onRecipientsChange: (recipients: RecipientDraft[]) => void;
-}
+export const formSchema = z.object({
+    recipients: z.array(recipientSchema),
+});
+
+export type FormValues = z.infer<typeof formSchema>;
+
+// ─── NetworkSelect ─────────────────────────────────────────────────────────────
 
 function NetworkSelect({
     address,
@@ -61,6 +68,20 @@ function NetworkSelect({
         }
     };
 
+    useEffect(() => {
+        if (
+            !disabled &&
+            compatibleChains.length === 1 &&
+            selected.length === 0
+        ) {
+            handleSelect({
+                id: compatibleChains[0].key,
+                name: compatibleChains[0].name,
+                icon: compatibleChains[0].iconLight,
+            });
+        }
+    }, [compatibleChains.length]);
+
     return (
         <>
             <button
@@ -72,7 +93,7 @@ function NetworkSelect({
                 {selectedChains.length === 0 ? (
                     <span className="text-muted-foreground text-lg">
                         {disabled
-                            ? "Enter a valid address first"
+                            ? "Enter recipient address first"
                             : "Select network"}
                     </span>
                 ) : (
@@ -107,22 +128,28 @@ function NetworkSelect({
     );
 }
 
+// ─── RecipientRow ──────────────────────────────────────────────────────────────
+
 export function RecipientRow({
-    recipient,
+    control,
     index,
     onEdit,
     onRemove,
 }: {
-    recipient: RecipientDraft;
+    control: Control<FormValues>;
     index: number;
     onEdit?: () => void;
     onRemove?: () => void;
 }) {
     const { data: chains = [] } = useChains();
+    const name = useWatch({ control, name: `recipients.${index}.name` });
+    const address = useWatch({ control, name: `recipients.${index}.address` });
+    const networks = useWatch({
+        control,
+        name: `recipients.${index}.networks`,
+    });
 
-    const recipientChains = chains.filter((c) =>
-        recipient.networks.includes(c.key),
-    );
+    const recipientChains = chains.filter((c) => networks.includes(c.key));
 
     return (
         <div className="flex flex-col gap-2">
@@ -132,11 +159,11 @@ export function RecipientRow({
                 </div>
                 <div className="flex flex-1 flex-col items-end min-w-0">
                     <div className="flex items-center gap-2 w-full">
-                        <div className="flex flex-1 flex-col gap-0.5 min-w-0">
-                            <p className="text-xs font-semibold leading-[14px]">
-                                {recipient.name}
-                            </p>
-                            <Address address={recipient.address} />
+                        <div className="flex flex-1 flex-col gap-0 leading-none min-w-0">
+                            <p className="text-sm font-medium">{name}</p>
+                            <div className="text-xxs text-muted-foreground">
+                                <Address address={address} />
+                            </div>
                         </div>
                         <div className="flex flex-wrap gap-1 shrink-0">
                             {recipientChains.map((c) => (
@@ -144,6 +171,7 @@ export function RecipientRow({
                                     key={c.key}
                                     name={c.name}
                                     size="sm"
+                                    variant="secondary"
                                     iconDark={c.iconDark}
                                     iconLight={c.iconLight}
                                 />
@@ -182,155 +210,219 @@ export function RecipientRow({
     );
 }
 
-const EMPTY_DRAFT: RecipientDraft = { name: "", networks: [], address: "" };
+// ─── AddRecipientInput ─────────────────────────────────────────────────────────
 
-export function AddRecipientForm({
+const EMPTY_RECIPIENT = { name: "", networks: [] as string[], address: "" };
+
+interface AddRecipientInputProps {
+    control: Control<FormValues>;
+    activeIndex: number;
+    setActiveIndex: (index: number) => void;
+    handleBack?: () => void;
+    onReview: () => void;
+}
+
+export function AddRecipientInput({
+    control,
+    activeIndex,
+    setActiveIndex,
     handleBack,
-    handleNext,
-    recipients,
-    onRecipientsChange,
-}: AddRecipientFormProps) {
+    onReview,
+}: AddRecipientInputProps) {
     const { data: chains = [] } = useChains();
-    const [draft, setDraft] = useState<RecipientDraft>(EMPTY_DRAFT);
-    const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [isAddressValid, setIsAddressValid] = useState(false);
     const [isAddressValidating, setIsAddressValidating] = useState(false);
 
-    const isDraftValid =
-        draft.name.trim().length > 0 &&
-        draft.networks.length > 0 &&
-        draft.address.trim().length > 0 &&
+    const { formState, setError, clearErrors, getValues, setValue } =
+        useFormContext<FormValues>();
+
+    const { fields, append, remove } = useFieldArray({
+        control,
+        name: "recipients",
+    });
+
+    const activeAddress = useWatch({
+        control,
+        name: `recipients.${activeIndex}.address`,
+    });
+    const activeNetworks = useWatch({
+        control,
+        name: `recipients.${activeIndex}.networks`,
+    });
+
+    const isActiveValid =
+        !formState.errors.recipients?.[activeIndex] &&
+        !!getValues(`recipients.${activeIndex}.name`)?.trim() &&
         isAddressValid &&
-        !isAddressValidating;
+        !isAddressValidating &&
+        activeNetworks?.length > 0;
 
-    const handleAddressChange = (address: string) => {
-        setDraft((d) => ({ ...d, address, networks: [] }));
-        setIsAddressValid(false);
-    };
+    const canProceed =
+        fields.length > 1 || (fields.length === 1 && isActiveValid);
 
-    const handleAddressValid = (valid: boolean) => {
-        if (!valid) {
-            setIsAddressValid(false);
-            return;
-        }
-        // Only treat as valid if at least one known chain recognises this address
-        const compatible = getCompatibleChains(draft.address, chains);
-        setIsAddressValid(compatible.length > 0);
-    };
+    const handleAddressValid = useCallback(
+        (valid: boolean) => {
+            if (!valid) {
+                setIsAddressValid(false);
+                if (activeAddress) {
+                    setError(`recipients.${activeIndex}.address`, {
+                        message: "Invalid address",
+                    });
+                }
+                return;
+            }
+            const compatible = getCompatibleChains(activeAddress, chains);
+            if (compatible.length > 0) {
+                setIsAddressValid(true);
+                clearErrors(`recipients.${activeIndex}.address`);
+                const compatibleKeys = compatible.map((c) => c.key);
+                const currentNetworks = getValues(
+                    `recipients.${activeIndex}.networks`,
+                );
+                const stillValid = currentNetworks.filter((n) =>
+                    compatibleKeys.includes(n),
+                );
+                if (stillValid.length !== currentNetworks.length) {
+                    setValue(`recipients.${activeIndex}.networks`, stillValid);
+                }
+            } else {
+                setIsAddressValid(false);
+                setError(`recipients.${activeIndex}.address`, {
+                    message: "No compatible networks for this address",
+                });
+            }
+        },
+        [
+            activeAddress,
+            chains,
+            activeIndex,
+            setError,
+            clearErrors,
+            getValues,
+            setValue,
+        ],
+    );
 
-    const commitDraft = () => {
-        if (!isDraftValid) return;
-        if (editingIndex !== null) {
-            const updated = [...recipients];
-            updated[editingIndex] = draft;
-            onRecipientsChange(updated);
-            setEditingIndex(null);
-        } else {
-            onRecipientsChange([...recipients, draft]);
-        }
-        setDraft(EMPTY_DRAFT);
+    const handleCommit = () => {
+        if (!isActiveValid) return;
+        append(EMPTY_RECIPIENT);
+        setActiveIndex(fields.length);
         setIsAddressValid(false);
     };
 
     const handleEdit = (index: number) => {
-        if (draft.name || draft.address) {
-            if (isDraftValid) {
-                const updated = [...recipients];
-                if (editingIndex !== null) updated[editingIndex] = draft;
-                onRecipientsChange(updated);
-            }
-        }
-        setDraft(recipients[index]);
-        setEditingIndex(index);
+        setActiveIndex(index);
     };
 
     const handleRemove = (index: number) => {
-        onRecipientsChange(recipients.filter((_, i) => i !== index));
-        if (editingIndex === index) {
-            setDraft(EMPTY_DRAFT);
-            setEditingIndex(null);
-        }
+        remove(index);
+        const newActive =
+            activeIndex >= index && activeIndex > 0
+                ? activeIndex - 1
+                : activeIndex;
+        setActiveIndex(Math.min(newActive, fields.length - 2));
+        if (activeIndex === index) setIsAddressValid(false);
     };
-
-    const handleReview = () => {
-        if (isDraftValid) commitDraft();
-        setTimeout(() => handleNext?.(), 0);
-    };
-
-    const canProceed = recipients.length > 0 || isDraftValid;
 
     return (
         <div className="flex flex-col gap-4">
             <StepperHeader title="Add Recipient" handleBack={handleBack} />
 
             <div className="flex flex-col gap-2">
-                <InputBlock title="Recipient Name" invalid={false} interactive>
-                    <LargeInput
-                        borderless
-                        placeholder="Alice"
-                        value={draft.name}
-                        onChange={(e) =>
-                            setDraft((d) => ({ ...d, name: e.target.value }))
-                        }
-                    />
-                </InputBlock>
+                <FormField
+                    control={control}
+                    name={`recipients.${activeIndex}.name`}
+                    render={({ field, fieldState }) => (
+                        <FormItem>
+                            <InputBlock
+                                title="Recipient Name"
+                                invalid={!!fieldState.error}
+                                interactive
+                            >
+                                <LargeInput
+                                    borderless
+                                    placeholder="Alice"
+                                    {...field}
+                                />
+                                <FormMessage />
+                            </InputBlock>
+                        </FormItem>
+                    )}
+                />
 
-                <InputBlock
-                    title="Recipient Address"
-                    invalid={false}
-                    interactive
-                >
-                    <AccountInput
-                        blockchain="unknown"
-                        value={draft.address}
-                        setValue={handleAddressChange}
-                        setIsValid={handleAddressValid}
-                        setIsValidating={setIsAddressValidating}
-                        borderless
-                    />
-                </InputBlock>
+                <FormField
+                    control={control}
+                    name={`recipients.${activeIndex}.address`}
+                    render={({ field, fieldState }) => (
+                        <FormItem>
+                            <InputBlock
+                                title="Recipient Address"
+                                invalid={!!fieldState.error}
+                                interactive
+                            >
+                                <AccountInput
+                                    blockchain="unknown"
+                                    value={activeAddress}
+                                    setValue={field.onChange}
+                                    setIsValid={handleAddressValid}
+                                    setIsValidating={setIsAddressValidating}
+                                    validateOnMount={!!activeAddress}
+                                    borderless
+                                />
+                                <FormMessage />
+                            </InputBlock>
+                        </FormItem>
+                    )}
+                />
 
-                <InputBlock
-                    title="Network"
-                    info="Networks compatible with this address"
-                    invalid={false}
-                    interactive
-                >
-                    <NetworkSelect
-                        address={draft.address}
-                        selected={draft.networks}
-                        onChange={(networks) =>
-                            setDraft((d) => ({ ...d, networks }))
-                        }
-                        disabled={!isAddressValid}
-                    />
-                </InputBlock>
+                <FormField
+                    control={control}
+                    name={`recipients.${activeIndex}.networks`}
+                    render={({ field, fieldState }) => (
+                        <FormItem>
+                            <InputBlock
+                                title="Network"
+                                info="Networks compatible with this address"
+                                invalid={!!fieldState.error}
+                                interactive
+                            >
+                                <NetworkSelect
+                                    address={activeAddress}
+                                    selected={field.value ?? []}
+                                    onChange={field.onChange}
+                                    disabled={!isAddressValid}
+                                />
+                                <FormMessage />
+                            </InputBlock>
+                        </FormItem>
+                    )}
+                />
             </div>
 
             <Button
                 variant="ghost"
                 type="button"
                 className="w-full justify-start rounded-b-xl"
-                disabled={!isDraftValid}
+                disabled={!isActiveValid}
                 tooltipContent={
-                    !isDraftValid
+                    !isActiveValid
                         ? "You must fill out all fields to add a recipient."
                         : undefined
                 }
-                onClick={commitDraft}
+                onClick={handleCommit}
             >
                 <Plus className="size-4 text-foreground" />
                 <span className="text-foreground">Add Another Recipient</span>
             </Button>
 
-            {recipients.length > 0 && (
+            {fields.length > 0 && (
                 <div className="flex flex-col divide-y">
-                    {recipients.map((r, i) =>
-                        editingIndex !== i ? (
+                    {fields.map((field, i) =>
+                        i !== activeIndex ? (
                             <RecipientRow
-                                key={i}
+                                key={field.id}
                                 index={i}
-                                recipient={r}
+                                control={control}
                                 onEdit={() => handleEdit(i)}
                                 onRemove={() => handleRemove(i)}
                             />
@@ -343,7 +435,7 @@ export function AddRecipientForm({
                 <Button
                     className="w-full"
                     disabled={!canProceed}
-                    onClick={handleReview}
+                    onClick={onReview}
                 >
                     Review Details
                 </Button>

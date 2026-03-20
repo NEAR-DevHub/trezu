@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { PageCard } from "@/components/card";
@@ -9,11 +11,12 @@ import { AuthButton } from "@/components/auth-button";
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/button";
 import { FileDown, FileUp, Plus, Trash2 } from "lucide-react";
-import { StepWizard } from "@/components/step-wizard";
 import {
-    AddRecipientForm,
-    type RecipientDraft,
+    AddRecipientInput,
+    formSchema,
+    type FormValues,
 } from "@/features/address-book/components/add-recipient-form";
+import { Form } from "@/components/ui/form";
 import { ReviewRecipients } from "@/features/address-book/components/review-recipients";
 import { AddressBookTable } from "@/features/address-book/components/address-book-table";
 import { RemoveRecipientDialog } from "@/features/address-book/components/remove-recipient-dialog";
@@ -74,53 +77,59 @@ function AddRecipientFlow({
 }) {
     const { treasuryId } = useTreasury();
     const [step, setStep] = useState(0);
-    const [recipients, setRecipients] = useState<RecipientDraft[]>([]);
+    const [activeIndex, setActiveIndex] = useState(0);
     const createEntries = useCreateAddressBookEntries(treasuryId);
 
-    const steps = [
-        {
-            component: ({
-                handleBack,
-                handleNext,
-            }: {
-                handleBack?: () => void;
-                handleNext?: () => void;
-            }) => (
-                <AddRecipientForm
-                    handleBack={handleBack ?? onCancel}
-                    handleNext={handleNext}
-                    recipients={recipients}
-                    onRecipientsChange={setRecipients}
-                />
-            ),
+    const form = useForm<FormValues>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            recipients: [{ name: "", networks: [], address: "" }],
         },
-        {
-            component: ({ handleBack }: { handleBack?: () => void }) => (
-                <ReviewRecipients
-                    handleBack={handleBack}
-                    recipients={recipients}
-                    isSubmitting={createEntries.isPending}
-                    onSubmit={async (notes) => {
-                        if (!treasuryId) return;
-                        await createEntries.mutateAsync({
-                            daoId: treasuryId,
-                            entries: recipients.map((r, i) => ({
-                                name: r.name,
-                                networks: r.networks,
-                                address: r.address,
-                                note: notes[i] || undefined,
-                            })),
-                        });
-                        onDone();
-                    }}
-                />
-            ),
-        },
-    ];
+        mode: "onChange",
+    });
+
+    const handleReview = () => {
+        const filled = form
+            .getValues()
+            .recipients.filter((r) => r.name.trim() || r.address.trim());
+        form.reset({ recipients: filled });
+        setStep(1);
+    };
+
+    const recipients = form.watch("recipients");
 
     return (
         <PageCard className="w-full max-w-xl mx-auto flex flex-col gap-4 p-4">
-            <StepWizard steps={steps} step={step} onStepChange={setStep} />
+            <Form {...form}>
+                {step === 0 ? (
+                    <AddRecipientInput
+                        control={form.control}
+                        activeIndex={activeIndex}
+                        setActiveIndex={setActiveIndex}
+                        handleBack={onCancel}
+                        onReview={handleReview}
+                    />
+                ) : (
+                    <ReviewRecipients
+                        handleBack={() => setStep(0)}
+                        control={form.control}
+                        isSubmitting={createEntries.isPending}
+                        onSubmit={async (notes) => {
+                            if (!treasuryId) return;
+                            await createEntries.mutateAsync({
+                                daoId: treasuryId,
+                                entries: recipients.map((r, i) => ({
+                                    name: r.name,
+                                    networks: r.networks,
+                                    address: r.address,
+                                    note: notes[i] || undefined,
+                                })),
+                            });
+                            onDone();
+                        }}
+                    />
+                )}
+            </Form>
         </PageCard>
     );
 }

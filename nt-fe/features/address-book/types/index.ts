@@ -1,3 +1,13 @@
+import { z } from "zod";
+
+export const recipientSchema = z.object({
+    name: z.string().min(1, "Name is required"),
+    address: z.string().min(1, "Address is required"),
+    networks: z.array(z.string()).min(1, "Select at least one network"),
+});
+
+export type RecipientDraft = z.infer<typeof recipientSchema>;
+
 export interface AddressBookEntry {
     id: string;
     daoId: string;
