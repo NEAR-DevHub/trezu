@@ -74,6 +74,8 @@ struct IntentsTransaction {
     amount_in_formatted: String,
     amount_out_formatted: String,
     near_tx_hashes: Vec<String>,
+    #[serde(default)]
+    origin_chain_tx_hashes: Vec<String>,
 }
 
 /// A balance change record from the database
@@ -272,10 +274,20 @@ pub async fn detect_swaps_from_api(
         // 2. A raw FT transfer to the deposit address (e.g. DAO ft_transfer via proposal)
         //    In this case token_id is the raw contract address, and the deposit
         //    tx hash is near_tx_hashes[0] (the first hash in the intents API response).
+        // 3. A raw NEAR Transfer via DAO proposal (token_id = "near", origin_asset = "nep141:wrap.near")
+        //    In this case the deposit tx hash is in origin_chain_tx_hashes.
         let raw_token_id = api_tx
             .origin_asset
             .strip_prefix("nep141:")
             .unwrap_or(&api_tx.origin_asset);
+
+        // For wrap.near swaps, the balance change may have token_id "near" or "NEAR"
+        // ("NEAR" is the fallback when token_id is NULL in the DB)
+        let deposit_token_aliases: Vec<&str> = if raw_token_id == "wrap.near" {
+            vec!["wrap.near", "near", "NEAR"]
+        } else {
+            vec![raw_token_id]
+        };
 
         // First try: match intents-prefixed deposits
         let mut matching_deposit = deposits
@@ -288,20 +300,33 @@ pub async fn detect_swaps_from_api(
             .max_by_key(|d| d.block_height)
             .copied();
 
-        // Second try: match by deposit tx hash + raw token ID
-        if matching_deposit.is_none()
-            && let Some(deposit_tx) = api_tx.near_tx_hashes.first()
-            && let Some(deposit_records) = tx_to_records.get(deposit_tx)
-        {
-            matching_deposit = deposit_records
-                .iter()
-                .filter(|d| {
-                    !matched_deposit_ids.contains(&d.id)
-                        && d.is_negative()
-                        && d.token_id_str() == raw_token_id
-                })
-                .max_by_key(|d| d.block_height)
-                .copied();
+        // Collect candidate deposit tx hashes: nearTxHashes[0] + originChainTxHashes
+        let deposit_tx_candidates: Vec<&str> = api_tx
+            .near_tx_hashes
+            .first()
+            .into_iter()
+            .chain(api_tx.origin_chain_tx_hashes.iter())
+            .map(|s| s.as_str())
+            .collect();
+
+        // Second try: match by deposit tx hash + raw token ID (or "near" alias for wrap.near)
+        if matching_deposit.is_none() {
+            for deposit_tx in &deposit_tx_candidates {
+                if let Some(deposit_records) = tx_to_records.get(*deposit_tx) {
+                    matching_deposit = deposit_records
+                        .iter()
+                        .filter(|d| {
+                            !matched_deposit_ids.contains(&d.id)
+                                && d.is_negative()
+                                && deposit_token_aliases.contains(&d.token_id_str())
+                        })
+                        .max_by_key(|d| d.block_height)
+                        .copied();
+                    if matching_deposit.is_some() {
+                        break;
+                    }
+                }
+            }
         }
 
         if let Some(deposit) = matching_deposit {
@@ -401,12 +426,15 @@ pub async fn store_detected_swaps(
 
 /// Classify DAO proposal-based swap deposits by inspecting proposal descriptions.
 ///
-/// For balance changes with method_name='on_proposal_callback' that aren't already
-/// linked in detected_swaps, this fetches the transaction to extract the proposal ID,
-/// then fetches the proposal and checks if it's an asset-exchange.
+/// For balance changes with method_name='on_proposal_callback' or 'act_proposal'
+/// that aren't already linked in detected_swaps, this fetches the transaction to
+/// extract the proposal ID, then fetches the proposal and checks if it's an
+/// asset-exchange.
 ///
 /// This handles both fulfilled swaps (where the intents API didn't link the deposit)
 /// and unfulfilled swaps (where no intents API data exists yet).
+/// It also handles Transfer-type proposals (act_proposal with token_id='near')
+/// where NEAR is wrapped to wNEAR and deposited to intents.
 pub async fn classify_proposal_swap_deposits(
     pool: &PgPool,
     network: &near_api::NetworkConfig,
@@ -414,14 +442,14 @@ pub async fn classify_proposal_swap_deposits(
 ) -> Result<usize, Box<dyn Error + Send + Sync>> {
     use crate::handlers::proposals::scraper::{AssetExchangeInfo, ProposalType, fetch_proposal};
 
-    // Find on_proposal_callback balance changes not yet linked as deposits in detected_swaps
+    // Find on_proposal_callback/act_proposal balance changes not yet linked as deposits
     let unlinked_deposits = sqlx::query!(
         r#"
         SELECT bc.id, bc.account_id, bc.block_height, bc.token_id,
                bc.amount, bc.transaction_hashes, bc.signer_id, bc.receipt_id
         FROM balance_changes bc
         WHERE bc.account_id = $1
-          AND bc.method_name = 'on_proposal_callback'
+          AND bc.method_name IN ('on_proposal_callback', 'act_proposal')
           AND bc.amount < 0
           AND NOT EXISTS (
               SELECT 1 FROM detected_swaps ds
@@ -496,7 +524,13 @@ pub async fn classify_proposal_swap_deposits(
 
         // First, try to link to an existing intents API row that has NULL deposit_balance_change_id.
         // Match by account + sent token (intents-prefixed version) + amount.
-        let intents_token_id = format!("intents.near:nep141:{}", token_id);
+        // For NEAR Transfer proposals, token_id is "near" but intents uses "wrap.near".
+        let intents_raw_token = if token_id == "near" {
+            "wrap.near"
+        } else {
+            &token_id
+        };
+        let intents_token_id = format!("intents.near:nep141:{}", intents_raw_token);
         let linked = sqlx::query!(
             r#"
             UPDATE detected_swaps
@@ -526,6 +560,46 @@ pub async fn classify_proposal_swap_deposits(
                 deposit.id
             );
             continue;
+        }
+
+        // Fallback: for NEAR transfers the balance change amount doesn't exactly match
+        // the intents sent_amount (due to gas/storage). Try matching by token only.
+        if token_id == "near" {
+            let linked_approx = sqlx::query!(
+                r#"
+                UPDATE detected_swaps
+                SET deposit_balance_change_id = $1,
+                    deposit_receipt_id = $2
+                WHERE id = (
+                    SELECT id FROM detected_swaps
+                    WHERE account_id = $3
+                      AND deposit_balance_change_id IS NULL
+                      AND sent_token_id = $4
+                      AND block_height >= $5
+                    ORDER BY block_height ASC, id ASC
+                    LIMIT 1
+                )
+                "#,
+                deposit.id,
+                deposit_receipt_id,
+                account_id,
+                intents_token_id,
+                deposit.block_height,
+            )
+            .execute(pool)
+            .await;
+
+            if let Ok(r) = &linked_approx
+                && r.rows_affected() > 0
+            {
+                classified += 1;
+                log::info!(
+                    "[swap-classify] {}: Linked NEAR deposit bc_id={} to existing intents swap (approx)",
+                    account_id,
+                    deposit.id
+                );
+                continue;
+            }
         }
 
         // No existing intents row — create a new row for unfulfilled swaps.
