@@ -569,10 +569,15 @@ pub async fn classify_proposal_swap_deposits(
                 UPDATE detected_swaps
                 SET deposit_balance_change_id = $1,
                     deposit_receipt_id = $2
-                WHERE account_id = $3
-                  AND deposit_balance_change_id IS NULL
-                  AND sent_token_id = $4
-                  AND block_height >= $5
+                WHERE id = (
+                    SELECT id FROM detected_swaps
+                    WHERE account_id = $3
+                      AND deposit_balance_change_id IS NULL
+                      AND sent_token_id = $4
+                      AND block_height >= $5
+                    ORDER BY block_height ASC, id ASC
+                    LIMIT 1
+                )
                 "#,
                 deposit.id,
                 deposit_receipt_id,
