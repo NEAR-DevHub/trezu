@@ -332,7 +332,7 @@ export function PaymentFormSection<
                                 withLink={false}
                             />
                             {entryChains.length > 0 && (
-                                <div className="flex items-center gap-3.5 shrink-0">
+                                <div className="flex items-center gap-2 shrink-0">
                                     {entryChains.map((chain) => (
                                         <NetworkBadge
                                             key={chain.key}

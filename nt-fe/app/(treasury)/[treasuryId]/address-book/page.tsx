@@ -1,46 +1,46 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { FileDown, FileUp, Loader2, Plus, Trash2 } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { PageCard } from "@/components/card";
-import { PageComponentLayout } from "@/components/page-component-layout";
 import { AuthButton } from "@/components/auth-button";
+import { PageCard } from "@/components/card";
 import { EmptyState } from "@/components/empty-state";
-import { FileDown, FileUp, Loader2, Plus, Trash2 } from "lucide-react";
+import { ResponsiveInput } from "@/components/input";
+import { NumberBadge } from "@/components/number-badge";
+import { PageComponentLayout } from "@/components/page-component-layout";
+import { TableSkeleton } from "@/components/table-skeleton";
+import { Form } from "@/components/ui/form";
+import {
+    type AddressBookEntry,
+    type RecipientDraft,
+    useAddressBook,
+    useCreateAddressBookEntries,
+    useDeleteAddressBookEntries,
+    useExportAddressBook,
+} from "@/features/address-book";
+import { useChains } from "@/features/address-book/chains";
 import {
     AddRecipientInput,
-    formSchema,
     type FormValues,
+    formSchema,
 } from "@/features/address-book/components/add-recipient-form";
-import { Form } from "@/components/ui/form";
-import { ReviewRecipients } from "@/features/address-book/components/review-recipients";
 import { AddressBookTable } from "@/features/address-book/components/address-book-table";
-import { RemoveRecipientDialog } from "@/features/address-book/components/remove-recipient-dialog";
 import {
     ImportUploadStep,
     type ParsedRecipient,
 } from "@/features/address-book/components/import-recipients-flow";
-import {
-    useCreateAddressBookEntries,
-    useAddressBook,
-    useDeleteAddressBookEntries,
-    useExportAddressBook,
-    type RecipientDraft,
-    type AddressBookEntry,
-} from "@/features/address-book";
-import { useChains } from "@/features/address-book/chains";
-import { useTreasury } from "@/hooks/use-treasury";
-import { TableSkeleton } from "@/components/table-skeleton";
-import { ResponsiveInput } from "@/components/input";
-import { NumberBadge } from "@/components/number-badge";
-import { useMediaQuery } from "@/hooks/use-media-query";
+import { RemoveRecipientDialog } from "@/features/address-book/components/remove-recipient-dialog";
+import { ReviewRecipients } from "@/features/address-book/components/review-recipients";
 import {
     buildNetworkLookup,
     resolveNetworkName,
 } from "@/features/address-book/utils/resolve-network";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { useTreasury } from "@/hooks/use-treasury";
+import { cn } from "@/lib/utils";
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
@@ -283,9 +283,15 @@ function RecipientsView({
     }
 
     function handleSend(entry: AddressBookEntry) {
-        router.push(
-            `/${treasuryId}/payments?address=${encodeURIComponent(entry.address)}`,
-        );
+        const params = new URLSearchParams({
+            address: entry.address,
+        });
+
+        if (entry.networks.length > 0) {
+            params.set("networks", entry.networks.join(","));
+        }
+
+        router.push(`/${treasuryId}/payments?${params.toString()}`);
     }
 
     return (

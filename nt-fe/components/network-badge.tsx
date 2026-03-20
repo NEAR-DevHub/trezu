@@ -32,7 +32,7 @@ const iconSizeMap = {
     lg: "size-6",
     default: "size-4",
     sm: "size-3",
-    icon: "size-3",
+    icon: "size-4",
 } as const;
 
 interface NetworkBadgeProps extends VariantProps<typeof networkBadgeVariants> {
