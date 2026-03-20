@@ -116,55 +116,82 @@ Both headers are sent together — `x-api-key` for API identification, Bearer JW
 
 6. Tokens stored in HTTP-only cookies, auto-refresh when within 60s of expiry
 
-### Core Operations
+### Core Operations — Actual API Flow (from HAR analysis)
 
-There are two distinct flow patterns depending on whether an **on-chain deposit** is needed:
+> **Important correction (2026-03-20):** The public 1Click API at `1click.chaindefuser.com` does NOT accept `CONFIDENTIAL_INTENTS` as a value for depositType/recipientType/refundType. The `/v0/generate-intent` endpoint returns 404 on the public API. near.com's server actions wrap the 1Click API with their own abstractions.
 
-#### Flow A: Shield (public → private) — requires on-chain deposit
+The actual shield flow observed via HAR capture of `near.com/transfer/confidential?mode=shield`:
+
+#### Shield (public → private)
+
+**Step 1 — Quote** (`POST /v0/quote`):
+Uses standard `INTENTS` types. The confidential routing is implicit — the returned `depositAddress` IS the hex confidential/FAR chain address.
+```json
+{
+  "dry": false,
+  "swapType": "EXACT_INPUT",
+  "slippageTolerance": 100,
+  "originAsset": "nep141:wrap.near",
+  "depositType": "INTENTS",
+  "destinationAsset": "nep141:wrap.near",
+  "amount": "100000000000000000000000",
+  "refundTo": "petersalomonsen.near",
+  "refundType": "INTENTS",
+  "recipient": "petersalomonsen.near",
+  "recipientType": "INTENTS",
+  "deadline": "2026-03-20T05:33:53.238Z",
+  "quoteWaitingTimeMs": 5000
+}
 ```
-depositType: INTENTS
-recipientType: CONFIDENTIAL_INTENTS
-refundType: CONFIDENTIAL_INTENTS
-```
-1. Get quote → receive `depositAddress`
-2. Generate intent → sign with wallet (NEP-413) → submit signed intent
-3. **Submit on-chain deposit tx** (transfer tokens to `depositAddress`)
-4. Poll execution status
+Response includes `quote.depositAddress` = `"086db130..."` (hex FAR chain address).
 
-**DAO flow:** The proposal must include BOTH the `v1.signer` call (to sign the intent) AND a token transfer to the deposit address. The backend submits the signed intent to 1Click API, then the on-chain transfer executes as part of the same proposal.
-
-#### Flow B: Operations with confidential source — API-only, no on-chain tx
-
-When `depositType: CONFIDENTIAL_INTENTS`, funds are already in the confidential ledger. The wallet signature (off-chain) authorizes the movement — **no NEAR transaction hits the chain**.
-
-##### Unshield (private → public)
-```
-depositType: CONFIDENTIAL_INTENTS
-recipientType: INTENTS
-refundType: CONFIDENTIAL_INTENTS
+**Step 2 — Construct intent** (client-side, NOT a separate API call):
+The intent is built directly from the quote response:
+```json
+{
+  "deadline": "<quote.deadline>",
+  "intents": [{
+    "intent": "transfer",
+    "receiver_id": "<quote.depositAddress>",
+    "tokens": { "<token_id>": "<amount>" }
+  }],
+  "signer_id": "<account_id>"
+}
 ```
 
-##### Private Transfer (private → private, different recipient)
-```
-depositType: CONFIDENTIAL_INTENTS
-recipientType: CONFIDENTIAL_INTENTS
-refundType: CONFIDENTIAL_INTENTS
-recipient: "near:recipient.near"
-```
+**Step 3 — Sign** (NEP-413 wallet signing):
+The intent JSON is wrapped as a NEP-413 message with `recipient: "intents.near"`.
 
-##### Confidential Swap (private, token A → token B)
+**Step 4 — Submit** (`POST /v0/submit-intent` or near.com server action):
+```json
+[{
+  "signedIntent": {
+    "standard": "nep413",
+    "payload": { "message": "<intent JSON>", "nonce": "...", "recipient": "intents.near" },
+    "public_key": "ed25519:...",
+    "signature": "ed25519:..."
+  }
+}]
 ```
-depositType: CONFIDENTIAL_INTENTS
-recipientType: CONFIDENTIAL_INTENTS
-refundType: CONFIDENTIAL_INTENTS
-```
+Response: `{ "intentHash": "...", "correlationId": "..." }`
 
-**Steps (same for all three):**
-1. Get quote (requires JWT auth)
-2. Generate intent → sign → submit signed intent
-3. Poll execution status
+**Step 5 — Poll status** (using `depositAddress`):
+`PENDING_DEPOSIT` → `PROCESSING` → `SUCCESS`
 
-**DAO flow:** The proposal only needs to call `v1.signer` to produce the signature. The backend then submits the signed intent to the 1Click API. No on-chain token movement needed.
+#### DAO flow implications
+
+Since the intent is a simple `transfer` on `intents.near`, the DAO flow for shield is:
+1. Backend gets quote (standard `INTENTS` types) → gets `depositAddress`
+2. Backend constructs the transfer intent payload
+3. DAO proposal calls `v1.signer` to sign the intent (NEP-413)
+4. Backend submits the signed intent
+5. Backend polls until SUCCESS
+
+No on-chain token transfer to a deposit address — the intent system handles the movement internally via the signed transfer.
+
+#### Unshield / Private Transfer / Swap
+
+These flows are not yet verified via HAR. They likely follow a similar pattern but may require JWT authentication for the quote (since they read confidential state). To be confirmed.
 
 ### Quote Request Shape
 ```typescript
