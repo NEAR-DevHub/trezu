@@ -7,9 +7,28 @@ import {
     exportAddressBook,
 } from "../api";
 import type {
+    AddressBookEntry,
     AddressBookEntryInput,
     CreateAddressBookEntriesInput,
 } from "../types";
+
+async function invalidateProfilesForAddresses(
+    queryClient: ReturnType<typeof useQueryClient>,
+    daoId: string | null | undefined,
+    addresses: string[],
+) {
+    if (!daoId || addresses.length === 0) return;
+
+    const uniqueAddresses = [...new Set(addresses.filter(Boolean))];
+
+    await Promise.all(
+        uniqueAddresses.map((address) =>
+            queryClient.invalidateQueries({
+                queryKey: ["profile", address, daoId],
+            }),
+        ),
+    );
+}
 
 export function useCreateAddressBookEntries(daoId: string | null | undefined) {
     const queryClient = useQueryClient();
@@ -23,9 +42,16 @@ export function useCreateAddressBookEntries(daoId: string | null | undefined) {
                     ? "Recipient added"
                     : `${created.length} recipients added`,
             );
-            await queryClient.invalidateQueries({
-                queryKey: ["address-book", daoId],
-            });
+            await Promise.all([
+                queryClient.invalidateQueries({
+                    queryKey: ["address-book", daoId],
+                }),
+                invalidateProfilesForAddresses(
+                    queryClient,
+                    daoId,
+                    created.map((entry) => entry.address),
+                ),
+            ]);
         },
         onError: () => {
             toast.error("Failed to add recipients");
@@ -44,11 +70,16 @@ export function useCreateAddressBookEntry(daoId: string | null | undefined) {
             daoId: string;
             entry: AddressBookEntryInput;
         }) => createAddressBookEntry(inputDaoId, entry),
-        onSuccess: async () => {
+        onSuccess: async (created) => {
             toast.success("Recipient added");
-            await queryClient.invalidateQueries({
-                queryKey: ["address-book", daoId],
-            });
+            await Promise.all([
+                queryClient.invalidateQueries({
+                    queryKey: ["address-book", daoId],
+                }),
+                invalidateProfilesForAddresses(queryClient, daoId, [
+                    created.address,
+                ]),
+            ]);
         },
         onError: () => {
             toast.error("Failed to add recipient");
@@ -60,16 +91,41 @@ export function useDeleteAddressBookEntries(daoId: string | null | undefined) {
     const queryClient = useQueryClient();
 
     return useMutation({
+        onMutate: (ids) => {
+            const cachedLists = queryClient.getQueriesData<AddressBookEntry[]>({
+                queryKey: ["address-book", daoId],
+            });
+            const deletedAddresses = new Set<string>();
+
+            for (const [, entries] of cachedLists) {
+                if (!entries) continue;
+
+                for (const entry of entries) {
+                    if (ids.includes(entry.id)) {
+                        deletedAddresses.add(entry.address);
+                    }
+                }
+            }
+
+            return { deletedAddresses: [...deletedAddresses] };
+        },
         mutationFn: (ids: string[]) => deleteAddressBookEntries(ids),
-        onSuccess: async (_, ids) => {
+        onSuccess: async (_, ids, context) => {
             toast.success(
                 ids.length === 1
                     ? "Recipient removed"
                     : `${ids.length} recipients removed`,
             );
-            await queryClient.invalidateQueries({
-                queryKey: ["address-book", daoId],
-            });
+            await Promise.all([
+                queryClient.invalidateQueries({
+                    queryKey: ["address-book", daoId],
+                }),
+                invalidateProfilesForAddresses(
+                    queryClient,
+                    daoId,
+                    context?.deletedAddresses ?? [],
+                ),
+            ]);
         },
         onError: () => {
             toast.error("Failed to remove recipients");

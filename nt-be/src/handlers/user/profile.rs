@@ -33,6 +33,7 @@ pub struct ProfileData {
     pub description: Option<String>,
     pub linktree: Option<serde_json::Value>,
     pub tags: Option<serde_json::Value>,
+    pub is_in_address_book: bool,
 }
 
 const SOCIAL_DB_CONTRACT: &str = "social.near";
@@ -75,6 +76,7 @@ async fn fetch_profile(state: &Arc<AppState>, account_id: &str) -> Result<Profil
             .map(String::from),
         linktree: profile.get("linktree").cloned(),
         tags: profile.get("tags").cloned(),
+        is_in_address_book: false,
     };
 
     Ok(profile_data)
@@ -110,20 +112,24 @@ pub async fn get_profile(
 
     // If the caller is authenticated and provided a dao_id, check whether the
     // address has an address book entry in that treasury and use its name.
-    if let (Some(user), Some(dao_id)) = (auth.0, params.dao_id) {
-        if user.verify_dao_member(&state.db_pool, &dao_id).await.is_ok() {
-            let ab_name = sqlx::query_scalar!(
-                "SELECT name FROM address_book WHERE dao_id = $1 AND address = $2",
-                dao_id,
-                params.account_id.trim()
-            )
-            .fetch_optional(&state.db_pool)
+    if let (Some(user), Some(dao_id)) = (auth.0, params.dao_id)
+        && user
+            .verify_dao_member(&state.db_pool, &dao_id)
             .await
-            .unwrap_or(None);
+            .is_ok()
+    {
+        let ab_name = sqlx::query_scalar!(
+            "SELECT name FROM address_book WHERE dao_id = $1 AND address = $2",
+            dao_id,
+            params.account_id.trim()
+        )
+        .fetch_optional(&state.db_pool)
+        .await
+        .unwrap_or(None);
 
-            if let Some(name) = ab_name {
-                profile.name = Some(name);
-            }
+        if let Some(name) = ab_name {
+            profile.name = Some(name);
+            profile.is_in_address_book = true;
         }
     }
 

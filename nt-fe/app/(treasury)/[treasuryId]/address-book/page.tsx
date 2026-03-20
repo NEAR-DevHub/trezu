@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { PageCard } from "@/components/card";
 import { PageComponentLayout } from "@/components/page-component-layout";
@@ -28,13 +28,19 @@ import {
     useAddressBook,
     useDeleteAddressBookEntries,
     useExportAddressBook,
+    type RecipientDraft,
     type AddressBookEntry,
 } from "@/features/address-book";
+import { useChains } from "@/features/address-book/chains";
 import { useTreasury } from "@/hooks/use-treasury";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { ResponsiveInput } from "@/components/input";
 import { NumberBadge } from "@/components/number-badge";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import {
+    buildNetworkLookup,
+    resolveNetworkName,
+} from "@/features/address-book/utils/resolve-network";
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
@@ -80,10 +86,12 @@ function AddressBookEmptyState({
 
 function RecipientFlow({
     mode,
+    initialRecipient,
     onDone,
     onCancel,
 }: {
     mode: "add" | "import";
+    initialRecipient?: RecipientDraft | null;
     onDone: () => void;
     onCancel: () => void;
 }) {
@@ -92,14 +100,27 @@ function RecipientFlow({
     const [activeIndex, setActiveIndex] = useState(0);
     const [importNotes, setImportNotes] = useState<Record<number, string>>({});
     const createEntries = useCreateAddressBookEntries(treasuryId);
+    const defaultValues = useMemo(
+        () => ({
+            recipients: [
+                initialRecipient ?? { name: "", networks: [], address: "" },
+            ],
+        }),
+        [initialRecipient],
+    );
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
-        defaultValues: {
-            recipients: [{ name: "", networks: [], address: "" }],
-        },
+        defaultValues,
         mode: "onChange",
     });
+
+    useEffect(() => {
+        form.reset(defaultValues);
+        setStep(0);
+        setActiveIndex(0);
+        setImportNotes({});
+    }, [defaultValues, form]);
 
     // Manual add: filter empty rows → review
     const handleManualReview = () => {
@@ -423,10 +444,81 @@ function RecipientsView({
 
 export default function AddressBookPage() {
     const { treasuryId } = useTreasury();
+    const pathname = usePathname();
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const { data: entries, isLoading } = useAddressBook(treasuryId);
+    const { data: chains = [], isLoading: isChainsLoading } = useChains();
     const [flowMode, setFlowMode] = useState<"add" | "import" | null>(null);
+    const [initialRecipient, setInitialRecipient] =
+        useState<RecipientDraft | null>(null);
 
     const hasEntries = (entries?.length ?? 0) > 0;
+    const prefilledRecipient = useMemo(() => {
+        const address = searchParams.get("address")?.trim();
+        if (!address) return null;
+
+        const rawNetworks = (
+            searchParams.get("networks") ??
+            searchParams.get("network") ??
+            ""
+        )
+            .split(",")
+            .map((network) => network.trim())
+            .filter(Boolean);
+
+        if (rawNetworks.length > 0 && isChainsLoading && chains.length === 0) {
+            return null;
+        }
+
+        const networkLookup = buildNetworkLookup(chains);
+        const networks = rawNetworks
+            .map((network) => resolveNetworkName(network, networkLookup))
+            .filter((network): network is string => Boolean(network));
+
+        return {
+            name: searchParams.get("name")?.trim() || address,
+            address,
+            networks,
+        };
+    }, [chains, isChainsLoading, searchParams]);
+
+    const clearPrefillParams = useCallback(() => {
+        const nextParams = new URLSearchParams(searchParams.toString());
+        for (const key of ["name", "address", "network", "networks"]) {
+            nextParams.delete(key);
+        }
+
+        const nextQuery = nextParams.toString();
+        router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
+            scroll: false,
+        });
+    }, [pathname, router, searchParams]);
+
+    useEffect(() => {
+        if (!prefilledRecipient) return;
+
+        setInitialRecipient(prefilledRecipient);
+        setFlowMode("add");
+    }, [prefilledRecipient]);
+
+    const handleAdd = useCallback(() => {
+        setInitialRecipient(null);
+        setFlowMode("add");
+        clearPrefillParams();
+    }, [clearPrefillParams]);
+
+    const handleImport = useCallback(() => {
+        setInitialRecipient(null);
+        setFlowMode("import");
+        clearPrefillParams();
+    }, [clearPrefillParams]);
+
+    const handleCloseFlow = useCallback(() => {
+        setFlowMode(null);
+        setInitialRecipient(null);
+        clearPrefillParams();
+    }, [clearPrefillParams]);
 
     return (
         <PageComponentLayout
@@ -436,18 +528,16 @@ export default function AddressBookPage() {
             {flowMode ? (
                 <RecipientFlow
                     mode={flowMode}
-                    onDone={() => setFlowMode(null)}
-                    onCancel={() => setFlowMode(null)}
+                    initialRecipient={initialRecipient}
+                    onDone={handleCloseFlow}
+                    onCancel={handleCloseFlow}
                 />
             ) : isLoading || hasEntries ? (
-                <RecipientsView
-                    onAdd={() => setFlowMode("add")}
-                    onImport={() => setFlowMode("import")}
-                />
+                <RecipientsView onAdd={handleAdd} onImport={handleImport} />
             ) : (
                 <AddressBookEmptyState
-                    onAdd={() => setFlowMode("add")}
-                    onImport={() => setFlowMode("import")}
+                    onAdd={handleAdd}
+                    onImport={handleImport}
                 />
             )}
         </PageComponentLayout>

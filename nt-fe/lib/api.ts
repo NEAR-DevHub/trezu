@@ -607,6 +607,7 @@ export interface ProfileData {
     description?: string;
     linktree?: any;
     tags?: any;
+    isInAddressBook?: boolean;
 }
 
 /**

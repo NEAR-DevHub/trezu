@@ -1,7 +1,9 @@
+import { ContactRound } from "lucide-react";
 import { useProfile } from "@/hooks/use-treasury-queries";
 import { useTreasury } from "@/hooks/use-treasury";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { Button } from "./button";
 import { Tooltip, TooltipProps } from "./tooltip";
 import { Separator } from "./ui/separator";
 import { Skeleton } from "./ui/skeleton";
@@ -115,6 +117,7 @@ export function UserWithData({
             <TooltipUser
                 accountId={address}
                 name={name}
+                chainName={chainName}
                 triggerProps={{ asChild: false }}
             >
                 {userElement}
@@ -130,6 +133,7 @@ export function UserWithData({
 interface TooltipUserProps {
     accountId: string;
     name?: string;
+    chainName?: string;
     children: React.ReactNode;
     triggerProps?: TooltipProps["triggerProps"];
 }
@@ -137,9 +141,26 @@ interface TooltipUserProps {
 export function TooltipUser({
     accountId,
     name,
+    chainName = "near",
     children,
     triggerProps,
 }: TooltipUserProps) {
+    const { treasuryId } = useTreasury();
+    const { data: profile, isLoading: isProfileLoading } = useProfile(
+        accountId,
+        treasuryId,
+    );
+    const isSavedInAddressBook = profile?.isInAddressBook ?? false;
+    const addressBookParams = new URLSearchParams({
+        name: name ?? profile?.name ?? accountId,
+        address: accountId,
+    });
+    addressBookParams.set("network", chainName);
+
+    const addToAddressBookUrl = treasuryId
+        ? `/${treasuryId}/address-book?${addressBookParams.toString()}`
+        : null;
+
     return (
         <Tooltip
             content={
@@ -151,13 +172,21 @@ export function TooltipUser({
                         withLink={false}
                     />
                     <Separator className="h-0.5!" />
-                    <div className="flex items-center gap-2 w-full justify-start py-1">
+                    <div className="flex flex-col gap-1">
+                        {!isProfileLoading &&
+                            !isSavedInAddressBook &&
+                            addToAddressBookUrl && (
+                                <Button asChild type="button" variant="ghost">
+                                    <Link href={addToAddressBookUrl}>
+                                        <ContactRound className="size-4" />
+                                        Save to Address book
+                                    </Link>
+                                </Button>
+                            )}
                         <CopyButton
                             text={accountId}
                             toastMessage="Wallet address copied to clipboard"
                             variant="ghost"
-                            size="icon"
-                            className="h-auto w-auto p-0"
                         >
                             <span className="break-all">
                                 Copy Wallet Address
@@ -166,6 +195,7 @@ export function TooltipUser({
                     </div>
                 </div>
             }
+            contentProps={{ className: "max-w-72 min-w-60" }}
             triggerProps={triggerProps}
         >
             {children}
