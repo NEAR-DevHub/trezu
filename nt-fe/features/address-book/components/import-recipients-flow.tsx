@@ -17,10 +17,7 @@ const TEMPLATE_CSV = `Recipient Name,Recipient Address,Network,Note (optional)
 alice,alice.near,Near,Payroll
 bob,0x82bAFB7aC512C62160C218bf184A3823AF60e9aD,Ethereum;BNB,Payroll
 charlie,F4k6615fhQZerPEGyhhfyfkZR7p8Fd1RK2jdegRcg2Qo,Solana,`;
-
-const PASTE_PLACEHOLDER = `alice, alice.near, Near, Payroll
-bob, 0x82bA..., Ethereum, Payroll
-charlie, F4k6..., Solana,`;
+const PLACEHOLDER_CSV = TEMPLATE_CSV.split("\n").slice(1).join("\n");
 
 interface ImportUploadStepProps {
     handleBack: () => void;
@@ -86,7 +83,7 @@ export function ImportUploadStep({
         <div className="flex flex-col gap-4">
             <StepperHeader
                 title="Import Recipients"
-                description="Upload a list of recipient addresses to quickly add multiple contacts to your address book."
+                description="Upload a list of recipient addresses to your address book."
                 handleBack={handleBack}
             />
 
@@ -102,7 +99,7 @@ export function ImportUploadStep({
                     onUploadedFileNameChange={setUploadedFileName}
                     templateCsvContent={TEMPLATE_CSV}
                     templateFileName="address_book_import_template.csv"
-                    pastePlaceholder={PASTE_PLACEHOLDER}
+                    pastePlaceholder={PLACEHOLDER_CSV}
                     errors={hasErrors ? preview.errors : dataErrors}
                     onErrorsClear={() => setDataErrors(null)}
                 />
