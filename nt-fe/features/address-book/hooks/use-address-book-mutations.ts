@@ -4,6 +4,7 @@ import {
     createAddressBookEntries,
     createAddressBookEntry,
     deleteAddressBookEntries,
+    exportAddressBook,
 } from "../api";
 import type {
     AddressBookEntryInput,
@@ -72,6 +73,19 @@ export function useDeleteAddressBookEntries(daoId: string | null | undefined) {
         },
         onError: () => {
             toast.error("Failed to remove recipients");
+        },
+    });
+}
+
+export function useExportAddressBook(daoId: string | null | undefined) {
+    return useMutation({
+        mutationFn: (ids?: string[]) => {
+            if (!daoId)
+                return Promise.reject(new Error("No treasury selected"));
+            return exportAddressBook(daoId, ids);
+        },
+        onError: () => {
+            toast.error("Failed to export recipients");
         },
     });
 }

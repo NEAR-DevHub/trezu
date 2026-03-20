@@ -46,3 +46,27 @@ export async function deleteAddressBookEntries(ids: string[]): Promise<void> {
         withCredentials: true,
     });
 }
+
+export async function exportAddressBook(
+    daoId: string,
+    ids?: string[],
+): Promise<void> {
+    const params: Record<string, string> = { daoId };
+    if (ids && ids.length > 0) {
+        params.ids = ids.join(",");
+    }
+    const response = await axios.get(
+        `${BACKEND_API_BASE}/address-book/export`,
+        {
+            params,
+            withCredentials: true,
+            responseType: "blob",
+        },
+    );
+    const url = URL.createObjectURL(response.data);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "address-book.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+}

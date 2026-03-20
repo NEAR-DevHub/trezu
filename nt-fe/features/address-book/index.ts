@@ -4,6 +4,7 @@ export {
     createAddressBookEntries,
     createAddressBookEntry,
     deleteAddressBookEntries,
+    exportAddressBook,
 } from "./api";
 
 // Types
@@ -20,4 +21,5 @@ export {
     useCreateAddressBookEntries,
     useCreateAddressBookEntry,
     useDeleteAddressBookEntries,
+    useExportAddressBook,
 } from "./hooks/use-address-book-mutations";

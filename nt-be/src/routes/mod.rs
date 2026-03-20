@@ -299,6 +299,10 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
                 .post(handlers::address_book::create_address_book_entries)
                 .delete(handlers::address_book::delete_address_book_entries),
         )
+        .route(
+            "/api/address-book/export",
+            get(handlers::address_book::export_address_book),
+        )
         // DAO endpoints
         .route(
             "/api/dao/mark-dirty",

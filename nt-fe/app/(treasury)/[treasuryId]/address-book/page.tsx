@@ -21,12 +21,14 @@ import {
     useCreateAddressBookEntries,
     useAddressBook,
     useDeleteAddressBookEntries,
+    useExportAddressBook,
     type AddressBookEntry,
 } from "@/features/address-book";
 import { useTreasury } from "@/hooks/use-treasury";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { ResponsiveInput } from "@/components/input";
 import { NumberBadge } from "@/components/number-badge";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
@@ -132,6 +134,7 @@ function RecipientsView({ onAdd }: { onAdd: () => void }) {
     const router = useRouter();
     const { data: entries = [], isLoading } = useAddressBook(treasuryId);
     const deleteEntries = useDeleteAddressBookEntries(treasuryId);
+    const exportEntries = useExportAddressBook(treasuryId);
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -141,6 +144,7 @@ function RecipientsView({ onAdd }: { onAdd: () => void }) {
     );
     const [bulkDeleteCount, setBulkDeleteCount] = useState(0);
     const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const isMobile = useMediaQuery("(max-width: 640px)");
 
     const handleSearchChange = useCallback((value: string) => {
         setSearch(value);
@@ -195,6 +199,12 @@ function RecipientsView({ onAdd }: { onAdd: () => void }) {
         setBulkDeleteCount(0);
     }
 
+    async function handleExport() {
+        await exportEntries.mutateAsync(
+            hasSelection ? [...selectedIds] : undefined,
+        );
+    }
+
     function handleSend(entry: AddressBookEntry) {
         router.push(
             `/${treasuryId}/payments?address=${encodeURIComponent(entry.address)}`,
@@ -218,13 +228,23 @@ function RecipientsView({ onAdd }: { onAdd: () => void }) {
                             <AuthButton
                                 permissionKind="any"
                                 permissionAction=""
+                                variant="secondary"
+                                size={isMobile ? "icon" : "default"}
+                                onClick={handleExport}
+                            >
+                                <FileDown className="size-4" />
+                                <span className="hidden sm:inline">Export</span>
+                            </AuthButton>
+                            <AuthButton
+                                permissionKind="any"
+                                permissionAction=""
                                 variant="outline-destructive"
-                                size="sm"
-                                className="h-9 w-full sm:w-auto"
+                                size={isMobile ? "icon" : "default"}
                                 disabled={deleteEntries.isPending}
                                 onClick={() => handleRemoveSelected()}
                             >
-                                <Trash2 className="w-4 h-4 mr-1" /> Remove
+                                <Trash2 className="size-4" />
+                                <span className="hidden sm:flex">Remove</span>
                             </AuthButton>
                         </div>
                     </>
@@ -254,24 +274,29 @@ function RecipientsView({ onAdd }: { onAdd: () => void }) {
                                 }
                                 onSearchActiveChange={setMobileSearchActive}
                             />
-                            <Button
+                            <AuthButton
+                                permissionKind="any"
+                                permissionAction=""
                                 variant="secondary"
                                 className={cn(
                                     "gap-1.5",
-                                    mobileSearchActive && "hidden md:flex",
+                                    mobileSearchActive && "hidden sm:flex",
                                 )}
+                                size={isMobile ? "icon" : "default"}
+                                onClick={handleExport}
                             >
-                                <FileDown className="size-3.5" />
+                                <FileDown className="size-4" />
                                 <span className="hidden sm:inline">Export</span>
-                            </Button>
+                            </AuthButton>
                             <Button
                                 variant="secondary"
                                 className={cn(
                                     "gap-1.5",
-                                    mobileSearchActive && "hidden md:flex",
+                                    mobileSearchActive && "hidden sm:flex",
                                 )}
+                                size={isMobile ? "icon" : "default"}
                             >
-                                <FileUp className="size-3.5" />
+                                <FileUp className="size-4" />
                                 <span className="hidden sm:inline">Import</span>
                             </Button>
                             <AuthButton
@@ -279,11 +304,12 @@ function RecipientsView({ onAdd }: { onAdd: () => void }) {
                                 permissionAction=""
                                 className={cn(
                                     "gap-1.5",
-                                    mobileSearchActive && "hidden md:flex",
+                                    mobileSearchActive && "hidden sm:flex",
                                 )}
+                                size={isMobile ? "icon" : "default"}
                                 onClick={onAdd}
                             >
-                                <Plus className="size-3.5" />
+                                <Plus className="size-4" />
                                 <span className="hidden sm:inline">
                                     Add Recipient
                                 </span>
