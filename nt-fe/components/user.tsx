@@ -146,10 +146,8 @@ export function TooltipUser({
     triggerProps,
 }: TooltipUserProps) {
     const { treasuryId } = useTreasury();
-    const { data: profile, isLoading: isProfileLoading } = useProfile(
-        accountId,
-        treasuryId,
-    );
+    const { data: profile, isLoading: isProfileLoading } =
+        useProfile(accountId);
     const isSavedInAddressBook = profile?.isInAddressBook ?? false;
     const addressBookParams = new URLSearchParams({
         name: name ?? profile?.name ?? accountId,
@@ -227,10 +225,8 @@ export function User({
     withHoverCard = false,
     chainName = "near",
 }: UserProps) {
-    const { treasuryId } = useTreasury();
     const { data: profile, isLoading } = useProfile(
         withName && !nameProp ? accountId : undefined,
-        treasuryId,
     );
 
     if (isLoading) {

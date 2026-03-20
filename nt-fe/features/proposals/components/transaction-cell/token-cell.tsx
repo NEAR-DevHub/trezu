@@ -1,32 +1,60 @@
-import { PaymentRequestData, VestingData, StakingData } from "../../types/index";
+import {
+    PaymentRequestData,
+    VestingData,
+    StakingData,
+} from "../../types/index";
 import { Amount } from "../amount";
 import { TooltipUser } from "@/components/user";
 import { TitleSubtitleCell } from "./title-subtitle-cell";
+import { useProfile } from "@/hooks/use-treasury-queries";
 
 interface TokenCellProps {
-  data: PaymentRequestData | VestingData | StakingData;
-  prefix?: string;
-  isUser?: boolean;
-  timestamp?: string;
-  textOnly?: boolean;
+    data: PaymentRequestData | VestingData | StakingData;
+    prefix?: string;
+    isUser?: boolean;
+    timestamp?: string;
+    textOnly?: boolean;
 }
 
+export function TokenCell({
+    data,
+    prefix = "To:",
+    isUser = true,
+    timestamp,
+    textOnly = false,
+}: TokenCellProps) {
+    const title = (
+        <Amount
+            amount={data.amount}
+            tokenId={data.tokenId}
+            showUSDValue={false}
+            iconSize="sm"
+            textOnly={textOnly}
+        />
+    );
+    const { data: profile } = useProfile(data.receiver);
+    const address = profile?.isInAddressBook
+        ? (profile?.name ?? data.receiver)
+        : data.receiver;
 
-export function TokenCell({ data, prefix = "To:", isUser = true, timestamp, textOnly = false }: TokenCellProps) {
-  const title = <Amount amount={data.amount} tokenId={data.tokenId} showUSDValue={false} iconSize="sm" textOnly={textOnly} />;
+    const subtitle = data.receiver ? (
+        <>
+            {prefix}
+            {isUser ? (
+                <TooltipUser accountId={data.receiver}>
+                    <span> {address}</span>
+                </TooltipUser>
+            ) : (
+                ` ${address}`
+            )}
+        </>
+    ) : undefined;
 
-  const subtitle = data.receiver ? (
-    <>
-      {prefix}
-      {isUser ? <TooltipUser accountId={data.receiver}><span> {data.receiver}</span></TooltipUser> : ` ${data.receiver}`}
-    </>
-  ) : undefined;
-
-  return (
-    <TitleSubtitleCell
-      title={title}
-      subtitle={subtitle}
-      timestamp={timestamp}
-    />
-  );
+    return (
+        <TitleSubtitleCell
+            title={title}
+            subtitle={subtitle}
+            timestamp={timestamp}
+        />
+    );
 }
