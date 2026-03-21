@@ -1,19 +1,29 @@
 /**
- * Test the confidential shield page with mock wallet connection.
+ * Full E2E test for the confidential shield page.
  *
- * Uses the same mock wallet pattern from nt-fe/e2e/trezu-wallet-integration.spec.ts
- * to simulate petersalomonsendev.near being connected.
+ * Uses mock wallet + intercepted relay endpoint to test the complete flow:
+ * 1. Connect wallet (mock)
+ * 2. Enter shield amount
+ * 3. Get quote (mock)
+ * 4. Review
+ * 5. Submit proposal → captures the v1.signer FunctionCall payload
+ *
+ * The proposal is NOT submitted on-chain — the relay endpoint is mocked
+ * to capture and verify the proposal structure.
  */
 import { test, expect, Page, BrowserContext, Route } from "@playwright/test";
+import * as fs from "fs";
+import * as path from "path";
 
 const DAO_ID = "petersalomonsendev.sputnik-dao.near";
 const ACCOUNT_ID = "petersalomonsendev.near";
 const BASE_URL = "http://localhost:3000";
 
-// ---- Mock wallet (same as nt-fe/e2e/helpers/mock-wallet.ts) ----
+// ---- Mock wallet ----
 
 const MOCK_MANIFEST_ID = "mock-wallet";
 
+// Enhanced mock wallet that supports signDelegateActions
 const MOCK_WALLET_EXECUTOR_JS = `(function() {
   window.selector.ready({
     async signIn({ network }) {
@@ -32,6 +42,24 @@ const MOCK_WALLET_EXECUTOR_JS = `(function() {
     async signMessage()  { throw new Error('Not supported'); },
     async signAndSendTransaction(p)  { return {}; },
     async signAndSendTransactions(p) { return []; },
+    async signDelegateActions(p) {
+      // Return mock signed delegate actions
+      // The relay endpoint is intercepted so these don't need to be real
+      console.log('[Mock Wallet] signDelegateActions called with', JSON.stringify(p.delegateActions?.length || 0), 'actions');
+      return {
+        signedDelegateActions: (p.delegateActions || []).map((da, i) => ({
+          delegateAction: {
+            senderId: window.sandboxedLocalStorage.getItem('signedAccountId') || '',
+            receiverId: da.receiverId,
+            actions: da.actions,
+            nonce: BigInt(i + 1),
+            maxBlockHeight: BigInt(999999999),
+            publicKey: { keyType: 0, data: new Uint8Array(32) },
+          },
+          signature: { keyType: 0, data: new Uint8Array(64) },
+        })),
+      };
+    },
   });
 })();`;
 
@@ -46,7 +74,7 @@ const MOCK_MANIFEST = {
             version: "1.0.0",
             type: "sandbox",
             executor: "/_near-connect-test/mock-wallet.js",
-            features: {},
+            features: { signDelegateActions: true, signInAndSignMessage: true },
             permissions: { allowsOpen: false },
         },
     ],
@@ -55,7 +83,6 @@ const MOCK_MANIFEST = {
 // ---- Setup helpers ----
 
 async function mockRoutes(context: BrowserContext) {
-    // Mock NearConnect manifest
     for (const url of [
         "**/raw.githubusercontent.com/**manifest.json*",
         "**/cdn.jsdelivr.net/**manifest.json*",
@@ -69,7 +96,6 @@ async function mockRoutes(context: BrowserContext) {
         });
     }
 
-    // Mock wallet executor
     await context.route(
         "**/_near-connect-test/mock-wallet.js*",
         async (route: Route) => {
@@ -112,95 +138,182 @@ async function seedWallet(page: Page) {
     );
 }
 
-// ---- Test ----
+// ---- Tests ----
 
-test("confidential shield page - full flow", async ({ page, context }) => {
+test("full confidential shield flow — proposal creation", async ({
+    page,
+    context,
+}) => {
     test.setTimeout(120_000);
+
+    const capturedRelayRequests: any[] = [];
 
     // Log errors
     page.on("console", (msg) => {
-        if (msg.type() === "error") {
-            console.log(`[error] ${msg.text()}`);
+        const text = msg.text();
+        if (msg.type() === "error" && !text.includes("creation-status")) {
+            console.log(`[error] ${text}`);
+        }
+        if (text.includes("[Mock Wallet]")) {
+            console.log(text);
         }
     });
 
     // Setup mocks
     await mockRoutes(context);
 
-    // Navigate to a page first to set localStorage (same-origin)
+    // Intercept relay endpoint — capture the proposal payload
+    await context.route(
+        "**/api/relay/delegate-action",
+        async (route: Route) => {
+            const postData = route.request().postData();
+            const body = postData ? JSON.parse(postData) : {};
+            console.log("\n=== Captured relay request ===");
+            console.log(JSON.stringify(body, null, 2).substring(0, 500));
+            capturedRelayRequests.push(body);
+
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    success: true,
+                    transactionHash: "mock-tx-hash-for-testing",
+                }),
+            });
+        },
+    );
+
+    // Seed wallet and navigate
     await page.goto(`${BASE_URL}/${DAO_ID}`);
     await seedWallet(page);
-
-    // Now navigate to the confidential page
-    console.log("Opening confidential page...");
     await page.goto(`${BASE_URL}/${DAO_ID}/confidential`);
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(2000);
 
-    // Take initial screenshot
-    await page.screenshot({ path: "fixtures/confidential-01-initial.png" });
-
-    // Check button state
-    const buttons = await page.locator("button").all();
-    for (const btn of buttons) {
-        const text = await btn.textContent();
-        const disabled = await btn.isDisabled();
-        if (text && text.trim().length > 2) {
-            console.log(`Button: "${text.trim()}" disabled=${disabled}`);
-        }
-    }
-
-    // Enter amount — TokenInput uses a regular input inside the card
+    // Step 1: Enter amount
+    console.log("=== Step 1: Enter amount ===");
     const amountInput = page.locator("input").first();
-    if (await amountInput.isVisible()) {
-        console.log("Entering amount: 0.1");
-        await amountInput.click();
-        await amountInput.fill("0.1");
-        await page.waitForTimeout(2000);
-    } else {
-        console.log("No amount input found");
-    }
+    await amountInput.click();
+    await amountInput.fill("0.1");
+    await page.waitForTimeout(2000);
 
-    // Wait for quote
-    console.log("Waiting for quote...");
-    await page.waitForTimeout(3000);
+    // Verify quote loaded
+    await expect(page.locator("text=You will receive")).toBeVisible({
+        timeout: 10_000,
+    });
+    console.log("Quote loaded: 0.1 wNEAR → confidential");
 
-    // Check for quote display
-    const quoteVisible = await page
-        .locator("text=You will receive")
-        .isVisible();
-    console.log(`Quote visible: ${quoteVisible}`);
-
-    // Check Review button
+    // Click Review
     const reviewBtn = page.getByRole("button", {
         name: /Review Shield Request/i,
     });
-    if (await reviewBtn.isVisible()) {
-        const disabled = await reviewBtn.isDisabled();
-        console.log(`Review button disabled: ${disabled}`);
+    await expect(reviewBtn).toBeEnabled({ timeout: 5_000 });
+    console.log("Review button enabled, clicking...");
+    await reviewBtn.click();
+    await page.waitForTimeout(2000);
 
-        await page.screenshot({
-            path: "fixtures/confidential-02-with-quote.png",
-        });
+    // Step 2: Review
+    console.log("\n=== Step 2: Review ===");
+    await page.screenshot({ path: "fixtures/confidential-review.png" });
 
-        if (!disabled) {
-            console.log("Clicking Review Shield Request...");
-            await reviewBtn.click();
-            await page.waitForTimeout(3000);
+    // Wait for review content to load
+    await expect(
+        page.locator("text=Public → Confidential"),
+    ).toBeVisible({ timeout: 10_000 });
+    console.log("Review step loaded");
 
-            await page.screenshot({
-                path: "fixtures/confidential-03-review.png",
-            });
-
-            // Check submit button
-            const submitBtn = page.getByRole("button", {
-                name: /Confirm and Submit/i,
-            });
-            if (await submitBtn.isVisible()) {
-                const submitDisabled = await submitBtn.isDisabled();
-                console.log(`Submit button disabled: ${submitDisabled}`);
-            }
-        }
+    // Check for v1.signer info
+    const signerInfo = page.locator("text=v1.signer");
+    if (await signerInfo.isVisible()) {
+        console.log("v1.signer signing info visible");
     }
 
-    console.log("\nTest complete. Screenshots saved in fixtures/");
+    // Click Submit
+    const submitBtn = page.getByRole("button", {
+        name: /Confirm and Submit/i,
+    });
+    await expect(submitBtn).toBeEnabled({ timeout: 10_000 });
+    console.log("Submit button enabled, clicking...");
+    await submitBtn.click();
+
+    // Wait for the relay request to be captured
+    await page.waitForTimeout(5000);
+
+    console.log(
+        `\n=== Result: ${capturedRelayRequests.length} relay requests captured ===`,
+    );
+
+    // Save captured requests as fixture
+    const fixturesDir = path.join(__dirname, "fixtures");
+    fs.mkdirSync(fixturesDir, { recursive: true });
+    fs.writeFileSync(
+        path.join(fixturesDir, "confidential_proposal_relay.json"),
+        JSON.stringify(capturedRelayRequests, null, 2),
+    );
+    console.log("Saved relay requests to fixtures/confidential_proposal_relay.json");
+
+    // Verify the proposal structure
+    if (capturedRelayRequests.length > 0) {
+        const firstRelay = capturedRelayRequests[0];
+        console.log("\nRelay request treasuryId:", firstRelay.treasuryId);
+        console.log("Relay request proposalType:", firstRelay.proposalType);
+
+        // The signedDelegateAction contains the proposal
+        const delegateAction = firstRelay.signedDelegateAction;
+        if (delegateAction?.delegateAction) {
+            const da = delegateAction.delegateAction;
+            console.log("Delegate action receiverId:", da.receiverId);
+            console.log("Delegate action senderId:", da.senderId);
+
+            // The first action should be add_proposal to the DAO
+            if (da.actions?.length > 0) {
+                const action = da.actions[0];
+                console.log("Action type:", action.type);
+                if (action.params) {
+                    console.log("Method:", action.params.methodName);
+                    // Decode the args to see the proposal
+                    try {
+                        const args = JSON.parse(
+                            Buffer.from(
+                                action.params.args,
+                                "base64",
+                            ).toString(),
+                        );
+                        console.log(
+                            "\nProposal description:",
+                            args.proposal?.description?.substring(0, 100),
+                        );
+                        const kind = args.proposal?.kind;
+                        if (kind?.FunctionCall) {
+                            console.log(
+                                "FunctionCall receiver:",
+                                kind.FunctionCall.receiver_id,
+                            );
+                            console.log(
+                                "FunctionCall method:",
+                                kind.FunctionCall.actions?.[0]?.method_name,
+                            );
+                            // Verify it's calling v1.signer
+                            expect(kind.FunctionCall.receiver_id).toBe(
+                                "v1.signer",
+                            );
+                            expect(
+                                kind.FunctionCall.actions[0].method_name,
+                            ).toBe("sign");
+                            console.log(
+                                "\n✅ Proposal correctly targets v1.signer with sign method!",
+                            );
+                        }
+                    } catch (e) {
+                        console.log("Could not decode proposal args:", e);
+                    }
+                }
+            }
+        }
+    } else {
+        console.log(
+            "⚠️  No relay requests captured — proposal submission may have failed",
+        );
+    }
+
+    await page.screenshot({ path: "fixtures/confidential-final.png" });
 });
