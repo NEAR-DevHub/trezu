@@ -1228,6 +1228,52 @@ export async function getIntentsQuote(
     }
 }
 
+// ======================================================================
+// Confidential Intents API
+// ======================================================================
+
+export interface GenerateIntentPayload {
+    message: string; // JSON string of the intent
+    nonce: string; // base64-encoded versioned nonce
+    recipient: string; // "intents.near"
+}
+
+export interface GenerateIntentResponse {
+    intent: {
+        standard: string; // "nep413"
+        payload: GenerateIntentPayload;
+    };
+    correlationId: string;
+}
+
+/**
+ * Generate a NEP-413 intent payload to sign.
+ * Called after getting a quote — uses the depositAddress from the quote.
+ */
+export async function generateIntent(request: {
+    type: string;
+    standard: string;
+    depositAddress: string;
+    signerId: string;
+}): Promise<GenerateIntentResponse> {
+    const url = `${BACKEND_API_BASE}/intents/generate-intent`;
+    const response = await axios.post<GenerateIntentResponse>(url, request);
+    return response.data;
+}
+
+/**
+ * Submit a signed intent for execution.
+ * Called after the DAO proposal is executed and MPC signature is obtained.
+ */
+export async function submitIntent(request: {
+    type: string;
+    signedData: any;
+}): Promise<{ intentHash: string; correlationId: string }> {
+    const url = `${BACKEND_API_BASE}/intents/submit-intent`;
+    const response = await axios.post(url, request);
+    return response.data;
+}
+
 /**
  * Receipt Search Result
  */
