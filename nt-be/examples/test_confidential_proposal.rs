@@ -103,11 +103,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Step 3: Building DAO proposal ===\n");
 
     // The proposal calls v1.signer::sign with the NEP-413 hash
+    // v1.signer uses payload_v2 with Eddsa variant (hex-encoded) and domain_id=1
     let signer_args = json!({
         "request": {
-            "payload": hash_array.iter().map(|b| *b as u64).collect::<Vec<_>>(),
+            "payload_v2": {
+                "Eddsa": hex::encode(&hash_array),
+            },
             "path": DAO_ID,
-            "key_version": 0,
+            "domain_id": 1,
         }
     });
 
