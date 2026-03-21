@@ -22,7 +22,11 @@ use serde_json::{Value, json};
 const ACCOUNT_ID: &str = "petersalomonsendev.near";
 const DAO_ID: &str = "petersalomonsendev.sputnik-dao.near";
 const MPC_PUBLIC_KEY: &str = "ed25519:7pPtVUyLDRXvzkgAUtfGeUK9ZWaSWd256tSgvazfZKZg";
-const ONECLICK_AUTH_URL: &str = "https://1click-test.chaindefuser.com";
+// Read from env or default to test API
+fn oneclick_url() -> String {
+    std::env::var("ONECLICK_API_URL")
+        .unwrap_or_else(|_| "https://1click-test.chaindefuser.com".to_string())
+}
 const SHIELD_AMOUNT: &str = "10000000000000000000000"; // 0.01 wNEAR
 
 #[derive(borsh::BorshSerialize)]
@@ -35,7 +39,7 @@ struct NEP413Payload {
 
 /// Fetch salt from intents.near
 async fn fetch_salt(client: &reqwest::Client) -> [u8; 4] {
-    let resp = client.post("https://rpc.mainnet.near.org")
+    let resp = client.post("https://rpc.mainnet.fastnear.com")
         .json(&json!({"jsonrpc":"2.0","id":1,"method":"query","params":{
             "request_type":"call_function","finality":"optimistic",
             "account_id":"intents.near","method_name":"current_salt",
@@ -99,7 +103,7 @@ async fn create_and_approve_proposal(
         .send_to(&near_api::NetworkConfig::mainnet()).await.unwrap();
 
     // Get proposal ID
-    let resp = client.post("https://rpc.mainnet.near.org")
+    let resp = client.post("https://rpc.mainnet.fastnear.com")
         .json(&json!({"jsonrpc":"2.0","id":1,"method":"query","params":{
             "request_type":"call_function","finality":"final",
             "account_id": DAO_ID, "method_name":"get_last_proposal_id",
@@ -112,7 +116,7 @@ async fn create_and_approve_proposal(
     println!("  Proposal ID: {}", proposal_id);
 
     // Fetch proposal kind
-    let resp = client.post("https://rpc.mainnet.near.org")
+    let resp = client.post("https://rpc.mainnet.fastnear.com")
         .json(&json!({"jsonrpc":"2.0","id":1,"method":"query","params":{
             "request_type":"call_function","finality":"final",
             "account_id": DAO_ID, "method_name":"get_proposal",
@@ -203,7 +207,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    let auth_resp = client.post(format!("{}/v0/auth/authenticate", ONECLICK_AUTH_URL))
+    let auth_resp = client.post(format!("{}/v0/auth/authenticate", oneclick_url()))
         .header("content-type", "application/json")
         .header("x-api-key", &api_key)
         .json(&auth_body).send().await?;
@@ -227,9 +231,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let quote_deadline = (chrono::Utc::now() + chrono::Duration::hours(24))
         .format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string();
 
-    // Note: CONFIDENTIAL_INTENTS is feature-gated on the API key.
-    // Using INTENTS→INTENTS to prove the full pipeline works.
-    // When our API key gets confidential access, just change recipientType/refundType.
     let quote_body = json!({
         "dry": false,
         "swapType": "EXACT_INPUT",
@@ -239,14 +240,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "destinationAsset": "nep141:wrap.near",
         "amount": SHIELD_AMOUNT,
         "refundTo": DAO_ID,
-        "refundType": "INTENTS",
+        "refundType": "CONFIDENTIAL_INTENTS",
         "recipient": DAO_ID,
-        "recipientType": "INTENTS",
+        "recipientType": "CONFIDENTIAL_INTENTS",
         "deadline": quote_deadline,
         "quoteWaitingTimeMs": 5000,
     });
 
-    let quote_resp = client.post(format!("{}/v0/quote", ONECLICK_AUTH_URL))
+    let quote_resp = client.post(format!("{}/v0/quote", oneclick_url()))
         .header("content-type", "application/json")
         .header("x-api-key", &api_key)
         .header("Authorization", format!("Bearer {}", access_token))
@@ -278,7 +279,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "signerId": DAO_ID,
     });
 
-    let gen_resp = client.post(format!("{}/v0/generate-intent", ONECLICK_AUTH_URL))
+    let gen_resp = client.post(format!("{}/v0/generate-intent", oneclick_url()))
         .header("content-type", "application/json")
         .header("x-api-key", &api_key)
         .header("Authorization", format!("Bearer {}", access_token))
@@ -371,7 +372,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    let submit_resp = client.post(format!("{}/v0/submit-intent", ONECLICK_AUTH_URL))
+    let submit_resp = client.post(format!("{}/v0/submit-intent", oneclick_url()))
         .header("content-type", "application/json")
         .header("x-api-key", &api_key)
         .header("Authorization", format!("Bearer {}", access_token))
@@ -428,7 +429,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     for i in 0..30 {
         let status_resp = client.get(format!(
             "{}/v0/status?depositAddress={}",
-            ONECLICK_AUTH_URL, deposit_address
+            oneclick_url(), deposit_address
         ))
         .header("x-api-key", &api_key)
         .header("Authorization", format!("Bearer {}", access_token))

@@ -1,7 +1,6 @@
 {
-  "error": "Unauthorized",
-  "message": "Invalid token",
+  "correlationId": "c266a637-4a44-4abf-86e0-3255278ab0cc",
+  "message": "Confidential intents are not enabled for you",
   "path": "/v0/quote",
-  "statusCode": 401,
-  "timestamp": "2026-03-21T09:58:34.694Z"
+  "timestamp": "2026-03-21T18:31:39.915Z"
 }
