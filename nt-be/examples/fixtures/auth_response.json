@@ -1,0 +1,6 @@
+{
+  "accessToken": "REDACTED_ACCESS_TOKEN",
+  "expiresIn": 900,
+  "refreshExpiresIn": 604800,
+  "refreshToken": "REDACTED_REFRESH_TOKEN"
+}
