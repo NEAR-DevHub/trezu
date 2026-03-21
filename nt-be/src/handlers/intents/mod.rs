@@ -1,6 +1,8 @@
 pub mod authenticate;
 pub mod balances;
 pub mod bridge_tokens;
+#[cfg(test)]
+mod confidential_shield_test;
 pub mod deposit_address;
 pub mod generate_intent;
 pub mod quote;
