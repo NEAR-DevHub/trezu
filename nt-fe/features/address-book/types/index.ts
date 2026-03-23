@@ -1,7 +1,15 @@
 import { z } from "zod";
 
+export const RECIPIENT_NAME_MAX_LENGTH = 64;
+
 export const recipientSchema = z.object({
-    name: z.string().min(1, "Name is required"),
+    name: z
+        .string()
+        .min(1, "Name is required")
+        .max(
+            RECIPIENT_NAME_MAX_LENGTH,
+            `Recipient must be less than ${RECIPIENT_NAME_MAX_LENGTH} characters`,
+        ),
     address: z.string().min(1, "Address is required"),
     networks: z.array(z.string()).min(1, "Select at least one network"),
 });

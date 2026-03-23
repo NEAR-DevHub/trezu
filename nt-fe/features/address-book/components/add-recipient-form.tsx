@@ -24,7 +24,7 @@ import {
 import { FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { NumberBadge } from "@/components/number-badge";
 import { Address } from "@/components/address";
-import { recipientSchema } from "../types";
+import { recipientSchema, RECIPIENT_NAME_MAX_LENGTH } from "../types";
 import { useMediaQuery } from "@/hooks/use-media-query";
 
 // ─── Form schema ───────────────────────────────────────────────────────────────
@@ -164,10 +164,10 @@ export function RecipientRow({
                     <NumberBadge number={index + 1} variant="secondary" />
                 </div>
                 <div className="flex flex-1 flex-col items-end min-w-0">
-                    <div className="flex items-center md:flex-row flex-col gap-2 w-full">
+                    <div className="flex items-center gap-2 w-full">
                         <div className="flex flex-1 items-start gap-1 min-w-0">
                             <div className="flex items-center gap-2">
-                                <div className="flex flex-1 flex-col gap-0 leading-none min-w-0">
+                                <div className="flex flex-1 flex-col gap-0 leading-none min-w-0 max-w-36 md:max-w-72">
                                     <p className="text-sm font-medium truncate">
                                         {name}
                                     </p>
@@ -357,6 +357,7 @@ export function AddRecipientInput({
                                 <LargeInput
                                     borderless
                                     placeholder="Alice"
+                                    maxLength={RECIPIENT_NAME_MAX_LENGTH}
                                     {...field}
                                 />
                                 <FormMessage />
