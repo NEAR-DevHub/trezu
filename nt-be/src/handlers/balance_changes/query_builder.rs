@@ -17,7 +17,7 @@ pub const FROM_ACCOUNT_EXPR: &str = "CASE \
             ), \
             signer_id \
         ) \
-        ELSE signer_id \
+        ELSE account_id \
     END";
 pub const TO_ACCOUNT_EXPR: &str = "CASE \
         WHEN amount > 0 THEN account_id \
@@ -222,7 +222,7 @@ pub fn build_where_conditions(filters: &BalanceChangeFilters) -> (Vec<String>, u
 
     // "From" filter:
     // - Incoming rows: counterparty (unless UNKNOWN), fallback to signer_id
-    // - Outgoing rows: signer_id
+    // - Outgoing rows: account_id (DAO)
     if filters.from_accounts.is_some() {
         conditions.push(format!("({}) = ANY(${})", FROM_ACCOUNT_EXPR, param_index));
         param_index += 1;
