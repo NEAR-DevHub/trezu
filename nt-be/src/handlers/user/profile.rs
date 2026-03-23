@@ -18,7 +18,7 @@ use crate::{
 pub struct ProfileQuery {
     pub account_id: String,
     /// When provided and the caller is an authenticated DAO member, the address
-    /// book name for this treasury will override the NEAR Social profile name.
+    /// book name for this treasury will be returned as `addressBookName`.
     pub dao_id: Option<String>,
 }
 
@@ -32,6 +32,7 @@ pub struct BatchProfileQuery {
 #[serde(rename_all = "camelCase")]
 pub struct ProfileData {
     pub name: Option<String>,
+    pub address_book_name: Option<String>,
     pub image: Option<serde_json::Value>,
     pub background_image: Option<String>,
     pub description: Option<String>,
@@ -69,6 +70,7 @@ async fn fetch_profile(state: &Arc<AppState>, account_id: &str) -> Result<Profil
             .get("name")
             .and_then(|v| v.as_str())
             .map(String::from),
+        address_book_name: None,
         image: profile.get("image").cloned(),
         background_image: profile
             .get("backgroundImage")
@@ -115,7 +117,7 @@ pub async fn get_profile(
         .await?;
 
     // If the caller is authenticated and provided a dao_id, check whether the
-    // address has an address book entry in that treasury and use its name.
+    // address has an address book entry in that treasury.
     if let (Some(user), Some(dao_id)) = (auth.0, params.dao_id)
         && user
             .verify_dao_member(&state.db_pool, &dao_id)
@@ -132,7 +134,7 @@ pub async fn get_profile(
         .unwrap_or(None);
 
         if let Some(name) = ab_name {
-            profile.name = Some(name);
+            profile.address_book_name = Some(name);
             profile.is_in_address_book = true;
         }
     }

@@ -10,7 +10,10 @@ interface VestingExpandedProps {
 
 export function VestingExpanded({ data }: VestingExpandedProps) {
     const infoItems: InfoItem[] = [
-        { label: "Recipient", value: <User accountId={data.receiver} /> },
+        {
+            label: "Recipient",
+            value: <User accountId={data.receiver} useAddressBook />,
+        },
         {
             label: "Amount",
             value: (

@@ -62,6 +62,7 @@ interface UserWithDataProps {
     withLink?: boolean;
     withHoverCard?: boolean;
     chainName?: string;
+    useAddressBook?: boolean;
 }
 
 export function UserWithData({
@@ -72,6 +73,7 @@ export function UserWithData({
     withLink = true,
     withHoverCard = false,
     chainName = "near",
+    useAddressBook = false,
 }: UserWithDataProps) {
     const image = `https://i.near.social/magic/large/https://near.social/magic/img/account/${address}`;
     const explorerUrl = getExplorerAddressUrl(chainName, address);
@@ -118,6 +120,7 @@ export function UserWithData({
                 accountId={address}
                 name={name}
                 chainName={chainName}
+                useAddressBook={useAddressBook}
                 triggerProps={{ asChild: false }}
             >
                 {userElement}
@@ -134,6 +137,7 @@ interface TooltipUserProps {
     accountId: string;
     name?: string;
     chainName?: string;
+    useAddressBook?: boolean;
     children: React.ReactNode;
     triggerProps?: TooltipProps["triggerProps"];
 }
@@ -142,10 +146,11 @@ export function TooltipUser({
     accountId,
     name,
     chainName = "near",
+    useAddressBook = false,
     children,
     triggerProps,
 }: TooltipUserProps) {
-    const { treasuryId } = useTreasury();
+    const { treasuryId, isGuestTreasury } = useTreasury();
     const { data: profile, isLoading: isProfileLoading } =
         useProfile(accountId);
     const isSavedInAddressBook = profile?.isInAddressBook ?? false;
@@ -166,6 +171,7 @@ export function TooltipUser({
                     <User
                         accountId={accountId}
                         name={name}
+                        useAddressBook={useAddressBook}
                         size="lg"
                         withLink={false}
                     />
@@ -173,7 +179,8 @@ export function TooltipUser({
                     <div className="flex flex-col gap-1">
                         {!isProfileLoading &&
                             !isSavedInAddressBook &&
-                            addToAddressBookUrl && (
+                            addToAddressBookUrl &&
+                            !isGuestTreasury && (
                                 <Button asChild type="button" variant="ghost">
                                     <Link href={addToAddressBookUrl}>
                                         <ContactRound className="size-4" />
@@ -207,6 +214,8 @@ interface UserProps {
     accountId: string;
     /** Override the display name instead of fetching from profile */
     name?: string;
+    /** Prefer treasury address-book name when available */
+    useAddressBook?: boolean;
     iconOnly?: boolean;
     withName?: boolean;
     size?: UserSize;
@@ -218,6 +227,7 @@ interface UserProps {
 export function User({
     accountId,
     name: nameProp,
+    useAddressBook = false,
     iconOnly = false,
     size = "sm",
     withLink = true,
@@ -235,12 +245,18 @@ export function User({
         );
     }
 
-    const resolvedName = nameProp ?? profile?.name ?? accountId;
+    const resolvedName =
+        nameProp ??
+        (useAddressBook
+            ? (profile?.addressBookName ?? profile?.name)
+            : profile?.name) ??
+        accountId;
 
     return (
         <UserWithData
             name={resolvedName}
             address={accountId}
+            useAddressBook={useAddressBook}
             size={size}
             iconOnly={iconOnly}
             withLink={withLink}
