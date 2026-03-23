@@ -1,25 +1,35 @@
-"use client"
+"use client";
 
-import type { CardComponentProps } from "nextstepjs"
-import { useNextStep } from "nextstepjs"
-import { X } from "lucide-react"
-import { Button } from "@/components/button"
-import { cn } from "@/lib/utils"
-import { useSidebarStore } from "@/stores/sidebar-store"
-import { TOUR_NAMES, SELECTOR_IDS } from "../steps/dashboard"
+import type { CardComponentProps } from "nextstepjs";
+import { useNextStep } from "nextstepjs";
+import { useRouter } from "next/navigation";
+import { X } from "lucide-react";
+import { Button } from "@/components/button";
+import { useTreasury } from "@/hooks/use-treasury";
+import { cn } from "@/lib/utils";
+import { useSidebarStore } from "@/stores/sidebar-store";
+import { TOUR_NAMES, SELECTOR_IDS } from "../steps/dashboard";
+import { NEW_FEATURE_ANNOUNCEMENT } from "../steps/page-tours";
 
 // Steps that require the sidebar to be open (0-indexed) for different tours
 const SIDEBAR_STEPS_MAP: Record<string, readonly number[]> = {
     [TOUR_NAMES.DASHBOARD]: [3, 4],
     [TOUR_NAMES.INFO_BOX_DISMISSED]: [0],
-}
+};
 
 // Steps that require clicking the treasury selector (0-indexed) for different tours
 const TREASURY_SELECTOR_MAP: Record<string, readonly number[]> = {
     [TOUR_NAMES.DASHBOARD]: [4],
-}
+};
 
-export const SIDEBAR_ANIMATION_DELAY = 350
+const TOUR_ACTIONS = {
+    [NEW_FEATURE_ANNOUNCEMENT.tourName]: {
+        getHref: (treasuryId?: string | null) =>
+            NEW_FEATURE_ANNOUNCEMENT.href(treasuryId),
+    },
+} as const;
+
+export const SIDEBAR_ANIMATION_DELAY = 350;
 
 export function TourCard({
     step,
@@ -29,53 +39,80 @@ export function TourCard({
     skipTour,
     arrow,
 }: CardComponentProps) {
-    const { setCurrentStep, currentTour } = useNextStep()
-    const setSidebarOpen = useSidebarStore((state) => state.setSidebarOpen)
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024
+    const { setCurrentStep, currentTour } = useNextStep();
+    const router = useRouter();
+    const { treasuryId } = useTreasury();
+    const setSidebarOpen = useSidebarStore((state) => state.setSidebarOpen);
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 1024;
 
-    const isLastStep = currentStep === totalSteps - 1
-    const tourName = currentTour
-    const sidebarSteps = SIDEBAR_STEPS_MAP[tourName as keyof typeof SIDEBAR_STEPS_MAP] || []
-    const treasurySelectorSteps = TREASURY_SELECTOR_MAP[tourName as keyof typeof TREASURY_SELECTOR_MAP] || []
+    const isLastStep = currentStep === totalSteps - 1;
+    const tourName = currentTour;
+    const sidebarSteps =
+        SIDEBAR_STEPS_MAP[tourName as keyof typeof SIDEBAR_STEPS_MAP] || [];
+    const treasurySelectorSteps =
+        TREASURY_SELECTOR_MAP[tourName as keyof typeof TREASURY_SELECTOR_MAP] ||
+        [];
+    const tourAction = TOUR_ACTIONS[tourName as keyof typeof TOUR_ACTIONS];
 
     const handleNext = () => {
-        const nextStepIndex = currentStep + 1
+        const nextStepIndex = currentStep + 1;
 
         // If next step needs sidebar, open it and delay the step change
         if (sidebarSteps.includes(nextStepIndex)) {
             if (isMobile) {
-                setSidebarOpen(true)
+                setSidebarOpen(true);
             }
             // If next step needs treasury selector click, handle it specially
             if (treasurySelectorSteps.includes(nextStepIndex)) {
                 setTimeout(() => {
-                    const trigger = document.getElementById(SELECTOR_IDS.DASHBOARD_STEP_5)
-                    trigger?.click()
-                    setCurrentStep(nextStepIndex, SIDEBAR_ANIMATION_DELAY)
-                }, SIDEBAR_ANIMATION_DELAY + 200)
+                    const trigger = document.getElementById(
+                        SELECTOR_IDS.DASHBOARD_STEP_5,
+                    );
+                    trigger?.click();
+                    setCurrentStep(nextStepIndex, SIDEBAR_ANIMATION_DELAY);
+                }, SIDEBAR_ANIMATION_DELAY + 200);
             } else {
-                setCurrentStep(nextStepIndex, SIDEBAR_ANIMATION_DELAY)
+                setCurrentStep(nextStepIndex, SIDEBAR_ANIMATION_DELAY);
             }
         } else {
-            nextStep()
+            nextStep();
         }
-    }
+    };
 
     const handleSkip = () => {
-        skipTour?.()
+        skipTour?.();
         if (isMobile) {
-            setSidebarOpen(false)
+            setSidebarOpen(false);
         }
-    }
+    };
 
-    const buttonText = totalSteps === 1 ? "Got It"
-        : isLastStep ? "Done" : "Next"
+    const handlePrimaryAction = () => {
+        if (isLastStep && tourAction) {
+            handleSkip();
+            router.push(tourAction.getHref(treasuryId));
+            return;
+        }
+
+        if (isLastStep) {
+            handleSkip();
+            return;
+        }
+
+        handleNext();
+    };
+
+    const buttonText =
+        isLastStep && step.title
+            ? step.title
+            : totalSteps === 1
+              ? "Got It"
+              : isLastStep
+                ? "Done"
+                : "Next";
 
     return (
         <div className="bg-popover-foreground text-popover rounded-md px-2 py-3 shadow-md min-w-[200px] animate-in fade-in-0 zoom-in-95">
-            <div className="text-popover-foreground">
-                {arrow}
-            </div>
+            <div className="text-popover-foreground">{arrow}</div>
 
             <div className="flex flex-col gap-3">
                 <div className="flex justify-between items-start gap-3">
@@ -89,7 +126,12 @@ export function TourCard({
                     </button>
                 </div>
 
-                <div className={cn("flex w-full items-center", totalSteps > 1 ? "justify-between" : "justify-end")}>
+                <div
+                    className={cn(
+                        "flex w-full items-center",
+                        totalSteps > 1 ? "justify-between" : "justify-end",
+                    )}
+                >
                     {totalSteps > 1 && (
                         <p className="text-xs rounded-full text-muted-foreground">
                             {currentStep + 1} of {totalSteps}
@@ -99,12 +141,12 @@ export function TourCard({
                     <Button
                         size="sm"
                         className="h-6 px-2 text-xs bg-popover text-popover-foreground hover:bg-popover/90 hover:text-popover-foreground/90"
-                        onClick={isLastStep ? handleSkip : handleNext}
+                        onClick={handlePrimaryAction}
                     >
                         {buttonText}
                     </Button>
                 </div>
             </div>
         </div>
-    )
+    );
 }
