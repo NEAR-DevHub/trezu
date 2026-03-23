@@ -395,6 +395,20 @@ pub async fn run_maintenance_cycle(
         }
     }
 
+    // Correct NEAR transfer counterparties (up to 20 per cycle)
+    match super::counterparty_correction::correct_near_counterparties(pool, network).await {
+        Ok(count) if count > 0 => {
+            log::info!(
+                "[maintenance] Corrected {} NEAR transfer counterparties",
+                count
+            );
+        }
+        Err(e) => {
+            log::warn!("[maintenance] Error correcting NEAR counterparties: {}", e);
+        }
+        _ => {}
+    }
+
     log::info!("[maintenance] Cycle complete");
     Ok(())
 }

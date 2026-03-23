@@ -41,6 +41,9 @@ struct WrongCounterpartyRecord {
 /// - Outgoing (amount < 0): `tx_status` → child receipt executor_id (the recipient)
 ///
 /// Returns the number of records corrected.
+/// Maximum number of records to correct per run to limit RPC usage.
+const MAX_RECORDS_PER_RUN: i64 = 20;
+
 pub async fn correct_near_counterparties(
     pool: &PgPool,
     network: &NetworkConfig,
@@ -55,13 +58,14 @@ pub async fn correct_near_counterparties(
           AND counterparty = receiver_id
           AND ABS(amount) > 0.01
         ORDER BY block_height ASC
+        LIMIT $1
         "#,
     )
+    .bind(MAX_RECORDS_PER_RUN)
     .fetch_all(pool)
     .await?;
 
     if records.is_empty() {
-        log::info!("[counterparty-correction] No records to correct");
         return Ok(0);
     }
 
