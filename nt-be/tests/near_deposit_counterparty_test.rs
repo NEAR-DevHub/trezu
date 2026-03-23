@@ -16,7 +16,12 @@
 /// ```
 mod common;
 
+use axum::body::Body;
+use axum::http::{Request, StatusCode};
+use nt_be::routes::create_routes;
 use sqlx::PgPool;
+use std::sync::Arc;
+use tower::ServiceExt;
 
 const TARGET_DAO: &str = "olskik-test.sputnik-dao.near";
 const SOURCE_DAO: &str = "testing-astradao.sputnik-dao.near";
@@ -68,18 +73,31 @@ async fn get_near_balance_change(
     .unwrap()
 }
 
-/// Set up monitored accounts and cursor for enrichment.
+/// Register monitored accounts via the API and seed the enrichment cursor.
 async fn setup_enrichment(pool: &PgPool) {
+    let state = Arc::new(common::build_test_state(pool.clone()));
+
     for dao in [TARGET_DAO, SOURCE_DAO, LESIK_DAO] {
-        sqlx::query(
-            "INSERT INTO monitored_accounts (account_id, enabled, dirty_at)
-             VALUES ($1, true, NOW())
-             ON CONFLICT (account_id) DO NOTHING",
-        )
-        .bind(dao)
-        .execute(pool)
-        .await
-        .unwrap();
+        let app = create_routes(state.clone());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/monitored-accounts")
+                    .header("content-type", "application/json")
+                    .body(Body::from(
+                        serde_json::json!({ "accountId": dao }).to_string(),
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert!(
+            response.status() == StatusCode::OK || response.status() == StatusCode::CONFLICT,
+            "Failed to register {}: {}",
+            dao,
+            response.status()
+        );
     }
 
     sqlx::query(
