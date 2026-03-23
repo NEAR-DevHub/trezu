@@ -36,9 +36,10 @@ struct WrongCounterpartyRecord {
 /// the actual sender/recipient DAO). Only processes records with `ABS(amount) > 0.01`
 /// to skip gas cost records where the voter is the correct counterparty.
 ///
-/// For each affected record, resolves the correct counterparty via RPC:
-/// - Incoming (amount > 0): `EXPERIMENTAL_receipt` → predecessor_id (the sender)
-/// - Outgoing (amount < 0): `tx_status` → child receipt executor_id (the recipient)
+/// For each affected record, resolves the correct counterparty via
+/// `EXPERIMENTAL_tx_status` (single RPC call per record):
+/// - Incoming (amount > 0): receipt predecessor_id (the sender)
+/// - Outgoing (amount < 0): child receipt executor_id (the recipient)
 ///
 /// Returns the number of records corrected.
 /// Maximum number of records to correct per run to limit RPC usage.
@@ -53,7 +54,7 @@ pub async fn correct_near_counterparties(
         SELECT id, account_id, block_height, amount, transaction_hashes,
                counterparty, signer_id
         FROM balance_changes
-        WHERE token_id = 'near'
+        WHERE LOWER(token_id) = 'near'
           AND method_name = 'act_proposal'
           AND counterparty = receiver_id
           AND ABS(amount) > 0.01
