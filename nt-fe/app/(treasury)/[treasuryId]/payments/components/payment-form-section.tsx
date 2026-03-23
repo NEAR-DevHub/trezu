@@ -212,6 +212,7 @@ export function PaymentFormSection<
                             <UserWithData
                                 name={selectedContact.name}
                                 address={selectedContact.address}
+                                useAddressBook
                                 size="md"
                                 withLink={false}
                             />
@@ -322,6 +323,7 @@ export function PaymentFormSection<
                             <UserWithData
                                 name={entry.name}
                                 address={entry.address}
+                                useAddressBook
                                 size="sm"
                                 withLink={false}
                             />
