@@ -8,6 +8,7 @@
 //! resolves correct counterparties via NEAR RPC — no Goldsky data needed.
 
 use crate::utils::jsonrpc::create_rpc_client;
+use bigdecimal::Zero;
 use near_api::NetworkConfig;
 use near_jsonrpc_client::methods;
 use near_jsonrpc_primitives::types::receipts::ReceiptReference;
@@ -154,7 +155,6 @@ pub async fn correct_near_counterparties(
 
         let receipt_id = our_receipt.id.to_string();
 
-        use bigdecimal::Zero;
         let new_counterparty = if record.amount > bigdecimal::BigDecimal::zero() {
             // Incoming: get predecessor via EXPERIMENTAL_receipt
             let parsed_receipt_id: near_primitives::hash::CryptoHash = match receipt_id.parse() {
