@@ -5,8 +5,7 @@ use chrono::{DateTime, Utc};
 pub const RELAYER_ACCOUNT: &str = "sponsor.trezu.near";
 
 const RELAYER_WHERE_CONDITION: &str = "counterparty != 'sponsor.trezu.near'";
-pub const FROM_ACCOUNT_EXPR: &str =
-    "CASE \
+pub const FROM_ACCOUNT_EXPR: &str = "CASE \
         WHEN amount > 0 THEN COALESCE( \
             NULLIF( \
                 CASE \
@@ -20,8 +19,7 @@ pub const FROM_ACCOUNT_EXPR: &str =
         ) \
         ELSE signer_id \
     END";
-pub const TO_ACCOUNT_EXPR: &str =
-    "CASE \
+pub const TO_ACCOUNT_EXPR: &str = "CASE \
         WHEN amount > 0 THEN account_id \
         ELSE COALESCE(NULLIF(counterparty, 'UNKNOWN'), receiver_id) \
     END";
@@ -226,19 +224,13 @@ pub fn build_where_conditions(filters: &BalanceChangeFilters) -> (Vec<String>, u
     // - Incoming rows: counterparty (unless UNKNOWN), fallback to signer_id
     // - Outgoing rows: signer_id
     if filters.from_accounts.is_some() {
-        conditions.push(format!(
-            "({}) = ANY(${})",
-            FROM_ACCOUNT_EXPR,
-            param_index
-        ));
+        conditions.push(format!("({}) = ANY(${})", FROM_ACCOUNT_EXPR, param_index));
         param_index += 1;
     }
     if filters.from_accounts_not.is_some() {
         conditions.push(format!(
             "(({}) IS NULL OR NOT (({}) = ANY(${})))",
-            FROM_ACCOUNT_EXPR,
-            FROM_ACCOUNT_EXPR,
-            param_index
+            FROM_ACCOUNT_EXPR, FROM_ACCOUNT_EXPR, param_index
         ));
         param_index += 1;
     }

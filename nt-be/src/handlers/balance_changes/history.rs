@@ -1994,4 +1994,3 @@ pub async fn get_recent_activity_recipients(
 
     Ok(Json(RecentActivityRecipientsResponse { options }))
 }
-
