@@ -261,9 +261,17 @@ export function ProposalSidebar({
         useState(false);
     const [awaitingProposalsFetch, setAwaitingProposalsFetch] = useState(false);
 
-    // Fetch all proposals for voting duration impact check
+    // Check if this is a voting duration change proposal
+    const isVotingDurationChange =
+        "ChangePolicyUpdateParameters" in proposal.kind;
+
+    // Fetch active proposals only when needed for voting duration impact check
     const { data: allProposalsData, isLoading: isLoadingProposals } =
-        useProposals(treasuryId, { statuses: ["InProgress"] });
+        useProposals(
+            treasuryId,
+            { statuses: ["InProgress"] },
+            isVotingDurationChange,
+        );
 
     const status = getProposalStatus(proposal, policy);
     const isUserVoter = !!proposal.votes[accountId ?? ""];
@@ -272,10 +280,6 @@ export function ProposalSidebar({
     const isExchangeProposal = proposalType === "Exchange";
     const isFailed = status === "Failed";
     const isExecuted = status === "Executed";
-
-    // Check if this is a voting duration change proposal
-    const isVotingDurationChange =
-        "ChangePolicyUpdateParameters" in proposal.kind;
 
     let newVotingDurationDays = 0;
     if (isVotingDurationChange) {
