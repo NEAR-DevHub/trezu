@@ -313,9 +313,11 @@ pub async fn resolve_receipt_block_height(
     let parsed_tx_hash: near_primitives::hash::CryptoHash = tx_hash.parse()?;
     let parsed_sender: near_primitives::types::AccountId = sender_account_id.parse()?;
 
+    // Use EXPERIMENTAL_tx_status which returns full ReceiptView objects
+    // (including predecessor_id) — avoids a separate EXPERIMENTAL_receipt call.
     let tx_response = with_transport_retry("tx_status", || {
-        let req = methods::tx::RpcTransactionStatusRequest {
-            transaction_info: methods::tx::TransactionInfo::TransactionId {
+        let req = methods::EXPERIMENTAL_tx_status::RpcTransactionStatusRequest {
+            transaction_info: methods::EXPERIMENTAL_tx_status::TransactionInfo::TransactionId {
                 tx_hash: parsed_tx_hash,
                 sender_account_id: parsed_sender.clone(),
             },
@@ -325,20 +327,23 @@ pub async fn resolve_receipt_block_height(
     })
     .await?;
 
-    let (receipts_outcome, mut tx_action_info) = match &tx_response.final_execution_outcome {
-        Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcome(outcome)) => (
-            &outcome.receipts_outcome,
-            Some(extract_tx_action_info(outcome)),
-        ),
-        Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcomeWithReceipt(outcome)) => (
-            &outcome.final_outcome.receipts_outcome,
-            Some(extract_tx_action_info(&outcome.final_outcome)),
-        ),
-        None => return Err("No final execution outcome in transaction".into()),
-    };
+    let (receipts_outcome, mut tx_action_info, receipts) =
+        match &tx_response.final_execution_outcome {
+            Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcome(outcome)) => (
+                &outcome.receipts_outcome,
+                Some(extract_tx_action_info(outcome)),
+                None,
+            ),
+            Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcomeWithReceipt(outcome)) => (
+                &outcome.final_outcome.receipts_outcome,
+                Some(extract_tx_action_info(&outcome.final_outcome)),
+                Some(&outcome.receipts),
+            ),
+            None => return Err("No final execution outcome in transaction".into()),
+        };
 
     // Find our receipt in receipts_outcome first — if it's not there,
-    // return early to avoid unnecessary RPC calls.
+    // return early.
     let our_receipt = match receipts_outcome
         .iter()
         .find(|ro| ro.id.to_string() == receipt_id)
@@ -348,38 +353,22 @@ pub async fn resolve_receipt_block_height(
     };
 
     // Resolve receipt-level counterparty data (predecessor + child receipts).
-    // This is opt-in: only called when the enrichment loop needs it (e.g., for
-    // native NEAR events where transaction-level signer/receiver is unreliable).
+    // This is opt-in: only enabled for native NEAR events where transaction-level
+    // signer/receiver is unreliable.
     if resolve_counterparty {
         if let Some(info) = &mut tx_action_info {
-            // Predecessor: the account that created this receipt (sender for incoming transfers).
-            // Use EXPERIMENTAL_receipt RPC since tx_status doesn't include predecessor_id.
-            let parsed_receipt_id: near_primitives::hash::CryptoHash = receipt_id.parse()?;
-            match with_transport_retry("receipt_predecessor", || {
-                let req = methods::EXPERIMENTAL_receipt::RpcReceiptRequest {
-                    receipt_reference: ReceiptReference {
-                        receipt_id: parsed_receipt_id,
-                    },
-                };
-                client.call(req)
-            })
-            .await
-            {
-                Ok(receipt_response) => {
-                    let predecessor = receipt_response.predecessor_id.to_string();
+            // Predecessor: extract from the full receipt data returned by
+            // EXPERIMENTAL_tx_status (no extra RPC call needed).
+            if let Some(receipts) = receipts {
+                let parsed_receipt_id: near_primitives::hash::CryptoHash = receipt_id.parse()?;
+                if let Some(receipt) = receipts.iter().find(|r| r.receipt_id == parsed_receipt_id) {
+                    let predecessor = receipt.predecessor_id.to_string();
                     log::debug!(
                         "[tx-resolver] receipt {} predecessor_id={}",
                         receipt_id,
                         predecessor
                     );
                     info.receipt_predecessor_id = Some(predecessor);
-                }
-                Err(e) => {
-                    log::warn!(
-                        "[tx-resolver] Failed to fetch receipt {}: {}",
-                        receipt_id,
-                        e
-                    );
                 }
             }
 
