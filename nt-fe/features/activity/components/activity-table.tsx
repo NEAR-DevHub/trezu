@@ -307,6 +307,10 @@ export function ActivityTable({
                                                         activity.tokenMetadata
                                                             .icon
                                                     }
+                                                    chainIcons={
+                                                        activity.tokenMetadata
+                                                            .chainIcons
+                                                    }
                                                     symbol={
                                                         activity.tokenMetadata
                                                             .symbol

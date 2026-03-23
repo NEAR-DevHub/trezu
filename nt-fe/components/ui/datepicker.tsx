@@ -280,6 +280,9 @@ export function DateTimePicker({
             if (mode === "range" && typeof d === "object" && "from" in d) {
                 // Handle range selection - automatically set startOfDay and endOfDay
                 const range = d as DateRange;
+                if (range.from) {
+                    setMonth(new TZDate(range.from, timezone));
+                }
                 const newRange: DateRange = {
                     from: range.from ? startOfDay(range.from) : undefined,
                     to: range.to ? endOfDay(range.to) : undefined,
@@ -288,12 +291,13 @@ export function DateTimePicker({
             } else {
                 // Handle single date selection
                 const newDate = new Date(d as Date);
+                setMonth(new TZDate(newDate, timezone));
                 // For single dates, set to start of day
                 const startOfDayDate = startOfDay(newDate);
                 onChange(startOfDayDate);
             }
         },
-        [onChange, mode],
+        [onChange, mode, timezone],
     );
 
     const onMonthYearChanged = useCallback(
@@ -746,9 +750,13 @@ export function DatePickerPopover({
                 </Button>
             </PopoverTrigger>
             <PopoverContent
-                className={cn("w-auto p-0", classNames?.content)}
+                className={cn(
+                    "w-auto max-w-[min(var(--radix-popover-content-available-width),calc(100vw-1rem))] max-h-[min(var(--radix-popover-content-available-height),calc(100dvh-1rem))] overflow-y-auto overflow-x-auto p-0",
+                    classNames?.content,
+                )}
                 align={align}
                 side={side}
+                collisionPadding={8}
             >
                 <DateTimePicker
                     value={value}
