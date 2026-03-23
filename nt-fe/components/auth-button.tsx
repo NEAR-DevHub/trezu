@@ -37,9 +37,22 @@ interface ErrorMessageProps extends React.ComponentProps<typeof Button> {
     message: string;
 }
 
-function ErrorMessage({ message, children, ...props }: ErrorMessageProps) {
+function ErrorMessage({
+    message,
+    className,
+    children,
+    ...props
+}: ErrorMessageProps) {
     return (
-        <Button {...props} tooltipContent={message}>
+        <Button
+            {...props}
+            tooltipContent={message}
+            aria-disabled
+            className={cn(
+                "w-full shrink pointer-events-none opacity-50",
+                className,
+            )}
+        >
             {children}
         </Button>
     );
