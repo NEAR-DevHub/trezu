@@ -541,7 +541,7 @@ export function UploadDataStep({
                                                 {activeTab === "upload" &&
                                                     dataErrors &&
                                                     dataErrors.length > 0 && (
-                                                        <div className="space-y-1 max-h-48 overflow-y-auto">
+                                                        <div className="space-y-1 max-h-48 overflow-y-auto overflow-x-hidden">
                                                             {dataErrors.map(
                                                                 (
                                                                     error,
@@ -551,7 +551,7 @@ export function UploadDataStep({
                                                                         key={
                                                                             idx
                                                                         }
-                                                                        className="text-sm text-destructive"
+                                                                        className="text-sm text-destructive break-all wrap-anywhere"
                                                                     >
                                                                         {
                                                                             error.message
@@ -585,7 +585,7 @@ export function UploadDataStep({
                                                     borderless
                                                     placeholder={`alice.near, 100.00\nbob.near, 100.00\ncharlie.near, 100.00`}
                                                     rows={8}
-                                                    className={`resize-none font-mono text-sm bg-muted focus:outline-none break-all whitespace-pre-wrap min-h-41 ${
+                                                    className={`w-full max-w-full resize-none font-mono text-sm bg-muted focus:outline-none break-all whitespace-pre-wrap wrap-anywhere overflow-x-hidden min-h-41 ${
                                                         dataErrors &&
                                                         dataErrors.length > 0
                                                             ? "border border-destructive bg-destructive/5! focus:border-destructive!"
@@ -599,7 +599,7 @@ export function UploadDataStep({
                                                 {/* Error Message Below Textarea */}
                                                 {dataErrors &&
                                                     dataErrors.length > 0 && (
-                                                        <div className="space-y-1 max-h-48 overflow-y-auto">
+                                                        <div className="space-y-1 max-h-48 overflow-y-auto overflow-x-hidden">
                                                             {dataErrors.map(
                                                                 (
                                                                     error,
@@ -609,7 +609,7 @@ export function UploadDataStep({
                                                                         key={
                                                                             idx
                                                                         }
-                                                                        className="text-sm text-destructive"
+                                                                        className="text-sm text-destructive break-all wrap-anywhere"
                                                                     >
                                                                         {
                                                                             error.message
