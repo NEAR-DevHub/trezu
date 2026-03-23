@@ -83,7 +83,17 @@ pub async fn correct_near_counterparties(
             None => continue,
         };
 
-        let signer = record.signer_id.as_deref().unwrap_or("sponsor.trezu.near");
+        let signer = match record.signer_id.as_deref() {
+            Some(s) => s,
+            None => {
+                log::warn!(
+                    "[counterparty-correction] Skipping record {} for tx {}: missing signer_id",
+                    record.id,
+                    tx_hash
+                );
+                continue;
+            }
+        };
 
         let parsed_tx_hash: near_primitives::hash::CryptoHash = match tx_hash.parse() {
             Ok(h) => h,

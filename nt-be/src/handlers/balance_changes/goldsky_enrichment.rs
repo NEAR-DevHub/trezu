@@ -17,6 +17,7 @@ use super::swap_detector::{
 };
 use super::transfer_hints::tx_resolver::{TxActionInfo, resolve_receipt_block_height};
 use super::utils::block_timestamp_to_datetime;
+use bigdecimal::Zero;
 use near_api::NetworkConfig;
 use serde::Deserialize;
 use sqlx::PgPool;
@@ -612,11 +613,15 @@ pub async fn run_enrichment_cycle(
             if let Some(cached) = receipt_block_cache.get(&outcome.id) {
                 cached.clone()
             } else {
+                // Only resolve counterparty data (predecessor + child receipts) for
+                // native NEAR events where tx-level signer/receiver is unreliable.
+                let has_near_event = events.iter().any(|e| e.token_id == "near");
                 let resolved = match resolve_receipt_block_height(
                     network,
                     tx_hash,
                     signer,
                     &outcome.id,
+                    has_near_event,
                 )
                 .await
                 {
@@ -721,7 +726,6 @@ pub async fn run_enrichment_cycle(
             //   - Incoming (amount > 0): receipt_predecessor_id is the sender
             //   - Outgoing (amount < 0): transfer_receiver_id is the recipient
             let effective_counterparty = if event.token_id == "near" {
-                use bigdecimal::Zero;
                 if amount > bigdecimal::BigDecimal::zero() {
                     // Incoming: predecessor created the Transfer receipt → sender
                     tx_action_info

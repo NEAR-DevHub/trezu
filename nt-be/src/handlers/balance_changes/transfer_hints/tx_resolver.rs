@@ -298,11 +298,15 @@ pub async fn resolve_all_receipt_block_heights(
 ///
 /// Calls `tx_status` once, finds the receipt matching `receipt_id`, and resolves
 /// its block hash to a height. Returns `None` if the receipt ID is not found.
+/// * `resolve_counterparty` - When true, makes an additional `EXPERIMENTAL_receipt`
+///   RPC call to extract `predecessor_id` and scans child receipts. Only needed for
+///   native NEAR events where transaction-level signer/receiver is unreliable.
 pub async fn resolve_receipt_block_height(
     network: &NetworkConfig,
     tx_hash: &str,
     sender_account_id: &str,
     receipt_id: &str,
+    resolve_counterparty: bool,
 ) -> Result<(Option<u64>, Option<TxActionInfo>), Box<dyn Error + Send + Sync>> {
     let client = create_rpc_client(network)?;
 
@@ -321,69 +325,20 @@ pub async fn resolve_receipt_block_height(
     })
     .await?;
 
-    let (receipts_outcome, mut tx_action_info, receipts) =
-        match &tx_response.final_execution_outcome {
-            Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcome(outcome)) => (
-                &outcome.receipts_outcome,
-                Some(extract_tx_action_info(outcome)),
-                None,
-            ),
-            Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcomeWithReceipt(outcome)) => (
-                &outcome.final_outcome.receipts_outcome,
-                Some(extract_tx_action_info(&outcome.final_outcome)),
-                Some(&outcome.receipts),
-            ),
-            None => return Err("No final execution outcome in transaction".into()),
-        };
+    let (receipts_outcome, mut tx_action_info) = match &tx_response.final_execution_outcome {
+        Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcome(outcome)) => (
+            &outcome.receipts_outcome,
+            Some(extract_tx_action_info(outcome)),
+        ),
+        Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcomeWithReceipt(outcome)) => (
+            &outcome.final_outcome.receipts_outcome,
+            Some(extract_tx_action_info(&outcome.final_outcome)),
+        ),
+        None => return Err("No final execution outcome in transaction".into()),
+    };
 
-    // Extract predecessor_id from the full receipt data.
-    // Try the tx_status receipts first (FinalExecutionOutcomeWithReceipt variant),
-    // otherwise fall back to EXPERIMENTAL_receipt RPC.
-    if let Some(info) = &mut tx_action_info {
-        let parsed_receipt_id: near_primitives::hash::CryptoHash = receipt_id.parse()?;
-
-        let predecessor = if let Some(receipts) = receipts {
-            receipts
-                .iter()
-                .find(|r| r.receipt_id == parsed_receipt_id)
-                .map(|r| r.predecessor_id.to_string())
-        } else {
-            None
-        };
-
-        let predecessor = match predecessor {
-            Some(p) => Some(p),
-            None => {
-                // Fall back to EXPERIMENTAL_receipt RPC
-                match with_transport_retry("receipt_predecessor", || {
-                    let req = methods::EXPERIMENTAL_receipt::RpcReceiptRequest {
-                        receipt_reference: ReceiptReference {
-                            receipt_id: parsed_receipt_id,
-                        },
-                    };
-                    client.call(req)
-                })
-                .await
-                {
-                    Ok(receipt_response) => Some(receipt_response.predecessor_id.to_string()),
-                    Err(e) => {
-                        log::warn!(
-                            "[tx-resolver] Failed to fetch receipt {}: {}",
-                            receipt_id,
-                            e
-                        );
-                        None
-                    }
-                }
-            }
-        };
-
-        if let Some(p) = predecessor {
-            log::debug!("[tx-resolver] receipt {} predecessor_id={}", receipt_id, p);
-            info.receipt_predecessor_id = Some(p);
-        }
-    }
-
+    // Find our receipt in receipts_outcome first — if it's not there,
+    // return early to avoid unnecessary RPC calls.
     let our_receipt = match receipts_outcome
         .iter()
         .find(|ro| ro.id.to_string() == receipt_id)
@@ -392,29 +347,64 @@ pub async fn resolve_receipt_block_height(
         None => return Ok((None, tx_action_info)),
     };
 
-    // For outgoing transfers: find a child receipt whose executor_id differs
-    // from our receipt's executor_id. That executor is the transfer recipient.
-    if let Some(info) = &mut tx_action_info {
-        let our_executor = our_receipt.outcome.executor_id.as_str();
-        let child_ids: std::collections::HashSet<String> = our_receipt
-            .outcome
-            .receipt_ids
-            .iter()
-            .map(|id| id.to_string())
-            .collect();
+    // Resolve receipt-level counterparty data (predecessor + child receipts).
+    // This is opt-in: only called when the enrichment loop needs it (e.g., for
+    // native NEAR events where transaction-level signer/receiver is unreliable).
+    if resolve_counterparty {
+        if let Some(info) = &mut tx_action_info {
+            // Predecessor: the account that created this receipt (sender for incoming transfers).
+            // Use EXPERIMENTAL_receipt RPC since tx_status doesn't include predecessor_id.
+            let parsed_receipt_id: near_primitives::hash::CryptoHash = receipt_id.parse()?;
+            match with_transport_retry("receipt_predecessor", || {
+                let req = methods::EXPERIMENTAL_receipt::RpcReceiptRequest {
+                    receipt_reference: ReceiptReference {
+                        receipt_id: parsed_receipt_id,
+                    },
+                };
+                client.call(req)
+            })
+            .await
+            {
+                Ok(receipt_response) => {
+                    let predecessor = receipt_response.predecessor_id.to_string();
+                    log::debug!(
+                        "[tx-resolver] receipt {} predecessor_id={}",
+                        receipt_id,
+                        predecessor
+                    );
+                    info.receipt_predecessor_id = Some(predecessor);
+                }
+                Err(e) => {
+                    log::warn!(
+                        "[tx-resolver] Failed to fetch receipt {}: {}",
+                        receipt_id,
+                        e
+                    );
+                }
+            }
 
-        // Find child receipts in the same transaction with a different executor
-        if let Some(child) = receipts_outcome.iter().find(|ro| {
-            child_ids.contains(&ro.id.to_string())
-                && ro.outcome.executor_id.as_str() != our_executor
-        }) {
-            let receiver = child.outcome.executor_id.to_string();
-            log::debug!(
-                "[tx-resolver] receipt {} has child receipt on {}",
-                receipt_id,
-                receiver
-            );
-            info.transfer_receiver_id = Some(receiver);
+            // Child receipts: find a child whose executor_id differs from ours.
+            // That executor is the transfer recipient (for outgoing transfers).
+            let our_executor = our_receipt.outcome.executor_id.as_str();
+            let child_ids: std::collections::HashSet<String> = our_receipt
+                .outcome
+                .receipt_ids
+                .iter()
+                .map(|id| id.to_string())
+                .collect();
+
+            if let Some(child) = receipts_outcome.iter().find(|ro| {
+                child_ids.contains(&ro.id.to_string())
+                    && ro.outcome.executor_id.as_str() != our_executor
+            }) {
+                let receiver = child.outcome.executor_id.to_string();
+                log::debug!(
+                    "[tx-resolver] receipt {} has child receipt on {}",
+                    receipt_id,
+                    receiver
+                );
+                info.transfer_receiver_id = Some(receiver);
+            }
         }
     }
 
