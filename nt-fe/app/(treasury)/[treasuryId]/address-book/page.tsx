@@ -206,6 +206,7 @@ function RecipientFlow({
 // ─── Recipients table view ────────────────────────────────────────────────────
 
 const SEARCH_DEBOUNCE_MS = 300;
+const ADDRESS_BOOK_PAGE_SIZE = 20;
 
 function RecipientsView({
     onAdd,
@@ -216,6 +217,8 @@ function RecipientsView({
 }) {
     const { treasuryId } = useTreasury();
     const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
     const { data: entries = [], isLoading } = useAddressBook(treasuryId);
     const deleteEntries = useDeleteAddressBookEntries(treasuryId);
     const exportEntries = useExportAddressBook(treasuryId);
@@ -229,6 +232,10 @@ function RecipientsView({
     const [bulkDeleteCount, setBulkDeleteCount] = useState(0);
     const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isMobile = useMediaQuery("(max-width: 640px)");
+    const page = Math.max(
+        0,
+        Number.parseInt(searchParams.get("page") || "0", 10) || 0,
+    );
 
     const handleSearchChange = useCallback((value: string) => {
         setSearch(value);
@@ -237,6 +244,30 @@ function RecipientsView({
             setDebouncedSearch(value.trim());
         }, SEARCH_DEBOUNCE_MS);
     }, []);
+
+    const updatePage = useCallback(
+        (newPage: number, replace = false) => {
+            const params = new URLSearchParams(searchParams.toString());
+
+            if (newPage === 0) {
+                params.delete("page");
+            } else {
+                params.set("page", newPage.toString());
+            }
+
+            const nextUrl = params.toString()
+                ? `${pathname}?${params.toString()}`
+                : pathname;
+
+            if (replace) {
+                router.replace(nextUrl, { scroll: false });
+                return;
+            }
+
+            router.push(nextUrl, { scroll: false });
+        },
+        [pathname, router, searchParams],
+    );
 
     useEffect(() => {
         return () => {
@@ -256,6 +287,19 @@ function RecipientsView({
                       .includes(debouncedSearch.toLowerCase()),
           )
         : entries;
+    const totalPages = Math.ceil(filtered.length / ADDRESS_BOOK_PAGE_SIZE);
+    const pageIndex =
+        totalPages === 0 ? 0 : Math.min(page, Math.max(totalPages - 1, 0));
+    const paginatedEntries = filtered.slice(
+        pageIndex * ADDRESS_BOOK_PAGE_SIZE,
+        (pageIndex + 1) * ADDRESS_BOOK_PAGE_SIZE,
+    );
+
+    useEffect(() => {
+        if (page !== pageIndex) {
+            updatePage(pageIndex, true);
+        }
+    }, [page, pageIndex, updatePage]);
 
     const hasSelection = selectedIds.size > 0;
 
@@ -435,11 +479,15 @@ function RecipientsView({
                 <TableSkeleton rows={6} columns={7} />
             ) : (
                 <AddressBookTable
-                    entries={filtered}
+                    entries={paginatedEntries}
                     selectedIds={selectedIds}
                     onSelectionChange={setSelectedIds}
                     onDelete={handleDelete}
                     onSend={handleSend}
+                    pageIndex={pageIndex}
+                    pageSize={ADDRESS_BOOK_PAGE_SIZE}
+                    total={filtered.length}
+                    onPageChange={updatePage}
                 />
             )}
 
