@@ -9,29 +9,39 @@ interface StakingExpandedProps {
 }
 
 export function StakingExpanded({ data }: StakingExpandedProps) {
-    const { data: lockupPool } = useLockupPool(data.isLockup ? data.receiver : null);
+    const { data: lockupPool } = useLockupPool(
+        data.isLockup ? data.receiver : null,
+    );
     const validator = data.isLockup ? lockupPool : data.receiver;
 
     const infoItems: InfoItem[] = [
         {
             label: "Source Wallet",
-            value: <span>{data.sourceWallet}</span>
+            value: <span>{data.sourceWallet}</span>,
         },
         {
             label: "Amount",
-            value: <Amount amount={data.amount} showNetwork tokenId={data.tokenId} />
+            value: (
+                <Amount
+                    amount={data.amount}
+                    showNetwork
+                    tokenId={data.tokenId}
+                />
+            ),
         },
         {
             label: "Validator",
-            value: <Link href={data.validatorUrl} target="_blank">{validator}</Link>
-        }
+            value: (
+                <Link href={data.validatorUrl} target="_blank">
+                    {validator}
+                </Link>
+            ),
+        },
     ];
 
     if (data.notes && data.notes !== "") {
         infoItems.push({ label: "Notes", value: <span>{data.notes}</span> });
     }
 
-    return (
-        <InfoDisplay items={infoItems} />
-    );
+    return <InfoDisplay items={infoItems} />;
 }

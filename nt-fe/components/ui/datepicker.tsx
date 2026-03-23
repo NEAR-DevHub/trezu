@@ -1,5 +1,4 @@
-'use client';
-
+"use client";
 
 import {
     addMonths,
@@ -16,7 +15,7 @@ import {
     startOfYear,
     subMonths,
     subDays,
-} from 'date-fns';
+} from "date-fns";
 import {
     Calendar,
     ChevronDownIcon,
@@ -24,12 +23,17 @@ import {
     ChevronRightIcon,
     ChevronUpIcon,
     XCircle,
-} from 'lucide-react';
-import * as React from 'react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { DayPicker, type DateRange, type Matcher, TZDate } from 'react-day-picker';
+} from "lucide-react";
+import * as React from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+    DayPicker,
+    type DateRange,
+    type Matcher,
+    TZDate,
+} from "react-day-picker";
 
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button, buttonVariants } from "@/components/ui/button";
 
 interface SelectOption {
     value: number;
@@ -37,65 +41,69 @@ interface SelectOption {
     disabled: boolean;
 }
 
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { cn } from '@/lib/utils';
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 import { Tooltip } from "@/components/tooltip";
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
 
 // Default preset date ranges for common time periods
 export const DEFAULT_DATE_PRESETS = [
     {
-        label: 'Today',
+        label: "Today",
         value: {
             from: startOfDay(new Date()),
             to: endOfDay(new Date()),
         },
     },
     {
-        label: 'Yesterday',
+        label: "Yesterday",
         value: {
             from: subDays(startOfDay(new Date()), 1),
             to: subDays(endOfDay(new Date()), 1),
         },
     },
     {
-        label: 'Last 3 days',
+        label: "Last 3 days",
         value: {
             from: subDays(startOfDay(new Date()), 3),
             to: endOfDay(new Date()),
         },
     },
     {
-        label: 'Last 7 days',
+        label: "Last 7 days",
         value: {
             from: subDays(startOfDay(new Date()), 7),
             to: endOfDay(new Date()),
         },
     },
     {
-        label: 'Last 14 days',
+        label: "Last 14 days",
         value: {
             from: subDays(startOfDay(new Date()), 14),
             to: endOfDay(new Date()),
         },
     },
     {
-        label: 'Last month',
+        label: "Last month",
         value: {
             from: subMonths(startOfDay(new Date()), 1),
             to: endOfDay(new Date()),
         },
     },
     {
-        label: 'Last 3 months',
+        label: "Last 3 months",
         value: {
             from: subMonths(startOfDay(new Date()), 3),
             to: endOfDay(new Date()),
         },
     },
     {
-        label: 'Last 6 months',
+        label: "Last 6 months",
         value: {
             from: subMonths(startOfDay(new Date()), 6),
             to: endOfDay(new Date()),
@@ -105,9 +113,8 @@ export const DEFAULT_DATE_PRESETS = [
 
 export type CalendarProps = Omit<
     React.ComponentProps<typeof DayPicker>,
-    'mode' | 'selected' | 'onSelect'
+    "mode" | "selected" | "onSelect"
 >;
-
 
 export type DateTimePickerProps = {
     /**
@@ -122,7 +129,7 @@ export type DateTimePickerProps = {
      * The selection mode - single date or date range.
      * @default 'single'
      */
-    mode?: 'single' | 'range';
+    mode?: "single" | "range";
     /**
      * The default month to display.
      * @default undefined
@@ -219,27 +226,36 @@ export function DateTimePicker({
     showCalendarIcon = true,
     clearable,
     borderless,
-    placeholder = 'Pick a date',
+    placeholder = "Pick a date",
     classNames,
     minDateTooltipContent,
     maxDateTooltipContent,
-    mode = 'single',
+    mode = "single",
     defaultMonth,
     numberOfMonths,
-    presets = mode === 'range' ? DEFAULT_DATE_PRESETS : undefined,
+    presets = mode === "range" ? DEFAULT_DATE_PRESETS : undefined,
     ...props
 }: DateTimePickerProps & CalendarProps) {
     // Helper to check if value is a range
     const isRange = (val: Date | DateRange | undefined): val is DateRange => {
-        return mode === 'range' && val !== undefined && typeof val === 'object' && 'from' in val;
+        return (
+            mode === "range" &&
+            val !== undefined &&
+            typeof val === "object" &&
+            "from" in val
+        );
     };
 
     const [open, setOpen] = useState(false);
     const [monthYearPicker, setMonthYearPicker] = useState<
-        'month' | 'year' | false
+        "month" | "year" | false
     >(false);
     const initDate = useMemo(
-        () => new TZDate((isRange(value) ? value.from : value) || new Date(), timezone),
+        () =>
+            new TZDate(
+                (isRange(value) ? value.from : value) || new Date(),
+                timezone,
+            ),
         [value, timezone, isRange],
     );
 
@@ -261,12 +277,12 @@ export function DateTimePicker({
         (d: Date | DateRange | undefined) => {
             if (!d) return;
 
-            if (mode === 'range' && typeof d === 'object' && 'from' in d) {
+            if (mode === "range" && typeof d === "object" && "from" in d) {
                 // Handle range selection - automatically set startOfDay and endOfDay
                 const range = d as DateRange;
                 const newRange: DateRange = {
                     from: range.from ? startOfDay(range.from) : undefined,
-                    to: range.to ? endOfDay(range.to) : undefined
+                    to: range.to ? endOfDay(range.to) : undefined,
                 };
                 onChange(newRange);
             } else {
@@ -281,10 +297,10 @@ export function DateTimePicker({
     );
 
     const onMonthYearChanged = useCallback(
-        (d: Date, mode: 'month' | 'year') => {
+        (d: Date, mode: "month" | "year") => {
             setMonth(d);
-            if (mode === 'year') {
-                setMonthYearPicker('month');
+            if (mode === "year") {
+                setMonthYearPicker("month");
             } else {
                 setMonthYearPicker(false);
             }
@@ -308,7 +324,7 @@ export function DateTimePicker({
     return (
         <div className="flex w-auto">
             {/* Preset buttons for range mode */}
-            {mode === 'range' && presets && presets.length > 0 && (
+            {mode === "range" && presets && presets.length > 0 && (
                 <div className="pr-3">
                     <div className="grid">
                         {presets.map((preset, index) => (
@@ -331,45 +347,65 @@ export function DateTimePicker({
                             <span
                                 onClick={() =>
                                     setMonthYearPicker(
-                                        monthYearPicker === 'month' ? false : 'month',
+                                        monthYearPicker === "month"
+                                            ? false
+                                            : "month",
                                     )
                                 }
                             >
-                                {format(month, 'MMMM')}
+                                {format(month, "MMMM")}
                             </span>
                             <span
                                 className="ms-1"
                                 onClick={() =>
                                     setMonthYearPicker(
-                                        monthYearPicker === 'year' ? false : 'year',
+                                        monthYearPicker === "year"
+                                            ? false
+                                            : "year",
                                     )
                                 }
                             >
-                                {format(month, 'yyyy')}
+                                {format(month, "yyyy")}
                             </span>
                         </div>
                         <Button
                             variant="ghost"
                             size="icon"
                             onClick={() =>
-                                setMonthYearPicker(monthYearPicker ? false : 'year')
+                                setMonthYearPicker(
+                                    monthYearPicker ? false : "year",
+                                )
                             }
                         >
-                            {monthYearPicker ? <ChevronUpIcon /> : <ChevronDownIcon />}
+                            {monthYearPicker ? (
+                                <ChevronUpIcon />
+                            ) : (
+                                <ChevronDownIcon />
+                            )}
                         </Button>
                     </div>
                     <div
-                        className={cn('flex space-x-2', monthYearPicker ? 'hidden' : '')}
+                        className={cn(
+                            "flex space-x-2",
+                            monthYearPicker ? "hidden" : "",
+                        )}
                     >
-                        <Button variant="ghost" size="icon" onClick={onPrevMonth}>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={onPrevMonth}
+                        >
                             <ChevronLeftIcon />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={onNextMonth}>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={onNextMonth}
+                        >
                             <ChevronRightIcon />
                         </Button>
                     </div>
                 </div>
-
 
                 <div className="relative overflow-hidden">
                     <DayPicker
@@ -381,7 +417,7 @@ export function DateTimePicker({
                         endMonth={endMonth}
                         defaultMonth={defaultMonth}
                         numberOfMonths={numberOfMonths}
-                        required={mode === 'range' ? true as any : undefined}
+                        required={mode === "range" ? (true as any) : undefined}
                         disabled={
                             [
                                 max ? { after: max } : null,
@@ -396,7 +432,8 @@ export function DateTimePicker({
                                 const isDisabledAfter = max && date > max;
 
                                 if (
-                                    (isDisabledBefore && minDateTooltipContent) ||
+                                    (isDisabledBefore &&
+                                        minDateTooltipContent) ||
                                     (isDisabledAfter && maxDateTooltipContent)
                                 ) {
                                     return (
@@ -406,7 +443,10 @@ export function DateTimePicker({
                                                     ? minDateTooltipContent
                                                     : maxDateTooltipContent
                                             }
-                                            contentProps={{ className: 'max-w-56 text-center' }}
+                                            contentProps={{
+                                                className:
+                                                    "max-w-56 text-center",
+                                            }}
                                         >
                                             <div {...props} />
                                         </Tooltip>
@@ -416,42 +456,45 @@ export function DateTimePicker({
                             },
                         }}
                         classNames={{
-                            dropdowns: 'flex w-full gap-2',
-                            months: 'flex w-full h-fit',
-                            month: 'flex flex-col w-full',
-                            month_caption: 'hidden',
-                            button_previous: 'hidden',
-                            button_next: 'hidden',
-                            month_grid: 'w-full border-collapse',
-                            weekdays: 'flex justify-between mt-2',
+                            dropdowns: "flex w-full gap-2",
+                            months: "flex w-full h-fit",
+                            month: "flex flex-col w-full",
+                            month_caption: "hidden",
+                            button_previous: "hidden",
+                            button_next: "hidden",
+                            month_grid: "w-full border-collapse",
+                            weekdays: "flex justify-between mt-2",
                             weekday:
-                                'text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]',
-                            week: 'flex w-full justify-between mt-2',
-                            day: 'h-9 w-9 text-center text-sm p-0 relative flex items-center justify-center [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 rounded-1',
+                                "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
+                            week: "flex w-full justify-between mt-2",
+                            day: "h-9 w-9 text-center text-sm p-0 relative flex items-center justify-center [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 rounded-1",
                             day_button: cn(
-                                buttonVariants({ variant: 'ghost' }),
-                                'size-9 p-0 font-normal aria-selected:opacity-100 rounded-md focus-visible:ring-0',
-                                mode === 'range' && 'hover:rounded-none [.day-range-start_&]:hover:rounded-l-md [.day-range-start_&]:hover:rounded-r-none [.day-range-end_&]:hover:rounded-r-md [.day-range-end_&]:hover:rounded-l-none',
+                                buttonVariants({ variant: "ghost" }),
+                                "size-9 p-0 font-normal aria-selected:opacity-100 rounded-md focus-visible:ring-0",
+                                mode === "range" &&
+                                    "hover:rounded-none [.day-range-start_&]:hover:rounded-l-md [.day-range-start_&]:hover:rounded-r-none [.day-range-end_&]:hover:rounded-r-md [.day-range-end_&]:hover:rounded-l-none",
                             ),
-                            range_end: 'day-range-end rounded-r-md',
-                            range_start: 'day-range-start rounded-l-md',
-                            selected:
-                                cn('bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground rounded-none', !isRange(value) && 'rounded-md'),
-                            today: 'bg-accent text-accent-foreground rounded-md',
+                            range_end: "day-range-end rounded-r-md",
+                            range_start: "day-range-start rounded-l-md",
+                            selected: cn(
+                                "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground rounded-none",
+                                !isRange(value) && "rounded-md",
+                            ),
+                            today: "bg-accent text-accent-foreground rounded-md",
                             outside:
-                                'day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30',
-                            disabled: 'text-muted-foreground opacity-50',
+                                "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
+                            disabled: "text-muted-foreground opacity-50",
                             range_middle:
-                                'aria-selected:bg-general-tertiary aria-selected:text-accent-foreground',
-                            hidden: 'invisible',
+                                "aria-selected:bg-general-tertiary aria-selected:text-accent-foreground",
+                            hidden: "invisible",
                         }}
                         showOutsideDays={true}
                         {...props}
                     />
                     <div
                         className={cn(
-                            'absolute bottom-0 left-0 right-0 top-0',
-                            monthYearPicker ? 'bg-popover' : 'hidden',
+                            "absolute bottom-0 left-0 right-0 top-0",
+                            monthYearPicker ? "bg-popover" : "hidden",
                         )}
                     ></div>
                     <MonthYearPicker
@@ -461,8 +504,8 @@ export function DateTimePicker({
                         minDate={minDate}
                         maxDate={maxDate}
                         className={cn(
-                            'absolute bottom-0 left-0 right-0 top-0',
-                            monthYearPicker ? '' : 'hidden',
+                            "absolute bottom-0 left-0 right-0 top-0",
+                            monthYearPicker ? "" : "hidden",
                         )}
                     />
                 </div>
@@ -481,15 +524,15 @@ function MonthYearPicker({
     value,
     minDate,
     maxDate,
-    mode = 'month',
+    mode = "month",
     onChange,
     className,
 }: {
     value: Date;
-    mode: 'month' | 'year';
+    mode: "month" | "year";
     minDate?: Date;
     maxDate?: Date;
-    onChange: (value: Date, mode: 'month' | 'year') => void;
+    onChange: (value: Date, mode: "month" | "year") => void;
     className?: string;
 }) {
     const years = useMemo(() => {
@@ -512,7 +555,11 @@ function MonthYearPicker({
             const endM = endOfMonth(setMonthFns(value, i));
             if (minDate && endM < minDate) disabled = true;
             if (maxDate && startM > maxDate) disabled = true;
-            months.push({ value: i, label: format(new Date(0, i), 'MMM'), disabled });
+            months.push({
+                value: i,
+                label: format(new Date(0, i), "MMM"),
+                disabled,
+            });
         }
         return months;
     }, [value]);
@@ -526,17 +573,22 @@ function MonthYearPicker({
             if (maxDate && newDate > maxDate) {
                 newDate = setMonthFns(newDate, getMonth(maxDate));
             }
-            onChange(newDate, 'year');
+            onChange(newDate, "year");
         },
         [onChange, value, minDate, maxDate],
     );
 
     useEffect(() => {
-        if (mode === 'year') {
+        if (mode === "year") {
             // Scroll to selected year after a brief delay to ensure DOM is ready
             const timeoutId = setTimeout(() => {
-                const selectedYearElement = document.querySelector(`[data-year="${getYear(value)}"]`);
-                selectedYearElement?.scrollIntoView({ behavior: 'auto', block: 'center' });
+                const selectedYearElement = document.querySelector(
+                    `[data-year="${getYear(value)}"]`,
+                );
+                selectedYearElement?.scrollIntoView({
+                    behavior: "auto",
+                    block: "center",
+                });
             }, 10);
             return () => clearTimeout(timeoutId);
         }
@@ -544,16 +596,17 @@ function MonthYearPicker({
     return (
         <div className={cn(className)}>
             <ScrollArea className="h-full">
-                {mode === 'year' && (
+                {mode === "year" && (
                     <div className="grid grid-cols-4">
                         {years.map((year) => (
-                            <div
-                                key={year.value}
-                                data-year={year.value}
-                            >
+                            <div key={year.value} data-year={year.value}>
                                 <Button
                                     disabled={year.disabled}
-                                    variant={getYear(value) === year.value ? 'default' : 'ghost'}
+                                    variant={
+                                        getYear(value) === year.value
+                                            ? "default"
+                                            : "ghost"
+                                    }
                                     className="rounded-full"
                                     onClick={() => onYearChange(year)}
                                 >
@@ -563,17 +616,24 @@ function MonthYearPicker({
                         ))}
                     </div>
                 )}
-                {mode === 'month' && (
+                {mode === "month" && (
                     <div className="grid grid-cols-3 gap-4">
                         {months.map((month) => (
                             <Button
                                 key={month.value}
                                 size="lg"
                                 disabled={month.disabled}
-                                variant={getMonth(value) === month.value ? 'default' : 'ghost'}
+                                variant={
+                                    getMonth(value) === month.value
+                                        ? "default"
+                                        : "ghost"
+                                }
                                 className="rounded-full"
                                 onClick={() =>
-                                    onChange(setMonthFns(value, month.value), 'month')
+                                    onChange(
+                                        setMonthFns(value, month.value),
+                                        "month",
+                                    )
                                 }
                             >
                                 {month.label}
@@ -586,7 +646,7 @@ function MonthYearPicker({
     );
 }
 
-export type DatePickerPopoverProps = Omit<DateTimePickerProps, 'classNames'> & {
+export type DatePickerPopoverProps = Omit<DateTimePickerProps, "classNames"> & {
     /**
      * Custom class names for the component.
      */
@@ -604,33 +664,38 @@ export type DatePickerPopoverProps = Omit<DateTimePickerProps, 'classNames'> & {
      * Alignment of the popover relative to the trigger.
      * @default "start"
      */
-    align?: 'start' | 'center' | 'end';
+    align?: "start" | "center" | "end";
     /**
      * Side of the trigger where the popover should appear.
      * @default "bottom"
      */
-    side?: 'top' | 'right' | 'bottom' | 'left';
+    side?: "top" | "right" | "bottom" | "left";
 };
 
 export function DatePickerPopover({
     value,
     onChange,
-    mode = 'single',
+    mode = "single",
     disabled,
     showCalendarIcon = true,
     clearable,
     borderless,
-    placeholder = 'Pick a date',
+    placeholder = "Pick a date",
     classNames,
-    align = 'start',
-    side = 'bottom',
+    align = "start",
+    side = "bottom",
     ...dateTimePickerProps
 }: DatePickerPopoverProps) {
     const [open, setOpen] = useState(false);
 
     // Helper to check if value is a range
     const isRange = (val: Date | DateRange | undefined): val is DateRange => {
-        return mode === 'range' && val !== undefined && typeof val === 'object' && 'from' in val;
+        return (
+            mode === "range" &&
+            val !== undefined &&
+            typeof val === "object" &&
+            "from" in val
+        );
     };
 
     // Format display value
@@ -639,15 +704,15 @@ export function DatePickerPopover({
 
         if (isRange(value)) {
             if (value.from && value.to) {
-                return `${format(value.from, 'MMM dd, yyyy')} - ${format(value.to, 'MMM dd, yyyy')}`;
+                return `${format(value.from, "MMM dd, yyyy")} - ${format(value.to, "MMM dd, yyyy")}`;
             }
             if (value.from) {
-                return `${format(value.from, 'MMM dd, yyyy')} - ...`;
+                return `${format(value.from, "MMM dd, yyyy")} - ...`;
             }
             return placeholder;
         }
 
-        return format(value as Date, 'MMM dd, yyyy');
+        return format(value as Date, "MMM dd, yyyy");
     };
 
     // Handle clear action
@@ -660,12 +725,13 @@ export function DatePickerPopover({
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
                 <Button
-                    variant={borderless ? 'ghost' : 'outline'}
+                    variant={borderless ? "ghost" : "outline"}
                     className={cn(
-                        'w-full justify-start text-left font-normal',
-                        !value && 'text-muted-foreground',
-                        borderless && 'border-none shadow-none hover:bg-transparent',
-                        classNames?.trigger
+                        "w-full justify-start text-left font-normal",
+                        !value && "text-muted-foreground",
+                        borderless &&
+                            "border-none shadow-none hover:bg-transparent",
+                        classNames?.trigger,
                     )}
                     disabled={disabled}
                 >
@@ -680,7 +746,7 @@ export function DatePickerPopover({
                 </Button>
             </PopoverTrigger>
             <PopoverContent
-                className={cn('w-auto p-0', classNames?.content)}
+                className={cn("w-auto p-0", classNames?.content)}
                 align={align}
                 side={side}
             >
@@ -694,4 +760,3 @@ export function DatePickerPopover({
         </Popover>
     );
 }
-

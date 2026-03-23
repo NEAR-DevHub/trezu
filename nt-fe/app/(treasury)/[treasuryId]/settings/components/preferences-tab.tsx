@@ -310,13 +310,11 @@ export function PreferencesTab() {
                                         >
                                             <SelectTrigger className="w-full overflow-hidden [&>span]:truncate [&>span]:min-w-0">
                                                 <span className="truncate block min-w-0">
-                                                    {isLoadingTimezones ? (
-                                                        "Loading timezones..."
-                                                    ) : field.value ? (
-                                                        `(${field.value.utc}) ${field.value.value}`
-                                                    ) : (
-                                                        "Select Timezone"
-                                                    )}
+                                                    {isLoadingTimezones
+                                                        ? "Loading timezones..."
+                                                        : field.value
+                                                          ? `(${field.value.utc}) ${field.value.value}`
+                                                          : "Select Timezone"}
                                                 </span>
                                             </SelectTrigger>
                                             <SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
@@ -341,7 +339,7 @@ export function PreferencesTab() {
                                                 </div>
                                                 <ScrollArea className="h-[300px]">
                                                     {filteredTimezones.length >
-                                                        0 ? (
+                                                    0 ? (
                                                         filteredTimezones.map(
                                                             (tz) => (
                                                                 <SelectItem
@@ -354,8 +352,12 @@ export function PreferencesTab() {
                                                                     className="whitespace-normal"
                                                                 >
                                                                     <span className="block whitespace-normal wrap-break-word">
-                                                                        ({tz.utc}){" "}
-                                                                        {tz.value}
+                                                                        (
+                                                                        {tz.utc}
+                                                                        ){" "}
+                                                                        {
+                                                                            tz.value
+                                                                        }
                                                                     </span>
                                                                 </SelectItem>
                                                             ),

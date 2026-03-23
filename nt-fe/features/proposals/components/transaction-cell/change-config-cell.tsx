@@ -12,16 +12,20 @@ interface ChangeConfigCellProps {
     textOnly?: boolean;
 }
 
-export function ChangeConfigCell({ proposal, timestamp }: ChangeConfigCellProps) {
+export function ChangeConfigCell({
+    proposal,
+    timestamp,
+}: ChangeConfigCellProps) {
     const { treasuryId } = useTreasury();
 
     const isPending = proposal.status === "InProgress";
 
     // If not pending, fetch the config at the time of submission
-    const { data: oldConfig, isLoading: isLoadingTimestamped } = useTreasuryConfig(
-        treasuryId,
-        !isPending ? proposal.submission_time : null
-    );
+    const { data: oldConfig, isLoading: isLoadingTimestamped } =
+        useTreasuryConfig(
+            treasuryId,
+            !isPending ? proposal.submission_time : null,
+        );
 
     const summary = useMemo(() => {
         if (!oldConfig) return null;
@@ -32,12 +36,12 @@ export function ChangeConfigCell({ proposal, timestamp }: ChangeConfigCellProps)
         const formattedOldConfig = {
             name: oldConfig.name ?? null,
             purpose: oldConfig.purpose ?? null,
-            metadata: (oldConfig.metadata as any) || {}
+            metadata: (oldConfig.metadata as any) || {},
         };
 
         const diff = computeConfigDiff(formattedOldConfig, newConfig);
         return {
-            changesCount: diff.changesCount
+            changesCount: diff.changesCount,
         };
     }, [oldConfig, proposal]);
 
@@ -62,7 +66,7 @@ export function ChangeConfigCell({ proposal, timestamp }: ChangeConfigCellProps)
     }
 
     const { changesCount } = summary;
-    const subtitle = `${changesCount} ${changesCount === 1 ? 'Change' : 'Changes'}`;
+    const subtitle = `${changesCount} ${changesCount === 1 ? "Change" : "Changes"}`;
 
     return (
         <TitleSubtitleCell

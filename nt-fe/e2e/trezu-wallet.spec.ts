@@ -174,19 +174,16 @@ test.describe("waiting-approval step", () => {
     }) => {
         const proposalId = 42;
 
-        await page.route(
-            "**/api/treasury/policy*",
-            async (route: Route) => {
-                await route.fulfill({
-                    status: 200,
-                    contentType: "application/json",
-                    body: JSON.stringify({
-                        proposal_period: "604800000000000",
-                        proposal_bond: "0",
-                    }),
-                });
-            },
-        );
+        await page.route("**/api/treasury/policy*", async (route: Route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    proposal_period: "604800000000000",
+                    proposal_bond: "0",
+                }),
+            });
+        });
 
         await page.route(
             `**/api/proposal/${DAO_ID}/${proposalId}`,
@@ -220,9 +217,9 @@ test.describe("waiting-approval step", () => {
             .getByRole("button", { name: "The Proposal is Approved. Proceed" })
             .click();
 
-        await expect(
-            page.getByText(/still pending approval/),
-        ).toBeVisible({ timeout: 5_000 });
+        await expect(page.getByText(/still pending approval/)).toBeVisible({
+            timeout: 5_000,
+        });
     });
 
     test("Proceed sends success postMessage when proposal is Approved and tx hash found", async ({
@@ -248,19 +245,16 @@ test.describe("waiting-approval step", () => {
             };
         });
 
-        await page.route(
-            "**/api/treasury/policy*",
-            async (route: Route) => {
-                await route.fulfill({
-                    status: 200,
-                    contentType: "application/json",
-                    body: JSON.stringify({
-                        proposal_period: "604800000000000",
-                        proposal_bond: "0",
-                    }),
-                });
-            },
-        );
+        await page.route("**/api/treasury/policy*", async (route: Route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    proposal_period: "604800000000000",
+                    proposal_bond: "0",
+                }),
+            });
+        });
 
         await page.route(
             `**/api/proposal/${DAO_ID}/${proposalId}`,
@@ -327,19 +321,16 @@ test.describe("waiting-approval step", () => {
     }) => {
         const proposalId = 99;
 
-        await page.route(
-            "**/api/treasury/policy*",
-            async (route: Route) => {
-                await route.fulfill({
-                    status: 200,
-                    contentType: "application/json",
-                    body: JSON.stringify({
-                        proposal_period: "604800000000000",
-                        proposal_bond: "0",
-                    }),
-                });
-            },
-        );
+        await page.route("**/api/treasury/policy*", async (route: Route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    proposal_period: "604800000000000",
+                    proposal_bond: "0",
+                }),
+            });
+        });
 
         await page.route(
             `**/api/proposal/${DAO_ID}/${proposalId}`,
@@ -382,9 +373,9 @@ test.describe("waiting-approval step", () => {
             .click();
 
         // Should show "not yet indexed" message
-        await expect(
-            page.getByText(/not yet indexed/),
-        ).toBeVisible({ timeout: 10_000 });
+        await expect(page.getByText(/not yet indexed/)).toBeVisible({
+            timeout: 10_000,
+        });
     });
 });
 
@@ -409,9 +400,9 @@ test.describe("cancel button", () => {
         });
 
         await page.goto("/wallet?action=sign_in&network=mainnet");
-        await expect(
-            page.getByRole("button", { name: "Cancel" }),
-        ).toBeVisible({ timeout: 10_000 });
+        await expect(page.getByRole("button", { name: "Cancel" })).toBeVisible({
+            timeout: 10_000,
+        });
 
         await page.getByRole("button", { name: "Cancel" }).click();
 
@@ -526,29 +517,26 @@ test.describe("sign_in with pre-connected wallet", () => {
     }) => {
         await setupMockWallet(page, "alice.near");
 
-        await page.route(
-            "**/api/user/treasuries*",
-            async (route: Route) => {
-                await route.fulfill({
-                    status: 200,
-                    contentType: "application/json",
-                    body: JSON.stringify([
-                        {
-                            daoId: DAO_ID,
-                            config: { name: "My Test Treasury" },
-                            isMember: true,
-                        },
-                    ]),
-                });
-            },
-        );
+        await page.route("**/api/user/treasuries*", async (route: Route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify([
+                    {
+                        daoId: DAO_ID,
+                        config: { name: "My Test Treasury" },
+                        isMember: true,
+                    },
+                ]),
+            });
+        });
 
         await page.goto("/wallet?action=sign_in&network=mainnet");
 
         // Should skip connect step and go directly to treasury selection
-        await expect(
-            page.getByText("Select a treasury to"),
-        ).toBeVisible({ timeout: 10_000 });
+        await expect(page.getByText("Select a treasury to")).toBeVisible({
+            timeout: 10_000,
+        });
         await expect(page.getByText(DAO_ID)).toBeVisible();
         await expect(page.getByText("My Test Treasury")).toBeVisible();
     });
@@ -572,22 +560,19 @@ test.describe("sign_in with pre-connected wallet", () => {
             window.close = () => {};
         });
 
-        await page.route(
-            "**/api/user/treasuries*",
-            async (route: Route) => {
-                await route.fulfill({
-                    status: 200,
-                    contentType: "application/json",
-                    body: JSON.stringify([
-                        {
-                            daoId: DAO_ID,
-                            config: { name: "My Test Treasury" },
-                            isMember: true,
-                        },
-                    ]),
-                });
-            },
-        );
+        await page.route("**/api/user/treasuries*", async (route: Route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify([
+                    {
+                        daoId: DAO_ID,
+                        config: { name: "My Test Treasury" },
+                        isMember: true,
+                    },
+                ]),
+            });
+        });
 
         await page.goto("/wallet?action=sign_in&network=mainnet");
 
@@ -595,9 +580,9 @@ test.describe("sign_in with pre-connected wallet", () => {
         await page.getByText(DAO_ID).click();
 
         // Should show done step
-        await expect(
-            page.getByText("Signed in successfully"),
-        ).toBeVisible({ timeout: 5_000 });
+        await expect(page.getByText("Signed in successfully")).toBeVisible({
+            timeout: 5_000,
+        });
 
         // Should have sent the DAO account ID as the signed-in account
         const messages = await page.evaluate(

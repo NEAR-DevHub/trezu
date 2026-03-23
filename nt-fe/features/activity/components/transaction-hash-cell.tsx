@@ -37,11 +37,7 @@ export function TransactionHashCell({
 
     return (
         <div className={className}>
-            <div
-                className="text-sm"
-            >
-                {transactionHash.slice(0, 12)}...
-            </div>
+            <div className="text-sm">{transactionHash.slice(0, 12)}...</div>
             <Button
                 variant="ghost"
                 size="icon-sm"

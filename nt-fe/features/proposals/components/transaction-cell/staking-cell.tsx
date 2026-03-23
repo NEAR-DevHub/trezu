@@ -8,10 +8,21 @@ interface StakingCellProps {
     textOnly?: boolean;
 }
 
-export function StakingCell({ data, timestamp, textOnly = false }: StakingCellProps) {
-    const { data: lockupPool } = useLockupPool(data.isLockup ? data.receiver : null);
+export function StakingCell({
+    data,
+    timestamp,
+    textOnly = false,
+}: StakingCellProps) {
+    const { data: lockupPool } = useLockupPool(
+        data.isLockup ? data.receiver : null,
+    );
     const validator = data.isLockup ? lockupPool : data.receiver;
     return (
-        <TokenCell data={{ ...data, receiver: validator || "" }} textOnly={textOnly} prefix="Validator:" timestamp={timestamp} />
+        <TokenCell
+            data={{ ...data, receiver: validator || "" }}
+            textOnly={textOnly}
+            prefix="Validator:"
+            timestamp={timestamp}
+        />
     );
 }

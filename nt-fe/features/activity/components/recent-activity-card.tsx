@@ -32,17 +32,17 @@ import type { RecentActivity as RecentActivityType } from "@/lib/api";
 
 type GroupedActivity =
     | {
-        type: "single";
-        activity: RecentActivityType;
-    }
+          type: "single";
+          activity: RecentActivityType;
+      }
     | {
-        type: "grouped";
-        pool: string;
-        activities: RecentActivityType[];
-        totalAmount: string;
-        tokenMetadata: RecentActivityType["tokenMetadata"];
-        blockTime: string; // Most recent time
-    };
+          type: "grouped";
+          pool: string;
+          activities: RecentActivityType[];
+          totalAmount: string;
+          tokenMetadata: RecentActivityType["tokenMetadata"];
+          blockTime: string; // Most recent time
+      };
 import {
     useReactTable,
     getCoreRowModel,
@@ -254,8 +254,8 @@ export function RecentActivity() {
                                     isSwap
                                         ? "bg-blue-500/10"
                                         : isReceived
-                                            ? "bg-general-success-background-faded"
-                                            : "bg-general-destructive-background-faded",
+                                          ? "bg-general-success-background-faded"
+                                          : "bg-general-destructive-background-faded",
                                 )}
                             >
                                 {isSwap ? (
@@ -341,7 +341,7 @@ export function RecentActivity() {
                                     {isDeposit ? (
                                         <>
                                             {swap.sentAmount &&
-                                                swap.sentTokenMetadata ? (
+                                            swap.sentTokenMetadata ? (
                                                 <span className="font-semibold text-foreground hidden sm:inline truncate">
                                                     {formatSmartAmount(
                                                         swap.sentAmount,
@@ -370,7 +370,8 @@ export function RecentActivity() {
                                             ) : null}
                                             <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                                             <span className="font-semibold text-general-success-foreground hidden sm:inline truncate">
-                                                +{formatSmartAmount(
+                                                +
+                                                {formatSmartAmount(
                                                     swap.receivedAmount,
                                                 )}{" "}
                                                 {receivedSymbol}
@@ -436,7 +437,7 @@ export function RecentActivity() {
             <Card className="gap-3 border-none shadow-none">
                 <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3 px-4">
                     <div className="space-y-1">
-                    <StepperHeader title="Recent Transactions" />
+                        <StepperHeader title="Recent Transactions" />
                         <CardDescription>
                             Sent and received transactions ({historyDescription}
                             )

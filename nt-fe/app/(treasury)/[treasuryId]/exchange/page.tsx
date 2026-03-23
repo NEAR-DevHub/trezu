@@ -188,11 +188,11 @@ function Step1({ handleNext }: StepProps) {
     const formattedReceiveAmount = useFormatQuoteAmount(
         quoteData?.quote
             ? {
-                amountOut: quoteData.quote.amountOut,
-                amountOutFormatted: quoteData.quote.amountOutFormatted,
-                amountOutUsd: quoteData.quote.amountOutUsd,
-                tokenDecimals: receiveToken.decimals,
-            }
+                  amountOut: quoteData.quote.amountOut,
+                  amountOutFormatted: quoteData.quote.amountOutFormatted,
+                  amountOutUsd: quoteData.quote.amountOutUsd,
+                  tokenDecimals: receiveToken.decimals,
+              }
             : null,
     );
 
@@ -307,8 +307,8 @@ function Step1({ handleNext }: StepProps) {
                         areSameTokens
                             ? "Tokens must be different"
                             : !hasValidAmount
-                                ? "Enter an amount to exchange"
-                                : "Review Exchange"
+                              ? "Enter an amount to exchange"
+                              : "Review Exchange"
                     }
                 />
             </div>
@@ -367,12 +367,12 @@ function Step2({ handleBack }: StepProps) {
     const formattedReceiveAmount = useFormatQuoteAmount(
         localLiveQuoteData?.quote
             ? {
-                amountOut: localLiveQuoteData.quote.amountOut,
-                amountOutFormatted:
-                    localLiveQuoteData.quote.amountOutFormatted,
-                amountOutUsd: localLiveQuoteData.quote.amountOutUsd,
-                tokenDecimals: receiveToken.decimals,
-            }
+                  amountOut: localLiveQuoteData.quote.amountOut,
+                  amountOutFormatted:
+                      localLiveQuoteData.quote.amountOutFormatted,
+                  amountOutUsd: localLiveQuoteData.quote.amountOutUsd,
+                  tokenDecimals: receiveToken.decimals,
+              }
             : null,
     );
 
@@ -400,15 +400,15 @@ function Step2({ handleBack }: StepProps) {
         ? isWrapConversion
             ? { percentDifference: "0", isFavorable: true, hasMarketData: true }
             : calculateMarketPriceDifference(
-                localLiveQuoteData.quote.amountInUsd,
-                localLiveQuoteData.quote.amountOutUsd,
-                localLiveQuoteData.quote.amountIn,
-                localLiveQuoteData.quote.amountOut,
-                sellToken.decimals,
-                receiveToken.decimals,
-                sellTokenData?.price,
-                receiveTokenData?.price,
-            )
+                  localLiveQuoteData.quote.amountInUsd,
+                  localLiveQuoteData.quote.amountOutUsd,
+                  localLiveQuoteData.quote.amountIn,
+                  localLiveQuoteData.quote.amountOut,
+                  sellToken.decimals,
+                  receiveToken.decimals,
+                  sellTokenData?.price,
+                  receiveTokenData?.price,
+              )
         : null;
 
     return (
@@ -494,24 +494,24 @@ function Step2({ handleBack }: StepProps) {
                                 size="sm"
                                 items={[
                                     ...(marketPriceDifference &&
-                                        marketPriceDifference.hasMarketData
+                                    marketPriceDifference.hasMarketData
                                         ? [
-                                            {
-                                                label: "Price Difference",
-                                                value: (
-                                                    <span className="font-medium">
-                                                        {marketPriceDifference.isFavorable
-                                                            ? "+"
-                                                            : ""}
-                                                        {
-                                                            marketPriceDifference.percentDifference
-                                                        }
-                                                        %
-                                                    </span>
-                                                ),
-                                                info: "Difference between the quote rate and the current market rate. Positive values indicate a better rate than market.",
-                                            },
-                                        ]
+                                              {
+                                                  label: "Price Difference",
+                                                  value: (
+                                                      <span className="font-medium">
+                                                          {marketPriceDifference.isFavorable
+                                                              ? "+"
+                                                              : ""}
+                                                          {
+                                                              marketPriceDifference.percentDifference
+                                                          }
+                                                          %
+                                                      </span>
+                                                  ),
+                                                  info: "Difference between the quote rate and the current market rate. Positive values indicate a better rate than market.",
+                                              },
+                                          ]
                                         : []),
                                     {
                                         label: "Estimated Time",
@@ -569,26 +569,26 @@ function Step2({ handleBack }: StepProps) {
                                     // Don't show Widget Fee for NEAR ↔ wNEAR conversions
                                     ...(!isWrapConversion
                                         ? [
-                                            {
-                                                label: "Exchange Fee",
-                                                value: (() => {
-                                                    // Calculate fee: amountIn * 0.35% = amountIn * 0.0035
-                                                    const feePercentage = 0.7;
-                                                    const amountIn =
-                                                        Number(
-                                                            localLiveQuoteData
-                                                                .quote
-                                                                .amountInFormatted,
-                                                        ) || 0;
-                                                    const feeAmount =
-                                                        amountIn *
-                                                        (feePercentage / 100);
+                                              {
+                                                  label: "Exchange Fee",
+                                                  value: (() => {
+                                                      // Calculate fee: amountIn * 0.35% = amountIn * 0.0035
+                                                      const feePercentage = 0.7;
+                                                      const amountIn =
+                                                          Number(
+                                                              localLiveQuoteData
+                                                                  .quote
+                                                                  .amountInFormatted,
+                                                          ) || 0;
+                                                      const feeAmount =
+                                                          amountIn *
+                                                          (feePercentage / 100);
 
-                                                    return `${feePercentage}% / ${formatSmartAmount(feeAmount)} ${sellToken.symbol}`;
-                                                })(),
-                                                info: "The 0.70% fee incurred here covers the NEAR Intents protocol costs to facilitate your trade and the Trezu widget fee. This amount is automatically calculated into your quoted rate.",
-                                            },
-                                        ]
+                                                      return `${feePercentage}% / ${formatSmartAmount(feeAmount)} ${sellToken.symbol}`;
+                                                  })(),
+                                                  info: "The 0.70% fee incurred here covers the NEAR Intents protocol costs to facilitate your trade and the Trezu widget fee. This amount is automatically calculated into your quoted rate.",
+                                              },
+                                          ]
                                         : []),
                                 ]}
                             />

@@ -16,7 +16,7 @@ export function useFilterState<T>({
     onUpdate,
     parseData,
     serializeData,
-    defaultOperation = "Is"
+    defaultOperation = "Is",
 }: UseFilterStateOptions<T>) {
     const [operation, setOperation] = useState<string>(defaultOperation);
     const [data, setData] = useState<T | null>(null);

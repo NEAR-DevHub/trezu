@@ -12,25 +12,23 @@ export function ExportButton() {
     const router = useRouter();
     const isMobile = useMediaQuery("(max-width: 640px)");
 
-
     const handleClick = () => {
         trackEvent("export_click", {
             source: "export_button",
             treasury_id: treasuryId,
         });
         router.push(`/${treasuryId}/dashboard/export`);
-
     };
 
-
-    return <Button
-        variant="secondary"
-        onClick={handleClick}
-        className="h-9 px-3"
-        size={isMobile ? "icon" : "default"}
-    >
-        <FileDown className="h-4 w-4" />
-        <span className="hidden sm:inline">Export</span>
-    </Button>
+    return (
+        <Button
+            variant="secondary"
+            onClick={handleClick}
+            className="h-9 px-3"
+            size={isMobile ? "icon" : "default"}
+        >
+            <FileDown className="h-4 w-4" />
+            <span className="hidden sm:inline">Export</span>
+        </Button>
+    );
 }
-

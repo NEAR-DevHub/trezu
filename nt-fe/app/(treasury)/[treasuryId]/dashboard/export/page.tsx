@@ -288,7 +288,7 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
                                     className={cn(
                                         "text-xs font-medium uppercase text-muted-foreground",
                                         header.column.id === "status" &&
-                                        "text-right",
+                                            "text-right",
                                     )}
                                 >
                                     {flexRender(
@@ -309,7 +309,7 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
                                     className={cn(
                                         "align-top",
                                         cell.column.id === "status" &&
-                                        "text-right",
+                                            "text-right",
                                     )}
                                 >
                                     {flexRender(
@@ -362,7 +362,8 @@ export default function ExportActivityPage() {
 
     // Create custom date presets based on plan's history limit
     const datePresets = useMemo(() => {
-        const historyMonths = planDetails?.planConfig?.limits?.historyLookupMonths;
+        const historyMonths =
+            planDetails?.planConfig?.limits?.historyLookupMonths;
         const presets = [...DEFAULT_DATE_PRESETS];
 
         if (historyMonths) {
@@ -372,7 +373,7 @@ export default function ExportActivityPage() {
             if (years >= 1) {
                 // Add "Last 1 year" preset
                 presets.push({
-                    label: 'Last 1 year',
+                    label: "Last 1 year",
                     value: {
                         from: subMonths(startOfDay(new Date()), 12),
                         to: endOfDay(new Date()),
@@ -383,7 +384,7 @@ export default function ExportActivityPage() {
             if (years >= 2) {
                 // Add "Last 2 years" preset
                 presets.push({
-                    label: 'Last 2 years',
+                    label: "Last 2 years",
                     value: {
                         from: subMonths(startOfDay(new Date()), 24),
                         to: endOfDay(new Date()),
@@ -609,8 +610,7 @@ export default function ExportActivityPage() {
         return credits > 0;
     }, [planDetails]);
 
-    const exportCreditsRemaining =
-        planDetails?.exportCredits ?? 0;
+    const exportCreditsRemaining = planDetails?.exportCredits ?? 0;
     const exportCreditsTotal =
         planDetails?.planConfig?.limits?.monthlyExportCredits ??
         planDetails?.planConfig?.limits?.trialExportCredits ??
@@ -677,12 +677,12 @@ export default function ExportActivityPage() {
                                                 Export Recent Transactions
                                             </p>
                                             <p className="text-sm text-muted-foreground">
-                                                Export generation and downloads are
-                                                available to team members only.
+                                                Export generation and downloads
+                                                are available to team members
+                                                only.
                                             </p>
                                         </div>
                                     </div>
-
                                 </div>
 
                                 {/* No Credits Alert */}
@@ -756,7 +756,7 @@ export default function ExportActivityPage() {
                                                                 style={{
                                                                     borderColor:
                                                                         documentType ===
-                                                                            type.value
+                                                                        type.value
                                                                             ? "var(--general-unofficial-border-5)"
                                                                             : "var(--general-unofficial-border-3)",
                                                                 }}
@@ -782,7 +782,7 @@ export default function ExportActivityPage() {
                                                             <Calendar className="h-4 w-4" />
                                                             <span className="text-sm">
                                                                 {dateRange?.from &&
-                                                                    dateRange?.to ? (
+                                                                dateRange?.to ? (
                                                                     <>
                                                                         {format(
                                                                             dateRange.from,
@@ -810,9 +810,9 @@ export default function ExportActivityPage() {
                                                             value={
                                                                 dateRange
                                                                     ? {
-                                                                        from: dateRange.from,
-                                                                        to: dateRange.to,
-                                                                    }
+                                                                          from: dateRange.from,
+                                                                          to: dateRange.to,
+                                                                      }
                                                                     : undefined
                                                             }
                                                             onChange={(
@@ -821,27 +821,27 @@ export default function ExportActivityPage() {
                                                                 if (
                                                                     range &&
                                                                     typeof range ===
-                                                                    "object" &&
+                                                                        "object" &&
                                                                     "from" in
-                                                                    range
+                                                                        range
                                                                 ) {
                                                                     form.setValue(
                                                                         "dateRange",
                                                                         {
                                                                             from: range.from
                                                                                 ? startOfDay(
-                                                                                    range.from,
-                                                                                )
+                                                                                      range.from,
+                                                                                  )
                                                                                 : startOfDay(
-                                                                                    new Date(),
-                                                                                ),
+                                                                                      new Date(),
+                                                                                  ),
                                                                             to: range.to
                                                                                 ? endOfDay(
-                                                                                    range.to,
-                                                                                )
+                                                                                      range.to,
+                                                                                  )
                                                                                 : endOfDay(
-                                                                                    new Date(),
-                                                                                ),
+                                                                                      new Date(),
+                                                                                  ),
                                                                         },
                                                                         {
                                                                             shouldValidate: true,
@@ -870,7 +870,9 @@ export default function ExportActivityPage() {
                                                             numberOfMonths={1}
                                                             min={minDate}
                                                             max={new Date()}
-                                                            presets={datePresets}
+                                                            presets={
+                                                                datePresets
+                                                            }
                                                         />
                                                     </PopoverContent>
                                                 </Popover>
@@ -1055,10 +1057,10 @@ export default function ExportActivityPage() {
                                                 {!isMember || !accountId
                                                     ? "You don't have permission to export"
                                                     : !canGenerateExport
-                                                        ? "You’ve used all your quota"
-                                                        : isExporting
-                                                            ? "Exporting..."
-                                                            : "Export"}
+                                                      ? "You’ve used all your quota"
+                                                      : isExporting
+                                                        ? "Exporting..."
+                                                        : "Export"}
                                             </Button>
                                         </div>
                                     </TabsContent>
@@ -1068,7 +1070,7 @@ export default function ExportActivityPage() {
                                         className="mt-4"
                                     >
                                         {!exportHistoryData ||
-                                            exportHistoryData.data.length === 0 ? (
+                                        exportHistoryData.data.length === 0 ? (
                                             <EmptyState
                                                 icon={FileX}
                                                 title="No exports yet"
@@ -1095,9 +1097,7 @@ export default function ExportActivityPage() {
                             }}
                             className="gap-3 w-full"
                         >
-                            <p className="font-semibold">
-                                Export Requirements
-                            </p>
+                            <p className="font-semibold">Export Requirements</p>
                             <div className="space-y-3 text-sm">
                                 <div className="flex gap-2.5">
                                     <Calendar className="w-5 h-5 shrink-0 mt-0.5" />
@@ -1170,11 +1170,18 @@ export default function ExportActivityPage() {
                                             Looking for more flexibility?
                                         </span>
                                         <Button
-                                            variant={exportCreditsRemaining === 0 ? "default" : "secondary"}
+                                            variant={
+                                                exportCreditsRemaining === 0
+                                                    ? "default"
+                                                    : "secondary"
+                                            }
                                             className="px-2! py-3!"
                                             size="sm"
                                             onClick={() => {
-                                                window.open(APP_CONTACT_US_URL, "_blank");
+                                                window.open(
+                                                    APP_CONTACT_US_URL,
+                                                    "_blank",
+                                                );
                                             }}
                                         >
                                             Contact Us

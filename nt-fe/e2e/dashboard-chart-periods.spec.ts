@@ -42,9 +42,7 @@ test.beforeAll(async () => {
     if (res.ok) {
         console.log(`Created DAO ${TREASURY_ID} in sandbox`);
     } else {
-        console.log(
-            `DAO creation returned ${res.status} (may already exist)`,
-        );
+        console.log(`DAO creation returned ${res.status} (may already exist)`);
     }
 });
 
@@ -234,9 +232,7 @@ function parseLabelDate(label: string, referenceDate: Date): Date | null {
     const monthOnlyMatch = label.match(/^([A-Z][a-z]{2})$/);
     if (monthOnlyMatch) {
         const monthStr = monthOnlyMatch[1];
-        let date = new Date(
-            `${monthStr} 1, ${referenceDate.getFullYear()}`,
-        );
+        let date = new Date(`${monthStr} 1, ${referenceDate.getFullYear()}`);
         if (date > referenceDate) {
             date = new Date(
                 `${monthStr} 1, ${referenceDate.getFullYear() - 1}`,
@@ -285,9 +281,7 @@ test.describe("Dashboard chart time period aggregation (issue #228)", () => {
             await page.goto(DASHBOARD_URL);
 
             // Wait for chart to render with default period (1W)
-            const chartContainer = page
-                .locator("[data-slot='chart']")
-                .first();
+            const chartContainer = page.locator("[data-slot='chart']").first();
             await chartContainer
                 .locator("svg")
                 .first()
