@@ -207,27 +207,27 @@ pub async fn correct_near_counterparties(
                 .map(|ro| ro.outcome.executor_id.to_string())
         };
 
-        if let Some(ref new_cp) = new_counterparty {
-            if *new_cp != record.counterparty {
-                sqlx::query(
-                    "UPDATE balance_changes SET counterparty = $1, updated_at = NOW()
-                     WHERE id = $2",
-                )
-                .bind(new_cp)
-                .bind(record.id)
-                .execute(pool)
-                .await?;
+        if let Some(ref new_cp) = new_counterparty
+            && *new_cp != record.counterparty
+        {
+            sqlx::query(
+                "UPDATE balance_changes SET counterparty = $1, updated_at = NOW()
+                 WHERE id = $2",
+            )
+            .bind(new_cp)
+            .bind(record.id)
+            .execute(pool)
+            .await?;
 
-                log::info!(
-                    "[counterparty-correction] id={}: {} → {} (tx={}, amount={})",
-                    record.id,
-                    record.counterparty,
-                    new_cp,
-                    tx_hash,
-                    record.amount,
-                );
-                corrected += 1;
-            }
+            log::info!(
+                "[counterparty-correction] id={}: {} → {} (tx={}, amount={})",
+                record.id,
+                record.counterparty,
+                new_cp,
+                tx_hash,
+                record.amount,
+            );
+            corrected += 1;
         }
     }
 
