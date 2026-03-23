@@ -150,7 +150,7 @@ export function TooltipUser({
     children,
     triggerProps,
 }: TooltipUserProps) {
-    const { treasuryId } = useTreasury();
+    const { treasuryId, isGuestTreasury } = useTreasury();
     const { data: profile, isLoading: isProfileLoading } =
         useProfile(accountId);
     const isSavedInAddressBook = profile?.isInAddressBook ?? false;
@@ -179,7 +179,8 @@ export function TooltipUser({
                     <div className="flex flex-col gap-1">
                         {!isProfileLoading &&
                             !isSavedInAddressBook &&
-                            addToAddressBookUrl && (
+                            addToAddressBookUrl &&
+                            !isGuestTreasury && (
                                 <Button asChild type="button" variant="ghost">
                                     <Link href={addToAddressBookUrl}>
                                         <ContactRound className="size-4" />
@@ -246,7 +247,9 @@ export function User({
 
     const resolvedName =
         nameProp ??
-        (useAddressBook ? (profile?.addressBookName ?? profile?.name) : profile?.name) ??
+        (useAddressBook
+            ? (profile?.addressBookName ?? profile?.name)
+            : profile?.name) ??
         accountId;
 
     return (

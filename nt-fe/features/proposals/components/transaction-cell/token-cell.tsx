@@ -39,7 +39,7 @@ export function TokenCell({
         <>
             {prefix}
             {isUser ? (
-                <TooltipUser accountId={data.receiver}>
+                <TooltipUser accountId={data.receiver} useAddressBook>
                     <span> {address}</span>
                 </TooltipUser>
             ) : (

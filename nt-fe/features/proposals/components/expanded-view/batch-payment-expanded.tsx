@@ -3,7 +3,7 @@ import { useBulkPaymentTransactionHash } from "@/hooks/use-bulk-payment-transact
 import { BatchPaymentRequestData } from "../../types/index";
 import { InfoDisplay, InfoItem } from "@/components/info-display";
 import { Amount } from "../amount";
-import { BatchPayment, BatchPaymentResponse, PaymentStatus } from "@/lib/api";
+import { BatchPayment, PaymentStatus } from "@/lib/api";
 import { Button } from "@/components/button";
 import { useState } from "react";
 import {
