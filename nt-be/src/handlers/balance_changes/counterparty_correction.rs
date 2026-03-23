@@ -54,7 +54,7 @@ pub async fn correct_near_counterparties(
         SELECT id, account_id, block_height, amount, transaction_hashes,
                counterparty, signer_id
         FROM balance_changes
-        WHERE LOWER(token_id) = 'near'
+        WHERE (token_id IS NULL OR LOWER(token_id) = 'near')
           AND method_name = 'act_proposal'
           AND counterparty = receiver_id
           AND ABS(amount) > 0.01

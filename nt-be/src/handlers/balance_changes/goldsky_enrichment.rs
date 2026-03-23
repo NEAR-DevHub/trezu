@@ -615,7 +615,9 @@ pub async fn run_enrichment_cycle(
             } else {
                 // Only resolve counterparty data (predecessor + child receipts) for
                 // native NEAR events where tx-level signer/receiver is unreliable.
-                let has_near_event = events.iter().any(|e| e.token_id == "near");
+                let has_near_event = events
+                    .iter()
+                    .any(|e| e.token_id.eq_ignore_ascii_case("near"));
                 let resolved = match resolve_receipt_block_height(
                     network,
                     tx_hash,
@@ -725,7 +727,7 @@ pub async fn run_enrichment_cycle(
             // Use receipt-level data from tx_status to find the real counterparty:
             //   - Incoming (amount > 0): receipt_predecessor_id is the sender
             //   - Outgoing (amount < 0): transfer_receiver_id is the recipient
-            let effective_counterparty = if event.token_id == "near" {
+            let effective_counterparty = if event.token_id.eq_ignore_ascii_case("near") {
                 if amount > bigdecimal::BigDecimal::zero() {
                     // Incoming: predecessor created the Transfer receipt → sender
                     tx_action_info
