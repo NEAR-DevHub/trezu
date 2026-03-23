@@ -39,6 +39,13 @@ pub struct TxActionInfo {
     pub action_kind: Option<String>,
     /// Full serialized actions from the transaction (ActionView is Serialize)
     pub actions: serde_json::Value,
+    /// The predecessor_id of the resolved receipt (the account that created it).
+    /// For incoming transfers, this is the actual sender of funds.
+    pub receipt_predecessor_id: Option<String>,
+    /// For outgoing transfers: the executor_id of a child receipt created by this
+    /// receipt, where that executor differs from the current account.
+    /// This is the actual recipient of funds (e.g., the target DAO for Transfer actions).
+    pub transfer_receiver_id: Option<String>,
 }
 
 /// Extract action info from a `FinalExecutionOutcomeView`.
@@ -116,6 +123,8 @@ fn extract_tx_action_info(
         method_name,
         action_kind,
         actions: actions_json,
+        receipt_predecessor_id: None, // populated later from receipt data
+        transfer_receiver_id: None,   // populated later from child receipts
     }
 }
 
@@ -312,25 +321,104 @@ pub async fn resolve_receipt_block_height(
     })
     .await?;
 
-    let (receipts_outcome, tx_action_info) = match &tx_response.final_execution_outcome {
-        Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcome(outcome)) => (
-            &outcome.receipts_outcome,
-            Some(extract_tx_action_info(outcome)),
-        ),
-        Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcomeWithReceipt(outcome)) => (
-            &outcome.final_outcome.receipts_outcome,
-            Some(extract_tx_action_info(&outcome.final_outcome)),
-        ),
-        None => return Err("No final execution outcome in transaction".into()),
-    };
+    let (receipts_outcome, mut tx_action_info, receipts) =
+        match &tx_response.final_execution_outcome {
+            Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcome(outcome)) => (
+                &outcome.receipts_outcome,
+                Some(extract_tx_action_info(outcome)),
+                None,
+            ),
+            Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcomeWithReceipt(outcome)) => (
+                &outcome.final_outcome.receipts_outcome,
+                Some(extract_tx_action_info(&outcome.final_outcome)),
+                Some(&outcome.receipts),
+            ),
+            None => return Err("No final execution outcome in transaction".into()),
+        };
 
-    let block_hash = match receipts_outcome
+    // Extract predecessor_id from the full receipt data.
+    // Try the tx_status receipts first (FinalExecutionOutcomeWithReceipt variant),
+    // otherwise fall back to EXPERIMENTAL_receipt RPC.
+    if let Some(info) = &mut tx_action_info {
+        let parsed_receipt_id: near_primitives::hash::CryptoHash = receipt_id.parse()?;
+
+        let predecessor = if let Some(receipts) = receipts {
+            receipts
+                .iter()
+                .find(|r| r.receipt_id == parsed_receipt_id)
+                .map(|r| r.predecessor_id.to_string())
+        } else {
+            None
+        };
+
+        let predecessor = match predecessor {
+            Some(p) => Some(p),
+            None => {
+                // Fall back to EXPERIMENTAL_receipt RPC
+                match with_transport_retry("receipt_predecessor", || {
+                    let req = methods::EXPERIMENTAL_receipt::RpcReceiptRequest {
+                        receipt_reference: ReceiptReference {
+                            receipt_id: parsed_receipt_id,
+                        },
+                    };
+                    client.call(req)
+                })
+                .await
+                {
+                    Ok(receipt_response) => Some(receipt_response.predecessor_id.to_string()),
+                    Err(e) => {
+                        log::warn!(
+                            "[tx-resolver] Failed to fetch receipt {}: {}",
+                            receipt_id,
+                            e
+                        );
+                        None
+                    }
+                }
+            }
+        };
+
+        if let Some(p) = predecessor {
+            log::debug!("[tx-resolver] receipt {} predecessor_id={}", receipt_id, p);
+            info.receipt_predecessor_id = Some(p);
+        }
+    }
+
+    let our_receipt = match receipts_outcome
         .iter()
         .find(|ro| ro.id.to_string() == receipt_id)
     {
-        Some(ro) => ro.block_hash,
+        Some(ro) => ro,
         None => return Ok((None, tx_action_info)),
     };
+
+    // For outgoing transfers: find a child receipt whose executor_id differs
+    // from our receipt's executor_id. That executor is the transfer recipient.
+    if let Some(info) = &mut tx_action_info {
+        let our_executor = our_receipt.outcome.executor_id.as_str();
+        let child_ids: std::collections::HashSet<String> = our_receipt
+            .outcome
+            .receipt_ids
+            .iter()
+            .map(|id| id.to_string())
+            .collect();
+
+        // Find child receipts in the same transaction with a different executor
+        if let Some(child) = receipts_outcome.iter().find(|ro| {
+            child_ids.contains(&ro.id.to_string())
+                && ro.outcome.executor_id.as_str() != our_executor
+        }) {
+            let receiver = child.outcome.executor_id.to_string();
+            log::debug!(
+                "[tx-resolver] receipt {} has child receipt on {}",
+                receipt_id,
+                receiver
+            );
+            info.transfer_receiver_id = Some(receiver);
+        }
+    }
+
+    let block_hash = our_receipt.block_hash;
 
     let block = with_transport_retry("block_for_receipt", || {
         let req = methods::block::RpcBlockRequest {
