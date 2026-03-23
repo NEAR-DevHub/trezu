@@ -39,6 +39,13 @@ pub struct TxActionInfo {
     pub action_kind: Option<String>,
     /// Full serialized actions from the transaction (ActionView is Serialize)
     pub actions: serde_json::Value,
+    /// The predecessor_id of the resolved receipt (the account that created it).
+    /// For incoming transfers, this is the actual sender of funds.
+    pub receipt_predecessor_id: Option<String>,
+    /// For outgoing transfers: the executor_id of a child receipt created by this
+    /// receipt, where that executor differs from the current account.
+    /// This is the actual recipient of funds (e.g., the target DAO for Transfer actions).
+    pub transfer_receiver_id: Option<String>,
 }
 
 /// Extract action info from a `FinalExecutionOutcomeView`.
@@ -116,6 +123,8 @@ fn extract_tx_action_info(
         method_name,
         action_kind,
         actions: actions_json,
+        receipt_predecessor_id: None, // populated later from receipt data
+        transfer_receiver_id: None,   // populated later from child receipts
     }
 }
 
@@ -287,22 +296,30 @@ pub async fn resolve_all_receipt_block_heights(
 
 /// Resolve the exact block height for a specific receipt within a transaction.
 ///
-/// Calls `tx_status` once, finds the receipt matching `receipt_id`, and resolves
-/// its block hash to a height. Returns `None` if the receipt ID is not found.
+/// Calls `EXPERIMENTAL_tx_status` once, finds the receipt matching `receipt_id`,
+/// and resolves its block hash to a height. Returns `None` if the receipt ID is
+/// not found.
+///
+/// * `resolve_counterparty` - When true, inspects receipt predecessors and child
+///   receipts from the `EXPERIMENTAL_tx_status` response to infer a more accurate
+///   counterparty for native NEAR events. No additional RPC calls are made.
 pub async fn resolve_receipt_block_height(
     network: &NetworkConfig,
     tx_hash: &str,
     sender_account_id: &str,
     receipt_id: &str,
+    resolve_counterparty: bool,
 ) -> Result<(Option<u64>, Option<TxActionInfo>), Box<dyn Error + Send + Sync>> {
     let client = create_rpc_client(network)?;
 
     let parsed_tx_hash: near_primitives::hash::CryptoHash = tx_hash.parse()?;
     let parsed_sender: near_primitives::types::AccountId = sender_account_id.parse()?;
 
+    // Use EXPERIMENTAL_tx_status which returns full ReceiptView objects
+    // (including predecessor_id) — avoids a separate EXPERIMENTAL_receipt call.
     let tx_response = with_transport_retry("tx_status", || {
-        let req = methods::tx::RpcTransactionStatusRequest {
-            transaction_info: methods::tx::TransactionInfo::TransactionId {
+        let req = methods::EXPERIMENTAL_tx_status::RpcTransactionStatusRequest {
+            transaction_info: methods::EXPERIMENTAL_tx_status::TransactionInfo::TransactionId {
                 tx_hash: parsed_tx_hash,
                 sender_account_id: parsed_sender.clone(),
             },
@@ -312,25 +329,72 @@ pub async fn resolve_receipt_block_height(
     })
     .await?;
 
-    let (receipts_outcome, tx_action_info) = match &tx_response.final_execution_outcome {
-        Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcome(outcome)) => (
-            &outcome.receipts_outcome,
-            Some(extract_tx_action_info(outcome)),
-        ),
-        Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcomeWithReceipt(outcome)) => (
-            &outcome.final_outcome.receipts_outcome,
-            Some(extract_tx_action_info(&outcome.final_outcome)),
-        ),
-        None => return Err("No final execution outcome in transaction".into()),
-    };
+    let (receipts_outcome, mut tx_action_info, receipts) =
+        match &tx_response.final_execution_outcome {
+            Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcome(outcome)) => (
+                &outcome.receipts_outcome,
+                Some(extract_tx_action_info(outcome)),
+                None,
+            ),
+            Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcomeWithReceipt(outcome)) => (
+                &outcome.final_outcome.receipts_outcome,
+                Some(extract_tx_action_info(&outcome.final_outcome)),
+                Some(&outcome.receipts),
+            ),
+            None => return Err("No final execution outcome in transaction".into()),
+        };
 
-    let block_hash = match receipts_outcome
+    // Parse receipt_id once to avoid per-iteration string allocations.
+    let parsed_receipt_id: near_primitives::hash::CryptoHash = receipt_id.parse()?;
+
+    // Find our receipt in receipts_outcome first — if it's not there,
+    // return early.
+    let our_receipt = match receipts_outcome
         .iter()
-        .find(|ro| ro.id.to_string() == receipt_id)
+        .find(|ro| ro.id == parsed_receipt_id)
     {
-        Some(ro) => ro.block_hash,
+        Some(ro) => ro,
         None => return Ok((None, tx_action_info)),
     };
+
+    // Resolve receipt-level counterparty data (predecessor + child receipts).
+    // This is opt-in: only enabled for native NEAR events where transaction-level
+    // signer/receiver is unreliable.
+    if resolve_counterparty && let Some(info) = &mut tx_action_info {
+        // Predecessor: extract from the full receipt data returned by
+        // EXPERIMENTAL_tx_status (no extra RPC call needed).
+        if let Some(receipts) = receipts
+            && let Some(receipt) = receipts.iter().find(|r| r.receipt_id == parsed_receipt_id)
+        {
+            let predecessor = receipt.predecessor_id.to_string();
+            log::debug!(
+                "[tx-resolver] receipt {} predecessor_id={}",
+                receipt_id,
+                predecessor
+            );
+            info.receipt_predecessor_id = Some(predecessor);
+        }
+
+        // Child receipts: find a child whose executor_id differs from ours.
+        // That executor is the transfer recipient (for outgoing transfers).
+        let our_executor = our_receipt.outcome.executor_id.as_str();
+        let child_ids: std::collections::HashSet<near_primitives::hash::CryptoHash> =
+            our_receipt.outcome.receipt_ids.iter().cloned().collect();
+
+        if let Some(child) = receipts_outcome.iter().find(|ro| {
+            child_ids.contains(&ro.id) && ro.outcome.executor_id.as_str() != our_executor
+        }) {
+            let receiver = child.outcome.executor_id.to_string();
+            log::debug!(
+                "[tx-resolver] receipt {} has child receipt on {}",
+                receipt_id,
+                receiver
+            );
+            info.transfer_receiver_id = Some(receiver);
+        }
+    }
+
+    let block_hash = our_receipt.block_hash;
 
     let block = with_transport_retry("block_for_receipt", || {
         let req = methods::block::RpcBlockRequest {
