@@ -13,8 +13,8 @@ import { InputBlock } from "@/components/input-block";
 import { LargeInput } from "@/components/large-input";
 import AccountInput from "@/components/account-input";
 import { Button } from "@/components/button";
+import { NetworkList } from "@/components/network-list";
 import { StepperHeader } from "@/components/step-wizard";
-import { NetworkBadge } from "@/components/network-badge";
 import { useChains } from "../chains";
 import { getCompatibleChains } from "../compatible-chains";
 import {
@@ -25,6 +25,7 @@ import { FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { NumberBadge } from "@/components/number-badge";
 import { Address } from "@/components/address";
 import { recipientSchema } from "../types";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 // ─── Form schema ───────────────────────────────────────────────────────────────
 
@@ -51,6 +52,7 @@ function NetworkSelect({
     const [open, setOpen] = useState(false);
 
     const compatibleChains = getCompatibleChains(address, chains);
+    const isMobile = useMediaQuery("(max-width: 768px)");
 
     const options = compatibleChains.map((c) => ({
         id: c.key,
@@ -84,11 +86,20 @@ function NetworkSelect({
 
     return (
         <>
-            <button
-                type="button"
+            <div
+                role="button"
+                tabIndex={disabled ? -1 : 0}
                 onClick={() => !disabled && setOpen(true)}
-                disabled={disabled}
-                className="flex items-center w-full py-1 focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed"
+                onKeyDown={(event) => {
+                    if (disabled) return;
+                    if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setOpen(true);
+                    }
+                }}
+                aria-disabled={disabled}
+                className="flex w-full items-center py-1 focus:outline-none data-[disabled=true]:cursor-not-allowed data-[disabled=true]:opacity-40"
+                data-disabled={disabled}
             >
                 {selectedChains.length === 0 ? (
                     <span className="text-muted-foreground text-lg">
@@ -97,20 +108,13 @@ function NetworkSelect({
                             : "Select network"}
                     </span>
                 ) : (
-                    <div className="flex flex-wrap gap-1.5">
-                        {selectedChains.map((c) => (
-                            <NetworkBadge
-                                key={c.name}
-                                name={c.name}
-                                variant="ghost"
-                                size="lg"
-                                iconDark={c.iconDark}
-                                iconLight={c.iconLight}
-                            />
-                        ))}
-                    </div>
+                    <NetworkList
+                        chains={selectedChains}
+                        className="gap-1.5"
+                        badgeSize={isMobile ? "sm" : "lg"}
+                    />
                 )}
-            </button>
+            </div>
             <SelectModal
                 multiSelect
                 isOpen={open}
@@ -160,7 +164,7 @@ export function RecipientRow({
                     <NumberBadge number={index + 1} variant="secondary" />
                 </div>
                 <div className="flex flex-1 flex-col items-end min-w-0">
-                    <div className="flex items-center gap-2 w-full">
+                    <div className="flex items-center md:flex-row flex-col gap-2 w-full">
                         <div className="flex flex-1 items-start gap-1 min-w-0">
                             <div className="flex items-center gap-2">
                                 <div className="flex flex-1 flex-col gap-0 leading-none min-w-0">
@@ -174,23 +178,14 @@ export function RecipientRow({
                                 {nameBadge}
                             </div>
                         </div>
-                        <div className="flex flex-wrap gap-1 shrink-0">
-                            {recipientChains.map((c) => (
-                                <NetworkBadge
-                                    key={c.key}
-                                    name={c.name}
-                                    size={
-                                        recipientChains.length > 3
-                                            ? "icon"
-                                            : "sm"
-                                    }
-                                    iconOnly={recipientChains.length > 3}
-                                    variant="secondary"
-                                    iconDark={c.iconDark}
-                                    iconLight={c.iconLight}
-                                />
-                            ))}
-                        </div>
+                        <NetworkList
+                            chains={recipientChains}
+                            className="shrink-0"
+                            badgeVariant="secondary"
+                            badgeIconOnly
+                            maxVisible={2}
+                            badgeSize="sm"
+                        />
                     </div>
                 </div>
             </div>

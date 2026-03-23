@@ -20,10 +20,9 @@ import { useTreasury } from "@/hooks/use-treasury";
 import { useAddressBook, AddressBookEntry } from "@/features/address-book";
 import { SelectModal } from "@/app/(treasury)/[treasuryId]/dashboard/components/select-modal";
 import { useChains, ChainInfo } from "@/features/address-book/chains";
-import { NetworkBadge } from "@/components/network-badge";
+import { NetworkList } from "@/components/network-list";
 import { Button } from "@/components/button";
 import { UserWithData } from "@/components/user";
-import { useNear } from "@/stores/near-store";
 
 interface PaymentFormSectionProps<
     TFieldValues extends FieldValues = FieldValues,
@@ -217,20 +216,15 @@ export function PaymentFormSection<
                                 withLink={false}
                             />
                             {selectedContact.networks.length > 0 && (
-                                <div className="flex flex-wrap gap-1">
-                                    {selectedContact.networks
-                                        .map((key) => chainMap.get(key))
-                                        .filter(Boolean)
-                                        .map((chain) => (
-                                            <NetworkBadge
-                                                key={chain!.key}
-                                                name={chain!.name}
-                                                iconDark={chain!.iconDark}
-                                                iconLight={chain!.iconLight}
-                                                size="sm"
-                                            />
-                                        ))}
-                                </div>
+                                <NetworkList
+                                    chains={
+                                        selectedContact.networks
+                                            .map((key) => chainMap.get(key))
+                                            .filter(Boolean) as ChainInfo[]
+                                    }
+                                    badgeSize="sm"
+                                    maxVisible={2}
+                                />
                             )}
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
@@ -332,19 +326,14 @@ export function PaymentFormSection<
                                 withLink={false}
                             />
                             {entryChains.length > 0 && (
-                                <div className="flex items-center gap-2 shrink-0">
-                                    {entryChains.map((chain) => (
-                                        <NetworkBadge
-                                            key={chain.key}
-                                            name={chain.name}
-                                            iconDark={chain.iconDark}
-                                            iconLight={chain.iconLight}
-                                            variant="secondary"
-                                            size="icon"
-                                            iconOnly
-                                        />
-                                    ))}
-                                </div>
+                                <NetworkList
+                                    chains={entryChains}
+                                    className="shrink-0"
+                                    badgeVariant="secondary"
+                                    badgeSize="icon"
+                                    maxVisible={2}
+                                    badgeIconOnly
+                                />
                             )}
                         </div>
                     );

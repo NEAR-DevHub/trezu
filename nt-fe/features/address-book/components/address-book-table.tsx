@@ -9,7 +9,7 @@ import {
     TableRow,
 } from "@/components/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { NetworkBadge } from "@/components/network-badge";
+import { NetworkList } from "@/components/network-list";
 import { User, UserWithData } from "@/components/user";
 import { FormattedDate } from "@/components/formatted-date";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -153,17 +153,10 @@ export function AddressBookTable({
 
                                     {/* Networks */}
                                     <TableCell>
-                                        <div className="flex flex-wrap gap-1">
-                                            {entryChains.map((chain) => (
-                                                <NetworkBadge
-                                                    key={chain.key}
-                                                    name={chain.name}
-                                                    variant="secondary"
-                                                    iconDark={chain.iconDark}
-                                                    iconLight={chain.iconLight}
-                                                />
-                                            ))}
-                                        </div>
+                                        <NetworkList
+                                            chains={entryChains}
+                                            badgeVariant="secondary"
+                                        />
                                     </TableCell>
 
                                     {/* Added By */}
