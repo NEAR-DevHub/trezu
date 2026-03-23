@@ -21,6 +21,7 @@ import {
     getExportHistory,
     getTreasuryCreationStatus,
 } from "@/lib/api";
+import { useTreasury } from "./use-treasury";
 
 /**
  * Query hook to get user's treasuries with config data
@@ -189,9 +190,10 @@ export function useLockupPool(accountId: string | null | undefined) {
  * Data is cached on the backend from social.near contract
  */
 export function useProfile(accountId: string | null | undefined) {
+    const { treasuryId } = useTreasury();
     return useQuery({
-        queryKey: ["profile", accountId],
-        queryFn: () => getProfile(accountId!),
+        queryKey: ["profile", accountId, treasuryId],
+        queryFn: () => getProfile(accountId!, treasuryId),
         enabled: !!accountId,
         staleTime: 1000 * 60 * 10, // 10 minutes (profile data doesn't change frequently)
     });

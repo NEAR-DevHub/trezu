@@ -1,6 +1,10 @@
 import { Button } from "./button";
 import { Tooltip } from "./tooltip";
-import { hasPermission, getApproversAndThreshold } from "@/lib/config-utils";
+import {
+    hasPermission,
+    isAnyMember,
+    getApproversAndThreshold,
+} from "@/lib/config-utils";
 import { ProposalKind } from "@/lib/proposals-api";
 import { useNear } from "@/stores/near-store";
 import { useTreasury } from "@/hooks/use-treasury";
@@ -35,13 +39,9 @@ interface ErrorMessageProps extends React.ComponentProps<typeof Button> {
 
 function ErrorMessage({ message, children, ...props }: ErrorMessageProps) {
     return (
-        <Tooltip content={message}>
-            <span className="w-full">
-                <Button {...props} disabled>
-                    {children}
-                </Button>
-            </span>
-        </Tooltip>
+        <Button {...props} tooltipContent={message}>
+            {children}
+        </Button>
     );
 }
 
@@ -62,9 +62,13 @@ export function AuthButton({
     const { data: policy } = useTreasuryPolicy(treasuryId);
     const { data: subscription } = useSubscription(treasuryId);
     const hasAccess = useMemo(() => {
-        return !!(
-            accountId &&
-            hasPermission(policy, accountId, permissionKind, permissionAction)
+        if (!accountId) return false;
+        if (permissionKind === "any") return isAnyMember(policy, accountId);
+        return hasPermission(
+            policy,
+            accountId,
+            permissionKind,
+            permissionAction,
         );
     }, [policy, accountId, permissionKind, permissionAction]);
     const hasSponsoredTransactions = useMemo(() => {
@@ -107,23 +111,18 @@ export function AuthButton({
     return (
         <>
             {tooltip || tooltipContent ? (
-                <Tooltip content={tooltip || tooltipContent} {...tooltipProps}>
-                    <span className="w-full">
-                        <Button
-                            {...props}
-                            disabled={disabled}
-                            onClick={onClick}
-                        >
-                            {children}
-                        </Button>
-                    </span>
-                </Tooltip>
+                <Button
+                    {...props}
+                    disabled={disabled}
+                    onClick={onClick}
+                    tooltipContent={tooltip || tooltipContent}
+                >
+                    {children}
+                </Button>
             ) : (
-                <span className="w-full">
-                    <Button {...props} disabled={disabled} onClick={onClick}>
-                        {children}
-                    </Button>
-                </span>
+                <Button {...props} disabled={disabled} onClick={onClick}>
+                    {children}
+                </Button>
             )}
         </>
     );

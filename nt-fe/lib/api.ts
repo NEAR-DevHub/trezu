@@ -607,6 +607,7 @@ export interface ProfileData {
     description?: string;
     linktree?: any;
     tags?: any;
+    isInAddressBook?: boolean;
 }
 
 /**
@@ -615,6 +616,7 @@ export interface ProfileData {
  */
 export async function getProfile(
     accountId: string,
+    daoId?: string,
 ): Promise<ProfileData | null> {
     if (!accountId) return null;
 
@@ -622,7 +624,8 @@ export async function getProfile(
         const url = `${BACKEND_API_BASE}/user/profile`;
 
         const response = await axios.get<ProfileData>(url, {
-            params: { accountId },
+            params: { accountId, ...(daoId ? { daoId } : {}) },
+            withCredentials: true,
         });
 
         return response.data;

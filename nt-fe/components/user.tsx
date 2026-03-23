@@ -1,6 +1,9 @@
+import { ContactRound } from "lucide-react";
 import { useProfile } from "@/hooks/use-treasury-queries";
+import { useTreasury } from "@/hooks/use-treasury";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { Button } from "./button";
 import { Tooltip, TooltipProps } from "./tooltip";
 import { Separator } from "./ui/separator";
 import { Skeleton } from "./ui/skeleton";
@@ -8,60 +11,17 @@ import { CopyButton } from "./copy-button";
 import { Address } from "./address";
 import { getExplorerAddressUrl } from "@/lib/blockchain-utils";
 
-interface UserProps {
-    accountId: string;
-    iconOnly?: boolean;
-    withName?: boolean;
-    size?: "sm" | "md" | "lg";
-    withLink?: boolean;
-    withHoverCard?: boolean;
-    chainName?: string; // Optional: specify the blockchain network for explorer links
-}
+// ─── Shared types ─────────────────────────────────────────────────────────────
 
-const sizeClasses = {
+export const sizeClasses = {
     sm: "size-6",
     md: "size-8",
     lg: "size-10",
-};
+} as const;
 
-interface TooltipUserProps {
-    accountId: string;
-    children: React.ReactNode;
-    triggerProps?: TooltipProps["triggerProps"];
-}
+type UserSize = keyof typeof sizeClasses;
 
-export function TooltipUser({
-    accountId,
-    children,
-    triggerProps,
-}: TooltipUserProps) {
-    return (
-        <Tooltip
-            content={
-                <div className="flex flex-col gap-2">
-                    <User accountId={accountId} size="lg" />
-                    <Separator className="h-0.5!" />
-                    <div className="flex items-center gap-2 w-full justify-start py-1">
-                        <CopyButton
-                            text={accountId}
-                            toastMessage="Wallet address copied to clipboard"
-                            variant="ghost"
-                            size="icon"
-                            className="h-auto w-auto p-0"
-                        >
-                            <span className="break-all">
-                                Copy Wallet Address
-                            </span>
-                        </CopyButton>
-                    </div>
-                </div>
-            }
-            triggerProps={triggerProps}
-        >
-            {children}
-        </Tooltip>
-    );
-}
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 const skeletonSizeClasses = {
     sm: { avatar: "size-6", name: "h-3.5 w-20", address: "h-3 w-24" },
@@ -73,7 +33,11 @@ export function UserSkeleton({
     iconOnly = false,
     size = "sm",
     withName = true,
-}: Pick<UserProps, "iconOnly" | "size" | "withName">) {
+}: {
+    iconOnly?: boolean;
+    size?: UserSize;
+    withName?: boolean;
+}) {
     const s = skeletonSizeClasses[size];
     return (
         <div className="flex items-center gap-1.5">
@@ -88,50 +52,46 @@ export function UserSkeleton({
     );
 }
 
-export function User({
-    accountId,
-    iconOnly = false,
+// ─── UserWithData — pure render, no fetching ──────────────────────────────────
+
+interface UserWithDataProps {
+    name: string;
+    address: string;
+    iconOnly?: boolean;
+    size?: UserSize;
+    withLink?: boolean;
+    withHoverCard?: boolean;
+    chainName?: string;
+}
+
+export function UserWithData({
+    name,
+    address,
     size = "sm",
+    iconOnly = false,
     withLink = true,
-    withName = true,
     withHoverCard = false,
-    chainName = "near", // Default to NEAR for backward compatibility
-}: UserProps) {
-    const { data: profile, isLoading } = useProfile(
-        withName ? accountId : undefined,
-    );
-
-    if (isLoading) {
-        return (
-            <UserSkeleton iconOnly={iconOnly} size={size} withName={withName} />
-        );
-    }
-
-    const image = `https://i.near.social/magic/large/https://near.social/magic/img/account/${accountId}`;
-
-    const name = profile?.name ? (
-        <span className="font-medium truncate max-w-full">{profile.name}</span>
-    ) : (
-        <Address
-            address={accountId}
-            className="font-medium truncate max-w-full"
-        />
-    );
+    chainName = "near",
+}: UserWithDataProps) {
+    const image = `https://i.near.social/magic/large/https://near.social/magic/img/account/${address}`;
+    const explorerUrl = getExplorerAddressUrl(chainName, address);
 
     const content = (
         <>
             <div className="rounded-full flex bg-muted border border-border">
                 <img
                     src={image}
-                    alt="User Logo"
+                    alt={name}
                     className={cn("rounded-full shrink-0", sizeClasses[size])}
                 />
             </div>
             {!iconOnly && (
                 <div className="flex flex-col items-start min-w-0">
-                    {withName && name}
+                    <span className="font-medium truncate max-w-full text-sm">
+                        {name}
+                    </span>
                     <Address
-                        address={accountId}
+                        address={address}
                         className="text-xs text-muted-foreground truncate max-w-full"
                     />
                 </div>
@@ -139,24 +99,25 @@ export function User({
         </>
     );
 
-    const explorerUrl = getExplorerAddressUrl(chainName, accountId);
-
-    const userElement = withLink && explorerUrl ? (
-        <Link
-            href={explorerUrl}
-            target="_blank"
-            className="flex items-center gap-1.5"
-        >
-            {content}
-        </Link>
-    ) : (
-        <div className="flex items-center gap-1.5">{content}</div>
-    );
+    const userElement =
+        withLink && explorerUrl ? (
+            <Link
+                href={explorerUrl}
+                target="_blank"
+                className="flex items-center gap-1.5"
+            >
+                {content}
+            </Link>
+        ) : (
+            <div className="flex items-center gap-1.5">{content}</div>
+        );
 
     if (withHoverCard) {
         return (
             <TooltipUser
-                accountId={accountId}
+                accountId={address}
+                name={name}
+                chainName={chainName}
                 triggerProps={{ asChild: false }}
             >
                 {userElement}
@@ -165,4 +126,126 @@ export function User({
     }
 
     return userElement;
+}
+
+// ─── TooltipUser ──────────────────────────────────────────────────────────────
+
+interface TooltipUserProps {
+    accountId: string;
+    name?: string;
+    chainName?: string;
+    children: React.ReactNode;
+    triggerProps?: TooltipProps["triggerProps"];
+}
+
+export function TooltipUser({
+    accountId,
+    name,
+    chainName = "near",
+    children,
+    triggerProps,
+}: TooltipUserProps) {
+    const { treasuryId } = useTreasury();
+    const { data: profile, isLoading: isProfileLoading } =
+        useProfile(accountId);
+    const isSavedInAddressBook = profile?.isInAddressBook ?? false;
+    const addressBookParams = new URLSearchParams({
+        name: name ?? profile?.name ?? accountId,
+        address: accountId,
+    });
+    addressBookParams.set("network", chainName);
+
+    const addToAddressBookUrl = treasuryId
+        ? `/${treasuryId}/address-book?${addressBookParams.toString()}`
+        : null;
+
+    return (
+        <Tooltip
+            content={
+                <div className="flex flex-col gap-2">
+                    <User
+                        accountId={accountId}
+                        name={name}
+                        size="lg"
+                        withLink={false}
+                    />
+                    <Separator className="h-0.5!" />
+                    <div className="flex flex-col gap-1">
+                        {!isProfileLoading &&
+                            !isSavedInAddressBook &&
+                            addToAddressBookUrl && (
+                                <Button asChild type="button" variant="ghost">
+                                    <Link href={addToAddressBookUrl}>
+                                        <ContactRound className="size-4" />
+                                        Save to Address book
+                                    </Link>
+                                </Button>
+                            )}
+                        <CopyButton
+                            text={accountId}
+                            toastMessage="Wallet address copied to clipboard"
+                            variant="ghost"
+                        >
+                            <span className="break-all">
+                                Copy Wallet Address
+                            </span>
+                        </CopyButton>
+                    </div>
+                </div>
+            }
+            contentProps={{ className: "max-w-72 min-w-60" }}
+            triggerProps={triggerProps}
+        >
+            {children}
+        </Tooltip>
+    );
+}
+
+// ─── User — fetches profile then delegates to UserWithData ────────────────────
+
+interface UserProps {
+    accountId: string;
+    /** Override the display name instead of fetching from profile */
+    name?: string;
+    iconOnly?: boolean;
+    withName?: boolean;
+    size?: UserSize;
+    withLink?: boolean;
+    withHoverCard?: boolean;
+    chainName?: string;
+}
+
+export function User({
+    accountId,
+    name: nameProp,
+    iconOnly = false,
+    size = "sm",
+    withLink = true,
+    withName = true,
+    withHoverCard = false,
+    chainName = "near",
+}: UserProps) {
+    const { data: profile, isLoading } = useProfile(
+        withName && !nameProp ? accountId : undefined,
+    );
+
+    if (isLoading) {
+        return (
+            <UserSkeleton iconOnly={iconOnly} size={size} withName={withName} />
+        );
+    }
+
+    const resolvedName = nameProp ?? profile?.name ?? accountId;
+
+    return (
+        <UserWithData
+            name={resolvedName}
+            address={accountId}
+            size={size}
+            iconOnly={iconOnly}
+            withLink={withLink}
+            withHoverCard={withHoverCard}
+            chainName={chainName}
+        />
+    );
 }

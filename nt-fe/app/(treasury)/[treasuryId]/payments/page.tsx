@@ -1,48 +1,51 @@
 "use client";
 
-import { PageCard } from "@/components/card";
-import { PageComponentLayout } from "@/components/page-component-layout";
-import { useForm, useFormContext } from "react-hook-form";
-import { Form, FormField } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { ConnectorAction } from "@hot-labs/near-connect";
+import { ArrowDownToLine } from "lucide-react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useForm, useFormContext } from "react-hook-form";
 import { z } from "zod";
+import { AmountSummary } from "@/components/amount-summary";
+import { Button } from "@/components/button";
+import { PageCard } from "@/components/card";
+import { CreateRequestButton } from "@/components/create-request-button";
+import { PageComponentLayout } from "@/components/page-component-layout";
+import { PendingButton } from "@/components/pending-button";
 import {
     ReviewStep,
+    type StepProps,
     StepperHeader,
-    StepProps,
     StepWizard,
 } from "@/components/step-wizard";
+import { Textarea } from "@/components/textarea";
+import { type Token, tokenSchema } from "@/components/token-input";
+import { Form, FormField } from "@/components/ui/form";
+import { NEAR_TOKEN } from "@/constants/token";
+import { useAddressBook } from "@/features/address-book";
+import {
+    PAGE_TOUR_NAMES,
+    PAGE_TOUR_STORAGE_KEYS,
+    useManualPageTour,
+    usePageTour,
+} from "@/features/onboarding/steps/page-tours";
+import { type BridgeAsset, useBridgeTokens } from "@/hooks/use-bridge-tokens";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { useTreasury } from "@/hooks/use-treasury";
 import {
     useStorageDepositIsRegistered,
     useToken,
     useTreasuryPolicy,
 } from "@/hooks/use-treasury-queries";
-import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { Textarea } from "@/components/textarea";
-import { useTreasury } from "@/hooks/use-treasury";
-import { useNear } from "@/stores/near-store";
-import { encodeToMarkdown, formatCurrency, jsonToBase64 } from "@/lib/utils";
-import Big from "@/lib/big";
-import { ConnectorAction } from "@hot-labs/near-connect";
-import { NEAR_TOKEN } from "@/constants/token";
-import { AmountSummary } from "@/components/amount-summary";
-import { FunctionCallKind, TransferKind } from "@/lib/proposals-api";
-import { CreateRequestButton } from "@/components/create-request-button";
-import { PendingButton } from "@/components/pending-button";
-import {
-    usePageTour,
-    useManualPageTour,
-    PAGE_TOUR_NAMES,
-    PAGE_TOUR_STORAGE_KEYS,
-} from "@/features/onboarding/steps/page-tours";
-import { Button } from "@/components/button";
-import { ArrowDownToLine } from "lucide-react";
-import Link from "next/link";
-import { useMediaQuery } from "@/hooks/use-media-query";
 import { trackEvent } from "@/lib/analytics";
+import Big from "@/lib/big";
+import { getBlockchainType } from "@/lib/blockchain-utils";
+import type { FunctionCallKind, TransferKind } from "@/lib/proposals-api";
+import { encodeToMarkdown, formatCurrency, jsonToBase64 } from "@/lib/utils";
+import { useNear } from "@/stores/near-store";
 import { PaymentFormSection } from "./components/payment-form-section";
-import { tokenSchema } from "@/components/token-input";
 
 const paymentFormSchema = z
     .object({
@@ -144,6 +147,11 @@ function Step2({ handleBack }: StepProps) {
         token.residency === "Ft",
     );
     const { data: tokenData } = useToken(token.address);
+    const { treasuryId } = useTreasury();
+    const { data: addressBook = [] } = useAddressBook(treasuryId);
+    const contactName = addressBook.find(
+        (e) => e.address.toLowerCase() === address?.toLowerCase(),
+    )?.name;
 
     useEffect(() => {
         if (storageDepositData !== undefined) {
@@ -174,7 +182,22 @@ function Step2({ handleBack }: StepProps) {
                     <p className="font-semibold">Recipient</p>
                     <div className="flex flex-col gap-1 w-full">
                         <div className="flex justify-between items-center gap-2 w-full text-xs ">
-                            <p className=" font-semibold">{address}</p>
+                            <div className="flex flex-col gap-0.5 min-w-0">
+                                {contactName && (
+                                    <p className="font-semibold">
+                                        {contactName}
+                                    </p>
+                                )}
+                                <p
+                                    className={
+                                        contactName
+                                            ? "text-muted-foreground truncate"
+                                            : "font-semibold"
+                                    }
+                                >
+                                    {address}
+                                </p>
+                            </div>
                             <div className="flex items-center gap-5">
                                 <img
                                     src={token.icon}
@@ -226,6 +249,89 @@ function Step2({ handleBack }: StepProps) {
 }
 
 type PaymentFormValues = z.infer<typeof paymentFormSchema>;
+
+const STABLE_TOKEN_PRIORITY: Record<string, number> = {
+    USDC: 2,
+    USDT: 1,
+};
+
+function getNetworkMatchScore(
+    tokenNetwork: string,
+    preferredNetworks: string[],
+): number {
+    const normalizedTokenNetwork = tokenNetwork.trim().toLowerCase();
+    const tokenBlockchain = getBlockchainType(normalizedTokenNetwork);
+    let bestScore = 0;
+
+    preferredNetworks.forEach((preferredNetwork, index) => {
+        const normalizedPreferredNetwork = preferredNetwork
+            .trim()
+            .toLowerCase();
+
+        if (normalizedPreferredNetwork === normalizedTokenNetwork) {
+            bestScore = Math.max(bestScore, 200 - index);
+            return;
+        }
+
+        const preferredBlockchain = getBlockchainType(
+            normalizedPreferredNetwork,
+        );
+
+        if (
+            preferredBlockchain !== "unknown" &&
+            preferredBlockchain === tokenBlockchain
+        ) {
+            bestScore = Math.max(bestScore, 100 - index);
+        }
+    });
+
+    return bestScore;
+}
+
+function pickCompatibleFallbackToken(
+    preferredNetworks: string[],
+    bridgeAssets: BridgeAsset[],
+): Token | null {
+    let bestCandidate: { score: number; token: Token } | null = null;
+
+    for (const asset of bridgeAssets) {
+        for (const network of asset.networks) {
+            const networkScore = getNetworkMatchScore(
+                network.name,
+                preferredNetworks,
+            );
+
+            if (networkScore === 0) {
+                continue;
+            }
+
+            const stablePriority =
+                STABLE_TOKEN_PRIORITY[network.symbol.toUpperCase()] ?? 0;
+            const candidateScore = networkScore * 10 + stablePriority;
+            const candidate: Token = {
+                address: network.id,
+                symbol: network.symbol,
+                decimals: network.decimals,
+                name: asset.name,
+                icon: asset.icon,
+                network: network.name,
+                chainIcons: network.chainIcons ?? undefined,
+                residency: "Intents",
+                minWithdrawalAmount: network.minWithdrawalAmount,
+                minDepositAmount: network.minDepositAmount,
+            };
+
+            if (!bestCandidate || candidateScore > bestCandidate.score) {
+                bestCandidate = {
+                    score: candidateScore,
+                    token: candidate,
+                };
+            }
+        }
+    }
+
+    return bestCandidate?.token ?? null;
+}
 
 const buildIntentProposal = (
     data: PaymentFormValues,
@@ -284,10 +390,27 @@ export default function PaymentsPage() {
     const { data: policy } = useTreasuryPolicy(treasuryId);
     const [step, setStep] = useState(0);
     const searchParams = useSearchParams();
+    const autoSelectedTokenKeyRef = useRef<string | null>(null);
+
+    const tokenParam = searchParams.get("token");
+    const preferredNetworks = useMemo(
+        () =>
+            (searchParams.get("networks") ?? searchParams.get("network") ?? "")
+                .split(",")
+                .map((network) => network.trim())
+                .filter(Boolean),
+        [searchParams],
+    );
+    const autoSelectionKey = useMemo(
+        () => preferredNetworks.join(","),
+        [preferredNetworks],
+    );
+    const { data: bridgeAssets = [] } = useBridgeTokens(
+        !tokenParam && preferredNetworks.length > 0,
+    );
 
     // Parse token from query params
     const defaultToken = useMemo(() => {
-        const tokenParam = searchParams.get("token");
         if (tokenParam) {
             try {
                 return JSON.parse(decodeURIComponent(tokenParam));
@@ -296,6 +419,19 @@ export default function PaymentsPage() {
             }
         }
         return NEAR_TOKEN;
+    }, [tokenParam]);
+
+    const compatibleDefaultToken = useMemo(() => {
+        if (tokenParam || preferredNetworks.length === 0) {
+            return null;
+        }
+
+        return pickCompatibleFallbackToken(preferredNetworks, bridgeAssets);
+    }, [bridgeAssets, preferredNetworks, tokenParam]);
+
+    const defaultAddress = useMemo(() => {
+        const addressParam = searchParams.get("address");
+        return addressParam ? decodeURIComponent(addressParam) : "";
     }, [searchParams]);
 
     // Onboarding tours
@@ -311,17 +447,44 @@ export default function PaymentsPage() {
     const form = useForm<PaymentFormValues>({
         resolver: zodResolver(paymentFormSchema),
         defaultValues: {
-            address: "",
+            address: defaultAddress,
             amount: "",
             memo: "",
             token: defaultToken,
         },
     });
 
-    // Update token when query param changes
+    // Update token/address when query params change
     useEffect(() => {
         form.setValue("token", defaultToken);
     }, [defaultToken, form]);
+
+    useEffect(() => {
+        if (defaultAddress) {
+            form.setValue("address", defaultAddress);
+        }
+    }, [defaultAddress, form]);
+
+    useEffect(() => {
+        if (!compatibleDefaultToken || tokenParam) {
+            return;
+        }
+
+        const currentToken = form.getValues("token");
+        const isStillDefaultNearToken =
+            currentToken?.address === NEAR_TOKEN.address &&
+            currentToken?.network === NEAR_TOKEN.network;
+
+        if (
+            !isStillDefaultNearToken ||
+            autoSelectedTokenKeyRef.current === autoSelectionKey
+        ) {
+            return;
+        }
+
+        form.setValue("token", compatibleDefaultToken);
+        autoSelectedTokenKeyRef.current = autoSelectionKey;
+    }, [autoSelectionKey, compatibleDefaultToken, form, tokenParam]);
 
     const onSubmit = async (data: PaymentFormValues) => {
         try {

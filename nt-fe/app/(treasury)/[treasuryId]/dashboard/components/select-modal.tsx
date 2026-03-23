@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, ReactNode } from "react";
+import { Check } from "lucide-react";
 import { Input } from "@/components/input";
 import {
     Dialog,
@@ -10,18 +11,35 @@ import { SelectList, SelectListItem } from "@/components/select-list";
 
 export interface SelectOption extends SelectListItem {}
 
-interface SelectModalProps {
+interface SelectModalPropsBase {
     isOpen: boolean;
     onClose: () => void;
-    onSelect: (option: SelectOption) => void;
     title: string;
     options: SelectOption[];
     searchPlaceholder?: string;
     isLoading?: boolean;
-    selectedId?: string;
     fixNear?: boolean;
     roundIcons?: boolean;
+    renderIcon?: (item: SelectOption) => ReactNode;
+    renderContent?: (item: SelectOption) => ReactNode;
+    renderRight?: (item: SelectOption) => ReactNode;
 }
+
+interface SelectModalSingleProps extends SelectModalPropsBase {
+    multiSelect?: false;
+    onSelect: (option: SelectOption) => void;
+    selectedId?: string;
+    selectedIds?: never;
+}
+
+interface SelectModalMultiProps extends SelectModalPropsBase {
+    multiSelect: true;
+    onSelect: (option: SelectOption) => void;
+    selectedIds: string[];
+    selectedId?: never;
+}
+
+type SelectModalProps = SelectModalSingleProps | SelectModalMultiProps;
 
 export function SelectModal({
     isOpen,
@@ -32,8 +50,13 @@ export function SelectModal({
     searchPlaceholder = "Search by name",
     isLoading = false,
     selectedId,
+    selectedIds,
+    multiSelect,
     fixNear,
     roundIcons,
+    renderIcon,
+    renderContent,
+    renderRight,
 }: SelectModalProps) {
     const [searchQuery, setSearchQuery] = useState("");
 
@@ -51,10 +74,12 @@ export function SelectModal({
     const handleSelect = useCallback(
         (option: SelectOption) => {
             onSelect(option);
-            setSearchQuery("");
-            onClose();
+            if (!multiSelect) {
+                setSearchQuery("");
+                onClose();
+            }
         },
-        [onSelect, onClose],
+        [onSelect, onClose, multiSelect],
     );
 
     const handleClose = useCallback(() => {
@@ -86,6 +111,17 @@ export function SelectModal({
                         emptyMessage="No results found"
                         fixNear={fixNear}
                         roundIcons={roundIcons}
+                        renderIcon={renderIcon}
+                        renderContent={renderContent}
+                        renderRight={
+                            renderRight ??
+                            (multiSelect
+                                ? (item) =>
+                                      selectedIds?.includes(item.id) ? (
+                                          <Check className="size-4 text-primary shrink-0" />
+                                      ) : null
+                                : undefined)
+                        }
                     />
                 </div>
             </DialogContent>
