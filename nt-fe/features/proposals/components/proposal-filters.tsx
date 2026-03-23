@@ -302,12 +302,24 @@ function FilterPill({
                 );
             case "from":
                 return (
-                    <FromFilterContent
+                    <AccountFilterContent
                         value={value}
                         onUpdate={onUpdate}
                         setIsOpen={setIsOpen}
                         onRemove={onRemove}
                         options={options || []}
+                        filterLabel="From"
+                    />
+                );
+            case "to":
+                return (
+                    <AccountFilterContent
+                        value={value}
+                        onUpdate={onUpdate}
+                        setIsOpen={setIsOpen}
+                        onRemove={onRemove}
+                        options={options || []}
+                        filterLabel="To"
                     />
                 );
         }
@@ -381,7 +393,7 @@ function FilterPill({
             );
         }
 
-        if (id === "from" && (filterData as any).selected) {
+        if ((id === "from" || id === "to") && (filterData as any).selected) {
             const selected = (filterData as any).selected;
             if (Array.isArray(selected)) {
                 if (selected.length === 0) return "ALL";
@@ -495,26 +507,28 @@ function FilterPill({
     );
 }
 
-interface FromFilterData {
+interface AccountFilterData {
     selected: string[];
 }
 
-function FromFilterContent({
+function AccountFilterContent({
     value,
     onUpdate,
     setIsOpen,
     onRemove,
     options,
+    filterLabel,
 }: {
     value: string;
     onUpdate: (value: string) => void;
     setIsOpen: (isOpen: boolean) => void;
     onRemove: () => void;
     options: Array<{ value: string; label: string }>;
+    filterLabel: "From" | "To";
 }) {
     const [searchQuery, setSearchQuery] = useState("");
     const { operation, setOperation, data, setData, handleClear } =
-        useFilterState<FromFilterData>({
+        useFilterState<AccountFilterData>({
             value,
             onUpdate,
             parseData: (parsed) => ({
@@ -564,7 +578,7 @@ function FromFilterContent({
 
     return (
         <BaseFilterPopover
-            filterLabel="From"
+            filterLabel={filterLabel}
             operation={operation}
             operations={FROM_OPERATIONS}
             onOperationChange={setOperation}

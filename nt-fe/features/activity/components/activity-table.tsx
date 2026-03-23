@@ -328,6 +328,7 @@ export function ActivityTable({
                                                 {getFromAccount(
                                                     activity,
                                                     isReceived,
+                                                    treasuryId,
                                                 )}
                                             </span>
                                         </TableCell>

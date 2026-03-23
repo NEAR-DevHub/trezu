@@ -18,7 +18,8 @@ import {
     searchIntentsTokens,
     SearchTokensParams,
     getRecentActivity,
-    getRecentActivityFromOptions,
+    getRecentActivityRecipients,
+    getRecentActivitySenders,
     getExportHistory,
     getTreasuryCreationStatus,
 } from "@/lib/api";
@@ -290,6 +291,8 @@ export function useRecentActivity(
     txHash?: string,
     fromAccount?: string[],
     fromAccountNot?: string[],
+    toAccount?: string[],
+    toAccountNot?: string[],
     startDate?: string,
     endDate?: string,
 ) {
@@ -306,6 +309,8 @@ export function useRecentActivity(
             txHash,
             fromAccount,
             fromAccountNot,
+            toAccount,
+            toAccountNot,
             startDate,
             endDate,
         ],
@@ -321,6 +326,8 @@ export function useRecentActivity(
                 txHash,
                 fromAccount,
                 fromAccountNot,
+                toAccount,
+                toAccountNot,
                 startDate,
                 endDate,
             ),
@@ -329,14 +336,25 @@ export function useRecentActivity(
     });
 }
 
-export function useRecentActivityFromOptions(
+export function useRecentActivitySenders(
     accountId: string | null | undefined,
     transactionType?: string,
 ) {
     return useQuery({
-        queryKey: ["recentActivityFromOptions", accountId, transactionType],
-        queryFn: () =>
-            getRecentActivityFromOptions(accountId!, transactionType),
+        queryKey: ["recentActivitySenders", accountId, transactionType],
+        queryFn: () => getRecentActivitySenders(accountId!, transactionType),
+        enabled: !!accountId,
+        staleTime: 1000 * 30,
+    });
+}
+
+export function useRecentActivityRecipients(
+    accountId: string | null | undefined,
+    transactionType?: string,
+) {
+    return useQuery({
+        queryKey: ["recentActivityRecipients", accountId, transactionType],
+        queryFn: () => getRecentActivityRecipients(accountId!, transactionType),
         enabled: !!accountId,
         staleTime: 1000 * 30,
     });

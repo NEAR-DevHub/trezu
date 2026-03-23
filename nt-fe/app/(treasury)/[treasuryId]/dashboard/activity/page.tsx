@@ -5,7 +5,8 @@ import { PageCard } from "@/components/card";
 import { TabsContent } from "@/components/responsive-tabs";
 import {
     useRecentActivity,
-    useRecentActivityFromOptions,
+    useRecentActivityRecipients,
+    useRecentActivitySenders,
 } from "@/hooks/use-treasury-queries";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useTreasury } from "@/hooks/use-treasury";
@@ -126,6 +127,29 @@ function ActivityList({
             console.error("Failed to parse from filter:", e);
         }
     }
+    const toFilter = searchParams.get("to");
+    let toAccount: string[] | undefined;
+    let toAccountNot: string[] | undefined;
+    if (toFilter) {
+        try {
+            const parsed = JSON.parse(toFilter);
+            const selectedValues = Array.isArray(parsed.selected)
+                ? parsed.selected.filter(Boolean)
+                : parsed.selected
+                  ? [parsed.selected]
+                  : [];
+            if (parsed.operation === "Is" && selectedValues.length > 0) {
+                toAccount = selectedValues;
+            } else if (
+                parsed.operation === "Is Not" &&
+                selectedValues.length > 0
+            ) {
+                toAccountNot = selectedValues;
+            }
+        } catch (e) {
+            console.error("Failed to parse to filter:", e);
+        }
+    }
 
     const { data, isLoading } = useRecentActivity(
         treasuryId,
@@ -138,6 +162,8 @@ function ActivityList({
         txHash,
         fromAccount,
         fromAccountNot,
+        toAccount,
+        toAccountNot,
         startDate,
         endDate,
     );
@@ -165,7 +191,11 @@ export default function ActivityPage() {
     const [txHashInput, setTxHashInput] = useState(txHashValue);
 
     const currentTab = searchParams.get("tab") || "all";
-    const { data: fromOptionsData } = useRecentActivityFromOptions(
+    const { data: senderOptionsData } = useRecentActivitySenders(
+        treasuryId,
+        currentTab === "all" ? undefined : currentTab,
+    );
+    const { data: recipientOptionsData } = useRecentActivityRecipients(
         treasuryId,
         currentTab === "all" ? undefined : currentTab,
     );
@@ -195,7 +225,15 @@ export default function ActivityPage() {
             {
                 id: "from",
                 label: "From",
-                options: (fromOptionsData || []).map((option) => ({
+                options: (senderOptionsData || []).map((option) => ({
+                    value: option,
+                    label: option,
+                })),
+            },
+            {
+                id: "to",
+                label: "To",
+                options: (recipientOptionsData || []).map((option) => ({
                     value: option,
                     label: option,
                 })),
@@ -203,7 +241,8 @@ export default function ActivityPage() {
         ];
     }, [
         subscriptionData?.planConfig?.limits?.historyLookupMonths,
-        fromOptionsData,
+        senderOptionsData,
+        recipientOptionsData,
     ]);
 
     const handleTabChange = useCallback(
@@ -218,7 +257,13 @@ export default function ActivityPage() {
 
     // Check if any filters are active
     const hasActiveFilters = useMemo(() => {
-        const filterParams = ["created_date", "token", "from", "min_usd_value"];
+        const filterParams = [
+            "created_date",
+            "token",
+            "from",
+            "to",
+            "min_usd_value",
+        ];
         return filterParams.some((param) => searchParams.has(param));
     }, [searchParams]);
 

@@ -50,6 +50,10 @@ pub struct BalanceChangesQuery {
     pub from_accounts: Option<Vec<String>>, // "From" account(s) filter
     #[serde(default, deserialize_with = "comma_separated")]
     pub from_accounts_not: Option<Vec<String>>, // Exclude these "From" account(s)
+    #[serde(default, deserialize_with = "comma_separated")]
+    pub to_accounts: Option<Vec<String>>, // "To" account(s) filter
+    #[serde(default, deserialize_with = "comma_separated")]
+    pub to_accounts_not: Option<Vec<String>>, // Exclude these "To" account(s)
 
     pub include_metadata: Option<bool>, // default: false (enrich with token metadata like symbol, name, decimals, icon)
     pub include_prices: Option<bool>, // default: false (fetch historical USD prices for transaction dates from DB; if missing, returns None)
@@ -198,6 +202,8 @@ pub async fn get_balance_changes_internal(
         transaction_hash_query: params.tx_hash.clone(),
         from_accounts: params.from_accounts.clone(),
         from_accounts_not: params.from_accounts_not.clone(),
+        to_accounts: params.to_accounts.clone(),
+        to_accounts_not: params.to_accounts_not.clone(),
         exclude_near_dust: params.exclude_near_dust,
         exclude_swaps_from_direction: params.exclude_swaps_from_direction,
     };
@@ -252,6 +258,12 @@ pub async fn get_balance_changes_internal(
     }
     if let Some(ref from_accounts_not) = filters.from_accounts_not {
         query = query.bind(from_accounts_not);
+    }
+    if let Some(ref to_accounts) = filters.to_accounts {
+        query = query.bind(to_accounts);
+    }
+    if let Some(ref to_accounts_not) = filters.to_accounts_not {
+        query = query.bind(to_accounts_not);
     }
 
     // Bind pagination only if we're using it

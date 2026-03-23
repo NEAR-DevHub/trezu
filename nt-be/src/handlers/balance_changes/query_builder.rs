@@ -20,6 +20,11 @@ pub const FROM_ACCOUNT_EXPR: &str =
         ) \
         ELSE signer_id \
     END";
+pub const TO_ACCOUNT_EXPR: &str =
+    "CASE \
+        WHEN amount > 0 THEN account_id \
+        ELSE COALESCE(NULLIF(counterparty, 'UNKNOWN'), receiver_id) \
+    END";
 
 /// Common parameters for filtering balance changes
 #[derive(Debug, Clone)]
@@ -52,6 +57,8 @@ pub struct BalanceChangeFilters {
     // "From" filter values (mapped to displayed "from" account logic)
     pub from_accounts: Option<Vec<String>>,
     pub from_accounts_not: Option<Vec<String>>,
+    pub to_accounts: Option<Vec<String>>,
+    pub to_accounts_not: Option<Vec<String>>,
 
     // Filter out tiny NEAR amounts (gas/storage noise) — used by recent activity only
     pub exclude_near_dust: bool,
@@ -235,6 +242,17 @@ pub fn build_where_conditions(filters: &BalanceChangeFilters) -> (Vec<String>, u
         ));
         param_index += 1;
     }
+    if filters.to_accounts.is_some() {
+        conditions.push(format!("({}) = ANY(${})", TO_ACCOUNT_EXPR, param_index));
+        param_index += 1;
+    }
+    if filters.to_accounts_not.is_some() {
+        conditions.push(format!(
+            "(({}) IS NULL OR NOT (({}) = ANY(${})))",
+            TO_ACCOUNT_EXPR, TO_ACCOUNT_EXPR, param_index
+        ));
+        param_index += 1;
+    }
 
     // Exclude tiny NEAR amounts (gas/storage noise)
     if filters.exclude_near_dust {
@@ -301,6 +319,8 @@ mod tests {
             transaction_hash_query: None,
             from_accounts: None,
             from_accounts_not: None,
+            to_accounts: None,
+            to_accounts_not: None,
             exclude_near_dust: false,
             exclude_swaps_from_direction: false,
         };
@@ -326,6 +346,8 @@ mod tests {
             transaction_hash_query: None,
             from_accounts: None,
             from_accounts_not: None,
+            to_accounts: None,
+            to_accounts_not: None,
             exclude_near_dust: false,
             exclude_swaps_from_direction: false,
         };

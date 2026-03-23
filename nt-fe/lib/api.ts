@@ -291,7 +291,7 @@ export interface RecentActivityResponse {
     total: number;
 }
 
-export interface RecentActivityFromOptionsResponse {
+export interface RecentActivityParticipantsResponse {
     options: string[];
 }
 
@@ -310,6 +310,8 @@ export async function getRecentActivity(
     txHash?: string,
     fromAccount?: string[],
     fromAccountNot?: string[],
+    toAccount?: string[],
+    toAccountNot?: string[],
     startDate?: string,
     endDate?: string,
 ): Promise<RecentActivityResponse | null> {
@@ -343,6 +345,12 @@ export async function getRecentActivity(
         if (fromAccountNot && fromAccountNot.length > 0) {
             params.fromNot = fromAccountNot.join(",");
         }
+        if (toAccount && toAccount.length > 0) {
+            params.to = toAccount.join(",");
+        }
+        if (toAccountNot && toAccountNot.length > 0) {
+            params.toNot = toAccountNot.join(",");
+        }
         if (startDate) {
             params.startDate = startDate;
         }
@@ -359,15 +367,15 @@ export async function getRecentActivity(
     }
 }
 
-export async function getRecentActivityFromOptions(
+export async function getRecentActivitySenders(
     accountId: string,
     transactionType?: string,
 ): Promise<string[]> {
     if (!accountId) return [];
 
     try {
-        const url = `${BACKEND_API_BASE}/recent-activity/from-options`;
-        const response = await axios.get<RecentActivityFromOptionsResponse>(
+        const url = `${BACKEND_API_BASE}/recent-activity/senders`;
+        const response = await axios.get<RecentActivityParticipantsResponse>(
             url,
             {
                 params: {
@@ -380,7 +388,33 @@ export async function getRecentActivityFromOptions(
         );
         return response.data.options ?? [];
     } catch (error) {
-        console.error("Error getting recent activity from options", error);
+        console.error("Error getting recent activity senders", error);
+        return [];
+    }
+}
+
+export async function getRecentActivityRecipients(
+    accountId: string,
+    transactionType?: string,
+): Promise<string[]> {
+    if (!accountId) return [];
+
+    try {
+        const url = `${BACKEND_API_BASE}/recent-activity/recipients`;
+        const response = await axios.get<RecentActivityParticipantsResponse>(
+            url,
+            {
+                params: {
+                    accountId,
+                    ...(transactionType && transactionType !== "all"
+                        ? { transactionType }
+                        : {}),
+                },
+            },
+        );
+        return response.data.options ?? [];
+    } catch (error) {
+        console.error("Error getting recent activity recipients", error);
         return [];
     }
 }
