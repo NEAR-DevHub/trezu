@@ -291,6 +291,10 @@ export interface RecentActivityResponse {
     total: number;
 }
 
+export interface RecentActivityFromOptionsResponse {
+    options: string[];
+}
+
 /**
  * Get recent activity (enriched balance changes) for an account
  * Returns transaction history with token metadata already included
@@ -303,6 +307,9 @@ export async function getRecentActivity(
     transactionType?: string,
     tokenSymbol?: string,
     tokenSymbolNot?: string,
+    txHash?: string,
+    fromAccount?: string[],
+    fromAccountNot?: string[],
     startDate?: string,
     endDate?: string,
 ): Promise<RecentActivityResponse | null> {
@@ -327,6 +334,15 @@ export async function getRecentActivity(
         if (tokenSymbolNot) {
             params.tokenSymbolNot = tokenSymbolNot;
         }
+        if (txHash) {
+            params.txHash = txHash;
+        }
+        if (fromAccount && fromAccount.length > 0) {
+            params.from = fromAccount.join(",");
+        }
+        if (fromAccountNot && fromAccountNot.length > 0) {
+            params.fromNot = fromAccountNot.join(",");
+        }
         if (startDate) {
             params.startDate = startDate;
         }
@@ -340,6 +356,32 @@ export async function getRecentActivity(
     } catch (error) {
         console.error("Error getting recent activity", error);
         return null;
+    }
+}
+
+export async function getRecentActivityFromOptions(
+    accountId: string,
+    transactionType?: string,
+): Promise<string[]> {
+    if (!accountId) return [];
+
+    try {
+        const url = `${BACKEND_API_BASE}/recent-activity/from-options`;
+        const response = await axios.get<RecentActivityFromOptionsResponse>(
+            url,
+            {
+                params: {
+                    accountId,
+                    ...(transactionType && transactionType !== "all"
+                        ? { transactionType }
+                        : {}),
+                },
+            },
+        );
+        return response.data.options ?? [];
+    } catch (error) {
+        console.error("Error getting recent activity from options", error);
+        return [];
     }
 }
 

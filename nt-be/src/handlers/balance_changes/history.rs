@@ -24,7 +24,7 @@ use urlencoding::encode;
 use crate::AppState;
 use crate::config::get_plan_config;
 use crate::handlers::balance_changes::query_builder::{
-    BalanceChangeFilters, RELAYER_ACCOUNT, build_count_query,
+    BalanceChangeFilters, FROM_ACCOUNT_EXPR, RELAYER_ACCOUNT, build_count_query,
 };
 use crate::handlers::subscription::plans::get_account_plan_info;
 use crate::handlers::token::TokenMetadata;
@@ -170,6 +170,9 @@ pub async fn get_balance_chart(
         transaction_types: None, // Include all transaction types for balance chart
         min_amount: None,
         max_amount: None,
+        tx_hash: None,
+        from_accounts: None,
+        from_accounts_not: None,
         include_metadata: Some(false), // Chart doesn't need metadata
         include_prices: Some(true),    // Chart needs prices for USD values
         include_chain_metadata: Some(false), // Chart doesn't need chain metadata
@@ -682,6 +685,9 @@ fn build_export_query(
         transaction_types: transaction_types.cloned(),
         min_amount: None,
         max_amount: None,
+        tx_hash: None,
+        from_accounts: None,
+        from_accounts_not: None,
         include_metadata: Some(true), // Export needs metadata (symbol, contract)
         include_prices: Some(true),   // Export needs prices (USD values)
         include_chain_metadata: Some(false), // Export doesn't need chain metadata
@@ -1372,6 +1378,11 @@ pub struct RecentActivityQuery {
     pub transaction_type: Option<String>, // "outgoing" | "incoming" | "staking_rewards" | "exchange" (single selection for tabs)
     pub token_symbol: Option<String>,
     pub token_symbol_not: Option<String>,
+    pub tx_hash: Option<String>,
+    #[serde(rename = "from", default, deserialize_with = "comma_separated")]
+    pub from_account: Option<Vec<String>>,
+    #[serde(rename = "fromNot", default, deserialize_with = "comma_separated")]
+    pub from_account_not: Option<Vec<String>>,
     pub start_date: Option<String>,
     pub end_date: Option<String>,
 }
@@ -1381,6 +1392,19 @@ pub struct RecentActivityQuery {
 pub struct RecentActivityResponse {
     pub data: Vec<RecentActivity>,
     pub total: i64,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RecentActivityFromOptionsQuery {
+    pub account_id: String,
+    pub transaction_type: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RecentActivityFromOptionsResponse {
+    pub options: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -1532,6 +1556,9 @@ pub async fn get_recent_activity(
         transaction_types: transaction_types_for_query.clone(),
         min_amount: None,
         max_amount: None,
+        transaction_hash_query: params.tx_hash.clone(),
+        from_accounts: params.from_account.clone(),
+        from_accounts_not: params.from_account_not.clone(),
         exclude_near_dust: true,
         exclude_swaps_from_direction: true, // Recent activity: exclude swaps from incoming/outgoing (separate tab)
     };
@@ -1555,6 +1582,15 @@ pub async fn get_recent_activity(
         count_query = count_query.bind(tokens);
     } else if let Some(ref exclude_tokens) = filters.exclude_token_ids {
         count_query = count_query.bind(exclude_tokens);
+    }
+    if let Some(ref tx_hash_query) = filters.transaction_hash_query {
+        count_query = count_query.bind(format!("%{}%", tx_hash_query));
+    }
+    if let Some(ref from_accounts) = filters.from_accounts {
+        count_query = count_query.bind(from_accounts);
+    }
+    if let Some(ref from_accounts_not) = filters.from_accounts_not {
+        count_query = count_query.bind(from_accounts_not);
     }
 
     let total: i64 = count_query.fetch_one(&state.db_pool).await.unwrap_or(0);
@@ -1583,6 +1619,9 @@ pub async fn get_recent_activity(
         transaction_types: transaction_types_for_query,
         min_amount: None,
         max_amount: None,
+        tx_hash: params.tx_hash.clone(),
+        from_accounts: params.from_account.clone(),
+        from_accounts_not: params.from_account_not.clone(),
         include_metadata: Some(true),
         include_prices: Some(true),
         include_chain_metadata: Some(false), // Recent activity doesn't need chain metadata here (will be added for swaps later)
@@ -1802,3 +1841,62 @@ pub async fn get_recent_activity(
         total: actual_total,
     }))
 }
+
+pub async fn get_recent_activity_from_options(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<RecentActivityFromOptionsQuery>,
+) -> Result<Json<RecentActivityFromOptionsResponse>, (StatusCode, Json<serde_json::Value>)> {
+    // Keep options endpoint unfiltered by date/token/hash/from, but honor transactionType tab.
+    let transaction_types_for_query = match params.transaction_type.as_deref() {
+        Some(t) => Some(vec![t.to_string()]),
+        None => None,
+    };
+
+    let filters = BalanceChangeFilters {
+        account_id: params.account_id.clone(),
+        date_cutoff: None,
+        start_date: None,
+        end_date: None,
+        token_ids: None,
+        exclude_token_ids: None,
+        transaction_types: transaction_types_for_query,
+        min_amount: None,
+        max_amount: None,
+        transaction_hash_query: None,
+        from_accounts: None,
+        from_accounts_not: None,
+        exclude_near_dust: true,
+        exclude_swaps_from_direction: true,
+    };
+
+    let (conditions, _) =
+        crate::handlers::balance_changes::query_builder::build_where_conditions(&filters);
+    let mut where_clause = conditions.join(" AND ");
+    where_clause.push_str(&format!(" AND ({}) IS NOT NULL", FROM_ACCOUNT_EXPR));
+
+    let query = format!(
+        "SELECT DISTINCT \
+            ({}) AS from_account \
+         FROM balance_changes \
+         WHERE {} \
+         ORDER BY from_account ASC",
+        FROM_ACCOUNT_EXPR, where_clause
+    );
+
+    let options_query =
+        sqlx::query_scalar::<sqlx::Postgres, String>(&query).bind(&params.account_id);
+
+    let options = options_query.fetch_all(&state.db_pool).await.map_err(|e| {
+        log::error!("Failed to fetch recent activity from options: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({
+                "error": "Failed to fetch recent activity from options",
+                "details": e.to_string()
+            })),
+        )
+    })?;
+
+    Ok(Json(RecentActivityFromOptionsResponse { options }))
+}
+

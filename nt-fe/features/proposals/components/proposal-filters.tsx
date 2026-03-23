@@ -45,6 +45,7 @@ const AMOUNT_OPERATIONS = ["Between", "Equal", "More Than", "Less Than"];
 const PROPOSAL_TYPE_OPERATIONS = ["Is", "Is Not"];
 const DATE_OPERATIONS = ["Is"];
 const USER_OPERATIONS = ["Is", "Is Not"];
+const FROM_OPERATIONS = ["Is", "Is Not"];
 
 interface TokenOption {
     id: string;
@@ -59,6 +60,7 @@ export interface FilterOption {
     minDate?: Date;
     maxDate?: Date;
     hideAmount?: boolean; // Hide amount fields for this filter (for token filter)
+    options?: Array<{ value: string; label: string }>;
 }
 
 interface ProposalFiltersProps {
@@ -145,6 +147,7 @@ export function ProposalFilters({
                             minDate={filterOption?.minDate}
                             maxDate={filterOption?.maxDate}
                             hideAmount={filterOption?.hideAmount}
+                            options={filterOption?.options}
                         />
                     );
                 })}
@@ -200,6 +203,7 @@ interface FilterPillProps {
     minDate?: Date;
     maxDate?: Date;
     hideAmount?: boolean;
+    options?: Array<{ value: string; label: string }>;
 }
 
 function FilterPill({
@@ -211,6 +215,7 @@ function FilterPill({
     minDate,
     maxDate,
     hideAmount,
+    options,
 }: FilterPillProps) {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -295,6 +300,16 @@ function FilterPill({
                         onRemove={onRemove}
                     />
                 );
+            case "from":
+                return (
+                    <FromFilterContent
+                        value={value}
+                        onUpdate={onUpdate}
+                        setIsOpen={setIsOpen}
+                        onRemove={onRemove}
+                        options={options || []}
+                    />
+                );
         }
     };
 
@@ -363,6 +378,23 @@ function FilterPill({
                 <span className="font-medium text-sm">
                     {selected.join(", ")}
                 </span>
+            );
+        }
+
+        if (id === "from" && (filterData as any).selected) {
+            const selected = (filterData as any).selected;
+            if (Array.isArray(selected)) {
+                if (selected.length === 0) return "ALL";
+                return (
+                    <span className="font-medium text-sm">
+                        {selected.length > 1
+                            ? `${selected[0]} +${selected.length - 1}`
+                            : selected[0]}
+                    </span>
+                );
+            }
+            return (
+                <span className="font-medium text-sm">{selected || "ALL"}</span>
             );
         }
 
@@ -460,6 +492,139 @@ function FilterPill({
                 </PopoverContent>
             </Popover>
         </div>
+    );
+}
+
+interface FromFilterData {
+    selected: string[];
+}
+
+function FromFilterContent({
+    value,
+    onUpdate,
+    setIsOpen,
+    onRemove,
+    options,
+}: {
+    value: string;
+    onUpdate: (value: string) => void;
+    setIsOpen: (isOpen: boolean) => void;
+    onRemove: () => void;
+    options: Array<{ value: string; label: string }>;
+}) {
+    const [searchQuery, setSearchQuery] = useState("");
+    const { operation, setOperation, data, setData, handleClear } =
+        useFilterState<FromFilterData>({
+            value,
+            onUpdate,
+            parseData: (parsed) => ({
+                selected: Array.isArray(parsed.selected)
+                    ? parsed.selected
+                    : parsed.selected
+                      ? [parsed.selected]
+                      : [],
+            }),
+            serializeData: (op, d) => ({
+                operation: op,
+                selected: d.selected,
+            }),
+        });
+
+    const handleDelete = () => {
+        onRemove();
+        setIsOpen(false);
+    };
+
+    const filteredOptions = useMemo(() => {
+        const selectedValues = data?.selected || [];
+        const query = searchQuery.toLowerCase();
+        return options
+            .filter((option) => option.label.toLowerCase().includes(query))
+            .sort((a, b) => {
+                const aSelected = selectedValues.includes(a.value);
+                const bSelected = selectedValues.includes(b.value);
+                if (aSelected && !bSelected) return -1;
+                if (!aSelected && bSelected) return 1;
+                return a.label
+                    .toLowerCase()
+                    .localeCompare(b.label.toLowerCase());
+            });
+    }, [options, data?.selected, searchQuery]);
+
+    const toggleSelected = (accountId: string) => {
+        const selected = data?.selected || [];
+        if (selected.includes(accountId)) {
+            setData({
+                selected: selected.filter((value) => value !== accountId),
+            });
+        } else {
+            setData({ selected: [...selected, accountId] });
+        }
+    };
+
+    return (
+        <BaseFilterPopover
+            filterLabel="From"
+            operation={operation}
+            operations={FROM_OPERATIONS}
+            onOperationChange={setOperation}
+            onClear={handleClear}
+            onDelete={handleDelete}
+            className="w-80 pb-1"
+        >
+            <div className="flex flex-col">
+                <div className="px-2 py-1.5">
+                    <Input
+                        autoFocus
+                        placeholder="Search by address"
+                        search
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="h-8 text-sm"
+                    />
+                </div>
+                <ScrollArea
+                    className="h-60 [&>[data-radix-scroll-area-viewport]>div]:block!"
+                    type="always"
+                >
+                    {filteredOptions.length > 0 ? (
+                        <div className="flex flex-col">
+                            {filteredOptions.map((option) => {
+                                const isSelected =
+                                    data?.selected?.includes(option.value) ||
+                                    false;
+                                return (
+                                    <label
+                                        key={option.value}
+                                        className="flex px-2 items-center gap-2 cursor-pointer hover:bg-muted/50 py-1.5 rounded-md"
+                                    >
+                                        <Checkbox
+                                            checked={isSelected}
+                                            onCheckedChange={() =>
+                                                toggleSelected(option.value)
+                                            }
+                                            className="shrink-0"
+                                        />
+                                        <div className="min-w-0">
+                                            <User
+                                                accountId={option.value}
+                                                iconOnly={false}
+                                                withLink={false}
+                                                size="sm"
+                                            />
+                                        </div>
+                                    </label>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <p className="text-xs text-muted-foreground text-center py-2">
+                            No addresses found
+                        </p>
+                    )}
+                </ScrollArea>
+            </div>
+        </BaseFilterPopover>
     );
 }
 

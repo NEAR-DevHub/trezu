@@ -18,6 +18,7 @@ import {
     searchIntentsTokens,
     SearchTokensParams,
     getRecentActivity,
+    getRecentActivityFromOptions,
     getExportHistory,
     getTreasuryCreationStatus,
 } from "@/lib/api";
@@ -286,6 +287,9 @@ export function useRecentActivity(
     transactionType?: string,
     tokenSymbol?: string,
     tokenSymbolNot?: string,
+    txHash?: string,
+    fromAccount?: string[],
+    fromAccountNot?: string[],
     startDate?: string,
     endDate?: string,
 ) {
@@ -299,6 +303,9 @@ export function useRecentActivity(
             transactionType,
             tokenSymbol,
             tokenSymbolNot,
+            txHash,
+            fromAccount,
+            fromAccountNot,
             startDate,
             endDate,
         ],
@@ -311,11 +318,27 @@ export function useRecentActivity(
                 transactionType,
                 tokenSymbol,
                 tokenSymbolNot,
+                txHash,
+                fromAccount,
+                fromAccountNot,
                 startDate,
                 endDate,
             ),
         enabled: !!accountId,
         staleTime: 1000 * 5, // 5 seconds (activity changes frequently)
+    });
+}
+
+export function useRecentActivityFromOptions(
+    accountId: string | null | undefined,
+    transactionType?: string,
+) {
+    return useQuery({
+        queryKey: ["recentActivityFromOptions", accountId, transactionType],
+        queryFn: () =>
+            getRecentActivityFromOptions(accountId!, transactionType),
+        enabled: !!accountId,
+        staleTime: 1000 * 30,
     });
 }
 
