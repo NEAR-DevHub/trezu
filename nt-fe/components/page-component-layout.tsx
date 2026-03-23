@@ -56,12 +56,7 @@ export function PageComponentLayout({
                                 size="icon"
                                 onClick={() => {
                                     if (typeof backButton === "string") {
-                                        // If there's history, go back; otherwise, navigate to the provided fallback URL
-                                        if (window.history.length > 1) {
-                                            router.back();
-                                        } else {
-                                            router.push(backButton);
-                                        }
+                                        router.push(backButton);
                                     } else {
                                         router.back();
                                     }
