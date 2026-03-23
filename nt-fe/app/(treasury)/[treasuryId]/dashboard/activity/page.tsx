@@ -24,7 +24,11 @@ import { ResponsiveTabs, TabItem } from "@/components/responsive-tabs";
 const PAGE_SIZE = 15;
 const FILTER_PANEL_MAX_HEIGHT = "500px";
 
-function ActivityList({ status }: { status?: "incoming" | "outgoing" | "staking_rewards" | "exchange" }) {
+function ActivityList({
+    status,
+}: {
+    status?: "incoming" | "outgoing" | "staking_rewards" | "exchange";
+}) {
     const { treasuryId } = useTreasury();
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -132,9 +136,9 @@ export default function ActivityPage() {
         const minDate = subscriptionData?.planConfig?.limits
             ?.historyLookupMonths
             ? subMonths(
-                new Date(),
-                subscriptionData.planConfig.limits.historyLookupMonths,
-            )
+                  new Date(),
+                  subscriptionData.planConfig.limits.historyLookupMonths,
+              )
             : undefined;
 
         return [
@@ -174,7 +178,6 @@ export default function ActivityPage() {
         { value: "incoming", label: "Received" },
         { value: "staking_rewards", label: "Staking Rewards" },
         { value: "exchange", label: "Exchange" },
-
     ];
 
     const actions = (
@@ -219,7 +222,11 @@ export default function ActivityPage() {
                 status={
                     value === "all"
                         ? undefined
-                        : (value as "incoming" | "outgoing" | "staking_rewards" | "exchange")
+                        : (value as
+                              | "incoming"
+                              | "outgoing"
+                              | "staking_rewards"
+                              | "exchange")
                 }
             />
         </TabsContent>

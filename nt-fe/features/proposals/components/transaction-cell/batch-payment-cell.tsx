@@ -17,10 +17,7 @@ export function BatchPaymentCell({
     timestamp,
     textOnly = false,
 }: BatchPaymentCellProps) {
-    const {
-        data: batchData,
-        isLoading,
-    } = useBatchPayment(data.batchId);
+    const { data: batchData, isLoading } = useBatchPayment(data.batchId);
 
     // Loading state
     if (isLoading) {

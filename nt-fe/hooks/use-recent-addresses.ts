@@ -19,7 +19,10 @@ function saveRecentAddress(address: string) {
     try {
         const recent = getRecentAddresses();
         // Remove if already exists, then add to front
-        const updated = [address, ...recent.filter(a => a !== address)].slice(0, MAX_RECENT_ADDRESSES);
+        const updated = [address, ...recent.filter((a) => a !== address)].slice(
+            0,
+            MAX_RECENT_ADDRESSES,
+        );
         localStorage.setItem(RECENT_ADDRESSES_KEY, JSON.stringify(updated));
     } catch {
         // Ignore localStorage errors

@@ -265,9 +265,7 @@ test.describe("sign_transactions: Transfer NEAR proposal preview", () => {
         await expect(popup.locator("text=alice.near").first()).toBeVisible();
 
         // Acting-as block shows the selected DAO
-        await expect(
-            popup.locator(`text=${DAO_ID}`).first(),
-        ).toBeVisible();
+        await expect(popup.locator(`text=${DAO_ID}`).first()).toBeVisible();
 
         // Cancel → popup closes and dApp receives failure
         await popup.click("button:has-text('Cancel')");
@@ -465,16 +463,13 @@ test.describe("waiting-approval: after DAO votes Approve, dApp receives tx hash"
         );
 
         // Shows pending message instead of closing
-        await popup.waitForSelector(
-            "text=Proposal is still pending approval",
-            { timeout: 8_000 },
-        );
+        await popup.waitForSelector("text=Proposal is still pending approval", {
+            timeout: 8_000,
+        });
 
         // Popup stays open; dApp has not received any message
         // (use evaluate, not waitForFunction — we assert the value is absent)
-        const msg = await page.evaluate(
-            () => (window as any).__lastMessage,
-        );
+        const msg = await page.evaluate(() => (window as any).__lastMessage);
         expect(msg).toBeUndefined();
     });
 });

@@ -12,9 +12,9 @@ export const ETH_TOKEN = {
     network: "eth",
     chainIcons: {
         dark: "https://near-intents.org/static/icons/network/ethereum_white.svg",
-        light: "https://near-intents.org/static/icons/network/ethereum.svg"
+        light: "https://near-intents.org/static/icons/network/ethereum.svg",
     },
-    residency: "Intents"
+    residency: "Intents",
 } satisfies Token;
 
 export const BTC_TOKEN = {
@@ -26,8 +26,7 @@ export const BTC_TOKEN = {
     network: "bitcoin",
     chainIcons: {
         dark: "https://near-intents.org/static/icons/network/btc.svg",
-        light: "https://near-intents.org/static/icons/network/btc.svg"
+        light: "https://near-intents.org/static/icons/network/btc.svg",
     },
     residency: "Intents",
 } satisfies Token;
-

@@ -147,11 +147,12 @@ export default function BalanceChart({
                     tickLine={false}
                     {...(explicitTicks
                         ? {
-                            ticks: explicitTicks,
-                            interval: explicitTickInterval,
-                        }
+                              ticks: explicitTicks,
+                              interval: explicitTickInterval,
+                          }
                         : { interval: tickInterval })}
-                    padding={{ left: 20, right: 20 }} />
+                    padding={{ left: 20, right: 20 }}
+                />
                 <YAxis
                     yAxisId="usd"
                     hide
@@ -189,9 +190,9 @@ export default function BalanceChart({
                                     name === "usdValue"
                                         ? formatCurrency(num)
                                         : `${num.toLocaleString(undefined, {
-                                            minimumFractionDigits: 2,
-                                            maximumFractionDigits: 6,
-                                        })}${symbol ? ` ${symbol.toUpperCase()}` : ""}`;
+                                              minimumFractionDigits: 2,
+                                              maximumFractionDigits: 6,
+                                          })}${symbol ? ` ${symbol.toUpperCase()}` : ""}`;
 
                                 return (
                                     <>

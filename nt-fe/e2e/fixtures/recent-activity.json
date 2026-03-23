@@ -1,1 +1,239 @@
-{"data":[{"id":52265,"blockTime":"2026-02-18T11:12:04.467268Z","tokenId":"intents.near:nep141:eth.omft.near","tokenMetadata":{"tokenId":"intents.near:nep141:eth.omft.near","name":"ETH","symbol":"ETH","decimals":18,"icon":"https://s2.coinmarketcap.com/static/img/coins/128x128/1027.png"},"counterparty":"UNKNOWN","signerId":null,"receiverId":null,"amount":"0.0050","transactionHashes":[],"receiptIds":[]},{"id":52009,"blockTime":"2026-02-18T10:57:00.401015Z","tokenId":"17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1","tokenMetadata":{"tokenId":"17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1","name":"USDC","symbol":"USDC","decimals":6,"icon":"data:image/svg+xml,%3C%3Fxml version=%221.0%22 encoding=%22utf-8%22%3F%3E%3C!-- Generator: Adobe Illustrator 22.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0) --%3E%3Csvg version=%221.1%22 id=%22Layer_1%22 xmlns=%22http://www.w3.org/2000/svg%22 xmlns:xlink=%22http://www.w3.org/1999/xlink%22 x=%220px%22 y=%220px%22 viewBox=%220 0 256 256%22 style=%22enable-background:new 0 0 256 256;%22 xml:space=%22preserve%22%3E%3Cstyle type=%22text/css%22%3E .st0%7Bfill:%232775CA;%7D .st1%7Bfill:%23FFFFFF;%7D%0A%3C/style%3E%3Ccircle class=%22st0%22 cx=%22128%22 cy=%22128%22 r=%22128%22/%3E%3Cpath class=%22st1%22 d=%22M104,217c0,3-2.4,4.7-5.2,3.8C60,208.4,32,172.2,32,129.3c0-42.8,28-79.1,66.8-91.5c2.9-0.9,5.2,0.8,5.2,3.8 v7.5c0,2-1.5,4.3-3.4,5C69.9,65.4,48,94.9,48,129.3c0,34.5,21.9,63.9,52.6,75.1c1.9,0.7,3.4,3,3.4,5V217z%22/%3E%3Cpath class=%22st1%22 d=%22M136,189.3c0,2.2-1.8,4-4,4h-8c-2.2,0-4-1.8-4-4v-12.6c-17.5-2.4-26-12.1-28.3-25.5c-0.4-2.3,1.4-4.3,3.7-4.3 h9.1c1.9,0,3.5,1.4,3.9,3.2c1.7,7.9,6.3,14,20.3,14c10.3,0,17.7-5.8,17.7-14.4c0-8.6-4.3-11.9-19.5-14.4c-22.4-3-33-9.8-33-27.3 c0-13.5,10.3-24.1,26.1-26.3V69.3c0-2.2,1.8-4,4-4h8c2.2,0,4,1.8,4,4v12.7c12.9,2.3,21.1,9.6,23.8,21.8c0.5,2.3-1.3,4.4-3.7,4.4 h-8.4c-1.8,0-3.3-1.2-3.8-2.9c-2.3-7.7-7.8-11.1-17.4-11.1c-10.6,0-16.1,5.1-16.1,12.3c0,7.6,3.1,11.4,19.4,13.7 c22,3,33.4,9.3,33.4,28c0,14.2-10.6,25.7-27.1,28.3V189.3z%22/%3E%3Cpath class=%22st1%22 d=%22M157.2,220.8c-2.9,0.9-5.2-0.8-5.2-3.8v-7.5c0-2.2,1.3-4.3,3.4-5c30.6-11.2,52.6-40.7,52.6-75.1 c0-34.5-21.9-63.9-52.6-75.1c-1.9-0.7-3.4-3-3.4-5v-7.5c0-3,2.4-4.7,5.2-3.8C196,50.2,224,86.5,224,129.3 C224,172.2,196,208.4,157.2,220.8z%22/%3E%3C/svg%3E%0A"},"counterparty":"intents.near","signerId":"intents.near","receiverId":"17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1","amount":"0.99868400","transactionHashes":["65ssL64hJRzjN4Eb9W5ap8ofQWawXShANzjMPt9aMmJG"],"receiptIds":["DvwqB3EztnxHG4rZb2MrMguhUE7CUT2MDFFVLBHJKq8K"]},{"id":51887,"blockTime":"2026-02-18T10:51:12.493001Z","tokenId":"npro.nearmobile.near","tokenMetadata":{"tokenId":"npro.nearmobile.near","name":"NPRO","symbol":"NPRO","decimals":24,"icon":"data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODgiIGhlaWdodD0iODgiIHZpZXdCb3g9IjAgMCA4OCA4OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9Ijg4IiBoZWlnaHQ9Ijg4IiByeD0iNDQiIGZpbGw9InVybCgjcGFpbnQwX2xpbmVhcl8zMjQ1XzE3NTIpIi8+CjxwYXRoIGQ9Ik00OC4wOTM4IDE2LjIxMTlDNDguMzg5MiAxNS44OTk1IDQ4Ljg4ODIgMTUuOTM3NyA0OS4xMzQ4IDE2LjI5Mkw2Ny41ODUgNDIuODE0NUM2Ny44MjcgNDMuMDkzNiA2Ny45Njg5IDQzLjQ2ODcgNjcuOTk1MSA0My44NjA0QzY3Ljk5ODIgNDMuOTA3IDY4LjAwMDIgNDMuOTUzNiA2OCA0NEM2OC4wMDAyIDQ0LjA0NjQgNjcuOTk4MiA0NC4wOTMgNjcuOTk1MSA0NC4xMzk3QzY3Ljk2ODkgNDQuNTMxMyA2Ny44MjcgNDQuOTA2NCA2Ny41ODUgNDUuMTg1Nkw0OS4xMzQ4IDcxLjcwOEM0OC44ODgyIDcyLjA2MjMgNDguMzg5MiA3Mi4xMDA1IDQ4LjA5MzggNzEuNzg4MUM0Ny44NzQzIDcxLjU1NTggNDcuODM5MSA3MS4xOTg1IDQ4LjAwODggNzAuOTI1OEw2Mi4yNzI1IDQ4LjAwOThDNjIuMzg1MiA0Ny44Mjg2IDYyLjE5MTcgNDcuNjExMiA2Mi4wMDU5IDQ3LjcxTDU3LjAwODggNTAuMzcxMUw0Ny43NTQ5IDY1Ljc1MkM0Ny41OTM1IDY2LjAyMDEgNDcuMjU0NCA2Ni4xMTA2IDQ2Ljk4NjMgNjUuOTU3QzQ2LjcxODUgNjUuODAzNSA0Ni42MTU5IDY1LjQ2MDQgNDYuNzUyOSA2NS4xNzg3TDUzLjgzOTkgNTAuNjQ4NEgzNC4xNjAyTDQxLjI0NzEgNjUuMTc4N0M0MS4zODQyIDY1LjQ2MDQgNDEuMjgxNSA2NS44MDM1IDQxLjAxMzcgNjUuOTU3QzQwLjc0NTYgNjYuMTEwNiA0MC40MDY1IDY2LjAyMDEgNDAuMjQ1MSA2NS43NTJMMzAuOTkxMiA1MC4zNzExTDI1Ljk5NDIgNDcuNzFDMjUuODA4MyA0Ny42MTEyIDI1LjYxNDggNDcuODI4NyAyNS43Mjc1IDQ4LjAwOThMMzkuOTkxMiA3MC45MjU4QzQwLjE2MDkgNzEuMTk4NSA0MC4xMjU3IDcxLjU1NTggMzkuOTA2MyA3MS43ODgxQzM5LjYxMDkgNzIuMTAwNSAzOS4xMTE4IDcyLjA2MjMgMzguODY1MiA3MS43MDhMMjAuNDE1IDQ1LjE4NTZDMjAuMTczIDQ0LjkwNjQgMjAuMDMxMSA0NC41MzEzIDIwLjAwNDkgNDQuMTM5N0MyMC4wMDE4IDQ0LjA5MyAxOS45OTk4IDQ0LjA0NjQgMjAgNDRDMTkuOTk5OCA0My45NTM2IDIwLjAwMTggNDMuOTA3IDIwLjAwNDkgNDMuODYwNEMyMC4wMzExIDQzLjQ2ODcgMjAuMTczIDQzLjA5MzYgMjAuNDE1IDQyLjgxNDVMMzguODY1MiAxNi4yOTJDMzkuMTExOCAxNS45Mzc3IDM5LjYxMDkgMTUuODk5NSAzOS45MDYzIDE2LjIxMTlDNDAuMTI1NyAxNi40NDQyIDQwLjE2MDkgMTYuODAxNSAzOS45OTEyIDE3LjA3NDJMMjQuNjk5MiA0MS42NDI2QzI0LjIyOTggNDIuMzk2OSAyNC4xOTA4IDQyLjg5MzYgMjQuMjYzNyA0My4xODk1QzI0LjMzNjYgNDMuNDg1NSAyNC41Mzc0IDQzLjY0NjYgMjQuNjg3NSA0My43MDUxQzI0LjY5NzEgNDMuNzA4OCAyNC43MDY3IDQzLjcxMzEgMjQuNzE1OCA0My43MTc4TDMwLjgwMTggNDYuODI5MUw0MC4yMjQ2IDI1LjM3MTFDNDAuMzY5IDI1LjA0MjYgNDAuNzQzOCAyNC44OTM5IDQxLjA2NjQgMjUuMDM2MUM0MS4zNzkzIDI1LjE3NDQgNDEuNTMzNyAyNS41MzkyIDQxLjQxOCAyNS44NjgyTDMzLjg0NDcgNDcuNDA2M0g1NC4zMDg2TDQ2LjczNjMgMjUuODY4MkM0Ni42MjA2IDI1LjUzOSA0Ni43NzQ3IDI1LjE3NDIgNDcuMDg3OSAyNS4wMzYxQzQ3LjQxMDQgMjQuODk0IDQ3Ljc4NDMgMjUuMDQyNyA0Ny45Mjg3IDI1LjM3MTFMNTcuMzIyMyA0Ni43NjE3TDYzLjI4NDIgNDMuNzE3OEM2My4yOTY5IDQzLjcxMTMgNjMuMzEwNyA0My43MDU4IDYzLjMyNDIgNDMuNzAxMkM2My40Nzc3IDQzLjY0ODQgNjMuNjc4MyA0My40OTY5IDYzLjc1MSA0My4yMUM2My44MjQyIDQyLjkyMDQgNjMuNzg0OSA0Mi40MjA0IDYzLjMwMDggNDEuNjQyNkw0OC4wMDg4IDE3LjA3NDJDNDcuODM5MSAxNi44MDE1IDQ3Ljg3NDMgMTYuNDQ0MiA0OC4wOTM4IDE2LjIxMTlaIiBmaWxsPSJ3aGl0ZSIvPgo8ZGVmcz4KPGxpbmVhckdyYWRpZW50IGlkPSJwYWludDBfbGluZWFyXzMyNDVfMTc1MiIgeDE9IjAiIHkxPSI0NC4wMDAzIiB4Mj0iODgiIHkyPSI0NC4wMDAzIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CjxzdG9wIHN0b3AtY29sb3I9IiM5Nzk3RkYiLz4KPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMTdEOUQ0Ii8+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPC9zdmc+Cg=="},"counterparty":"petersalomonsen.near","signerId":"petersalomonsen.near","receiverId":"npro.nearmobile.near","amount":"0.1000","transactionHashes":["8mSXPBCnbsxhKmESNusJ7kRb9ysnCYDmuK31EadXVXDd"],"receiptIds":["2EeNNur5cBbAU3pndvhUSoFZGQi2tHUgTEmjiXMKqpLB"]},{"id":51617,"blockTime":"2026-02-18T10:35:50.386702Z","tokenId":"npro.nearmobile.near","tokenMetadata":{"tokenId":"npro.nearmobile.near","name":"NPRO","symbol":"NPRO","decimals":24,"icon":"data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODgiIGhlaWdodD0iODgiIHZpZXdCb3g9IjAgMCA4OCA4OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9Ijg4IiBoZWlnaHQ9Ijg4IiByeD0iNDQiIGZpbGw9InVybCgjcGFpbnQwX2xpbmVhcl8zMjQ1XzE3NTIpIi8+CjxwYXRoIGQ9Ik00OC4wOTM4IDE2LjIxMTlDNDguMzg5MiAxNS44OTk1IDQ4Ljg4ODIgMTUuOTM3NyA0OS4xMzQ4IDE2LjI5Mkw2Ny41ODUgNDIuODE0NUM2Ny44MjcgNDMuMDkzNiA2Ny45Njg5IDQzLjQ2ODcgNjcuOTk1MSA0My44NjA0QzY3Ljk5ODIgNDMuOTA3IDY4LjAwMDIgNDMuOTUzNiA2OCA0NEM2OC4wMDAyIDQ0LjA0NjQgNjcuOTk4MiA0NC4wOTMgNjcuOTk1MSA0NC4xMzk3QzY3Ljk2ODkgNDQuNTMxMyA2Ny44MjcgNDQuOTA2NCA2Ny41ODUgNDUuMTg1Nkw0OS4xMzQ4IDcxLjcwOEM0OC44ODgyIDcyLjA2MjMgNDguMzg5MiA3Mi4xMDA1IDQ4LjA5MzggNzEuNzg4MUM0Ny44NzQzIDcxLjU1NTggNDcuODM5MSA3MS4xOTg1IDQ4LjAwODggNzAuOTI1OEw2Mi4yNzI1IDQ4LjAwOThDNjIuMzg1MiA0Ny44Mjg2IDYyLjE5MTcgNDcuNjExMiA2Mi4wMDU5IDQ3LjcxTDU3LjAwODggNTAuMzcxMUw0Ny43NTQ5IDY1Ljc1MkM0Ny41OTM1IDY2LjAyMDEgNDcuMjU0NCA2Ni4xMTA2IDQ2Ljk4NjMgNjUuOTU3QzQ2LjcxODUgNjUuODAzNSA0Ni42MTU5IDY1LjQ2MDQgNDYuNzUyOSA2NS4xNzg3TDUzLjgzOTkgNTAuNjQ4NEgzNC4xNjAyTDQxLjI0NzEgNjUuMTc4N0M0MS4zODQyIDY1LjQ2MDQgNDEuMjgxNSA2NS44MDM1IDQxLjAxMzcgNjUuOTU3QzQwLjc0NTYgNjYuMTEwNiA0MC40MDY1IDY2LjAyMDEgNDAuMjQ1MSA2NS43NTJMMzAuOTkxMiA1MC4zNzExTDI1Ljk5NDIgNDcuNzFDMjUuODA4MyA0Ny42MTEyIDI1LjYxNDggNDcuODI4NyAyNS43Mjc1IDQ4LjAwOThMMzkuOTkxMiA3MC45MjU4QzQwLjE2MDkgNzEuMTk4NSA0MC4xMjU3IDcxLjU1NTggMzkuOTA2MyA3MS43ODgxQzM5LjYxMDkgNzIuMTAwNSAzOS4xMTE4IDcyLjA2MjMgMzguODY1MiA3MS43MDhMMjAuNDE1IDQ1LjE4NTZDMjAuMTczIDQ0LjkwNjQgMjAuMDMxMSA0NC41MzEzIDIwLjAwNDkgNDQuMTM5N0MyMC4wMDE4IDQ0LjA5MyAxOS45OTk4IDQ0LjA0NjQgMjAgNDRDMTkuOTk5OCA0My45NTM2IDIwLjAwMTggNDMuOTA3IDIwLjAwNDkgNDMuODYwNEMyMC4wMzExIDQzLjQ2ODcgMjAuMTczIDQzLjA5MzYgMjAuNDE1IDQyLjgxNDVMMzguODY1MiAxNi4yOTJDMzkuMTExOCAxNS45Mzc3IDM5LjYxMDkgMTUuODk5NSAzOS45MDYzIDE2LjIxMTlDNDAuMTI1NyAxNi40NDQyIDQwLjE2MDkgMTYuODAxNSAzOS45OTEyIDE3LjA3NDJMMjQuNjk5MiA0MS42NDI2QzI0LjIyOTggNDIuMzk2OSAyNC4xOTA4IDQyLjg5MzYgMjQuMjYzNyA0My4xODk1QzI0LjMzNjYgNDMuNDg1NSAyNC41Mzc0IDQzLjY0NjYgMjQuNjg3NSA0My43MDUxQzI0LjY5NzEgNDMuNzA4OCAyNC43MDY3IDQzLjcxMzEgMjQuNzE1OCA0My43MTc4TDMwLjgwMTggNDYuODI5MUw0MC4yMjQ2IDI1LjM3MTFDNDAuMzY5IDI1LjA0MjYgNDAuNzQzOCAyNC44OTM5IDQxLjA2NjQgMjUuMDM2MUM0MS4zNzkzIDI1LjE3NDQgNDEuNTMzNyAyNS41MzkyIDQxLjQxOCAyNS44NjgyTDMzLjg0NDcgNDcuNDA2M0g1NC4zMDg2TDQ2LjczNjMgMjUuODY4MkM0Ni42MjA2IDI1LjUzOSA0Ni43NzQ3IDI1LjE3NDIgNDcuMDg3OSAyNS4wMzYxQzQ3LjQxMDQgMjQuODk0IDQ3Ljc4NDMgMjUuMDQyNyA0Ny45Mjg3IDI1LjM3MTFMNTcuMzIyMyA0Ni43NjE3TDYzLjI4NDIgNDMuNzE3OEM2My4yOTY5IDQzLjcxMTMgNjMuMzEwNyA0My43MDU4IDYzLjMyNDIgNDMuNzAxMkM2My40Nzc3IDQzLjY0ODQgNjMuNjc4MyA0My40OTY5IDYzLjc1MSA0My4yMUM2My44MjQyIDQyLjkyMDQgNjMuNzg0OSA0Mi40MjA0IDYzLjMwMDggNDEuNjQyNkw0OC4wMDg4IDE3LjA3NDJDNDcuODM5MSAxNi44MDE1IDQ3Ljg3NDMgMTYuNDQ0MiA0OC4wOTM4IDE2LjIxMTlaIiBmaWxsPSJ3aGl0ZSIvPgo8ZGVmcz4KPGxpbmVhckdyYWRpZW50IGlkPSJwYWludDBfbGluZWFyXzMyNDVfMTc1MiIgeDE9IjAiIHkxPSI0NC4wMDAzIiB4Mj0iODgiIHkyPSI0NC4wMDAzIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CjxzdG9wIHN0b3AtY29sb3I9IiM5Nzk3RkYiLz4KPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMTdEOUQ0Ii8+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPC9zdmc+Cg=="},"counterparty":"petersalomonsen.near","signerId":"petersalomonsen.near","receiverId":"npro.nearmobile.near","amount":"0.1500","transactionHashes":["5uv9ZFWCSqac3nibe533szZGayTNsteaDDVWg3JvCxLj"],"receiptIds":["ApivoCQHKeacjjahbuPNBnD8EudWfNZAhaHMgk8EMcZy"]},{"id":51552,"blockTime":"2026-02-18T10:32:22.617258Z","tokenId":"near","tokenMetadata":{"tokenId":"near","name":"NEAR","symbol":"NEAR","decimals":24,"icon":"https://s2.coinmarketcap.com/static/img/coins/128x128/6535.png","network":"near","chainName":"Near Protocol","chainIcons":{"dark":"https://near-intents.org/static/icons/network/near.svg","light":"https://near-intents.org/static/icons/network/near_dark.svg"}},"counterparty":"petersalomonsen.near","signerId":"petersalomonsen.near","receiverId":"webassemblymusic-treasury.sputnik-dao.near","amount":"2","transactionHashes":["EvKKQHJadwFDNcrXAv1jWg8BFXqwWkwnx7zvisAqxAqD"],"receiptIds":["8tWrkDb35B1xzjmAXC2pAUc7tp6zfjuRtJeUzTUJv9sX"]},{"id":51480,"blockTime":"2026-02-18T10:28:18.794076Z","tokenId":"near","tokenMetadata":{"tokenId":"near","name":"NEAR","symbol":"NEAR","decimals":24,"icon":"https://s2.coinmarketcap.com/static/img/coins/128x128/6535.png","network":"near","chainName":"Near Protocol","chainIcons":{"dark":"https://near-intents.org/static/icons/network/near.svg","light":"https://near-intents.org/static/icons/network/near_dark.svg"}},"counterparty":"petersalomonsen.near","signerId":"petersalomonsen.near","receiverId":"webassemblymusic-treasury.sputnik-dao.near","amount":"3","transactionHashes":["Hh91V5ohiafvcRK2KPCfiHgfmifmE534j1b72AAjg4Kj"],"receiptIds":["HakzaUQawc2zj7FWmzBK7N7U3uMXC17g6edfPPN8dmD7"]},{"id":50967,"blockTime":"2026-02-18T06:36:09.038286Z","tokenId":"near","tokenMetadata":{"tokenId":"near","name":"NEAR","symbol":"NEAR","decimals":24,"icon":"https://s2.coinmarketcap.com/static/img/coins/128x128/6535.png","network":"near","chainName":"Near Protocol","chainIcons":{"dark":"https://near-intents.org/static/icons/network/near.svg","light":"https://near-intents.org/static/icons/network/near_dark.svg"}},"counterparty":"petersalomonsen.near","signerId":"petersalomonsen.near","receiverId":"webassemblymusic-treasury.sputnik-dao.near","amount":"0.2000","transactionHashes":["TzjG1CME1onFFLxRdE5U8eVCEcFEztiiTLfKhvuFtoq"],"receiptIds":["E3ygwQv25no23PYQruukEy8UBxj4DV1xqF2rzL84p24U"]},{"id":52224,"blockTime":"2026-02-18T03:52:38.994686Z","tokenId":"near","tokenMetadata":{"tokenId":"near","name":"NEAR","symbol":"NEAR","decimals":24,"icon":"https://s2.coinmarketcap.com/static/img/coins/128x128/6535.png","network":"near","chainName":"Near Protocol","chainIcons":{"dark":"https://near-intents.org/static/icons/network/near.svg","light":"https://near-intents.org/static/icons/network/near_dark.svg"}},"counterparty":"astro-stakers.poolv1.near","signerId":null,"receiverId":null,"amount":"0.043154791913411917079952","transactionHashes":[],"receiptIds":[]},{"id":52223,"blockTime":"2026-02-17T20:29:11.481769Z","tokenId":"near","tokenMetadata":{"tokenId":"near","name":"NEAR","symbol":"NEAR","decimals":24,"icon":"https://s2.coinmarketcap.com/static/img/coins/128x128/6535.png","price":1.051121798043976,"network":"near","chainName":"Near Protocol","chainIcons":{"dark":"https://near-intents.org/static/icons/network/near.svg","light":"https://near-intents.org/static/icons/network/near_dark.svg"}},"counterparty":"astro-stakers.poolv1.near","signerId":null,"receiverId":null,"amount":"0.041985510254136946107590","transactionHashes":[],"receiptIds":[],"valueUsd":0.04413188503012221},{"id":50493,"blockTime":"2026-02-17T19:51:56.396599Z","tokenId":"near","tokenMetadata":{"tokenId":"near","name":"NEAR","symbol":"NEAR","decimals":24,"icon":"https://s2.coinmarketcap.com/static/img/coins/128x128/6535.png","price":1.051121798043976,"network":"near","chainName":"Near Protocol","chainIcons":{"dark":"https://near-intents.org/static/icons/network/near.svg","light":"https://near-intents.org/static/icons/network/near_dark.svg"}},"counterparty":"petersalomonsen.near","signerId":"petersalomonsen.near","receiverId":"webassemblymusic-treasury.sputnik-dao.near","amount":"1","transactionHashes":["GJMm3zFEA6NuSvVT9wmETcywbQoveypcydLU4uo7SzS3"],"receiptIds":["CaFCcCZahtTvCnj18sJj26ZMCPirKFqtUudJmu1tT67k"],"valueUsd":1.051121798043976}],"total":338}
+{
+    "data": [
+        {
+            "id": 52265,
+            "blockTime": "2026-02-18T11:12:04.467268Z",
+            "tokenId": "intents.near:nep141:eth.omft.near",
+            "tokenMetadata": {
+                "tokenId": "intents.near:nep141:eth.omft.near",
+                "name": "ETH",
+                "symbol": "ETH",
+                "decimals": 18,
+                "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/1027.png"
+            },
+            "counterparty": "UNKNOWN",
+            "signerId": null,
+            "receiverId": null,
+            "amount": "0.0050",
+            "transactionHashes": [],
+            "receiptIds": []
+        },
+        {
+            "id": 52009,
+            "blockTime": "2026-02-18T10:57:00.401015Z",
+            "tokenId": "17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+            "tokenMetadata": {
+                "tokenId": "17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+                "name": "USDC",
+                "symbol": "USDC",
+                "decimals": 6,
+                "icon": "data:image/svg+xml,%3C%3Fxml version=%221.0%22 encoding=%22utf-8%22%3F%3E%3C!-- Generator: Adobe Illustrator 22.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0) --%3E%3Csvg version=%221.1%22 id=%22Layer_1%22 xmlns=%22http://www.w3.org/2000/svg%22 xmlns:xlink=%22http://www.w3.org/1999/xlink%22 x=%220px%22 y=%220px%22 viewBox=%220 0 256 256%22 style=%22enable-background:new 0 0 256 256;%22 xml:space=%22preserve%22%3E%3Cstyle type=%22text/css%22%3E .st0%7Bfill:%232775CA;%7D .st1%7Bfill:%23FFFFFF;%7D%0A%3C/style%3E%3Ccircle class=%22st0%22 cx=%22128%22 cy=%22128%22 r=%22128%22/%3E%3Cpath class=%22st1%22 d=%22M104,217c0,3-2.4,4.7-5.2,3.8C60,208.4,32,172.2,32,129.3c0-42.8,28-79.1,66.8-91.5c2.9-0.9,5.2,0.8,5.2,3.8 v7.5c0,2-1.5,4.3-3.4,5C69.9,65.4,48,94.9,48,129.3c0,34.5,21.9,63.9,52.6,75.1c1.9,0.7,3.4,3,3.4,5V217z%22/%3E%3Cpath class=%22st1%22 d=%22M136,189.3c0,2.2-1.8,4-4,4h-8c-2.2,0-4-1.8-4-4v-12.6c-17.5-2.4-26-12.1-28.3-25.5c-0.4-2.3,1.4-4.3,3.7-4.3 h9.1c1.9,0,3.5,1.4,3.9,3.2c1.7,7.9,6.3,14,20.3,14c10.3,0,17.7-5.8,17.7-14.4c0-8.6-4.3-11.9-19.5-14.4c-22.4-3-33-9.8-33-27.3 c0-13.5,10.3-24.1,26.1-26.3V69.3c0-2.2,1.8-4,4-4h8c2.2,0,4,1.8,4,4v12.7c12.9,2.3,21.1,9.6,23.8,21.8c0.5,2.3-1.3,4.4-3.7,4.4 h-8.4c-1.8,0-3.3-1.2-3.8-2.9c-2.3-7.7-7.8-11.1-17.4-11.1c-10.6,0-16.1,5.1-16.1,12.3c0,7.6,3.1,11.4,19.4,13.7 c22,3,33.4,9.3,33.4,28c0,14.2-10.6,25.7-27.1,28.3V189.3z%22/%3E%3Cpath class=%22st1%22 d=%22M157.2,220.8c-2.9,0.9-5.2-0.8-5.2-3.8v-7.5c0-2.2,1.3-4.3,3.4-5c30.6-11.2,52.6-40.7,52.6-75.1 c0-34.5-21.9-63.9-52.6-75.1c-1.9-0.7-3.4-3-3.4-5v-7.5c0-3,2.4-4.7,5.2-3.8C196,50.2,224,86.5,224,129.3 C224,172.2,196,208.4,157.2,220.8z%22/%3E%3C/svg%3E%0A"
+            },
+            "counterparty": "intents.near",
+            "signerId": "intents.near",
+            "receiverId": "17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+            "amount": "0.99868400",
+            "transactionHashes": [
+                "65ssL64hJRzjN4Eb9W5ap8ofQWawXShANzjMPt9aMmJG"
+            ],
+            "receiptIds": ["DvwqB3EztnxHG4rZb2MrMguhUE7CUT2MDFFVLBHJKq8K"]
+        },
+        {
+            "id": 51887,
+            "blockTime": "2026-02-18T10:51:12.493001Z",
+            "tokenId": "npro.nearmobile.near",
+            "tokenMetadata": {
+                "tokenId": "npro.nearmobile.near",
+                "name": "NPRO",
+                "symbol": "NPRO",
+                "decimals": 24,
+                "icon": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODgiIGhlaWdodD0iODgiIHZpZXdCb3g9IjAgMCA4OCA4OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9Ijg4IiBoZWlnaHQ9Ijg4IiByeD0iNDQiIGZpbGw9InVybCgjcGFpbnQwX2xpbmVhcl8zMjQ1XzE3NTIpIi8+CjxwYXRoIGQ9Ik00OC4wOTM4IDE2LjIxMTlDNDguMzg5MiAxNS44OTk1IDQ4Ljg4ODIgMTUuOTM3NyA0OS4xMzQ4IDE2LjI5Mkw2Ny41ODUgNDIuODE0NUM2Ny44MjcgNDMuMDkzNiA2Ny45Njg5IDQzLjQ2ODcgNjcuOTk1MSA0My44NjA0QzY3Ljk5ODIgNDMuOTA3IDY4LjAwMDIgNDMuOTUzNiA2OCA0NEM2OC4wMDAyIDQ0LjA0NjQgNjcuOTk4MiA0NC4wOTMgNjcuOTk1MSA0NC4xMzk3QzY3Ljk2ODkgNDQuNTMxMyA2Ny44MjcgNDQuOTA2NCA2Ny41ODUgNDUuMTg1Nkw0OS4xMzQ4IDcxLjcwOEM0OC44ODgyIDcyLjA2MjMgNDguMzg5MiA3Mi4xMDA1IDQ4LjA5MzggNzEuNzg4MUM0Ny44NzQzIDcxLjU1NTggNDcuODM5MSA3MS4xOTg1IDQ4LjAwODggNzAuOTI1OEw2Mi4yNzI1IDQ4LjAwOThDNjIuMzg1MiA0Ny44Mjg2IDYyLjE5MTcgNDcuNjExMiA2Mi4wMDU5IDQ3LjcxTDU3LjAwODggNTAuMzcxMUw0Ny43NTQ5IDY1Ljc1MkM0Ny41OTM1IDY2LjAyMDEgNDcuMjU0NCA2Ni4xMTA2IDQ2Ljk4NjMgNjUuOTU3QzQ2LjcxODUgNjUuODAzNSA0Ni42MTU5IDY1LjQ2MDQgNDYuNzUyOSA2NS4xNzg3TDUzLjgzOTkgNTAuNjQ4NEgzNC4xNjAyTDQxLjI0NzEgNjUuMTc4N0M0MS4zODQyIDY1LjQ2MDQgNDEuMjgxNSA2NS44MDM1IDQxLjAxMzcgNjUuOTU3QzQwLjc0NTYgNjYuMTEwNiA0MC40MDY1IDY2LjAyMDEgNDAuMjQ1MSA2NS43NTJMMzAuOTkxMiA1MC4zNzExTDI1Ljk5NDIgNDcuNzFDMjUuODA4MyA0Ny42MTEyIDI1LjYxNDggNDcuODI4NyAyNS43Mjc1IDQ4LjAwOThMMzkuOTkxMiA3MC45MjU4QzQwLjE2MDkgNzEuMTk4NSA0MC4xMjU3IDcxLjU1NTggMzkuOTA2MyA3MS43ODgxQzM5LjYxMDkgNzIuMTAwNSAzOS4xMTE4IDcyLjA2MjMgMzguODY1MiA3MS43MDhMMjAuNDE1IDQ1LjE4NTZDMjAuMTczIDQ0LjkwNjQgMjAuMDMxMSA0NC41MzEzIDIwLjAwNDkgNDQuMTM5N0MyMC4wMDE4IDQ0LjA5MyAxOS45OTk4IDQ0LjA0NjQgMjAgNDRDMTkuOTk5OCA0My45NTM2IDIwLjAwMTggNDMuOTA3IDIwLjAwNDkgNDMuODYwNEMyMC4wMzExIDQzLjQ2ODcgMjAuMTczIDQzLjA5MzYgMjAuNDE1IDQyLjgxNDVMMzguODY1MiAxNi4yOTJDMzkuMTExOCAxNS45Mzc3IDM5LjYxMDkgMTUuODk5NSAzOS45MDYzIDE2LjIxMTlDNDAuMTI1NyAxNi40NDQyIDQwLjE2MDkgMTYuODAxNSAzOS45OTEyIDE3LjA3NDJMMjQuNjk5MiA0MS42NDI2QzI0LjIyOTggNDIuMzk2OSAyNC4xOTA4IDQyLjg5MzYgMjQuMjYzNyA0My4xODk1QzI0LjMzNjYgNDMuNDg1NSAyNC41Mzc0IDQzLjY0NjYgMjQuNjg3NSA0My43MDUxQzI0LjY5NzEgNDMuNzA4OCAyNC43MDY3IDQzLjcxMzEgMjQuNzE1OCA0My43MTc4TDMwLjgwMTggNDYuODI5MUw0MC4yMjQ2IDI1LjM3MTFDNDAuMzY5IDI1LjA0MjYgNDAuNzQzOCAyNC44OTM5IDQxLjA2NjQgMjUuMDM2MUM0MS4zNzkzIDI1LjE3NDQgNDEuNTMzNyAyNS41MzkyIDQxLjQxOCAyNS44NjgyTDMzLjg0NDcgNDcuNDA2M0g1NC4zMDg2TDQ2LjczNjMgMjUuODY4MkM0Ni42MjA2IDI1LjUzOSA0Ni43NzQ3IDI1LjE3NDIgNDcuMDg3OSAyNS4wMzYxQzQ3LjQxMDQgMjQuODk0IDQ3Ljc4NDMgMjUuMDQyNyA0Ny45Mjg3IDI1LjM3MTFMNTcuMzIyMyA0Ni43NjE3TDYzLjI4NDIgNDMuNzE3OEM2My4yOTY5IDQzLjcxMTMgNjMuMzEwNyA0My43MDU4IDYzLjMyNDIgNDMuNzAxMkM2My40Nzc3IDQzLjY0ODQgNjMuNjc4MyA0My40OTY5IDYzLjc1MSA0My4yMUM2My44MjQyIDQyLjkyMDQgNjMuNzg0OSA0Mi40MjA0IDYzLjMwMDggNDEuNjQyNkw0OC4wMDg4IDE3LjA3NDJDNDcuODM5MSAxNi44MDE1IDQ3Ljg3NDMgMTYuNDQ0MiA0OC4wOTM4IDE2LjIxMTlaIiBmaWxsPSJ3aGl0ZSIvPgo8ZGVmcz4KPGxpbmVhckdyYWRpZW50IGlkPSJwYWludDBfbGluZWFyXzMyNDVfMTc1MiIgeDE9IjAiIHkxPSI0NC4wMDAzIiB4Mj0iODgiIHkyPSI0NC4wMDAzIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CjxzdG9wIHN0b3AtY29sb3I9IiM5Nzk3RkYiLz4KPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMTdEOUQ0Ii8+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPC9zdmc+Cg=="
+            },
+            "counterparty": "petersalomonsen.near",
+            "signerId": "petersalomonsen.near",
+            "receiverId": "npro.nearmobile.near",
+            "amount": "0.1000",
+            "transactionHashes": [
+                "8mSXPBCnbsxhKmESNusJ7kRb9ysnCYDmuK31EadXVXDd"
+            ],
+            "receiptIds": ["2EeNNur5cBbAU3pndvhUSoFZGQi2tHUgTEmjiXMKqpLB"]
+        },
+        {
+            "id": 51617,
+            "blockTime": "2026-02-18T10:35:50.386702Z",
+            "tokenId": "npro.nearmobile.near",
+            "tokenMetadata": {
+                "tokenId": "npro.nearmobile.near",
+                "name": "NPRO",
+                "symbol": "NPRO",
+                "decimals": 24,
+                "icon": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODgiIGhlaWdodD0iODgiIHZpZXdCb3g9IjAgMCA4OCA4OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9Ijg4IiBoZWlnaHQ9Ijg4IiByeD0iNDQiIGZpbGw9InVybCgjcGFpbnQwX2xpbmVhcl8zMjQ1XzE3NTIpIi8+CjxwYXRoIGQ9Ik00OC4wOTM4IDE2LjIxMTlDNDguMzg5MiAxNS44OTk1IDQ4Ljg4ODIgMTUuOTM3NyA0OS4xMzQ4IDE2LjI5Mkw2Ny41ODUgNDIuODE0NUM2Ny44MjcgNDMuMDkzNiA2Ny45Njg5IDQzLjQ2ODcgNjcuOTk1MSA0My44NjA0QzY3Ljk5ODIgNDMuOTA3IDY4LjAwMDIgNDMuOTUzNiA2OCA0NEM2OC4wMDAyIDQ0LjA0NjQgNjcuOTk4MiA0NC4wOTMgNjcuOTk1MSA0NC4xMzk3QzY3Ljk2ODkgNDQuNTMxMyA2Ny44MjcgNDQuOTA2NCA2Ny41ODUgNDUuMTg1Nkw0OS4xMzQ4IDcxLjcwOEM0OC44ODgyIDcyLjA2MjMgNDguMzg5MiA3Mi4xMDA1IDQ4LjA5MzggNzEuNzg4MUM0Ny44NzQzIDcxLjU1NTggNDcuODM5MSA3MS4xOTg1IDQ4LjAwODggNzAuOTI1OEw2Mi4yNzI1IDQ4LjAwOThDNjIuMzg1MiA0Ny44Mjg2IDYyLjE5MTcgNDcuNjExMiA2Mi4wMDU5IDQ3LjcxTDU3LjAwODggNTAuMzcxMUw0Ny43NTQ5IDY1Ljc1MkM0Ny41OTM1IDY2LjAyMDEgNDcuMjU0NCA2Ni4xMTA2IDQ2Ljk4NjMgNjUuOTU3QzQ2LjcxODUgNjUuODAzNSA0Ni42MTU5IDY1LjQ2MDQgNDYuNzUyOSA2NS4xNzg3TDUzLjgzOTkgNTAuNjQ4NEgzNC4xNjAyTDQxLjI0NzEgNjUuMTc4N0M0MS4zODQyIDY1LjQ2MDQgNDEuMjgxNSA2NS44MDM1IDQxLjAxMzcgNjUuOTU3QzQwLjc0NTYgNjYuMTEwNiA0MC40MDY1IDY2LjAyMDEgNDAuMjQ1MSA2NS43NTJMMzAuOTkxMiA1MC4zNzExTDI1Ljk5NDIgNDcuNzFDMjUuODA4MyA0Ny42MTEyIDI1LjYxNDggNDcuODI4NyAyNS43Mjc1IDQ4LjAwOThMMzkuOTkxMiA3MC45MjU4QzQwLjE2MDkgNzEuMTk4NSA0MC4xMjU3IDcxLjU1NTggMzkuOTA2MyA3MS43ODgxQzM5LjYxMDkgNzIuMTAwNSAzOS4xMTE4IDcyLjA2MjMgMzguODY1MiA3MS43MDhMMjAuNDE1IDQ1LjE4NTZDMjAuMTczIDQ0LjkwNjQgMjAuMDMxMSA0NC41MzEzIDIwLjAwNDkgNDQuMTM5N0MyMC4wMDE4IDQ0LjA5MyAxOS45OTk4IDQ0LjA0NjQgMjAgNDRDMTkuOTk5OCA0My45NTM2IDIwLjAwMTggNDMuOTA3IDIwLjAwNDkgNDMuODYwNEMyMC4wMzExIDQzLjQ2ODcgMjAuMTczIDQzLjA5MzYgMjAuNDE1IDQyLjgxNDVMMzguODY1MiAxNi4yOTJDMzkuMTExOCAxNS45Mzc3IDM5LjYxMDkgMTUuODk5NSAzOS45MDYzIDE2LjIxMTlDNDAuMTI1NyAxNi40NDQyIDQwLjE2MDkgMTYuODAxNSAzOS45OTEyIDE3LjA3NDJMMjQuNjk5MiA0MS42NDI2QzI0LjIyOTggNDIuMzk2OSAyNC4xOTA4IDQyLjg5MzYgMjQuMjYzNyA0My4xODk1QzI0LjMzNjYgNDMuNDg1NSAyNC41Mzc0IDQzLjY0NjYgMjQuNjg3NSA0My43MDUxQzI0LjY5NzEgNDMuNzA4OCAyNC43MDY3IDQzLjcxMzEgMjQuNzE1OCA0My43MTc4TDMwLjgwMTggNDYuODI5MUw0MC4yMjQ2IDI1LjM3MTFDNDAuMzY5IDI1LjA0MjYgNDAuNzQzOCAyNC44OTM5IDQxLjA2NjQgMjUuMDM2MUM0MS4zNzkzIDI1LjE3NDQgNDEuNTMzNyAyNS41MzkyIDQxLjQxOCAyNS44NjgyTDMzLjg0NDcgNDcuNDA2M0g1NC4zMDg2TDQ2LjczNjMgMjUuODY4MkM0Ni42MjA2IDI1LjUzOSA0Ni43NzQ3IDI1LjE3NDIgNDcuMDg3OSAyNS4wMzYxQzQ3LjQxMDQgMjQuODk0IDQ3Ljc4NDMgMjUuMDQyNyA0Ny45Mjg3IDI1LjM3MTFMNTcuMzIyMyA0Ni43NjE3TDYzLjI4NDIgNDMuNzE3OEM2My4yOTY5IDQzLjcxMTMgNjMuMzEwNyA0My43MDU4IDYzLjMyNDIgNDMuNzAxMkM2My40Nzc3IDQzLjY0ODQgNjMuNjc4MyA0My40OTY5IDYzLjc1MSA0My4yMUM2My44MjQyIDQyLjkyMDQgNjMuNzg0OSA0Mi40MjA0IDYzLjMwMDggNDEuNjQyNkw0OC4wMDg4IDE3LjA3NDJDNDcuODM5MSAxNi44MDE1IDQ3Ljg3NDMgMTYuNDQ0MiA0OC4wOTM4IDE2LjIxMTlaIiBmaWxsPSJ3aGl0ZSIvPgo8ZGVmcz4KPGxpbmVhckdyYWRpZW50IGlkPSJwYWludDBfbGluZWFyXzMyNDVfMTc1MiIgeDE9IjAiIHkxPSI0NC4wMDAzIiB4Mj0iODgiIHkyPSI0NC4wMDAzIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CjxzdG9wIHN0b3AtY29sb3I9IiM5Nzk3RkYiLz4KPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMTdEOUQ0Ii8+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPC9zdmc+Cg=="
+            },
+            "counterparty": "petersalomonsen.near",
+            "signerId": "petersalomonsen.near",
+            "receiverId": "npro.nearmobile.near",
+            "amount": "0.1500",
+            "transactionHashes": [
+                "5uv9ZFWCSqac3nibe533szZGayTNsteaDDVWg3JvCxLj"
+            ],
+            "receiptIds": ["ApivoCQHKeacjjahbuPNBnD8EudWfNZAhaHMgk8EMcZy"]
+        },
+        {
+            "id": 51552,
+            "blockTime": "2026-02-18T10:32:22.617258Z",
+            "tokenId": "near",
+            "tokenMetadata": {
+                "tokenId": "near",
+                "name": "NEAR",
+                "symbol": "NEAR",
+                "decimals": 24,
+                "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/6535.png",
+                "network": "near",
+                "chainName": "Near Protocol",
+                "chainIcons": {
+                    "dark": "https://near-intents.org/static/icons/network/near.svg",
+                    "light": "https://near-intents.org/static/icons/network/near_dark.svg"
+                }
+            },
+            "counterparty": "petersalomonsen.near",
+            "signerId": "petersalomonsen.near",
+            "receiverId": "webassemblymusic-treasury.sputnik-dao.near",
+            "amount": "2",
+            "transactionHashes": [
+                "EvKKQHJadwFDNcrXAv1jWg8BFXqwWkwnx7zvisAqxAqD"
+            ],
+            "receiptIds": ["8tWrkDb35B1xzjmAXC2pAUc7tp6zfjuRtJeUzTUJv9sX"]
+        },
+        {
+            "id": 51480,
+            "blockTime": "2026-02-18T10:28:18.794076Z",
+            "tokenId": "near",
+            "tokenMetadata": {
+                "tokenId": "near",
+                "name": "NEAR",
+                "symbol": "NEAR",
+                "decimals": 24,
+                "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/6535.png",
+                "network": "near",
+                "chainName": "Near Protocol",
+                "chainIcons": {
+                    "dark": "https://near-intents.org/static/icons/network/near.svg",
+                    "light": "https://near-intents.org/static/icons/network/near_dark.svg"
+                }
+            },
+            "counterparty": "petersalomonsen.near",
+            "signerId": "petersalomonsen.near",
+            "receiverId": "webassemblymusic-treasury.sputnik-dao.near",
+            "amount": "3",
+            "transactionHashes": [
+                "Hh91V5ohiafvcRK2KPCfiHgfmifmE534j1b72AAjg4Kj"
+            ],
+            "receiptIds": ["HakzaUQawc2zj7FWmzBK7N7U3uMXC17g6edfPPN8dmD7"]
+        },
+        {
+            "id": 50967,
+            "blockTime": "2026-02-18T06:36:09.038286Z",
+            "tokenId": "near",
+            "tokenMetadata": {
+                "tokenId": "near",
+                "name": "NEAR",
+                "symbol": "NEAR",
+                "decimals": 24,
+                "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/6535.png",
+                "network": "near",
+                "chainName": "Near Protocol",
+                "chainIcons": {
+                    "dark": "https://near-intents.org/static/icons/network/near.svg",
+                    "light": "https://near-intents.org/static/icons/network/near_dark.svg"
+                }
+            },
+            "counterparty": "petersalomonsen.near",
+            "signerId": "petersalomonsen.near",
+            "receiverId": "webassemblymusic-treasury.sputnik-dao.near",
+            "amount": "0.2000",
+            "transactionHashes": [
+                "TzjG1CME1onFFLxRdE5U8eVCEcFEztiiTLfKhvuFtoq"
+            ],
+            "receiptIds": ["E3ygwQv25no23PYQruukEy8UBxj4DV1xqF2rzL84p24U"]
+        },
+        {
+            "id": 52224,
+            "blockTime": "2026-02-18T03:52:38.994686Z",
+            "tokenId": "near",
+            "tokenMetadata": {
+                "tokenId": "near",
+                "name": "NEAR",
+                "symbol": "NEAR",
+                "decimals": 24,
+                "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/6535.png",
+                "network": "near",
+                "chainName": "Near Protocol",
+                "chainIcons": {
+                    "dark": "https://near-intents.org/static/icons/network/near.svg",
+                    "light": "https://near-intents.org/static/icons/network/near_dark.svg"
+                }
+            },
+            "counterparty": "astro-stakers.poolv1.near",
+            "signerId": null,
+            "receiverId": null,
+            "amount": "0.043154791913411917079952",
+            "transactionHashes": [],
+            "receiptIds": []
+        },
+        {
+            "id": 52223,
+            "blockTime": "2026-02-17T20:29:11.481769Z",
+            "tokenId": "near",
+            "tokenMetadata": {
+                "tokenId": "near",
+                "name": "NEAR",
+                "symbol": "NEAR",
+                "decimals": 24,
+                "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/6535.png",
+                "price": 1.051121798043976,
+                "network": "near",
+                "chainName": "Near Protocol",
+                "chainIcons": {
+                    "dark": "https://near-intents.org/static/icons/network/near.svg",
+                    "light": "https://near-intents.org/static/icons/network/near_dark.svg"
+                }
+            },
+            "counterparty": "astro-stakers.poolv1.near",
+            "signerId": null,
+            "receiverId": null,
+            "amount": "0.041985510254136946107590",
+            "transactionHashes": [],
+            "receiptIds": [],
+            "valueUsd": 0.04413188503012221
+        },
+        {
+            "id": 50493,
+            "blockTime": "2026-02-17T19:51:56.396599Z",
+            "tokenId": "near",
+            "tokenMetadata": {
+                "tokenId": "near",
+                "name": "NEAR",
+                "symbol": "NEAR",
+                "decimals": 24,
+                "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/6535.png",
+                "price": 1.051121798043976,
+                "network": "near",
+                "chainName": "Near Protocol",
+                "chainIcons": {
+                    "dark": "https://near-intents.org/static/icons/network/near.svg",
+                    "light": "https://near-intents.org/static/icons/network/near_dark.svg"
+                }
+            },
+            "counterparty": "petersalomonsen.near",
+            "signerId": "petersalomonsen.near",
+            "receiverId": "webassemblymusic-treasury.sputnik-dao.near",
+            "amount": "1",
+            "transactionHashes": [
+                "GJMm3zFEA6NuSvVT9wmETcywbQoveypcydLU4uo7SzS3"
+            ],
+            "receiptIds": ["CaFCcCZahtTvCnj18sJj26ZMCPirKFqtUudJmu1tT67k"],
+            "valueUsd": 1.051121798043976
+        }
+    ],
+    "total": 338
+}

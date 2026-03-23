@@ -267,7 +267,9 @@ function WalletPageContent() {
         // Parse transactions if present
         if (transactionsParam) {
             try {
-                const txs = base64ToJson(transactionsParam) as TransactionRequest[];
+                const txs = base64ToJson(
+                    transactionsParam,
+                ) as TransactionRequest[];
                 setTransactions(txs);
             } catch (e) {
                 console.error("Failed to parse transactions:", e);

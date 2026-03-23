@@ -28,7 +28,7 @@ export function InputBlock({
                 "dark:[&_input]:bg-transparent! dark:[&_textarea]:bg-transparent! dark:**:data-[slot=select-trigger]:bg-transparent!",
                 invalid && "border-destructive border bg-destructive/5",
                 interactive &&
-                "focus-within:bg-general-tertiary hover:bg-general-tertiary transition-colors",
+                    "focus-within:bg-general-tertiary hover:bg-general-tertiary transition-colors",
                 className,
             )}
         >

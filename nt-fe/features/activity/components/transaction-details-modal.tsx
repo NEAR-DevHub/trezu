@@ -57,14 +57,10 @@ export function TransactionDetailsModal({
     const fromAccount = isSwap
         ? "via NEAR Intents"
         : isReceived
-            ? knownCounterparty || activity.signerId || null
-            : treasuryId;
+          ? knownCounterparty || activity.signerId || null
+          : treasuryId;
 
-    const toAccount = isSwap
-        ? treasuryId
-        : isReceived
-            ? treasuryId
-            : null;
+    const toAccount = isSwap ? treasuryId : isReceived ? treasuryId : null;
 
     const formatAmount = (amount: string, decimals?: number) => {
         const num = parseFloat(amount);
@@ -86,17 +82,29 @@ export function TransactionDetailsModal({
                         <div className="relative flex justify-center items-center gap-4 w-full">
                             {/* From: Sent Token */}
                             {activity.swap.sentAmount &&
-                                activity.swap.sentTokenMetadata ? (
+                            activity.swap.sentTokenMetadata ? (
                                 <ExchangeSummaryCard
                                     title="Sell"
                                     token={{
-                                        address: activity.swap.sentTokenMetadata.tokenId,
-                                        symbol: activity.swap.sentTokenMetadata.symbol,
-                                        decimals: activity.swap.sentTokenMetadata.decimals,
-                                        name: activity.swap.sentTokenMetadata.name,
-                                        icon: activity.swap.sentTokenMetadata.icon || "",
-                                        network: activity.swap.sentTokenMetadata.network || "near",
-                                        chainIcons: activity.swap.sentTokenMetadata.chainIcons,
+                                        address:
+                                            activity.swap.sentTokenMetadata
+                                                .tokenId,
+                                        symbol: activity.swap.sentTokenMetadata
+                                            .symbol,
+                                        decimals:
+                                            activity.swap.sentTokenMetadata
+                                                .decimals,
+                                        name: activity.swap.sentTokenMetadata
+                                            .name,
+                                        icon:
+                                            activity.swap.sentTokenMetadata
+                                                .icon || "",
+                                        network:
+                                            activity.swap.sentTokenMetadata
+                                                .network || "near",
+                                        chainIcons:
+                                            activity.swap.sentTokenMetadata
+                                                .chainIcons,
                                     }}
                                     amount={formatSmartAmount(
                                         activity.swap.sentAmount,
@@ -115,13 +123,25 @@ export function TransactionDetailsModal({
                             <ExchangeSummaryCard
                                 title="Receive"
                                 token={{
-                                    address: activity.swap.receivedTokenMetadata.tokenId,
-                                    symbol: activity.swap.receivedTokenMetadata.symbol,
-                                    decimals: activity.swap.receivedTokenMetadata.decimals,
-                                    name: activity.swap.receivedTokenMetadata.name,
-                                    icon: activity.swap.receivedTokenMetadata.icon || "",
-                                    network: activity.swap.receivedTokenMetadata.network || "near",
-                                    chainIcons: activity.swap.receivedTokenMetadata.chainIcons,
+                                    address:
+                                        activity.swap.receivedTokenMetadata
+                                            .tokenId,
+                                    symbol: activity.swap.receivedTokenMetadata
+                                        .symbol,
+                                    decimals:
+                                        activity.swap.receivedTokenMetadata
+                                            .decimals,
+                                    name: activity.swap.receivedTokenMetadata
+                                        .name,
+                                    icon:
+                                        activity.swap.receivedTokenMetadata
+                                            .icon || "",
+                                    network:
+                                        activity.swap.receivedTokenMetadata
+                                            .network || "near",
+                                    chainIcons:
+                                        activity.swap.receivedTokenMetadata
+                                            .chainIcons,
                                 }}
                                 amount={formatSmartAmount(
                                     activity.swap.receivedAmount,
@@ -163,39 +183,35 @@ export function TransactionDetailsModal({
                             },
                             ...(isSwap && activity.swap
                                 ? [
-                                    ...(activity.swap.sentAmount &&
-                                        activity.swap.sentTokenMetadata
-                                        ? [
-                                            {
-                                                label: "From",
-                                                value: (
-                                                    'Via NEAR Intents'
-                                                ),
-                                            } as InfoItem,
-                                        ]
-                                        : []),
-                                    {
-                                        label: "To",
-                                        value: (
-                                            <div className="flex items-center gap-1">
-                                                <span className="max-w-[300px] truncate">
-                                                    {treasuryId}
-                                                </span>
-                                                <CopyButton
-                                                    text={
-                                                        treasuryId
-                                                    }
-                                                    toastMessage="Address copied to clipboard"
-                                                    tooltipContent="Copy Address"
-                                                    variant="ghost"
-                                                    size="icon-sm"
-                                                />
-                                            </div>
-                                        ),
-                                    } as InfoItem,
-                                ]
+                                      ...(activity.swap.sentAmount &&
+                                      activity.swap.sentTokenMetadata
+                                          ? [
+                                                {
+                                                    label: "From",
+                                                    value: "Via NEAR Intents",
+                                                } as InfoItem,
+                                            ]
+                                          : []),
+                                      {
+                                          label: "To",
+                                          value: (
+                                              <div className="flex items-center gap-1">
+                                                  <span className="max-w-[300px] truncate">
+                                                      {treasuryId}
+                                                  </span>
+                                                  <CopyButton
+                                                      text={treasuryId}
+                                                      toastMessage="Address copied to clipboard"
+                                                      tooltipContent="Copy Address"
+                                                      variant="ghost"
+                                                      size="icon-sm"
+                                                  />
+                                              </div>
+                                          ),
+                                      } as InfoItem,
+                                  ]
                                 : isFunctionCall && activity.methodName
-                                    ? [
+                                  ? [
                                         {
                                             label: "Method",
                                             value: activity.methodName,
@@ -224,78 +240,82 @@ export function TransactionDetailsModal({
                                             ),
                                         } as InfoItem,
                                     ]
-                                    : [
+                                  : [
                                         ...(fromAccount
                                             ? [
-                                                {
-                                                    label: "From",
-                                                    value: (
-                                                        <div className="flex items-center gap-1">
-                                                            <span className="max-w-[300px] truncate">
-                                                                {fromAccount}
-                                                            </span>
-                                                            <CopyButton
-                                                                text={
-                                                                    fromAccount
-                                                                }
-                                                                variant="ghost"
-                                                                size="icon-sm"
-                                                                tooltipContent="Copy Address"
-                                                                toastMessage="Address copied to clipboard"
-                                                            />
-                                                        </div>
-                                                    ),
-                                                } as InfoItem,
-                                            ]
+                                                  {
+                                                      label: "From",
+                                                      value: (
+                                                          <div className="flex items-center gap-1">
+                                                              <span className="max-w-[300px] truncate">
+                                                                  {fromAccount}
+                                                              </span>
+                                                              <CopyButton
+                                                                  text={
+                                                                      fromAccount
+                                                                  }
+                                                                  variant="ghost"
+                                                                  size="icon-sm"
+                                                                  tooltipContent="Copy Address"
+                                                                  toastMessage="Address copied to clipboard"
+                                                              />
+                                                          </div>
+                                                      ),
+                                                  } as InfoItem,
+                                              ]
                                             : []),
                                         ...(toAccount
                                             ? [
-                                                {
-                                                    label: "To",
-                                                    value: (
-                                                        <div className="flex items-center gap-1">
-                                                            <span className="max-w-[300px] truncate">
-                                                                {toAccount}
-                                                            </span>
-                                                            <CopyButton
-                                                                text={
-                                                                    toAccount
-                                                                }
-                                                                toastMessage="Address copied to clipboard"
-                                                                tooltipContent="Copy Address"
-                                                                variant="ghost"
-                                                                size="icon-sm"
-                                                            />
-                                                        </div>
-                                                    ),
-                                                } as InfoItem,
-                                            ]
+                                                  {
+                                                      label: "To",
+                                                      value: (
+                                                          <div className="flex items-center gap-1">
+                                                              <span className="max-w-[300px] truncate">
+                                                                  {toAccount}
+                                                              </span>
+                                                              <CopyButton
+                                                                  text={
+                                                                      toAccount
+                                                                  }
+                                                                  toastMessage="Address copied to clipboard"
+                                                                  tooltipContent="Copy Address"
+                                                                  variant="ghost"
+                                                                  size="icon-sm"
+                                                              />
+                                                          </div>
+                                                      ),
+                                                  } as InfoItem,
+                                              ]
                                             : []),
                                     ]),
                             ...(isLoadingTransaction
                                 ? [
-                                    {
-                                        label: "Transaction",
-                                        value: (
-                                            <Skeleton className="h-5 w-[200px]" />
-                                        ),
-                                    } as InfoItem,
-                                ]
+                                      {
+                                          label: "Transaction",
+                                          value: (
+                                              <Skeleton className="h-5 w-[200px]" />
+                                          ),
+                                      } as InfoItem,
+                                  ]
                                 : activity.transactionHashes?.length ||
                                     activity.receiptIds?.length
-                                    ? [
+                                  ? [
                                         {
                                             label: "Transaction",
                                             value: (
                                                 <TransactionHashCell
-                                                    transactionHashes={activity.transactionHashes}
-                                                    receiptIds={activity.receiptIds}
+                                                    transactionHashes={
+                                                        activity.transactionHashes
+                                                    }
+                                                    receiptIds={
+                                                        activity.receiptIds
+                                                    }
                                                     className="flex items-center gap-2"
                                                 />
                                             ),
                                         } as InfoItem,
                                     ]
-                                    : []),
+                                  : []),
                         ]}
                     />
                 </div>
