@@ -532,10 +532,10 @@ export function getNearTokenTypeLabel(
     if (resolvedNetwork !== "near") return null;
 
     const id = tokenId.toLowerCase();
-    if (id === "" || id === "near") return "Native Token";
+    if (id === "" || id === "near") return "NEAR Native Token";
     if (id.startsWith("nep141:") || id.startsWith("nep245:"))
-        return "Intents Token";
-    return "Fungible Token";
+        return "NEAR Intents Token";
+    return "NEAR Fungible Token";
 }
 
 export function formatNanosecondDuration(nanoseconds: string): string {
