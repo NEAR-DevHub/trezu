@@ -155,46 +155,62 @@ pub async fn create_address_book_entries(
         )
     })?;
 
-    let mut created = Vec::with_capacity(req.entries.len());
-    for entry in req.entries {
-        let row = sqlx::query_as!(
-            InsertedAddressBookRow,
-            r#"
-            INSERT INTO address_book (dao_id, name, networks, address, note, created_by)
-            VALUES ($1, $2, $3, $4, $5, $6)
-            ON CONFLICT (dao_id, address) DO NOTHING
-            RETURNING id, dao_id, name, networks, address, note, created_at
-            "#,
-            req.dao_id,
-            entry.name,
-            &entry.networks,
-            entry.address,
-            entry.note,
-            user_id,
+    let entries_json = serde_json::to_value(
+        req.entries
+            .iter()
+            .map(|e| {
+                serde_json::json!({
+                    "name": e.name,
+                    "networks": e.networks,
+                    "address": e.address,
+                    "note": e.note,
+                })
+            })
+            .collect::<Vec<_>>(),
+    )
+    .map_err(|e| {
+        log::error!("Failed to serialize entries: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to serialize entries".to_string(),
         )
-        .fetch_optional(&state.db_pool)
-        .await
-        .map_err(|e| {
-            log::error!("Failed to create address book entry: {}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Failed to create address book entry".to_string(),
-            )
-        })?;
+    })?;
 
-        if let Some(row) = row {
-            created.push(AddressBookEntry {
-                id: row.id,
-                dao_id: row.dao_id,
-                name: row.name,
-                networks: row.networks,
-                address: row.address,
-                note: row.note,
-                created_by: Some(auth_user.account_id.clone()),
-                created_at: row.created_at,
-            });
-        }
-    }
+    let rows = sqlx::query_as::<_, InsertedAddressBookRow>(
+        r#"
+        INSERT INTO address_book (dao_id, name, networks, address, note, created_by)
+        SELECT $1, r.name, r.networks, r.address, r.note, $3
+        FROM json_to_recordset($2::json) AS r(name text, networks text[], address text, note text)
+        ON CONFLICT (dao_id, address) DO NOTHING
+        RETURNING id, dao_id, name, networks, address, note, created_at
+        "#,
+    )
+    .bind(&req.dao_id)
+    .bind(sqlx::types::Json(entries_json))
+    .bind(user_id)
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|e| {
+        log::error!("Failed to create address book entries: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to create address book entries".to_string(),
+        )
+    })?;
+
+    let created = rows
+        .into_iter()
+        .map(|row| AddressBookEntry {
+            id: row.id,
+            dao_id: row.dao_id,
+            name: row.name,
+            networks: row.networks,
+            address: row.address,
+            note: row.note,
+            created_by: Some(auth_user.account_id.clone()),
+            created_at: row.created_at,
+        })
+        .collect();
 
     Ok(Json(created))
 }
@@ -353,21 +369,27 @@ pub async fn delete_address_book_entries(
         ));
     }
 
+    let dao_id = &rows[0].dao_id;
+
     auth_user
-        .verify_dao_member(&state.db_pool, &rows[0].dao_id)
+        .verify_dao_member(&state.db_pool, dao_id)
         .await
         .map_err(|_| (StatusCode::FORBIDDEN, "Not a DAO policy member".to_string()))?;
 
-    sqlx::query!("DELETE FROM address_book WHERE id = ANY($1)", &req.ids)
-        .execute(&state.db_pool)
-        .await
-        .map_err(|e| {
-            log::error!("Failed to delete address book entries: {}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Failed to delete address book entries".to_string(),
-            )
-        })?;
+    sqlx::query!(
+        "DELETE FROM address_book WHERE id = ANY($1) AND dao_id = $2",
+        &req.ids,
+        dao_id,
+    )
+    .execute(&state.db_pool)
+    .await
+    .map_err(|e| {
+        log::error!("Failed to delete address book entries: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to delete address book entries".to_string(),
+        )
+    })?;
 
     Ok(StatusCode::NO_CONTENT)
 }

@@ -7,7 +7,11 @@ use near_api::Contract;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
-use crate::{AppState, auth::OptionalAuthUser, utils::cache::CacheTier};
+use crate::{
+    AppState,
+    auth::OptionalAuthUser,
+    utils::cache::{CacheKey, CacheTier},
+};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -97,7 +101,7 @@ pub async fn get_profile(
         ));
     }
 
-    let cache_key = format!("profile:{}", account_id);
+    let cache_key = CacheKey::new("profile").with(&account_id).build();
     let state_clone = state.clone();
 
     let mut profile = state
