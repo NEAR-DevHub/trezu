@@ -504,7 +504,6 @@ function RecipientsView({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AddressBookPage() {
-    const { treasuryId } = useTreasury();
     const pathname = usePathname();
     const router = useRouter();
     const searchParams = useSearchParams();
