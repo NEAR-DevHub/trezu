@@ -2,6 +2,7 @@ import { getProposalStatus } from "@/features/proposals/utils/proposal-utils";
 import { Policy, VotePolicy } from "@/types/policy";
 import axios from "axios";
 import Big from "@/lib/big";
+import { nanosToMs } from "@/lib/utils";
 
 const BACKEND_API_BASE = `${process.env.NEXT_PUBLIC_BACKEND_API_BASE}/api`;
 
@@ -488,12 +489,8 @@ export async function getProposalTransaction(
         );
 
         // Convert nanoseconds to milliseconds and create UTC dates
-        const submissionDate = new Date(
-            submissionTimestamp.div(1000000).toNumber(),
-        );
-        const expirationDate = new Date(
-            expirationTimestamp.div(1000000).toNumber(),
-        );
+        const submissionDate = new Date(nanosToMs(submissionTimestamp.toFixed(0)));
+        const expirationDate = new Date(nanosToMs(expirationTimestamp.toFixed(0)));
 
         const afterDate = new Date(
             submissionDate.getTime() - 24 * 60 * 60 * 1000,

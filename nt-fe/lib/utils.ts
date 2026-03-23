@@ -516,6 +516,16 @@ export const decodeProposalDescription = (key: string, description: string) => {
  * @param nanoseconds - Duration in nanoseconds as string
  * @returns Human-readable duration string (e.g., "7 days", "2 weeks, 3 days", "5 hours")
  */
+/** Convert a nanosecond timestamp/duration (string) to milliseconds. */
+export function nanosToMs(nanoseconds: string): number {
+    return Big(nanoseconds).div(1_000_000).toNumber();
+}
+
+/** Convert milliseconds to a nanosecond string. */
+export function msToNanos(ms: number): string {
+    return Big(Math.round(ms)).times(1_000_000).toFixed(0);
+}
+
 export function formatNanosecondDuration(nanoseconds: string): string {
     const ns = BigInt(nanoseconds);
 

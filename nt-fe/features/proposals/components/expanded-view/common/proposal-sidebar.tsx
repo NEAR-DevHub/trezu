@@ -14,7 +14,7 @@ import {
 } from "@/features/proposals/utils/proposal-utils";
 import { useProposalInsufficientBalance } from "@/features/proposals/hooks/use-proposal-insufficient-balance";
 import { UserVote } from "../../user-vote";
-import { useProposalTransaction, useSwapStatus } from "@/hooks/use-proposals";
+import { useProposalTransaction, useSwapStatus, useProposals } from "@/hooks/use-proposals";
 import Link from "next/link";
 import Big from "@/lib/big";
 import { User } from "@/components/user";
@@ -24,9 +24,11 @@ import {
 } from "@/components/auth-button";
 import { useFormatDate } from "@/components/formatted-date";
 import { InfoAlert } from "@/components/info-alert";
-import { cn } from "@/lib/utils";
+import { cn, nanosToMs } from "@/lib/utils";
 import { extractProposalData } from "@/features/proposals/utils/proposal-extractors";
 import { NotEnoughBalance } from "../../not-enough-balance";
+import { VotingDurationImpactModal } from "../../voting-duration-impact-modal";
+import { useState } from "react";
 
 interface ProposalSidebarProps {
     proposal: Proposal;
@@ -251,6 +253,14 @@ export function ProposalSidebar({
         treasuryId,
     );
 
+    const [showVotingDurationModal, setShowVotingDurationModal] = useState(false);
+
+    // Fetch all proposals for voting duration impact check
+    const { data: allProposalsData, isLoading: isLoadingProposals } = useProposals(
+        treasuryId,
+        { statuses: ["InProgress"] }
+    );
+
     const status = getProposalStatus(proposal, policy);
     const isUserVoter = !!proposal.votes[accountId ?? ""];
     const isPending = status === "Pending";
@@ -259,13 +269,27 @@ export function ProposalSidebar({
     const isFailed = status === "Failed";
     const isExecuted = status === "Executed";
 
+    // Check if this is a voting duration change proposal
+    const isVotingDurationChange =
+        "ChangePolicyUpdateParameters" in proposal.kind;
+
+    let newVotingDurationDays = 0;
+    if (isVotingDurationChange) {
+        const params = (proposal.kind as any).ChangePolicyUpdateParameters?.parameters;
+        if (params?.proposal_period) {
+            newVotingDurationDays = Math.floor(
+                nanosToMs(params.proposal_period) / (24 * 60 * 60 * 1000)
+            );
+        }
+    }
+
     // Extract deposit address for exchange proposals
     let depositAddress: string | undefined;
     if (isExchangeProposal) {
         try {
             const { data } = extractProposalData(proposal);
             depositAddress = (data as any).depositAddress;
-        } catch (e) {}
+        } catch (e) { }
     }
 
     // Fetch transaction data for non-exchange proposals, or for failed exchange proposals
@@ -284,18 +308,14 @@ export function ProposalSidebar({
     );
 
     const expiresAt = new Date(
-        Big(proposal.submission_time)
-            .add(policy.proposal_period)
-            .div(1000000)
-            .toNumber(),
+        nanosToMs(
+            Big(proposal.submission_time).add(policy.proposal_period).toFixed(0)
+        ),
     );
 
     // For exchange proposals, calculate 24-hour expiration
     const exchange24HourExpiry = isExchangeProposal
-        ? new Date(
-              Big(proposal.submission_time).div(1000000).toNumber() +
-                  EXCHANGE_EXPIRY_MS,
-          )
+        ? new Date(nanosToMs(proposal.submission_time) + EXCHANGE_EXPIRY_MS)
         : null;
 
     let timestamp;
@@ -316,6 +336,38 @@ export function ProposalSidebar({
             break;
     }
 
+    // Handle approve with voting duration check
+    const handleApprove = () => {
+        if (isVotingDurationChange && newVotingDurationDays > 0) {
+            // Only show the impact modal when this approval is the deciding (last) vote
+            const currentApprovals = Object.values(proposal.votes).filter(
+                (v) => v === "Approve"
+            ).length;
+            const { requiredVotes } = getApproversAndThreshold(
+                policy,
+                accountId ?? "",
+                proposal.kind,
+                false
+            );
+            if (requiredVotes !== null && currentApprovals + 1 >= requiredVotes && activeProposals.length > 0) {
+                setShowVotingDurationModal(true);
+            } else {
+                onVote("Approve");
+            }
+        } else {
+            onVote("Approve");
+        }
+    };
+
+    const handleVotingDurationConfirm = () => {
+        setShowVotingDurationModal(false);
+        onVote("Approve");
+    };
+
+    // Get active proposals excluding the current one
+    const activeProposals =
+        allProposalsData?.proposals?.filter((p: Proposal) => p.id !== proposal.id) ?? [];
+
     return (
         <PageCard className="relative w-full">
             <div className="relative flex flex-col gap-4">
@@ -323,9 +375,7 @@ export function ProposalSidebar({
                     proposer={proposal.proposer}
                     date={
                         new Date(
-                            Big(proposal.submission_time)
-                                .div(1000000)
-                                .toNumber(),
+                            nanosToMs(proposal.submission_time),
                         )
                     }
                 />
@@ -379,36 +429,36 @@ export function ProposalSidebar({
                         swapStatus.status === "PENDING_DEPOSIT" ||
                         swapStatus.status === "INCOMPLETE_DEPOSIT" ||
                         swapStatus.status === "PROCESSING") && (
-                        <InfoAlert
-                            className="inline-flex"
-                            message={
-                                <span>
-                                    <strong>Exchanging Tokens</strong>
-                                    <br />
-                                    This request has been approved by the team.
-                                    Token exchange is now in progress and may
-                                    take some time.
-                                </span>
-                            }
-                        />
-                    )}
+                            <InfoAlert
+                                className="inline-flex"
+                                message={
+                                    <span>
+                                        <strong>Exchanging Tokens</strong>
+                                        <br />
+                                        This request has been approved by the team.
+                                        Token exchange is now in progress and may
+                                        take some time.
+                                    </span>
+                                }
+                            />
+                        )}
 
                     {/* Failed/Refunded Status */}
                     {(swapStatus.status === "FAILED" ||
                         swapStatus.status === "REFUNDED") && (
-                        <InfoAlert
-                            className="inline-flex"
-                            message={
-                                <span>
-                                    <strong>Request Failed</strong>
-                                    <br />
-                                    The team approved this request, but it
-                                    failed due to rate fluctuations. Please
-                                    create a new request and try again.
-                                </span>
-                            }
-                        />
-                    )}
+                            <InfoAlert
+                                className="inline-flex"
+                                message={
+                                    <span>
+                                        <strong>Request Failed</strong>
+                                        <br />
+                                        The team approved this request, but it
+                                        failed due to rate fluctuations. Please
+                                        create a new request and try again.
+                                    </span>
+                                }
+                            />
+                        )}
                 </>
             )}
 
@@ -470,7 +520,7 @@ export function ProposalSidebar({
                             proposalKind={proposal.kind}
                             variant="default"
                             className="flex gap-1 w-full"
-                            onClick={() => onVote("Approve")}
+                            onClick={handleApprove}
                             disabled={isUserVoter}
                             tooltip={isUserVoter ? NO_VOTE_MESSAGE : undefined}
                         >
@@ -479,6 +529,19 @@ export function ProposalSidebar({
                         </AuthButtonWithProposal>
                     )}
                 </div>
+            )}
+
+            {/* Voting Duration Impact Modal */}
+            {isVotingDurationChange && (
+                <VotingDurationImpactModal
+                    isOpen={showVotingDurationModal}
+                    onClose={() => setShowVotingDurationModal(false)}
+                    onConfirm={handleVotingDurationConfirm}
+                    newDurationDays={newVotingDurationDays}
+                    currentPolicy={policy}
+                    activeProposals={activeProposals}
+                    isLoadingProposals={isLoadingProposals}
+                />
             )}
         </PageCard>
     );

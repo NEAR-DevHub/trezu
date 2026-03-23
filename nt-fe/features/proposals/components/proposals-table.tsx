@@ -187,7 +187,7 @@ export function ProposalsTable({
                     const title = getProposalUIKind(proposal);
                     return (
                         <div className="flex items-center gap-5 max-w-[400px] truncate">
-                            <span className="text-sm text-muted-foreground w-6 shrink-0">
+                            <span className="text-sm text-muted-foreground w-6 shrink-0 font-semibold">
                                 #{proposal.id}
                             </span>
                             <ProposalTypeIcon proposal={proposal} />
