@@ -622,6 +622,9 @@ export function DepositModal({
         if (!Big(normalizedAmount).gt(0)) {
             return null;
         }
+        const normalizedUsd = Number.isFinite(amountUSD)
+            ? amountUSD.toFixed(2)
+            : "0.00";
 
         return (
             <div className="flex flex-col items-end">
@@ -629,7 +632,7 @@ export function DepositModal({
                     {formatSmartAmount(normalizedAmount)}
                 </span>
                 <span className="text-sm text-muted-foreground">
-                    ≈${formatSmartAmount(amountUSD)}
+                    ≈${normalizedUsd}
                 </span>
             </div>
         );
