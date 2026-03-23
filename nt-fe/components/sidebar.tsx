@@ -126,6 +126,7 @@ const bottomNavLinks: {
     icon: React.ComponentType<IconProps<"default">>;
     id?: string;
     showNewPill?: boolean;
+    memberRequired?: boolean;
 }[] = [
     {
         path: "address-book",
@@ -133,6 +134,7 @@ const bottomNavLinks: {
         icon: ContactRound,
         id: "address-book-link",
         showNewPill: true,
+        memberRequired: true,
     },
     { path: "members", label: "Members", icon: Users, id: "dashboard-step4" },
     { path: "settings", label: "Settings", icon: Settings },
@@ -322,32 +324,36 @@ export function Sidebar({ onClose }: SidebarProps) {
                             onContactClick={() => setSupportModalOpen(true)}
                         />
                     )}
-                    {bottomNavLinks.map((link) => {
-                        const href = treasuryId
-                            ? `/${treasuryId}${link.path ? `/${link.path}` : ""}`
-                            : `/${link.path ? `/${link.path}` : ""}`;
-                        const isActive = pathname === href;
+                    {bottomNavLinks
+                        .filter(
+                            (link) => !(link.memberRequired && isGuestTreasury),
+                        )
+                        .map((link) => {
+                            const href = treasuryId
+                                ? `/${treasuryId}${link.path ? `/${link.path}` : ""}`
+                                : `/${link.path ? `/${link.path}` : ""}`;
+                            const isActive = pathname === href;
 
-                        return (
-                            <NavLink
-                                id={link.id}
-                                key={link.path}
-                                isActive={isActive}
-                                icon={link.icon}
-                                label={link.label}
-                                showLabels={!isReduced}
-                                endAdornment={
-                                    link.showNewPill ? (
-                                        <NEW enabled={!isReduced} />
-                                    ) : undefined
-                                }
-                                onClick={() => {
-                                    router.push(href);
-                                    if (isMobile) onClose();
-                                }}
-                            />
-                        );
-                    })}
+                            return (
+                                <NavLink
+                                    id={link.id}
+                                    key={link.path}
+                                    isActive={isActive}
+                                    icon={link.icon}
+                                    label={link.label}
+                                    showLabels={!isReduced}
+                                    endAdornment={
+                                        link.showNewPill ? (
+                                            <NEW enabled={!isReduced} />
+                                        ) : undefined
+                                    }
+                                    onClick={() => {
+                                        router.push(href);
+                                        if (isMobile) onClose();
+                                    }}
+                                />
+                            );
+                        })}
 
                     <NavLink
                         id="help-support-link"
