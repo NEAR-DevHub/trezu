@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { ChevronDown, CircleCheck } from "lucide-react";
 import QRCode from "react-qr-code";
 import { SelectModal } from "./select-modal";
 import { fetchDepositAddress } from "@/lib/bridge-api";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useBridgeTokens, BridgeNetwork } from "@/hooks/use-bridge-tokens";
+import { useAssets, useAggregatedTokens } from "@/hooks/use-assets";
 import { Button } from "@/components/button";
 import { CopyButton } from "@/components/copy-button";
 import { useForm } from "react-hook-form";
@@ -20,7 +21,8 @@ import {
 import { InputBlock } from "@/components/input-block";
 import { useThemeStore } from "@/stores/theme-store";
 import { getNetworkDisplayName } from "@/components/token-display";
-import { formatBalance } from "@/lib/utils";
+import { formatBalance, formatSmartAmount } from "@/lib/utils";
+import Big from "@/lib/big";
 
 interface DepositModalProps {
     isOpen: boolean;
@@ -75,6 +77,11 @@ type DepositFormValues = {
     network: Network | null;
 };
 
+interface NetworkBalanceDisplay {
+    amount: string;
+    amountUSD: number;
+}
+
 export function DepositModal({
     isOpen,
     onClose,
@@ -83,7 +90,16 @@ export function DepositModal({
 }: DepositModalProps) {
     const { treasuryId } = useTreasury();
     const { theme } = useThemeStore();
-
+    const { data: { tokens: treasuryAssets = [] } = {} } = useAssets(
+        treasuryId,
+        {
+            onlyPositiveBalance: false,
+            onlySupportedTokens: true,
+        },
+    );
+    const aggregatedTreasuryTokens = useAggregatedTokens(treasuryAssets);
+    // Prevent old async responses from updating state.
+    const latestAddressRequestRef = useRef(0);
     const form = useForm<DepositFormValues>({
         resolver: zodResolver(depositFormSchema),
         mode: "onChange",
@@ -97,9 +113,21 @@ export function DepositModal({
         null,
     );
     const [allAssets, setAllAssets] = useState<SelectOption[]>([]);
+    const [assetSections, setAssetSections] = useState<
+        { title: string; options: SelectOption[] }[]
+    >([]);
+    const [assetBalanceMap, setAssetBalanceMap] = useState<
+        Map<string, { balance: string; balanceUSD: number }>
+    >(new Map());
     // Per-asset network lists: asset.id → SelectOption[] (each list is specific to that asset)
     const [assetNetworksMap, setAssetNetworksMap] = useState<
         Map<string, SelectOption[]>
+    >(new Map());
+    const [networkBalancesByAsset, setNetworkBalancesByAsset] = useState<
+        Map<string, Map<string, NetworkBalanceDisplay>>
+    >(new Map());
+    const [selectedNetworkBalances, setSelectedNetworkBalances] = useState<
+        Map<string, NetworkBalanceDisplay>
     >(new Map());
     const [filteredNetworks, setFilteredNetworks] = useState<SelectOption[]>(
         [],
@@ -127,6 +155,47 @@ export function DepositModal({
             (network) => network.id === selectedNetwork.id,
         );
     }, [selectedAsset, selectedNetwork, bridgeAssets]);
+
+    const networkSections = useMemo(() => {
+        const withAssets = filteredNetworks
+            .filter((network) => {
+                const balance = selectedNetworkBalances.get(network.id);
+                return !!balance && Big(balance.amount).gt(0);
+            })
+            .sort((a, b) => {
+                const aUSD = selectedNetworkBalances.get(a.id)?.amountUSD || 0;
+                const bUSD = selectedNetworkBalances.get(b.id)?.amountUSD || 0;
+                if (aUSD !== bUSD) return bUSD - aUSD;
+                return a.name.localeCompare(b.name);
+            });
+
+        const supportedNetworks = filteredNetworks
+            .filter((network) => {
+                const balance = selectedNetworkBalances.get(network.id);
+                return !balance || !Big(balance.amount).gt(0);
+            })
+            .sort((a, b) => a.name.localeCompare(b.name));
+
+        if (withAssets.length === 0) {
+            return [
+                {
+                    title: "Supported Networks",
+                    options: supportedNetworks,
+                },
+            ];
+        }
+
+        return [
+            {
+                title: "Networks with Assets",
+                options: withAssets,
+            },
+            {
+                title: "Supported Networks",
+                options: supportedNetworks,
+            },
+        ];
+    }, [filteredNetworks, selectedNetworkBalances]);
 
     useEffect(() => {
         if (!isOpen || !bridgeAssets.length) return;
@@ -170,11 +239,113 @@ export function DepositModal({
 
         // Build per-asset network lists (each asset gets its own dedicated list)
         const newAssetNetworksMap = new Map<string, SelectOption[]>();
+        const networkBalancesByAssetId = new Map<
+            string,
+            Map<string, NetworkBalanceDisplay>
+        >();
+        const ownedTreasuryAssetsById = new Map(
+            aggregatedTreasuryTokens.map((asset) => [
+                asset.id.toLowerCase(),
+                asset,
+            ]),
+        );
+        const assetBalancesById = new Map<
+            string,
+            { balance: string; balanceUSD: number }
+        >();
 
-        const formattedAssets: SelectOption[] = bridgeAssets.map((asset) => {
+        const yourAssets: SelectOption[] = [];
+        const otherAssets: SelectOption[] = [];
+
+        const buildNetworkBalanceMap = (
+            assetId: string,
+            bridgeNetworks: BridgeNetwork[],
+        ): Map<string, NetworkBalanceDisplay> => {
+            const balances = new Map<string, NetworkBalanceDisplay>();
+            const ownedAsset = ownedTreasuryAssetsById.get(
+                assetId.toLowerCase(),
+            );
+
+            if (!ownedAsset) return balances;
+
+            const normalizeContractId = (value?: string) =>
+                (value || "").replace(/^nep141:/, "");
+
+            // Match each bridge network to treasury-held balances in priority order:
+            // 1) exact contract-id match (after normalizing `nep141:` prefix),
+            // 2) for NEAR token on NEAR network, aggregate all NEAR residencies,
+            // 3) fallback for native chain entries without contractId by chain name.
+            // Then sum matched balances into a single display amount per bridge network.
+            for (const bridgeNetwork of bridgeNetworks) {
+                const normalizedBridgeId = normalizeContractId(
+                    bridgeNetwork.id,
+                );
+                const byContractId = ownedAsset.networks.filter(
+                    (network) =>
+                        normalizeContractId(network.contractId) ===
+                        normalizedBridgeId,
+                );
+
+                const bridgeNetworkName = bridgeNetwork.name.toLowerCase();
+                const includeAllNearResidencies =
+                    assetId.toLowerCase() === "near" &&
+                    bridgeNetworkName === "near";
+
+                const chainMatches = ownedAsset.networks.filter(
+                    (network) =>
+                        network.network.toLowerCase() === bridgeNetworkName,
+                );
+
+                const fallbackChainMatches = ownedAsset.networks.filter(
+                    (network) =>
+                        !network.contractId &&
+                        network.network.toLowerCase() === bridgeNetworkName,
+                );
+
+                const matches = includeAllNearResidencies
+                    ? chainMatches
+                    : byContractId.length > 0
+                      ? byContractId
+                      : fallbackChainMatches;
+
+                if (matches.length === 0) continue;
+
+                const amount = matches
+                    .reduce((sum, network) => {
+                        return sum.add(
+                            Big(network.availableBalanceRaw).div(
+                                Big(10).pow(network.decimals),
+                            ),
+                        );
+                    }, Big(0))
+                    .toString();
+                const amountUSD = matches.reduce(
+                    (sum, network) => sum + network.availableBalanceUSD,
+                    0,
+                );
+
+                if (Big(amount).gt(0)) {
+                    balances.set(bridgeNetwork.id, {
+                        amount,
+                        amountUSD,
+                    });
+                }
+            }
+
+            return balances;
+        };
+
+        for (const asset of bridgeAssets) {
             const networks = asset.networks.map(toNetworkOption);
             newAssetNetworksMap.set(asset.id, networks);
-            return {
+            networkBalancesByAssetId.set(
+                asset.id,
+                buildNetworkBalanceMap(asset.id, asset.networks),
+            );
+
+            const normalizedId = asset.id.toLowerCase();
+            const ownedAsset = ownedTreasuryAssetsById.get(normalizedId);
+            const selectOption: SelectOption = {
                 id: asset.id,
                 name: asset.name,
                 symbol: asset.networks[0]?.symbol,
@@ -182,7 +353,27 @@ export function DepositModal({
                 gradient: "bg-gradient-cyan-blue",
                 networks: asset.networks,
             };
+
+            if (ownedAsset) {
+                yourAssets.push(selectOption);
+                assetBalancesById.set(asset.id, {
+                    balance: ownedAsset.availableTotalBalance.toString(),
+                    balanceUSD: ownedAsset.availableTotalBalanceUSD,
+                });
+                continue;
+            }
+
+            otherAssets.push(selectOption);
+        }
+
+        yourAssets.sort((a, b) => {
+            const aUSD = assetBalancesById.get(a.id)?.balanceUSD || 0;
+            const bUSD = assetBalancesById.get(b.id)?.balanceUSD || 0;
+            return bUSD - aUSD;
         });
+        otherAssets.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+        const formattedAssets: SelectOption[] = [...yourAssets, ...otherAssets];
 
         // Add "Other" at the end
         formattedAssets.push(otherAsset);
@@ -193,16 +384,36 @@ export function DepositModal({
 
         setAllAssets(formattedAssets);
         setAssetNetworksMap(newAssetNetworksMap);
+        setNetworkBalancesByAsset(networkBalancesByAssetId);
+        setAssetBalanceMap(assetBalancesById);
+        setAssetSections([
+            {
+                title: "Your Assets",
+                options: yourAssets,
+            },
+            {
+                title: "Other Assets",
+                options: [...otherAssets, otherAsset],
+            },
+        ]);
 
-        // Auto-select asset based on prefillTokenSymbol or default to USDC
-        const targetId = prefillTokenSymbol?.toLowerCase() || "usdc";
-        const targetAsset = formattedAssets.find(
-            (asset) =>
-                asset.id?.toLowerCase() === targetId ||
-                (!prefillTokenSymbol &&
-                    asset.id?.toLowerCase() ===
-                        prefillTokenSymbol?.toLowerCase()),
-        );
+        // Auto-select asset:
+        // 1) explicit prefill token, 2) first token in "Your Assets", 3) USDC, 4) first available
+        let targetAsset: SelectOption | undefined;
+        if (prefillTokenSymbol) {
+            const targetId = prefillTokenSymbol.toLowerCase();
+            targetAsset = formattedAssets.find(
+                (asset) => asset.id?.toLowerCase() === targetId,
+            );
+        }
+        if (!targetAsset) {
+            targetAsset =
+                yourAssets[0] ||
+                formattedAssets.find(
+                    (asset) => asset.id?.toLowerCase() === "usdc",
+                ) ||
+                formattedAssets[0];
+        }
 
         if (targetAsset) {
             form.setValue("asset", targetAsset);
@@ -214,6 +425,9 @@ export function DepositModal({
                     ...n,
                     name: getNetworkDisplayName(n.name),
                 })),
+            );
+            setSelectedNetworkBalances(
+                networkBalancesByAssetId.get(targetAsset.id) || new Map(),
             );
 
             let networkToSelect: SelectOption | null = null;
@@ -236,10 +450,19 @@ export function DepositModal({
 
             if (networkToSelect) {
                 form.setValue("network", networkToSelect);
+            } else {
+                form.setValue("network", null);
             }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isOpen, bridgeAssets, prefillTokenSymbol, prefillNetworkId, theme]);
+    }, [
+        isOpen,
+        bridgeAssets,
+        aggregatedTreasuryTokens,
+        prefillTokenSymbol,
+        prefillNetworkId,
+        theme,
+    ]);
 
     // Handle asset selection - show all assets but update network list
     const handleAssetSelect = useCallback(
@@ -257,6 +480,9 @@ export function DepositModal({
                     name: getNetworkDisplayName(n.name),
                 })),
             );
+            setSelectedNetworkBalances(
+                networkBalancesByAsset.get(asset.id) || new Map(),
+            );
 
             // Auto-select network if only one is available
             if (availableNetworks.length === 1) {
@@ -268,7 +494,7 @@ export function DepositModal({
                 form.setValue("network", null);
             }
         },
-        [form, assetNetworksMap, selectedNetwork],
+        [form, assetNetworksMap, selectedNetwork, networkBalancesByAsset],
     );
 
     // Handle network selection
@@ -290,6 +516,7 @@ export function DepositModal({
                 setDepositAddress(null);
                 return;
             }
+            const requestId = ++latestAddressRequestRef.current;
 
             // All NEAR networks deposit directly to treasury account ID
             const isNearNetwork = (
@@ -298,6 +525,7 @@ export function DepositModal({
                 .toLowerCase()
                 .includes("near");
             if (isNearNetwork) {
+                if (requestId !== latestAddressRequestRef.current) return;
                 setDepositAddress(treasuryId);
                 return;
             }
@@ -312,9 +540,11 @@ export function DepositModal({
                 );
 
                 if (result && result.address) {
+                    if (requestId !== latestAddressRequestRef.current) return;
                     setDepositAddress(result.address);
                     form.clearErrors("network");
                 } else {
+                    if (requestId !== latestAddressRequestRef.current) return;
                     setDepositAddress(null);
                     form.setError("network", {
                         type: "manual",
@@ -323,6 +553,7 @@ export function DepositModal({
                     });
                 }
             } catch (err: any) {
+                if (requestId !== latestAddressRequestRef.current) return;
                 form.setError("network", {
                     type: "manual",
                     message:
@@ -331,6 +562,7 @@ export function DepositModal({
                 });
                 setDepositAddress(null);
             } finally {
+                if (requestId !== latestAddressRequestRef.current) return;
                 setIsLoadingAddress(false);
             }
         };
@@ -340,13 +572,15 @@ export function DepositModal({
         } else {
             setDepositAddress(null);
         }
-    }, [selectedAsset, selectedNetwork, treasuryId]);
+    }, [selectedAsset, selectedNetwork, treasuryId, form]);
 
     // Reset all state when modal closes
     const handleClose = useCallback(() => {
+        latestAddressRequestRef.current += 1;
         form.reset();
         setDepositAddress(null);
         setFilteredNetworks([]);
+        setSelectedNetworkBalances(new Map());
         setModalType(null);
         onClose();
     }, [form, onClose]);
@@ -380,6 +614,24 @@ export function DepositModal({
                 <span>{middle}</span>
                 <span className="font-bold">{last6}</span>
             </>
+        );
+    };
+
+    const renderBalance = (amount: number | string, amountUSD: number) => {
+        const normalizedAmount = amount.toString();
+        if (!Big(normalizedAmount).gt(0)) {
+            return null;
+        }
+
+        return (
+            <div className="flex flex-col items-end">
+                <span className="font-semibold">
+                    {formatSmartAmount(normalizedAmount)}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                    ≈${formatSmartAmount(amountUSD)}
+                </span>
+            </div>
         );
     };
 
@@ -690,9 +942,20 @@ export function DepositModal({
                             }}
                             title="Select Asset"
                             options={allAssets}
+                            sections={assetSections}
                             searchPlaceholder="Search by name"
                             isLoading={isLoadingAssets}
                             selectedId={selectedAsset?.id}
+                            renderRight={(item) => {
+                                const balanceData = assetBalanceMap.get(
+                                    item.id,
+                                );
+                                if (!balanceData) return null;
+                                return renderBalance(
+                                    balanceData.balance,
+                                    balanceData.balanceUSD,
+                                );
+                            }}
                         />
 
                         <SelectModal
@@ -704,10 +967,20 @@ export function DepositModal({
                             }}
                             title="Select Network"
                             options={filteredNetworks}
+                            sections={networkSections}
                             searchPlaceholder="Search by name"
                             isLoading={isLoadingAssets}
                             fixNear
                             roundIcons={false}
+                            renderRight={(item) => {
+                                const networkBalance =
+                                    selectedNetworkBalances.get(item.id);
+                                if (!networkBalance) return null;
+                                return renderBalance(
+                                    networkBalance.amount,
+                                    networkBalance.amountUSD,
+                                );
+                            }}
                         />
                     </div>
                 </Form>
