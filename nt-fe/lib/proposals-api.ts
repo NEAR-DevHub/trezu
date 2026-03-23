@@ -489,8 +489,12 @@ export async function getProposalTransaction(
         );
 
         // Convert nanoseconds to milliseconds and create UTC dates
-        const submissionDate = new Date(nanosToMs(submissionTimestamp.toFixed(0)));
-        const expirationDate = new Date(nanosToMs(expirationTimestamp.toFixed(0)));
+        const submissionDate = new Date(
+            nanosToMs(submissionTimestamp.toFixed(0)),
+        );
+        const expirationDate = new Date(
+            nanosToMs(expirationTimestamp.toFixed(0)),
+        );
 
         const afterDate = new Date(
             submissionDate.getTime() - 24 * 60 * 60 * 1000,

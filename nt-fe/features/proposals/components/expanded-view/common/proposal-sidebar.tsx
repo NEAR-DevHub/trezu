@@ -1,6 +1,6 @@
 import { Proposal } from "@/lib/proposals-api";
 import { Button } from "@/components/button";
-import { ArrowUpRight, Check, X, Download } from "lucide-react";
+import { ArrowUpRight, Check, X, Download, Loader2 } from "lucide-react";
 import { PageCard } from "@/components/card";
 import { Policy } from "@/types/policy";
 import { getApproversAndThreshold } from "@/lib/config-utils";
@@ -14,7 +14,11 @@ import {
 } from "@/features/proposals/utils/proposal-utils";
 import { useProposalInsufficientBalance } from "@/features/proposals/hooks/use-proposal-insufficient-balance";
 import { UserVote } from "../../user-vote";
-import { useProposalTransaction, useSwapStatus, useProposals } from "@/hooks/use-proposals";
+import {
+    useProposalTransaction,
+    useSwapStatus,
+    useProposals,
+} from "@/hooks/use-proposals";
 import Link from "next/link";
 import Big from "@/lib/big";
 import { User } from "@/components/user";
@@ -28,7 +32,7 @@ import { cn, nanosToMs } from "@/lib/utils";
 import { extractProposalData } from "@/features/proposals/utils/proposal-extractors";
 import { NotEnoughBalance } from "../../not-enough-balance";
 import { VotingDurationImpactModal } from "../../voting-duration-impact-modal";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface ProposalSidebarProps {
     proposal: Proposal;
@@ -253,13 +257,13 @@ export function ProposalSidebar({
         treasuryId,
     );
 
-    const [showVotingDurationModal, setShowVotingDurationModal] = useState(false);
+    const [showVotingDurationModal, setShowVotingDurationModal] =
+        useState(false);
+    const [awaitingProposalsFetch, setAwaitingProposalsFetch] = useState(false);
 
     // Fetch all proposals for voting duration impact check
-    const { data: allProposalsData, isLoading: isLoadingProposals } = useProposals(
-        treasuryId,
-        { statuses: ["InProgress"] }
-    );
+    const { data: allProposalsData, isLoading: isLoadingProposals } =
+        useProposals(treasuryId, { statuses: ["InProgress"] });
 
     const status = getProposalStatus(proposal, policy);
     const isUserVoter = !!proposal.votes[accountId ?? ""];
@@ -275,10 +279,11 @@ export function ProposalSidebar({
 
     let newVotingDurationDays = 0;
     if (isVotingDurationChange) {
-        const params = (proposal.kind as any).ChangePolicyUpdateParameters?.parameters;
+        const params = (proposal.kind as any).ChangePolicyUpdateParameters
+            ?.parameters;
         if (params?.proposal_period) {
             newVotingDurationDays = Math.floor(
-                nanosToMs(params.proposal_period) / (24 * 60 * 60 * 1000)
+                nanosToMs(params.proposal_period) / (24 * 60 * 60 * 1000),
             );
         }
     }
@@ -289,7 +294,7 @@ export function ProposalSidebar({
         try {
             const { data } = extractProposalData(proposal);
             depositAddress = (data as any).depositAddress;
-        } catch (e) { }
+        } catch (e) {}
     }
 
     // Fetch transaction data for non-exchange proposals, or for failed exchange proposals
@@ -309,7 +314,9 @@ export function ProposalSidebar({
 
     const expiresAt = new Date(
         nanosToMs(
-            Big(proposal.submission_time).add(policy.proposal_period).toFixed(0)
+            Big(proposal.submission_time)
+                .add(policy.proposal_period)
+                .toFixed(0),
         ),
     );
 
@@ -336,23 +343,38 @@ export function ProposalSidebar({
             break;
     }
 
+    const isLastApprovingVote = () => {
+        const currentApprovals = Object.values(proposal.votes).filter(
+            (v) => v === "Approve",
+        ).length;
+        const { requiredVotes } = getApproversAndThreshold(
+            policy,
+            accountId ?? "",
+            proposal.kind,
+            false,
+        );
+        return requiredVotes !== null && currentApprovals + 1 >= requiredVotes;
+    };
+
+    // When proposals finish loading after user clicked Approve, open the modal
+    useEffect(() => {
+        if (awaitingProposalsFetch && !isLoadingProposals) {
+            setAwaitingProposalsFetch(false);
+            setShowVotingDurationModal(true);
+        }
+    }, [awaitingProposalsFetch, isLoadingProposals]);
+
     // Handle approve with voting duration check
     const handleApprove = () => {
-        if (isVotingDurationChange && newVotingDurationDays > 0) {
-            // Only show the impact modal when this approval is the deciding (last) vote
-            const currentApprovals = Object.values(proposal.votes).filter(
-                (v) => v === "Approve"
-            ).length;
-            const { requiredVotes } = getApproversAndThreshold(
-                policy,
-                accountId ?? "",
-                proposal.kind,
-                false
-            );
-            if (requiredVotes !== null && currentApprovals + 1 >= requiredVotes && activeProposals.length > 0) {
-                setShowVotingDurationModal(true);
+        if (
+            isVotingDurationChange &&
+            newVotingDurationDays > 0 &&
+            isLastApprovingVote()
+        ) {
+            if (isLoadingProposals) {
+                setAwaitingProposalsFetch(true);
             } else {
-                onVote("Approve");
+                setShowVotingDurationModal(true);
             }
         } else {
             onVote("Approve");
@@ -366,18 +388,16 @@ export function ProposalSidebar({
 
     // Get active proposals excluding the current one
     const activeProposals =
-        allProposalsData?.proposals?.filter((p: Proposal) => p.id !== proposal.id) ?? [];
+        allProposalsData?.proposals?.filter(
+            (p: Proposal) => p.id !== proposal.id,
+        ) ?? [];
 
     return (
         <PageCard className="relative w-full">
             <div className="relative flex flex-col gap-4">
                 <TransactionCreated
                     proposer={proposal.proposer}
-                    date={
-                        new Date(
-                            nanosToMs(proposal.submission_time),
-                        )
-                    }
+                    date={new Date(nanosToMs(proposal.submission_time))}
                 />
                 <VotingSection
                     proposal={proposal}
@@ -429,36 +449,36 @@ export function ProposalSidebar({
                         swapStatus.status === "PENDING_DEPOSIT" ||
                         swapStatus.status === "INCOMPLETE_DEPOSIT" ||
                         swapStatus.status === "PROCESSING") && (
-                            <InfoAlert
-                                className="inline-flex"
-                                message={
-                                    <span>
-                                        <strong>Exchanging Tokens</strong>
-                                        <br />
-                                        This request has been approved by the team.
-                                        Token exchange is now in progress and may
-                                        take some time.
-                                    </span>
-                                }
-                            />
-                        )}
+                        <InfoAlert
+                            className="inline-flex"
+                            message={
+                                <span>
+                                    <strong>Exchanging Tokens</strong>
+                                    <br />
+                                    This request has been approved by the team.
+                                    Token exchange is now in progress and may
+                                    take some time.
+                                </span>
+                            }
+                        />
+                    )}
 
                     {/* Failed/Refunded Status */}
                     {(swapStatus.status === "FAILED" ||
                         swapStatus.status === "REFUNDED") && (
-                            <InfoAlert
-                                className="inline-flex"
-                                message={
-                                    <span>
-                                        <strong>Request Failed</strong>
-                                        <br />
-                                        The team approved this request, but it
-                                        failed due to rate fluctuations. Please
-                                        create a new request and try again.
-                                    </span>
-                                }
-                            />
-                        )}
+                        <InfoAlert
+                            className="inline-flex"
+                            message={
+                                <span>
+                                    <strong>Request Failed</strong>
+                                    <br />
+                                    The team approved this request, but it
+                                    failed due to rate fluctuations. Please
+                                    create a new request and try again.
+                                </span>
+                            }
+                        />
+                    )}
                 </>
             )}
 
@@ -521,10 +541,14 @@ export function ProposalSidebar({
                             variant="default"
                             className="flex gap-1 w-full"
                             onClick={handleApprove}
-                            disabled={isUserVoter}
+                            disabled={isUserVoter || awaitingProposalsFetch}
                             tooltip={isUserVoter ? NO_VOTE_MESSAGE : undefined}
                         >
-                            <Check className="h-4 w-4 mr-2" />
+                            {awaitingProposalsFetch ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                                <Check className="h-4 w-4 mr-2" />
+                            )}
                             Approve
                         </AuthButtonWithProposal>
                     )}
