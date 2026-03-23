@@ -29,6 +29,21 @@ import { ResponsiveInput } from "@/components/input";
 const PAGE_SIZE = 15;
 const FILTER_PANEL_MAX_HEIGHT = "500px";
 
+function getSelectedAccountsFromFilter(filterValue: string | null): string[] {
+    if (!filterValue) return [];
+    try {
+        const parsed = JSON.parse(filterValue);
+        const selectedValues = Array.isArray(parsed.selected)
+            ? parsed.selected
+            : parsed.selected
+              ? [parsed.selected]
+              : [];
+        return selectedValues.filter(Boolean);
+    } catch {
+        return [];
+    }
+}
+
 function ActivityList({
     status,
 }: {
@@ -199,6 +214,37 @@ export default function ActivityPage() {
         treasuryId,
         currentTab === "all" ? undefined : currentTab,
     );
+    const selectedFromAccounts = useMemo(
+        () => getSelectedAccountsFromFilter(searchParams.get("from")),
+        [searchParams],
+    );
+    const selectedToAccounts = useMemo(
+        () => getSelectedAccountsFromFilter(searchParams.get("to")),
+        [searchParams],
+    );
+    // Keep currently selected URL values visible in the dropdown when changing tabs:
+    // tab-specific options may not include those values, but users still need to see/edit
+    // their active filters without losing context.
+    const senderOptions = useMemo(
+        () =>
+            Array.from(
+                new Set([
+                    ...(senderOptionsData || []),
+                    ...selectedFromAccounts,
+                ]),
+            ),
+        [senderOptionsData, selectedFromAccounts],
+    );
+    const recipientOptions = useMemo(
+        () =>
+            Array.from(
+                new Set([
+                    ...(recipientOptionsData || []),
+                    ...selectedToAccounts,
+                ]),
+            ),
+        [recipientOptionsData, selectedToAccounts],
+    );
 
     // Calculate filter options with date restrictions based on plan
     const activityFilterOptions: FilterOption[] = useMemo(() => {
@@ -225,7 +271,7 @@ export default function ActivityPage() {
             {
                 id: "from",
                 label: "From",
-                options: (senderOptionsData || []).map((option) => ({
+                options: senderOptions.map((option) => ({
                     value: option,
                     label: option,
                 })),
@@ -233,7 +279,7 @@ export default function ActivityPage() {
             {
                 id: "to",
                 label: "To",
-                options: (recipientOptionsData || []).map((option) => ({
+                options: recipientOptions.map((option) => ({
                     value: option,
                     label: option,
                 })),
@@ -241,8 +287,8 @@ export default function ActivityPage() {
         ];
     }, [
         subscriptionData?.planConfig?.limits?.historyLookupMonths,
-        senderOptionsData,
-        recipientOptionsData,
+        senderOptions,
+        recipientOptions,
     ]);
 
     const handleTabChange = useCallback(
