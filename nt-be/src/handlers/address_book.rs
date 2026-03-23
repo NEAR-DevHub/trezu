@@ -223,9 +223,10 @@ pub async fn export_address_book(
         .map(|s| s.split(',').filter_map(|p| p.trim().parse().ok()).collect());
 
     if let Some(ref v) = ids
-        && v.is_empty() {
-            return Err((StatusCode::BAD_REQUEST, "ids must not be empty".to_string()));
-        }
+        && v.is_empty()
+    {
+        return Err((StatusCode::BAD_REQUEST, "ids must not be empty".to_string()));
+    }
 
     let rows: Vec<AddressBookRow> = match ids {
         Some(ids) => sqlx::query_as!(
@@ -369,4 +370,493 @@ pub async fn delete_address_book_entries(
         })?;
 
     Ok(StatusCode::NO_CONTENT)
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        AppState,
+        auth::{create_jwt, middleware::AUTH_COOKIE_NAME},
+        routes::create_routes,
+        utils::test_utils::build_test_state,
+    };
+    use axum::{
+        body::{Body, to_bytes},
+        http::{Request, StatusCode, header},
+    };
+    use serde_json::json;
+    use sqlx::PgPool;
+    use std::sync::Arc;
+    use tower::ServiceExt;
+    use uuid::Uuid;
+
+    const DAO_ID: &str = "test-dao.sputnik-dao.near";
+    const OTHER_DAO_ID: &str = "other-dao.sputnik-dao.near";
+    const USER_ACCOUNT_ID: &str = "member.near";
+
+    fn test_state(pool: PgPool) -> Arc<AppState> {
+        Arc::new(build_test_state(pool))
+    }
+
+    async fn seed_dao(pool: &PgPool, dao_id: &str) {
+        sqlx::query(
+            "INSERT INTO monitored_accounts (account_id) VALUES ($1) ON CONFLICT (account_id) DO NOTHING",
+        )
+        .bind(dao_id)
+        .execute(pool)
+        .await
+        .expect("Should insert monitored account for test DAO");
+
+        sqlx::query("INSERT INTO daos (dao_id) VALUES ($1) ON CONFLICT (dao_id) DO NOTHING")
+            .bind(dao_id)
+            .execute(pool)
+            .await
+            .expect("Should insert DAO record for test DAO");
+    }
+
+    async fn seed_policy_member(pool: &PgPool, dao_id: &str, account_id: &str) {
+        seed_dao(pool, dao_id).await;
+
+        sqlx::query(
+            r#"
+            INSERT INTO dao_members (dao_id, account_id, is_policy_member, is_saved, is_hidden)
+            VALUES ($1, $2, true, false, false)
+            ON CONFLICT (dao_id, account_id) DO UPDATE
+            SET is_policy_member = EXCLUDED.is_policy_member,
+                is_saved = EXCLUDED.is_saved,
+                is_hidden = EXCLUDED.is_hidden
+            "#,
+        )
+        .bind(dao_id)
+        .bind(account_id)
+        .execute(pool)
+        .await
+        .expect("Should insert DAO policy member for tests");
+    }
+
+    async fn issue_auth_cookie(pool: &PgPool, state: &Arc<AppState>, account_id: &str) -> String {
+        let user_id: Uuid = sqlx::query_scalar(
+            r#"
+            INSERT INTO users (account_id)
+            VALUES ($1)
+            ON CONFLICT (account_id) DO UPDATE SET updated_at = NOW()
+            RETURNING id
+            "#,
+        )
+        .bind(account_id)
+        .fetch_one(pool)
+        .await
+        .expect("Should create or fetch test user");
+
+        let jwt = create_jwt(
+            account_id,
+            state.env_vars.jwt_secret.as_bytes(),
+            state.env_vars.jwt_expiry_hours,
+        )
+        .expect("Should create JWT for test user");
+
+        sqlx::query(
+            "INSERT INTO user_sessions (user_id, token_hash, expires_at) VALUES ($1, $2, $3)",
+        )
+        .bind(user_id)
+        .bind(jwt.token_hash)
+        .bind(jwt.expires_at)
+        .execute(pool)
+        .await
+        .expect("Should create active session for test user");
+
+        format!("{AUTH_COOKIE_NAME}={}", jwt.token)
+    }
+
+    async fn insert_address_book_entry(
+        pool: &PgPool,
+        dao_id: &str,
+        name: &str,
+        address: &str,
+    ) -> Uuid {
+        sqlx::query_scalar(
+            r#"
+            INSERT INTO address_book (dao_id, name, networks, address, note)
+            VALUES ($1, $2, $3, $4, NULL)
+            RETURNING id
+            "#,
+        )
+        .bind(dao_id)
+        .bind(name)
+        .bind(vec!["near".to_string()])
+        .bind(address)
+        .fetch_one(pool)
+        .await
+        .expect("Should insert address book entry for tests")
+    }
+
+    async fn response_text(response: axum::response::Response) -> String {
+        String::from_utf8(
+            to_bytes(response.into_body(), usize::MAX)
+                .await
+                .expect("Should read response body")
+                .to_vec(),
+        )
+        .expect("Response body should be valid UTF-8")
+    }
+
+    #[sqlx::test]
+    async fn test_address_book_routes_support_crud_and_export(pool: PgPool) {
+        let state = test_state(pool.clone());
+        let app = create_routes(state.clone());
+
+        seed_policy_member(&pool, DAO_ID, USER_ACCOUNT_ID).await;
+        let auth_cookie = issue_auth_cookie(&pool, &state, USER_ACCOUNT_ID).await;
+
+        let create_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/address-book")
+                    .header("content-type", "application/json")
+                    .header("cookie", &auth_cookie)
+                    .body(Body::from(
+                        json!({
+                            "daoId": DAO_ID,
+                            "entries": [{
+                                "name": "Vendor, Inc.",
+                                "networks": ["near", "ethereum"],
+                                "address": "0xabc123",
+                                "note": "Says \"hi\", friend"
+                            }]
+                        })
+                        .to_string(),
+                    ))
+                    .expect("Should build create request"),
+            )
+            .await
+            .expect("Create request should complete");
+
+        let create_status = create_response.status();
+        let create_body = response_text(create_response).await;
+        assert_eq!(
+            create_status,
+            StatusCode::OK,
+            "Create should succeed. Body: {create_body}"
+        );
+
+        let created_entries: serde_json::Value =
+            serde_json::from_str(&create_body).expect("Create response should be valid JSON");
+        let created_entries = created_entries
+            .as_array()
+            .expect("Create response should be a JSON array");
+        assert_eq!(
+            created_entries.len(),
+            1,
+            "Create should return exactly one inserted entry"
+        );
+
+        let created_entry = created_entries
+            .first()
+            .expect("Create response should contain the new entry");
+        let created_id = created_entry
+            .get("id")
+            .and_then(|value| value.as_str())
+            .expect("Created entry should include an id")
+            .to_string();
+        assert_eq!(
+            created_entry
+                .get("createdBy")
+                .and_then(|value| value.as_str()),
+            Some(USER_ACCOUNT_ID),
+            "Create should include the authenticated creator account"
+        );
+
+        let duplicate_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/address-book")
+                    .header("content-type", "application/json")
+                    .header("cookie", &auth_cookie)
+                    .body(Body::from(
+                        json!({
+                            "daoId": DAO_ID,
+                            "entries": [{
+                                "name": "Duplicate vendor",
+                                "networks": ["near"],
+                                "address": "0xabc123",
+                                "note": "Should be ignored"
+                            }]
+                        })
+                        .to_string(),
+                    ))
+                    .expect("Should build duplicate create request"),
+            )
+            .await
+            .expect("Duplicate create request should complete");
+
+        let duplicate_status = duplicate_response.status();
+        let duplicate_body = response_text(duplicate_response).await;
+        assert_eq!(
+            duplicate_status,
+            StatusCode::OK,
+            "Duplicate create should still return OK. Body: {duplicate_body}"
+        );
+
+        let duplicate_entries: serde_json::Value = serde_json::from_str(&duplicate_body)
+            .expect("Duplicate create response should be JSON");
+        let duplicate_entries = duplicate_entries
+            .as_array()
+            .expect("Duplicate create response should be a JSON array");
+        assert!(
+            duplicate_entries.is_empty(),
+            "Duplicate create should not return any inserted rows"
+        );
+
+        let list_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("GET")
+                    .uri(format!("/api/address-book?daoId={DAO_ID}"))
+                    .header("cookie", &auth_cookie)
+                    .body(Body::empty())
+                    .expect("Should build list request"),
+            )
+            .await
+            .expect("List request should complete");
+
+        let list_status = list_response.status();
+        let list_body = response_text(list_response).await;
+        assert_eq!(
+            list_status,
+            StatusCode::OK,
+            "List should succeed. Body: {list_body}"
+        );
+
+        let listed_entries: serde_json::Value =
+            serde_json::from_str(&list_body).expect("List response should be valid JSON");
+        let listed_entries = listed_entries
+            .as_array()
+            .expect("List response should be a JSON array");
+        assert_eq!(
+            listed_entries.len(),
+            1,
+            "List should still return one entry after duplicate create"
+        );
+        assert_eq!(
+            listed_entries[0]
+                .get("name")
+                .and_then(|value| value.as_str()),
+            Some("Vendor, Inc."),
+            "List should preserve the original entry rather than overwrite it"
+        );
+
+        let export_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("GET")
+                    .uri(format!(
+                        "/api/address-book/export?daoId={DAO_ID}&ids={created_id}"
+                    ))
+                    .header("cookie", &auth_cookie)
+                    .body(Body::empty())
+                    .expect("Should build export request"),
+            )
+            .await
+            .expect("Export request should complete");
+
+        let export_status = export_response.status();
+        let export_content_type = export_response
+            .headers()
+            .get(header::CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok())
+            .expect("Export response should include a content type")
+            .to_string();
+        let export_content_disposition = export_response
+            .headers()
+            .get(header::CONTENT_DISPOSITION)
+            .and_then(|value| value.to_str().ok())
+            .expect("Export response should include content disposition")
+            .to_string();
+        let export_body = response_text(export_response).await;
+
+        assert_eq!(
+            export_status,
+            StatusCode::OK,
+            "Export should succeed. Body: {export_body}"
+        );
+        assert_eq!(
+            export_content_type, "text/csv; charset=utf-8",
+            "Export should return CSV content"
+        );
+        assert_eq!(
+            export_content_disposition, "attachment; filename=\"address-book.csv\"",
+            "Export should return a downloadable filename"
+        );
+        assert!(
+            export_body.starts_with("Name,Address,Networks,Note,Created By,Created At\n"),
+            "Export should include the expected CSV header"
+        );
+        assert!(
+            export_body.contains("\"Vendor, Inc.\""),
+            "Export should quote names that contain commas"
+        );
+        assert!(
+            export_body.contains("\"Says \"\"hi\"\", friend\""),
+            "Export should escape quotes inside CSV fields"
+        );
+        assert!(
+            export_body.contains(USER_ACCOUNT_ID),
+            "Export should include the creator account id"
+        );
+
+        let delete_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("DELETE")
+                    .uri("/api/address-book")
+                    .header("content-type", "application/json")
+                    .header("cookie", &auth_cookie)
+                    .body(Body::from(
+                        json!({
+                            "ids": [created_id]
+                        })
+                        .to_string(),
+                    ))
+                    .expect("Should build delete request"),
+            )
+            .await
+            .expect("Delete request should complete");
+
+        let delete_status = delete_response.status();
+        let delete_body = response_text(delete_response).await;
+        assert_eq!(
+            delete_status,
+            StatusCode::NO_CONTENT,
+            "Delete should succeed. Body: {delete_body}"
+        );
+
+        let final_list_response = app
+            .oneshot(
+                Request::builder()
+                    .method("GET")
+                    .uri(format!("/api/address-book?daoId={DAO_ID}"))
+                    .header("cookie", &auth_cookie)
+                    .body(Body::empty())
+                    .expect("Should build final list request"),
+            )
+            .await
+            .expect("Final list request should complete");
+
+        let final_list_status = final_list_response.status();
+        let final_list_body = response_text(final_list_response).await;
+        assert_eq!(
+            final_list_status,
+            StatusCode::OK,
+            "Final list should succeed. Body: {final_list_body}"
+        );
+
+        let final_entries: serde_json::Value =
+            serde_json::from_str(&final_list_body).expect("Final list response should be JSON");
+        let final_entries = final_entries
+            .as_array()
+            .expect("Final list response should be a JSON array");
+        assert!(
+            final_entries.is_empty(),
+            "Delete should remove the exported address book entry"
+        );
+    }
+
+    #[sqlx::test]
+    async fn test_create_address_book_rejects_empty_entries(pool: PgPool) {
+        let state = test_state(pool.clone());
+        let app = create_routes(state.clone());
+
+        seed_policy_member(&pool, DAO_ID, USER_ACCOUNT_ID).await;
+        let auth_cookie = issue_auth_cookie(&pool, &state, USER_ACCOUNT_ID).await;
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/address-book")
+                    .header("content-type", "application/json")
+                    .header("cookie", &auth_cookie)
+                    .body(Body::from(
+                        json!({
+                            "daoId": DAO_ID,
+                            "entries": []
+                        })
+                        .to_string(),
+                    ))
+                    .expect("Should build empty create request"),
+            )
+            .await
+            .expect("Empty create request should complete");
+
+        let status = response.status();
+        let body = response_text(response).await;
+        assert_eq!(
+            status,
+            StatusCode::BAD_REQUEST,
+            "Empty create should be rejected. Body: {body}"
+        );
+        assert_eq!(
+            body, "entries must not be empty",
+            "Empty create should return the validation error"
+        );
+    }
+
+    #[sqlx::test]
+    async fn test_delete_address_book_rejects_entries_from_multiple_daos(pool: PgPool) {
+        let state = test_state(pool.clone());
+        let app = create_routes(state.clone());
+
+        seed_dao(&pool, DAO_ID).await;
+        seed_dao(&pool, OTHER_DAO_ID).await;
+
+        let auth_cookie = issue_auth_cookie(&pool, &state, USER_ACCOUNT_ID).await;
+        let first_id = insert_address_book_entry(&pool, DAO_ID, "Alpha", "alpha.near").await;
+        let second_id = insert_address_book_entry(&pool, OTHER_DAO_ID, "Beta", "beta.near").await;
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method("DELETE")
+                    .uri("/api/address-book")
+                    .header("content-type", "application/json")
+                    .header("cookie", &auth_cookie)
+                    .body(Body::from(
+                        json!({
+                            "ids": [first_id, second_id]
+                        })
+                        .to_string(),
+                    ))
+                    .expect("Should build multi-DAO delete request"),
+            )
+            .await
+            .expect("Multi-DAO delete request should complete");
+
+        let status = response.status();
+        let body = response_text(response).await;
+        assert_eq!(
+            status,
+            StatusCode::BAD_REQUEST,
+            "Deleting entries across DAOs should be rejected. Body: {body}"
+        );
+        assert_eq!(
+            body, "All entries must belong to the same DAO",
+            "Delete should explain why the request was rejected"
+        );
+
+        let remaining_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM address_book")
+            .fetch_one(&pool)
+            .await
+            .expect("Should count remaining address book rows");
+        assert_eq!(
+            remaining_count, 2,
+            "Rejected multi-DAO delete should leave both rows untouched"
+        );
+    }
 }
