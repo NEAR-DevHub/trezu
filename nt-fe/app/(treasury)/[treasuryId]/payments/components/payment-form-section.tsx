@@ -66,7 +66,7 @@ export function PaymentFormSection<
         useState<AddressBookEntry | null>(null);
 
     const { treasuryId } = useTreasury();
-    const { data: addressBook = [] } = useAddressBook(treasuryId);
+    const { data: addressBook = [] } = useAddressBook();
     const { data: chains = [] } = useChains();
 
     const chainMap = useMemo(() => {

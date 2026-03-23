@@ -1,14 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { getAddressBook } from "../api";
 import { useNear } from "@/stores/near-store";
+import { useTreasury } from "@/hooks/use-treasury";
 
-export function useAddressBook(daoId: string | null | undefined) {
+export function useAddressBook() {
     const { accountId } = useNear();
-    const enabled = !!daoId && !!accountId;
+    const { treasuryId, isGuestTreasury } = useTreasury();
+    const enabled = !!treasuryId && !!accountId && !isGuestTreasury;
 
     return useQuery({
-        queryKey: ["address-book", daoId, accountId],
-        queryFn: () => getAddressBook(daoId!),
+        queryKey: ["address-book", treasuryId, accountId],
+        queryFn: () => getAddressBook(treasuryId!),
         enabled,
         staleTime: 1000 * 30,
     });

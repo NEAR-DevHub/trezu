@@ -59,7 +59,7 @@ export function ReviewPaymentsStep({
     } | null>(null);
 
     const { treasuryId } = useTreasury();
-    const { data: addressBook = [] } = useAddressBook(treasuryId);
+    const { data: addressBook = [] } = useAddressBook();
     const { data: selectedTokenData } = useToken(selectedToken?.address || "");
     const { data: selectedTokenBalanceData } = useTokenBalance(
         treasuryId,

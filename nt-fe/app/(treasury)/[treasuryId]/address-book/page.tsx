@@ -219,7 +219,7 @@ function RecipientsView({
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    const { data: entries = [], isLoading } = useAddressBook(treasuryId);
+    const { data: entries = [], isLoading } = useAddressBook();
     const deleteEntries = useDeleteAddressBookEntries(treasuryId);
     const exportEntries = useExportAddressBook(treasuryId);
     const [search, setSearch] = useState("");
@@ -508,7 +508,7 @@ export default function AddressBookPage() {
     const pathname = usePathname();
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { data: entries, isLoading } = useAddressBook(treasuryId);
+    const { data: entries, isLoading } = useAddressBook();
     const { data: chains = [], isLoading: isChainsLoading } = useChains();
     const [flowMode, setFlowMode] = useState<"add" | "import" | null>(null);
     const [initialRecipient, setInitialRecipient] =
