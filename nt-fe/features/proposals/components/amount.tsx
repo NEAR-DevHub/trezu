@@ -1,7 +1,12 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { TokenDisplay } from "@/components/token-display-with-network";
 import { useToken } from "@/hooks/use-treasury-queries";
-import { cn, formatBalance, formatCurrency } from "@/lib/utils";
+import {
+    cn,
+    formatBalance,
+    formatCurrency,
+    getNearTokenTypeLabel,
+} from "@/lib/utils";
 import { useMemo } from "react";
 
 interface AmountProps {
@@ -89,11 +94,21 @@ export function Amount({
                     </span>
                 )}
             </div>
-            {showNetwork && (network || tokenData?.network) && (
-                <span className="text-muted-foreground text-xs">
-                    Network: {(network || tokenData?.network)?.toUpperCase()}
-                </span>
-            )}
+            {showNetwork &&
+                (() => {
+                    const resolvedNetwork = network ?? tokenData?.network;
+                    const nearTypeLabel = getNearTokenTypeLabel(
+                        tokenId,
+                        resolvedNetwork,
+                    );
+                    const label =
+                        nearTypeLabel ?? resolvedNetwork?.toUpperCase();
+                    return label ? (
+                        <span className="text-muted-foreground text-xs">
+                            Network: {label}
+                        </span>
+                    ) : null;
+                })()}
         </div>
     );
 }

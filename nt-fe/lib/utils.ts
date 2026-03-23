@@ -516,6 +516,28 @@ export const decodeProposalDescription = (key: string, description: string) => {
  * @param nanoseconds - Duration in nanoseconds as string
  * @returns Human-readable duration string (e.g., "7 days", "2 weeks, 3 days", "5 hours")
  */
+/**
+ * Returns a human-readable NEAR token type label based on the tokenId.
+ * - "" or "near" → "Native Token"
+ * - starts with "nep141:" or "nep245:" → "Intents Token"
+ * - anything else (contract address) → "Fungible Token"
+ *
+ * Returns null for non-NEAR networks so callers can fall back to the chain name.
+ */
+export function getNearTokenTypeLabel(
+    tokenId: string,
+    network?: string,
+): string | null {
+    const resolvedNetwork = network?.toLowerCase() ?? "near";
+    if (resolvedNetwork !== "near") return null;
+
+    const id = tokenId.toLowerCase();
+    if (id === "" || id === "near") return "Native Token";
+    if (id.startsWith("nep141:") || id.startsWith("nep245:"))
+        return "Intents Token";
+    return "Fungible Token";
+}
+
 export function formatNanosecondDuration(nanoseconds: string): string {
     const ns = BigInt(nanoseconds);
 
