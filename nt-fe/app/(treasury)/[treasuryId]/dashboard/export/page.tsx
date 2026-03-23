@@ -24,7 +24,10 @@ import { useNear } from "@/stores/near-store";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useExportHistory } from "@/hooks/use-treasury-queries";
 import { APP_CONTACT_US_URL } from "@/constants/config";
-import { DatePickerPopover, DEFAULT_DATE_PRESETS } from "@/components/datepicker";
+import {
+    DatePickerPopover,
+    DEFAULT_DATE_PRESETS,
+} from "@/components/datepicker";
 import { Input } from "@/components/input";
 import {
     FormField,
@@ -804,8 +807,7 @@ export default function ExportActivityPage() {
                                                                           ),
                                                                 },
                                                                 {
-                                                                    shouldValidate:
-                                                                        true,
+                                                                    shouldValidate: true,
                                                                 },
                                                             );
                                                         } else {
@@ -820,8 +822,7 @@ export default function ExportActivityPage() {
                                                                     ),
                                                                 },
                                                                 {
-                                                                    shouldValidate:
-                                                                        true,
+                                                                    shouldValidate: true,
                                                                 },
                                                             );
                                                         }
