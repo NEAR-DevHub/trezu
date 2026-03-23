@@ -1,20 +1,20 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { type Control, useFieldArray, useWatch } from "react-hook-form";
 import { Button } from "@/components/button";
+import type { StepProps } from "@/components/step-wizard";
 import { StepperHeader } from "@/components/step-wizard";
+import { SummaryBlock } from "@/components/summary-block";
 import { Textarea } from "@/components/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import type { AddressBookEntry } from "../types";
 import {
     AddRecipientInput,
-    FormValues,
+    type FormValues,
     RecipientRow,
 } from "./add-recipient-form";
-import type { StepProps } from "@/components/step-wizard";
-import { SummaryBlock } from "@/components/summary-block";
-import { Control, useFieldArray, useWatch } from "react-hook-form";
-import type { AddressBookEntry } from "../types";
 
 function normalizeAddress(address: string) {
     return address.trim();
@@ -72,7 +72,7 @@ export function ReviewRecipients({
         () => new Set(duplicateIndexes),
         [duplicateIndexes],
     );
-    const includedRecipientIndexes = useMemo(
+    const nonDuplicateRecipientIndexes = useMemo(
         () =>
             recipients.reduce<number[]>((included, _recipient, index) => {
                 if (!duplicateIndexSet.has(index)) {
@@ -85,13 +85,23 @@ export function ReviewRecipients({
     );
     const duplicateCount = duplicateIndexes.length;
     const newRecipientCount = count - duplicateCount;
+    const hasOnlyDuplicates = count > 0 && newRecipientCount === 0;
     const canSubmit =
         newRecipientCount > 0 && (duplicateCount === 0 || skipDuplicates);
+    const includedRecipientIndexes = skipDuplicates
+        ? nonDuplicateRecipientIndexes
+        : recipients.map((_recipient, index) => index);
     const networkCount = new Set(
         includedRecipientIndexes.flatMap(
             (index) => recipients[index]?.networks ?? [],
         ),
     ).size;
+    const submitTooltip =
+        hasOnlyDuplicates && skipDuplicates
+            ? "All imported recipients are already in your address book, so there is nothing new to import."
+            : duplicateCount > 0 && !skipDuplicates
+              ? "Enable duplicate skipping or remove duplicate recipients to continue."
+              : undefined;
 
     if (editingIndex !== null) {
         return (
@@ -118,7 +128,8 @@ export function ReviewRecipients({
                     }
                     // On x different networks
                     subRow={
-                        count > 1 && (
+                        count > 1 &&
+                        newRecipientCount > 0 && (
                             <p className="text-sm text-muted-foreground">
                                 on {networkCount} network
                                 {networkCount !== 1 ? "s" : ""}
@@ -130,9 +141,9 @@ export function ReviewRecipients({
                     <p className="text-sm font-semibold">Recipients</p>
                     {duplicateCount > 0 && (
                         <p className="text-xs text-general-info-foreground font-medium">
-                            {duplicateCount} duplicated recipients out of{" "}
-                            {count} total recipients. Continue to upload only
-                            the new recipients.
+                            {hasOnlyDuplicates
+                                ? "All imported recipients already exist in your address book. Go back to upload a different list or remove duplicates from this review."
+                                : `${duplicateCount} duplicated recipients out of ${count} total recipients. Continue to upload only the new recipients.`}
                         </p>
                     )}
                 </div>
@@ -211,12 +222,13 @@ export function ReviewRecipients({
             <Button
                 className="w-full"
                 disabled={isSubmitting || !canSubmit}
+                tooltipContent={submitTooltip}
                 onClick={() => onSubmit(notes, includedRecipientIndexes)}
             >
                 {isSubmitting
                     ? "Adding…"
-                    : newRecipientCount === 0
-                      ? "No New Recipients"
+                    : hasOnlyDuplicates
+                      ? "Nothing New to Import"
                       : `Add Recipient${newRecipientCount !== 1 ? "s" : ""}`}
             </Button>
         </div>
