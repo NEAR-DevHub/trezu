@@ -355,45 +355,43 @@ pub async fn resolve_receipt_block_height(
     // Resolve receipt-level counterparty data (predecessor + child receipts).
     // This is opt-in: only enabled for native NEAR events where transaction-level
     // signer/receiver is unreliable.
-    if resolve_counterparty {
-        if let Some(info) = &mut tx_action_info {
-            // Predecessor: extract from the full receipt data returned by
-            // EXPERIMENTAL_tx_status (no extra RPC call needed).
-            if let Some(receipts) = receipts {
-                let parsed_receipt_id: near_primitives::hash::CryptoHash = receipt_id.parse()?;
-                if let Some(receipt) = receipts.iter().find(|r| r.receipt_id == parsed_receipt_id) {
-                    let predecessor = receipt.predecessor_id.to_string();
-                    log::debug!(
-                        "[tx-resolver] receipt {} predecessor_id={}",
-                        receipt_id,
-                        predecessor
-                    );
-                    info.receipt_predecessor_id = Some(predecessor);
-                }
-            }
-
-            // Child receipts: find a child whose executor_id differs from ours.
-            // That executor is the transfer recipient (for outgoing transfers).
-            let our_executor = our_receipt.outcome.executor_id.as_str();
-            let child_ids: std::collections::HashSet<String> = our_receipt
-                .outcome
-                .receipt_ids
-                .iter()
-                .map(|id| id.to_string())
-                .collect();
-
-            if let Some(child) = receipts_outcome.iter().find(|ro| {
-                child_ids.contains(&ro.id.to_string())
-                    && ro.outcome.executor_id.as_str() != our_executor
-            }) {
-                let receiver = child.outcome.executor_id.to_string();
+    if resolve_counterparty && let Some(info) = &mut tx_action_info {
+        // Predecessor: extract from the full receipt data returned by
+        // EXPERIMENTAL_tx_status (no extra RPC call needed).
+        if let Some(receipts) = receipts {
+            let parsed_receipt_id: near_primitives::hash::CryptoHash = receipt_id.parse()?;
+            if let Some(receipt) = receipts.iter().find(|r| r.receipt_id == parsed_receipt_id) {
+                let predecessor = receipt.predecessor_id.to_string();
                 log::debug!(
-                    "[tx-resolver] receipt {} has child receipt on {}",
+                    "[tx-resolver] receipt {} predecessor_id={}",
                     receipt_id,
-                    receiver
+                    predecessor
                 );
-                info.transfer_receiver_id = Some(receiver);
+                info.receipt_predecessor_id = Some(predecessor);
             }
+        }
+
+        // Child receipts: find a child whose executor_id differs from ours.
+        // That executor is the transfer recipient (for outgoing transfers).
+        let our_executor = our_receipt.outcome.executor_id.as_str();
+        let child_ids: std::collections::HashSet<String> = our_receipt
+            .outcome
+            .receipt_ids
+            .iter()
+            .map(|id| id.to_string())
+            .collect();
+
+        if let Some(child) = receipts_outcome.iter().find(|ro| {
+            child_ids.contains(&ro.id.to_string())
+                && ro.outcome.executor_id.as_str() != our_executor
+        }) {
+            let receiver = child.outcome.executor_id.to_string();
+            log::debug!(
+                "[tx-resolver] receipt {} has child receipt on {}",
+                receipt_id,
+                receiver
+            );
+            info.transfer_receiver_id = Some(receiver);
         }
     }
 
