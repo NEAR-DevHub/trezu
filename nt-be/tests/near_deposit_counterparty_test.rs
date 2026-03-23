@@ -286,3 +286,126 @@ async fn test_re_enrichment_corrects_wrong_counterparty(pool: PgPool) {
 
     println!("PASSED");
 }
+
+/// Test 4: correct_near_counterparties fixes existing wrong records without
+/// needing Goldsky outcomes or cursor reset.
+///
+/// Inserts balance_changes with wrong counterparty, then runs the correction
+/// function which queries the DB, resolves via RPC, and updates directly.
+#[sqlx::test]
+async fn test_correct_near_counterparties(pool: PgPool) {
+    common::load_test_env();
+    let _ = env_logger::try_init();
+    let network = common::create_archival_network();
+
+    // Insert wrong incoming record (counterparty = receiver_id)
+    sqlx::query(
+        "INSERT INTO balance_changes
+         (account_id, token_id, block_height, block_timestamp, block_time,
+          amount, balance_before, balance_after,
+          transaction_hashes, receipt_id, signer_id, receiver_id,
+          counterparty, actions, raw_data, action_kind, method_name)
+         VALUES ($1, 'near', $2, 1774267965606000000, '2026-03-23T12:12:45.606Z',
+          0.1, 1.7727, 1.8727,
+          ARRAY[$3], '{}'::text[], 'sponsor.trezu.near', 'yurtur.near',
+          'yurtur.near', '{}'::jsonb, '{}'::jsonb, 'FUNCTION_CALL', 'act_proposal')",
+    )
+    .bind(TARGET_DAO)
+    .bind(INCOMING_BLOCK)
+    .bind(INCOMING_TX)
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    // Insert wrong outgoing record (counterparty = receiver_id)
+    sqlx::query(
+        "INSERT INTO balance_changes
+         (account_id, token_id, block_height, block_timestamp, block_time,
+          amount, balance_before, balance_after,
+          transaction_hashes, receipt_id, signer_id, receiver_id,
+          counterparty, actions, raw_data, action_kind, method_name)
+         VALUES ($1, 'near', $2, 1774266706024000000, '2026-03-23T11:51:46.024Z',
+          -1.001, 2.7737, 1.7726,
+          ARRAY[$3], '{}'::text[], 'sponsor.trezu.near', 'olskik.near',
+          'olskik.near', '{}'::jsonb, '{}'::jsonb, 'FUNCTION_CALL', 'act_proposal')",
+    )
+    .bind(TARGET_DAO)
+    .bind(OUTGOING_BLOCK)
+    .bind(OUTGOING_TX)
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    // Insert a gas cost record that should NOT be corrected (amount < 0.01)
+    sqlx::query(
+        "INSERT INTO balance_changes
+         (account_id, token_id, block_height, block_timestamp, block_time,
+          amount, balance_before, balance_after,
+          transaction_hashes, receipt_id, signer_id, receiver_id,
+          counterparty, actions, raw_data, action_kind, method_name)
+         VALUES ($1, 'near', 190790036, 1774266706024000000, '2026-03-23T11:51:46.024Z',
+          0.00005, 1.7726, 1.7727,
+          ARRAY[$2], '{}'::text[], 'sponsor.trezu.near', 'olskik.near',
+          'olskik.near', '{}'::jsonb, '{}'::jsonb, 'FUNCTION_CALL', 'act_proposal')",
+    )
+    .bind(TARGET_DAO)
+    .bind(OUTGOING_TX)
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    // Verify wrong counterparties
+    let (wrong_in, _) = get_near_balance_change(&pool, TARGET_DAO, INCOMING_TX)
+        .await
+        .unwrap();
+    let (wrong_out, _) = get_near_balance_change(&pool, TARGET_DAO, OUTGOING_TX)
+        .await
+        .unwrap();
+    assert_eq!(wrong_in, "yurtur.near");
+    assert_eq!(wrong_out, "olskik.near");
+
+    // Run correction (no Goldsky outcomes needed)
+    let corrected =
+        nt_be::handlers::balance_changes::counterparty_correction::correct_near_counterparties(
+            &pool, &network,
+        )
+        .await
+        .unwrap();
+
+    println!("Corrected {} records", corrected);
+    assert_eq!(corrected, 2, "Should correct 2 records (not the gas cost)");
+
+    // Verify corrected
+    let (fixed_in, _) = get_near_balance_change(&pool, TARGET_DAO, INCOMING_TX)
+        .await
+        .unwrap();
+    let (fixed_out, _) = get_near_balance_change(&pool, TARGET_DAO, OUTGOING_TX)
+        .await
+        .unwrap();
+
+    println!(
+        "Corrected: incoming={} (was {}), outgoing={} (was {})",
+        fixed_in, wrong_in, fixed_out, wrong_out
+    );
+
+    assert_eq!(fixed_in, SOURCE_DAO);
+    assert_eq!(fixed_out, LESIK_DAO);
+
+    // Verify gas cost record was NOT changed
+    let gas_record: Option<(String,)> = sqlx::query_as(
+        "SELECT counterparty FROM balance_changes
+         WHERE account_id = $1 AND block_height = 190790036 AND token_id = 'near'",
+    )
+    .bind(TARGET_DAO)
+    .fetch_optional(&pool)
+    .await
+    .unwrap();
+
+    assert_eq!(
+        gas_record.unwrap().0,
+        "olskik.near",
+        "Gas cost record should NOT be corrected"
+    );
+
+    println!("PASSED");
+}
