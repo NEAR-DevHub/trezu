@@ -11,7 +11,6 @@ use crate::utils::jsonrpc::create_rpc_client;
 use bigdecimal::Zero;
 use near_api::NetworkConfig;
 use near_jsonrpc_client::methods;
-use near_jsonrpc_primitives::types::receipts::ReceiptReference;
 use near_primitives::views::FinalExecutionOutcomeViewEnum;
 use sqlx::PgPool;
 
@@ -105,10 +104,10 @@ pub async fn correct_near_counterparties(
             Err(_) => continue,
         };
 
-        // Fetch full transaction outcome to find receipts
+        // Use EXPERIMENTAL_tx_status to get full receipt data including predecessor_id
         let tx_response = match with_transport_retry("tx_status_correction", || {
-            let req = methods::tx::RpcTransactionStatusRequest {
-                transaction_info: methods::tx::TransactionInfo::TransactionId {
+            let req = methods::EXPERIMENTAL_tx_status::RpcTransactionStatusRequest {
+                transaction_info: methods::EXPERIMENTAL_tx_status::TransactionInfo::TransactionId {
                     tx_hash: parsed_tx_hash,
                     sender_account_id: parsed_sender.clone(),
                 },
@@ -129,10 +128,12 @@ pub async fn correct_near_counterparties(
             }
         };
 
-        let receipts_outcome = match &tx_response.final_execution_outcome {
-            Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcome(o)) => &o.receipts_outcome,
+        let (receipts_outcome, receipts) = match &tx_response.final_execution_outcome {
+            Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcome(o)) => {
+                (&o.receipts_outcome, None)
+            }
             Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcomeWithReceipt(o)) => {
-                &o.final_outcome.receipts_outcome
+                (&o.final_outcome.receipts_outcome, Some(&o.receipts))
             }
             None => continue,
         };
@@ -153,55 +154,21 @@ pub async fn correct_near_counterparties(
             }
         };
 
-        let receipt_id = our_receipt.id.to_string();
-
         let new_counterparty = if record.amount > bigdecimal::BigDecimal::zero() {
-            // Incoming: get predecessor via EXPERIMENTAL_receipt
-            let parsed_receipt_id: near_primitives::hash::CryptoHash = match receipt_id.parse() {
-                Ok(id) => id,
-                Err(_) => continue,
-            };
-
-            match with_transport_retry("receipt_predecessor_correction", || {
-                let req = methods::EXPERIMENTAL_receipt::RpcReceiptRequest {
-                    receipt_reference: ReceiptReference {
-                        receipt_id: parsed_receipt_id,
-                    },
-                };
-                client.call(req)
-            })
-            .await
-            {
-                Ok(receipt) => {
-                    let predecessor = receipt.predecessor_id.to_string();
-                    if predecessor != record.account_id {
-                        Some(predecessor)
-                    } else {
-                        None
-                    }
-                }
-                Err(e) => {
-                    log::warn!(
-                        "[counterparty-correction] Failed to fetch receipt {}: {}",
-                        receipt_id,
-                        e
-                    );
-                    None
-                }
-            }
+            // Incoming: get predecessor from full receipt data
+            receipts
+                .and_then(|rs| rs.iter().find(|r| r.receipt_id == our_receipt.id))
+                .map(|r| r.predecessor_id.to_string())
+                .filter(|p| *p != record.account_id)
         } else {
             // Outgoing: find child receipt with different executor
-            let child_ids: std::collections::HashSet<String> = our_receipt
-                .outcome
-                .receipt_ids
-                .iter()
-                .map(|id| id.to_string())
-                .collect();
+            let child_ids: std::collections::HashSet<near_primitives::hash::CryptoHash> =
+                our_receipt.outcome.receipt_ids.iter().cloned().collect();
 
             receipts_outcome
                 .iter()
                 .find(|ro| {
-                    child_ids.contains(&ro.id.to_string())
+                    child_ids.contains(&ro.id)
                         && ro.outcome.executor_id.as_str() != record.account_id
                 })
                 .map(|ro| ro.outcome.executor_id.to_string())

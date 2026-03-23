@@ -296,11 +296,13 @@ pub async fn resolve_all_receipt_block_heights(
 
 /// Resolve the exact block height for a specific receipt within a transaction.
 ///
-/// Calls `tx_status` once, finds the receipt matching `receipt_id`, and resolves
-/// its block hash to a height. Returns `None` if the receipt ID is not found.
-/// * `resolve_counterparty` - When true, makes an additional `EXPERIMENTAL_receipt`
-///   RPC call to extract `predecessor_id` and scans child receipts. Only needed for
-///   native NEAR events where transaction-level signer/receiver is unreliable.
+/// Calls `EXPERIMENTAL_tx_status` once, finds the receipt matching `receipt_id`,
+/// and resolves its block hash to a height. Returns `None` if the receipt ID is
+/// not found.
+///
+/// * `resolve_counterparty` - When true, inspects receipt predecessors and child
+///   receipts from the `EXPERIMENTAL_tx_status` response to infer a more accurate
+///   counterparty for native NEAR events. No additional RPC calls are made.
 pub async fn resolve_receipt_block_height(
     network: &NetworkConfig,
     tx_hash: &str,
@@ -342,11 +344,14 @@ pub async fn resolve_receipt_block_height(
             None => return Err("No final execution outcome in transaction".into()),
         };
 
+    // Parse receipt_id once to avoid per-iteration string allocations.
+    let parsed_receipt_id: near_primitives::hash::CryptoHash = receipt_id.parse()?;
+
     // Find our receipt in receipts_outcome first — if it's not there,
     // return early.
     let our_receipt = match receipts_outcome
         .iter()
-        .find(|ro| ro.id.to_string() == receipt_id)
+        .find(|ro| ro.id == parsed_receipt_id)
     {
         Some(ro) => ro,
         None => return Ok((None, tx_action_info)),
@@ -358,32 +363,26 @@ pub async fn resolve_receipt_block_height(
     if resolve_counterparty && let Some(info) = &mut tx_action_info {
         // Predecessor: extract from the full receipt data returned by
         // EXPERIMENTAL_tx_status (no extra RPC call needed).
-        if let Some(receipts) = receipts {
-            let parsed_receipt_id: near_primitives::hash::CryptoHash = receipt_id.parse()?;
-            if let Some(receipt) = receipts.iter().find(|r| r.receipt_id == parsed_receipt_id) {
-                let predecessor = receipt.predecessor_id.to_string();
-                log::debug!(
-                    "[tx-resolver] receipt {} predecessor_id={}",
-                    receipt_id,
-                    predecessor
-                );
-                info.receipt_predecessor_id = Some(predecessor);
-            }
+        if let Some(receipts) = receipts
+            && let Some(receipt) = receipts.iter().find(|r| r.receipt_id == parsed_receipt_id)
+        {
+            let predecessor = receipt.predecessor_id.to_string();
+            log::debug!(
+                "[tx-resolver] receipt {} predecessor_id={}",
+                receipt_id,
+                predecessor
+            );
+            info.receipt_predecessor_id = Some(predecessor);
         }
 
         // Child receipts: find a child whose executor_id differs from ours.
         // That executor is the transfer recipient (for outgoing transfers).
         let our_executor = our_receipt.outcome.executor_id.as_str();
-        let child_ids: std::collections::HashSet<String> = our_receipt
-            .outcome
-            .receipt_ids
-            .iter()
-            .map(|id| id.to_string())
-            .collect();
+        let child_ids: std::collections::HashSet<near_primitives::hash::CryptoHash> =
+            our_receipt.outcome.receipt_ids.iter().cloned().collect();
 
         if let Some(child) = receipts_outcome.iter().find(|ro| {
-            child_ids.contains(&ro.id.to_string())
-                && ro.outcome.executor_id.as_str() != our_executor
+            child_ids.contains(&ro.id) && ro.outcome.executor_id.as_str() != our_executor
         }) {
             let receiver = child.outcome.executor_id.to_string();
             log::debug!(
