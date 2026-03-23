@@ -148,7 +148,7 @@ function Step2({ handleBack }: StepProps) {
     );
     const { data: tokenData } = useToken(token.address);
     const { treasuryId } = useTreasury();
-    const { data: addressBook = [] } = useAddressBook(treasuryId);
+    const { data: addressBook = [] } = useAddressBook();
     const contactName = addressBook.find(
         (e) => e.address.toLowerCase() === address?.toLowerCase(),
     )?.name;
