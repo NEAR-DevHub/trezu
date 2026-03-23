@@ -602,6 +602,7 @@ export async function getLockupContract(
 
 export interface ProfileData {
     name?: string;
+    addressBookName?: string;
     image?: string;
     backgroundImage?: string;
     description?: string;

@@ -11,7 +11,7 @@ export function FunctionCallExpanded({ data }: FunctionCallExpandedProps) {
     let items: InfoItem[] = [
         {
             label: "Recipient",
-            value: <User accountId={data.receiver} />,
+            value: <User accountId={data.receiver} useAddressBook />,
         },
         {
             label: "Method",

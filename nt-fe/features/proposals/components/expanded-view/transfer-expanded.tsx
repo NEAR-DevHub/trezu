@@ -21,6 +21,7 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
             value: (
                 <User
                     accountId={data.receiver}
+                    useAddressBook
                     withName={chainName === "near"}
                     chainName={chainName}
                 />

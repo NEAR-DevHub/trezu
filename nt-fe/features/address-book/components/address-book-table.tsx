@@ -146,6 +146,7 @@ export function AddressBookTable({
                                         <UserWithData
                                             name={entry.name}
                                             address={entry.address}
+                                            useAddressBook
                                             size="md"
                                             withHoverCard
                                         />

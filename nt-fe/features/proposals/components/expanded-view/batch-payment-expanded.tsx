@@ -69,6 +69,7 @@ function PaymentDisplay({
             label: "Recipient",
             value: (
                 <User
+                    useAddressBook
                     withName={chainName === "near"}
                     accountId={payment.recipient}
                     chainName={chainName}
