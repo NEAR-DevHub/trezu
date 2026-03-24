@@ -6,6 +6,14 @@
 //!
 //! This is a standalone correction process that queries the app database and
 //! resolves correct counterparties via NEAR RPC — no Goldsky data needed.
+//!
+//! ## Cursor-based backward scan
+//!
+//! Progress is tracked in `maintenance_jobs` (row `counterparty_correction`).
+//! On the first invocation the cursor is initialised to the highest block
+//! height of any matching record; each subsequent call advances the cursor
+//! downward by the size of the batch just processed.  The job stops
+//! naturally once no matching records remain below the cursor.
 
 use crate::utils::jsonrpc::create_rpc_client;
 use bigdecimal::Zero;
@@ -16,12 +24,16 @@ use sqlx::PgPool;
 
 use super::utils::with_transport_retry;
 
+const JOB_NAME: &str = "counterparty_correction";
+
+/// Maximum number of records to examine per run.
+const MAX_RECORDS_PER_RUN: i64 = 20;
+
 /// A balance_changes record with a potentially wrong counterparty.
 #[derive(Debug, sqlx::FromRow)]
 struct WrongCounterpartyRecord {
     id: i64,
     account_id: String,
-    #[allow(dead_code)]
     block_height: i64,
     amount: bigdecimal::BigDecimal,
     transaction_hashes: Vec<String>,
@@ -36,19 +48,70 @@ struct WrongCounterpartyRecord {
 /// the actual sender/recipient DAO). Only processes records with `ABS(amount) > 0.01`
 /// to skip gas cost records where the voter is the correct counterparty.
 ///
-/// For each affected record, resolves the correct counterparty via
-/// `EXPERIMENTAL_tx_status` (single RPC call per record):
-/// - Incoming (amount > 0): receipt predecessor_id (the sender)
-/// - Outgoing (amount < 0): child receipt executor_id (the recipient)
+/// Progress is tracked in `maintenance_jobs`.  The scan works **backwards**
+/// through block history so that the most-recent (most visible) records are
+/// fixed first.  Once no matching records exist below the cursor the function
+/// returns 0 and the job is effectively complete.
 ///
 /// Returns the number of records corrected.
-/// Maximum number of records to correct per run to limit RPC usage.
-const MAX_RECORDS_PER_RUN: i64 = 20;
-
 pub async fn correct_near_counterparties(
     pool: &PgPool,
     network: &NetworkConfig,
 ) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    // --- Resolve the cursor --------------------------------------------------
+
+    let cursor: Option<i64> = sqlx::query_scalar(
+        "SELECT last_processed_block FROM maintenance_jobs WHERE job_name = $1",
+    )
+    .bind(JOB_NAME)
+    .fetch_optional(pool)
+    .await?;
+
+    let from_block: i64 = match cursor {
+        Some(b) => b,
+        None => {
+            // First run: seed the cursor at the highest matching block so the
+            // scan starts at the most recent records and works backwards.
+            let max_block: Option<i64> = sqlx::query_scalar(
+                r#"
+                SELECT MAX(block_height)
+                FROM balance_changes
+                WHERE (token_id IS NULL OR LOWER(token_id) = 'near')
+                  AND method_name = 'act_proposal'
+                  AND counterparty = receiver_id
+                  AND ABS(amount) > 0.01
+                "#,
+            )
+            .fetch_optional(pool)
+            .await?
+            .flatten();
+
+            match max_block {
+                Some(b) => {
+                    sqlx::query(
+                        "INSERT INTO maintenance_jobs (job_name, last_processed_block)
+                         VALUES ($1, $2)",
+                    )
+                    .bind(JOB_NAME)
+                    .bind(b)
+                    .execute(pool)
+                    .await?;
+                    log::info!(
+                        "[counterparty-correction] Initialised cursor at block {}",
+                        b
+                    );
+                    b
+                }
+                None => {
+                    log::info!("[counterparty-correction] No records to correct");
+                    return Ok(0);
+                }
+            }
+        }
+    };
+
+    // --- Fetch the next batch (backwards from cursor) -----------------------
+
     let records: Vec<WrongCounterpartyRecord> = sqlx::query_as(
         r#"
         SELECT id, account_id, block_height, amount, transaction_hashes,
@@ -58,22 +121,31 @@ pub async fn correct_near_counterparties(
           AND method_name = 'act_proposal'
           AND counterparty = receiver_id
           AND ABS(amount) > 0.01
-        ORDER BY block_height ASC
-        LIMIT $1
+          AND block_height <= $1
+        ORDER BY block_height DESC
+        LIMIT $2
         "#,
     )
+    .bind(from_block)
     .bind(MAX_RECORDS_PER_RUN)
     .fetch_all(pool)
     .await?;
 
     if records.is_empty() {
+        log::info!(
+            "[counterparty-correction] No records at or below block {} — job complete",
+            from_block
+        );
         return Ok(0);
     }
 
     log::info!(
-        "[counterparty-correction] Found {} records to correct",
-        records.len()
+        "[counterparty-correction] Processing {} records at or below block {}",
+        records.len(),
+        from_block,
     );
+
+    // --- Resolve counterparties via RPC -------------------------------------
 
     let client = create_rpc_client(network)?;
     let mut corrected = 0usize;
@@ -199,10 +271,30 @@ pub async fn correct_near_counterparties(
         }
     }
 
+    // --- Advance cursor to one block below the lowest block we processed ----
+
+    let min_block = records
+        .iter()
+        .map(|r| r.block_height)
+        .min()
+        .expect("records is non-empty");
+    let next_cursor = min_block - 1;
+
+    sqlx::query(
+        "UPDATE maintenance_jobs
+         SET last_processed_block = $1, updated_at = NOW()
+         WHERE job_name = $2",
+    )
+    .bind(next_cursor)
+    .bind(JOB_NAME)
+    .execute(pool)
+    .await?;
+
     log::info!(
-        "[counterparty-correction] Corrected {}/{} records",
+        "[counterparty-correction] Corrected {}/{} records; cursor advanced to block {}",
         corrected,
-        records.len()
+        records.len(),
+        next_cursor,
     );
 
     Ok(corrected)
