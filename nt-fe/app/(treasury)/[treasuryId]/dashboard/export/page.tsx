@@ -24,7 +24,10 @@ import { useNear } from "@/stores/near-store";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useExportHistory } from "@/hooks/use-treasury-queries";
 import { APP_CONTACT_US_URL } from "@/constants/config";
-import { DateTimePicker, DEFAULT_DATE_PRESETS } from "@/components/datepicker";
+import {
+    DatePickerPopover,
+    DEFAULT_DATE_PRESETS,
+} from "@/components/datepicker";
 import { Input } from "@/components/input";
 import {
     FormField,
@@ -60,11 +63,6 @@ import { ExportHistoryItem } from "@/lib/api";
 import { Download, Loader2 } from "lucide-react";
 import { User } from "@/components/user";
 import { FormattedDate } from "@/components/formatted-date";
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover";
 import { CreditsQuotaDisplay } from "@/components/credits-quota-display";
 import {
     useReactTable,
@@ -773,109 +771,75 @@ export default function ExportActivityPage() {
                                                 <label className="text-sm font-medium mb-2 block">
                                                     Time Range
                                                 </label>
-                                                <Popover>
-                                                    <PopoverTrigger asChild>
-                                                        <Button
-                                                            variant="outline"
-                                                            className="w-full justify-start bg-transparent! border-2 font-normal"
-                                                        >
-                                                            <Calendar className="h-4 w-4" />
-                                                            <span className="text-sm">
-                                                                {dateRange?.from &&
-                                                                dateRange?.to ? (
-                                                                    <>
-                                                                        {format(
-                                                                            dateRange.from,
-                                                                            "MMM dd, yyyy",
-                                                                        )}{" "}
-                                                                        -{" "}
-                                                                        {format(
-                                                                            dateRange.to,
-                                                                            "MMM dd, yyyy",
-                                                                        )}
-                                                                    </>
-                                                                ) : (
-                                                                    "Select date range"
-                                                                )}
-                                                            </span>
-                                                        </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent
-                                                        className="w-auto p-0"
-                                                        align="start"
-                                                        side="bottom"
-                                                    >
-                                                        <DateTimePicker
-                                                            mode="range"
-                                                            value={
-                                                                dateRange
-                                                                    ? {
-                                                                          from: dateRange.from,
-                                                                          to: dateRange.to,
-                                                                      }
-                                                                    : undefined
-                                                            }
-                                                            onChange={(
-                                                                range: any,
-                                                            ) => {
-                                                                if (
-                                                                    range &&
-                                                                    typeof range ===
-                                                                        "object" &&
-                                                                    "from" in
-                                                                        range
-                                                                ) {
-                                                                    form.setValue(
-                                                                        "dateRange",
-                                                                        {
-                                                                            from: range.from
-                                                                                ? startOfDay(
-                                                                                      range.from,
-                                                                                  )
-                                                                                : startOfDay(
-                                                                                      new Date(),
-                                                                                  ),
-                                                                            to: range.to
-                                                                                ? endOfDay(
-                                                                                      range.to,
-                                                                                  )
-                                                                                : endOfDay(
-                                                                                      new Date(),
-                                                                                  ),
-                                                                        },
-                                                                        {
-                                                                            shouldValidate: true,
-                                                                        },
-                                                                    );
-                                                                } else {
-                                                                    form.setValue(
-                                                                        "dateRange",
-                                                                        {
-                                                                            from: startOfDay(
-                                                                                new Date(),
-                                                                            ),
-                                                                            to: endOfDay(
-                                                                                new Date(),
-                                                                            ),
-                                                                        },
-                                                                        {
-                                                                            shouldValidate: true,
-                                                                        },
-                                                                    );
-                                                                }
-                                                            }}
-                                                            defaultMonth={
-                                                                defaultMonth
-                                                            }
-                                                            numberOfMonths={1}
-                                                            min={minDate}
-                                                            max={new Date()}
-                                                            presets={
-                                                                datePresets
-                                                            }
-                                                        />
-                                                    </PopoverContent>
-                                                </Popover>
+                                                <DatePickerPopover
+                                                    mode="range"
+                                                    value={
+                                                        dateRange
+                                                            ? {
+                                                                  from: dateRange.from,
+                                                                  to: dateRange.to,
+                                                              }
+                                                            : undefined
+                                                    }
+                                                    onChange={(range: any) => {
+                                                        if (
+                                                            range &&
+                                                            typeof range ===
+                                                                "object" &&
+                                                            "from" in range
+                                                        ) {
+                                                            form.setValue(
+                                                                "dateRange",
+                                                                {
+                                                                    from: range.from
+                                                                        ? startOfDay(
+                                                                              range.from,
+                                                                          )
+                                                                        : startOfDay(
+                                                                              new Date(),
+                                                                          ),
+                                                                    to: range.to
+                                                                        ? endOfDay(
+                                                                              range.to,
+                                                                          )
+                                                                        : endOfDay(
+                                                                              new Date(),
+                                                                          ),
+                                                                },
+                                                                {
+                                                                    shouldValidate: true,
+                                                                },
+                                                            );
+                                                        } else {
+                                                            form.setValue(
+                                                                "dateRange",
+                                                                {
+                                                                    from: startOfDay(
+                                                                        new Date(),
+                                                                    ),
+                                                                    to: endOfDay(
+                                                                        new Date(),
+                                                                    ),
+                                                                },
+                                                                {
+                                                                    shouldValidate: true,
+                                                                },
+                                                            );
+                                                        }
+                                                    }}
+                                                    defaultMonth={defaultMonth}
+                                                    numberOfMonths={1}
+                                                    min={minDate}
+                                                    max={new Date()}
+                                                    presets={datePresets}
+                                                    align="start"
+                                                    side="bottom"
+                                                    classNames={{
+                                                        trigger:
+                                                            "w-full justify-start bg-transparent! border-2 font-normal",
+                                                    }}
+                                                    placeholder="Select date range"
+                                                />
                                             </div>
 
                                             {/* Asset Selection */}

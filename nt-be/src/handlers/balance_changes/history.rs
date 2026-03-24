@@ -27,7 +27,7 @@ use crate::handlers::balance_changes::query_builder::{
     BalanceChangeFilters, RELAYER_ACCOUNT, build_count_query,
 };
 use crate::handlers::subscription::plans::get_account_plan_info;
-use crate::handlers::token::TokenMetadata;
+use crate::handlers::token::{TokenMetadata, fetch_tokens_with_fallback};
 use crate::routes::{BalanceChangesQuery, EnrichedBalanceChange, get_balance_changes_internal};
 use crate::utils::serde::comma_separated;
 
@@ -1590,7 +1590,7 @@ pub async fn get_recent_activity(
         exclude_swaps_from_direction: true, // Recent activity: exclude swaps from incoming/outgoing (separate Exchange tab)
     };
 
-    let enriched_changes = get_balance_changes_internal(&state, &balance_query)
+    let mut enriched_changes = get_balance_changes_internal(&state, &balance_query)
         .await
         .map_err(|e| {
             log::error!("Failed to fetch recent activity: {}", e);
@@ -1602,6 +1602,34 @@ pub async fn get_recent_activity(
                 })),
             )
         })?;
+
+    // Enrich all recent-activity rows with chain metadata
+    let activity_token_ids: Vec<String> = enriched_changes
+        .iter()
+        .map(|c| c.token_id.clone())
+        .collect::<std::collections::HashSet<_>>()
+        .into_iter()
+        .collect();
+
+    if !activity_token_ids.is_empty() {
+        let chain_metadata_map =
+            fetch_tokens_with_fallback(&state, &activity_token_ids, true).await;
+        for change in &mut enriched_changes {
+            if let Some(ref mut metadata) = change.token_metadata
+                && let Some(chain_meta) = chain_metadata_map.get(&change.token_id)
+            {
+                if chain_meta.network.is_some() {
+                    metadata.network = chain_meta.network.clone();
+                }
+                if chain_meta.chain_name.is_some() {
+                    metadata.chain_name = chain_meta.chain_name.clone();
+                }
+                if chain_meta.chain_icons.is_some() {
+                    metadata.chain_icons = chain_meta.chain_icons.clone();
+                }
+            }
+        }
+    }
 
     // Look up detected swaps for both fulfillment and deposit IDs on this page
     let change_ids: Vec<i64> = enriched_changes.iter().map(|c| c.id).collect();
@@ -1702,12 +1730,17 @@ pub async fn get_recent_activity(
         }
     }
 
-    // IMPORTANT: For swap tokens, we need to fetch them again WITH chain metadata
-    // even if they're already in metadata_map, because the initial fetch didn't include chain data
-    let swap_token_ids_vec: Vec<String> = swap_token_ids.into_iter().collect();
+    // Fetch chain metadata only for swap tokens that are missing it.
+    let swap_token_ids_vec: Vec<String> = swap_token_ids
+        .into_iter()
+        .filter(|token_id| {
+            metadata_map.get(token_id).is_none_or(|meta| {
+                meta.chain_icons.is_none() || meta.network.is_none() || meta.chain_name.is_none()
+            })
+        })
+        .collect();
 
     if !swap_token_ids_vec.is_empty() {
-        use crate::handlers::token::fetch_tokens_with_fallback;
         let swap_metadata_with_chain =
             fetch_tokens_with_fallback(&state, &swap_token_ids_vec, true).await;
         // Override the metadata_map with chain-enriched versions

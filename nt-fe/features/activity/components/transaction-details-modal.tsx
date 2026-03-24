@@ -152,6 +152,7 @@ export function TransactionDetailsModal({
                         <AmountSummary
                             title={transactionType}
                             total={formatAmount(activity.amount)}
+                            showNetworkIcon
                             token={{
                                 address: activity.tokenMetadata.tokenId,
                                 symbol: activity.tokenMetadata.symbol,
@@ -160,6 +161,7 @@ export function TransactionDetailsModal({
                                 icon: activity.tokenMetadata.icon || "",
                                 network:
                                     activity.tokenMetadata.network || "near",
+                                chainIcons: activity.tokenMetadata.chainIcons,
                             }}
                         />
                     )}
