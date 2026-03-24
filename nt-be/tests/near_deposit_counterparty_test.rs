@@ -333,8 +333,8 @@ async fn test_re_enrichment_corrects_wrong_counterparty(pool: PgPool) {
 /// 2. Progress is tracked in `maintenance_jobs`: on the first run the cursor is
 ///    initialised to the highest matching block; after the batch it advances to
 ///    `min(batch) - 1`.
-/// 3. A second cycle finds no records at or below the new cursor and returns 0,
-///    proving the job does not re-process already-handled blocks.
+/// 3. A second cycle finds no records at or below the new cursor, sets the
+///    cursor to the sentinel `-1`, and becomes a no-op on all future calls.
 /// 4. Gas-cost records (`ABS(amount) ≤ 0.01`) are never touched.
 #[sqlx::test]
 async fn test_correct_near_counterparties(pool: PgPool) {
@@ -485,10 +485,10 @@ async fn test_correct_near_counterparties(pool: PgPool) {
     .await
     .unwrap();
     assert_eq!(
-        cursor_second, cursor_after,
-        "Cursor must not move when there are no more records to process"
+        cursor_second, -1,
+        "Cursor should be set to sentinel -1 when no records remain"
     );
-    println!("Cursor after second cycle (unchanged): {}", cursor_second);
+    println!("Cursor after second cycle (sentinel): {}", cursor_second);
 
     println!("PASSED");
 }
