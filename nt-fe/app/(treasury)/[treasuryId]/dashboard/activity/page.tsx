@@ -33,12 +33,8 @@ function getSelectedAccountsFromFilter(filterValue: string | null): string[] {
     if (!filterValue) return [];
     try {
         const parsed = JSON.parse(filterValue);
-        const selectedValues = Array.isArray(parsed.selected)
-            ? parsed.selected
-            : parsed.selected
-              ? [parsed.selected]
-              : [];
-        return selectedValues.filter(Boolean);
+        if (!Array.isArray(parsed.users)) return [];
+        return parsed.users.filter(Boolean);
     } catch {
         return [];
     }
@@ -125,11 +121,9 @@ function ActivityList({
     if (fromFilter) {
         try {
             const parsed = JSON.parse(fromFilter);
-            const selectedValues = Array.isArray(parsed.selected)
-                ? parsed.selected.filter(Boolean)
-                : parsed.selected
-                  ? [parsed.selected]
-                  : [];
+            const selectedValues = Array.isArray(parsed.users)
+                ? parsed.users.filter(Boolean)
+                : [];
             if (parsed.operation === "Is" && selectedValues.length > 0) {
                 fromAccount = selectedValues;
             } else if (
@@ -148,11 +142,9 @@ function ActivityList({
     if (toFilter) {
         try {
             const parsed = JSON.parse(toFilter);
-            const selectedValues = Array.isArray(parsed.selected)
-                ? parsed.selected.filter(Boolean)
-                : parsed.selected
-                  ? [parsed.selected]
-                  : [];
+            const selectedValues = Array.isArray(parsed.users)
+                ? parsed.users.filter(Boolean)
+                : [];
             if (parsed.operation === "Is" && selectedValues.length > 0) {
                 toAccount = selectedValues;
             } else if (

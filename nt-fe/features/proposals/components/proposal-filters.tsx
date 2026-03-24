@@ -302,24 +302,30 @@ function FilterPill({
                 );
             case "from":
                 return (
-                    <AccountFilterContent
+                    <UserFilterContent
                         value={value}
                         onUpdate={onUpdate}
                         setIsOpen={setIsOpen}
                         onRemove={onRemove}
-                        options={options || []}
-                        filterLabel="From"
+                        label="From"
+                        operations={FROM_OPERATIONS}
+                        suggestedUsers={(options || []).map(
+                            (option) => option.value,
+                        )}
                     />
                 );
             case "to":
                 return (
-                    <AccountFilterContent
+                    <UserFilterContent
                         value={value}
                         onUpdate={onUpdate}
                         setIsOpen={setIsOpen}
                         onRemove={onRemove}
-                        options={options || []}
-                        filterLabel="To"
+                        label="To"
+                        operations={FROM_OPERATIONS}
+                        suggestedUsers={(options || []).map(
+                            (option) => option.value,
+                        )}
                     />
                 );
         }
@@ -393,20 +399,20 @@ function FilterPill({
             );
         }
 
-        if ((id === "from" || id === "to") && (filterData as any).selected) {
-            const selected = (filterData as any).selected;
-            if (Array.isArray(selected)) {
-                if (selected.length === 0) return "ALL";
+        if (id === "from" || id === "to") {
+            const users = (filterData as any).users;
+            if (Array.isArray(users)) {
+                if (users.length === 0) return "ALL";
                 return (
                     <span className="font-medium text-sm">
-                        {selected.length > 1
-                            ? `${selected[0]} +${selected.length - 1}`
-                            : selected[0]}
+                        {users.length > 1
+                            ? `${users[0]} +${users.length - 1}`
+                            : users[0]}
                     </span>
                 );
             }
             return (
-                <span className="font-medium text-sm">{selected || "ALL"}</span>
+                <span className="font-medium text-sm">{users || "ALL"}</span>
             );
         }
 
@@ -504,141 +510,6 @@ function FilterPill({
                 </PopoverContent>
             </Popover>
         </div>
-    );
-}
-
-interface AccountFilterData {
-    selected: string[];
-}
-
-function AccountFilterContent({
-    value,
-    onUpdate,
-    setIsOpen,
-    onRemove,
-    options,
-    filterLabel,
-}: {
-    value: string;
-    onUpdate: (value: string) => void;
-    setIsOpen: (isOpen: boolean) => void;
-    onRemove: () => void;
-    options: Array<{ value: string; label: string }>;
-    filterLabel: "From" | "To";
-}) {
-    const [searchQuery, setSearchQuery] = useState("");
-    const { operation, setOperation, data, setData, handleClear } =
-        useFilterState<AccountFilterData>({
-            value,
-            onUpdate,
-            parseData: (parsed) => ({
-                selected: Array.isArray(parsed.selected)
-                    ? parsed.selected
-                    : parsed.selected
-                      ? [parsed.selected]
-                      : [],
-            }),
-            serializeData: (op, d) => ({
-                operation: op,
-                selected: d.selected,
-            }),
-        });
-
-    const handleDelete = () => {
-        onRemove();
-        setIsOpen(false);
-    };
-
-    const filteredOptions = useMemo(() => {
-        const selectedValues = data?.selected || [];
-        const query = searchQuery.toLowerCase();
-        return options
-            .filter((option) => option.label.toLowerCase().includes(query))
-            .sort((a, b) => {
-                const aSelected = selectedValues.includes(a.value);
-                const bSelected = selectedValues.includes(b.value);
-                if (aSelected && !bSelected) return -1;
-                if (!aSelected && bSelected) return 1;
-                return a.label
-                    .toLowerCase()
-                    .localeCompare(b.label.toLowerCase());
-            });
-    }, [options, data?.selected, searchQuery]);
-
-    const toggleSelected = (accountId: string) => {
-        const selected = data?.selected || [];
-        if (selected.includes(accountId)) {
-            setData({
-                selected: selected.filter((value) => value !== accountId),
-            });
-        } else {
-            setData({ selected: [...selected, accountId] });
-        }
-    };
-
-    return (
-        <BaseFilterPopover
-            filterLabel={filterLabel}
-            operation={operation}
-            operations={FROM_OPERATIONS}
-            onOperationChange={setOperation}
-            onClear={handleClear}
-            onDelete={handleDelete}
-            className="w-80 pb-1"
-        >
-            <div className="flex flex-col">
-                <div className="px-2 py-1.5">
-                    <Input
-                        autoFocus
-                        placeholder="Search by address"
-                        search
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="h-8 text-sm"
-                    />
-                </div>
-                <ScrollArea
-                    className="h-60 [&>[data-radix-scroll-area-viewport]>div]:block!"
-                    type="always"
-                >
-                    {filteredOptions.length > 0 ? (
-                        <div className="flex flex-col">
-                            {filteredOptions.map((option) => {
-                                const isSelected =
-                                    data?.selected?.includes(option.value) ||
-                                    false;
-                                return (
-                                    <label
-                                        key={option.value}
-                                        className="flex px-2 items-center gap-2 cursor-pointer hover:bg-muted/50 py-1.5 rounded-md"
-                                    >
-                                        <Checkbox
-                                            checked={isSelected}
-                                            onCheckedChange={() =>
-                                                toggleSelected(option.value)
-                                            }
-                                            className="shrink-0"
-                                        />
-                                        <div className="min-w-0">
-                                            <User
-                                                accountId={option.value}
-                                                iconOnly={false}
-                                                withLink={false}
-                                                size="sm"
-                                            />
-                                        </div>
-                                    </label>
-                                );
-                            })}
-                        </div>
-                    ) : (
-                        <p className="text-xs text-muted-foreground text-center py-2">
-                            No addresses found
-                        </p>
-                    )}
-                </ScrollArea>
-            </div>
-        </BaseFilterPopover>
     );
 }
 
@@ -976,6 +847,8 @@ interface UserFilterContentProps {
     setIsOpen: (isOpen: boolean) => void;
     onRemove: () => void;
     label: string;
+    operations?: string[];
+    suggestedUsers?: string[];
 }
 
 interface UserData {
@@ -988,6 +861,8 @@ function UserFilterContent({
     setIsOpen,
     onRemove,
     label,
+    operations = USER_OPERATIONS,
+    suggestedUsers,
 }: UserFilterContentProps) {
     const { treasuryId } = useTreasury();
     const { recentAddresses, addRecentAddress } = useRecentAddresses();
@@ -998,7 +873,7 @@ function UserFilterContent({
             value,
             onUpdate,
             parseData: (parsed) => ({
-                users: parsed.users || [],
+                users: Array.isArray(parsed.users) ? parsed.users : [],
             }),
             serializeData: (op, d) => ({
                 operation: op,
@@ -1013,16 +888,18 @@ function UserFilterContent({
         return "members";
     }, [label]);
 
+    const shouldUseSuggestedUsers = !!suggestedUsers;
+
     // Fetch the appropriate user list using the unified hook
     const { users: fetchedUsers, isLoading: isLoadingMembers } = useDaoUsers(
-        treasuryId ?? null,
+        shouldUseSuggestedUsers ? null : (treasuryId ?? null),
         userListType,
     );
 
     // Use fetched users as suggestions
     const memberSuggestions = useMemo(() => {
-        return fetchedUsers;
-    }, [fetchedUsers]);
+        return suggestedUsers ?? fetchedUsers;
+    }, [suggestedUsers, fetchedUsers]);
 
     // Combine DAO members with custom addresses and recent addresses, then filter and sort
     const filteredMembers = useMemo(() => {
@@ -1066,7 +943,8 @@ function UserFilterContent({
         if (currentUsers.includes(accountId)) {
             setData({ users: currentUsers.filter((u) => u !== accountId) });
         } else {
-            setData({ users: [...currentUsers, accountId] });
+            const nextValues = [...currentUsers, accountId];
+            setData({ users: nextValues });
             addRecentAddress(accountId);
         }
     };
@@ -1075,9 +953,10 @@ function UserFilterContent({
         if (e.key === "Enter" && searchQuery.trim()) {
             e.preventDefault();
             const accountId = searchQuery.trim();
-            if (!data?.users.includes(accountId)) {
-                setData({ users: [...(data?.users || []), accountId] });
-                // Save to recent addresses
+            const currentValues = data?.users || [];
+            if (!currentValues.includes(accountId)) {
+                const nextValues = [...currentValues, accountId];
+                setData({ users: nextValues });
                 addRecentAddress(accountId);
             }
             setSearchQuery("");
@@ -1088,7 +967,7 @@ function UserFilterContent({
         <BaseFilterPopover
             filterLabel={label}
             operation={operation}
-            operations={USER_OPERATIONS}
+            operations={operations}
             onOperationChange={setOperation}
             onClear={handleClear}
             onDelete={handleDelete}
@@ -1108,7 +987,7 @@ function UserFilterContent({
                 </div>
 
                 {/* Loading state */}
-                {isLoadingMembers ? (
+                {!shouldUseSuggestedUsers && isLoadingMembers ? (
                     <div className="text-xs text-muted-foreground text-center py-2">
                         Loading members...
                     </div>
