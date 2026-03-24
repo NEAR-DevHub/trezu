@@ -44,6 +44,17 @@ pub struct BalanceChangesQuery {
     pub min_amount: Option<f64>, // Minimum amount in decimal-adjusted format (e.g., 1.5 NEAR)
     pub max_amount: Option<f64>, // Maximum amount in decimal-adjusted format (e.g., 100 USDC)
 
+    // Search filtering
+    pub tx_hash: Option<String>, // Partial match against transaction hashes
+    #[serde(default, deserialize_with = "comma_separated")]
+    pub from_accounts: Option<Vec<String>>, // "From" account(s) filter
+    #[serde(default, deserialize_with = "comma_separated")]
+    pub from_accounts_not: Option<Vec<String>>, // Exclude these "From" account(s)
+    #[serde(default, deserialize_with = "comma_separated")]
+    pub to_accounts: Option<Vec<String>>, // "To" account(s) filter
+    #[serde(default, deserialize_with = "comma_separated")]
+    pub to_accounts_not: Option<Vec<String>>, // Exclude these "To" account(s)
+
     pub include_metadata: Option<bool>, // default: false (enrich with token metadata like symbol, name, decimals, icon)
     pub include_prices: Option<bool>, // default: false (fetch historical USD prices for transaction dates from DB; if missing, returns None)
     pub include_chain_metadata: Option<bool>, // default: false (enrich with chain/network metadata for cross-chain tokens)
@@ -188,6 +199,11 @@ pub async fn get_balance_changes_internal(
         transaction_types: params.transaction_types.clone(),
         min_amount: min_amount_raw,
         max_amount: max_amount_raw,
+        transaction_hash_query: params.tx_hash.clone(),
+        from_accounts: params.from_accounts.clone(),
+        from_accounts_not: params.from_accounts_not.clone(),
+        to_accounts: params.to_accounts.clone(),
+        to_accounts_not: params.to_accounts_not.clone(),
         exclude_near_dust: params.exclude_near_dust,
         exclude_swaps_from_direction: params.exclude_swaps_from_direction,
     };
@@ -233,6 +249,21 @@ pub async fn get_balance_changes_internal(
     }
     if let Some(max) = filters.max_amount {
         query = query.bind(max);
+    }
+    if let Some(ref tx_hash_query) = filters.transaction_hash_query {
+        query = query.bind(format!("%{}%", tx_hash_query));
+    }
+    if let Some(ref from_accounts) = filters.from_accounts {
+        query = query.bind(from_accounts);
+    }
+    if let Some(ref from_accounts_not) = filters.from_accounts_not {
+        query = query.bind(from_accounts_not);
+    }
+    if let Some(ref to_accounts) = filters.to_accounts {
+        query = query.bind(to_accounts);
+    }
+    if let Some(ref to_accounts_not) = filters.to_accounts_not {
+        query = query.bind(to_accounts_not);
     }
 
     // Bind pagination only if we're using it
