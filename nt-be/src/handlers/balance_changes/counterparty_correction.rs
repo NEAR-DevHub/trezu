@@ -23,7 +23,7 @@
 //!
 //! When no records remain at or below the cursor the cursor is set to `-1`
 //! as a terminal sentinel.  Subsequent calls short-circuit immediately
-//! (`last_processed_block <= 0`) making completed jobs effectively O(1).
+//! (`last_processed_block < 0`) making completed jobs effectively O(1).
 
 use crate::utils::jsonrpc::create_rpc_client;
 use bigdecimal::Zero;
@@ -82,8 +82,8 @@ pub async fn correct_near_counterparties(
             .await?;
 
     let from_block: i64 = match cursor {
-        // Sentinel: job already completed — skip without any DB scan.
-        Some(b) if b <= 0 => {
+        // Sentinel: job already completed — skip without scanning `balance_changes`.
+        Some(b) if b < 0 => {
             return Ok(0);
         }
         Some(b) => b,
