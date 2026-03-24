@@ -10,5 +10,5 @@ COMMENT ON TABLE maintenance_jobs IS
     'Cursor table for background data-maintenance jobs. Each row tracks how far '
     'a job has progressed so it can resume without reprocessing.';
 COMMENT ON COLUMN maintenance_jobs.last_processed_block IS
-    'Jobs scan backwards; this is the lowest block height that has been '
-    'examined. Next run queries block_height <= this value.';
+    'Jobs scan backwards; this is the highest block height still eligible to be '
+    'processed on the next run (an upper bound; queries use block_height <= this value).';

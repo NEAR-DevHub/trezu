@@ -11,9 +11,15 @@
 //!
 //! Progress is tracked in `maintenance_jobs` (row `counterparty_correction`).
 //! On the first invocation the cursor is initialised to the highest block
-//! height of any matching record; each subsequent call advances the cursor
-//! downward by the size of the batch just processed.  The job stops
-//! naturally once no matching records remain below the cursor.
+//! height of any matching record. On each subsequent call, after processing
+//! a batch, the cursor is moved to **one below the smallest `block_height`**
+//! among the records in that batch. This can advance the cursor by more than
+//! the batch size when matching records are sparse. The job stops naturally
+//! once no matching records remain at or below the cursor.
+//!
+//! The cursor is only advanced when all records in the batch were resolved
+//! without transient RPC errors, so a temporary network outage will not
+//! permanently skip records.
 
 use crate::utils::jsonrpc::create_rpc_client;
 use bigdecimal::Zero;
@@ -50,8 +56,11 @@ struct WrongCounterpartyRecord {
 ///
 /// Progress is tracked in `maintenance_jobs`.  The scan works **backwards**
 /// through block history so that the most-recent (most visible) records are
-/// fixed first.  Once no matching records exist below the cursor the function
-/// returns 0 and the job is effectively complete.
+/// fixed first.  Once no matching records exist at or below the cursor the
+/// function returns 0 and the job is effectively complete.
+///
+/// The cursor is only advanced when the batch completed without transient RPC
+/// errors, so a temporary network outage will not permanently skip records.
 ///
 /// Returns the number of records corrected.
 pub async fn correct_near_counterparties(
@@ -75,7 +84,7 @@ pub async fn correct_near_counterparties(
                 r#"
                 SELECT MAX(block_height)
                 FROM balance_changes
-                WHERE (token_id IS NULL OR LOWER(token_id) = 'near')
+                WHERE (token_id IS NULL OR token_id IN ('near', 'NEAR'))
                   AND method_name = 'act_proposal'
                   AND counterparty = receiver_id
                   AND ABS(amount) > 0.01
@@ -87,19 +96,32 @@ pub async fn correct_near_counterparties(
 
             match max_block {
                 Some(b) => {
+                    // ON CONFLICT DO NOTHING handles a concurrent first-run race
+                    // from multiple replicas; we then re-fetch to get whichever
+                    // replica's value won (they all use the same max_block, so
+                    // the result is identical regardless).
                     sqlx::query(
                         "INSERT INTO maintenance_jobs (job_name, last_processed_block)
-                         VALUES ($1, $2)",
+                         VALUES ($1, $2)
+                         ON CONFLICT (job_name) DO NOTHING",
                     )
                     .bind(JOB_NAME)
                     .bind(b)
                     .execute(pool)
                     .await?;
+
+                    let actual: i64 = sqlx::query_scalar(
+                        "SELECT last_processed_block FROM maintenance_jobs WHERE job_name = $1",
+                    )
+                    .bind(JOB_NAME)
+                    .fetch_one(pool)
+                    .await?;
+
                     log::info!(
                         "[counterparty-correction] Initialised cursor at block {}",
-                        b
+                        actual
                     );
-                    b
+                    actual
                 }
                 None => {
                     log::info!("[counterparty-correction] No records to correct");
@@ -116,7 +138,7 @@ pub async fn correct_near_counterparties(
         SELECT id, account_id, block_height, amount, transaction_hashes,
                counterparty, signer_id
         FROM balance_changes
-        WHERE (token_id IS NULL OR LOWER(token_id) = 'near')
+        WHERE (token_id IS NULL OR token_id IN ('near', 'NEAR'))
           AND method_name = 'act_proposal'
           AND counterparty = receiver_id
           AND ABS(amount) > 0.01
@@ -148,6 +170,7 @@ pub async fn correct_near_counterparties(
 
     let client = create_rpc_client(network)?;
     let mut corrected = 0usize;
+    let mut had_rpc_error = false;
 
     for record in &records {
         let tx_hash = match record.transaction_hashes.first() {
@@ -196,6 +219,7 @@ pub async fn correct_near_counterparties(
                     tx_hash,
                     e
                 );
+                had_rpc_error = true;
                 continue;
             }
         };
@@ -270,7 +294,20 @@ pub async fn correct_near_counterparties(
         }
     }
 
-    // --- Advance cursor to one block below the lowest block we processed ----
+    // --- Advance cursor ------------------------------------------------------
+    //
+    // Only advance if the batch completed without transient RPC errors.
+    // A temporary network outage must not permanently skip unresolved records.
+    // Permanent skips (missing signer_id, unparseable hash) are not counted as
+    // RPC errors and do not block cursor advancement.
+    if had_rpc_error {
+        log::warn!(
+            "[counterparty-correction] Skipping cursor advance due to RPC errors; \
+             will retry this batch next cycle (cursor stays at {})",
+            from_block
+        );
+        return Ok(corrected);
+    }
 
     let min_block = records
         .iter()
@@ -279,9 +316,11 @@ pub async fn correct_near_counterparties(
         .expect("records is non-empty");
     let next_cursor = min_block - 1;
 
+    // LEAST() ensures the cursor only ever decreases, even under concurrent
+    // runs from multiple replicas that may have read the same from_block.
     sqlx::query(
         "UPDATE maintenance_jobs
-         SET last_processed_block = $1, updated_at = NOW()
+         SET last_processed_block = LEAST(last_processed_block, $1), updated_at = NOW()
          WHERE job_name = $2",
     )
     .bind(next_cursor)
