@@ -53,7 +53,8 @@ struct WrongCounterpartyRecord {
 
 /// Find and correct balance_changes records where the counterparty is likely wrong.
 ///
-/// Identifies records where `token_id = 'near'`, `method_name = 'act_proposal'`,
+/// Identifies records where `token_id IS NULL OR token_id IN ('near', 'NEAR')`,
+/// `method_name = 'act_proposal'`,
 /// and `counterparty = receiver_id` (the meta-tx delegate target was used instead of
 /// the actual sender/recipient DAO). Only processes records with `ABS(amount) > 0.01`
 /// to skip gas cost records where the voter is the correct counterparty.
