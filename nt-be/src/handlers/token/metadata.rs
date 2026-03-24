@@ -938,7 +938,6 @@ pub async fn search_token_by_symbol(
         WHERE UPPER(token_symbol) = UPPER($1)
           AND account_type = 'ft_token'
         ORDER BY discovered_at DESC
-        LIMIT 10
         "#,
         symbol
     )

@@ -511,11 +511,16 @@ export const decodeProposalDescription = (key: string, description: string) => {
     return null; // Return null if key not found
 };
 
-/**
- * Format nanoseconds to human-readable duration
- * @param nanoseconds - Duration in nanoseconds as string
- * @returns Human-readable duration string (e.g., "7 days", "2 weeks, 3 days", "5 hours")
- */
+/** Convert a nanosecond timestamp/duration (string) to milliseconds. */
+export function nanosToMs(nanoseconds: string): number {
+    return Big(nanoseconds).div(1_000_000).toNumber();
+}
+
+/** Convert milliseconds to a nanosecond string. */
+export function msToNanos(ms: number): string {
+    return Big(Math.round(ms)).times(1_000_000).toFixed(0);
+}
+
 /**
  * Returns a human-readable NEAR token type label based on the tokenId.
  * - "" or "near" → "Native Token"
@@ -538,6 +543,11 @@ export function getNearTokenTypeLabel(
     return "NEAR Fungible Token";
 }
 
+/**
+ * Format nanoseconds to human-readable duration
+ * @param nanoseconds - Duration in nanoseconds as string
+ * @returns Human-readable duration string (e.g., "7 days", "2 weeks, 3 days", "5 hours")
+ */
 export function formatNanosecondDuration(nanoseconds: string): string {
     const ns = BigInt(nanoseconds);
 

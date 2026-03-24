@@ -21,7 +21,7 @@ import type {
     PaymentRequestData,
     FunctionCallData,
 } from "@/features/proposals/types/index";
-import { jsonToBase64, base64ToJson } from "@/lib/utils";
+import { jsonToBase64, base64ToJson, nanosToMs } from "@/lib/utils";
 
 const BACKEND_API_BASE = `${process.env.NEXT_PUBLIC_BACKEND_API_BASE}/api`;
 
@@ -536,12 +536,8 @@ function WalletPageContent() {
                 }
 
                 // Compute date window from submission_time and proposal_period
-                const submissionMs = Number(
-                    BigInt(proposal.submission_time) / BigInt(1_000_000),
-                );
-                const expirationMs =
-                    submissionMs +
-                    Number(BigInt(proposalPeriodNs) / BigInt(1_000_000));
+                const submissionMs = nanosToMs(proposal.submission_time);
+                const expirationMs = submissionMs + nanosToMs(proposalPeriodNs);
                 const afterDate = new Date(submissionMs - 24 * 60 * 60 * 1000)
                     .toISOString()
                     .split("T")[0];
