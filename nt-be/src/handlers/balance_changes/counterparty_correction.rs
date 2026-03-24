@@ -20,6 +20,10 @@
 //! The cursor is only advanced when all records in the batch were resolved
 //! without transient RPC errors, so a temporary network outage will not
 //! permanently skip records.
+//!
+//! When no records remain at or below the cursor the cursor is set to `-1`
+//! as a terminal sentinel.  Subsequent calls short-circuit immediately
+//! (`last_processed_block <= 0`) making completed jobs effectively O(1).
 
 use crate::utils::jsonrpc::create_rpc_client;
 use bigdecimal::Zero;
@@ -57,7 +61,8 @@ struct WrongCounterpartyRecord {
 /// Progress is tracked in `maintenance_jobs`.  The scan works **backwards**
 /// through block history so that the most-recent (most visible) records are
 /// fixed first.  Once no matching records exist at or below the cursor the
-/// function returns 0 and the job is effectively complete.
+/// cursor is set to `-1` (sentinel) and the function becomes a no-op on all
+/// subsequent calls.
 ///
 /// The cursor is only advanced when the batch completed without transient RPC
 /// errors, so a temporary network outage will not permanently skip records.
@@ -76,6 +81,10 @@ pub async fn correct_near_counterparties(
             .await?;
 
     let from_block: i64 = match cursor {
+        // Sentinel: job already completed — skip without any DB scan.
+        Some(b) if b <= 0 => {
+            return Ok(0);
+        }
         Some(b) => b,
         None => {
             // First run: seed the cursor at the highest matching block so the
@@ -153,10 +162,17 @@ pub async fn correct_near_counterparties(
     .await?;
 
     if records.is_empty() {
-        log::info!(
-            "[counterparty-correction] No records at or below block {} — job complete",
-            from_block
-        );
+        // No more records — mark job complete with sentinel -1 so future
+        // calls short-circuit at the cursor check above (O(1) per cycle).
+        sqlx::query(
+            "UPDATE maintenance_jobs
+             SET last_processed_block = -1, updated_at = NOW()
+             WHERE job_name = $1",
+        )
+        .bind(JOB_NAME)
+        .execute(pool)
+        .await?;
+        log::info!("[counterparty-correction] Job complete; cursor set to sentinel -1");
         return Ok(0);
     }
 
