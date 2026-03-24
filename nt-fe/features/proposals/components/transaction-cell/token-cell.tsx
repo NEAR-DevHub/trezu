@@ -33,15 +33,13 @@ export function TokenCell({
         />
     );
     const { data: profile } = useProfile(data.receiver);
-    const address = profile?.isInAddressBook
-        ? (profile?.name ?? data.receiver)
-        : data.receiver;
+    const address = profile?.addressBookName ?? data.receiver;
 
     const subtitle = data.receiver ? (
         <>
             {prefix}
             {isUser ? (
-                <TooltipUser accountId={data.receiver}>
+                <TooltipUser accountId={data.receiver} useAddressBook>
                     <span> {address}</span>
                 </TooltipUser>
             ) : (

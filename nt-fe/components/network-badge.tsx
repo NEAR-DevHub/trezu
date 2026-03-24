@@ -37,8 +37,8 @@ const iconSizeMap = {
 
 interface NetworkBadgeProps extends VariantProps<typeof networkBadgeVariants> {
     name: string;
-    iconDark: string;
-    iconLight: string;
+    iconDark?: string;
+    iconLight?: string;
     className?: string;
     iconOnly?: boolean;
 }
@@ -54,23 +54,26 @@ export function NetworkBadge({
 }: NetworkBadgeProps) {
     const { theme } = useThemeStore();
     const isMobile = useMediaQuery("(max-width: 768px)");
-    const icon = theme === "dark" ? iconDark : iconLight;
+    const icon =
+        theme === "dark" ? (iconDark ?? iconLight) : (iconLight ?? iconDark);
     const iconSize = iconSizeMap[isMobile ? "icon" : (size ?? "sm")];
     const badge = (
         <span
             className={cn(networkBadgeVariants({ variant, size }), className)}
         >
-            <img
-                src={icon}
-                alt={name}
-                className={cn(
-                    iconSize,
-                    name.toLowerCase() === "near protocol"
-                        ? "p-0.5"
-                        : "rounded-[8px]",
-                )}
-            />
-            {!iconOnly && <span className="hidden md:block">{name}</span>}
+            {icon && (
+                <img
+                    src={icon}
+                    alt={name}
+                    className={cn(
+                        iconSize,
+                        name.toLowerCase() === "near protocol"
+                            ? "p-0.5"
+                            : "rounded-[8px]",
+                    )}
+                />
+            )}
+            {!iconOnly && <span>{name}</span>}
         </span>
     );
 

@@ -27,7 +27,7 @@ export function RemoveRecipientDialog({
 }: RemoveRecipientDialogProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const isBulk = typeof count === "number" && count > 1;
+    const isBulk = typeof count === "number" && entry === null && count > 0;
     const isOpen = isBulk ? count > 0 : entry !== null;
 
     async function handleConfirm() {
@@ -50,7 +50,7 @@ export function RemoveRecipientDialog({
                         <>
                             This will remove{" "}
                             <span className="font-semibold">
-                                {count} recipients
+                                {count} recipient{count > 1 ? "s" : ""}
                             </span>{" "}
                             from your address book. You can add them again
                             anytime.
