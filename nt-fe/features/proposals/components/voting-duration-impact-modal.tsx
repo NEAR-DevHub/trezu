@@ -324,26 +324,19 @@ export function VotingDurationImpactModal({
                                     {expiringExpanded && (
                                         <div className="border-t">
                                             {/* Header */}
-                                            <div className="grid grid-cols-[1fr_1fr] gap-4 px-4 py-2 bg-general-tertiary border-b text-xs font-medium uppercase text-muted-foreground">
+                                            <div className="grid grid-cols-[1fr_1fr_140px] gap-4 px-4 py-2 bg-general-tertiary border-b text-xs font-medium uppercase text-muted-foreground">
                                                 <div>Request</div>
                                                 <div>Transaction</div>
+                                                <div>New Expiry</div>
                                             </div>
                                             {impactedProposals
                                                 .filter((p) => p.willExpire)
                                                 .map(({ proposal }) => (
                                                     <div
                                                         key={proposal.id}
-                                                        className="grid grid-cols-[1fr_1fr] gap-4 px-4 py-3 border-b items-center"
+                                                        className="grid grid-cols-[1fr_1fr_140px] gap-4 px-4 py-3 border-b items-center"
                                                     >
-                                                        <Link
-                                                            href={`/${treasuryId}/requests/${proposal.id}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="flex items-center gap-3 min-w-0 group"
-                                                            onClick={(e) =>
-                                                                e.stopPropagation()
-                                                            }
-                                                        >
+                                                        <div className="flex items-center gap-3 min-w-0">
                                                             <span className="text-sm font-semibold text-muted-foreground shrink-0">
                                                                 #{proposal.id}
                                                             </span>
@@ -353,7 +346,7 @@ export function VotingDurationImpactModal({
                                                                 }
                                                             />
                                                             <div className="flex flex-col min-w-0">
-                                                                <span className="text-sm font-medium truncate group-hover:underline">
+                                                                <span className="text-sm font-medium truncate">
                                                                     {getProposalUIKind(
                                                                         proposal,
                                                                     )}
@@ -369,8 +362,7 @@ export function VotingDurationImpactModal({
                                                                     className="text-xs text-muted-foreground"
                                                                 />
                                                             </div>
-                                                            <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100" />
-                                                        </Link>
+                                                        </div>
 
                                                         <div className="min-w-0 truncate">
                                                             <TransactionCell
@@ -379,6 +371,19 @@ export function VotingDurationImpactModal({
                                                                 }
                                                             />
                                                         </div>
+
+                                                        <Link
+                                                            href={`/${treasuryId}/requests/${proposal.id}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="flex items-center gap-1.5 text-sm hover:underline"
+                                                            onClick={(e) =>
+                                                                e.stopPropagation()
+                                                            }
+                                                        >
+                                                            Upon approval
+                                                            <ArrowUpRight className="h-3.5 w-3.5 shrink-0" />
+                                                        </Link>
                                                     </div>
                                                 ))}
                                         </div>
