@@ -30,13 +30,13 @@ async fn run_maintenance_cycle(pool: &PgPool, network: &NetworkConfig) {
     nt_be::handlers::balance_changes::account_monitor::run_maintenance_cycle(
         pool,
         network,
-        0,       // up_to_block=0: no gap filling for any account
-        None,    // no hint service
-        None,    // no fastnear
-        None,    // no intents api key
+        0,    // up_to_block=0: no gap filling for any account
+        None, // no hint service
+        None, // no fastnear
+        None, // no intents api key
         "http://unused",
-        None,    // no neardata
-        true,    // disable staking rewards
+        None, // no neardata
+        true, // disable staking rewards
     )
     .await
     .expect("run_maintenance_cycle failed");
@@ -415,7 +415,10 @@ async fn test_correct_near_counterparties(pool: PgPool) {
     .fetch_optional(&pool)
     .await
     .unwrap();
-    assert!(cursor_before.is_none(), "No cursor should exist before first run");
+    assert!(
+        cursor_before.is_none(),
+        "No cursor should exist before first run"
+    );
 
     // Run via run_maintenance_cycle — the production server code path.
     // No monitored accounts registered: correction must run unconditionally.
@@ -433,8 +436,14 @@ async fn test_correct_near_counterparties(pool: PgPool) {
         "Corrected: incoming={} (was {}), outgoing={} (was {})",
         fixed_in, wrong_in, fixed_out, wrong_out
     );
-    assert_eq!(fixed_in, SOURCE_DAO, "Incoming counterparty should be corrected");
-    assert_eq!(fixed_out, LESIK_DAO, "Outgoing counterparty should be corrected");
+    assert_eq!(
+        fixed_in, SOURCE_DAO,
+        "Incoming counterparty should be corrected"
+    );
+    assert_eq!(
+        fixed_out, LESIK_DAO,
+        "Outgoing counterparty should be corrected"
+    );
 
     // Gas cost record (amount 0.00005) must not be touched
     let gas_record: Option<(String,)> = sqlx::query_as(

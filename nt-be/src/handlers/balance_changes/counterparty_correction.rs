@@ -60,12 +60,11 @@ pub async fn correct_near_counterparties(
 ) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
     // --- Resolve the cursor --------------------------------------------------
 
-    let cursor: Option<i64> = sqlx::query_scalar(
-        "SELECT last_processed_block FROM maintenance_jobs WHERE job_name = $1",
-    )
-    .bind(JOB_NAME)
-    .fetch_optional(pool)
-    .await?;
+    let cursor: Option<i64> =
+        sqlx::query_scalar("SELECT last_processed_block FROM maintenance_jobs WHERE job_name = $1")
+            .bind(JOB_NAME)
+            .fetch_optional(pool)
+            .await?;
 
     let from_block: i64 = match cursor {
         Some(b) => b,
