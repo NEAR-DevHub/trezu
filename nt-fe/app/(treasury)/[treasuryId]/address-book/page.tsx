@@ -393,16 +393,22 @@ function RecipientsView({
                     </>
                 ) : (
                     <>
-                        <div className="flex items-center gap-3 w-max">
-                            <h2 className="text-base font-semibold leading-none">
-                                Recipients
-                            </h2>
-                            {entries.length > 0 && (
-                                <NumberBadge
-                                    number={entries.length}
-                                    variant="secondary"
-                                />
-                            )}
+                        <div className="flex flex-col gap-0">
+                            <div className="flex items-center gap-3 w-max">
+                                <h2 className="text-base font-semibold leading-none">
+                                    Recipients
+                                </h2>
+                                {entries.length > 0 && (
+                                    <NumberBadge
+                                        number={entries.length}
+                                        variant="secondary"
+                                    />
+                                )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                                This information is private. Only you and your
+                                team can see these recipients.
+                            </p>
                         </div>
                         <div className="flex items-center gap-2 justify-end min-w-0">
                             <ResponsiveInput

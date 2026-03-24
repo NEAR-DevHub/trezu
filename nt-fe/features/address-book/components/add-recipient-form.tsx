@@ -401,6 +401,7 @@ export function AddRecipientInput({
                                 info="Networks compatible with this address"
                                 invalid={!!fieldState.error}
                                 interactive
+                                disabled={!isAddressValid}
                             >
                                 <NetworkSelect
                                     address={activeAddress}

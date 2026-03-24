@@ -10,6 +10,7 @@ interface InputBlockProps {
     invalid: boolean;
     className?: string;
     interactive?: boolean;
+    disabled?: boolean;
 }
 
 export function InputBlock({
@@ -20,6 +21,7 @@ export function InputBlock({
     invalid,
     interactive,
     className,
+    disabled,
 }: InputBlockProps) {
     return (
         <div
@@ -28,7 +30,9 @@ export function InputBlock({
                 "dark:[&_input]:bg-transparent! dark:[&_textarea]:bg-transparent! dark:**:data-[slot=select-trigger]:bg-transparent!",
                 invalid && "border-destructive border bg-destructive/5",
                 interactive &&
+                    !disabled &&
                     "focus-within:bg-general-tertiary hover:bg-general-tertiary transition-colors",
+                disabled && "opacity-50 pointer-events-none",
                 className,
             )}
         >

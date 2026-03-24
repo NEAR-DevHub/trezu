@@ -65,24 +65,14 @@ export function RemoveRecipientDialog({
                     )}
                 </DialogDescription>
                 <DialogFooter>
-                    <div className="flex gap-2 w-full">
-                        <Button
-                            variant="outline"
-                            className="flex-1"
-                            onClick={onClose}
-                            disabled={isSubmitting}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            variant="destructive"
-                            className="flex-1"
-                            onClick={handleConfirm}
-                            disabled={isSubmitting}
-                        >
-                            {isSubmitting ? "Removing..." : "Remove"}
-                        </Button>
-                    </div>
+                    <Button
+                        variant="destructive"
+                        className="flex-1"
+                        onClick={handleConfirm}
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting ? "Removing..." : "Remove"}
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
