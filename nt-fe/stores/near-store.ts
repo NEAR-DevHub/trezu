@@ -6,7 +6,6 @@ import {
     SignedMessage,
     ConnectorAction,
 } from "@hot-labs/near-connect";
-import manifests from "@hot-labs/near-connect/repository/manifest.json";
 import { Proposal, Vote as ProposalVote } from "@/lib/proposals-api";
 import {
     ProposalPermissionKind,
@@ -15,7 +14,6 @@ import {
 import { toast } from "sonner";
 import Big from "@/lib/big";
 import { useQueryClient } from "@tanstack/react-query";
-import { ledgerWalletManifest } from "@/lib/wallet-manifests";
 import {
     getAuthChallenge,
     authLogin,
@@ -34,13 +32,8 @@ import {
     estimateProposalStorage,
     estimateVoteStorage,
 } from "@/lib/sputnik-storage";
-import { setupLedgerSandboxBackendBridge } from "@/src/ledger-wallet/parent-bridge";
-import {
-    isWebHidSupported,
-    isWebUsbSupported,
-    isWebBleSupported,
-} from "@/src/ledger-wallet/near-ledger";
 import { APP_WALLET_SETUP_URL } from "@/constants/config";
+import { trackEvent } from "@/lib/analytics";
 
 /**
  * Ensures sandboxed iframes get bluetooth permission for Ledger Nano X BLE.
@@ -85,6 +78,8 @@ export interface CreateProposalParams {
         receiverId: string;
         actions: ConnectorAction[];
     }>;
+    /** Metric hint for the backend. "swap" | "payment" | "vote" | "other". Omit for non-tracked proposals. */
+    proposalType?: string;
 }
 
 interface Vote {
@@ -128,10 +123,9 @@ interface NearStore {
         treasuryId: string,
         params: SignDelegateActionsParams,
         storageBytes: Big,
+        proposalType?: string,
     ) => Promise<boolean>;
-    createProposal: (
-        params: CreateProposalParams,
-    ) => Promise<void>;
+    createProposal: (params: CreateProposalParams) => Promise<void>;
     voteProposals: (treasuryId: string, votes: Vote[]) => Promise<void>;
 }
 
@@ -171,7 +165,6 @@ export const useNearStore = create<NearStore>((set, get) => ({
 
         try {
             newConnector = new NearConnector({
-                manifest: manifests as any,
                 network: "mainnet",
                 footerBranding: {
                     icon: "/favicon_dark.svg",
@@ -264,24 +257,6 @@ export const useNearStore = create<NearStore>((set, get) => ({
         );
 
         set({ connector: newConnector });
-
-        // Register Ledger wallet after connector is initialized
-        newConnector.whenManifestLoaded.then(async () => {
-            if (
-                (await isWebHidSupported()) ||
-                (await isWebUsbSupported()) ||
-                (await isWebBleSupported())
-            ) {
-                try {
-                    setupLedgerSandboxBackendBridge();
-                    await newConnector.registerWallet(ledgerWalletManifest);
-                    console.log("Ledger wallet registered successfully");
-                } catch (e) {
-                    console.warn("Failed to register Ledger wallet:", e);
-                }
-            }
-        });
-
         set({ isInitializing: false });
         return newConnector;
     },
@@ -362,6 +337,10 @@ export const useNearStore = create<NearStore>((set, get) => ({
                     },
                 });
             }
+            trackEvent("new-wallet-connected", {
+                source: "terms-accepted",
+                account_id: get().walletAccountId ?? undefined,
+            });
         } catch (error) {
             console.error("Failed to accept terms:", error);
             throw error;
@@ -422,6 +401,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
         treasuryId: string,
         params: SignDelegateActionsParams,
         storageBytes: Big,
+        proposalType?: string,
     ): Promise<boolean> => {
         const state = get();
         if (!isFullyAuthenticated(state)) {
@@ -435,12 +415,15 @@ export const useNearStore = create<NearStore>((set, get) => ({
         const wallet = await state.connector.wallet();
         const result = await wallet.signDelegateActions(params);
 
-        // Relay each signed delegate action to the backend for gas-sponsored submission
-        for (const signedAction of result.signedDelegateActions) {
+        // Relay each signed delegate action to the backend for gas-sponsored submission.
+        // proposalType is only passed for the first action (the actual proposal/vote);
+        // subsequent actions are helper calls like storage_deposit.
+        for (let i = 0; i < result.signedDelegateActions.length; i++) {
             const relayResult = await relayDelegateAction(
                 treasuryId,
-                signedAction,
+                result.signedDelegateActions[i],
                 storageBytes,
+                i === 0 ? proposalType : undefined,
             );
             if (!relayResult.success) {
                 throw new Error(
@@ -452,9 +435,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
         return true;
     },
 
-    createProposal: async (
-        params: CreateProposalParams,
-    ) => {
+    createProposal: async (params: CreateProposalParams) => {
         const state = get();
         if (!isFullyAuthenticated(state)) {
             toast.error("Please connect wallet and accept terms to continue.");
@@ -512,6 +493,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                 params.treasuryId,
                 { delegateActions, network: "mainnet" },
                 storageBytes,
+                params.proposalType,
             );
         } catch (error) {
             console.error("Failed to create proposal:", error);
@@ -578,6 +560,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                 treasuryId,
                 { delegateActions, network: "mainnet" },
                 voteStorageBytes,
+                "vote",
             );
         } catch (error) {
             console.error("Failed to vote proposals:", error);
@@ -661,12 +644,12 @@ export const useNear = () => {
         const toastAction =
             votes.length === 1 && votes[0].vote !== "Remove"
                 ? {
-                    label: "View Request",
-                    onClick: () =>
-                        window.open(
-                            `/${treasuryId}/requests/${votes[0].proposalId}`,
-                        ),
-                }
+                      label: "View Request",
+                      onClick: () =>
+                          window.open(
+                              `/${treasuryId}/requests/${votes[0].proposalId}`,
+                          ),
+                  }
                 : undefined;
         const text =
             votes.length === 1 && votes[0].vote === "Remove"
@@ -682,9 +665,7 @@ export const useNear = () => {
                     "!bg-transparent !text-foreground hover:!bg-muted !border-0",
                 ),
                 title: cn(
-                    toastAction
-                        ? "!border-r !border-r-border !pr-4"
-                        : "!pr-0",
+                    toastAction ? "!border-r !border-r-border !pr-4" : "!pr-0",
                 ),
             },
         });

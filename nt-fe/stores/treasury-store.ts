@@ -12,11 +12,12 @@ export const useTreasuryStore = create<TreasuryStore>()(
     persist(
         (set) => ({
             lastTreasuryId: null,
-            setLastTreasuryId: (treasuryId) => set({ lastTreasuryId: treasuryId }),
+            setLastTreasuryId: (treasuryId) =>
+                set({ lastTreasuryId: treasuryId }),
         }),
         {
             name: "treasury-store",
             storage: createJSONStorage(() => localStorage),
-        }
-    )
+        },
+    ),
 );

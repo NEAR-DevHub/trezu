@@ -206,13 +206,53 @@ async fn test_swap_detection_for_usdc_to_usdt_swap(pool: PgPool) -> sqlx::Result
     println!("Detected {} swap(s)", swaps.len());
     for swap in &swaps {
         println!(
-            "  tx={} | sent={:?} -> received={} | amount={}",
+            "  tx={} | sent={:?} ({:?}) -> received={} ({}) | deposit_block={:?} fulfillment_block={}",
             swap.solver_transaction_hash,
             swap.sent_token_id,
+            swap.sent_amount,
             swap.received_token_id,
-            swap.received_amount
+            swap.received_amount,
+            swap.deposit_block_height,
+            swap.fulfillment_block_height,
         );
     }
+
+    assert!(
+        !swaps.is_empty(),
+        "Expected at least one swap detected via Intents Explorer API"
+    );
+
+    let swap = &swaps[0];
+    assert_eq!(swap.account_id, ACCOUNT_ID);
+
+    // Sent side: USDC (origin asset from intents API)
+    assert_eq!(
+        swap.sent_token_id.as_deref(),
+        Some(INTENTS_USDC_TOKEN),
+        "Sent token should be intents USDC"
+    );
+    assert!(
+        swap.sent_amount.is_some(),
+        "Sent amount should be populated from API"
+    );
+
+    // Received side: the positive intents balance change from the fulfillment
+    assert!(
+        swap.received_token_id.starts_with("intents.near:"),
+        "Received token should be an intents token, got: {}",
+        swap.received_token_id
+    );
+    assert!(
+        swap.received_amount > bigdecimal::BigDecimal::from(0),
+        "Received amount should be positive, got: {}",
+        swap.received_amount
+    );
+
+    // Fulfillment should be linked to a balance change
+    assert!(
+        swap.fulfillment_balance_change_id > 0,
+        "Fulfillment should be linked to a balance change"
+    );
 
     println!("\n=== Results ===");
     println!("Swap detection found {} matches", swaps.len());

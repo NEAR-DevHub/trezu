@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE monitored_accounts SET last_synced_at = NOW() WHERE account_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "3cebcc334c930ca2f21de643b6c0a8130ed206e1a0405414df235723947a8996"
+}

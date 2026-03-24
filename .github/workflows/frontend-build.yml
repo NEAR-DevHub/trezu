@@ -35,6 +35,10 @@ jobs:
       working-directory: nt-fe
       run: bun install
 
+    - name: Check formatting
+      working-directory: nt-fe
+      run: bun run format:check
+
     - name: Build
       working-directory: nt-fe
       run: bun run build

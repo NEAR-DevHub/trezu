@@ -13,7 +13,8 @@
       "version": "lts",
       "installYarnUsingApt": false
     },
-    "ghcr.io/devcontainers/features/desktop-lite:1": {}
+    "ghcr.io/devcontainers/features/desktop-lite:1": {},
+    "ghcr.io/devcontainers/features/sshd:1": {}
   },
   "forwardPorts": [6080, 5901, 5432, 5433],
   "portsAttributes": {
@@ -34,7 +35,8 @@
     "vscode": {
       "extensions": [
         "rust-lang.rust-analyzer",
-        "vadimcn.vscode-lldb"
+        "vadimcn.vscode-lldb",
+        "ms-ossdata.vscode-pgsql"
       ]
     }
   },
@@ -44,10 +46,8 @@
     "storage": "64gb"
   },
   "postCreateCommand": "bash .devcontainer/post-create.sh",
-  "postStartCommand": "bash .devcontainer/post-start.sh",
   "remoteUser": "vscode",
   "containerEnv": {
-    "DATABASE_URL": "postgresql://treasury_test:test_password@localhost:5433/treasury_test_db",
     "RUST_LOG": "info"
   }
 }

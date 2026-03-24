@@ -19,12 +19,18 @@ export interface ConfigDiff {
  * Compute the difference between two configs
  */
 export function computeConfigDiff(
-    oldConfig: { name: string | null; purpose: string | null; metadata: Record<string, any> | null } | null,
-    newConfig: { name: string; purpose: string; metadata: Record<string, any> }
+    oldConfig: {
+        name: string | null;
+        purpose: string | null;
+        metadata: Record<string, any> | null;
+    } | null,
+    newConfig: { name: string; purpose: string; metadata: Record<string, any> },
 ): ConfigDiff {
     const nameChanged = oldConfig?.name !== newConfig.name;
     const purposeChanged = oldConfig?.purpose !== newConfig.purpose;
-    const metadataChanged = JSON.stringify(oldConfig?.metadata) !== JSON.stringify(newConfig.metadata);
+    const metadataChanged =
+        JSON.stringify(oldConfig?.metadata) !==
+        JSON.stringify(newConfig.metadata);
 
     let changesCount = 0;
     if (nameChanged) changesCount++;
@@ -35,11 +41,17 @@ export function computeConfigDiff(
         const newMetadata = newConfig.metadata ?? {};
 
         // Get all unique keys from both old and new metadata
-        const allKeys = new Set([...Object.keys(oldMetadata), ...Object.keys(newMetadata)]);
+        const allKeys = new Set([
+            ...Object.keys(oldMetadata),
+            ...Object.keys(newMetadata),
+        ]);
 
         // Count how many keys have different values
         for (const key of allKeys) {
-            if (JSON.stringify(oldMetadata[key]) !== JSON.stringify(newMetadata[key])) {
+            if (
+                JSON.stringify(oldMetadata[key]) !==
+                JSON.stringify(newMetadata[key])
+            ) {
                 changesCount++;
             }
         }
@@ -58,4 +70,3 @@ export function computeConfigDiff(
         changesCount,
     };
 }
-

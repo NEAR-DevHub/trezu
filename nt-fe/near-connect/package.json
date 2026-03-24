@@ -1,0 +1,20 @@
+{
+    "name": "near-connect-trezu",
+    "version": "1.0.0",
+    "type": "commonjs",
+    "license": "MIT",
+    "author": "NEAR Dev Inc",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/NEAR-DevHub/treasury26"
+    },
+    "homepage": "https://github.com/NEAR-DevHub/treasury26",
+    "scripts": {
+        "build": "vite build",
+        "type-check": "tsc --noEmit"
+    },
+    "devDependencies": {
+        "typescript": "^5.2.2",
+        "vite": "^5.3.4"
+    }
+}

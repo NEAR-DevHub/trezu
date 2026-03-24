@@ -47,8 +47,8 @@ export function CreditsQuotaDisplay({
     const progressPercentage = isUnlimited
         ? 0
         : creditsTotal === 0
-            ? 0
-            : Math.min(100, (creditsUsed / creditsTotal) * 100);
+          ? 0
+          : Math.min(100, (creditsUsed / creditsTotal) * 100);
 
     // Format reset date
     const resetDate = formatResetDate(creditsResetAt);
@@ -91,4 +91,3 @@ export function CreditsQuotaDisplay({
         </div>
     );
 }
-

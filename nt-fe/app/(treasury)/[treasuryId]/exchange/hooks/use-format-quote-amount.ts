@@ -12,22 +12,27 @@ interface FormatQuoteAmountParams {
 /**
  * Hook to format token amounts from quote data with optimal precision
  * Calculates token price from quote USD value and formats with enough decimals to represent $0.01
- * 
+ *
  * @param params - Quote amount data and token decimals
  * @returns Formatted token amount string
  */
-export function useFormatQuoteAmount(params: FormatQuoteAmountParams | null): string {
+export function useFormatQuoteAmount(
+    params: FormatQuoteAmountParams | null,
+): string {
     return useMemo(() => {
         if (!params) {
             return "";
         }
 
-        const { amountOut, amountOutFormatted, amountOutUsd, tokenDecimals } = params;
+        const { amountOut, amountOutFormatted, amountOutUsd, tokenDecimals } =
+            params;
 
         try {
             // Calculate token price from USD value: price = usdValue / tokenAmount
             const usdValue = parseFloat(amountOutUsd || "0");
-            const tokenAmountDecimal = Big(amountOut).div(Big(10).pow(tokenDecimals));
+            const tokenAmountDecimal = Big(amountOut).div(
+                Big(10).pow(tokenDecimals),
+            );
             const tokenPrice = tokenAmountDecimal.gt(0)
                 ? usdValue / Number(tokenAmountDecimal.toString())
                 : 0;
@@ -40,4 +45,3 @@ export function useFormatQuoteAmount(params: FormatQuoteAmountParams | null): st
         }
     }, [params]);
 }
-

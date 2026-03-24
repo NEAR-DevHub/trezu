@@ -1,5 +1,7 @@
+pub mod address_book;
 pub mod balance_changes;
 pub mod bulkpayment;
+pub mod chains;
 pub mod dao;
 pub mod intents;
 pub mod lookup;

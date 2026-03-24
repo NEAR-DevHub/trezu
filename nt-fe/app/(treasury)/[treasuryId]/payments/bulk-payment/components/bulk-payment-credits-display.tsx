@@ -67,9 +67,11 @@ export function BulkPaymentCreditsDisplay({
                         Looking for more flexibility?
                     </span>
                     <Button
-                        variant={creditsAvailable === 0 ? "default" : "secondary"}
+                        variant={
+                            creditsAvailable === 0 ? "default" : "secondary"
+                        }
                         className="p-3"
-                        size='sm'
+                        size="sm"
                         onClick={() => {
                             window.open(APP_CONTACT_US_URL, "_blank");
                         }}

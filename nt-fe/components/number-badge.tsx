@@ -9,6 +9,7 @@ const styles = cva(
                 default: "bg-orange-500 text-white",
                 secondary: "bg-muted text-muted-foreground",
                 accent: "bg-general-unofficial-border text-foreground",
+                error: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
             },
             sizes: {
                 default: "size-5 px-2 py-[3px]",
@@ -28,7 +29,7 @@ export function NumberBadge({
     sizes = "default",
 }: {
     number: number;
-    variant?: "default" | "secondary" | "accent";
+    variant?: "default" | "secondary" | "accent" | "error";
     sizes?: "default" | "sm";
 }) {
     return (

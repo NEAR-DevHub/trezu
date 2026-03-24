@@ -1,8 +1,8 @@
 import Big from "@/lib/big";
-import { InputBlock } from "./input-block";
 import { Token } from "./token-input";
 import { formatCurrency } from "@/lib/utils";
 import { TokenDisplay } from "./token-display-with-network";
+import { SummaryBlock } from "./summary-block";
 
 interface AmountSummaryProps {
     total: Big | string;
@@ -31,46 +31,37 @@ export function AmountSummary({
     useInputBlock = true,
     showNetworkIcon = false,
 }: AmountSummaryProps) {
-    const totalString =
-        total instanceof Big ? total.toString() : total.toString();
+    const totalString = total.toString();
 
-    const content = (
-        <div className="flex flex-col gap-2 p-2 text-xs text-muted-foreground text-center justify-center items-center">
-            <p className="font-medium text-xs">{title}</p>
-            <TokenDisplay
-                symbol={token.symbol}
-                icon={token.icon || ""}
-                chainIcons={showNetworkIcon ? token.chainIcons : undefined}
-                iconSize="xl"
-            />
-            <div className="flex flex-col gap-0.5 max-w-full">
+    return (
+        <SummaryBlock
+            title={title}
+            useInputBlock={useInputBlock}
+            icon={
+                <TokenDisplay
+                    symbol={token.symbol}
+                    icon={token.icon || ""}
+                    chainIcons={showNetworkIcon ? token.chainIcons : undefined}
+                    iconSize="xl"
+                />
+            }
+            secondRow={
                 <p className="text-lg font-semibold text-foreground break-all">
                     {totalString}{" "}
                     <span className="text-muted-foreground font-medium text-xs">
                         {token.symbol}
                     </span>
                 </p>
-                {totalUSD && (
+            }
+            subRow={
+                totalUSD ? (
                     <p className="text-xxs text-muted-foreground break-all">
                         ≈{formatCurrency(totalUSD)}
                     </p>
-                )}
-            </div>
-            <div>{children}</div>
-        </div>
-    );
-
-    if (!useInputBlock) {
-        return (
-            <div className="w-full max-w-[280px] rounded-lg border bg-muted h-[180px] flex items-center justify-center">
-                {content}
-            </div>
-        );
-    }
-
-    return (
-        <InputBlock title="" invalid={false}>
-            {content}
-        </InputBlock>
+                ) : undefined
+            }
+        >
+            {children}
+        </SummaryBlock>
     );
 }

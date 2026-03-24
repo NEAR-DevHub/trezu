@@ -291,9 +291,7 @@ export default function RequestsPage() {
             value: "InProgress",
             label: "Pending",
             trigger:
-                !!pendingCount &&
-                pendingCount > 0 &&
-                currentTab !== "InProgress" ? (
+                !!pendingCount && pendingCount > 0 ? (
                     <NumberBadge number={pendingCount} variant="secondary" />
                 ) : undefined,
         },

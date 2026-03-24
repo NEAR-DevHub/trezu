@@ -64,15 +64,19 @@ export interface FunctionCallData {
 }
 
 export interface PolicyChange {
-    field: "proposal_bond" | "proposal_period" | "bounty_bond" | "bounty_forgiveness_period";
+    field:
+        | "proposal_bond"
+        | "proposal_period"
+        | "bounty_bond"
+        | "bounty_forgiveness_period";
     oldValue: string | null;
     newValue: string | null;
 }
 
 export interface MemberRoleChange {
     member: string;
-    oldRoles?: string[] | null;  // Previous roles (groups) the member was assigned to
-    newRoles?: string[] | null;  // New roles (groups) the member is assigned to
+    oldRoles?: string[] | null; // Previous roles (groups) the member was assigned to
+    newRoles?: string[] | null; // New roles (groups) the member is assigned to
 }
 
 export interface RoleDefinitionChange {
@@ -128,7 +132,12 @@ export interface StakingData {
     tokenId: string;
     amount: string;
     receiver: string;
-    action: "stake" | "deposit" | "deposit_and_stake" | "Withdraw Earnings" | "unstake";
+    action:
+        | "stake"
+        | "deposit"
+        | "deposit_and_stake"
+        | "Withdraw Earnings"
+        | "unstake";
     sourceWallet: "Lockup" | "Wallet";
     validatorUrl: string;
     isLockup: boolean;
@@ -253,32 +262,32 @@ export interface ProposalTypeDataMap {
     "Earn NEAR": StakingData;
     "Unstake NEAR": StakingData;
     "Withdraw Earnings": StakingData;
-    "Vesting": VestingData;
-    "Exchange": SwapRequestData;
+    Vesting: VestingData;
+    Exchange: SwapRequestData;
     "Batch Payment Request": BatchPaymentRequestData;
-    "Members": MembersData;
-    "Upgrade": UpgradeData;
+    Members: MembersData;
+    Upgrade: UpgradeData;
     "Set Staking Contract": SetStakingContractData;
-    "Bounty": BountyData;
-    "Vote": VoteData;
+    Bounty: BountyData;
+    Vote: VoteData;
     "Factory Info Update": FactoryInfoUpdateData;
-    "Unsupported": UnknownData;
+    Unsupported: UnknownData;
 }
 
 /**
  * Extract proposal data based on type
  * @template T The proposal UI kind
  */
-export type ProposalDataForType<T extends ProposalUIKind> = ProposalTypeDataMap[T];
+export type ProposalDataForType<T extends ProposalUIKind> =
+    ProposalTypeDataMap[T];
 
 /**
  * Helper type for proposal data extractors
  * These functions extract and normalize data from raw proposals
  */
 export type ProposalDataExtractor<T extends ProposalUIKind> = (
-    proposal: Proposal
+    proposal: Proposal,
 ) => ProposalDataForType<T> | null;
-
 
 /**
  * Union type of all proposal data structures

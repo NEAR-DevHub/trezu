@@ -4,7 +4,11 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/button";
 import { Plus, ChevronDown } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/input";
 import { DateTimePicker } from "@/components/ui/datepicker";
@@ -45,8 +49,8 @@ const USER_OPERATIONS = ["Is", "Is Not"];
 interface TokenOption {
     id: string;
     name: string;
-    symbol: string;
-    icon: string;
+    icon?: string;
+    gradient?: string;
 }
 
 export interface FilterOption {
@@ -62,7 +66,10 @@ interface ProposalFiltersProps {
     filterOptions: FilterOption[];
 }
 
-export function ProposalFilters({ className, filterOptions }: ProposalFiltersProps) {
+export function ProposalFilters({
+    className,
+    filterOptions,
+}: ProposalFiltersProps) {
     const searchParams = useSearchParams();
     const router = useRouter();
     const pathname = usePathname();
@@ -91,7 +98,7 @@ export function ProposalFilters({ className, filterOptions }: ProposalFiltersPro
             params.delete("page"); // Reset page when filters change
             router.push(`${pathname}?${params.toString()}`);
         },
-        [searchParams, router, pathname]
+        [searchParams, router, pathname],
     );
 
     const resetFilters = () => {
@@ -106,7 +113,7 @@ export function ProposalFilters({ className, filterOptions }: ProposalFiltersPro
     };
 
     const availableFilters = filterOptions.filter(
-        (opt) => !activeFilters.includes(opt.id)
+        (opt) => !activeFilters.includes(opt.id),
     );
 
     return (
@@ -122,7 +129,9 @@ export function ProposalFilters({ className, filterOptions }: ProposalFiltersPro
 
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
                 {activeFilters.map((filterId) => {
-                    const filterOption = filterOptions.find((o) => o.id === filterId);
+                    const filterOption = filterOptions.find(
+                        (o) => o.id === filterId,
+                    );
                     return (
                         <FilterPill
                             key={filterId}
@@ -130,7 +139,9 @@ export function ProposalFilters({ className, filterOptions }: ProposalFiltersPro
                             label={filterOption?.label || ""}
                             value={searchParams.get(filterId) || ""}
                             onRemove={() => removeFilter(filterId)}
-                            onUpdate={(val) => updateFilters({ [filterId]: val })}
+                            onUpdate={(val) =>
+                                updateFilters({ [filterId]: val })
+                            }
                             minDate={filterOption?.minDate}
                             maxDate={filterOption?.maxDate}
                             hideAmount={filterOption?.hideAmount}
@@ -139,7 +150,10 @@ export function ProposalFilters({ className, filterOptions }: ProposalFiltersPro
                 })}
 
                 {availableFilters.length > 0 && (
-                    <Popover open={isAddFilterOpen} onOpenChange={setIsAddFilterOpen}>
+                    <Popover
+                        open={isAddFilterOpen}
+                        onOpenChange={setIsAddFilterOpen}
+                    >
                         <PopoverTrigger asChild>
                             <Button
                                 variant="ghost"
@@ -150,7 +164,10 @@ export function ProposalFilters({ className, filterOptions }: ProposalFiltersPro
                                 Add Filter
                             </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-fit p-0 min-w-36" align="start">
+                        <PopoverContent
+                            className="w-fit p-0 min-w-36"
+                            align="start"
+                        >
                             <div className="flex flex-col">
                                 {availableFilters.map((filter) => (
                                     <Button
@@ -185,7 +202,16 @@ interface FilterPillProps {
     hideAmount?: boolean;
 }
 
-function FilterPill({ id, label, value, onRemove, onUpdate, minDate, maxDate, hideAmount }: FilterPillProps) {
+function FilterPill({
+    id,
+    label,
+    value,
+    onRemove,
+    onUpdate,
+    minDate,
+    maxDate,
+    hideAmount,
+}: FilterPillProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     // Single unified parsing - no backward compatibility
@@ -194,26 +220,81 @@ function FilterPill({ id, label, value, onRemove, onUpdate, minDate, maxDate, hi
     }, [value]);
 
     const displayValue = useMemo(() => {
-        if (!value || filterData) return 'ALL'; // Use custom rendering for all filter types
+        if (!value || filterData) return "ALL"; // Use custom rendering for all filter types
         return value;
     }, [value, filterData]);
 
     const renderFilterContent = () => {
         switch (id) {
             case "recipients":
-                return <UserFilterContent value={value} onUpdate={onUpdate} setIsOpen={setIsOpen} onRemove={onRemove} label={label} />;
+                return (
+                    <UserFilterContent
+                        value={value}
+                        onUpdate={onUpdate}
+                        setIsOpen={setIsOpen}
+                        onRemove={onRemove}
+                        label={label}
+                    />
+                );
             case "proposers":
-                return <UserFilterContent value={value} onUpdate={onUpdate} setIsOpen={setIsOpen} onRemove={onRemove} label={label} />;
+                return (
+                    <UserFilterContent
+                        value={value}
+                        onUpdate={onUpdate}
+                        setIsOpen={setIsOpen}
+                        onRemove={onRemove}
+                        label={label}
+                    />
+                );
             case "approvers":
-                return <UserFilterContent value={value} onUpdate={onUpdate} setIsOpen={setIsOpen} onRemove={onRemove} label={label} />;
+                return (
+                    <UserFilterContent
+                        value={value}
+                        onUpdate={onUpdate}
+                        setIsOpen={setIsOpen}
+                        onRemove={onRemove}
+                        label={label}
+                    />
+                );
             case "proposal_types":
-                return <ProposalTypeFilterContent value={value} onUpdate={onUpdate} setIsOpen={setIsOpen} onRemove={onRemove} />;
+                return (
+                    <ProposalTypeFilterContent
+                        value={value}
+                        onUpdate={onUpdate}
+                        setIsOpen={setIsOpen}
+                        onRemove={onRemove}
+                    />
+                );
             case "created_date":
-                return <CreatedDateFilterContent value={value} onUpdate={onUpdate} setIsOpen={setIsOpen} onRemove={onRemove} minDate={minDate} maxDate={maxDate} />;
+                return (
+                    <CreatedDateFilterContent
+                        value={value}
+                        onUpdate={onUpdate}
+                        setIsOpen={setIsOpen}
+                        onRemove={onRemove}
+                        minDate={minDate}
+                        maxDate={maxDate}
+                    />
+                );
             case "token":
-                return <TokenFilterContent value={value} onUpdate={onUpdate} setIsOpen={setIsOpen} onRemove={onRemove} hideAmount={hideAmount} />;
+                return (
+                    <TokenFilterContent
+                        value={value}
+                        onUpdate={onUpdate}
+                        setIsOpen={setIsOpen}
+                        onRemove={onRemove}
+                        hideAmount={hideAmount}
+                    />
+                );
             case "my_vote":
-                return <MyVoteFilterContent value={value} onUpdate={onUpdate} setIsOpen={setIsOpen} onRemove={onRemove} />;
+                return (
+                    <MyVoteFilterContent
+                        value={value}
+                        onUpdate={onUpdate}
+                        setIsOpen={setIsOpen}
+                        onRemove={onRemove}
+                    />
+                );
         }
     };
 
@@ -228,11 +309,13 @@ function FilterPill({ id, label, value, onRemove, onUpdate, minDate, maxDate, hi
     };
 
     const renderFilterDisplay = () => {
-        if (!filterData) return <span className="font-medium">{displayValue}</span>;
+        if (!filterData)
+            return <span className="font-medium">{displayValue}</span>;
 
         // Token filter display
         if (id === "token" && (filterData as any).token) {
-            const { operation, token, amountOperation, minAmount, maxAmount } = filterData as any;
+            const { operation, token, amountOperation, minAmount, maxAmount } =
+                filterData as any;
             let amountDisplay = "";
             if (operation === "Is" && (minAmount || maxAmount)) {
                 if (amountOperation === "Between" && minAmount && maxAmount) {
@@ -248,15 +331,26 @@ function FilterPill({ id, label, value, onRemove, onUpdate, minDate, maxDate, hi
 
             return (
                 <div className="flex items-center gap-1.5">
-                    {token.icon?.startsWith("http") || token.icon?.startsWith("data:") ? (
-                        <img src={token.icon} alt={token.symbol} className="w-4 h-4 rounded-full object-contain" />
+                    {token.icon?.startsWith("http") ||
+                    token.icon?.startsWith("data:") ? (
+                        <img
+                            src={token.icon}
+                            alt={token.symbol}
+                            className="w-4 h-4 rounded-full object-contain"
+                        />
                     ) : (
                         <div className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[8px] font-bold bg-gradient-cyan-blue">
                             <span>{token.icon}</span>
                         </div>
                     )}
-                    {amountDisplay && <span className="text-sm text-foreground">{amountDisplay}</span>}
-                    <span className="text-sm text-foreground">{token.symbol}</span>
+                    {amountDisplay && (
+                        <span className="text-sm text-foreground">
+                            {amountDisplay}
+                        </span>
+                    )}
+                    <span className="text-sm text-foreground">
+                        {token.symbol}
+                    </span>
                 </div>
             );
         }
@@ -264,47 +358,78 @@ function FilterPill({ id, label, value, onRemove, onUpdate, minDate, maxDate, hi
         // My Vote filter display
         if (id === "my_vote" && (filterData as any).selected) {
             const selected = (filterData as any).selected as string[];
-            if (selected.length === 0) return 'ALL';
-            return <span className="font-medium text-sm">{selected.join(", ")}</span>;
+            if (selected.length === 0) return "ALL";
+            return (
+                <span className="font-medium text-sm">
+                    {selected.join(", ")}
+                </span>
+            );
         }
 
         // Proposal Type filter display
         if (id === "proposal_types" && (filterData as any).selected) {
             const selected = (filterData as any).selected as string[];
-            if (selected.length === 0) return 'ALL';
-            return <span className="font-medium text-sm">{selected.join(", ")}</span>;
+            if (selected.length === 0) return "ALL";
+            return (
+                <span className="font-medium text-sm">
+                    {selected.join(", ")}
+                </span>
+            );
         }
 
         // Date filter display
         if (id === "created_date" && (filterData as any).dateRange) {
             try {
                 const { from, to } = (filterData as any).dateRange;
-                if (!from && !to) return 'ALL';
+                if (!from && !to) return "ALL";
                 if (from && to && !isSameDay(new Date(from), new Date(to))) {
-                    return <span className="font-medium text-sm">{format(new Date(from), "MMM d, yyyy")} - {format(new Date(to), "MMM d, yyyy")}</span>;
+                    return (
+                        <span className="font-medium text-sm">
+                            {format(new Date(from), "MMM d, yyyy")} -{" "}
+                            {format(new Date(to), "MMM d, yyyy")}
+                        </span>
+                    );
                 } else if (from) {
-                    return <span className="font-medium text-sm">{format(new Date(from), "MMM d, yyyy")}</span>;
+                    return (
+                        <span className="font-medium text-sm">
+                            {format(new Date(from), "MMM d, yyyy")}
+                        </span>
+                    );
                 }
             } catch {
-                return <span className="font-medium text-sm">Invalid date</span>;
+                return (
+                    <span className="font-medium text-sm">Invalid date</span>
+                );
             }
         }
 
         // User filter display (recipients, proposers, approvers)
-        if ((id === "recipients" || id === "proposers" || id === "approvers") && (filterData as any).users) {
+        if (
+            (id === "recipients" || id === "proposers" || id === "approvers") &&
+            (filterData as any).users
+        ) {
             const users = (filterData as any).users as string[];
-            if (users.length === 0) return 'ALL';
+            if (users.length === 0) return "ALL";
             return (
                 <div className="flex items-center">
                     {users.slice(0, 3).map((accountId, index) => (
                         <TooltipUser key={accountId} accountId={accountId}>
-                            <div className="cursor-pointer" style={{ marginLeft: index > 0 ? '-6px' : '0' }}>
-                                <User accountId={accountId} iconOnly withName={false} />
+                            <div
+                                className="cursor-pointer"
+                                style={{ marginLeft: index > 0 ? "-6px" : "0" }}
+                            >
+                                <User
+                                    accountId={accountId}
+                                    iconOnly
+                                    withName={false}
+                                />
                             </div>
                         </TooltipUser>
                     ))}
                     {users.length > 3 && (
-                        <span className="text-xs text-muted-foreground ml-1">+{users.length - 3}</span>
+                        <span className="text-xs text-muted-foreground ml-1">
+                            +{users.length - 3}
+                        </span>
                     )}
                 </div>
             );
@@ -323,7 +448,8 @@ function FilterPill({ id, label, value, onRemove, onUpdate, minDate, maxDate, hi
                         className="h-9 bg-secondary hover:bg-secondary px-3 font-normal gap-1.5"
                     >
                         <span className="text-muted-foreground">
-                            {label}{getOperationSuffix()}:
+                            {label}
+                            {getOperationSuffix()}:
                         </span>
                         {renderFilterDisplay()}
                         <ChevronDown className="h-3 w-3 text-muted-foreground ml-1" />
@@ -352,26 +478,34 @@ interface TokenData {
     maxAmount?: string;
 }
 
-function TokenFilterContent({ value, onUpdate, setIsOpen, onRemove, hideAmount }: TokenFilterContentProps) {
-    const { operation, setOperation, data, setData, handleClear } = useFilterState<TokenData>({
-        value,
-        onUpdate,
-        parseData: (parsed) => ({
-            token: parsed.token,
-            amountOperation: parsed.amountOperation || "Between",
-            minAmount: parsed.minAmount || "",
-            maxAmount: parsed.maxAmount || ""
-        }),
-        serializeData: (op, d) => ({
-            operation: op,
-            token: d.token,
-            ...(op === "Is" && !hideAmount && {
-                amountOperation: d.amountOperation,
-                minAmount: d.minAmount,
-                maxAmount: d.maxAmount
-            })
-        })
-    });
+function TokenFilterContent({
+    value,
+    onUpdate,
+    setIsOpen,
+    onRemove,
+    hideAmount,
+}: TokenFilterContentProps) {
+    const { operation, setOperation, data, setData, handleClear } =
+        useFilterState<TokenData>({
+            value,
+            onUpdate,
+            parseData: (parsed) => ({
+                token: parsed.token,
+                amountOperation: parsed.amountOperation || "Between",
+                minAmount: parsed.minAmount || "",
+                maxAmount: parsed.maxAmount || "",
+            }),
+            serializeData: (op, d) => ({
+                operation: op,
+                token: d.token,
+                ...(op === "Is" &&
+                    !hideAmount && {
+                        amountOperation: d.amountOperation,
+                        minAmount: d.minAmount,
+                        maxAmount: d.maxAmount,
+                    }),
+            }),
+        });
 
     const handleDelete = () => {
         onRemove();
@@ -380,10 +514,11 @@ function TokenFilterContent({ value, onUpdate, setIsOpen, onRemove, hideAmount }
 
     const updateData = (updates: Partial<TokenData>) => {
         setData({
-            token: updates.token ?? data?.token as any,
-            amountOperation: updates.amountOperation ?? data?.amountOperation ?? "Between",
+            token: updates.token ?? (data?.token as any),
+            amountOperation:
+                updates.amountOperation ?? data?.amountOperation ?? "Between",
             minAmount: updates.minAmount ?? data?.minAmount ?? "",
-            maxAmount: updates.maxAmount ?? data?.maxAmount ?? ""
+            maxAmount: updates.maxAmount ?? data?.maxAmount ?? "",
         });
     };
 
@@ -408,35 +543,52 @@ function TokenFilterContent({ value, onUpdate, setIsOpen, onRemove, hideAmount }
             {!hideAmount && data?.token && operation === "Is" && (
                 <>
                     <div className="py-2 px-2 flex items-baseline gap-1">
-                        <span className="text-xs  text-muted-foreground">Amount</span>
+                        <span className="text-xs  text-muted-foreground">
+                            Amount
+                        </span>
                         <OperationSelect
                             operations={AMOUNT_OPERATIONS}
-                            selectedOperation={data.amountOperation || "Between"}
-                            onOperationChange={(op) => updateData({ amountOperation: op })}
+                            selectedOperation={
+                                data.amountOperation || "Between"
+                            }
+                            onOperationChange={(op) =>
+                                updateData({ amountOperation: op })
+                            }
                         />
                     </div>
-
 
                     <div className="px-2 py-1">
                         {data.amountOperation === "Between" ? (
                             <div className="flex-col flex gap-2">
                                 <div className="flex flex-col gap-1">
-                                    <span className="text-sm text-foreground font-medium">From</span>
+                                    <span className="text-sm text-foreground font-medium">
+                                        From
+                                    </span>
                                     <Input
                                         type="number"
                                         placeholder="Min"
                                         value={data.minAmount || ""}
-                                        onChange={(e) => updateData({ minAmount: e.target.value })}
+                                        onChange={(e) =>
+                                            updateData({
+                                                minAmount: e.target.value,
+                                            })
+                                        }
                                         className="h-8 text-sm"
                                     />
                                 </div>
                                 <div className="flex flex-col gap-1">
-                                    <span className="text-sm text-foreground font-medium">To</span>
+                                    <span className="text-sm text-foreground font-medium">
+                                        To
+                                    </span>
                                     <Input
                                         type="number"
                                         placeholder="Max"
                                         value={data.maxAmount || ""}
-                                        onChange={(e) => updateData({ maxAmount: e.target.value })}
+                                        onChange={(e) =>
+                                            updateData({
+                                                maxAmount: e.target.value,
+                                            })
+                                        }
                                         className="h-8 text-sm"
                                     />
                                 </div>
@@ -446,20 +598,26 @@ function TokenFilterContent({ value, onUpdate, setIsOpen, onRemove, hideAmount }
                                 type="number"
                                 placeholder="Amount"
                                 value={data.minAmount || ""}
-                                onChange={(e) => updateData({ minAmount: e.target.value })}
+                                onChange={(e) =>
+                                    updateData({ minAmount: e.target.value })
+                                }
                                 className="h-8 text-sm"
                             />
                         )}
                     </div>
                 </>
-            )
-            }
-        </BaseFilterPopover >
+            )}
+        </BaseFilterPopover>
     );
 }
 
 // My Vote filter using unified CheckboxFilterContent
-function MyVoteFilterContent({ value, onUpdate, setIsOpen, onRemove }: {
+function MyVoteFilterContent({
+    value,
+    onUpdate,
+    setIsOpen,
+    onRemove,
+}: {
     value: string;
     onUpdate: (value: string) => void;
     setIsOpen: (isOpen: boolean) => void;
@@ -473,13 +631,21 @@ function MyVoteFilterContent({ value, onUpdate, setIsOpen, onRemove }: {
             onRemove={onRemove}
             filterLabel="My Vote Status"
             operations={MY_VOTE_OPERATIONS}
-            options={MY_VOTE_OPTIONS.map(vote => ({ value: vote, label: vote }))}
+            options={MY_VOTE_OPTIONS.map((vote) => ({
+                value: vote,
+                label: vote,
+            }))}
         />
     );
 }
 
 // Proposal Type filter using unified CheckboxFilterContent
-function ProposalTypeFilterContent({ value, onUpdate, setIsOpen, onRemove }: {
+function ProposalTypeFilterContent({
+    value,
+    onUpdate,
+    setIsOpen,
+    onRemove,
+}: {
     value: string;
     onUpdate: (value: string) => void;
     setIsOpen: (isOpen: boolean) => void;
@@ -493,7 +659,10 @@ function ProposalTypeFilterContent({ value, onUpdate, setIsOpen, onRemove }: {
             onRemove={onRemove}
             filterLabel="Request Type"
             operations={PROPOSAL_TYPE_OPERATIONS}
-            options={PROPOSAL_TYPE_OPTIONS.map(type => ({ value: type, label: type }))}
+            options={PROPOSAL_TYPE_OPTIONS.map((type) => ({
+                value: type,
+                label: type,
+            }))}
         />
     );
 }
@@ -514,27 +683,43 @@ interface DateData {
     };
 }
 
-function CreatedDateFilterContent({ value, onUpdate, setIsOpen, onRemove, minDate, maxDate }: CreatedDateFilterContentProps) {
-    const { operation, setOperation, data, setData, handleClear } = useFilterState<DateData>({
-        value,
-        onUpdate,
-        parseData: (parsed) => ({
-            dateRange: parsed.dateRange ? {
-                from: parsed.dateRange.from ? new Date(parsed.dateRange.from) : undefined,
-                to: parsed.dateRange.to ? new Date(parsed.dateRange.to) : undefined
-            } : {
-                from: undefined,
-                to: undefined
-            }
-        }),
-        serializeData: (op, d) => ({
-            operation: op,
-            dateRange: d.dateRange ? {
-                from: d.dateRange.from?.toISOString(),
-                to: d.dateRange.to?.toISOString()
-            } : undefined
-        })
-    });
+function CreatedDateFilterContent({
+    value,
+    onUpdate,
+    setIsOpen,
+    onRemove,
+    minDate,
+    maxDate,
+}: CreatedDateFilterContentProps) {
+    const { operation, setOperation, data, setData, handleClear } =
+        useFilterState<DateData>({
+            value,
+            onUpdate,
+            parseData: (parsed) => ({
+                dateRange: parsed.dateRange
+                    ? {
+                          from: parsed.dateRange.from
+                              ? new Date(parsed.dateRange.from)
+                              : undefined,
+                          to: parsed.dateRange.to
+                              ? new Date(parsed.dateRange.to)
+                              : undefined,
+                      }
+                    : {
+                          from: undefined,
+                          to: undefined,
+                      },
+            }),
+            serializeData: (op, d) => ({
+                operation: op,
+                dateRange: d.dateRange
+                    ? {
+                          from: d.dateRange.from?.toISOString(),
+                          to: d.dateRange.to?.toISOString(),
+                      }
+                    : undefined,
+            }),
+        });
 
     const handleDelete = () => {
         onRemove();
@@ -562,17 +747,37 @@ function CreatedDateFilterContent({ value, onUpdate, setIsOpen, onRemove, minDat
                 <div className="h-full w-full flex items-center justify-center">
                     <DateTimePicker
                         mode="range"
-                        value={data?.dateRange ? { from: data?.dateRange.from, to: data?.dateRange.to } : undefined}
+                        value={
+                            data?.dateRange
+                                ? {
+                                      from: data?.dateRange.from,
+                                      to: data?.dateRange.to,
+                                  }
+                                : undefined
+                        }
                         onChange={(range) => {
-                            if (range && typeof range === 'object' && 'from' in range) {
+                            if (
+                                range &&
+                                typeof range === "object" &&
+                                "from" in range
+                            ) {
                                 setData({
                                     dateRange: {
-                                        from: range.from ? startOfDay(range.from) : undefined,
-                                        to: range.to ? endOfDay(range.to) : undefined
-                                    }
+                                        from: range.from
+                                            ? startOfDay(range.from)
+                                            : undefined,
+                                        to: range.to
+                                            ? endOfDay(range.to)
+                                            : undefined,
+                                    },
                                 });
                             } else {
-                                setData({ dateRange: { from: undefined, to: undefined } });
+                                setData({
+                                    dateRange: {
+                                        from: undefined,
+                                        to: undefined,
+                                    },
+                                });
                             }
                         }}
                         defaultMonth={defaultMonth}
@@ -598,22 +803,29 @@ interface UserData {
     users: string[];
 }
 
-function UserFilterContent({ value, onUpdate, setIsOpen, onRemove, label }: UserFilterContentProps) {
+function UserFilterContent({
+    value,
+    onUpdate,
+    setIsOpen,
+    onRemove,
+    label,
+}: UserFilterContentProps) {
     const { treasuryId } = useTreasury();
     const { recentAddresses, addRecentAddress } = useRecentAddresses();
     const [searchQuery, setSearchQuery] = useState("");
 
-    const { operation, setOperation, data, setData, handleClear } = useFilterState<UserData>({
-        value,
-        onUpdate,
-        parseData: (parsed) => ({
-            users: parsed.users || []
-        }),
-        serializeData: (op, d) => ({
-            operation: op,
-            users: d.users
-        })
-    });
+    const { operation, setOperation, data, setData, handleClear } =
+        useFilterState<UserData>({
+            value,
+            onUpdate,
+            parseData: (parsed) => ({
+                users: parsed.users || [],
+            }),
+            serializeData: (op, d) => ({
+                operation: op,
+                users: d.users,
+            }),
+        });
 
     // Determine which user list type to fetch based on label
     const userListType: UserListType = useMemo(() => {
@@ -623,7 +835,10 @@ function UserFilterContent({ value, onUpdate, setIsOpen, onRemove, label }: User
     }, [label]);
 
     // Fetch the appropriate user list using the unified hook
-    const { users: fetchedUsers, isLoading: isLoadingMembers } = useDaoUsers(treasuryId ?? null, userListType);
+    const { users: fetchedUsers, isLoading: isLoadingMembers } = useDaoUsers(
+        treasuryId ?? null,
+        userListType,
+    );
 
     // Use fetched users as suggestions
     const memberSuggestions = useMemo(() => {
@@ -638,13 +853,17 @@ function UserFilterContent({ value, onUpdate, setIsOpen, onRemove, label }: User
         // Combine DAO members with selected users and recent addresses that aren't already in DAO members
         const allUsers = new Set([
             ...memberSuggestions,
-            ...selectedUsers.filter(user => !memberSuggestions.includes(user)),
-            ...recentAddresses.filter(addr => !memberSuggestions.includes(addr))
+            ...selectedUsers.filter(
+                (user) => !memberSuggestions.includes(user),
+            ),
+            ...recentAddresses.filter(
+                (addr) => !memberSuggestions.includes(addr),
+            ),
         ]);
 
         // Filter based on search query, then sort with checked users at top
         return Array.from(allUsers)
-            .filter(accountId => accountId.toLowerCase().includes(query))
+            .filter((accountId) => accountId.toLowerCase().includes(query))
             .sort((a, b) => {
                 const aSelected = selectedUsers.includes(a);
                 const bSelected = selectedUsers.includes(b);
@@ -666,7 +885,7 @@ function UserFilterContent({ value, onUpdate, setIsOpen, onRemove, label }: User
     const handleToggleUser = (accountId: string) => {
         const currentUsers = data?.users || [];
         if (currentUsers.includes(accountId)) {
-            setData({ users: currentUsers.filter(u => u !== accountId) });
+            setData({ users: currentUsers.filter((u) => u !== accountId) });
         } else {
             setData({ users: [...currentUsers, accountId] });
             addRecentAddress(accountId);
@@ -715,11 +934,16 @@ function UserFilterContent({ value, onUpdate, setIsOpen, onRemove, label }: User
                         Loading members...
                     </div>
                 ) : (
-                    <ScrollArea className="h-60 [&>[data-radix-scroll-area-viewport]>div]:block!" type="always" >
+                    <ScrollArea
+                        className="h-60 [&>[data-radix-scroll-area-viewport]>div]:block!"
+                        type="always"
+                    >
                         {filteredMembers.length > 0 && (
                             <div className="flex flex-col">
                                 {filteredMembers.map((accountId) => {
-                                    const isSelected = data?.users?.includes(accountId) || false;
+                                    const isSelected =
+                                        data?.users?.includes(accountId) ||
+                                        false;
                                     return (
                                         <label
                                             key={accountId}
@@ -727,11 +951,18 @@ function UserFilterContent({ value, onUpdate, setIsOpen, onRemove, label }: User
                                         >
                                             <Checkbox
                                                 checked={isSelected}
-                                                onCheckedChange={() => handleToggleUser(accountId)}
+                                                onCheckedChange={() =>
+                                                    handleToggleUser(accountId)
+                                                }
                                                 className="shrink-0"
                                             />
                                             <div className="min-w-0">
-                                                <User accountId={accountId} iconOnly={false} withLink={false} size="sm" />
+                                                <User
+                                                    accountId={accountId}
+                                                    iconOnly={false}
+                                                    withLink={false}
+                                                    size="sm"
+                                                />
                                             </div>
                                         </label>
                                     );
@@ -741,7 +972,8 @@ function UserFilterContent({ value, onUpdate, setIsOpen, onRemove, label }: User
 
                         {searchQuery && filteredMembers.length === 0 && (
                             <p className="text-xs text-muted-foreground text-center py-2">
-                                No members found. Press Enter to add "{searchQuery}"
+                                No members found. Press Enter to add "
+                                {searchQuery}"
                             </p>
                         )}
 
@@ -756,4 +988,3 @@ function UserFilterContent({ value, onUpdate, setIsOpen, onRemove, label }: User
         </BaseFilterPopover>
     );
 }
-

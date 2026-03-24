@@ -39,6 +39,10 @@ pub struct EnvVars {
     // Intents Explorer API configuration
     pub intents_explorer_api_key: Option<String>,
     pub intents_explorer_api_url: String,
+    // Goldsky enrichment: Postgres (read-only Goldsky sink)
+    pub goldsky_database_url: Option<String>,
+    // Feature flags
+    pub disable_staking_rewards: bool,
 }
 
 impl Default for EnvVars {
@@ -147,6 +151,13 @@ impl Default for EnvVars {
                 .filter(|s| !s.is_empty()),
             intents_explorer_api_url: std::env::var("INTENTS_EXPLORER_API_URL")
                 .unwrap_or_else(|_| "https://explorer.near-intents.org/api/v0".to_string()),
+            goldsky_database_url: std::env::var("GOLDSKY_DATABASE_URL")
+                .ok()
+                .filter(|s| !s.is_empty()),
+            disable_staking_rewards: std::env::var("DISABLE_STAKING_REWARDS")
+                .unwrap_or_else(|_| "false".to_string())
+                .parse()
+                .unwrap_or(false),
         }
     }
 }

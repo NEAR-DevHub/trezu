@@ -11,7 +11,10 @@ import {
  * Helper function to compute member-level role changes
  * A member can belong to multiple roles (groups)
  */
-export function computeMemberRoleChanges(currentPolicy: Policy, newPolicy: Policy): RoleChange {
+export function computeMemberRoleChanges(
+    currentPolicy: Policy,
+    newPolicy: Policy,
+): RoleChange {
     const addedMembers: MemberRoleChange[] = [];
     const removedMembers: MemberRoleChange[] = [];
     const updatedMembers: MemberRoleChange[] = [];
@@ -40,7 +43,10 @@ export function computeMemberRoleChanges(currentPolicy: Policy, newPolicy: Polic
     }
 
     // Get all unique members
-    const allMembers = new Set([...currentMemberRoles.keys(), ...newMemberRoles.keys()]);
+    const allMembers = new Set([
+        ...currentMemberRoles.keys(),
+        ...newMemberRoles.keys(),
+    ]);
 
     for (const member of allMembers) {
         const oldRoles = currentMemberRoles.get(member) || [];
@@ -62,7 +68,9 @@ export function computeMemberRoleChanges(currentPolicy: Policy, newPolicy: Polic
                 member,
                 oldRoles: oldRolesSorted,
             });
-        } else if (JSON.stringify(oldRolesSorted) !== JSON.stringify(newRolesSorted)) {
+        } else if (
+            JSON.stringify(oldRolesSorted) !== JSON.stringify(newRolesSorted)
+        ) {
             // Member's roles changed
             updatedMembers.push({
                 member,
@@ -73,8 +81,10 @@ export function computeMemberRoleChanges(currentPolicy: Policy, newPolicy: Polic
     }
 
     // Compare role definitions (vote policies and permissions)
-    const currentRoleMap = new Map(currentPolicy?.roles?.map(r => [r.name, r]) || []);
-    const newRoleMap = new Map(newPolicy.roles.map(r => [r.name, r]));
+    const currentRoleMap = new Map(
+        currentPolicy?.roles?.map((r) => [r.name, r]) || [],
+    );
+    const newRoleMap = new Map(newPolicy.roles.map((r) => [r.name, r]));
 
     // Check all roles that exist in both policies
     for (const [roleName, newRole] of newRoleMap) {
@@ -82,17 +92,21 @@ export function computeMemberRoleChanges(currentPolicy: Policy, newPolicy: Polic
         if (!oldRole) continue; // Skip newly added roles (they don't have old values to compare)
 
         // For each proposal kind in the role's vote_policy
-        for (const [proposalKind, newVotePolicy] of Object.entries(newRole.vote_policy)) {
+        for (const [proposalKind, newVotePolicy] of Object.entries(
+            newRole.vote_policy,
+        )) {
             const oldVotePolicy = oldRole.vote_policy[proposalKind];
             if (!oldVotePolicy) continue; // Skip if this proposal kind didn't exist before
 
             const hasChanges =
                 oldVotePolicy.weight_kind !== newVotePolicy.weight_kind ||
                 oldVotePolicy.quorum !== newVotePolicy.quorum ||
-                JSON.stringify(oldVotePolicy.threshold) !== JSON.stringify(newVotePolicy.threshold);
+                JSON.stringify(oldVotePolicy.threshold) !==
+                    JSON.stringify(newVotePolicy.threshold);
 
             const permissionsChanged =
-                JSON.stringify([...oldRole.permissions].sort()) !== JSON.stringify([...newRole.permissions].sort());
+                JSON.stringify([...oldRole.permissions].sort()) !==
+                JSON.stringify([...newRole.permissions].sort());
 
             if (hasChanges || permissionsChanged) {
                 roleDefinitionChanges.push({
@@ -104,8 +118,12 @@ export function computeMemberRoleChanges(currentPolicy: Policy, newPolicy: Polic
                     newQuorum: newVotePolicy.quorum,
                     oldWeightKind: oldVotePolicy.weight_kind,
                     newWeightKind: newVotePolicy.weight_kind,
-                    oldPermissions: permissionsChanged ? oldRole.permissions : undefined,
-                    newPermissions: permissionsChanged ? newRole.permissions : undefined,
+                    oldPermissions: permissionsChanged
+                        ? oldRole.permissions
+                        : undefined,
+                    newPermissions: permissionsChanged
+                        ? newRole.permissions
+                        : undefined,
                 });
             }
         }
@@ -125,7 +143,7 @@ export function computeMemberRoleChanges(currentPolicy: Policy, newPolicy: Polic
 export function computePolicyDiff(
     currentPolicy: Policy,
     newPolicy: Policy | null,
-    originalProposalKind: any
+    originalProposalKind: any,
 ): {
     policyChanges: PolicyChange[];
     roleChanges: RoleChange;
@@ -163,7 +181,10 @@ export function computePolicyDiff(
                 newValue: newPolicy.bounty_bond,
             });
         }
-        if (currentPolicy?.bounty_forgiveness_period !== newPolicy?.bounty_forgiveness_period) {
+        if (
+            currentPolicy?.bounty_forgiveness_period !==
+            newPolicy?.bounty_forgiveness_period
+        ) {
             policyChanges.push({
                 field: "bounty_forgiveness_period",
                 oldValue: currentPolicy?.bounty_forgiveness_period || "0",
@@ -191,7 +212,9 @@ export function computePolicyDiff(
                 newValue: newVP.quorum,
             });
         }
-        if (JSON.stringify(oldVP?.threshold) !== JSON.stringify(newVP.threshold)) {
+        if (
+            JSON.stringify(oldVP?.threshold) !== JSON.stringify(newVP.threshold)
+        ) {
             defaultVotePolicyChanges.push({
                 field: "threshold",
                 oldValue: oldVP?.threshold,
@@ -201,23 +224,33 @@ export function computePolicyDiff(
     }
 
     if ("ChangePolicyUpdateParameters" in originalProposalKind) {
-        const parameters = originalProposalKind.ChangePolicyUpdateParameters.parameters;
+        const parameters =
+            originalProposalKind.ChangePolicyUpdateParameters.parameters;
 
-        if (parameters?.proposal_bond !== null && parameters?.proposal_bond !== currentPolicy?.proposal_bond) {
+        if (
+            parameters?.proposal_bond !== null &&
+            parameters?.proposal_bond !== currentPolicy?.proposal_bond
+        ) {
             policyChanges.push({
                 field: "proposal_bond",
                 oldValue: currentPolicy.proposal_bond,
                 newValue: parameters.proposal_bond,
             });
         }
-        if (parameters?.proposal_period !== null && parameters?.proposal_period !== currentPolicy?.proposal_period) {
+        if (
+            parameters?.proposal_period !== null &&
+            parameters?.proposal_period !== currentPolicy?.proposal_period
+        ) {
             policyChanges.push({
                 field: "proposal_period",
                 oldValue: currentPolicy?.proposal_period,
                 newValue: parameters.proposal_period,
             });
         }
-        if (parameters?.bounty_bond !== null && parameters?.bounty_bond !== currentPolicy?.bounty_bond) {
+        if (
+            parameters?.bounty_bond !== null &&
+            parameters?.bounty_bond !== currentPolicy?.bounty_bond
+        ) {
             policyChanges.push({
                 field: "bounty_bond",
                 oldValue: currentPolicy?.bounty_bond,
@@ -226,7 +259,8 @@ export function computePolicyDiff(
         }
         if (
             parameters?.bounty_forgiveness_period !== null &&
-            parameters?.bounty_forgiveness_period !== currentPolicy?.bounty_forgiveness_period
+            parameters?.bounty_forgiveness_period !==
+                currentPolicy?.bounty_forgiveness_period
         ) {
             policyChanges.push({
                 field: "bounty_forgiveness_period",
@@ -239,16 +273,24 @@ export function computePolicyDiff(
     if ("ChangePolicyAddOrUpdateRole" in originalProposalKind) {
         // For single role changes, create a temporary policy with just that change
         const role = originalProposalKind.ChangePolicyAddOrUpdateRole.role;
-        const tempNewPolicy = { ...currentPolicy, roles: [...currentPolicy.roles] };
+        const tempNewPolicy = {
+            ...currentPolicy,
+            roles: [...currentPolicy.roles],
+        };
 
-        const existingRoleIndex = tempNewPolicy.roles.findIndex((r: any) => r.name === role.name);
+        const existingRoleIndex = tempNewPolicy.roles.findIndex(
+            (r: any) => r.name === role.name,
+        );
         if (existingRoleIndex >= 0) {
             tempNewPolicy.roles[existingRoleIndex] = role as any;
         } else {
             tempNewPolicy.roles.push(role as any);
         }
 
-        roleChanges = computeMemberRoleChanges(currentPolicy, tempNewPolicy as Policy);
+        roleChanges = computeMemberRoleChanges(
+            currentPolicy,
+            tempNewPolicy as Policy,
+        );
     }
 
     if ("ChangePolicyRemoveRole" in originalProposalKind) {
@@ -263,7 +305,9 @@ export function computePolicyDiff(
     }
 
     if ("ChangePolicyUpdateDefaultVotePolicy" in originalProposalKind) {
-        const newVotePolicy = originalProposalKind.ChangePolicyUpdateDefaultVotePolicy.vote_policy;
+        const newVotePolicy =
+            originalProposalKind.ChangePolicyUpdateDefaultVotePolicy
+                .vote_policy;
         const oldVP = currentPolicy.default_vote_policy;
 
         if (oldVP.weight_kind !== newVotePolicy.weight_kind) {
@@ -280,7 +324,10 @@ export function computePolicyDiff(
                 newValue: newVotePolicy.quorum,
             });
         }
-        if (JSON.stringify(oldVP.threshold) !== JSON.stringify(newVotePolicy.threshold)) {
+        if (
+            JSON.stringify(oldVP.threshold) !==
+            JSON.stringify(newVotePolicy.threshold)
+        ) {
             defaultVotePolicyChanges.push({
                 field: "threshold",
                 oldValue: oldVP.threshold,
@@ -295,4 +342,3 @@ export function computePolicyDiff(
         defaultVotePolicyChanges,
     };
 }
-

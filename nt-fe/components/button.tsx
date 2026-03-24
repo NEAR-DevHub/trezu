@@ -3,8 +3,11 @@ import { Button as ShadcnButton, buttonVariants } from "./ui/button";
 import { VariantProps } from "class-variance-authority";
 import { Tooltip } from "./tooltip";
 
-interface ButtonProps extends React.ComponentProps<typeof ShadcnButton> {
-    variant?: VariantProps<typeof buttonVariants>["variant"];
+type ShadcnVariant = VariantProps<typeof buttonVariants>["variant"];
+
+interface ButtonProps
+    extends Omit<React.ComponentProps<typeof ShadcnButton>, "variant"> {
+    variant?: ShadcnVariant | "outline-destructive" | "card";
     size?: VariantProps<typeof buttonVariants>["size"];
 }
 
@@ -24,18 +27,22 @@ export function Button({
     const { disabled } = props;
     let className = "";
     switch (variant ?? "default") {
-        case "default":
-            className = "text-primary-button-text";
-            break;
         case "link":
             className =
                 "hover:no-underline font-semibold text-foreground/80 hover:text-foreground";
+            break;
+        case "card":
+            className = "bg-card text-foreground hover:bg-card/80";
             break;
         case "ghost":
             className = "hover:bg-muted-foreground/5";
             break;
         case "outline":
             className = "hover:bg-muted-foreground/5 border";
+            break;
+        case "outline-destructive":
+            className =
+                "border text-destructive hover:text-destructive hover:bg-destructive/10";
             break;
     }
 
@@ -47,12 +54,22 @@ export function Button({
         case "lg":
             sizeClassName = "h-13 font-semibold text-lg";
             break;
+        case "icon-sm":
+            sizeClassName = "p-2 h-8";
+            break;
         case "default":
             sizeClassName = "py-[5.5px]! px-5! gap-1.5 rounded-[8px]";
     }
+    const shadcnVariant: ShadcnVariant =
+        variant === "outline-destructive"
+            ? "outline"
+            : variant === "card"
+              ? "secondary"
+              : variant;
+
     const button = (
         <ShadcnButton
-            variant={variant}
+            variant={shadcnVariant}
             className={cn(className, sizeClassName, classNameOverride)}
             size={size}
             {...props}

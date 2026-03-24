@@ -103,7 +103,7 @@ function DialogContent({
                 props.onCloseAutoFocus?.(e);
             }}
             className={cn(
-                "bg-card p-3.5",
+                "bg-card p-3.5 flex flex-col",
                 // Mobile: bottom drawer (full width, no margins)
                 "max-w-none! w-full inset-x-0 left-0 right-0 bottom-0 top-auto translate-x-0 translate-y-0 max-h-[85vh] rounded-t-2xl rounded-b-none",
                 "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
@@ -113,6 +113,7 @@ function DialogContent({
                 "sm:w-full sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-lg",
                 "sm:data-[state=closed]:slide-out-to-bottom-0 sm:data-[state=open]:slide-in-from-bottom-0",
                 "sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95",
+                "overflow-y-auto scrollbar-hide",
                 className,
             )}
         >

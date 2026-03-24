@@ -28,7 +28,7 @@ import { ProposalTypeIcon } from "./proposal-type-icon";
 import { VotingIndicator } from "./voting-indicator";
 import { Policy } from "@/types/policy";
 import { TreasuryConfig } from "@/lib/api";
-import { useFormatDate } from "@/components/formatted-date";
+import { FormattedDate } from "@/components/formatted-date";
 
 import { TooltipUser } from "@/components/user";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -93,8 +93,6 @@ export function ProposalsTable({
     const { treasuryId } = useTreasury();
     const { isMobile } = useResponsiveSidebar();
     const router = useRouter();
-    const formatDate = useFormatDate();
-
     const columns = useMemo<ColumnDef<Proposal, any>[]>(
         () => [
             columnHelper.display({
@@ -187,24 +185,24 @@ export function ProposalsTable({
                 cell: (info) => {
                     const proposal = info.row.original;
                     const title = getProposalUIKind(proposal);
-                    const date = formatDate(
-                        new Date(parseInt(proposal.submission_time) / 1000000),
-                    );
                     return (
                         <div className="flex items-center gap-5 max-w-[400px] truncate">
-                            <span className="text-sm text-muted-foreground w-6 shrink-0">
+                            <span className="text-sm text-muted-foreground w-6 shrink-0 font-semibold">
                                 #{proposal.id}
                             </span>
                             <ProposalTypeIcon proposal={proposal} />
-                            <div className="flex flex-col gap-0.5">
+                            <div className="flex flex-col items-start">
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm font-medium">
                                         {title}
                                     </span>
                                 </div>
-                                <span className="text-xs text-muted-foreground">
-                                    {date}
-                                </span>
+                                <FormattedDate
+                                    proposal={proposal}
+                                    policy={policy}
+                                    relative
+                                    className="text-xs text-muted-foreground"
+                                />
                             </div>
                         </div>
                     );
@@ -296,7 +294,7 @@ export function ProposalsTable({
                 ),
             }),
         ],
-        [policy, accountId, treasuryId, formatDate],
+        [policy, accountId, treasuryId],
     );
 
     const table = useReactTable({
@@ -386,7 +384,7 @@ export function ProposalsTable({
                         permissionKind="transfer"
                         onClick={() => router.push(`/${treasuryId}/payments`)}
                         permissionAction="AddProposal"
-                        className="gap-1 w-full"
+                        className="gap-1 w-full shrink"
                     >
                         <ArrowUpRight className="size-3.5" /> Send
                     </AuthButton>
@@ -394,7 +392,7 @@ export function ProposalsTable({
                         permissionKind="call"
                         onClick={() => router.push(`/${treasuryId}/exchange`)}
                         permissionAction="AddProposal"
-                        className="gap-1 w-full"
+                        className="gap-1 w-full shrink"
                     >
                         <ArrowRightLeft className="size-3.5" /> Exchange
                     </AuthButton>

@@ -61,12 +61,9 @@ export function TreasurySelector({
         [treasuries],
     );
 
-    // Auto-register treasury when it's selected/viewed, and re-trigger
-    // the dirty monitor every 30s so recent balance changes are detected.
+    // Register treasury once when it changes
     React.useEffect(() => {
         open(treasuryId);
-        const interval = setInterval(() => open(treasuryId), 30_000);
-        return () => clearInterval(interval);
     }, [treasuryId, open]);
 
     React.useEffect(() => {
@@ -196,7 +193,7 @@ export function TreasurySelector({
                         <>
                             {memberTreasuries.length > 0 && <SelectSeparator />}
                             <SelectGroup>
-                                <SelectLabel>Guest Accounts</SelectLabel>
+                                <SelectLabel>Guest Treasuries</SelectLabel>
                                 {savedGuestTreasuries.map((treasury) => (
                                     <SelectItem
                                         key={treasury.daoId}

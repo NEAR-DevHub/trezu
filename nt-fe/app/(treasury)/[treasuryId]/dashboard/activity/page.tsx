@@ -15,7 +15,7 @@ import {
 } from "@/features/proposals/components/proposal-filters";
 import { Button } from "@/components/button";
 import { ListFilter } from "lucide-react";
-import { MemberOnlyExportButton } from "@/components/member-only-export-button";
+import { ExportButton } from "@/components/export-button";
 import { getHistoryDescription } from "@/features/activity";
 import { subMonths } from "date-fns";
 import { ResponsiveTabs, TabItem } from "@/components/responsive-tabs";
@@ -24,7 +24,11 @@ import { ResponsiveTabs, TabItem } from "@/components/responsive-tabs";
 const PAGE_SIZE = 15;
 const FILTER_PANEL_MAX_HEIGHT = "500px";
 
-function ActivityList({ status }: { status?: "incoming" | "outgoing" }) {
+function ActivityList({
+    status,
+}: {
+    status?: "incoming" | "outgoing" | "staking_rewards" | "exchange";
+}) {
     const { treasuryId } = useTreasury();
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -73,7 +77,7 @@ function ActivityList({ status }: { status?: "incoming" | "outgoing" }) {
             const parsed = JSON.parse(tokenFilter);
             // The token filter stores data as: { operation: "Is" | "Is Not", token: { id, symbol, name, icon } }
             if (parsed.token) {
-                const symbol = parsed.token.symbol;
+                const symbol = parsed.token.id;
 
                 if (!symbol) {
                     console.error(
@@ -172,6 +176,8 @@ export default function ActivityPage() {
         { value: "all", label: "All" },
         { value: "outgoing", label: "Sent" },
         { value: "incoming", label: "Received" },
+        { value: "staking_rewards", label: "Staking Rewards" },
+        { value: "exchange", label: "Exchange" },
     ];
 
     const actions = (
@@ -192,7 +198,7 @@ export default function ActivityPage() {
                     />
                 )}
             </Button>
-            <MemberOnlyExportButton />
+            <ExportButton />
         </div>
     );
 
@@ -216,7 +222,11 @@ export default function ActivityPage() {
                 status={
                     value === "all"
                         ? undefined
-                        : (value as "incoming" | "outgoing")
+                        : (value as
+                              | "incoming"
+                              | "outgoing"
+                              | "staking_rewards"
+                              | "exchange")
                 }
             />
         </TabsContent>

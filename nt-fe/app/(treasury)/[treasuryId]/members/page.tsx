@@ -328,8 +328,8 @@ export default function MembersPage() {
                 const rolesWithFullWildcard =
                     rolesWithAddProposal.length === 0
                         ? availableRoles.filter((role) =>
-                            role.permissions.some((perm) => perm === ":*"),
-                        )
+                              role.permissions.some((perm) => perm === ":*"),
+                          )
                         : [];
 
                 // Determine which roles are allowed based on priority
@@ -664,6 +664,7 @@ export default function MembersPage() {
                         },
                     },
                 },
+                proposalType: "other",
             });
 
             // Refetch proposals to show the newly created proposal
@@ -738,22 +739,22 @@ export default function MembersPage() {
             const membersToRemove =
                 selectedMembers.length > 0
                     ? selectedMembers.map((accountId) => {
-                        const member = existingMembers.find(
-                            (m) => m.accountId === accountId,
-                        );
-                        return {
-                            member: accountId,
-                            roles: member?.roles || [],
-                        };
-                    })
+                          const member = existingMembers.find(
+                              (m) => m.accountId === accountId,
+                          );
+                          return {
+                              member: accountId,
+                              roles: member?.roles || [],
+                          };
+                      })
                     : memberToDelete
-                        ? [
+                      ? [
                             {
                                 member: memberToDelete.accountId,
                                 roles: memberToDelete.roles,
                             },
                         ]
-                        : [];
+                      : [];
 
             if (membersToRemove.length === 0) return;
 
@@ -764,7 +765,7 @@ export default function MembersPage() {
                 updatedPolicy,
                 summary,
                 "Update Policy - Remove Member" +
-                (membersToRemove.length > 1 ? "s" : ""),
+                    (membersToRemove.length > 1 ? "s" : ""),
                 `Member removal request created successfully`,
             );
 
@@ -933,11 +934,11 @@ export default function MembersPage() {
                                 checked={
                                     selectedMembers.length ===
                                         existingMembers.length &&
-                                        existingMembers.length > 0
+                                    existingMembers.length > 0
                                         ? true
                                         : selectedMembers.length > 0
-                                            ? "indeterminate"
-                                            : false
+                                          ? "indeterminate"
+                                          : false
                                 }
                                 onCheckedChange={handleToggleAll}
                             />
@@ -1032,7 +1033,7 @@ export default function MembersPage() {
                                             balanceCheck={{
                                                 withProposalBond: true,
                                             }}
-                                            variant="ghost"
+                                            variant="outline-destructive"
                                             size="icon"
                                             onClick={() => {
                                                 setMemberToDelete(member);
@@ -1042,7 +1043,7 @@ export default function MembersPage() {
                                                 hasPendingMemberRequest ||
                                                 !deleteValidation.canModify
                                             }
-                                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                            className="h-8 w-8"
                                             tooltip={deleteValidation.reason}
                                             tooltipProps={{
                                                 disabled:
@@ -1104,7 +1105,9 @@ export default function MembersPage() {
                                     variant="default"
                                 >
                                     <Plus className="size-5" />
-                                    <span className="hidden sm:inline">Add New Member</span>
+                                    <span className="hidden sm:inline">
+                                        Add New Member
+                                    </span>
                                 </AuthButton>
                             )}
                         </div>
@@ -1135,14 +1138,14 @@ export default function MembersPage() {
                                         balanceCheck={{
                                             withProposalBond: true,
                                         }}
-                                        variant="outline"
+                                        variant="outline-destructive"
                                         size="sm"
                                         onClick={handleBulkDelete}
                                         disabled={
                                             hasPendingMemberRequest ||
                                             !bulkDeleteValidation.canModify
                                         }
-                                        className="h-9 w-full sm:w-auto text-destructive hover:text-destructive hover:bg-destructive/10"
+                                        className="h-9 w-full sm:w-auto"
                                     >
                                         <Trash2 className="w-4 h-4 mr-1" />
                                         Remove
@@ -1266,8 +1269,8 @@ export default function MembersPage() {
                 members={
                     selectedMembers.length > 0
                         ? existingMembers.filter((m) =>
-                            selectedMembers.includes(m.accountId),
-                        )
+                              selectedMembers.includes(m.accountId),
+                          )
                         : undefined
                 }
                 onConfirm={handleDeleteMembersSubmit}
@@ -1275,11 +1278,11 @@ export default function MembersPage() {
                     const membersToDelete =
                         selectedMembers.length > 0
                             ? existingMembers.filter((m) =>
-                                selectedMembers.includes(m.accountId),
-                            )
+                                  selectedMembers.includes(m.accountId),
+                              )
                             : memberToDelete
-                                ? [memberToDelete]
-                                : [];
+                              ? [memberToDelete]
+                              : [];
 
                     if (membersToDelete.length === 0) return undefined;
 

@@ -23,22 +23,20 @@ pub fn load_test_env() {
     });
 }
 
-/// Create archival network config for tests with fastnear API key
+/// Create archival network config for tests with fastnear API key.
+/// Respects NEAR_ARCHIVAL_RPC_URL env var for proxy/cache override.
 pub fn create_archival_network() -> NetworkConfig {
     load_test_env();
 
     let fastnear_api_key =
         std::env::var("FASTNEAR_API_KEY").expect("FASTNEAR_API_KEY must be set in .env");
 
-    // Use fastnear archival RPC which supports historical queries
+    let rpc_url = std::env::var("NEAR_ARCHIVAL_RPC_URL")
+        .unwrap_or_else(|_| "https://archival-rpc.mainnet.fastnear.com/".to_string());
+
     NetworkConfig {
         rpc_endpoints: vec![
-            RPCEndpoint::new(
-                "https://archival-rpc.mainnet.fastnear.com/"
-                    .parse()
-                    .unwrap(),
-            )
-            .with_api_key(fastnear_api_key),
+            RPCEndpoint::new(rpc_url.parse().unwrap()).with_api_key(fastnear_api_key),
         ],
         ..NetworkConfig::mainnet()
     }
@@ -65,9 +63,18 @@ pub fn build_test_state(db_pool: sqlx::PgPool) -> AppState {
         nt_be::services::DeFiLlamaClient::with_base_url(http_client.clone(), base_url.clone());
     let price_service = nt_be::services::PriceLookupService::new(db_pool.clone(), defillama_client);
 
+    let rpc_url = env_vars
+        .near_rpc_url
+        .clone()
+        .unwrap_or_else(|| "https://rpc.mainnet.fastnear.com/".to_string());
+    let archival_rpc_url = env_vars
+        .near_archival_rpc_url
+        .clone()
+        .unwrap_or_else(|| "https://archival-rpc.mainnet.fastnear.com/".to_string());
+
     let network = NetworkConfig {
         rpc_endpoints: vec![
-            RPCEndpoint::new("https://rpc.mainnet.fastnear.com/".parse().unwrap())
+            RPCEndpoint::new(rpc_url.parse().unwrap())
                 .with_api_key(env_vars.fastnear_api_key.clone()),
         ],
         ..NetworkConfig::mainnet()
@@ -75,12 +82,8 @@ pub fn build_test_state(db_pool: sqlx::PgPool) -> AppState {
 
     let archival_network = NetworkConfig {
         rpc_endpoints: vec![
-            RPCEndpoint::new(
-                "https://archival-rpc.mainnet.fastnear.com/"
-                    .parse()
-                    .unwrap(),
-            )
-            .with_api_key(env_vars.fastnear_api_key.clone()),
+            RPCEndpoint::new(archival_rpc_url.parse().unwrap())
+                .with_api_key(env_vars.fastnear_api_key.clone()),
         ],
         ..NetworkConfig::mainnet()
     };
@@ -116,6 +119,8 @@ pub fn build_test_state(db_pool: sqlx::PgPool) -> AppState {
         db_pool,
         price_service,
         transfer_hint_service: transfer_hint_service.map(Arc::new),
+        neardata_client: None,
+        goldsky_pool: None,
     }
 }
 
@@ -202,9 +207,10 @@ impl TestServer {
         let mock_server = start_mock_defillama_server().await;
         let mock_uri = mock_server.uri();
 
-        // Start the server in the background, pointing to the mock DeFiLlama API
-        let mut process = Command::new("cargo")
-            .args(["run", "--bin", "nt-be"])
+        // Start the pre-built server binary directly (not `cargo run`) to avoid
+        // blocking on the cargo build lock when called from within `cargo test`.
+        // Clear proxy env vars so the server uses real RPC endpoints (not the test proxy).
+        let mut process = Command::new(env!("CARGO_BIN_EXE_nt-be"))
             .env("PORT", "3001")
             .env("RUST_LOG", "info")
             .env("MONITOR_INTERVAL_SECONDS", "0") // Disable background monitoring
@@ -215,6 +221,11 @@ impl TestServer {
             )
             .env("SIGNER_ID", "sandbox")
             .env("DEFILLAMA_API_BASE_URL", &mock_uri) // Point to mock server
+            .env_remove("NEAR_RPC_URL")
+            .env_remove("NEAR_ARCHIVAL_RPC_URL")
+            .env_remove("TRANSFER_HINTS_BASE_URL")
+            .env_remove("NEARDATA_BASE_URL")
+            .env_remove("INTENTS_EXPLORER_API_URL")
             .spawn()
             .expect("Failed to start server");
 
@@ -243,6 +254,72 @@ impl TestServer {
         }
 
         // Kill process before panicking to avoid zombie
+        let _ = process.kill();
+        let _ = process.wait();
+        panic!("Server failed to start within timeout");
+    }
+
+    /// Start the test server with Goldsky enrichment enabled (GOLDSKY_DATABASE_URL set).
+    /// Workers use shortened delays for faster test execution:
+    /// - Enrichment: 3s initial delay, 5s interval
+    /// - Maintenance: 15s initial delay, 30s interval
+    pub async fn start_with_goldsky(goldsky_database_url: &str) -> Self {
+        load_test_env();
+
+        let db_url =
+            std::env::var("DATABASE_URL").expect("DATABASE_URL must be set for integration tests");
+
+        // Start mock DeFiLlama server
+        let mock_server = start_mock_defillama_server().await;
+        let mock_uri = mock_server.uri();
+
+        let mut process = Command::new(env!("CARGO_BIN_EXE_nt-be"))
+            .env("PORT", "3001")
+            .env("RUST_LOG", "info")
+            .env("DATABASE_URL", &db_url)
+            .env("GOLDSKY_DATABASE_URL", goldsky_database_url)
+            // Tune worker timings for test: enrichment runs first, maintenance after
+            .env("ENRICHMENT_INITIAL_DELAY_SECONDS", "3")
+            .env("ENRICHMENT_INTERVAL_SECONDS", "10")
+            .env("MAINTENANCE_INITIAL_DELAY_SECONDS", "45")
+            .env("MAINTENANCE_INTERVAL_SECONDS", "60")
+            .env(
+                "SIGNER_KEY",
+                "ed25519:3tgdk2wPraJzT4nsTuf86UX41xgPNk3MHnq8epARMdBNs29AFEztAuaQ7iHddDfXG9F2RzV1XNQYgJyAyoW51UBB",
+            )
+            .env("SIGNER_ID", "sandbox")
+            .env("DEFILLAMA_API_BASE_URL", &mock_uri)
+            .env_remove("NEAR_RPC_URL")
+            .env_remove("NEAR_ARCHIVAL_RPC_URL")
+            .env_remove("TRANSFER_HINTS_BASE_URL")
+            .env_remove("NEARDATA_BASE_URL")
+            .env_remove("INTENTS_EXPLORER_API_URL")
+            .spawn()
+            .expect("Failed to start server");
+
+        let port = 3001;
+
+        let client = reqwest::Client::new();
+        for attempt in 0..60 {
+            if attempt % 10 == 0 && attempt > 0 {
+                println!("Still waiting for server... (attempt {}/60)", attempt);
+            }
+            sleep(Duration::from_millis(500)).await;
+            if let Ok(response) = client
+                .get(format!("http://localhost:{}/api/health", port))
+                .send()
+                .await
+                && response.status().is_success()
+            {
+                println!("Server ready after {} attempts", attempt + 1);
+                return TestServer {
+                    process,
+                    port,
+                    _mock_server: Some(mock_server),
+                };
+            }
+        }
+
         let _ = process.kill();
         let _ = process.wait();
         panic!("Server failed to start within timeout");

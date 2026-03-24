@@ -34,10 +34,13 @@ export function TreasuryBalance({
     const { data, isLoading } = useAssets(daoId);
     if (isLoading)
         return <Skeleton className={skeletonClassName ?? "h-4 w-16"} />;
-    if (data?.totalBalanceUSD === undefined) return null;
+    if (!data?.tokens) return null;
+    const balanceExcludingLockup = data.tokens
+        .filter((t) => t.residency !== "Lockup")
+        .reduce((sum, t) => sum + t.balanceUSD, 0);
     return (
         <span className={cn("text-sm text-muted-foreground", className)}>
-            {formatCurrency(Number(data.totalBalanceUSD))}
+            {formatCurrency(balanceExcludingLockup)}
         </span>
     );
 }

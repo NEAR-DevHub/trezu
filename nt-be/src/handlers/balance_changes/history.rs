@@ -27,7 +27,7 @@ use crate::handlers::balance_changes::query_builder::{
     BalanceChangeFilters, RELAYER_ACCOUNT, build_count_query,
 };
 use crate::handlers::subscription::plans::get_account_plan_info;
-use crate::handlers::token::TokenMetadata;
+use crate::handlers::token::{TokenMetadata, fetch_tokens_with_fallback};
 use crate::routes::{BalanceChangesQuery, EnrichedBalanceChange, get_balance_changes_internal};
 use crate::utils::serde::comma_separated;
 
@@ -172,7 +172,9 @@ pub async fn get_balance_chart(
         max_amount: None,
         include_metadata: Some(false), // Chart doesn't need metadata
         include_prices: Some(true),    // Chart needs prices for USD values
+        include_chain_metadata: Some(false), // Chart doesn't need chain metadata
         exclude_near_dust: false,
+        exclude_swaps_from_direction: false, // Balance chart: include swaps
     };
 
     let enriched_changes = get_balance_changes_internal(&state, &query)
@@ -390,6 +392,13 @@ async fn handle_export(
     )
     .await
     .map_err(|e| (StatusCode::FORBIDDEN, e.to_string()))?;
+
+    crate::services::platform_metrics::record_event(
+        &state.db_pool,
+        &params.account_id,
+        "exports_used",
+    )
+    .await;
 
     // Format dates as YYYY-MM-DD for cleaner filename
     let start_date = params.start_time.format("%Y-%m-%d").to_string();
@@ -675,7 +684,9 @@ fn build_export_query(
         max_amount: None,
         include_metadata: Some(true), // Export needs metadata (symbol, contract)
         include_prices: Some(true),   // Export needs prices (USD values)
+        include_chain_metadata: Some(false), // Export doesn't need chain metadata
         exclude_near_dust: false,
+        exclude_swaps_from_direction: false, // Export: include swaps in incoming/outgoing
     }
 }
 
@@ -1358,7 +1369,7 @@ pub struct RecentActivityQuery {
     pub limit: Option<i64>,
     pub offset: Option<i64>,
     pub min_usd_value: Option<f64>,
-    pub transaction_type: Option<String>, // "outgoing" | "incoming" | "staking_rewards" (single selection for tabs)
+    pub transaction_type: Option<String>, // "outgoing" | "incoming" | "staking_rewards" | "exchange" (single selection for tabs)
     pub token_symbol: Option<String>,
     pub token_symbol_not: Option<String>,
     pub start_date: Option<String>,
@@ -1501,10 +1512,9 @@ pub async fn get_recent_activity(
     // Build query filters for total count (need to count before USD filtering)
     let count_date_cutoff_str: Option<String> = date_cutoff.map(|dt| dt.to_rfc3339());
 
-    // For recent activity, "incoming" should include staking rewards
+    // For recent activity, "incoming" should exclude staking rewards (shown in separate tab)
     let transaction_types_for_query = match params.transaction_type.as_deref() {
-        Some("incoming") => Some(vec!["incoming".to_string(), "staking_rewards".to_string()]),
-        Some(other) => Some(vec![other.to_string()]),
+        Some(t) => Some(vec![t.to_string()]),
         None => None,
     };
 
@@ -1523,6 +1533,7 @@ pub async fn get_recent_activity(
         min_amount: None,
         max_amount: None,
         exclude_near_dust: true,
+        exclude_swaps_from_direction: true, // Recent activity: exclude swaps from incoming/outgoing (separate tab)
     };
 
     // Count query
@@ -1574,10 +1585,12 @@ pub async fn get_recent_activity(
         max_amount: None,
         include_metadata: Some(true),
         include_prices: Some(true),
+        include_chain_metadata: Some(false), // Recent activity doesn't need chain metadata here (will be added for swaps later)
         exclude_near_dust: true,
+        exclude_swaps_from_direction: true, // Recent activity: exclude swaps from incoming/outgoing (separate Exchange tab)
     };
 
-    let enriched_changes = get_balance_changes_internal(&state, &balance_query)
+    let mut enriched_changes = get_balance_changes_internal(&state, &balance_query)
         .await
         .map_err(|e| {
             log::error!("Failed to fetch recent activity: {}", e);
@@ -1589,6 +1602,34 @@ pub async fn get_recent_activity(
                 })),
             )
         })?;
+
+    // Enrich all recent-activity rows with chain metadata
+    let activity_token_ids: Vec<String> = enriched_changes
+        .iter()
+        .map(|c| c.token_id.clone())
+        .collect::<std::collections::HashSet<_>>()
+        .into_iter()
+        .collect();
+
+    if !activity_token_ids.is_empty() {
+        let chain_metadata_map =
+            fetch_tokens_with_fallback(&state, &activity_token_ids, true).await;
+        for change in &mut enriched_changes {
+            if let Some(ref mut metadata) = change.token_metadata
+                && let Some(chain_meta) = chain_metadata_map.get(&change.token_id)
+            {
+                if chain_meta.network.is_some() {
+                    metadata.network = chain_meta.network.clone();
+                }
+                if chain_meta.chain_name.is_some() {
+                    metadata.chain_name = chain_meta.chain_name.clone();
+                }
+                if chain_meta.chain_icons.is_some() {
+                    metadata.chain_icons = chain_meta.chain_icons.clone();
+                }
+            }
+        }
+    }
 
     // Look up detected swaps for both fulfillment and deposit IDs on this page
     let change_ids: Vec<i64> = enriched_changes.iter().map(|c| c.id).collect();
@@ -1689,16 +1730,21 @@ pub async fn get_recent_activity(
         }
     }
 
-    // Fetch metadata for any swap tokens not already in our map
-    let additional_token_ids: Vec<String> = swap_token_ids
+    // Fetch chain metadata only for swap tokens that are missing it.
+    let swap_token_ids_vec: Vec<String> = swap_token_ids
         .into_iter()
-        .filter(|id| !metadata_map.contains_key(id))
+        .filter(|token_id| {
+            metadata_map.get(token_id).is_none_or(|meta| {
+                meta.chain_icons.is_none() || meta.network.is_none() || meta.chain_name.is_none()
+            })
+        })
         .collect();
 
-    if !additional_token_ids.is_empty() {
-        use crate::handlers::token::fetch_tokens_with_fallback;
-        let additional_metadata = fetch_tokens_with_fallback(&state, &additional_token_ids).await;
-        metadata_map.extend(additional_metadata);
+    if !swap_token_ids_vec.is_empty() {
+        let swap_metadata_with_chain =
+            fetch_tokens_with_fallback(&state, &swap_token_ids_vec, true).await;
+        // Override the metadata_map with chain-enriched versions
+        metadata_map.extend(swap_metadata_with_chain);
     }
 
     // Convert enriched changes to RecentActivity format with swap info

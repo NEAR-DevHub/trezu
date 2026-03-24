@@ -33,6 +33,7 @@ test.beforeAll(async () => {
             name: "Romakqa Testing Treasury",
             accountId: TREASURY_ID,
             paymentThreshold: 1,
+            governanceThreshold: 1,
             governors: ["test.near"],
             financiers: ["test.near"],
             requestors: ["test.near"],
@@ -41,9 +42,7 @@ test.beforeAll(async () => {
     if (res.ok) {
         console.log(`Created DAO ${TREASURY_ID} in sandbox`);
     } else {
-        console.log(
-            `DAO creation returned ${res.status} (may already exist)`,
-        );
+        console.log(`DAO creation returned ${res.status} (may already exist)`);
     }
 });
 
@@ -233,9 +232,7 @@ function parseLabelDate(label: string, referenceDate: Date): Date | null {
     const monthOnlyMatch = label.match(/^([A-Z][a-z]{2})$/);
     if (monthOnlyMatch) {
         const monthStr = monthOnlyMatch[1];
-        let date = new Date(
-            `${monthStr} 1, ${referenceDate.getFullYear()}`,
-        );
+        let date = new Date(`${monthStr} 1, ${referenceDate.getFullYear()}`);
         if (date > referenceDate) {
             date = new Date(
                 `${monthStr} 1, ${referenceDate.getFullYear() - 1}`,
@@ -284,9 +281,7 @@ test.describe("Dashboard chart time period aggregation (issue #228)", () => {
             await page.goto(DASHBOARD_URL);
 
             // Wait for chart to render with default period (1W)
-            const chartContainer = page
-                .locator("[data-slot='chart']")
-                .first();
+            const chartContainer = page.locator("[data-slot='chart']").first();
             await chartContainer
                 .locator("svg")
                 .first()
@@ -352,7 +347,11 @@ test.describe("Dashboard chart time period aggregation (issue #228)", () => {
             ).toBeGreaterThanOrEqual(MIN_SPAN_DAYS[period]);
 
             // Check gaps between consecutive labels
+            // Exclude "Now" from gap checks: it maps to today's date, so its
+            // distance from the last fixture label grows over time and would
+            // cause false failures as fixture data ages.
             const sortedDates = parsedDates
+                .filter((l) => l.text !== "Now")
                 .map((l) => l.date.getTime())
                 .sort((a, b) => a - b);
 

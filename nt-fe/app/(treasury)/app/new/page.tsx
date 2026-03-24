@@ -32,6 +32,7 @@ import { Alert, AlertDescription } from "@/components/alert";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useTreasuryCreationStatus } from "@/hooks/use-treasury-queries";
 import { CreationDisabledModal } from "@/components/creation-disabled-modal";
+import { trackEvent } from "@/lib/analytics";
 
 const treasuryFormSchema = z
     .object({
@@ -507,6 +508,10 @@ export default function NewTreasuryPage() {
 
             await createTreasury(request)
                 .then((response) => {
+                    trackEvent("treasury-created", {
+                        treasury_id: response.treasury,
+                        source: "/app/new",
+                    });
                     queryClient.invalidateQueries({
                         queryKey: ["userTreasuries", accountId],
                     });

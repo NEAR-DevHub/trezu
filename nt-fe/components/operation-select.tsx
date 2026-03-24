@@ -3,7 +3,11 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 export type Operation = string;
@@ -34,7 +38,7 @@ export function OperationSelect({
                     size="sm"
                     className={cn(
                         "gap-1 px-1.5! w-fit h-5 items-center bg-card hover:bg-card border-0 text-xxs",
-                        className
+                        className,
                     )}
                 >
                     <span className="font-medium">{selectedOperation}</span>
@@ -50,7 +54,7 @@ export function OperationSelect({
                             size="sm"
                             className={cn(
                                 "justify-start font-normal h-8 text-xxs",
-                                selectedOperation === operation && "bg-muted"
+                                selectedOperation === operation && "bg-muted",
                             )}
                             onClick={() => {
                                 onOperationChange(operation);

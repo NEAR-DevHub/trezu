@@ -42,6 +42,19 @@ async fn health_check(
         ));
     }
 
+    // Query Goldsky enrichment cursor if configured
+    let goldsky_cursor_block = if state.goldsky_pool.is_some() {
+        sqlx::query_scalar::<_, i64>(
+            "SELECT last_processed_block FROM goldsky_cursors WHERE consumer_name = 'balance_enrichment'"
+        )
+        .fetch_optional(&state.db_pool)
+        .await
+        .ok()
+        .flatten()
+    } else {
+        None
+    };
+
     Ok(Json(json!({
         "status": "healthy",
         "timestamp": chrono::Utc::now().to_rfc3339(),
@@ -49,6 +62,10 @@ async fn health_check(
             "connected": true,
             "pool_size": pool_size,
             "idle_connections": idle_connections
+        },
+        "goldsky_enrichment": {
+            "enabled": state.goldsky_pool.is_some(),
+            "cursor_block": goldsky_cursor_block
         }
     })))
 }
@@ -152,10 +169,6 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
         .route(
             "/api/user/check-account-exists",
             get(handlers::user::check_account_exists::check_account_exists),
-        )
-        .route(
-            "/api/user/create",
-            post(handlers::user::create::create_user_account),
         )
         .route(
             "/api/user/lockup",
@@ -274,6 +287,22 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
         )
         .route("/api/auth/me", get(auth::handlers::get_me))
         .route("/api/auth/logout", post(auth::handlers::logout))
+        // Chains endpoint
+        .route(
+            "/api/chains",
+            get(handlers::chains::get_chains),
+        )
+        // Address book endpoints
+        .route(
+            "/api/address-book",
+            get(handlers::address_book::list_address_book)
+                .post(handlers::address_book::create_address_book_entries)
+                .delete(handlers::address_book::delete_address_book_entries),
+        )
+        .route(
+            "/api/address-book/export",
+            get(handlers::address_book::export_address_book),
+        )
         // DAO endpoints
         .route(
             "/api/dao/mark-dirty",

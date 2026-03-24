@@ -17,8 +17,7 @@ import { ScrollArea } from "./ui/scroll-area";
 interface TokenOption {
     id: string;
     name: string;
-    symbol: string;
-    icon: string;
+    icon?: string;
     gradient?: string;
 }
 
@@ -47,23 +46,20 @@ export function TokenSelectPopover({
 
                 // Format and deduplicate tokens by symbol (network-agnostic)
                 const tokenMap = new Map<string, TokenOption>();
+                console.log(assets);
 
                 assets.forEach((asset: any) => {
-                    const symbol = asset.symbol;
-                    if (symbol && !tokenMap.has(symbol)) {
+                    const id = asset.id;
+                    if (id && !tokenMap.has(id)) {
                         const hasValidIcon =
                             asset.icon &&
                             (asset.icon.startsWith("http") ||
                                 asset.icon.startsWith("data:") ||
                                 asset.icon.startsWith("/"));
 
-                        tokenMap.set(symbol, {
+                        tokenMap.set(id, {
                             id: asset.id,
                             name: asset.name || asset.assetName,
-                            symbol:
-                                asset.symbol === "wNEAR"
-                                    ? "NEAR"
-                                    : asset.symbol,
                             icon: hasValidIcon
                                 ? asset.icon
                                 : asset.symbol?.charAt(0) || "?",
@@ -89,7 +85,7 @@ export function TokenSelectPopover({
         const query = search.toLowerCase();
         return tokens.filter(
             (token) =>
-                token.symbol.toLowerCase().includes(query) ||
+                token.id.toLowerCase().includes(query) ||
                 token.name.toLowerCase().includes(query),
         );
     }, [tokens, search]);
@@ -117,7 +113,7 @@ export function TokenSelectPopover({
                             selectedToken.icon?.startsWith("data:") ? (
                                 <img
                                     src={selectedToken.icon}
-                                    alt={selectedToken.symbol}
+                                    alt={selectedToken.name}
                                     className="w-5 h-5 rounded-full object-contain"
                                 />
                             ) : (
@@ -126,7 +122,7 @@ export function TokenSelectPopover({
                                 </div>
                             )}
                             <span className="font-medium">
-                                {selectedToken.symbol}
+                                {selectedToken.name}
                             </span>
                         </>
                     ) : (
@@ -172,8 +168,8 @@ export function TokenSelectPopover({
                                         size="sm"
                                         className={cn(
                                             "w-full justify-start gap-2 h-auto py-2 font-normal",
-                                            selectedToken?.symbol ===
-                                                token.symbol && "bg-muted",
+                                            selectedToken?.id === token.id &&
+                                                "bg-muted",
                                         )}
                                         onClick={() => handleSelect(token)}
                                     >
@@ -181,7 +177,7 @@ export function TokenSelectPopover({
                                         token.icon?.startsWith("data:") ? (
                                             <img
                                                 src={token.icon}
-                                                alt={token.symbol}
+                                                alt={token.id}
                                                 className="w-5 h-5 rounded-full object-contain shrink-0"
                                             />
                                         ) : (
@@ -191,7 +187,7 @@ export function TokenSelectPopover({
                                         )}
                                         <div className="flex flex-col items-start text-left">
                                             <span className="font-medium text-sm leading-tight">
-                                                {token.symbol}
+                                                {token.id.toUpperCase()}
                                             </span>
                                             <span className="text-xs text-muted-foreground leading-tight">
                                                 {token.name}

@@ -1,7 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { UseFormReturn } from "react-hook-form";
 import Big from "@/lib/big";
-import { getIntentsQuote, IntentsQuoteResponse, getTokenMetadata } from "@/lib/api";
+import {
+    getIntentsQuote,
+    IntentsQuoteResponse,
+    getTokenMetadata,
+} from "@/lib/api";
 import { Token } from "@/components/token-input";
 import {
     formatAssetForIntentsAPI,
@@ -62,9 +66,11 @@ export function useExchangeQuote({
                         .toFixed();
 
                     // Fetch token price for USD calculation
-                    const tokenMetadata = await getTokenMetadata('wrap.near');
+                    const tokenMetadata = await getTokenMetadata("wrap.near");
                     const tokenPrice = tokenMetadata?.price || 0;
-                    const amountUsd = (parseFloat(sellAmount) * tokenPrice).toFixed();
+                    const amountUsd = (
+                        parseFloat(sellAmount) * tokenPrice
+                    ).toFixed();
 
                     const mockQuote: IntentsQuoteResponse = {
                         quote: {
@@ -78,8 +84,12 @@ export function useExchangeQuote({
                             minAmountOut: amountInRaw,
                             timeEstimate: 0,
                             depositAddress: selectedTreasury,
-                            deadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-                            timeWhenInactive: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                            deadline: new Date(
+                                Date.now() + 24 * 60 * 60 * 1000,
+                            ).toISOString(),
+                            timeWhenInactive: new Date(
+                                Date.now() + 24 * 60 * 60 * 1000,
+                            ).toISOString(),
                         },
                         quoteRequest: {
                             swapType: "EXACT_INPUT",
@@ -92,7 +102,9 @@ export function useExchangeQuote({
                             refundType: "DESTINATION_CHAIN",
                             recipient: selectedTreasury,
                             recipientType: "DESTINATION_CHAIN",
-                            deadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                            deadline: new Date(
+                                Date.now() + 24 * 60 * 60 * 1000,
+                            ).toISOString(),
                         },
                         signature: "",
                         timestamp: new Date().toISOString(),

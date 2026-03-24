@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Trezu Wallet Test dApp</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 20px; }
+        h1 { font-size: 1.4rem; }
+        button {
+            padding: 8px 16px; margin: 6px 6px 6px 0;
+            border: 1px solid #ccc; border-radius: 6px;
+            background: #fff; cursor: pointer; font-size: 0.9rem;
+        }
+        button:hover:not(:disabled) { background: #f0f0f0; }
+        button:disabled { opacity: 0.4; cursor: default; }
+        #status {
+            padding: 12px; background: #f5f5f5; border-radius: 6px;
+            margin: 12px 0; font-family: monospace; font-size: 0.85rem;
+        }
+        #messages {
+            padding: 12px; background: #f0f8ff; border-radius: 6px;
+            margin: 12px 0; font-family: monospace; font-size: 0.8rem;
+            white-space: pre-wrap; word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <h1>Dummy dApp — Trezu Wallet Integration Test</h1>
+    <div id="status">Status: Not connected</div>
+    <div>
+        <button id="connect-btn">Connect Wallet</button>
+        <button id="transfer-btn" disabled>Transfer 1 NEAR to alice.near</button>
+        <button id="ftcall-btn" disabled>Call ft_transfer on token.near</button>
+    </div>
+    <div id="messages">No messages yet.</div>
+
+    <script>
+        /* ---- helpers ---- */
+
+        /** UTF8-safe base64 encode (mirrors app's jsonToBase64). */
+        function jsonToBase64(value) {
+            const json = JSON.stringify(value);
+            const bytes = new TextEncoder().encode(json);
+            let bin = "";
+            for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+            return btoa(bin);
+        }
+
+        function openWalletPopup(url) {
+            const w = 520, h = 700;
+            const left = Math.round((screen.width  - w) / 2);
+            const top  = Math.round((screen.height - h) / 2);
+            return window.open(
+                url, "TrezuWallet",
+                `width=${w},height=${h},top=${top},left=${left}`
+            );
+        }
+
+        function waitForResult(popup) {
+            return new Promise((resolve, reject) => {
+                function handler(event) {
+                    const msg = event.data;
+                    if (!msg || typeof msg.type !== "string" || !msg.type.startsWith("trezu:")) return;
+                    if (msg.type === "trezu:result") {
+                        window.removeEventListener("message", handler);
+                        clearInterval(pollId);
+                        if (msg.status === "success") resolve(msg);
+                        else reject(Object.assign(new Error(msg.errorMessage || "failed"), { msg }));
+                    }
+                }
+                window.addEventListener("message", handler);
+                const pollId = setInterval(() => {
+                    if (popup.closed) {
+                        window.removeEventListener("message", handler);
+                        clearInterval(pollId);
+                        reject(new Error("Popup was closed"));
+                    }
+                }, 300);
+            });
+        }
+
+        /* ---- state ---- */
+
+        // Use var so Playwright can set window.connectedAs from page.evaluate()
+        var connectedAs = null;  // daoId chosen during sign_in
+
+        // Global listener: captures every trezu:result into __lastMessage so
+        // Playwright can assert on it even when the popup is opened directly
+        // (not via a button) and regardless of whether waitForResult resolves
+        // or rejects.
+        window.addEventListener("message", function(event) {
+            var msg = event.data;
+            if (msg && msg.type === "trezu:result") {
+                window.__lastMessage = msg;
+            }
+        });
+
+        function setStatus(text) {
+            document.getElementById("status").textContent = "Status: " + text;
+        }
+
+        function showMessage(obj) {
+            document.getElementById("messages").textContent = JSON.stringify(obj, null, 2);
+        }
+
+        /* ---- connect ---- */
+
+        document.getElementById("connect-btn").addEventListener("click", async () => {
+            const url = new URL(window.location.origin + "/wallet");
+            url.searchParams.set("action", "sign_in");
+            url.searchParams.set("network", "mainnet");
+            url.searchParams.set("callbackUrl", window.location.href);
+
+            setStatus("Opening wallet popup…");
+            const popup = openWalletPopup(url.toString());
+            try {
+                const result = await waitForResult(popup);
+                connectedAs = result.accountId;
+                setStatus("Connected as " + connectedAs);
+                document.getElementById("transfer-btn").disabled = false;
+                document.getElementById("ftcall-btn").disabled = false;
+                showMessage(result);
+            } catch (err) {
+                setStatus("Connection failed: " + err.message);
+                showMessage({ error: err.message, msg: err.msg });
+            }
+        });
+
+        /* ---- transfer ---- */
+
+        document.getElementById("transfer-btn").addEventListener("click", async () => {
+            const transactions = [{
+                receiverId: "alice.near",
+                actions: [{
+                    type: "Transfer",
+                    params: {
+                        methodName: "",
+                        args: {},
+                        gas: "0",
+                        deposit: "1000000000000000000000000"  // 1 NEAR
+                    }
+                }]
+            }];
+            await doSignTx("Sending transfer…", transactions);
+        });
+
+        /* ---- ft_transfer ---- */
+
+        document.getElementById("ftcall-btn").addEventListener("click", async () => {
+            const transactions = [{
+                receiverId: "token.near",
+                actions: [{
+                    type: "FunctionCall",
+                    params: {
+                        methodName: "ft_transfer",
+                        args: { receiver_id: "alice.near", amount: "1000000" },
+                        gas: "30000000000000",
+                        deposit: "1"
+                    }
+                }]
+            }];
+            await doSignTx("Calling ft_transfer…", transactions);
+        });
+
+        async function doSignTx(statusMsg, transactions) {
+            const url = new URL(window.location.origin + "/wallet");
+            url.searchParams.set("action", "sign_transactions");
+            url.searchParams.set("network", "mainnet");
+            url.searchParams.set("signerId", connectedAs);
+            url.searchParams.set("transactions", jsonToBase64(transactions));
+            url.searchParams.set("callbackUrl", window.location.href);
+
+            setStatus(statusMsg);
+            const popup = openWalletPopup(url.toString());
+            try {
+                const result = await waitForResult(popup);
+                setStatus("Done: " + result.transactionHashes);
+                showMessage(result);
+            } catch (err) {
+                setStatus("Transaction failed: " + err.message);
+                showMessage({ error: err.message, msg: err.msg });
+            }
+        }
+    </script>
+</body>
+</html>

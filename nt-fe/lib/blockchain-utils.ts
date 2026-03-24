@@ -8,9 +8,15 @@
 export type BlockchainType =
     | "near"
     | "bitcoin"
+    | "bitcoincash"
+    | "litecoin"
+    | "dash"
     | "ethereum"
+    | "starknet"
+    | "aleo"
     | "solana"
     | "tron"
+    | "ton"
     | "zcash"
     | "dogecoin"
     | "xrp"
@@ -34,6 +40,21 @@ export function getBlockchainType(chainName: string): BlockchainType {
     // Bitcoin
     if (chainLower === "bitcoin" || chainLower === "btc") {
         return "bitcoin";
+    }
+
+    // Bitcoin Cash
+    if (chainLower === "bitcoincash" || chainLower === "bch") {
+        return "bitcoincash";
+    }
+
+    // Litecoin
+    if (chainLower === "litecoin" || chainLower === "ltc") {
+        return "litecoin";
+    }
+
+    // Dash
+    if (chainLower === "dash") {
+        return "dash";
     }
 
     // Ethereum and EVM chains
@@ -63,6 +84,8 @@ export function getBlockchainType(chainName: string): BlockchainType {
         "layerx",
         "monad",
         "scroll",
+        "plasma",
+        "adi",
     ]);
     if (evmChains.has(chainLower)) {
         return "ethereum";
@@ -115,6 +138,21 @@ export function getBlockchainType(chainName: string): BlockchainType {
     // Cardano
     if (chainLower === "cardano" || chainLower === "ada") {
         return "cardano";
+    }
+
+    // TON
+    if (chainLower === "ton") {
+        return "ton";
+    }
+
+    // Starknet
+    if (chainLower === "starknet") {
+        return "starknet";
+    }
+
+    // Aleo
+    if (chainLower === "aleo") {
+        return "aleo";
     }
 
     // Hyperliquid (treat as EVM-compatible for now, though it may need special handling)
@@ -193,6 +231,24 @@ export function getExplorerAddressUrl(
 
         case "bitcoin":
             return `https://blockchair.com/bitcoin/address/${address}`;
+
+        case "bitcoincash":
+            return `https://blockchair.com/bitcoin-cash/address/${address}`;
+
+        case "litecoin":
+            return `https://blockchair.com/litecoin/address/${address}`;
+
+        case "dash":
+            return `https://blockchair.com/dash/address/${address}`;
+
+        case "starknet":
+            return `https://starkscan.co/contract/${address}`;
+
+        case "aleo":
+            return `https://explorer.aleo.org/address/${address}`;
+
+        case "ton":
+            return `https://tonscan.org/address/${address}`;
 
         case "solana":
             return `https://solscan.io/address/${address}`;

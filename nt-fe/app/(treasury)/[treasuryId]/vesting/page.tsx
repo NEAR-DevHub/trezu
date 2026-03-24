@@ -23,7 +23,7 @@ import {
     encodeToMarkdown,
     formatUserDate,
     formatTimestamp,
-    toBase64,
+    jsonToBase64,
     formatCurrency,
 } from "@/lib/utils";
 import { useFormatDate } from "@/components/formatted-date";
@@ -369,7 +369,7 @@ export default function VestingPage() {
                         actions: [
                             {
                                 method_name: "create",
-                                args: toBase64({
+                                args: jsonToBase64({
                                     lockup_duration: "0",
                                     owner_account_id: data.vesting.address,
                                     ...vestingArgs,
@@ -384,6 +384,7 @@ export default function VestingPage() {
                 },
             },
             proposalBond,
+            proposalType: "other",
         })
             .then(() => {
                 form.reset();

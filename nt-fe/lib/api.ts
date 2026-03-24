@@ -602,11 +602,13 @@ export async function getLockupContract(
 
 export interface ProfileData {
     name?: string;
+    addressBookName?: string;
     image?: string;
     backgroundImage?: string;
     description?: string;
     linktree?: any;
     tags?: any;
+    isInAddressBook?: boolean;
 }
 
 /**
@@ -615,6 +617,7 @@ export interface ProfileData {
  */
 export async function getProfile(
     accountId: string,
+    daoId?: string,
 ): Promise<ProfileData | null> {
     if (!accountId) return null;
 
@@ -622,7 +625,8 @@ export async function getProfile(
         const url = `${BACKEND_API_BASE}/user/profile`;
 
         const response = await axios.get<ProfileData>(url, {
-            params: { accountId },
+            params: { accountId, ...(daoId ? { daoId } : {}) },
+            withCredentials: true,
         });
 
         return response.data;
@@ -1186,6 +1190,7 @@ export async function relayDelegateAction(
     treasuryId: string,
     signedDelegateAction: string,
     storageBytes: Big,
+    proposalType?: string,
 ): Promise<RelayDelegateActionResponse> {
     const url = `${BACKEND_API_BASE}/relay/delegate-action`;
     const response = await axios.post<RelayDelegateActionResponse>(
@@ -1194,6 +1199,7 @@ export async function relayDelegateAction(
             signedDelegateAction: signedDelegateAction,
             storageBytes: storageBytes.toFixed(0),
             treasuryId,
+            ...(proposalType ? { proposalType } : {}),
         },
         { withCredentials: true },
     );

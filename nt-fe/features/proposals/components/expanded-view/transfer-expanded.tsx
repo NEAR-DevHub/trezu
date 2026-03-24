@@ -7,34 +7,54 @@ import { ArrowUpRight } from "lucide-react";
 import { useToken } from "@/hooks/use-treasury-queries";
 
 interface TransferExpandedProps {
-  data: PaymentRequestData;
+    data: PaymentRequestData;
 }
 
 export function TransferExpanded({ data }: TransferExpandedProps) {
-  // Get token metadata to determine blockchain network
-  const { data: tokenData } = useToken(data.tokenId);
-  const chainName = tokenData?.network || "near";
+    // Get token metadata to determine blockchain network
+    const { data: tokenData } = useToken(data.tokenId);
+    const chainName = tokenData?.network || "near";
 
-  const infoItems: InfoItem[] = [
-    {
-      label: "Recipient",
-      value: <User accountId={data.receiver} withName={chainName === "near"} chainName={chainName} />
-    },
-    {
-      label: "Amount",
-      value: <Amount amount={data.amount} showNetwork tokenId={data.tokenId} />
+    const infoItems: InfoItem[] = [
+        {
+            label: "Recipient",
+            value: (
+                <User
+                    accountId={data.receiver}
+                    useAddressBook
+                    withName={chainName === "near"}
+                    chainName={chainName}
+                />
+            ),
+        },
+        {
+            label: "Amount",
+            value: (
+                <Amount
+                    amount={data.amount}
+                    showNetwork
+                    tokenId={data.tokenId}
+                />
+            ),
+        },
+    ];
+
+    if (data.notes && data.notes !== "") {
+        const notes = <span>{data.notes}</span>;
+        const content =
+            data.url && data.url !== "" ? (
+                <Link
+                    href={data.url}
+                    target="_blank"
+                    className="flex items-center gap-5"
+                >
+                    {notes} <ArrowUpRight className="size-4 shrink-0" />{" "}
+                </Link>
+            ) : (
+                notes
+            );
+        infoItems.push({ label: "Notes", value: content });
     }
-  ];
 
-  if (data.notes && data.notes !== "") {
-    const notes = <span>{data.notes}</span>;
-    const content = data.url && data.url !== "" ?
-      <Link href={data.url} target="_blank" className="flex items-center gap-5">{notes} <ArrowUpRight className="size-4 shrink-0" /> </Link>
-      : notes;
-    infoItems.push({ label: "Notes", value: content });
-  }
-
-  return (
-    <InfoDisplay items={infoItems} />
-  );
+    return <InfoDisplay items={infoItems} />;
 }

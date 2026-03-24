@@ -26,6 +26,8 @@ import { MessageCircleQuestion } from "./animate-ui/icons/message-circle-questio
 import { ArrowUpDown } from "./animate-ui/icons/arrow-up-down";
 import { CreditCard } from "./animate-ui/icons/credit-card";
 import { Bookmark } from "./animate-ui/icons/bookmark";
+import { ContactRound } from "./animate-ui/icons/contact-round";
+import { NEW } from "@/features/onboarding/components/new";
 import {
     PAGE_TOUR_SELECTORS,
     useGuestSaveTour,
@@ -35,8 +37,10 @@ interface NavLinkProps {
     isActive: boolean;
     icon: React.ComponentType<IconProps<"default">>;
     label: string;
+    tooltipContent?: React.ReactNode;
     showBadge?: boolean;
     badgeCount?: number;
+    endAdornment?: React.ReactNode;
     onClick: () => void;
     id?: string;
     showLabels?: boolean;
@@ -46,8 +50,10 @@ function NavLink({
     isActive,
     icon: Icon,
     label,
+    tooltipContent,
     showBadge = false,
     badgeCount = 0,
+    endAdornment,
     onClick,
     id,
     showLabels = true,
@@ -57,7 +63,9 @@ function NavLink({
             <Button
                 id={id}
                 variant="link"
-                tooltipContent={!showLabels ? label : undefined}
+                tooltipContent={
+                    !showLabels ? (tooltipContent ?? label) : undefined
+                }
                 side="right"
                 onClick={onClick}
                 className={cn(
@@ -68,11 +76,18 @@ function NavLink({
                         : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                 )}
             >
-                <div className="flex items-center gap-3">
-                    <Icon className="size-5 shrink-0" />
-                    {showLabels && label}
+                <div className="flex gap-2">
+                    <div className="flex min-w-0 items-center gap-3">
+                        <Icon className="size-5 shrink-0" />
+                        {showLabels && <span>{label}</span>}
+                    </div>
+                    {showLabels && (showBadge || endAdornment) && (
+                        <div className="flex  items-center gap-2">
+                            {showBadge && <NumberBadge number={badgeCount} />}
+                            {endAdornment}
+                        </div>
+                    )}
                 </div>
-                {showBadge && showLabels && <NumberBadge number={badgeCount} />}
             </Button>
         </AnimateIcon>
     );
@@ -110,7 +125,17 @@ const bottomNavLinks: {
     label: string;
     icon: React.ComponentType<IconProps<"default">>;
     id?: string;
+    showNewPill?: boolean;
+    memberRequired?: boolean;
 }[] = [
+    {
+        path: "address-book",
+        label: "Address Book",
+        icon: ContactRound,
+        id: "address-book-link",
+        showNewPill: true,
+        memberRequired: true,
+    },
     { path: "members", label: "Members", icon: Users, id: "dashboard-step4" },
     { path: "settings", label: "Settings", icon: Settings },
 ];
@@ -299,27 +324,36 @@ export function Sidebar({ onClose }: SidebarProps) {
                             onContactClick={() => setSupportModalOpen(true)}
                         />
                     )}
-                    {bottomNavLinks.map((link) => {
-                        const href = treasuryId
-                            ? `/${treasuryId}${link.path ? `/${link.path}` : ""}`
-                            : `/${link.path ? `/${link.path}` : ""}`;
-                        const isActive = pathname === href;
+                    {bottomNavLinks
+                        .filter(
+                            (link) => !(link.memberRequired && isGuestTreasury),
+                        )
+                        .map((link) => {
+                            const href = treasuryId
+                                ? `/${treasuryId}${link.path ? `/${link.path}` : ""}`
+                                : `/${link.path ? `/${link.path}` : ""}`;
+                            const isActive = pathname === href;
 
-                        return (
-                            <NavLink
-                                id={link.id}
-                                key={link.path}
-                                isActive={isActive}
-                                icon={link.icon}
-                                label={link.label}
-                                showLabels={!isReduced}
-                                onClick={() => {
-                                    router.push(href);
-                                    if (isMobile) onClose();
-                                }}
-                            />
-                        );
-                    })}
+                            return (
+                                <NavLink
+                                    id={link.id}
+                                    key={link.path}
+                                    isActive={isActive}
+                                    icon={link.icon}
+                                    label={link.label}
+                                    showLabels={!isReduced}
+                                    endAdornment={
+                                        link.showNewPill ? (
+                                            <NEW enabled={!isReduced} />
+                                        ) : undefined
+                                    }
+                                    onClick={() => {
+                                        router.push(href);
+                                        if (isMobile) onClose();
+                                    }}
+                                />
+                            );
+                        })}
 
                     <NavLink
                         id="help-support-link"

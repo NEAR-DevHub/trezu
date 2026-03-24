@@ -4,6 +4,7 @@ pub mod coingecko;
 pub mod dao_sync;
 pub mod defillama;
 pub mod monitored_accounts;
+pub mod platform_metrics;
 pub mod price_lookup;
 pub mod price_provider;
 pub mod price_sync;

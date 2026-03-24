@@ -86,7 +86,6 @@ export function EditPaymentStep({
                     tokenName="token"
                     recipientName="recipient"
                     tokenLocked={true}
-                    validateOnMount={true}
                     saveButtonText="Save Changes"
                     onSave={handleSave}
                     isSubmitting={isSaving}

@@ -315,6 +315,7 @@ export function VotingTab() {
                         },
                     },
                     proposalBond: proposalBond,
+                    proposalType: "other",
                 },
             );
 
@@ -375,6 +376,7 @@ export function VotingTab() {
                     },
                 },
                 proposalBond: proposalBond,
+                proposalType: "other",
             });
 
             // Refetch proposals to show the newly created proposal

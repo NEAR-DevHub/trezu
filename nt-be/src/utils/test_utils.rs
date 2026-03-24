@@ -22,12 +22,12 @@ static INIT: Once = Once::new();
 
 /// Load environment files in the correct order for tests
 ///
-/// Loads .env files to ensure required environment variables are available.
-/// Uses plain `from_filename` (not `override`) to avoid changing DATABASE_URL
-/// when sqlx::test macro has already read it at compile time.
+/// Loads `.env` first for base config (API keys etc.), then `.env.test` (no override).
+/// Uses plain `from_filename` (not `override`) to avoid changing DATABASE_URL at runtime,
+/// which would conflict with `#[sqlx::test]` macro that reads DATABASE_URL at compile time.
 ///
-/// NOTE: Integration tests in `tests/` use `tests/common/mod.rs::load_test_env()`
-/// which does override DATABASE_URL for the test database.
+/// NOTE: When recording RPC fixtures, set `DATABASE_URL` to the test database explicitly
+/// (via the recording script) so tests that shortcut via DB data still hit the RPC.
 #[cfg(test)]
 pub fn load_test_env() {
     INIT.call_once(|| {
@@ -60,7 +60,7 @@ pub async fn init_test_state() -> AppState {
 /// Initialize app state with a provided database pool.
 ///
 /// Use this in `#[sqlx::test]` tests that receive a pool from the macro
-/// but also need a full AppState (e.g. for dirty_monitor which takes AppState).
+/// but also need a full AppState (e.g. for integration tests that take AppState).
 #[cfg(test)]
 pub fn build_test_state(db_pool: sqlx::PgPool) -> AppState {
     use std::sync::Arc;
@@ -77,9 +77,19 @@ pub fn build_test_state(db_pool: sqlx::PgPool) -> AppState {
     let price_service = crate::services::PriceLookupService::new(db_pool.clone(), defillama_client);
 
     // Create network configs first (needed for transfer hint service)
+    // Respects NEAR_RPC_URL / NEAR_ARCHIVAL_RPC_URL env vars for proxy/cache override
+    let rpc_url = env_vars
+        .near_rpc_url
+        .clone()
+        .unwrap_or_else(|| "https://rpc.mainnet.fastnear.com/".to_string());
+    let archival_rpc_url = env_vars
+        .near_archival_rpc_url
+        .clone()
+        .unwrap_or_else(|| "https://archival-rpc.mainnet.fastnear.com/".to_string());
+
     let network = NetworkConfig {
         rpc_endpoints: vec![
-            RPCEndpoint::new("https://rpc.mainnet.fastnear.com/".parse().unwrap())
+            RPCEndpoint::new(rpc_url.parse().unwrap())
                 .with_api_key(env_vars.fastnear_api_key.clone()),
         ],
         ..NetworkConfig::mainnet()
@@ -87,12 +97,8 @@ pub fn build_test_state(db_pool: sqlx::PgPool) -> AppState {
 
     let archival_network = NetworkConfig {
         rpc_endpoints: vec![
-            RPCEndpoint::new(
-                "https://archival-rpc.mainnet.fastnear.com/"
-                    .parse()
-                    .unwrap(),
-            )
-            .with_api_key(env_vars.fastnear_api_key.clone()),
+            RPCEndpoint::new(archival_rpc_url.parse().unwrap())
+                .with_api_key(env_vars.fastnear_api_key.clone()),
         ],
         ..NetworkConfig::mainnet()
     };
@@ -129,5 +135,7 @@ pub fn build_test_state(db_pool: sqlx::PgPool) -> AppState {
         db_pool,
         price_service,
         transfer_hint_service: transfer_hint_service.map(Arc::new),
+        goldsky_pool: None,
+        neardata_client: None,
     }
 }

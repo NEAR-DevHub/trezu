@@ -91,7 +91,6 @@ export function useProposalsInsufficientBalance(
             queryFn: () => getTokenBalance(treasuryId!, tokenId, network),
             enabled: !!treasuryId && !!tokenId && !!network,
             staleTime: 1000 * 5,
-            refetchInterval: 1000 * 5,
         })),
     });
 

@@ -13,7 +13,8 @@ import {
     ArrowDownToLine,
     ArrowUpToLine,
     ArrowRightLeft,
-    ArrowRight,
+    ChevronRight,
+    Info,
 } from "lucide-react";
 import { Pagination } from "@/components/pagination";
 import { useTreasury } from "@/hooks/use-treasury";
@@ -29,6 +30,8 @@ import {
     getFromAccount,
     getToAccount,
 } from "../utils/history-utils";
+import { TokenDisplay } from "@/components/token-display-with-network";
+import { Tooltip } from "@/components/tooltip";
 
 interface ActivityTableProps {
     activities: RecentActivity[];
@@ -92,7 +95,12 @@ export function ActivityTable({
                                     TO
                                 </TableHead>
                                 <TableHead className="text-right pr-6 min-w-[120px] text-xs font-medium uppercase text-muted-foreground">
-                                    TRANSACTION
+                                    <div className="flex items-center justify-end gap-1">
+                                        TRANSACTION HASH
+                                        <Tooltip content="Unique identifier (hash) of this transaction">
+                                            <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                                        </Tooltip>
+                                    </div>
                                 </TableHead>
                             </TableRow>
                         </TableHeader>
@@ -113,8 +121,8 @@ export function ActivityTable({
                                                         isSwap
                                                             ? "bg-blue-500/10"
                                                             : isReceived
-                                                                ? "bg-general-success-background-faded"
-                                                                : "bg-general-destructive-background-faded",
+                                                              ? "bg-general-success-background-faded"
+                                                              : "bg-general-destructive-background-faded",
                                                     )}
                                                 >
                                                     {isSwap ? (
@@ -144,14 +152,37 @@ export function ActivityTable({
                                         </TableCell>
                                         <TableCell className="min-w-[180px]">
                                             {isSwap &&
-                                                activity.swap &&
-                                                activity.swap.swapRole ===
+                                            activity.swap &&
+                                            activity.swap.swapRole ===
                                                 "deposit" ? (
                                                 <div className="flex items-center gap-1.5">
+                                                    {/* Sent token icon */}
+                                                    {activity.swap
+                                                        .sentTokenMetadata && (
+                                                        <TokenDisplay
+                                                            symbol={
+                                                                activity.swap
+                                                                    .sentTokenMetadata
+                                                                    .symbol
+                                                            }
+                                                            icon={
+                                                                activity.swap
+                                                                    .sentTokenMetadata
+                                                                    .icon || ""
+                                                            }
+                                                            chainIcons={
+                                                                activity.swap
+                                                                    .sentTokenMetadata
+                                                                    .chainIcons
+                                                            }
+                                                            iconSize="sm"
+                                                        />
+                                                    )}
+                                                    {/* Sent amount */}
                                                     {activity.swap.sentAmount &&
-                                                        activity.swap
-                                                            .sentTokenMetadata ? (
-                                                        <span className="font-semibold text-general-destructive-foreground whitespace-nowrap">
+                                                    activity.swap
+                                                        .sentTokenMetadata ? (
+                                                        <span className="font-normal text-foreground whitespace-nowrap">
                                                             {formatSmartAmount(
                                                                 activity.swap
                                                                     .sentAmount,
@@ -163,12 +194,33 @@ export function ActivityTable({
                                                             }
                                                         </span>
                                                     ) : (
-                                                        <span className="font-semibold text-muted-foreground">
+                                                        <span className="font-normal text-muted-foreground">
                                                             ?
                                                         </span>
                                                     )}
-                                                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                                    <span className="font-semibold text-muted-foreground whitespace-nowrap">
+                                                    {/* Arrow */}
+                                                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                                    {/* Received token icon */}
+                                                    <TokenDisplay
+                                                        symbol={
+                                                            activity.swap
+                                                                .receivedTokenMetadata
+                                                                .symbol
+                                                        }
+                                                        icon={
+                                                            activity.swap
+                                                                .receivedTokenMetadata
+                                                                .icon || ""
+                                                        }
+                                                        chainIcons={
+                                                            activity.swap
+                                                                .receivedTokenMetadata
+                                                                .chainIcons
+                                                        }
+                                                        iconSize="sm"
+                                                    />
+                                                    {/* Received amount with + sign */}
+                                                    <span className="font-normal text-general-success-foreground whitespace-nowrap">
                                                         {
                                                             activity.swap
                                                                 .receivedTokenMetadata
@@ -177,13 +229,36 @@ export function ActivityTable({
                                                     </span>
                                                 </div>
                                             ) : isSwap &&
-                                                activity.swap &&
-                                                activity.swap.swapRole ===
-                                                "fulfillment" ? (
+                                              activity.swap &&
+                                              activity.swap.swapRole ===
+                                                  "fulfillment" ? (
                                                 <div className="flex items-center gap-1.5">
+                                                    {/* Sent token icon */}
+                                                    {activity.swap
+                                                        .sentTokenMetadata && (
+                                                        <TokenDisplay
+                                                            symbol={
+                                                                activity.swap
+                                                                    .sentTokenMetadata
+                                                                    .symbol
+                                                            }
+                                                            icon={
+                                                                activity.swap
+                                                                    .sentTokenMetadata
+                                                                    .icon || ""
+                                                            }
+                                                            chainIcons={
+                                                                activity.swap
+                                                                    .sentTokenMetadata
+                                                                    .chainIcons
+                                                            }
+                                                            iconSize="sm"
+                                                        />
+                                                    )}
+                                                    {/* Sent amount */}
                                                     {activity.swap
                                                         .sentTokenMetadata ? (
-                                                        <span className="font-semibold text-muted-foreground whitespace-nowrap">
+                                                        <span className="font-normal text-foreground whitespace-nowrap">
                                                             {
                                                                 activity.swap
                                                                     .sentTokenMetadata
@@ -191,8 +266,30 @@ export function ActivityTable({
                                                             }
                                                         </span>
                                                     ) : null}
-                                                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                                    <span className="font-semibold text-general-success-foreground whitespace-nowrap">
+                                                    {/* Arrow */}
+                                                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                                    {/* Received token icon */}
+                                                    <TokenDisplay
+                                                        symbol={
+                                                            activity.swap
+                                                                .receivedTokenMetadata
+                                                                .symbol
+                                                        }
+                                                        icon={
+                                                            activity.swap
+                                                                .receivedTokenMetadata
+                                                                .icon || ""
+                                                        }
+                                                        chainIcons={
+                                                            activity.swap
+                                                                .receivedTokenMetadata
+                                                                .chainIcons
+                                                        }
+                                                        iconSize="sm"
+                                                    />
+                                                    {/* Received amount with + sign */}
+                                                    <span className="font-normal text-general-success-foreground whitespace-nowrap">
+                                                        +
                                                         {formatSmartAmount(
                                                             activity.swap
                                                                 .receivedAmount,
@@ -210,6 +307,10 @@ export function ActivityTable({
                                                         activity.tokenMetadata
                                                             .icon
                                                     }
+                                                    chainIcons={
+                                                        activity.tokenMetadata
+                                                            .chainIcons
+                                                    }
                                                     symbol={
                                                         activity.tokenMetadata
                                                             .symbol
@@ -217,11 +318,12 @@ export function ActivityTable({
                                                     amount={formatActivityAmount(
                                                         activity.amount,
                                                     )}
-                                                    className={
+                                                    className={cn(
+                                                        "font-normal",
                                                         isReceived
                                                             ? "text-general-success-foreground"
-                                                            : "text-foreground"
-                                                    }
+                                                            : "text-foreground",
+                                                    )}
                                                 />
                                             )}
                                         </TableCell>

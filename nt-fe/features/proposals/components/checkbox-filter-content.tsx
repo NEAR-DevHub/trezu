@@ -32,17 +32,18 @@ export function CheckboxFilterContent({
     options,
     className,
 }: CheckboxFilterContentProps) {
-    const { operation, setOperation, data, setData, handleClear } = useFilterState<CheckboxFilterData>({
-        value,
-        onUpdate,
-        parseData: (parsed) => ({
-            selected: parsed.selected || []
-        }),
-        serializeData: (op, d) => ({
-            operation: op,
-            selected: d.selected
-        })
-    });
+    const { operation, setOperation, data, setData, handleClear } =
+        useFilterState<CheckboxFilterData>({
+            value,
+            onUpdate,
+            parseData: (parsed) => ({
+                selected: parsed.selected || [],
+            }),
+            serializeData: (op, d) => ({
+                operation: op,
+                selected: d.selected,
+            }),
+        });
 
     const handleDelete = () => {
         onRemove();
@@ -52,7 +53,9 @@ export function CheckboxFilterContent({
     const handleToggle = (optionValue: string) => {
         const currentSelected = data?.selected || [];
         if (currentSelected.includes(optionValue)) {
-            setData({ selected: currentSelected.filter(v => v !== optionValue) });
+            setData({
+                selected: currentSelected.filter((v) => v !== optionValue),
+            });
         } else {
             setData({ selected: [...currentSelected, optionValue] });
         }
@@ -75,7 +78,9 @@ export function CheckboxFilterContent({
                         className="flex px-2 py-1.5 items-center gap-2 cursor-pointer hover:bg-muted/50 p-2 rounded-md"
                     >
                         <Checkbox
-                            checked={data?.selected.includes(option.value) || false}
+                            checked={
+                                data?.selected.includes(option.value) || false
+                            }
                             onCheckedChange={() => handleToggle(option.value)}
                         />
                         <span className="text-sm">{option.label}</span>

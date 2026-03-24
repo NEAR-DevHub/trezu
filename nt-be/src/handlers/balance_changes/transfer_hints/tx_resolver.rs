@@ -30,6 +30,104 @@ use near_primitives::types::{BlockId, BlockReference};
 use near_primitives::views::FinalExecutionOutcomeViewEnum;
 use std::error::Error;
 
+/// Transaction action metadata extracted from tx_status for storage in balance_changes.
+#[derive(Debug, Clone)]
+pub struct TxActionInfo {
+    /// The first FunctionCall's method_name, if any
+    pub method_name: Option<String>,
+    /// High-level action kind string derived from the transaction's first action
+    pub action_kind: Option<String>,
+    /// Full serialized actions from the transaction (ActionView is Serialize)
+    pub actions: serde_json::Value,
+    /// The predecessor_id of the resolved receipt (the account that created it).
+    /// For incoming transfers, this is the actual sender of funds.
+    pub receipt_predecessor_id: Option<String>,
+    /// For outgoing transfers: the executor_id of a child receipt created by this
+    /// receipt, where that executor differs from the current account.
+    /// This is the actual recipient of funds (e.g., the target DAO for Transfer actions).
+    pub transfer_receiver_id: Option<String>,
+}
+
+/// Extract action info from a `FinalExecutionOutcomeView`.
+///
+/// For meta-transactions (Delegate), looks inside the delegate's inner actions
+/// to find the actual FunctionCall method_name and action_kind.
+fn extract_tx_action_info(
+    outcome: &near_primitives::views::FinalExecutionOutcomeView,
+) -> TxActionInfo {
+    use near_primitives::views::ActionView;
+
+    let actions = &outcome.transaction.actions;
+
+    // Look for FunctionCall in top-level actions first, then inside Delegate
+    let method_name = actions
+        .iter()
+        .find_map(|a| match a {
+            ActionView::FunctionCall { method_name, .. } => Some(method_name.clone()),
+            _ => None,
+        })
+        .or_else(|| {
+            // Check inside Delegate actions (meta-transactions)
+            actions.iter().find_map(|a| match a {
+                ActionView::Delegate {
+                    delegate_action, ..
+                } => delegate_action.actions.iter().find_map(|inner| {
+                    // NonDelegateAction wraps Action; check if it's FunctionCall
+                    let action: near_primitives::action::Action = inner.clone().into();
+                    match action {
+                        near_primitives::action::Action::FunctionCall(fc) => Some(fc.method_name),
+                        _ => None,
+                    }
+                }),
+                _ => None,
+            })
+        });
+
+    // Derive action_kind: for Delegate, use the inner action kind
+    let action_kind = actions.first().map(|a| {
+        match a {
+            ActionView::CreateAccount => "CREATE_ACCOUNT",
+            ActionView::DeployContract { .. } => "DEPLOY_CONTRACT",
+            ActionView::FunctionCall { .. } => "FUNCTION_CALL",
+            ActionView::Transfer { .. } => "TRANSFER",
+            ActionView::Stake { .. } => "STAKE",
+            ActionView::AddKey { .. } => "ADD_KEY",
+            ActionView::DeleteKey { .. } => "DELETE_KEY",
+            ActionView::DeleteAccount { .. } => "DELETE_ACCOUNT",
+            ActionView::Delegate {
+                delegate_action, ..
+            } => {
+                // Use the first inner action's kind for meta-transactions
+                delegate_action
+                    .actions
+                    .first()
+                    .map(|inner| {
+                        let action: near_primitives::action::Action = inner.clone().into();
+                        match action {
+                            near_primitives::action::Action::FunctionCall(_) => "FUNCTION_CALL",
+                            near_primitives::action::Action::Transfer(_) => "TRANSFER",
+                            near_primitives::action::Action::CreateAccount(_) => "CREATE_ACCOUNT",
+                            _ => "DELEGATE",
+                        }
+                    })
+                    .unwrap_or("DELEGATE")
+            }
+            _ => "UNKNOWN",
+        }
+        .to_string()
+    });
+
+    let actions_json = serde_json::to_value(actions).unwrap_or(serde_json::json!([]));
+
+    TxActionInfo {
+        method_name,
+        action_kind,
+        actions: actions_json,
+        receipt_predecessor_id: None, // populated later from receipt data
+        transfer_receiver_id: None,   // populated later from child receipts
+    }
+}
+
 /// Result of resolving a transaction to find balance change blocks
 #[derive(Debug, Clone)]
 pub struct ResolvedTransaction {
@@ -131,6 +229,182 @@ pub async fn resolve_transaction_blocks(
         transaction_hash: tx_hash.to_string(),
         receipt_blocks,
     })
+}
+
+/// Resolve a transaction to get ALL unique receipt block heights, sorted ascending.
+///
+/// Unlike `resolve_transaction_blocks`, this does not filter by executor_id.
+/// Returns every unique block height where any receipt in the transaction executed.
+/// The caller should check balance at each block to find where the actual change occurred.
+pub async fn resolve_all_receipt_block_heights(
+    network: &NetworkConfig,
+    tx_hash: &str,
+    sender_account_id: &str,
+) -> Result<Vec<u64>, Box<dyn Error + Send + Sync>> {
+    let client = create_rpc_client(network)?;
+
+    let parsed_tx_hash: near_primitives::hash::CryptoHash = tx_hash.parse()?;
+    let parsed_sender: near_primitives::types::AccountId = sender_account_id.parse()?;
+
+    let tx_response = with_transport_retry("tx_status_all_receipts", || {
+        let req = methods::tx::RpcTransactionStatusRequest {
+            transaction_info: methods::tx::TransactionInfo::TransactionId {
+                tx_hash: parsed_tx_hash,
+                sender_account_id: parsed_sender.clone(),
+            },
+            wait_until: near_primitives::views::TxExecutionStatus::Final,
+        };
+        client.call(req)
+    })
+    .await?;
+
+    let receipts_outcome = match &tx_response.final_execution_outcome {
+        Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcome(outcome)) => {
+            &outcome.receipts_outcome
+        }
+        Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcomeWithReceipt(outcome)) => {
+            &outcome.final_outcome.receipts_outcome
+        }
+        None => return Err("No final execution outcome in transaction".into()),
+    };
+
+    // Collect unique block hashes
+    let mut unique_block_hashes: Vec<near_primitives::hash::CryptoHash> = Vec::new();
+    for ro in receipts_outcome {
+        if !unique_block_hashes.contains(&ro.block_hash) {
+            unique_block_hashes.push(ro.block_hash);
+        }
+    }
+
+    // Resolve each unique block hash to height
+    let mut heights = Vec::new();
+    for block_hash in unique_block_hashes {
+        let block = with_transport_retry("block_for_receipt", || {
+            let req = methods::block::RpcBlockRequest {
+                block_reference: BlockReference::BlockId(BlockId::Hash(block_hash)),
+            };
+            client.call(req)
+        })
+        .await?;
+        heights.push(block.header.height);
+    }
+
+    heights.sort();
+    heights.dedup();
+    Ok(heights)
+}
+
+/// Resolve the exact block height for a specific receipt within a transaction.
+///
+/// Calls `EXPERIMENTAL_tx_status` once, finds the receipt matching `receipt_id`,
+/// and resolves its block hash to a height. Returns `None` if the receipt ID is
+/// not found.
+///
+/// * `resolve_counterparty` - When true, inspects receipt predecessors and child
+///   receipts from the `EXPERIMENTAL_tx_status` response to infer a more accurate
+///   counterparty for native NEAR events. No additional RPC calls are made.
+pub async fn resolve_receipt_block_height(
+    network: &NetworkConfig,
+    tx_hash: &str,
+    sender_account_id: &str,
+    receipt_id: &str,
+    resolve_counterparty: bool,
+) -> Result<(Option<u64>, Option<TxActionInfo>), Box<dyn Error + Send + Sync>> {
+    let client = create_rpc_client(network)?;
+
+    let parsed_tx_hash: near_primitives::hash::CryptoHash = tx_hash.parse()?;
+    let parsed_sender: near_primitives::types::AccountId = sender_account_id.parse()?;
+
+    // Use EXPERIMENTAL_tx_status which returns full ReceiptView objects
+    // (including predecessor_id) — avoids a separate EXPERIMENTAL_receipt call.
+    let tx_response = with_transport_retry("tx_status", || {
+        let req = methods::EXPERIMENTAL_tx_status::RpcTransactionStatusRequest {
+            transaction_info: methods::EXPERIMENTAL_tx_status::TransactionInfo::TransactionId {
+                tx_hash: parsed_tx_hash,
+                sender_account_id: parsed_sender.clone(),
+            },
+            wait_until: near_primitives::views::TxExecutionStatus::Final,
+        };
+        client.call(req)
+    })
+    .await?;
+
+    let (receipts_outcome, mut tx_action_info, receipts) =
+        match &tx_response.final_execution_outcome {
+            Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcome(outcome)) => (
+                &outcome.receipts_outcome,
+                Some(extract_tx_action_info(outcome)),
+                None,
+            ),
+            Some(FinalExecutionOutcomeViewEnum::FinalExecutionOutcomeWithReceipt(outcome)) => (
+                &outcome.final_outcome.receipts_outcome,
+                Some(extract_tx_action_info(&outcome.final_outcome)),
+                Some(&outcome.receipts),
+            ),
+            None => return Err("No final execution outcome in transaction".into()),
+        };
+
+    // Parse receipt_id once to avoid per-iteration string allocations.
+    let parsed_receipt_id: near_primitives::hash::CryptoHash = receipt_id.parse()?;
+
+    // Find our receipt in receipts_outcome first — if it's not there,
+    // return early.
+    let our_receipt = match receipts_outcome
+        .iter()
+        .find(|ro| ro.id == parsed_receipt_id)
+    {
+        Some(ro) => ro,
+        None => return Ok((None, tx_action_info)),
+    };
+
+    // Resolve receipt-level counterparty data (predecessor + child receipts).
+    // This is opt-in: only enabled for native NEAR events where transaction-level
+    // signer/receiver is unreliable.
+    if resolve_counterparty && let Some(info) = &mut tx_action_info {
+        // Predecessor: extract from the full receipt data returned by
+        // EXPERIMENTAL_tx_status (no extra RPC call needed).
+        if let Some(receipts) = receipts
+            && let Some(receipt) = receipts.iter().find(|r| r.receipt_id == parsed_receipt_id)
+        {
+            let predecessor = receipt.predecessor_id.to_string();
+            log::debug!(
+                "[tx-resolver] receipt {} predecessor_id={}",
+                receipt_id,
+                predecessor
+            );
+            info.receipt_predecessor_id = Some(predecessor);
+        }
+
+        // Child receipts: find a child whose executor_id differs from ours.
+        // That executor is the transfer recipient (for outgoing transfers).
+        let our_executor = our_receipt.outcome.executor_id.as_str();
+        let child_ids: std::collections::HashSet<near_primitives::hash::CryptoHash> =
+            our_receipt.outcome.receipt_ids.iter().cloned().collect();
+
+        if let Some(child) = receipts_outcome.iter().find(|ro| {
+            child_ids.contains(&ro.id) && ro.outcome.executor_id.as_str() != our_executor
+        }) {
+            let receiver = child.outcome.executor_id.to_string();
+            log::debug!(
+                "[tx-resolver] receipt {} has child receipt on {}",
+                receipt_id,
+                receiver
+            );
+            info.transfer_receiver_id = Some(receiver);
+        }
+    }
+
+    let block_hash = our_receipt.block_hash;
+
+    let block = with_transport_retry("block_for_receipt", || {
+        let req = methods::block::RpcBlockRequest {
+            block_reference: BlockReference::BlockId(BlockId::Hash(block_hash)),
+        };
+        client.call(req)
+    })
+    .await?;
+
+    Ok((Some(block.header.height), tx_action_info))
 }
 
 /// Find candidate blocks where a balance change may have occurred using tx_status
@@ -701,6 +975,46 @@ mod tests {
         assert!(
             has_known_receipt,
             "Should contain the known receipt 4k8fzeY5VkQmRsseapsPBA2mNReroXdjQVpvHkhWURt1"
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_resolve_all_receipt_block_heights_intents_swap() {
+        let state = init_test_state().await;
+
+        // Transaction 9noKHxN7Rj7tNhZVfZZbCRu1ZiWSq8cqDr9RAwX1TL7U
+        // act_proposal on webassemblymusic-treasury.sputnik-dao.near
+        // triggering an intents swap (ft_withdraw → mt_burn → ft_transfer → ft_resolve_withdraw)
+        // Signer: sponsor.trezu.near
+        // 11 receipts across 7 unique blocks
+        let tx_hash = "9noKHxN7Rj7tNhZVfZZbCRu1ZiWSq8cqDr9RAwX1TL7U";
+        let sender = "sponsor.trezu.near";
+
+        let blocks = resolve_all_receipt_block_heights(&state.archival_network, tx_hash, sender)
+            .await
+            .expect("Should resolve all receipt block heights");
+
+        println!("All receipt block heights: {:?}", blocks);
+
+        // Should be sorted ascending and deduped
+        assert!(
+            blocks.windows(2).all(|w| w[0] < w[1]),
+            "Blocks should be sorted ascending with no duplicates"
+        );
+
+        // This transaction has receipts across 7 unique blocks
+        assert_eq!(blocks.len(), 7, "Expected 7 unique receipt blocks");
+
+        // Key blocks where webassemblymusic-treasury balance changes:
+        //   188102397: NEAR balance change (gas cost)
+        //   188102398: intents USDC balance change (mt_burn)
+        assert!(
+            blocks.contains(&188102397),
+            "Should contain block 188102397 (NEAR balance change)"
+        );
+        assert!(
+            blocks.contains(&188102398),
+            "Should contain block 188102398 (intents USDC mt_burn)"
         );
     }
 }

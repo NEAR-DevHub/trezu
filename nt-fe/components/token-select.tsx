@@ -181,7 +181,7 @@ export default function TokenSelect({
 
         // Helper function to map treasury network to Network object
         const mapTreasuryNetwork = (n: any) => ({
-            id: n.id,
+            id: n.contractId ?? n.id,
             name: n.network,
             chainIcons:
                 n.chainIcons ||
@@ -215,12 +215,7 @@ export default function TokenSelect({
                 if (!bridgeAsset) {
                     return {
                         id: treasuryToken.id,
-                        name:
-                            treasuryToken.name +
-                            (treasuryToken.isAggregated &&
-                            treasuryToken.networks.length > 1
-                                ? ` • ${treasuryToken.networks.length} Networks`
-                                : ""),
+                        name: treasuryToken.id.toUpperCase(),
                         symbol: treasuryToken.id,
                         icon: treasuryToken.icon || "",
                         assetId: treasuryToken.id,
@@ -335,11 +330,7 @@ export default function TokenSelect({
 
                 return {
                     id: treasuryToken.id,
-                    name:
-                        treasuryToken.name +
-                        (mergedNetworks.length > 1
-                            ? ` • ${mergedNetworks.length} Networks`
-                            : ""),
+                    name: treasuryToken.id.toUpperCase(),
                     symbol: treasuryToken.id,
                     icon: treasuryToken.icon || bridgeAsset.icon || "",
                     assetId: bridgeAsset.id,
@@ -371,7 +362,7 @@ export default function TokenSelect({
         const otherAssetsFiltered = assets
             .filter(
                 (token) =>
-                    !ownedTokensMap.has(token.id) &&
+                    !ownedTokensMap.has(token.id.toUpperCase()) &&
                     (token.id.toLowerCase().includes(searchLower) ||
                         token.name?.toLowerCase().includes(searchLower) ||
                         token.networks[0]?.symbol
@@ -401,57 +392,51 @@ export default function TokenSelect({
     }, [assets, search, showOnlyOwnedAssets, aggregatedTreasuryTokens]);
 
     // Apply custom filter if provided
-    const {
-        yourAssets: filteredYourAssets,
-        otherAssets: filteredOtherAssets,
-        hasAnyBalance: filteredHasAnyBalance,
-    } = useMemo(() => {
-        if (!filterTokens) {
-            return { yourAssets, otherAssets, hasAnyBalance };
-        }
+    const { yourAssets: filteredYourAssets, otherAssets: filteredOtherAssets } =
+        useMemo(() => {
+            if (!filterTokens) {
+                return { yourAssets, otherAssets, hasAnyBalance };
+            }
 
-        const applyFilter = (assets: typeof yourAssets) =>
-            assets
-                .map((asset) => {
-                    const filteredNetworks = asset.networks.filter((network) =>
-                        filterTokens({
-                            address: network.id,
-                            symbol: network.symbol ?? "",
-                            network: network.name,
-                            residency: network.residency,
-                        }),
+            const applyFilter = (assets: typeof yourAssets) =>
+                assets
+                    .map((asset) => {
+                        const filteredNetworks = asset.networks.filter(
+                            (network) =>
+                                filterTokens({
+                                    address: network.id,
+                                    symbol: network.symbol ?? "",
+                                    network: network.name,
+                                    residency: network.residency,
+                                }),
+                        );
+
+                        if (filteredNetworks.length === 0) return null;
+
+                        const baseAssetName =
+                            asset.assetName || asset.name.split(" • ")[0];
+
+                        return {
+                            ...asset,
+                            name: baseAssetName,
+                            networks: filteredNetworks,
+                            networkCount: filteredNetworks.length,
+                        };
+                    })
+                    .filter(
+                        (asset): asset is NonNullable<typeof asset> =>
+                            asset !== null,
                     );
 
-                    if (filteredNetworks.length === 0) return null;
+            const filteredOwned = applyFilter(yourAssets);
+            const filteredOther: any[] = applyFilter(otherAssets);
 
-                    const baseAssetName =
-                        asset.assetName || asset.name.split(" • ")[0];
-                    const updatedName =
-                        filteredNetworks.length > 1
-                            ? `${baseAssetName} • ${filteredNetworks.length} Networks`
-                            : baseAssetName;
-
-                    return {
-                        ...asset,
-                        name: updatedName,
-                        networks: filteredNetworks,
-                        networkCount: filteredNetworks.length,
-                    };
-                })
-                .filter(
-                    (asset): asset is NonNullable<typeof asset> =>
-                        asset !== null,
-                );
-
-        const filteredOwned = applyFilter(yourAssets);
-        const filteredOther: any[] = applyFilter(otherAssets);
-
-        return {
-            yourAssets: filteredOwned,
-            otherAssets: filteredOther,
-            hasAnyBalance: filteredOwned.length > 0,
-        };
-    }, [yourAssets, otherAssets, hasAnyBalance, filterTokens]);
+            return {
+                yourAssets: filteredOwned,
+                otherAssets: filteredOther,
+                hasAnyBalance: filteredOwned.length > 0,
+            };
+        }, [yourAssets, otherAssets, hasAnyBalance, filterTokens]);
 
     const networkItems = useMemo(() => {
         if (!selectedAsset) return [];
@@ -519,12 +504,21 @@ export default function TokenSelect({
                 item.residency && item.residency !== "Intents";
 
             if (isTreasuryToken) {
-                // Treasury token
-                const treasuryToken = aggregatedTreasuryTokens
-                    .flatMap((t) => t.networks)
-                    .find(
+                // Treasury token — prioritize contractId match, fall back to
+                // network name for native tokens that have no contractId (e.g. NEAR)
+                const allTreasuryNetworks = aggregatedTreasuryTokens.flatMap(
+                    (t) => t.networks,
+                );
+                const treasuryToken =
+                    allTreasuryNetworks.find(
                         (n) =>
-                            n.id === item.networkId &&
+                            n.contractId === item.networkId &&
+                            n.residency === item.residency,
+                    ) ??
+                    allTreasuryNetworks.find(
+                        (n) =>
+                            !n.contractId &&
+                            n.network === item.networkName &&
                             n.residency === item.residency,
                     );
 
@@ -825,13 +819,13 @@ export default function TokenSelect({
                                                                     token.gradient
                                                                 }
                                                                 alt={
-                                                                    token.symbol ||
+                                                                    token.id ||
                                                                     token.name
                                                                 }
                                                             />
                                                             <div className="flex-1 text-left">
                                                                 <div className="font-semibold">
-                                                                    {token.symbol ||
+                                                                    {token.id.toUpperCase() ||
                                                                         token.name}
                                                                 </div>
                                                                 <div className="text-sm text-muted-foreground">

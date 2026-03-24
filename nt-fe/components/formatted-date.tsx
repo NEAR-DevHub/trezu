@@ -1,79 +1,151 @@
 "use client";
 
-import { formatUserDate, formatRelativeTime, type FormatUserDateOptions } from "@/lib/utils";
+import {
+    formatUserDate,
+    formatRelativeTime,
+    formatProposalStatusDate,
+    cn,
+    type FormatUserDateOptions,
+} from "@/lib/utils";
 import { useUserPreferences } from "@/hooks/use-user-preferences";
 import { Tooltip } from "@/components/tooltip";
+import type { Proposal } from "@/lib/proposals-api";
+import type { Policy } from "@/types/policy";
+import { getProposalStatusDateInfo } from "@/features/proposals/utils/proposal-utils";
 
-interface FormattedDateProps extends Omit<FormatUserDateOptions, "timezone" | "timeFormat"> {
-  /** The date to format */
-  date: Date | string | number;
-  /** Override user's timezone preference */
-  timezone?: string | null;
-  /** Override user's time format preference */
-  timeFormat?: "12" | "24";
-  /** Additional CSS classes */
-  className?: string;
-  /** Use relative time format (e.g., "2 minutes ago", "Yesterday"). Defaults to false. */
-  relative?: boolean;
-}
+type BaseFormattedDateProps = Omit<
+    FormatUserDateOptions,
+    "timezone" | "timeFormat"
+> & {
+    /** Override user's timezone preference */
+    timezone?: string | null;
+    /** Override user's time format preference */
+    timeFormat?: "12" | "24";
+    /** Additional CSS classes */
+    className?: string;
+};
+
+type StandardDateProps = BaseFormattedDateProps & {
+    /** The date to format */
+    date: Date | string | number;
+    proposal?: never;
+    policy?: never;
+    /** Use relative time format (e.g., "2 minutes ago", "Yesterday"). Defaults to false. */
+    relative?: boolean;
+};
+
+type ProposalStatusDateProps = BaseFormattedDateProps & {
+    date?: never;
+    /** Proposal to derive the status-based date from */
+    proposal: Proposal;
+    /** Policy required for expiration calculation */
+    policy: Policy;
+    /** Use status-based relative time (e.g. "Expires in 2 hours"). Defaults to false. */
+    relative?: boolean;
+};
+
+type FormattedDateProps = StandardDateProps | ProposalStatusDateProps;
 
 /**
- * Component that displays a formatted date according to user preferences
- * Automatically uses user's timezone and time format settings from preferences
+ * Component that displays a formatted date according to user preferences.
+ * Automatically uses user's timezone and time format settings from preferences.
+ *
+ * When `proposal` + `policy` are provided, displays the status-relevant date:
+ * - Pending → "Expires in X" (expiry date)
+ * - Executed/Rejected/Failed/Expired/Removed → "Status X ago" (resolved date)
+ * Full timestamp shown in tooltip on hover.
  */
-export function FormattedDate({
-  date,
-  timezone: overrideTimezone,
-  timeFormat: overrideTimeFormat,
-  className,
-  relative = false,
-  ...options
-}: FormattedDateProps) {
-  const preferences = useUserPreferences();
+export function FormattedDate(props: FormattedDateProps) {
+    const preferences = useUserPreferences();
 
-  // Use override values or fall back to user preferences
-  // Note: timezone.name contains the IANA timezone (e.g., "Asia/Kolkata")
-  const timezone = overrideTimezone !== undefined
-    ? overrideTimezone
-    : preferences.timezone?.name || null;
+    const timezone =
+        props.timezone !== undefined
+            ? props.timezone
+            : preferences.timezone?.name || null;
+    const timeFormat = props.timeFormat || preferences.timeFormat;
 
-  const timeFormat = overrideTimeFormat || preferences.timeFormat;
+    let displayText: string;
+    let tooltipText: string | undefined;
 
-  const formattedDate = formatUserDate(date, {
-    timezone,
-    timeFormat,
-    ...options,
-  });
+    let urgentExpiry = false;
 
-  // If relative time is requested, show it with formatted date in tooltip
-  if (relative) {
-    const relativeTime = formatRelativeTime(date);
-    return (
-      <Tooltip
-        content={formattedDate}
-        triggerProps={{ asChild: false }}
-      >
-        <span className={className}>{relativeTime}</span>
-      </Tooltip>
+    if (props.proposal && props.policy) {
+        const { date, isFuture, label } = getProposalStatusDateInfo(
+            props.proposal,
+            props.policy,
+        );
+        tooltipText = formatUserDate(date, { timezone, timeFormat });
+        if (isFuture && date.getTime() - Date.now() < 6 * 60 * 60 * 1000) {
+            urgentExpiry = true;
+        }
+        if (props.relative) {
+            const relativeStr = formatProposalStatusDate(date, isFuture);
+            displayText = label ? `${label} ${relativeStr}` : relativeStr;
+        } else {
+            displayText = tooltipText;
+            tooltipText = undefined;
+        }
+    } else {
+        const {
+            date,
+            relative = false,
+            timezone: _tz,
+            timeFormat: _tf,
+            policy: _p,
+            proposal: _pr,
+            ...options
+        } = props as StandardDateProps;
+        tooltipText = formatUserDate(date, {
+            timezone,
+            timeFormat,
+            ...options,
+        });
+        if (relative) {
+            displayText = formatRelativeTime(date);
+        } else {
+            displayText = tooltipText;
+            tooltipText = undefined;
+        }
+    }
+
+    const content = (
+        <span
+            className={cn(
+                urgentExpiry && "text-general-warning-foreground",
+                props.className,
+            )}
+        >
+            {displayText}
+        </span>
     );
-  }
 
-  return <span className={className}>{formattedDate}</span>;
+    return tooltipText ? (
+        <Tooltip
+            content={tooltipText}
+            triggerProps={{ asChild: false, className: "py-px flex" }}
+        >
+            {content}
+        </Tooltip>
+    ) : (
+        content
+    );
 }
 
 /**
- * Hook that returns a formatting function with user preferences applied
- * Useful when you need to format dates in non-render contexts
+ * Hook that returns a formatting function with user preferences applied.
+ * Useful when you need to format dates in non-render contexts.
  */
 export function useFormatDate() {
-  const preferences = useUserPreferences();
+    const preferences = useUserPreferences();
 
-  return (date: Date | string | number, options: FormatUserDateOptions = {}) => {
-    return formatUserDate(date, {
-      timezone: preferences.timezone?.name || null,
-      timeFormat: preferences.timeFormat,
-      ...options,
-    });
-  };
+    return (
+        date: Date | string | number,
+        options: FormatUserDateOptions = {},
+    ) => {
+        return formatUserDate(date, {
+            timezone: preferences.timezone?.name || null,
+            timeFormat: preferences.timeFormat,
+            ...options,
+        });
+    };
 }
-

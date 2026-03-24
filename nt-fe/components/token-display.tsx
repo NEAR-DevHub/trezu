@@ -2,6 +2,7 @@ import { ChainIcons, TreasuryAsset } from "@/lib/api";
 import { formatCurrency, formatSmartAmount } from "@/lib/utils";
 import { useThemeStore } from "@/stores/theme-store";
 import Big from "@/lib/big";
+import { TokenDisplay as TokenWithNetworkDisplay } from "./token-display-with-network";
 
 interface NetworkIconDisplayProps {
     chainIcons: ChainIcons | null;
@@ -158,19 +159,26 @@ export const BalanceCell = ({
 
 export const TokenAmountDisplay = ({
     icon,
+    chainIcons,
     symbol,
     amount,
     className,
 }: {
     icon?: string;
+    chainIcons?: ChainIcons;
     symbol: string;
     amount: string;
     className?: string;
 }) => {
     return (
         <div className="flex items-center gap-2">
-            {icon && (
-                <img src={icon} alt={symbol} className="h-6 w-6 rounded-full" />
+            {(icon || chainIcons) && (
+                <TokenWithNetworkDisplay
+                    symbol={symbol}
+                    icon={icon || ""}
+                    chainIcons={chainIcons}
+                    iconSize="lg"
+                />
             )}
             <div className={className}>
                 {amount} {symbol}
