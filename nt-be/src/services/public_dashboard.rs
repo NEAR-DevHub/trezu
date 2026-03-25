@@ -596,7 +596,7 @@ async fn refresh_public_dashboard_snapshot_for_date(
             }
         }
 
-        if completed % REFRESH_LOG_INTERVAL == 0 || completed == total_daos {
+        if completed.is_multiple_of(REFRESH_LOG_INTERVAL) || completed == total_daos {
             log::info!(
                 "[public-dashboard] Progress: {}/{} DAOs processed ({} ok, {} failed)",
                 completed,
