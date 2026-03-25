@@ -103,6 +103,13 @@ const resourceItems: SupportItemProps[] = [
         description: "Stay updated with our latest releases and insights.",
         href: APP_TWITTER_URL,
     },
+    {
+        icon: <BarChart3 className="size-5" />,
+        title: "Stats",
+        description:
+            "View total assets under management across all sputnik DAOs.",
+        href: "/stats",
+    },
 ];
 
 const supportItems: SupportItemProps[] = [
@@ -119,13 +126,6 @@ const supportItems: SupportItemProps[] = [
         onClick: () => {
             Gleap.open();
         },
-    },
-    {
-        icon: <BarChart3 className="size-5" />,
-        title: "Stats",
-        description:
-            "View total assets under management across all treasuries.",
-        href: "/stats",
     },
 ];
 

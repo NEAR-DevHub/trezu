@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, ChartSpline } from "lucide-react";
+import { ChartSpline } from "lucide-react";
 import { QueryProvider } from "@/components/query-provider";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { PageCard } from "@/components/card";
@@ -55,6 +55,7 @@ export function PublicDashboardStatsPage() {
             <PageComponentLayout
                 title="Stats"
                 hideCollapseButton
+                hideLogin
                 logo={
                     <div className="flex items-center gap-2.5">
                         <Link href="/">
