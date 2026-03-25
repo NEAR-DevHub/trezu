@@ -72,6 +72,7 @@ export function getBlockchainType(chainName: string): BlockchainType {
         "bsc",
         "binance",
         "optimism",
+        "op",
         "avalanche",
         "aurora",
         "turbochain",
@@ -82,6 +83,7 @@ export function getBlockchainType(chainName: string): BlockchainType {
         "tuxappchain",
         "aurora_devnet",
         "layerx",
+        "xlayer",
         "monad",
         "scroll",
         "plasma",
@@ -211,7 +213,7 @@ export function getExplorerAddressUrl(
             if (chainLower === "bsc" || chainLower === "binance") {
                 return `https://bscscan.com/address/${address}`;
             }
-            if (chainLower === "optimism") {
+            if (chainLower === "optimism" || chainLower === "op") {
                 return `https://optimistic.etherscan.io/address/${address}`;
             }
             if (chainLower === "base") {
