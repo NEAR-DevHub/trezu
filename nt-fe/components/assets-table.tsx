@@ -365,13 +365,17 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                                                         {
                                                                             symbol: network.symbol,
                                                                             address:
-                                                                                network.id,
+                                                                                network.contractId,
                                                                             network:
                                                                                 network.network,
                                                                             decimals:
                                                                                 network.decimals,
                                                                             icon: network.icon,
                                                                             name: network.name,
+                                                                            residency:
+                                                                                network.residency,
+                                                                            chainIcons:
+                                                                                network.chainIcons,
                                                                         },
                                                                     ),
                                                                 );
