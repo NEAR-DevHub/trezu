@@ -84,9 +84,9 @@ function extractFTTransferData(
             return undefined;
         }
 
-        const tokenId = args.token
-            ? args.token.startsWith("nep245:")
-                ? args.token
+        const tokenId = args.token_ids[0]
+            ? args.token_ids[0].startsWith("nep245:")
+                ? args.token_ids[0]
                 : `nep245:${args.token}:${args.token_ids[0]}`
             : `nep245:${functionCall.receiver_id}:${args.token_ids[0]}`;
 
