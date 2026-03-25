@@ -396,32 +396,60 @@ const buildIntentProposal = (
     gasForIntentAction: string,
 ): FunctionCallKind => {
     const isNetworkWithdrawal = data.token.network !== "near";
-    const tokenContract = data.token.address.replace("nep141:", "");
+    const nep141Token = data.token.address.startsWith("nep141:")
+        ? data.token.address.replace("nep141:", "")
+        : null;
+    const nep245Token = data.token.address.startsWith("nep245:")
+        ? data.token.address.split(":")[1]
+        : null;
+    const tokenContract = nep141Token || nep245Token;
 
-    const ftWithdrawArgs = isNetworkWithdrawal
+    const withdrawalAction = nep141Token
         ? {
-              token: tokenContract,
-              receiver_id: tokenContract,
-              amount: parsedAmount,
-              memo: `WITHDRAW_TO:${data.address}`,
+              method_name: "ft_withdraw",
+              args: jsonToBase64(
+                  isNetworkWithdrawal
+                      ? {
+                            token: tokenContract,
+                            receiver_id: tokenContract,
+                            amount: parsedAmount,
+                            memo: `WITHDRAW_TO:${data.address}`,
+                        }
+                      : {
+                            token: tokenContract,
+                            receiver_id: data.address,
+                            amount: parsedAmount,
+                        },
+              ),
+              deposit: "1",
+              gas: gasForIntentAction,
           }
         : {
-              token: tokenContract,
-              receiver_id: data.address,
-              amount: parsedAmount,
+              method_name: "mt_withdraw",
+              args: jsonToBase64(
+                  isNetworkWithdrawal
+                      ? {
+                            token: tokenContract,
+                            receiver_id: tokenContract,
+                            amounts: [parsedAmount],
+                            token_ids: [data.token.address.split(":")[2]],
+                            memo: `WITHDRAW_TO:${data.address}`,
+                        }
+                      : {
+                            token: tokenContract,
+                            receiver_id: data.address,
+                            amounts: [parsedAmount],
+                            token_ids: [data.token.address.split(":")[2]],
+                        },
+              ),
+              deposit: "1",
+              gas: gasForIntentAction,
           };
 
     return {
         FunctionCall: {
             receiver_id: "intents.near",
-            actions: [
-                {
-                    method_name: "ft_withdraw",
-                    args: jsonToBase64(ftWithdrawArgs),
-                    deposit: "1",
-                    gas: gasForIntentAction,
-                },
-            ],
+            actions: [withdrawalAction],
         },
     };
 };
@@ -589,8 +617,8 @@ export default function PaymentsPage() {
                 notes: data.memo || "",
             };
             const proposalBond = policy?.proposal_bond || "0";
-            const gas = "270000000000000";
-            const gasForIntentAction = Big(30).mul(Big(10).pow(12)).toFixed(); // 30 Tgas for ft_withdraw
+            const gas = Big(255).mul(Big(10).pow(12)).toFixed(); // 255 Tgas for storage_deposit
+            const gasForIntentAction = Big(45).mul(Big(10).pow(12)).toFixed(); // 45 Tgas for ft_withdraw
 
             const additionalTransactions: Array<{
                 receiverId: string;

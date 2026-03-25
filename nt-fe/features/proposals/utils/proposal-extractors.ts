@@ -37,6 +37,9 @@ function extractFTTransferData(
             a.method_name === "transfer",
     );
     const actionWithdraw = actions.find((a) => a.method_name === "ft_withdraw");
+    const actionMTWithdraw = actions.find(
+        (a) => a.method_name === "mt_withdraw",
+    );
 
     if (action) {
         if (
@@ -72,6 +75,29 @@ function extractFTTransferData(
         return {
             tokenId: `nep141:${args.token}`,
             amount: args.amount || "0",
+            receiver,
+        };
+    } else if (actionMTWithdraw) {
+        // NEP-245 withdrawal via mt_withdraw on intents.near
+        const args = decodeArgs(actionMTWithdraw.args);
+        if (!args || !args.amounts || !args.token_ids) {
+            return undefined;
+        }
+
+        const tokenId = args.token
+            ? args.token.startsWith("nep245:")
+                ? args.token
+                : `nep245:${args.token}:${args.token_ids[0]}`
+            : `nep245:${functionCall.receiver_id}:${args.token_ids[0]}`;
+
+        const isExternalWithdraw = args.memo?.startsWith("WITHDRAW_TO:");
+        const receiver = isExternalWithdraw
+            ? args.memo.replace("WITHDRAW_TO:", "")
+            : args.receiver_id;
+
+        return {
+            tokenId,
+            amount: args.amounts[0] || "0",
             receiver,
         };
     }

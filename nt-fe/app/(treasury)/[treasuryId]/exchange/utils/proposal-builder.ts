@@ -105,7 +105,9 @@ function createStorageDepositTransaction(
 function isFTToken(token: Token): boolean {
     return (
         token.residency === "ft" ||
-        (token.network === "near" && !token.address.startsWith("nep141:"))
+        (token.network === "near" &&
+            !token.address.startsWith("nep141:") &&
+            !token.address.startsWith("nep245:"))
     );
 }
 
@@ -219,7 +221,8 @@ export async function buildFungibleTokenProposal(
     const originAsset = sellToken.address;
     const isNearToken =
         sellToken.network === "near" &&
-        !sellToken.address.startsWith("nep141:");
+        !sellToken.address.startsWith("nep141:") &&
+        !sellToken.address.startsWith("nep245:");
 
     const additionalTransactions = [];
 

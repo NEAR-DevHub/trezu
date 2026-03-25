@@ -39,8 +39,8 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
                 <User
                     accountId={data.receiver}
                     useAddressBook
-                    withName={chainName === "near"}
                     chainName={chainName}
+                    withHoverCard
                 />
             ),
         },
