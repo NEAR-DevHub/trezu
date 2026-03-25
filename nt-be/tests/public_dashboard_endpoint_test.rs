@@ -28,14 +28,15 @@ async fn test_public_dashboard_aum_returns_latest_snapshot(pool: PgPool) -> sqlx
             snapshot_date,
             dao_id,
             token_id,
+            contract_id,
             total_amount_raw,
             price_usd,
             total_usd
         )
         VALUES
-            ('2026-03-25', 'dao-1.sputnik-dao.near', 'near', 2500000000000000000000000, 3, 7.5),
-            ('2026-03-25', 'dao-2.sputnik-dao.near', 'near', 1500000000000000000000000, 3, 4.5),
-            ('2026-03-25', 'dao-3.sputnik-dao.near', 'usdc', 4500000, 1, 4.5)
+            ('2026-03-25', 'dao-1.sputnik-dao.near', 'near',  NULL,                       2500000000000000000000000, 3, 7.5),
+            ('2026-03-25', 'dao-2.sputnik-dao.near', 'near',  NULL,                       1500000000000000000000000, 3, 4.5),
+            ('2026-03-25', 'dao-3.sputnik-dao.near', 'usdc',  'usdc.tether-token.near',   4500000,                  1, 4.5)
         "#,
     )
     .execute(&pool)

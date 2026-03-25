@@ -10,7 +10,8 @@ CREATE TABLE public_dashboard_daily_balances (
     snapshot_date    DATE    NOT NULL REFERENCES public_dashboard_daily_runs(snapshot_date) ON DELETE CASCADE,
     dao_id           TEXT    NOT NULL,
     is_trezu         BOOLEAN NOT NULL DEFAULT false,
-    token_id         TEXT    NOT NULL,
+    token_id         TEXT    NOT NULL,  -- unified grouping key (e.g. "near", "usdc")
+    contract_id      TEXT,              -- actual contract / defuse asset ID for metadata lookup
     total_amount_raw NUMERIC NOT NULL,
     price_usd        NUMERIC NOT NULL,
     total_usd        NUMERIC NOT NULL,

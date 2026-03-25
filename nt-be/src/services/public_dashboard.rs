@@ -5,6 +5,7 @@ use std::{
     sync::Arc,
     time::Duration,
 };
+use tokio::{sync::Semaphore, task::JoinSet};
 
 use bigdecimal::BigDecimal;
 use chrono::{NaiveDate, Utc};
@@ -20,6 +21,8 @@ use crate::{
 
 const TOP_TOKENS_LIMIT: usize = 20;
 const STARTUP_DELAY_SECS: u64 = 20;
+const REFRESH_CONCURRENCY: usize = 10;
+const REFRESH_LOG_INTERVAL: usize = 10;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -45,7 +48,11 @@ pub struct PublicDashboardSnapshot {
 
 #[derive(Clone, Debug, PartialEq)]
 struct AggregatedToken {
+    /// Unified grouping key (e.g. "near", "usdc") — matches SimplifiedToken::id.
     token_id: String,
+    /// Actual contract / defuse asset ID used for metadata lookup (e.g. "wrap.near",
+    /// "nep141:usdc.tether-token.near"). None for native NEAR.
+    contract_id: Option<String>,
     symbol: String,
     name: String,
     icon: Option<String>,
@@ -80,6 +87,7 @@ struct RunRow {
 #[derive(FromRow)]
 struct BalanceRow {
     token_id: String,
+    contract_id: Option<String>,
     total_amount_raw: BigDecimal,
     price_usd: BigDecimal,
     total_usd: BigDecimal,
@@ -160,6 +168,22 @@ fn asset_usd_value(asset: &SimplifiedToken) -> BigDecimal {
     (raw_amount / divisor) * price
 }
 
+/// Returns the contract ID to store for a token:
+///
+/// - Native / lockup / staked (no contract) → `"near"`
+/// - Intents token                           → `"intents.near:{raw_contract_id}"`
+/// - FT token                                → bare contract ID as-is
+fn normalize_contract_id(token: &SimplifiedToken) -> Option<String> {
+    use crate::handlers::user::assets::TokenResidency;
+    match &token.contract_id {
+        None => Some("near".to_string()),
+        Some(cid) => match &token.residency {
+            TokenResidency::Intents => Some(format!("intents.near:{}", cid)),
+            _ => Some(cid.clone()),
+        },
+    }
+}
+
 fn aggregate_tokens(tokens: &[SimplifiedToken]) -> Vec<AggregatedToken> {
     let mut by_token: HashMap<String, AggregatedToken> = HashMap::new();
 
@@ -171,10 +195,12 @@ fn aggregate_tokens(tokens: &[SimplifiedToken]) -> Vec<AggregatedToken> {
 
         let usd_value = asset_usd_value(token);
         let price_usd = asset_price_usd(token);
+        let contract_id = normalize_contract_id(token);
         let entry = by_token
             .entry(token.id.clone())
             .or_insert_with(|| AggregatedToken {
                 token_id: token.id.clone(),
+                contract_id: contract_id.clone(),
                 symbol: token.symbol.clone(),
                 name: token.name.clone(),
                 icon: token.icon.clone(),
@@ -183,6 +209,11 @@ fn aggregate_tokens(tokens: &[SimplifiedToken]) -> Vec<AggregatedToken> {
                 price_usd: price_usd.clone(),
                 total_usd: BigDecimal::from(0),
             });
+
+        // Keep the first non-None normalized contract_id seen for this unified token.
+        if entry.contract_id.is_none() {
+            entry.contract_id = contract_id;
+        }
 
         entry.total_amount_raw += raw_amount;
         entry.total_usd += usd_value;
@@ -237,6 +268,7 @@ fn aggregate_balance_rows(rows: &[BalanceRow]) -> Vec<AggregatedToken> {
             .entry(row.token_id.clone())
             .or_insert_with(|| AggregatedToken {
                 token_id: row.token_id.clone(),
+                contract_id: row.contract_id.clone(),
                 // Metadata is not stored; it will be enriched at request time.
                 symbol: row.token_id.clone(),
                 name: row.token_id.clone(),
@@ -363,17 +395,19 @@ async fn store_daily_balance_snapshot(
                 dao_id,
                 is_trezu,
                 token_id,
+                contract_id,
                 total_amount_raw,
                 price_usd,
                 total_usd
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             "#,
         )
         .bind(snapshot_date)
         .bind(&balance.dao_id)
         .bind(balance.is_trezu)
         .bind(&balance.token.token_id)
+        .bind(&balance.token.contract_id)
         .bind(&balance.token.total_amount_raw)
         .bind(&balance.token.price_usd)
         .bind(&balance.token.total_usd)
@@ -403,34 +437,67 @@ pub async fn load_latest_public_dashboard_snapshot(
         return Ok(None);
     };
 
+    // Aggregate per-token totals in the DB — returns one row per unique token
+    // across all DAOs, already sorted by USD value descending. Much faster than
+    // fetching every per-DAO row and aggregating in Rust.
     let balance_rows = sqlx::query_as::<_, BalanceRow>(
         r#"
-        SELECT token_id, total_amount_raw, price_usd, total_usd
+        SELECT
+            token_id,
+            MIN(contract_id) FILTER (WHERE contract_id IS NOT NULL) AS contract_id,
+            SUM(total_amount_raw) AS total_amount_raw,
+            MAX(price_usd)       AS price_usd,
+            SUM(total_usd)       AS total_usd
         FROM public_dashboard_daily_balances
         WHERE snapshot_date = $1
-        ORDER BY dao_id, token_id
+        GROUP BY token_id
+        ORDER BY SUM(total_usd) DESC
         "#,
     )
     .bind(run.snapshot_date)
     .fetch_all(&state.db_pool)
     .await?;
 
-    let aggregated_tokens = aggregate_balance_rows(&balance_rows);
-    let (total_aum_usd, mut top_tokens) = summarize_tokens(aggregated_tokens);
+    // Rows are already one-per-token from the GROUP BY.
+    let mut aggregated_tokens = aggregate_balance_rows(&balance_rows);
 
-    // Enrich top tokens with fresh metadata (counterparties table → Defuse API → NearBlocks).
-    let token_ids: Vec<String> = top_tokens.iter().map(|t| t.token_id.clone()).collect();
+    // Enrich with fresh metadata before summarizing.
+    // Prefer contract_id for the lookup (e.g. "wrap.near", "nep141:usdc.tether-token.near")
+    // so the metadata service can resolve it correctly; fall back to token_id otherwise.
+    let lookup_ids: Vec<String> = aggregated_tokens
+        .iter()
+        .map(|t| t.contract_id.clone().unwrap_or_else(|| t.token_id.clone()))
+        .collect();
     let metadata =
-        crate::handlers::token::metadata::fetch_tokens_with_fallback(state, &token_ids, false)
+        crate::handlers::token::metadata::fetch_tokens_with_defuse_extension(state, &lookup_ids)
             .await;
-    for token in &mut top_tokens {
-        if let Some(meta) = metadata.get(&token.token_id) {
-            token.symbol = meta.symbol.clone();
-            token.name = meta.name.clone();
-            token.icon = meta.icon.clone();
-            token.decimals = meta.decimals;
-        }
+
+    // Build NEAR metadata once and reuse for all NEAR variants, mirroring assets.rs.
+    let near_meta = {
+        use crate::handlers::token::metadata::TokenMetadata;
+        let m = metadata.get("near");
+        TokenMetadata::create_near_metadata(
+            m.and_then(|m| m.price),
+            m.and_then(|m| m.price_updated_at.clone()),
+        )
+    };
+
+    for token in &mut aggregated_tokens {
+        let lookup_id = token.contract_id.as_deref().unwrap_or(&token.token_id);
+        let meta = if matches!(lookup_id, "near" | "wrap.near" | "nep141:wrap.near") {
+            &near_meta
+        } else if let Some(m) = metadata.get(lookup_id) {
+            m
+        } else {
+            continue;
+        };
+        token.symbol = meta.symbol.clone();
+        token.name = meta.name.clone();
+        token.icon = meta.icon.clone();
+        token.decimals = meta.decimals;
     }
+
+    let (total_aum_usd, top_tokens) = summarize_tokens(aggregated_tokens);
 
     Ok(Some(PublicDashboardSnapshot {
         snapshot_date: run.snapshot_date.to_string(),
@@ -452,13 +519,22 @@ async fn refresh_public_dashboard_snapshot_for_date(
             HashSet::new()
         });
 
-    let mut successful_dao_count = 0i32;
-    let mut failed_dao_count = 0i32;
-    let mut balances = Vec::new();
+    let total_daos = dao_ids.len();
+    log::info!(
+        "[public-dashboard] Starting refresh for {} DAOs (concurrency={})",
+        total_daos,
+        REFRESH_CONCURRENCY
+    );
 
+    // Split parse errors out early so the hot loop only deals with valid IDs.
+    let mut failed_dao_count = 0i32;
+    let mut tasks: Vec<(AccountId, bool)> = Vec::with_capacity(total_daos);
     for dao_id in dao_ids {
-        let account_id: AccountId = match dao_id.parse() {
-            Ok(account_id) => account_id,
+        match dao_id.parse::<AccountId>() {
+            Ok(account_id) => {
+                let is_trezu = trezu_set.contains(account_id.as_str());
+                tasks.push((account_id, is_trezu));
+            }
             Err(err) => {
                 failed_dao_count += 1;
                 log::warn!(
@@ -466,14 +542,36 @@ async fn refresh_public_dashboard_snapshot_for_date(
                     dao_id,
                     err
                 );
-                continue;
             }
-        };
+        }
+    }
 
-        let is_trezu = trezu_set.contains(account_id.as_str());
+    // Process all DAOs concurrently, bounded by REFRESH_CONCURRENCY.
+    let semaphore = Arc::new(Semaphore::new(REFRESH_CONCURRENCY));
+    let mut join_set = JoinSet::new();
 
-        match compute_user_assets(state, &account_id).await {
-            Ok(tokens) => {
+    for (account_id, is_trezu) in tasks {
+        let state = state.clone();
+        let sem = semaphore.clone();
+        join_set.spawn(async move {
+            let _permit = sem
+                .acquire_owned()
+                .await
+                .expect("semaphore should not close");
+            let result = compute_user_assets(&state, &account_id).await;
+            (account_id, is_trezu, result)
+        });
+    }
+
+    let mut successful_dao_count = 0i32;
+    let mut completed: usize = 0;
+    let mut balances = Vec::new();
+
+    while let Some(join_result) = join_set.join_next().await {
+        completed += 1;
+
+        match join_result {
+            Ok((account_id, is_trezu, Ok(tokens))) => {
                 successful_dao_count += 1;
                 for token in aggregate_tokens(&tokens) {
                     balances.push(StoredDailyBalance {
@@ -483,7 +581,7 @@ async fn refresh_public_dashboard_snapshot_for_date(
                     });
                 }
             }
-            Err((status, message)) => {
+            Ok((account_id, _is_trezu, Err((status, message)))) => {
                 failed_dao_count += 1;
                 log::warn!(
                     "[public-dashboard] Failed to compute assets for {} ({}): {}",
@@ -492,6 +590,20 @@ async fn refresh_public_dashboard_snapshot_for_date(
                     message
                 );
             }
+            Err(join_err) => {
+                failed_dao_count += 1;
+                log::warn!("[public-dashboard] Task panicked: {}", join_err);
+            }
+        }
+
+        if completed % REFRESH_LOG_INTERVAL == 0 || completed == total_daos {
+            log::info!(
+                "[public-dashboard] Progress: {}/{} DAOs processed ({} ok, {} failed)",
+                completed,
+                total_daos,
+                successful_dao_count,
+                failed_dao_count
+            );
         }
     }
 
@@ -708,6 +820,7 @@ mod tests {
                 is_trezu: true,
                 token: AggregatedToken {
                     token_id: "near".to_string(),
+                    contract_id: None,
                     symbol: "NEAR".to_string(),
                     name: "NEAR".to_string(),
                     icon: None,
@@ -722,6 +835,7 @@ mod tests {
                 is_trezu: true,
                 token: AggregatedToken {
                     token_id: "near".to_string(),
+                    contract_id: None,
                     symbol: "NEAR".to_string(),
                     name: "NEAR".to_string(),
                     icon: None,
@@ -736,6 +850,7 @@ mod tests {
                 is_trezu: false,
                 token: AggregatedToken {
                     token_id: "usdc".to_string(),
+                    contract_id: Some("usdc.tether-token.near".to_string()),
                     symbol: "USDC".to_string(),
                     name: "USDC".to_string(),
                     icon: None,
