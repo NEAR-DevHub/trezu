@@ -515,13 +515,15 @@ export async function getTokenMetadata(
     tokenId: string,
 ): Promise<TokenMetadata | null> {
     if (!tokenId) return null;
-
     let token = tokenId;
-    if (
+    const noPrefixNoNear =
         !token.startsWith("nep141:") &&
         !token.startsWith("nep245:") &&
-        token.toLowerCase() !== "near"
-    ) {
+        token.toLowerCase() !== "near";
+
+    if (noPrefixNoNear && token.split(":").length === 2) {
+        token = `nep245:${token}`;
+    } else if (noPrefixNoNear) {
         token = `nep141:${token}`;
     }
 

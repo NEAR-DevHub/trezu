@@ -306,7 +306,7 @@ export function ProposalSidebar({
         treasuryId,
         proposal,
         policy,
-        !isExchangeProposal || isFailed,
+        !isExchangeProposal,
     );
 
     // Fetch swap status for executed exchange proposals
