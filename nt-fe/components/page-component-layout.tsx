@@ -13,6 +13,7 @@ interface PageComponentLayoutProps {
     description?: string;
     backButton?: boolean | string;
     hideCollapseButton?: boolean;
+    logo?: ReactNode;
     children: ReactNode;
 }
 
@@ -21,6 +22,7 @@ export function PageComponentLayout({
     description,
     backButton,
     hideCollapseButton,
+    logo,
     children,
 }: PageComponentLayoutProps) {
     const { toggleSidebar } = useSidebarStore();
@@ -65,16 +67,18 @@ export function PageComponentLayout({
                                 <ArrowLeft className="size-5 stroke-2" />
                             </Button>
                         )}
-                        <div className="flex items-baseline gap-2">
-                            <h1 className="text-base md:text-lg font-bold">
-                                {title}
-                            </h1>
-                            {description && (
-                                <span className="hidden lg:inline text-xs text-muted-foreground">
-                                    {description}
-                                </span>
-                            )}
-                        </div>
+                        {logo ?? (
+                            <div className="flex items-baseline gap-2">
+                                <h1 className="text-base md:text-lg font-bold">
+                                    {title}
+                                </h1>
+                                {description && (
+                                    <span className="hidden lg:inline text-xs text-muted-foreground">
+                                        {description}
+                                    </span>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
 
