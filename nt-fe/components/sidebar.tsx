@@ -76,7 +76,7 @@ function NavLink({
                         : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                 )}
             >
-                <div className="flex gap-2">
+                <div className="flex gap-2 w-full justify-between">
                     <div className="flex min-w-0 items-center gap-3">
                         <Icon className="size-5 shrink-0" />
                         {showLabels && <span>{label}</span>}
