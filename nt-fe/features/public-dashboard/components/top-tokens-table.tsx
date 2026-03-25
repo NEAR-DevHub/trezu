@@ -57,7 +57,7 @@ export function TopTokensTable({ tokens }: TopTokensTableProps) {
     return (
         <PageCard className="p-0 gap-0 overflow-hidden">
             <div className="px-4 pt-4 pb-2">
-                <StepperHeader title="Top Assets" />
+                <StepperHeader title="Top 20 Assets" />
             </div>
 
             {tokens.length === 0 ? (
