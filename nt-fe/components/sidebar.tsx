@@ -76,13 +76,13 @@ function NavLink({
                         : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                 )}
             >
-                <div className="flex gap-2 w-full justify-between">
+                <div className="flex gap-2 w-full justify-between ">
                     <div className="flex min-w-0 items-center gap-3">
                         <Icon className="size-5 shrink-0" />
                         {showLabels && <span>{label}</span>}
                     </div>
                     {showLabels && (showBadge || endAdornment) && (
-                        <div className="flex  items-center gap-2">
+                        <div className="flex items-center gap-2">
                             {showBadge && <NumberBadge number={badgeCount} />}
                             {endAdornment}
                         </div>
@@ -208,10 +208,10 @@ export function Sidebar({ onClose }: SidebarProps) {
                         "transition-[width,transform] duration-300",
                     isMobile
                         ? isOpen
-                            ? "w-56 translate-x-0"
+                            ? "w-60 translate-x-0"
                             : "-translate-x-full"
                         : isOpen
-                          ? "w-56"
+                          ? "w-60"
                           : "w-16",
                 )}
             >
