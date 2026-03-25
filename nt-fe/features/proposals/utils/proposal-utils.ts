@@ -126,6 +126,10 @@ function processMTTransferProposal(
 ): "Exchange" | "Batch Payment Request" | "Payment Request" | undefined {
     if (!("FunctionCall" in proposal.kind)) return undefined;
     const functionCall = proposal.kind.FunctionCall;
+    const proposalAction = decodeProposalDescription(
+        "proposal action",
+        proposal.description,
+    );
     // NEP-245 withdrawal via mt_withdraw is always a Payment Request
     if (
         functionCall.actions.some(
@@ -144,6 +148,9 @@ function processMTTransferProposal(
         const args = decodeArgs(transfer?.args as string);
         if (args?.receiver_id === BULK_PAYMENT_CONTRACT_ID) {
             return "Batch Payment Request" as const;
+        }
+        if (proposalAction === "payment-transfer") {
+            return "Payment Request" as const;
         }
         return "Exchange" as const;
     }
@@ -275,6 +282,20 @@ export type UIProposalStatus =
     | "Removed"
     | "Moved";
 
+export function getProposalQuoteDeadline(proposal: Proposal): Date | null {
+    const quoteDeadline = decodeProposalDescription(
+        "quoteDeadline",
+        proposal.description,
+    );
+
+    if (!quoteDeadline || typeof quoteDeadline !== "string") {
+        return null;
+    }
+
+    const parsedDate = new Date(quoteDeadline);
+    return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+}
+
 export function getProposalStatus(
     proposal: Proposal,
     policy: Policy,
@@ -290,9 +311,14 @@ export function getProposalStatus(
         case "Failed":
             return "Failed";
         case "InProgress":
-            // For exchange proposals, check if 24 hours have passed
+            const quoteDeadline = getProposalQuoteDeadline(proposal);
+            if (quoteDeadline && quoteDeadline.getTime() < Date.now()) {
+                return "Expired";
+            }
+
+            // Legacy exchange proposals expire after 24 hours
             const proposalType = getProposalUIKind(proposal);
-            if (proposalType === "Exchange") {
+            if (!quoteDeadline && proposalType === "Exchange") {
                 if (
                     (submissionTime + EXCHANGE_EXPIRY_NS) / 1_000_000 <
                     Date.now()
@@ -325,17 +351,20 @@ export function getProposalStatusDateInfo(
 ): { date: Date; isFuture: boolean; label: string } {
     const submissionTime = parseInt(proposal.submission_time);
     const uiStatus = getProposalStatus(proposal, policy);
+    const quoteDeadline = getProposalQuoteDeadline(proposal);
 
     if (uiStatus === "Pending") {
         // Expiry = submission_time + proposal_period (nanoseconds → ms)
         const proposalPeriod = parseInt(policy.proposal_period);
-        // For exchange proposals, use the shorter 24h expiry
+        // Use stored 1Click quote deadline when present.
         const proposalType = getProposalUIKind(proposal);
-        const expiryNs =
-            proposalType === "Exchange"
-                ? submissionTime + EXCHANGE_EXPIRY_NS
-                : submissionTime + proposalPeriod;
-        const expiryDate = new Date(expiryNs / 1_000_000);
+        const expiryDate = quoteDeadline
+            ? quoteDeadline
+            : new Date(
+                  (proposalType === "Exchange"
+                      ? submissionTime + EXCHANGE_EXPIRY_NS
+                      : submissionTime + proposalPeriod) / 1_000_000,
+              );
         return { date: expiryDate, isFuture: true, label: "Expires" };
     }
 
@@ -351,15 +380,16 @@ export function getProposalStatusDateInfo(
         case "Failed":
             return { date: submissionDate, isFuture: false, label: "Created" };
         case "Expired": {
-            // Exchange proposals expire after 24h, others after proposal_period
+            // Use stored 1Click quote deadline when present.
             const proposalType = getProposalUIKind(proposal);
             const expiredDate =
-                proposalType === "Exchange"
+                quoteDeadline ??
+                (proposalType === "Exchange"
                     ? new Date(submissionTime / 1_000_000 + EXCHANGE_EXPIRY_MS)
                     : new Date(
                           (submissionTime + parseInt(policy.proposal_period)) /
                               1_000_000,
-                      );
+                      ));
             return { date: expiredDate, isFuture: false, label: "Expired" };
         }
         case "Removed":

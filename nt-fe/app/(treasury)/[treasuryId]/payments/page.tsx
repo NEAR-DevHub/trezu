@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { ConnectorAction } from "@hot-labs/near-connect";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowDownToLine } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -42,9 +43,11 @@ import {
 import { trackEvent } from "@/lib/analytics";
 import Big from "@/lib/big";
 import { getBlockchainType } from "@/lib/blockchain-utils";
+import { getIntentsQuote, type IntentsQuoteResponse } from "@/lib/api";
 import type { FunctionCallKind, TransferKind } from "@/lib/proposals-api";
-import { encodeToMarkdown, formatCurrency, jsonToBase64 } from "@/lib/utils";
+import { encodeToMarkdown, formatCurrency, nanosToMs } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
+import { buildIntentsTransferProposal } from "../exchange/utils/proposal-builder";
 import { PaymentFormSection } from "./components/payment-form-section";
 
 const paymentFormSchema = z
@@ -141,23 +144,77 @@ function Step2({ handleBack }: StepProps) {
     const token = form.watch("token");
     const address = form.watch("address");
     const amount = form.watch("amount");
+    const { treasuryId } = useTreasury();
+    const { data: policy } = useTreasuryPolicy(treasuryId);
     const { data: storageDepositData } = useStorageDepositIsRegistered(
         address,
         token.address,
         token.residency === "Ft",
     );
     const { data: tokenData } = useToken(token.address);
-    const { treasuryId } = useTreasury();
     const { data: addressBook = [] } = useAddressBook();
     const contactName = addressBook.find(
         (e) => e.address.toLowerCase() === address?.toLowerCase(),
     )?.name;
+    const isSelectedTokenIntents = isIntentsToken(token);
+    const parsedAmount = useMemo(() => {
+        if (!amount || Number(amount) <= 0) {
+            return null;
+        }
+
+        return Big(amount).mul(Big(10).pow(token.decimals)).toFixed();
+    }, [amount, token.decimals]);
+
+    const {
+        data: liveQuote,
+        isLoading: isLoadingLiveQuote,
+        isFetching: isFetchingLiveQuote,
+        isError: hasLiveQuoteError,
+    } = useQuery({
+        queryKey: [
+            "paymentLiveQuote",
+            treasuryId,
+            token.address,
+            amount,
+            address,
+        ],
+        queryFn: async (): Promise<IntentsQuoteResponse | null> => {
+            if (!treasuryId || !parsedAmount) {
+                return null;
+            }
+
+            return getIntentsQuote(
+                buildIntentsPaymentQuoteRequest(
+                    treasuryId,
+                    form.getValues(),
+                    parsedAmount,
+                    policy?.proposal_period,
+                ),
+                false,
+            );
+        },
+        enabled:
+            isSelectedTokenIntents &&
+            !!treasuryId &&
+            !!address &&
+            !!parsedAmount &&
+            !!policy?.proposal_period,
+        refetchOnWindowFocus: false,
+    });
 
     useEffect(() => {
         if (storageDepositData !== undefined) {
             form.setValue("isRegistered", storageDepositData);
         }
     }, [storageDepositData, form]);
+
+    useEffect(() => {
+        if (liveQuote) {
+            form.setValue("proposalData" as any, liveQuote, {
+                shouldValidate: false,
+            });
+        }
+    }, [form, liveQuote]);
 
     const estimatedUSDValue =
         !!amount && !!tokenData?.price
@@ -241,7 +298,22 @@ function Step2({ handleBack }: StepProps) {
                         { kind: "transfer", action: "AddProposal" },
                         { kind: "call", action: "AddProposal" },
                     ]}
-                    idleMessage="Confirm and Submit Request"
+                    idleMessage={
+                        isSelectedTokenIntents
+                            ? hasLiveQuoteError
+                                ? "Failed to prepare 1Click transfer route"
+                                : isLoadingLiveQuote || isFetchingLiveQuote
+                                  ? "Preparing 1Click transfer route..."
+                                  : "Confirm and Submit Request"
+                            : "Confirm and Submit Request"
+                    }
+                    disabled={
+                        isSelectedTokenIntents &&
+                        (isLoadingLiveQuote ||
+                            isFetchingLiveQuote ||
+                            hasLiveQuoteError ||
+                            !liveQuote)
+                    }
                 />
             </div>
         </PageCard>
@@ -333,69 +405,58 @@ function pickCompatibleFallbackToken(
     return bestCandidate?.token ?? null;
 }
 
-const buildIntentProposal = (
+function buildIntentTransferDescription(
+    data: PaymentFormValues,
+    quote: Awaited<ReturnType<typeof getIntentsQuote>>,
+): string {
+    const quoteDeadline = quote?.quote.deadline;
+    const notes = [data.memo?.trim()].filter(Boolean).join(" ");
+
+    return encodeToMarkdown({
+        proposal_action: "payment-transfer",
+        notes,
+        recipient: data.address,
+        depositAddress: quote?.quote.depositAddress,
+        quoteDeadline,
+        signature: quote?.signature,
+        timeEstimate: quote?.quote.timeEstimate
+            ? `${quote.quote.timeEstimate} seconds`
+            : undefined,
+    });
+}
+
+function isIntentsToken(token: Token): boolean {
+    return (
+        token.address.startsWith("nep141:") ||
+        token.address.startsWith("nep245:")
+    );
+}
+
+function buildIntentsPaymentQuoteRequest(
+    treasuryId: string,
     data: PaymentFormValues,
     parsedAmount: string,
-    gasForIntentAction: string,
-): FunctionCallKind => {
-    const isNetworkWithdrawal = data.token.network !== "near";
-    const nep141Token = data.token.address.startsWith("nep141:")
-        ? data.token.address.replace("nep141:", "")
-        : null;
-    const nep245Token = data.token.address.startsWith("nep245:")
-        ? data.token.address.split(":")[1]
-        : null;
-    const tokenContract = nep141Token || nep245Token;
-
-    const withdrawalAction = nep141Token
-        ? {
-              method_name: "ft_withdraw",
-              args: jsonToBase64(
-                  isNetworkWithdrawal
-                      ? {
-                            token: tokenContract,
-                            receiver_id: tokenContract,
-                            amount: parsedAmount,
-                            memo: `WITHDRAW_TO:${data.address}`,
-                        }
-                      : {
-                            token: tokenContract,
-                            receiver_id: data.address,
-                            amount: parsedAmount,
-                        },
-              ),
-              deposit: "1",
-              gas: gasForIntentAction,
-          }
-        : {
-              method_name: "mt_withdraw",
-              args: jsonToBase64(
-                  isNetworkWithdrawal
-                      ? {
-                            token: tokenContract,
-                            receiver_id: tokenContract,
-                            amounts: [parsedAmount],
-                            token_ids: [data.token.address.split(":")[2]],
-                            memo: `WITHDRAW_TO:${data.address}`,
-                        }
-                      : {
-                            token: tokenContract,
-                            receiver_id: data.address,
-                            amounts: [parsedAmount],
-                            token_ids: [data.token.address.split(":")[2]],
-                        },
-              ),
-              deposit: "1",
-              gas: gasForIntentAction,
-          };
+    proposalPeriod?: string,
+) {
+    const deadlineMs = proposalPeriod
+        ? nanosToMs(proposalPeriod)
+        : 24 * 60 * 60 * 1000;
 
     return {
-        FunctionCall: {
-            receiver_id: "intents.near",
-            actions: [withdrawalAction],
-        },
+        swapType: "EXACT_INPUT",
+        slippageTolerance: 0,
+        originAsset: data.token.address,
+        depositType: "INTENTS" as const,
+        destinationAsset: data.token.address,
+        amount: parsedAmount,
+        refundTo: treasuryId,
+        refundType: "INTENTS" as const,
+        recipient: data.address,
+        recipientType: "DESTINATION_CHAIN" as const,
+        deadline: new Date(Date.now() + deadlineMs).toISOString(),
+        quoteWaitingTimeMs: 0,
     };
-};
+}
 
 const buildTransferProposal = (
     data: PaymentFormValues,
@@ -517,20 +578,14 @@ export default function PaymentsPage() {
     const onSubmit = async (data: PaymentFormValues) => {
         try {
             const isNEAR = data.token.symbol === "NEAR";
-            const description = {
-                notes: data.memo || "",
-            };
             const proposalBond = policy?.proposal_bond || "0";
             const gas = Big(255).mul(Big(10).pow(12)).toFixed(); // 255 Tgas for storage_deposit
-            const gasForIntentAction = Big(45).mul(Big(10).pow(12)).toFixed(); // 45 Tgas for ft_withdraw
 
             const additionalTransactions: Array<{
                 receiverId: string;
                 actions: ConnectorAction[];
             }> = [];
-            const isSelectedTokenIntents =
-                data.token.address.startsWith("nep141:") ||
-                data.token.address.startsWith("nep245:");
+            const isSelectedTokenIntents = isIntentsToken(data.token);
 
             const needsStorageDeposit =
                 !data.isRegistered && !isNEAR && !isSelectedTokenIntents;
@@ -562,14 +617,45 @@ export default function PaymentsPage() {
                 .mul(Big(10).pow(data.token.decimals))
                 .toFixed();
 
-            const proposalKind = isSelectedTokenIntents
-                ? buildIntentProposal(data, parsedAmount, gasForIntentAction)
-                : buildTransferProposal(data, parsedAmount);
+            let description = encodeToMarkdown({
+                notes: data.memo || "",
+            });
+            let proposalKind: FunctionCallKind | TransferKind;
+
+            if (isSelectedTokenIntents) {
+                const cachedQuote = form.getValues(
+                    "proposalData" as any,
+                ) as IntentsQuoteResponse | null;
+                const quote =
+                    cachedQuote ??
+                    (await getIntentsQuote(
+                        buildIntentsPaymentQuoteRequest(
+                            treasuryId!,
+                            data,
+                            parsedAmount,
+                            policy?.proposal_period,
+                        ),
+                        false,
+                    ));
+
+                if (!quote) {
+                    throw new Error("Failed to create 1Click transfer quote");
+                }
+
+                description = buildIntentTransferDescription(data, quote);
+                proposalKind = buildIntentsTransferProposal(
+                    data.token.address,
+                    quote.quote.depositAddress,
+                    quote.quote.amountIn,
+                );
+            } else {
+                proposalKind = buildTransferProposal(data, parsedAmount);
+            }
 
             await createProposal("Request to send payment submitted", {
                 treasuryId: treasuryId!,
                 proposal: {
-                    description: encodeToMarkdown(description),
+                    description,
                     kind: proposalKind,
                 },
                 proposalBond,
