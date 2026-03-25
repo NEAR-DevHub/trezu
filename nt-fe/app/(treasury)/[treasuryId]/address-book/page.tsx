@@ -392,9 +392,9 @@ function RecipientsView({
                         </div>
                     </>
                 ) : (
-                    <>
-                        <div className="flex flex-col gap-0">
-                            <div className="flex items-center gap-3 w-max">
+                    <div className="flex items-center justify-between w-full gap-3">
+                        <div className="flex flex-col gap-0 w-full max-w-md">
+                            <div className="flex items-center gap-3 w-fit">
                                 <h2 className="text-base font-semibold leading-none">
                                     Recipients
                                 </h2>
@@ -405,17 +405,17 @@ function RecipientsView({
                                     />
                                 )}
                             </div>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-xs text-muted-foreground hidden min-w-0 lg:block">
                                 This information is private. Only you and your
                                 team can see these recipients.
                             </p>
                         </div>
-                        <div className="flex items-center gap-2 justify-end min-w-0">
+                        <div className="flex items-center gap-2 justify-end min-w-0 w-fit shrink-0">
                             <ResponsiveInput
                                 type="text"
                                 placeholder="Search recipient by name"
                                 mobilePlaceholder="Search"
-                                className="max-w-52 w-full"
+                                className="w-52 min-w-0"
                                 search
                                 value={search}
                                 onChange={(e) =>
@@ -476,7 +476,7 @@ function RecipientsView({
                                 </span>
                             </AuthButton>
                         </div>
-                    </>
+                    </div>
                 )}
             </div>
 
