@@ -2,6 +2,7 @@ import { IntentsQuoteResponse } from "@/lib/api";
 import { Token } from "@/components/token-input";
 import { encodeToMarkdown, jsonToBase64 } from "@/lib/utils";
 import { getBatchStorageDepositIsRegistered } from "@/lib/api";
+import type { FunctionCallKind } from "@/lib/proposals-api";
 
 interface ProposalBuilderParams {
     proposalData: IntentsQuoteResponse;
@@ -44,6 +45,30 @@ interface ExchangeProposalResult {
             };
         }>;
     }>;
+}
+
+export function buildIntentsTransferProposal(
+    tokenAddress: string,
+    depositAddress: string,
+    amountIn: string,
+): FunctionCallKind {
+    return {
+        FunctionCall: {
+            receiver_id: "intents.near",
+            actions: [
+                {
+                    method_name: "mt_transfer",
+                    args: jsonToBase64({
+                        receiver_id: depositAddress,
+                        amount: amountIn,
+                        token_id: tokenAddress,
+                    }),
+                    deposit: "1",
+                    gas: "150000000000000",
+                },
+            ],
+        },
+    };
 }
 
 /**
@@ -318,24 +343,11 @@ export async function buildFungibleTokenProposal(
                     receiveToken,
                     slippageTolerance,
                 ),
-                kind: {
-                    FunctionCall: {
-                        receiver_id: "intents.near",
-                        actions: [
-                            {
-                                method_name: "mt_transfer",
-                                args: jsonToBase64({
-                                    receiver_id:
-                                        proposalData.quote.depositAddress,
-                                    amount: amountInSmallestUnit,
-                                    token_id: originAsset,
-                                }),
-                                deposit: "1", // 1 yoctoNEAR
-                                gas: "150000000000000", // 150 TGas
-                            },
-                        ],
-                    },
-                },
+                kind: buildIntentsTransferProposal(
+                    originAsset,
+                    proposalData.quote.depositAddress,
+                    amountInSmallestUnit,
+                ),
             },
             additionalTransactions: normalizeAdditionalTransactions(
                 additionalTransactions,

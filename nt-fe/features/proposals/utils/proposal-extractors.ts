@@ -36,6 +36,11 @@ function extractFTTransferData(
             a.method_name === "ft_transfer_call" ||
             a.method_name === "transfer",
     );
+    const actionMTTransfer = actions.find(
+        (a) =>
+            a.method_name === "mt_transfer" ||
+            a.method_name === "mt_transfer_call",
+    );
     const actionWithdraw = actions.find((a) => a.method_name === "ft_withdraw");
     const actionMTWithdraw = actions.find(
         (a) => a.method_name === "mt_withdraw",
@@ -55,6 +60,15 @@ function extractFTTransferData(
                     action.method_name === "transfer"
                         ? "near"
                         : functionCall.receiver_id,
+                amount: args.amount || "0",
+                receiver: args.receiver_id || "",
+            };
+        }
+    } else if (actionMTTransfer) {
+        const args = decodeArgs(actionMTTransfer.args);
+        if (args) {
+            return {
+                tokenId: args.token_id || "near",
                 amount: args.amount || "0",
                 receiver: args.receiver_id || "",
             };
@@ -90,15 +104,11 @@ function extractFTTransferData(
                 : `nep245:${args.token}:${args.token_ids[0]}`
             : `nep245:${functionCall.receiver_id}:${args.token_ids[0]}`;
 
-        const isExternalWithdraw = args.memo?.startsWith("WITHDRAW_TO:");
-        const receiver = isExternalWithdraw
-            ? args.memo.replace("WITHDRAW_TO:", "")
-            : args.receiver_id;
-
         return {
             tokenId,
             amount: args.amounts[0] || "0",
-            receiver,
+            receiver:
+                args.memo?.replace("WITHDRAW_TO:", "") || args.receiver_id,
         };
     }
     return undefined;
@@ -113,6 +123,10 @@ export function extractPaymentRequestData(
     let tokenId = "near";
     let amount = "0";
     let receiver = "";
+    const proposalAction = decodeProposalDescription(
+        "proposal action",
+        proposal.description,
+    );
 
     if ("Transfer" in proposal.kind) {
         const transfer = proposal.kind.Transfer;
@@ -135,6 +149,14 @@ export function extractPaymentRequestData(
     const notes = decodeProposalDescription("notes", proposal.description);
     const title = decodeProposalDescription("title", proposal.description);
     const url = decodeProposalDescription("url", proposal.description);
+    const describedRecipient = decodeProposalDescription(
+        "recipient",
+        proposal.description,
+    );
+
+    if (proposalAction === "payment-transfer" && describedRecipient) {
+        receiver = describedRecipient;
+    }
 
     return {
         tokenId,

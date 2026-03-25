@@ -2,12 +2,12 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { ConnectorAction } from "@hot-labs/near-connect";
-import { ArrowDownToLine, Info } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowDownToLine } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useForm, useFormContext, useWatch } from "react-hook-form";
-import { useDebounce } from "use-debounce";
+import { useForm, useFormContext } from "react-hook-form";
 import { z } from "zod";
 import { AmountSummary } from "@/components/amount-summary";
 import { Button } from "@/components/button";
@@ -22,7 +22,6 @@ import {
     StepWizard,
 } from "@/components/step-wizard";
 import { Textarea } from "@/components/textarea";
-import { Tooltip } from "@/components/tooltip";
 import { type Token, tokenSchema } from "@/components/token-input";
 import { Form, FormField } from "@/components/ui/form";
 import { NEAR_TOKEN } from "@/constants/token";
@@ -41,22 +40,14 @@ import {
     useToken,
     useTreasuryPolicy,
 } from "@/hooks/use-treasury-queries";
-import { useIntentsWithdrawalFee } from "@/hooks/use-intents-withdrawal-fee";
 import { trackEvent } from "@/lib/analytics";
 import Big from "@/lib/big";
 import { getBlockchainType } from "@/lib/blockchain-utils";
-import {
-    getNetworkFeeCoverageErrorMessage,
-    NETWORK_FEE_TOOLTIP_TEXT,
-} from "@/lib/intents-fee";
+import { getIntentsQuote, type IntentsQuoteResponse } from "@/lib/api";
 import type { FunctionCallKind, TransferKind } from "@/lib/proposals-api";
-import {
-    cn,
-    encodeToMarkdown,
-    formatCurrency,
-    jsonToBase64,
-} from "@/lib/utils";
+import { encodeToMarkdown, formatCurrency, nanosToMs } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
+import { buildIntentsTransferProposal } from "../exchange/utils/proposal-builder";
 import { PaymentFormSection } from "./components/payment-form-section";
 
 const paymentFormSchema = z
@@ -84,12 +75,7 @@ const paymentFormSchema = z
         }
     });
 
-interface Step1Props extends StepProps {
-    feeErrorMessage?: string | null;
-    isFeeLoading?: boolean;
-}
-
-function Step1({ handleNext, feeErrorMessage, isFeeLoading }: Step1Props) {
+function Step1({ handleNext }: StepProps) {
     const form = useFormContext<PaymentFormValues>();
     const { treasuryId } = useTreasury();
     const isMobile = useMediaQuery("(max-width: 768px)");
@@ -122,7 +108,7 @@ function Step1({ handleNext, feeErrorMessage, isFeeLoading }: Step1Props) {
                             className="flex items-center gap-2 border-2"
                             id="payments-bulk-btn"
                             onClick={() => {
-                                trackEvent("bulk-payments-click", {
+                                trackEvent("bulk_payments_click", {
                                     source: "payments_page",
                                     treasury_id: treasuryId ?? "",
                                 });
@@ -146,36 +132,75 @@ function Step1({ handleNext, feeErrorMessage, isFeeLoading }: Step1Props) {
                 amountName="amount"
                 tokenName="token"
                 recipientName="address"
-                feeErrorMessage={feeErrorMessage}
                 saveButtonText={saveButtonText}
                 onSave={handleSave}
-                isSubmitting={isFeeLoading}
             />
         </PageCard>
     );
 }
 
-interface Step2Props extends StepProps {
-    networkFee?: string | null;
-    showFeeBreakdown: boolean;
-}
-
-function Step2({ handleBack, networkFee, showFeeBreakdown }: Step2Props) {
+function Step2({ handleBack }: StepProps) {
     const form = useFormContext<PaymentFormValues>();
     const token = form.watch("token");
     const address = form.watch("address");
     const amount = form.watch("amount");
+    const { treasuryId } = useTreasury();
+    const { data: policy } = useTreasuryPolicy(treasuryId);
     const { data: storageDepositData } = useStorageDepositIsRegistered(
         address,
         token.address,
         token.residency === "Ft",
     );
     const { data: tokenData } = useToken(token.address);
-    const { treasuryId } = useTreasury();
     const { data: addressBook = [] } = useAddressBook();
     const contactName = addressBook.find(
         (e) => e.address.toLowerCase() === address?.toLowerCase(),
     )?.name;
+    const isSelectedTokenIntents = isIntentsToken(token);
+    const parsedAmount = useMemo(() => {
+        if (!amount || Number(amount) <= 0) {
+            return null;
+        }
+
+        return Big(amount).mul(Big(10).pow(token.decimals)).toFixed();
+    }, [amount, token.decimals]);
+
+    const {
+        data: liveQuote,
+        isLoading: isLoadingLiveQuote,
+        isFetching: isFetchingLiveQuote,
+        isError: hasLiveQuoteError,
+    } = useQuery({
+        queryKey: [
+            "paymentLiveQuote",
+            treasuryId,
+            token.address,
+            amount,
+            address,
+        ],
+        queryFn: async (): Promise<IntentsQuoteResponse | null> => {
+            if (!treasuryId || !parsedAmount) {
+                return null;
+            }
+
+            return getIntentsQuote(
+                buildIntentsPaymentQuoteRequest(
+                    treasuryId,
+                    form.getValues(),
+                    parsedAmount,
+                    policy?.proposal_period,
+                ),
+                false,
+            );
+        },
+        enabled:
+            isSelectedTokenIntents &&
+            !!treasuryId &&
+            !!address &&
+            !!parsedAmount &&
+            !!policy?.proposal_period,
+        refetchOnWindowFocus: false,
+    });
 
     useEffect(() => {
         if (storageDepositData !== undefined) {
@@ -183,20 +208,18 @@ function Step2({ handleBack, networkFee, showFeeBreakdown }: Step2Props) {
         }
     }, [storageDepositData, form]);
 
-    const totalAmountWithFees = Big(amount || "0");
-    const recipientAmountRaw =
-        showFeeBreakdown && networkFee
-            ? Big(amount || "0").minus(networkFee)
-            : Big(amount || "0");
-    const recipientAmount = recipientAmountRaw.lt(0)
-        ? Big(0)
-        : recipientAmountRaw;
-    const estimatedUSDValue = !!tokenData?.price
-        ? totalAmountWithFees.mul(tokenData.price)
-        : Big(0);
-    const recipientEstimatedUSDValue = !!tokenData?.price
-        ? recipientAmount.mul(tokenData.price)
-        : Big(0);
+    useEffect(() => {
+        if (liveQuote) {
+            form.setValue("proposalData" as any, liveQuote, {
+                shouldValidate: false,
+            });
+        }
+    }, [form, liveQuote]);
+
+    const estimatedUSDValue =
+        !!amount && !!tokenData?.price
+            ? Big(amount).mul(tokenData.price)
+            : Big(0);
 
     return (
         <PageCard>
@@ -205,7 +228,7 @@ function Step2({ handleBack, networkFee, showFeeBreakdown }: Step2Props) {
                 handleBack={handleBack}
             >
                 <AmountSummary
-                    total={totalAmountWithFees}
+                    total={amount}
                     totalUSD={estimatedUSDValue.toNumber()}
                     token={token}
                     showNetworkIcon={true}
@@ -213,8 +236,9 @@ function Step2({ handleBack, networkFee, showFeeBreakdown }: Step2Props) {
                     <p>to 1 recipient</p>
                 </AmountSummary>
                 <div className="flex flex-col gap-2">
+                    <p className="font-semibold">Recipient</p>
                     <div className="flex flex-col gap-1 w-full">
-                        <div className="flex justify-between items-center gap-2 w-full text-xs">
+                        <div className="flex justify-between items-center gap-2 w-full text-xs ">
                             <div className="flex flex-col gap-0.5 min-w-0">
                                 {contactName && (
                                     <p className="font-semibold">
@@ -222,17 +246,16 @@ function Step2({ handleBack, networkFee, showFeeBreakdown }: Step2Props) {
                                     </p>
                                 )}
                                 <p
-                                    className={cn(
-                                        "break-all whitespace-normal",
+                                    className={
                                         contactName
-                                            ? "text-muted-foreground"
-                                            : "font-semibold",
-                                    )}
+                                            ? "text-muted-foreground truncate"
+                                            : "font-semibold"
+                                    }
                                 >
                                     {address}
                                 </p>
                             </div>
-                            <div className="flex items-center gap-5 min-w-fit">
+                            <div className="flex items-center gap-5">
                                 <img
                                     src={token.icon}
                                     alt={token.symbol}
@@ -240,37 +263,14 @@ function Step2({ handleBack, networkFee, showFeeBreakdown }: Step2Props) {
                                 />
                                 <div className="flex flex-col gap-[3px] items-end">
                                     <p className="text-xs font-semibold text-wrap break-all">
-                                        {recipientAmount.toString()}{" "}
-                                        {token.symbol}
+                                        {amount} {token.symbol}
                                     </p>
                                     <p className="text-xxs text-muted-foreground text-wrap break-all">
-                                        ≈{" "}
-                                        {formatCurrency(
-                                            recipientEstimatedUSDValue,
-                                        )}
+                                        ≈ {formatCurrency(estimatedUSDValue)}
                                     </p>
                                 </div>
                             </div>
                         </div>
-                        {showFeeBreakdown && networkFee && (
-                            <div className="flex items-center justify-between gap-2 text-sm my-3">
-                                <div className="flex items-center gap-1 text-muted-foreground">
-                                    <p>Network Fee</p>
-                                    <Tooltip
-                                        content={NETWORK_FEE_TOOLTIP_TEXT}
-                                        side="top"
-                                    >
-                                        <Info
-                                            className="size-3 shrink-0"
-                                            aria-label="Network fee info"
-                                        />
-                                    </Tooltip>
-                                </div>
-                                <p>
-                                    {networkFee} {token.symbol}
-                                </p>
-                            </div>
-                        )}
                         <FormField
                             control={form.control}
                             name="memo"
@@ -298,7 +298,22 @@ function Step2({ handleBack, networkFee, showFeeBreakdown }: Step2Props) {
                         { kind: "transfer", action: "AddProposal" },
                         { kind: "call", action: "AddProposal" },
                     ]}
-                    idleMessage="Confirm and Submit Request"
+                    idleMessage={
+                        isSelectedTokenIntents
+                            ? hasLiveQuoteError
+                                ? "Failed to prepare 1Click transfer route"
+                                : isLoadingLiveQuote || isFetchingLiveQuote
+                                  ? "Preparing 1Click transfer route..."
+                                  : "Confirm and Submit Request"
+                            : "Confirm and Submit Request"
+                    }
+                    disabled={
+                        isSelectedTokenIntents &&
+                        (isLoadingLiveQuote ||
+                            isFetchingLiveQuote ||
+                            hasLiveQuoteError ||
+                            !liveQuote)
+                    }
                 />
             </div>
         </PageCard>
@@ -390,69 +405,58 @@ function pickCompatibleFallbackToken(
     return bestCandidate?.token ?? null;
 }
 
-const buildIntentProposal = (
+function buildIntentTransferDescription(
+    data: PaymentFormValues,
+    quote: Awaited<ReturnType<typeof getIntentsQuote>>,
+): string {
+    const quoteDeadline = quote?.quote.deadline;
+    const notes = [data.memo?.trim()].filter(Boolean).join(" ");
+
+    return encodeToMarkdown({
+        proposal_action: "payment-transfer",
+        notes,
+        recipient: data.address,
+        depositAddress: quote?.quote.depositAddress,
+        quoteDeadline,
+        signature: quote?.signature,
+        timeEstimate: quote?.quote.timeEstimate
+            ? `${quote.quote.timeEstimate} seconds`
+            : undefined,
+    });
+}
+
+function isIntentsToken(token: Token): boolean {
+    return (
+        token.address.startsWith("nep141:") ||
+        token.address.startsWith("nep245:")
+    );
+}
+
+function buildIntentsPaymentQuoteRequest(
+    treasuryId: string,
     data: PaymentFormValues,
     parsedAmount: string,
-    gasForIntentAction: string,
-): FunctionCallKind => {
-    const isNetworkWithdrawal = data.token.network !== "near";
-    const nep141Token = data.token.address.startsWith("nep141:")
-        ? data.token.address.replace("nep141:", "")
-        : null;
-    const nep245Token = data.token.address.startsWith("nep245:")
-        ? data.token.address.split(":")[1]
-        : null;
-    const tokenContract = nep141Token || nep245Token;
-
-    const withdrawalAction = nep141Token
-        ? {
-              method_name: "ft_withdraw",
-              args: jsonToBase64(
-                  isNetworkWithdrawal
-                      ? {
-                            token: tokenContract,
-                            receiver_id: tokenContract,
-                            amount: parsedAmount,
-                            memo: `WITHDRAW_TO:${data.address}`,
-                        }
-                      : {
-                            token: tokenContract,
-                            receiver_id: data.address,
-                            amount: parsedAmount,
-                        },
-              ),
-              deposit: "1",
-              gas: gasForIntentAction,
-          }
-        : {
-              method_name: "mt_withdraw",
-              args: jsonToBase64(
-                  isNetworkWithdrawal
-                      ? {
-                            token: tokenContract,
-                            receiver_id: tokenContract,
-                            amounts: [parsedAmount],
-                            token_ids: [data.token.address.split(":")[2]],
-                            memo: `WITHDRAW_TO:${data.address}`,
-                        }
-                      : {
-                            token: tokenContract,
-                            receiver_id: data.address,
-                            amounts: [parsedAmount],
-                            token_ids: [data.token.address.split(":")[2]],
-                        },
-              ),
-              deposit: "1",
-              gas: gasForIntentAction,
-          };
+    proposalPeriod?: string,
+) {
+    const deadlineMs = proposalPeriod
+        ? nanosToMs(proposalPeriod)
+        : 24 * 60 * 60 * 1000;
 
     return {
-        FunctionCall: {
-            receiver_id: "intents.near",
-            actions: [withdrawalAction],
-        },
+        swapType: "EXACT_INPUT",
+        slippageTolerance: 0,
+        originAsset: data.token.address,
+        depositType: "INTENTS" as const,
+        destinationAsset: data.token.address,
+        amount: parsedAmount,
+        refundTo: treasuryId,
+        refundType: "INTENTS" as const,
+        recipient: data.address,
+        recipientType: "DESTINATION_CHAIN" as const,
+        deadline: new Date(Date.now() + deadlineMs).toISOString(),
+        quoteWaitingTimeMs: 0,
     };
-};
+}
 
 const buildTransferProposal = (
     data: PaymentFormValues,
@@ -538,46 +542,7 @@ export default function PaymentsPage() {
             token: defaultToken,
         },
     });
-    const [watchedToken, watchedAmount, watchedAddress] = useWatch({
-        control: form.control,
-        name: ["token", "amount", "address"],
-    }) as [PaymentFormValues["token"], string, string];
-    const [debouncedAddress] = useDebounce(watchedAddress, 300);
-    const {
-        data: intentsFeeData,
-        isIntentsCrossChainToken,
-        isLoading: isIntentsFeeLoading,
-    } = useIntentsWithdrawalFee({
-        token: watchedToken,
-        destinationAddress: debouncedAddress,
-    });
 
-    const feeErrorMessage = useMemo(() => {
-        if (
-            !isIntentsCrossChainToken ||
-            !watchedAmount ||
-            isNaN(Number(watchedAmount)) ||
-            Number(watchedAmount) <= 0 ||
-            isIntentsFeeLoading ||
-            !intentsFeeData
-        ) {
-            return null;
-        }
-
-        return getNetworkFeeCoverageErrorMessage({
-            amount: watchedAmount,
-            networkFee: Big(intentsFeeData.networkFee),
-            decimals: watchedToken.decimals,
-            symbol: watchedToken.symbol,
-        });
-    }, [
-        intentsFeeData,
-        isIntentsCrossChainToken,
-        isIntentsFeeLoading,
-        watchedAmount,
-        watchedToken?.decimals,
-        watchedToken?.symbol,
-    ]);
     // Update token/address when query params change
     useEffect(() => {
         form.setValue("token", defaultToken);
@@ -613,19 +578,14 @@ export default function PaymentsPage() {
     const onSubmit = async (data: PaymentFormValues) => {
         try {
             const isNEAR = data.token.symbol === "NEAR";
-            const description = {
-                notes: data.memo || "",
-            };
             const proposalBond = policy?.proposal_bond || "0";
             const gas = Big(255).mul(Big(10).pow(12)).toFixed(); // 255 Tgas for storage_deposit
-            const gasForIntentAction = Big(45).mul(Big(10).pow(12)).toFixed(); // 45 Tgas for ft_withdraw
 
             const additionalTransactions: Array<{
                 receiverId: string;
                 actions: ConnectorAction[];
             }> = [];
-            const isSelectedTokenIntents =
-                data.token.address.startsWith("nep141:");
+            const isSelectedTokenIntents = isIntentsToken(data.token);
 
             const needsStorageDeposit =
                 !data.isRegistered && !isNEAR && !isSelectedTokenIntents;
@@ -657,14 +617,45 @@ export default function PaymentsPage() {
                 .mul(Big(10).pow(data.token.decimals))
                 .toFixed();
 
-            const proposalKind = isSelectedTokenIntents
-                ? buildIntentProposal(data, parsedAmount, gasForIntentAction)
-                : buildTransferProposal(data, parsedAmount);
+            let description = encodeToMarkdown({
+                notes: data.memo || "",
+            });
+            let proposalKind: FunctionCallKind | TransferKind;
+
+            if (isSelectedTokenIntents) {
+                const cachedQuote = form.getValues(
+                    "proposalData" as any,
+                ) as IntentsQuoteResponse | null;
+                const quote =
+                    cachedQuote ??
+                    (await getIntentsQuote(
+                        buildIntentsPaymentQuoteRequest(
+                            treasuryId!,
+                            data,
+                            parsedAmount,
+                            policy?.proposal_period,
+                        ),
+                        false,
+                    ));
+
+                if (!quote) {
+                    throw new Error("Failed to create 1Click transfer quote");
+                }
+
+                description = buildIntentTransferDescription(data, quote);
+                proposalKind = buildIntentsTransferProposal(
+                    data.token.address,
+                    quote.quote.depositAddress,
+                    quote.quote.amountIn,
+                );
+            } else {
+                proposalKind = buildTransferProposal(data, parsedAmount);
+            }
 
             await createProposal("Request to send payment submitted", {
                 treasuryId: treasuryId!,
                 proposal: {
-                    description: encodeToMarkdown(description),
+                    description,
                     kind: proposalKind,
                 },
                 proposalBond,
@@ -672,11 +663,6 @@ export default function PaymentsPage() {
                 proposalType: "payment",
             })
                 .then(() => {
-                    trackEvent("payment-submitted", {
-                        treasury_id: treasuryId ?? "",
-                        token_symbol: data.token.symbol,
-                        amount: data.amount,
-                    });
                     form.reset();
                     setStep(0);
                     triggerPendingTour();
@@ -688,31 +674,6 @@ export default function PaymentsPage() {
             console.error("Payments error", error);
         }
     };
-
-    const steps = useMemo(
-        () => [
-            {
-                component: Step1,
-                props: {
-                    feeErrorMessage,
-                    isFeeLoading: isIntentsFeeLoading,
-                },
-            },
-            {
-                component: Step2,
-                props: {
-                    showFeeBreakdown: isIntentsCrossChainToken,
-                    networkFee: intentsFeeData?.networkFee,
-                },
-            },
-        ],
-        [
-            feeErrorMessage,
-            isIntentsFeeLoading,
-            isIntentsCrossChainToken,
-            intentsFeeData?.networkFee,
-        ],
-    );
 
     return (
         <PageComponentLayout
@@ -727,7 +688,14 @@ export default function PaymentsPage() {
                     <StepWizard
                         step={step}
                         onStepChange={setStep}
-                        steps={steps}
+                        steps={[
+                            {
+                                component: Step1,
+                            },
+                            {
+                                component: Step2,
+                            },
+                        ]}
                     />
                 </form>
             </Form>
