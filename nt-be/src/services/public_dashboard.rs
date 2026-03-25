@@ -1,4 +1,10 @@
-use std::{cmp::Ordering, collections::{HashMap, HashSet}, str::FromStr, sync::Arc, time::Duration};
+use std::{
+    cmp::Ordering,
+    collections::{HashMap, HashSet},
+    str::FromStr,
+    sync::Arc,
+    time::Duration,
+};
 
 use bigdecimal::BigDecimal;
 use chrono::{NaiveDate, Utc};
@@ -144,7 +150,7 @@ fn asset_price_usd(asset: &SimplifiedToken) -> BigDecimal {
 
 fn asset_usd_value(asset: &SimplifiedToken) -> BigDecimal {
     let raw_amount = asset_raw_amount(asset);
-    if raw_amount == BigDecimal::from(0) {
+    if raw_amount == 0 {
         return BigDecimal::from(0);
     }
 
@@ -159,7 +165,7 @@ fn aggregate_tokens(tokens: &[SimplifiedToken]) -> Vec<AggregatedToken> {
 
     for token in tokens {
         let raw_amount = asset_raw_amount(token);
-        if raw_amount == BigDecimal::from(0) {
+        if raw_amount == 0 {
             continue;
         }
 
@@ -180,7 +186,7 @@ fn aggregate_tokens(tokens: &[SimplifiedToken]) -> Vec<AggregatedToken> {
 
         entry.total_amount_raw += raw_amount;
         entry.total_usd += usd_value;
-        if entry.price_usd == BigDecimal::from(0) && price_usd != BigDecimal::from(0) {
+        if entry.price_usd == 0 && price_usd != 0 {
             entry.price_usd = price_usd;
         }
     }
@@ -243,7 +249,7 @@ fn aggregate_balance_rows(rows: &[BalanceRow]) -> Vec<AggregatedToken> {
 
         entry.total_amount_raw += row.total_amount_raw.clone();
         entry.total_usd += row.total_usd.clone();
-        if entry.price_usd == BigDecimal::from(0) && row.price_usd != BigDecimal::from(0) {
+        if entry.price_usd == 0 && row.price_usd != 0 {
             entry.price_usd = row.price_usd.clone();
         }
     }
@@ -414,12 +420,9 @@ pub async fn load_latest_public_dashboard_snapshot(
 
     // Enrich top tokens with fresh metadata (counterparties table → Defuse API → NearBlocks).
     let token_ids: Vec<String> = top_tokens.iter().map(|t| t.token_id.clone()).collect();
-    let metadata = crate::handlers::token::metadata::fetch_tokens_with_fallback(
-        state,
-        &token_ids,
-        false,
-    )
-    .await;
+    let metadata =
+        crate::handlers::token::metadata::fetch_tokens_with_fallback(state, &token_ids, false)
+            .await;
     for token in &mut top_tokens {
         if let Some(meta) = metadata.get(&token.token_id) {
             token.symbol = meta.symbol.clone();
@@ -442,10 +445,12 @@ async fn refresh_public_dashboard_snapshot_for_date(
     snapshot_date: NaiveDate,
 ) -> Result<RefreshSummary, Box<dyn std::error::Error + Send + Sync>> {
     let dao_ids = list_all_dao_ids(&state.db_pool).await?;
-    let trezu_set = load_trezu_dao_set(&state.db_pool).await.unwrap_or_else(|err| {
-        log::warn!("[public-dashboard] Failed to load Trezu DAO set: {}", err);
-        HashSet::new()
-    });
+    let trezu_set = load_trezu_dao_set(&state.db_pool)
+        .await
+        .unwrap_or_else(|err| {
+            log::warn!("[public-dashboard] Failed to load Trezu DAO set: {}", err);
+            HashSet::new()
+        });
 
     let mut successful_dao_count = 0i32;
     let mut failed_dao_count = 0i32;

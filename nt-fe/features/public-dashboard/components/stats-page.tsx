@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ChartSpline } from "lucide-react";
 import { QueryProvider } from "@/components/query-provider";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { PageCard } from "@/components/card";
@@ -9,6 +9,7 @@ import { usePublicDashboard } from "../hooks/use-public-dashboard";
 import { AumStatCard, AumStatCardSkeleton } from "./aum-stat-card";
 import { TopTokensTable, TopTokensTableSkeleton } from "./top-tokens-table";
 import { EmptyState } from "@/components/empty-state";
+import Link from "next/link";
 
 function DashboardContent() {
     const { data, isLoading, isError } = usePublicDashboard();
@@ -27,7 +28,7 @@ function DashboardContent() {
             <PageCard>
                 <div className="flex flex-col items-center justify-center gap-2 py-12">
                     <EmptyState
-                        icon={AlertCircle}
+                        icon={ChartSpline}
                         title="No data yet"
                         description="Stats will appear after the first daily snapshot is computed."
                     />
@@ -54,10 +55,11 @@ export function PublicDashboardStatsPage() {
             <PageComponentLayout
                 title="Stats"
                 hideCollapseButton
-                backButton="/"
                 logo={
                     <div className="flex items-center gap-2.5">
-                        <Logo size="sm" />
+                        <Link href="/">
+                            <Logo size="sm" />
+                        </Link>
                         <span className="hidden sm:inline text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
                             Updates daily
                         </span>
