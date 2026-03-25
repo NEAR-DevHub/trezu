@@ -74,6 +74,10 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
     Router::new()
         // Health check
         .route("/api/health", get(health_check))
+        .route(
+            "/api/public/dashboard/aum",
+            get(handlers::public_dashboard::get_public_dashboard_aum),
+        )
         // Balance changes endpoint
         .route(
             "/api/balance-changes",

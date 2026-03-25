@@ -238,6 +238,14 @@ async fn main() {
         });
     }
 
+    // Spawn public dashboard daily refresh service
+    {
+        let state_clone = state.clone();
+        tokio::spawn(async move {
+            nt_be::services::run_public_dashboard_refresh_service(state_clone).await;
+        });
+    }
+
     // Configure CORS - must specify exact origins, methods, and headers when using credentials
     let origins: Vec<HeaderValue> = state
         .env_vars

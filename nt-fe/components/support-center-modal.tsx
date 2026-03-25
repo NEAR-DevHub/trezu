@@ -14,7 +14,7 @@ import {
     LANDING_PAGE,
 } from "@/constants/config";
 import Link from "next/link";
-import { CirclePlay, Eye, File, Headphones } from "lucide-react";
+import { BarChart3, CirclePlay, Eye, File, Headphones } from "lucide-react";
 import Gleap from "gleap";
 import { LogoInlined } from "./logo";
 
@@ -119,6 +119,13 @@ const supportItems: SupportItemProps[] = [
         onClick: () => {
             Gleap.open();
         },
+    },
+    {
+        icon: <BarChart3 className="size-5" />,
+        title: "Stats",
+        description:
+            "View total assets under management across all treasuries.",
+        href: "/stats",
     },
 ];
 

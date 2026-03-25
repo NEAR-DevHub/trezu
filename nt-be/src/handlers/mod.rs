@@ -7,6 +7,7 @@ pub mod intents;
 pub mod lookup;
 pub mod proposals;
 pub mod proxy;
+pub mod public_dashboard;
 pub mod relay;
 pub mod subscription;
 pub mod token;
