@@ -460,9 +460,9 @@ export function getProposalRequiredFunds(
         if (mtWithdrawAction) {
             const args = decodeArgs(mtWithdrawAction.args);
             if (args?.amounts?.[0] && args?.token_ids?.[0]) {
-                const tokenId = args.token
-                    ? args.token.startsWith("nep245:")
-                        ? args.token
+                const tokenId = args.token_ids[0]
+                    ? args.token_ids[0].startsWith("nep245:")
+                        ? args.token_ids[0]
                         : `nep245:${args.token}:${args.token_ids[0]}`
                     : `nep245:${functionCall.receiver_id}:${args.token_ids[0]}`;
                 return { tokenId, amount: args.amounts[0] };
