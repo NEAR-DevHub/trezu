@@ -218,12 +218,6 @@ export function Content() {
         !creationAvailable;
 
     useEffect(() => {
-        if (accountId) {
-            posthog.identify(accountId, { account_id: accountId });
-        }
-    }, [accountId]);
-
-    useEffect(() => {
         if (!isLoading && treasuries.length > 0) {
             router.push(`/${lastTreasuryId || treasuries[0].daoId}`);
         } else if (
