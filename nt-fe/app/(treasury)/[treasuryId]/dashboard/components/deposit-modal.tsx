@@ -1,28 +1,29 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronDown, CircleCheck } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
 import QRCode from "react-qr-code";
-import { SelectModal } from "./select-modal";
-import { fetchDepositAddress } from "@/lib/bridge-api";
-import { useTreasury } from "@/hooks/use-treasury";
-import { useBridgeTokens, BridgeNetwork } from "@/hooks/use-bridge-tokens";
-import { useAssets, useAggregatedTokens } from "@/hooks/use-assets";
+import { z } from "zod";
 import { Button } from "@/components/button";
 import { CopyButton } from "@/components/copy-button";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { InputBlock } from "@/components/input-block";
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
 } from "@/components/modal";
-import { InputBlock } from "@/components/input-block";
-import { useThemeStore } from "@/stores/theme-store";
 import { getNetworkDisplayName } from "@/components/token-display";
-import { formatBalance, formatSmartAmount } from "@/lib/utils";
+import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { useAggregatedTokens, useAssets } from "@/hooks/use-assets";
+import { type BridgeNetwork, useBridgeTokens } from "@/hooks/use-bridge-tokens";
+import { useTreasury } from "@/hooks/use-treasury";
 import Big from "@/lib/big";
+import { fetchDepositAddress } from "@/lib/bridge-api";
+import { formatBalance, formatSmartAmount } from "@/lib/utils";
+import { useThemeStore } from "@/stores/theme-store";
+import { SelectModal } from "./select-modal";
 
 interface DepositModalProps {
     isOpen: boolean;
@@ -140,6 +141,18 @@ export function DepositModal({
 
     const { data: bridgeAssets = [], isLoading: isLoadingAssets } =
         useBridgeTokens(isOpen);
+
+    useEffect(() => {
+        if (selectedAsset && selectedNetwork) {
+            trackEvent("deposit-asset-and-network-selected", {
+                treasury_id: treasuryId ?? "",
+                asset_id: selectedAsset.id,
+                asset_name: selectedAsset.name,
+                network_id: selectedNetwork.id,
+                network_name: selectedNetwork.name,
+            });
+        }
+    }, [selectedAsset?.id, selectedNetwork?.id]);
 
     // Get the selected network's bridge data to access min amounts
     const selectedBridgeNetwork = useMemo(() => {

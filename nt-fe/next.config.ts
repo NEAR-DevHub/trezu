@@ -5,12 +5,26 @@ const nextConfig: NextConfig = {
     output: "standalone",
     serverExternalPackages: ["thread-stream", "pino", "geoip-lite"],
     transpilePackages: ["@hot-labs/near-connect"],
+    // Required to support PostHog trailing slash API requests
+    skipTrailingSlashRedirect: true,
     headers: async () => {
         return [
             // Allow CORS so NEAR Connect can load trezu-wallet.js
             {
                 source: "/_next/static/:path*",
                 headers: [{ key: "Access-Control-Allow-Origin", value: "*" }],
+            },
+        ];
+    },
+    async rewrites() {
+        return [
+            {
+                source: "/ingest/static/:path*",
+                destination: "https://us-assets.i.posthog.com/static/:path*",
+            },
+            {
+                source: "/ingest/:path*",
+                destination: "https://us.i.posthog.com/:path*",
             },
         ];
     },

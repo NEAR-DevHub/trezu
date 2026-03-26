@@ -49,6 +49,7 @@ import { StepperHeader } from "@/components/step-wizard";
 import { NumberBadge } from "@/components/number-badge";
 import { NEARN_IO_ACCOUNT } from "./constants";
 import { useSearchParams, useRouter } from "next/navigation";
+import { trackEvent } from "@/lib/analytics";
 
 interface Member {
     accountId: string;
@@ -443,6 +444,8 @@ export default function MembersPage() {
         const isValid = await form.trigger();
         if (!isValid) return;
 
+        trackEvent("member-add-review-clicked", { treasury_id: treasuryId });
+
         // Validate all addresses exist on blockchain (in parallel)
         setIsValidatingAddresses(true);
         const members = form.getValues("members");
@@ -512,6 +515,11 @@ export default function MembersPage() {
                 "Update Policy - Add New Members",
                 "New member request created successfully",
             );
+
+            trackEvent("member-add-submitted", {
+                treasury_id: treasuryId,
+                members_count: data.members.length,
+            });
 
             setIsPreviewModalOpen(false);
             form.reset({
@@ -710,6 +718,11 @@ export default function MembersPage() {
                 successMessage,
             );
 
+            trackEvent("member-edit-submitted", {
+                treasury_id: treasuryId,
+                members_count: membersData.length,
+            });
+
             setIsEditPreviewModalOpen(false);
             setIsEditRolesModalOpen(false);
             setSelectedMembers([]);
@@ -725,6 +738,8 @@ export default function MembersPage() {
     const handleEditReviewRequest = () => {
         // Validate the form
         if (!form.formState.isValid) return;
+
+        trackEvent("member-edit-review-clicked", { treasury_id: treasuryId });
 
         // Close edit modal and open preview modal
         setIsEditRolesModalOpen(false);
@@ -769,6 +784,11 @@ export default function MembersPage() {
                 `Member removal request created successfully`,
             );
 
+            trackEvent("member-delete-submitted", {
+                treasury_id: treasuryId,
+                members_count: membersToRemove.length,
+            });
+
             setIsDeleteModalOpen(false);
             setMemberToDelete(null);
             setSelectedMembers([]);
@@ -783,8 +803,9 @@ export default function MembersPage() {
         form.reset({
             members: [{ accountId: "", roles: [] }],
         });
+        trackEvent("member-add-modal-opened", { treasury_id: treasuryId });
         setIsAddMemberModalOpen(true);
-    }, [form]);
+    }, [form, treasuryId]);
 
     const handleEditMember = useCallback(
         (member: Member) => {

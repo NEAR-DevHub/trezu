@@ -1,66 +1,67 @@
 "use client";
 
-import { PageCard } from "@/components/card";
-import { TokenInput, tokenSchema } from "@/components/token-input";
-import { PageComponentLayout } from "@/components/page-component-layout";
-import { useForm, useFormContext } from "react-hook-form";
-import { Form } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ArrowDown, ChevronRight, Loader2 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { trackEvent } from "@/lib/analytics";
+import { useEffect, useMemo, useState } from "react";
+import { useForm, useFormContext } from "react-hook-form";
 import { z } from "zod";
+import { Button } from "@/components/button";
+import { PageCard } from "@/components/card";
+import { CopyButton } from "@/components/copy-button";
+import { CreateRequestButton } from "@/components/create-request-button";
+import { useFormatDate } from "@/components/formatted-date";
+import { InfoDisplay } from "@/components/info-display";
+import { PageComponentLayout } from "@/components/page-component-layout";
+import { PendingButton } from "@/components/pending-button";
 import {
     ReviewStep,
+    type StepProps,
     StepperHeader,
-    StepProps,
     StepWizard,
 } from "@/components/step-wizard";
-import { useToken, useTreasuryPolicy } from "@/hooks/use-treasury-queries";
-import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { TokenInput, tokenSchema } from "@/components/token-input";
+import { Form } from "@/components/ui/form";
+import { Skeleton } from "@/components/ui/skeleton";
+import { WarningAlert } from "@/components/warning-alert";
+import { NEAR_TOKEN } from "@/constants/token";
+import {
+    PAGE_TOUR_NAMES,
+    PAGE_TOUR_STORAGE_KEYS,
+    usePageTour,
+} from "@/features/onboarding/steps/page-tours";
 import { useTreasury } from "@/hooks/use-treasury";
+import { useToken, useTreasuryPolicy } from "@/hooks/use-treasury-queries";
+import type { IntentsQuoteResponse } from "@/lib/api";
+import { cn, formatBalance, formatSmartAmount } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 import { useThemeStore } from "@/stores/theme-store";
-import { cn, formatBalance, formatSmartAmount } from "@/lib/utils";
-import { NEAR_TOKEN } from "@/constants/token";
-import { CreateRequestButton } from "@/components/create-request-button";
-import { ArrowDown, ChevronRight, Loader2 } from "lucide-react";
 import { ExchangeSettingsModal } from "./components/exchange-settings-modal";
-import { Button } from "@/components/button";
-import { IntentsQuoteResponse } from "@/lib/api";
-import { PendingButton } from "@/components/pending-button";
-import { CopyButton } from "@/components/copy-button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ExchangeSummaryCard } from "./components/exchange-summary-card";
+import { Rate } from "./components/rate";
 import {
-    DRY_QUOTE_REFRESH_INTERVAL,
-    PROPOSAL_REFRESH_INTERVAL,
-    ETH_TOKEN,
     BTC_TOKEN,
+    DRY_QUOTE_REFRESH_INTERVAL,
+    ETH_TOKEN,
+    PROPOSAL_REFRESH_INTERVAL,
 } from "./constants";
-import { WarningAlert } from "@/components/warning-alert";
-import { useFormatDate } from "@/components/formatted-date";
-import {
-    calculateMarketPriceDifference,
-    isNEARWrapConversion,
-    isNEARDeposit,
-    isNEARWithdraw,
-    isNativeNEAR,
-} from "./utils";
 import { useCountdownTimer } from "./hooks/use-countdown-timer";
 import { useExchangeQuote } from "./hooks/use-exchange-quote";
 import { useFormatQuoteAmount } from "./hooks/use-format-quote-amount";
-import { ExchangeSummaryCard } from "./components/exchange-summary-card";
-import { Rate } from "./components/rate";
-import { InfoDisplay } from "@/components/info-display";
 import {
-    buildNativeNEARProposal,
+    calculateMarketPriceDifference,
+    isNativeNEAR,
+    isNEARDeposit,
+    isNEARWithdraw,
+    isNEARWrapConversion,
+} from "./utils";
+import {
     buildFungibleTokenProposal,
+    buildNativeNEARProposal,
     buildNEARDepositProposal,
     buildNEARWithdrawProposal,
 } from "./utils/proposal-builder";
-import {
-    usePageTour,
-    PAGE_TOUR_NAMES,
-    PAGE_TOUR_STORAGE_KEYS,
-} from "@/features/onboarding/steps/page-tours";
 
 const exchangeFormSchema = z.object({
     sellAmount: z
@@ -720,6 +721,12 @@ export default function ExchangePage() {
                 proposalBond,
                 additionalTransactions: result.additionalTransactions,
                 proposalType: "swap",
+            });
+
+            trackEvent("exchange-submitted", {
+                treasury_id: selectedTreasury,
+                sell_token_symbol: data.sellToken.symbol,
+                receive_token_symbol: data.receiveToken.symbol,
             });
 
             form.reset();

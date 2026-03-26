@@ -1,18 +1,18 @@
+import { Loader2 } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/button";
+import { InfoAlert } from "@/components/info-alert";
 import {
     Dialog,
     DialogContent,
-    DialogHeader,
-    DialogTitle,
     DialogDescription,
     DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from "@/components/modal";
-import { Button } from "@/components/button";
-import { useNear } from "@/stores/near-store";
 import { useTreasury } from "@/hooks/use-treasury";
-import { Loader2 } from "lucide-react";
-import { useState } from "react";
-import { InfoAlert } from "@/components/info-alert";
-import { Proposal } from "@/lib/proposals-api";
+import type { Proposal } from "@/lib/proposals-api";
+import { useNear } from "@/stores/near-store";
 
 interface VoteModalProps {
     isOpen: boolean;

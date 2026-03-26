@@ -1,16 +1,16 @@
-import { UseFormReturn, FormProvider } from "react-hook-form";
+import { FormProvider, type UseFormReturn } from "react-hook-form";
+import { ButtonWithTooltip } from "@/components/button-with-tooltip";
+import { MemberInput } from "@/components/member-input";
 import {
     Dialog,
     DialogContent,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogFooter,
 } from "@/components/modal";
-import { MemberInput } from "@/components/member-input";
-import { ButtonWithTooltip } from "@/components/button-with-tooltip";
-import { RolePermission } from "@/types/policy";
-import { getRoleDescription, sortRolesByOrder } from "@/lib/role-utils";
 import { formatRoleName } from "@/components/role-name";
+import { getRoleDescription, sortRolesByOrder } from "@/lib/role-utils";
+import type { RolePermission } from "@/types/policy";
 
 interface MemberFormData {
     members: Array<{
@@ -129,7 +129,9 @@ export function MemberModal({
                     <div className="w-full">
                         <ButtonWithTooltip
                             type="button"
-                            onClick={onReviewRequest}
+                            onClick={() => {
+                                onReviewRequest();
+                            }}
                             disabled={
                                 !form.formState.isValid ||
                                 isValidatingAddresses ||

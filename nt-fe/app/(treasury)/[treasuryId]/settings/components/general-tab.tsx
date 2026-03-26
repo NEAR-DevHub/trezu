@@ -1,25 +1,26 @@
 "use client";
 
-import { Input } from "@/components/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/button";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { Database, Loader2 } from "lucide-react";
-import { useEffect, useState, useRef, useMemo } from "react";
+import { trackEvent } from "@/lib/analytics";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
+import { Button } from "@/components/button";
 import { PageCard } from "@/components/card";
+import { CreateRequestButton } from "@/components/create-request-button";
+import { Input } from "@/components/input";
+import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import { useTreasury } from "@/hooks/use-treasury";
 import {
     useTreasuryConfig,
     useTreasuryPolicy,
 } from "@/hooks/use-treasury-queries";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Form, FormField, FormControl, FormItem } from "@/components/ui/form";
-import { toast } from "sonner";
-import { useNear } from "@/stores/near-store";
 import { encodeToMarkdown, jsonToBase64 } from "@/lib/utils";
-import { CreateRequestButton } from "@/components/create-request-button";
-import { useQueryClient } from "@tanstack/react-query";
+import { useNear } from "@/stores/near-store";
 
 const COLOR_OPTIONS = [
     "#000000", // black (appears as white in dark mode)
@@ -130,6 +131,9 @@ export function GeneralTab() {
 
             // Reset form to mark as not dirty
             form.reset(data);
+            trackEvent("treasury-settings-updated", {
+                treasury_id: treasuryId ?? "",
+            });
         } catch (error) {
             console.error("Error creating proposal:", error);
         } finally {
