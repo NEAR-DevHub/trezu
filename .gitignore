@@ -4,3 +4,4 @@ node_modules
 .DS_Store
 nt-fe/screenshots/
 sandbox/sandbox-init/target
+.env.local

@@ -1,38 +1,42 @@
 "use client";
 
-import { PageCard } from "@/components/card";
-import { InputBlock } from "@/components/input-block";
-import { PageComponentLayout } from "@/components/page-component-layout";
-import {
-    StepperHeader,
-    StepProps,
-    StepWizard,
-    InlineNextButton,
-} from "@/components/step-wizard";
-import { Button } from "@/components/button";
-import { Form, FormField, FormMessage } from "@/components/ui/form";
-import { LargeInput } from "@/components/large-input";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useState } from "react";
-import { ArrayPath, useForm, useFormContext } from "react-hook-form";
-import z from "zod";
-import {
-    checkHandleUnused,
-    createTreasury,
-    CreateTreasuryRequest,
-} from "@/lib/api";
-import { Member, MemberInput, memberSchema } from "@/components/member-input";
-import { useNear } from "@/stores/near-store";
+import { useQueryClient } from "@tanstack/react-query";
 import { Database, Minus, Plus, UsersRound, Vote } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { type ArrayPath, useForm, useFormContext } from "react-hook-form";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
-import { ROLES } from "@/components/role-selector";
+import z from "zod";
 import { Alert, AlertDescription } from "@/components/alert";
+import { Button } from "@/components/button";
+import { PageCard } from "@/components/card";
+import { CreationDisabledModal } from "@/components/creation-disabled-modal";
+import { InputBlock } from "@/components/input-block";
+import { LargeInput } from "@/components/large-input";
+import {
+    type Member,
+    MemberInput,
+    memberSchema,
+} from "@/components/member-input";
+import { PageComponentLayout } from "@/components/page-component-layout";
+import { ROLES } from "@/components/role-selector";
+import {
+    InlineNextButton,
+    type StepProps,
+    StepperHeader,
+    StepWizard,
+} from "@/components/step-wizard";
+import { Form, FormField, FormMessage } from "@/components/ui/form";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useTreasuryCreationStatus } from "@/hooks/use-treasury-queries";
-import { CreationDisabledModal } from "@/components/creation-disabled-modal";
 import { trackEvent } from "@/lib/analytics";
+import {
+    type CreateTreasuryRequest,
+    checkHandleUnused,
+    createTreasury,
+} from "@/lib/api";
+import { useNear } from "@/stores/near-store";
 
 const treasuryFormSchema = z
     .object({
@@ -104,6 +108,7 @@ function Step1({ handleNext }: StepProps) {
             "details.accountName",
         ]);
         if (isValid && handleNext) {
+            trackEvent("treasury-creation-step-1-completed");
             handleNext();
         }
     };
@@ -265,6 +270,9 @@ function Step2({ handleBack, handleNext }: StepProps) {
     const handleReview = async () => {
         const isValid = await form.trigger(["members"]);
         if (isValid && handleNext) {
+            trackEvent("treasury-creation-step-2-completed", {
+                members_count: form.getValues("members").length,
+            });
             handleNext();
         }
     };
@@ -376,6 +384,10 @@ function Step3({ handleBack }: StepProps) {
     const form = useFormContext<TreasuryFormValues>();
     const { details } = form.watch();
     const { members } = form.watch();
+
+    useEffect(() => {
+        trackEvent("treasury-creation-step-3-viewed");
+    }, []);
     const financialMembers = members.filter((m: Member) =>
         m.roles.includes("financial"),
     ).length;
@@ -511,6 +523,10 @@ export default function NewTreasuryPage() {
                     trackEvent("treasury-created", {
                         treasury_id: response.treasury,
                         source: "/app/new",
+                        members_count:
+                            request.governors.length +
+                            request.financiers.length +
+                            request.requestors.length,
                     });
                     queryClient.invalidateQueries({
                         queryKey: ["userTreasuries", accountId],

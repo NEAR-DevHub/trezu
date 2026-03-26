@@ -105,7 +105,7 @@ function Step1({ handleNext }: StepProps) {
                             className="flex items-center gap-2 border-2"
                             id="payments-bulk-btn"
                             onClick={() => {
-                                trackEvent("bulk_payments_click", {
+                                trackEvent("bulk-payments-click", {
                                     source: "payments_page",
                                     treasury_id: treasuryId ?? "",
                                 });
@@ -548,6 +548,11 @@ export default function PaymentsPage() {
                 proposalType: "payment",
             })
                 .then(() => {
+                    trackEvent("payment-submitted", {
+                        treasury_id: treasuryId ?? "",
+                        token_symbol: data.token.symbol,
+                        amount: data.amount,
+                    });
                     form.reset();
                     setStep(0);
                     triggerPendingTour();

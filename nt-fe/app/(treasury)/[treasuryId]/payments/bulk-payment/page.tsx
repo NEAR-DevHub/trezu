@@ -1,39 +1,39 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
-import { useTreasury } from "@/hooks/use-treasury";
-import { useNear } from "@/stores/near-store";
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
+import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import Big from "@/lib/big";
 import { PageComponentLayout } from "@/components/page-component-layout";
+import { NEAR_TOKEN } from "@/constants/token";
+import { useTreasury } from "@/hooks/use-treasury";
+import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
+import { trackEvent } from "@/lib/analytics";
+import { getBatchStorageDepositIsRegistered } from "@/lib/api";
+import Big from "@/lib/big";
 import {
-    UploadDataStep,
-    ReviewPaymentsStep,
-    EditPaymentStep,
-} from "./components";
-import { needsStorageDepositCheck } from "./utils";
-import {
-    bulkPaymentFormSchema,
-    type BulkPaymentFormValues,
-    type BulkPaymentData,
-    type EditPaymentFormValues,
-} from "./schemas";
-import {
+    BULK_PAYMENT_CONTRACT_ID,
+    buildApproveListProposal,
     generateListId,
     submitPaymentList,
-    buildApproveListProposal,
-    BULK_PAYMENT_CONTRACT_ID,
 } from "@/lib/bulk-payment-api";
-import { getBatchStorageDepositIsRegistered } from "@/lib/api";
 import { encodeToMarkdown } from "@/lib/utils";
-import { NEAR_TOKEN } from "@/constants/token";
+import { useNear } from "@/stores/near-store";
 import { BulkPaymentToast } from "../components/bulk-payment-toast";
-import { trackEvent } from "@/lib/analytics";
+import {
+    EditPaymentStep,
+    ReviewPaymentsStep,
+    UploadDataStep,
+} from "./components";
+import {
+    type BulkPaymentData,
+    type BulkPaymentFormValues,
+    bulkPaymentFormSchema,
+    type EditPaymentFormValues,
+} from "./schemas";
+import { needsStorageDepositCheck } from "./utils";
 
 export default function BulkPaymentPage() {
     const router = useRouter();
@@ -66,7 +66,7 @@ export default function BulkPaymentPage() {
         source: "upload_continue" | "edit_save" | "edit_cancel",
         recipientsCount: number,
     ) => {
-        trackEvent("bulk_payments_review_step_view", {
+        trackEvent("bulk-payments-review-step-view", {
             source,
             treasury_id: selectedTreasury ?? "",
             recipients_count: recipientsCount,
@@ -329,6 +329,12 @@ export default function BulkPaymentPage() {
                         submitResult.error || "Failed to submit payment list",
                     );
                 }
+
+                trackEvent("bulk-payment-submitted", {
+                    treasury_id: selectedTreasury ?? "",
+                    token_symbol: selectedToken.symbol,
+                    recipients_count: paymentData.length,
+                });
 
                 toast.dismiss(loadingToastId);
 
