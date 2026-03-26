@@ -1,0 +1,32 @@
+{
+  "quote": {
+    "amountIn": "10000000000000000000000",
+    "amountInFormatted": "0.01",
+    "amountInUsd": "0.05",
+    "minAmountIn": "10000000000000000000000",
+    "amountOut": "10000000000000000000000",
+    "amountOutFormatted": "0.01",
+    "amountOutUsd": "0.05",
+    "minAmountOut": "9900000000000000000000",
+    "timeEstimate": 10,
+    "depositAddress": "d32b552aa188face5952516a370bc5a9d91f77a19c48d5b7b16e6c59eb79b08e",
+    "deadline": "2026-03-26T12:00:00.000Z",
+    "timeWhenInactive": "2026-03-26T12:00:00.000Z"
+  },
+  "quoteRequest": {
+    "swapType": "EXACT_INPUT",
+    "slippageTolerance": 100,
+    "originAsset": "nep141:wrap.near",
+    "depositType": "INTENTS",
+    "destinationAsset": "nep141:wrap.near",
+    "amount": "10000000000000000000000",
+    "refundTo": "petersalomonsendev.sputnik-dao.near",
+    "refundType": "CONFIDENTIAL_INTENTS",
+    "recipient": "petersalomonsendev.sputnik-dao.near",
+    "recipientType": "CONFIDENTIAL_INTENTS",
+    "deadline": "2026-03-26T12:00:00.000Z"
+  },
+  "signature": "mock-signature",
+  "timestamp": "2026-03-25T12:00:00.000Z",
+  "correlationId": "test-correlation-id-001"
+}

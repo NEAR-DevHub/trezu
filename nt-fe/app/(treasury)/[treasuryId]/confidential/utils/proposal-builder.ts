@@ -92,6 +92,11 @@ export async function buildConfidentialProposal(
         payload.recipient,
     );
 
+    // Convert hash to hex string for payload_v2 Eddsa format
+    const hashHex = Array.from(payloadHash)
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+
     // Opaque description — does NOT reveal amounts or tokens
     const description = encodeToMarkdown({
         proposal_action: "confidential-transfer",
@@ -110,9 +115,11 @@ export async function buildConfidentialProposal(
                             method_name: "sign",
                             args: jsonToBase64({
                                 request: {
-                                    payload: Array.from(payloadHash),
                                     path: treasuryId,
-                                    key_version: 0,
+                                    payload_v2: {
+                                        Eddsa: hashHex,
+                                    },
+                                    domain_id: 1,
                                 },
                             }),
                             deposit: "1",

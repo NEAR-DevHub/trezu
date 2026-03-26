@@ -40,6 +40,7 @@ import { buildConfidentialProposal } from "./utils/proposal-builder";
 const WNEAR_TOKEN = {
     address: "wrap.near",
     symbol: "wNEAR",
+    name: "Wrapped NEAR",
     icon: "",
     decimals: 24,
     network: "NEAR",

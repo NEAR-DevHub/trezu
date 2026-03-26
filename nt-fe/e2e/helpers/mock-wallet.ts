@@ -27,6 +27,21 @@ export const MOCK_WALLET_EXECUTOR_JS = `(function() {
     async signMessage()  { throw new Error('Not supported'); },
     async signAndSendTransaction(p)  { return {}; },
     async signAndSendTransactions(p) { return []; },
+    async signDelegateActions(p) {
+      return {
+        signedDelegateActions: (p.delegateActions || []).map((da, i) => ({
+          delegateAction: {
+            senderId: window.sandboxedLocalStorage.getItem('signedAccountId') || '',
+            receiverId: da.receiverId,
+            actions: da.actions,
+            nonce: i + 1,
+            maxBlockHeight: 999999999,
+            publicKey: { keyType: 0, data: Array.from(new Uint8Array(32)) },
+          },
+          signature: { keyType: 0, data: Array.from(new Uint8Array(64)) },
+        })),
+      };
+    },
   });
 })();`;
 
@@ -41,7 +56,7 @@ export const MOCK_MANIFEST = {
             version: "1.0.0",
             type: "sandbox",
             executor: "/_near-connect-test/mock-wallet.js",
-            features: {},
+            features: { signDelegateActions: true, signInAndSignMessage: true },
             permissions: { allowsOpen: false },
         },
     ],
