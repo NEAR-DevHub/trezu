@@ -41,6 +41,7 @@ import {
     buildNetworkLookup,
     resolveNetworkName,
 } from "@/features/address-book/utils/resolve-network";
+import { StepperHeader } from "@/components/step-wizard";
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
@@ -353,7 +354,7 @@ function RecipientsView({
     return (
         <PageCard className="p-0 gap-0">
             {/* Header */}
-            <div className="flex flex-row items-center justify-between gap-3 sm:gap-4 py-3 sm:py-2 px-4 sm:px-6 border-b">
+            <div className="flex flex-row items-center justify-between gap-3 sm:gap-4 py-3.5 px-8 border-b">
                 {hasSelection ? (
                     <>
                         <span className="font-semibold text-base">
@@ -399,10 +400,8 @@ function RecipientsView({
                 ) : (
                     <div className="flex items-center justify-between w-full gap-3">
                         <div className="flex flex-col gap-0 w-full max-w-md">
-                            <div className="flex items-center gap-3 w-fit">
-                                <h2 className="text-base font-semibold leading-none">
-                                    Recipients
-                                </h2>
+                            <div className="flex items-center gap-3 w-fit lg:pt-1">
+                                <StepperHeader title="Recipients" />
                                 {entries.length > 0 && (
                                     <NumberBadge
                                         number={entries.length}

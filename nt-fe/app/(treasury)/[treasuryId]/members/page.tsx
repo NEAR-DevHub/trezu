@@ -50,6 +50,7 @@ import { NumberBadge } from "@/components/number-badge";
 import { NEARN_IO_ACCOUNT } from "./constants";
 import { useSearchParams, useRouter } from "next/navigation";
 import { trackEvent } from "@/lib/analytics";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 interface Member {
     accountId: string;
@@ -112,6 +113,7 @@ export default function MembersPage() {
     const queryClient = useQueryClient();
     const searchParams = useSearchParams();
     const router = useRouter();
+    const isMobile = useMediaQuery("(max-width: 640px)");
 
     usePageTour(
         PAGE_TOUR_NAMES.MEMBERS_PENDING,
@@ -1096,8 +1098,8 @@ export default function MembersPage() {
             <PageCard className="gap-0 p-0">
                 {/* Hide header when members are selected */}
                 {!(selectedMembers.length > 0) && (
-                    <div className="flex flex-row items-center justify-between gap-3 sm:gap-4 py-3 sm:py-2 px-4 sm:px-6 border-b ">
-                        <div className="flex items-center gap-3 w-max">
+                    <div className="flex flex-row items-center justify-between gap-3 sm:gap-4 py-3.5 px-8 border-b">
+                        <div className="flex items-center gap-2 w-fit">
                             <StepperHeader title="Active Members" />
                             <NumberBadge
                                 number={existingMembers.length}
@@ -1121,11 +1123,10 @@ export default function MembersPage() {
                                     balanceCheck={{ withProposalBond: true }}
                                     onClick={handleOpenAddMemberModal}
                                     disabled={hasPendingMemberRequest}
-                                    size="icon"
-                                    className="sm:w-auto sm:px-4"
-                                    variant="default"
+                                    size={isMobile ? "icon" : "default"}
+                                    className="size-9 sm:w-auto"
                                 >
-                                    <Plus className="size-5" />
+                                    <Plus className="size-4" />
                                     <span className="hidden sm:inline">
                                         Add New Member
                                     </span>
@@ -1137,12 +1138,12 @@ export default function MembersPage() {
 
                 {/* Bulk Actions Bar */}
                 {selectedMembers.length > 0 && (
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 py-3 sm:py-2 px-4 sm:px-6 border-b">
+                    <div className="flex items-center justify-between gap-4 py-3.5 px-8 border-b">
                         <span className="font-semibold text-base sm:text-lg">
                             {selectedMembers.length} member
                             {selectedMembers.length !== 1 ? "s" : ""} selected
                         </span>
-                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <div className="flex items-center gap-2 w-fit">
                             <Tooltip
                                 content={bulkDeleteValidation.reason}
                                 disabled={
@@ -1160,16 +1161,18 @@ export default function MembersPage() {
                                             withProposalBond: true,
                                         }}
                                         variant="outline-destructive"
-                                        size="sm"
+                                        size={isMobile ? "icon" : "sm"}
                                         onClick={handleBulkDelete}
                                         disabled={
                                             hasPendingMemberRequest ||
                                             !bulkDeleteValidation.canModify
                                         }
-                                        className="h-9 w-full sm:w-auto"
+                                        className="size-9 sm:w-auto"
                                     >
                                         <Trash2 className="w-4 h-4 mr-1" />
-                                        Remove
+                                        <span className="hidden sm:inline">
+                                            Remove
+                                        </span>
                                     </AuthButton>
                                 </span>
                             </Tooltip>
@@ -1179,13 +1182,15 @@ export default function MembersPage() {
                                     permissionAction="AddProposal"
                                     balanceCheck={{ withProposalBond: true }}
                                     variant="outline"
-                                    size="sm"
+                                    size={isMobile ? "icon" : "sm"}
                                     onClick={handleBulkEdit}
                                     disabled={hasPendingMemberRequest}
-                                    className="h-9 w-full sm:w-auto"
+                                    className="size-9 sm:w-auto"
                                 >
                                     <Pencil className="w-4 h-4 mr-1" />
-                                    Edit
+                                    <span className="hidden sm:inline">
+                                        Edit
+                                    </span>
                                 </AuthButton>
                             </span>
                         </div>

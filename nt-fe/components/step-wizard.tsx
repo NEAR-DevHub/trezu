@@ -156,7 +156,7 @@ export function StepperHeader({
                 </Button>
             )}
             <div className="flex flex-col gap-0">
-                <p className="font-semibold">{title}</p>
+                <p className="font-semibold text-sm md:text-base">{title}</p>
                 {description && (
                     <p className="text-sm text-muted-foreground">
                         {description}
