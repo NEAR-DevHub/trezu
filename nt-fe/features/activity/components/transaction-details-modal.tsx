@@ -10,11 +10,13 @@ import { ChevronRight } from "lucide-react";
 import type { RecentActivity } from "@/lib/api";
 import { FormattedDate } from "@/components/formatted-date";
 import { CopyButton } from "@/components/copy-button";
-import { useReceiptSearch } from "@/hooks/use-receipt-search";
 import { InfoDisplay, InfoItem } from "@/components/info-display";
 import { AmountSummary } from "@/components/amount-summary";
-import { Skeleton } from "@/components/ui/skeleton";
-import { getActivityLabel } from "../utils/history-utils";
+import {
+    getActivityLabel,
+    getFromAccount,
+    getToAccount,
+} from "../utils/history-utils";
 import { ExchangeSummaryCard } from "@/app/(treasury)/[treasuryId]/exchange/components/exchange-summary-card";
 import { formatSmartAmount } from "@/lib/utils";
 import { TransactionHashCell } from "./transaction-hash-cell";
@@ -26,6 +28,29 @@ interface TransactionDetailsModalProps {
     onClose: () => void;
 }
 
+function AccountValue({
+    value,
+    showCopy = true,
+}: {
+    value: string;
+    showCopy?: boolean;
+}) {
+    return (
+        <div className="flex items-center gap-1">
+            <span className="max-w-[300px] truncate">{value}</span>
+            {showCopy ? (
+                <CopyButton
+                    text={value}
+                    variant="ghost"
+                    size="icon-sm"
+                    tooltipContent="Copy Address"
+                    toastMessage="Address copied to clipboard"
+                />
+            ) : null}
+        </div>
+    );
+}
+
 export function TransactionDetailsModal({
     activity,
     treasuryId,
@@ -33,12 +58,6 @@ export function TransactionDetailsModal({
     onClose,
 }: TransactionDetailsModalProps) {
     if (!activity) return null;
-
-    const needsReceiptSearch = !activity.transactionHashes?.length;
-    const { data: transactionFromReceipt, isLoading: isLoadingTransaction } =
-        useReceiptSearch(
-            needsReceiptSearch ? activity.receiptIds?.[0] : undefined,
-        );
 
     const isReceived = parseFloat(activity.amount) > 0;
     const isSwap = !!activity.swap;
@@ -48,19 +67,8 @@ export function TransactionDetailsModal({
         tokenSymbol: activity.tokenMetadata?.symbol,
     });
 
-    // Determine From/To based on receiver_id vs treasury account
-    // For outgoing: don't show receiver (stored counterparty is often the contract)
-    const knownCounterparty =
-        activity.counterparty && activity.counterparty !== "UNKNOWN"
-            ? activity.counterparty
-            : null;
-    const fromAccount = isSwap
-        ? "via NEAR Intents"
-        : isReceived
-          ? knownCounterparty || activity.signerId || null
-          : treasuryId;
-
-    const toAccount = isSwap ? treasuryId : isReceived ? treasuryId : null;
+    const fromAccount = getFromAccount(activity, isReceived, treasuryId);
+    const toAccount = getToAccount(activity, isReceived, treasuryId);
 
     const formatAmount = (amount: string, decimals?: number) => {
         const num = parseFloat(amount);
@@ -185,30 +193,19 @@ export function TransactionDetailsModal({
                             },
                             ...(isSwap && activity.swap
                                 ? [
-                                      ...(activity.swap.sentAmount &&
-                                      activity.swap.sentTokenMetadata
-                                          ? [
-                                                {
-                                                    label: "From",
-                                                    value: "Via NEAR Intents",
-                                                } as InfoItem,
-                                            ]
-                                          : []),
+                                      {
+                                          label: "From",
+                                          value: (
+                                              <AccountValue
+                                                  value={fromAccount}
+                                                  showCopy={false}
+                                              />
+                                          ),
+                                      } as InfoItem,
                                       {
                                           label: "To",
                                           value: (
-                                              <div className="flex items-center gap-1">
-                                                  <span className="max-w-[300px] truncate">
-                                                      {treasuryId}
-                                                  </span>
-                                                  <CopyButton
-                                                      text={treasuryId}
-                                                      toastMessage="Address copied to clipboard"
-                                                      tooltipContent="Copy Address"
-                                                      variant="ghost"
-                                                      size="icon-sm"
-                                                  />
-                                              </div>
+                                              <AccountValue value={toAccount} />
                                           ),
                                       } as InfoItem,
                                   ]
@@ -221,103 +218,53 @@ export function TransactionDetailsModal({
                                         {
                                             label: "Contract",
                                             value: (
-                                                <div className="flex items-center gap-1">
-                                                    <span className="max-w-[300px] truncate">
-                                                        {activity.receiverId ||
-                                                            activity.counterparty ||
-                                                            "unknown"}
-                                                    </span>
-                                                    <CopyButton
-                                                        text={
-                                                            activity.receiverId ||
-                                                            activity.counterparty ||
-                                                            ""
-                                                        }
-                                                        variant="ghost"
-                                                        size="icon-sm"
-                                                        tooltipContent="Copy Address"
-                                                        toastMessage="Address copied to clipboard"
-                                                    />
-                                                </div>
-                                            ),
-                                        } as InfoItem,
-                                    ]
-                                  : [
-                                        ...(fromAccount
-                                            ? [
-                                                  {
-                                                      label: "From",
-                                                      value: (
-                                                          <div className="flex items-center gap-1">
-                                                              <span className="max-w-[300px] truncate">
-                                                                  {fromAccount}
-                                                              </span>
-                                                              <CopyButton
-                                                                  text={
-                                                                      fromAccount
-                                                                  }
-                                                                  variant="ghost"
-                                                                  size="icon-sm"
-                                                                  tooltipContent="Copy Address"
-                                                                  toastMessage="Address copied to clipboard"
-                                                              />
-                                                          </div>
-                                                      ),
-                                                  } as InfoItem,
-                                              ]
-                                            : []),
-                                        ...(toAccount
-                                            ? [
-                                                  {
-                                                      label: "To",
-                                                      value: (
-                                                          <div className="flex items-center gap-1">
-                                                              <span className="max-w-[300px] truncate">
-                                                                  {toAccount}
-                                                              </span>
-                                                              <CopyButton
-                                                                  text={
-                                                                      toAccount
-                                                                  }
-                                                                  toastMessage="Address copied to clipboard"
-                                                                  tooltipContent="Copy Address"
-                                                                  variant="ghost"
-                                                                  size="icon-sm"
-                                                              />
-                                                          </div>
-                                                      ),
-                                                  } as InfoItem,
-                                              ]
-                                            : []),
-                                    ]),
-                            ...(isLoadingTransaction
-                                ? [
-                                      {
-                                          label: "Transaction",
-                                          value: (
-                                              <Skeleton className="h-5 w-[200px]" />
-                                          ),
-                                      } as InfoItem,
-                                  ]
-                                : activity.transactionHashes?.length ||
-                                    activity.receiptIds?.length
-                                  ? [
-                                        {
-                                            label: "Transaction",
-                                            value: (
-                                                <TransactionHashCell
-                                                    transactionHashes={
-                                                        activity.transactionHashes
+                                                <AccountValue
+                                                    value={
+                                                        activity.receiverId ||
+                                                        activity.counterparty ||
+                                                        "unknown"
                                                     }
-                                                    receiptIds={
-                                                        activity.receiptIds
-                                                    }
-                                                    className="flex items-center gap-2"
                                                 />
                                             ),
                                         } as InfoItem,
                                     ]
-                                  : []),
+                                  : [
+                                        {
+                                            label: "From",
+                                            value: (
+                                                <AccountValue
+                                                    value={fromAccount}
+                                                />
+                                            ),
+                                        } as InfoItem,
+                                        {
+                                            label: "To",
+                                            value: (
+                                                <AccountValue
+                                                    value={toAccount}
+                                                />
+                                            ),
+                                        } as InfoItem,
+                                    ]),
+                            ...(activity.transactionHashes?.length ||
+                            activity.receiptIds?.length
+                                ? [
+                                      {
+                                          label: "Transaction",
+                                          value: (
+                                              <TransactionHashCell
+                                                  transactionHashes={
+                                                      activity.transactionHashes
+                                                  }
+                                                  receiptIds={
+                                                      activity.receiptIds
+                                                  }
+                                                  className="flex items-center gap-2"
+                                              />
+                                          ),
+                                      } as InfoItem,
+                                  ]
+                                : []),
                         ]}
                     />
                 </div>
