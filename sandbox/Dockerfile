@@ -39,10 +39,11 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY sandbox/sandbox-init/Cargo.toml ./
-COPY sandbox/sandbox-init/src ./src
+COPY sandbox/sandbox-init/Cargo.toml sandbox-init/
+COPY sandbox/sandbox-init/src sandbox-init/src
+COPY sandbox/contracts/ contracts/
 
-RUN cargo build --release
+RUN cd sandbox-init && cargo build --release
 
 # ============================================================================
 # Stage 3: Build the Treasury Backend (nt-be)
@@ -91,7 +92,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy built binaries
-COPY --from=sandbox-builder /build/target/release/sandbox-init /usr/local/bin/
+COPY --from=sandbox-builder /build/sandbox-init/target/release/sandbox-init /usr/local/bin/
 COPY --from=api-builder /build/target/release/nt-be /usr/local/bin/
 COPY --from=indexer-builder /app/target/release/sputnik-indexer /usr/local/bin/
 

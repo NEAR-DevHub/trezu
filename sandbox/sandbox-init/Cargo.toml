@@ -27,6 +27,9 @@ serde_json = "1.0"
 # Base64 decoding
 base64 = "0.22"
 
+# WAT → WASM compilation (for mock contracts)
+wat = "1"
+
 # Utilities
 anyhow = "1.0"
 tracing = "0.1"

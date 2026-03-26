@@ -581,6 +581,43 @@ async fn deploy_dao_contract(
     Ok(())
 }
 
+/// Deploy the mock v1.signer contract (compiled from WAT at build time)
+async fn deploy_mock_signer(
+    network_config: &NetworkConfig,
+    parent_id: &AccountId,
+) -> Result<()> {
+    let contract_id: AccountId = "v1.signer".parse().unwrap();
+    info!("Deploying mock v1.signer contract to {}", contract_id);
+
+    // Create v1.signer as a sub-account of signer
+    create_account(
+        &contract_id,
+        parent_id,
+        NearToken::from_near(50),
+        network_config,
+    )
+    .await?;
+
+    // Compile WAT → WASM
+    let wat_source = include_str!("../../contracts/mock_signer.wat");
+    let wasm_bytes = wat::parse_str(wat_source)
+        .context("Failed to compile mock_signer.wat to WASM")?;
+
+    info!("Compiled mock signer WAT to {} bytes of WASM", wasm_bytes.len());
+
+    near_api::Contract::deploy(contract_id.clone())
+        .use_code(wasm_bytes)
+        .without_init_call()
+        .with_signer(get_genesis_signer())
+        .send_to(network_config)
+        .await
+        .context("Failed to deploy mock v1.signer")?
+        .assert_success();
+
+    info!("Successfully deployed mock v1.signer contract");
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     // Initialize tracing
@@ -636,6 +673,12 @@ async fn main() -> Result<()> {
         GenesisAccount {
             account_id: "sputnik-dao.near".parse().unwrap(),
             balance: NearToken::from_near(1000),
+            private_key: genesis_account.private_key.clone(),
+            public_key: genesis_account.public_key.clone(),
+        },
+        GenesisAccount {
+            account_id: "signer".parse().unwrap(),
+            balance: NearToken::from_near(100),
             private_key: genesis_account.private_key.clone(),
             public_key: genesis_account.public_key.clone(),
         },
@@ -770,6 +813,11 @@ async fn main() -> Result<()> {
         } else {
             info!("DAO contract not found at {}, skipping", dao_wasm);
         }
+        // Deploy mock v1.signer contract (WAT → WASM)
+        let signer_id: AccountId = "signer".parse().unwrap();
+        if let Err(e) = deploy_mock_signer(&network_config, &signer_id).await {
+            error!("Failed to deploy mock v1.signer: {}", e);
+        }
     } else {
         info!("================================================");
         info!("Resuming from persistent storage - skipping contract deployment");
@@ -796,6 +844,7 @@ async fn main() -> Result<()> {
     info!("  - omft.near");
     info!("  - sputnik-dao.near (DAO factory)");
     info!("  - {}", bulk_payment_id);
+    info!("  - v1.signer (mock MPC signer)");
     info!("");
     info!("Persistent home directory: {:?}", sandbox_home);
     info!("");
