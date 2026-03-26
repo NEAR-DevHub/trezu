@@ -15,6 +15,7 @@ pub struct EnvVars {
     pub bulk_payment_signer: SecretKey,
     pub disable_balance_monitoring: bool,
     pub disable_treasury_creation: bool,
+    pub disable_stats_generation: bool,
     pub monitor_interval_seconds: u64,
     pub telegram_bot_token: Option<String>,
     pub telegram_chat_id: Option<String>,
@@ -83,6 +84,10 @@ impl Default for EnvVars {
                 .parse()
                 .unwrap_or(false),
             disable_treasury_creation: std::env::var("DISABLE_TREASURY_CREATION")
+                .unwrap_or_else(|_| "false".to_string())
+                .parse()
+                .unwrap_or(false),
+            disable_stats_generation: std::env::var("DISABLE_STATS_GENERATION")
                 .unwrap_or_else(|_| "false".to_string())
                 .parse()
                 .unwrap_or(false),

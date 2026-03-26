@@ -129,7 +129,7 @@ function getMemberItems(
                         <Pill
                             key={role}
                             title={formatRoleName(role)}
-                            variant="card"
+                            variant="secondary"
                         />
                     ))}
                 </div>
