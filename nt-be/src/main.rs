@@ -239,7 +239,7 @@ async fn main() {
     }
 
     // Spawn public dashboard daily refresh service
-    {
+    if !state.env_vars.disable_stats_generation {
         let state_clone = state.clone();
         tokio::spawn(async move {
             nt_be::services::run_public_dashboard_refresh_service(state_clone).await;

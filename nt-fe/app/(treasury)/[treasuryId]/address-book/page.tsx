@@ -318,6 +318,11 @@ function RecipientsView({
             setBulkDeleteCount(0);
         } else if (entryToDelete) {
             await deleteEntries.mutateAsync([entryToDelete.id]);
+            setSelectedIds((prev) => {
+                const next = new Set(prev);
+                next.delete(entryToDelete.id);
+                return next;
+            });
             setEntryToDelete(null);
         }
     }

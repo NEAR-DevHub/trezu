@@ -54,20 +54,21 @@ export function ReviewRecipients({
             ),
         [existingEntries],
     );
-    const duplicateIndexes = useMemo(
-        () =>
-            recipients.reduce<number[]>((duplicates, recipient, index) => {
-                if (
-                    recipient?.address &&
-                    existingAddresses.has(normalizeAddress(recipient.address))
-                ) {
-                    duplicates.push(index);
-                }
-
-                return duplicates;
-            }, []),
-        [existingAddresses, recipients],
-    );
+    const duplicateIndexes = useMemo(() => {
+        const seen = new Set<string>();
+        const duplicates: number[] = [];
+        for (let index = 0; index < recipients.length; index++) {
+            const address = recipients[index]?.address;
+            if (!address) continue;
+            const normalized = normalizeAddress(address);
+            if (existingAddresses.has(normalized) || seen.has(normalized)) {
+                duplicates.push(index);
+            } else {
+                seen.add(normalized);
+            }
+        }
+        return duplicates;
+    }, [existingAddresses, recipients]);
     const duplicateIndexSet = useMemo(
         () => new Set(duplicateIndexes),
         [duplicateIndexes],
