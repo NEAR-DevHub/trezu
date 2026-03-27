@@ -21,7 +21,11 @@ import { useThemeStore } from "@/stores/theme-store";
 import { cn, formatBalance } from "@/lib/utils";
 import { CreateRequestButton } from "@/components/create-request-button";
 import { Loader2, Shield, ShieldCheck } from "lucide-react";
-import { IntentsQuoteResponse, GenerateIntentResponse } from "@/lib/api";
+import {
+    IntentsQuoteResponse,
+    GenerateIntentResponse,
+    getConfidentialBalances,
+} from "@/lib/api";
 import { PendingButton } from "@/components/pending-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WarningAlert } from "@/components/warning-alert";
@@ -61,6 +65,40 @@ const confidentialFormSchema = z.object({
 });
 
 type ConfidentialFormValues = z.infer<typeof confidentialFormSchema>;
+
+function ConfidentialBalance() {
+    const { treasuryId } = useTreasury();
+    const [balances, setBalances] = useState<Record<string, string> | null>(
+        null,
+    );
+
+    useEffect(() => {
+        if (!treasuryId) return;
+        getConfidentialBalances(treasuryId)
+            .then(setBalances)
+            .catch(() => setBalances(null));
+    }, [treasuryId]);
+
+    if (!balances || Object.keys(balances).length === 0) return null;
+
+    return (
+        <div className="rounded-lg border bg-muted/50 p-3 flex flex-col gap-1">
+            <div className="flex items-center gap-2 text-sm font-medium">
+                <ShieldCheck className="size-4 text-primary" />
+                Confidential Balance
+            </div>
+            {Object.entries(balances).map(([token, amount]) => (
+                <div
+                    key={token}
+                    className="flex justify-between text-sm text-muted-foreground"
+                >
+                    <span>{token.replace("nep141:", "")}</span>
+                    <span className="font-mono">{amount}</span>
+                </div>
+            ))}
+        </div>
+    );
+}
 
 function Step1({ handleNext }: StepProps) {
     const form = useFormContext<ConfidentialFormValues>();
@@ -185,6 +223,8 @@ function Step1({ handleNext }: StepProps) {
                     Private Intents
                 </span>
             </div>
+
+            <ConfidentialBalance />
         </PageCard>
     );
 }
@@ -313,7 +353,6 @@ function Step2({ handleBack }: StepProps) {
 
 interface SubmittedProposal {
     proposalId: number;
-    intentResponse: GenerateIntentResponse;
 }
 
 export default function ConfidentialPage() {
@@ -369,7 +408,6 @@ export default function ConfidentialPage() {
             // Show the tracker — it polls for approval and submits the intent
             setSubmittedProposal({
                 proposalId: prevCount,
-                intentResponse: proposalData.intent,
             });
         } catch (error: any) {
             console.error("Confidential shield error", error);
@@ -386,7 +424,6 @@ export default function ConfidentialPage() {
                 <div className="flex flex-col gap-4 max-w-[600px] mx-auto">
                     <ProposalTracker
                         proposalId={submittedProposal.proposalId}
-                        intentResponse={submittedProposal.intentResponse}
                         onDone={() => {
                             setSubmittedProposal(null);
                             form.reset();

@@ -77,6 +77,22 @@ pub async fn generate_intent(
         ));
     }
 
+    // Store the intent payload for auto-submission after DAO proposal approval.
+    // The signer_id format is "near:dao.sputnik-dao.near" or just "dao.sputnik-dao.near".
+    let dao_id = request.signer_id.strip_prefix("near:").unwrap_or(&request.signer_id);
+    if let Some(payload) = response_body.get("intent").and_then(|i| i.get("payload")) {
+        let correlation_id = response_body.get("correlationId").and_then(|v| v.as_str());
+        if let Err(e) = crate::handlers::relay::confidential::store_pending_intent(
+            &state.db_pool,
+            dao_id,
+            -1, // proposal_id unknown yet — will be matched by dao_id
+            payload,
+            correlation_id,
+        ).await {
+            log::warn!("Failed to store pending intent for {}: {}", dao_id, e);
+        }
+    }
+
     Ok(Json(response_body))
 }
 

@@ -33,7 +33,7 @@ pub struct RelayRequest {
     pub signed_delegate_action: Base64VecU8,
     /// Optional proposal type hint for metrics. Only set on the actual proposal call,
     /// NOT on helper calls like storage_deposit.
-    /// "swap" | "payment" | "vote" | any other string → "other_proposals_submitted"
+    /// "swap" | "payment" | "vote" | "confidential_transfer" | any other string
     /// Absent/null → no metric recorded.
     #[serde(default)]
     pub proposal_type: Option<String>,
@@ -335,7 +335,10 @@ pub async fn relay_delegate_action(
         .await;
 
     match execution_result {
-        Ok(result) => match result.into_result() {
+        Ok(result) => {
+            // Capture the debug representation before consuming the result
+            let result_debug = format!("{:?}", result);
+            match result.into_result() {
             Ok(_) => {
                 // Step 7: Decrement gas-covered credits and accumulate paid_near in one query
                 let near_spent = if should_balance_storage {
@@ -409,6 +412,23 @@ pub async fn relay_delegate_action(
                     .await;
                 }
 
+                // If this is a vote on a confidential_transfer proposal, try to extract
+                // the MPC signature and auto-submit the signed intent.
+                if request.proposal_type.as_deref() == Some("vote") {
+                    tokio::spawn({
+                        let state = state.clone();
+                        let treasury_id = request.treasury_id.to_string();
+                        let result_debug = result_debug.clone();
+                        async move {
+                            crate::handlers::relay::confidential::try_auto_submit_intent(
+                                &state,
+                                &treasury_id,
+                                &result_debug,
+                            ).await;
+                        }
+                    });
+                }
+
                 Ok(Json(RelayResponse {
                     success: true,
                     error: None,
@@ -421,7 +441,7 @@ pub async fn relay_delegate_action(
                     format!("Execution failed: {}", e),
                 ))
             }
-        },
+        }},
         Err(e) => {
             log::error!("Failed to relay delegate action: {:?}", e);
             Err(error_response(

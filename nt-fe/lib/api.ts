@@ -1275,6 +1275,18 @@ export async function submitIntent(request: {
 }
 
 /**
+ * Fetch confidential balances for a DAO.
+ * Returns token balances from the 1Click confidential intents system.
+ */
+export async function getConfidentialBalances(
+    daoId: string,
+): Promise<Record<string, string>> {
+    const url = `${BACKEND_API_BASE}/intents/balances`;
+    const response = await axios.get(url, { params: { daoId } });
+    return response.data;
+}
+
+/**
  * Receipt Search Result
  */
 export interface ReceiptSearchResult {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { PageCard } from "@/components/card";
 import { StepperHeader } from "@/components/step-wizard";
 import {
@@ -11,120 +11,96 @@ import {
     ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { submitIntent, GenerateIntentResponse } from "@/lib/api";
 import { useTreasury } from "@/hooks/use-treasury";
-import { getProposal, getProposalTransaction } from "@/lib/proposals-api";
-import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
-import {
-    extractSignatureFromTx,
-    formatSignature,
-    MPC_PUBLIC_KEY,
-} from "../utils/extract-signature";
+import { getProposal } from "@/lib/proposals-api";
+import { useNear } from "@/stores/near-store";
 
 type TrackerPhase =
     | "pending"
+    | "approving"
     | "approved"
-    | "extracting"
-    | "submitting"
     | "done"
     | "error";
 
 interface ProposalTrackerProps {
     proposalId: number;
-    intentResponse: GenerateIntentResponse;
     onDone?: () => void;
 }
 
+/**
+ * Tracks a confidential shield proposal through approval.
+ *
+ * After approval, the backend automatically extracts the MPC signature
+ * and submits the signed intent (handled in the relay's vote path).
+ * This component just shows the progress.
+ */
 export function ProposalTracker({
     proposalId,
-    intentResponse,
     onDone,
 }: ProposalTrackerProps) {
     const { treasuryId } = useTreasury();
-    const { data: policy } = useTreasuryPolicy(treasuryId);
+    const { voteProposals } = useNear();
     const [phase, setPhase] = useState<TrackerPhase>("pending");
     const [error, setError] = useState<string | null>(null);
-    const [intentHash, setIntentHash] = useState<string | null>(null);
+    const [proposal, setProposal] = useState<any>(null);
 
-    const handlePostApproval = useCallback(async () => {
-        if (!treasuryId || !policy) return;
+    // Fetch proposal on mount
+    useEffect(() => {
+        if (!treasuryId) return;
+        getProposal(treasuryId, String(proposalId)).then((p) => {
+            if (p) {
+                setProposal(p);
+                if (p.status === "Approved") {
+                    setPhase("done");
+                }
+            }
+        });
+    }, [treasuryId, proposalId]);
 
-        const proposalIdStr = String(proposalId);
-
+    const handleApprove = async () => {
+        if (!treasuryId || !proposal) return;
         try {
-            setPhase("extracting");
-
-            // Get the execution transaction
-            const proposal = await getProposal(treasuryId, proposalIdStr);
-            if (!proposal) {
-                throw new Error("Could not find proposal");
-            }
-
-            const txData = await getProposalTransaction(
-                treasuryId,
-                proposal,
-                policy,
-            );
-
-            if (!txData?.transaction_hash) {
-                throw new Error("Could not find execution transaction");
-            }
-
-            // Extract MPC signature from the transaction receipts
-            const sigBytes = await extractSignatureFromTx(
-                txData.transaction_hash,
-                treasuryId,
-            );
-
-            if (!sigBytes) {
-                throw new Error(
-                    "Could not extract MPC signature from transaction",
-                );
-            }
-
-            const signature = formatSignature(sigBytes);
-
-            // Submit the signed intent
-            setPhase("submitting");
-            const result = await submitIntent({
-                type: "swap_transfer",
-                signedData: {
-                    standard: "nep413",
-                    payload: intentResponse.intent.payload,
-                    public_key: MPC_PUBLIC_KEY,
-                    signature,
+            setPhase("approving");
+            await voteProposals(treasuryId, [
+                {
+                    proposalId,
+                    vote: "Approve",
+                    proposal,
                 },
-            });
-
-            setIntentHash(result.intentHash);
+            ]);
+            // The backend relay auto-submits the signed intent
             setPhase("done");
         } catch (err: unknown) {
             setError(
-                err instanceof Error ? err.message : "Unknown error",
+                err instanceof Error ? err.message : "Failed to approve",
             );
             setPhase("error");
         }
-    }, [treasuryId, policy, proposalId, intentResponse]);
+    };
 
-    // Poll for proposal approval
+    // Poll for proposal approval (in case someone else approves)
     useEffect(() => {
         if (phase !== "pending" || !treasuryId) return;
 
         const interval = setInterval(async () => {
             try {
-                const proposal = await getProposal(treasuryId, String(proposalId));
-                if (!proposal) return;
-                if (proposal.status === "Approved") {
+                const p = await getProposal(
+                    treasuryId,
+                    String(proposalId),
+                );
+                if (!p) return;
+                setProposal(p);
+                if (p.status === "Approved") {
                     clearInterval(interval);
-                    setPhase("approved");
+                    setPhase("done");
                 }
                 if (
-                    proposal.status === "Rejected" ||
-                    proposal.status === "Failed" ||
-                    proposal.status === "Expired"
+                    p.status === "Rejected" ||
+                    p.status === "Failed" ||
+                    p.status === "Expired"
                 ) {
                     clearInterval(interval);
-                    setError(`Proposal ${proposal.status.toLowerCase()}`);
+                    setError(`Proposal ${p.status.toLowerCase()}`);
                     setPhase("error");
                 }
             } catch {
@@ -135,61 +111,48 @@ export function ProposalTracker({
         return () => clearInterval(interval);
     }, [phase, treasuryId, proposalId]);
 
-    // Trigger post-approval flow
-    useEffect(() => {
-        if (phase === "approved") {
-            handlePostApproval();
-        }
-    }, [phase, handlePostApproval]);
-
     return (
         <PageCard>
             <StepperHeader title="Shield Request Submitted" />
 
             <div className="flex flex-col gap-4">
                 <PhaseRow
-                    done={phase !== "pending"}
-                    active={phase === "pending"}
+                    done={phase !== "pending" && phase !== "approving"}
+                    active={phase === "pending" || phase === "approving"}
                     label="Proposal submitted to DAO"
+                    sublabel={`Proposal #${proposalId}`}
                 />
-                <PhaseRow
-                    done={
-                        phase === "extracting" ||
-                        phase === "submitting" ||
-                        phase === "done"
-                    }
-                    active={phase === "pending"}
-                    label="Waiting for DAO approval"
-                    sublabel={
-                        phase === "pending"
-                            ? `Proposal #${proposalId} — council members need to approve`
-                            : undefined
-                    }
-                />
-                <PhaseRow
-                    done={phase === "submitting" || phase === "done"}
-                    active={phase === "extracting"}
-                    label="Extracting MPC signature"
-                />
+
+                {phase === "pending" && proposal && (
+                    <Button onClick={handleApprove} className="w-full">
+                        Approve Proposal
+                    </Button>
+                )}
+
+                {phase === "approving" && (
+                    <Button disabled className="w-full">
+                        <Loader2 className="size-4 animate-spin mr-2" />
+                        Approving in wallet...
+                    </Button>
+                )}
+
                 <PhaseRow
                     done={phase === "done"}
-                    active={phase === "submitting"}
-                    label="Submitting signed intent"
+                    active={phase === "approving"}
+                    label="MPC signing + intent submission"
+                    sublabel={
+                        phase === "done"
+                            ? "Backend extracted signature and submitted intent"
+                            : undefined
+                    }
                 />
 
                 {phase === "done" && (
                     <div className="rounded-lg border bg-green-50 dark:bg-green-900/20 p-4 flex items-start gap-3">
                         <ShieldCheck className="size-5 text-green-600 mt-0.5" />
-                        <div className="flex flex-col gap-1">
-                            <span className="font-medium text-green-700 dark:text-green-400">
-                                Intent submitted successfully
-                            </span>
-                            {intentHash && (
-                                <span className="text-sm text-muted-foreground font-mono">
-                                    {intentHash}
-                                </span>
-                            )}
-                        </div>
+                        <span className="font-medium text-green-700 dark:text-green-400">
+                            Confidential shield complete
+                        </span>
                     </div>
                 )}
 
