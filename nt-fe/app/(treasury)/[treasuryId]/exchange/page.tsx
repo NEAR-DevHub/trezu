@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowDown, ChevronRight, Loader2 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { trackEvent } from "@/lib/analytics";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm, useFormContext } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/button";
@@ -92,21 +92,22 @@ function Step1({ handleNext }: StepProps) {
         sellToken.address === "wrap.near" && sellToken.residency === "Ft";
 
     // Filter function for receive token - hide native NEAR unless FT NEAR is selected
-    const filterReceiveTokens = useMemo(() => {
-        return (token: {
+    const filterReceiveTokens = useCallback(
+        (token: {
             address: string;
             symbol: string;
             network: string;
             residency?: string;
         }) => {
             // Hide native NEAR unless selling FT NEAR (for unwrapping)
-            if (token.address === "near" && token.residency === "Near") {
+            if (token.residency === "Near") {
                 return isSellTokenFTNEAR;
             }
             // FT NEAR and Intents NEAR are always visible
             return true;
-        };
-    }, [isSellTokenFTNEAR]);
+        },
+        [isSellTokenFTNEAR],
+    );
 
     // Reset receive token if it's no longer valid based on filter
     useEffect(() => {
