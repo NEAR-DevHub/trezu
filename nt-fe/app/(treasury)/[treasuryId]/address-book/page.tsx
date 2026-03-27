@@ -57,7 +57,7 @@ function AddressBookEmptyState({
             <EmptyState
                 icon={FileUp}
                 title="Add your first recipient"
-                description={`Save frequently used addresses for faster, error-free payouts. Your contacts stay private and visible only to your team.`}
+                description={`Save frequently used addresses for faster, error-free payouts.\nYour contacts stay private and visible only to your team.`}
                 className="py-0"
             />
             <div className="flex gap-3 w-full max-w-[300px]">
