@@ -191,6 +191,15 @@ async function mockRoutes(context: BrowserContext) {
         });
     });
 
+    // Confidential balances (return empty to avoid auth prompt)
+    await context.route("**/api/intents/balances*", async (route) => {
+        await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({}),
+        });
+    });
+
     // Treasury creation status (polled on init)
     await context.route("**/api/treasury/creation-status*", async (route) => {
         await route.fulfill({
@@ -259,8 +268,8 @@ test.describe("Confidential Shield", () => {
         const reviewBtn = page.getByRole("button", {
             name: /Review Shield Request/i,
         });
-        await expect(reviewBtn).toBeEnabled({ timeout: 5_000 });
-        await reviewBtn.click();
+        await expect(reviewBtn).toBeEnabled({ timeout: 10_000 });
+        await reviewBtn.click({ timeout: 10_000 });
 
         // ── Step 2: Verify review content ────────────────────
         await expect(

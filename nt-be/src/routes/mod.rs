@@ -299,6 +299,10 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
             "/api/intents/balances",
             get(handlers::intents::balances::get_balances),
         )
+        .route(
+            "/api/intents/prepare-auth",
+            post(handlers::intents::prepare_auth::prepare_auth),
+        )
         // Proxy endpoints - catch-all for external API
         .route(
             "/api/proxy/{*path}",

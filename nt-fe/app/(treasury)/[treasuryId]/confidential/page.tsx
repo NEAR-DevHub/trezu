@@ -14,7 +14,7 @@ import {
     StepWizard,
 } from "@/components/step-wizard";
 import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useNear } from "@/stores/near-store";
 import { useThemeStore } from "@/stores/theme-store";
@@ -25,6 +25,7 @@ import {
     IntentsQuoteResponse,
     GenerateIntentResponse,
     getConfidentialBalances,
+    prepareConfidentialAuth,
 } from "@/lib/api";
 import { PendingButton } from "@/components/pending-button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -68,16 +69,100 @@ type ConfidentialFormValues = z.infer<typeof confidentialFormSchema>;
 
 function ConfidentialBalance() {
     const { treasuryId } = useTreasury();
+    const { createProposal } = useNear();
+    const { data: policy } = useTreasuryPolicy(treasuryId);
     const [balances, setBalances] = useState<Record<string, string> | null>(
         null,
     );
+    const [needsAuth, setNeedsAuth] = useState(false);
+    const [isAuthenticating, setIsAuthenticating] = useState(false);
+    const [authProposalId, setAuthProposalId] = useState<number | null>(null);
 
-    useEffect(() => {
+    const fetchBalances = useCallback(() => {
         if (!treasuryId) return;
         getConfidentialBalances(treasuryId)
-            .then(setBalances)
-            .catch(() => setBalances(null));
+            .then((b) => {
+                setBalances(b);
+                setNeedsAuth(false);
+            })
+            .catch((err) => {
+                setBalances(null);
+                // 401 = no JWT, needs auth
+                if (err?.response?.status === 401) {
+                    setNeedsAuth(true);
+                }
+            });
     }, [treasuryId]);
+
+    useEffect(fetchBalances, [fetchBalances]);
+
+    const handleAuthenticate = async () => {
+        if (!treasuryId) return;
+        setIsAuthenticating(true);
+        try {
+            const { proposal } = await prepareConfidentialAuth(treasuryId);
+            const proposalBond = policy?.proposal_bond || "0";
+
+            const prevCount = await getLastProposalId(treasuryId);
+
+            await createProposal("Confidential auth request submitted", {
+                treasuryId,
+                proposal,
+                proposalBond,
+                proposalType: "confidential_transfer",
+            });
+
+            setAuthProposalId(prevCount);
+        } catch (err) {
+            console.error("Auth proposal error", err);
+            setIsAuthenticating(false);
+        }
+    };
+
+    // If auth proposal submitted, show tracker
+    if (authProposalId !== null) {
+        return (
+            <ProposalTracker
+                proposalId={authProposalId}
+                onDone={() => {
+                    setAuthProposalId(null);
+                    setIsAuthenticating(false);
+                    setNeedsAuth(false);
+                    // Re-fetch balances after auth
+                    setTimeout(fetchBalances, 2000);
+                }}
+            />
+        );
+    }
+
+    if (needsAuth) {
+        return (
+            <div className="rounded-lg border bg-muted/50 p-3 flex flex-col gap-2">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                    <Shield className="size-4 text-primary" />
+                    Confidential Account
+                </div>
+                <p className="text-sm text-muted-foreground">
+                    Authenticate your DAO to view confidential balances.
+                    This creates a signing proposal via v1.signer.
+                </p>
+                <button
+                    onClick={handleAuthenticate}
+                    disabled={isAuthenticating}
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                >
+                    {isAuthenticating ? (
+                        <>
+                            <Loader2 className="size-4 animate-spin mr-2" />
+                            Authenticating...
+                        </>
+                    ) : (
+                        "Authenticate DAO"
+                    )}
+                </button>
+            </div>
+        );
+    }
 
     if (!balances || Object.keys(balances).length === 0) return null;
 

@@ -1287,6 +1287,22 @@ export async function getConfidentialBalances(
 }
 
 /**
+ * Prepare a confidential auth proposal for a DAO.
+ * Returns the v1.signer proposal args to submit to the DAO.
+ * The backend stores the auth payload for auto-submission after approval.
+ */
+export async function prepareConfidentialAuth(daoId: string): Promise<{
+    proposal: {
+        description: string;
+        kind: Record<string, unknown>;
+    };
+}> {
+    const url = `${BACKEND_API_BASE}/intents/prepare-auth`;
+    const response = await axios.post(url, { daoId });
+    return response.data;
+}
+
+/**
  * Receipt Search Result
  */
 export interface ReceiptSearchResult {

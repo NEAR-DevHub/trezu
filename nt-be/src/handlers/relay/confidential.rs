@@ -103,10 +103,10 @@ pub async fn try_auto_submit_intent(
         treasury_id
     );
 
-    // Find the most recent pending intent for this treasury
-    let pending = sqlx::query_as::<_, (i32, Value, Option<String>)>(
+    // Find the most recent pending intent or auth for this treasury
+    let pending = sqlx::query_as::<_, (i32, Value, Option<String>, String)>(
         r#"
-        SELECT proposal_id, intent_payload, correlation_id
+        SELECT proposal_id, intent_payload, correlation_id, intent_type
         FROM pending_confidential_intents
         WHERE dao_id = $1 AND status = 'pending'
         ORDER BY created_at DESC
@@ -117,7 +117,7 @@ pub async fn try_auto_submit_intent(
     .fetch_optional(&state.db_pool)
     .await;
 
-    let (proposal_id, intent_payload, _correlation_id) = match pending {
+    let (proposal_id, intent_payload, _correlation_id, intent_type) = match pending {
         Ok(Some(row)) => row,
         Ok(None) => {
             log::warn!(
@@ -133,60 +133,109 @@ pub async fn try_auto_submit_intent(
     };
 
     log::info!(
-        "Auto-submitting signed intent for {}/proposal#{}",
-        treasury_id,
-        proposal_id
+        "Auto-submitting {} for {}/proposal#{}",
+        intent_type, treasury_id, proposal_id
     );
 
-    // Build the submit-intent body
-    let submit_body = serde_json::json!({
-        "type": "swap_transfer",
-        "signedData": {
-            "standard": "nep413",
-            "payload": intent_payload,
-            "public_key": MPC_PUBLIC_KEY,
-            "signature": sig_b58,
-        }
-    });
+    let (url, body) = if intent_type == "auth" {
+        // Authentication: call 1Click auth/authenticate
+        let url = format!("{}/v0/auth/authenticate", state.env_vars.oneclick_api_url);
+        let body = serde_json::json!({
+            "signedData": {
+                "standard": "nep413",
+                "payload": intent_payload,
+                "public_key": MPC_PUBLIC_KEY,
+                "signature": sig_b58,
+            }
+        });
+        (url, body)
+    } else {
+        // Shield: call 1Click submit-intent
+        let url = format!("{}/v0/submit-intent", state.env_vars.oneclick_api_url);
+        let body = serde_json::json!({
+            "type": "swap_transfer",
+            "signedData": {
+                "standard": "nep413",
+                "payload": intent_payload,
+                "public_key": MPC_PUBLIC_KEY,
+                "signature": sig_b58,
+            }
+        });
+        (url, body)
+    };
 
-    // Submit to 1Click API
-    let url = format!("{}/v0/submit-intent", state.env_vars.oneclick_api_url);
     let result = state
         .http_client
         .post(&url)
         .header("content-type", "application/json")
-        .json(&submit_body)
+        .json(&body)
         .send()
         .await;
 
     match result {
         Ok(resp) => {
             let status = resp.status();
-            let body: Value = resp.json().await.unwrap_or_default();
+            let resp_body: Value = resp.json().await.unwrap_or_default();
 
             if status.is_success() {
                 log::info!(
-                    "Successfully submitted signed intent for {}/proposal#{}: {:?}",
-                    treasury_id, proposal_id, body
+                    "Successfully submitted {} for {}/proposal#{}: {:?}",
+                    intent_type, treasury_id, proposal_id, resp_body
                 );
-                // Update status
+
+                // For auth: store the JWT tokens in monitored_accounts
+                if intent_type == "auth" {
+                    if let (Some(access_token), Some(refresh_token)) = (
+                        resp_body.get("accessToken").and_then(|v| v.as_str()),
+                        resp_body.get("refreshToken").and_then(|v| v.as_str()),
+                    ) {
+                        let expires_in = resp_body
+                            .get("expiresIn")
+                            .and_then(|v| v.as_i64())
+                            .unwrap_or(3600);
+                        let expires_at = chrono::Utc::now()
+                            + chrono::Duration::seconds(expires_in);
+
+                        let _ = sqlx::query(
+                            r#"
+                            UPDATE monitored_accounts
+                            SET confidential_access_token = $1,
+                                confidential_refresh_token = $2,
+                                confidential_token_expires_at = $3
+                            WHERE account_id = $4
+                            "#,
+                        )
+                        .bind(access_token)
+                        .bind(refresh_token)
+                        .bind(expires_at)
+                        .bind(treasury_id)
+                        .execute(&state.db_pool)
+                        .await;
+
+                        log::info!(
+                            "Stored confidential JWT for DAO {} (expires in {}s)",
+                            treasury_id, expires_in
+                        );
+                    }
+                }
+
                 let _ = sqlx::query(
                     "UPDATE pending_confidential_intents SET status = 'submitted', submit_result = $1, updated_at = NOW() WHERE dao_id = $2 AND proposal_id = $3"
                 )
-                .bind(&body)
+                .bind(&resp_body)
                 .bind(treasury_id)
                 .bind(proposal_id)
                 .execute(&state.db_pool)
                 .await;
             } else {
                 log::error!(
-                    "1Click submit-intent failed ({}) for {}/proposal#{}: {:?}",
-                    status, treasury_id, proposal_id, body
+                    "1Click {} failed ({}) for {}/proposal#{}: {:?}",
+                    intent_type, status, treasury_id, proposal_id, resp_body
                 );
                 let _ = sqlx::query(
                     "UPDATE pending_confidential_intents SET status = 'failed', submit_result = $1, updated_at = NOW() WHERE dao_id = $2 AND proposal_id = $3"
                 )
-                .bind(&body)
+                .bind(&resp_body)
                 .bind(treasury_id)
                 .bind(proposal_id)
                 .execute(&state.db_pool)
@@ -195,8 +244,8 @@ pub async fn try_auto_submit_intent(
         }
         Err(e) => {
             log::error!(
-                "Failed to call 1Click submit-intent for {}/proposal#{}: {}",
-                treasury_id, proposal_id, e
+                "Failed to call 1Click {} for {}/proposal#{}: {}",
+                intent_type, treasury_id, proposal_id, e
             );
             let _ = sqlx::query(
                 "UPDATE pending_confidential_intents SET status = 'failed', submit_result = $1, updated_at = NOW() WHERE dao_id = $2 AND proposal_id = $3"
