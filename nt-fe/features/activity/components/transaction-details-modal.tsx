@@ -12,6 +12,7 @@ import { FormattedDate } from "@/components/formatted-date";
 import { CopyButton } from "@/components/copy-button";
 import { InfoDisplay, InfoItem } from "@/components/info-display";
 import { AmountSummary } from "@/components/amount-summary";
+import { User } from "@/components/user";
 import {
     getActivityLabel,
     getFromAccount,
@@ -31,10 +32,24 @@ interface TransactionDetailsModalProps {
 function AccountValue({
     value,
     showCopy = true,
+    useAddressBook = false,
 }: {
     value: string;
     showCopy?: boolean;
+    useAddressBook?: boolean;
 }) {
+    const canRenderUser =
+        useAddressBook &&
+        value !== "via NEAR Intents" &&
+        value !== "—" &&
+        value !== "unknown" &&
+        value !== "UNKNOWN" &&
+        !value.includes(" ");
+
+    if (canRenderUser) {
+        return <User accountId={value} useAddressBook withHoverCard={true} />;
+    }
+
     return (
         <div className="flex items-center gap-1">
             <span className="max-w-[300px] truncate">{value}</span>
@@ -199,13 +214,17 @@ export function TransactionDetailsModal({
                                               <AccountValue
                                                   value={fromAccount}
                                                   showCopy={false}
+                                                  useAddressBook
                                               />
                                           ),
                                       } as InfoItem,
                                       {
                                           label: "To",
                                           value: (
-                                              <AccountValue value={toAccount} />
+                                              <AccountValue
+                                                  value={toAccount}
+                                                  useAddressBook
+                                              />
                                           ),
                                       } as InfoItem,
                                   ]
@@ -224,6 +243,7 @@ export function TransactionDetailsModal({
                                                         activity.counterparty ||
                                                         "unknown"
                                                     }
+                                                    useAddressBook
                                                 />
                                             ),
                                         } as InfoItem,
@@ -234,6 +254,7 @@ export function TransactionDetailsModal({
                                             value: (
                                                 <AccountValue
                                                     value={fromAccount}
+                                                    useAddressBook
                                                 />
                                             ),
                                         } as InfoItem,
@@ -242,6 +263,7 @@ export function TransactionDetailsModal({
                                             value: (
                                                 <AccountValue
                                                     value={toAccount}
+                                                    useAddressBook
                                                 />
                                             ),
                                         } as InfoItem,
