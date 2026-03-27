@@ -6,6 +6,7 @@ import { useEffect, useCallback, useRef } from "react";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useNear } from "@/stores/near-store";
 import { useResponsiveSidebar } from "@/stores/sidebar-store";
+import { useAddressBook } from "@/features/address-book";
 
 export const FEATURE_VERSION = 1 as const;
 export const NEW_FEATURE_TOUR_NAME = `NEW_FEATURE_${FEATURE_VERSION}` as const;
@@ -53,7 +54,8 @@ export const NEW_FEATURE_ANNOUNCEMENT = {
     content: (
         <>
             New! 🎉 Save frequently used addresses for faster, error-free
-            payouts. Your contacts stay private and visible only to your team.
+            payouts.
+            <br /> Your contacts stay private and visible only to your team.
         </>
     ),
 } as const;
@@ -280,13 +282,14 @@ export function usePageTour(
 
 export function useNewFeatureTour(enabled = true) {
     const { accountId } = useNear();
+    const { data: addressBook } = useAddressBook();
 
     return usePageTour(
         NEW_FEATURE_ANNOUNCEMENT.tourName,
         `${NEW_FEATURE_ANNOUNCEMENT.storageKey}:${accountId ?? "anonymous"}`,
         {
             version: NEW_FEATURE_ANNOUNCEMENT.version,
-            enabled,
+            enabled: enabled && addressBook && addressBook.length === 0,
         },
     );
 }
