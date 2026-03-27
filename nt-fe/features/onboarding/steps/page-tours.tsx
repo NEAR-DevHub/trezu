@@ -52,8 +52,8 @@ export const NEW_FEATURE_ANNOUNCEMENT = {
         treasuryId ? `/${treasuryId}/address-book` : "/address-book",
     content: (
         <>
-            New! 🎉 Save recipient addresses and make payments in just a few
-            clicks. Your contacts stay private and visible only to your team.
+            New! 🎉 Save frequently used addresses for faster, error-free
+            payouts. Your contacts stay private and visible only to your team.
         </>
     ),
 } as const;

@@ -57,7 +57,7 @@ function AddressBookEmptyState({
             <EmptyState
                 icon={FileUp}
                 title="Add your first recipient"
-                description={`Add recipients to create payments faster.\nYour address book is private and only visible to your team.`}
+                description={`Save frequently used addresses for faster, error-free payouts. Your contacts stay private and visible only to your team.`}
                 className="py-0"
             />
             <div className="flex gap-3 w-full max-w-[300px]">
@@ -410,8 +410,8 @@ function RecipientsView({
                                 )}
                             </div>
                             <p className="text-xs text-muted-foreground hidden min-w-0 lg:block">
-                                This information is private. Only you and your
-                                team can see these recipients.
+                                Saved addresses are private and visible only to
+                                your team.
                             </p>
                         </div>
                         <div className="flex items-center gap-2 justify-end min-w-0 w-fit shrink-0">
