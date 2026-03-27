@@ -98,7 +98,7 @@ export function useConfidentialQuote({
 
                 // Generate the intent payload (stored by the backend for auto-submission)
                 const intent = await generateIntent({
-                    type: "SWAP_TRANSFER",
+                    type: "swap_transfer",
                     standard: "nep413",
                     depositAddress: quote.quote.depositAddress,
                     signerId: selectedTreasury,
