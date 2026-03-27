@@ -277,7 +277,7 @@ export default function TokenSelect({
                           []);
 
                     if (chainMatches.length === 0) {
-                        // No treasury match — bridge-only network
+                        // No treasury match — bridge-only network (Intents)
                         mergedNetworks.push({
                             id: bridgeNetwork.id,
                             name: bridgeNetwork.name,
@@ -285,6 +285,7 @@ export default function TokenSelect({
                             chainIcons: bridgeNetwork.chainIcons,
                             chainId: bridgeNetwork.chainId,
                             decimals: bridgeNetwork.decimals,
+                            residency: "Intents",
                             minWithdrawalAmount:
                                 bridgeNetwork.minWithdrawalAmount,
                             minDepositAmount: bridgeNetwork.minDepositAmount,
@@ -314,6 +315,26 @@ export default function TokenSelect({
                                         : undefined,
                                 balance: treasuryNetwork.availableBalanceRaw,
                                 balanceUSD: treasuryNetwork.availableBalanceUSD,
+                            });
+                        }
+
+                        // Chain-name match means treasury has native/lockup entries
+                        // (no contractId), which are different from the Intents-wrapped
+                        // form of the asset. Always add the bridge network itself as an
+                        // Intents option so it can be selected as a swap target.
+                        if (!contractIdMatch) {
+                            mergedNetworks.push({
+                                id: bridgeNetwork.id,
+                                name: bridgeNetwork.name,
+                                symbol: bridgeNetwork.symbol,
+                                chainIcons: bridgeNetwork.chainIcons,
+                                chainId: bridgeNetwork.chainId,
+                                decimals: bridgeNetwork.decimals,
+                                residency: "Intents",
+                                minWithdrawalAmount:
+                                    bridgeNetwork.minWithdrawalAmount,
+                                minDepositAmount:
+                                    bridgeNetwork.minDepositAmount,
                             });
                         }
                     }
