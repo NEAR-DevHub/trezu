@@ -54,6 +54,10 @@ pub static CHAIN_METADATA: Lazy<HashMap<String, ChainMetadata>> = Lazy::new(|| {
         ChainMetadata::new("Arbitrum", "arbitrum.svg", "arbitrum.svg"),
     );
     metadata.insert(
+        "arb".to_string(),
+        ChainMetadata::new("Arbitrum", "arbitrum.svg", "arbitrum.svg"),
+    );
+    metadata.insert(
         "bitcoin".to_string(),
         ChainMetadata::new("Bitcoin", "btc.svg", "btc.svg"),
     );
