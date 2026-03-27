@@ -40,14 +40,36 @@ pub struct AuthPayload {
     pub recipient: String,
 }
 
-/// Build a versioned nonce (32 bytes): 1-byte version + 8-byte salt + 8-byte deadline + 15 zero padding.
-fn build_nonce(salt: &[u8], deadline: &chrono::DateTime<chrono::Utc>) -> [u8; 32] {
+/// Fetch the current salt from the intents.near contract.
+async fn fetch_salt(state: &Arc<AppState>) -> Result<[u8; 4], String> {
+    let intents: near_api::AccountId = "intents.near".parse().unwrap();
+
+    let result = near_api::Contract(intents)
+        .call_function("current_salt", ())
+        .read_only::<String>()
+        .fetch_from(&state.network)
+        .await
+        .map_err(|e| format!("Failed to fetch salt from intents.near: {}", e))?;
+
+    let hex_str = result.data.trim_matches('"');
+    let salt_bytes = hex::decode(hex_str)
+        .map_err(|e| format!("Invalid salt hex: {}", e))?;
+
+    salt_bytes.try_into().map_err(|_| "Salt not 4 bytes".to_string())
+}
+
+/// Build a 32-byte nonce matching the 1Click API expected format.
+fn build_nonce(salt: &[u8; 4], deadline: &chrono::DateTime<chrono::Utc>) -> [u8; 32] {
+    let deadline_ns = (deadline.timestamp_millis() as u64) * 1_000_000;
+    let now_ns = (chrono::Utc::now().timestamp_millis() as u64) * 1_000_000;
+    let random_tail: [u8; 7] = rand::random();
     let mut nonce = [0u8; 32];
-    nonce[0] = 0x01; // version
-    let salt_bytes = &salt[..salt.len().min(8)];
-    nonce[1..1 + salt_bytes.len()].copy_from_slice(salt_bytes);
-    let ts = deadline.timestamp_millis().to_be_bytes();
-    nonce[9..17].copy_from_slice(&ts);
+    nonce[0..4].copy_from_slice(&[0x56, 0x28, 0xF6, 0xC6]); // magic prefix
+    nonce[4] = 0; // version
+    nonce[5..9].copy_from_slice(salt);
+    nonce[9..17].copy_from_slice(&deadline_ns.to_le_bytes());
+    nonce[17..25].copy_from_slice(&now_ns.to_le_bytes());
+    nonce[25..32].copy_from_slice(&random_tail);
     nonce
 }
 
@@ -70,8 +92,10 @@ pub async fn prepare_auth(
     })
     .to_string();
 
-    // Build nonce (use random salt)
-    let salt: [u8; 8] = rand::random();
+    // Fetch salt from intents.near and build nonce
+    let salt = fetch_salt(&state).await.map_err(|e| {
+        (StatusCode::BAD_GATEWAY, format!("Failed to fetch salt: {}", e))
+    })?;
     let nonce = build_nonce(&salt, &deadline);
     let nonce_b64 = base64::engine::general_purpose::STANDARD.encode(nonce);
 

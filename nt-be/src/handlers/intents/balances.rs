@@ -32,16 +32,20 @@ pub async fn get_balances(
     // Get or refresh the JWT for this DAO
     let access_token = refresh_dao_jwt(&state, &query.dao_id).await?;
 
-    let mut url = format!("{}/v0/account/balances", state.env_vars.oneclick_api_url);
+    let mut url = format!("{}/v0/account/balances", super::constants::CONFIDENTIAL_API_URL);
 
     if let Some(token_ids) = &query.token_ids {
         url.push_str(&format!("?tokenIds={}", token_ids));
     }
 
-    let response = state
+    let mut req = state
         .http_client
         .get(&url)
-        .header("Authorization", format!("Bearer {}", access_token))
+        .header("Authorization", format!("Bearer {}", access_token));
+    if let Some(api_key) = super::constants::oneclick_api_key() {
+        req = req.header("x-api-key", api_key);
+    }
+    let response = req
         .send()
         .await
         .map_err(|e| {

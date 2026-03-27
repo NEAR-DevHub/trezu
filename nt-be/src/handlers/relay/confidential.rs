@@ -10,7 +10,30 @@ use serde_json::Value;
 use sqlx::PgPool;
 use std::sync::Arc;
 
-const MPC_PUBLIC_KEY: &str = "ed25519:7pPtVUyLDRXvzkgAUtfGeUK9ZWaSWd256tSgvazfZKZg";
+use crate::handlers::intents::constants::{CONFIDENTIAL_API_URL, oneclick_api_key};
+
+/// Fetch the Ed25519 derived public key for a DAO's path from v1.signer.
+async fn fetch_mpc_public_key(
+    state: &Arc<AppState>,
+    dao_id: &str,
+) -> Result<String, String> {
+    let v1_signer: near_api::AccountId = "v1.signer".parse().unwrap();
+    let args = serde_json::json!({
+        "path": dao_id,
+        "predecessor": dao_id,
+        "domain_id": 1,
+    });
+
+    let args_bytes = serde_json::to_vec(&args).unwrap();
+    let result = near_api::Contract(v1_signer)
+        .call_function_raw("derived_public_key", args_bytes)
+        .read_only::<String>()
+        .fetch_from(&state.network)
+        .await
+        .map_err(|e| format!("Failed to query v1.signer: {}", e))?;
+
+    Ok(result.data)
+}
 
 /// Store a pending intent for later auto-submission.
 pub async fn store_pending_intent(
@@ -27,6 +50,9 @@ pub async fn store_pending_intent(
         ON CONFLICT (dao_id, proposal_id) DO UPDATE SET
             intent_payload = EXCLUDED.intent_payload,
             correlation_id = EXCLUDED.correlation_id,
+            intent_type = 'shield',
+            status = 'pending',
+            submit_result = NULL,
             updated_at = NOW()
         "#,
     )
@@ -132,45 +158,57 @@ pub async fn try_auto_submit_intent(
         }
     };
 
+    // Fetch the DAO's derived MPC public key from v1.signer
+    let mpc_public_key = match fetch_mpc_public_key(state, treasury_id).await {
+        Ok(key) => key,
+        Err(e) => {
+            log::error!("Failed to fetch MPC public key for {}: {}", treasury_id, e);
+            return;
+        }
+    };
+
     log::info!(
-        "Auto-submitting {} for {}/proposal#{}",
-        intent_type, treasury_id, proposal_id
+        "Auto-submitting {} for {}/proposal#{} (mpc_key={})",
+        intent_type, treasury_id, proposal_id, mpc_public_key
     );
 
     let (url, body) = if intent_type == "auth" {
         // Authentication: call 1Click auth/authenticate
-        let url = format!("{}/v0/auth/authenticate", state.env_vars.oneclick_api_url);
+        let url = format!("{}/v0/auth/authenticate", CONFIDENTIAL_API_URL);
         let body = serde_json::json!({
             "signedData": {
                 "standard": "nep413",
                 "payload": intent_payload,
-                "public_key": MPC_PUBLIC_KEY,
+                "public_key": mpc_public_key,
                 "signature": sig_b58,
             }
         });
         (url, body)
     } else {
         // Shield: call 1Click submit-intent
-        let url = format!("{}/v0/submit-intent", state.env_vars.oneclick_api_url);
+        let url = format!("{}/v0/submit-intent", CONFIDENTIAL_API_URL);
         let body = serde_json::json!({
             "type": "swap_transfer",
             "signedData": {
                 "standard": "nep413",
                 "payload": intent_payload,
-                "public_key": MPC_PUBLIC_KEY,
+                "public_key": mpc_public_key,
                 "signature": sig_b58,
             }
         });
         (url, body)
     };
 
-    let result = state
+    let mut req = state
         .http_client
         .post(&url)
-        .header("content-type", "application/json")
-        .json(&body)
-        .send()
-        .await;
+        .header("content-type", "application/json");
+
+    if let Some(api_key) = oneclick_api_key() {
+        req = req.header("x-api-key", api_key);
+    }
+
+    let result = req.json(&body).send().await;
 
     match result {
         Ok(resp) => {

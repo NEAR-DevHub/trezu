@@ -67,11 +67,17 @@ const confidentialFormSchema = z.object({
 
 type ConfidentialFormValues = z.infer<typeof confidentialFormSchema>;
 
+interface ConfidentialToken {
+    available: string;
+    source: string;
+    tokenId: string;
+}
+
 function ConfidentialBalance() {
     const { treasuryId } = useTreasury();
     const { createProposal } = useNear();
     const { data: policy } = useTreasuryPolicy(treasuryId);
-    const [balances, setBalances] = useState<Record<string, string> | null>(
+    const [balances, setBalances] = useState<ConfidentialToken[] | null>(
         null,
     );
     const [needsAuth, setNeedsAuth] = useState(false);
@@ -81,14 +87,15 @@ function ConfidentialBalance() {
     const fetchBalances = useCallback(() => {
         if (!treasuryId) return;
         getConfidentialBalances(treasuryId)
-            .then((b) => {
-                setBalances(b);
+            .then((resp: any) => {
+                setBalances(resp.balances || []);
                 setNeedsAuth(false);
             })
             .catch((err) => {
                 setBalances(null);
-                // 401 = no JWT, needs auth
-                if (err?.response?.status === 401) {
+                // 401 = no JWT, 502 = refresh failed — both need re-auth
+                const status = err?.response?.status;
+                if (status === 401 || status === 502) {
                     setNeedsAuth(true);
                 }
             });
@@ -164,7 +171,7 @@ function ConfidentialBalance() {
         );
     }
 
-    if (!balances || Object.keys(balances).length === 0) return null;
+    if (!balances || balances.length === 0) return null;
 
     return (
         <div className="rounded-lg border bg-muted/50 p-3 flex flex-col gap-1">
@@ -172,13 +179,15 @@ function ConfidentialBalance() {
                 <ShieldCheck className="size-4 text-primary" />
                 Confidential Balance
             </div>
-            {Object.entries(balances).map(([token, amount]) => (
+            {balances.map((b) => (
                 <div
-                    key={token}
+                    key={b.tokenId}
                     className="flex justify-between text-sm text-muted-foreground"
                 >
-                    <span>{token.replace("nep141:", "")}</span>
-                    <span className="font-mono">{amount}</span>
+                    <span>{b.tokenId.replace("nep141:", "")}</span>
+                    <span className="font-mono">
+                        {formatBalance(b.available, 24)}
+                    </span>
                 </div>
             ))}
         </div>

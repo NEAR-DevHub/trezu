@@ -9,10 +9,6 @@ import {
 } from "@/lib/api";
 import { Token } from "@/components/token-input";
 
-// PoC mode: use mock responses from captured near.com fixtures
-// TODO: Remove this when 1Click API supports confidential quotes with our API key
-const USE_MOCK_QUOTES = true;
-
 interface UseConfidentialQuoteParams {
     selectedTreasury: string | null | undefined;
     token: Token;
@@ -62,74 +58,32 @@ export function useConfidentialQuote({
                     .mul(Big(10).pow(token.decimals))
                     .toFixed();
 
-                const originAsset = token.address === "near"
-                    ? "near"
-                    : `nep141:${token.address}`;
+                const originAsset =
+                    token.address === "near"
+                        ? "near"
+                        : `nep141:${token.address}`;
 
-                let quote: IntentsQuoteResponse | null;
-
-                if (USE_MOCK_QUOTES) {
-                    // PoC: build a mock quote based on captured real data
-                    const amountFormatted = amount;
-                    const depositAddress = "d32b552aa188face5952516a370bc5a9d91f77a19c48d5b7b16e6c59eb79b08e";
-                    const deadline = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-
-                    quote = {
-                        quote: {
-                            amountIn: parsedAmount,
-                            amountInFormatted: amountFormatted,
-                            amountInUsd: "0.00", // PoC placeholder
-                            minAmountIn: parsedAmount,
-                            amountOut: parsedAmount,
-                            amountOutFormatted: amountFormatted,
-                            amountOutUsd: "0.00",
-                            minAmountOut: Big(parsedAmount).mul(0.99).toFixed(0),
-                            timeEstimate: 10,
-                            depositAddress,
-                            deadline,
-                            timeWhenInactive: deadline,
-                        },
-                        quoteRequest: {
-                            swapType: "EXACT_INPUT",
-                            slippageTolerance: Math.round(slippageTolerance * 100),
-                            originAsset,
-                            depositType: "INTENTS",
-                            destinationAsset: originAsset,
-                            amount: parsedAmount,
-                            refundTo: selectedTreasury,
-                            refundType: "CONFIDENTIAL_INTENTS",
-                            recipient: selectedTreasury,
-                            recipientType: "CONFIDENTIAL_INTENTS",
-                            deadline,
-                        },
-                        signature: "mock",
-                        timestamp: new Date().toISOString(),
-                        correlationId: `poc-${Date.now()}`,
-                    };
-                } else {
-                    // Real API call
-                    quote = await getIntentsQuote(
-                        {
-                            swapType: "EXACT_INPUT",
-                            slippageTolerance: Math.round(
-                                slippageTolerance * 100,
-                            ),
-                            originAsset,
-                            depositType: "INTENTS",
-                            destinationAsset: originAsset,
-                            amount: parsedAmount,
-                            refundTo: selectedTreasury,
-                            refundType: "CONFIDENTIAL_INTENTS",
-                            recipient: selectedTreasury,
-                            recipientType: "CONFIDENTIAL_INTENTS",
-                            deadline: new Date(
-                                Date.now() + 24 * 60 * 60 * 1000,
-                            ).toISOString(),
-                            quoteWaitingTimeMs: isDryRun ? 3000 : 5000,
-                        },
-                        isDryRun,
-                    );
-                }
+                const quote = await getIntentsQuote(
+                    {
+                        swapType: "EXACT_INPUT",
+                        slippageTolerance: Math.round(
+                            slippageTolerance * 100,
+                        ),
+                        originAsset,
+                        depositType: "INTENTS",
+                        destinationAsset: originAsset,
+                        amount: parsedAmount,
+                        refundTo: selectedTreasury,
+                        refundType: "CONFIDENTIAL_INTENTS",
+                        recipient: selectedTreasury,
+                        recipientType: "CONFIDENTIAL_INTENTS",
+                        deadline: new Date(
+                            Date.now() + 24 * 60 * 60 * 1000,
+                        ).toISOString(),
+                        quoteWaitingTimeMs: isDryRun ? 3000 : 5000,
+                    },
+                    isDryRun,
+                );
 
                 if (!quote) return null;
 
@@ -142,40 +96,13 @@ export function useConfidentialQuote({
                     return { quote };
                 }
 
-                let intent: GenerateIntentResponse;
-
-                if (USE_MOCK_QUOTES) {
-                    // PoC: build a mock intent based on captured real data
-                    const message = JSON.stringify({
-                        deadline: quote.quote.deadline,
-                        intents: [{
-                            intent: "transfer",
-                            receiver_id: quote.quote.depositAddress,
-                            tokens: { [originAsset]: parsedAmount },
-                        }],
-                        signer_id: selectedTreasury,
-                    });
-
-                    intent = {
-                        intent: {
-                            standard: "nep413",
-                            payload: {
-                                message,
-                                nonce: "Vij2xgAlKBKzgB67tZAvnxgPVIiJkIBxtPcWOQPg6MM=", // mock nonce
-                                recipient: "intents.near",
-                            },
-                        },
-                        correlationId: quote.correlationId,
-                    };
-                } else {
-                    // Real API call
-                    intent = await generateIntent({
-                        type: "SWAP_TRANSFER",
-                        standard: "nep413",
-                        depositAddress: quote.quote.depositAddress,
-                        signerId: selectedTreasury,
-                    });
-                }
+                // Generate the intent payload (stored by the backend for auto-submission)
+                const intent = await generateIntent({
+                    type: "SWAP_TRANSFER",
+                    standard: "nep413",
+                    depositAddress: quote.quote.depositAddress,
+                    signerId: selectedTreasury,
+                });
 
                 // Store both for proposal building
                 form.setValue(
@@ -191,7 +118,8 @@ export function useConfidentialQuote({
                     form.setError("receiveAmount", {
                         type: "manual",
                         message:
-                            error?.message || "Failed to get confidential quote",
+                            error?.message ||
+                            "Failed to get confidential quote",
                     });
                 }
                 return null;

@@ -32,7 +32,8 @@ pub async fn generate_intent(
     State(state): State<Arc<AppState>>,
     Json(request): Json<GenerateIntentRequest>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-    let url = format!("{}/v0/generate-intent", state.env_vars.oneclick_api_url);
+    log::info!("generate_intent called: type={}, signerId={}", request.r#type, request.signer_id);
+    let url = format!("{}/v0/generate-intent", super::constants::CONFIDENTIAL_API_URL);
 
     let body = serde_json::json!({
         "type": request.r#type,
@@ -41,10 +42,19 @@ pub async fn generate_intent(
         "signerId": request.signer_id,
     });
 
-    let response = state
+    // The signer_id is the DAO — use its stored JWT for authentication
+    let dao_id = request.signer_id.strip_prefix("near:").unwrap_or(&request.signer_id);
+    let access_token = super::authenticate::refresh_dao_jwt(&state, dao_id).await?;
+
+    let mut req = state
         .http_client
         .post(&url)
         .header("content-type", "application/json")
+        .header("Authorization", format!("Bearer {}", access_token));
+    if let Some(api_key) = super::constants::oneclick_api_key() {
+        req = req.header("x-api-key", api_key);
+    }
+    let response = req
         .json(&body)
         .send()
         .await

@@ -24,17 +24,21 @@ pub async fn submit_intent(
     State(state): State<Arc<AppState>>,
     Json(request): Json<SubmitIntentRequest>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-    let url = format!("{}/v0/submit-intent", state.env_vars.oneclick_api_url);
+    let url = format!("{}/v0/submit-intent", super::constants::CONFIDENTIAL_API_URL);
 
     let body = serde_json::json!({
         "type": request.r#type,
         "signedData": request.signed_data,
     });
 
-    let response = state
+    let mut req = state
         .http_client
         .post(&url)
-        .header("content-type", "application/json")
+        .header("content-type", "application/json");
+    if let Some(api_key) = super::constants::oneclick_api_key() {
+        req = req.header("x-api-key", api_key);
+    }
+    let response = req
         .json(&body)
         .send()
         .await

@@ -1,11 +1,47 @@
 import { V1_SIGNER_CONTRACT } from "../constants";
 
 /**
- * MPC public key for v1.signer on mainnet.
- * This is the Ed25519 key used to verify intents signed by the DAO.
+ * Fetch the Ed25519 derived public key for a DAO's path from v1.signer.
  */
-export const MPC_PUBLIC_KEY =
-    "ed25519:7pPtVUyLDRXvzkgAUtfGeUK9ZWaSWd256tSgvazfZKZg";
+export async function fetchMpcPublicKey(daoId: string): Promise<string> {
+    const rpcUrl =
+        process.env.NEXT_PUBLIC_NEAR_RPC_URL ||
+        "https://archival-rpc.mainnet.fastnear.com";
+    const args = JSON.stringify({
+        path: daoId,
+        predecessor: daoId,
+        domain_id: 1,
+    });
+
+    const resp = await fetch(rpcUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: 1,
+            method: "query",
+            params: {
+                request_type: "call_function",
+                finality: "final",
+                account_id: "v1.signer",
+                method_name: "derived_public_key",
+                args_base64: btoa(args),
+            },
+        }),
+    });
+
+    const data = (await resp.json()) as {
+        result?: { result?: number[] };
+    };
+    if (!data.result?.result) {
+        throw new Error("Failed to fetch MPC public key from v1.signer");
+    }
+
+    const keyStr = new TextDecoder().decode(
+        new Uint8Array(data.result.result),
+    );
+    return keyStr.replace(/"/g, "");
+}
 
 /**
  * Fetch the full transaction status (including all receipts) from NEAR RPC.

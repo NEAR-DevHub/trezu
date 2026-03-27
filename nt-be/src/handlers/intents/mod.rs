@@ -1,5 +1,6 @@
 pub mod authenticate;
 pub mod balances;
+pub mod constants;
 pub mod prepare_auth;
 pub mod bridge_tokens;
 #[cfg(test)]

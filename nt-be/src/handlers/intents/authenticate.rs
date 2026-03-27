@@ -41,12 +41,16 @@ pub async fn authenticate(
     State(state): State<Arc<AppState>>,
     Json(request): Json<AuthenticateRequest>,
 ) -> Result<Json<AuthenticateResult>, (StatusCode, String)> {
-    let url = format!("{}/v0/auth/authenticate", state.env_vars.oneclick_api_url);
+    let url = format!("{}/v0/auth/authenticate", super::constants::CONFIDENTIAL_API_URL);
 
-    let response = state
+    let mut req = state
         .http_client
         .post(&url)
-        .header("content-type", "application/json")
+        .header("content-type", "application/json");
+    if let Some(api_key) = super::constants::oneclick_api_key() {
+        req = req.header("x-api-key", api_key);
+    }
+    let response = req
         .json(&request.signed_data)
         .send()
         .await
@@ -177,12 +181,16 @@ pub async fn refresh_dao_jwt(
     }
 
     // Refresh the token
-    let url = format!("{}/v0/auth/refresh", state.env_vars.oneclick_api_url);
+    let url = format!("{}/v0/auth/refresh", super::constants::CONFIDENTIAL_API_URL);
 
-    let response = state
+    let mut req = state
         .http_client
         .post(&url)
-        .header("content-type", "application/json")
+        .header("content-type", "application/json");
+    if let Some(api_key) = super::constants::oneclick_api_key() {
+        req = req.header("x-api-key", api_key);
+    }
+    let response = req
         .json(&serde_json::json!({ "refreshToken": refresh_token }))
         .send()
         .await

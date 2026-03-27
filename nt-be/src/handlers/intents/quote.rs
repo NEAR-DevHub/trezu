@@ -131,8 +131,15 @@ pub async fn get_quote(
         oneclick_request.referral = Some(referral.clone());
     }
 
-    // Build the request to 1click API
-    let url = format!("{}/v0/quote", state.env_vars.oneclick_api_url);
+    // Use the confidential API for CONFIDENTIAL_INTENTS quotes, production for everything else
+    let is_confidential = oneclick_request.recipient_type.as_deref() == Some("CONFIDENTIAL_INTENTS")
+        || oneclick_request.refund_type.as_deref() == Some("CONFIDENTIAL_INTENTS");
+    let base_url = if is_confidential {
+        super::constants::CONFIDENTIAL_API_URL
+    } else {
+        &state.env_vars.oneclick_api_url
+    };
+    let url = format!("{}/v0/quote", base_url);
 
     let mut request_builder = state
         .http_client
@@ -143,6 +150,19 @@ pub async fn get_quote(
     // Add JWT authentication if configured
     if let Some(jwt_token) = state.env_vars.oneclick_jwt_token.as_ref() {
         request_builder = request_builder.header("Authorization", format!("Bearer {}", jwt_token));
+    }
+
+    // For confidential quotes: add API key and DAO's JWT token
+    if is_confidential {
+        if let Some(api_key) = super::constants::oneclick_api_key() {
+            request_builder = request_builder.header("x-api-key", api_key);
+        }
+        // Use the DAO's stored JWT for authenticated confidential quotes
+        if let Some(dao_id) = oneclick_request.recipient.as_ref() {
+            if let Ok(jwt) = super::authenticate::refresh_dao_jwt(&state, dao_id).await {
+                request_builder = request_builder.header("Authorization", format!("Bearer {}", jwt));
+            }
+        }
     }
 
     // Make the request
