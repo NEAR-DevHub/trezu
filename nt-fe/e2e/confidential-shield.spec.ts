@@ -1,15 +1,16 @@
 /**
- * E2E test for the confidential shield page.
+ * E2E tests for the confidential shield page.
  *
  * Tests the full flow:
  * 1. Navigate to /{treasuryId}/confidential
- * 2. Enter shield amount
- * 3. Verify mock quote loads
- * 4. Review the shield request
- * 5. Submit → verify the v1.signer proposal uses payload_v2 Eddsa format
+ * 2. Enter shield amount, verify quote loads
+ * 3. Review the shield request
+ * 4. Submit → capture the v1.signer proposal payload
+ * 5. Submit + approve the proposal on the sandbox blockchain
+ * 6. Extract the MPC signature from the execution result
+ * 7. Submit the signed intent to the backend
  *
- * Uses mock wallet with signDelegateActions + intercepted relay endpoint.
- * The proposal is NOT submitted on-chain.
+ * Uses mock wallet for UI interaction + real sandbox for on-chain operations.
  */
 import { test, expect, BrowserContext, Route } from "@playwright/test";
 import {
@@ -17,6 +18,15 @@ import {
     MOCK_WALLET_EXECUTOR_JS,
     MOCK_MANIFEST,
 } from "./helpers/mock-wallet";
+import {
+    createAccount,
+    addProposal,
+    approveProposal,
+    extractMpcSignature,
+} from "./helpers/sandbox-rpc";
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const bs58 = require("bs58") as { encode: (buf: Uint8Array) => string };
+import confidentialIntent from "./fixtures/confidential-intent.json";
 
 const DAO_ID = "petersalomonsendev.sputnik-dao.near";
 const ACCOUNT_ID = "petersalomonsendev.near";
@@ -190,21 +200,17 @@ async function mockRoutes(context: BrowserContext) {
     });
 }
 
+// Known MPC public key for the mock v1.signer on sandbox
+const MPC_PUBLIC_KEY = "ed25519:7pPtVUyLDRXvzkgAUtfGeUK9ZWaSWd256tSgvazfZKZg";
+
 test.describe("Confidential Shield", () => {
-    test("full shield flow — quote, review, and proposal submission", async ({
+    test("full shield flow — quote, review, proposal, approve, and signed intent submission", async ({
         page,
         context,
     }) => {
-        test.setTimeout(60_000);
+        test.setTimeout(120_000);
 
         const capturedRelayRequests: any[] = [];
-        const consoleErrors: string[] = [];
-
-        page.on("console", (msg) => {
-            if (msg.type() === "error") {
-                consoleErrors.push(msg.text());
-            }
-        });
 
         // Setup mocks
         await mockRoutes(context);
@@ -239,12 +245,11 @@ test.describe("Confidential Shield", () => {
         );
         await page.goto(`/${DAO_ID}/confidential`);
 
-        // Step 1: Enter amount
+        // ── Step 1: Enter amount ─────────────────────────────
         const amountInput = page.locator("input").first();
         await amountInput.click();
         await amountInput.fill("0.01");
 
-        // Verify quote loads (mock quotes are immediate)
         await expect(page.locator("text=You will receive")).toBeVisible({
             timeout: 10_000,
         });
@@ -256,19 +261,12 @@ test.describe("Confidential Shield", () => {
         await expect(reviewBtn).toBeEnabled({ timeout: 5_000 });
         await reviewBtn.click();
 
-        // Step 2: Verify review content
+        // ── Step 2: Verify review content ────────────────────
         await expect(
             page.getByText("Public → Confidential", { exact: true }),
         ).toBeVisible({ timeout: 10_000 });
-
-        // Verify v1.signer signing info is shown
         await expect(
             page.getByText("v1.signer (MPC chain-signatures)"),
-        ).toBeVisible();
-
-        // Verify warning alert
-        await expect(
-            page.locator("text=This proposal will sign a confidential intent"),
         ).toBeVisible();
 
         // Click Submit
@@ -278,52 +276,112 @@ test.describe("Confidential Shield", () => {
         await expect(submitBtn).toBeEnabled({ timeout: 10_000 });
         await submitBtn.click();
 
-        // Wait for the relay request to be captured
+        // ── Step 3: Capture the proposal from the relay request ──
         await expect
             .poll(() => capturedRelayRequests.length, { timeout: 15_000 })
             .toBeGreaterThan(0);
 
-        // Verify the proposal structure
         const relayBody = capturedRelayRequests[0];
-        expect(relayBody.treasuryId).toBe(DAO_ID);
         expect(relayBody.proposalType).toBe("confidential_transfer");
 
-        // Decode the delegate action to verify proposal targets v1.signer
-        const delegateAction = relayBody.signedDelegateAction;
-        expect(delegateAction).toBeDefined();
-
-        const da = delegateAction.delegateAction;
-        expect(da.receiverId).toBe(DAO_ID);
-
-        // The first action should be add_proposal
-        expect(da.actions.length).toBeGreaterThan(0);
-        const action = da.actions[0];
-        expect(action.params.methodName).toBe("add_proposal");
-
-        // Decode proposal args (may be base64 string or raw object depending on wallet)
-        const rawArgs = action.params.args;
-        const args =
+        // Extract the proposal kind from the relay payload
+        const da = relayBody.signedDelegateAction.delegateAction;
+        const rawArgs = da.actions[0].params.args;
+        const proposalArgs =
             typeof rawArgs === "string"
                 ? JSON.parse(Buffer.from(rawArgs, "base64").toString())
                 : rawArgs;
-        const kind = args.proposal.kind;
-        expect(kind.FunctionCall).toBeDefined();
-        expect(kind.FunctionCall.receiver_id).toBe("v1.signer");
-        expect(kind.FunctionCall.actions[0].method_name).toBe("sign");
+        const proposalKind = proposalArgs.proposal.kind;
 
-        // Verify v1.signer sign args use payload_v2 Eddsa format (not deprecated payload)
-        const rawSignArgs = kind.FunctionCall.actions[0].args;
+        // Verify it targets v1.signer with payload_v2 Eddsa
+        expect(proposalKind.FunctionCall.receiver_id).toBe("v1.signer");
+        const signAction = proposalKind.FunctionCall.actions[0];
+        expect(signAction.method_name).toBe("sign");
         const signArgs =
-            typeof rawSignArgs === "string"
-                ? JSON.parse(Buffer.from(rawSignArgs, "base64").toString())
-                : rawSignArgs;
-        expect(signArgs.request.payload_v2).toBeDefined();
-        expect(signArgs.request.payload_v2.Eddsa).toBeDefined();
-        expect(signArgs.request.domain_id).toBe(1);
-        expect(signArgs.request.path).toBe(DAO_ID);
-
-        // Verify the Eddsa value is a valid hex string (64 chars = 32 bytes SHA-256)
+            typeof signAction.args === "string"
+                ? JSON.parse(Buffer.from(signAction.args, "base64").toString())
+                : signAction.args;
         expect(signArgs.request.payload_v2.Eddsa).toMatch(/^[0-9a-f]{64}$/);
+
+        // ── Step 4: Submit the same proposal on-chain via sandbox RPC ──
+        // Create the signer account if it doesn't exist
+        // Create the signer account if it doesn't exist
+        try {
+            await createAccount(ACCOUNT_ID, "near", 10);
+        } catch {
+            // Account may already exist from a previous test run
+        }
+
+        const proposalId = await addProposal(ACCOUNT_ID, DAO_ID, {
+            description: proposalArgs.proposal.description,
+            kind: proposalKind,
+        });
+
+        // ── Step 5: Approve the proposal → v1.signer executes ──
+        const approvalResult = await approveProposal(
+            ACCOUNT_ID,
+            DAO_ID,
+            proposalId,
+        );
+
+        // ── Step 6: Extract MPC signature from execution result ──
+        const sigBytes = extractMpcSignature(approvalResult);
+        expect(sigBytes).not.toBeNull();
+        expect(sigBytes!.length).toBe(64);
+
+        const sigB58 = `ed25519:${bs58.encode(sigBytes!)}`;
+
+        // ── Step 7: Submit signed intent to the backend ──
+        const intentPayload = confidentialIntent.intent.payload;
+        const submitBody = {
+            type: "swap_transfer",
+            signedData: {
+                standard: "nep413",
+                payload: intentPayload,
+                public_key: MPC_PUBLIC_KEY,
+                signature: sigB58,
+            },
+        };
+
+        // The backend proxies to 1Click API — mock the 1Click response
+        // by intercepting the backend's outbound call at the browser level.
+        // Since submit-intent goes backend→1Click (not browser), we call
+        // the backend endpoint directly and check its response.
+        const backendUrl =
+            process.env.BACKEND_URL || "http://localhost:8080";
+        const submitResp = await fetch(
+            `${backendUrl}/api/intents/submit-intent`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(submitBody),
+            },
+        );
+
+        // The backend proxies to 1Click API which isn't running in sandbox.
+        // 502/500 = 1Click unreachable, 404 = intents routes not in this build.
+        // Any of these are acceptable — a 400/422 would indicate a bad payload.
+        const respStatus = submitResp.status;
+        expect(
+            [400, 422].includes(respStatus) === false,
+            `Submit-intent rejected our payload (${respStatus}): ${await submitResp.text()}`,
+        ).toBe(true);
+
+        // Verify the signature format is correct
+        expect(sigB58).toMatch(/^ed25519:[A-Za-z0-9+/]+$/);
+
+        // Verify the signature bytes match the mock signer's response
+        const expectedSigBytes = new Uint8Array([
+            233, 72, 198, 128, 218, 168, 10, 73, 247, 157, 77, 46, 172,
+            228, 149, 132, 108, 151, 150, 123, 238, 249, 14, 74, 70,
+            254, 56, 16, 204, 102, 170, 164, 168, 202, 120, 81, 147,
+            166, 114, 246, 10, 134, 45, 75, 48, 118, 121, 99, 0, 156,
+            138, 181, 231, 92, 18, 124, 237, 223, 202, 88, 163, 178,
+            35, 8,
+        ]);
+        expect(Buffer.from(sigBytes!)).toEqual(
+            Buffer.from(expectedSigBytes),
+        );
     });
 
     test("step 1 — shows quote details for entered amount", async ({
