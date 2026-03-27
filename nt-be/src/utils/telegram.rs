@@ -1,77 +1,121 @@
-//! Telegram client for sending notifications via Telegram Bot API.
-//!
-//! This module provides a simple client for sending messages to a Telegram chat
-//! using a bot token. If the bot is not configured (missing token or chat ID),
-//! messages are logged as warnings instead of failing.
-//!
-//! # Environment Variables
-//! - `TELEGRAM_BOT_TOKEN`: The Telegram bot token for authentication
-//! - `TELEGRAM_CHAT_ID`: The chat ID where messages will be sent
-//!
-//! # Examples
-//! ```no_run
-//! use nt_be::utils::telegram::TelegramClient;
-//!
-//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-//! let client = TelegramClient::new(
-//!     Some("bot123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11".to_string()),
-//!     Some("123456789".to_string()),
-//! );
-//!
-//! client.send_message("Hello from Rust!").await?;
-//! # Ok(())
-//! # }
-//! ```
+use teloxide::{
+    Bot,
+    payloads::SendMessageSetters,
+    requests::Requester,
+    types::{ChatId, InlineKeyboardButton, InlineKeyboardMarkup},
+};
+use url::Url;
 
-#[derive(Clone, Debug, Default)]
+/// Telegram bot client wrapping teloxide's Bot.
+///
+/// Provides helper methods for common messaging patterns used across the app:
+/// - `send_message`: send a plain notification to the configured internal alerts channel
+/// - `send_message_to_chat`: send a plain message to any chat by ID
+/// - `send_message_with_button`: send a message with an inline URL button to any chat
+///
+/// All methods silently succeed when the bot is not configured (missing token).
+#[derive(Clone, Debug)]
 pub struct TelegramClient {
-    bot: Option<(String, String)>,
+    pub(crate) bot: Option<Bot>,
+    notification_chat_id: Option<String>,
 }
 
 impl TelegramClient {
-    /// Creates a new TelegramClient with optional bot token and chat ID.
+    /// Create a new TelegramClient.
     ///
-    /// If either parameter is None, the client will be unconfigured and
-    /// messages will be logged as warnings instead of sent.
+    /// - `bot_token`: the Telegram Bot API token (from `TELEGRAM_BOT_TOKEN`)
+    /// - `chat_id`: the internal alerts channel chat ID (from `TELEGRAM_CHAT_ID`)
     pub fn new(bot_token: Option<String>, chat_id: Option<String>) -> Self {
         Self {
-            bot: bot_token.zip(chat_id),
+            bot: bot_token.filter(|s| !s.is_empty()).map(Bot::new),
+            notification_chat_id: chat_id,
         }
     }
 
-    /// Sends a message to the configured Telegram chat.
-    ///
-    /// If the client is not configured (missing token or chat ID), this logs
-    /// a warning and returns Ok without sending the message.
-    ///
-    /// # Errors
-    /// Returns an error if:
-    /// - The network request fails
-    /// - The Telegram API returns a non-success status code
-    pub async fn send_message(&self, message: &str) -> Result<(), Box<dyn std::error::Error>> {
-        if let Some((bot_token, chat_id)) = &self.bot {
-            let url = format!("https://api.telegram.org/bot{}/sendMessage", bot_token);
-            let response = reqwest::Client::new()
-                .post(url)
-                .json(&serde_json::json!({
-                    "chat_id": chat_id,
-                    "text": message,
-                }))
-                .send()
-                .await?;
+    /// Expose the inner teloxide Bot, if configured.
+    pub fn bot(&self) -> Option<&Bot> {
+        self.bot.as_ref()
+    }
 
-            let status = response.status();
-            if !status.is_success() {
-                let body = response.text().await.unwrap_or_default();
-                return Err(format!("Telegram API returned {}: {}", status, body).into());
+    /// Send a plain-text notification to the configured internal alerts channel.
+    ///
+    /// This is the legacy method used for internal operational alerts (user creation,
+    /// treasury creation, whitelist requests). The chat ID comes from `TELEGRAM_CHAT_ID`.
+    pub async fn send_message(&self, message: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let (bot, chat_id_str) = match (&self.bot, &self.notification_chat_id) {
+            (Some(b), Some(c)) => (b, c),
+            _ => {
+                log::warn!(
+                    "Telegram client not configured. Please set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID. Message ignored: {}",
+                    message
+                );
+                return Ok(());
             }
-            Ok(())
-        } else {
-            log::warn!(
-                "Telegram client not configured. Please set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in the environment variables. Message ignored: {}",
-                message
-            );
-            Ok(())
+        };
+
+        let chat_id: i64 = chat_id_str
+            .parse()
+            .map_err(|_| format!("Invalid TELEGRAM_CHAT_ID: {}", chat_id_str))?;
+
+        bot.send_message(ChatId(chat_id), message).await?;
+        Ok(())
+    }
+
+    /// Send a plain-text message to an arbitrary Telegram chat.
+    pub async fn send_message_to_chat(
+        &self,
+        chat_id: i64,
+        text: &str,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let bot = match &self.bot {
+            Some(b) => b,
+            None => {
+                log::warn!("Telegram bot not configured (TELEGRAM_BOT_TOKEN not set). Message to chat {} ignored.", chat_id);
+                return Ok(());
+            }
+        };
+
+        bot.send_message(ChatId(chat_id), text).await?;
+        Ok(())
+    }
+
+    /// Send a message with a single inline URL button to an arbitrary Telegram chat.
+    pub async fn send_message_with_button(
+        &self,
+        chat_id: i64,
+        text: &str,
+        button_label: &str,
+        button_url: &str,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let bot = match &self.bot {
+            Some(b) => b,
+            None => {
+                log::warn!("Telegram bot not configured (TELEGRAM_BOT_TOKEN not set). Message with button to chat {} ignored.", chat_id);
+                return Ok(());
+            }
+        };
+
+        let parsed_url: Url = button_url
+            .parse()
+            .map_err(|_| format!("Invalid button URL: {}", button_url))?;
+
+        let keyboard = InlineKeyboardMarkup::new([[InlineKeyboardButton::url(
+            button_label,
+            parsed_url,
+        )]]);
+
+        bot.send_message(ChatId(chat_id), text)
+            .reply_markup(keyboard)
+            .await?;
+        Ok(())
+    }
+}
+
+impl Default for TelegramClient {
+    fn default() -> Self {
+        Self {
+            bot: None,
+            notification_chat_id: None,
         }
     }
 }
