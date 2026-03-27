@@ -31,7 +31,7 @@ pub async fn handle_telegram_webhook(
 
     match update.kind {
         UpdateKind::MyChatMember(m) => match m.new_chat_member.kind {
-            ChatMemberKind::Member
+            ChatMemberKind::Member(_)
             | ChatMemberKind::Administrator(_)
             | ChatMemberKind::Owner(_) => {
                 handle_bot_added(&state, m.chat.id.0, m.chat.title()).await;
