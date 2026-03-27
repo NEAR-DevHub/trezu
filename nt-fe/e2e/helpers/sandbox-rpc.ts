@@ -79,6 +79,18 @@ export async function createAccount(
     ]);
 }
 
+/** Transfer NEAR from one account to another */
+export async function transferNear(
+    senderId: string,
+    receiverId: string,
+    amountNear: number,
+): Promise<void> {
+    const deposit = BigInt(amountNear) * BigInt("1000000000000000000000000");
+    await signAndSend(senderId, receiverId, [
+        actionCreators.transfer(deposit),
+    ]);
+}
+
 /** Sign and send a transaction using the genesis key */
 async function signAndSend(
     signerId: string,

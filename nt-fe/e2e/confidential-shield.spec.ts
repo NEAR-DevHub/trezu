@@ -20,6 +20,7 @@ import {
 } from "./helpers/mock-wallet";
 import {
     createAccount,
+    transferNear,
     addProposal,
     approveProposal,
     extractMpcSignature,
@@ -305,12 +306,14 @@ test.describe("Confidential Shield", () => {
 
         // ── Step 4: Submit the same proposal on-chain via sandbox RPC ──
         // Create the signer account if it doesn't exist
-        // Create the signer account if it doesn't exist
         try {
             await createAccount(ACCOUNT_ID, "near", 10);
         } catch {
             // Account may already exist from a previous test run
         }
+
+        // Fund the DAO so it can cover storage for proposals
+        await transferNear("near", DAO_ID, 5);
 
         const proposalId = await addProposal(ACCOUNT_ID, DAO_ID, {
             description: proposalArgs.proposal.description,
@@ -331,8 +334,26 @@ test.describe("Confidential Shield", () => {
 
         const sigB58 = `ed25519:${bs58.encode(sigBytes!)}`;
 
-        // ── Step 7: Submit signed intent to the backend ──
+        // ── Step 7: Verify the signed intent payload ──
         const intentPayload = confidentialIntent.intent.payload;
+
+        // Verify the signature format is correct
+        expect(sigB58).toMatch(/^ed25519:[A-Za-z0-9]+$/);
+
+        // Verify the signature bytes match the mock signer's hardcoded response
+        const expectedSigBytes = new Uint8Array([
+            233, 72, 198, 128, 218, 168, 10, 73, 247, 157, 77, 46, 172,
+            228, 149, 132, 108, 151, 150, 123, 238, 249, 14, 74, 70,
+            254, 56, 16, 204, 102, 170, 164, 168, 202, 120, 81, 147,
+            166, 114, 246, 10, 134, 45, 75, 48, 118, 121, 99, 0, 156,
+            138, 181, 231, 92, 18, 124, 237, 223, 202, 88, 163, 178,
+            35, 8,
+        ]);
+        expect(Buffer.from(sigBytes!)).toEqual(
+            Buffer.from(expectedSigBytes),
+        );
+
+        // Verify the complete submit-intent payload structure
         const submitBody = {
             type: "swap_transfer",
             signedData: {
@@ -343,10 +364,22 @@ test.describe("Confidential Shield", () => {
             },
         };
 
-        // The backend proxies to 1Click API — mock the 1Click response
-        // by intercepting the backend's outbound call at the browser level.
-        // Since submit-intent goes backend→1Click (not browser), we call
-        // the backend endpoint directly and check its response.
+        // Assert the payload has all required fields
+        expect(submitBody.type).toBe("swap_transfer");
+        expect(submitBody.signedData.standard).toBe("nep413");
+        expect(submitBody.signedData.payload.message).toContain(
+            "signer_id",
+        );
+        expect(submitBody.signedData.payload.nonce).toBeTruthy();
+        expect(submitBody.signedData.payload.recipient).toBe(
+            "intents.near",
+        );
+        expect(submitBody.signedData.public_key).toBe(MPC_PUBLIC_KEY);
+        expect(submitBody.signedData.signature).toMatch(
+            /^ed25519:[A-Za-z0-9]+$/,
+        );
+
+        // Call the backend's submit-intent to verify it accepts the payload
         const backendUrl =
             process.env.BACKEND_URL || "http://localhost:8080";
         const submitResp = await fetch(
@@ -360,28 +393,11 @@ test.describe("Confidential Shield", () => {
 
         // The backend proxies to 1Click API which isn't running in sandbox.
         // 502/500 = 1Click unreachable, 404 = intents routes not in this build.
-        // Any of these are acceptable — a 400/422 would indicate a bad payload.
-        const respStatus = submitResp.status;
+        // A 400/422 would indicate our payload is malformed.
         expect(
-            [400, 422].includes(respStatus) === false,
-            `Submit-intent rejected our payload (${respStatus}): ${await submitResp.text()}`,
+            [400, 422].includes(submitResp.status) === false,
+            `Submit-intent rejected our payload (${submitResp.status}): ${await submitResp.text()}`,
         ).toBe(true);
-
-        // Verify the signature format is correct
-        expect(sigB58).toMatch(/^ed25519:[A-Za-z0-9+/]+$/);
-
-        // Verify the signature bytes match the mock signer's response
-        const expectedSigBytes = new Uint8Array([
-            233, 72, 198, 128, 218, 168, 10, 73, 247, 157, 77, 46, 172,
-            228, 149, 132, 108, 151, 150, 123, 238, 249, 14, 74, 70,
-            254, 56, 16, 204, 102, 170, 164, 168, 202, 120, 81, 147,
-            166, 114, 246, 10, 134, 45, 75, 48, 118, 121, 99, 0, 156,
-            138, 181, 231, 92, 18, 124, 237, 223, 202, 88, 163, 178,
-            35, 8,
-        ]);
-        expect(Buffer.from(sigBytes!)).toEqual(
-            Buffer.from(expectedSigBytes),
-        );
     });
 
     test("step 1 — shows quote details for entered amount", async ({

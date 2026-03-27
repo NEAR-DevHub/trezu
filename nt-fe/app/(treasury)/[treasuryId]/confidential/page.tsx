@@ -36,6 +36,8 @@ import {
     ConfidentialQuoteData,
 } from "./hooks/use-confidential-quote";
 import { buildConfidentialProposal } from "./utils/proposal-builder";
+import { ProposalTracker } from "./components/proposal-tracker";
+import { getLastProposalId } from "@/lib/proposals-api";
 
 const WNEAR_TOKEN = {
     address: "wrap.near",
@@ -309,11 +311,18 @@ function Step2({ handleBack }: StepProps) {
     );
 }
 
+interface SubmittedProposal {
+    proposalId: number;
+    intentResponse: GenerateIntentResponse;
+}
+
 export default function ConfidentialPage() {
     const { treasuryId: selectedTreasury } = useTreasury();
     const { createProposal } = useNear();
     const { data: policy } = useTreasuryPolicy(selectedTreasury);
     const [step, setStep] = useState(0);
+    const [submittedProposal, setSubmittedProposal] =
+        useState<SubmittedProposal | null>(null);
 
     const form = useForm<ConfidentialFormValues>({
         resolver: zodResolver(confidentialFormSchema),
@@ -325,7 +334,7 @@ export default function ConfidentialPage() {
         },
     });
 
-    const onSubmit = async (data: ConfidentialFormValues) => {
+    const onSubmit = async () => {
         const proposalData = form.getValues("proposalData" as any) as
             | ConfidentialQuoteData
             | null;
@@ -344,19 +353,50 @@ export default function ConfidentialPage() {
                 proposalBond,
             });
 
-            await createProposal("Confidential shield request submitted", {
-                treasuryId: selectedTreasury,
-                proposal: result.proposal,
-                proposalBond,
-                proposalType: "confidential_transfer",
-            });
+            // Get proposal count before submission to determine the new proposal's ID
+            const prevCount = await getLastProposalId(selectedTreasury);
 
-            form.reset();
-            setStep(0);
+            await createProposal(
+                "Confidential shield request submitted",
+                {
+                    treasuryId: selectedTreasury,
+                    proposal: result.proposal,
+                    proposalBond,
+                    proposalType: "confidential_transfer",
+                },
+            );
+
+            // Show the tracker — it polls for approval and submits the intent
+            setSubmittedProposal({
+                proposalId: prevCount,
+                intentResponse: proposalData.intent,
+            });
         } catch (error: any) {
             console.error("Confidential shield error", error);
         }
     };
+
+    // Show tracker while a proposal is being tracked
+    if (submittedProposal) {
+        return (
+            <PageComponentLayout
+                title="Confidential"
+                description="Shield tokens to your confidential account"
+            >
+                <div className="flex flex-col gap-4 max-w-[600px] mx-auto">
+                    <ProposalTracker
+                        proposalId={submittedProposal.proposalId}
+                        intentResponse={submittedProposal.intentResponse}
+                        onDone={() => {
+                            setSubmittedProposal(null);
+                            form.reset();
+                            setStep(0);
+                        }}
+                    />
+                </div>
+            </PageComponentLayout>
+        );
+    }
 
     return (
         <PageComponentLayout
