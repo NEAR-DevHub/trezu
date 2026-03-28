@@ -51,31 +51,8 @@ async fn test_confidential_generate_intent_requires_auth() {
 
     assert_eq!(
         resp.status(),
-        401,
+        reqwest::StatusCode::UNAUTHORIZED,
         "Confidential generate-intent should require auth"
-    );
-}
-
-#[tokio::test]
-async fn test_confidential_submit_intent_requires_auth() {
-    let server = TestServer::start().await;
-    let client = reqwest::Client::new();
-
-    let resp = client
-        .post(server.url("/api/confidential-intents/submit-intent"))
-        .json(&serde_json::json!({
-            "daoId": "test.sputnik-dao.near",
-            "type": "swap_transfer",
-            "signedData": {"bad": "data"},
-        }))
-        .send()
-        .await
-        .unwrap();
-
-    assert_eq!(
-        resp.status(),
-        401,
-        "Confidential submit-intent should require auth"
     );
 }
 
@@ -92,7 +69,7 @@ async fn test_confidential_balances_requires_auth() {
 
     assert_eq!(
         resp.status(),
-        401,
+        reqwest::StatusCode::UNAUTHORIZED,
         "Confidential balances should require auth"
     );
 }
@@ -113,29 +90,7 @@ async fn test_confidential_prepare_auth_requires_auth() {
 
     assert_eq!(
         resp.status(),
-        401,
+        reqwest::StatusCode::UNAUTHORIZED,
         "Confidential prepare-auth should require auth"
-    );
-}
-
-#[tokio::test]
-async fn test_confidential_authenticate_requires_auth() {
-    let server = TestServer::start().await;
-    let client = reqwest::Client::new();
-
-    let resp = client
-        .post(server.url("/api/confidential-intents/authenticate"))
-        .json(&serde_json::json!({
-            "daoId": "test.sputnik-dao.near",
-            "signedData": {"bad": "data"},
-        }))
-        .send()
-        .await
-        .unwrap();
-
-    assert_eq!(
-        resp.status(),
-        401,
-        "Confidential authenticate should require auth"
     );
 }

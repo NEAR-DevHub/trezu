@@ -1295,19 +1295,6 @@ export async function generateIntent(request: {
 }
 
 /**
- * Submit a signed intent for execution.
- * Called after the DAO proposal is executed and MPC signature is obtained.
- */
-export async function submitIntent(request: {
-    type: string;
-    signedData: any;
-}): Promise<{ intentHash: string; correlationId: string }> {
-    const url = `${BACKEND_API_BASE}/confidential-intents/submit-intent`;
-    const response = await axios.post(url, request, { withCredentials: true });
-    return response.data;
-}
-
-/**
  * Fetch confidential balances for a DAO.
  * Returns token balances from the 1Click confidential intents system.
  */

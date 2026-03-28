@@ -88,13 +88,13 @@ export function ProposalTracker({ proposalId, onDone }: ProposalTrackerProps) {
 
     return (
         <PageCard>
-            <StepperHeader title="Shield Request Submitted" />
+            <StepperHeader title="Proposal Submitted" />
 
             <div className="flex flex-col gap-4">
                 <PhaseRow
                     done={phase === "done"}
                     active={phase === "pending" || phase === "approving"}
-                    label="Sign confidential intent"
+                    label="Awaiting approval"
                     sublabel={`Proposal #${proposalId}`}
                 />
 
@@ -115,7 +115,7 @@ export function ProposalTracker({ proposalId, onDone }: ProposalTrackerProps) {
                     <div className="rounded-lg border bg-green-50 dark:bg-green-900/20 p-4 flex items-start gap-3">
                         <ShieldCheck className="size-5 text-green-600 mt-0.5" />
                         <span className="font-medium text-green-700 dark:text-green-400">
-                            Confidential shield complete
+                            Request complete
                         </span>
                     </div>
                 )}

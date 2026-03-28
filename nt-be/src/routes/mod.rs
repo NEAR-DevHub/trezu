@@ -284,20 +284,12 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
         )
         // Confidential intents endpoints (all require DAO membership auth)
         .route(
-            "/api/confidential-intents/authenticate",
-            post(handlers::intents::confidential::authenticate::authenticate),
-        )
-        .route(
             "/api/confidential-intents/quote",
             post(handlers::intents::confidential::quote::get_confidential_quote),
         )
         .route(
             "/api/confidential-intents/generate-intent",
             post(handlers::intents::confidential::generate_intent::generate_intent),
-        )
-        .route(
-            "/api/confidential-intents/submit-intent",
-            post(handlers::intents::confidential::submit_intent::submit_intent),
         )
         .route(
             "/api/confidential-intents/balances",

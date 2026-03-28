@@ -74,7 +74,7 @@ fn build_nonce(salt: &[u8; 4], deadline: &chrono::DateTime<chrono::Utc>) -> [u8;
     nonce
 }
 
-/// POST /api/intents/prepare-auth
+/// POST /api/confidential-intents/prepare-auth
 ///
 /// Builds a v1.signer signing proposal for DAO authentication.
 /// The auth payload is stored for auto-submission after approval.

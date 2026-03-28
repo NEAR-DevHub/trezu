@@ -232,7 +232,7 @@ test("Confidential Shield — full flow", async ({ page, context }) => {
 
     // The tracker should show the signing step
     await expect(
-        page.getByText("Sign confidential intent", { exact: false }),
+        page.getByText("Awaiting approval", { exact: false }),
     ).toBeVisible({ timeout: 15_000 });
 
     // Click Approve
@@ -243,7 +243,7 @@ test("Confidential Shield — full flow", async ({ page, context }) => {
 
     // Wait for auth to complete
     await expect(
-        page.getByText("Confidential shield complete", { exact: false }),
+        page.getByText("Request complete", { exact: false }),
     ).toBeVisible({ timeout: 30_000 });
 
     // Click to go back to shield form
@@ -293,7 +293,7 @@ test("Confidential Shield — full flow", async ({ page, context }) => {
 
     // Tracker should show signing step
     await expect(
-        page.getByText("Sign confidential intent", { exact: false }),
+        page.getByText("Awaiting approval", { exact: false }),
     ).toBeVisible({ timeout: 15_000 });
 
     // Click Approve
@@ -304,7 +304,7 @@ test("Confidential Shield — full flow", async ({ page, context }) => {
 
     // Wait for completion
     await expect(
-        page.getByText("Confidential shield complete", { exact: false }),
+        page.getByText("Request complete", { exact: false }),
     ).toBeVisible({ timeout: 30_000 });
 
     // ════════════════════════════════════════════════════
