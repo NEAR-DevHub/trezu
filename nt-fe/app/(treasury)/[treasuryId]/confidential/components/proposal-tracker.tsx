@@ -27,6 +27,8 @@ type TrackerPhase =
 interface ProposalTrackerProps {
     /** The signing proposal ID (deposit proposal is signingId + 1) */
     proposalId: number;
+    /** Whether to track a deposit proposal (default: true) */
+    hasDeposit?: boolean;
     onDone?: () => void;
 }
 
@@ -37,6 +39,7 @@ interface ProposalTrackerProps {
  */
 export function ProposalTracker({
     proposalId,
+    hasDeposit = true,
     onDone,
 }: ProposalTrackerProps) {
     const { treasuryId } = useTreasury();
@@ -55,18 +58,20 @@ export function ProposalTracker({
             if (p) {
                 setSigningProposal(p);
                 if (p.status === "Approved") {
-                    setPhase("deposit_pending");
+                    setPhase(hasDeposit ? "deposit_pending" : "deposit_done");
                 }
             }
         });
-        getProposal(treasuryId, String(depositProposalId)).then((p) => {
-            if (p) {
-                setDepositProposal(p);
-                if (p.status === "Approved") {
-                    setPhase("deposit_done");
+        if (hasDeposit) {
+            getProposal(treasuryId, String(depositProposalId)).then((p) => {
+                if (p) {
+                    setDepositProposal(p);
+                    if (p.status === "Approved") {
+                        setPhase("deposit_done");
+                    }
                 }
-            }
-        });
+            });
+        }
     }, [treasuryId, proposalId, depositProposalId]);
 
     const handleApprove = async (
@@ -100,10 +105,13 @@ export function ProposalTracker({
                 setSigningProposal(p);
                 if (p.status === "Approved") {
                     clearInterval(interval);
-                    setPhase("deposit_pending");
-                    // Also fetch deposit proposal
-                    const dp = await getProposal(treasuryId, String(depositProposalId));
-                    if (dp) setDepositProposal(dp);
+                    if (hasDeposit) {
+                        setPhase("deposit_pending");
+                        const dp = await getProposal(treasuryId, String(depositProposalId));
+                        if (dp) setDepositProposal(dp);
+                    } else {
+                        setPhase("deposit_done");
+                    }
                 }
                 if (["Rejected", "Failed", "Expired"].includes(p.status)) {
                     clearInterval(interval);

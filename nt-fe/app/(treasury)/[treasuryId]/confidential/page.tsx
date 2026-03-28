@@ -131,6 +131,7 @@ function ConfidentialBalance() {
         return (
             <ProposalTracker
                 proposalId={authProposalId}
+                hasDeposit={false}
                 onDone={() => {
                     setAuthProposalId(null);
                     setIsAuthenticating(false);
