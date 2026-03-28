@@ -143,11 +143,11 @@ All confidential endpoints are under `/api/confidential-intents/` and require au
 | Endpoint | Handler | Description |
 |----------|---------|-------------|
 | `POST /api/confidential-intents/prepare-auth` | `prepare_auth.rs` | Build auth proposal args |
-| `POST /api/confidential-intents/authenticate` | `authenticate.rs` | Store JWT after manual auth |
 | `POST /api/confidential-intents/quote` | `quote.rs` | Get shield quote |
 | `POST /api/confidential-intents/generate-intent` | `generate_intent.rs` | Generate intent + store for auto-submit |
-| `POST /api/confidential-intents/submit-intent` | `submit_intent.rs` | Manual intent submission |
 | `GET /api/confidential-intents/balances` | `balances.rs` | View confidential balances |
+
+Note: `authenticate` and `submit-intent` are not exposed as frontend-facing endpoints. The backend handles both automatically via the relay's auto-submit flow after proposal approval.
 
 ### Auto-Submit Flow (relay integration)
 

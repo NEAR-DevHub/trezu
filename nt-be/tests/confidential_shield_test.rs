@@ -1,16 +1,20 @@
 //! Integration tests for confidential shield endpoints.
 //!
 //! Uses TestServer (real nt-be binary) to verify auth requirements
-//! and endpoint availability.
+//! and authenticated access.
 
 mod common;
 
 use common::TestServer;
+use serial_test::serial;
 
 #[tokio::test]
-async fn test_confidential_quote_requires_auth() {
+#[serial]
+async fn test_confidential_endpoints() {
     let server = TestServer::start().await;
     let client = reqwest::Client::new();
+
+    // ── All confidential endpoints require auth ──
 
     let resp = client
         .post(server.url("/api/confidential-intents/quote"))
@@ -24,18 +28,11 @@ async fn test_confidential_quote_requires_auth() {
         .send()
         .await
         .unwrap();
-
     assert_eq!(
         resp.status(),
         reqwest::StatusCode::UNAUTHORIZED,
-        "Confidential quote should require auth"
+        "quote should require auth"
     );
-}
-
-#[tokio::test]
-async fn test_confidential_generate_intent_requires_auth() {
-    let server = TestServer::start().await;
-    let client = reqwest::Client::new();
 
     let resp = client
         .post(server.url("/api/confidential-intents/generate-intent"))
@@ -48,36 +45,22 @@ async fn test_confidential_generate_intent_requires_auth() {
         .send()
         .await
         .unwrap();
-
     assert_eq!(
         resp.status(),
         reqwest::StatusCode::UNAUTHORIZED,
-        "Confidential generate-intent should require auth"
+        "generate-intent should require auth"
     );
-}
-
-#[tokio::test]
-async fn test_confidential_balances_requires_auth() {
-    let server = TestServer::start().await;
-    let client = reqwest::Client::new();
 
     let resp = client
         .get(server.url("/api/confidential-intents/balances?daoId=test.sputnik-dao.near"))
         .send()
         .await
         .unwrap();
-
     assert_eq!(
         resp.status(),
         reqwest::StatusCode::UNAUTHORIZED,
-        "Confidential balances should require auth"
+        "balances should require auth"
     );
-}
-
-#[tokio::test]
-async fn test_confidential_prepare_auth_requires_auth() {
-    let server = TestServer::start().await;
-    let client = reqwest::Client::new();
 
     let resp = client
         .post(server.url("/api/confidential-intents/prepare-auth"))
@@ -87,10 +70,76 @@ async fn test_confidential_prepare_auth_requires_auth() {
         .send()
         .await
         .unwrap();
-
     assert_eq!(
         resp.status(),
         reqwest::StatusCode::UNAUTHORIZED,
-        "Confidential prepare-auth should require auth"
+        "prepare-auth should require auth"
+    );
+
+    // ── With auth: prepare-auth should succeed (returns proposal args) ──
+
+    // Create a valid auth session
+    let db_url =
+        std::env::var("DATABASE_URL").expect("DATABASE_URL must be set for integration tests");
+    let pool = sqlx::PgPool::connect(&db_url)
+        .await
+        .expect("Failed to connect to test DB");
+
+    let account_id = "test.near";
+    let dao_id = "test.sputnik-dao.near";
+
+    // Insert user
+    sqlx::query("INSERT INTO users (account_id, terms_accepted_at) VALUES ($1, NOW()) ON CONFLICT (account_id) DO NOTHING")
+        .bind(account_id)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+    // Insert DAO member
+    sqlx::query("INSERT INTO dao_members (account_id, dao_id, is_policy_member) VALUES ($1, $2, true) ON CONFLICT DO NOTHING")
+        .bind(account_id)
+        .bind(dao_id)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+    // Insert monitored account
+    sqlx::query("INSERT INTO monitored_accounts (account_id) VALUES ($1) ON CONFLICT DO NOTHING")
+        .bind(dao_id)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+    // Create JWT using the test secret
+    let jwt = common::create_test_jwt(account_id);
+
+    // Insert session
+    use sha2::Digest;
+    let token_hash = hex::encode(sha2::Sha256::digest(jwt.as_bytes()));
+    sqlx::query("INSERT INTO user_sessions (user_id, token_hash, expires_at) SELECT id, $1, NOW() + INTERVAL '1 day' FROM users WHERE account_id = $2 ON CONFLICT (token_hash) DO NOTHING")
+        .bind(&token_hash)
+        .bind(account_id)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+    pool.close().await;
+
+    // Call prepare-auth with valid JWT cookie
+    let resp = client
+        .post(server.url("/api/confidential-intents/prepare-auth"))
+        .header(reqwest::header::COOKIE, format!("auth_token={}", jwt))
+        .json(&serde_json::json!({
+            "daoId": dao_id,
+        }))
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(
+        resp.status(),
+        reqwest::StatusCode::OK,
+        "prepare-auth should succeed with valid auth: {}",
+        resp.text().await.unwrap_or_default()
     );
 }
