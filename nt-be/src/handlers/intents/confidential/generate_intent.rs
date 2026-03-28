@@ -24,7 +24,7 @@ pub struct GenerateIntentRequest {
 /// Proxy endpoint for 1Click API generate-intent.
 /// Returns the intent payload that needs to be signed.
 ///
-/// POST /api/intents/generate-intent
+/// POST /api/confidential-intents/generate-intent
 ///
 /// The response contains a standard-specific payload (e.g. NEP-413 for NEAR)
 /// that the wallet or v1.signer must sign before submitting via submit-intent.

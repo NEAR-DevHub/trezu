@@ -36,7 +36,7 @@ pub struct AuthenticateResult {
 /// Authenticate a DAO with the 1Click confidential intents API.
 /// Exchanges a signed auth payload for JWT tokens, stored per-DAO in monitored_accounts.
 ///
-/// POST /api/intents/authenticate
+/// POST /api/confidential-intents/authenticate
 pub async fn authenticate(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,

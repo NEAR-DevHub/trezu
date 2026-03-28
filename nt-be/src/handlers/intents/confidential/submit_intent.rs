@@ -20,7 +20,7 @@ pub struct SubmitIntentRequest {
 /// Proxy endpoint for 1Click API submit-intent.
 /// Submits a signed intent for execution.
 ///
-/// POST /api/intents/submit-intent
+/// POST /api/confidential-intents/submit-intent
 pub async fn submit_intent(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,

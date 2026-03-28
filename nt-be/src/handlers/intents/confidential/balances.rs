@@ -24,7 +24,7 @@ pub struct BalancesQuery {
 /// Fetch confidential balances for a DAO from the 1Click API.
 /// Requires authentication and DAO membership.
 ///
-/// GET /api/intents/balances?daoId=mydao.sputnik-dao.near
+/// GET /api/confidential-intents/balances?daoId=mydao.sputnik-dao.near
 pub async fn get_balances(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,
