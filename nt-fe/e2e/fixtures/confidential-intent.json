@@ -1,11 +1,11 @@
 {
-  "intent": {
-    "standard": "nep413",
-    "payload": {
-      "message": "{\"deadline\":\"2026-03-26T12:00:00.000Z\",\"intents\":[{\"intent\":\"transfer\",\"receiver_id\":\"d32b552aa188face5952516a370bc5a9d91f77a19c48d5b7b16e6c59eb79b08e\",\"tokens\":{\"nep141:wrap.near\":\"10000000000000000000000\"}}],\"signer_id\":\"petersalomonsendev.sputnik-dao.near\"}",
-      "nonce": "Vij2xgAlKBKzgB67tZAvnxgPVIiJkIBxtPcWOQPg6MM=",
-      "recipient": "intents.near"
-    }
-  },
-  "correlationId": "test-correlation-id-001"
+    "intent": {
+        "standard": "nep413",
+        "payload": {
+            "message": "{\"deadline\":\"2026-03-26T12:00:00.000Z\",\"intents\":[{\"intent\":\"transfer\",\"receiver_id\":\"d32b552aa188face5952516a370bc5a9d91f77a19c48d5b7b16e6c59eb79b08e\",\"tokens\":{\"nep141:wrap.near\":\"10000000000000000000000\"}}],\"signer_id\":\"petersalomonsendev.sputnik-dao.near\"}",
+            "nonce": "Vij2xgAlKBKzgB67tZAvnxgPVIiJkIBxtPcWOQPg6MM=",
+            "recipient": "intents.near"
+        }
+    },
+    "correlationId": "test-correlation-id-001"
 }

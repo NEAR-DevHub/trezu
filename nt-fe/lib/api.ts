@@ -1288,7 +1288,9 @@ export async function generateIntent(request: {
     signerId: string;
 }): Promise<GenerateIntentResponse> {
     const url = `${BACKEND_API_BASE}/confidential-intents/generate-intent`;
-    const response = await axios.post<GenerateIntentResponse>(url, request, { withCredentials: true });
+    const response = await axios.post<GenerateIntentResponse>(url, request, {
+        withCredentials: true,
+    });
     return response.data;
 }
 
@@ -1313,7 +1315,10 @@ export async function getConfidentialBalances(
     daoId: string,
 ): Promise<Record<string, string>> {
     const url = `${BACKEND_API_BASE}/confidential-intents/balances`;
-    const response = await axios.get(url, { params: { daoId }, withCredentials: true });
+    const response = await axios.get(url, {
+        params: { daoId },
+        withCredentials: true,
+    });
     return response.data;
 }
 
@@ -1329,7 +1334,11 @@ export async function prepareConfidentialAuth(daoId: string): Promise<{
     };
 }> {
     const url = `${BACKEND_API_BASE}/confidential-intents/prepare-auth`;
-    const response = await axios.post(url, { daoId }, { withCredentials: true });
+    const response = await axios.post(
+        url,
+        { daoId },
+        { withCredentials: true },
+    );
     return response.data;
 }
 

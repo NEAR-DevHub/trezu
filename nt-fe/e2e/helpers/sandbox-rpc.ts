@@ -86,9 +86,7 @@ export async function transferNear(
     amountNear: number,
 ): Promise<void> {
     const deposit = BigInt(amountNear) * BigInt("1000000000000000000000000");
-    await signAndSend(senderId, receiverId, [
-        actionCreators.transfer(deposit),
-    ]);
+    await signAndSend(senderId, receiverId, [actionCreators.transfer(deposit)]);
 }
 
 /** Sign and send a transaction using the genesis key */
@@ -151,9 +149,7 @@ async function signAndSend(
             jsonrpc: "2.0",
             id: 1,
             method: "broadcast_tx_commit",
-            params: [
-                Buffer.from(signedTx.encode()).toString("base64"),
-            ],
+            params: [Buffer.from(signedTx.encode()).toString("base64")],
         }),
     });
 

@@ -15,11 +15,7 @@ import { useTreasury } from "@/hooks/use-treasury";
 import { getProposal } from "@/lib/proposals-api";
 import { useNear } from "@/stores/near-store";
 
-type TrackerPhase =
-    | "pending"
-    | "approving"
-    | "done"
-    | "error";
+type TrackerPhase = "pending" | "approving" | "done" | "error";
 
 interface ProposalTrackerProps {
     proposalId: number;
@@ -32,10 +28,7 @@ interface ProposalTrackerProps {
  * After approval, the backend automatically extracts the MPC signature
  * and submits the signed intent or authenticates the DAO.
  */
-export function ProposalTracker({
-    proposalId,
-    onDone,
-}: ProposalTrackerProps) {
+export function ProposalTracker({ proposalId, onDone }: ProposalTrackerProps) {
     const { treasuryId } = useTreasury();
     const { voteProposals } = useNear();
     const [phase, setPhase] = useState<TrackerPhase>("pending");
@@ -64,9 +57,7 @@ export function ProposalTracker({
             ]);
             setPhase("done");
         } catch (err: unknown) {
-            setError(
-                err instanceof Error ? err.message : "Failed to approve",
-            );
+            setError(err instanceof Error ? err.message : "Failed to approve");
             setPhase("error");
         }
     };
@@ -88,7 +79,9 @@ export function ProposalTracker({
                     setError(`Proposal ${p.status.toLowerCase()}`);
                     setPhase("error");
                 }
-            } catch { /* ignore */ }
+            } catch {
+                /* ignore */
+            }
         }, 5_000);
         return () => clearInterval(interval);
     }, [phase, treasuryId, proposalId]);
@@ -152,12 +145,10 @@ export function ProposalTracker({
                         </Button>
                     )}
                     {treasuryId && (
-                        <Button
-                            variant="ghost"
-                            asChild
-                            className="flex-1"
-                        >
-                            <a href={`/${treasuryId}/requests?proposal=${proposalId}`}>
+                        <Button variant="ghost" asChild className="flex-1">
+                            <a
+                                href={`/${treasuryId}/requests?proposal=${proposalId}`}
+                            >
                                 View Proposal
                                 <ExternalLink className="size-3 ml-1" />
                             </a>

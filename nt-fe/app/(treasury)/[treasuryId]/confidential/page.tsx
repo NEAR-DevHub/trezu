@@ -55,11 +55,9 @@ const WNEAR_TOKEN = {
 };
 
 const confidentialFormSchema = z.object({
-    amount: z
-        .string()
-        .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
-            message: "Amount must be greater than 0",
-        }),
+    amount: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+        message: "Amount must be greater than 0",
+    }),
     token: tokenSchema,
     receiveAmount: z.string().optional(),
     slippageTolerance: z.number().optional(),
@@ -81,9 +79,7 @@ function ConfidentialBalance({
     const { treasuryId } = useTreasury();
     const { createProposal } = useNear();
     const { data: policy } = useTreasuryPolicy(treasuryId);
-    const [balances, setBalances] = useState<ConfidentialToken[] | null>(
-        null,
-    );
+    const [balances, setBalances] = useState<ConfidentialToken[] | null>(null);
     const [needsAuth, setNeedsAuth] = useState(false);
     const [isAuthenticating, setIsAuthenticating] = useState(false);
 
@@ -134,8 +130,8 @@ function ConfidentialBalance({
                     Confidential Account
                 </div>
                 <p className="text-sm text-muted-foreground">
-                    Authenticate your DAO to view confidential balances.
-                    This creates a signing proposal via v1.signer.
+                    Authenticate your DAO to view confidential balances. This
+                    creates a signing proposal via v1.signer.
                 </p>
                 <button
                     onClick={handleAuthenticate}
@@ -202,8 +198,8 @@ function Step1({ handleNext }: StepProps) {
         !isNaN(Number(debouncedAmount)) &&
         Number(debouncedAmount) > 0;
 
-    const { data: quoteData, isLoading: isLoadingQuote } =
-        useConfidentialQuote({
+    const { data: quoteData, isLoading: isLoadingQuote } = useConfidentialQuote(
+        {
             selectedTreasury,
             token,
             amount: debouncedAmount,
@@ -212,7 +208,8 @@ function Step1({ handleNext }: StepProps) {
             enabled: Boolean(selectedTreasury && hasValidAmount),
             isDryRun: true,
             refetchInterval: DRY_QUOTE_REFRESH_INTERVAL,
-        });
+        },
+    );
 
     const handleContinue = () => {
         form.trigger().then((isValid) => {
@@ -288,8 +285,8 @@ function Step1({ handleNext }: StepProps) {
                         !hasValidAmount
                             ? "Enter an amount to shield"
                             : !quoteData?.quote
-                                ? "Loading quote..."
-                                : "Review Shield Request"
+                              ? "Loading quote..."
+                              : "Review Shield Request"
                     }
                 />
             </div>
@@ -345,13 +342,14 @@ function Step2({ handleBack }: StepProps) {
                             <Shield className="size-8 text-primary" />
                             <div className="text-center">
                                 <div className="text-2xl font-bold">
-                                    {liveQuoteData.quote.quote
-                                        .amountInFormatted}{" "}
+                                    {
+                                        liveQuoteData.quote.quote
+                                            .amountInFormatted
+                                    }{" "}
                                     {token.symbol}
                                 </div>
                                 <div className="text-sm text-muted-foreground">
-                                    ≈ $
-                                    {liveQuoteData.quote.quote.amountInUsd}
+                                    ≈ ${liveQuoteData.quote.quote.amountInUsd}
                                 </div>
                             </div>
                             <div className="text-sm text-muted-foreground">
@@ -477,11 +475,15 @@ export default function ConfidentialPage() {
     });
 
     const onSubmit = async () => {
-        const proposalData = form.getValues("proposalData" as any) as
-            | ConfidentialQuoteData
-            | null;
+        const proposalData = form.getValues(
+            "proposalData" as any,
+        ) as ConfidentialQuoteData | null;
 
-        if (!proposalData?.intent || !proposalData?.quote || !selectedTreasury) {
+        if (
+            !proposalData?.intent ||
+            !proposalData?.quote ||
+            !selectedTreasury
+        ) {
             console.error("Missing proposal data or treasury");
             return;
         }
@@ -498,15 +500,12 @@ export default function ConfidentialPage() {
             // Get proposal count before submission to determine the new proposal's ID
             const prevCount = await getLastProposalId(selectedTreasury);
 
-            await createProposal(
-                "Confidential shield request submitted",
-                {
-                    treasuryId: selectedTreasury,
-                    proposal: result.proposal,
-                    proposalBond,
-                    proposalType: "confidential_transfer",
-                },
-            );
+            await createProposal("Confidential shield request submitted", {
+                treasuryId: selectedTreasury,
+                proposal: result.proposal,
+                proposalBond,
+                proposalType: "confidential_transfer",
+            });
 
             // Show the tracker
             setSubmittedProposal({
@@ -543,7 +542,8 @@ export default function ConfidentialPage() {
             if (!selectedTreasury) return;
             setIsAuthenticating(true);
             try {
-                const { proposal } = await prepareConfidentialAuth(selectedTreasury);
+                const { proposal } =
+                    await prepareConfidentialAuth(selectedTreasury);
                 const proposalBond = policy?.proposal_bond || "0";
                 const prevCount = await getLastProposalId(selectedTreasury);
                 await createProposal("Confidential auth request submitted", {
@@ -570,16 +570,19 @@ export default function ConfidentialPage() {
                             <Shield className="size-10 text-primary" />
                             <StepperHeader title="Authenticate DAO" />
                             <p className="text-sm text-muted-foreground text-center max-w-md">
-                                Your DAO needs to authenticate with the confidential
-                                intents system before you can shield tokens or view
-                                private balances. This creates a one-time signing
-                                proposal via v1.signer.
+                                Your DAO needs to authenticate with the
+                                confidential intents system before you can
+                                shield tokens or view private balances. This
+                                creates a one-time signing proposal via
+                                v1.signer.
                             </p>
                             <CreateRequestButton
                                 onClick={handleAuthenticate}
                                 isSubmitting={isAuthenticating}
                                 className="w-full"
-                                permissions={[{ kind: "call", action: "AddProposal" }]}
+                                permissions={[
+                                    { kind: "call", action: "AddProposal" },
+                                ]}
                                 idleMessage="Authenticate DAO"
                             />
                         </div>
@@ -644,10 +647,7 @@ export default function ConfidentialPage() {
                     <StepWizard
                         step={step}
                         onStepChange={setStep}
-                        steps={[
-                            { component: Step1 },
-                            { component: Step2 },
-                        ]}
+                        steps={[{ component: Step1 }, { component: Step2 }]}
                     />
                 </form>
             </Form>

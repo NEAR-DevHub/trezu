@@ -70,23 +70,18 @@ export function useConfidentialQuote({
                           ? baseAddress
                           : `nep141:${baseAddress}`;
 
-                const quote = await getConfidentialQuote(
-                    selectedTreasury,
-                    {
-                        dry: isDryRun,
-                        swapType: "EXACT_INPUT",
-                        slippageTolerance: Math.round(
-                            slippageTolerance * 100,
-                        ),
-                        originAsset,
-                        destinationAsset: originAsset,
-                        amount: parsedAmount,
-                        deadline: new Date(
-                            Date.now() + 24 * 60 * 60 * 1000,
-                        ).toISOString(),
-                        quoteWaitingTimeMs: isDryRun ? 3000 : 5000,
-                    },
-                );
+                const quote = await getConfidentialQuote(selectedTreasury, {
+                    dry: isDryRun,
+                    swapType: "EXACT_INPUT",
+                    slippageTolerance: Math.round(slippageTolerance * 100),
+                    originAsset,
+                    destinationAsset: originAsset,
+                    amount: parsedAmount,
+                    deadline: new Date(
+                        Date.now() + 24 * 60 * 60 * 1000,
+                    ).toISOString(),
+                    quoteWaitingTimeMs: isDryRun ? 3000 : 5000,
+                });
 
                 if (!quote) return null;
 

@@ -37,9 +37,7 @@ export async function fetchMpcPublicKey(daoId: string): Promise<string> {
         throw new Error("Failed to fetch MPC public key from v1.signer");
     }
 
-    const keyStr = new TextDecoder().decode(
-        new Uint8Array(data.result.result),
-    );
+    const keyStr = new TextDecoder().decode(new Uint8Array(data.result.result));
     return keyStr.replace(/"/g, "");
 }
 
@@ -61,7 +59,11 @@ async function fetchTxStatus(
             jsonrpc: "2.0",
             id: 1,
             method: "EXPERIMENTAL_tx_status",
-            params: { tx_hash: txHash, sender_account_id: senderId, wait_until: "EXECUTED" },
+            params: {
+                tx_hash: txHash,
+                sender_account_id: senderId,
+                wait_until: "EXECUTED",
+            },
         }),
     });
 
@@ -92,10 +94,7 @@ export function extractSignatureFromTxResult(
 
     for (const receipt of receiptsOutcome) {
         const { executor_id, status } = receipt.outcome;
-        if (
-            executor_id === V1_SIGNER_CONTRACT &&
-            status.SuccessValue
-        ) {
+        if (executor_id === V1_SIGNER_CONTRACT && status.SuccessValue) {
             try {
                 const decoded = atob(status.SuccessValue);
                 const parsed = JSON.parse(decoded) as {

@@ -18,10 +18,7 @@ import {
     MOCK_WALLET_EXECUTOR_JS,
     MOCK_MANIFEST,
 } from "./helpers/mock-wallet";
-import {
-    createAccount,
-    transferNear,
-} from "./helpers/sandbox-rpc";
+import { createAccount, transferNear } from "./helpers/sandbox-rpc";
 
 const DAO_ID = "petersalomonsendev.sputnik-dao.near";
 const ACCOUNT_ID = "petersalomonsendev.near";
@@ -56,7 +53,6 @@ async function mockWalletRoutes(context: BrowserContext) {
             });
         },
     );
-
 }
 
 /** Ensure the DAO, user account, and auth session exist on the sandbox */
@@ -108,222 +104,213 @@ async function setupSandbox(): Promise<string> {
     return session.token;
 }
 
-test("Confidential Shield — full flow", async ({
-        page,
-        context,
-    }) => {
-        test.setTimeout(180_000);
+test("Confidential Shield — full flow", async ({ page, context }) => {
+    test.setTimeout(180_000);
 
-        // Setup sandbox (create accounts, DAO, auth session)
-        const sandboxJwt = await setupSandbox();
+    // Setup sandbox (create accounts, DAO, auth session)
+    const sandboxJwt = await setupSandbox();
 
-        // Inject auth cookie on all backend requests FIRST.
-        // Cross-origin cookies don't work on plain HTTP in Chromium.
-        // Then register wallet mocks which use fallback() for non-matching URLs.
-        // Proxy all backend requests with the auth cookie injected.
-        // We can't rely on browser cookies cross-origin on HTTP,
-        // so we re-issue the request server-side via fetch.
-        await context.route("http://localhost:8080/**", async (route) => {
-            const url = route.request().url();
+    // Inject auth cookie on all backend requests FIRST.
+    // Cross-origin cookies don't work on plain HTTP in Chromium.
+    // Then register wallet mocks which use fallback() for non-matching URLs.
+    // Proxy all backend requests with the auth cookie injected.
+    // We can't rely on browser cookies cross-origin on HTTP,
+    // so we re-issue the request server-side via fetch.
+    await context.route("http://localhost:8080/**", async (route) => {
+        const url = route.request().url();
 
-            // Mock auth/me (the mock wallet can't do real NEAR auth)
-            if (url.includes("/api/auth/me")) {
-                return route.fulfill({
-                    status: 200,
-                    contentType: "application/json",
-                    body: JSON.stringify({
-                        accountId: ACCOUNT_ID,
-                        termsAccepted: true,
-                    }),
-                });
-            }
-
-            // Re-issue request with cookie from test code (Node.js fetch)
-            const method = route.request().method();
-            const headers: Record<string, string> = {
-                cookie: `auth_token=${sandboxJwt}`,
-            };
-            const reqHeaders = route.request().headers();
-            if (reqHeaders["content-type"]) {
-                headers["content-type"] = reqHeaders["content-type"];
-            }
-
-            const resp = await fetch(url, {
-                method,
-                headers,
-                body: method !== "GET" ? route.request().postData() : undefined,
-            });
-
-            const body = Buffer.from(await resp.arrayBuffer());
-            const respHeaders: Record<string, string> = {};
-            resp.headers.forEach((val, key) => {
-                // Strip CORS headers — Playwright handles CORS for intercepted requests
-                if (!key.startsWith("access-control-")) {
-                    respHeaders[key] = val;
-                }
-            });
-            await route.fulfill({
-                status: resp.status,
-                headers: respHeaders,
-                body,
-            });
-        });
-
-        // Route NEAR RPC calls to sandbox instead of mainnet
-        for (const rpcHost of [
-            "**/archival-rpc.mainnet.fastnear.com**",
-            "**/free.rpc.fastnear.com**",
-        ]) {
-            await context.route(rpcHost, async (route) => {
-                const resp = await fetch("http://localhost:3030", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: route.request().postData(),
-                });
-                const body = Buffer.from(await resp.arrayBuffer());
-                await route.fulfill({ status: resp.status, body });
+        // Mock auth/me (the mock wallet can't do real NEAR auth)
+        if (url.includes("/api/auth/me")) {
+            return route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    accountId: ACCOUNT_ID,
+                    termsAccepted: true,
+                }),
             });
         }
 
-        // Mock the wallet (uses fallback for non-wallet URLs)
-        await mockWalletRoutes(context);
+        // Re-issue request with cookie from test code (Node.js fetch)
+        const method = route.request().method();
+        const headers: Record<string, string> = {
+            cookie: `auth_token=${sandboxJwt}`,
+        };
+        const reqHeaders = route.request().headers();
+        if (reqHeaders["content-type"]) {
+            headers["content-type"] = reqHeaders["content-type"];
+        }
 
-        // Capture console errors
-        page.on("console", (msg) => {
-            if (msg.type() === "error") {
-                console.log(`[BROWSER ERROR] ${msg.text()}`);
+        const resp = await fetch(url, {
+            method,
+            headers,
+            body: method !== "GET" ? route.request().postData() : undefined,
+        });
+
+        const body = Buffer.from(await resp.arrayBuffer());
+        const respHeaders: Record<string, string> = {};
+        resp.headers.forEach((val, key) => {
+            // Strip CORS headers — Playwright handles CORS for intercepted requests
+            if (!key.startsWith("access-control-")) {
+                respHeaders[key] = val;
             }
         });
-        page.on("response", (resp) => {
-            if (resp.status() === 401) {
-                console.log(`[401] ${resp.url()}`);
-            }
+        await route.fulfill({
+            status: resp.status,
+            headers: respHeaders,
+            body,
         });
-        page.on("pageerror", (err) => {
-            console.log(`[PAGE ERROR] ${err.message}`);
+    });
+
+    // Route NEAR RPC calls to sandbox instead of mainnet
+    for (const rpcHost of [
+        "**/archival-rpc.mainnet.fastnear.com**",
+        "**/free.rpc.fastnear.com**",
+    ]) {
+        await context.route(rpcHost, async (route) => {
+            const resp = await fetch("http://localhost:3030", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: route.request().postData(),
+            });
+            const body = Buffer.from(await resp.arrayBuffer());
+            await route.fulfill({ status: resp.status, body });
         });
+    }
 
-        // Seed wallet and navigate
-        await page.goto(`/${DAO_ID}`);
-        await page.evaluate(
-            ({ walletId, acct }) => {
-                localStorage.setItem("selected-wallet", walletId);
-                localStorage.setItem(`${walletId}:signedAccountId`, acct);
-            },
-            { walletId: MOCK_MANIFEST_ID, acct: ACCOUNT_ID },
-        );
-        await page.goto(`/${DAO_ID}/confidential`);
+    // Mock the wallet (uses fallback for non-wallet URLs)
+    await mockWalletRoutes(context);
 
-        // ════════════════════════════════════════════════════
-        // Phase 1: Authentication
-        // ════════════════════════════════════════════════════
+    // Capture console errors
+    page.on("console", (msg) => {
+        if (msg.type() === "error") {
+            console.log(`[BROWSER ERROR] ${msg.text()}`);
+        }
+    });
+    page.on("response", (resp) => {
+        if (resp.status() === 401) {
+            console.log(`[401] ${resp.url()}`);
+        }
+    });
+    page.on("pageerror", (err) => {
+        console.log(`[PAGE ERROR] ${err.message}`);
+    });
 
-        // Should show auth prompt (no JWT yet)
-        const authButton = page.getByRole("button", {
-            name: "Authenticate DAO",
-        });
-        await expect(authButton).toBeVisible({ timeout: 15_000 });
+    // Seed wallet and navigate
+    await page.goto(`/${DAO_ID}`);
+    await page.evaluate(
+        ({ walletId, acct }) => {
+            localStorage.setItem("selected-wallet", walletId);
+            localStorage.setItem(`${walletId}:signedAccountId`, acct);
+        },
+        { walletId: MOCK_MANIFEST_ID, acct: ACCOUNT_ID },
+    );
+    await page.goto(`/${DAO_ID}/confidential`);
 
-        // Click Authenticate DAO
-        await authButton.click();
+    // ════════════════════════════════════════════════════
+    // Phase 1: Authentication
+    // ════════════════════════════════════════════════════
 
-        // The tracker should show the signing step
-        await expect(
-            page.getByText("Sign confidential intent", { exact: false }),
-        ).toBeVisible({ timeout: 15_000 });
+    // Should show auth prompt (no JWT yet)
+    const authButton = page.getByRole("button", {
+        name: "Authenticate DAO",
+    });
+    await expect(authButton).toBeVisible({ timeout: 15_000 });
 
-        // Click Approve
-        await expect(
-            page.getByRole("button", { name: /Approve/i }),
-        ).toBeVisible({ timeout: 10_000 });
-        await page.getByRole("button", { name: /Approve/i }).click();
+    // Click Authenticate DAO
+    await authButton.click();
 
-        // Wait for auth to complete
-        await expect(
-            page.getByText("Confidential shield complete", { exact: false }),
-        ).toBeVisible({ timeout: 30_000 });
+    // The tracker should show the signing step
+    await expect(
+        page.getByText("Sign confidential intent", { exact: false }),
+    ).toBeVisible({ timeout: 15_000 });
 
-        // Click to go back to shield form
-        await page.getByRole("button", { name: /New Shield/i }).click();
+    // Click Approve
+    await expect(page.getByRole("button", { name: /Approve/i })).toBeVisible({
+        timeout: 10_000,
+    });
+    await page.getByRole("button", { name: /Approve/i }).click();
 
-        // ════════════════════════════════════════════════════
-        // Phase 2: Shield flow
-        // ════════════════════════════════════════════════════
+    // Wait for auth to complete
+    await expect(
+        page.getByText("Confidential shield complete", { exact: false }),
+    ).toBeVisible({ timeout: 30_000 });
 
-        // Should show the shield form (authenticated now)
-        await expect(
-            page.locator("text=Shield to Confidential"),
-        ).toBeVisible({ timeout: 15_000 });
+    // Click to go back to shield form
+    await page.getByRole("button", { name: /New Shield/i }).click();
 
-        // Enter amount
-        const amountInput = page.locator("input").first();
-        await amountInput.click();
-        await amountInput.fill("0.01");
+    // ════════════════════════════════════════════════════
+    // Phase 2: Shield flow
+    // ════════════════════════════════════════════════════
 
-        // Wait for quote
-        await expect(page.locator("text=You will receive")).toBeVisible({
-            timeout: 15_000,
-        });
+    // Should show the shield form (authenticated now)
+    await expect(page.locator("text=Shield to Confidential")).toBeVisible({
+        timeout: 15_000,
+    });
 
-        // Click Review
-        const reviewBtn = page.getByRole("button", {
-            name: /Review Shield Request/i,
-        });
-        await expect(reviewBtn).toBeEnabled({ timeout: 10_000 });
-        await reviewBtn.click({ timeout: 10_000 });
+    // Enter amount
+    const amountInput = page.locator("input").first();
+    await amountInput.click();
+    await amountInput.fill("0.01");
 
-        // Verify review content
-        await expect(
-            page.getByText("Public → Confidential", { exact: true }),
-        ).toBeVisible({ timeout: 10_000 });
+    // Wait for quote
+    await expect(page.locator("text=You will receive")).toBeVisible({
+        timeout: 15_000,
+    });
 
-        // Click Submit
-        const submitBtn = page.getByRole("button", {
-            name: /Confirm and Submit/i,
-        });
-        await expect(submitBtn).toBeEnabled({ timeout: 10_000 });
-        await submitBtn.click();
+    // Click Review
+    const reviewBtn = page.getByRole("button", {
+        name: /Review Shield Request/i,
+    });
+    await expect(reviewBtn).toBeEnabled({ timeout: 10_000 });
+    await reviewBtn.click({ timeout: 10_000 });
 
-        // ════════════════════════════════════════════════════
-        // Phase 3: Approve signing proposal
-        // ════════════════════════════════════════════════════
+    // Verify review content
+    await expect(
+        page.getByText("Public → Confidential", { exact: true }),
+    ).toBeVisible({ timeout: 10_000 });
 
-        // Tracker should show signing step
-        await expect(
-            page.getByText("Sign confidential intent", { exact: false }),
-        ).toBeVisible({ timeout: 15_000 });
+    // Click Submit
+    const submitBtn = page.getByRole("button", {
+        name: /Confirm and Submit/i,
+    });
+    await expect(submitBtn).toBeEnabled({ timeout: 10_000 });
+    await submitBtn.click();
 
-        // Click Approve
-        await expect(
-            page.getByRole("button", { name: /Approve/i }),
-        ).toBeVisible({ timeout: 10_000 });
-        await page
-            .getByRole("button", { name: /Approve/i })
-            .click();
+    // ════════════════════════════════════════════════════
+    // Phase 3: Approve signing proposal
+    // ════════════════════════════════════════════════════
 
-        // Wait for completion
-        await expect(
-            page.getByText("Confidential shield complete", { exact: false }),
-        ).toBeVisible({ timeout: 30_000 });
+    // Tracker should show signing step
+    await expect(
+        page.getByText("Sign confidential intent", { exact: false }),
+    ).toBeVisible({ timeout: 15_000 });
 
-        // ════════════════════════════════════════════════════
-        // Phase 5: Verify the intent was submitted to mock 1Click
-        // ════════════════════════════════════════════════════
+    // Click Approve
+    await expect(page.getByRole("button", { name: /Approve/i })).toBeVisible({
+        timeout: 10_000,
+    });
+    await page.getByRole("button", { name: /Approve/i }).click();
 
-        const submittedResp = await fetch(
-            "http://localhost:4000/_test/submitted-intents",
-        );
-        const submittedIntents = await submittedResp.json();
-        expect(submittedIntents.length).toBeGreaterThan(0);
+    // Wait for completion
+    await expect(
+        page.getByText("Confidential shield complete", { exact: false }),
+    ).toBeVisible({ timeout: 30_000 });
 
-        // Verify the last submitted intent has the right structure
-        const lastIntent = submittedIntents[submittedIntents.length - 1];
-        expect(lastIntent.type).toBe("swap_transfer");
-        expect(lastIntent.signedData.standard).toBe("nep413");
-        expect(lastIntent.signedData.payload.recipient).toBe(
-            "intents.near",
-        );
-        expect(lastIntent.signedData.signature).toMatch(
-            /^ed25519:[A-Za-z0-9]+$/,
-        );
+    // ════════════════════════════════════════════════════
+    // Phase 5: Verify the intent was submitted to mock 1Click
+    // ════════════════════════════════════════════════════
+
+    const submittedResp = await fetch(
+        "http://localhost:4000/_test/submitted-intents",
+    );
+    const submittedIntents = await submittedResp.json();
+    expect(submittedIntents.length).toBeGreaterThan(0);
+
+    // Verify the last submitted intent has the right structure
+    const lastIntent = submittedIntents[submittedIntents.length - 1];
+    expect(lastIntent.type).toBe("swap_transfer");
+    expect(lastIntent.signedData.standard).toBe("nep413");
+    expect(lastIntent.signedData.payload.recipient).toBe("intents.near");
+    expect(lastIntent.signedData.signature).toMatch(/^ed25519:[A-Za-z0-9]+$/);
 });
