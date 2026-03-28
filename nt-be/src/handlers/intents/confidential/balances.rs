@@ -46,7 +46,7 @@ pub async fn get_balances(
     let mut url = format!("{}/v0/account/balances", state.env_vars.confidential_api_url);
 
     if let Some(token_ids) = &query.token_ids {
-        url.push_str(&format!("?tokenIds={}", token_ids));
+        url.push_str(&format!("?tokenIds={}", urlencoding::encode(token_ids)));
     }
 
     let mut req = state

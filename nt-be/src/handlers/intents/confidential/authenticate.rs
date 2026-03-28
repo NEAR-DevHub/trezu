@@ -2,7 +2,7 @@ use axum::{Json, extract::State, http::StatusCode};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
-use crate::AppState;
+use crate::{AppState, auth::AuthUser};
 
 /// Request body for authenticating a DAO with the 1Click confidential intents API.
 /// The signed data is a NEP-413 signature over an empty-intents auth payload,
@@ -39,8 +39,12 @@ pub struct AuthenticateResult {
 /// POST /api/intents/authenticate
 pub async fn authenticate(
     State(state): State<Arc<AppState>>,
+    _auth_user: AuthUser,
     Json(request): Json<AuthenticateRequest>,
 ) -> Result<Json<AuthenticateResult>, (StatusCode, String)> {
+    // Validate that dao_id matches signer_id in the signed NEP-413 payload
+    validate_signer_id(&request)?;
+
     let url = format!("{}/v0/auth/authenticate", state.env_vars.confidential_api_url);
 
     let mut req = state
@@ -91,7 +95,7 @@ pub async fn authenticate(
         chrono::Utc::now() + chrono::Duration::seconds(auth_response.expires_in);
 
     // Store JWT tokens in monitored_accounts
-    sqlx::query!(
+    let result = sqlx::query!(
         r#"
         UPDATE monitored_accounts
         SET confidential_access_token = $1,
@@ -113,6 +117,17 @@ pub async fn authenticate(
             format!("Failed to store JWT tokens: {}", e),
         )
     })?;
+
+    if result.rows_affected() == 0 {
+        log::error!(
+            "DAO {} not found in monitored_accounts — JWT not stored",
+            request.dao_id
+        );
+        return Err((
+            StatusCode::NOT_FOUND,
+            format!("DAO {} is not a monitored account", request.dao_id),
+        ));
+    }
 
     log::info!(
         "Stored confidential JWT for DAO {} (expires in {}s)",
@@ -267,4 +282,52 @@ pub async fn refresh_dao_jwt(
 
     log::info!("Refreshed confidential JWT for DAO {}", dao_id);
     Ok(auth_response.access_token)
+}
+
+/// Validate that the signer_id inside the NEP-413 signed payload matches the
+/// requested dao_id. This prevents a caller from authenticating one DAO using
+/// a signature produced for a different account.
+fn validate_signer_id(request: &AuthenticateRequest) -> Result<(), (StatusCode, String)> {
+    // signed_data structure: { signedData: { payload: { message: "<json>" } } }
+    let message_str = request
+        .signed_data
+        .get("signedData")
+        .and_then(|sd| sd.get("payload"))
+        .and_then(|p| p.get("message"))
+        .and_then(|m| m.as_str())
+        .ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                "Missing signedData.payload.message in signed_data".to_string(),
+            )
+        })?;
+
+    let message: serde_json::Value = serde_json::from_str(message_str).map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("Invalid JSON in NEP-413 message: {}", e),
+        )
+    })?;
+
+    let signer_id = message
+        .get("signer_id")
+        .and_then(|s| s.as_str())
+        .ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                "Missing signer_id in NEP-413 message".to_string(),
+            )
+        })?;
+
+    if signer_id != request.dao_id {
+        return Err((
+            StatusCode::FORBIDDEN,
+            format!(
+                "signer_id '{}' in signed payload does not match dao_id '{}'",
+                signer_id, request.dao_id
+            ),
+        ));
+    }
+
+    Ok(())
 }

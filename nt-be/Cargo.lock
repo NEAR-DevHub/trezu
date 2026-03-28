@@ -2313,7 +2313,6 @@ dependencies = [
  "bs58 0.5.1",
  "chrono",
  "dotenvy",
- "ed25519-dalek",
  "env_logger",
  "futures",
  "hex",
