@@ -7,7 +7,7 @@ use serde::Deserialize;
 use serde_json::Value;
 use std::sync::Arc;
 
-use crate::AppState;
+use crate::{AppState, auth::AuthUser};
 
 use super::authenticate::refresh_dao_jwt;
 
@@ -22,13 +22,24 @@ pub struct BalancesQuery {
 }
 
 /// Fetch confidential balances for a DAO from the 1Click API.
-/// Requires a stored JWT token (from a prior authenticate call).
+/// Requires authentication and DAO membership.
 ///
 /// GET /api/intents/balances?daoId=mydao.sputnik-dao.near
 pub async fn get_balances(
     State(state): State<Arc<AppState>>,
+    auth_user: AuthUser,
     Query(query): Query<BalancesQuery>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
+    // Verify the caller is a member of this DAO
+    auth_user
+        .verify_dao_member(&state.db_pool, &query.dao_id)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::FORBIDDEN,
+                format!("Not a DAO member: {}", e),
+            )
+        })?;
     // Get or refresh the JWT for this DAO
     let access_token = refresh_dao_jwt(&state, &query.dao_id).await?;
 

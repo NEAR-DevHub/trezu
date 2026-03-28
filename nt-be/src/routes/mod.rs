@@ -282,25 +282,29 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
             "/api/intents/swap-status",
             get(handlers::intents::swap_status::get_swap_status),
         )
-        // Confidential intents endpoints
+        // Confidential intents endpoints (all require DAO membership auth)
         .route(
-            "/api/intents/authenticate",
+            "/api/confidential-intents/authenticate",
             post(handlers::intents::authenticate::authenticate),
         )
         .route(
-            "/api/intents/generate-intent",
+            "/api/confidential-intents/quote",
+            post(handlers::intents::confidential_quote::get_confidential_quote),
+        )
+        .route(
+            "/api/confidential-intents/generate-intent",
             post(handlers::intents::generate_intent::generate_intent),
         )
         .route(
-            "/api/intents/submit-intent",
+            "/api/confidential-intents/submit-intent",
             post(handlers::intents::submit_intent::submit_intent),
         )
         .route(
-            "/api/intents/balances",
+            "/api/confidential-intents/balances",
             get(handlers::intents::balances::get_balances),
         )
         .route(
-            "/api/intents/prepare-auth",
+            "/api/confidential-intents/prepare-auth",
             post(handlers::intents::prepare_auth::prepare_auth),
         )
         // Proxy endpoints - catch-all for external API

@@ -11,7 +11,7 @@ use serde_json::json;
 use sha2::Digest;
 use std::sync::Arc;
 
-use crate::AppState;
+use crate::{AppState, auth::AuthUser};
 
 const V1_SIGNER_CONTRACT: &str = "v1.signer";
 const V1_SIGNER_GAS: &str = "250000000000000";
@@ -79,8 +79,13 @@ fn build_nonce(salt: &[u8; 4], deadline: &chrono::DateTime<chrono::Utc>) -> [u8;
 /// The auth payload is stored for auto-submission after approval.
 pub async fn prepare_auth(
     State(state): State<Arc<AppState>>,
+    auth_user: AuthUser,
     Json(request): Json<PrepareAuthRequest>,
 ) -> Result<Json<PrepareAuthResponse>, (StatusCode, String)> {
+    auth_user
+        .verify_dao_member(&state.db_pool, &request.dao_id)
+        .await
+        .map_err(|e| (StatusCode::FORBIDDEN, format!("Not a DAO member: {}", e)))?;
     // Build auth message (empty intents = auth-only)
     let deadline = chrono::Utc::now() + chrono::Duration::days(7);
     let deadline_str = deadline.format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string();

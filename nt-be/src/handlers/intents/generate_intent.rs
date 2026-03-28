@@ -3,7 +3,7 @@ use serde::Deserialize;
 use serde_json::Value;
 use std::sync::Arc;
 
-use crate::AppState;
+use crate::{AppState, auth::AuthUser};
 
 /// Request body for generating an intent to sign.
 /// After getting a quote, this endpoint returns the intent payload
@@ -30,8 +30,15 @@ pub struct GenerateIntentRequest {
 /// that the wallet or v1.signer must sign before submitting via submit-intent.
 pub async fn generate_intent(
     State(state): State<Arc<AppState>>,
+    auth_user: AuthUser,
     Json(request): Json<GenerateIntentRequest>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
+    let dao_id = request.signer_id.strip_prefix("near:").unwrap_or(&request.signer_id);
+    auth_user
+        .verify_dao_member(&state.db_pool, dao_id)
+        .await
+        .map_err(|e| (StatusCode::FORBIDDEN, format!("Not a DAO member: {}", e)))?;
+
     log::info!("generate_intent called: type={}, signerId={}", request.r#type, request.signer_id);
     let url = format!("{}/v0/generate-intent", super::constants::CONFIDENTIAL_API_URL);
 

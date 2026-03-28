@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { UseFormReturn } from "react-hook-form";
 import Big from "@/lib/big";
 import {
-    getIntentsQuote,
+    getConfidentialQuote,
     generateIntent,
     IntentsQuoteResponse,
     GenerateIntentResponse,
@@ -63,26 +63,22 @@ export function useConfidentialQuote({
                         ? "near"
                         : `nep141:${token.address}`;
 
-                const quote = await getIntentsQuote(
+                const quote = await getConfidentialQuote(
+                    selectedTreasury,
                     {
+                        dry: isDryRun,
                         swapType: "EXACT_INPUT",
                         slippageTolerance: Math.round(
                             slippageTolerance * 100,
                         ),
                         originAsset,
-                        depositType: "INTENTS",
                         destinationAsset: originAsset,
                         amount: parsedAmount,
-                        refundTo: selectedTreasury,
-                        refundType: "CONFIDENTIAL_INTENTS",
-                        recipient: selectedTreasury,
-                        recipientType: "CONFIDENTIAL_INTENTS",
                         deadline: new Date(
                             Date.now() + 24 * 60 * 60 * 1000,
                         ).toISOString(),
                         quoteWaitingTimeMs: isDryRun ? 3000 : 5000,
                     },
-                    isDryRun,
                 );
 
                 if (!quote) return null;

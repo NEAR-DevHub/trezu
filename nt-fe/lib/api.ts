@@ -1250,13 +1250,44 @@ export interface GenerateIntentResponse {
  * Generate a NEP-413 intent payload to sign.
  * Called after getting a quote — uses the depositAddress from the quote.
  */
+/**
+ * Get confidential shield quote from the dedicated endpoint.
+ * Requires DAO membership auth. Uses 1Click test API with JWT.
+ */
+export async function getConfidentialQuote(
+    daoId: string,
+    request: {
+        dry?: boolean;
+        swapType?: string;
+        slippageTolerance?: number;
+        originAsset: string;
+        destinationAsset: string;
+        amount: string;
+        deadline: string;
+        quoteWaitingTimeMs?: number;
+    },
+): Promise<IntentsQuoteResponse | null> {
+    try {
+        const url = `${BACKEND_API_BASE}/confidential-intents/quote`;
+        const response = await axios.post<IntentsQuoteResponse>(
+            url,
+            { daoId, ...request },
+            { withCredentials: true },
+        );
+        return response.data;
+    } catch (error: any) {
+        if (error?.response?.status === 404) return null;
+        throw error;
+    }
+}
+
 export async function generateIntent(request: {
     type: string;
     standard: string;
     depositAddress: string;
     signerId: string;
 }): Promise<GenerateIntentResponse> {
-    const url = `${BACKEND_API_BASE}/intents/generate-intent`;
+    const url = `${BACKEND_API_BASE}/confidential-intents/generate-intent`;
     const response = await axios.post<GenerateIntentResponse>(url, request);
     return response.data;
 }
@@ -1269,7 +1300,7 @@ export async function submitIntent(request: {
     type: string;
     signedData: any;
 }): Promise<{ intentHash: string; correlationId: string }> {
-    const url = `${BACKEND_API_BASE}/intents/submit-intent`;
+    const url = `${BACKEND_API_BASE}/confidential-intents/submit-intent`;
     const response = await axios.post(url, request);
     return response.data;
 }
@@ -1281,7 +1312,7 @@ export async function submitIntent(request: {
 export async function getConfidentialBalances(
     daoId: string,
 ): Promise<Record<string, string>> {
-    const url = `${BACKEND_API_BASE}/intents/balances`;
+    const url = `${BACKEND_API_BASE}/confidential-intents/balances`;
     const response = await axios.get(url, { params: { daoId } });
     return response.data;
 }
@@ -1297,7 +1328,7 @@ export async function prepareConfidentialAuth(daoId: string): Promise<{
         kind: Record<string, unknown>;
     };
 }> {
-    const url = `${BACKEND_API_BASE}/intents/prepare-auth`;
+    const url = `${BACKEND_API_BASE}/confidential-intents/prepare-auth`;
     const response = await axios.post(url, { daoId });
     return response.data;
 }
