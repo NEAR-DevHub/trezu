@@ -58,10 +58,17 @@ export function useConfidentialQuote({
                     .mul(Big(10).pow(token.decimals))
                     .toFixed();
 
+                // Strip the intents.near: prefix for the 1Click API
+                const baseAddress = token.address.replace(
+                    /^intents\.near:/,
+                    "",
+                );
                 const originAsset =
-                    token.address === "near"
+                    baseAddress === "near"
                         ? "near"
-                        : `nep141:${token.address}`;
+                        : baseAddress.startsWith("nep141:")
+                          ? baseAddress
+                          : `nep141:${baseAddress}`;
 
                 const quote = await getConfidentialQuote(
                     selectedTreasury,

@@ -293,24 +293,12 @@ test("Confidential Shield — full flow", async ({
             page.getByText("Sign confidential intent", { exact: false }),
         ).toBeVisible({ timeout: 15_000 });
 
-        // Click Approve Signing
+        // Click Approve
         await expect(
-            page.getByRole("button", { name: /Approve Signing/i }),
+            page.getByRole("button", { name: /Approve/i }),
         ).toBeVisible({ timeout: 10_000 });
         await page
-            .getByRole("button", { name: /Approve Signing/i })
-            .click();
-
-        // ════════════════════════════════════════════════════
-        // Phase 4: Approve deposit proposal
-        // ════════════════════════════════════════════════════
-
-        // Deposit step should become active
-        await expect(
-            page.getByRole("button", { name: /Approve Deposit/i }),
-        ).toBeVisible({ timeout: 30_000 });
-        await page
-            .getByRole("button", { name: /Approve Deposit/i })
+            .getByRole("button", { name: /Approve/i })
             .click();
 
         // Wait for completion

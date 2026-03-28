@@ -1,4 +1,6 @@
-//! Full end-to-end confidential shield: auth → quote → intent → MPC sign → submit → deposit
+//! Full end-to-end confidential shield: auth → quote → intent → MPC sign → submit
+//!
+//! Prerequisite: The DAO must already have tokens deposited to intents.near.
 //!
 //! This script performs a REAL confidential shield of 0.01 wNEAR:
 //! 1. Authenticate with 1Click API (test endpoint)
@@ -7,8 +9,7 @@
 //! 4. Create DAO proposal to sign via v1.signer MPC
 //! 5. Approve proposal → get MPC Ed25519 signature
 //! 6. Submit signed intent to 1Click API
-//! 7. Execute ft_transfer_call on-chain (deposit tokens to intents.near)
-//! 8. Poll for completion
+//! 7. Poll for completion
 //!
 //! Run with: cargo run --example full_confidential_shield
 
@@ -388,43 +389,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // =============================================
-    // Step 6: On-chain ft_transfer_call (deposit tokens)
+    // Step 6: Poll for completion
     // =============================================
-    println!("=== Step 6: On-chain ft_transfer_call ===\n");
-
-    // The DAO needs to transfer wNEAR to intents.near
-    // This needs to be done via a DAO proposal too
-    let ft_transfer_args = json!({
-        "receiver_id": "intents.near",
-        "amount": SHIELD_AMOUNT,
-        "msg": "",
-    });
-
-    let deposit_proposal = json!({
-        "proposal": {
-            "description": "Deposit wNEAR to intents.near for confidential shield",
-            "kind": {
-                "FunctionCall": {
-                    "receiver_id": "wrap.near",
-                    "actions": [{
-                        "method_name": "ft_transfer_call",
-                        "args": BASE64.encode(serde_json::to_string(&ft_transfer_args)?.as_bytes()),
-                        "deposit": "1",
-                        "gas": "100000000000000",
-                    }],
-                }
-            }
-        }
-    });
-
-    println!("Creating and approving deposit proposal...");
-    let _deposit_result = create_and_approve_proposal(&near_secret, deposit_proposal, &client).await;
-    println!("Deposit proposal executed!\n");
-
-    // =============================================
-    // Step 7: Poll for completion
-    // =============================================
-    println!("=== Step 7: Poll for completion ===\n");
+    println!("=== Step 6: Poll for completion ===\n");
+    println!("Note: The DAO must already have tokens deposited to intents.near.\n");
 
     for i in 0..30 {
         let status_resp = client.get(format!(

@@ -45,7 +45,7 @@ import { ProposalTracker } from "./components/proposal-tracker";
 import { getLastProposalId } from "@/lib/proposals-api";
 
 const WNEAR_TOKEN = {
-    address: "wrap.near",
+    address: "intents.near:nep141:wrap.near",
     symbol: "wNEAR",
     name: "Wrapped NEAR",
     icon: "",
@@ -245,7 +245,7 @@ function Step1({ handleNext }: StepProps) {
                 control={form.control}
                 amountName="amount"
                 tokenName="token"
-                showInsufficientBalance={true}
+                showInsufficientBalance={false}
                 dynamicFontSize={true}
             />
 
@@ -494,49 +494,6 @@ export default function ConfidentialPage() {
                 proposalBond,
             });
 
-            // Build the deposit proposal (ft_transfer_call to intents.near)
-            const depositArgs = btoa(
-                JSON.stringify({
-                    receiver_id: "intents.near",
-                    amount: proposalData.quote.quote.amountIn,
-                    msg: "",
-                }),
-            );
-
-            const depositProposal = {
-                receiverId: selectedTreasury,
-                actions: [
-                    {
-                        type: "FunctionCall" as const,
-                        params: {
-                            methodName: "add_proposal",
-                            args: {
-                                proposal: {
-                                    description:
-                                        "Deposit wNEAR to intents.near for confidential shield",
-                                    kind: {
-                                        FunctionCall: {
-                                            receiver_id: "wrap.near",
-                                            actions: [
-                                                {
-                                                    method_name:
-                                                        "ft_transfer_call",
-                                                    args: depositArgs,
-                                                    deposit: "1",
-                                                    gas: "100000000000000",
-                                                },
-                                            ],
-                                        },
-                                    },
-                                },
-                            },
-                            gas: "100000000000000",
-                            deposit: proposalBond,
-                        },
-                    },
-                ],
-            };
-
             // Get proposal count before submission to determine the new proposal's ID
             const prevCount = await getLastProposalId(selectedTreasury);
 
@@ -547,11 +504,10 @@ export default function ConfidentialPage() {
                     proposal: result.proposal,
                     proposalBond,
                     proposalType: "confidential_transfer",
-                    additionalTransactions: [depositProposal],
                 },
             );
 
-            // Show the tracker — signing proposal is prevCount, deposit is prevCount+1
+            // Show the tracker
             setSubmittedProposal({
                 proposalId: prevCount,
             });
@@ -570,7 +526,6 @@ export default function ConfidentialPage() {
                 <div className="flex flex-col gap-4 max-w-[600px] mx-auto">
                     <ProposalTracker
                         proposalId={authProposalId}
-                        hasDeposit={false}
                         onDone={() => {
                             setAuthProposalId(null);
                             setAuthState("authenticated");
