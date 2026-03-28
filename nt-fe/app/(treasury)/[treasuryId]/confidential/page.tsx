@@ -14,7 +14,7 @@ import {
     StepWizard,
 } from "@/components/step-wizard";
 import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useNear } from "@/stores/near-store";
 import { useThemeStore } from "@/stores/theme-store";
@@ -73,7 +73,11 @@ interface ConfidentialToken {
     tokenId: string;
 }
 
-function ConfidentialBalance() {
+function ConfidentialBalance({
+    onAuthProposal,
+}: {
+    onAuthProposal?: (proposalId: number) => void;
+}) {
     const { treasuryId } = useTreasury();
     const { createProposal } = useNear();
     const { data: policy } = useTreasuryPolicy(treasuryId);
@@ -82,9 +86,8 @@ function ConfidentialBalance() {
     );
     const [needsAuth, setNeedsAuth] = useState(false);
     const [isAuthenticating, setIsAuthenticating] = useState(false);
-    const [authProposalId, setAuthProposalId] = useState<number | null>(null);
 
-    const fetchBalances = useCallback(() => {
+    useEffect(() => {
         if (!treasuryId) return;
         getConfidentialBalances(treasuryId)
             .then((resp: any) => {
@@ -93,15 +96,12 @@ function ConfidentialBalance() {
             })
             .catch((err) => {
                 setBalances(null);
-                // 401 = no JWT, 502 = refresh failed — both need re-auth
                 const status = err?.response?.status;
-                if (status === 401 || status === 502) {
+                if (status === 401 || status === 502 || status === 403) {
                     setNeedsAuth(true);
                 }
             });
     }, [treasuryId]);
-
-    useEffect(fetchBalances, [fetchBalances]);
 
     const handleAuthenticate = async () => {
         if (!treasuryId) return;
@@ -119,29 +119,12 @@ function ConfidentialBalance() {
                 proposalType: "confidential_transfer",
             });
 
-            setAuthProposalId(prevCount);
+            onAuthProposal?.(prevCount);
         } catch (err) {
             console.error("Auth proposal error", err);
             setIsAuthenticating(false);
         }
     };
-
-    // If auth proposal submitted, show tracker
-    if (authProposalId !== null) {
-        return (
-            <ProposalTracker
-                proposalId={authProposalId}
-                hasDeposit={false}
-                onDone={() => {
-                    setAuthProposalId(null);
-                    setIsAuthenticating(false);
-                    setNeedsAuth(false);
-                    // Re-fetch balances after auth
-                    setTimeout(fetchBalances, 2000);
-                }}
-            />
-        );
-    }
 
     if (needsAuth) {
         return (
@@ -457,6 +440,30 @@ export default function ConfidentialPage() {
     const [step, setStep] = useState(0);
     const [submittedProposal, setSubmittedProposal] =
         useState<SubmittedProposal | null>(null);
+    const [authState, setAuthState] = useState<
+        "loading" | "needs_auth" | "authenticated" | "auth_pending"
+    >("loading");
+    const [authProposalId, setAuthProposalId] = useState<number | null>(null);
+
+    // Check if the DAO is authenticated with the 1Click API
+    useEffect(() => {
+        if (!selectedTreasury) return;
+        getConfidentialBalances(selectedTreasury)
+            .then(() => setAuthState("authenticated"))
+            .catch((err) => {
+                const status = err?.response?.status;
+                if (status === 401 || status === 502 || status === 403) {
+                    setAuthState("needs_auth");
+                } else {
+                    setAuthState("needs_auth");
+                }
+            });
+    }, [selectedTreasury]);
+
+    const handleAuthProposal = (proposalId: number) => {
+        setAuthProposalId(proposalId);
+        setAuthState("auth_pending");
+    };
 
     const form = useForm<ConfidentialFormValues>({
         resolver: zodResolver(confidentialFormSchema),
@@ -553,6 +560,67 @@ export default function ConfidentialPage() {
         }
     };
 
+    // Auth pending — show tracker for the auth proposal
+    if (authState === "auth_pending" && authProposalId !== null) {
+        return (
+            <PageComponentLayout
+                title="Confidential"
+                description="Authenticating your DAO"
+            >
+                <div className="flex flex-col gap-4 max-w-[600px] mx-auto">
+                    <ProposalTracker
+                        proposalId={authProposalId}
+                        hasDeposit={false}
+                        onDone={() => {
+                            setAuthProposalId(null);
+                            setAuthState("authenticated");
+                        }}
+                    />
+                </div>
+            </PageComponentLayout>
+        );
+    }
+
+    // Not authenticated — show auth prompt
+    if (authState === "needs_auth") {
+        return (
+            <PageComponentLayout
+                title="Confidential"
+                description="Shield tokens to your confidential account"
+            >
+                <div className="flex flex-col gap-4 max-w-[600px] mx-auto">
+                    <PageCard>
+                        <div className="flex flex-col items-center gap-4 py-6">
+                            <Shield className="size-10 text-primary" />
+                            <StepperHeader title="Authenticate DAO" />
+                            <p className="text-sm text-muted-foreground text-center max-w-md">
+                                Your DAO needs to authenticate with the confidential
+                                intents system before you can shield tokens or view
+                                private balances. This creates a one-time signing
+                                proposal via v1.signer.
+                            </p>
+                            <ConfidentialBalance onAuthProposal={handleAuthProposal} />
+                        </div>
+                    </PageCard>
+                </div>
+            </PageComponentLayout>
+        );
+    }
+
+    // Loading auth state
+    if (authState === "loading") {
+        return (
+            <PageComponentLayout
+                title="Confidential"
+                description="Shield tokens to your confidential account"
+            >
+                <div className="flex flex-col gap-4 max-w-[600px] mx-auto items-center py-12">
+                    <Loader2 className="size-8 animate-spin text-muted-foreground" />
+                </div>
+            </PageComponentLayout>
+        );
+    }
+
     // Show tracker while a proposal is being tracked
     if (submittedProposal) {
         return (
@@ -574,6 +642,7 @@ export default function ConfidentialPage() {
         );
     }
 
+    // Authenticated — show shield form
     return (
         <PageComponentLayout
             title="Confidential"
