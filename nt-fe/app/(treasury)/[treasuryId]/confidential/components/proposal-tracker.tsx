@@ -167,13 +167,13 @@ export function ProposalTracker({
                             handleApprove(
                                 proposalId,
                                 signingProposal,
-                                "deposit_pending",
+                                hasDeposit ? "deposit_pending" : "deposit_done",
                                 "signing_approving",
                             )
                         }
                         className="w-full"
                     >
-                        Approve Signing
+                        {hasDeposit ? "Approve Signing" : "Approve"}
                     </Button>
                 )}
 
@@ -184,35 +184,39 @@ export function ProposalTracker({
                     </Button>
                 )}
 
-                {/* Step 2: Deposit proposal */}
-                <PhaseRow
-                    done={depositDone}
-                    active={phase === "deposit_pending" || phase === "deposit_approving"}
-                    label="Deposit tokens to intents.near"
-                    sublabel={signingDone ? `Proposal #${depositProposalId}` : undefined}
-                />
+                {/* Step 2: Deposit proposal (only for shield, not auth) */}
+                {hasDeposit && (
+                    <>
+                        <PhaseRow
+                            done={depositDone}
+                            active={phase === "deposit_pending" || phase === "deposit_approving"}
+                            label="Deposit tokens to intents.near"
+                            sublabel={signingDone ? `Proposal #${depositProposalId}` : undefined}
+                        />
 
-                {phase === "deposit_pending" && depositProposal && (
-                    <Button
-                        onClick={() =>
-                            handleApprove(
-                                depositProposalId,
-                                depositProposal,
-                                "deposit_done",
-                                "deposit_approving",
-                            )
-                        }
-                        className="w-full"
-                    >
-                        Approve Deposit
-                    </Button>
-                )}
+                        {phase === "deposit_pending" && depositProposal && (
+                            <Button
+                                onClick={() =>
+                                    handleApprove(
+                                        depositProposalId,
+                                        depositProposal,
+                                        "deposit_done",
+                                        "deposit_approving",
+                                    )
+                                }
+                                className="w-full"
+                            >
+                                Approve Deposit
+                            </Button>
+                        )}
 
-                {phase === "deposit_approving" && (
-                    <Button disabled className="w-full">
-                        <Loader2 className="size-4 animate-spin mr-2" />
-                        Approving in wallet...
-                    </Button>
+                        {phase === "deposit_approving" && (
+                            <Button disabled className="w-full">
+                                <Loader2 className="size-4 animate-spin mr-2" />
+                                Approving in wallet...
+                            </Button>
+                        )}
+                    </>
                 )}
 
                 {phase === "deposit_done" && (
