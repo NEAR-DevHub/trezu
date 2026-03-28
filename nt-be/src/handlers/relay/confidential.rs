@@ -236,8 +236,8 @@ pub async fn try_auto_submit_intent(state: &Arc<AppState>, treasury_id: &str, re
                 );
 
                 // For auth: store the JWT tokens in monitored_accounts
-                if intent_type == "auth" {
-                    if let (Some(access_token), Some(refresh_token)) = (
+                if intent_type == "auth"
+                    && let (Some(access_token), Some(refresh_token)) = (
                         resp_body.get("accessToken").and_then(|v| v.as_str()),
                         resp_body.get("refreshToken").and_then(|v| v.as_str()),
                     ) {
@@ -269,7 +269,6 @@ pub async fn try_auto_submit_intent(state: &Arc<AppState>, treasury_id: &str, re
                             expires_in
                         );
                     }
-                }
 
                 let _ = sqlx::query(
                     "UPDATE pending_confidential_intents SET status = 'submitted', submit_result = $1, updated_at = NOW() WHERE dao_id = $2 AND proposal_id = $3"
