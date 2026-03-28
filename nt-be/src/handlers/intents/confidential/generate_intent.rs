@@ -228,7 +228,11 @@ mod tests {
             signer_id: format!("near:{}", dao_id),
         };
 
-        let generate_result = generate_intent(State(state.clone()), Json(generate_request)).await;
+        let auth_user = crate::auth::AuthUser {
+            account_id: "test.near".to_string(),
+        };
+        let generate_result =
+            generate_intent(State(state.clone()), auth_user, Json(generate_request)).await;
 
         match generate_result {
             Ok(response) => {

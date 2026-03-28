@@ -14,15 +14,26 @@
 #[cfg(test)]
 mod tests {
     use crate::AppState;
-    use crate::handlers::intents::generate_intent::{GenerateIntentRequest, generate_intent};
+    use crate::auth::AuthUser;
+    use crate::handlers::intents::confidential::generate_intent::{
+        GenerateIntentRequest, generate_intent,
+    };
+    use crate::handlers::intents::confidential::submit_intent::{
+        SubmitIntentRequest, submit_intent,
+    };
     use crate::handlers::intents::quote::{QuoteRequest, get_quote};
-    use crate::handlers::intents::submit_intent::{SubmitIntentRequest, submit_intent};
     use crate::utils::env::EnvVars;
     use axum::Json;
     use axum::extract::State;
     use std::sync::Arc;
     use wiremock::matchers::{method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    fn mock_auth_user() -> AuthUser {
+        AuthUser {
+            account_id: "test.near".to_string(),
+        }
+    }
 
     /// Create test AppState pointing at a mock server
     async fn create_test_state(mock_server_url: &str) -> Arc<AppState> {
@@ -230,7 +241,7 @@ mod tests {
             signer_id: "petersalomonsendev.near".to_string(),
         };
 
-        let result = generate_intent(State(state), Json(request)).await;
+        let result = generate_intent(State(state), mock_auth_user(), Json(request)).await;
         assert!(result.is_ok(), "Generate intent should succeed");
 
         let response = result.unwrap().0;
@@ -283,7 +294,9 @@ mod tests {
             signer_id: "petersalomonsendev.near".to_string(),
         };
 
-        let result = generate_intent(State(state), Json(request)).await.unwrap();
+        let result = generate_intent(State(state), mock_auth_user(), Json(request))
+            .await
+            .unwrap();
         let message_str = result.0["intent"]["payload"]["message"].as_str().unwrap();
         let message: serde_json::Value = serde_json::from_str(message_str).unwrap();
 
@@ -322,11 +335,12 @@ mod tests {
         });
 
         let request = SubmitIntentRequest {
+            dao_id: "test.sputnik-dao.near".to_string(),
             r#type: "SWAP_TRANSFER".to_string(),
             signed_data,
         };
 
-        let result = submit_intent(State(state), Json(request)).await;
+        let result = submit_intent(State(state), mock_auth_user(), Json(request)).await;
         assert!(result.is_ok(), "Submit intent should succeed");
 
         let response = result.unwrap().0;
@@ -403,7 +417,7 @@ mod tests {
             signer_id: account_id.to_string(),
         };
 
-        let gen_result = generate_intent(State(state.clone()), Json(gen_request))
+        let gen_result = generate_intent(State(state.clone()), mock_auth_user(), Json(gen_request))
             .await
             .expect("Generate intent should succeed");
         let intent_payload = &gen_result.0["intent"]["payload"];
@@ -461,11 +475,12 @@ mod tests {
         });
 
         let submit_request = SubmitIntentRequest {
+            dao_id: "test.sputnik-dao.near".to_string(),
             r#type: "SWAP_TRANSFER".to_string(),
             signed_data,
         };
 
-        let submit_result = submit_intent(State(state), Json(submit_request))
+        let submit_result = submit_intent(State(state), mock_auth_user(), Json(submit_request))
             .await
             .expect("Submit should succeed");
 
@@ -499,7 +514,7 @@ mod tests {
             signer_id: "test.near".to_string(),
         };
 
-        let result = generate_intent(State(state), Json(request)).await;
+        let result = generate_intent(State(state), mock_auth_user(), Json(request)).await;
         assert!(result.is_err());
         let (status, msg) = result.unwrap_err();
         assert_eq!(status, axum::http::StatusCode::BAD_REQUEST);
@@ -527,11 +542,12 @@ mod tests {
         let state = create_test_state(&mock_server.uri()).await;
 
         let request = SubmitIntentRequest {
+            dao_id: "test.sputnik-dao.near".to_string(),
             r#type: "SWAP_TRANSFER".to_string(),
             signed_data: serde_json::json!({"bad": "data"}),
         };
 
-        let result = submit_intent(State(state), Json(request)).await;
+        let result = submit_intent(State(state), mock_auth_user(), Json(request)).await;
         assert!(result.is_err());
         let (status, _) = result.unwrap_err();
         assert_eq!(status, axum::http::StatusCode::UNAUTHORIZED);
