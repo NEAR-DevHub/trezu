@@ -200,10 +200,15 @@ async fn create_test_session(Json(body): Json<Value>) -> Json<Value> {
         .await
         .ok();
 
-    let nonce = challenge_resp
-        .and_then(|r| futures::executor::block_on(r.json::<Value>()).ok())
-        .and_then(|v| v.get("nonce").and_then(|n| n.as_str()).map(String::from))
-        .unwrap_or_default();
+    let nonce = match challenge_resp {
+        Some(r) => r
+            .json::<Value>()
+            .await
+            .ok()
+            .and_then(|v| v.get("nonce").and_then(|n| n.as_str()).map(String::from))
+            .unwrap_or_default(),
+        None => String::new(),
+    };
 
     // For sandbox testing, we can't do real NEP-413 signing.
     // Instead, insert directly into the DB.

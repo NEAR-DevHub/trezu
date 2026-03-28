@@ -111,7 +111,13 @@ pub async fn generate_intent(
         if let Err(e) = crate::handlers::relay::confidential::store_pending_intent(
             &state.db_pool,
             dao_id,
-            -1, // proposal_id unknown yet — will be matched by dao_id
+            // proposal_id = -1 is a sentinel for "not yet linked to a proposal".
+            // The UNIQUE(dao_id, proposal_id) constraint means only one pending intent
+            // per DAO exists at a time. If a second intent is generated before the first
+            // is submitted, the ON CONFLICT upsert overwrites the previous one. This is
+            // intentional: the most recently generated intent is always the one that
+            // should be signed and submitted.
+            -1,
             payload,
             correlation_id,
         )

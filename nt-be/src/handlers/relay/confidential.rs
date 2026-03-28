@@ -127,7 +127,10 @@ pub async fn try_auto_submit_intent(state: &Arc<AppState>, treasury_id: &str, re
         treasury_id
     );
 
-    // Find the most recent pending intent or auth for this treasury
+    // Find the most recent pending intent or auth for this treasury.
+    // Because generate_intent stores pending intents with proposal_id = -1 and the
+    // UNIQUE(dao_id, proposal_id) constraint, there is at most one pending row per DAO
+    // at any time. The ORDER BY + LIMIT 1 is a safety net in case the schema evolves.
     let pending = sqlx::query_as::<_, (i32, Value, Option<String>, String)>(
         r#"
         SELECT proposal_id, intent_payload, correlation_id, intent_type

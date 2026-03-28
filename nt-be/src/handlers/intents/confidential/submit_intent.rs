@@ -3,7 +3,7 @@ use serde::Deserialize;
 use serde_json::Value;
 use std::sync::Arc;
 
-use crate::AppState;
+use crate::{AppState, auth::AuthUser};
 
 /// Request body for submitting a signed intent to the 1Click API.
 #[derive(Deserialize, Debug)]
@@ -13,17 +13,24 @@ pub struct SubmitIntentRequest {
     pub r#type: String,
     /// The signed intent data (standard-specific: NEP-413, ERC-191, etc.)
     pub signed_data: Value,
+    /// The DAO account ID — used for membership verification
+    pub dao_id: String,
 }
 
 /// Proxy endpoint for 1Click API submit-intent.
-/// Submits a signed intent for execution. No JWT required —
-/// the intent itself is cryptographically signed.
+/// Submits a signed intent for execution.
 ///
 /// POST /api/intents/submit-intent
 pub async fn submit_intent(
     State(state): State<Arc<AppState>>,
+    auth_user: AuthUser,
     Json(request): Json<SubmitIntentRequest>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
+    auth_user
+        .verify_dao_member(&state.db_pool, &request.dao_id)
+        .await
+        .map_err(|e| (StatusCode::FORBIDDEN, format!("Not a DAO member: {}", e)))?;
+
     let url = format!("{}/v0/submit-intent", state.env_vars.confidential_api_url);
 
     let body = serde_json::json!({

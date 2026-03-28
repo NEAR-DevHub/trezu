@@ -39,9 +39,15 @@ pub struct AuthenticateResult {
 /// POST /api/intents/authenticate
 pub async fn authenticate(
     State(state): State<Arc<AppState>>,
-    _auth_user: AuthUser,
+    auth_user: AuthUser,
     Json(request): Json<AuthenticateRequest>,
 ) -> Result<Json<AuthenticateResult>, (StatusCode, String)> {
+    // Verify the caller is a member of this DAO
+    auth_user
+        .verify_dao_member(&state.db_pool, &request.dao_id)
+        .await
+        .map_err(|e| (StatusCode::FORBIDDEN, format!("Not a DAO member: {}", e)))?;
+
     // Validate that dao_id matches signer_id in the signed NEP-413 payload
     validate_signer_id(&request)?;
 
