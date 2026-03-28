@@ -443,6 +443,7 @@ export default function ConfidentialPage() {
     const [authState, setAuthState] = useState<
         "loading" | "needs_auth" | "authenticated" | "auth_pending"
     >("loading");
+    const [isAuthenticating, setIsAuthenticating] = useState(false);
     const [authProposalId, setAuthProposalId] = useState<number | null>(null);
 
     // Check if the DAO is authenticated with the 1Click API
@@ -540,6 +541,7 @@ export default function ConfidentialPage() {
     if (authState === "needs_auth") {
         const handleAuthenticate = async () => {
             if (!selectedTreasury) return;
+            setIsAuthenticating(true);
             try {
                 const { proposal } = await prepareConfidentialAuth(selectedTreasury);
                 const proposalBond = policy?.proposal_bond || "0";
@@ -553,6 +555,7 @@ export default function ConfidentialPage() {
                 handleAuthProposal(prevCount);
             } catch (err) {
                 console.error("Auth proposal error", err);
+                setIsAuthenticating(false);
             }
         };
 
@@ -574,6 +577,7 @@ export default function ConfidentialPage() {
                             </p>
                             <CreateRequestButton
                                 onClick={handleAuthenticate}
+                                isSubmitting={isAuthenticating}
                                 className="w-full"
                                 permissions={[{ kind: "call", action: "AddProposal" }]}
                                 idleMessage="Authenticate DAO"
