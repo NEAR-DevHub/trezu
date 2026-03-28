@@ -95,6 +95,13 @@ async fn test_confidential_endpoints() {
         .await
         .unwrap();
 
+    // Insert DAO (required by foreign key on dao_members)
+    sqlx::query("INSERT INTO daos (dao_id) VALUES ($1) ON CONFLICT DO NOTHING")
+        .bind(dao_id)
+        .execute(&pool)
+        .await
+        .unwrap();
+
     // Insert DAO member
     sqlx::query("INSERT INTO dao_members (account_id, dao_id, is_policy_member) VALUES ($1, $2, true) ON CONFLICT DO NOTHING")
         .bind(account_id)
