@@ -3,15 +3,9 @@
 
 ## Concept
 
-A confidential treasury is a sputnik-dao.near subaccount where all proposals target **private intents** — a NEAR sandbox running inside a TEE (Trusted Execution Environment) network. This TEE network is called **FAR** (NEAR chain is public, FAR chain is confidential).
+A confidential treasury allows a sputnik-dao.near DAO to shield tokens into the **private intents** system — a NEAR-based confidential ledger running inside a TEE (Trusted Execution Environment) network. Shielded tokens are invisible on-chain; only the DAO can see its confidential balances via authenticated API calls.
 
-A treasury is either public or confidential — we don't mix the two. For confidential transfers, you need a quote from the private intents API, and since DAOs have no access keys, signing is done via **MPC (multi-party computation)** using the `v1.signer` contract (chain-signatures).
-
-## References
-
-- Defuse frontend PR (individual account implementation): https://github.com/defuse-protocol/defuse-frontend/pull/962
-- Cloned repo at `/tmp/defuse-frontend` (branch `feat/shield`)
-- Chain Signatures (MPC signer): https://docs.near.org/chain-abstraction/chain-signatures#multichain-smart-contract
+Since DAOs have no access keys, all signing is done via **MPC (multi-party computation)** using the `v1.signer` contract (chain-signatures). The backend automatically extracts MPC signatures from approved proposals and submits signed intents to the 1Click API.
 
 ## Architecture: near.com vs DAO
 
@@ -20,112 +14,58 @@ A treasury is either public or confidential — we don't mix the two. For confid
 | Account | `alice.near` | `mydao.sputnik-dao.near` |
 | Signer ID | `near:alice.near` | `near:mydao.sputnik-dao.near` |
 | Signing | Wallet signs off-chain (NEP-413) | DAO proposal → `v1.signer` contract (MPC chain-signatures) |
-| Auth flow | Synchronous (sign → submit in one step) | Asynchronous (proposal → approval → execute → sign → submit) |
+| Auth flow | Synchronous (sign → submit in one step) | Asynchronous (proposal → approval → backend auto-submits) |
 | Access keys | User's wallet key | None — must use MPC |
-| Mode | Toggle between public/private | Treasury-level flag (one or the other) |
 
 ### Key Challenge: DAO Signing
 
-The near.com flow assumes synchronous wallet signing via NEP-413 (`wallet.signMessage()`). DAOs don't have wallet keys. Two types of proposals are needed:
+The near.com flow assumes synchronous wallet signing via NEP-413. DAOs don't have wallet keys. Two types of signing proposals are needed:
 
-#### Proposal Type 1: JWT Authentication (infrequent)
+#### 1. JWT Authentication (infrequent)
 
-Before the DAO can do any confidential operations, the backend needs a JWT token. This requires a NEP-413 signature from the DAO — which means a DAO proposal.
+Before the DAO can get quotes or view confidential balances, the backend needs a JWT token from the 1Click API. This requires an MPC-signed auth payload.
 
-1. Backend constructs an auth payload (empty intents, `signer_id: "near:mydao.sputnik-dao.near"`)
-2. DAO members create & approve a proposal that calls `v1.signer` to sign this auth payload
-3. Backend receives the MPC signature, calls `UserAuthService.authenticate()` to get JWT
-4. Backend stores the JWT (access + refresh tokens) for this DAO
+1. Frontend calls `POST /api/confidential-intents/prepare-auth` → backend builds NEP-413 auth message, computes hash, returns v1.signer proposal args
+2. Frontend creates DAO proposal calling `v1.signer.sign()` with the auth hash
+3. DAO council approves the proposal
+4. Backend relay detects MPC signature in execution result → auto-calls 1Click `/v0/auth/authenticate`
+5. Backend stores JWT (access + refresh tokens) per-DAO in `monitored_accounts`
 
-The refresh token lasts ~7 days, so this only needs to happen once per week (or on first setup). The backend auto-refreshes the access token using the refresh token (refresh when < 60s remaining).
+The access token lasts ~15 minutes (auto-refreshed). The refresh token lasts ~7 days.
 
-#### Proposal Type 2: Intent Signing (per operation)
+#### 2. Shield Intent Signing (per operation)
 
-Each confidential operation (shield, unshield, transfer, swap) needs its own signed intent:
+Each shield operation needs a signed intent:
 
-**Shield (public → private):**
-1. Backend gets quote from 1Click API (no JWT needed for shield quotes)
-2. DAO members create & approve a proposal that:
-   a. Calls `v1.signer` to sign the intent payload
-   b. Transfers tokens to the deposit address (on-chain)
-3. Backend submits the signed intent to 1Click API (no JWT needed for submit)
+1. Frontend gets quote from `POST /api/confidential-intents/quote` (requires JWT)
+2. Frontend calls `POST /api/confidential-intents/generate-intent` → backend stores the intent payload and returns the NEP-413 payload
+3. Frontend creates DAO proposal calling `v1.signer.sign()` with the intent hash
+4. DAO council approves the proposal
+5. Backend relay detects MPC signature → auto-calls 1Click `/v0/submit-intent` with the stored intent payload + signature
 
-**Unshield / Private transfer / Confidential swap:**
-1. Backend gets quote from 1Click API (**JWT required** — reading confidential state)
-2. DAO members create & approve a proposal that calls `v1.signer` to sign the intent payload
-3. Backend submits the signed intent to 1Click API (no JWT needed for submit)
-4. No on-chain token transfer needed (funds already in confidential ledger)
+**Prerequisite:** The DAO must already have tokens deposited to `intents.near` (via `ft_transfer_call` on `wrap.near`). The shield operation moves tokens from the DAO's public intents balance to its confidential balance.
 
-### JWT Token Details
-
-| Aspect | Detail |
-|--------|--------|
-| Access token TTL | Short-lived (from server `expiresIn`), auto-refresh when < 60s left |
-| Refresh token TTL | ~7 days (from server `refreshExpiresIn`) |
-| Storage | Backend stores per-DAO |
-| Needs JWT | `getBalances`, `getUnshieldQuote`, `getPrivateTransferQuote` |
-| No JWT needed | `getShieldQuote`, `generateIntent`, `submitIntent`, `getExecutionStatus` |
-
-The JWT proves account ownership to read confidential state. `submitIntent` doesn't need it because the intent itself is cryptographically signed.
-
-## Private Intents API
+## 1Click Confidential API
 
 ### Base URL & Auth
 
-- **API Base URL:** `https://1click.chaindefuser.com` (env var `ONE_CLICK_URL`)
-- **API Key:** Sent as `x-api-key` header (env var `ONE_CLICK_API_KEY`)
-- **JWT Auth:** `Authorization: Bearer <jwt>` header for confidential operations (obtained via wallet-signed authentication)
+- **API Base URL:** `https://1click-test.chaindefuser.com` (env var `CONFIDENTIAL_API_URL`, configurable for sandbox mock)
+- **API Key:** `x-api-key` header (env var `ONECLICK_API_KEY`)
+- **JWT Auth:** `Authorization: Bearer <jwt>` header for authenticated operations (quotes, generate-intent, balances)
 
-Both headers are sent together — `x-api-key` for API identification, Bearer JWT for user authentication.
+### Endpoints Used
 
-### Authentication Flow (near.com)
+| Endpoint | Method | JWT Required | Description |
+|----------|--------|-------------|-------------|
+| `/v0/auth/authenticate` | POST | No (produces JWT) | Exchange signed NEP-413 payload for JWT tokens |
+| `/v0/auth/refresh` | POST | No | Refresh an expired access token |
+| `/v0/quote` | POST | Yes | Get a shield quote |
+| `/v0/generate-intent` | POST | Yes | Generate the NEP-413 intent payload to sign |
+| `/v0/submit-intent` | POST | No | Submit the MPC-signed intent |
+| `/v0/account/balances` | GET | Yes | View confidential token balances |
 
-1. Build an `IntentPayload` with empty intents (auth-only):
-   ```
-   {
-     deadline: "2026-03-18T12:05:00.000Z",
-     intents: [],
-     signer_id: "near:alice.near",
-     verifying_contract: "intents.near",
-     nonce: "<base64 timestamped random bytes>"
-   }
-   ```
+### Quote Request (Shield)
 
-2. Convert to NEP-413 message for wallet signing:
-   ```
-   message: JSON.stringify({ deadline, intents: [], signer_id })
-   recipient: "intents.near"  (verifying_contract)
-   nonce: <32 bytes from base64>
-   ```
-
-3. Wallet signs → returns `{ public_key, signature }`
-
-4. Submit to `UserAuthService.authenticate()`:
-   ```
-   {
-     signedData: {
-       standard: "nep413",
-       payload: { message, nonce, recipient },
-       public_key: "ed25519:...",
-       signature: "ed25519:..."
-     }
-   }
-   ```
-
-5. Response: `{ accessToken, refreshToken, expiresIn, refreshExpiresIn }`
-
-6. Tokens stored in HTTP-only cookies, auto-refresh when within 60s of expiry
-
-### Core Operations — Actual API Flow (from HAR analysis)
-
-> **Important correction (2026-03-20):** The public 1Click API at `1click.chaindefuser.com` does NOT accept `CONFIDENTIAL_INTENTS` as a value for depositType/recipientType/refundType. The `/v0/generate-intent` endpoint returns 404 on the public API. near.com's server actions wrap the 1Click API with their own abstractions.
-
-The actual shield flow observed via HAR capture of `near.com/transfer/confidential?mode=shield`:
-
-#### Shield (public → private)
-
-**Step 1 — Quote** (`POST /v0/quote`):
-Uses standard `INTENTS` types. The confidential routing is implicit — the returned `depositAddress` IS the hex confidential/FAR chain address.
 ```json
 {
   "dry": false,
@@ -134,399 +74,107 @@ Uses standard `INTENTS` types. The confidential routing is implicit — the retu
   "originAsset": "nep141:wrap.near",
   "depositType": "INTENTS",
   "destinationAsset": "nep141:wrap.near",
-  "amount": "100000000000000000000000",
-  "refundTo": "petersalomonsen.near",
-  "refundType": "INTENTS",
-  "recipient": "petersalomonsen.near",
-  "recipientType": "INTENTS",
-  "deadline": "2026-03-20T05:33:53.238Z",
+  "amount": "10000000000000000000000",
+  "refundTo": "mydao.sputnik-dao.near",
+  "refundType": "CONFIDENTIAL_INTENTS",
+  "recipient": "mydao.sputnik-dao.near",
+  "recipientType": "CONFIDENTIAL_INTENTS",
+  "deadline": "<ISO timestamp, 24h from now>",
   "quoteWaitingTimeMs": 5000
 }
 ```
-Response includes `quote.depositAddress` = `"086db130..."` (hex FAR chain address).
 
-**Step 2 — Construct intent** (client-side, NOT a separate API call):
-The intent is built directly from the quote response:
-```json
-{
-  "deadline": "<quote.deadline>",
-  "intents": [{
-    "intent": "transfer",
-    "receiver_id": "<quote.depositAddress>",
-    "tokens": { "<token_id>": "<amount>" }
-  }],
-  "signer_id": "<account_id>"
-}
-```
-
-**Step 3 — Sign** (NEP-413 wallet signing):
-The intent JSON is wrapped as a NEP-413 message with `recipient: "intents.near"`.
-
-**Step 4 — Submit** (`POST /v0/submit-intent` or near.com server action):
-```json
-[{
-  "signedIntent": {
-    "standard": "nep413",
-    "payload": { "message": "<intent JSON>", "nonce": "...", "recipient": "intents.near" },
-    "public_key": "ed25519:...",
-    "signature": "ed25519:..."
-  }
-}]
-```
-Response: `{ "intentHash": "...", "correlationId": "..." }`
-
-**Step 5 — Poll status** (using `depositAddress`):
-`PENDING_DEPOSIT` → `PROCESSING` → `SUCCESS`
-
-#### DAO flow implications
-
-Since the intent is a simple `transfer` on `intents.near`, the DAO flow for shield is:
-1. Backend gets quote (standard `INTENTS` types) → gets `depositAddress`
-2. Backend constructs the transfer intent payload
-3. DAO proposal calls `v1.signer` to sign the intent (NEP-413)
-4. Backend submits the signed intent
-5. Backend polls until SUCCESS
-
-No on-chain token transfer to a deposit address — the intent system handles the movement internally via the signed transfer.
-
-#### Unshield / Private Transfer / Swap
-
-These flows are not yet verified via HAR. They likely follow a similar pattern but may require JWT authentication for the quote (since they read confidential state). To be confirmed.
-
-### Quote Request Shape
-```typescript
-{
-  dry: boolean,
-  swapType: "EXACT_INPUT" | "EXACT_OUTPUT" | "FLEX_INPUT" | "ANY_INPUT",
-  slippageTolerance: number,      // basis points
-  originAsset: string,            // token ID
-  destinationAsset: string,       // token ID
-  amount: string,
-  deadline: string,               // ISO timestamp
-  depositType: "ORIGIN_CHAIN" | "INTENTS" | "CONFIDENTIAL_INTENTS",
-  recipientType: "DESTINATION_CHAIN" | "INTENTS" | "CONFIDENTIAL_INTENTS",
-  refundType: "ORIGIN_CHAIN" | "INTENTS" | "CONFIDENTIAL_INTENTS",
-  refundTo: string,               // intentsUserId
-  recipient: string,              // intentsUserId
-}
-```
+Note: `recipientType` and `refundType` use `CONFIDENTIAL_INTENTS`. The `depositType` uses `INTENTS`.
 
 ### Generate Intent Request
-```typescript
+
+```json
 {
-  type: "swap_transfer",
-  standard: "nep413",             // for NEAR
-  depositAddress: string,         // from quote response
-  signerId: string,               // intentsUserId
+  "type": "swap_transfer",
+  "standard": "nep413",
+  "depositAddress": "<from quote response>",
+  "signerId": "mydao.sputnik-dao.near"
 }
 ```
 
-### Submit Intent Request (after signing)
-```typescript
+### Submit Intent Request
+
+```json
 {
-  type: "swap_transfer",
-  signedData: {
-    standard: "nep413",
-    payload: {
-      message: string,            // JSON intent body from generateIntent
-      nonce: string,              // base64
-      recipient: string,          // verifying contract
+  "type": "swap_transfer",
+  "signedData": {
+    "standard": "nep413",
+    "payload": {
+      "message": "<intent JSON from generate-intent>",
+      "nonce": "<base64 nonce from generate-intent>",
+      "recipient": "intents.near"
     },
-    public_key: string,           // ed25519 public key
-    signature: string,            // ed25519 signature
+    "public_key": "ed25519:<MPC derived public key>",
+    "signature": "ed25519:<MPC signature>"
   }
 }
 ```
 
-### Get Balances
-```typescript
-AccountService.getBalances(tokenIds?)  // requires JWT auth
+### MPC Public Key
+
+The MPC public key is derived per-DAO from `v1.signer` using:
+```
+v1.signer.derived_public_key({ path: "mydao.sputnik-dao.near", predecessor: "mydao.sputnik-dao.near", domain_id: 1 })
 ```
 
-### Poll Execution Status
-```typescript
-OneClickService.getExecutionStatus(depositAddress)  // depositAddress from quote
-```
+This returns the Ed25519 key that the 1Click API uses to verify the signature. The backend fetches this dynamically for each DAO.
 
-## Intent Types (from SDK)
+### Auth Nonce Format
 
-Relevant intent variants for DAO confidential operations:
+The 1Click API validates a specific nonce format (32 bytes):
+- Bytes 0-3: Magic prefix `[0x56, 0x28, 0xF6, 0xC6]`
+- Byte 4: Version `0`
+- Bytes 5-8: Salt from `intents.near::current_salt()`
+- Bytes 9-16: Deadline in nanoseconds (LE)
+- Bytes 17-24: Current time in nanoseconds (LE)
+- Bytes 25-31: Random bytes
 
-```typescript
-// Token swap diff
-type IntentTokenDiff = {
-  intent: "token_diff",
-  diff: Record<string, string>,   // token_id -> amount delta
-  memo?: string,
-  referral?: string,
-}
+## Backend Architecture
 
-// Direct transfer
-type IntentTransfer = {
-  intent: "transfer",
-  receiver_id: string,
-  tokens: Record<string, string>,
-  memo?: string,
-}
+### API Endpoints
 
-// Potentially useful for DAO auth delegation
-type IntentSetAuthByPredecessorId = {
-  intent: "set_auth_by_predecessor_id",
-  enabled: boolean,
-}
+All confidential endpoints are under `/api/confidential-intents/` and require authenticated user + DAO membership:
 
-// Contract-call-based auth (alternative to off-chain signing)
-type IntentAuthCall = {
-  intent: "auth_call",
-  contract_id: string,
-  msg: string,
-  attached_deposit?: string,
-  min_gas?: string,
-}
-```
+| Endpoint | Handler | Description |
+|----------|---------|-------------|
+| `POST /api/confidential-intents/prepare-auth` | `prepare_auth.rs` | Build auth proposal args |
+| `POST /api/confidential-intents/authenticate` | `authenticate.rs` | Store JWT after manual auth |
+| `POST /api/confidential-intents/quote` | `quote.rs` | Get shield quote |
+| `POST /api/confidential-intents/generate-intent` | `generate_intent.rs` | Generate intent + store for auto-submit |
+| `POST /api/confidential-intents/submit-intent` | `submit_intent.rs` | Manual intent submission |
+| `GET /api/confidential-intents/balances` | `balances.rs` | View confidential balances |
 
-The `IntentSetAuthByPredecessorId` and `IntentAuthCall` types are interesting for DAO use — they suggest a contract-call-based auth path that could work without off-chain wallet signatures.
+### Auto-Submit Flow (relay integration)
 
-## Key Source Files (defuse-frontend, branch feat/shield)
+The relay handler (`handlers/relay/confidential.rs`) automatically handles post-approval:
 
-| File | Purpose |
-|------|---------|
-| `src/components/DefuseSDK/features/machines/privateIntents.ts` | Core server-side module (Server Actions): auth, cookies, shield/unshield/transfer, all API calls |
-| `src/hooks/usePrivateModeAuth.ts` | Client auth hook: wallet signing flow, IntentPayload construction |
-| `src/app/shield-demo/page.tsx` | Working demo of shield/unshield/private transfer — good reference implementation |
-| `src/components/DefuseSDK/core/messages.ts` | `wrapPayloadAsWalletMessage()` — converts API payloads to wallet-signable format |
-| `src/components/DefuseSDK/utils/intentStandards.ts` | Maps auth methods to intent standards (near → nep413) |
-| `src/components/DefuseSDK/features/machines/swapIntent1csMachine.ts` | Full swap flow: generateIntent → sign → submitIntent |
-| `src/components/DefuseSDK/features/machines/1cs.ts` | Quote logic with CONFIDENTIAL_INTENTS support |
-| `src/components/DefuseSDK/features/machines/depositedBalanceMachine.ts` | Balance polling for confidential mode |
+1. After any vote relay succeeds, checks for MPC signature marker (`eyJzY2hlbWUi`) in execution result
+2. If found, looks up pending intent/auth in `pending_confidential_intents` table
+3. For **auth**: calls 1Click `/v0/auth/authenticate`, stores JWT in `monitored_accounts`
+4. For **shield**: calls 1Click `/v0/submit-intent` with the stored intent payload + signature
 
----
+### Database Tables
 
-## Task Breakdown
+- `monitored_accounts` — stores `confidential_access_token`, `confidential_refresh_token`, `confidential_token_expires_at` per DAO
+- `pending_confidential_intents` — stores intent payloads (or auth payloads) awaiting MPC signature, with `intent_type` ('shield' or 'auth') and `status` ('pending', 'submitted', 'failed')
 
-### Peter's Tasks
+## Sandbox Testing
 
-#### 1.1 Proof of concept confidential balances and transfer
-- Learn from near.com implementation how to create the access token, where is the API server (URL)
-
-#### 1.2 Create a small script in Rust to get confidential balance, and list of transactions
+The sandbox includes:
+- **Mock v1.signer** (`sandbox/contracts/mock_signer.wat`) — returns hardcoded Ed25519 signature + `derived_public_key`
+- **Mock v2.ref-finance.near** (`sandbox/contracts/mock_ref_finance.wat`) — returns token whitelist
+- **Mock 1Click API** (in `sandbox-init/src/mock_server.rs`) — serves quote, generate-intent, submit-intent, authenticate, balances on port 4000
+- **Delegate action signing** (`/_test/sign-delegate-action`) — signs with sandbox genesis key for the mock wallet
 
-#### 1.3 Create a small script in Rust to request confidential quote → deposit there (e.g. with near-cli-rs) → observe the new balance
-
-#### 1.4 Create a small script in Rust to transfer within FAR network
-
-#### 1.5 Create a small script in Rust to withdraw to public chains 
-
-### Megha's Tasks
-
-#### 1.4 Limit features for confidential treasuries
-- We don't support bulk payments, export on the UI - mark them as "coming soon"
-- Depends on: 1.4.1 Add a flag to the backend (confidential or not)
+The Playwright E2E test runs the full flow: authenticate → get quote → sign intent → auto-submit — using real relay transactions through the sandbox blockchain.
 
-#### 1.4.1 Add a flag to the backend (confidential or not)
+## References
 
-#### 1.5 Extend the onboarding with confidential treasury option
-
----
-
-## Implementation Plan: Live PoC with Playwright + Ledger
-
-### Goal
-
-Demonstrate the full confidential intent flow against the **real 1Click API** on mainnet, using a real DAO (`webassemblymusic-treasury.sputnik-dao.near`), orchestrated via Playwright with Ledger signing. Capture real API payloads as mocks for automated tests.
-
-- **DAO:** `webassemblymusic-treasury.sputnik-dao.near`
-- **Council member:** `petersalomonsen.near` (Ledger)
-- **Token:** `wrap.near` (wNEAR)
-- **Signing:** Full DAO flow with `v1.signer` (MPC chain-signatures)
-- **Sponsoring:** Meta-transactions via backend relayer
-- **Covers tasks:** 1.1, 1.3, 1.4
-
-### Phase 1: Backend — New API handlers
-
-Add three new handlers in `nt-be/src/handlers/intents/`:
-
-| Handler | Endpoint | Proxies to | JWT required? |
-|---------|----------|------------|---------------|
-| `authenticate.rs` | `POST /api/intents/authenticate` | `UserAuthService.authenticate()` | No (produces JWT) |
-| `generate_intent.rs` | `POST /api/intents/generate-intent` | `OneClickService.generateIntent()` | No |
-| `submit_intent.rs` | `POST /api/intents/submit-intent` | `OneClickService.submitIntent()` | No |
-
-Also needed:
-- `GET /api/intents/balances` — proxy to `AccountService.getBalances()` (JWT required, stored per-DAO in backend)
-- JWT storage per-DAO (access + refresh tokens, auto-refresh logic)
-
-### Phase 2: Frontend — Confidential treasury PoC page
-
-A minimal page (e.g., `/confidential-poc`) that demonstrates:
-
-1. **Shield wNEAR** — form to enter amount, creates a DAO proposal (FunctionCall to `v1.signer` + token transfer to deposit address)
-2. **View confidential balance** — calls `/api/intents/balances`
-3. **Private transfer** — form with recipient + amount, creates a DAO proposal (FunctionCall to `v1.signer` only)
-4. **Unshield** — form to unshield back to public, creates DAO proposal
-
-Each step creates a proposal that the user approves with their Ledger.
-
-### Phase 3: Playwright test — interactive flow
-
-```
-e2e-tests/confidential-intents/
-└── shield-transfer-unshield.spec.ts
-```
-
-The test orchestrates the full flow with `page.pause()` breakpoints for Ledger signing:
-
-```
-Step 1: SHIELD (wrap.near → confidential)
-  1. Navigate to /confidential-poc
-  2. Enter shield amount (e.g. 0.1 wNEAR)
-  3. Click "Create Shield Proposal"
-  4. → pause() → user signs proposal creation with Ledger
-  5. Backend gets quote, creates proposal with FunctionCall to v1.signer
-  6. Click "Approve Proposal"
-  7. → pause() → user signs approval with Ledger
-  8. Backend picks up v1.signer result, submits signed intent to 1Click API
-  9. Backend transfers wNEAR to deposit address (meta-tx, sponsored)
-  10. Poll execution status until SUCCESS
-  11. ✅ Save quote + generateIntent + submitIntent payloads as mocks
-
-Step 2: JWT AUTH (one-time, via DAO proposal)
-  1. Click "Authenticate DAO"
-  2. → pause() → user signs auth proposal with Ledger
-  3. → pause() → user signs approval with Ledger
-  4. v1.signer signs auth payload, backend exchanges for JWT
-  5. ✅ JWT stored in backend for this DAO
-
-Step 3: CHECK BALANCE
-  1. Click "View Confidential Balance"
-  2. Backend calls getBalances with stored JWT
-  3. ✅ Verify shielded wNEAR appears
-
-Step 4: PRIVATE TRANSFER (confidential → confidential)
-  1. Enter recipient + amount
-  2. Click "Create Transfer Proposal"
-  3. → pause() → user signs with Ledger (create + approve)
-  4. Backend gets quote (JWT), v1.signer signs intent, backend submits
-  5. ✅ Save payloads as mocks
-
-Step 5: UNSHIELD (confidential → public)
-  1. Enter unshield amount
-  2. Click "Create Unshield Proposal"
-  3. → pause() → user signs with Ledger (create + approve)
-  4. Backend gets quote (JWT), v1.signer signs intent, backend submits
-  5. Poll until SUCCESS
-  6. ✅ Save payloads as mocks, verify wNEAR returned to DAO
-```
-
-### Phase 4: Automated sandbox test with captured mocks
-
-Use the payloads captured in Phase 3 as mock responses for the sandbox integration test (see below). This gives us realistic test data from actual API interactions.
-
----
-
-## PoC Test Strategy: Rust Sandbox Integration Test
-
-### Reference Implementation
-
-The previous treasury client (neardevhub-treasury-dashboard) has a [Playwright E2E test](https://github.com/NEAR-DevHub/neardevhub-treasury-dashboard/blob/staging/playwright-tests/tests/intents/create-1click-exchange-request.spec.js) that demonstrates the full 1click exchange flow in a NEAR sandbox:
-
-1. Deploy sandbox with `intents.near`, `omft.near`, sputnik DAO factory
-2. Create a DAO, fund it with tokens via `ft_deposit`
-3. Create a DAO proposal for an exchange (quote → proposal → approve)
-4. Simulate the intent execution: solver provides liquidity, both sides sign, call `execute_intents`
-5. Verify balances changed
-
-### Adapting for CONFIDENTIAL_INTENTS in Rust
-
-We already have a Rust sandbox setup (`sandbox/sandbox-init`) using `near-sandbox` + `near-api` (not `near-workspaces`). The integration tests in `contracts/bulk-payment/tests/integration_tests.rs` show the patterns for account creation, contract deployment, and DAO interaction.
-
-#### Key insight: no FAR chain sandbox needed
-
-The defuse-frontend (`feat/shield` branch) confirms that the frontend **never talks directly to the FAR chain**. All confidential operations go through just two APIs:
-
-1. **1Click API** (`1click.chaindefuser.com`) — the sole gateway for all confidential operations:
-   - Authentication (JWT via wallet signature)
-   - Confidential balances (`AccountService.getBalances`)
-   - Quotes (`OneClickService.getQuote`)
-   - Intent lifecycle (`generateIntent` → `submitIntent` → `getExecutionStatus`)
-
-2. **Intents Explorer API** (`explorer.near-intents.org/api/v0`) — read-only transaction history:
-   - `GET /transactions-pages?search={account}&page=...&statuses=...`
-
-No direct FAR chain RPC, no WebSockets. So the PoC test only needs a **single NEAR sandbox** plus **mock HTTP servers** for these two APIs.
-
-#### What we need
-
-A Rust integration test that proves the full confidential intent flow works end-to-end:
-
-1. **Shield:** Public NEAR/token → confidential balance (via `CONFIDENTIAL_INTENTS`)
-2. **Private transfer:** Confidential balance → another account on FAR
-3. **Unshield:** Confidential balance → public chain
-
-#### Test setup
-
-**NEAR sandbox** with:
-- `sputnik-dao.near` factory + DAO instance
-- `intents.near` (imported from mainnet)
-- `omft.near` with test tokens (ETH, USDC)
-- **Mock signer contract** (see below)
-
-**Mock HTTP servers** (e.g., `wiremock` or `axum`):
-- Mock 1Click API — returns canned quote/generate-intent/submit-intent responses; validates that request payloads contain `CONFIDENTIAL_INTENTS` types
-- Mock Intents Explorer API — returns canned transaction history
-
-#### v1.signer in sandbox
-
-The real `v1.signer` contract can be imported from mainnet, but **MPC signing won't work** — there are no MPC nodes in sandbox. Options:
-
-1. **Mock signer contract** (recommended) — Deploy a simple contract that mimics the `v1.signer` interface but returns deterministic ed25519 signatures from a known keypair
-2. **Skip the signer, test the payload** — Verify the DAO proposal constructs the correct `FunctionCall` targeting `v1.signer` with right arguments, then test signing separately with a local keypair
-
-#### Recommended PoC test structure
-
-```
-contracts/confidential-intents/
-├── Cargo.toml
-├── src/
-│   └── lib.rs                    # Mock v1.signer contract (returns known signatures)
-└── tests/
-    └── integration_tests.rs      # Full flow test
-```
-
-#### Integration test flow
-
-```rust
-#[tokio::test]
-async fn test_confidential_intent_full_flow() {
-    // 1. Start sandbox, deploy contracts (DAO, intents, omft, mock-signer)
-    //    Start mock 1Click API + Intents Explorer servers
-    // 2. Create DAO with council member
-    // 3. Fund DAO with test tokens (ETH on omft)
-
-    // 4. SHIELD: Create proposal to shield tokens (public → confidential)
-    //    - Get mock quote (depositType: INTENTS, recipientType: CONFIDENTIAL_INTENTS)
-    //    - Proposal kind: FunctionCall to mock-signer with intent payload
-    //    - Approve proposal → mock-signer returns signature
-    //    - Submit signed intent to mock 1Click API
-    //    - Verify: public balance decreased
-
-    // 5. PRIVATE TRANSFER: Create proposal for confidential transfer
-    //    - depositType: CONFIDENTIAL_INTENTS, recipientType: CONFIDENTIAL_INTENTS
-    //    - Same flow: proposal → approve → sign → submit
-
-    // 6. UNSHIELD: Create proposal to unshield back to public
-    //    - depositType: CONFIDENTIAL_INTENTS, recipientType: INTENTS
-    //    - Same flow: proposal → approve → sign → submit
-    //    - Simulate intent execution on intents.near (register deposit key,
-    //      build solver + 1Click intents with NEP-413 sigs, call execute_intents)
-    //    - Verify: public balance increased
-}
-```
-
-### Backend Tasks (unassigned)
-
-#### 1.2 Backend for getting the balances, keep track of confidential transactions
-- Or references that we can re-populate the database from
-
-#### 1.3 Backend for processing the approved proposals
-- Construct a signed FAR chain request from the v1.signer signature
+- Defuse frontend (individual account implementation): https://github.com/defuse-protocol/defuse-frontend/pull/962
+- Chain Signatures (MPC signer): https://docs.near.org/chain-abstraction/chain-signatures
+- 1Click API (test): https://1click-test.chaindefuser.com
