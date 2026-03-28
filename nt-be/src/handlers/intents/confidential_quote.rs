@@ -42,7 +42,7 @@ pub async fn get_confidential_quote(
 
     let access_token = super::authenticate::refresh_dao_jwt(&state, &request.dao_id).await?;
 
-    let url = format!("{}/v0/quote", super::constants::CONFIDENTIAL_API_URL);
+    let url = format!("{}/v0/quote", state.env_vars.confidential_api_url);
 
     let body = serde_json::json!({
         "dry": request.dry,

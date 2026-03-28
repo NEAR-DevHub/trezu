@@ -24,7 +24,7 @@ pub async fn submit_intent(
     State(state): State<Arc<AppState>>,
     Json(request): Json<SubmitIntentRequest>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-    let url = format!("{}/v0/submit-intent", super::constants::CONFIDENTIAL_API_URL);
+    let url = format!("{}/v0/submit-intent", state.env_vars.confidential_api_url);
 
     let body = serde_json::json!({
         "type": request.r#type,

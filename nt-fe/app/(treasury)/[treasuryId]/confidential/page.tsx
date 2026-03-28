@@ -581,8 +581,26 @@ export default function ConfidentialPage() {
         );
     }
 
-    // Not authenticated — show auth prompt
+    // Not authenticated — show auth prompt with button directly
     if (authState === "needs_auth") {
+        const handleAuthenticate = async () => {
+            if (!selectedTreasury) return;
+            try {
+                const { proposal } = await prepareConfidentialAuth(selectedTreasury);
+                const proposalBond = policy?.proposal_bond || "0";
+                const prevCount = await getLastProposalId(selectedTreasury);
+                await createProposal("Confidential auth request submitted", {
+                    treasuryId: selectedTreasury,
+                    proposal,
+                    proposalBond,
+                    proposalType: "confidential_transfer",
+                });
+                handleAuthProposal(prevCount);
+            } catch (err) {
+                console.error("Auth proposal error", err);
+            }
+        };
+
         return (
             <PageComponentLayout
                 title="Confidential"
@@ -599,7 +617,12 @@ export default function ConfidentialPage() {
                                 private balances. This creates a one-time signing
                                 proposal via v1.signer.
                             </p>
-                            <ConfidentialBalance onAuthProposal={handleAuthProposal} />
+                            <CreateRequestButton
+                                onClick={handleAuthenticate}
+                                className="w-full"
+                                permissions={[{ kind: "call", action: "AddProposal" }]}
+                                idleMessage="Authenticate DAO"
+                            />
                         </div>
                     </PageCard>
                 </div>

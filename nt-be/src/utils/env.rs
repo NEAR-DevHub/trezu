@@ -28,6 +28,8 @@ pub struct EnvVars {
     pub transfer_hints_base_url: Option<String>, // Override FastNear API URL for testing
     // 1click API configuration for asset exchange quotes
     pub oneclick_api_url: String,
+    // Confidential intents API URL (defaults to 1click-test)
+    pub confidential_api_url: String,
     pub oneclick_jwt_token: Option<String>,
     pub oneclick_app_fee_bps: Option<u32>,
     pub oneclick_app_fee_recipient: Option<String>,
@@ -122,6 +124,8 @@ impl Default for EnvVars {
             // 1click API configuration
             oneclick_api_url: std::env::var("ONECLICK_API_URL")
                 .unwrap_or_else(|_| "https://1click.chaindefuser.com".to_string()),
+            confidential_api_url: std::env::var("CONFIDENTIAL_API_URL")
+                .unwrap_or_else(|_| "https://1click-test.chaindefuser.com".to_string()),
             oneclick_jwt_token: std::env::var("ONECLICK_JWT_TOKEN")
                 .ok()
                 .filter(|s| !s.is_empty()),

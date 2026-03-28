@@ -10,7 +10,7 @@ use serde_json::Value;
 use sqlx::PgPool;
 use std::sync::Arc;
 
-use crate::handlers::intents::constants::{CONFIDENTIAL_API_URL, oneclick_api_key};
+use crate::handlers::intents::constants::oneclick_api_key;
 
 /// Fetch the Ed25519 derived public key for a DAO's path from v1.signer.
 async fn fetch_mpc_public_key(
@@ -174,7 +174,7 @@ pub async fn try_auto_submit_intent(
 
     let (url, body) = if intent_type == "auth" {
         // Authentication: call 1Click auth/authenticate
-        let url = format!("{}/v0/auth/authenticate", CONFIDENTIAL_API_URL);
+        let url = format!("{}/v0/auth/authenticate", state.env_vars.confidential_api_url);
         let body = serde_json::json!({
             "signedData": {
                 "standard": "nep413",
@@ -186,7 +186,7 @@ pub async fn try_auto_submit_intent(
         (url, body)
     } else {
         // Shield: call 1Click submit-intent
-        let url = format!("{}/v0/submit-intent", CONFIDENTIAL_API_URL);
+        let url = format!("{}/v0/submit-intent", state.env_vars.confidential_api_url);
         let body = serde_json::json!({
             "type": "swap_transfer",
             "signedData": {

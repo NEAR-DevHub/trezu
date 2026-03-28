@@ -195,6 +195,11 @@ export async function addProposal(
     return count - 1;
 }
 
+/** Wait for the next block on sandbox */
+async function waitBlock(): Promise<void> {
+    await new Promise((r) => setTimeout(r, 1500));
+}
+
 /** Approve a DAO proposal and return the full execution result (including cross-contract receipts) */
 export async function approveProposal(
     signerId: string,
@@ -205,6 +210,9 @@ export async function approveProposal(
     const proposal = (await viewFunction(daoId, "get_proposal", {
         id: proposalId,
     })) as { kind: Record<string, unknown> };
+
+    // Wait for the proposal to be ready for voting (needs a new block)
+    await waitBlock();
 
     const broadcastResult = await signAndSend(signerId, daoId, [
         actionCreators.functionCall(
@@ -228,7 +236,7 @@ export async function approveProposal(
     if (!txHash) return broadcastResult;
 
     // Wait for cross-contract receipts to be processed
-    await new Promise((r) => setTimeout(r, 3000));
+    await new Promise((r) => setTimeout(r, 5000));
 
     const resp = await fetch(SANDBOX_RPC, {
         method: "POST",

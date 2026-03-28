@@ -40,7 +40,7 @@ pub async fn generate_intent(
         .map_err(|e| (StatusCode::FORBIDDEN, format!("Not a DAO member: {}", e)))?;
 
     log::info!("generate_intent called: type={}, signerId={}", request.r#type, request.signer_id);
-    let url = format!("{}/v0/generate-intent", super::constants::CONFIDENTIAL_API_URL);
+    let url = format!("{}/v0/generate-intent", state.env_vars.confidential_api_url);
 
     let body = serde_json::json!({
         "type": request.r#type,

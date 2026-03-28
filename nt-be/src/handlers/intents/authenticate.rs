@@ -41,7 +41,7 @@ pub async fn authenticate(
     State(state): State<Arc<AppState>>,
     Json(request): Json<AuthenticateRequest>,
 ) -> Result<Json<AuthenticateResult>, (StatusCode, String)> {
-    let url = format!("{}/v0/auth/authenticate", super::constants::CONFIDENTIAL_API_URL);
+    let url = format!("{}/v0/auth/authenticate", state.env_vars.confidential_api_url);
 
     let mut req = state
         .http_client
@@ -181,7 +181,7 @@ pub async fn refresh_dao_jwt(
     }
 
     // Refresh the token
-    let url = format!("{}/v0/auth/refresh", super::constants::CONFIDENTIAL_API_URL);
+    let url = format!("{}/v0/auth/refresh", state.env_vars.confidential_api_url);
 
     let mut req = state
         .http_client
