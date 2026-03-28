@@ -240,35 +240,36 @@ pub async fn try_auto_submit_intent(state: &Arc<AppState>, treasury_id: &str, re
                     && let (Some(access_token), Some(refresh_token)) = (
                         resp_body.get("accessToken").and_then(|v| v.as_str()),
                         resp_body.get("refreshToken").and_then(|v| v.as_str()),
-                    ) {
-                        let expires_in = resp_body
-                            .get("expiresIn")
-                            .and_then(|v| v.as_i64())
-                            .unwrap_or(3600);
-                        let expires_at = chrono::Utc::now() + chrono::Duration::seconds(expires_in);
+                    )
+                {
+                    let expires_in = resp_body
+                        .get("expiresIn")
+                        .and_then(|v| v.as_i64())
+                        .unwrap_or(3600);
+                    let expires_at = chrono::Utc::now() + chrono::Duration::seconds(expires_in);
 
-                        let _ = sqlx::query(
-                            r#"
+                    let _ = sqlx::query(
+                        r#"
                             UPDATE monitored_accounts
                             SET confidential_access_token = $1,
                                 confidential_refresh_token = $2,
                                 confidential_token_expires_at = $3
                             WHERE account_id = $4
                             "#,
-                        )
-                        .bind(access_token)
-                        .bind(refresh_token)
-                        .bind(expires_at)
-                        .bind(treasury_id)
-                        .execute(&state.db_pool)
-                        .await;
+                    )
+                    .bind(access_token)
+                    .bind(refresh_token)
+                    .bind(expires_at)
+                    .bind(treasury_id)
+                    .execute(&state.db_pool)
+                    .await;
 
-                        log::info!(
-                            "Stored confidential JWT for DAO {} (expires in {}s)",
-                            treasury_id,
-                            expires_in
-                        );
-                    }
+                    log::info!(
+                        "Stored confidential JWT for DAO {} (expires in {}s)",
+                        treasury_id,
+                        expires_in
+                    );
+                }
 
                 let _ = sqlx::query(
                     "UPDATE pending_confidential_intents SET status = 'submitted', submit_result = $1, updated_at = NOW() WHERE dao_id = $2 AND proposal_id = $3"
