@@ -1,7 +1,0 @@
-{
-  "error": "Bad Request",
-  "message": "Invalid type 'SWAP_TRANSFER'. Expected one of: 'swap_transfer'",
-  "path": "/v0/generate-intent",
-  "statusCode": 400,
-  "timestamp": "2026-03-24T18:03:00.526Z"
-}
