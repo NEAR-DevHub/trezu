@@ -25,7 +25,11 @@ async fn test_confidential_quote_requires_auth() {
         .await
         .unwrap();
 
-    assert_eq!(resp.status(), 401, "Confidential quote should require auth");
+    assert_eq!(
+        resp.status(),
+        reqwest::StatusCode::UNAUTHORIZED,
+        "Confidential quote should require auth"
+    );
 }
 
 #[tokio::test]
