@@ -70,17 +70,13 @@ pub async fn get_confidential_quote(
         req = req.header("x-api-key", api_key);
     }
 
-    let response = req
-        .json(&body)
-        .send()
-        .await
-        .map_err(|e| {
-            log::error!("Error calling 1Click confidential quote API: {}", e);
-            (
-                StatusCode::BAD_GATEWAY,
-                format!("Failed to get quote: {}", e),
-            )
-        })?;
+    let response = req.json(&body).send().await.map_err(|e| {
+        log::error!("Error calling 1Click confidential quote API: {}", e);
+        (
+            StatusCode::BAD_GATEWAY,
+            format!("Failed to get quote: {}", e),
+        )
+    })?;
 
     let status = response.status();
     let response_body: Value = response.json().await.map_err(|e| {

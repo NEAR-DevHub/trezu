@@ -34,16 +34,14 @@ pub async fn get_balances(
     auth_user
         .verify_dao_member(&state.db_pool, &query.dao_id)
         .await
-        .map_err(|e| {
-            (
-                StatusCode::FORBIDDEN,
-                format!("Not a DAO member: {}", e),
-            )
-        })?;
+        .map_err(|e| (StatusCode::FORBIDDEN, format!("Not a DAO member: {}", e)))?;
     // Get or refresh the JWT for this DAO
     let access_token = refresh_dao_jwt(&state, &query.dao_id).await?;
 
-    let mut url = format!("{}/v0/account/balances", state.env_vars.confidential_api_url);
+    let mut url = format!(
+        "{}/v0/account/balances",
+        state.env_vars.confidential_api_url
+    );
 
     if let Some(token_ids) = &query.token_ids {
         url.push_str(&format!("?tokenIds={}", urlencoding::encode(token_ids)));
@@ -56,16 +54,17 @@ pub async fn get_balances(
     if let Some(api_key) = super::config::oneclick_api_key() {
         req = req.header("x-api-key", api_key);
     }
-    let response = req
-        .send()
-        .await
-        .map_err(|e| {
-            log::error!("Error fetching confidential balances for {}: {}", query.dao_id, e);
-            (
-                StatusCode::BAD_GATEWAY,
-                format!("Failed to fetch balances: {}", e),
-            )
-        })?;
+    let response = req.send().await.map_err(|e| {
+        log::error!(
+            "Error fetching confidential balances for {}: {}",
+            query.dao_id,
+            e
+        );
+        (
+            StatusCode::BAD_GATEWAY,
+            format!("Failed to fetch balances: {}", e),
+        )
+    })?;
 
     let status = response.status();
     let response_body: Value = response.json().await.map_err(|e| {

@@ -45,7 +45,10 @@ pub async fn authenticate(
     // Validate that dao_id matches signer_id in the signed NEP-413 payload
     validate_signer_id(&request)?;
 
-    let url = format!("{}/v0/auth/authenticate", state.env_vars.confidential_api_url);
+    let url = format!(
+        "{}/v0/auth/authenticate",
+        state.env_vars.confidential_api_url
+    );
 
     let mut req = state
         .http_client
@@ -54,17 +57,13 @@ pub async fn authenticate(
     if let Some(api_key) = super::config::oneclick_api_key() {
         req = req.header("x-api-key", api_key);
     }
-    let response = req
-        .json(&request.signed_data)
-        .send()
-        .await
-        .map_err(|e| {
-            log::error!("Error calling 1Click auth API: {}", e);
-            (
-                StatusCode::BAD_GATEWAY,
-                format!("Failed to authenticate with 1Click API: {}", e),
-            )
-        })?;
+    let response = req.json(&request.signed_data).send().await.map_err(|e| {
+        log::error!("Error calling 1Click auth API: {}", e);
+        (
+            StatusCode::BAD_GATEWAY,
+            format!("Failed to authenticate with 1Click API: {}", e),
+        )
+    })?;
 
     let status = response.status();
     let body_text = response.text().await.map_err(|e| {
@@ -82,17 +81,15 @@ pub async fn authenticate(
         ));
     }
 
-    let auth_response: AuthenticateResponse =
-        serde_json::from_str(&body_text).map_err(|e| {
-            log::error!("Failed to parse auth response: {} body: {}", e, body_text);
-            (
-                StatusCode::BAD_GATEWAY,
-                "Failed to parse authentication response".to_string(),
-            )
-        })?;
+    let auth_response: AuthenticateResponse = serde_json::from_str(&body_text).map_err(|e| {
+        log::error!("Failed to parse auth response: {} body: {}", e, body_text);
+        (
+            StatusCode::BAD_GATEWAY,
+            "Failed to parse authentication response".to_string(),
+        )
+    })?;
 
-    let expires_at =
-        chrono::Utc::now() + chrono::Duration::seconds(auth_response.expires_in);
+    let expires_at = chrono::Utc::now() + chrono::Duration::seconds(auth_response.expires_in);
 
     // Store JWT tokens in monitored_accounts
     let result = sqlx::query!(
@@ -253,8 +250,7 @@ pub async fn refresh_dao_jwt(
         )
     })?;
 
-    let new_expires_at =
-        chrono::Utc::now() + chrono::Duration::seconds(auth_response.expires_in);
+    let new_expires_at = chrono::Utc::now() + chrono::Duration::seconds(auth_response.expires_in);
 
     // Update stored tokens
     sqlx::query!(

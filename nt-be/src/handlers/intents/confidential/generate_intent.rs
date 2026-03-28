@@ -33,13 +33,20 @@ pub async fn generate_intent(
     auth_user: AuthUser,
     Json(request): Json<GenerateIntentRequest>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-    let dao_id = request.signer_id.strip_prefix("near:").unwrap_or(&request.signer_id);
+    let dao_id = request
+        .signer_id
+        .strip_prefix("near:")
+        .unwrap_or(&request.signer_id);
     auth_user
         .verify_dao_member(&state.db_pool, dao_id)
         .await
         .map_err(|e| (StatusCode::FORBIDDEN, format!("Not a DAO member: {}", e)))?;
 
-    log::info!("generate_intent called: type={}, signerId={}", request.r#type, request.signer_id);
+    log::info!(
+        "generate_intent called: type={}, signerId={}",
+        request.r#type,
+        request.signer_id
+    );
     let url = format!("{}/v0/generate-intent", state.env_vars.confidential_api_url);
 
     let body = serde_json::json!({
@@ -50,7 +57,10 @@ pub async fn generate_intent(
     });
 
     // The signer_id is the DAO — use its stored JWT for authentication
-    let dao_id = request.signer_id.strip_prefix("near:").unwrap_or(&request.signer_id);
+    let dao_id = request
+        .signer_id
+        .strip_prefix("near:")
+        .unwrap_or(&request.signer_id);
     let access_token = super::authenticate::refresh_dao_jwt(&state, dao_id).await?;
 
     let mut req = state
@@ -61,17 +71,13 @@ pub async fn generate_intent(
     if let Some(api_key) = super::config::oneclick_api_key() {
         req = req.header("x-api-key", api_key);
     }
-    let response = req
-        .json(&body)
-        .send()
-        .await
-        .map_err(|e| {
-            log::error!("Error calling 1Click generate-intent API: {}", e);
-            (
-                StatusCode::BAD_GATEWAY,
-                format!("Failed to generate intent: {}", e),
-            )
-        })?;
+    let response = req.json(&body).send().await.map_err(|e| {
+        log::error!("Error calling 1Click generate-intent API: {}", e);
+        (
+            StatusCode::BAD_GATEWAY,
+            format!("Failed to generate intent: {}", e),
+        )
+    })?;
 
     let status = response.status();
     let response_body: Value = response.json().await.map_err(|e| {
@@ -96,7 +102,10 @@ pub async fn generate_intent(
 
     // Store the intent payload for auto-submission after DAO proposal approval.
     // The signer_id format is "near:dao.sputnik-dao.near" or just "dao.sputnik-dao.near".
-    let dao_id = request.signer_id.strip_prefix("near:").unwrap_or(&request.signer_id);
+    let dao_id = request
+        .signer_id
+        .strip_prefix("near:")
+        .unwrap_or(&request.signer_id);
     if let Some(payload) = response_body.get("intent").and_then(|i| i.get("payload")) {
         let correlation_id = response_body.get("correlationId").and_then(|v| v.as_str());
         if let Err(e) = crate::handlers::relay::confidential::store_pending_intent(
@@ -105,7 +114,9 @@ pub async fn generate_intent(
             -1, // proposal_id unknown yet — will be matched by dao_id
             payload,
             correlation_id,
-        ).await {
+        )
+        .await
+        {
             log::warn!("Failed to store pending intent for {}: {}", dao_id, e);
         }
     }
@@ -211,8 +222,7 @@ mod tests {
             signer_id: format!("near:{}", dao_id),
         };
 
-        let generate_result =
-            generate_intent(State(state.clone()), Json(generate_request)).await;
+        let generate_result = generate_intent(State(state.clone()), Json(generate_request)).await;
 
         match generate_result {
             Ok(response) => {

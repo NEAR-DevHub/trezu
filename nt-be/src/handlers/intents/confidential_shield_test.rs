@@ -13,13 +13,13 @@
 
 #[cfg(test)]
 mod tests {
+    use crate::AppState;
     use crate::handlers::intents::generate_intent::{GenerateIntentRequest, generate_intent};
     use crate::handlers::intents::quote::{QuoteRequest, get_quote};
     use crate::handlers::intents::submit_intent::{SubmitIntentRequest, submit_intent};
     use crate::utils::env::EnvVars;
-    use crate::AppState;
-    use axum::extract::State;
     use axum::Json;
+    use axum::extract::State;
     use std::sync::Arc;
     use wiremock::matchers::{method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -126,9 +126,7 @@ mod tests {
 
         Mock::given(method("POST"))
             .and(path("/v0/quote"))
-            .respond_with(
-                ResponseTemplate::new(200).set_body_json(mock_shield_quote_response()),
-            )
+            .respond_with(ResponseTemplate::new(200).set_body_json(mock_shield_quote_response()))
             .expect(1)
             .mount(&mock_server)
             .await;
@@ -178,9 +176,7 @@ mod tests {
 
         Mock::given(method("POST"))
             .and(path("/v0/quote"))
-            .respond_with(
-                ResponseTemplate::new(200).set_body_json(mock_shield_quote_response()),
-            )
+            .respond_with(ResponseTemplate::new(200).set_body_json(mock_shield_quote_response()))
             .mount(&mock_server)
             .await;
 
@@ -219,9 +215,7 @@ mod tests {
 
         Mock::given(method("POST"))
             .and(path("/v0/generate-intent"))
-            .respond_with(
-                ResponseTemplate::new(200).set_body_json(mock_generate_intent_response()),
-            )
+            .respond_with(ResponseTemplate::new(200).set_body_json(mock_generate_intent_response()))
             .expect(1)
             .mount(&mock_server)
             .await;
@@ -231,8 +225,8 @@ mod tests {
         let request = GenerateIntentRequest {
             r#type: "SWAP_TRANSFER".to_string(),
             standard: "nep413".to_string(),
-            deposit_address:
-                "d32b552aa188face5952516a370bc5a9d91f77a19c48d5b7b16e6c59eb79b08e".to_string(),
+            deposit_address: "d32b552aa188face5952516a370bc5a9d91f77a19c48d5b7b16e6c59eb79b08e"
+                .to_string(),
             signer_id: "petersalomonsendev.near".to_string(),
         };
 
@@ -275,15 +269,12 @@ mod tests {
 
         Mock::given(method("POST"))
             .and(path("/v0/generate-intent"))
-            .respond_with(
-                ResponseTemplate::new(200).set_body_json(mock_generate_intent_response()),
-            )
+            .respond_with(ResponseTemplate::new(200).set_body_json(mock_generate_intent_response()))
             .mount(&mock_server)
             .await;
 
         let state = create_test_state(&mock_server.uri()).await;
-        let deposit_addr =
-            "d32b552aa188face5952516a370bc5a9d91f77a19c48d5b7b16e6c59eb79b08e";
+        let deposit_addr = "d32b552aa188face5952516a370bc5a9d91f77a19c48d5b7b16e6c59eb79b08e";
 
         let request = GenerateIntentRequest {
             r#type: "SWAP_TRANSFER".to_string(),
@@ -310,9 +301,7 @@ mod tests {
 
         Mock::given(method("POST"))
             .and(path("/v0/submit-intent"))
-            .respond_with(
-                ResponseTemplate::new(200).set_body_json(mock_submit_intent_response()),
-            )
+            .respond_with(ResponseTemplate::new(200).set_body_json(mock_submit_intent_response()))
             .expect(1)
             .mount(&mock_server)
             .await;
@@ -363,25 +352,19 @@ mod tests {
         // Mount all three mocks
         Mock::given(method("POST"))
             .and(path("/v0/quote"))
-            .respond_with(
-                ResponseTemplate::new(200).set_body_json(mock_shield_quote_response()),
-            )
+            .respond_with(ResponseTemplate::new(200).set_body_json(mock_shield_quote_response()))
             .mount(&mock_server)
             .await;
 
         Mock::given(method("POST"))
             .and(path("/v0/generate-intent"))
-            .respond_with(
-                ResponseTemplate::new(200).set_body_json(mock_generate_intent_response()),
-            )
+            .respond_with(ResponseTemplate::new(200).set_body_json(mock_generate_intent_response()))
             .mount(&mock_server)
             .await;
 
         Mock::given(method("POST"))
             .and(path("/v0/submit-intent"))
-            .respond_with(
-                ResponseTemplate::new(200).set_body_json(mock_submit_intent_response()),
-            )
+            .respond_with(ResponseTemplate::new(200).set_body_json(mock_submit_intent_response()))
             .mount(&mock_server)
             .await;
 

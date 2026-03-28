@@ -52,10 +52,11 @@ async fn fetch_salt(state: &Arc<AppState>) -> Result<[u8; 4], String> {
         .map_err(|e| format!("Failed to fetch salt from intents.near: {}", e))?;
 
     let hex_str = result.data.trim_matches('"');
-    let salt_bytes = hex::decode(hex_str)
-        .map_err(|e| format!("Invalid salt hex: {}", e))?;
+    let salt_bytes = hex::decode(hex_str).map_err(|e| format!("Invalid salt hex: {}", e))?;
 
-    salt_bytes.try_into().map_err(|_| "Salt not 4 bytes".to_string())
+    salt_bytes
+        .try_into()
+        .map_err(|_| "Salt not 4 bytes".to_string())
 }
 
 /// Build a 32-byte nonce matching the 1Click API expected format.
@@ -99,7 +100,10 @@ pub async fn prepare_auth(
 
     // Fetch salt from intents.near and build nonce
     let salt = fetch_salt(&state).await.map_err(|e| {
-        (StatusCode::BAD_GATEWAY, format!("Failed to fetch salt: {}", e))
+        (
+            StatusCode::BAD_GATEWAY,
+            format!("Failed to fetch salt: {}", e),
+        )
     })?;
     let nonce = build_nonce(&salt, &deadline);
     let nonce_b64 = base64::engine::general_purpose::STANDARD.encode(nonce);
@@ -135,8 +139,7 @@ pub async fn prepare_auth(
         }
     });
 
-    let sign_args_b64 =
-        base64::engine::general_purpose::STANDARD.encode(sign_args.to_string());
+    let sign_args_b64 = base64::engine::general_purpose::STANDARD.encode(sign_args.to_string());
 
     let proposal = json!({
         "description": "Authenticate DAO for confidential intents",

@@ -38,17 +38,13 @@ pub async fn submit_intent(
     if let Some(api_key) = super::config::oneclick_api_key() {
         req = req.header("x-api-key", api_key);
     }
-    let response = req
-        .json(&body)
-        .send()
-        .await
-        .map_err(|e| {
-            log::error!("Error calling 1Click submit-intent API: {}", e);
-            (
-                StatusCode::BAD_GATEWAY,
-                format!("Failed to submit intent: {}", e),
-            )
-        })?;
+    let response = req.json(&body).send().await.map_err(|e| {
+        log::error!("Error calling 1Click submit-intent API: {}", e);
+        (
+            StatusCode::BAD_GATEWAY,
+            format!("Failed to submit intent: {}", e),
+        )
+    })?;
 
     let status = response.status();
     let response_body: Value = response.json().await.map_err(|e| {

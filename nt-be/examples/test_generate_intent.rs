@@ -176,29 +176,26 @@ async fn register_public_key(secret_key_str: &str, public_key: &str) {
 
     let args = serde_json::json!({ "public_key": public_key });
 
-    let tx = Transaction::construct(
-        signer_id.clone(),
-        INTENTS_CONTRACT.parse().unwrap(),
-    )
-    .add_action(Action::FunctionCall(Box::new(FunctionCallAction {
-        method_name: "add_public_key".to_string(),
-        args: serde_json::to_vec(&args).unwrap().into(),
-        gas: NearGas::from_tgas(5),
-        deposit: NearToken::from_yoctonear(1),
-    })))
-    .with_signer(
-        near_api::signer::Signer::new(near_api::signer::secret_key::SecretKeySigner::new(near_secret)).unwrap(),
-    )
-    .send_to(&near_api::NetworkConfig::mainnet())
-    .await;
+    let tx = Transaction::construct(signer_id.clone(), INTENTS_CONTRACT.parse().unwrap())
+        .add_action(Action::FunctionCall(Box::new(FunctionCallAction {
+            method_name: "add_public_key".to_string(),
+            args: serde_json::to_vec(&args).unwrap().into(),
+            gas: NearGas::from_tgas(5),
+            deposit: NearToken::from_yoctonear(1),
+        })))
+        .with_signer(
+            near_api::signer::Signer::new(near_api::signer::secret_key::SecretKeySigner::new(
+                near_secret,
+            ))
+            .unwrap(),
+        )
+        .send_to(&near_api::NetworkConfig::mainnet())
+        .await;
 
     match tx {
         Ok(result) => {
             println!("add_public_key tx succeeded!");
-            println!(
-                "Result: {:?}\n",
-                result
-            );
+            println!("Result: {:?}\n", result);
         }
         Err(e) => {
             eprintln!("add_public_key tx failed: {:?}", e);
@@ -211,10 +208,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::from_filename("../.env").ok();
     dotenvy::from_filename(".env").ok();
 
-    let secret_key = std::env::var("PETERSALOMONSEN_DEV")
-        .expect("PETERSALOMONSEN_DEV must be set");
-    let api_key = std::env::var("ONECLICK_API_KEY")
-        .expect("ONECLICK_API_KEY must be set");
+    let secret_key = std::env::var("PETERSALOMONSEN_DEV").expect("PETERSALOMONSEN_DEV must be set");
+    let api_key = std::env::var("ONECLICK_API_KEY").expect("ONECLICK_API_KEY must be set");
     let existing_token = std::env::var("ONECLICK_ACCESS_TOKEN").ok();
 
     let client = reqwest::Client::new();
@@ -228,7 +223,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // =============================================
     println!("=== Checking if public key is registered on intents.near ===\n");
     let is_registered = check_public_key_registered(&public_key_str).await;
-    println!("Public key {} registered: {}\n", public_key_str, is_registered);
+    println!(
+        "Public key {} registered: {}\n",
+        public_key_str, is_registered
+    );
 
     if !is_registered {
         register_public_key(&secret_key, &public_key_str).await;
@@ -329,7 +327,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .expect("Auth response should contain accessToken")
             .to_string();
 
-        println!("Got access token (first 50 chars): {}...\n", &token[..50.min(token.len())]);
+        println!(
+            "Got access token (first 50 chars): {}...\n",
+            &token[..50.min(token.len())]
+        );
         token
     };
 

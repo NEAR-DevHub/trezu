@@ -66,24 +66,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Council: [{}]", ACCOUNT_ID);
     println!("Args: {}\n", serde_json::to_string_pretty(&args)?);
 
-    let tx = Transaction::construct(
-        ACCOUNT_ID.parse().unwrap(),
-        DAO_FACTORY.parse().unwrap(),
-    )
-    .add_action(Action::FunctionCall(Box::new(FunctionCallAction {
-        method_name: "create".to_string(),
-        args: serde_json::to_vec(&args)?.into(),
-        gas: NearGas::from_tgas(150),
-        deposit: NearToken::from_near(5), // 5 NEAR for DAO creation
-    })))
-    .with_signer(
-        near_api::signer::Signer::new(
-            near_api::signer::secret_key::SecretKeySigner::new(near_secret),
+    let tx = Transaction::construct(ACCOUNT_ID.parse().unwrap(), DAO_FACTORY.parse().unwrap())
+        .add_action(Action::FunctionCall(Box::new(FunctionCallAction {
+            method_name: "create".to_string(),
+            args: serde_json::to_vec(&args)?.into(),
+            gas: NearGas::from_tgas(150),
+            deposit: NearToken::from_near(5), // 5 NEAR for DAO creation
+        })))
+        .with_signer(
+            near_api::signer::Signer::new(near_api::signer::secret_key::SecretKeySigner::new(
+                near_secret,
+            ))
+            .unwrap(),
         )
-        .unwrap(),
-    )
-    .send_to(&near_api::NetworkConfig::mainnet())
-    .await;
+        .send_to(&near_api::NetworkConfig::mainnet())
+        .await;
 
     match tx {
         Ok(result) => {

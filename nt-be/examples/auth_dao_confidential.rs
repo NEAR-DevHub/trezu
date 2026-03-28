@@ -33,15 +33,29 @@ struct NEP413Payload {
 }
 
 async fn fetch_salt(client: &reqwest::Client) -> [u8; 4] {
-    let resp = client.post("https://rpc.mainnet.fastnear.com")
+    let resp = client
+        .post("https://rpc.mainnet.fastnear.com")
         .json(&json!({"jsonrpc":"2.0","id":1,"method":"query","params":{
             "request_type":"call_function","finality":"optimistic",
             "account_id":"intents.near","method_name":"current_salt",
             "args_base64": BASE64.encode("{}"),
-        }})).send().await.unwrap().json::<Value>().await.unwrap();
-    let bytes: Vec<u8> = resp["result"]["result"].as_array().unwrap()
-        .iter().map(|v| v.as_u64().unwrap() as u8).collect();
-    let hex_str = String::from_utf8(bytes).unwrap().trim_matches('"').to_string();
+        }}))
+        .send()
+        .await
+        .unwrap()
+        .json::<Value>()
+        .await
+        .unwrap();
+    let bytes: Vec<u8> = resp["result"]["result"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_u64().unwrap() as u8)
+        .collect();
+    let hex_str = String::from_utf8(bytes)
+        .unwrap()
+        .trim_matches('"')
+        .to_string();
     hex::decode(&hex_str).unwrap().try_into().unwrap()
 }
 
@@ -71,31 +85,58 @@ async fn create_and_approve_proposal(
             gas: NearGas::from_tgas(100),
             deposit: NearToken::from_yoctonear(0),
         })))
-        .with_signer(near_api::signer::Signer::new(
-            near_api::signer::secret_key::SecretKeySigner::new(near_secret.clone()),
-        ).unwrap())
-        .send_to(&near_api::NetworkConfig::mainnet()).await.unwrap();
+        .with_signer(
+            near_api::signer::Signer::new(near_api::signer::secret_key::SecretKeySigner::new(
+                near_secret.clone(),
+            ))
+            .unwrap(),
+        )
+        .send_to(&near_api::NetworkConfig::mainnet())
+        .await
+        .unwrap();
 
-    let resp = client.post("https://rpc.mainnet.fastnear.com")
+    let resp = client
+        .post("https://rpc.mainnet.fastnear.com")
         .json(&json!({"jsonrpc":"2.0","id":1,"method":"query","params":{
             "request_type":"call_function","finality":"final",
             "account_id": DAO_ID, "method_name":"get_last_proposal_id",
             "args_base64": BASE64.encode("{}"),
-        }})).send().await.unwrap().json::<Value>().await.unwrap();
-    let bytes: Vec<u8> = resp["result"]["result"].as_array().unwrap()
-        .iter().map(|v| v.as_u64().unwrap() as u8).collect();
+        }}))
+        .send()
+        .await
+        .unwrap()
+        .json::<Value>()
+        .await
+        .unwrap();
+    let bytes: Vec<u8> = resp["result"]["result"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_u64().unwrap() as u8)
+        .collect();
     let proposal_id: u64 = String::from_utf8(bytes).unwrap().parse().unwrap();
     let proposal_id = proposal_id - 1;
     println!("  Proposal ID: {}", proposal_id);
 
-    let resp = client.post("https://rpc.mainnet.fastnear.com")
+    let resp = client
+        .post("https://rpc.mainnet.fastnear.com")
         .json(&json!({"jsonrpc":"2.0","id":1,"method":"query","params":{
             "request_type":"call_function","finality":"final",
             "account_id": DAO_ID, "method_name":"get_proposal",
             "args_base64": BASE64.encode(json!({"id": proposal_id}).to_string()),
-        }})).send().await.unwrap().json::<Value>().await.unwrap();
-    let bytes: Vec<u8> = resp["result"]["result"].as_array().unwrap()
-        .iter().map(|v| v.as_u64().unwrap() as u8).collect();
+        }}))
+        .send()
+        .await
+        .unwrap()
+        .json::<Value>()
+        .await
+        .unwrap();
+    let bytes: Vec<u8> = resp["result"]["result"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_u64().unwrap() as u8)
+        .collect();
     let proposal_data: Value = serde_json::from_slice(&bytes).unwrap();
     let kind = &proposal_data["kind"];
 
@@ -104,14 +145,21 @@ async fn create_and_approve_proposal(
             method_name: "act_proposal".to_string(),
             args: serde_json::to_vec(&json!({
                 "id": proposal_id, "action": "VoteApprove", "proposal": kind,
-            })).unwrap().into(),
+            }))
+            .unwrap()
+            .into(),
             gas: NearGas::from_tgas(300),
             deposit: NearToken::from_yoctonear(0),
         })))
-        .with_signer(near_api::signer::Signer::new(
-            near_api::signer::secret_key::SecretKeySigner::new(near_secret.clone()),
-        ).unwrap())
-        .send_to(&near_api::NetworkConfig::mainnet()).await.unwrap();
+        .with_signer(
+            near_api::signer::Signer::new(near_api::signer::secret_key::SecretKeySigner::new(
+                near_secret.clone(),
+            ))
+            .unwrap(),
+        )
+        .send_to(&near_api::NetworkConfig::mainnet())
+        .await
+        .unwrap();
 
     format!("{:?}", result)
 }
@@ -120,14 +168,23 @@ fn extract_mpc_signature(result_debug: &str) -> Option<Vec<u8>> {
     let marker = "eyJzY2hlbWUi";
     if let Some(start) = result_debug.find(marker) {
         let rest = &result_debug[start..];
-        let end = rest.find(|c: char| !c.is_alphanumeric() && c != '+' && c != '/' && c != '=')
+        let end = rest
+            .find(|c: char| !c.is_alphanumeric() && c != '+' && c != '/' && c != '=')
             .unwrap_or(rest.len());
         let b64_value = &rest[..end];
         if let Ok(decoded) = BASE64.decode(b64_value) {
             let sig_json: Value = serde_json::from_slice(&decoded).ok()?;
-            eprintln!("MPC response JSON: {}", serde_json::to_string_pretty(&sig_json).unwrap_or_default());
+            eprintln!(
+                "MPC response JSON: {}",
+                serde_json::to_string_pretty(&sig_json).unwrap_or_default()
+            );
             if let Some(sig_arr) = sig_json["signature"].as_array() {
-                return Some(sig_arr.iter().map(|v| v.as_u64().unwrap_or(0) as u8).collect());
+                return Some(
+                    sig_arr
+                        .iter()
+                        .map(|v| v.as_u64().unwrap_or(0) as u8)
+                        .collect(),
+                );
             }
         }
     }
@@ -156,7 +213,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "deadline": auth_deadline.format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string(),
         "intents": [],
         "signer_id": DAO_ID,  // Auth AS the DAO
-    }).to_string();
+    })
+    .to_string();
 
     println!("Auth message: {}", auth_message);
 
@@ -215,7 +273,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(bytes) => bytes,
         None => {
             // Try to find any base64 in receipts
-            eprintln!("Failed to extract MPC signature. Full result written to mpc_auth_result.txt");
+            eprintln!(
+                "Failed to extract MPC signature. Full result written to mpc_auth_result.txt"
+            );
             eprintln!("Result length: {} chars", result.len());
             // Print last 500 chars which might have the return value
             let start = result.len().saturating_sub(500);
@@ -242,16 +302,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    let auth_resp = client.post(format!("{}/v0/auth/authenticate", oneclick_url()))
+    let auth_resp = client
+        .post(format!("{}/v0/auth/authenticate", oneclick_url()))
         .header("content-type", "application/json")
         .header("x-api-key", &api_key)
-        .json(&auth_body).send().await?;
+        .json(&auth_body)
+        .send()
+        .await?;
 
     let auth_status = auth_resp.status();
     let auth_data: Value = auth_resp.json().await?;
 
     if !auth_status.is_success() {
-        eprintln!("Auth failed ({}): {}", auth_status, serde_json::to_string_pretty(&auth_data)?);
+        eprintln!(
+            "Auth failed ({}): {}",
+            auth_status,
+            serde_json::to_string_pretty(&auth_data)?
+        );
         return Ok(());
     }
 
@@ -265,10 +332,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Step 4: Check DAO's confidential balance
     println!("\n=== Step 4: DAO confidential balance ===\n");
 
-    let balance_resp = client.get(format!("{}/v0/account/balances", oneclick_url()))
+    let balance_resp = client
+        .get(format!("{}/v0/account/balances", oneclick_url()))
         .header("x-api-key", &api_key)
         .header("Authorization", format!("Bearer {}", access_token))
-        .send().await?;
+        .send()
+        .await?;
 
     let balance_data: Value = balance_resp.json().await?;
     println!("{}", serde_json::to_string_pretty(&balance_data)?);

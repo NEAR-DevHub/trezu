@@ -22,15 +22,29 @@ struct NEP413Payload {
 }
 
 async fn fetch_salt(client: &reqwest::Client) -> [u8; 4] {
-    let resp = client.post("https://rpc.mainnet.fastnear.com")
+    let resp = client
+        .post("https://rpc.mainnet.fastnear.com")
         .json(&json!({"jsonrpc":"2.0","id":1,"method":"query","params":{
             "request_type":"call_function","finality":"optimistic",
             "account_id":"intents.near","method_name":"current_salt",
             "args_base64": BASE64.encode("{}"),
-        }})).send().await.unwrap().json::<Value>().await.unwrap();
-    let bytes: Vec<u8> = resp["result"]["result"].as_array().unwrap()
-        .iter().map(|v| v.as_u64().unwrap() as u8).collect();
-    let hex_str = String::from_utf8(bytes).unwrap().trim_matches('"').to_string();
+        }}))
+        .send()
+        .await
+        .unwrap()
+        .json::<Value>()
+        .await
+        .unwrap();
+    let bytes: Vec<u8> = resp["result"]["result"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_u64().unwrap() as u8)
+        .collect();
+    let hex_str = String::from_utf8(bytes)
+        .unwrap()
+        .trim_matches('"')
+        .to_string();
     hex::decode(&hex_str).unwrap().try_into().unwrap()
 }
 
@@ -48,12 +62,19 @@ fn build_nonce(salt: &[u8; 4], deadline: &chrono::DateTime<chrono::Utc>) -> [u8;
     nonce
 }
 
-fn sign_nep413(secret_key_str: &str, message: &str, nonce: &[u8; 32], recipient: &str) -> (String, String) {
+fn sign_nep413(
+    secret_key_str: &str,
+    message: &str,
+    nonce: &[u8; 32],
+    recipient: &str,
+) -> (String, String) {
     let secret_key: near_crypto::SecretKey = secret_key_str.parse().unwrap();
     let public_key = secret_key.public_key();
     let payload = NEP413Payload {
-        message: message.to_string(), nonce: *nonce,
-        recipient: recipient.to_string(), callback_url: None,
+        message: message.to_string(),
+        nonce: *nonce,
+        recipient: recipient.to_string(),
+        callback_url: None,
     };
     const PREFIX: u32 = (1u32 << 31) + 413;
     let mut bytes = PREFIX.to_le_bytes().to_vec();
@@ -84,9 +105,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "deadline": auth_deadline.format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string(),
         "intents": [],
         "signer_id": ACCOUNT_ID,
-    }).to_string();
+    })
+    .to_string();
 
-    let (auth_sig, auth_pub) = sign_nep413(&secret_key_str, &auth_message, &auth_nonce, "intents.near");
+    let (auth_sig, auth_pub) =
+        sign_nep413(&secret_key_str, &auth_message, &auth_nonce, "intents.near");
 
     let auth_resp = client.post(format!("{}/v0/auth/authenticate", oneclick_url()))
         .header("content-type", "application/json")
@@ -101,7 +124,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })).send().await?;
 
     let auth_data: Value = auth_resp.json().await?;
-    let access_token = auth_data["accessToken"].as_str()
+    let access_token = auth_data["accessToken"]
+        .as_str()
         .ok_or("Auth failed - no accessToken")?;
     println!("Authenticated as {}\n", ACCOUNT_ID);
 
@@ -109,24 +133,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Confidential balances ===\n");
 
     // Get all balances (no token filter)
-    let balance_resp = client.get(format!("{}/v0/account/balances", oneclick_url()))
+    let balance_resp = client
+        .get(format!("{}/v0/account/balances", oneclick_url()))
         .header("x-api-key", &api_key)
         .header("Authorization", format!("Bearer {}", access_token))
-        .send().await?;
+        .send()
+        .await?;
 
     let balance_status = balance_resp.status();
     let balance_data: Value = balance_resp.json().await?;
 
     println!("Status: {}", balance_status);
-    println!("Response:\n{}\n", serde_json::to_string_pretty(&balance_data)?);
+    println!(
+        "Response:\n{}\n",
+        serde_json::to_string_pretty(&balance_data)?
+    );
 
     // Also try with specific token
     println!("=== wNEAR balance specifically ===\n");
-    let wnear_resp = client.get(format!("{}/v0/account/balances", oneclick_url()))
+    let wnear_resp = client
+        .get(format!("{}/v0/account/balances", oneclick_url()))
         .header("x-api-key", &api_key)
         .header("Authorization", format!("Bearer {}", access_token))
         .query(&[("tokenIds", "nep141:wrap.near")])
-        .send().await?;
+        .send()
+        .await?;
 
     let wnear_status = wnear_resp.status();
     let wnear_data: Value = wnear_resp.json().await?;

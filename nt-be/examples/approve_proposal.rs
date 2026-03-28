@@ -11,15 +11,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::from_filename("../.env").ok();
     dotenvy::from_filename(".env").ok();
 
-    let proposal_id: u64 = std::env::args()
-        .nth(1)
-        .unwrap_or("0".to_string())
-        .parse()?;
+    let proposal_id: u64 = std::env::args().nth(1).unwrap_or("0".to_string()).parse()?;
 
-    let secret: near_api::SecretKey =
-        std::env::var("PETERSALOMONSEN_DEV")?.parse()?;
+    let secret: near_api::SecretKey = std::env::var("PETERSALOMONSEN_DEV")?.parse()?;
 
-    println!("Approving proposal {} on petersalomonsendev.sputnik-dao.near...", proposal_id);
+    println!(
+        "Approving proposal {} on petersalomonsendev.sputnik-dao.near...",
+        proposal_id
+    );
 
     // Fetch the proposal to get its kind (required by act_proposal)
     let client = reqwest::Client::new();
@@ -51,8 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .iter()
         .map(|v| v.as_u64().unwrap() as u8)
         .collect();
-    let proposal: serde_json::Value =
-        serde_json::from_slice(&result_bytes)?;
+    let proposal: serde_json::Value = serde_json::from_slice(&result_bytes)?;
     let kind = &proposal["kind"];
 
     println!("Proposal status: {}", proposal["status"]);
@@ -74,10 +72,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         deposit: NearToken::from_yoctonear(0),
     })))
     .with_signer(
-        near_api::signer::Signer::new(
-            near_api::signer::secret_key::SecretKeySigner::new(secret),
-        )
-        .unwrap(),
+        near_api::signer::Signer::new(near_api::signer::secret_key::SecretKeySigner::new(secret))
+            .unwrap(),
     )
     .send_to(&near_api::NetworkConfig::mainnet())
     .await;

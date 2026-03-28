@@ -49,12 +49,19 @@ async fn check_public_key_registered(account_id: &str, public_key: &str) -> bool
                 "args_base64": args_b64,
             }
         }))
-        .send().await.unwrap()
-        .json::<Value>().await.unwrap();
+        .send()
+        .await
+        .unwrap()
+        .json::<Value>()
+        .await
+        .unwrap();
 
     let result_bytes: Vec<u8> = response["result"]["result"]
-        .as_array().unwrap()
-        .iter().map(|v| v.as_u64().unwrap() as u8).collect();
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_u64().unwrap() as u8)
+        .collect();
     String::from_utf8(result_bytes).unwrap() == "true"
 }
 
@@ -82,20 +89,22 @@ async fn register_public_key_via_dao(secret_key_str: &str, public_key: &str) {
     });
 
     println!("  Creating add_public_key proposal...");
-    let tx = Transaction::construct(
-        ACCOUNT_ID.parse().unwrap(), DAO_ID.parse().unwrap(),
-    )
-    .add_action(Action::FunctionCall(Box::new(FunctionCallAction {
-        method_name: "add_proposal".to_string(),
-        args: serde_json::to_vec(&proposal).unwrap().into(),
-        gas: NearGas::from_tgas(100),
-        deposit: NearToken::from_yoctonear(0),
-    })))
-    .with_signer(near_api::signer::Signer::new(
-        near_api::signer::secret_key::SecretKeySigner::new(near_secret.clone()),
-    ).unwrap())
-    .send_to(&near_api::NetworkConfig::mainnet())
-    .await.expect("add_proposal failed");
+    let tx = Transaction::construct(ACCOUNT_ID.parse().unwrap(), DAO_ID.parse().unwrap())
+        .add_action(Action::FunctionCall(Box::new(FunctionCallAction {
+            method_name: "add_proposal".to_string(),
+            args: serde_json::to_vec(&proposal).unwrap().into(),
+            gas: NearGas::from_tgas(100),
+            deposit: NearToken::from_yoctonear(0),
+        })))
+        .with_signer(
+            near_api::signer::Signer::new(near_api::signer::secret_key::SecretKeySigner::new(
+                near_secret.clone(),
+            ))
+            .unwrap(),
+        )
+        .send_to(&near_api::NetworkConfig::mainnet())
+        .await
+        .expect("add_proposal failed");
 
     // Get the last proposal ID
     let client = reqwest::Client::new();
@@ -112,12 +121,19 @@ async fn register_public_key_via_dao(secret_key_str: &str, public_key: &str) {
                 "args_base64": BASE64.encode("{}"),
             }
         }))
-        .send().await.unwrap()
-        .json::<Value>().await.unwrap();
+        .send()
+        .await
+        .unwrap()
+        .json::<Value>()
+        .await
+        .unwrap();
 
     let result_bytes: Vec<u8> = resp["result"]["result"]
-        .as_array().unwrap()
-        .iter().map(|v| v.as_u64().unwrap() as u8).collect();
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_u64().unwrap() as u8)
+        .collect();
     let last_id: u64 = String::from_utf8(result_bytes).unwrap().parse().unwrap();
     let proposal_id = last_id - 1; // The one we just created
 
@@ -137,34 +153,45 @@ async fn register_public_key_via_dao(secret_key_str: &str, public_key: &str) {
                 "args_base64": BASE64.encode(json!({"id": proposal_id}).to_string()),
             }
         }))
-        .send().await.unwrap()
-        .json::<Value>().await.unwrap();
+        .send()
+        .await
+        .unwrap()
+        .json::<Value>()
+        .await
+        .unwrap();
 
     let result_bytes: Vec<u8> = resp["result"]["result"]
-        .as_array().unwrap()
-        .iter().map(|v| v.as_u64().unwrap() as u8).collect();
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_u64().unwrap() as u8)
+        .collect();
     let proposal_data: Value = serde_json::from_slice(&result_bytes).unwrap();
     let kind = &proposal_data["kind"];
 
     println!("  Approving proposal...");
-    let tx = Transaction::construct(
-        ACCOUNT_ID.parse().unwrap(), DAO_ID.parse().unwrap(),
-    )
-    .add_action(Action::FunctionCall(Box::new(FunctionCallAction {
-        method_name: "act_proposal".to_string(),
-        args: serde_json::to_vec(&json!({
-            "id": proposal_id,
-            "action": "VoteApprove",
-            "proposal": kind,
-        })).unwrap().into(),
-        gas: NearGas::from_tgas(100),
-        deposit: NearToken::from_yoctonear(0),
-    })))
-    .with_signer(near_api::signer::Signer::new(
-        near_api::signer::secret_key::SecretKeySigner::new(near_secret),
-    ).unwrap())
-    .send_to(&near_api::NetworkConfig::mainnet())
-    .await.expect("act_proposal failed");
+    let tx = Transaction::construct(ACCOUNT_ID.parse().unwrap(), DAO_ID.parse().unwrap())
+        .add_action(Action::FunctionCall(Box::new(FunctionCallAction {
+            method_name: "act_proposal".to_string(),
+            args: serde_json::to_vec(&json!({
+                "id": proposal_id,
+                "action": "VoteApprove",
+                "proposal": kind,
+            }))
+            .unwrap()
+            .into(),
+            gas: NearGas::from_tgas(100),
+            deposit: NearToken::from_yoctonear(0),
+        })))
+        .with_signer(
+            near_api::signer::Signer::new(near_api::signer::secret_key::SecretKeySigner::new(
+                near_secret,
+            ))
+            .unwrap(),
+        )
+        .send_to(&near_api::NetworkConfig::mainnet())
+        .await
+        .expect("act_proposal failed");
 
     println!("  Public key registered on intents.near!");
 }
@@ -183,8 +210,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Step 1: Check/register MPC public key on intents.near ===\n");
 
     let is_registered = check_public_key_registered(DAO_ID, MPC_PUBLIC_KEY).await;
-    println!("MPC key {} registered on intents.near for {}: {}\n",
-        MPC_PUBLIC_KEY, DAO_ID, is_registered);
+    println!(
+        "MPC key {} registered on intents.near for {}: {}\n",
+        MPC_PUBLIC_KEY, DAO_ID, is_registered
+    );
 
     if !is_registered {
         register_public_key_via_dao(&secret_key_str, MPC_PUBLIC_KEY).await;
@@ -206,7 +235,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let deposit_address = "d32b552aa188face5952516a370bc5a9d91f77a19c48d5b7b16e6c59eb79b08e";
     let amount = "100000000000000000000000"; // 0.1 wNEAR
     let deadline = (chrono::Utc::now() + chrono::Duration::hours(24))
-        .format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string();
+        .format("%Y-%m-%dT%H:%M:%S%.3fZ")
+        .to_string();
 
     let intent_message = json!({
         "deadline": deadline,
@@ -216,7 +246,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "tokens": { "nep141:wrap.near": amount },
         }],
         "signer_id": DAO_ID,
-    }).to_string();
+    })
+    .to_string();
 
     // Build versioned nonce (fetch salt from intents.near)
     let client = reqwest::Client::new();
@@ -233,12 +264,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "args_base64": BASE64.encode("{}"),
             }
         }))
-        .send().await?.json::<Value>().await?;
+        .send()
+        .await?
+        .json::<Value>()
+        .await?;
 
     let salt_result: Vec<u8> = salt_resp["result"]["result"]
-        .as_array().unwrap()
-        .iter().map(|v| v.as_u64().unwrap() as u8).collect();
-    let salt_hex = String::from_utf8(salt_result)?.trim_matches('"').to_string();
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_u64().unwrap() as u8)
+        .collect();
+    let salt_hex = String::from_utf8(salt_result)?
+        .trim_matches('"')
+        .to_string();
     let salt_bytes = hex::decode(&salt_hex)?;
     let salt: [u8; 4] = salt_bytes.try_into().expect("Salt must be 4 bytes");
 
@@ -259,7 +298,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let nonce_b64 = BASE64.encode(nonce);
     let recipient = "intents.near";
 
-    println!("Intent message: {}...{}", &intent_message[..50], &intent_message[intent_message.len()-30..]);
+    println!(
+        "Intent message: {}...{}",
+        &intent_message[..50],
+        &intent_message[intent_message.len() - 30..]
+    );
     println!("Nonce: {}", nonce_b64);
 
     // Compute NEP-413 hash
@@ -307,20 +350,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     println!("Creating signing proposal...");
-    Transaction::construct(
-        ACCOUNT_ID.parse().unwrap(), DAO_ID.parse().unwrap(),
-    )
-    .add_action(Action::FunctionCall(Box::new(FunctionCallAction {
-        method_name: "add_proposal".to_string(),
-        args: serde_json::to_vec(&proposal)?.into(),
-        gas: NearGas::from_tgas(100),
-        deposit: NearToken::from_yoctonear(0),
-    })))
-    .with_signer(near_api::signer::Signer::new(
-        near_api::signer::secret_key::SecretKeySigner::new(near_secret.clone()),
-    ).unwrap())
-    .send_to(&near_api::NetworkConfig::mainnet())
-    .await?;
+    Transaction::construct(ACCOUNT_ID.parse().unwrap(), DAO_ID.parse().unwrap())
+        .add_action(Action::FunctionCall(Box::new(FunctionCallAction {
+            method_name: "add_proposal".to_string(),
+            args: serde_json::to_vec(&proposal)?.into(),
+            gas: NearGas::from_tgas(100),
+            deposit: NearToken::from_yoctonear(0),
+        })))
+        .with_signer(
+            near_api::signer::Signer::new(near_api::signer::secret_key::SecretKeySigner::new(
+                near_secret.clone(),
+            ))
+            .unwrap(),
+        )
+        .send_to(&near_api::NetworkConfig::mainnet())
+        .await?;
 
     // Get proposal ID
     let resp = client
@@ -336,11 +380,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "args_base64": BASE64.encode("{}"),
             }
         }))
-        .send().await?.json::<Value>().await?;
+        .send()
+        .await?
+        .json::<Value>()
+        .await?;
 
     let result_bytes: Vec<u8> = resp["result"]["result"]
-        .as_array().unwrap()
-        .iter().map(|v| v.as_u64().unwrap() as u8).collect();
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_u64().unwrap() as u8)
+        .collect();
     let last_id: u64 = String::from_utf8(result_bytes)?.parse()?;
     let proposal_id = last_id - 1;
     println!("Signing proposal ID: {}", proposal_id);
@@ -364,33 +414,41 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "args_base64": BASE64.encode(json!({"id": proposal_id}).to_string()),
             }
         }))
-        .send().await?.json::<Value>().await?;
+        .send()
+        .await?
+        .json::<Value>()
+        .await?;
 
     let result_bytes: Vec<u8> = resp["result"]["result"]
-        .as_array().unwrap()
-        .iter().map(|v| v.as_u64().unwrap() as u8).collect();
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_u64().unwrap() as u8)
+        .collect();
     let proposal_data: Value = serde_json::from_slice(&result_bytes)?;
     let kind = &proposal_data["kind"];
 
     println!("Approving...");
-    let approve_tx = Transaction::construct(
-        ACCOUNT_ID.parse().unwrap(), DAO_ID.parse().unwrap(),
-    )
-    .add_action(Action::FunctionCall(Box::new(FunctionCallAction {
-        method_name: "act_proposal".to_string(),
-        args: serde_json::to_vec(&json!({
-            "id": proposal_id,
-            "action": "VoteApprove",
-            "proposal": kind,
-        }))?.into(),
-        gas: NearGas::from_tgas(300),
-        deposit: NearToken::from_yoctonear(0),
-    })))
-    .with_signer(near_api::signer::Signer::new(
-        near_api::signer::secret_key::SecretKeySigner::new(near_secret),
-    ).unwrap())
-    .send_to(&near_api::NetworkConfig::mainnet())
-    .await?;
+    let approve_tx = Transaction::construct(ACCOUNT_ID.parse().unwrap(), DAO_ID.parse().unwrap())
+        .add_action(Action::FunctionCall(Box::new(FunctionCallAction {
+            method_name: "act_proposal".to_string(),
+            args: serde_json::to_vec(&json!({
+                "id": proposal_id,
+                "action": "VoteApprove",
+                "proposal": kind,
+            }))?
+            .into(),
+            gas: NearGas::from_tgas(300),
+            deposit: NearToken::from_yoctonear(0),
+        })))
+        .with_signer(
+            near_api::signer::Signer::new(near_api::signer::secret_key::SecretKeySigner::new(
+                near_secret,
+            ))
+            .unwrap(),
+        )
+        .send_to(&near_api::NetworkConfig::mainnet())
+        .await?;
 
     // Extract the MPC signature from the execution result
     let mut mpc_signature: Option<Vec<u8>> = None;
@@ -404,7 +462,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(start) = result_debug.find(marker) {
         // Find the end of this base64 string (next non-base64 char)
         let rest = &result_debug[start..];
-        let end = rest.find(|c: char| !c.is_alphanumeric() && c != '+' && c != '/' && c != '=')
+        let end = rest
+            .find(|c: char| !c.is_alphanumeric() && c != '+' && c != '/' && c != '=')
             .unwrap_or(rest.len());
         let b64_value = &rest[..end];
 
@@ -412,8 +471,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             if let Ok(sig_json) = serde_json::from_slice::<Value>(&decoded) {
                 println!("MPC response: {}", sig_json);
                 let sig_array: Vec<u8> = sig_json["signature"]
-                    .as_array().unwrap()
-                    .iter().map(|v| v.as_u64().unwrap() as u8).collect();
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|v| v.as_u64().unwrap() as u8)
+                    .collect();
                 mpc_signature = Some(sig_array);
             }
         }
@@ -421,7 +483,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let sig_bytes = match mpc_signature {
         Some(s) => {
-            println!("\nMPC signature ({} bytes): {}", s.len(), hex::encode(&s[..8]));
+            println!(
+                "\nMPC signature ({} bytes): {}",
+                s.len(),
+                hex::encode(&s[..8])
+            );
             s
         }
         None => {
@@ -456,7 +522,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }]);
 
-    println!("Signed intent: {}", serde_json::to_string_pretty(&signed_intent)?);
+    println!(
+        "Signed intent: {}",
+        serde_json::to_string_pretty(&signed_intent)?
+    );
 
     // Note: Submitting to the actual 1Click API would require the auth flow
     // For now, save the signed intent as a fixture

@@ -13,10 +13,7 @@ use std::sync::Arc;
 use crate::handlers::intents::confidential::config::oneclick_api_key;
 
 /// Fetch the Ed25519 derived public key for a DAO's path from v1.signer.
-async fn fetch_mpc_public_key(
-    state: &Arc<AppState>,
-    dao_id: &str,
-) -> Result<String, String> {
+async fn fetch_mpc_public_key(state: &Arc<AppState>, dao_id: &str) -> Result<String, String> {
     let v1_signer: near_api::AccountId = "v1.signer".parse().unwrap();
     let args = serde_json::json!({
         "path": dao_id,
@@ -98,7 +95,12 @@ fn extract_mpc_signature(result_debug: &str) -> Option<Vec<u8>> {
         return None;
     }
 
-    Some(sig_array.iter().map(|v| v.as_u64().unwrap() as u8).collect())
+    Some(
+        sig_array
+            .iter()
+            .map(|v| v.as_u64().unwrap() as u8)
+            .collect(),
+    )
 }
 
 /// Try to auto-submit a confidential intent after a vote relay succeeds.
@@ -106,11 +108,7 @@ fn extract_mpc_signature(result_debug: &str) -> Option<Vec<u8>> {
 /// This is called in a background task after a successful vote relay.
 /// It checks all pending intents for the treasury and tries to match
 /// the MPC signature in the execution result.
-pub async fn try_auto_submit_intent(
-    state: &Arc<AppState>,
-    treasury_id: &str,
-    result_debug: &str,
-) {
+pub async fn try_auto_submit_intent(state: &Arc<AppState>, treasury_id: &str, result_debug: &str) {
     // Extract MPC signature from execution result
     let sig_bytes = match extract_mpc_signature(result_debug) {
         Some(bytes) => bytes,
@@ -153,7 +151,11 @@ pub async fn try_auto_submit_intent(
             return;
         }
         Err(e) => {
-            log::error!("DB error looking up pending intent for {}: {}", treasury_id, e);
+            log::error!(
+                "DB error looking up pending intent for {}: {}",
+                treasury_id,
+                e
+            );
             return;
         }
     };
@@ -169,12 +171,18 @@ pub async fn try_auto_submit_intent(
 
     log::info!(
         "Auto-submitting {} for {}/proposal#{} (mpc_key={})",
-        intent_type, treasury_id, proposal_id, mpc_public_key
+        intent_type,
+        treasury_id,
+        proposal_id,
+        mpc_public_key
     );
 
     let (url, body) = if intent_type == "auth" {
         // Authentication: call 1Click auth/authenticate
-        let url = format!("{}/v0/auth/authenticate", state.env_vars.confidential_api_url);
+        let url = format!(
+            "{}/v0/auth/authenticate",
+            state.env_vars.confidential_api_url
+        );
         let body = serde_json::json!({
             "signedData": {
                 "standard": "nep413",
@@ -218,7 +226,10 @@ pub async fn try_auto_submit_intent(
             if status.is_success() {
                 log::info!(
                     "Successfully submitted {} for {}/proposal#{}: {:?}",
-                    intent_type, treasury_id, proposal_id, resp_body
+                    intent_type,
+                    treasury_id,
+                    proposal_id,
+                    resp_body
                 );
 
                 // For auth: store the JWT tokens in monitored_accounts
@@ -231,8 +242,7 @@ pub async fn try_auto_submit_intent(
                             .get("expiresIn")
                             .and_then(|v| v.as_i64())
                             .unwrap_or(3600);
-                        let expires_at = chrono::Utc::now()
-                            + chrono::Duration::seconds(expires_in);
+                        let expires_at = chrono::Utc::now() + chrono::Duration::seconds(expires_in);
 
                         let _ = sqlx::query(
                             r#"
@@ -252,7 +262,8 @@ pub async fn try_auto_submit_intent(
 
                         log::info!(
                             "Stored confidential JWT for DAO {} (expires in {}s)",
-                            treasury_id, expires_in
+                            treasury_id,
+                            expires_in
                         );
                     }
                 }
@@ -268,7 +279,11 @@ pub async fn try_auto_submit_intent(
             } else {
                 log::error!(
                     "1Click {} failed ({}) for {}/proposal#{}: {:?}",
-                    intent_type, status, treasury_id, proposal_id, resp_body
+                    intent_type,
+                    status,
+                    treasury_id,
+                    proposal_id,
+                    resp_body
                 );
                 let _ = sqlx::query(
                     "UPDATE pending_confidential_intents SET status = 'failed', submit_result = $1, updated_at = NOW() WHERE dao_id = $2 AND proposal_id = $3"
@@ -283,7 +298,10 @@ pub async fn try_auto_submit_intent(
         Err(e) => {
             log::error!(
                 "Failed to call 1Click {} for {}/proposal#{}: {}",
-                intent_type, treasury_id, proposal_id, e
+                intent_type,
+                treasury_id,
+                proposal_id,
+                e
             );
             let _ = sqlx::query(
                 "UPDATE pending_confidential_intents SET status = 'failed', submit_result = $1, updated_at = NOW() WHERE dao_id = $2 AND proposal_id = $3"

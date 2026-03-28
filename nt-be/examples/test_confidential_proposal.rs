@@ -60,10 +60,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Use the captured nonce from real near.com flow
     let nonce_b64 = "Vij2xgAlKBKzgB67tZAvnxgPVIiJkIBxtPcWOQPg6MM=";
-    let nonce_bytes: Vec<u8> = base64::Engine::decode(
-        &base64::engine::general_purpose::STANDARD,
-        nonce_b64,
-    )?;
+    let nonce_bytes: Vec<u8> =
+        base64::Engine::decode(&base64::engine::general_purpose::STANDARD, nonce_b64)?;
     let nonce: [u8; 32] = nonce_bytes.try_into().expect("Nonce must be 32 bytes");
     let recipient = "intents.near";
 
@@ -134,34 +132,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    println!(
-        "Proposal:\n{}\n",
-        serde_json::to_string_pretty(&proposal)?
-    );
+    println!("Proposal:\n{}\n", serde_json::to_string_pretty(&proposal)?);
 
     // =============================================
     // Step 4: Submit the add_proposal transaction
     // =============================================
     println!("=== Step 4: Submitting add_proposal to DAO ===\n");
 
-    let tx = Transaction::construct(
-        ACCOUNT_ID.parse().unwrap(),
-        DAO_ID.parse().unwrap(),
-    )
-    .add_action(Action::FunctionCall(Box::new(FunctionCallAction {
-        method_name: "add_proposal".to_string(),
-        args: serde_json::to_vec(&proposal)?.into(),
-        gas: NearGas::from_tgas(100),
-        deposit: NearToken::from_yoctonear(0), // proposal_bond is 0 for this DAO
-    })))
-    .with_signer(
-        near_api::signer::Signer::new(
-            near_api::signer::secret_key::SecretKeySigner::new(near_secret),
+    let tx = Transaction::construct(ACCOUNT_ID.parse().unwrap(), DAO_ID.parse().unwrap())
+        .add_action(Action::FunctionCall(Box::new(FunctionCallAction {
+            method_name: "add_proposal".to_string(),
+            args: serde_json::to_vec(&proposal)?.into(),
+            gas: NearGas::from_tgas(100),
+            deposit: NearToken::from_yoctonear(0), // proposal_bond is 0 for this DAO
+        })))
+        .with_signer(
+            near_api::signer::Signer::new(near_api::signer::secret_key::SecretKeySigner::new(
+                near_secret,
+            ))
+            .unwrap(),
         )
-        .unwrap(),
-    )
-    .send_to(&near_api::NetworkConfig::mainnet())
-    .await;
+        .send_to(&near_api::NetworkConfig::mainnet())
+        .await;
 
     match tx {
         Ok(result) => {
