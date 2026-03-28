@@ -326,9 +326,17 @@ async fn sign_delegate_action(
     let key_str = state.genesis_secret_key
         .strip_prefix("ed25519:")
         .unwrap_or(&state.genesis_secret_key);
-    let key_bytes = bs58::decode(key_str).into_vec().map_err(|e| format!("bad key: {}", e))?;
+    let key_bytes = bs58::decode(key_str)
+        .into_vec()
+        .map_err(|e| format!("bad key: {}", e))?;
+    if key_bytes.len() < 32 {
+        return Err(format!(
+            "key too short: {} bytes, need at least 32",
+            key_bytes.len()
+        ));
+    }
     // ed25519-dalek expects the 32-byte seed (first 32 bytes of the 64-byte expanded key)
-    let seed: [u8; 32] = key_bytes[..32].try_into().map_err(|_| "key too short")?;
+    let seed: [u8; 32] = key_bytes[..32].try_into().unwrap();
     let signing_key = SigningKey::from_bytes(&seed);
     let public_key_bytes = signing_key.verifying_key().to_bytes();
 

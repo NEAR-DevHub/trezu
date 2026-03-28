@@ -72,7 +72,7 @@ async function setupSandbox(): Promise<string> {
         const config = await configResp.json();
         if (!config?.name) throw new Error("no DAO");
     } catch {
-        await fetch(`${BACKEND_URL}/api/treasury/create`, {
+        const createResp = await fetch(`${BACKEND_URL}/api/treasury/create`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -85,6 +85,11 @@ async function setupSandbox(): Promise<string> {
                 requestors: [ACCOUNT_ID],
             }),
         });
+        if (!createResp.ok) {
+            throw new Error(
+                `Failed to create DAO: ${createResp.status} ${await createResp.text()}`,
+            );
+        }
         await new Promise((r) => setTimeout(r, 3000));
     }
 
@@ -100,6 +105,11 @@ async function setupSandbox(): Promise<string> {
             body: JSON.stringify({ accountId: ACCOUNT_ID }),
         },
     );
+    if (!sessionResp.ok) {
+        throw new Error(
+            `Failed to create session: ${sessionResp.status} ${await sessionResp.text()}`,
+        );
+    }
     const session = (await sessionResp.json()) as { token: string };
     return session.token;
 }

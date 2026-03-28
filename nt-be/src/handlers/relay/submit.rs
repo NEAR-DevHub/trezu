@@ -33,7 +33,8 @@ pub struct RelayRequest {
     pub signed_delegate_action: Base64VecU8,
     /// Optional proposal type hint for metrics. Only set on the actual proposal call,
     /// NOT on helper calls like storage_deposit.
-    /// "swap" | "payment" | "vote" | "confidential_transfer" | any other string
+    /// "swap" → swap_proposals, "payment" → payment_proposals, "vote" → votes_casted,
+    /// "confidential_transfer" and others → other_proposals_submitted.
     /// Absent/null → no metric recorded.
     #[serde(default)]
     pub proposal_type: Option<String>,
