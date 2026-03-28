@@ -195,7 +195,7 @@ export async function addProposal(
     return count - 1;
 }
 
-/** Approve a DAO proposal and return the full execution result */
+/** Approve a DAO proposal and return the full execution result (including cross-contract receipts) */
 export async function approveProposal(
     signerId: string,
     daoId: string,
@@ -206,7 +206,7 @@ export async function approveProposal(
         id: proposalId,
     })) as { kind: Record<string, unknown> };
 
-    return signAndSend(signerId, daoId, [
+    const broadcastResult = await signAndSend(signerId, daoId, [
         actionCreators.functionCall(
             "act_proposal",
             Buffer.from(
@@ -220,6 +220,34 @@ export async function approveProposal(
             BigInt(0),
         ),
     ]);
+
+    // broadcast_tx_commit doesn't include cross-contract receipts (e.g. v1.signer).
+    // Use EXPERIMENTAL_tx_status to get the full receipt tree.
+    const txHash = (broadcastResult as { transaction?: { hash?: string } })
+        .transaction?.hash;
+    if (!txHash) return broadcastResult;
+
+    // Wait for cross-contract receipts to be processed
+    await new Promise((r) => setTimeout(r, 3000));
+
+    const resp = await fetch(SANDBOX_RPC, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: 1,
+            method: "EXPERIMENTAL_tx_status",
+            params: {
+                tx_hash: txHash,
+                sender_account_id: signerId,
+                wait_until: "EXECUTED",
+            },
+        }),
+    });
+    const data = (await resp.json()) as {
+        result?: Record<string, unknown>;
+    };
+    return data.result || broadcastResult;
 }
 
 /**

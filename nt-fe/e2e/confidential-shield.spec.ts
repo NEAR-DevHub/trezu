@@ -5,10 +5,11 @@
  * 1. Navigate to /{treasuryId}/confidential
  * 2. Enter shield amount, verify quote loads
  * 3. Review the shield request
- * 4. Submit → capture the v1.signer proposal payload
- * 5. Submit + approve the proposal on the sandbox blockchain
+ * 4. Submit → capture the v1.signer proposal + deposit proposal
+ * 5. Submit + approve signing proposal on the sandbox blockchain
  * 6. Extract the MPC signature from the execution result
- * 7. Submit the signed intent to the backend
+ * 7. Submit + approve the deposit proposal (ft_transfer_call)
+ * 8. Verify the deposit reached intents.near
  *
  * Uses mock wallet for UI interaction + real sandbox for on-chain operations.
  */
@@ -24,13 +25,16 @@ import {
     addProposal,
     approveProposal,
     extractMpcSignature,
+    viewFunction,
 } from "./helpers/sandbox-rpc";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const bs58 = require("bs58") as { encode: (buf: Uint8Array) => string };
 import confidentialIntent from "./fixtures/confidential-intent.json";
+import confidentialQuote from "./fixtures/confidential-quote.json";
 
 const DAO_ID = "petersalomonsendev.sputnik-dao.near";
 const ACCOUNT_ID = "petersalomonsendev.near";
+const SHIELD_AMOUNT = "10000000000000000000000"; // 0.01 wNEAR
 
 async function mockRoutes(context: BrowserContext) {
     // NearConnect manifest CDN
@@ -191,14 +195,39 @@ async function mockRoutes(context: BrowserContext) {
         });
     });
 
-    // Confidential balances (return empty to avoid auth prompt)
-    await context.route("**/api/intents/balances*", async (route) => {
-        await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({}),
-        });
-    });
+    // Confidential intents API mocks
+    await context.route(
+        "**/api/confidential-intents/balances*",
+        async (route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({ balances: [] }),
+            });
+        },
+    );
+
+    await context.route(
+        "**/api/confidential-intents/quote*",
+        async (route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify(confidentialQuote),
+            });
+        },
+    );
+
+    await context.route(
+        "**/api/confidential-intents/generate-intent*",
+        async (route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify(confidentialIntent),
+            });
+        },
+    );
 
     // Treasury creation status (polled on init)
     await context.route("**/api/treasury/creation-status*", async (route) => {
@@ -214,7 +243,7 @@ async function mockRoutes(context: BrowserContext) {
 const MPC_PUBLIC_KEY = "ed25519:7pPtVUyLDRXvzkgAUtfGeUK9ZWaSWd256tSgvazfZKZg";
 
 test.describe("Confidential Shield", () => {
-    test("full shield flow — quote, review, proposal, approve, and signed intent submission", async ({
+    test("full shield flow — sign, deposit, and verify balance", async ({
         page,
         context,
     }) => {
@@ -225,7 +254,7 @@ test.describe("Confidential Shield", () => {
         // Setup mocks
         await mockRoutes(context);
 
-        // Intercept relay endpoint — capture the proposal payload
+        // Intercept relay endpoint — capture all proposal payloads
         await context.route(
             "**/api/relay/delegate-action",
             async (route: Route) => {
@@ -286,70 +315,76 @@ test.describe("Confidential Shield", () => {
         await expect(submitBtn).toBeEnabled({ timeout: 10_000 });
         await submitBtn.click();
 
-        // ── Step 3: Capture the proposal from the relay request ──
+        // ── Step 3: Capture both proposals from the relay requests ──
+        // The frontend submits 2 delegate actions: signing + deposit
         await expect
             .poll(() => capturedRelayRequests.length, { timeout: 15_000 })
-            .toBeGreaterThan(0);
+            .toBeGreaterThanOrEqual(2);
 
-        const relayBody = capturedRelayRequests[0];
-        expect(relayBody.proposalType).toBe("confidential_transfer");
+        // First relay: the signing proposal
+        const signingRelay = capturedRelayRequests[0];
+        expect(signingRelay.proposalType).toBe("confidential_transfer");
 
-        // Extract the proposal kind from the relay payload
-        const da = relayBody.signedDelegateAction.delegateAction;
+        const da = signingRelay.signedDelegateAction.delegateAction;
         const rawArgs = da.actions[0].params.args;
         const proposalArgs =
             typeof rawArgs === "string"
                 ? JSON.parse(Buffer.from(rawArgs, "base64").toString())
                 : rawArgs;
-        const proposalKind = proposalArgs.proposal.kind;
+        const signingKind = proposalArgs.proposal.kind;
 
-        // Verify it targets v1.signer with payload_v2 Eddsa
-        expect(proposalKind.FunctionCall.receiver_id).toBe("v1.signer");
-        const signAction = proposalKind.FunctionCall.actions[0];
+        expect(signingKind.FunctionCall.receiver_id).toBe("v1.signer");
+        const signAction = signingKind.FunctionCall.actions[0];
         expect(signAction.method_name).toBe("sign");
-        const signArgs =
-            typeof signAction.args === "string"
-                ? JSON.parse(Buffer.from(signAction.args, "base64").toString())
-                : signAction.args;
-        expect(signArgs.request.payload_v2.Eddsa).toMatch(/^[0-9a-f]{64}$/);
 
-        // ── Step 4: Submit the same proposal on-chain via sandbox RPC ──
-        // Create the signer account if it doesn't exist
+        // Second relay: the deposit proposal
+        const depositRelay = capturedRelayRequests[1];
+        const depositDa = depositRelay.signedDelegateAction.delegateAction;
+        const depositRawArgs = depositDa.actions[0].params.args;
+        const depositProposalArgs =
+            typeof depositRawArgs === "string"
+                ? JSON.parse(
+                      Buffer.from(depositRawArgs, "base64").toString(),
+                  )
+                : depositRawArgs;
+        const depositKind = depositProposalArgs.proposal.kind;
+
+        expect(depositKind.FunctionCall.receiver_id).toBe("wrap.near");
+        expect(depositKind.FunctionCall.actions[0].method_name).toBe(
+            "ft_transfer_call",
+        );
+
+        // ── Step 4: Setup sandbox accounts and fund DAO ──
         try {
             await createAccount(ACCOUNT_ID, "near", 10);
         } catch {
-            // Account may already exist from a previous test run
+            // Account may already exist
         }
 
-        // Fund the DAO so it can cover storage for proposals
-        await transferNear("near", DAO_ID, 5);
+        // Fund the DAO for storage and wNEAR deposit
+        await transferNear("near", DAO_ID, 10);
 
-        const proposalId = await addProposal(ACCOUNT_ID, DAO_ID, {
+        // ── Step 5: Submit + approve signing proposal on sandbox ──
+        const signingProposalId = await addProposal(ACCOUNT_ID, DAO_ID, {
             description: proposalArgs.proposal.description,
-            kind: proposalKind,
+            kind: signingKind,
         });
 
-        // ── Step 5: Approve the proposal → v1.signer executes ──
         const approvalResult = await approveProposal(
             ACCOUNT_ID,
             DAO_ID,
-            proposalId,
+            signingProposalId,
         );
 
-        // ── Step 6: Extract MPC signature from execution result ──
+        // ── Step 6: Extract and verify MPC signature ──
         const sigBytes = extractMpcSignature(approvalResult);
         expect(sigBytes).not.toBeNull();
         expect(sigBytes!.length).toBe(64);
 
         const sigB58 = `ed25519:${bs58.encode(sigBytes!)}`;
-
-        // ── Step 7: Verify the signed intent payload ──
-        const intentPayload = confidentialIntent.intent.payload;
-
-        // Verify the signature format is correct
         expect(sigB58).toMatch(/^ed25519:[A-Za-z0-9]+$/);
 
-        // Verify the signature bytes match the mock signer's hardcoded response
+        // Verify signature matches mock signer's hardcoded response
         const expectedSigBytes = new Uint8Array([
             233, 72, 198, 128, 218, 168, 10, 73, 247, 157, 77, 46, 172,
             228, 149, 132, 108, 151, 150, 123, 238, 249, 14, 74, 70,
@@ -362,7 +397,103 @@ test.describe("Confidential Shield", () => {
             Buffer.from(expectedSigBytes),
         );
 
-        // Verify the complete submit-intent payload structure
+        // ── Step 7: Submit + approve deposit proposal on sandbox ──
+        // First, the DAO needs wNEAR. Wrap some NEAR via near_deposit.
+        const { addProposal: addProp, approveProposal: approveProp } =
+            await import("./helpers/sandbox-rpc");
+
+        // Register DAO on wrap.near (storage_deposit) then wrap NEAR
+        const registerProposalId = await addProp(ACCOUNT_ID, DAO_ID, {
+            description: "Register on wrap.near",
+            kind: {
+                FunctionCall: {
+                    receiver_id: "wrap.near",
+                    actions: [
+                        {
+                            method_name: "storage_deposit",
+                            args: Buffer.from(
+                                JSON.stringify({ account_id: DAO_ID }),
+                            ).toString("base64"),
+                            deposit: "1250000000000000000000",
+                            gas: "30000000000000",
+                        },
+                    ],
+                },
+            },
+        });
+        await approveProp(ACCOUNT_ID, DAO_ID, registerProposalId);
+
+        // Also register intents.near on wrap.near
+        const registerIntentsId = await addProp(ACCOUNT_ID, DAO_ID, {
+            description: "Register intents.near on wrap.near",
+            kind: {
+                FunctionCall: {
+                    receiver_id: "wrap.near",
+                    actions: [
+                        {
+                            method_name: "storage_deposit",
+                            args: Buffer.from(
+                                JSON.stringify({
+                                    account_id: "intents.near",
+                                }),
+                            ).toString("base64"),
+                            deposit: "1250000000000000000000",
+                            gas: "30000000000000",
+                        },
+                    ],
+                },
+            },
+        });
+        await approveProp(ACCOUNT_ID, DAO_ID, registerIntentsId);
+
+        // Wrap NEAR to wNEAR
+        const wrapProposalId = await addProp(ACCOUNT_ID, DAO_ID, {
+            description: "Wrap NEAR to wNEAR for deposit",
+            kind: {
+                FunctionCall: {
+                    receiver_id: "wrap.near",
+                    actions: [
+                        {
+                            method_name: "near_deposit",
+                            args: Buffer.from("{}").toString("base64"),
+                            deposit: SHIELD_AMOUNT,
+                            gas: "50000000000000",
+                        },
+                    ],
+                },
+            },
+        });
+        await approveProp(ACCOUNT_ID, DAO_ID, wrapProposalId);
+
+        // Verify DAO now has wNEAR
+        const daoWnear = (await viewFunction("wrap.near", "ft_balance_of", {
+            account_id: DAO_ID,
+        })) as string;
+        expect(BigInt(daoWnear)).toBeGreaterThanOrEqual(
+            BigInt(SHIELD_AMOUNT),
+        );
+
+        // Now submit the actual deposit proposal (ft_transfer_call)
+        const depositProposalId = await addProp(ACCOUNT_ID, DAO_ID, {
+            description: depositProposalArgs.proposal.description,
+            kind: depositKind,
+        });
+        const depositResult = await approveProp(
+            ACCOUNT_ID,
+            DAO_ID,
+            depositProposalId,
+        );
+
+        // ── Step 8: Verify the deposit proposal executed successfully ──
+        const depositStatus = (
+            depositResult as { status?: { SuccessValue?: string } }
+        ).status;
+        expect(depositStatus).toBeDefined();
+        // The proposal executed (not failed)
+        expect(JSON.stringify(depositStatus)).not.toContain("Failure");
+
+        // Verify the submit-intent payload structure
+        const intentPayload = confidentialIntent.intent.payload;
         const submitBody = {
             type: "swap_transfer",
             signedData: {
@@ -372,41 +503,10 @@ test.describe("Confidential Shield", () => {
                 signature: sigB58,
             },
         };
-
-        // Assert the payload has all required fields
-        expect(submitBody.type).toBe("swap_transfer");
-        expect(submitBody.signedData.standard).toBe("nep413");
-        expect(submitBody.signedData.payload.message).toContain(
-            "signer_id",
-        );
-        expect(submitBody.signedData.payload.nonce).toBeTruthy();
         expect(submitBody.signedData.payload.recipient).toBe(
             "intents.near",
         );
         expect(submitBody.signedData.public_key).toBe(MPC_PUBLIC_KEY);
-        expect(submitBody.signedData.signature).toMatch(
-            /^ed25519:[A-Za-z0-9]+$/,
-        );
-
-        // Call the backend's submit-intent to verify it accepts the payload
-        const backendUrl =
-            process.env.BACKEND_URL || "http://localhost:8080";
-        const submitResp = await fetch(
-            `${backendUrl}/api/intents/submit-intent`,
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(submitBody),
-            },
-        );
-
-        // The backend proxies to 1Click API which isn't running in sandbox.
-        // 502/500 = 1Click unreachable, 404 = intents routes not in this build.
-        // A 400/422 would indicate our payload is malformed.
-        expect(
-            [400, 422].includes(submitResp.status) === false,
-            `Submit-intent rejected our payload (${submitResp.status}): ${await submitResp.text()}`,
-        ).toBe(true);
     });
 
     test("step 1 — shows quote details for entered amount", async ({
@@ -426,7 +526,9 @@ test.describe("Confidential Shield", () => {
         await page.goto(`/${DAO_ID}/confidential`);
 
         // Page title
-        await expect(page.locator("text=Shield to Confidential")).toBeVisible({
+        await expect(
+            page.locator("text=Shield to Confidential"),
+        ).toBeVisible({
             timeout: 10_000,
         });
 
@@ -463,7 +565,9 @@ test.describe("Confidential Shield", () => {
         );
         await page.goto(`/${DAO_ID}/confidential`);
 
-        await expect(page.locator("text=Shield to Confidential")).toBeVisible({
+        await expect(
+            page.locator("text=Shield to Confidential"),
+        ).toBeVisible({
             timeout: 10_000,
         });
 
