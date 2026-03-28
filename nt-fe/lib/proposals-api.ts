@@ -597,7 +597,9 @@ export async function getLastProposalId(daoId: string): Promise<number> {
 
     const resultBytes: number[] = data?.result?.result;
     if (!resultBytes) {
-        throw new Error("Failed to query get_last_proposal_id: no result bytes in RPC response");
+        throw new Error(
+            "Failed to query get_last_proposal_id: no result bytes in RPC response",
+        );
     }
     const decoded = new TextDecoder().decode(new Uint8Array(resultBytes));
     return JSON.parse(decoded) as number;

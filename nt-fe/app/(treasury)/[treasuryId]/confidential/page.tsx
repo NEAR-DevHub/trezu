@@ -20,10 +20,7 @@ import { useNear } from "@/stores/near-store";
 import { formatBalance } from "@/lib/utils";
 import { CreateRequestButton } from "@/components/create-request-button";
 import { Loader2, Shield, ShieldCheck } from "lucide-react";
-import {
-    getConfidentialBalances,
-    prepareConfidentialAuth,
-} from "@/lib/api";
+import { getConfidentialBalances, prepareConfidentialAuth } from "@/lib/api";
 import { PendingButton } from "@/components/pending-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WarningAlert } from "@/components/warning-alert";
