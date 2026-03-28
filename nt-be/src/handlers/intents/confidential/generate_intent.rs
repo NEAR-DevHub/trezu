@@ -58,7 +58,7 @@ pub async fn generate_intent(
         .post(&url)
         .header("content-type", "application/json")
         .header("Authorization", format!("Bearer {}", access_token));
-    if let Some(api_key) = super::constants::oneclick_api_key() {
+    if let Some(api_key) = super::config::oneclick_api_key() {
         req = req.header("x-api-key", api_key);
     }
     let response = req

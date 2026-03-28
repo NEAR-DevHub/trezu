@@ -1,15 +1,9 @@
-pub mod authenticate;
-pub mod balances;
-pub mod confidential_quote;
-pub mod constants;
-pub mod prepare_auth;
 pub mod bridge_tokens;
+pub mod confidential;
 #[cfg(test)]
 mod confidential_shield_test;
 pub mod deposit_address;
-pub mod generate_intent;
 pub mod quote;
 pub mod search_tokens;
-pub mod submit_intent;
 pub mod supported_tokens;
 pub mod swap_status;

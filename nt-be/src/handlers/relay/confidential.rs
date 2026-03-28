@@ -10,7 +10,7 @@ use serde_json::Value;
 use sqlx::PgPool;
 use std::sync::Arc;
 
-use crate::handlers::intents::constants::oneclick_api_key;
+use crate::handlers::intents::confidential::config::oneclick_api_key;
 
 /// Fetch the Ed25519 derived public key for a DAO's path from v1.signer.
 async fn fetch_mpc_public_key(

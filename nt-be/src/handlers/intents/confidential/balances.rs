@@ -53,7 +53,7 @@ pub async fn get_balances(
         .http_client
         .get(&url)
         .header("Authorization", format!("Bearer {}", access_token));
-    if let Some(api_key) = super::constants::oneclick_api_key() {
+    if let Some(api_key) = super::config::oneclick_api_key() {
         req = req.header("x-api-key", api_key);
     }
     let response = req

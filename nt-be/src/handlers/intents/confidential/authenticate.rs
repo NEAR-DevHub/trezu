@@ -47,7 +47,7 @@ pub async fn authenticate(
         .http_client
         .post(&url)
         .header("content-type", "application/json");
-    if let Some(api_key) = super::constants::oneclick_api_key() {
+    if let Some(api_key) = super::config::oneclick_api_key() {
         req = req.header("x-api-key", api_key);
     }
     let response = req
@@ -187,7 +187,7 @@ pub async fn refresh_dao_jwt(
         .http_client
         .post(&url)
         .header("content-type", "application/json");
-    if let Some(api_key) = super::constants::oneclick_api_key() {
+    if let Some(api_key) = super::config::oneclick_api_key() {
         req = req.header("x-api-key", api_key);
     }
     let response = req
