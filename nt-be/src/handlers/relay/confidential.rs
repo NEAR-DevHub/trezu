@@ -95,12 +95,12 @@ fn extract_mpc_signature(result_debug: &str) -> Option<Vec<u8>> {
         return None;
     }
 
-    Some(
-        sig_array
-            .iter()
-            .map(|v| v.as_u64().unwrap() as u8)
-            .collect(),
-    )
+    let bytes: Option<Vec<u8>> = sig_array
+        .iter()
+        .map(|v| v.as_u64().map(|n| n as u8))
+        .collect();
+
+    bytes
 }
 
 /// Try to auto-submit a confidential intent after a vote relay succeeds.

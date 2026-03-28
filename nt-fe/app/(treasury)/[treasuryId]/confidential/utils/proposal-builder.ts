@@ -5,7 +5,6 @@ import { V1_SIGNER_CONTRACT, V1_SIGNER_GAS } from "../constants";
 interface ConfidentialProposalParams {
     intentResponse: GenerateIntentResponse;
     treasuryId: string;
-    proposalBond: string;
 }
 
 /**
@@ -33,6 +32,11 @@ async function computeNep413Hash(
     const nonceBytes = Uint8Array.from(atob(nonceBase64), (c) =>
         c.charCodeAt(0),
     );
+    if (nonceBytes.length !== 32) {
+        throw new Error(
+            `NEP-413 nonce must be exactly 32 bytes, got ${nonceBytes.length}`,
+        );
+    }
     const recipientBytes = new TextEncoder().encode(recipient);
 
     // Build borsh-serialized payload
@@ -82,7 +86,7 @@ async function computeNep413Hash(
 export async function buildConfidentialProposal(
     params: ConfidentialProposalParams,
 ) {
-    const { intentResponse, treasuryId, proposalBond } = params;
+    const { intentResponse, treasuryId } = params;
     const { payload } = intentResponse.intent;
 
     // Compute the NEP-413 hash (what v1.signer will sign)

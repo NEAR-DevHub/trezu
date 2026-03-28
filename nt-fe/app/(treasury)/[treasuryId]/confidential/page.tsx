@@ -17,13 +17,10 @@ import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
 import { useEffect, useState } from "react";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useNear } from "@/stores/near-store";
-import { useThemeStore } from "@/stores/theme-store";
-import { cn, formatBalance } from "@/lib/utils";
+import { formatBalance } from "@/lib/utils";
 import { CreateRequestButton } from "@/components/create-request-button";
 import { Loader2, Shield, ShieldCheck } from "lucide-react";
 import {
-    IntentsQuoteResponse,
-    GenerateIntentResponse,
     getConfidentialBalances,
     prepareConfidentialAuth,
 } from "@/lib/api";
@@ -494,7 +491,6 @@ export default function ConfidentialPage() {
             const result = await buildConfidentialProposal({
                 intentResponse: proposalData.intent,
                 treasuryId: selectedTreasury,
-                proposalBond,
             });
 
             // Get proposal count before submission to determine the new proposal's ID

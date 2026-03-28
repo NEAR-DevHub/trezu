@@ -1311,9 +1311,19 @@ export async function submitIntent(request: {
  * Fetch confidential balances for a DAO.
  * Returns token balances from the 1Click confidential intents system.
  */
+export interface ConfidentialBalance {
+    available: string;
+    source: string;
+    tokenId: string;
+}
+
+export interface ConfidentialBalancesResponse {
+    balances: ConfidentialBalance[];
+}
+
 export async function getConfidentialBalances(
     daoId: string,
-): Promise<Record<string, string>> {
+): Promise<ConfidentialBalancesResponse> {
     const url = `${BACKEND_API_BASE}/confidential-intents/balances`;
     const response = await axios.get(url, {
         params: { daoId },
