@@ -1,17 +1,14 @@
-//! Full end-to-end confidential shield: auth → quote → intent → MPC sign → submit
+//! Confidential transfer: DAO → personal account (private → private)
 //!
-//! Prerequisite: The DAO must already have tokens deposited to intents.near.
+//! Both legs are CONFIDENTIAL_INTENTS — fully private transfer.
+//! The DAO's confidential balance is debited, and the personal
+//! account's confidential balance is credited.
 //!
-//! This script performs a REAL confidential shield of 0.01 wNEAR:
-//! 1. Authenticate with 1Click API (test endpoint)
-//! 2. Get a real shield quote (INTENTS → CONFIDENTIAL_INTENTS)
-//! 3. Generate intent payload
-//! 4. Create DAO proposal to sign via v1.signer MPC
-//! 5. Approve proposal → get MPC Ed25519 signature
-//! 6. Submit signed intent to 1Click API
-//! 7. Poll for completion
+//! Prerequisites:
+//! - DAO must have confidential balance (shield first)
+//! - PETERSALOMONSEN_DEV and ONECLICK_API_KEY env vars must be set
 //!
-//! Run with: cargo run --example full_confidential_shield
+//! Run with: cargo run --example confidential_transfer
 
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use near_api::{
@@ -22,7 +19,9 @@ use serde_json::{Value, json};
 
 const ACCOUNT_ID: &str = "petersalomonsendev.near";
 const DAO_ID: &str = "petersalomonsendev.sputnik-dao.near";
-// Read from env or default to test API
+const RECIPIENT_ID: &str = "petersalomonsendev.near";
+const TRANSFER_AMOUNT: &str = "10000000000000000000000"; // 0.01 wNEAR
+
 fn oneclick_url() -> String {
     std::env::var("ONECLICK_API_URL")
         .unwrap_or_else(|_| "https://1click-test.chaindefuser.com".to_string())
@@ -58,8 +57,6 @@ async fn fetch_mpc_public_key(client: &reqwest::Client, dao_id: &str) -> String 
     key_str.trim_matches('"').to_string()
 }
 
-const SHIELD_AMOUNT: &str = "10000000000000000000000"; // 0.01 wNEAR
-
 #[derive(borsh::BorshSerialize)]
 struct NEP413Payload {
     message: String,
@@ -68,7 +65,6 @@ struct NEP413Payload {
     callback_url: Option<String>,
 }
 
-/// Fetch salt from intents.near
 async fn fetch_salt(client: &reqwest::Client) -> [u8; 4] {
     let resp = client
         .post("https://rpc.mainnet.fastnear.com")
@@ -96,7 +92,6 @@ async fn fetch_salt(client: &reqwest::Client) -> [u8; 4] {
     hex::decode(&hex_str).unwrap().try_into().unwrap()
 }
 
-/// Build versioned nonce
 fn build_nonce(salt: &[u8; 4], deadline: &chrono::DateTime<chrono::Utc>) -> [u8; 32] {
     let deadline_ns = (deadline.timestamp_millis() as u64) * 1_000_000;
     let now_ns = (chrono::Utc::now().timestamp_millis() as u64) * 1_000_000;
@@ -111,7 +106,6 @@ fn build_nonce(salt: &[u8; 4], deadline: &chrono::DateTime<chrono::Utc>) -> [u8;
     nonce
 }
 
-/// Sign NEP-413 and return (signature_str, public_key_str)
 fn sign_nep413(
     secret_key_str: &str,
     message: &str,
@@ -135,13 +129,11 @@ fn sign_nep413(
     (sig.to_string(), public_key.to_string())
 }
 
-/// Create and approve a DAO proposal, return the execution result debug string
 async fn create_and_approve_proposal(
     near_secret: &near_api::SecretKey,
     proposal: Value,
     client: &reqwest::Client,
 ) -> String {
-    // Create proposal
     Transaction::construct(ACCOUNT_ID.parse().unwrap(), DAO_ID.parse().unwrap())
         .add_action(Action::FunctionCall(Box::new(FunctionCallAction {
             method_name: "add_proposal".to_string(),
@@ -159,7 +151,6 @@ async fn create_and_approve_proposal(
         .await
         .unwrap();
 
-    // Get proposal ID
     let resp = client
         .post("https://rpc.mainnet.fastnear.com")
         .json(&json!({"jsonrpc":"2.0","id":1,"method":"query","params":{
@@ -183,7 +174,6 @@ async fn create_and_approve_proposal(
     let proposal_id = proposal_id - 1;
     println!("  Proposal ID: {}", proposal_id);
 
-    // Fetch proposal kind
     let resp = client
         .post("https://rpc.mainnet.fastnear.com")
         .json(&json!({"jsonrpc":"2.0","id":1,"method":"query","params":{
@@ -206,7 +196,6 @@ async fn create_and_approve_proposal(
     let proposal_data: Value = serde_json::from_slice(&bytes).unwrap();
     let kind = &proposal_data["kind"];
 
-    // Approve
     let result = Transaction::construct(ACCOUNT_ID.parse().unwrap(), DAO_ID.parse().unwrap())
         .add_action(Action::FunctionCall(Box::new(FunctionCallAction {
             method_name: "act_proposal".to_string(),
@@ -231,7 +220,6 @@ async fn create_and_approve_proposal(
     format!("{:?}", result)
 }
 
-/// Extract MPC signature from execution result
 fn extract_mpc_signature(result_debug: &str) -> Option<Vec<u8>> {
     let marker = "eyJzY2hlbWUi";
     if let Some(start) = result_debug.find(marker) {
@@ -268,48 +256,87 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let api_key = std::env::var("ONECLICK_API_KEY").expect("ONECLICK_API_KEY must be set");
     let client = reqwest::Client::new();
 
+    // Fetch the DAO's derived MPC public key from v1.signer
     println!("Fetching MPC public key for {}...", DAO_ID);
     let mpc_public_key = fetch_mpc_public_key(&client, DAO_ID).await;
     println!("MPC public key: {}\n", mpc_public_key);
 
     // =============================================
-    // Step 1: Authenticate with 1Click API
+    // Step 1: Authenticate DAO with 1Click API
     // =============================================
-    println!("=== Step 1: Authenticate ===\n");
+    println!("=== Step 1: Authenticate DAO via MPC ===\n");
 
     let salt = fetch_salt(&client).await;
-    let auth_deadline = chrono::Utc::now() + chrono::Duration::minutes(5);
+    let auth_deadline = chrono::Utc::now() + chrono::Duration::days(7);
     let auth_nonce = build_nonce(&salt, &auth_deadline);
     let auth_nonce_b64 = BASE64.encode(auth_nonce);
 
-    // Auth as personal account (has key on intents.near)
-    // The DAO will use MPC key for signing intents, but auth is personal
+    // Build auth message for the DAO
     let auth_message = json!({
         "deadline": auth_deadline.format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string(),
         "intents": [],
-        "signer_id": ACCOUNT_ID,
+        "signer_id": DAO_ID,
     })
     .to_string();
 
-    let (auth_sig, auth_pub) =
-        sign_nep413(&secret_key_str, &auth_message, &auth_nonce, "intents.near");
+    // Compute NEP-413 hash for MPC signing
+    let nep413_payload = NEP413Payload {
+        message: auth_message.clone(),
+        nonce: auth_nonce,
+        recipient: "intents.near".to_string(),
+        callback_url: None,
+    };
+    const PREFIX: u32 = (1u32 << 31) + 413;
+    let mut borsh_bytes = PREFIX.to_le_bytes().to_vec();
+    borsh::to_writer(&mut borsh_bytes, &nep413_payload)?;
+    use sha2::Digest;
+    let auth_hash = sha2::Sha256::digest(&borsh_bytes);
+    let auth_hash_hex = hex::encode(&auth_hash);
 
-    // Note: We auth as the personal account (which has the key on intents.near)
-    // The DAO will use MPC key, but for getting the quote we auth with the personal account
-    let auth_body = json!({
-        "signedData": {
-            "standard": "nep413",
-            "payload": { "message": auth_message, "nonce": auth_nonce_b64, "recipient": "intents.near" },
-            "public_key": auth_pub,
-            "signature": auth_sig,
+    // Create MPC signing proposal for DAO auth
+    let auth_proposal = json!({
+        "proposal": {
+            "description": "Authenticate DAO for confidential transfer",
+            "kind": {
+                "FunctionCall": {
+                    "receiver_id": "v1.signer",
+                    "actions": [{
+                        "method_name": "sign",
+                        "args": BASE64.encode(json!({
+                            "request": {
+                                "payload_v2": { "Eddsa": auth_hash_hex },
+                                "path": DAO_ID,
+                                "domain_id": 1,
+                            }
+                        }).to_string().as_bytes()),
+                        "deposit": "1",
+                        "gas": "250000000000000",
+                    }],
+                }
+            }
         }
     });
 
+    println!("Creating and approving auth proposal...");
+    let auth_result = create_and_approve_proposal(&near_secret, auth_proposal, &client).await;
+    let auth_sig_bytes =
+        extract_mpc_signature(&auth_result).expect("Failed to extract MPC auth signature");
+    let auth_sig_b58 = format!("ed25519:{}", bs58::encode(&auth_sig_bytes).into_string());
+    println!("MPC auth signature obtained\n");
+
+    // Authenticate with 1Click using MPC signature
     let auth_resp = client
         .post(format!("{}/v0/auth/authenticate", oneclick_url()))
         .header("content-type", "application/json")
         .header("x-api-key", &api_key)
-        .json(&auth_body)
+        .json(&json!({
+            "signedData": {
+                "standard": "nep413",
+                "payload": { "message": auth_message, "nonce": auth_nonce_b64, "recipient": "intents.near" },
+                "public_key": mpc_public_key,
+                "signature": auth_sig_b58,
+            }
+        }))
         .send()
         .await?;
 
@@ -322,12 +349,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let access_token = auth_data["accessToken"].as_str().unwrap();
-    println!("Authenticated! Token: {}...\n", &access_token[..30]);
+    println!("DAO authenticated! Token: {}...\n", &access_token[..30]);
 
     // =============================================
-    // Step 2: Get shield quote
+    // Step 2: Get confidential transfer quote
     // =============================================
-    println!("=== Step 2: Get shield quote ===\n");
+    println!("=== Step 2: Get confidential transfer quote ===\n");
+    println!(
+        "Transferring {} yocto wNEAR from {} → {}\n",
+        TRANSFER_AMOUNT, DAO_ID, RECIPIENT_ID
+    );
 
     let quote_deadline = (chrono::Utc::now() + chrono::Duration::hours(24))
         .format("%Y-%m-%dT%H:%M:%S%.3fZ")
@@ -338,12 +369,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "swapType": "EXACT_INPUT",
         "slippageTolerance": 100,
         "originAsset": "nep141:wrap.near",
-        "depositType": "INTENTS",
+        "depositType": "CONFIDENTIAL_INTENTS",
         "destinationAsset": "nep141:wrap.near",
-        "amount": SHIELD_AMOUNT,
+        "amount": TRANSFER_AMOUNT,
         "refundTo": DAO_ID,
         "refundType": "CONFIDENTIAL_INTENTS",
-        "recipient": DAO_ID,
+        "recipient": RECIPIENT_ID,
         "recipientType": "CONFIDENTIAL_INTENTS",
         "deadline": quote_deadline,
         "quoteWaitingTimeMs": 5000,
@@ -371,32 +402,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let deposit_address = quote_data["quote"]["depositAddress"].as_str().unwrap();
-    let quote_deadline_actual = quote_data["quote"]["deadline"].as_str().unwrap();
     println!(
-        "Quote: {} wNEAR → confidential",
-        quote_data["quote"]["amountInFormatted"]
+        "Quote: {} wNEAR confidential → {} confidential",
+        quote_data["quote"]["amountInFormatted"], RECIPIENT_ID
     );
     println!("Deposit address: {}", deposit_address);
-    println!("Deadline: {}\n", quote_deadline_actual);
+    println!(
+        "Deadline: {}\n",
+        quote_data["quote"]["deadline"].as_str().unwrap()
+    );
 
     // =============================================
     // Step 3: Generate intent
     // =============================================
     println!("=== Step 3: Generate intent ===\n");
 
-    let gen_body = json!({
-        "type": "swap_transfer",
-        "standard": "nep413",
-        "depositAddress": deposit_address,
-        "signerId": DAO_ID,
-    });
-
     let gen_resp = client
         .post(format!("{}/v0/generate-intent", oneclick_url()))
         .header("content-type", "application/json")
         .header("x-api-key", &api_key)
         .header("Authorization", format!("Bearer {}", access_token))
-        .json(&gen_body)
+        .json(&json!({
+            "type": "swap_transfer",
+            "standard": "nep413",
+            "depositAddress": deposit_address,
+            "signerId": DAO_ID,
+        }))
         .send()
         .await?;
 
@@ -415,39 +446,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let intent_message = gen_data["intent"]["payload"]["message"].as_str().unwrap();
     let intent_nonce_b64 = gen_data["intent"]["payload"]["nonce"].as_str().unwrap();
     let intent_recipient = gen_data["intent"]["payload"]["recipient"].as_str().unwrap();
-
     println!("Intent generated!");
-    println!(
-        "Message: {}...{}",
-        &intent_message[..40],
-        &intent_message[intent_message.len() - 30..]
-    );
-    println!("Nonce: {}\n", intent_nonce_b64);
+    println!("Message: {}\n", intent_message);
 
     // =============================================
     // Step 4: Create DAO proposal to sign via MPC
     // =============================================
     println!("=== Step 4: Create signing proposal ===\n");
 
-    // Compute NEP-413 hash
     let intent_nonce: [u8; 32] = BASE64.decode(intent_nonce_b64)?.try_into().unwrap();
-    let nep413_payload = NEP413Payload {
+    let intent_payload = NEP413Payload {
         message: intent_message.to_string(),
         nonce: intent_nonce,
         recipient: intent_recipient.to_string(),
         callback_url: None,
     };
-    const PREFIX: u32 = (1u32 << 31) + 413;
-    let mut bytes = PREFIX.to_le_bytes().to_vec();
-    borsh::to_writer(&mut bytes, &nep413_payload)?;
-    use sha2::Digest;
-    let hash = sha2::Sha256::digest(&bytes);
-    let hash_hex = hex::encode(&hash);
-    println!("NEP-413 hash: {}", hash_hex);
+    let mut intent_bytes = PREFIX.to_le_bytes().to_vec();
+    borsh::to_writer(&mut intent_bytes, &intent_payload)?;
+    let intent_hash = sha2::Sha256::digest(&intent_bytes);
+    let intent_hash_hex = hex::encode(&intent_hash);
+    println!("NEP-413 hash: {}", intent_hash_hex);
 
     let proposal = json!({
         "proposal": {
-            "description": "Confidential shield: sign intent via v1.signer",
+            "description": "Confidential transfer: sign intent via v1.signer",
             "kind": {
                 "FunctionCall": {
                     "receiver_id": "v1.signer",
@@ -455,7 +477,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         "method_name": "sign",
                         "args": BASE64.encode(json!({
                             "request": {
-                                "payload_v2": { "Eddsa": hash_hex },
+                                "payload_v2": { "Eddsa": intent_hash_hex },
                                 "path": DAO_ID,
                                 "domain_id": 1,
                             }
@@ -480,26 +502,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // =============================================
     println!("=== Step 5: Submit signed intent ===\n");
 
-    let submit_body = json!({
-        "type": "swap_transfer",
-        "signedData": {
-            "standard": "nep413",
-            "payload": {
-                "message": intent_message,
-                "nonce": intent_nonce_b64,
-                "recipient": intent_recipient,
-            },
-            "public_key": mpc_public_key,
-            "signature": sig_b58,
-        }
-    });
-
     let submit_resp = client
         .post(format!("{}/v0/submit-intent", oneclick_url()))
         .header("content-type", "application/json")
         .header("x-api-key", &api_key)
         .header("Authorization", format!("Bearer {}", access_token))
-        .json(&submit_body)
+        .json(&json!({
+            "type": "swap_transfer",
+            "signedData": {
+                "standard": "nep413",
+                "payload": {
+                    "message": intent_message,
+                    "nonce": intent_nonce_b64,
+                    "recipient": intent_recipient,
+                },
+                "public_key": mpc_public_key,
+                "signature": sig_b58,
+            }
+        }))
         .send()
         .await?;
 
@@ -512,15 +532,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         serde_json::to_string_pretty(&submit_data)?
     );
 
-    if !submit_status.is_success() {
-        eprintln!("Submit failed. The intent may still work if we do the on-chain deposit.");
-    }
-
     // =============================================
     // Step 6: Poll for completion
     // =============================================
     println!("=== Step 6: Poll for completion ===\n");
-    println!("Note: The DAO must already have tokens deposited to intents.near.\n");
 
     for i in 0..30 {
         let status_resp = client
@@ -543,13 +558,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("[{}] Status: {}", i, status);
 
         if status == "SUCCESS" {
-            println!("\n🎉 Confidential shield complete!");
+            println!("\n🎉 Confidential transfer complete!");
+            println!(
+                "{} wNEAR transferred from {} → {}",
+                TRANSFER_AMOUNT, DAO_ID, RECIPIENT_ID
+            );
             println!("Details: {}", serde_json::to_string_pretty(&status_data)?);
             break;
         }
 
         if status == "EXPIRED" || status == "FAILED" {
-            eprintln!("\nShield failed with status: {}", status);
+            eprintln!("\nTransfer failed with status: {}", status);
             eprintln!("Details: {}", serde_json::to_string_pretty(&status_data)?);
             break;
         }
