@@ -91,12 +91,14 @@ function RecipientFlow({
     existingEntries = [],
     onDone,
     onCancel,
+    onImport,
 }: {
     mode: "add" | "import";
     initialRecipient?: RecipientDraft | null;
     existingEntries?: AddressBookEntry[];
     onDone: () => void;
     onCancel: () => void;
+    onImport: () => void;
 }) {
     const { treasuryId } = useTreasury();
     const [step, setStep] = useState(0);
@@ -164,6 +166,7 @@ function RecipientFlow({
                             setActiveIndex={setActiveIndex}
                             handleBack={onCancel}
                             onReview={handleManualReview}
+                            onImport={onImport}
                         />
                     ) : (
                         <ImportUploadStep
@@ -602,6 +605,7 @@ export default function AddressBookPage() {
                     existingEntries={entries ?? []}
                     onDone={handleCloseFlow}
                     onCancel={handleCloseFlow}
+                    onImport={handleImport}
                 />
             ) : isLoading || hasEntries ? (
                 <RecipientsView onAdd={handleAdd} onImport={handleImport} />
