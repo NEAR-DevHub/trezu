@@ -964,7 +964,8 @@ mod tests {
 
         let today = Utc::now().date_naive();
         let days_since_monday = today.weekday().num_days_from_monday() as i64;
-        let this_wednesday = today - chrono::Duration::days(days_since_monday) + chrono::Duration::days(2);
+        let this_wednesday =
+            today - chrono::Duration::days(days_since_monday) + chrono::Duration::days(2);
 
         store_daily_balance_snapshot(&pool, this_wednesday, 5, 2, 1, &[]).await?;
         assert!(
