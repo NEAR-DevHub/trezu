@@ -329,5 +329,20 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
             "/api/subscription/{account_id}",
             get(handlers::subscription::get_subscription_status),
         )
+        // Telegram bot endpoints
+        .route(
+            "/api/telegram/webhook",
+            post(handlers::telegram::webhook::handle_telegram_webhook),
+        )
+        .route(
+            "/api/telegram/connect",
+            get(handlers::telegram::connect::get_chat_info)
+                .post(handlers::telegram::connect::connect_treasuries)
+                .delete(handlers::telegram::connect::disconnect_treasury),
+        )
+        .route(
+            "/api/telegram/status",
+            get(handlers::telegram::connect::get_status),
+        )
         .with_state(state)
 }
