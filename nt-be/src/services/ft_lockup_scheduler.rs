@@ -61,7 +61,11 @@ fn compute_next_claim_at(
     // Interval-only scheduler:
     // next_claim_at is the first boundary strictly after "now".
     let elapsed = now.timestamp().saturating_sub(start);
-    let passed_intervals = if elapsed <= 0 { 0 } else { (elapsed / interval) + 1 };
+    let passed_intervals = if elapsed <= 0 {
+        0
+    } else {
+        (elapsed / interval) + 1
+    };
     let next_ts = start.saturating_add(passed_intervals.saturating_mul(interval));
     DateTime::<Utc>::from_timestamp(next_ts, 0)
         .or_else(|| DateTime::<Utc>::from_timestamp(now.timestamp(), 0))
@@ -185,7 +189,13 @@ async fn refresh_instance_rows(
             }
         };
 
-        let Some(account_data) = (match fetch_ft_lockup_account_data(&state, &instance_id, &dao_account).await {
+        let Some(account_data) = (match fetch_ft_lockup_account_data(
+            &state,
+            &instance_id,
+            &dao_account,
+        )
+        .await
+        {
             Ok(account_data) => account_data,
             Err((status, msg)) => {
                 log::warn!(
@@ -522,10 +532,7 @@ pub async fn run_due_ft_lockup_claims(
             }
             Ok(Err(e)) => {
                 summary.failed += 1;
-                log::warn!(
-                    "[ft-lockup-claim] task failed with error: {}",
-                    e
-                );
+                log::warn!("[ft-lockup-claim] task failed with error: {}", e);
             }
             Err(e) => {
                 summary.failed += 1;

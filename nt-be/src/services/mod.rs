@@ -18,7 +18,8 @@ pub use dao_sync::{
 };
 pub use defillama::DeFiLlamaClient;
 pub use ft_lockup_scheduler::{
-    refresh_ft_lockup_dao_schedules, run_due_ft_lockup_claims, run_ft_lockup_schedule_refresh_service,
+    refresh_ft_lockup_dao_schedules, run_due_ft_lockup_claims,
+    run_ft_lockup_schedule_refresh_service,
 };
 pub use monitored_accounts::{
     MonitoredAccount, RegisterMonitoredAccountError, RegisterMonitoredAccountResult,
