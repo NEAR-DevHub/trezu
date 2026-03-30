@@ -326,6 +326,7 @@ async fn load_trezu_dao_set(pool: &PgPool) -> Result<HashSet<String>, sqlx::Erro
     Ok(rows.into_iter().map(|(dao_id,)| dao_id).collect())
 }
 
+#[cfg(test)]
 async fn snapshot_exists_for_date(
     pool: &PgPool,
     snapshot_date: NaiveDate,
@@ -916,6 +917,59 @@ mod tests {
         assert!(
             snapshot_exists_for_date(&pool, snapshot_date).await?,
             "snapshot existence check should succeed"
+        );
+
+        Ok(())
+    }
+
+    /// snapshot_exists_this_week uses Utc::now() internally, so we seed a snapshot
+    /// on the current week's Monday and verify the function returns true; then verify
+    /// a snapshot from a prior week returns false.
+    #[sqlx::test]
+    async fn test_snapshot_exists_this_week(pool: PgPool) -> sqlx::Result<()> {
+        use chrono::Datelike;
+
+        let today = Utc::now().date_naive();
+        let days_since_monday = today.weekday().num_days_from_monday() as i64;
+        let this_monday = today - chrono::Duration::days(days_since_monday);
+        let last_week = this_monday - chrono::Duration::days(7);
+
+        // No snapshot yet → should be false
+        assert!(
+            !snapshot_exists_this_week(&pool).await?,
+            "should be false when no snapshots exist"
+        );
+
+        // Insert a snapshot from last week → still false
+        store_daily_balance_snapshot(&pool, last_week, 1, 0, 0, &[]).await?;
+        assert!(
+            !snapshot_exists_this_week(&pool).await?,
+            "snapshot from prior week should not count"
+        );
+
+        // Insert a snapshot for this Monday → true
+        store_daily_balance_snapshot(&pool, this_monday, 1, 0, 0, &[]).await?;
+        assert!(
+            snapshot_exists_this_week(&pool).await?,
+            "snapshot on this week's Monday should be detected"
+        );
+
+        Ok(())
+    }
+
+    /// A snapshot mid-week (Wednesday) also satisfies the weekly check.
+    #[sqlx::test]
+    async fn test_snapshot_exists_this_week_mid_week(pool: PgPool) -> sqlx::Result<()> {
+        use chrono::Datelike;
+
+        let today = Utc::now().date_naive();
+        let days_since_monday = today.weekday().num_days_from_monday() as i64;
+        let this_wednesday = today - chrono::Duration::days(days_since_monday) + chrono::Duration::days(2);
+
+        store_daily_balance_snapshot(&pool, this_wednesday, 5, 2, 1, &[]).await?;
+        assert!(
+            snapshot_exists_this_week(&pool).await?,
+            "mid-week snapshot should satisfy the weekly check"
         );
 
         Ok(())

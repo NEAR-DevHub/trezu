@@ -112,4 +112,51 @@ mod tests {
             "Expected 30 seconds until midnight"
         );
     }
+
+    // 2026-03-30 is a Monday
+    #[test]
+    fn test_next_monday_utc_midnight_from_monday() {
+        let now =
+            DateTime::parse_from_rfc3339("2026-03-30T12:00:00Z").expect("timestamp should parse");
+        let now = now.with_timezone(&Utc);
+        // Monday → next Monday is 7 days later
+        assert_eq!(
+            next_monday_utc_midnight(now).to_rfc3339(),
+            "2026-04-06T00:00:00+00:00"
+        );
+    }
+
+    #[test]
+    fn test_next_monday_utc_midnight_from_tuesday() {
+        let now =
+            DateTime::parse_from_rfc3339("2026-03-31T09:00:00Z").expect("timestamp should parse");
+        let now = now.with_timezone(&Utc);
+        // Tuesday → next Monday is 6 days later
+        assert_eq!(
+            next_monday_utc_midnight(now).to_rfc3339(),
+            "2026-04-06T00:00:00+00:00"
+        );
+    }
+
+    #[test]
+    fn test_next_monday_utc_midnight_from_sunday() {
+        let now =
+            DateTime::parse_from_rfc3339("2026-04-05T22:00:00Z").expect("timestamp should parse");
+        let now = now.with_timezone(&Utc);
+        // Sunday → next Monday is 1 day later
+        assert_eq!(
+            next_monday_utc_midnight(now).to_rfc3339(),
+            "2026-04-06T00:00:00+00:00"
+        );
+    }
+
+    #[test]
+    fn test_duration_until_next_monday_utc_midnight() {
+        // Friday 2026-04-03 at 00:00:00 UTC → next Monday 2026-04-06 = 3 days exactly
+        let now =
+            DateTime::parse_from_rfc3339("2026-04-03T00:00:00Z").expect("timestamp should parse");
+        let now = now.with_timezone(&Utc);
+        let duration = duration_until_next_monday_utc_midnight(now);
+        assert_eq!(duration, Duration::from_secs(3 * 24 * 60 * 60));
+    }
 }
