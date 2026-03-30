@@ -16,7 +16,7 @@ use sqlx::{FromRow, PgPool};
 use crate::{
     AppState,
     handlers::user::assets::{SimplifiedToken, compute_user_assets},
-    utils::datetime::duration_until_next_utc_midnight,
+    utils::datetime::duration_until_next_monday_utc_midnight,
 };
 
 const TOP_TOKENS_LIMIT: usize = 20;
@@ -632,25 +632,50 @@ async fn refresh_public_dashboard_snapshot_for_date(
     })
 }
 
-async fn ensure_today_public_dashboard_snapshot(
+/// Returns true if any snapshot exists within the current ISO week (Monday–Sunday).
+async fn snapshot_exists_this_week(pool: &PgPool) -> Result<bool, sqlx::Error> {
+    use chrono::Datelike;
+    let today = Utc::now().date_naive();
+    let days_since_monday = today.weekday().num_days_from_monday() as i64;
+    let week_start = today - chrono::Duration::days(days_since_monday);
+
+    let (exists,) = sqlx::query_as::<_, (bool,)>(
+        r#"
+        SELECT EXISTS(
+            SELECT 1
+            FROM public_dashboard_daily_runs
+            WHERE snapshot_date >= $1
+        )
+        "#,
+    )
+    .bind(week_start)
+    .fetch_one(pool)
+    .await?;
+
+    Ok(exists)
+}
+
+async fn ensure_this_week_public_dashboard_snapshot(
     state: &Arc<AppState>,
 ) -> Result<Option<RefreshSummary>, Box<dyn std::error::Error + Send + Sync>> {
-    let today = Utc::now().date_naive();
-    if snapshot_exists_for_date(&state.db_pool, today).await? {
+    if snapshot_exists_this_week(&state.db_pool).await? {
         return Ok(None);
     }
 
+    let today = Utc::now().date_naive();
     refresh_public_dashboard_snapshot_for_date(state, today)
         .await
         .map(Some)
 }
 
 pub async fn run_public_dashboard_refresh_service(state: Arc<AppState>) {
-    log::info!("Starting public dashboard refresh service (startup check + UTC midnight schedule)");
+    log::info!(
+        "Starting public dashboard refresh service (startup check + weekly Monday UTC midnight schedule)"
+    );
 
     tokio::time::sleep(Duration::from_secs(STARTUP_DELAY_SECS)).await;
 
-    match ensure_today_public_dashboard_snapshot(&state).await {
+    match ensure_this_week_public_dashboard_snapshot(&state).await {
         Ok(Some(summary)) => {
             log::info!(
                 "[public-dashboard] Startup refresh stored snapshot for {} ({} DAOs, {} Trezu, {} failures, {} balance rows)",
@@ -663,7 +688,7 @@ pub async fn run_public_dashboard_refresh_service(state: Arc<AppState>) {
         }
         Ok(None) => {
             log::info!(
-                "[public-dashboard] Startup refresh skipped, today's snapshot already exists"
+                "[public-dashboard] Startup refresh skipped, this week's snapshot already exists"
             );
         }
         Err(err) => {
@@ -673,7 +698,7 @@ pub async fn run_public_dashboard_refresh_service(state: Arc<AppState>) {
 
     loop {
         let now = Utc::now();
-        let sleep_for = duration_until_next_utc_midnight(now);
+        let sleep_for = duration_until_next_monday_utc_midnight(now);
         let wake_at = now + chrono::Duration::from_std(sleep_for).unwrap_or_default();
 
         log::info!(
@@ -687,7 +712,7 @@ pub async fn run_public_dashboard_refresh_service(state: Arc<AppState>) {
         match refresh_public_dashboard_snapshot_for_date(&state, snapshot_date).await {
             Ok(summary) => {
                 log::info!(
-                    "[public-dashboard] Stored snapshot for {} ({} DAOs, {} Trezu, {} failures, {} balance rows)",
+                    "[public-dashboard] Weekly snapshot stored for {} ({} DAOs, {} Trezu, {} failures, {} balance rows)",
                     summary.snapshot_date,
                     summary.dao_count,
                     summary.trezu_dao_count,
@@ -696,7 +721,7 @@ pub async fn run_public_dashboard_refresh_service(state: Arc<AppState>) {
                 );
             }
             Err(err) => {
-                log::error!("[public-dashboard] Midnight refresh failed: {}", err);
+                log::error!("[public-dashboard] Weekly refresh failed: {}", err);
             }
         }
     }
