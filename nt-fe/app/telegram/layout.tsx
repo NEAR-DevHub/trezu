@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "../globals.css";
+import { NearInitializer } from "@/components/near-initializer";
 import { QueryProvider } from "@/components/query-provider";
 
 const geistSans = Geist({
@@ -46,7 +47,10 @@ export default function TelegramLayout({
             <body
                 className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
             >
-                <QueryProvider>{children}</QueryProvider>
+                <QueryProvider>
+                    <NearInitializer />
+                    {children}
+                </QueryProvider>
             </body>
         </html>
     );
