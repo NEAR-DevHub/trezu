@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-query";
 import {
     connectTreasuries,
+    disconnectTreasury,
     getTelegramChatInfo,
     getTelegramStatus,
 } from "@/lib/telegram-api";
@@ -42,6 +43,18 @@ export function useConnectTreasuries(token: string) {
         onSuccess: () => {
             queryClient.invalidateQueries({
                 queryKey: ["telegramChatInfo", token],
+            });
+        },
+    });
+}
+
+export function useDisconnectTelegramTreasury() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (daoId: string) => disconnectTreasury(daoId),
+        onSuccess: (_data, daoId) => {
+            queryClient.invalidateQueries({
+                queryKey: ["telegramStatus", daoId],
             });
         },
     });
