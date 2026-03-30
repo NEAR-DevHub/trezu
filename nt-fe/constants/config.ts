@@ -12,7 +12,7 @@ export const PRIVACY_POLICY_URL = "https://trezu.org/privacy-policy";
 export const APP_WALLET_SETUP_URL = undefined;
 
 /** Telegram bot handle without @ (used for t.me links). */
-const TELEGRAM_BOT_HANDLE = "trezubot";
+export const TELEGRAM_BOT_HANDLE = process.env.NEXT_PUBLIC_TELEGRAM_BOT_HANDLE;
 
 /** Telegram bot @username shown in integration instructions (add bot to group chat). */
 export const TELEGRAM_BOT_USERNAME = `@${TELEGRAM_BOT_HANDLE}`;
