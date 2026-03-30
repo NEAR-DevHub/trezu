@@ -312,38 +312,40 @@ function AvailableExpandedRows({
                                 />
                             </TableCell>
                             <TableCell className="p-4">
-                                <div className="flex gap-1 justify-end">
-                                    <AuthButton
-                                        permissionKind="transfer"
-                                        permissionAction="AddProposal"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-                                        tooltipContent="Send"
-                                        onClick={() =>
-                                            onNavigate(
-                                                `/${treasuryId}/payments?token=${tokenParam}`,
-                                            )
-                                        }
-                                    >
-                                        <ArrowUpRight className="size-4 text-primary" />
-                                    </AuthButton>
-                                    <AuthButton
-                                        permissionKind="call"
-                                        permissionAction="AddProposal"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-                                        tooltipContent="Exchange"
-                                        onClick={() =>
-                                            onNavigate(
-                                                `/${treasuryId}/exchange?sellToken=${tokenParam}`,
-                                            )
-                                        }
-                                    >
-                                        <ArrowLeftRight className="size-4 text-primary" />
-                                    </AuthButton>
-                                </div>
+                                {!isLockupUnlocked && (
+                                    <div className="flex gap-1 justify-end">
+                                        <AuthButton
+                                            permissionKind="transfer"
+                                            permissionAction="AddProposal"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                                            tooltipContent="Send"
+                                            onClick={() =>
+                                                onNavigate(
+                                                    `/${treasuryId}/payments?token=${tokenParam}`,
+                                                )
+                                            }
+                                        >
+                                            <ArrowUpRight className="size-4 text-primary" />
+                                        </AuthButton>
+                                        <AuthButton
+                                            permissionKind="call"
+                                            permissionAction="AddProposal"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                                            tooltipContent="Exchange"
+                                            onClick={() =>
+                                                onNavigate(
+                                                    `/${treasuryId}/exchange?sellToken=${tokenParam}`,
+                                                )
+                                            }
+                                        >
+                                            <ArrowLeftRight className="size-4 text-primary" />
+                                        </AuthButton>
+                                    </div>
+                                )}
                             </TableCell>
                             <TableCell />
                             <TableCell />
