@@ -52,7 +52,7 @@ export function TelegramSettingsIntegration() {
                     <div className="flex justify-between items-center gap-4 w-full">
                         <div className="min-w-0">
                             <StepperHeader
-                                title="Connect Treasury"
+                                title="Telegram"
                                 description={`Connected to ${connectedChatDisplay}`}
                             />
                         </div>
@@ -74,7 +74,7 @@ export function TelegramSettingsIntegration() {
                         {!treasuryId ? (
                             <>
                                 <StepperHeader
-                                    title="Connect Treasury"
+                                    title="Telegram"
                                     description="Link your treasuries to a Telegram chat."
                                 />
                                 <p className="text-sm text-muted-foreground">
@@ -91,8 +91,8 @@ export function TelegramSettingsIntegration() {
                             <div className="flex justify-between items-center gap-4 w-full">
                                 <div className="min-w-0">
                                     <StepperHeader
-                                        title="Connect Treasury"
-                                        description="Link your treasuries to a Telegram chat."
+                                        title="Telegram"
+                                        description="Link your treasury to a Telegram chat to receive notifications."
                                     />
                                 </div>
                                 <Button
