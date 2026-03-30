@@ -91,7 +91,13 @@ export const NetworkIconDisplay = ({
     );
 };
 
-export const NetworkDisplay = ({ asset }: { asset: TreasuryAsset }) => {
+export const NetworkDisplay = ({
+    asset,
+    subLabel,
+}: {
+    asset: TreasuryAsset;
+    subLabel?: string;
+}) => {
     const { theme } = useThemeStore();
 
     let type;
@@ -130,7 +136,9 @@ export const NetworkDisplay = ({ asset }: { asset: TreasuryAsset }) => {
                 <span className="font-semibold capitalize">
                     {asset.chainName}
                 </span>
-                <span className="text-xs text-muted-foreground">{type}</span>
+                <span className="text-xs text-muted-foreground">
+                    {subLabel ?? type}
+                </span>
             </div>
         </div>
     );

@@ -206,12 +206,61 @@ interface AvailableExpandedRowsProps {
     onNavigate: (href: string) => void;
 }
 
+interface MergedAvailableNetwork {
+    network: NetworkAsset;
+    availableRaw: Big.Big;
+    isLockupUnlocked: boolean;
+}
+
+function buildAvailableSourceKey(
+    network: NetworkAsset,
+    isLockupUnlocked: boolean,
+): string {
+    return [
+        network.network,
+        isLockupUnlocked ? "lockup-unlocked" : network.residency,
+        network.contractId ?? network.id,
+    ].join(":");
+}
+
+function mergeAvailableNetworks(
+    availableNetworks: NetworkAsset[],
+): MergedAvailableNetwork[] {
+    const bySource = new Map<string, MergedAvailableNetwork>();
+
+    for (const network of availableNetworks) {
+        const isLockupUnlocked = !!network.lockupInstanceId;
+        const sourceKey = buildAvailableSourceKey(network, isLockupUnlocked);
+        const availableRaw = networkAvailableRawForAvailableView(network);
+        const existing = bySource.get(sourceKey);
+
+        if (existing) {
+            existing.availableRaw = existing.availableRaw.add(availableRaw);
+        } else {
+            bySource.set(sourceKey, {
+                network,
+                availableRaw,
+                isLockupUnlocked,
+            });
+        }
+    }
+
+    return Array.from(bySource.values());
+}
+
 function AvailableExpandedRows({
     asset,
     availableNetworks,
     treasuryId,
     onNavigate,
 }: AvailableExpandedRowsProps) {
+    // Merge same source token rows, but keep lockup-unlocked amounts separate
+    // from regular FT wallet balances so they can be shown as "Unlocked Token".
+    const mergedAvailableNetworks = useMemo(
+        () => mergeAvailableNetworks(availableNetworks),
+        [availableNetworks],
+    );
+
     return (
         <>
             <TableRow className="bg-muted/30 uppercase text-muted-foreground font-medium hover:bg-muted/30">
@@ -221,88 +270,87 @@ function AvailableExpandedRows({
                 </TableCell>
                 <TableCell colSpan={3} />
             </TableRow>
-            {availableNetworks.map((network) => {
-                const tokenParam = encodeURIComponent(
-                    JSON.stringify({
-                        symbol: network.symbol,
-                        address: network.id,
-                        network: network.network,
-                        decimals: network.decimals,
-                        icon: network.icon,
-                        name: network.name,
-                    }),
-                );
-                const availableRawNetwork =
-                    networkAvailableRawForAvailableView(network);
-                return (
-                    <TableRow
-                        key={networkRowKey(asset.id, "available", network)}
-                        className="bg-muted/30 group"
-                    >
-                        <TableCell className="p-4 pl-16">
-                            <div className="space-y-1">
-                                <NetworkDisplay asset={network} />
-                                {network.lockupInstanceId && (
-                                    <div className="text-xs text-muted-foreground">
-                                        Lockup Session:{" "}
-                                        {network.lockupInstanceId}
-                                    </div>
-                                )}
-                            </div>
-                        </TableCell>
-                        <TableCell className="p-4 text-right">
-                            <BalanceCell
-                                balance={displayAmount(
-                                    availableRawNetwork,
-                                    network.decimals,
-                                )}
-                                symbol={network.symbol}
-                                balanceUSD={toUsd(
-                                    availableRawNetwork,
-                                    network.decimals,
-                                    network.price,
-                                )}
-                            />
-                        </TableCell>
-                        <TableCell className="p-4">
-                            <div className="flex gap-1 justify-end">
-                                <AuthButton
-                                    permissionKind="transfer"
-                                    permissionAction="AddProposal"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-                                    tooltipContent="Send"
-                                    onClick={() =>
-                                        onNavigate(
-                                            `/${treasuryId}/payments?token=${tokenParam}`,
-                                        )
+            {mergedAvailableNetworks.map(
+                ({ network, availableRaw, isLockupUnlocked }) => {
+                    const tokenParam = encodeURIComponent(
+                        JSON.stringify({
+                            symbol: network.symbol,
+                            address: network.id,
+                            network: network.network,
+                            decimals: network.decimals,
+                            icon: network.icon,
+                            name: network.name,
+                        }),
+                    );
+                    return (
+                        <TableRow
+                            key={networkRowKey(asset.id, "available", network)}
+                            className="bg-muted/30 group"
+                        >
+                            <TableCell className="p-4 pl-16">
+                                <NetworkDisplay
+                                    asset={network}
+                                    subLabel={
+                                        isLockupUnlocked
+                                            ? "Unlocked Token"
+                                            : undefined
                                     }
-                                >
-                                    <ArrowUpRight className="size-4 text-primary" />
-                                </AuthButton>
-                                <AuthButton
-                                    permissionKind="call"
-                                    permissionAction="AddProposal"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-                                    tooltipContent="Exchange"
-                                    onClick={() =>
-                                        onNavigate(
-                                            `/${treasuryId}/exchange?sellToken=${tokenParam}`,
-                                        )
-                                    }
-                                >
-                                    <ArrowLeftRight className="size-4 text-primary" />
-                                </AuthButton>
-                            </div>
-                        </TableCell>
-                        <TableCell />
-                        <TableCell />
-                    </TableRow>
-                );
-            })}
+                                />
+                            </TableCell>
+                            <TableCell className="p-4 text-right">
+                                <BalanceCell
+                                    balance={displayAmount(
+                                        availableRaw,
+                                        network.decimals,
+                                    )}
+                                    symbol={network.symbol}
+                                    balanceUSD={toUsd(
+                                        availableRaw,
+                                        network.decimals,
+                                        network.price,
+                                    )}
+                                />
+                            </TableCell>
+                            <TableCell className="p-4">
+                                <div className="flex gap-1 justify-end">
+                                    <AuthButton
+                                        permissionKind="transfer"
+                                        permissionAction="AddProposal"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                                        tooltipContent="Send"
+                                        onClick={() =>
+                                            onNavigate(
+                                                `/${treasuryId}/payments?token=${tokenParam}`,
+                                            )
+                                        }
+                                    >
+                                        <ArrowUpRight className="size-4 text-primary" />
+                                    </AuthButton>
+                                    <AuthButton
+                                        permissionKind="call"
+                                        permissionAction="AddProposal"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                                        tooltipContent="Exchange"
+                                        onClick={() =>
+                                            onNavigate(
+                                                `/${treasuryId}/exchange?sellToken=${tokenParam}`,
+                                            )
+                                        }
+                                    >
+                                        <ArrowLeftRight className="size-4 text-primary" />
+                                    </AuthButton>
+                                </div>
+                            </TableCell>
+                            <TableCell />
+                            <TableCell />
+                        </TableRow>
+                    );
+                },
+            )}
         </>
     );
 }

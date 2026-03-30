@@ -26,7 +26,7 @@ async fn main() {
     match nt_be::services::refresh_ft_lockup_dao_schedules(&state).await {
         Ok(summary) => {
             log::info!(
-                "[ft-lockup-claim] refresh done instances={} rows_upserted={}",
+                "[ft-lockup][claim] refresh done instances={} rows_upserted={}",
                 summary.instances,
                 summary.rows_upserted
             );
@@ -44,7 +44,7 @@ async fn main() {
     match nt_be::services::run_due_ft_lockup_claims(&state, limit, dry_run).await {
         Ok(summary) => {
             log::info!(
-                "[ft-lockup-claim] cycle done due_rows={} attempted={} succeeded={} failed={} dry_run={}",
+                "[ft-lockup][claim] cycle done due_rows={} attempted={} succeeded={} failed={} dry_run={}",
                 summary.due_rows,
                 summary.attempted,
                 summary.succeeded,

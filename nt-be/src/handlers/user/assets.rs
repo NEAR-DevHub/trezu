@@ -178,6 +178,35 @@ fn parse_u128_amount(value: &str) -> u128 {
     value.parse::<u128>().unwrap_or(0)
 }
 
+fn canonical_token_id(token_id: &str) -> &str {
+    token_id
+        .strip_prefix("intents.near:")
+        .unwrap_or(token_id)
+        .strip_prefix("nep141:")
+        .unwrap_or(token_id)
+}
+
+fn is_near_or_wrap_near(token_id: &str) -> bool {
+    matches!(canonical_token_id(token_id), "near" | "wrap.near")
+}
+
+fn resolve_token_meta_and_unified_id<'a>(
+    token_id: &str,
+    metadata_map: &'a HashMap<String, TokenMetadataResponse>,
+    near_token_meta: &'a TokenMetadataResponse,
+) -> Option<(&'a TokenMetadataResponse, String)> {
+    if is_near_or_wrap_near(token_id) {
+        return Some((near_token_meta, "near".to_string()));
+    }
+
+    let token_meta = metadata_map.get(token_id)?;
+    let unified_id = find_token_by_symbol(&token_meta.symbol)
+        .map(|u| u.unified_asset_id)
+        .unwrap_or_else(|| token_meta.symbol.to_lowercase());
+
+    Some((token_meta, unified_id))
+}
+
 /// Fetch full account data from the FastNear API.
 ///
 /// Queries `https://api.fastnear.com/v1/account/{account_id}/full` and returns
@@ -935,17 +964,10 @@ pub async fn compute_user_assets(
     let mut all_simplified_tokens: Vec<(SimplifiedToken, U128)> = ref_tokens_with_balances
         .into_iter()
         .filter_map(|(token_id, balance)| {
-            let token_meta = if token_id == "near" || token_id == "wrap.near" {
-                &near_token_meta
-            } else {
-                metadata_map.get(&token_id)?
-            };
+            let (token_meta, unified_id) =
+                resolve_token_meta_and_unified_id(&token_id, &metadata_map, &near_token_meta)?;
 
             let price = token_meta.price.unwrap_or(0.0).to_string();
-
-            let unified_id = find_token_by_symbol(&token_meta.symbol)
-                .map(|u| u.unified_asset_id)
-                .unwrap_or_else(|| token_meta.symbol.to_lowercase());
 
             Some((
                 SimplifiedToken {
@@ -984,7 +1006,11 @@ pub async fn compute_user_assets(
     // locked  = unreleased = deposited - claimed - unclaimed
     // available = total - locked = unclaimed
     for position in ft_lockup_positions {
-        let Some(token_meta) = metadata_map.get(&position.token_account_id) else {
+        let Some((token_meta, unified_id)) = resolve_token_meta_and_unified_id(
+            &position.token_account_id,
+            &metadata_map,
+            &near_token_meta,
+        ) else {
             continue;
         };
 
@@ -999,10 +1025,6 @@ pub async fn compute_user_assets(
             .deposited_amount
             .saturating_sub(position.claimed_amount)
             .saturating_sub(position.unclaimed_amount);
-
-        let unified_id = find_token_by_symbol(&token_meta.symbol)
-            .map(|u| u.unified_asset_id)
-            .unwrap_or_else(|| token_meta.symbol.to_lowercase());
 
         all_simplified_tokens.push((
             SimplifiedToken {

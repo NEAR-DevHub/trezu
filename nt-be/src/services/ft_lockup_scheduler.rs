@@ -99,12 +99,20 @@ async fn upsert_schedule_row(
 ) -> Result<(), sqlx::Error> {
     let deposited_amount = parse_u128_amount(&account_data.deposited_amount);
     let claimed_amount = parse_u128_amount(&account_data.claimed_amount);
+    let unclaimed_amount = parse_u128_amount(&account_data.unclaimed_amount);
     if deposited_amount == 0 || claimed_amount >= deposited_amount {
         delete_schedule_row(pool, dao_account_id, instance_id).await?;
         return Ok(());
     }
 
-    let next_claim_at = compute_next_claim_at(Utc::now(), account_data);
+    let now = Utc::now();
+    // If tokens are already claimable, make this row due right away so the
+    // first claimer cycle can execute claim immediately.
+    let next_claim_at = if unclaimed_amount > 0 {
+        Some(now)
+    } else {
+        compute_next_claim_at(now, account_data)
+    };
 
     let session_interval_seconds = u64_to_i64_opt(account_data.session_interval);
     let start_timestamp_seconds = u64_to_i64_opt(account_data.start_timestamp);
@@ -148,7 +156,7 @@ async fn refresh_instance_rows(
         Ok(a) => a,
         Err((status, msg)) => {
             log::warn!(
-                "[ft-lockup-scheduler] skip instance={} list_accounts failed: {} ({})",
+                "[ft-lockup][scheduler] skip instance={} list_accounts failed: {} ({})",
                 instance_id,
                 msg,
                 status
@@ -164,7 +172,7 @@ async fn refresh_instance_rows(
         Ok(m) => m,
         Err((status, msg)) => {
             log::warn!(
-                "[ft-lockup-scheduler] skip instance={} metadata failed: {} ({})",
+                "[ft-lockup][scheduler] skip instance={} metadata failed: {} ({})",
                 instance_id,
                 msg,
                 status
@@ -180,7 +188,7 @@ async fn refresh_instance_rows(
             Ok(v) => v,
             Err(e) => {
                 log::warn!(
-                    "[ft-lockup-scheduler] invalid dao account id={} instance={}: {}",
+                    "[ft-lockup][scheduler] invalid dao account id={} instance={}: {}",
                     dao_account_id,
                     instance_id,
                     e
@@ -199,7 +207,7 @@ async fn refresh_instance_rows(
             Ok(account_data) => account_data,
             Err((status, msg)) => {
                 log::warn!(
-                    "[ft-lockup-scheduler] skip account sync instance={} dao={} get_account failed: {} ({})",
+                    "[ft-lockup][scheduler] skip account sync instance={} dao={} get_account failed: {} ({})",
                     instance_id,
                     dao_account.as_str(),
                     msg,
@@ -389,7 +397,7 @@ pub async fn run_due_ft_lockup_claims(
 
             if dry_run {
                 log::info!(
-                    "[ft-lockup-claim] dry-run due instance={} dao={}",
+                    "[ft-lockup][claim] dry-run due instance={} dao={}",
                     instance_id,
                     dao_account_id
                 );
@@ -400,7 +408,7 @@ pub async fn run_due_ft_lockup_claims(
                 Ok(v) => v,
                 Err(e) => {
                     log::warn!(
-                        "[ft-lockup-claim] invalid instance id instance={} dao={} error={}",
+                        "[ft-lockup][claim] invalid instance id instance={} dao={} error={}",
                         instance_id,
                         dao_account_id,
                         e
@@ -420,7 +428,7 @@ pub async fn run_due_ft_lockup_claims(
                 .await
             {
                 log::warn!(
-                    "[ft-lockup-claim] first registration failed instance={} dao={} token={} error={}",
+                    "[ft-lockup][claim] first registration failed instance={} dao={} token={} error={}",
                     instance_id,
                     dao_account_id,
                     token_account_id,
@@ -436,7 +444,7 @@ pub async fn run_due_ft_lockup_claims(
                 Ok(v) => v,
                 Err(e) => {
                     log::warn!(
-                        "[ft-lockup-claim] failed to serialize claim args instance={} dao={} error={}",
+                        "[ft-lockup][claim] failed to serialize claim args instance={} dao={} error={}",
                         instance_id,
                         dao_account_id,
                         e
@@ -464,7 +472,7 @@ pub async fn run_due_ft_lockup_claims(
                             Ok(v) => v,
                             Err(e) => {
                                 log::warn!(
-                                    "[ft-lockup-claim] invalid dao id after claim instance={} dao={} error={}",
+                                    "[ft-lockup][claim] invalid dao id after claim instance={} dao={} error={}",
                                     instance_id,
                                     dao_account_id,
                                     e
@@ -492,7 +500,7 @@ pub async fn run_due_ft_lockup_claims(
                             }
                             Err((_, msg)) => {
                                 log::warn!(
-                                    "[ft-lockup-claim] post-claim refresh failed instance={} dao={} error={}",
+                                    "[ft-lockup][claim] post-claim refresh failed instance={} dao={} error={}",
                                     instance_id,
                                     dao_account_id,
                                     msg
@@ -503,13 +511,17 @@ pub async fn run_due_ft_lockup_claims(
                             }
                         }
 
-                        log::info!("[ft-lockup-claim] success instance={} dao={}", instance_id, dao_account_id);
+                        log::info!(
+                            "[ft-lockup][claim] success instance={} dao={}",
+                            instance_id,
+                            dao_account_id
+                        );
                         Ok(true)
                     }
                     Err(e) => {
                         mark_claim_failure(&state.db_pool, &dao_account_id, &instance_id).await?;
                         log::warn!(
-                            "[ft-lockup-claim] failed instance={} dao={} error={}",
+                            "[ft-lockup][claim] failed instance={} dao={} error={}",
                             instance_id,
                             dao_account_id,
                             e
@@ -520,7 +532,7 @@ pub async fn run_due_ft_lockup_claims(
                 Err(e) => {
                     mark_claim_failure(&state.db_pool, &dao_account_id, &instance_id).await?;
                     log::warn!(
-                        "[ft-lockup-claim] failed instance={} dao={} error={}",
+                        "[ft-lockup][claim] failed instance={} dao={} error={}",
                         instance_id,
                         dao_account_id,
                         e
@@ -543,11 +555,11 @@ pub async fn run_due_ft_lockup_claims(
             }
             Ok(Err(e)) => {
                 summary.failed += 1;
-                log::warn!("[ft-lockup-claim] task failed with error: {}", e);
+                log::warn!("[ft-lockup][claim] task failed with error: {}", e);
             }
             Err(e) => {
                 summary.failed += 1;
-                log::warn!("[ft-lockup-claim] task join failed: {}", e);
+                log::warn!("[ft-lockup][claim] task join failed: {}", e);
             }
         }
     }
@@ -567,13 +579,28 @@ pub async fn run_ft_lockup_schedule_refresh_service(state: Arc<AppState>) {
         match refresh_ft_lockup_dao_schedules(&state).await {
             Ok(summary) => {
                 log::info!(
-                    "[ft-lockup-scheduler] refresh complete instances={} rows_upserted={}",
+                    "[ft-lockup][scheduler] refresh complete instances={} rows_upserted={}",
                     summary.instances,
                     summary.rows_upserted
                 );
+
+                match run_due_ft_lockup_claims(&state, None, false).await {
+                    Ok(claim_summary) => {
+                        log::info!(
+                            "[ft-lockup][claim] cycle done due_rows={} attempted={} succeeded={} failed={}",
+                            claim_summary.due_rows,
+                            claim_summary.attempted,
+                            claim_summary.succeeded,
+                            claim_summary.failed
+                        );
+                    }
+                    Err(e) => {
+                        log::error!("[ft-lockup][claim] cycle failed after refresh: {}", e);
+                    }
+                }
             }
             Err(e) => {
-                log::error!("[ft-lockup-scheduler] refresh failed: {}", e);
+                log::error!("[ft-lockup][scheduler] refresh failed: {}", e);
             }
         }
 
@@ -606,5 +633,32 @@ mod tests {
             "next claim time should be in the future"
         );
         assert_eq!((next_claim_at.timestamp() - 1000) % 100, 0);
+    }
+
+    #[test]
+    fn first_cycle_marks_due_when_unclaimed_exists() {
+        let data = FtLockupAccountData {
+            deposited_amount: "100".to_string(),
+            claimed_amount: "0".to_string(),
+            unclaimed_amount: "10".to_string(),
+            start_timestamp: Some(1000),
+            session_interval: Some(100),
+            session_num: Some(10),
+            last_claim_session: Some(0),
+        };
+
+        let now = Utc::now();
+        let unclaimed_amount = parse_u128_amount(&data.unclaimed_amount);
+        let next_claim_at = if unclaimed_amount > 0 {
+            Some(now)
+        } else {
+            compute_next_claim_at(now, &data)
+        }
+        .expect("next claim should be set");
+
+        assert!(
+            next_claim_at.timestamp() <= now.timestamp(),
+            "rows with unclaimed amount should be due immediately"
+        );
     }
 }
