@@ -1,16 +1,16 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { getUserTreasuries, type Treasury } from "@/lib/api";
 import {
     type ChatInfo,
     type ConnectedTreasury,
-    type TelegramStatus,
     connectTreasuries,
     getTelegramChatInfo,
     getTelegramStatus,
+    type TelegramStatus,
 } from "@/lib/telegram-api";
-import { getUserTreasuries, type Treasury } from "@/lib/api";
 import { useNearStore } from "@/stores/near-store";
 
 // ---------------------------------------------------------------------------
@@ -22,7 +22,12 @@ type PageState =
     | { kind: "needs-auth" }
     | { kind: "fetching-chat" }
     | { kind: "token-expired" }
-    | { kind: "select-treasuries"; chatInfo: ChatInfo; treasuries: Treasury[]; statusMap: Record<string, TelegramStatus> }
+    | {
+          kind: "select-treasuries";
+          chatInfo: ChatInfo;
+          treasuries: Treasury[];
+          statusMap: Record<string, TelegramStatus>;
+      }
     | { kind: "confirming"; chatInfo: ChatInfo; selectedIds: string[] }
     | { kind: "done" }
     | { kind: "error"; message: string };
@@ -58,7 +63,7 @@ function ConnectPageInner() {
         };
         run();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [checkAuth, init, isInitializing]);
 
     // Step 2: react to auth state changes
     useEffect(() => {
@@ -72,11 +77,15 @@ function ConnectPageInner() {
             }
         }
 
-        if (state.kind === "needs-auth" && isAuthenticated && hasAcceptedTerms) {
+        if (
+            state.kind === "needs-auth" &&
+            isAuthenticated &&
+            hasAcceptedTerms
+        ) {
             setState({ kind: "fetching-chat" });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isAuthenticated, hasAcceptedTerms, isInitializing]);
+    }, [isAuthenticated, hasAcceptedTerms, isInitializing, state.kind]);
 
     // Step 3: fetch chat info once authenticated
     const fetchChat = useCallback(async () => {
@@ -90,7 +99,9 @@ function ConnectPageInner() {
 
             // Fetch user's member treasuries
             const accountId = walletAccountId ?? "";
-            const treasuries = await getUserTreasuries(accountId, { includeHidden: false });
+            const treasuries = await getUserTreasuries(accountId, {
+                includeHidden: false,
+            });
 
             // Pre-select treasuries already connected to this chat
             const alreadyConnected = new Set(
@@ -115,13 +126,22 @@ function ConnectPageInner() {
                     }),
             );
 
-            setState({ kind: "select-treasuries", chatInfo, treasuries, statusMap });
+            setState({
+                kind: "select-treasuries",
+                chatInfo,
+                treasuries,
+                statusMap,
+            });
         } catch (err: unknown) {
-            const status = (err as { response?: { status?: number } })?.response?.status;
+            const status = (err as { response?: { status?: number } })?.response
+                ?.status;
             if (status === 404 || status === 410) {
                 setState({ kind: "token-expired" });
             } else {
-                setState({ kind: "error", message: "Failed to load chat info. Please try again." });
+                setState({
+                    kind: "error",
+                    message: "Failed to load chat info. Please try again.",
+                });
             }
         }
     }, [token, walletAccountId]);
@@ -152,7 +172,11 @@ function ConnectPageInner() {
         if (state.kind !== "select-treasuries") return;
         const savedState = state;
         const ids: string[] = Array.from(selectedIds);
-        setState({ kind: "confirming", chatInfo: state.chatInfo, selectedIds: ids });
+        setState({
+            kind: "confirming",
+            chatInfo: state.chatInfo,
+            selectedIds: ids,
+        });
         setConnectError(null);
 
         try {
@@ -162,7 +186,9 @@ function ConnectPageInner() {
             const message =
                 (err as { response?: { data?: string } })?.response?.data ??
                 "Failed to connect treasuries. Please try again.";
-            setConnectError(typeof message === "string" ? message : "An error occurred.");
+            setConnectError(
+                typeof message === "string" ? message : "An error occurred.",
+            );
             setState(savedState);
         }
     };
@@ -186,7 +212,8 @@ function ConnectPageInner() {
                     <h1 className="text-xl font-semibold mb-2">Link expired</h1>
                     <p className="text-muted-foreground">
                         This link has expired or has already been used. Re-click
-                        &ldquo;Connect Treasury&rdquo; in Telegram to get a new link.
+                        &ldquo;Connect Treasury&rdquo; in Telegram to get a new
+                        link.
                     </p>
                 </div>
             </main>
@@ -199,7 +226,8 @@ function ConnectPageInner() {
                 <div className="text-center max-w-sm">
                     <h1 className="text-xl font-semibold mb-2">Connected!</h1>
                     <p className="text-muted-foreground">
-                        Treasuries connected successfully. You can close this tab.
+                        Treasuries connected successfully. You can close this
+                        tab.
                     </p>
                 </div>
             </main>
@@ -221,11 +249,15 @@ function ConnectPageInner() {
         return (
             <main className="flex min-h-screen items-center justify-center p-6">
                 <div className="text-center max-w-sm space-y-4">
-                    <h1 className="text-xl font-semibold">Sign in to connect</h1>
+                    <h1 className="text-xl font-semibold">
+                        Sign in to connect
+                    </h1>
                     <p className="text-muted-foreground">
-                        Connect your NEAR wallet to link treasuries to this Telegram chat.
+                        Connect your NEAR wallet to link treasuries to this
+                        Telegram chat.
                     </p>
                     <button
+                        type="button"
                         className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
                         onClick={() => connect()}
                     >
@@ -240,34 +272,50 @@ function ConnectPageInner() {
         const { chatInfo, treasuries, statusMap } =
             state.kind === "select-treasuries"
                 ? state
-                : { chatInfo: state.chatInfo, treasuries: [] as Treasury[], statusMap: {} };
+                : {
+                      chatInfo: state.chatInfo,
+                      treasuries: [] as Treasury[],
+                      statusMap: {},
+                  };
 
         const isConfirming = state.kind === "confirming";
-        const connectedSet = new Set(chatInfo.connectedTreasuries.map((t: ConnectedTreasury) => t.daoId));
+        const connectedSet = new Set(
+            chatInfo.connectedTreasuries.map((t: ConnectedTreasury) => t.daoId),
+        );
 
         return (
             <main className="flex min-h-screen items-center justify-center p-6">
                 <div className="w-full max-w-md space-y-4">
                     <div>
-                        <h1 className="text-xl font-semibold">Connect Treasury</h1>
+                        <h1 className="text-xl font-semibold">
+                            Connect Treasury
+                        </h1>
                         {chatInfo.chatTitle && (
                             <p className="text-sm text-muted-foreground mt-1">
-                                Chat: <span className="font-medium">{chatInfo.chatTitle}</span>
+                                Chat:{" "}
+                                <span className="font-medium">
+                                    {chatInfo.chatTitle}
+                                </span>
                             </p>
                         )}
                     </div>
 
                     <p className="text-sm text-muted-foreground">
-                        Select the treasuries you want to connect to this Telegram chat.
+                        Select the treasuries you want to connect to this
+                        Telegram chat.
                     </p>
 
                     {connectError && (
-                        <p className="text-sm text-destructive">{connectError}</p>
+                        <p className="text-sm text-destructive">
+                            {connectError}
+                        </p>
                     )}
 
                     <ul className="space-y-2">
                         {treasuries.map((treasury: Treasury) => {
-                            const alreadyHere = connectedSet.has(treasury.daoId);
+                            const alreadyHere = connectedSet.has(
+                                treasury.daoId,
+                            );
                             const elsewhereStatus = statusMap[treasury.daoId];
                             const checked = selectedIds.has(treasury.daoId);
 
@@ -281,7 +329,9 @@ function ConnectPageInner() {
                                         id={treasury.daoId}
                                         checked={checked}
                                         disabled={isConfirming}
-                                        onChange={() => handleToggle(treasury.daoId)}
+                                        onChange={() =>
+                                            handleToggle(treasury.daoId)
+                                        }
                                         className="mt-0.5"
                                     />
                                     <label
@@ -289,7 +339,8 @@ function ConnectPageInner() {
                                         className="flex-1 cursor-pointer space-y-0.5"
                                     >
                                         <span className="block text-sm font-medium">
-                                            {treasury.config.name ?? treasury.daoId}
+                                            {treasury.config.name ??
+                                                treasury.daoId}
                                         </span>
                                         <span className="block text-xs text-muted-foreground">
                                             {treasury.daoId}
@@ -320,6 +371,7 @@ function ConnectPageInner() {
                     )}
 
                     <button
+                        type="button"
                         className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                         disabled={selectedIds.size === 0 || isConfirming}
                         onClick={handleConnect}

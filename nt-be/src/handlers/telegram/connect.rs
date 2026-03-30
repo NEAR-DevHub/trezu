@@ -121,7 +121,10 @@ pub async fn get_chat_info(
     .ok_or((StatusCode::NOT_FOUND, "Token not found".to_string()))?;
 
     if row.expires_at < Utc::now() || row.used_at.is_some() {
-        return Err((StatusCode::GONE, "Token expired or already used".to_string()));
+        return Err((
+            StatusCode::GONE,
+            "Token expired or already used".to_string(),
+        ));
     }
 
     let connected_treasuries = sqlx::query_scalar::<_, String>(
@@ -153,7 +156,10 @@ pub async fn connect_treasuries(
     Json(body): Json<ConnectTreasuriesRequest>,
 ) -> Result<Json<ConnectTreasuriesResponse>, (StatusCode, String)> {
     if body.treasury_ids.is_empty() {
-        return Err((StatusCode::BAD_REQUEST, "treasury_ids must not be empty".to_string()));
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "treasury_ids must not be empty".to_string(),
+        ));
     }
 
     // Re-validate token
@@ -167,26 +173,32 @@ pub async fn connect_treasuries(
     .ok_or((StatusCode::NOT_FOUND, "Token not found".to_string()))?;
 
     if token_row.expires_at < Utc::now() || token_row.used_at.is_some() {
-        return Err((StatusCode::GONE, "Token expired or already used".to_string()));
+        return Err((
+            StatusCode::GONE,
+            "Token expired or already used".to_string(),
+        ));
     }
 
     let chat_id = token_row.chat_id;
 
     // Look up the user's UUID for connected_by
-    let user_id = sqlx::query_scalar::<_, Uuid>(
-        "SELECT id FROM users WHERE account_id = $1",
-    )
-    .bind(&auth_user.account_id)
-    .fetch_optional(&state.db_pool)
-    .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let user_id = sqlx::query_scalar::<_, Uuid>("SELECT id FROM users WHERE account_id = $1")
+        .bind(&auth_user.account_id)
+        .fetch_optional(&state.db_pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     // Verify policy membership for all requested treasuries
     for dao_id in &body.treasury_ids {
         auth_user
             .verify_dao_member(&state.db_pool, dao_id)
             .await
-            .map_err(|_| (StatusCode::FORBIDDEN, format!("Not a policy member of {}", dao_id)))?;
+            .map_err(|_| {
+                (
+                    StatusCode::FORBIDDEN,
+                    format!("Not a policy member of {}", dao_id),
+                )
+            })?;
     }
 
     // Run everything in a transaction
@@ -233,8 +245,16 @@ pub async fn connect_treasuries(
         if n == 1 { "treasury" } else { "treasuries" },
         auth_user.account_id
     );
-    if let Err(e) = state.telegram_client.send_message_to_chat(chat_id, &msg).await {
-        log::warn!("[telegram] Failed to send confirmation to chat {}: {}", chat_id, e);
+    if let Err(e) = state
+        .telegram_client
+        .send_message_to_chat(chat_id, &msg)
+        .await
+    {
+        log::warn!(
+            "[telegram] Failed to send confirmation to chat {}: {}",
+            chat_id,
+            e
+        );
     }
 
     Ok(Json(ConnectTreasuriesResponse {

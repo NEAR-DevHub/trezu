@@ -41,7 +41,10 @@ impl TelegramClient {
     ///
     /// This is the legacy method used for internal operational alerts (user creation,
     /// treasury creation, whitelist requests). The chat ID comes from `TELEGRAM_CHAT_ID`.
-    pub async fn send_message(&self, message: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn send_message(
+        &self,
+        message: &str,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let (bot, chat_id_str) = match (&self.bot, &self.notification_chat_id) {
             (Some(b), Some(c)) => (b, c),
             _ => {
@@ -70,7 +73,10 @@ impl TelegramClient {
         let bot = match &self.bot {
             Some(b) => b,
             None => {
-                log::warn!("Telegram bot not configured (TELEGRAM_BOT_TOKEN not set). Message to chat {} ignored.", chat_id);
+                log::warn!(
+                    "Telegram bot not configured (TELEGRAM_BOT_TOKEN not set). Message to chat {} ignored.",
+                    chat_id
+                );
                 return Ok(());
             }
         };
@@ -90,7 +96,10 @@ impl TelegramClient {
         let bot = match &self.bot {
             Some(b) => b,
             None => {
-                log::warn!("Telegram bot not configured (TELEGRAM_BOT_TOKEN not set). Message with button to chat {} ignored.", chat_id);
+                log::warn!(
+                    "Telegram bot not configured (TELEGRAM_BOT_TOKEN not set). Message with button to chat {} ignored.",
+                    chat_id
+                );
                 return Ok(());
             }
         };
@@ -99,10 +108,8 @@ impl TelegramClient {
             .parse()
             .map_err(|_| format!("Invalid button URL: {}", button_url))?;
 
-        let keyboard = InlineKeyboardMarkup::new([[InlineKeyboardButton::url(
-            button_label,
-            parsed_url,
-        )]]);
+        let keyboard =
+            InlineKeyboardMarkup::new([[InlineKeyboardButton::url(button_label, parsed_url)]]);
 
         bot.send_message(ChatId(chat_id), text)
             .reply_markup(keyboard)

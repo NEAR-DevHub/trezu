@@ -83,7 +83,11 @@ async fn handle_bot_added(state: &AppState, chat_id: i64, chat_title: Option<&st
     let token = match token_result {
         Ok(t) => t,
         Err(e) => {
-            log::error!("[telegram] Failed to create connect token for chat {}: {}", chat_id, e);
+            log::error!(
+                "[telegram] Failed to create connect token for chat {}: {}",
+                chat_id,
+                e
+            );
             return;
         }
     };
@@ -103,7 +107,11 @@ async fn handle_bot_added(state: &AppState, chat_id: i64, chat_title: Option<&st
         )
         .await
     {
-        log::error!("[telegram] Failed to send connect message to chat {}: {}", chat_id, e);
+        log::error!(
+            "[telegram] Failed to send connect message to chat {}: {}",
+            chat_id,
+            e
+        );
     }
 }
 

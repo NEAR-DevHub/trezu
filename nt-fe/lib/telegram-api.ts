@@ -53,7 +53,9 @@ export async function disconnectTreasury(daoId: string): Promise<void> {
     });
 }
 
-export async function getTelegramStatus(daoId: string): Promise<TelegramStatus> {
+export async function getTelegramStatus(
+    daoId: string,
+): Promise<TelegramStatus> {
     const { data } = await axios.get<TelegramStatus>(
         `${BACKEND_API_BASE}/telegram/status`,
         { params: { daoId }, withCredentials: true },
