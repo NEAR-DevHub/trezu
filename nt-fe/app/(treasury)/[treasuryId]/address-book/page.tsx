@@ -156,7 +156,7 @@ function RecipientFlow({
     const recipients = form.watch("recipients");
 
     return (
-        <PageCard className="w-full max-w-[600px] mx-auto flex flex-col gap-4 p-4">
+        <PageCard className="w-full max-w-[800px] mx-auto flex flex-col gap-4 p-4">
             <Form {...form}>
                 {step === 0 ? (
                     mode === "add" ? (
