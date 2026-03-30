@@ -143,12 +143,17 @@ export function LockupDetailsModal({
     let progressLabel = "0%";
     let reservedStorage = Big(0);
     let lockupStaked = Big(0);
-    let lockupAllocated = Big(0);
+    // Used by progress/locked-unlocked math (falls back to total when missing).
+    let allocatedForProgress = Big(0);
+    // Raw `totalAllocated` from contract (no fallback), used for earned breakdown.
+    let allocatedFromContract = Big(0);
+    let summaryTotal = Big(0);
 
     if (isFtLockup && asset.balance.type === "Standard") {
         total = Big(
             formatBalance(asset.balance.total, asset.decimals, asset.decimals),
         );
+        summaryTotal = total;
         locked = Big(
             formatBalance(asset.balance.locked, asset.decimals, asset.decimals),
         );
@@ -168,13 +173,28 @@ export function LockupDetailsModal({
         const allocatedRaw = asset.balance.lockup.totalAllocated.gt(0)
             ? asset.balance.lockup.totalAllocated
             : asset.balance.lockup.total;
+        const allocatedRawForBreakdown = asset.balance.lockup.totalAllocated;
         const lockedRaw = asset.balance.lockup.unvested;
         const unlockedRaw = allocatedRaw.sub(lockedRaw);
         lockupStaked = asset.balance.lockup.staked;
-        lockupAllocated = allocatedRaw;
+        allocatedForProgress = allocatedRaw;
+        allocatedFromContract = Big(
+            formatBalance(
+                allocatedRawForBreakdown,
+                asset.decimals,
+                asset.decimals,
+            ),
+        );
 
         total = Big(
             formatBalance(allocatedRaw, asset.decimals, asset.decimals),
+        );
+        summaryTotal = Big(
+            formatBalance(
+                asset.balance.lockup.total,
+                asset.decimals,
+                asset.decimals,
+            ),
         );
         locked = Big(formatBalance(lockedRaw, asset.decimals, asset.decimals));
         unlocked = Big(
@@ -192,7 +212,7 @@ export function LockupDetailsModal({
         );
     }
 
-    const totalUsd = total.mul(asset.price).toNumber();
+    const totalUsd = summaryTotal.mul(asset.price).toNumber();
 
     const roundsTotal = asset.ftLockupSchedule?.sessionNum ?? 0;
 
@@ -219,8 +239,8 @@ export function LockupDetailsModal({
     };
     const allocatedAmountSummary = (
         <AmountSummary
-            title="Allocated Amount"
-            total={total.toFixed(2)}
+            title={isNearLockup ? "Balance" : "Allocated Amount"}
+            total={summaryTotal.toFixed(2)}
             totalUSD={totalUsd}
             token={amountSummaryToken}
         />
@@ -230,7 +250,13 @@ export function LockupDetailsModal({
         Big(formatBalance(lockupStaked, asset.decimals)),
     );
     const isFullLockupStaked =
-        lockupAllocated.gt(0) && lockupStaked.gte(lockupAllocated);
+        allocatedForProgress.gt(0) && lockupStaked.gte(allocatedForProgress);
+    const earnedFromStaking =
+        allocatedFromContract.gt(0) && summaryTotal.gt(allocatedFromContract)
+            ? summaryTotal.sub(allocatedFromContract)
+            : Big(0);
+    const showTokenBreakdown =
+        isNearLockup && allocatedFromContract.gt(0) && earnedFromStaking.gt(0);
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -274,6 +300,31 @@ export function LockupDetailsModal({
                                 To use unlocked tokens, stop earning first and
                                 withdraw them.
                             </p>
+                        </div>
+                    ) : null}
+                    {showTokenBreakdown ? (
+                        <div className="space-y-2 text-sm">
+                            <p className="font-semibold">Token Breakdown</p>
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-muted-foreground">
+                                        Allocated Amount
+                                    </p>
+                                    <p className="font-medium">
+                                        {allocatedFromContract.toFixed(2)}{" "}
+                                        {asset.symbol}
+                                    </p>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <p className="text-muted-foreground">
+                                        Earned
+                                    </p>
+                                    <p className="text-general-success-foreground font-medium">
+                                        +{earnedFromStaking.toFixed(2)}{" "}
+                                        {asset.symbol}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     ) : null}
 
