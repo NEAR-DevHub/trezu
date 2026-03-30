@@ -2,7 +2,7 @@ use std::{sync::Arc, time::Duration};
 
 use chrono::{DateTime, Utc};
 use near_api::{
-    AccountId, NearGas, NearToken, Transaction,
+    AccountId, Contract, NearGas, NearToken, Transaction,
     types::{Action, transaction::actions::FunctionCallAction},
 };
 use sqlx::{PgPool, Row};
@@ -298,23 +298,34 @@ async fn register_ft_once(
     instance_id: &str,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let token_account: AccountId = token_account_id.parse()?;
+    let dao_account: AccountId = dao_account_id.parse()?;
 
-    let args = serde_json::to_vec(&serde_json::json!({
-        "account_id": dao_account_id,
-        "registration_only": true
-    }))?;
-
-    Transaction::construct(state.bulk_payment_contract_id.clone(), token_account)
-        .add_action(Action::FunctionCall(Box::new(FunctionCallAction {
-            method_name: "storage_deposit".to_string(),
-            args,
-            gas: FT_LOCKUP_GAS,
-            deposit: STORAGE_DEPOSIT_AMOUNT,
-        })))
-        .with_signer(state.bulk_payment_signer.clone())
-        .send_to(&state.network)
+    let already_registered = Contract(token_account.clone())
+        .storage_deposit()
+        .view_account_storage(dao_account)
+        .fetch_from(&state.network)
         .await?
-        .into_result()?;
+        .data
+        .is_some();
+
+    if !already_registered {
+        let args = serde_json::to_vec(&serde_json::json!({
+            "account_id": dao_account_id,
+            "registration_only": true
+        }))?;
+
+        Transaction::construct(state.bulk_payment_contract_id.clone(), token_account)
+            .add_action(Action::FunctionCall(Box::new(FunctionCallAction {
+                method_name: "storage_deposit".to_string(),
+                args,
+                gas: FT_LOCKUP_GAS,
+                deposit: STORAGE_DEPOSIT_AMOUNT,
+            })))
+            .with_signer(state.bulk_payment_signer.clone())
+            .send_to(&state.network)
+            .await?
+            .into_result()?;
+    }
 
     sqlx::query(
         r#"

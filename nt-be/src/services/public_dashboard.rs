@@ -722,6 +722,8 @@ mod tests {
         SimplifiedToken {
             id: token_id.to_string(),
             contract_id: Some(format!("{}.near", token_id)),
+            lockup_instance_id: None,
+            ft_lockup_schedule: None,
             residency: TokenResidency::Ft,
             network: "near".to_string(),
             chain_name: "Near Protocol".to_string(),
@@ -746,6 +748,8 @@ mod tests {
             SimplifiedToken {
                 id: "near".to_string(),
                 contract_id: None,
+                lockup_instance_id: None,
+                ft_lockup_schedule: None,
                 residency: TokenResidency::Staked,
                 network: "near".to_string(),
                 chain_name: "Near Protocol".to_string(),
@@ -774,6 +778,8 @@ mod tests {
             SimplifiedToken {
                 id: "near".to_string(),
                 contract_id: None,
+                lockup_instance_id: None,
+                ft_lockup_schedule: None,
                 residency: TokenResidency::Lockup,
                 network: "near".to_string(),
                 chain_name: "Near Protocol".to_string(),
@@ -786,6 +792,7 @@ mod tests {
                     staked: NearToken::from_yoctonear(0),
                     unstaked_balance: NearToken::from_yoctonear(0),
                     can_withdraw: false,
+                    staking_pool_id: None,
                 }),
                 decimals: 24,
                 price: "3".to_string(),
