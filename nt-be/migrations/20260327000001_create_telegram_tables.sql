@@ -11,6 +11,7 @@ CREATE TABLE telegram_chats (
 CREATE TABLE telegram_connect_tokens (
     token      uuid        NOT NULL DEFAULT gen_random_uuid(),
     chat_id    bigint      NOT NULL REFERENCES telegram_chats(chat_id) ON DELETE CASCADE,
+    message_id integer     NULL,
     expires_at timestamptz NOT NULL DEFAULT now() + interval '1 hour',
     used_at    timestamptz NULL,  -- set when the frontend completes the connection
     CONSTRAINT telegram_connect_tokens_pkey PRIMARY KEY (token)

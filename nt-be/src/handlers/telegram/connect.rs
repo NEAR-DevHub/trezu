@@ -87,6 +87,7 @@ struct TokenChatRow {
 #[derive(FromRow)]
 struct TokenOnlyRow {
     chat_id: i64,
+    message_id: Option<i32>,
     expires_at: DateTime<Utc>,
     used_at: Option<DateTime<Utc>>,
 }
@@ -103,7 +104,6 @@ struct StatusRow {
 
 pub async fn get_chat_info(
     State(state): State<Arc<AppState>>,
-    _auth_user: AuthUser,
     Query(params): Query<TokenQuery>,
 ) -> Result<Json<ChatInfoResponse>, (StatusCode, String)> {
     let row = sqlx::query_as::<_, TokenChatRow>(
@@ -164,7 +164,7 @@ pub async fn connect_treasuries(
 
     // Re-validate token
     let token_row = sqlx::query_as::<_, TokenOnlyRow>(
-        "SELECT chat_id, expires_at, used_at FROM telegram_connect_tokens WHERE token = $1",
+        "SELECT chat_id, message_id, expires_at, used_at FROM telegram_connect_tokens WHERE token = $1",
     )
     .bind(body.token)
     .fetch_optional(&state.db_pool)
@@ -237,7 +237,7 @@ pub async fn connect_treasuries(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    // Send confirmation message (non-fatal)
+    // Edit the original connect message with a success status (non-fatal)
     let n = body.treasury_ids.len();
     let msg = format!(
         "✓ {} {} connected by {}",
@@ -245,16 +245,36 @@ pub async fn connect_treasuries(
         if n == 1 { "treasury" } else { "treasuries" },
         auth_user.account_id
     );
-    if let Err(e) = state
-        .telegram_client
-        .send_message_to_chat(chat_id, &msg)
-        .await
-    {
+    if let Some(message_id) = token_row.message_id {
+        if let Err(e) = state
+            .telegram_client
+            .edit_message_text(chat_id, message_id, &msg)
+            .await
+        {
+            log::warn!(
+                "[telegram] Failed to edit or fallback-send connect message {} in chat {}: {}",
+                message_id,
+                chat_id,
+                e
+            );
+        }
+    } else {
         log::warn!(
-            "[telegram] Failed to send confirmation to chat {}: {}",
-            chat_id,
-            e
+            "[telegram] No connect message_id stored for token {}, skipping message edit in chat {}",
+            body.token,
+            chat_id
         );
+        if let Err(send_err) = state
+            .telegram_client
+            .send_message_to_chat(chat_id, &msg)
+            .await
+        {
+            log::warn!(
+                "[telegram] Fallback send failed with missing message_id in chat {}: {}",
+                chat_id,
+                send_err
+            );
+        }
     }
 
     Ok(Json(ConnectTreasuriesResponse {

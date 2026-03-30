@@ -5,6 +5,7 @@ use axum::{
 };
 use std::sync::Arc;
 use teloxide::types::{ChatMemberKind, Update, UpdateKind};
+use teloxide::utils::command::parse_command;
 
 use crate::AppState;
 
@@ -42,7 +43,11 @@ pub async fn handle_telegram_webhook(
             ChatMemberKind::Restricted(_) => {}
         },
         UpdateKind::Message(msg) => {
-            if msg.text().map_or(false, |t| t.starts_with("/connect")) {
+            if msg
+                .text()
+                .and_then(|t| parse_command(t, "").map(|(cmd, _)| cmd))
+                .is_some_and(|cmd| matches!(cmd, "start" | "connect"))
+            {
                 handle_bot_added(&state, msg.chat.id.0, msg.chat.title()).await;
             }
         }
@@ -97,18 +102,54 @@ async fn handle_bot_added(state: &AppState, chat_id: i64, chat_title: Option<&st
         state.env_vars.frontend_base_url, token
     );
 
-    if let Err(e) = state
-        .telegram_client
-        .send_message_with_button(
-            chat_id,
-            "This chat is not connected to a Trezu treasury yet.",
-            "Connect Treasury",
-            &connect_url,
+    let existing_connections = sqlx::query_scalar::<_, i64>(
+        "SELECT COUNT(*) FROM telegram_treasury_connections WHERE chat_id = $1",
+    )
+    .bind(chat_id)
+    .fetch_one(&state.db_pool)
+    .await
+    .unwrap_or(0);
+
+    let prompt_text = if existing_connections > 0 {
+        format!(
+            "This chat already has {} connected {}. Use the button below to review or update treasury connections.",
+            existing_connections,
+            if existing_connections == 1 {
+                "treasury"
+            } else {
+                "treasuries"
+            }
         )
+    } else {
+        "No treasuries are connected to this chat yet. Use the button below to connect one."
+            .to_string()
+    };
+
+    let sent_message_id = match state
+        .telegram_client
+        .send_message_with_button(chat_id, &prompt_text, "Connect Treasury", &connect_url)
         .await
     {
-        log::error!(
-            "[telegram] Failed to send connect message to chat {}: {}",
+        Ok(message_id) => message_id,
+        Err(e) => {
+            log::error!(
+                "[telegram] Failed to send connect message to chat {}: {}",
+                chat_id,
+                e
+            );
+            return;
+        }
+    };
+
+    if let Err(e) =
+        sqlx::query("UPDATE telegram_connect_tokens SET message_id = $1 WHERE token = $2")
+            .bind(sent_message_id)
+            .bind(token)
+            .execute(&state.db_pool)
+            .await
+    {
+        log::warn!(
+            "[telegram] Failed to persist connect message_id for chat {}: {}",
             chat_id,
             e
         );

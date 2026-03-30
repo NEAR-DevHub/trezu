@@ -14,7 +14,7 @@ use url::Url;
 /// - `send_message_with_button`: send a message with an inline URL button to any chat
 ///
 /// All methods silently succeed when the bot is not configured (missing token).
-#[derive(Clone, Debug)]
+#[derive(Clone, Default, Debug)]
 pub struct TelegramClient {
     pub(crate) bot: Option<Bot>,
     notification_chat_id: Option<String>,
@@ -92,7 +92,7 @@ impl TelegramClient {
         text: &str,
         button_label: &str,
         button_url: &str,
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<i32, Box<dyn std::error::Error + Send + Sync>> {
         let bot = match &self.bot {
             Some(b) => b,
             None => {
@@ -100,7 +100,7 @@ impl TelegramClient {
                     "Telegram bot not configured (TELEGRAM_BOT_TOKEN not set). Message with button to chat {} ignored.",
                     chat_id
                 );
-                return Ok(());
+                return Ok(0);
             }
         };
 
@@ -111,18 +111,49 @@ impl TelegramClient {
         let keyboard =
             InlineKeyboardMarkup::new([[InlineKeyboardButton::url(button_label, parsed_url)]]);
 
-        bot.send_message(ChatId(chat_id), text)
+        let sent = bot
+            .send_message(ChatId(chat_id), text)
             .reply_markup(keyboard)
             .await?;
-        Ok(())
+        Ok(sent.id.0)
     }
-}
 
-impl Default for TelegramClient {
-    fn default() -> Self {
-        Self {
-            bot: None,
-            notification_chat_id: None,
+    /// Edit an existing message in an arbitrary Telegram chat.
+    pub async fn edit_message_text(
+        &self,
+        chat_id: i64,
+        message_id: i32,
+        text: &str,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let bot = match &self.bot {
+            Some(b) => b,
+            None => {
+                log::warn!(
+                    "Telegram bot not configured (TELEGRAM_BOT_TOKEN not set). Edit message {} in chat {} ignored.",
+                    message_id,
+                    chat_id
+                );
+                return Ok(());
+            }
+        };
+
+        if let Err(edit_err) = bot
+            .edit_message_text(
+                ChatId(chat_id),
+                teloxide::types::MessageId(message_id),
+                text,
+            )
+            .await
+        {
+            log::warn!(
+                "[telegram] Edit message {} in chat {} failed: {}. Falling back to send_message.",
+                message_id,
+                chat_id,
+                edit_err
+            );
+            bot.send_message(ChatId(chat_id), text).await?;
         }
+
+        Ok(())
     }
 }
