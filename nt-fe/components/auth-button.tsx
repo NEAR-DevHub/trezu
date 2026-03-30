@@ -46,6 +46,8 @@ function ErrorMessage({
     return (
         <Button
             {...props}
+            disabled
+            onClick={undefined}
             tooltipContent={message}
             aria-disabled
             className={cn(

@@ -10,6 +10,8 @@ use std::fmt::Display;
 pub enum CacheTier {
     /// Long-lived data (5 minutes TTL) - metadata, configs, lookups
     LongTerm,
+    /// Extra long-lived data (6 hours TTL) - heavy discovery/index responses
+    VeryLongTerm,
     /// Frequently changing data (5 seconds TTL) - balances, policies
     ShortTerm,
     /// Historical/immutable data (very long TTL) - block data, historical balances
@@ -23,6 +25,8 @@ pub enum CacheTier {
 pub struct Cache {
     /// Long-term cache (5 minutes TTL)
     pub long_term: MokaCache<String, Value>,
+    /// Very long-term cache (6 hours TTL)
+    pub very_long_term: MokaCache<String, Value>,
     /// Short-term cache (30 seconds TTL)
     pub short_term: MokaCache<String, Value>,
 }
@@ -80,6 +84,11 @@ impl Cache {
             .time_to_live(Duration::from_secs(300)) // 5 minutes
             .build();
 
+        let very_long_term = MokaCache::builder()
+            .max_capacity(20_000)
+            .time_to_live(Duration::from_secs(21_600)) // 6 hours
+            .build();
+
         let short_term = MokaCache::builder()
             .max_capacity(1_000)
             .time_to_live(Duration::from_secs(5)) // 5 seconds
@@ -87,6 +96,7 @@ impl Cache {
 
         Self {
             long_term,
+            very_long_term,
             short_term,
         }
     }
@@ -105,6 +115,11 @@ impl Cache {
             .time_to_live(Duration::from_secs(long_term_ttl_secs))
             .build();
 
+        let very_long_term = MokaCache::builder()
+            .max_capacity(long_term_capacity.saturating_mul(2))
+            .time_to_live(Duration::from_secs(long_term_ttl_secs.saturating_mul(72)))
+            .build();
+
         let short_term = MokaCache::builder()
             .max_capacity(short_term_capacity)
             .time_to_live(Duration::from_secs(short_term_ttl_secs))
@@ -112,6 +127,7 @@ impl Cache {
 
         Self {
             long_term,
+            very_long_term,
             short_term,
         }
     }
@@ -120,6 +136,7 @@ impl Cache {
     fn get_cache(&self, tier: CacheTier) -> &MokaCache<String, Value> {
         match tier {
             CacheTier::LongTerm => &self.long_term,
+            CacheTier::VeryLongTerm => &self.very_long_term,
             CacheTier::ShortTerm => &self.short_term,
             CacheTier::Immutable => &self.long_term, // TODO: implement separate immutable cache
         }

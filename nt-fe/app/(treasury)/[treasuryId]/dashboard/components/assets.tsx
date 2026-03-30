@@ -1,13 +1,11 @@
-import { AssetsTable } from "@/components/assets-table";
-import { TreasuryAsset } from "@/lib/api";
-import { PageCard } from "@/components/card";
-import { AssetsTableSkeleton } from "@/components/assets-table";
 import { Coins } from "lucide-react";
+import { AssetsTable, AssetsTableSkeleton } from "@/components/assets-table";
+import { PageCard } from "@/components/card";
 import { EmptyState } from "@/components/empty-state";
 import { StepperHeader } from "@/components/step-wizard";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useEffect, useMemo, useState } from "react";
 import { useAggregatedTokens } from "@/hooks/use-assets";
+import type { TreasuryAsset } from "@/lib/api";
+import { getDashboardBucketVisibility } from "@/lib/dashboard-balance-view";
 
 interface Props {
     tokens: TreasuryAsset[];
@@ -16,47 +14,15 @@ interface Props {
 
 export default function Assets({ tokens, isLoading }: Props) {
     const aggregatedTokens = useAggregatedTokens(tokens);
-    const [filterLessThanDollar, setFilterLessThanDollar] = useState(false);
-
-    const total = useMemo(
-        () =>
-            aggregatedTokens.reduce(
-                (value, element) => value + element.totalBalanceUSD,
-                0,
-            ),
-        [aggregatedTokens],
-    );
-
-    const isThereSomethingToHide = useMemo(
-        () => aggregatedTokens.some((value) => value.totalBalanceUSD < 1),
-        [aggregatedTokens],
-    );
-
-    const shouldShowLessThanDollar = total > 1 && isThereSomethingToHide;
-
-    // Auto-check "Hide assets <1 USD" on initial load only
-    const [initialized, setInitialized] = useState(false);
-    useEffect(() => {
-        if (!initialized && !isLoading && shouldShowLessThanDollar) {
-            setFilterLessThanDollar(true);
-            setInitialized(true);
-        }
-    }, [initialized, isLoading, shouldShowLessThanDollar]);
-
-    const filteredAssets = useMemo(
-        () =>
-            filterLessThanDollar
-                ? aggregatedTokens.filter((value) => value.totalBalanceUSD > 1)
-                : aggregatedTokens,
-        [aggregatedTokens, filterLessThanDollar],
-    );
+    const bucketVisibility = getDashboardBucketVisibility(tokens);
+    const hasTabs = bucketVisibility.showLocked || bucketVisibility.showEarning;
 
     const renderContent = () => {
         if (isLoading) {
             return <AssetsTableSkeleton />;
         }
 
-        if (filteredAssets.length === 0) {
+        if (aggregatedTokens.length === 0) {
             return (
                 <EmptyState
                     icon={Coins}
@@ -66,27 +32,16 @@ export default function Assets({ tokens, isLoading }: Props) {
             );
         }
 
-        return <AssetsTable aggregatedTokens={filteredAssets} />;
+        return <AssetsTable aggregatedTokens={aggregatedTokens} />;
     };
 
     return (
         <PageCard className="flex flex-col gap-5">
-            <div className="flex justify-between">
-                <StepperHeader title="Assets" />
-                <div className="flex gap-2">
-                    <Checkbox
-                        checked={filterLessThanDollar}
-                        onCheckedChange={(value) =>
-                            setFilterLessThanDollar(value as boolean)
-                        }
-                        disabled={!shouldShowLessThanDollar}
-                        defaultChecked={!shouldShowLessThanDollar && total > 1}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                        {"Hide assets <1 USD"}
-                    </p>
+            {!hasTabs && (
+                <div className="flex justify-between">
+                    <StepperHeader title="Assets" />
                 </div>
-            </div>
+            )}
             {renderContent()}
         </PageCard>
     );

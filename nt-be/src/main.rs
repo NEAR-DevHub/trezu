@@ -104,7 +104,7 @@ async fn main() {
     }
 
     // TODO: Re-enable once we have a DefiLlama API key or higher rate limit
-    // // Spawn usd_value backfill service
+    // Spawn usd_value backfill service
     // {
     //     let pool = state.db_pool.clone();
     //     let http_client = state.http_client.clone();
@@ -243,6 +243,14 @@ async fn main() {
         let state_clone = state.clone();
         tokio::spawn(async move {
             nt_be::services::run_public_dashboard_refresh_service(state_clone).await;
+        });
+    }
+
+    // Spawn FT lockup DAO schedule refresh service (every 6 hours).
+    {
+        let state_clone = state.clone();
+        tokio::spawn(async move {
+            nt_be::services::run_ft_lockup_schedule_refresh_service(state_clone).await;
         });
     }
 

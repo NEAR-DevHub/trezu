@@ -8,6 +8,7 @@ export interface LockupBalance {
     storageLocked: Big;
     unstakedBalance: Big;
     canWithdraw: boolean;
+    stakingPoolId?: string;
 }
 
 export interface StakingPoolAccountInfo {
@@ -37,6 +38,7 @@ interface LockupBalanceRaw {
     staked: string;
     unstakedBalance: string;
     canWithdraw: boolean;
+    stakingPoolId?: string;
 }
 
 interface StakingPoolAccountInfoRaw {
@@ -78,6 +80,7 @@ export function transformBalance(raw: BalanceRaw): {
             staked: Big(raw.Vested.staked),
             unstakedBalance: Big(raw.Vested.unstakedBalance),
             canWithdraw: raw.Vested.canWithdraw,
+            stakingPoolId: raw.Vested.stakingPoolId,
         };
         return {
             balance: { type: "Vested", lockup },
