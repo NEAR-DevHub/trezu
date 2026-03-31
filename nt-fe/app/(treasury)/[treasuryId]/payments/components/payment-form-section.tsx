@@ -15,7 +15,6 @@ import { TokenInput, Token } from "@/components/token-input";
 import AccountInput from "@/components/account-input";
 import { CreateRequestButton } from "@/components/create-request-button";
 import { getBlockchainType } from "@/lib/blockchain-utils";
-import { validateMinimumWithdrawal } from "@/lib/payment-validation";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useAddressBook, AddressBookEntry } from "@/features/address-book";
 import { SelectModal } from "@/app/(treasury)/[treasuryId]/dashboard/components/select-modal";
@@ -38,6 +37,7 @@ interface PaymentFormSectionProps<
     recipientName: Path<TFieldValues>;
 
     tokenLocked?: boolean;
+    feeErrorMessage?: string | null;
 
     saveButtonText: string;
     onSave: () => void;
@@ -53,6 +53,7 @@ export function PaymentFormSection<
     tokenName,
     recipientName,
     tokenLocked = false,
+    feeErrorMessage = null,
     saveButtonText,
     onSave,
     isSubmitting = false,
@@ -83,22 +84,15 @@ export function PaymentFormSection<
         return getBlockchainType(token.network);
     }, [token?.network]);
 
-    // Validate amount against minimum withdrawal for intents tokens
+    // Validate amount against dynamic fee coverage
     useEffect(() => {
-        clearErrors(amountName);
-        if (!amount || !token) return;
-
-        const error = validateMinimumWithdrawal(
-            amount,
-            token.minWithdrawalAmount,
-            token.decimals,
-            token.symbol,
-        );
-
-        if (error) {
-            setError(amountName, { type: "manual", message: error });
+        if (!feeErrorMessage) {
+            clearErrors(amountName);
+            return;
         }
-    }, [amount, token, amountName, setError, clearErrors]);
+
+        setError(amountName, { type: "manual", message: feeErrorMessage });
+    }, [amountName, clearErrors, feeErrorMessage, setError]);
 
     // When a contact is selected, sync the address into the form field
     useEffect(() => {
@@ -167,7 +161,11 @@ export function PaymentFormSection<
     );
 
     const isSaveDisabled =
-        !recipient || !isRecipientValid || isValidatingRecipient;
+        !recipient ||
+        !isRecipientValid ||
+        isValidatingRecipient ||
+        !!feeErrorMessage ||
+        isSubmitting;
 
     const handleClearContact = () => {
         setSelectedContact(null);
@@ -191,8 +189,7 @@ export function PaymentFormSection<
                     disabled: tokenLocked,
                     showOnlyOwnedAssets: false,
                 }}
-                showInsufficientBalance={true}
-                dynamicFontSize={true}
+                showInsufficientBalance={!feeErrorMessage}
             />
 
             <InputBlock

@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { SelectedTokenData } from "@/components/token-select";
 
 export interface BulkPaymentData {
+    row?: number;
     recipient: string;
     amount: string;
     memo?: string;
