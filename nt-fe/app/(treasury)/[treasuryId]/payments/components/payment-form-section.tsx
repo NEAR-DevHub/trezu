@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
     Control,
     FieldValues,
@@ -77,7 +77,16 @@ export function PaymentFormSection<
 
     const token = useWatch({ control, name: tokenName }) as Token | null;
     const recipient = useWatch({ control, name: recipientName }) as string;
-    const amount = useWatch({ control, name: amountName }) as string;
+    const setRecipientValue = useCallback(
+        (value: PathValue<TFieldValues, Path<TFieldValues>>) => {
+            setValue(recipientName, value, {
+                shouldDirty: true,
+                shouldTouch: true,
+                shouldValidate: true,
+            });
+        },
+        [recipientName, setValue],
+    );
 
     const blockchainType = useMemo(() => {
         if (!token?.network) return "near";
@@ -97,15 +106,14 @@ export function PaymentFormSection<
     // When a contact is selected, sync the address into the form field
     useEffect(() => {
         if (selectedContact) {
-            setValue(
-                recipientName,
+            setRecipientValue(
                 selectedContact.address as PathValue<
                     TFieldValues,
                     Path<TFieldValues>
                 >,
             );
         }
-    }, [selectedContact, recipientName, setValue]);
+    }, [selectedContact, setRecipientValue]);
 
     // Clear selected contact if it's incompatible with the current blockchain
     useEffect(() => {
@@ -117,13 +125,12 @@ export function PaymentFormSection<
             );
         if (!isCompatible) {
             setSelectedContact(null);
-            setValue(
-                recipientName,
+            setRecipientValue(
                 "" as PathValue<TFieldValues, Path<TFieldValues>>,
             );
             setIsRecipientValid(false);
         }
-    }, [blockchainType, selectedContact, setValue, recipientName]);
+    }, [blockchainType, selectedContact, setRecipientValue]);
 
     const filteredAddressBook = useMemo(
         () =>
@@ -169,10 +176,7 @@ export function PaymentFormSection<
 
     const handleClearContact = () => {
         setSelectedContact(null);
-        setValue(
-            recipientName,
-            "" as PathValue<TFieldValues, Path<TFieldValues>>,
-        );
+        setRecipientValue("" as PathValue<TFieldValues, Path<TFieldValues>>);
         setIsRecipientValid(false);
     };
 
@@ -251,8 +255,7 @@ export function PaymentFormSection<
                             blockchain={blockchainType}
                             value={recipient}
                             setValue={(val) =>
-                                setValue(
-                                    recipientName,
+                                setRecipientValue(
                                     val as PathValue<
                                         TFieldValues,
                                         Path<TFieldValues>
