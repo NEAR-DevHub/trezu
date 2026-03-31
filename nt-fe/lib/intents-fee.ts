@@ -62,7 +62,7 @@ export async function estimateIntentsNetworkFee(args: {
                 args.token.minWithdrawalAmount &&
                 BigInt(args.token.minWithdrawalAmount) > 0n
                     ? BigInt(args.token.minWithdrawalAmount)
-                    : 1n,
+                    : 100000000n,
             destinationAddress: args.destinationAddress,
             feeInclusive: false,
         },
