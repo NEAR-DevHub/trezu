@@ -8,11 +8,11 @@ export interface StepProps {
     handleNext?: () => void;
 }
 
-interface Step {
-    component: React.ComponentType<{
-        handleBack?: () => void;
-        handleNext?: () => void;
-    }>;
+export interface StepDefinition<
+    TProps extends Record<string, unknown> = Record<string, unknown>,
+> {
+    component: React.ComponentType<StepProps & TProps>;
+    props?: TProps;
 }
 
 interface StepIndicatorProps {
@@ -49,7 +49,7 @@ export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
 }
 
 interface StepWizardProps {
-    steps: Step[];
+    steps: Array<StepDefinition<any>>;
     stepTitles?: string[];
     step: number;
     onStepChange: (step: number) => void;
@@ -123,6 +123,7 @@ export function StepWizard({
                     className="flex flex-col gap-4"
                 >
                     <CurrentStep.component
+                        {...CurrentStep.props}
                         handleBack={step > 0 ? handleBack : undefined}
                         handleNext={handleNext}
                     />

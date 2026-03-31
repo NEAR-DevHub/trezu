@@ -7,4 +7,5 @@ export {
     parseAndValidatePasteData,
     needsStorageDepositCheck,
     validateAccountsAndStorage,
+    validateIntentsFeeCoverage,
 } from "./parsing";

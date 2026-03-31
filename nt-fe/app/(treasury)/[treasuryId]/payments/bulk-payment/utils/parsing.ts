@@ -14,6 +14,11 @@ import {
     getBlockchainDisplayName,
     validateAddress,
 } from "@/lib/address-validation";
+import {
+    estimateIntentsNetworkFee,
+    getNetworkFeeCoverageErrorMessage,
+    isIntentsCrossChainToken,
+} from "@/lib/intents-fee";
 import type { BulkPaymentData } from "../schemas";
 import type { TreasuryAsset } from "@/lib/api";
 import Big from "@/lib/big";
@@ -385,6 +390,7 @@ export function parsePaymentData(
         }
 
         payments.push({
+            row: actualRowNumber,
             recipient,
             amount: parsedAmountStr, // Store as string to preserve precision
             validationError: validationError || undefined,
@@ -652,4 +658,91 @@ export async function validateAccountsAndStorage(
     // For non-NEAR tokens, validation was done during CSV parsing
     // Just return payments as-is
     return payments;
+}
+
+/**
+ * Validate that each payment amount is greater than the estimated network fee.
+ * Uses one validated recipient as representative (same destination chain).
+ */
+export async function validateIntentsFeeCoverage(
+    payments: BulkPaymentData[],
+    selectedToken: {
+        address: string;
+        network?: string;
+        decimals: number;
+        symbol: string;
+        minWithdrawalAmount?: string;
+    },
+): Promise<{ payments: BulkPaymentData[]; networkFee: string | null }> {
+    if (!isIntentsCrossChainToken(selectedToken)) {
+        return { payments, networkFee: null };
+    }
+
+    const representativePayment = payments.find((p) => !p.validationError);
+    if (!representativePayment) {
+        return { payments, networkFee: null };
+    }
+
+    const representativeAddress = representativePayment.recipient;
+    try {
+        const { networkFee } = await estimateIntentsNetworkFee({
+            token: {
+                address: selectedToken.address,
+                decimals: selectedToken.decimals,
+                minWithdrawalAmount: selectedToken.minWithdrawalAmount,
+            },
+            destinationAddress: representativeAddress,
+            destinationBlockchain: getBlockchainType(
+                selectedToken.network || "unknown",
+            ),
+        });
+
+        return {
+            payments: payments.map((payment) => {
+                if (payment.validationError) {
+                    return payment;
+                }
+
+                const rowPrefix =
+                    payment.row && payment.row > 0
+                        ? `Row ${payment.row}: `
+                        : "";
+                const feeErrorMessage = getNetworkFeeCoverageErrorMessage({
+                    amount: payment.amount,
+                    networkFee,
+                    decimals: selectedToken.decimals,
+                    symbol: selectedToken.symbol,
+                    prefix: rowPrefix,
+                });
+
+                if (!feeErrorMessage) {
+                    return payment;
+                }
+
+                return {
+                    ...payment,
+                    validationError: feeErrorMessage,
+                };
+            }),
+            networkFee: networkFee.toString(),
+        };
+    } catch {
+        return {
+            payments: payments.map((payment) => {
+                if (payment.validationError) {
+                    return payment;
+                }
+
+                const rowPrefix =
+                    payment.row && payment.row > 0
+                        ? `Row ${payment.row} (${payment.recipient}): `
+                        : "";
+                return {
+                    ...payment,
+                    validationError: `${rowPrefix}Couldn't estimate network fee for this amount. Please verify and try again.`,
+                };
+            }),
+            networkFee: null,
+        };
+    }
 }

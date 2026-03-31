@@ -76,12 +76,12 @@ export function NetworkList({
                     <PopoverContent
                         align={popoverAlign}
                         className={cn(
-                            "w-auto max-w-56 p-2",
+                            "w-auto max-w-56 h-[200px] p-2",
                             popoverContentClassName,
                         )}
                         onClick={(event) => event.stopPropagation()}
                     >
-                        <ScrollArea className="max-h-64">
+                        <ScrollArea className="h-full">
                             <div className="flex flex-col gap-1">
                                 {hiddenChains.map((chain) => (
                                     <NetworkBadge

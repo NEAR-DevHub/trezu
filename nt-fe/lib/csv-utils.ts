@@ -4,7 +4,8 @@ import Papa from "papaparse";
  * Common Papa Parse configuration
  */
 const PAPA_PARSE_CONFIG: Papa.ParseConfig = {
-    delimiter: "", // auto-detect delimiter (tries comma, tab, pipe, semicolon, etc.)
+    delimiter: "",
+    delimitersToGuess: [",", "\t"],
     skipEmptyLines: "greedy", // Skip lines with only whitespace
     header: false, // We want arrays, not objects
     dynamicTyping: false, // Keep everything as strings for consistent parsing

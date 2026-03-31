@@ -25,6 +25,7 @@ pub struct AddAccountRequest {
 pub struct AddAccountResponse {
     pub account_id: String,
     pub enabled: bool,
+    pub is_confidential: bool,
     pub last_synced_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -78,6 +79,7 @@ pub async fn add_monitored_account(
     Ok(Json(AddAccountResponse {
         account_id: account.account_id,
         enabled: account.enabled,
+        is_confidential: account.is_confidential,
         last_synced_at: account.last_synced_at,
         created_at: account.created_at,
         updated_at: account.updated_at,

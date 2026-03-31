@@ -2,11 +2,12 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { ConnectorAction } from "@hot-labs/near-connect";
-import { ArrowDownToLine } from "lucide-react";
+import { ArrowDownToLine, Info } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useForm, useFormContext } from "react-hook-form";
+import { useForm, useFormContext, useWatch } from "react-hook-form";
+import { useDebounce } from "use-debounce";
 import { z } from "zod";
 import { AmountSummary } from "@/components/amount-summary";
 import { Button } from "@/components/button";
@@ -21,6 +22,7 @@ import {
     StepWizard,
 } from "@/components/step-wizard";
 import { Textarea } from "@/components/textarea";
+import { Tooltip } from "@/components/tooltip";
 import { type Token, tokenSchema } from "@/components/token-input";
 import { Form, FormField } from "@/components/ui/form";
 import { NEAR_TOKEN } from "@/constants/token";
@@ -39,11 +41,21 @@ import {
     useToken,
     useTreasuryPolicy,
 } from "@/hooks/use-treasury-queries";
+import { useIntentsWithdrawalFee } from "@/hooks/use-intents-withdrawal-fee";
 import { trackEvent } from "@/lib/analytics";
 import Big from "@/lib/big";
 import { getBlockchainType } from "@/lib/blockchain-utils";
+import {
+    getNetworkFeeCoverageErrorMessage,
+    NETWORK_FEE_TOOLTIP_TEXT,
+} from "@/lib/intents-fee";
 import type { FunctionCallKind, TransferKind } from "@/lib/proposals-api";
-import { encodeToMarkdown, formatCurrency, jsonToBase64 } from "@/lib/utils";
+import {
+    cn,
+    encodeToMarkdown,
+    formatCurrency,
+    jsonToBase64,
+} from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 import { PaymentFormSection } from "./components/payment-form-section";
 
@@ -72,7 +84,12 @@ const paymentFormSchema = z
         }
     });
 
-function Step1({ handleNext }: StepProps) {
+interface Step1Props extends StepProps {
+    feeErrorMessage?: string | null;
+    isFeeLoading?: boolean;
+}
+
+function Step1({ handleNext, feeErrorMessage, isFeeLoading }: Step1Props) {
     const form = useFormContext<PaymentFormValues>();
     const { treasuryId } = useTreasury();
     const isMobile = useMediaQuery("(max-width: 768px)");
@@ -129,14 +146,21 @@ function Step1({ handleNext }: StepProps) {
                 amountName="amount"
                 tokenName="token"
                 recipientName="address"
+                feeErrorMessage={feeErrorMessage}
                 saveButtonText={saveButtonText}
                 onSave={handleSave}
+                isSubmitting={isFeeLoading}
             />
         </PageCard>
     );
 }
 
-function Step2({ handleBack }: StepProps) {
+interface Step2Props extends StepProps {
+    networkFee?: string | null;
+    showFeeBreakdown: boolean;
+}
+
+function Step2({ handleBack, networkFee, showFeeBreakdown }: Step2Props) {
     const form = useFormContext<PaymentFormValues>();
     const token = form.watch("token");
     const address = form.watch("address");
@@ -159,10 +183,20 @@ function Step2({ handleBack }: StepProps) {
         }
     }, [storageDepositData, form]);
 
-    const estimatedUSDValue =
-        !!amount && !!tokenData?.price
-            ? Big(amount).mul(tokenData.price)
-            : Big(0);
+    const totalAmountWithFees = Big(amount || "0");
+    const recipientAmountRaw =
+        showFeeBreakdown && networkFee
+            ? Big(amount || "0").minus(networkFee)
+            : Big(amount || "0");
+    const recipientAmount = recipientAmountRaw.lt(0)
+        ? Big(0)
+        : recipientAmountRaw;
+    const estimatedUSDValue = !!tokenData?.price
+        ? totalAmountWithFees.mul(tokenData.price)
+        : Big(0);
+    const recipientEstimatedUSDValue = !!tokenData?.price
+        ? recipientAmount.mul(tokenData.price)
+        : Big(0);
 
     return (
         <PageCard>
@@ -171,7 +205,7 @@ function Step2({ handleBack }: StepProps) {
                 handleBack={handleBack}
             >
                 <AmountSummary
-                    total={amount}
+                    total={totalAmountWithFees}
                     totalUSD={estimatedUSDValue.toNumber()}
                     token={token}
                     showNetworkIcon={true}
@@ -179,9 +213,8 @@ function Step2({ handleBack }: StepProps) {
                     <p>to 1 recipient</p>
                 </AmountSummary>
                 <div className="flex flex-col gap-2">
-                    <p className="font-semibold">Recipient</p>
                     <div className="flex flex-col gap-1 w-full">
-                        <div className="flex justify-between items-center gap-2 w-full text-xs ">
+                        <div className="flex justify-between items-center gap-2 w-full text-xs">
                             <div className="flex flex-col gap-0.5 min-w-0">
                                 {contactName && (
                                     <p className="font-semibold">
@@ -189,16 +222,17 @@ function Step2({ handleBack }: StepProps) {
                                     </p>
                                 )}
                                 <p
-                                    className={
+                                    className={cn(
+                                        "break-all whitespace-normal",
                                         contactName
-                                            ? "text-muted-foreground truncate"
-                                            : "font-semibold"
-                                    }
+                                            ? "text-muted-foreground"
+                                            : "font-semibold",
+                                    )}
                                 >
                                     {address}
                                 </p>
                             </div>
-                            <div className="flex items-center gap-5">
+                            <div className="flex items-center gap-5 min-w-fit">
                                 <img
                                     src={token.icon}
                                     alt={token.symbol}
@@ -206,14 +240,37 @@ function Step2({ handleBack }: StepProps) {
                                 />
                                 <div className="flex flex-col gap-[3px] items-end">
                                     <p className="text-xs font-semibold text-wrap break-all">
-                                        {amount} {token.symbol}
+                                        {recipientAmount.toString()}{" "}
+                                        {token.symbol}
                                     </p>
                                     <p className="text-xxs text-muted-foreground text-wrap break-all">
-                                        ≈ {formatCurrency(estimatedUSDValue)}
+                                        ≈{" "}
+                                        {formatCurrency(
+                                            recipientEstimatedUSDValue,
+                                        )}
                                     </p>
                                 </div>
                             </div>
                         </div>
+                        {showFeeBreakdown && networkFee && (
+                            <div className="flex items-center justify-between gap-2 text-sm my-3">
+                                <div className="flex items-center gap-1 text-muted-foreground">
+                                    <p>Network Fee</p>
+                                    <Tooltip
+                                        content={NETWORK_FEE_TOOLTIP_TEXT}
+                                        side="top"
+                                    >
+                                        <Info
+                                            className="size-3 shrink-0"
+                                            aria-label="Network fee info"
+                                        />
+                                    </Tooltip>
+                                </div>
+                                <p>
+                                    {networkFee} {token.symbol}
+                                </p>
+                            </div>
+                        )}
                         <FormField
                             control={form.control}
                             name="memo"
@@ -453,7 +510,46 @@ export default function PaymentsPage() {
             token: defaultToken,
         },
     });
+    const [watchedToken, watchedAmount, watchedAddress] = useWatch({
+        control: form.control,
+        name: ["token", "amount", "address"],
+    }) as [PaymentFormValues["token"], string, string];
+    const [debouncedAddress] = useDebounce(watchedAddress, 300);
+    const {
+        data: intentsFeeData,
+        isIntentsCrossChainToken,
+        isLoading: isIntentsFeeLoading,
+    } = useIntentsWithdrawalFee({
+        token: watchedToken,
+        destinationAddress: debouncedAddress,
+    });
 
+    const feeErrorMessage = useMemo(() => {
+        if (
+            !isIntentsCrossChainToken ||
+            !watchedAmount ||
+            isNaN(Number(watchedAmount)) ||
+            Number(watchedAmount) <= 0 ||
+            isIntentsFeeLoading ||
+            !intentsFeeData
+        ) {
+            return null;
+        }
+
+        return getNetworkFeeCoverageErrorMessage({
+            amount: watchedAmount,
+            networkFee: Big(intentsFeeData.networkFee),
+            decimals: watchedToken.decimals,
+            symbol: watchedToken.symbol,
+        });
+    }, [
+        intentsFeeData,
+        isIntentsCrossChainToken,
+        isIntentsFeeLoading,
+        watchedAmount,
+        watchedToken?.decimals,
+        watchedToken?.symbol,
+    ]);
     // Update token/address when query params change
     useEffect(() => {
         form.setValue("token", defaultToken);
@@ -565,6 +661,31 @@ export default function PaymentsPage() {
         }
     };
 
+    const steps = useMemo(
+        () => [
+            {
+                component: Step1,
+                props: {
+                    feeErrorMessage,
+                    isFeeLoading: isIntentsFeeLoading,
+                },
+            },
+            {
+                component: Step2,
+                props: {
+                    showFeeBreakdown: isIntentsCrossChainToken,
+                    networkFee: intentsFeeData?.networkFee,
+                },
+            },
+        ],
+        [
+            feeErrorMessage,
+            isIntentsFeeLoading,
+            isIntentsCrossChainToken,
+            intentsFeeData?.networkFee,
+        ],
+    );
+
     return (
         <PageComponentLayout
             title="Payments"
@@ -578,14 +699,7 @@ export default function PaymentsPage() {
                     <StepWizard
                         step={step}
                         onStepChange={setStep}
-                        steps={[
-                            {
-                                component: Step1,
-                            },
-                            {
-                                component: Step2,
-                            },
-                        ]}
+                        steps={steps}
                     />
                 </form>
             </Form>

@@ -10,6 +10,7 @@ pub mod proxy;
 pub mod public_dashboard;
 pub mod relay;
 pub mod subscription;
+pub mod telegram;
 pub mod token;
 pub mod treasury;
 pub mod user;

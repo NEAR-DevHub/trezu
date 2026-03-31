@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, type ReactNode } from "react";
+import { useState, useEffect, useCallback, type ReactNode, useId } from "react";
 import {
     useWatch,
     useFieldArray,
@@ -8,7 +8,7 @@ import {
     type Control,
 } from "react-hook-form";
 import { z } from "zod";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, FileUp } from "lucide-react";
 import { InputBlock } from "@/components/input-block";
 import { LargeInput } from "@/components/large-input";
 import AccountInput from "@/components/account-input";
@@ -229,6 +229,7 @@ interface AddRecipientInputProps {
     setActiveIndex: (index: number) => void;
     handleBack?: () => void;
     onReview: () => void;
+    onImport?: () => void;
     /** When true, only show the form fields + a "Done" button — hides the committed list, "Add Another", stepper header, and "Review Details". */
     editOnly?: boolean;
 }
@@ -239,6 +240,7 @@ export function AddRecipientInput({
     setActiveIndex,
     handleBack,
     onReview,
+    onImport,
     editOnly = false,
 }: AddRecipientInputProps) {
     const { data: chains = [] } = useChains();
@@ -252,11 +254,13 @@ export function AddRecipientInput({
         control,
         name: "recipients",
     });
+    const id = useId();
 
     const activeAddress = useWatch({
         control,
         name: `recipients.${activeIndex}.address`,
     });
+    const activeFormKey = `${activeIndex}-${id}`;
     const activeNetworks = useWatch({
         control,
         name: `recipients.${activeIndex}.networks`,
@@ -269,8 +273,7 @@ export function AddRecipientInput({
         !isAddressValidating &&
         activeNetworks?.length > 0;
 
-    const canProceed =
-        fields.length > 1 || (fields.length === 1 && isActiveValid);
+    const canProceed = isActiveValid;
 
     const handleAddressValid = useCallback(
         (valid: boolean) => {
@@ -324,26 +327,32 @@ export function AddRecipientInput({
 
     const handleEdit = (index: number) => {
         setActiveIndex(index);
+        setIsAddressValid(false);
     };
 
     const handleRemove = (index: number) => {
         remove(index);
-        const newActive =
-            activeIndex >= index && activeIndex > 0
-                ? activeIndex - 1
-                : activeIndex;
-        setActiveIndex(Math.min(newActive, fields.length - 2));
-        if (activeIndex === index) setIsAddressValid(false);
+        const nextLength = fields.length - 1;
+        const nextActive = activeIndex > index ? activeIndex - 1 : activeIndex;
+        setActiveIndex(Math.max(0, Math.min(nextActive, nextLength - 1)));
+        setIsAddressValid(false);
     };
 
     return (
         <div className="flex flex-col gap-4">
-            <StepperHeader
-                title={editOnly ? "Edit Recipient" : "Add Recipient"}
-                handleBack={handleBack}
-            />
+            <div className="flex gap-3 justify-between items-center">
+                <StepperHeader
+                    title={editOnly ? "Edit Recipient" : "Add Recipient"}
+                    handleBack={handleBack}
+                />
+                {!editOnly && onImport && (
+                    <Button variant={"outline"} onClick={onImport}>
+                        <FileUp className="size-4" /> Import
+                    </Button>
+                )}
+            </div>
 
-            <div className="flex flex-col gap-2">
+            <div key={activeFormKey} className="flex flex-col gap-2">
                 <FormField
                     control={control}
                     name={`recipients.${activeIndex}.name`}

@@ -51,16 +51,19 @@ export interface PaymentRequestData {
     url?: string;
 }
 
+export interface FunctionCallAction {
+    methodName: string;
+    args: Record<string, any>;
+    gas: string;
+    deposit: string;
+}
+
 /**
  * Data structure for Function Call proposals
  */
 export interface FunctionCallData {
     receiver: string;
-    methodName: string;
-    actionsCount: number;
-    gas: string;
-    deposit: string;
-    args: Record<string, any>;
+    actions: FunctionCallAction[];
 }
 
 export interface PolicyChange {

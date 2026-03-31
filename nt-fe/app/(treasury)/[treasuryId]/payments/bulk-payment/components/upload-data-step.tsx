@@ -21,12 +21,19 @@ import {
     TabsTrigger,
     TabsContent,
 } from "@/components/underline-tabs";
-import { parseAndValidateCsv, parseAndValidatePasteData } from "../utils";
+import {
+    parseAndValidateCsv,
+    parseAndValidatePasteData,
+    validateIntentsFeeCoverage,
+} from "../utils";
 
 interface UploadDataStepProps {
     handleBack?: () => void;
     treasuryId: string;
-    onContinue: (payments: BulkPaymentData[]) => void;
+    onContinue: (
+        payments: BulkPaymentData[],
+        networkFeePerRecipient: string | null,
+    ) => void;
 }
 
 export function UploadDataStep({
@@ -43,6 +50,7 @@ export function UploadDataStep({
         row: number;
         message: string;
     }> | null>(null);
+    const [isReviewLoading, setIsReviewLoading] = useState(false);
 
     const isLoading = isLoadingSubscription;
     const availableCredits = subscription?.batchPaymentCredits ?? 0;
@@ -144,27 +152,58 @@ export function UploadDataStep({
         }
 
         setDataErrors(null);
+        setIsReviewLoading(true);
+        try {
+            // Parse and validate data
+            let result: {
+                payments: BulkPaymentData[];
+                errors: Array<{ row: number; message: string }>;
+            };
 
-        // Parse and validate data
-        let result: {
-            payments: BulkPaymentData[];
-            errors: Array<{ row: number; message: string }>;
-        };
+            if (activeTab === "upload" && csvData) {
+                result = parseAndValidateCsv(csvData, selectedToken);
+            } else {
+                result = parseAndValidatePasteData(
+                    pasteDataInput,
+                    selectedToken,
+                );
+            }
 
-        if (activeTab === "upload" && csvData) {
-            result = parseAndValidateCsv(csvData, selectedToken);
-        } else {
-            result = parseAndValidatePasteData(pasteDataInput, selectedToken);
+            if (result.errors.length > 0) {
+                // Show errors in the component
+                setDataErrors(result.errors);
+                return;
+            }
+
+            if (activeTab === "paste") {
+                const feeValidationResult = await validateIntentsFeeCoverage(
+                    result.payments,
+                    selectedToken,
+                );
+                const feeErrors = feeValidationResult.payments
+                    .filter((payment) => !!payment.validationError)
+                    .map((payment) => ({
+                        row: payment.row || 0,
+                        message: payment.validationError!,
+                    }));
+
+                if (feeErrors.length > 0) {
+                    setDataErrors(feeErrors);
+                    return;
+                }
+
+                onContinue(
+                    feeValidationResult.payments,
+                    feeValidationResult.networkFee,
+                );
+                return;
+            }
+
+            // Pass validated payments to parent
+            onContinue(result.payments, null);
+        } finally {
+            setIsReviewLoading(false);
         }
-
-        if (result.errors.length > 0) {
-            // Show errors in the component
-            setDataErrors(result.errors);
-            return;
-        }
-
-        // Pass validated payments to parent
-        onContinue(result.payments);
     };
 
     // Show full page skeleton while loading
@@ -634,9 +673,11 @@ export function UploadDataStep({
                             !selectedToken ||
                             (activeTab === "upload" && !csvData) ||
                             (activeTab === "paste" && !pasteDataInput.trim()) ||
-                            availableCredits === 0
+                            availableCredits === 0 ||
+                            isReviewLoading
                         }
                         onClick={handleContinue}
+                        isSubmitting={isReviewLoading}
                         permissions={[
                             { kind: "transfer", action: "AddProposal" },
                             { kind: "call", action: "AddProposal" },
