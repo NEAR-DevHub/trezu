@@ -87,8 +87,8 @@ const mapBridgeMatchedNetwork = (
     chainId: bridgeNetwork.chainId,
     decimals: bridgeNetwork.decimals,
     residency: treasuryNetwork.residency,
-    minWithdrawalAmount: undefined,
-    minDepositAmount: undefined,
+    minWithdrawalAmount: bridgeNetwork.minWithdrawalAmount,
+    minDepositAmount: bridgeNetwork.minDepositAmount,
     lockedBalance:
         treasuryNetwork.balance.type === "Standard"
             ? treasuryNetwork.balance.locked.toFixed(0)

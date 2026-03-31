@@ -12,16 +12,19 @@ import { editPaymentSchema } from "../schemas";
 import type { SelectedTokenData } from "@/components/token-select";
 import { needsStorageDepositCheck } from "../utils";
 import { getBatchStorageDepositIsRegistered } from "@/lib/api";
+import Big from "@/lib/big";
+import { getNetworkFeeCoverageErrorMessage } from "@/lib/intents-fee";
 
 interface EditPaymentStepProps extends StepProps {
     payment: BulkPaymentData;
     paymentIndex: number;
     selectedToken: SelectedTokenData;
+    networkFeePerRecipient: string | null;
     onSave: (
         index: number,
         data: EditPaymentFormValues,
         isRegistered: boolean,
-    ) => void;
+    ) => Promise<void> | void;
     onCancel: () => void;
 }
 
@@ -29,6 +32,7 @@ export function EditPaymentStep({
     payment,
     paymentIndex,
     selectedToken,
+    networkFeePerRecipient,
     onSave,
     onCancel,
 }: EditPaymentStepProps) {
@@ -42,6 +46,16 @@ export function EditPaymentStep({
             token: selectedToken,
         },
     });
+    const watchedAmount = form.watch("amount");
+    const feeErrorMessage =
+        networkFeePerRecipient && watchedAmount && Number(watchedAmount) > 0
+            ? getNetworkFeeCoverageErrorMessage({
+                  amount: watchedAmount,
+                  networkFee: Big(networkFeePerRecipient),
+                  decimals: selectedToken.decimals,
+                  symbol: selectedToken.symbol,
+              })
+            : null;
 
     const handleSave = async () => {
         const isValid = await form.trigger();
@@ -86,6 +100,7 @@ export function EditPaymentStep({
                     tokenName="token"
                     recipientName="recipient"
                     tokenLocked={true}
+                    feeErrorMessage={feeErrorMessage}
                     saveButtonText="Save Changes"
                     onSave={handleSave}
                     isSubmitting={isSaving}

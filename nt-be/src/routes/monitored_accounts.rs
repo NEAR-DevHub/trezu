@@ -25,6 +25,7 @@ pub struct AddAccountRequest {
 pub struct AddAccountResponse {
     pub account_id: String,
     pub enabled: bool,
+    pub is_confidential: bool,
     pub last_synced_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -78,6 +79,7 @@ pub async fn add_monitored_account(
     Ok(Json(AddAccountResponse {
         account_id: account.account_id,
         enabled: account.enabled,
+        is_confidential: account.is_confidential,
         last_synced_at: account.last_synced_at,
         created_at: account.created_at,
         updated_at: account.updated_at,
@@ -98,7 +100,7 @@ pub async fn list_monitored_accounts(
     let accounts = if let Some(enabled) = params.enabled {
         sqlx::query_as::<_, MonitoredAccount>(
             r#"
-            SELECT account_id, enabled, last_synced_at, created_at, updated_at,
+            SELECT account_id, enabled, is_confidential, last_synced_at, created_at, updated_at,
                    export_credits, batch_payment_credits, plan_type, credits_reset_at, dirty_at
             FROM monitored_accounts
             WHERE enabled = $1
@@ -111,7 +113,7 @@ pub async fn list_monitored_accounts(
     } else {
         sqlx::query_as::<_, MonitoredAccount>(
             r#"
-            SELECT account_id, enabled, last_synced_at, created_at, updated_at,
+            SELECT account_id, enabled, is_confidential, last_synced_at, created_at, updated_at,
                    export_credits, batch_payment_credits, plan_type, credits_reset_at, dirty_at
             FROM monitored_accounts
             ORDER BY account_id
@@ -142,7 +144,7 @@ pub async fn update_monitored_account(
         SET enabled = $2,
             updated_at = NOW()
         WHERE account_id = $1
-        RETURNING account_id, enabled, last_synced_at, created_at, updated_at,
+        RETURNING account_id, enabled, is_confidential, last_synced_at, created_at, updated_at,
                   export_credits, batch_payment_credits, plan_type, credits_reset_at, dirty_at
         "#,
     )
