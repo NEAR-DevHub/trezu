@@ -12,6 +12,7 @@ use crate::utils::datetime::next_month_start_utc;
 pub struct MonitoredAccount {
     pub account_id: String,
     pub enabled: bool,
+    #[sqlx(default)]
     pub is_confidential: bool,
     pub last_synced_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
@@ -71,7 +72,7 @@ pub async fn register_or_refresh_monitored_account(
             UPDATE monitored_accounts
             SET dirty_at = NOW(), updated_at = NOW()
             WHERE account_id = $1
-            RETURNING account_id, enabled, is_confidential, last_synced_at, created_at, updated_at,
+            RETURNING account_id, enabled, last_synced_at, created_at, updated_at,
                       export_credits, batch_payment_credits, plan_type, credits_reset_at, dirty_at
             "#,
         )
@@ -104,7 +105,7 @@ pub async fn register_or_refresh_monitored_account(
         r#"
         INSERT INTO monitored_accounts (account_id, enabled, export_credits, batch_payment_credits, gas_covered_transactions, plan_type, credits_reset_at, dirty_at)
         VALUES ($1, true, $2, $3, $4, 'plus', $5, NOW())
-        RETURNING account_id, enabled, is_confidential, last_synced_at, created_at, updated_at,
+        RETURNING account_id, enabled, last_synced_at, created_at, updated_at,
                   export_credits, batch_payment_credits, plan_type, credits_reset_at, dirty_at
         "#,
     )

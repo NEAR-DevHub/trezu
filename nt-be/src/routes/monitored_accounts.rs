@@ -100,7 +100,7 @@ pub async fn list_monitored_accounts(
     let accounts = if let Some(enabled) = params.enabled {
         sqlx::query_as::<_, MonitoredAccount>(
             r#"
-            SELECT account_id, enabled, is_confidential, last_synced_at, created_at, updated_at,
+            SELECT account_id, enabled, last_synced_at, created_at, updated_at,
                    export_credits, batch_payment_credits, plan_type, credits_reset_at, dirty_at
             FROM monitored_accounts
             WHERE enabled = $1
@@ -113,7 +113,7 @@ pub async fn list_monitored_accounts(
     } else {
         sqlx::query_as::<_, MonitoredAccount>(
             r#"
-            SELECT account_id, enabled, is_confidential, last_synced_at, created_at, updated_at,
+            SELECT account_id, enabled, last_synced_at, created_at, updated_at,
                    export_credits, batch_payment_credits, plan_type, credits_reset_at, dirty_at
             FROM monitored_accounts
             ORDER BY account_id
@@ -144,7 +144,7 @@ pub async fn update_monitored_account(
         SET enabled = $2,
             updated_at = NOW()
         WHERE account_id = $1
-        RETURNING account_id, enabled, is_confidential, last_synced_at, created_at, updated_at,
+        RETURNING account_id, enabled, last_synced_at, created_at, updated_at,
                   export_credits, batch_payment_credits, plan_type, credits_reset_at, dirty_at
         "#,
     )
