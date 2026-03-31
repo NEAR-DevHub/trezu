@@ -229,7 +229,7 @@ impl AppStateBuilder {
                 // Otherwise use mainnet with FastNEAR
                 NetworkConfig {
                     rpc_endpoints: vec![
-                        RPCEndpoint::new("https://near.lava.build:443/".parse().unwrap())
+                        RPCEndpoint::new("https://rpc.mainnet.fastnear.com/".parse().unwrap())
                             .with_api_key(fastnear_api_key.clone()),
                     ],
                     ..NetworkConfig::mainnet()
