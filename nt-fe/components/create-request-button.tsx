@@ -20,6 +20,7 @@ interface CreateRequestButtonProps {
     type?: "button" | "submit";
     className?: string;
     idleMessage?: string;
+    loadingMessage?: string;
 }
 
 export function CreateRequestButton({
@@ -30,6 +31,7 @@ export function CreateRequestButton({
     type = "button",
     className = "w-full h-10",
     idleMessage = "Create Request",
+    loadingMessage,
 }: CreateRequestButtonProps) {
     const { accountId } = useNear();
     const { treasuryId } = useTreasury();
@@ -73,7 +75,7 @@ export function CreateRequestButton({
                 {isSubmitting ? (
                     <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Creating Proposal...
+                        {loadingMessage ?? idleMessage}
                     </>
                 ) : !accountId ? (
                     "Connect your wallet"

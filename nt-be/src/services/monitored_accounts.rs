@@ -12,6 +12,8 @@ use crate::utils::datetime::next_month_start_utc;
 pub struct MonitoredAccount {
     pub account_id: String,
     pub enabled: bool,
+    #[sqlx(default)]
+    pub is_confidential: bool,
     pub last_synced_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,

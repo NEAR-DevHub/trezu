@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { PageComponentLayout } from "@/components/page-component-layout";
@@ -60,6 +60,9 @@ export default function BulkPaymentPage() {
     const comment = form.watch("comment");
 
     const [paymentData, setPaymentData] = useState<BulkPaymentData[]>([]);
+    const [networkFeePerRecipient, setNetworkFeePerRecipient] = useState<
+        string | null
+    >(null);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
     const trackReviewStepEnter = (
@@ -74,8 +77,12 @@ export default function BulkPaymentPage() {
     };
 
     // Handle continue from upload step
-    const handleContinueFromUpload = (payments: BulkPaymentData[]) => {
+    const handleContinueFromUpload = (
+        payments: BulkPaymentData[],
+        fee: string | null,
+    ) => {
         setPaymentData(payments);
+        setNetworkFeePerRecipient(fee);
         trackReviewStepEnter("upload_continue", payments.length);
         setStep(1); // Move to review step
     };
@@ -362,6 +369,7 @@ export default function BulkPaymentPage() {
                 form.reset();
                 setStep(0);
                 setPaymentData([]);
+                setNetworkFeePerRecipient(null);
             } catch (error) {
                 console.error(
                     "Failed to submit payment list to backend:",
@@ -398,6 +406,7 @@ export default function BulkPaymentPage() {
                         payment={payment}
                         paymentIndex={editingIndex}
                         selectedToken={selectedToken}
+                        networkFeePerRecipient={networkFeePerRecipient}
                         onSave={handleSaveEdit}
                         onCancel={handleCancelEdit}
                     />
@@ -429,6 +438,7 @@ export default function BulkPaymentPage() {
                         <ReviewPaymentsStep
                             handleBack={() => setStep(0)}
                             initialPaymentData={paymentData}
+                            networkFeePerRecipient={networkFeePerRecipient}
                             onEditPayment={handleEditPayment}
                             onPaymentDataChange={setPaymentData}
                             onSubmit={onSubmit}

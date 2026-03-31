@@ -1,5 +1,6 @@
 import { useBatchPayment, useToken } from "@/hooks/use-treasury-queries";
 import { useBulkPaymentTransactionHash } from "@/hooks/use-bulk-payment-transactions";
+import { useIntentsWithdrawalFee } from "@/hooks/use-intents-withdrawal-fee";
 import { BatchPaymentRequestData } from "../../types/index";
 import { InfoDisplay, InfoItem } from "@/components/info-display";
 import { Amount } from "../amount";
@@ -22,6 +23,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Proposal } from "@/lib/proposals-api";
 import { getProposalStatus } from "../../utils/proposal-utils";
 import { Policy } from "@/types/policy";
+import Big from "@/lib/big";
+import { NETWORK_FEE_TOOLTIP_TEXT } from "@/lib/intents-fee";
 
 interface PaymentDisplayProps {
     number: number;
@@ -221,6 +224,28 @@ export function BatchPaymentRequestExpanded({
     if (activeBatchData?.tokenId?.toLowerCase() === "native") {
         tokenId = "near";
     }
+    const { data: tokenData } = useToken(tokenId);
+    const representativeRecipient = activeBatchData.payments[0]?.recipient;
+    const {
+        data: dynamicFeeData,
+        isLoading: isFeeLoading,
+        isIntentsCrossChainToken,
+    } = useIntentsWithdrawalFee({
+        token: tokenData
+            ? {
+                  address: tokenId,
+                  network: tokenData.network || "near",
+                  decimals: tokenData.decimals,
+              }
+            : null,
+        destinationAddress: representativeRecipient,
+    });
+    const totalNetworkFee =
+        isIntentsCrossChainToken && dynamicFeeData?.networkFee
+            ? Big(dynamicFeeData.networkFee).mul(
+                  activeBatchData.payments.length,
+              )
+            : null;
 
     const onExpandedChanged = (index: number) => {
         setExpanded((prev) => {
@@ -251,6 +276,21 @@ export function BatchPaymentRequestExpanded({
                 />
             ),
         },
+        ...(isIntentsCrossChainToken && totalNetworkFee
+            ? [
+                  {
+                      label: "Network Fee",
+                      info: NETWORK_FEE_TOOLTIP_TEXT,
+                      value: isFeeLoading ? (
+                          <Skeleton className="h-4 w-24" />
+                      ) : totalNetworkFee ? (
+                          `${totalNetworkFee.toString()} ${tokenData?.symbol || ""}`.trim()
+                      ) : (
+                          "-"
+                      ),
+                  } satisfies InfoItem,
+              ]
+            : []),
         {
             label: "Recipients",
             value: (
