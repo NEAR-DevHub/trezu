@@ -8,9 +8,11 @@ export interface StepProps {
     handleNext?: () => void;
 }
 
-interface Step {
-    component: React.ComponentType<any>;
-    props?: Record<string, unknown>;
+export interface StepDefinition<
+    TProps extends Record<string, unknown> = Record<string, unknown>,
+> {
+    component: React.ComponentType<StepProps & TProps>;
+    props?: TProps;
 }
 
 interface StepIndicatorProps {
@@ -47,7 +49,7 @@ export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
 }
 
 interface StepWizardProps {
-    steps: Step[];
+    steps: Array<StepDefinition<any>>;
     stepTitles?: string[];
     step: number;
     onStepChange: (step: number) => void;

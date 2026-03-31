@@ -50,7 +50,12 @@ import {
     NETWORK_FEE_TOOLTIP_TEXT,
 } from "@/lib/intents-fee";
 import type { FunctionCallKind, TransferKind } from "@/lib/proposals-api";
-import { encodeToMarkdown, formatCurrency, jsonToBase64 } from "@/lib/utils";
+import {
+    cn,
+    encodeToMarkdown,
+    formatCurrency,
+    jsonToBase64,
+} from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 import { PaymentFormSection } from "./components/payment-form-section";
 
@@ -209,7 +214,7 @@ function Step2({ handleBack, networkFee, showFeeBreakdown }: Step2Props) {
                 </AmountSummary>
                 <div className="flex flex-col gap-2">
                     <div className="flex flex-col gap-1 w-full">
-                        <div className="flex justify-between items-center gap-2 w-full text-xs ">
+                        <div className="flex justify-between items-center gap-2 w-full text-xs">
                             <div className="flex flex-col gap-0.5 min-w-0">
                                 {contactName && (
                                     <p className="font-semibold">
@@ -217,16 +222,17 @@ function Step2({ handleBack, networkFee, showFeeBreakdown }: Step2Props) {
                                     </p>
                                 )}
                                 <p
-                                    className={
+                                    className={cn(
+                                        "break-all whitespace-normal",
                                         contactName
-                                            ? "text-muted-foreground truncate"
-                                            : "font-semibold"
-                                    }
+                                            ? "text-muted-foreground"
+                                            : "font-semibold",
+                                    )}
                                 >
                                     {address}
                                 </p>
                             </div>
-                            <div className="flex items-center gap-5">
+                            <div className="flex items-center gap-5 min-w-fit">
                                 <img
                                     src={token.icon}
                                     alt={token.symbol}
