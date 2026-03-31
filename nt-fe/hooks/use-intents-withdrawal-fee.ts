@@ -29,8 +29,10 @@ export function useIntentsWithdrawalFee({
     destinationAddress,
 }: UseIntentsWithdrawalFeeParams) {
     const isCrossChainIntents = !!token && isIntentsCrossChainToken(token);
+    const normalizedDestinationAddress = destinationAddress?.trim() ?? "";
 
-    const shouldEstimate = isCrossChainIntents && !!destinationAddress;
+    const shouldEstimate =
+        isCrossChainIntents && normalizedDestinationAddress.length > 0;
 
     const query = useQuery({
         queryKey: [
@@ -39,7 +41,7 @@ export function useIntentsWithdrawalFee({
             token?.network,
             token?.decimals,
             token?.minWithdrawalAmount,
-            destinationAddress,
+            normalizedDestinationAddress,
         ],
         queryFn: async (): Promise<IntentsWithdrawalFeeData> => {
             if (!token) {
@@ -53,7 +55,7 @@ export function useIntentsWithdrawalFee({
                         decimals: token.decimals,
                         minWithdrawalAmount: token.minWithdrawalAmount,
                     },
-                    destinationAddress: destinationAddress!,
+                    destinationAddress: normalizedDestinationAddress,
                     destinationBlockchain: getBlockchainType(token.network),
                 });
 
