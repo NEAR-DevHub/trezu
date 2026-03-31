@@ -17,7 +17,6 @@ interface IntentsFeeToken {
 interface UseIntentsWithdrawalFeeParams {
     token: IntentsFeeToken | null | undefined;
     destinationAddress: string | null | undefined;
-    enabled?: boolean;
 }
 
 export interface IntentsWithdrawalFeeData {
@@ -28,12 +27,10 @@ export interface IntentsWithdrawalFeeData {
 export function useIntentsWithdrawalFee({
     token,
     destinationAddress,
-    enabled = true,
 }: UseIntentsWithdrawalFeeParams) {
     const isCrossChainIntents = !!token && isIntentsCrossChainToken(token);
 
-    const shouldEstimate =
-        enabled && isCrossChainIntents && !!destinationAddress;
+    const shouldEstimate = isCrossChainIntents && !!destinationAddress;
 
     const query = useQuery({
         queryKey: [

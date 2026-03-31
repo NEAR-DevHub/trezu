@@ -6,10 +6,7 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { useToken } from "@/hooks/use-treasury-queries";
 import { useIntentsWithdrawalFee } from "@/hooks/use-intents-withdrawal-fee";
-import {
-    isIntentsCrossChainToken,
-    NETWORK_FEE_TOOLTIP_TEXT,
-} from "@/lib/intents-fee";
+import { NETWORK_FEE_TOOLTIP_TEXT } from "@/lib/intents-fee";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface TransferExpandedProps {
@@ -20,22 +17,20 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
     // Get token metadata to determine blockchain network
     const { data: tokenData } = useToken(data.tokenId);
     const chainName = tokenData?.network || "near";
-    const isIntentsCrossChain = isIntentsCrossChainToken({
-        address: data.tokenId,
-        network: chainName,
+    const {
+        data: dynamicFeeData,
+        isLoading: isFeeLoading,
+        isIntentsCrossChainToken,
+    } = useIntentsWithdrawalFee({
+        token: tokenData
+            ? {
+                  address: data.tokenId,
+                  network: chainName,
+                  decimals: tokenData.decimals,
+              }
+            : null,
+        destinationAddress: data.receiver,
     });
-    const { data: dynamicFeeData, isLoading: isFeeLoading } =
-        useIntentsWithdrawalFee({
-            token: tokenData
-                ? {
-                      address: data.tokenId,
-                      network: chainName,
-                      decimals: tokenData.decimals,
-                  }
-                : null,
-            destinationAddress: data.receiver,
-            enabled: isIntentsCrossChain,
-        });
 
     const infoItems: InfoItem[] = [
         {
@@ -61,7 +56,7 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
         },
     ];
 
-    if (isIntentsCrossChain) {
+    if (isIntentsCrossChainToken) {
         infoItems.push({
             label: "Network Fee",
             info: NETWORK_FEE_TOOLTIP_TEXT,
