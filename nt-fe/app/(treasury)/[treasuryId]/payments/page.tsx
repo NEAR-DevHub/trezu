@@ -58,13 +58,14 @@ import {
 } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 import { PaymentFormSection } from "./components/payment-form-section";
+import { Address } from "@/components/address";
 
 const paymentFormSchema = z
     .object({
         address: z
             .string()
             .min(2, "Recipient should be at least 2 characters")
-            .max(64, "Recipient must be less than 64 characters"),
+            .max(128, "Recipient must be less than 128 characters"),
         amount: z
             .string()
             .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
@@ -221,16 +222,14 @@ function Step2({ handleBack, networkFee, showFeeBreakdown }: Step2Props) {
                                         {contactName}
                                     </p>
                                 )}
-                                <p
+                                <Address
+                                    address={address}
                                     className={cn(
-                                        "break-all whitespace-normal",
                                         contactName
                                             ? "text-muted-foreground"
                                             : "font-semibold",
                                     )}
-                                >
-                                    {address}
-                                </p>
+                                />
                             </div>
                             <div className="flex items-center gap-5 min-w-fit">
                                 <img

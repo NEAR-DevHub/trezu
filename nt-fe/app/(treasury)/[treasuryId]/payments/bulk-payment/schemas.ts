@@ -35,7 +35,7 @@ export const editPaymentSchema = z.object({
     recipient: z
         .string()
         .min(2, "Recipient should be at least 2 characters")
-        .max(64, "Recipient must be less than 64 characters"),
+        .max(128, "Recipient must be less than 128 characters"),
     amount: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
         message: "Amount must be greater than 0",
     }),

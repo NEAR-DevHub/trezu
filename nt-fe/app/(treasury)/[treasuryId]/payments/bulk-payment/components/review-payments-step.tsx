@@ -20,7 +20,7 @@ import {
 } from "@/components/modal";
 import { NumberBadge } from "@/components/number-badge";
 import type { BulkPaymentFormValues, BulkPaymentData } from "../schemas";
-import { formatBalance, formatSmartAmount } from "@/lib/utils";
+import { cn, formatBalance, formatSmartAmount } from "@/lib/utils";
 import { validateAccountsAndStorage } from "../utils";
 import { useToken, useTokenBalance } from "@/hooks/use-treasury-queries";
 import { useTreasury } from "@/hooks/use-treasury";
@@ -30,6 +30,7 @@ import { CreateRequestButton } from "@/components/create-request-button";
 import { trackEvent } from "@/lib/analytics";
 import { NETWORK_FEE_TOOLTIP_TEXT } from "@/lib/intents-fee";
 import { Tooltip } from "@/components/tooltip";
+import { Address } from "@/components/address";
 
 interface ReviewPaymentsStepProps extends StepProps {
     initialPaymentData: BulkPaymentData[];
@@ -287,17 +288,17 @@ export function ReviewPaymentsStep({
                                                                                 }
                                                                             </span>
                                                                         )}
-                                                                        <span
-                                                                            className={
-                                                                                contact
-                                                                                    ? "text-xs text-muted-foreground truncate lg:break-all"
-                                                                                    : "font-semibold text-sm text-foreground truncate lg:break-all"
-                                                                            }
-                                                                        >
-                                                                            {
+
+                                                                        <Address
+                                                                            address={
                                                                                 payment.recipient
                                                                             }
-                                                                        </span>
+                                                                            className={cn(
+                                                                                contact
+                                                                                    ? "text-xs text-muted-foreground"
+                                                                                    : "font-semibold text-sm text-foreground",
+                                                                            )}
+                                                                        />
                                                                     </>
                                                                 );
                                                             })()}
