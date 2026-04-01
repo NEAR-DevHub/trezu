@@ -1,4 +1,4 @@
-use chrono::{DateTime, Datelike, Months, Utc};
+use chrono::{DateTime, Datelike, Months, Utc, Weekday};
 use std::time::Duration;
 
 /// Returns the next UTC month start (`YYYY-MM-01 00:00:00Z`) after `now`.
@@ -29,6 +29,40 @@ pub fn next_utc_midnight_after(now: DateTime<Utc>) -> DateTime<Utc> {
         .expect("00:00:00 should always be valid");
 
     DateTime::<Utc>::from_naive_utc_and_offset(midnight, Utc)
+}
+
+/// Returns the next Monday at UTC midnight after `now`.
+/// If `now` is already Monday, returns the following Monday (7 days later).
+pub fn next_monday_utc_midnight(now: DateTime<Utc>) -> DateTime<Utc> {
+    let today = now.date_naive();
+    let days_until_monday = match today.weekday() {
+        Weekday::Mon => 7,
+        Weekday::Tue => 6,
+        Weekday::Wed => 5,
+        Weekday::Thu => 4,
+        Weekday::Fri => 3,
+        Weekday::Sat => 2,
+        Weekday::Sun => 1,
+    };
+
+    let next_monday = today
+        .checked_add_days(chrono::Days::new(days_until_monday))
+        .expect("next Monday should always be valid");
+
+    let midnight = next_monday
+        .and_hms_opt(0, 0, 0)
+        .expect("00:00:00 should always be valid");
+
+    DateTime::<Utc>::from_naive_utc_and_offset(midnight, Utc)
+}
+
+/// Returns the sleep duration until the next Monday at UTC midnight.
+pub fn duration_until_next_monday_utc_midnight(now: DateTime<Utc>) -> Duration {
+    let next_monday = next_monday_utc_midnight(now);
+    let sleep_duration = next_monday.signed_duration_since(now);
+    sleep_duration
+        .to_std()
+        .unwrap_or_else(|_| Duration::from_secs(0))
 }
 
 /// Returns the sleep duration until the next UTC midnight.
@@ -77,5 +111,52 @@ mod tests {
             Duration::from_secs(30),
             "Expected 30 seconds until midnight"
         );
+    }
+
+    // 2026-03-30 is a Monday
+    #[test]
+    fn test_next_monday_utc_midnight_from_monday() {
+        let now =
+            DateTime::parse_from_rfc3339("2026-03-30T12:00:00Z").expect("timestamp should parse");
+        let now = now.with_timezone(&Utc);
+        // Monday → next Monday is 7 days later
+        assert_eq!(
+            next_monday_utc_midnight(now).to_rfc3339(),
+            "2026-04-06T00:00:00+00:00"
+        );
+    }
+
+    #[test]
+    fn test_next_monday_utc_midnight_from_tuesday() {
+        let now =
+            DateTime::parse_from_rfc3339("2026-03-31T09:00:00Z").expect("timestamp should parse");
+        let now = now.with_timezone(&Utc);
+        // Tuesday → next Monday is 6 days later
+        assert_eq!(
+            next_monday_utc_midnight(now).to_rfc3339(),
+            "2026-04-06T00:00:00+00:00"
+        );
+    }
+
+    #[test]
+    fn test_next_monday_utc_midnight_from_sunday() {
+        let now =
+            DateTime::parse_from_rfc3339("2026-04-05T22:00:00Z").expect("timestamp should parse");
+        let now = now.with_timezone(&Utc);
+        // Sunday → next Monday is 1 day later
+        assert_eq!(
+            next_monday_utc_midnight(now).to_rfc3339(),
+            "2026-04-06T00:00:00+00:00"
+        );
+    }
+
+    #[test]
+    fn test_duration_until_next_monday_utc_midnight() {
+        // Friday 2026-04-03 at 00:00:00 UTC → next Monday 2026-04-06 = 3 days exactly
+        let now =
+            DateTime::parse_from_rfc3339("2026-04-03T00:00:00Z").expect("timestamp should parse");
+        let now = now.with_timezone(&Utc);
+        let duration = duration_until_next_monday_utc_midnight(now);
+        assert_eq!(duration, Duration::from_secs(3 * 24 * 60 * 60));
     }
 }

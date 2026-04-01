@@ -18,10 +18,29 @@ mod common;
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
+use near_api::NetworkConfig;
 use nt_be::routes::create_routes;
 use sqlx::PgPool;
 use std::sync::Arc;
 use tower::ServiceExt;
+
+/// Run one maintenance cycle with minimal configuration (no gap filling, no staking).
+/// This is the production code path — the server calls this every 5 minutes.
+async fn run_maintenance_cycle(pool: &PgPool, network: &NetworkConfig) {
+    nt_be::handlers::balance_changes::account_monitor::run_maintenance_cycle(
+        pool,
+        network,
+        0,    // up_to_block=0: no gap filling for any account
+        None, // no hint service
+        None, // no fastnear
+        None, // no intents api key
+        "http://unused",
+        None, // no neardata
+        true, // disable staking rewards
+    )
+    .await
+    .expect("run_maintenance_cycle failed");
+}
 
 const TARGET_DAO: &str = "olskik-test.sputnik-dao.near";
 const SOURCE_DAO: &str = "testing-astradao.sputnik-dao.near";
@@ -305,11 +324,18 @@ async fn test_re_enrichment_corrects_wrong_counterparty(pool: PgPool) {
     println!("PASSED");
 }
 
-/// Test 4: correct_near_counterparties fixes existing wrong records without
-/// needing Goldsky outcomes or cursor reset.
+/// Test 4: counterparty correction via the server maintenance cycle, with cursor tracking.
 ///
-/// Inserts balance_changes with wrong counterparty, then runs the correction
-/// function which queries the DB, resolves via RPC, and updates directly.
+/// Verifies the full production code path end-to-end:
+///
+/// 1. `run_maintenance_cycle` (what the server spawns every 5 minutes) drives the
+///    correction — no monitored accounts are needed (correction is unconditional).
+/// 2. Progress is tracked in `maintenance_jobs`: on the first run the cursor is
+///    initialised to the highest matching block; after the batch it advances to
+///    `min(batch) - 1`.
+/// 3. A second cycle finds no records at or below the new cursor, sets the
+///    cursor to the sentinel `-1`, and becomes a no-op on all future calls.
+/// 4. Gas-cost records (`ABS(amount) ≤ 0.01`) are never touched.
 #[sqlx::test]
 async fn test_correct_near_counterparties(pool: PgPool) {
     common::load_test_env();
@@ -372,7 +398,7 @@ async fn test_correct_near_counterparties(pool: PgPool) {
     .await
     .unwrap();
 
-    // Verify wrong counterparties
+    // Verify wrong counterparties are in place before correction
     let (wrong_in, _) = get_near_balance_change(&pool, TARGET_DAO, INCOMING_TX)
         .await
         .unwrap();
@@ -382,18 +408,23 @@ async fn test_correct_near_counterparties(pool: PgPool) {
     assert_eq!(wrong_in, "yurtur.near");
     assert_eq!(wrong_out, "olskik.near");
 
-    // Run correction (no Goldsky outcomes needed)
-    let corrected =
-        nt_be::handlers::balance_changes::counterparty_correction::correct_near_counterparties(
-            &pool, &network,
-        )
-        .await
-        .unwrap();
+    // No maintenance_jobs cursor should exist yet
+    let cursor_before: Option<i64> = sqlx::query_scalar(
+        "SELECT last_processed_block FROM maintenance_jobs WHERE job_name = 'counterparty_correction'",
+    )
+    .fetch_optional(&pool)
+    .await
+    .unwrap();
+    assert!(
+        cursor_before.is_none(),
+        "No cursor should exist before first run"
+    );
 
-    println!("Corrected {} records", corrected);
-    assert_eq!(corrected, 2, "Should correct 2 records (not the gas cost)");
+    // Run via run_maintenance_cycle — the production server code path.
+    // No monitored accounts registered: correction must run unconditionally.
+    run_maintenance_cycle(&pool, &network).await;
 
-    // Verify corrected
+    // --- Verify corrections -------------------------------------------------
     let (fixed_in, _) = get_near_balance_change(&pool, TARGET_DAO, INCOMING_TX)
         .await
         .unwrap();
@@ -405,11 +436,16 @@ async fn test_correct_near_counterparties(pool: PgPool) {
         "Corrected: incoming={} (was {}), outgoing={} (was {})",
         fixed_in, wrong_in, fixed_out, wrong_out
     );
+    assert_eq!(
+        fixed_in, SOURCE_DAO,
+        "Incoming counterparty should be corrected"
+    );
+    assert_eq!(
+        fixed_out, LESIK_DAO,
+        "Outgoing counterparty should be corrected"
+    );
 
-    assert_eq!(fixed_in, SOURCE_DAO);
-    assert_eq!(fixed_out, LESIK_DAO);
-
-    // Verify gas cost record was NOT changed
+    // Gas cost record (amount 0.00005) must not be touched
     let gas_record: Option<(String,)> = sqlx::query_as(
         "SELECT counterparty FROM balance_changes
          WHERE account_id = $1 AND block_height = 190790036 AND token_id = 'near'",
@@ -418,12 +454,41 @@ async fn test_correct_near_counterparties(pool: PgPool) {
     .fetch_optional(&pool)
     .await
     .unwrap();
-
     assert_eq!(
         gas_record.unwrap().0,
         "olskik.near",
         "Gas cost record should NOT be corrected"
     );
+
+    // --- Verify cursor was written and points to below the lowest processed block ---
+    // OUTGOING_BLOCK (190790034) is the lower of the two corrected records.
+    let cursor_after: i64 = sqlx::query_scalar(
+        "SELECT last_processed_block FROM maintenance_jobs WHERE job_name = 'counterparty_correction'",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        cursor_after,
+        OUTGOING_BLOCK - 1,
+        "Cursor should advance to one below the lowest processed block"
+    );
+    println!("Cursor after first cycle: {}", cursor_after);
+
+    // --- Second cycle: must find nothing to reprocess -----------------------
+    run_maintenance_cycle(&pool, &network).await;
+
+    let cursor_second: i64 = sqlx::query_scalar(
+        "SELECT last_processed_block FROM maintenance_jobs WHERE job_name = 'counterparty_correction'",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        cursor_second, -1,
+        "Cursor should be set to sentinel -1 when no records remain"
+    );
+    println!("Cursor after second cycle (sentinel): {}", cursor_second);
 
     println!("PASSED");
 }

@@ -145,6 +145,7 @@ export function AddressBookTable({
                                     <TableCell>
                                         <UserWithData
                                             name={entry.name}
+                                            withLink={false}
                                             address={entry.address}
                                             useAddressBook
                                             size="md"
@@ -167,6 +168,7 @@ export function AddressBookTable({
                                                 accountId={entry.createdBy}
                                                 size="sm"
                                                 withHoverCard
+                                                withLink={false}
                                             />
                                         ) : (
                                             <span className="text-muted-foreground text-sm">

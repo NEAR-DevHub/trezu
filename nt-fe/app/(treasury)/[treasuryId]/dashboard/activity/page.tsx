@@ -3,11 +3,15 @@
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { PageCard } from "@/components/card";
 import { TabsContent } from "@/components/responsive-tabs";
-import { useRecentActivity } from "@/hooks/use-treasury-queries";
+import {
+    useRecentActivity,
+    useRecentActivityRecipients,
+    useRecentActivitySenders,
+} from "@/hooks/use-treasury-queries";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityTable } from "@/features/activity";
 import {
     ProposalFilters as GenericFilters,
@@ -19,10 +23,22 @@ import { ExportButton } from "@/components/export-button";
 import { getHistoryDescription } from "@/features/activity";
 import { subMonths } from "date-fns";
 import { ResponsiveTabs, TabItem } from "@/components/responsive-tabs";
+import { ResponsiveInput } from "@/components/input";
 
 // Constants
 const PAGE_SIZE = 15;
 const FILTER_PANEL_MAX_HEIGHT = "500px";
+
+function getSelectedAccountsFromFilter(filterValue: string | null): string[] {
+    if (!filterValue) return [];
+    try {
+        const parsed = JSON.parse(filterValue);
+        if (!Array.isArray(parsed.users)) return [];
+        return parsed.users.filter(Boolean);
+    } catch {
+        return [];
+    }
+}
 
 function ActivityList({
     status,
@@ -49,6 +65,7 @@ function ActivityList({
     const minUsdValue = searchParams.get("min_usd_value")
         ? parseFloat(searchParams.get("min_usd_value")!)
         : undefined;
+    const txHash = searchParams.get("tx_hash") || undefined;
 
     // Parse date filter
     const createdDateFilter = searchParams.get("created_date");
@@ -97,6 +114,50 @@ function ActivityList({
         }
     }
 
+    // Parse "From" filter
+    const fromFilter = searchParams.get("from");
+    let fromAccount: string[] | undefined;
+    let fromAccountNot: string[] | undefined;
+    if (fromFilter) {
+        try {
+            const parsed = JSON.parse(fromFilter);
+            const selectedValues = Array.isArray(parsed.users)
+                ? parsed.users.filter(Boolean)
+                : [];
+            if (parsed.operation === "Is" && selectedValues.length > 0) {
+                fromAccount = selectedValues;
+            } else if (
+                parsed.operation === "Is Not" &&
+                selectedValues.length > 0
+            ) {
+                fromAccountNot = selectedValues;
+            }
+        } catch (e) {
+            console.error("Failed to parse from filter:", e);
+        }
+    }
+    const toFilter = searchParams.get("to");
+    let toAccount: string[] | undefined;
+    let toAccountNot: string[] | undefined;
+    if (toFilter) {
+        try {
+            const parsed = JSON.parse(toFilter);
+            const selectedValues = Array.isArray(parsed.users)
+                ? parsed.users.filter(Boolean)
+                : [];
+            if (parsed.operation === "Is" && selectedValues.length > 0) {
+                toAccount = selectedValues;
+            } else if (
+                parsed.operation === "Is Not" &&
+                selectedValues.length > 0
+            ) {
+                toAccountNot = selectedValues;
+            }
+        } catch (e) {
+            console.error("Failed to parse to filter:", e);
+        }
+    }
+
     const { data, isLoading } = useRecentActivity(
         treasuryId,
         PAGE_SIZE,
@@ -105,6 +166,11 @@ function ActivityList({
         status,
         tokenSymbol,
         tokenSymbolNot,
+        txHash,
+        fromAccount,
+        fromAccountNot,
+        toAccount,
+        toAccountNot,
         startDate,
         endDate,
     );
@@ -128,8 +194,49 @@ export default function ActivityPage() {
     const pathname = usePathname();
     const { data: subscriptionData } = useSubscription(treasuryId);
     const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+    const txHashValue = searchParams.get("tx_hash") || "";
+    const [txHashInput, setTxHashInput] = useState(txHashValue);
 
     const currentTab = searchParams.get("tab") || "all";
+    const { data: senderOptionsData } = useRecentActivitySenders(
+        treasuryId,
+        currentTab === "all" ? undefined : currentTab,
+    );
+    const { data: recipientOptionsData } = useRecentActivityRecipients(
+        treasuryId,
+        currentTab === "all" ? undefined : currentTab,
+    );
+    const selectedFromAccounts = useMemo(
+        () => getSelectedAccountsFromFilter(searchParams.get("from")),
+        [searchParams],
+    );
+    const selectedToAccounts = useMemo(
+        () => getSelectedAccountsFromFilter(searchParams.get("to")),
+        [searchParams],
+    );
+    // Keep currently selected URL values visible in the dropdown when changing tabs:
+    // tab-specific options may not include those values, but users still need to see/edit
+    // their active filters without losing context.
+    const senderOptions = useMemo(
+        () =>
+            Array.from(
+                new Set([
+                    ...(senderOptionsData || []),
+                    ...selectedFromAccounts,
+                ]),
+            ),
+        [senderOptionsData, selectedFromAccounts],
+    );
+    const recipientOptions = useMemo(
+        () =>
+            Array.from(
+                new Set([
+                    ...(recipientOptionsData || []),
+                    ...selectedToAccounts,
+                ]),
+            ),
+        [recipientOptionsData, selectedToAccounts],
+    );
 
     // Calculate filter options with date restrictions based on plan
     const activityFilterOptions: FilterOption[] = useMemo(() => {
@@ -153,8 +260,28 @@ export default function ActivityPage() {
                 label: "Token",
                 hideAmount: true,
             },
+            {
+                id: "from",
+                label: "From",
+                options: senderOptions.map((option) => ({
+                    value: option,
+                    label: option,
+                })),
+            },
+            {
+                id: "to",
+                label: "To",
+                options: recipientOptions.map((option) => ({
+                    value: option,
+                    label: option,
+                })),
+            },
         ];
-    }, [subscriptionData?.planConfig?.limits?.historyLookupMonths]);
+    }, [
+        subscriptionData?.planConfig?.limits?.historyLookupMonths,
+        senderOptions,
+        recipientOptions,
+    ]);
 
     const handleTabChange = useCallback(
         (value: string) => {
@@ -168,9 +295,33 @@ export default function ActivityPage() {
 
     // Check if any filters are active
     const hasActiveFilters = useMemo(() => {
-        const filterParams = ["created_date", "token", "min_usd_value"];
+        const filterParams = [
+            "created_date",
+            "token",
+            "from",
+            "to",
+            "min_usd_value",
+        ];
         return filterParams.some((param) => searchParams.has(param));
     }, [searchParams]);
+
+    useEffect(() => {
+        setTxHashInput(txHashValue);
+    }, [txHashValue]);
+
+    const handleTxHashSearch = useCallback(
+        (value: string) => {
+            const params = new URLSearchParams(searchParams.toString());
+            if (value.trim()) {
+                params.set("tx_hash", value.trim());
+            } else {
+                params.delete("tx_hash");
+            }
+            params.delete("page");
+            router.push(`${pathname}?${params.toString()}`);
+        },
+        [searchParams, router, pathname],
+    );
 
     const tabs: TabItem[] = [
         { value: "all", label: "All" },
@@ -182,6 +333,16 @@ export default function ActivityPage() {
 
     const actions = (
         <div className="flex items-center justify-end gap-2">
+            <ResponsiveInput
+                value={txHashInput}
+                onChange={(e) => setTxHashInput(e.target.value)}
+                onDebouncedChange={handleTxHashSearch}
+                debounceMs={350}
+                placeholder="Search by transaction hash"
+                mobilePlaceholder="Transaction hash"
+                className="md:w-56"
+                search
+            />
             <Button
                 variant="secondary"
                 size="icon"

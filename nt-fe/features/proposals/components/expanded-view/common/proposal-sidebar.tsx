@@ -132,7 +132,12 @@ function TransactionCreated({
                 </div>
             </div>
             <div className="ml-5">
-                <User accountId={proposer} withName={true} />
+                <User
+                    accountId={proposer}
+                    withName={true}
+                    withHoverCard
+                    withLink={false}
+                />
             </div>
         </div>
     );

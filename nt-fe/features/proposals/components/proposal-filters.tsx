@@ -45,6 +45,7 @@ const AMOUNT_OPERATIONS = ["Between", "Equal", "More Than", "Less Than"];
 const PROPOSAL_TYPE_OPERATIONS = ["Is", "Is Not"];
 const DATE_OPERATIONS = ["Is"];
 const USER_OPERATIONS = ["Is", "Is Not"];
+const FROM_OPERATIONS = ["Is", "Is Not"];
 
 interface TokenOption {
     id: string;
@@ -59,6 +60,7 @@ export interface FilterOption {
     minDate?: Date;
     maxDate?: Date;
     hideAmount?: boolean; // Hide amount fields for this filter (for token filter)
+    options?: Array<{ value: string; label: string }>;
 }
 
 interface ProposalFiltersProps {
@@ -145,6 +147,7 @@ export function ProposalFilters({
                             minDate={filterOption?.minDate}
                             maxDate={filterOption?.maxDate}
                             hideAmount={filterOption?.hideAmount}
+                            options={filterOption?.options}
                         />
                     );
                 })}
@@ -200,6 +203,7 @@ interface FilterPillProps {
     minDate?: Date;
     maxDate?: Date;
     hideAmount?: boolean;
+    options?: Array<{ value: string; label: string }>;
 }
 
 function FilterPill({
@@ -211,6 +215,7 @@ function FilterPill({
     minDate,
     maxDate,
     hideAmount,
+    options,
 }: FilterPillProps) {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -295,6 +300,34 @@ function FilterPill({
                         onRemove={onRemove}
                     />
                 );
+            case "from":
+                return (
+                    <UserFilterContent
+                        value={value}
+                        onUpdate={onUpdate}
+                        setIsOpen={setIsOpen}
+                        onRemove={onRemove}
+                        label="From"
+                        operations={FROM_OPERATIONS}
+                        suggestedUsers={(options || []).map(
+                            (option) => option.value,
+                        )}
+                    />
+                );
+            case "to":
+                return (
+                    <UserFilterContent
+                        value={value}
+                        onUpdate={onUpdate}
+                        setIsOpen={setIsOpen}
+                        onRemove={onRemove}
+                        label="To"
+                        operations={FROM_OPERATIONS}
+                        suggestedUsers={(options || []).map(
+                            (option) => option.value,
+                        )}
+                    />
+                );
         }
     };
 
@@ -363,6 +396,23 @@ function FilterPill({
                 <span className="font-medium text-sm">
                     {selected.join(", ")}
                 </span>
+            );
+        }
+
+        if (id === "from" || id === "to") {
+            const users = (filterData as any).users;
+            if (Array.isArray(users)) {
+                if (users.length === 0) return "ALL";
+                return (
+                    <span className="font-medium text-sm">
+                        {users.length > 1
+                            ? `${users[0]} +${users.length - 1}`
+                            : users[0]}
+                    </span>
+                );
+            }
+            return (
+                <span className="font-medium text-sm">{users || "ALL"}</span>
             );
         }
 
@@ -797,6 +847,8 @@ interface UserFilterContentProps {
     setIsOpen: (isOpen: boolean) => void;
     onRemove: () => void;
     label: string;
+    operations?: string[];
+    suggestedUsers?: string[];
 }
 
 interface UserData {
@@ -809,6 +861,8 @@ function UserFilterContent({
     setIsOpen,
     onRemove,
     label,
+    operations = USER_OPERATIONS,
+    suggestedUsers,
 }: UserFilterContentProps) {
     const { treasuryId } = useTreasury();
     const { recentAddresses, addRecentAddress } = useRecentAddresses();
@@ -819,7 +873,7 @@ function UserFilterContent({
             value,
             onUpdate,
             parseData: (parsed) => ({
-                users: parsed.users || [],
+                users: Array.isArray(parsed.users) ? parsed.users : [],
             }),
             serializeData: (op, d) => ({
                 operation: op,
@@ -834,16 +888,18 @@ function UserFilterContent({
         return "members";
     }, [label]);
 
+    const shouldUseSuggestedUsers = !!suggestedUsers;
+
     // Fetch the appropriate user list using the unified hook
     const { users: fetchedUsers, isLoading: isLoadingMembers } = useDaoUsers(
-        treasuryId ?? null,
+        shouldUseSuggestedUsers ? null : (treasuryId ?? null),
         userListType,
     );
 
     // Use fetched users as suggestions
     const memberSuggestions = useMemo(() => {
-        return fetchedUsers;
-    }, [fetchedUsers]);
+        return suggestedUsers ?? fetchedUsers;
+    }, [suggestedUsers, fetchedUsers]);
 
     // Combine DAO members with custom addresses and recent addresses, then filter and sort
     const filteredMembers = useMemo(() => {
@@ -887,7 +943,8 @@ function UserFilterContent({
         if (currentUsers.includes(accountId)) {
             setData({ users: currentUsers.filter((u) => u !== accountId) });
         } else {
-            setData({ users: [...currentUsers, accountId] });
+            const nextValues = [...currentUsers, accountId];
+            setData({ users: nextValues });
             addRecentAddress(accountId);
         }
     };
@@ -896,9 +953,10 @@ function UserFilterContent({
         if (e.key === "Enter" && searchQuery.trim()) {
             e.preventDefault();
             const accountId = searchQuery.trim();
-            if (!data?.users.includes(accountId)) {
-                setData({ users: [...(data?.users || []), accountId] });
-                // Save to recent addresses
+            const currentValues = data?.users || [];
+            if (!currentValues.includes(accountId)) {
+                const nextValues = [...currentValues, accountId];
+                setData({ users: nextValues });
                 addRecentAddress(accountId);
             }
             setSearchQuery("");
@@ -909,7 +967,7 @@ function UserFilterContent({
         <BaseFilterPopover
             filterLabel={label}
             operation={operation}
-            operations={USER_OPERATIONS}
+            operations={operations}
             onOperationChange={setOperation}
             onClear={handleClear}
             onDelete={handleDelete}
@@ -929,7 +987,7 @@ function UserFilterContent({
                 </div>
 
                 {/* Loading state */}
-                {isLoadingMembers ? (
+                {!shouldUseSuggestedUsers && isLoadingMembers ? (
                     <div className="text-xs text-muted-foreground text-center py-2">
                         Loading members...
                     </div>

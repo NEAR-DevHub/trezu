@@ -1,11 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { TabGroup } from "@/components/tab-group";
 import { GeneralTab } from "./components/general-tab";
-import { VotingTab } from "./components/voting-tab";
+import { IntegrationsTab } from "./components/integrations-tab";
 import { PreferencesTab } from "./components/preferences-tab";
-import { useState } from "react";
+import { VotingTab } from "./components/voting-tab";
 
 export default function SettingsPage() {
     const [activeTab, setActiveTab] = useState("general");
@@ -14,6 +15,7 @@ export default function SettingsPage() {
         { value: "general", label: "General" },
         { value: "voting", label: "Voting" },
         { value: "preferences", label: "Preferences" },
+        { value: "integrations", label: "Integrations" },
     ];
 
     return (
@@ -33,6 +35,7 @@ export default function SettingsPage() {
                 {activeTab === "general" && <GeneralTab />}
                 {activeTab === "voting" && <VotingTab />}
                 {activeTab === "preferences" && <PreferencesTab />}
+                {activeTab === "integrations" && <IntegrationsTab />}
             </div>
         </PageComponentLayout>
     );

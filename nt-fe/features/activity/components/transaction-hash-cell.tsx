@@ -4,6 +4,8 @@ import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/button";
 import { ExternalLink } from "lucide-react";
 import { useReceiptSearch } from "@/hooks/use-receipt-search";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 interface TransactionHashCellProps {
     transactionHashes?: string[];
@@ -22,14 +24,19 @@ export function TransactionHashCell({
     receiptIds,
     className = "flex items-center justify-end gap-2",
 }: TransactionHashCellProps) {
-    const needsReceiptSearch = !transactionHashes?.length;
-    const { data: transactionFromReceipt } = useReceiptSearch(
+    const needsReceiptSearch = true;
+    !transactionHashes?.length;
+    const { data: transactionFromReceipt, isLoading } = useReceiptSearch(
         needsReceiptSearch ? receiptIds?.[0] : undefined,
     );
 
     const transactionHash = transactionHashes?.length
         ? transactionHashes[0]
         : transactionFromReceipt?.[0]?.originatedFromTransactionHash;
+
+    if (needsReceiptSearch && isLoading) {
+        return <Skeleton className={cn("h-5 w-full", className)} />;
+    }
 
     if (!transactionHash) return null;
 
