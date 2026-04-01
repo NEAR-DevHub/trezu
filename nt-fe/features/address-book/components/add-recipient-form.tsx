@@ -358,7 +358,6 @@ export function AddRecipientInput({
         const nextLength = fields.length - 1;
         const nextActive = activeIndex > index ? activeIndex - 1 : activeIndex;
         setActiveIndex(Math.max(0, Math.min(nextActive, nextLength - 1)));
-        setIsAddressValid(false);
     };
 
     return (
