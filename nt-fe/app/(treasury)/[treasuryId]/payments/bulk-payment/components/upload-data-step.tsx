@@ -26,6 +26,7 @@ import {
     parseAndValidatePasteData,
     validateIntentsFeeCoverage,
 } from "../utils";
+import { InfoAlert } from "@/components/info-alert";
 
 interface UploadDataStepProps {
     handleBack?: () => void;
@@ -61,6 +62,7 @@ export function UploadDataStep({
     const creditsUsed = totalCredits - availableCredits;
 
     const selectedToken = form.watch("selectedToken");
+    const isNep245Token = selectedToken?.address?.startsWith("nep245:");
     const csvData = form.watch("csvData");
     const pasteDataInput = form.watch("pasteDataInput");
     const activeTab = form.watch("activeTab");
@@ -372,11 +374,16 @@ export function UploadDataStep({
                                                 "w-full h-14 rounded-lg px-4 bg-muted hover:bg-muted/80 hover:border-none",
                                         }}
                                     />
+                                    {isNep245Token && (
+                                        <InfoAlert
+                                            message="NEP-245 multi-token bulk payments are coming soon. They offer a more user-friendly transfer experience."
+                                        />
+                                    )}
                                 </div>
                             </div>
                         </div>
                         {/* Step 2: Provide Payment Data */}
-                        <div className="mb-4">
+                        <div className={`mb-4 ${isNep245Token ? "opacity-50 pointer-events-none" : ""}`}>
                             <div className="flex gap-2 mb-4">
                                 <NumberBadge number={2} variant="secondary" />
                                 <div className="flex-1 flex flex-col gap-2">
@@ -671,6 +678,7 @@ export function UploadDataStep({
                         type="button"
                         disabled={
                             !selectedToken ||
+                            isNep245Token ||
                             (activeTab === "upload" && !csvData) ||
                             (activeTab === "paste" && !pasteDataInput.trim()) ||
                             availableCredits === 0 ||
@@ -683,14 +691,16 @@ export function UploadDataStep({
                             { kind: "call", action: "AddProposal" },
                         ]}
                         idleMessage={
-                            availableCredits === 0
-                                ? "You’ve used all your limits"
-                                : !selectedToken ||
-                                    (activeTab === "upload" && !csvData) ||
-                                    (activeTab === "paste" &&
-                                        !pasteDataInput.trim())
-                                  ? "Select asset and provide payment data"
-                                  : "Continue to Review"
+                            isNep245Token
+                                ? "NEP-245 bulk payments coming soon"
+                                : availableCredits === 0
+                                  ? "You’ve used all your limits"
+                                  : !selectedToken ||
+                                      (activeTab === "upload" && !csvData) ||
+                                      (activeTab === "paste" &&
+                                          !pasteDataInput.trim())
+                                    ? "Select asset and provide payment data"
+                                    : "Continue to Review"
                         }
                     />
                 </PageCard>
