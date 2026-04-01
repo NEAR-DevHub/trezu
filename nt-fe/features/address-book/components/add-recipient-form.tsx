@@ -24,6 +24,7 @@ import {
 import { FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { NumberBadge } from "@/components/number-badge";
 import { Address } from "@/components/address";
+import { Pill } from "@/components/pill";
 import { recipientSchema, RECIPIENT_NAME_MAX_LENGTH } from "../types";
 import { useMediaQuery } from "@/hooks/use-media-query";
 
@@ -140,12 +141,14 @@ export function RecipientRow({
     onEdit,
     onRemove,
     nameBadge,
+    invalid,
 }: {
     control: Control<FormValues>;
     index: number;
     onEdit?: () => void;
     onRemove?: () => void;
     nameBadge?: ReactNode;
+    invalid?: boolean;
 }) {
     const { data: chains = [] } = useChains();
     const name = useWatch({ control, name: `recipients.${index}.name` });
@@ -176,6 +179,12 @@ export function RecipientRow({
                                     </div>
                                 </div>
                                 {nameBadge}
+                                {invalid && (
+                                    <Pill
+                                        title="Incomplete"
+                                        className="bg-destructive/10 text-destructive"
+                                    />
+                                )}
                             </div>
                         </div>
                         <NetworkList
@@ -265,6 +274,7 @@ export function AddRecipientInput({
         control,
         name: `recipients.${activeIndex}.networks`,
     });
+    const allRecipients = useWatch({ control, name: "recipients" }) ?? [];
 
     const isActiveValid =
         !formState.errors.recipients?.[activeIndex] &&
@@ -273,7 +283,20 @@ export function AddRecipientInput({
         !isAddressValidating &&
         activeNetworks?.length > 0;
 
-    const canProceed = isActiveValid;
+    const isEntryComplete = (i: number) => {
+        const r = allRecipients[i];
+        if (!r) return false;
+        return (
+            !!r.name?.trim() &&
+            !!r.address &&
+            r.networks?.length > 0 &&
+            !formState.errors.recipients?.[i]
+        );
+    };
+
+    const canProceed =
+        isActiveValid &&
+        fields.every((_, i) => i === activeIndex || isEntryComplete(i));
 
     const handleAddressValid = useCallback(
         (valid: boolean) => {
@@ -463,6 +486,7 @@ export function AddRecipientInput({
                                         control={control}
                                         onEdit={() => handleEdit(i)}
                                         onRemove={() => handleRemove(i)}
+                                        invalid={!isEntryComplete(i)}
                                     />
                                 ) : null,
                             )}
@@ -473,6 +497,11 @@ export function AddRecipientInput({
                         <Button
                             className="w-full"
                             disabled={!canProceed}
+                            tooltipContent={
+                                !canProceed
+                                    ? "All recipients must be complete before reviewing."
+                                    : undefined
+                            }
                             onClick={onReview}
                         >
                             Review Details
