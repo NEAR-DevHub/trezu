@@ -5,6 +5,7 @@ pub mod chains;
 pub mod dao;
 pub mod intents;
 pub mod lookup;
+pub mod notifications;
 pub mod proposals;
 pub mod proxy;
 pub mod public_dashboard;
