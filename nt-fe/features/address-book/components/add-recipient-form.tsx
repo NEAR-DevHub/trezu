@@ -200,6 +200,11 @@ export function RecipientRow({
                             className="text-muted-foreground hover:text-foreground"
                             onClick={onEdit}
                             disabled={disabledEdit}
+                            tooltipContent={
+                                disabledEdit
+                                    ? "You must fill out all fields to add a recipient."
+                                    : undefined
+                            }
                         >
                             <Pencil className="size-4" />
                             Edit
