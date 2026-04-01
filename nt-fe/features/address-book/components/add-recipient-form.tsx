@@ -140,12 +140,14 @@ export function RecipientRow({
     onEdit,
     onRemove,
     nameBadge,
+    disabledEdit,
 }: {
     control: Control<FormValues>;
     index: number;
     onEdit?: () => void;
     onRemove?: () => void;
     nameBadge?: ReactNode;
+    disabledEdit?: boolean;
 }) {
     const { data: chains = [] } = useChains();
     const name = useWatch({ control, name: `recipients.${index}.name` });
@@ -197,6 +199,7 @@ export function RecipientRow({
                             size="sm"
                             className="text-muted-foreground hover:text-foreground"
                             onClick={onEdit}
+                            disabled={disabledEdit}
                         >
                             <Pencil className="size-4" />
                             Edit
@@ -463,6 +466,7 @@ export function AddRecipientInput({
                                         control={control}
                                         onEdit={() => handleEdit(i)}
                                         onRemove={() => handleRemove(i)}
+                                        disabledEdit={!isActiveValid}
                                     />
                                 ) : null,
                             )}
