@@ -24,6 +24,7 @@ import {
 import { FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { NumberBadge } from "@/components/number-badge";
 import { Address } from "@/components/address";
+import { Pill } from "@/components/pill";
 import { recipientSchema, RECIPIENT_NAME_MAX_LENGTH } from "../types";
 import { useMediaQuery } from "@/hooks/use-media-query";
 
@@ -179,9 +180,10 @@ export function RecipientRow({
                                 </div>
                                 {nameBadge}
                                 {invalid && (
-                                    <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">
-                                        Incomplete
-                                    </span>
+                                    <Pill
+                                        title="Incomplete"
+                                        className="bg-destructive/10 text-destructive"
+                                    />
                                 )}
                             </div>
                         </div>
