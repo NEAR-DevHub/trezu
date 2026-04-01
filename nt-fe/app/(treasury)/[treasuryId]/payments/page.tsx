@@ -466,7 +466,6 @@ function buildIntentTransferDescription(
     data: PaymentFormValues,
     quote: Awaited<ReturnType<typeof getIntentsQuote>>,
 ): string {
-    const quoteDeadline = quote?.quote.deadline;
     const notes = [data.memo?.trim()].filter(Boolean).join(" ");
 
     return encodeToMarkdown({
@@ -474,7 +473,6 @@ function buildIntentTransferDescription(
         notes,
         recipient: data.address,
         depositAddress: quote?.quote.depositAddress,
-        quoteDeadline,
         signature: quote?.signature,
         timeEstimate: quote?.quote.timeEstimate
             ? `${quote.quote.timeEstimate} seconds`
