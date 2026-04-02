@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { BadgeDollarSign, Info, ChevronDown, ChevronUp } from "lucide-react";
+import {
+    BadgeDollarSign,
+    Info,
+    ChevronDown,
+    ChevronUp,
+    ChevronLeft,
+} from "lucide-react";
+import { Button } from "@/components/button";
 import {
     Dialog,
     DialogContent,
@@ -23,6 +30,7 @@ import { Tooltip } from "./tooltip";
 interface LockupDetailsModalProps {
     isOpen: boolean;
     onClose: () => void;
+    onBack?: () => void;
     asset: TreasuryAsset | null;
     treasuryId: string | null;
 }
@@ -123,6 +131,7 @@ function calculateNextFtUnlockDate(
 export function LockupDetailsModal({
     isOpen,
     onClose,
+    onBack,
     asset,
     treasuryId,
 }: LockupDetailsModalProps) {
@@ -262,7 +271,22 @@ export function LockupDetailsModal({
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-[560px]">
                 <DialogHeader>
-                    <DialogTitle>Lockup Details</DialogTitle>
+                    <div className="flex items-center gap-1">
+                        {onBack ? (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="size-7 -ml-1"
+                                onClick={onBack}
+                            >
+                                <ChevronLeft className="size-4" />
+                            </Button>
+                        ) : null}
+                        <DialogTitle className="text-left">
+                            Lockup Details
+                        </DialogTitle>
+                    </div>
                 </DialogHeader>
 
                 <div className="space-y-6">

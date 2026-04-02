@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/button";
 import { InfoDisplay, type InfoItem } from "@/components/info-display";
-import { Info } from "lucide-react";
+import { ChevronLeft, Info } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -20,6 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface EarningPoolDetailsModalProps {
     isOpen: boolean;
     onClose: () => void;
+    onBack?: () => void;
     asset: TreasuryAsset | null;
     poolId: string | null;
 }
@@ -27,6 +28,7 @@ interface EarningPoolDetailsModalProps {
 export function EarningPoolDetailsModal({
     isOpen,
     onClose,
+    onBack,
     asset,
     poolId,
 }: EarningPoolDetailsModalProps) {
@@ -124,7 +126,22 @@ export function EarningPoolDetailsModal({
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Earning Details</DialogTitle>
+                    <div className="flex items-center gap-1">
+                        {onBack ? (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="size-7 -ml-1"
+                                onClick={onBack}
+                            >
+                                <ChevronLeft className="size-4" />
+                            </Button>
+                        ) : null}
+                        <DialogTitle className="text-left">
+                            Earning Details
+                        </DialogTitle>
+                    </div>
                 </DialogHeader>
 
                 <div className="flex flex-col gap-6">

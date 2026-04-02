@@ -10,9 +10,21 @@ import {
     Info,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Fragment, useMemo, useState } from "react";
+import {
+    Fragment,
+    type ReactNode,
+    useCallback,
+    useMemo,
+    useState,
+} from "react";
 import { AuthButton } from "@/components/auth-button";
 import { Button } from "@/components/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/modal";
 import {
     Table,
     TableBody,
@@ -21,8 +33,16 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/table";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { AggregatedAsset } from "@/hooks/use-assets";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { useTreasury } from "@/hooks/use-treasury";
 import type { TreasuryAsset } from "@/lib/api";
 import { availableBalance, lockedBalance } from "@/lib/balance";
@@ -68,8 +88,6 @@ interface AssetMetrics {
 const DEFAULT_DECIMALS = 24;
 const SORT_BUTTON_CLASS =
     "inline-flex items-center gap-1 hover:text-foreground hover:bg-transparent px-1! uppercase text-xxs";
-const SORT_BUTTON_LEFT_CLASS =
-    "flex items-center gap-1 hover:text-foreground hover:bg-transparent px-1! uppercase text-xxs";
 
 function toUsd(rawAmount: Big.Big, decimals: number, price: number): number {
     if (price <= 0) return 0;
@@ -130,7 +148,6 @@ function getAssetMetrics(asset: AggregatedAsset): AssetMetrics {
     let hasEarning = false;
 
     for (const network of asset.networks) {
-        const availableRaw = networkAvailableRaw(network);
         const lockedRaw = networkLockedRaw(network);
         const earningRaw = networkEarningRaw(network);
         const availableForAvailableViewRaw =
@@ -199,17 +216,516 @@ function networkRowKey(
     ].join(":");
 }
 
-interface AvailableExpandedRowsProps {
-    asset: AggregatedAsset;
-    availableNetworks: NetworkAsset[];
-    treasuryId: string | null;
-    onNavigate: (href: string) => void;
+function buildTokenParam(network: NetworkAsset): string {
+    return encodeURIComponent(
+        JSON.stringify({
+            symbol: network.symbol,
+            address: network.id,
+            network: network.network,
+            decimals: network.decimals,
+            icon: network.icon,
+            name: network.name,
+        }),
+    );
+}
+
+interface MobileEarningPoolRow {
+    key: string;
+    label: string;
+    network: NetworkAsset;
+    poolId: string;
+    amountRaw: Big.Big;
+    amountUsd: number;
+}
+
+interface MobileModalData {
+    primaryDecimals: number;
+    summaryRaw: Big.Big;
+    summaryUsd: number;
+    summaryLabel: string;
+    listLabel: string;
+    listNetworks: NetworkAsset[];
+    earningPoolRows: MobileEarningPoolRow[];
+    weight: number;
+}
+
+interface MobileAssetViewModalProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    selectedAsset: AggregatedAsset | null;
+    mobileModalData: MobileModalData | null;
+    view: ViewMode;
+    renderRows: () => ReactNode;
+}
+
+function MobileAssetViewModal({
+    open,
+    onOpenChange,
+    selectedAsset,
+    mobileModalData,
+    view,
+    renderRows,
+}: MobileAssetViewModalProps) {
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="gap-0">
+                <DialogHeader>
+                    <DialogTitle>
+                        {selectedAsset?.networks[0]?.symbol ??
+                            selectedAsset?.name ??
+                            "Asset Details"}
+                    </DialogTitle>
+                </DialogHeader>
+                {open && selectedAsset && mobileModalData && (
+                    <div className="flex flex-col">
+                        <div className="flex items-center gap-3 py-3 border-b border-border/50">
+                            <span className="flex-1 text-sm text-muted-foreground">
+                                {mobileModalData.summaryLabel}
+                            </span>
+                            <BalanceCell
+                                balance={displayAmount(
+                                    mobileModalData.summaryRaw,
+                                    mobileModalData.primaryDecimals,
+                                )}
+                                symbol={selectedAsset.id}
+                                balanceUSD={mobileModalData.summaryUsd}
+                            />
+                        </div>
+                        <div className="flex items-center gap-3 py-3 border-b border-border/50">
+                            <span className="flex-1 text-sm text-muted-foreground">
+                                Coin Price
+                            </span>
+                            <span className="text-sm font-medium">
+                                {formatCurrency(selectedAsset.price)}
+                            </span>
+                        </div>
+                        {view === "available" && (
+                            <div className="flex items-center gap-3 py-3 border-b border-border/50">
+                                <span className="flex-1 text-sm text-muted-foreground">
+                                    Weight
+                                </span>
+                                <div className="w-24 bg-muted rounded-full h-1.5 overflow-hidden shrink-0">
+                                    <div
+                                        className="bg-foreground h-full rounded-full transition-all"
+                                        style={{
+                                            width: `${mobileModalData.weight}%`,
+                                        }}
+                                    />
+                                </div>
+                                <span className="text-xs font-medium w-14 text-right shrink-0">
+                                    {mobileModalData.weight.toFixed(2)}%
+                                </span>
+                            </div>
+                        )}
+                        <div className="pt-3 pb-1.5">
+                            <span className="text-xxs font-medium uppercase text-muted-foreground">
+                                {mobileModalData.listLabel}
+                            </span>
+                        </div>
+                        {renderRows()}
+                    </div>
+                )}
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function buildMobileModalData(
+    selectedAsset: AggregatedAsset,
+    view: ViewMode,
+    weight?: number,
+): MobileModalData {
+    const availableNetworks = selectedAsset.networks.filter(
+        (n) =>
+            n.residency !== "Staked" &&
+            networkAvailableRawForAvailableView(n).gt(0),
+    );
+    // Locked view still includes lockup rows with currently unlocked amounts
+    const lockedNetworks = selectedAsset.networks.filter((n) => {
+        if (n.residency === "Staked") return false;
+        return (
+            networkLockedRaw(n).gt(0) ||
+            (n.residency === "Lockup" && networkAvailableRaw(n).gt(0))
+        );
+    });
+    const earningNetworks = selectedAsset.networks.filter(
+        (n) =>
+            ((n.residency === "Staked" &&
+                n.balance.type === "Staked" &&
+                n.balance.staking.pools.some((pool) =>
+                    pool.stakedBalance.gt(0),
+                )) ||
+                (n.balance.type === "Vested" &&
+                    n.balance.lockup.staked.gt(0))) &&
+            networkEarningRaw(n).gt(0),
+    );
+
+    const listNetworks =
+        view === "available"
+            ? availableNetworks
+            : view === "locked"
+              ? lockedNetworks
+              : earningNetworks;
+
+    const earningPoolRows = earningNetworks.flatMap((network, networkIdx) => {
+        if (network.balance.type === "Staked") {
+            return network.balance.staking.pools
+                .filter((pool) => pool.stakedBalance.gt(0))
+                .map((pool, poolIdx) => {
+                    const poolTotal = pool.stakedBalance.add(
+                        pool.unstakedBalance,
+                    );
+                    return {
+                        key: `${selectedAsset.id}-mobile-earning-${networkIdx}-${poolIdx}`,
+                        label: pool.poolId,
+                        network,
+                        poolId: pool.poolId,
+                        amountRaw: poolTotal,
+                        amountUsd: toUsd(
+                            poolTotal,
+                            network.decimals,
+                            network.price,
+                        ),
+                    };
+                });
+        }
+
+        if (
+            network.balance.type === "Vested" &&
+            network.balance.lockup.staked.gt(0)
+        ) {
+            const poolId =
+                network.balance.lockup.stakingPoolId ?? "Lockup staking pool";
+            const poolTotal = network.balance.lockup.staked.add(
+                network.balance.lockup.unstakedBalance,
+            );
+            return [
+                {
+                    key: `${selectedAsset.id}-mobile-earning-lockup-${networkIdx}`,
+                    label: poolId,
+                    network,
+                    poolId,
+                    amountRaw: poolTotal,
+                    amountUsd: toUsd(
+                        poolTotal,
+                        network.decimals,
+                        network.price,
+                    ),
+                },
+            ];
+        }
+
+        return [];
+    });
+
+    const primaryDecimals =
+        selectedAsset.networks[0]?.decimals ?? DEFAULT_DECIMALS;
+    const summaryRaw =
+        view === "available"
+            ? availableNetworks.reduce(
+                  (sum, n) => sum.add(networkAvailableRawForAvailableView(n)),
+                  Big(0),
+              )
+            : view === "locked"
+              ? lockedNetworks.reduce(
+                    (sum, n) => sum.add(networkLockedRaw(n)),
+                    Big(0),
+                )
+              : earningNetworks.reduce(
+                    (sum, n) => sum.add(networkEarningRaw(n)),
+                    Big(0),
+                );
+    const summaryUsd =
+        view === "available"
+            ? availableNetworks.reduce(
+                  (sum, n) =>
+                      sum +
+                      toUsd(
+                          networkAvailableRawForAvailableView(n),
+                          n.decimals,
+                          n.price,
+                      ),
+                  0,
+              )
+            : view === "locked"
+              ? lockedNetworks.reduce(
+                    (sum, n) =>
+                        sum + toUsd(networkLockedRaw(n), n.decimals, n.price),
+                    0,
+                )
+              : earningNetworks.reduce(
+                    (sum, n) =>
+                        sum + toUsd(networkEarningRaw(n), n.decimals, n.price),
+                    0,
+                );
+    const summaryLabel =
+        view === "available"
+            ? "Balance"
+            : view === "locked"
+              ? "Locked Balance"
+              : "Total Balance";
+    const listLabel =
+        view === "available"
+            ? "Source"
+            : view === "locked"
+              ? `Balance by ${lockedNetworks.length === 1 ? "Investor" : "Investors"}`
+              : "Pool Breakdown";
+
+    return {
+        primaryDecimals,
+        summaryRaw,
+        summaryUsd,
+        summaryLabel,
+        listLabel,
+        listNetworks,
+        earningPoolRows,
+        weight: weight ?? 0,
+    };
 }
 
 interface MergedAvailableNetwork {
     network: NetworkAsset;
     availableRaw: Big.Big;
     isLockupUnlocked: boolean;
+}
+
+interface BaseAssetViewProps {
+    asset: AggregatedAsset;
+    isMobile: boolean;
+    isExpanded: boolean;
+    primaryDecimals?: number;
+}
+
+interface AvailableViewProps extends BaseAssetViewProps {
+    availableRaw?: Big.Big;
+    availableUsd?: number;
+    weight?: number;
+    availableNetworks?: NetworkAsset[];
+    selectedAssetId?: string;
+    treasuryId?: string | null;
+    onNavigate?: (href: string) => void;
+}
+
+function AvailableView({
+    asset,
+    isMobile,
+    isExpanded,
+    primaryDecimals,
+    availableRaw,
+    availableUsd,
+    weight,
+    availableNetworks,
+    selectedAssetId,
+    treasuryId,
+    onNavigate,
+}: AvailableViewProps): ReactNode {
+    if (!isExpanded) {
+        return (
+            <>
+                <TableCell className="p-4 text-right">
+                    <BalanceCell
+                        balance={displayAmount(
+                            availableRaw ?? Big(0),
+                            primaryDecimals ?? DEFAULT_DECIMALS,
+                        )}
+                        symbol={asset.id}
+                        balanceUSD={availableUsd ?? 0}
+                    />
+                </TableCell>
+                <TableCell className="p-4 text-right font-medium hidden sm:table-cell">
+                    {formatCurrency(asset.price)}
+                </TableCell>
+                <TableCell className="p-4 text-right hidden sm:table-cell">
+                    <div className="flex items-center justify-end gap-3">
+                        <span className="font-medium w-14 text-right">
+                            {(weight ?? 0).toFixed(2)}%
+                        </span>
+                        <div className="w-24 bg-muted rounded-full h-2 overflow-hidden">
+                            <div
+                                className="bg-foreground h-full rounded-full"
+                                style={{
+                                    width: `${weight ?? 0}%`,
+                                }}
+                            />
+                        </div>
+                    </div>
+                </TableCell>
+            </>
+        );
+    }
+
+    if (isMobile) {
+        return (
+            <>
+                {(availableNetworks ?? []).map((network) => {
+                    const amountRaw =
+                        networkAvailableRawForAvailableView(network);
+                    const amountUsd = toUsd(
+                        amountRaw,
+                        network.decimals,
+                        network.price,
+                    );
+                    const isLockupUnlocked = !!network.lockupInstanceId;
+                    const tokenParam = buildTokenParam(network);
+                    return (
+                        <div
+                            key={networkRowKey(
+                                selectedAssetId ?? asset.id,
+                                "available",
+                                network,
+                            )}
+                            className="py-3 border-b border-border/50"
+                        >
+                            <div className="flex items-center gap-2">
+                                <div className="flex-1 min-w-0">
+                                    <NetworkDisplay
+                                        asset={network}
+                                        subLabel={
+                                            isLockupUnlocked
+                                                ? "Unlocked Token"
+                                                : undefined
+                                        }
+                                    />
+                                </div>
+                                <div className="text-right shrink-0">
+                                    <BalanceCell
+                                        balance={displayAmount(
+                                            amountRaw,
+                                            network.decimals,
+                                        )}
+                                        symbol={network.symbol}
+                                        balanceUSD={amountUsd}
+                                    />
+                                </div>
+                            </div>
+                            {!isLockupUnlocked && (
+                                <div className="mt-2 flex justify-end">
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        className="h-auto p-0 text-sm font-medium text-foreground hover:bg-transparent"
+                                        onClick={() =>
+                                            onNavigate?.(
+                                                `/${treasuryId}/payments?token=${tokenParam}`,
+                                            )
+                                        }
+                                    >
+                                        <ArrowUpRight className="size-4" /> Sent
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        className="h-auto p-0 text-sm font-medium text-foreground hover:bg-transparent"
+                                        onClick={() =>
+                                            onNavigate?.(
+                                                `/${treasuryId}/exchange?sellToken=${tokenParam}`,
+                                            )
+                                        }
+                                    >
+                                        <ArrowLeftRight className="size-4" />{" "}
+                                        Exchange
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </>
+        );
+    }
+
+    const mergedAvailableNetworks = mergeAvailableNetworks(
+        availableNetworks ?? [],
+    );
+    return (
+        <>
+            <TableRow className="bg-muted/30 uppercase text-muted-foreground font-medium hover:bg-muted/30">
+                <TableCell className="p-2 pl-16 text-xxs">Source</TableCell>
+                <TableCell className="p-2 text-xxs text-right">
+                    Balance
+                </TableCell>
+                <TableCell colSpan={3} />
+            </TableRow>
+            {mergedAvailableNetworks.map(
+                ({
+                    network,
+                    availableRaw: mergedAvailableRaw,
+                    isLockupUnlocked,
+                }) => {
+                    const tokenParam = buildTokenParam(network);
+                    return (
+                        <TableRow
+                            key={networkRowKey(asset.id, "available", network)}
+                            className="bg-muted/30 group"
+                        >
+                            <TableCell className="p-4 pl-16">
+                                <NetworkDisplay
+                                    asset={network}
+                                    subLabel={
+                                        isLockupUnlocked
+                                            ? "Unlocked Token"
+                                            : undefined
+                                    }
+                                />
+                            </TableCell>
+                            <TableCell className="p-4 text-right">
+                                <BalanceCell
+                                    balance={displayAmount(
+                                        mergedAvailableRaw,
+                                        network.decimals,
+                                    )}
+                                    symbol={network.symbol}
+                                    balanceUSD={toUsd(
+                                        mergedAvailableRaw,
+                                        network.decimals,
+                                        network.price,
+                                    )}
+                                />
+                            </TableCell>
+                            <TableCell className="p-4">
+                                {!isLockupUnlocked && (
+                                    <div className="flex gap-1 justify-end">
+                                        <AuthButton
+                                            permissionKind="transfer"
+                                            permissionAction="AddProposal"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                                            tooltipContent="Send"
+                                            onClick={() =>
+                                                onNavigate?.(
+                                                    `/${treasuryId}/payments?token=${tokenParam}`,
+                                                )
+                                            }
+                                        >
+                                            <ArrowUpRight className="size-4 text-primary" />
+                                        </AuthButton>
+                                        <AuthButton
+                                            permissionKind="call"
+                                            permissionAction="AddProposal"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                                            tooltipContent="Exchange"
+                                            onClick={() =>
+                                                onNavigate?.(
+                                                    `/${treasuryId}/exchange?sellToken=${tokenParam}`,
+                                                )
+                                            }
+                                        >
+                                            <ArrowLeftRight className="size-4 text-primary" />
+                                        </AuthButton>
+                                    </div>
+                                )}
+                            </TableCell>
+                            <TableCell />
+                            <TableCell />
+                        </TableRow>
+                    );
+                },
+            )}
+        </>
+    );
 }
 
 function buildAvailableSourceKey(
@@ -248,137 +764,145 @@ function mergeAvailableNetworks(
     return Array.from(bySource.values());
 }
 
-function AvailableExpandedRows({
-    asset,
-    availableNetworks,
-    treasuryId,
-    onNavigate,
-}: AvailableExpandedRowsProps) {
-    // Merge same source token rows, but keep lockup-unlocked amounts separate
-    // from regular FT wallet balances so they can be shown as "Unlocked Token".
-    const mergedAvailableNetworks = useMemo(
-        () => mergeAvailableNetworks(availableNetworks),
-        [availableNetworks],
-    );
-
-    return (
-        <>
-            <TableRow className="bg-muted/30 uppercase text-muted-foreground font-medium hover:bg-muted/30">
-                <TableCell className="p-2 pl-16 text-xxs">Source</TableCell>
-                <TableCell className="p-2 text-xxs text-right">
-                    Balance
-                </TableCell>
-                <TableCell colSpan={3} />
-            </TableRow>
-            {mergedAvailableNetworks.map(
-                ({ network, availableRaw, isLockupUnlocked }) => {
-                    const tokenParam = encodeURIComponent(
-                        JSON.stringify({
-                            symbol: network.symbol,
-                            address: network.id,
-                            network: network.network,
-                            decimals: network.decimals,
-                            icon: network.icon,
-                            name: network.name,
-                        }),
-                    );
-                    return (
-                        <TableRow
-                            key={networkRowKey(asset.id, "available", network)}
-                            className="bg-muted/30 group"
-                        >
-                            <TableCell className="p-4 pl-16">
-                                <NetworkDisplay
-                                    asset={network}
-                                    subLabel={
-                                        isLockupUnlocked
-                                            ? "Unlocked Token"
-                                            : undefined
-                                    }
-                                />
-                            </TableCell>
-                            <TableCell className="p-4 text-right">
-                                <BalanceCell
-                                    balance={displayAmount(
-                                        availableRaw,
-                                        network.decimals,
-                                    )}
-                                    symbol={network.symbol}
-                                    balanceUSD={toUsd(
-                                        availableRaw,
-                                        network.decimals,
-                                        network.price,
-                                    )}
-                                />
-                            </TableCell>
-                            <TableCell className="p-4">
-                                {!isLockupUnlocked && (
-                                    <div className="flex gap-1 justify-end">
-                                        <AuthButton
-                                            permissionKind="transfer"
-                                            permissionAction="AddProposal"
-                                            variant="ghost"
-                                            size="icon"
-                                            className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-                                            tooltipContent="Send"
-                                            onClick={() =>
-                                                onNavigate(
-                                                    `/${treasuryId}/payments?token=${tokenParam}`,
-                                                )
-                                            }
-                                        >
-                                            <ArrowUpRight className="size-4 text-primary" />
-                                        </AuthButton>
-                                        <AuthButton
-                                            permissionKind="call"
-                                            permissionAction="AddProposal"
-                                            variant="ghost"
-                                            size="icon"
-                                            className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-                                            tooltipContent="Exchange"
-                                            onClick={() =>
-                                                onNavigate(
-                                                    `/${treasuryId}/exchange?sellToken=${tokenParam}`,
-                                                )
-                                            }
-                                        >
-                                            <ArrowLeftRight className="size-4 text-primary" />
-                                        </AuthButton>
-                                    </div>
-                                )}
-                            </TableCell>
-                            <TableCell />
-                            <TableCell />
-                        </TableRow>
-                    );
-                },
-            )}
-        </>
-    );
+interface LockedViewProps extends BaseAssetViewProps {
+    lockedRaw?: Big.Big;
+    lockedUsd?: number;
+    unlockedRaw?: Big.Big;
+    unlockedUsd?: number;
+    totalAllocatedRaw?: Big.Big;
+    totalAllocatedUsd?: number;
+    lockedNetworks?: NetworkAsset[];
+    ftLockupInstanceCount?: number;
+    selectedAssetId?: string;
+    onSelectLockup?: (network: TreasuryAsset) => void;
 }
 
-interface LockedExpandedRowsProps {
-    asset: AggregatedAsset;
-    lockedNetworks: NetworkAsset[];
-    ftLockupInstanceCount: number;
-    onSelectLockup: (network: TreasuryAsset) => void;
-}
-
-function LockedExpandedRows({
+function LockedView({
     asset,
+    isMobile,
+    isExpanded,
+    primaryDecimals,
+    lockedRaw,
+    lockedUsd,
+    unlockedRaw,
+    unlockedUsd,
+    totalAllocatedRaw,
+    totalAllocatedUsd,
     lockedNetworks,
     ftLockupInstanceCount,
+    selectedAssetId,
     onSelectLockup,
-}: LockedExpandedRowsProps) {
+}: LockedViewProps): ReactNode {
+    if (!isExpanded) {
+        return (
+            <>
+                <TableCell className="p-4 text-right hidden sm:table-cell">
+                    <BalanceCell
+                        balance={displayAmount(
+                            lockedRaw ?? Big(0),
+                            primaryDecimals ?? DEFAULT_DECIMALS,
+                        )}
+                        symbol={asset.id}
+                        balanceUSD={lockedUsd ?? 0}
+                    />
+                </TableCell>
+                <TableCell className="p-4 text-right">
+                    <BalanceCell
+                        balance={displayAmount(
+                            unlockedRaw ?? Big(0),
+                            primaryDecimals ?? DEFAULT_DECIMALS,
+                        )}
+                        symbol={asset.id}
+                        balanceUSD={unlockedUsd ?? 0}
+                    />
+                </TableCell>
+                <TableCell className="p-4 text-right font-medium hidden sm:table-cell">
+                    {formatCurrency(asset.price)}
+                </TableCell>
+                <TableCell className="p-4 text-right hidden sm:table-cell">
+                    <BalanceCell
+                        balance={displayAmount(
+                            totalAllocatedRaw ?? Big(0),
+                            primaryDecimals ?? DEFAULT_DECIMALS,
+                        )}
+                        symbol={asset.id}
+                        balanceUSD={totalAllocatedUsd ?? 0}
+                    />
+                </TableCell>
+            </>
+        );
+    }
+
+    if (isMobile) {
+        return (
+            <>
+                {(lockedNetworks ?? []).map((network) => {
+                    const amountRaw = networkLockedRaw(network);
+                    const amountUsd = toUsd(
+                        amountRaw,
+                        network.decimals,
+                        network.price,
+                    );
+                    const canOpenDetails =
+                        network.residency === "Lockup" ||
+                        !!network.lockupInstanceId;
+                    return (
+                        <div
+                            key={networkRowKey(
+                                selectedAssetId ?? asset.id,
+                                "locked",
+                                network,
+                            )}
+                            className="py-3 border-b border-border/50"
+                        >
+                            <div className="flex items-center gap-2">
+                                <div className="flex-1 min-w-0">
+                                    <NetworkDisplay asset={network} />
+                                </div>
+                                <div className="text-right shrink-0">
+                                    <BalanceCell
+                                        balance={displayAmount(
+                                            amountRaw,
+                                            network.decimals,
+                                        )}
+                                        symbol={network.symbol}
+                                        balanceUSD={amountUsd}
+                                    />
+                                </div>
+                            </div>
+                            {canOpenDetails && (
+                                <div className="mt-2 flex justify-end">
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        className="h-auto p-0 text-sm font-medium text-foreground hover:bg-transparent"
+                                        onClick={() =>
+                                            onSelectLockup?.(network)
+                                        }
+                                    >
+                                        Details{" "}
+                                        <ChevronRight className="size-4" />
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </>
+        );
+    }
+
     return (
         <>
             <TableRow className="bg-muted/30 uppercase text-muted-foreground font-medium hover:bg-muted/30">
                 <TableCell className="p-2 pl-16 text-xxs">
-                    {lockedNetworks.length === 1 ? "Investor" : "Investors"}
+                    {(lockedNetworks ?? []).length === 1
+                        ? "Investor"
+                        : "Investors"}
                 </TableCell>
                 <TableCell colSpan={5} />
             </TableRow>
-            {lockedNetworks.map((network) => {
+            {(lockedNetworks ?? []).map((network) => {
                 const lockedRawNetwork = networkLockedRaw(network);
                 const unlockedRawNetwork = networkAvailableRaw(network);
                 const totalAllocated = lockedRawNetwork.add(unlockedRawNetwork);
@@ -386,7 +910,7 @@ function LockedExpandedRows({
                     <TableRow
                         key={networkRowKey(asset.id, "locked", network)}
                         className="bg-muted/30 cursor-pointer hover:bg-muted/50"
-                        onClick={() => onSelectLockup(network)}
+                        onClick={() => onSelectLockup?.(network)}
                     >
                         <TableCell className="p-4 pl-16">
                             <div className="space-y-1">
@@ -410,7 +934,7 @@ function LockedExpandedRows({
                                         </span>
                                         <span className="text-xs text-muted-foreground">
                                             Locked Token
-                                            {ftLockupInstanceCount > 1 &&
+                                            {(ftLockupInstanceCount ?? 0) > 1 &&
                                                 network.lockupInstanceId && (
                                                     <span>
                                                         {" "}
@@ -477,17 +1001,105 @@ function LockedExpandedRows({
     );
 }
 
-interface EarningExpandedRowsProps {
-    asset: AggregatedAsset;
-    earningNetworks: NetworkAsset[];
-    onSelectPool: (network: TreasuryAsset, poolId: string) => void;
+interface EarningViewProps extends BaseAssetViewProps {
+    earningRaw?: Big.Big;
+    earningUsd?: number;
+    earningWithdrawRaw?: Big.Big;
+    earningWithdrawUsd?: number;
+    earningNetworks?: NetworkAsset[];
+    earningPoolRows?: MobileEarningPoolRow[];
+    onSelectPool?: (network: TreasuryAsset, poolId: string) => void;
 }
 
-function EarningExpandedRows({
+function EarningView({
     asset,
+    isMobile,
+    isExpanded,
+    primaryDecimals,
+    earningRaw,
+    earningUsd,
+    earningWithdrawRaw,
+    earningWithdrawUsd,
     earningNetworks,
+    earningPoolRows,
     onSelectPool,
-}: EarningExpandedRowsProps) {
+}: EarningViewProps): ReactNode {
+    if (!isExpanded) {
+        return (
+            <>
+                <TableCell className="p-4 text-right">
+                    <BalanceCell
+                        balance={displayAmount(
+                            earningRaw ?? Big(0),
+                            primaryDecimals ?? DEFAULT_DECIMALS,
+                        )}
+                        symbol={asset.id}
+                        balanceUSD={earningUsd ?? 0}
+                    />
+                </TableCell>
+                <TableCell className="p-4 text-right font-medium hidden sm:table-cell">
+                    {formatCurrency(asset.price)}
+                </TableCell>
+                <TableCell className="p-4 text-right hidden sm:table-cell">
+                    <BalanceCell
+                        balance={displayAmount(
+                            earningWithdrawRaw ?? Big(0),
+                            primaryDecimals ?? DEFAULT_DECIMALS,
+                        )}
+                        symbol={asset.id}
+                        balanceUSD={earningWithdrawUsd ?? 0}
+                    />
+                </TableCell>
+            </>
+        );
+    }
+
+    if (isMobile) {
+        return (
+            <>
+                {(earningPoolRows ?? []).map((poolRow) => {
+                    const network = poolRow.network;
+                    return (
+                        <div
+                            key={poolRow.key}
+                            className="py-3 border-b border-border/50"
+                        >
+                            <div className="flex items-center gap-2">
+                                <div className="flex-1 min-w-0">
+                                    <div className="truncate text-sm font-medium text-foreground">
+                                        {poolRow.label}
+                                    </div>
+                                </div>
+                                <div className="text-right shrink-0">
+                                    <BalanceCell
+                                        balance={displayAmount(
+                                            poolRow.amountRaw,
+                                            network.decimals,
+                                        )}
+                                        symbol={network.symbol}
+                                        balanceUSD={poolRow.amountUsd}
+                                    />
+                                </div>
+                            </div>
+                            <div className="mt-2 flex justify-end">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    className="h-auto p-0 text-sm font-medium text-foreground hover:bg-transparent"
+                                    onClick={() =>
+                                        onSelectPool?.(network, poolRow.poolId)
+                                    }
+                                >
+                                    Details <ChevronRight className="size-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    );
+                })}
+            </>
+        );
+    }
+
     return (
         <>
             <TableRow className="bg-muted/30 uppercase text-muted-foreground font-medium hover:bg-muted/30">
@@ -496,7 +1108,7 @@ function EarningExpandedRows({
                 </TableCell>
                 <TableCell colSpan={4} />
             </TableRow>
-            {earningNetworks.flatMap((network, networkIdx) => {
+            {(earningNetworks ?? []).flatMap((network, networkIdx) => {
                 if (network.balance.type === "Staked") {
                     return network.balance.staking.pools.map(
                         (pool, poolIdx) => {
@@ -511,7 +1123,7 @@ function EarningExpandedRows({
                                     key={`${asset.id}-earning-${networkIdx}-${poolIdx}`}
                                     className="bg-muted/30 cursor-pointer hover:bg-muted/50"
                                     onClick={() =>
-                                        onSelectPool(network, pool.poolId)
+                                        onSelectPool?.(network, pool.poolId)
                                     }
                                 >
                                     <TableCell className="p-4 pl-16">
@@ -573,7 +1185,9 @@ function EarningExpandedRows({
                         <TableRow
                             key={`${asset.id}-earning-lockup-${networkIdx}`}
                             className="bg-muted/30 cursor-pointer hover:bg-muted/50"
-                            onClick={() => onSelectPool(network, lockupPoolId)}
+                            onClick={() =>
+                                onSelectPool?.(network, lockupPoolId)
+                            }
                         >
                             <TableCell className="p-4 pl-16">
                                 <div className="font-medium text-sm">
@@ -620,10 +1234,83 @@ function EarningExpandedRows({
     );
 }
 
+interface ExpandedRowsProps extends BaseAssetViewProps {
+    view: ViewMode;
+    availableNetworks: NetworkAsset[];
+    lockedNetworks: NetworkAsset[];
+    earningNetworks: NetworkAsset[];
+    ftLockupInstanceCount: number;
+    treasuryId: string | null;
+    onNavigate: (href: string) => void;
+    onSelectLockup: (network: TreasuryAsset) => void;
+    onSelectPool: (network: TreasuryAsset, poolId: string) => void;
+}
+
+function ExpandedRows({
+    view,
+    isMobile,
+    isExpanded,
+    asset,
+    availableNetworks,
+    lockedNetworks,
+    earningNetworks,
+    ftLockupInstanceCount,
+    treasuryId,
+    onNavigate,
+    onSelectLockup,
+    onSelectPool,
+}: ExpandedRowsProps): ReactNode {
+    if (isMobile || !isExpanded) return null;
+
+    if (view === "available" && availableNetworks.length > 0) {
+        return (
+            <AvailableView
+                asset={asset}
+                isMobile={false}
+                isExpanded
+                availableNetworks={availableNetworks}
+                treasuryId={treasuryId}
+                onNavigate={onNavigate}
+            />
+        );
+    }
+
+    if (view === "locked" && lockedNetworks.length > 0) {
+        return (
+            <LockedView
+                asset={asset}
+                isMobile={false}
+                isExpanded
+                lockedNetworks={lockedNetworks}
+                ftLockupInstanceCount={ftLockupInstanceCount}
+                onSelectLockup={onSelectLockup}
+            />
+        );
+    }
+
+    if (view === "earning" && earningNetworks.length > 0) {
+        return (
+            <EarningView
+                asset={asset}
+                isMobile={false}
+                isExpanded
+                earningNetworks={earningNetworks}
+                onSelectPool={onSelectPool}
+            />
+        );
+    }
+
+    return null;
+}
+
 export function AssetsTable({ aggregatedTokens }: Props) {
     const { treasuryId } = useTreasury();
     const router = useRouter();
+    const isMobile = useMediaQuery("(max-width: 640px)");
     const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+    const [selectedMobileAsset, setSelectedMobileAsset] =
+        useState<AggregatedAsset | null>(null);
+    const [isMobileViewModalOpen, setIsMobileViewModalOpen] = useState(false);
     const [selectedStakingNetwork, setSelectedStakingNetwork] =
         useState<TreasuryAsset | null>(null);
     const [selectedPoolId, setSelectedPoolId] = useState<string | null>(null);
@@ -635,6 +1322,28 @@ export function AssetsTable({ aggregatedTokens }: Props) {
         key: SortKey;
         dir: SortDirection;
     }>({ key: "balance", dir: "desc" });
+    const openMobileEarningDetails = useCallback(
+        (network: TreasuryAsset, poolId: string | null) => {
+            setIsMobileViewModalOpen(false);
+            setSelectedStakingNetwork(network);
+            setSelectedPoolId(poolId);
+            setIsStakingModalOpen(true);
+        },
+        [],
+    );
+    const openMobileLockupDetails = useCallback((network: TreasuryAsset) => {
+        setIsMobileViewModalOpen(false);
+        setSelectedLockupNetwork(network);
+        setIsLockupModalOpen(true);
+    }, []);
+    const navigateFromMobile = useCallback(
+        (href: string) => {
+            setIsMobileViewModalOpen(false);
+            setSelectedMobileAsset(null);
+            router.push(href);
+        },
+        [router],
+    );
     const metricsById = useMemo(
         () =>
             new Map(
@@ -682,10 +1391,12 @@ export function AssetsTable({ aggregatedTokens }: Props) {
         visibleViews.push(["earning", "Earning", totals.earningUsd]);
     }
     const [activeView, setActiveView] = useState<ViewMode>("available");
+
     const view: ViewMode =
         hasLockedOrEarning && visibleViews.some(([id]) => id === activeView)
             ? activeView
             : "available";
+
     const activeSort = useMemo(() => {
         if (isSortKeySupportedForView(sortState.key, view)) return sortState;
         return defaultSortForView(view);
@@ -798,6 +1509,63 @@ export function AssetsTable({ aggregatedTokens }: Props) {
             });
     }, [aggregatedTokens, metricsById, view, activeSort]);
 
+    const mobileModalData = useMemo(() => {
+        if (!isMobileViewModalOpen || !selectedMobileAsset) return null;
+        const selectedViewAsset = viewAssets.find(
+            ({ asset }) => asset.id === selectedMobileAsset.id,
+        );
+        return buildMobileModalData(
+            selectedMobileAsset,
+            view,
+            selectedViewAsset?.weight,
+        );
+    }, [isMobileViewModalOpen, selectedMobileAsset, viewAssets, view]);
+
+    const renderMobileRows = () => {
+        if (!mobileModalData || !selectedMobileAsset) return null;
+
+        if (view === "earning") {
+            return (
+                <EarningView
+                    asset={selectedMobileAsset}
+                    isMobile
+                    isExpanded
+                    earningPoolRows={mobileModalData.earningPoolRows}
+                    onSelectPool={(network, poolId) =>
+                        openMobileEarningDetails(network, poolId)
+                    }
+                />
+            );
+        }
+
+        if (view === "locked") {
+            return (
+                <LockedView
+                    asset={selectedMobileAsset}
+                    isMobile
+                    isExpanded
+                    lockedNetworks={mobileModalData.listNetworks}
+                    selectedAssetId={selectedMobileAsset.id}
+                    onSelectLockup={(network) =>
+                        openMobileLockupDetails(network)
+                    }
+                />
+            );
+        }
+
+        return (
+            <AvailableView
+                asset={selectedMobileAsset}
+                isMobile
+                isExpanded
+                availableNetworks={mobileModalData.listNetworks}
+                selectedAssetId={selectedMobileAsset.id}
+                treasuryId={treasuryId ?? null}
+                onNavigate={navigateFromMobile}
+            />
+        );
+    };
+
     const toggleSort = (key: SortKey) => {
         setSortState((prev) => {
             if (prev.key === key) {
@@ -857,56 +1625,84 @@ export function AssetsTable({ aggregatedTokens }: Props) {
     return (
         <div className="overflow-hidden">
             {hasLockedOrEarning && (
-                <div
-                    className={cn(
-                        "grid",
-                        visibleViews.length === 2
-                            ? "grid-cols-2"
-                            : "grid-cols-3",
-                    )}
-                >
-                    {visibleViews.map(([id, label, value]) => (
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            key={id}
-                            onClick={() => setActiveView(id)}
-                            className={cn(
-                                "h-auto rounded-none text-left border-r border-border/70 border-b-2 border-b-transparent justify-start items-start flex-col hover:bg-transparent",
-                                activeView === id && "border-b-foreground",
-                            )}
+                <>
+                    <div className="sm:hidden">
+                        <Select
+                            value={view}
+                            onValueChange={(next) => {
+                                if (
+                                    next === "available" ||
+                                    next === "locked" ||
+                                    next === "earning"
+                                ) {
+                                    setActiveView(next);
+                                }
+                            }}
                         >
-                            <p
+                            <SelectTrigger className="h-auto w-auto border-0 bg-transparent p-0 text-sm font-medium text-foreground shadow-none hover:bg-transparent focus-visible:ring-0 [&_svg]:text-foreground! [&_svg]:opacity-100">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent align="start" className="min-w-56">
+                                {visibleViews.map(([id, label, value]) => (
+                                    <SelectItem key={id} value={id}>
+                                        {label} {formatCurrency(value)}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div
+                        className={cn(
+                            "hidden sm:grid",
+                            visibleViews.length === 2
+                                ? "grid-cols-2"
+                                : "grid-cols-3",
+                        )}
+                    >
+                        {visibleViews.map(([id, label, value]) => (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                key={id}
+                                onClick={() => setActiveView(id)}
                                 className={cn(
-                                    "text-xs",
-                                    activeView === id
-                                        ? "text-foreground"
-                                        : "text-muted-foreground",
+                                    "h-auto rounded-none text-left border-r border-border/70 border-b-2 border-b-transparent justify-start items-start flex-col hover:bg-transparent",
+                                    activeView === id && "border-b-foreground",
                                 )}
                             >
-                                {label}
-                            </p>
-                            <p
-                                className={cn(
-                                    "text-lg leading-[1.1] font-medium",
-                                    activeView === id
-                                        ? "text-foreground"
-                                        : "text-muted-foreground",
-                                )}
-                            >
-                                {formatCurrency(value)}
-                            </p>
-                        </Button>
-                    ))}
-                </div>
+                                <p
+                                    className={cn(
+                                        "text-xs",
+                                        activeView === id
+                                            ? "text-foreground"
+                                            : "text-muted-foreground",
+                                    )}
+                                >
+                                    {label}
+                                </p>
+                                <p
+                                    className={cn(
+                                        "text-lg leading-[1.1] font-medium",
+                                        activeView === id
+                                            ? "text-foreground"
+                                            : "text-muted-foreground",
+                                    )}
+                                >
+                                    {formatCurrency(value)}
+                                </p>
+                            </Button>
+                        ))}
+                    </div>
+                </>
             )}
 
             <Table>
                 <TableHeader className="bg-transparent border-t-0">
                     <TableRow className="hover:bg-transparent">
                         {renderSortableHead("token", "Token", {
-                            headClassName: "pl-4",
-                            buttonClassName: SORT_BUTTON_LEFT_CLASS,
+                            headClassName: "pl-0 sm:pl-4",
+                            buttonClassName: cn("justify-start"),
                         })}
                         {view === "available" && (
                             <>
@@ -915,11 +1711,13 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                     buttonClassName: "ml-auto",
                                 })}
                                 {renderSortableHead("price", "Coin Price", {
-                                    headClassName: "text-right",
+                                    headClassName:
+                                        "text-right hidden sm:table-cell",
                                     buttonClassName: "ml-auto",
                                 })}
                                 {renderSortableHead("weight", "Weight", {
-                                    headClassName: "text-right",
+                                    headClassName:
+                                        "text-right hidden sm:table-cell",
                                     buttonClassName: "ml-auto",
                                 })}
                             </>
@@ -931,18 +1729,21 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                     buttonClassName: "ml-auto",
                                 })}
                                 {renderSortableHead("unlocked", "Unlocked", {
-                                    headClassName: "text-right",
+                                    headClassName:
+                                        "text-right hidden sm:table-cell",
                                     buttonClassName: "ml-auto",
                                 })}
                                 {renderSortableHead("price", "Coin Price", {
-                                    headClassName: "text-right",
+                                    headClassName:
+                                        "text-right hidden sm:table-cell",
                                     buttonClassName: "ml-auto",
                                 })}
                                 {renderSortableHead(
                                     "totalAllocated",
                                     "Total Allocated",
                                     {
-                                        headClassName: "text-right",
+                                        headClassName:
+                                            "text-right hidden sm:table-cell",
                                         buttonClassName: "ml-auto",
                                     },
                                 )}
@@ -959,20 +1760,22 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                     },
                                 )}
                                 {renderSortableHead("price", "Coin Price", {
-                                    headClassName: "text-right",
+                                    headClassName:
+                                        "text-right hidden sm:table-cell",
                                     buttonClassName: "ml-auto",
                                 })}
                                 {renderSortableHead(
                                     "withdrawable",
                                     "Available To Withdraw",
                                     {
-                                        headClassName: "text-right",
+                                        headClassName:
+                                            "text-right hidden sm:table-cell",
                                         buttonClassName: "ml-auto",
                                     },
                                 )}
                             </>
                         )}
-                        <TableHead className="w-10" />
+                        <TableHead className="w-10 hidden sm:table-cell" />
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1116,14 +1919,19 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                             <Fragment key={asset.id}>
                                 <TableRow
                                     className="cursor-pointer"
-                                    onClick={() =>
+                                    onClick={() => {
+                                        if (isMobile) {
+                                            setSelectedMobileAsset(asset);
+                                            setIsMobileViewModalOpen(true);
+                                            return;
+                                        }
                                         setExpanded((prev) => ({
                                             ...prev,
                                             [asset.id]: !prev[asset.id],
-                                        }))
-                                    }
+                                        }));
+                                    }}
                                 >
-                                    <TableCell className="p-4 pl-4">
+                                    <TableCell className="py-4 pr-4 pl-0 sm:p-4 sm:pl-4">
                                         <div className="flex items-center gap-3">
                                             <img
                                                 src={asset.icon}
@@ -1142,109 +1950,54 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                     </TableCell>
 
                                     {view === "available" && (
-                                        <>
-                                            <TableCell className="p-4 text-right">
-                                                <BalanceCell
-                                                    balance={displayAmount(
-                                                        availableRaw,
-                                                        primaryDecimals,
-                                                    )}
-                                                    symbol={asset.id}
-                                                    balanceUSD={availableUsd}
-                                                />
-                                            </TableCell>
-                                            <TableCell className="p-4 text-right font-medium">
-                                                {formatCurrency(asset.price)}
-                                            </TableCell>
-                                            <TableCell className="p-4 text-right">
-                                                <div className="flex items-center justify-end gap-3">
-                                                    <span className="font-medium w-14 text-right">
-                                                        {weight.toFixed(2)}%
-                                                    </span>
-                                                    <div className="w-24 bg-muted rounded-full h-2 overflow-hidden">
-                                                        <div
-                                                            className="bg-foreground h-full rounded-full"
-                                                            style={{
-                                                                width: `${weight}%`,
-                                                            }}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                        </>
+                                        <AvailableView
+                                            asset={asset}
+                                            isMobile={false}
+                                            isExpanded={false}
+                                            primaryDecimals={primaryDecimals}
+                                            availableRaw={availableRaw}
+                                            availableUsd={availableUsd}
+                                            weight={weight}
+                                        />
                                     )}
 
                                     {view === "locked" && (
-                                        <>
-                                            <TableCell className="p-4 text-right">
-                                                <BalanceCell
-                                                    balance={displayAmount(
-                                                        lockedRaw,
-                                                        primaryDecimals,
-                                                    )}
-                                                    symbol={asset.id}
-                                                    balanceUSD={lockedUsd}
-                                                />
-                                            </TableCell>
-                                            <TableCell className="p-4 text-right">
-                                                <BalanceCell
-                                                    balance={displayAmount(
-                                                        unlockedRaw,
-                                                        primaryDecimals,
-                                                    )}
-                                                    symbol={asset.id}
-                                                    balanceUSD={unlockedUsd}
-                                                />
-                                            </TableCell>
-                                            <TableCell className="p-4 text-right font-medium">
-                                                {formatCurrency(asset.price)}
-                                            </TableCell>
-                                            <TableCell className="p-4 text-right">
-                                                <BalanceCell
-                                                    balance={displayAmount(
-                                                        totalAllocatedRaw,
-                                                        primaryDecimals,
-                                                    )}
-                                                    symbol={asset.id}
-                                                    balanceUSD={
-                                                        totalAllocatedUsd
-                                                    }
-                                                />
-                                            </TableCell>
-                                        </>
+                                        <LockedView
+                                            asset={asset}
+                                            isMobile={false}
+                                            isExpanded={false}
+                                            primaryDecimals={primaryDecimals}
+                                            lockedRaw={lockedRaw}
+                                            lockedUsd={lockedUsd}
+                                            unlockedRaw={unlockedRaw}
+                                            unlockedUsd={unlockedUsd}
+                                            totalAllocatedRaw={
+                                                totalAllocatedRaw
+                                            }
+                                            totalAllocatedUsd={
+                                                totalAllocatedUsd
+                                            }
+                                        />
                                     )}
 
                                     {view === "earning" && (
-                                        <>
-                                            <TableCell className="p-4 text-right">
-                                                <BalanceCell
-                                                    balance={displayAmount(
-                                                        earningRaw,
-                                                        primaryDecimals,
-                                                    )}
-                                                    symbol={asset.id}
-                                                    balanceUSD={earningUsd}
-                                                />
-                                            </TableCell>
-                                            <TableCell className="p-4 text-right font-medium">
-                                                {formatCurrency(asset.price)}
-                                            </TableCell>
-                                            <TableCell className="p-4 text-right">
-                                                <BalanceCell
-                                                    balance={displayAmount(
-                                                        earningWithdrawRaw,
-                                                        primaryDecimals,
-                                                    )}
-                                                    symbol={asset.id}
-                                                    balanceUSD={
-                                                        earningWithdrawUsd
-                                                    }
-                                                />
-                                            </TableCell>
-                                        </>
+                                        <EarningView
+                                            asset={asset}
+                                            isMobile={false}
+                                            isExpanded={false}
+                                            primaryDecimals={primaryDecimals}
+                                            earningRaw={earningRaw}
+                                            earningUsd={earningUsd}
+                                            earningWithdrawRaw={
+                                                earningWithdrawRaw
+                                            }
+                                            earningWithdrawUsd={
+                                                earningWithdrawUsd
+                                            }
+                                        />
                                     )}
 
-                                    <TableCell className="p-4 text-right">
+                                    <TableCell className="p-4 text-right hidden sm:table-cell">
                                         {isExpanded ? (
                                             <ChevronDown className="size-4 text-primary ml-auto" />
                                         ) : (
@@ -1253,61 +2006,39 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                     </TableCell>
                                 </TableRow>
 
-                                {isExpanded &&
-                                    view === "available" &&
-                                    availableNetworks.length > 0 && (
-                                        <AvailableExpandedRows
-                                            asset={asset}
-                                            availableNetworks={
-                                                availableNetworks
-                                            }
-                                            treasuryId={treasuryId ?? null}
-                                            onNavigate={(href) =>
-                                                router.push(href)
-                                            }
-                                        />
-                                    )}
-
-                                {isExpanded &&
-                                    view === "locked" &&
-                                    lockedNetworks.length > 0 && (
-                                        <LockedExpandedRows
-                                            asset={asset}
-                                            lockedNetworks={lockedNetworks}
-                                            ftLockupInstanceCount={
-                                                ftLockupInstanceCount
-                                            }
-                                            onSelectLockup={(network) => {
-                                                setSelectedLockupNetwork(
-                                                    network,
-                                                );
-                                                setIsLockupModalOpen(true);
-                                            }}
-                                        />
-                                    )}
-
-                                {isExpanded &&
-                                    view === "earning" &&
-                                    earningNetworks.length > 0 && (
-                                        <EarningExpandedRows
-                                            asset={asset}
-                                            earningNetworks={earningNetworks}
-                                            onSelectPool={(network, poolId) => {
-                                                setSelectedStakingNetwork(
-                                                    network,
-                                                );
-                                                setSelectedPoolId(poolId);
-                                                setIsStakingModalOpen(true);
-                                            }}
-                                        />
-                                    )}
+                                <ExpandedRows
+                                    view={view}
+                                    isMobile={isMobile}
+                                    isExpanded={isExpanded}
+                                    asset={asset}
+                                    availableNetworks={availableNetworks}
+                                    lockedNetworks={lockedNetworks}
+                                    earningNetworks={earningNetworks}
+                                    ftLockupInstanceCount={
+                                        ftLockupInstanceCount
+                                    }
+                                    treasuryId={treasuryId ?? null}
+                                    onNavigate={(href) => router.push(href)}
+                                    onSelectLockup={(network) => {
+                                        setSelectedLockupNetwork(network);
+                                        setIsLockupModalOpen(true);
+                                    }}
+                                    onSelectPool={(network, poolId) => {
+                                        setSelectedStakingNetwork(network);
+                                        setSelectedPoolId(poolId);
+                                        setIsStakingModalOpen(true);
+                                    }}
+                                />
 
                                 {hasLockedEarningNotice && (
                                     <TableRow className="hover:bg-transparent">
-                                        <TableCell className="p-0" colSpan={6}>
-                                            <div className="mb-3 mt-2 flex items-center gap-2 rounded-lg bg-muted/60 px-4 py-2 text-xs">
+                                        <TableCell
+                                            className="p-0 whitespace-normal"
+                                            colSpan={6}
+                                        >
+                                            <div className="mb-3 mt-2 flex items-start sm:items-center gap-2 rounded-lg bg-muted/60 px-4 py-2 text-xs">
                                                 <Info className="size-4 shrink-0" />
-                                                <p className="text-foreground">
+                                                <p className="text-foreground leading-relaxed wrap-break-word">
                                                     {isFullLockedInEarning
                                                         ? "Your full allocated balance"
                                                         : "Part of your allocated balance"}{" "}
@@ -1352,7 +2083,18 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                     setIsStakingModalOpen(false);
                     setSelectedStakingNetwork(null);
                     setSelectedPoolId(null);
+                    setSelectedMobileAsset(null);
                 }}
+                onBack={
+                    selectedMobileAsset
+                        ? () => {
+                              setIsStakingModalOpen(false);
+                              setSelectedStakingNetwork(null);
+                              setSelectedPoolId(null);
+                              setIsMobileViewModalOpen(true);
+                          }
+                        : undefined
+                }
                 asset={selectedStakingNetwork}
                 poolId={selectedPoolId}
             />
@@ -1361,9 +2103,30 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                 onClose={() => {
                     setIsLockupModalOpen(false);
                     setSelectedLockupNetwork(null);
+                    setSelectedMobileAsset(null);
                 }}
+                onBack={
+                    selectedMobileAsset
+                        ? () => {
+                              setIsLockupModalOpen(false);
+                              setSelectedLockupNetwork(null);
+                              setIsMobileViewModalOpen(true);
+                          }
+                        : undefined
+                }
                 asset={selectedLockupNetwork}
                 treasuryId={treasuryId ?? null}
+            />
+            <MobileAssetViewModal
+                open={isMobileViewModalOpen}
+                onOpenChange={(open) => {
+                    setIsMobileViewModalOpen(open);
+                    if (!open) setSelectedMobileAsset(null);
+                }}
+                selectedAsset={selectedMobileAsset}
+                mobileModalData={mobileModalData}
+                view={view}
+                renderRows={renderMobileRows}
             />
         </div>
     );
@@ -1374,7 +2137,7 @@ export function AssetsTableSkeleton() {
         <Table>
             <TableHeader className="bg-transparent border-t-0">
                 <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-muted-foreground pl-4">
+                    <TableHead className="text-muted-foreground pl-0 sm:pl-4">
                         <Skeleton className="h-4 w-12" />
                     </TableHead>
                     <TableHead className="text-right text-muted-foreground">
@@ -1392,7 +2155,7 @@ export function AssetsTableSkeleton() {
             <TableBody>
                 {[0, 1, 2, 3].map((idx) => (
                     <TableRow key={`skeleton-row-${idx}`}>
-                        <TableCell className="p-4 pl-4">
+                        <TableCell className="py-4 pr-4 pl-0 sm:p-4 sm:pl-4">
                             <div className="flex items-center gap-3">
                                 <Skeleton className="h-10 w-10 rounded-full" />
                                 <div>

@@ -557,17 +557,35 @@ export default function BalanceWithGraph({
                         <p className="text-3xl font-bold mt-2">
                             {formatCurrency(balanceView.totalUsd)}
                         </p>
-                        <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                        <div className="mt-2 hidden md:flex items-center gap-2 text-sm text-muted-foreground">
                             {balanceBreakdownItems.map((item, idx) => (
                                 <div key={item.label} className="contents">
                                     {idx > 0 && (
-                                        <span className="text-border">|</span>
+                                        <span
+                                            aria-hidden="true"
+                                            className="h-3 w-px bg-border"
+                                        />
                                     )}
                                     <span>
                                         {item.label}{" "}
                                         <span className="font-semibold text-foreground">
                                             {formatCurrency(item.value)}
                                         </span>
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="mt-4 border-t border-border/70 pt-3 space-y-3 md:hidden">
+                            {balanceBreakdownItems.map((item) => (
+                                <div
+                                    key={item.label}
+                                    className="flex items-center justify-between text-base"
+                                >
+                                    <span className="text-muted-foreground">
+                                        {item.label}
+                                    </span>
+                                    <span className="font-semibold text-foreground">
+                                        {formatCurrency(item.value)}
                                     </span>
                                 </div>
                             ))}
