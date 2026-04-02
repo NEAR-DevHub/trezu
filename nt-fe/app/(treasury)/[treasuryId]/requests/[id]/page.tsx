@@ -1,20 +1,20 @@
 "use client";
 
-import { use, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { PageComponentLayout } from "@/components/page-component-layout";
-import { ExpandedView } from "@/features/proposals";
-import { useProposal } from "@/hooks/use-proposals";
-import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
-import { useTreasury } from "@/hooks/use-treasury";
-import { VoteModal } from "@/features/proposals/components/vote-modal";
+import { redirect, useRouter } from "next/navigation";
+import { trackEvent } from "@/lib/analytics";
+import { use, useEffect, useMemo, useState } from "react";
 import { DepositModal } from "@/app/(treasury)/[treasuryId]/dashboard/components/deposit-modal";
-import { Proposal } from "@/lib/proposals-api";
-import { Skeleton } from "@/components/ui/skeleton";
 import { PageCard } from "@/components/card";
-import { redirect } from "next/navigation";
+import { PageComponentLayout } from "@/components/page-component-layout";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ExpandedView } from "@/features/proposals";
+import { VoteModal } from "@/features/proposals/components/vote-modal";
+import { useProposal } from "@/hooks/use-proposals";
+import { useTreasury } from "@/hooks/use-treasury";
+import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
+import type { Proposal } from "@/lib/proposals-api";
 
 interface RequestPageProps {
     params: Promise<{
@@ -78,6 +78,15 @@ export default function RequestPage({ params }: RequestPageProps) {
         canLoadPolicy ? treasuryId : null,
         submissionTime,
     );
+
+    useEffect(() => {
+        if (proposal) {
+            trackEvent("request-detail-viewed", {
+                proposal_id: proposal.id,
+                treasury_id: treasuryId ?? "",
+            });
+        }
+    }, [proposal?.id, proposal, treasuryId]);
 
     const [isVoteModalOpen, setIsVoteModalOpen] = useState(false);
     const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);

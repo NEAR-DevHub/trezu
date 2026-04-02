@@ -88,7 +88,7 @@ export function UserWithData({
                 />
             </div>
             {!iconOnly && (
-                <div className="flex flex-col items-start min-w-0">
+                <div className="flex flex-col items-start max-w-60 md:max-w-80 min-w-0">
                     <span className="font-medium truncate max-w-full text-sm">
                         {name}
                     </span>

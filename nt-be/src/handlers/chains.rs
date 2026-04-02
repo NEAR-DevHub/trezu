@@ -18,6 +18,7 @@ pub async fn get_chains(
 ) -> Result<Json<Vec<ChainInfo>>, (StatusCode, String)> {
     let mut chains: Vec<ChainInfo> = CHAIN_METADATA
         .iter()
+        .filter(|(_, meta)| meta.canonical_key.is_none())
         .map(|(key, meta)| ChainInfo {
             key: key.clone(),
             name: meta.name.clone(),

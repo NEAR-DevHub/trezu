@@ -180,16 +180,14 @@ export function extractFunctionCallData(proposal: Proposal): FunctionCallData {
     }
 
     const functionCall = proposal.kind.FunctionCall;
-    const action = functionCall.actions[0];
-    const args = action ? decodeArgs(action.args) : {};
-
     return {
         receiver: functionCall.receiver_id,
-        methodName: action?.method_name || "",
-        actionsCount: functionCall.actions.length,
-        gas: action?.gas || "0",
-        deposit: action?.deposit || "0",
-        args: args || {},
+        actions: functionCall.actions.map((action) => ({
+            methodName: action.method_name,
+            args: decodeArgs(action.args),
+            gas: action.gas,
+            deposit: action.deposit,
+        })),
     };
 }
 

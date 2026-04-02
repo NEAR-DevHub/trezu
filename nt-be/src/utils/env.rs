@@ -15,6 +15,7 @@ pub struct EnvVars {
     pub bulk_payment_signer: SecretKey,
     pub disable_balance_monitoring: bool,
     pub disable_treasury_creation: bool,
+    pub disable_stats_generation: bool,
     pub monitor_interval_seconds: u64,
     pub telegram_bot_token: Option<String>,
     pub telegram_chat_id: Option<String>,
@@ -43,6 +44,9 @@ pub struct EnvVars {
     pub goldsky_database_url: Option<String>,
     // Feature flags
     pub disable_staking_rewards: bool,
+    // Telegram bot webhook configuration
+    pub telegram_webhook_secret: Option<String>,
+    pub frontend_base_url: String,
 }
 
 impl Default for EnvVars {
@@ -83,6 +87,10 @@ impl Default for EnvVars {
                 .parse()
                 .unwrap_or(false),
             disable_treasury_creation: std::env::var("DISABLE_TREASURY_CREATION")
+                .unwrap_or_else(|_| "false".to_string())
+                .parse()
+                .unwrap_or(false),
+            disable_stats_generation: std::env::var("DISABLE_STATS_GENERATION")
                 .unwrap_or_else(|_| "false".to_string())
                 .parse()
                 .unwrap_or(false),
@@ -158,6 +166,11 @@ impl Default for EnvVars {
                 .unwrap_or_else(|_| "false".to_string())
                 .parse()
                 .unwrap_or(false),
+            telegram_webhook_secret: std::env::var("TELEGRAM_WEBHOOK_SECRET")
+                .ok()
+                .filter(|s| !s.is_empty()),
+            frontend_base_url: std::env::var("FRONTEND_BASE_URL")
+                .unwrap_or_else(|_| "http://localhost:3001".to_string()),
         }
     }
 }

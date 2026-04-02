@@ -114,8 +114,8 @@ export function getActivityLabel(activity: ActivityAccount): string {
  * - Swaps → "via NEAR Intents"
  * - Staking rewards → pool address
  * - Proposal actions → method name
- * - Incoming → "from {sender}" (only if known)
- * - Outgoing → no sub-label (receiver is often a contract, not the actual recipient)
+ * - Incoming → "from {counterparty}" (only if known)
+ * - Outgoing → "to {counterparty}" (only if known)
  * - No action data → empty
  */
 export function getActivitySubLabel(
@@ -141,19 +141,20 @@ export function getActivitySubLabel(
         return from && from !== "UNKNOWN" ? `from ${from}` : "";
     }
 
-    // For outgoing: don't show receiver (stored counterparty is often the contract)
-    return "";
+    const to = activity.counterparty || activity.receiverId;
+    return to && to !== "UNKNOWN" ? `to ${to}` : "";
 }
 
 /**
  * Determines the sender of a transaction
  * For swaps: show "via NEAR Intents"
  * For received payments: show the counterparty who sent funds (if known)
- * For sent payments: show the signer who initiated the transaction
+ * For sent payments: sender is always the DAO
  */
 export function getFromAccount(
     activity: ActivityAccount,
     isReceived: boolean,
+    treasuryId: string | null | undefined,
 ): string {
     if (activity.swap) return "via NEAR Intents";
     const knownCounterparty =
@@ -163,21 +164,24 @@ export function getFromAccount(
     if (isReceived) {
         return knownCounterparty || activity.signerId || "—";
     }
-    return activity.signerId || "—";
+    return treasuryId || "—";
 }
 
 /**
  * Determines the recipient of a transaction
  * For swaps: show treasury
- * For sent payments: don't show receiver (stored counterparty is often the contract, not the actual recipient)
- * For received payments: show treasuryId
+ * For sent payments: receiver is the counterparty
+ * For received payments: receiver is treasuryId
  */
 export function getToAccount(
-    _activity: ActivityAccount,
+    activity: ActivityAccount,
     isReceived: boolean,
     treasuryId: string | null | undefined,
 ): string {
     if (isReceived) return treasuryId || "—";
-    // For outgoing: don't display receiver
-    return "—";
+    const knownCounterparty =
+        activity.counterparty && activity.counterparty !== "UNKNOWN"
+            ? activity.counterparty
+            : null;
+    return knownCounterparty || activity.receiverId || "—";
 }

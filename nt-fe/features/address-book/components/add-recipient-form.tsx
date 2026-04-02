@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, type ReactNode } from "react";
+import { useState, useEffect, useCallback, type ReactNode, useId } from "react";
 import {
     useWatch,
     useFieldArray,
@@ -8,7 +8,7 @@ import {
     type Control,
 } from "react-hook-form";
 import { z } from "zod";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, FileUp } from "lucide-react";
 import { InputBlock } from "@/components/input-block";
 import { LargeInput } from "@/components/large-input";
 import AccountInput from "@/components/account-input";
@@ -24,6 +24,7 @@ import {
 import { FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { NumberBadge } from "@/components/number-badge";
 import { Address } from "@/components/address";
+import { Pill } from "@/components/pill";
 import { recipientSchema, RECIPIENT_NAME_MAX_LENGTH } from "../types";
 import { useMediaQuery } from "@/hooks/use-media-query";
 
@@ -140,12 +141,14 @@ export function RecipientRow({
     onEdit,
     onRemove,
     nameBadge,
+    invalid,
 }: {
     control: Control<FormValues>;
     index: number;
     onEdit?: () => void;
     onRemove?: () => void;
     nameBadge?: ReactNode;
+    invalid?: boolean;
 }) {
     const { data: chains = [] } = useChains();
     const name = useWatch({ control, name: `recipients.${index}.name` });
@@ -176,6 +179,12 @@ export function RecipientRow({
                                     </div>
                                 </div>
                                 {nameBadge}
+                                {invalid && (
+                                    <Pill
+                                        title="Incomplete"
+                                        className="bg-destructive/10 text-destructive"
+                                    />
+                                )}
                             </div>
                         </div>
                         <NetworkList
@@ -229,6 +238,7 @@ interface AddRecipientInputProps {
     setActiveIndex: (index: number) => void;
     handleBack?: () => void;
     onReview: () => void;
+    onImport?: () => void;
     /** When true, only show the form fields + a "Done" button — hides the committed list, "Add Another", stepper header, and "Review Details". */
     editOnly?: boolean;
 }
@@ -239,6 +249,7 @@ export function AddRecipientInput({
     setActiveIndex,
     handleBack,
     onReview,
+    onImport,
     editOnly = false,
 }: AddRecipientInputProps) {
     const { data: chains = [] } = useChains();
@@ -252,15 +263,18 @@ export function AddRecipientInput({
         control,
         name: "recipients",
     });
+    const id = useId();
 
     const activeAddress = useWatch({
         control,
         name: `recipients.${activeIndex}.address`,
     });
+    const activeFormKey = `${activeIndex}-${id}`;
     const activeNetworks = useWatch({
         control,
         name: `recipients.${activeIndex}.networks`,
     });
+    const allRecipients = useWatch({ control, name: "recipients" }) ?? [];
 
     const isActiveValid =
         !formState.errors.recipients?.[activeIndex] &&
@@ -269,8 +283,20 @@ export function AddRecipientInput({
         !isAddressValidating &&
         activeNetworks?.length > 0;
 
+    const isEntryComplete = (i: number) => {
+        const r = allRecipients[i];
+        if (!r) return false;
+        return (
+            !!r.name?.trim() &&
+            !!r.address &&
+            r.networks?.length > 0 &&
+            !formState.errors.recipients?.[i]
+        );
+    };
+
     const canProceed =
-        fields.length > 1 || (fields.length === 1 && isActiveValid);
+        isActiveValid &&
+        fields.every((_, i) => i === activeIndex || isEntryComplete(i));
 
     const handleAddressValid = useCallback(
         (valid: boolean) => {
@@ -324,26 +350,32 @@ export function AddRecipientInput({
 
     const handleEdit = (index: number) => {
         setActiveIndex(index);
+        setIsAddressValid(false);
     };
 
     const handleRemove = (index: number) => {
         remove(index);
-        const newActive =
-            activeIndex >= index && activeIndex > 0
-                ? activeIndex - 1
-                : activeIndex;
-        setActiveIndex(Math.min(newActive, fields.length - 2));
-        if (activeIndex === index) setIsAddressValid(false);
+        const nextLength = fields.length - 1;
+        const nextActive = activeIndex > index ? activeIndex - 1 : activeIndex;
+        setActiveIndex(Math.max(0, Math.min(nextActive, nextLength - 1)));
+        setIsAddressValid(false);
     };
 
     return (
         <div className="flex flex-col gap-4">
-            <StepperHeader
-                title={editOnly ? "Edit Recipient" : "Add Recipient"}
-                handleBack={handleBack}
-            />
+            <div className="flex gap-3 justify-between items-center">
+                <StepperHeader
+                    title={editOnly ? "Edit Recipient" : "Add Recipient"}
+                    handleBack={handleBack}
+                />
+                {!editOnly && onImport && (
+                    <Button variant={"outline"} onClick={onImport}>
+                        <FileUp className="size-4" /> Import
+                    </Button>
+                )}
+            </div>
 
-            <div className="flex flex-col gap-2">
+            <div key={activeFormKey} className="flex flex-col gap-2">
                 <FormField
                     control={control}
                     name={`recipients.${activeIndex}.name`}
@@ -454,6 +486,7 @@ export function AddRecipientInput({
                                         control={control}
                                         onEdit={() => handleEdit(i)}
                                         onRemove={() => handleRemove(i)}
+                                        invalid={!isEntryComplete(i)}
                                     />
                                 ) : null,
                             )}
@@ -464,6 +497,11 @@ export function AddRecipientInput({
                         <Button
                             className="w-full"
                             disabled={!canProceed}
+                            tooltipContent={
+                                !canProceed
+                                    ? "All recipients must be complete before reviewing."
+                                    : undefined
+                            }
                             onClick={onReview}
                         >
                             Review Details

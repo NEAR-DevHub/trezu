@@ -212,6 +212,13 @@ async fn main() {
         log::info!("Goldsky enrichment worker disabled (GOLDSKY_DATABASE_URL not set)");
     }
 
+    // Spawn notification worker (event detection + Telegram dispatch)
+    nt_be::handlers::notifications::run_notification_loop(
+        state.clone(),
+        state.telegram_client.clone(),
+        state.env_vars.frontend_base_url.clone(),
+    );
+
     // Spawn DAO list sync service (fetches DAOs from sputnik-dao.near every 5 minutes)
     {
         let pool = state.db_pool.clone();
@@ -235,6 +242,14 @@ async fn main() {
         let pool = state.db_pool.clone();
         tokio::spawn(async move {
             nt_be::handlers::subscription::run_monthly_plan_reset_service(pool).await;
+        });
+    }
+
+    // Spawn public dashboard daily refresh service
+    if !state.env_vars.disable_stats_generation {
+        let state_clone = state.clone();
+        tokio::spawn(async move {
+            nt_be::services::run_public_dashboard_refresh_service(state_clone).await;
         });
     }
 

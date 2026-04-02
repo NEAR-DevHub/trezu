@@ -18,6 +18,8 @@ import {
     searchIntentsTokens,
     SearchTokensParams,
     getRecentActivity,
+    getRecentActivityRecipients,
+    getRecentActivitySenders,
     getExportHistory,
     getTreasuryCreationStatus,
 } from "@/lib/api";
@@ -286,6 +288,11 @@ export function useRecentActivity(
     transactionType?: string,
     tokenSymbol?: string,
     tokenSymbolNot?: string,
+    txHash?: string,
+    fromAccount?: string[],
+    fromAccountNot?: string[],
+    toAccount?: string[],
+    toAccountNot?: string[],
     startDate?: string,
     endDate?: string,
 ) {
@@ -299,6 +306,11 @@ export function useRecentActivity(
             transactionType,
             tokenSymbol,
             tokenSymbolNot,
+            txHash,
+            fromAccount,
+            fromAccountNot,
+            toAccount,
+            toAccountNot,
             startDate,
             endDate,
         ],
@@ -311,11 +323,40 @@ export function useRecentActivity(
                 transactionType,
                 tokenSymbol,
                 tokenSymbolNot,
+                txHash,
+                fromAccount,
+                fromAccountNot,
+                toAccount,
+                toAccountNot,
                 startDate,
                 endDate,
             ),
         enabled: !!accountId,
         staleTime: 1000 * 5, // 5 seconds (activity changes frequently)
+    });
+}
+
+export function useRecentActivitySenders(
+    accountId: string | null | undefined,
+    transactionType?: string,
+) {
+    return useQuery({
+        queryKey: ["recentActivitySenders", accountId, transactionType],
+        queryFn: () => getRecentActivitySenders(accountId!, transactionType),
+        enabled: !!accountId,
+        staleTime: 1000 * 30,
+    });
+}
+
+export function useRecentActivityRecipients(
+    accountId: string | null | undefined,
+    transactionType?: string,
+) {
+    return useQuery({
+        queryKey: ["recentActivityRecipients", accountId, transactionType],
+        queryFn: () => getRecentActivityRecipients(accountId!, transactionType),
+        enabled: !!accountId,
+        staleTime: 1000 * 30,
     });
 }
 

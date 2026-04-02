@@ -181,10 +181,7 @@ export function ExchangeSettingsModal({
                             </p>
                         </div>
 
-                        <Button
-                            type="submit"
-                            className="w-full h-12 font-medium bg-foreground text-background hover:bg-foreground/90 mt-5"
-                        >
+                        <Button type="submit" className="w-full h-10 mt-5">
                             Save
                         </Button>
                     </form>

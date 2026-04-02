@@ -41,6 +41,7 @@ import {
     buildNetworkLookup,
     resolveNetworkName,
 } from "@/features/address-book/utils/resolve-network";
+import { StepperHeader } from "@/components/step-wizard";
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
@@ -56,7 +57,7 @@ function AddressBookEmptyState({
             <EmptyState
                 icon={FileUp}
                 title="Add your first recipient"
-                description={`Add recipients to create payments faster.\nYour address book is private and only visible to your team.`}
+                description={`Save frequently used addresses for faster, error-free payouts.\nYour contacts stay private and visible only to your team.`}
                 className="py-0"
             />
             <div className="flex gap-3 w-full max-w-[300px]">
@@ -90,12 +91,14 @@ function RecipientFlow({
     existingEntries = [],
     onDone,
     onCancel,
+    onImport,
 }: {
     mode: "add" | "import";
     initialRecipient?: RecipientDraft | null;
     existingEntries?: AddressBookEntry[];
     onDone: () => void;
     onCancel: () => void;
+    onImport: () => void;
 }) {
     const { treasuryId } = useTreasury();
     const [step, setStep] = useState(0);
@@ -153,7 +156,7 @@ function RecipientFlow({
     const recipients = form.watch("recipients");
 
     return (
-        <PageCard className="w-full max-w-[600px] mx-auto flex flex-col gap-4 p-4">
+        <PageCard className="w-full max-w-[800px] mx-auto flex flex-col gap-4 p-4">
             <Form {...form}>
                 {step === 0 ? (
                     mode === "add" ? (
@@ -163,6 +166,7 @@ function RecipientFlow({
                             setActiveIndex={setActiveIndex}
                             handleBack={onCancel}
                             onReview={handleManualReview}
+                            onImport={onImport}
                         />
                     ) : (
                         <ImportUploadStep
@@ -318,6 +322,11 @@ function RecipientsView({
             setBulkDeleteCount(0);
         } else if (entryToDelete) {
             await deleteEntries.mutateAsync([entryToDelete.id]);
+            setSelectedIds((prev) => {
+                const next = new Set(prev);
+                next.delete(entryToDelete.id);
+                return next;
+            });
             setEntryToDelete(null);
         }
     }
@@ -348,7 +357,7 @@ function RecipientsView({
     return (
         <PageCard className="p-0 gap-0">
             {/* Header */}
-            <div className="flex flex-row items-center justify-between gap-3 sm:gap-4 py-3 sm:py-2 px-4 sm:px-6 border-b">
+            <div className="flex flex-row items-center justify-between gap-3 sm:gap-4 py-3.5 px-8 border-b">
                 {hasSelection ? (
                     <>
                         <span className="font-semibold text-base">
@@ -392,12 +401,10 @@ function RecipientsView({
                         </div>
                     </>
                 ) : (
-                    <>
-                        <div className="flex flex-col gap-0">
-                            <div className="flex items-center gap-3 w-max">
-                                <h2 className="text-base font-semibold leading-none">
-                                    Recipients
-                                </h2>
+                    <div className="flex items-center justify-between w-full gap-3">
+                        <div className="flex flex-col gap-0 w-full max-w-md">
+                            <div className="flex items-center gap-3 w-fit lg:pt-1">
+                                <StepperHeader title="Recipients" />
                                 {entries.length > 0 && (
                                     <NumberBadge
                                         number={entries.length}
@@ -405,17 +412,17 @@ function RecipientsView({
                                     />
                                 )}
                             </div>
-                            <p className="text-sm text-muted-foreground">
-                                This information is private. Only you and your
-                                team can see these recipients.
+                            <p className="text-xs text-muted-foreground hidden min-w-0 lg:block">
+                                Saved addresses are private and visible only to
+                                your team.
                             </p>
                         </div>
-                        <div className="flex items-center gap-2 justify-end min-w-0">
+                        <div className="flex items-center gap-2 justify-end min-w-0 w-fit shrink-0">
                             <ResponsiveInput
                                 type="text"
                                 placeholder="Search recipient by name"
                                 mobilePlaceholder="Search"
-                                className="max-w-52 w-full"
+                                className="w-52 min-w-0"
                                 search
                                 value={search}
                                 onChange={(e) =>
@@ -476,7 +483,7 @@ function RecipientsView({
                                 </span>
                             </AuthButton>
                         </div>
-                    </>
+                    </div>
                 )}
             </div>
 
@@ -598,6 +605,7 @@ export default function AddressBookPage() {
                     existingEntries={entries ?? []}
                     onDone={handleCloseFlow}
                     onCancel={handleCloseFlow}
+                    onImport={handleImport}
                 />
             ) : isLoading || hasEntries ? (
                 <RecipientsView onAdd={handleAdd} onImport={handleImport} />

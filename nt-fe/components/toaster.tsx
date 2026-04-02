@@ -1,8 +1,37 @@
 "use client";
 
-import { Toaster as SonnerToaster } from "sonner";
+import { Toaster as SonnerToaster, toast } from "sonner";
 import { useThemeStore } from "@/stores/theme-store";
-import { CircleAlert, CircleCheck } from "lucide-react";
+import { Check } from "lucide-react";
+
+const ErrorIcon = () => (
+    <svg
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+    >
+        <path
+            d="M8.00065 14.6673C11.6825 14.6673 14.6673 11.6825 14.6673 8.00065C14.6673 4.31875 11.6825 1.33398 8.00065 1.33398C4.31875 1.33398 1.33398 4.31875 1.33398 8.00065C1.33398 11.6825 4.31875 14.6673 8.00065 14.6673Z"
+            fill="#DC2626"
+        />
+        <path
+            d="M8 5.33398V8.00065"
+            stroke="#F5F5F5"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+        />
+        <path
+            d="M8 10.666H8.00667"
+            stroke="#F5F5F5"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+        />
+    </svg>
+);
 
 export function Toaster() {
     const { theme } = useThemeStore();
@@ -24,11 +53,9 @@ export function Toaster() {
             }}
             icons={{
                 success: (
-                    <CircleCheck className="size-4 fill-general-success-foreground text-white shrink-0" />
+                    <Check className="size-3.5 p-0.5 bg-general-success-foreground rounded-full stroke-3 text-white shrink-0" />
                 ),
-                error: (
-                    <CircleAlert className="size-4 fill-destructive text-white shrink-0" />
-                ),
+                error: <ErrorIcon />,
             }}
         />
     );

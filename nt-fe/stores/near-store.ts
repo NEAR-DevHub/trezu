@@ -34,6 +34,7 @@ import {
 } from "@/lib/sputnik-storage";
 import { APP_WALLET_SETUP_URL } from "@/constants/config";
 import { trackEvent } from "@/lib/analytics";
+import posthog from "posthog-js";
 
 /**
  * Ensures sandboxed iframes get bluetooth permission for Ledger Nano X BLE.
@@ -196,6 +197,10 @@ export const useNearStore = create<NearStore>((set, get) => ({
         newConnector.on(
             "wallet:signIn",
             async ({ accounts, wallet, source }: EventMap["wallet:signIn"]) => {
+                trackEvent("wallet-selected", {
+                    wallet_id: wallet.manifest.id,
+                    wallet_name: wallet.manifest.name,
+                });
                 const { nonce } = get();
                 if (source !== "signIn" || nonce === null) {
                     return;
@@ -227,12 +232,22 @@ export const useNearStore = create<NearStore>((set, get) => ({
                     nonce: null,
                     isAuthenticating: false,
                 });
+                posthog.identify(loginResponse.accountId, {
+                    account_id: loginResponse.accountId,
+                });
             },
         );
 
         newConnector.on(
             "wallet:signInAndSignMessage",
-            async ({ accounts }: EventMap["wallet:signInAndSignMessage"]) => {
+            async ({
+                accounts,
+                wallet,
+            }: EventMap["wallet:signInAndSignMessage"]) => {
+                trackEvent("wallet-selected", {
+                    wallet_id: wallet.manifest.id,
+                    wallet_name: wallet.manifest.name,
+                });
                 const result = accounts[0];
                 const loginResponse = await authLogin({
                     accountId: result.signedMessage.accountId,
@@ -252,6 +267,9 @@ export const useNearStore = create<NearStore>((set, get) => ({
                     },
                     isAuthenticating: false,
                     nonce: null,
+                });
+                posthog.identify(loginResponse.accountId, {
+                    account_id: loginResponse.accountId,
                 });
             },
         );
@@ -317,6 +335,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
             user: null,
             authError: null,
         });
+        posthog.reset();
 
         // Disconnect wallet
         if (connector) {
@@ -356,6 +375,9 @@ export const useNearStore = create<NearStore>((set, get) => ({
                     hasAcceptedTerms: user.termsAccepted,
                     user,
                     walletAccountId: user.accountId,
+                });
+                posthog.identify(user.accountId, {
+                    account_id: user.accountId,
                 });
             } else {
                 set({
@@ -562,6 +584,11 @@ export const useNearStore = create<NearStore>((set, get) => ({
                 voteStorageBytes,
                 "vote",
             );
+            trackEvent("proposal-voted", {
+                vote: votes[0]?.vote.toLowerCase(),
+                proposals_count: votes.length,
+                treasury_id: treasuryId,
+            });
         } catch (error) {
             console.error("Failed to vote proposals:", error);
             toast.error(`Failed to submit vote${votes.length > 1 ? "s" : ""}`);

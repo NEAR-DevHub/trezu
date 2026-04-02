@@ -5,6 +5,24 @@ use chrono::{DateTime, Utc};
 pub const RELAYER_ACCOUNT: &str = "sponsor.trezu.near";
 
 const RELAYER_WHERE_CONDITION: &str = "counterparty != 'sponsor.trezu.near'";
+pub const FROM_ACCOUNT_EXPR: &str = "CASE \
+        WHEN amount > 0 THEN COALESCE( \
+            NULLIF( \
+                CASE \
+                    WHEN counterparty = 'STAKING_REWARD' AND token_id LIKE 'staking:%' \
+                        THEN substring(token_id FROM 9) \
+                    ELSE counterparty \
+                END, \
+                'UNKNOWN' \
+            ), \
+            signer_id \
+        ) \
+        ELSE account_id \
+    END";
+pub const TO_ACCOUNT_EXPR: &str = "CASE \
+        WHEN amount > 0 THEN account_id \
+        ELSE COALESCE(NULLIF(counterparty, 'UNKNOWN'), receiver_id) \
+    END";
 
 /// Common parameters for filtering balance changes
 #[derive(Debug, Clone)]
@@ -30,6 +48,15 @@ pub struct BalanceChangeFilters {
     // Amount Filtering
     pub min_amount: Option<f64>, // Absolute value, decimal-adjusted
     pub max_amount: Option<f64>, // Absolute value, decimal-adjusted
+
+    // Transaction hash search (partial match against any hash in transaction_hashes)
+    pub transaction_hash_query: Option<String>,
+
+    // "From" filter values (mapped to displayed "from" account logic)
+    pub from_accounts: Option<Vec<String>>,
+    pub from_accounts_not: Option<Vec<String>>,
+    pub to_accounts: Option<Vec<String>>,
+    pub to_accounts_not: Option<Vec<String>>,
 
     // Filter out tiny NEAR amounts (gas/storage noise) — used by recent activity only
     pub exclude_near_dust: bool,
@@ -184,6 +211,41 @@ pub fn build_where_conditions(filters: &BalanceChangeFilters) -> (Vec<String>, u
         param_index += 1;
     }
 
+    // Transaction hash query (partial match)
+    if filters.transaction_hash_query.is_some() {
+        conditions.push(format!(
+            "EXISTS (SELECT 1 FROM unnest(transaction_hashes) AS tx_hash WHERE tx_hash ILIKE ${})",
+            param_index
+        ));
+        param_index += 1;
+    }
+
+    // "From" filter:
+    // - Incoming rows: counterparty (unless UNKNOWN), fallback to signer_id
+    // - Outgoing rows: account_id (DAO)
+    if filters.from_accounts.is_some() {
+        conditions.push(format!("({}) = ANY(${})", FROM_ACCOUNT_EXPR, param_index));
+        param_index += 1;
+    }
+    if filters.from_accounts_not.is_some() {
+        conditions.push(format!(
+            "(({}) IS NULL OR NOT (({}) = ANY(${})))",
+            FROM_ACCOUNT_EXPR, FROM_ACCOUNT_EXPR, param_index
+        ));
+        param_index += 1;
+    }
+    if filters.to_accounts.is_some() {
+        conditions.push(format!("({}) = ANY(${})", TO_ACCOUNT_EXPR, param_index));
+        param_index += 1;
+    }
+    if filters.to_accounts_not.is_some() {
+        conditions.push(format!(
+            "(({}) IS NULL OR NOT (({}) = ANY(${})))",
+            TO_ACCOUNT_EXPR, TO_ACCOUNT_EXPR, param_index
+        ));
+        param_index += 1;
+    }
+
     // Exclude tiny NEAR amounts (gas/storage noise)
     if filters.exclude_near_dust {
         conditions.push("NOT (token_id = 'near' AND ABS(amount) < 0.09)".to_string());
@@ -246,6 +308,11 @@ mod tests {
             transaction_types: None,
             min_amount: None,
             max_amount: None,
+            transaction_hash_query: None,
+            from_accounts: None,
+            from_accounts_not: None,
+            to_accounts: None,
+            to_accounts_not: None,
             exclude_near_dust: false,
             exclude_swaps_from_direction: false,
         };
@@ -268,6 +335,11 @@ mod tests {
             transaction_types: Some(vec!["outgoing".to_string()]),
             min_amount: None,
             max_amount: None,
+            transaction_hash_query: None,
+            from_accounts: None,
+            from_accounts_not: None,
+            to_accounts: None,
+            to_accounts_not: None,
             exclude_near_dust: false,
             exclude_swaps_from_direction: false,
         };
