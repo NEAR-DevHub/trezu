@@ -36,7 +36,15 @@ function extractFTTransferData(
             a.method_name === "ft_transfer_call" ||
             a.method_name === "transfer",
     );
+    const actionMTTransfer = actions.find(
+        (a) =>
+            a.method_name === "mt_transfer" ||
+            a.method_name === "mt_transfer_call",
+    );
     const actionWithdraw = actions.find((a) => a.method_name === "ft_withdraw");
+    const actionMTWithdraw = actions.find(
+        (a) => a.method_name === "mt_withdraw",
+    );
 
     if (action) {
         if (
@@ -56,6 +64,15 @@ function extractFTTransferData(
                 receiver: args.receiver_id || "",
             };
         }
+    } else if (actionMTTransfer) {
+        const args = decodeArgs(actionMTTransfer.args);
+        if (args) {
+            return {
+                tokenId: args.token_id || "near",
+                amount: args.amount || "0",
+                receiver: args.receiver_id || "",
+            };
+        }
     } else if (actionWithdraw) {
         const args = decodeArgs(actionWithdraw.args);
         if (!args) {
@@ -70,9 +87,32 @@ function extractFTTransferData(
             : args.receiver_id;
 
         return {
-            tokenId: `nep141:${args.token}`,
+            tokenId:
+                args.token.startsWith("nep141:") ||
+                args.token.startsWith("nep245:")
+                    ? args.token
+                    : `nep141:${args.token}`,
             amount: args.amount || "0",
             receiver,
+        };
+    } else if (actionMTWithdraw) {
+        // NEP-245 withdrawal via mt_withdraw on intents.near
+        const args = decodeArgs(actionMTWithdraw.args);
+        if (!args || !args.amounts || !args.token_ids) {
+            return undefined;
+        }
+
+        const tokenId = args.token_ids[0]
+            ? args.token_ids[0].startsWith("nep245:")
+                ? args.token_ids[0]
+                : `nep245:${args.token}:${args.token_ids[0]}`
+            : `nep245:${functionCall.receiver_id}:${args.token_ids[0]}`;
+
+        return {
+            tokenId,
+            amount: args.amounts[0] || "0",
+            receiver:
+                args.memo?.replace("WITHDRAW_TO:", "") || args.receiver_id,
         };
     }
     return undefined;
@@ -87,6 +127,10 @@ export function extractPaymentRequestData(
     let tokenId = "near";
     let amount = "0";
     let receiver = "";
+    const proposalAction = decodeProposalDescription(
+        "proposal action",
+        proposal.description,
+    );
 
     if ("Transfer" in proposal.kind) {
         const transfer = proposal.kind.Transfer;
@@ -109,6 +153,14 @@ export function extractPaymentRequestData(
     const notes = decodeProposalDescription("notes", proposal.description);
     const title = decodeProposalDescription("title", proposal.description);
     const url = decodeProposalDescription("url", proposal.description);
+    const describedRecipient = decodeProposalDescription(
+        "recipient",
+        proposal.description,
+    );
+
+    if (proposalAction === "payment-transfer" && describedRecipient) {
+        receiver = describedRecipient;
+    }
 
     return {
         tokenId,
