@@ -128,6 +128,10 @@ pub static CHAIN_METADATA: Lazy<HashMap<String, ChainMetadata>> = Lazy::new(|| {
         ChainMetadata::new("BeraChain", "berachain.svg", "berachain.svg"),
     );
     metadata.insert(
+        "bera".to_string(),
+        ChainMetadata::alias("berachain", metadata.get("berachain").unwrap()),
+    );
+    metadata.insert(
         "tron".to_string(),
         ChainMetadata::new("Tron", "tron.svg", "tron.svg"),
     );
