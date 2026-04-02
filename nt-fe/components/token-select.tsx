@@ -400,26 +400,36 @@ export default function TokenSelect({
                 {step === "network" && selectedAsset && (
                     <ScrollArea className="h-[400px]">
                         {(() => {
-                            const withBalance = networkItems.filter((item) => {
-                                if (
-                                    !item.balance ||
-                                    item.balance.trim() === "" ||
-                                    item.decimals === undefined
-                                )
-                                    return false;
-                                try {
-                                    return !Big(
-                                        formatBalance(
-                                            item.balance,
-                                            item.decimals,
-                                        ),
-                                    ).eq(0);
-                                } catch {
-                                    return false;
-                                }
-                            });
-                            const withoutBalance = networkItems.filter(
-                                (item) => {
+                            const withBalance = networkItems
+                                .filter((item) => {
+                                    if (
+                                        !item.balance ||
+                                        item.balance.trim() === "" ||
+                                        item.decimals === undefined
+                                    )
+                                        return false;
+                                    try {
+                                        return !Big(
+                                            formatBalance(
+                                                item.balance,
+                                                item.decimals,
+                                            ),
+                                        ).eq(0);
+                                    } catch {
+                                        return false;
+                                    }
+                                })
+                                .sort((a, b) => {
+                                    const aDisabled = disableTokens?.({
+                                        address: a.id,
+                                        symbol: a.symbol,
+                                        network: a.name,
+                                        residency: a.residency,
+                                    });
+                                    return aDisabled ? 1 : -1;
+                                });
+                            const withoutBalance = networkItems
+                                .filter((item) => {
                                     if (
                                         !item.balance ||
                                         item.balance.trim() === "" ||
@@ -436,8 +446,16 @@ export default function TokenSelect({
                                     } catch {
                                         return true;
                                     }
-                                },
-                            );
+                                })
+                                .sort((a, b) => {
+                                    const aDisabled = disableTokens?.({
+                                        address: a.id,
+                                        symbol: a.symbol,
+                                        network: a.name,
+                                        residency: a.residency,
+                                    });
+                                    return aDisabled ? 1 : -1;
+                                });
 
                             const renderNetworkButton = (
                                 item: MergedNetwork,
