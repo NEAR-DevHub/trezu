@@ -10,7 +10,7 @@ import {
     getProposalStatus,
     UIProposalStatus,
     getProposalUIKind,
-    getProposalQuoteDeadline,
+    EXCHANGE_EXPIRY_MS,
 } from "@/features/proposals/utils/proposal-utils";
 import { useProposalInsufficientBalance } from "@/features/proposals/hooks/use-proposal-insufficient-balance";
 import { UserVote } from "../../user-vote";
@@ -280,7 +280,6 @@ export function ProposalSidebar({
     const isExchangeProposal = proposalType === "Exchange";
     const isFailed = status === "Failed";
     const isExecuted = status === "Executed";
-    const quoteDeadline = getProposalQuoteDeadline(proposal);
 
     let newVotingDurationDays = 0;
     if (isVotingDurationChange) {
@@ -307,7 +306,7 @@ export function ProposalSidebar({
         treasuryId,
         proposal,
         policy,
-        !isExchangeProposal,
+        !isExchangeProposal || isFailed,
     );
 
     // Fetch swap status for executed exchange proposals
@@ -325,11 +324,20 @@ export function ProposalSidebar({
         ),
     );
 
+    // For exchange proposals, calculate 24-hour expiration
+    const exchange24HourExpiry = isExchangeProposal
+        ? new Date(nanosToMs(proposal.submission_time) + EXCHANGE_EXPIRY_MS)
+        : null;
+
     let timestamp;
     switch (status) {
         case "Expired":
         case "Pending":
-            timestamp = quoteDeadline ?? expiresAt;
+            // Use 24-hour expiry for exchange proposals, otherwise use policy period
+            timestamp =
+                isExchangeProposal && exchange24HourExpiry
+                    ? exchange24HourExpiry
+                    : expiresAt;
             break;
 
         default:
@@ -478,17 +486,17 @@ export function ProposalSidebar({
                 </>
             )}
 
-            {/* 1Click Quote Deadline Warning */}
-            {isPending && quoteDeadline && (
+            {/* Exchange Proposal 24-Hour Warning */}
+            {isPending && isExchangeProposal && exchange24HourExpiry && (
                 <InfoAlert
                     className="inline-flex"
                     message={
                         <span>
-                            <strong>1Click quote deadline applies</strong>
+                            <strong>Voting period: 24 hours</strong>
                             <br />
-                            Approve this request before the quote deadline, or
-                            the 1Click route will expire and the request will no
-                            longer be executable.
+                            This exchange request has a 24-hour voting duration.
+                            Approve this request within this time, or the
+                            request will expire.
                         </span>
                     }
                 />

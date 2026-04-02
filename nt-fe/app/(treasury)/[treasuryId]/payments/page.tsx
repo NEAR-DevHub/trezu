@@ -417,7 +417,6 @@ function buildIntentTransferDescription(
         notes,
         recipient: data.address,
         depositAddress: quote?.quote.depositAddress,
-        quoteDeadline,
         signature: quote?.signature,
         timeEstimate: quote?.quote.timeEstimate
             ? `${quote.quote.timeEstimate} seconds`
