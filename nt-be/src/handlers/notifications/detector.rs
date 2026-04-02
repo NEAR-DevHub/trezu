@@ -148,9 +148,13 @@ async fn detect_balance_change_events(
 
         let payload = if is_proposal {
             let decoded = decode_add_proposal_payload(row.actions.as_ref());
+            let submitter = decoded
+                .delegate_sender_id
+                .as_deref()
+                .or(row.counterparty.as_deref());
 
             serde_json::json!({
-                "counterparty": row.counterparty,
+                "counterparty": submitter,
                 "block_height": row.block_height,
                 "description": decoded.description,
                 "proposal_kind": decoded.proposal_kind,

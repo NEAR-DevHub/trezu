@@ -21,6 +21,9 @@ const BULK_PAYMENT_CONTRACT_ID: &str = "bulkpayment.near";
 pub struct AddProposalPayload {
     pub description: Option<String>,
     pub proposal_kind: Option<String>,
+    /// For delegate actions, the real submitter (`sender_id` from the delegate
+    /// action) which should be used instead of the balance-change counterparty.
+    pub delegate_sender_id: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -53,7 +56,7 @@ fn classify_proposal_kind(proposal_json: &Value) -> Option<String> {
     if let Some(kind_object) = kind.as_object()
         && kind_object.contains_key("Transfer")
     {
-        return Some("Transfer".to_string());
+        return Some("Payment".to_string());
     }
 
     let proposal = Proposal {
@@ -110,7 +113,13 @@ fn classify_proposal_kind(proposal_json: &Value) -> Option<String> {
     None
 }
 
-fn decode_add_proposal_args(actions: &Value) -> Option<Value> {
+/// Decoded add_proposal args together with an optional delegate `sender_id`.
+struct DecodedArgs {
+    args: Value,
+    delegate_sender_id: Option<String>,
+}
+
+fn decode_add_proposal_args(actions: &Value) -> Option<DecodedArgs> {
     fn decode_add_proposal(action: &Value) -> Option<Value> {
         let function_call = action
             .get("FunctionCall")
@@ -128,18 +137,30 @@ fn decode_add_proposal_args(actions: &Value) -> Option<Value> {
     let actions = actions.as_array()?;
     for action in actions {
         if let Some(args) = decode_add_proposal(action) {
-            return Some(args);
+            return Some(DecodedArgs {
+                args,
+                delegate_sender_id: None,
+            });
         }
-        let delegate_actions = action
+        let delegate_action = action
             .get("Delegate")
             .or_else(|| action.get("delegate"))
-            .and_then(|v| v.get("delegate_action").or_else(|| v.get("delegateAction")))
-            .and_then(|v| v.get("actions"))
-            .and_then(|v| v.as_array());
-        if let Some(inner_actions) = delegate_actions
-            && let Some(args) = inner_actions.iter().find_map(decode_add_proposal)
-        {
-            return Some(args);
+            .and_then(|v| v.get("delegate_action").or_else(|| v.get("delegateAction")));
+        if let Some(da) = delegate_action {
+            let inner_actions = da.get("actions").and_then(|v| v.as_array());
+            if let Some(inner_actions) = inner_actions
+                && let Some(args) = inner_actions.iter().find_map(decode_add_proposal)
+            {
+                let sender_id = da
+                    .get("sender_id")
+                    .or_else(|| da.get("senderId"))
+                    .and_then(|v| v.as_str())
+                    .map(str::to_owned);
+                return Some(DecodedArgs {
+                    args,
+                    delegate_sender_id: sender_id,
+                });
+            }
         }
     }
     None
@@ -185,18 +206,19 @@ pub fn decode_add_proposal_payload(actions: Option<&Value>) -> AddProposalPayloa
         log::debug!("[notifications][decoder] add_proposal decode: missing actions");
         return AddProposalPayload::default();
     };
-    let Some(args) = decode_add_proposal_args(actions) else {
+    let Some(decoded) = decode_add_proposal_args(actions) else {
         log::debug!(
             "[notifications][decoder] add_proposal decode: failed to decode add_proposal args from actions"
         );
         return AddProposalPayload::default();
     };
+    let args = &decoded.args;
     let proposal = if let Some(proposal) = args.get("proposal") {
         proposal
     } else if args.get("kind").is_some() || args.get("description").is_some() {
         // Some DAO versions send add_proposal args as top-level proposal fields:
         // { "description": "...", "kind": { ... } }
-        &args
+        args
     } else {
         let arg_keys: Vec<String> = args
             .as_object()
@@ -225,6 +247,7 @@ pub fn decode_add_proposal_payload(actions: Option<&Value>) -> AddProposalPayloa
     AddProposalPayload {
         description,
         proposal_kind,
+        delegate_sender_id: decoded.delegate_sender_id,
     }
 }
 
@@ -445,6 +468,7 @@ mod tests {
         let decoded = decode_add_proposal_payload(Some(&actions));
         assert_eq!(decoded.description.as_deref(), Some("Pay Alice"));
         assert_eq!(decoded.proposal_kind.as_deref(), Some("Transfer"));
+        assert_eq!(decoded.delegate_sender_id, None);
     }
 
     #[test]
@@ -452,6 +476,7 @@ mod tests {
         let actions = serde_json::json!([{
             "Delegate": {
                 "delegate_action": {
+                    "sender_id": "alice.near",
                     "actions": [{
                         "FunctionCall": {
                             "method_name": "add_proposal",
@@ -465,6 +490,7 @@ mod tests {
         let decoded = decode_add_proposal_payload(Some(&actions));
         assert_eq!(decoded.description.as_deref(), Some("Call contract"));
         assert_eq!(decoded.proposal_kind.as_deref(), Some("Payment"));
+        assert_eq!(decoded.delegate_sender_id.as_deref(), Some("alice.near"));
     }
 
     #[test]
