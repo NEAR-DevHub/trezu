@@ -27,6 +27,7 @@ import { availableBalance, totalBalance } from "@/lib/balance";
 import Big from "@/lib/big";
 import {
     getDashboardBalanceView,
+    getDashboardBucketVisibility,
     getDashboardBreakdownItems,
 } from "@/lib/dashboard-balance-view";
 import { formatBalance, formatCurrency } from "@/lib/utils";
@@ -241,6 +242,12 @@ export default function BalanceWithGraph({
     const balanceBreakdownItems = useMemo(() => {
         return getDashboardBreakdownItems(headerScopedTokens);
     }, [headerScopedTokens]);
+    const bucketVisibility = useMemo(
+        () => getDashboardBucketVisibility(headerScopedTokens),
+        [headerScopedTokens],
+    );
+    const showBreakdown =
+        bucketVisibility.showLocked || bucketVisibility.showEarning;
 
     // Calculate time range for chart API
     const chartParams = useMemo(() => {
@@ -557,39 +564,46 @@ export default function BalanceWithGraph({
                         <p className="text-3xl font-bold mt-2">
                             {formatCurrency(balanceView.totalUsd)}
                         </p>
-                        <div className="mt-2 hidden md:flex items-center gap-2 text-sm text-muted-foreground">
-                            {balanceBreakdownItems.map((item, idx) => (
-                                <div key={item.label} className="contents">
-                                    {idx > 0 && (
-                                        <span
-                                            aria-hidden="true"
-                                            className="h-3 w-px bg-border"
-                                        />
-                                    )}
-                                    <span>
-                                        {item.label}{" "}
-                                        <span className="font-semibold text-foreground">
-                                            {formatCurrency(item.value)}
-                                        </span>
-                                    </span>
+                        {showBreakdown && (
+                            <>
+                                <div className="mt-2 hidden md:flex items-center gap-2 text-sm text-muted-foreground">
+                                    {balanceBreakdownItems.map((item, idx) => (
+                                        <div
+                                            key={item.label}
+                                            className="contents"
+                                        >
+                                            {idx > 0 && (
+                                                <span
+                                                    aria-hidden="true"
+                                                    className="h-3 w-px bg-border"
+                                                />
+                                            )}
+                                            <span>
+                                                {item.label}{" "}
+                                                <span className="font-semibold text-foreground">
+                                                    {formatCurrency(item.value)}
+                                                </span>
+                                            </span>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
-                        <div className="mt-4 border-t border-border/70 pt-3 space-y-3 md:hidden">
-                            {balanceBreakdownItems.map((item) => (
-                                <div
-                                    key={item.label}
-                                    className="flex items-center justify-between text-base"
-                                >
-                                    <span className="text-muted-foreground">
-                                        {item.label}
-                                    </span>
-                                    <span className="font-semibold text-foreground">
-                                        {formatCurrency(item.value)}
-                                    </span>
+                                <div className="mt-4 border-t border-border/70 pt-3 space-y-3 md:hidden">
+                                    {balanceBreakdownItems.map((item) => (
+                                        <div
+                                            key={item.label}
+                                            className="flex items-center justify-between text-base"
+                                        >
+                                            <span className="text-muted-foreground">
+                                                {item.label}
+                                            </span>
+                                            <span className="font-semibold text-foreground">
+                                                {formatCurrency(item.value)}
+                                            </span>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
+                            </>
+                        )}
                     </div>
                     <div className="hidden md:flex md:flex-row items-end flex-col gap-1 md:gap-2 md:items-center">
                         <Select
