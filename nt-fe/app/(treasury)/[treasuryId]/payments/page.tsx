@@ -86,9 +86,15 @@ const paymentFormSchema = z
 interface Step1Props extends StepProps {
     feeErrorMessage?: string | null;
     isFeeLoading?: boolean;
+    quoteErrorMessage?: string | null;
 }
 
-function Step1({ handleNext, feeErrorMessage, isFeeLoading }: Step1Props) {
+function Step1({
+    handleNext,
+    feeErrorMessage,
+    isFeeLoading,
+    quoteErrorMessage,
+}: Step1Props) {
     const form = useFormContext<PaymentFormValues>();
     const { treasuryId } = useTreasury();
     const isMobile = useMediaQuery("(max-width: 768px)");
@@ -145,7 +151,7 @@ function Step1({ handleNext, feeErrorMessage, isFeeLoading }: Step1Props) {
                 amountName="amount"
                 tokenName="token"
                 recipientName="address"
-                feeErrorMessage={feeErrorMessage}
+                feeErrorMessage={feeErrorMessage || quoteErrorMessage}
                 saveButtonText={saveButtonText}
                 onSave={handleSave}
                 isSubmitting={isFeeLoading}
@@ -157,15 +163,27 @@ function Step1({ handleNext, feeErrorMessage, isFeeLoading }: Step1Props) {
 interface Step2Props extends StepProps {
     networkFee?: string | null;
     showFeeBreakdown: boolean;
+    liveQuote?: IntentsQuoteResponse | null;
+    isLoadingLiveQuote?: boolean;
+    isFetchingLiveQuote?: boolean;
+    hasLiveQuoteError?: boolean;
+    liveQuoteErrorMessage?: string | null;
 }
 
-function Step2({ handleBack, networkFee, showFeeBreakdown }: Step2Props) {
+function Step2({
+    handleBack,
+    networkFee,
+    showFeeBreakdown,
+    liveQuote,
+    isLoadingLiveQuote,
+    isFetchingLiveQuote,
+    hasLiveQuoteError,
+    liveQuoteErrorMessage,
+}: Step2Props) {
     const form = useFormContext<PaymentFormValues>();
     const token = form.watch("token");
     const address = form.watch("address");
     const amount = form.watch("amount");
-    const { treasuryId } = useTreasury();
-    const { data: policy } = useTreasuryPolicy(treasuryId);
     const { data: storageDepositData } = useStorageDepositIsRegistered(
         address,
         token.address,
@@ -177,50 +195,6 @@ function Step2({ handleBack, networkFee, showFeeBreakdown }: Step2Props) {
         (e) => e.address.toLowerCase() === address?.toLowerCase(),
     )?.name;
     const isSelectedTokenIntents = isIntentsToken(token);
-    const parsedAmount = useMemo(() => {
-        if (!amount || Number(amount) <= 0) {
-            return null;
-        }
-
-        return Big(amount).mul(Big(10).pow(token.decimals)).toFixed();
-    }, [amount, token.decimals]);
-
-    const {
-        data: liveQuote,
-        isLoading: isLoadingLiveQuote,
-        isFetching: isFetchingLiveQuote,
-        isError: hasLiveQuoteError,
-    } = useQuery({
-        queryKey: [
-            "paymentLiveQuote",
-            treasuryId,
-            token.address,
-            amount,
-            address,
-        ],
-        queryFn: async (): Promise<IntentsQuoteResponse | null> => {
-            if (!treasuryId || !parsedAmount) {
-                return null;
-            }
-
-            return getIntentsQuote(
-                buildIntentsPaymentQuoteRequest(
-                    treasuryId,
-                    form.getValues(),
-                    parsedAmount,
-                    policy?.proposal_period,
-                ),
-                false,
-            );
-        },
-        enabled:
-            isSelectedTokenIntents &&
-            !!treasuryId &&
-            !!address &&
-            !!parsedAmount &&
-            !!policy?.proposal_period,
-        refetchOnWindowFocus: false,
-    });
 
     useEffect(() => {
         if (storageDepositData !== undefined) {
@@ -352,7 +326,8 @@ function Step2({ handleBack, networkFee, showFeeBreakdown }: Step2Props) {
                     idleMessage={
                         isSelectedTokenIntents
                             ? hasLiveQuoteError
-                                ? "Failed to prepare 1Click transfer route"
+                                ? liveQuoteErrorMessage ||
+                                  "Failed to prepare 1Click transfer route"
                                 : isLoadingLiveQuote || isFetchingLiveQuote
                                   ? "Preparing 1Click transfer route..."
                                   : "Confirm and Submit Request"
@@ -631,6 +606,86 @@ export default function PaymentsPage() {
         watchedToken?.decimals,
         watchedToken?.symbol,
     ]);
+
+    const isSelectedTokenIntents = isIntentsToken(watchedToken);
+    const parsedAmount = useMemo(() => {
+        if (!watchedAmount || Number(watchedAmount) <= 0) {
+            return null;
+        }
+
+        return Big(watchedAmount)
+            .mul(Big(10).pow(watchedToken.decimals))
+            .toFixed();
+    }, [watchedAmount, watchedToken.decimals]);
+
+    const {
+        data: liveQuote,
+        isLoading: isLoadingLiveQuote,
+        isFetching: isFetchingLiveQuote,
+        isError: hasLiveQuoteError,
+        error: liveQuoteError,
+    } = useQuery({
+        queryKey: [
+            "paymentLiveQuote",
+            treasuryId,
+            watchedToken.address,
+            watchedAmount,
+            debouncedAddress,
+        ],
+        queryFn: async (): Promise<IntentsQuoteResponse | null> => {
+            if (!treasuryId || !parsedAmount) {
+                return null;
+            }
+
+            return getIntentsQuote(
+                buildIntentsPaymentQuoteRequest(
+                    treasuryId,
+                    form.getValues(),
+                    parsedAmount,
+                    policy?.proposal_period,
+                ),
+                false,
+            );
+        },
+        enabled:
+            isSelectedTokenIntents &&
+            !!treasuryId &&
+            !!debouncedAddress &&
+            !!parsedAmount &&
+            !!policy?.proposal_period,
+        refetchOnWindowFocus: false,
+        retry: false,
+    });
+
+    const liveQuoteErrorMessage = useMemo(() => {
+        if (!hasLiveQuoteError || !liveQuoteError) return null;
+        const message =
+            liveQuoteError instanceof Error
+                ? liveQuoteError.message
+                : "Failed to prepare 1Click transfer route";
+
+        // Convert raw amount in "at least <raw>" pattern to human-readable format
+        // e.g. "Amount is too low for bridge, try at least 432" → "...at least 0.000433 USDC"
+        // Bump by 1 because the API returns an exclusive minimum
+        return message.replace(/at least (\d+)/i, (_, rawAmount) => {
+            try {
+                const formatted = Big(rawAmount)
+                    .plus(1)
+                    .div(Big(10).pow(watchedToken.decimals))
+                    .toFixed()
+                    .replace(/\.?0+$/, "");
+                return `at least ${formatted} ${watchedToken.symbol}`;
+            } catch {
+                return `at least ${rawAmount}`;
+            }
+        });
+    }, [
+        hasLiveQuoteError,
+        liveQuoteError,
+        watchedToken.decimals,
+        watchedToken.symbol,
+    ]);
+
     // Update token/address when query params change
     useEffect(() => {
         form.setValue("token", defaultToken);
@@ -775,6 +830,11 @@ export default function PaymentsPage() {
                 props: {
                     feeErrorMessage,
                     isFeeLoading: isIntentsFeeLoading,
+                    quoteErrorMessage: liveQuoteErrorMessage?.includes(
+                        "at least",
+                    )
+                        ? liveQuoteErrorMessage
+                        : null,
                 },
             },
             {
@@ -782,6 +842,11 @@ export default function PaymentsPage() {
                 props: {
                     showFeeBreakdown: isIntentsCrossChainToken,
                     networkFee: intentsFeeData?.networkFee,
+                    liveQuote,
+                    isLoadingLiveQuote,
+                    isFetchingLiveQuote,
+                    hasLiveQuoteError,
+                    liveQuoteErrorMessage,
                 },
             },
         ],
@@ -790,6 +855,11 @@ export default function PaymentsPage() {
             isIntentsFeeLoading,
             isIntentsCrossChainToken,
             intentsFeeData?.networkFee,
+            liveQuote,
+            isLoadingLiveQuote,
+            isFetchingLiveQuote,
+            hasLiveQuoteError,
+            liveQuoteErrorMessage,
         ],
     );
 

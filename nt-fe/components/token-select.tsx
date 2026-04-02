@@ -69,6 +69,13 @@ interface TokenSelectProps {
         network: string;
         residency?: string;
     }) => boolean;
+    disableTokenMessage?: string;
+    disableTokens?: (token: {
+        address: string;
+        symbol: string;
+        network: string;
+        residency?: string;
+    }) => boolean;
 }
 
 export default function TokenSelect({
@@ -77,6 +84,8 @@ export default function TokenSelect({
     disabled,
     locked,
     lockedTokenData,
+    disableTokenMessage,
+    disableTokens,
     classNames,
     showOnlyOwnedAssets = false,
     iconSize = "md",
@@ -433,43 +442,58 @@ export default function TokenSelect({
                             const renderNetworkButton = (
                                 item: MergedNetwork,
                                 idx: number,
-                            ) => (
-                                <Button
-                                    key={`${item.id}-${idx}`}
-                                    onClick={() => handleNetworkClick(item)}
-                                    variant="ghost"
-                                    type="button"
-                                    className="w-full flex items-center gap-1 py-3 rounded-lg h-auto justify-start pl-1!"
-                                >
-                                    <div className="pl-3 w-full">
-                                        <div className="flex items-center gap-3">
-                                            <NetworkIconDisplay
-                                                chainIcons={item.chainIcons}
-                                                networkName={item.name}
-                                                residency={item.residency}
-                                            />
+                            ) => {
+                                const isDisabled = disableTokens?.({
+                                    address: item.id,
+                                    symbol: item.symbol,
+                                    network: item.name,
+                                    residency: item.residency,
+                                });
+                                return (
+                                    <Button
+                                        key={`${item.id}-${idx}`}
+                                        onClick={() => handleNetworkClick(item)}
+                                        variant="ghost"
+                                        type="button"
+                                        disabled={isDisabled}
+                                        tooltipContent={
+                                            isDisabled
+                                                ? disableTokenMessage
+                                                : undefined
+                                        }
+                                        className="w-full flex items-center gap-1 py-3 rounded-lg h-auto justify-start pl-1!"
+                                    >
+                                        <div className="pl-3 w-full">
+                                            <div className="flex items-center gap-3">
+                                                <NetworkIconDisplay
+                                                    chainIcons={item.chainIcons}
+                                                    networkName={item.name}
+                                                    residency={item.residency}
+                                                />
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="flex-1" />
-                                    {withBalance.includes(item) && (
-                                        <div className="flex flex-col items-end">
-                                            <span className="font-semibold">
-                                                {formatSmartAmount(
-                                                    formatBalance(
-                                                        item.balance!,
-                                                        item.decimals!,
-                                                    ),
-                                                )}
-                                            </span>
-                                            <span className="text-sm text-muted-foreground">
-                                                ≈$
-                                                {item.balanceUSD?.toFixed(2) ||
-                                                    "0.00"}
-                                            </span>
-                                        </div>
-                                    )}
-                                </Button>
-                            );
+                                        <div className="flex-1" />
+                                        {withBalance.includes(item) && (
+                                            <div className="flex flex-col items-end">
+                                                <span className="font-semibold">
+                                                    {formatSmartAmount(
+                                                        formatBalance(
+                                                            item.balance!,
+                                                            item.decimals!,
+                                                        ),
+                                                    )}
+                                                </span>
+                                                <span className="text-sm text-muted-foreground">
+                                                    ≈$
+                                                    {item.balanceUSD?.toFixed(
+                                                        2,
+                                                    ) || "0.00"}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </Button>
+                                );
+                            };
 
                             if (withBalance.length > 0) {
                                 return (

@@ -24,7 +24,8 @@ export function isIntentsCrossChainToken(token: {
 }): boolean {
     return (
         !!token.address &&
-        token.address.startsWith("nep141:") &&
+        (token.address.startsWith("nep141:") ||
+            token.address.startsWith("nep245:")) &&
         (token.network || "").toLowerCase() !== "near"
     );
 }

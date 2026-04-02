@@ -365,6 +365,10 @@ export function UploadDataStep({
                                                 token,
                                             )
                                         }
+                                        disableTokens={(token) =>
+                                            token.address.startsWith("nep245:")
+                                        }
+                                        disableTokenMessage="This token is not yet support for bulk payments. We are working on it."
                                         disabled={availableCredits === 0}
                                         iconSize="lg"
                                         classNames={{
