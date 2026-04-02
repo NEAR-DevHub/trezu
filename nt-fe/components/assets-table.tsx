@@ -610,12 +610,12 @@ function AvailableView({
                                             )
                                         }
                                     >
-                                        <ArrowUpRight className="size-4" /> Sent
+                                        <ArrowUpRight className="size-4" /> Send
                                     </Button>
                                     <Button
                                         type="button"
                                         variant="ghost"
-                                        className="h-auto p-0 text-sm font-medium text-foreground hover:bg-transparent"
+                                        className="h-auto p-0 text-sm font-medium text-foreground hover:bg-transparent pr-0!"
                                         onClick={() =>
                                             onNavigate?.(
                                                 `/${treasuryId}/exchange?sellToken=${tokenParam}`,
