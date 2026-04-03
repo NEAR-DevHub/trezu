@@ -8,7 +8,9 @@ ADD
 ADD
     COLUMN IF NOT EXISTS confidential_refresh_token TEXT,
 ADD
-    COLUMN IF NOT EXISTS confidential_token_expires_at TIMESTAMPTZ;
+    COLUMN IF NOT EXISTS confidential_token_expires_at TIMESTAMPTZ
+ADD
+    COLUMN IF NOT EXISTS is_confidential_account BOOLEAN DEFAULT FALSE;
 
 -- Store intent data for confidential proposals awaiting DAO approval.
 -- After the signing proposal is approved and the MPC signature extracted,
