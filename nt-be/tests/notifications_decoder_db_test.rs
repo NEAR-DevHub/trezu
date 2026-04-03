@@ -88,7 +88,7 @@ async fn test_decoder_reads_nested_proposal_shape_from_db(pool: PgPool) {
         Some(&db_actions),
     );
     assert_eq!(decoded.description.as_deref(), Some("Pay Alice"));
-    assert_eq!(decoded.proposal_kind.as_deref(), Some("Transfer"));
+    assert_eq!(decoded.proposal_kind.as_deref(), Some("Payment"));
 }
 
 #[sqlx::test]
@@ -125,6 +125,6 @@ async fn test_detector_writes_decoded_payload_for_top_level_shape(pool: PgPool) 
     );
     assert_eq!(
         payload.get("proposal_kind").and_then(|v| v.as_str()),
-        Some("Transfer")
+        Some("Payment")
     );
 }
