@@ -101,7 +101,7 @@ pub async fn list_monitored_accounts(
         sqlx::query_as::<_, MonitoredAccount>(
             r#"
             SELECT account_id, enabled, last_synced_at, created_at, updated_at,
-                   export_credits, batch_payment_credits, plan_type, credits_reset_at, dirty_at
+                   export_credits, batch_payment_credits, plan_type, credits_reset_at, dirty_at, is_confidential_account
             FROM monitored_accounts
             WHERE enabled = $1
             ORDER BY account_id
@@ -114,7 +114,7 @@ pub async fn list_monitored_accounts(
         sqlx::query_as::<_, MonitoredAccount>(
             r#"
             SELECT account_id, enabled, last_synced_at, created_at, updated_at,
-                   export_credits, batch_payment_credits, plan_type, credits_reset_at, dirty_at
+                   export_credits, batch_payment_credits, plan_type, credits_reset_at, dirty_at, is_confidential_account
             FROM monitored_accounts
             ORDER BY account_id
             "#,
@@ -145,7 +145,7 @@ pub async fn update_monitored_account(
             updated_at = NOW()
         WHERE account_id = $1
         RETURNING account_id, enabled, last_synced_at, created_at, updated_at,
-                  export_credits, batch_payment_credits, plan_type, credits_reset_at, dirty_at
+                  export_credits, batch_payment_credits, plan_type, credits_reset_at, dirty_at, is_confidential_account
         "#,
     )
     .bind(&account_id)
