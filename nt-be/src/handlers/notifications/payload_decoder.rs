@@ -467,7 +467,7 @@ mod tests {
 
         let decoded = decode_add_proposal_payload(Some(&actions));
         assert_eq!(decoded.description.as_deref(), Some("Pay Alice"));
-        assert_eq!(decoded.proposal_kind.as_deref(), Some("Transfer"));
+        assert_eq!(decoded.proposal_kind.as_deref(), Some("Payment"));
         assert_eq!(decoded.delegate_sender_id, None);
     }
 
@@ -504,7 +504,7 @@ mod tests {
 
         let decoded = decode_add_proposal_payload(Some(&actions));
         assert_eq!(decoded.description.as_deref(), Some("Legacy shape"));
-        assert_eq!(decoded.proposal_kind.as_deref(), Some("Transfer"));
+        assert_eq!(decoded.proposal_kind.as_deref(), Some("Payment"));
     }
 
     #[test]
