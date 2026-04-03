@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                    INSERT INTO dao_notification_deliveries\n                        (notification_id, destination, destination_ref)\n                    VALUES ($1, 'telegram', $2)\n                    ON CONFLICT (notification_id, destination, destination_ref) DO NOTHING\n                    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "0a0a64b326cb7beea6c2d93c4df8498d52eb9369704059c0b27773c54ac91717"
+}

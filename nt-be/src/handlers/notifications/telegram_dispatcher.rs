@@ -97,16 +97,16 @@ pub async fn run_telegram_dispatch_cycle(
         {
             Ok(_) => {
                 let destination_ref = notif.chat_id.to_string();
-                let result = sqlx::query(
+                let result = sqlx::query!(
                     r#"
                     INSERT INTO dao_notification_deliveries
                         (notification_id, destination, destination_ref)
                     VALUES ($1, 'telegram', $2)
                     ON CONFLICT (notification_id, destination, destination_ref) DO NOTHING
                     "#,
+                    notif.id,
+                    &destination_ref,
                 )
-                .bind(notif.id)
-                .bind(&destination_ref)
                 .execute(&state.db_pool)
                 .await;
 

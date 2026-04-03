@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO telegram_treasury_connections (dao_id, chat_id, connected_by)\n            VALUES ($1, $2, $3)\n            ON CONFLICT (dao_id) DO UPDATE SET\n                chat_id = EXCLUDED.chat_id,\n                connected_by = EXCLUDED.connected_by,\n                connected_at = now()\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Int8",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "9f77289662be69ae30a76974a72f867dd8182d5eb96527d5caf6b1a99f1fe5c2"
+}

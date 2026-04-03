@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO public_dashboard_daily_runs (\n            snapshot_date, dao_count, trezu_dao_count, failed_dao_count,\n            computed_at\n        )\n        VALUES ($1, $2, $3, $4, NOW())\n        ON CONFLICT (snapshot_date) DO UPDATE SET\n            dao_count = EXCLUDED.dao_count,\n            trezu_dao_count = EXCLUDED.trezu_dao_count,\n            failed_dao_count = EXCLUDED.failed_dao_count,\n            computed_at = NOW()\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Date",
+        "Int4",
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "60ec12588c443bd00edb2c0a97ef48ad7b4743f3d5e8dabee8b6f65787405104"
+}

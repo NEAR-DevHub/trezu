@@ -421,25 +421,27 @@ mod tests {
     }
 
     async fn seed_dao(pool: &PgPool, dao_id: &str) {
-        sqlx::query(
+        sqlx::query!(
             "INSERT INTO monitored_accounts (account_id) VALUES ($1) ON CONFLICT (account_id) DO NOTHING",
+            dao_id,
         )
-        .bind(dao_id)
         .execute(pool)
         .await
         .expect("Should insert monitored account for test DAO");
 
-        sqlx::query("INSERT INTO daos (dao_id) VALUES ($1) ON CONFLICT (dao_id) DO NOTHING")
-            .bind(dao_id)
-            .execute(pool)
-            .await
-            .expect("Should insert DAO record for test DAO");
+        sqlx::query!(
+            "INSERT INTO daos (dao_id) VALUES ($1) ON CONFLICT (dao_id) DO NOTHING",
+            dao_id,
+        )
+        .execute(pool)
+        .await
+        .expect("Should insert DAO record for test DAO");
     }
 
     async fn seed_policy_member(pool: &PgPool, dao_id: &str, account_id: &str) {
         seed_dao(pool, dao_id).await;
 
-        sqlx::query(
+        sqlx::query!(
             r#"
             INSERT INTO dao_members (dao_id, account_id, is_policy_member, is_saved, is_hidden)
             VALUES ($1, $2, true, false, false)
@@ -448,9 +450,9 @@ mod tests {
                 is_saved = EXCLUDED.is_saved,
                 is_hidden = EXCLUDED.is_hidden
             "#,
+            dao_id,
+            account_id,
         )
-        .bind(dao_id)
-        .bind(account_id)
         .execute(pool)
         .await
         .expect("Should insert DAO policy member for tests");
@@ -477,12 +479,12 @@ mod tests {
         )
         .expect("Should create JWT for test user");
 
-        sqlx::query(
+        sqlx::query!(
             "INSERT INTO user_sessions (user_id, token_hash, expires_at) VALUES ($1, $2, $3)",
+            user_id,
+            jwt.token_hash,
+            jwt.expires_at,
         )
-        .bind(user_id)
-        .bind(jwt.token_hash)
-        .bind(jwt.expires_at)
         .execute(pool)
         .await
         .expect("Should create active session for test user");

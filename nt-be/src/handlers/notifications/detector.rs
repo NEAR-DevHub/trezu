@@ -59,17 +59,17 @@ async fn update_cursor(
     consumer_name: &str,
     last_id: i64,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    sqlx::query(
+    sqlx::query!(
         "INSERT INTO goldsky_cursors (consumer_name, last_processed_id, last_processed_block, updated_at)
          VALUES ($1, $2, $3, NOW())
          ON CONFLICT (consumer_name) DO UPDATE SET
            last_processed_id = EXCLUDED.last_processed_id,
            last_processed_block = EXCLUDED.last_processed_block,
            updated_at = NOW()",
+        consumer_name,
+        last_id.to_string(),
+        last_id,
     )
-    .bind(consumer_name)
-    .bind(last_id.to_string())
-    .bind(last_id)
     .execute(pool)
     .await?;
     Ok(())
@@ -168,17 +168,17 @@ async fn detect_balance_change_events(
             })
         };
 
-        let rows_inserted = sqlx::query(
+        let rows_inserted = sqlx::query!(
             r#"
             INSERT INTO dao_notifications (dao_id, event_type, source_id, source_table, payload)
             VALUES ($1, $2, $3, 'balance_changes', $4)
             ON CONFLICT (source_table, source_id, dao_id, event_type) DO NOTHING
             "#,
+            &row.account_id,
+            event_type,
+            row.id,
+            &payload,
         )
-        .bind(&row.account_id)
-        .bind(event_type)
-        .bind(row.id)
-        .bind(&payload)
         .execute(pool)
         .await?
         .rows_affected();
@@ -243,16 +243,16 @@ async fn detect_swap_events(
             "received_amount": row.received_amount.to_string(),
         });
 
-        let rows_inserted = sqlx::query(
+        let rows_inserted = sqlx::query!(
             r#"
             INSERT INTO dao_notifications (dao_id, event_type, source_id, source_table, payload)
             VALUES ($1, 'swap_fulfilled', $2, 'detected_swaps', $3)
             ON CONFLICT (source_table, source_id, dao_id, event_type) DO NOTHING
             "#,
+            &row.account_id,
+            row.id,
+            &payload,
         )
-        .bind(&row.account_id)
-        .bind(row.id)
-        .bind(&payload)
         .execute(pool)
         .await?
         .rows_affected();

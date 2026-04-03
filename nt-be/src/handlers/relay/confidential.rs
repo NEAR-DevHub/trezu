@@ -1,7 +1,7 @@
 //! Auto-submit confidential intents after DAO proposal approval.
 //!
 //! When a confidential_transfer proposal is created, the intent payload is stored
-//! in `pending_confidential_intents`. When a vote approves the proposal and the
+//! in `confidential_intents`. When a vote approves the proposal and the
 //! MPC signature is in the execution result, the signed intent is submitted to
 //! the 1Click API automatically.
 
@@ -40,9 +40,9 @@ pub async fn store_pending_intent(
     intent_payload: &Value,
     correlation_id: Option<&str>,
 ) -> Result<(), String> {
-    sqlx::query(
+    sqlx::query!(
         r#"
-        INSERT INTO pending_confidential_intents (dao_id, proposal_id, intent_payload, correlation_id)
+        INSERT INTO confidential_intents (dao_id, proposal_id, intent_payload, correlation_id)
         VALUES ($1, $2, $3, $4)
         ON CONFLICT (dao_id, proposal_id) DO UPDATE SET
             intent_payload = EXCLUDED.intent_payload,
@@ -52,11 +52,11 @@ pub async fn store_pending_intent(
             submit_result = NULL,
             updated_at = NOW()
         "#,
+        dao_id,
+        proposal_id,
+        intent_payload,
+        correlation_id,
     )
-    .bind(dao_id)
-    .bind(proposal_id)
-    .bind(intent_payload)
-    .bind(correlation_id)
     .execute(pool)
     .await
     .map_err(|e| format!("Failed to store pending intent: {}", e))?;
@@ -134,7 +134,7 @@ pub async fn try_auto_submit_intent(state: &Arc<AppState>, treasury_id: &str, re
     let pending = sqlx::query_as::<_, (i32, Value, Option<String>, String)>(
         r#"
         SELECT proposal_id, intent_payload, correlation_id, intent_type
-        FROM pending_confidential_intents
+        FROM confidential_intents
         WHERE dao_id = $1 AND status = 'pending'
         ORDER BY created_at DESC
         LIMIT 1
@@ -248,7 +248,7 @@ pub async fn try_auto_submit_intent(state: &Arc<AppState>, treasury_id: &str, re
                         .unwrap_or(3600);
                     let expires_at = chrono::Utc::now() + chrono::Duration::seconds(expires_in);
 
-                    let _ = sqlx::query(
+                    let _ = sqlx::query!(
                         r#"
                             UPDATE monitored_accounts
                             SET confidential_access_token = $1,
@@ -256,11 +256,11 @@ pub async fn try_auto_submit_intent(state: &Arc<AppState>, treasury_id: &str, re
                                 confidential_token_expires_at = $3
                             WHERE account_id = $4
                             "#,
+                        access_token,
+                        refresh_token,
+                        expires_at,
+                        treasury_id,
                     )
-                    .bind(access_token)
-                    .bind(refresh_token)
-                    .bind(expires_at)
-                    .bind(treasury_id)
                     .execute(&state.db_pool)
                     .await;
 
@@ -271,12 +271,12 @@ pub async fn try_auto_submit_intent(state: &Arc<AppState>, treasury_id: &str, re
                     );
                 }
 
-                let _ = sqlx::query(
-                    "UPDATE pending_confidential_intents SET status = 'submitted', submit_result = $1, updated_at = NOW() WHERE dao_id = $2 AND proposal_id = $3"
+                let _ = sqlx::query!(
+                    "UPDATE confidential_intents SET status = 'submitted', submit_result = $1, updated_at = NOW() WHERE dao_id = $2 AND proposal_id = $3",
+                    &resp_body,
+                    treasury_id,
+                    proposal_id,
                 )
-                .bind(&resp_body)
-                .bind(treasury_id)
-                .bind(proposal_id)
                 .execute(&state.db_pool)
                 .await;
             } else {
@@ -288,12 +288,12 @@ pub async fn try_auto_submit_intent(state: &Arc<AppState>, treasury_id: &str, re
                     proposal_id,
                     resp_body
                 );
-                let _ = sqlx::query(
-                    "UPDATE pending_confidential_intents SET status = 'failed', submit_result = $1, updated_at = NOW() WHERE dao_id = $2 AND proposal_id = $3"
+                let _ = sqlx::query!(
+                    "UPDATE confidential_intents SET status = 'failed', submit_result = $1, updated_at = NOW() WHERE dao_id = $2 AND proposal_id = $3",
+                    &resp_body,
+                    treasury_id,
+                    proposal_id,
                 )
-                .bind(&resp_body)
-                .bind(treasury_id)
-                .bind(proposal_id)
                 .execute(&state.db_pool)
                 .await;
             }
@@ -306,12 +306,12 @@ pub async fn try_auto_submit_intent(state: &Arc<AppState>, treasury_id: &str, re
                 proposal_id,
                 e
             );
-            let _ = sqlx::query(
-                "UPDATE pending_confidential_intents SET status = 'failed', submit_result = $1, updated_at = NOW() WHERE dao_id = $2 AND proposal_id = $3"
+            let _ = sqlx::query!(
+                "UPDATE confidential_intents SET status = 'failed', submit_result = $1, updated_at = NOW() WHERE dao_id = $2 AND proposal_id = $3",
+                serde_json::json!({"error": e.to_string()}),
+                treasury_id,
+                proposal_id,
             )
-            .bind(serde_json::json!({"error": e.to_string()}))
-            .bind(treasury_id)
-            .bind(proposal_id)
             .execute(&state.db_pool)
             .await;
         }

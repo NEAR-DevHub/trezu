@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE monitored_accounts\n        SET paid_near = paid_near + $2,\n            created_by_trezu_at = NOW(),\n            updated_at = NOW()\n        WHERE account_id = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Numeric"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "505f372cb95be4b2fea57d2cb339ece44c82d987f780c97e1b475baacca2811b"
+}

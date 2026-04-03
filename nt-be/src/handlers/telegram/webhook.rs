@@ -59,16 +59,16 @@ pub async fn handle_telegram_webhook(
 
 async fn handle_bot_added(state: &AppState, chat_id: i64, chat_title: Option<&str>) {
     // Upsert the chat record
-    let upsert_result = sqlx::query(
+    let upsert_result = sqlx::query!(
         r#"
         INSERT INTO telegram_chats (chat_id, chat_title)
         VALUES ($1, $2)
         ON CONFLICT (chat_id) DO UPDATE
             SET chat_title = EXCLUDED.chat_title, updated_at = now()
         "#,
+        chat_id,
+        chat_title,
     )
-    .bind(chat_id)
-    .bind(chat_title)
     .execute(&state.db_pool)
     .await;
 
@@ -141,12 +141,13 @@ async fn handle_bot_added(state: &AppState, chat_id: i64, chat_title: Option<&st
         }
     };
 
-    if let Err(e) =
-        sqlx::query("UPDATE telegram_connect_tokens SET message_id = $1 WHERE token = $2")
-            .bind(sent_message_id)
-            .bind(token)
-            .execute(&state.db_pool)
-            .await
+    if let Err(e) = sqlx::query!(
+        "UPDATE telegram_connect_tokens SET message_id = $1 WHERE token = $2",
+        sent_message_id,
+        token,
+    )
+    .execute(&state.db_pool)
+    .await
     {
         log::warn!(
             "[telegram] Failed to persist connect message_id for chat {}: {}",
@@ -158,8 +159,7 @@ async fn handle_bot_added(state: &AppState, chat_id: i64, chat_title: Option<&st
 
 async fn handle_bot_removed(state: &AppState, chat_id: i64) {
     // Cascade deletes tokens and connections automatically
-    if let Err(e) = sqlx::query("DELETE FROM telegram_chats WHERE chat_id = $1")
-        .bind(chat_id)
+    if let Err(e) = sqlx::query!("DELETE FROM telegram_chats WHERE chat_id = $1", chat_id)
         .execute(&state.db_pool)
         .await
     {

@@ -170,9 +170,9 @@ pub async fn prepare_auth(
         )
     })?;
 
-    sqlx::query(
+    sqlx::query!(
         r#"
-        INSERT INTO pending_confidential_intents (dao_id, proposal_id, intent_payload, intent_type)
+        INSERT INTO confidential_intents (dao_id, proposal_id, intent_payload, intent_type)
         VALUES ($1, -1, $2, 'auth')
         ON CONFLICT (dao_id, proposal_id) DO UPDATE SET
             intent_payload = EXCLUDED.intent_payload,
@@ -180,9 +180,9 @@ pub async fn prepare_auth(
             status = 'pending',
             updated_at = NOW()
         "#,
+        &request.dao_id,
+        &payload_json,
     )
-    .bind(&request.dao_id)
-    .bind(&payload_json)
     .execute(&state.db_pool)
     .await
     .map_err(|e| {

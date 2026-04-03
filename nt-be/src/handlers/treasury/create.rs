@@ -209,7 +209,7 @@ pub async fn create_treasury(
 
     // Record NEAR spent on treasury creation and mark as created by our platform
     let creation_cost: BigDecimal = TREASURY_CREATE_DEPOSIT.as_yoctonear().into();
-    if let Err(e) = sqlx::query(
+    if let Err(e) = sqlx::query!(
         r#"
         UPDATE monitored_accounts
         SET paid_near = paid_near + $2,
@@ -217,9 +217,9 @@ pub async fn create_treasury(
             updated_at = NOW()
         WHERE account_id = $1
         "#,
+        treasury.as_str(),
+        creation_cost,
     )
-    .bind(treasury.as_str())
-    .bind(creation_cost)
     .execute(&state.db_pool)
     .await
     {
