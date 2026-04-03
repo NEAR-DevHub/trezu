@@ -411,7 +411,8 @@ export function DepositModal({
         ]);
 
         // Auto-select asset:
-        // 1) explicit prefill token, 2) first token in "Your Assets", 3) USDC, 4) first available
+        // 1) explicit prefill token, 2) owned USDC, 3) first token in "Your Assets",
+        // 4) any USDC option, 5) first available
         let targetAsset: SelectOption | undefined;
         if (prefillTokenSymbol) {
             const targetId = prefillTokenSymbol.toLowerCase();
@@ -421,6 +422,9 @@ export function DepositModal({
         }
         if (!targetAsset) {
             targetAsset =
+                yourAssets.find(
+                    (asset) => asset.id?.toLowerCase() === "usdc",
+                ) ||
                 yourAssets[0] ||
                 formattedAssets.find(
                     (asset) => asset.id?.toLowerCase() === "usdc",

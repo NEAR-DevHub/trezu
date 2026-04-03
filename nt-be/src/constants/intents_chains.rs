@@ -14,6 +14,9 @@ pub struct ChainIcons {
 pub struct ChainMetadata {
     pub name: String,
     pub icon: ChainIcons,
+    /// If set, this key is an alias for another canonical key and should be
+    /// excluded from the enumerated chains list.
+    pub canonical_key: Option<String>,
 }
 
 impl ChainIcons {
@@ -30,6 +33,15 @@ impl ChainMetadata {
         Self {
             name: name.to_string(),
             icon: ChainIcons::new(dark_suffix, light_suffix),
+            canonical_key: None,
+        }
+    }
+
+    pub fn alias(canonical_key: &str, metadata: &ChainMetadata) -> Self {
+        Self {
+            name: metadata.name.clone(),
+            icon: metadata.icon.clone(),
+            canonical_key: Some(canonical_key.to_string()),
         }
     }
 }
@@ -53,10 +65,8 @@ pub static CHAIN_METADATA: Lazy<HashMap<String, ChainMetadata>> = Lazy::new(|| {
         "arbitrum".to_string(),
         ChainMetadata::new("Arbitrum", "arbitrum.svg", "arbitrum.svg"),
     );
-    metadata.insert(
-        "arb".to_string(),
-        ChainMetadata::new("Arbitrum", "arbitrum.svg", "arbitrum.svg"),
-    );
+    let arb_alias = ChainMetadata::alias("arbitrum", metadata.get("arbitrum").unwrap());
+    metadata.insert("arb".to_string(), arb_alias);
     metadata.insert(
         "bitcoin".to_string(),
         ChainMetadata::new("Bitcoin", "btc.svg", "btc.svg"),
@@ -116,6 +126,10 @@ pub static CHAIN_METADATA: Lazy<HashMap<String, ChainMetadata>> = Lazy::new(|| {
     metadata.insert(
         "berachain".to_string(),
         ChainMetadata::new("BeraChain", "berachain.svg", "berachain.svg"),
+    );
+    metadata.insert(
+        "bera".to_string(),
+        ChainMetadata::alias("berachain", metadata.get("berachain").unwrap()),
     );
     metadata.insert(
         "tron".to_string(),
@@ -196,6 +210,10 @@ pub static CHAIN_METADATA: Lazy<HashMap<String, ChainMetadata>> = Lazy::new(|| {
     metadata.insert(
         "layerx".to_string(),
         ChainMetadata::new("LayerX", "layerx_white.svg", "layerx.svg"),
+    );
+    metadata.insert(
+        "xlayer".to_string(),
+        ChainMetadata::alias("layerx", metadata.get("layerx").unwrap()),
     );
     metadata.insert(
         "dash".to_string(),

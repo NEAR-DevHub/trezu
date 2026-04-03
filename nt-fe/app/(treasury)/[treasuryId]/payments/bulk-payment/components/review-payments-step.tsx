@@ -5,7 +5,7 @@ import { useFormContext } from "react-hook-form";
 import { PageCard } from "@/components/card";
 import { Button } from "@/components/button";
 import { Textarea } from "@/components/textarea";
-import { Edit2, Trash2 } from "lucide-react";
+import { Edit2, Info, Trash2 } from "lucide-react";
 import { StepProps, ReviewStep } from "@/components/step-wizard";
 import { WarningAlert } from "@/components/warning-alert";
 import { TokenDisplay } from "@/components/token-display-with-network";
@@ -20,18 +20,21 @@ import {
 } from "@/components/modal";
 import { NumberBadge } from "@/components/number-badge";
 import type { BulkPaymentFormValues, BulkPaymentData } from "../schemas";
-import { formatBalance, formatSmartAmount } from "@/lib/utils";
+import { cn, formatBalance, formatSmartAmount } from "@/lib/utils";
 import { validateAccountsAndStorage } from "../utils";
-import { validateMinimumWithdrawal } from "@/lib/payment-validation";
 import { useToken, useTokenBalance } from "@/hooks/use-treasury-queries";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useAddressBook } from "@/features/address-book";
 import { AmountSummary } from "@/components/amount-summary";
 import { CreateRequestButton } from "@/components/create-request-button";
 import { trackEvent } from "@/lib/analytics";
+import { NETWORK_FEE_TOOLTIP_TEXT } from "@/lib/intents-fee";
+import { Tooltip } from "@/components/tooltip";
+import { Address } from "@/components/address";
 
 interface ReviewPaymentsStepProps extends StepProps {
     initialPaymentData: BulkPaymentData[];
+    networkFeePerRecipient: string | null;
     onEditPayment: (index: number) => void;
     onPaymentDataChange: (data: BulkPaymentData[]) => void;
     onSubmit: () => void;
@@ -40,6 +43,7 @@ interface ReviewPaymentsStepProps extends StepProps {
 export function ReviewPaymentsStep({
     handleBack,
     initialPaymentData,
+    networkFeePerRecipient,
     onEditPayment,
     onPaymentDataChange,
     onSubmit,
@@ -79,41 +83,8 @@ export function ReviewPaymentsStep({
                     paymentData,
                     selectedToken,
                 );
-
-                // Add minimum withdrawal validation
-                const paymentsWithMinValidation = validatedPayments.map(
-                    (payment) => {
-                        // Check minimum withdrawal amount
-                        const minWithdrawalError = validateMinimumWithdrawal(
-                            payment.amount,
-                            selectedToken.minWithdrawalAmount,
-                            selectedToken.decimals,
-                            selectedToken.symbol,
-                        );
-
-                        // Combine errors if both exist
-                        if (payment.validationError && minWithdrawalError) {
-                            return {
-                                ...payment,
-                                validationError: `${payment.validationError}; ${minWithdrawalError}`,
-                            };
-                        }
-
-                        // Use whichever error exists
-                        if (minWithdrawalError) {
-                            return {
-                                ...payment,
-                                validationError: minWithdrawalError,
-                            };
-                        }
-
-                        return payment;
-                    },
-                );
-
-                setPaymentData(paymentsWithMinValidation);
-                onPaymentDataChange(paymentsWithMinValidation);
-                setValidationComplete(true);
+                setPaymentData(validatedPayments);
+                onPaymentDataChange(validatedPayments);
             } finally {
                 setIsValidatingAccounts(false);
             }
@@ -156,6 +127,9 @@ export function ReviewPaymentsStep({
     const hasValidationErrors = paymentData.some(
         (payment) => payment.validationError,
     );
+    const totalNetworkFee = networkFeePerRecipient
+        ? Big(networkFeePerRecipient).mul(paymentData.length)
+        : null;
 
     // Calculate total USD value and check insufficient balance
     let totalUSDValue = Big(0);
@@ -314,17 +288,17 @@ export function ReviewPaymentsStep({
                                                                                 }
                                                                             </span>
                                                                         )}
-                                                                        <span
-                                                                            className={
-                                                                                contact
-                                                                                    ? "text-xs text-muted-foreground truncate lg:break-all"
-                                                                                    : "font-semibold text-sm text-foreground truncate lg:break-all"
-                                                                            }
-                                                                        >
-                                                                            {
+
+                                                                        <Address
+                                                                            address={
                                                                                 payment.recipient
                                                                             }
-                                                                        </span>
+                                                                            className={cn(
+                                                                                contact
+                                                                                    ? "text-xs text-muted-foreground"
+                                                                                    : "font-semibold text-sm text-foreground",
+                                                                            )}
+                                                                        />
                                                                     </>
                                                                 );
                                                             })()}
@@ -411,6 +385,26 @@ export function ReviewPaymentsStep({
                         </>
                     )}
                 </div>
+
+                {!isValidatingAccounts && totalNetworkFee && (
+                    <div className="flex items-center justify-between gap-2 text-sm py-3 border-t border-border">
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                            <p>Network Fee</p>
+                            <Tooltip
+                                content={NETWORK_FEE_TOOLTIP_TEXT}
+                                side="top"
+                            >
+                                <Info
+                                    className="size-3 shrink-0"
+                                    aria-label="Network fee info"
+                                />
+                            </Tooltip>
+                        </div>
+                        <p>
+                            {totalNetworkFee.toString()} {selectedToken.symbol}
+                        </p>
+                    </div>
+                )}
 
                 {/* Comment */}
                 {!isValidatingAccounts && (

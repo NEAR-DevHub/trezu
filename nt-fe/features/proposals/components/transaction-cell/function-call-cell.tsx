@@ -11,11 +11,15 @@ interface FunctionCallCellProps {
 export function FunctionCallCell({ data, timestamp }: FunctionCallCellProps) {
     const { data: profile } = useProfile(data.receiver);
     const receiver = profile?.addressBookName ?? data.receiver;
-    const subtitle = `on ${receiver}${data.actionsCount > 1 ? ` (+${data.actionsCount - 1} more)` : ""}`;
+    const subtitle = `on ${receiver}`;
+    const title =
+        data.actions.length === 1
+            ? data.actions[0].methodName
+            : `${data.actions.length} actions`;
 
     return (
         <TitleSubtitleCell
-            title={data.methodName || "Function Call"}
+            title={title}
             subtitle={subtitle}
             timestamp={timestamp}
         />
