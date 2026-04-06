@@ -36,7 +36,10 @@ async function setupStartPageMocks(
             });
         }
 
-        if (url.includes("/api/user/treasuries") || url.includes("/user/treasuries")) {
+        if (
+            url.includes("/api/user/treasuries") ||
+            url.includes("/user/treasuries")
+        ) {
             return route.fulfill({
                 status: 200,
                 contentType: "application/json",
