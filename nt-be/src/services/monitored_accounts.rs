@@ -71,7 +71,7 @@ pub async fn register_or_refresh_monitored_account(
             UPDATE monitored_accounts
             SET dirty_at = NOW(), updated_at = NOW()
             WHERE account_id = $1
-            RETURNING account_id, enabled, last_synced_at, created_at, updated_at,
+            RETURNING account_id, enabled, last_synced_at, created_at, updated_at, is_confidential_account,
                       export_credits, batch_payment_credits, plan_type, credits_reset_at, dirty_at
             "#,
         )

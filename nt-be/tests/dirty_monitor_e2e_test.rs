@@ -187,12 +187,7 @@ async fn test_maintenance_detects_payments(pool: PgPool) -> sqlx::Result<()> {
         .db_pool(pool.clone())
         .build()
         .await
-        .map_err(|e| {
-            sqlx::Error::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                e.to_string(),
-            ))
-        })?;
+        .map_err(|e| sqlx::Error::Io(std::io::Error::other(e.to_string())))?;
     let app = nt_be::routes::create_routes(Arc::new(app_state));
 
     let response = app

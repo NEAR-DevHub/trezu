@@ -154,14 +154,14 @@ Note: `authenticate` and `submit-intent` are not exposed as frontend-facing endp
 The relay handler (`handlers/relay/confidential.rs`) automatically handles post-approval:
 
 1. After any vote relay succeeds, checks for MPC signature marker (`eyJzY2hlbWUi`) in execution result
-2. If found, looks up pending intent/auth in `pending_confidential_intents` table
+2. If found, looks up pending intent/auth in `confidential_intents` table
 3. For **auth**: calls 1Click `/v0/auth/authenticate`, stores JWT in `monitored_accounts`
 4. For **shield**: calls 1Click `/v0/submit-intent` with the stored intent payload + signature
 
 ### Database Tables
 
 - `monitored_accounts` — stores `confidential_access_token`, `confidential_refresh_token`, `confidential_token_expires_at` per DAO
-- `pending_confidential_intents` — stores intent payloads (or auth payloads) awaiting MPC signature, with `intent_type` ('shield' or 'auth') and `status` ('pending', 'submitted', 'failed')
+- `confidential_intents` — stores intent payloads (or auth payloads) awaiting MPC signature, with `intent_type` ('shield' or 'auth') and `status` ('pending', 'submitted', 'failed')
 
 ## Sandbox Testing
 
