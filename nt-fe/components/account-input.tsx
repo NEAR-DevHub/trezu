@@ -238,8 +238,8 @@ const AccountInput = ({
 
         // For other chains: immediate validation (or accept all if no pattern)
         if (!config.regex) {
-            // No validation pattern - show green if non-empty (unknown blockchain)
-            return trimmedValue ? "border-green-500" : "";
+            // No validation pattern (unknown blockchain) — no feedback border
+            return "";
         }
 
         const isValid = config.regex.test(trimmedValue);
@@ -272,9 +272,13 @@ const AccountInput = ({
             {value && isValidating && (
                 <p className="text-xs text-yellow-600">Validating address...</p>
             )}
-            {value && !isValidating && !validationError && hasValidated && (
-                <p className="text-xs text-green-600">Valid address</p>
-            )}
+            {value &&
+                !isValidating &&
+                !validationError &&
+                hasValidated &&
+                blockchain !== "unknown" && (
+                    <p className="text-xs text-green-600">Valid address</p>
+                )}
         </div>
     );
 };

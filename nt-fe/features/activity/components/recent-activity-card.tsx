@@ -32,17 +32,17 @@ import type { RecentActivity as RecentActivityType } from "@/lib/api";
 
 type GroupedActivity =
     | {
-        type: "single";
-        activity: RecentActivityType;
-    }
+          type: "single";
+          activity: RecentActivityType;
+      }
     | {
-        type: "grouped";
-        pool: string;
-        activities: RecentActivityType[];
-        totalAmount: string;
-        tokenMetadata: RecentActivityType["tokenMetadata"];
-        blockTime: string; // Most recent time
-    };
+          type: "grouped";
+          pool: string;
+          activities: RecentActivityType[];
+          totalAmount: string;
+          tokenMetadata: RecentActivityType["tokenMetadata"];
+          blockTime: string; // Most recent time
+      };
 import {
     useReactTable,
     getCoreRowModel,
@@ -53,9 +53,10 @@ import {
 import { Table, TableBody, TableCell, TableRow } from "@/components/table";
 import { FormattedDate } from "@/components/formatted-date";
 import { TransactionDetailsModal } from "./transaction-details-modal";
-import { MemberOnlyExportButton } from "@/components/member-only-export-button";
+import { ExportButton } from "@/components/export-button";
 import Link from "next/link";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { StepperHeader } from "@/components/step-wizard";
 
 const ITEMS_ON_DASHBOARD = 10;
 const MAX_ITEMS = 100;
@@ -253,8 +254,8 @@ export function RecentActivity() {
                                     isSwap
                                         ? "bg-blue-500/10"
                                         : isReceived
-                                            ? "bg-general-success-background-faded"
-                                            : "bg-general-destructive-background-faded",
+                                          ? "bg-general-success-background-faded"
+                                          : "bg-general-destructive-background-faded",
                                 )}
                             >
                                 {isSwap ? (
@@ -340,8 +341,8 @@ export function RecentActivity() {
                                     {isDeposit ? (
                                         <>
                                             {swap.sentAmount &&
-                                                swap.sentTokenMetadata ? (
-                                                <span className="font-semibold text-general-destructive-foreground hidden sm:inline truncate">
+                                            swap.sentTokenMetadata ? (
+                                                <span className="font-semibold text-foreground hidden sm:inline truncate">
                                                     {formatSmartAmount(
                                                         swap.sentAmount,
                                                     )}{" "}
@@ -352,23 +353,24 @@ export function RecentActivity() {
                                                     ?
                                                 </span>
                                             )}
-                                            <span className="font-semibold text-muted-foreground sm:hidden">
+                                            <span className="font-semibold text-foreground sm:hidden">
                                                 {sentSymbol ?? "?"}
                                             </span>
-                                            <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                            <span className="font-semibold text-muted-foreground truncate">
+                                            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                            <span className="font-semibold text-general-success-foreground truncate">
                                                 {receivedSymbol}
                                             </span>
                                         </>
                                     ) : (
                                         <>
                                             {sentSymbol ? (
-                                                <span className="font-semibold text-muted-foreground truncate">
+                                                <span className="font-semibold text-foreground truncate">
                                                     {sentSymbol}
                                                 </span>
                                             ) : null}
-                                            <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                                             <span className="font-semibold text-general-success-foreground hidden sm:inline truncate">
+                                                +
                                                 {formatSmartAmount(
                                                     swap.receivedAmount,
                                                 )}{" "}
@@ -435,9 +437,7 @@ export function RecentActivity() {
             <Card className="gap-3 border-none shadow-none">
                 <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3 px-4">
                     <div className="space-y-1">
-                        <CardTitle className="text-base md:text-lg font-bold">
-                            Recent Transactions
-                        </CardTitle>
+                        <StepperHeader title="Recent Transactions" />
                         <CardDescription>
                             Sent and received transactions ({historyDescription}
                             )
@@ -460,7 +460,7 @@ export function RecentActivity() {
                                 Hide transactions &lt;1USD
                             </label>
                         </div> */}
-                        <MemberOnlyExportButton />
+                        <ExportButton />
                         <Link href={`/${treasuryId}/dashboard/activity`}>
                             <Button
                                 variant="secondary"
@@ -508,8 +508,8 @@ export function RecentActivity() {
                             <div className="w-full overflow-x-auto px-2">
                                 <Table className="table-fixed w-full min-w-full">
                                     <colgroup>
-                                        <col className="w-42 sm:w-52" />
-                                        <col className="min-w-0" />
+                                        <col className="w-42 sm:w-52 lg:w-1/2" />
+                                        <col className="min-w-0 lg:w-1/2" />
                                     </colgroup>
                                     <TableBody>
                                         {table.getRowModel().rows.map((row) => {

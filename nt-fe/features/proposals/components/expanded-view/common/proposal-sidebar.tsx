@@ -1,6 +1,6 @@
 import { Proposal } from "@/lib/proposals-api";
 import { Button } from "@/components/button";
-import { ArrowUpRight, Check, X, Download } from "lucide-react";
+import { ArrowUpRight, Check, X, Download, Loader2 } from "lucide-react";
 import { PageCard } from "@/components/card";
 import { Policy } from "@/types/policy";
 import { getApproversAndThreshold } from "@/lib/config-utils";
@@ -14,7 +14,11 @@ import {
 } from "@/features/proposals/utils/proposal-utils";
 import { useProposalInsufficientBalance } from "@/features/proposals/hooks/use-proposal-insufficient-balance";
 import { UserVote } from "../../user-vote";
-import { useProposalTransaction, useSwapStatus } from "@/hooks/use-proposals";
+import {
+    useProposalTransaction,
+    useSwapStatus,
+    useProposals,
+} from "@/hooks/use-proposals";
 import Link from "next/link";
 import Big from "@/lib/big";
 import { User } from "@/components/user";
@@ -24,9 +28,11 @@ import {
 } from "@/components/auth-button";
 import { useFormatDate } from "@/components/formatted-date";
 import { InfoAlert } from "@/components/info-alert";
-import { cn } from "@/lib/utils";
+import { cn, nanosToMs } from "@/lib/utils";
 import { extractProposalData } from "@/features/proposals/utils/proposal-extractors";
 import { NotEnoughBalance } from "../../not-enough-balance";
+import { VotingDurationImpactModal } from "../../voting-duration-impact-modal";
+import { useState, useEffect } from "react";
 
 interface ProposalSidebarProps {
     proposal: Proposal;
@@ -126,7 +132,12 @@ function TransactionCreated({
                 </div>
             </div>
             <div className="ml-5">
-                <User accountId={proposer} withName={true} />
+                <User
+                    accountId={proposer}
+                    withName={true}
+                    withHoverCard
+                    withLink={false}
+                />
             </div>
         </div>
     );
@@ -251,6 +262,22 @@ export function ProposalSidebar({
         treasuryId,
     );
 
+    const [showVotingDurationModal, setShowVotingDurationModal] =
+        useState(false);
+    const [awaitingProposalsFetch, setAwaitingProposalsFetch] = useState(false);
+
+    // Check if this is a voting duration change proposal
+    const isVotingDurationChange =
+        "ChangePolicyUpdateParameters" in proposal.kind;
+
+    // Fetch active proposals only when needed for voting duration impact check
+    const { data: allProposalsData, isLoading: isLoadingProposals } =
+        useProposals(
+            treasuryId,
+            { statuses: ["InProgress"] },
+            isVotingDurationChange,
+        );
+
     const status = getProposalStatus(proposal, policy);
     const isUserVoter = !!proposal.votes[accountId ?? ""];
     const isPending = status === "Pending";
@@ -258,6 +285,17 @@ export function ProposalSidebar({
     const isExchangeProposal = proposalType === "Exchange";
     const isFailed = status === "Failed";
     const isExecuted = status === "Executed";
+
+    let newVotingDurationDays = 0;
+    if (isVotingDurationChange) {
+        const params = (proposal.kind as any).ChangePolicyUpdateParameters
+            ?.parameters;
+        if (params?.proposal_period) {
+            newVotingDurationDays = Math.floor(
+                nanosToMs(params.proposal_period) / (24 * 60 * 60 * 1000),
+            );
+        }
+    }
 
     // Extract deposit address for exchange proposals
     let depositAddress: string | undefined;
@@ -284,18 +322,16 @@ export function ProposalSidebar({
     );
 
     const expiresAt = new Date(
-        Big(proposal.submission_time)
-            .add(policy.proposal_period)
-            .div(1000000)
-            .toNumber(),
+        nanosToMs(
+            Big(proposal.submission_time)
+                .add(policy.proposal_period)
+                .toFixed(0),
+        ),
     );
 
     // For exchange proposals, calculate 24-hour expiration
     const exchange24HourExpiry = isExchangeProposal
-        ? new Date(
-              Big(proposal.submission_time).div(1000000).toNumber() +
-                  EXCHANGE_EXPIRY_MS,
-          )
+        ? new Date(nanosToMs(proposal.submission_time) + EXCHANGE_EXPIRY_MS)
         : null;
 
     let timestamp;
@@ -316,18 +352,61 @@ export function ProposalSidebar({
             break;
     }
 
+    const isLastApprovingVote = () => {
+        const currentApprovals = Object.values(proposal.votes).filter(
+            (v) => v === "Approve",
+        ).length;
+        const { requiredVotes } = getApproversAndThreshold(
+            policy,
+            accountId ?? "",
+            proposal.kind,
+            false,
+        );
+        return requiredVotes !== null && currentApprovals + 1 >= requiredVotes;
+    };
+
+    // When proposals finish loading after user clicked Approve, open the modal
+    useEffect(() => {
+        if (awaitingProposalsFetch && !isLoadingProposals) {
+            setAwaitingProposalsFetch(false);
+            setShowVotingDurationModal(true);
+        }
+    }, [awaitingProposalsFetch, isLoadingProposals]);
+
+    // Handle approve with voting duration check
+    const handleApprove = () => {
+        if (
+            isVotingDurationChange &&
+            newVotingDurationDays > 0 &&
+            isLastApprovingVote()
+        ) {
+            if (isLoadingProposals) {
+                setAwaitingProposalsFetch(true);
+            } else {
+                setShowVotingDurationModal(true);
+            }
+        } else {
+            onVote("Approve");
+        }
+    };
+
+    const handleVotingDurationConfirm = () => {
+        setShowVotingDurationModal(false);
+        onVote("Approve");
+    };
+
+    // Get active proposals excluding the current one
+    const activeProposals =
+        allProposalsData?.proposals?.filter(
+            (p: Proposal) => p.id !== proposal.id,
+        ) ?? [];
+
     return (
         <PageCard className="relative w-full">
             <div className="relative flex flex-col gap-4">
                 <TransactionCreated
                     proposer={proposal.proposer}
-                    date={
-                        new Date(
-                            Big(proposal.submission_time)
-                                .div(1000000)
-                                .toNumber(),
-                        )
-                    }
+                    date={new Date(nanosToMs(proposal.submission_time))}
                 />
                 <VotingSection
                     proposal={proposal}
@@ -470,15 +549,32 @@ export function ProposalSidebar({
                             proposalKind={proposal.kind}
                             variant="default"
                             className="flex gap-1 w-full"
-                            onClick={() => onVote("Approve")}
-                            disabled={isUserVoter}
+                            onClick={handleApprove}
+                            disabled={isUserVoter || awaitingProposalsFetch}
                             tooltip={isUserVoter ? NO_VOTE_MESSAGE : undefined}
                         >
-                            <Check className="h-4 w-4 mr-2" />
+                            {awaitingProposalsFetch ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                                <Check className="h-4 w-4 mr-2" />
+                            )}
                             Approve
                         </AuthButtonWithProposal>
                     )}
                 </div>
+            )}
+
+            {/* Voting Duration Impact Modal */}
+            {isVotingDurationChange && (
+                <VotingDurationImpactModal
+                    isOpen={showVotingDurationModal}
+                    onClose={() => setShowVotingDurationModal(false)}
+                    onConfirm={handleVotingDurationConfirm}
+                    newDurationDays={newVotingDurationDays}
+                    currentPolicy={policy}
+                    activeProposals={activeProposals}
+                    isLoadingProposals={isLoadingProposals}
+                />
             )}
         </PageCard>
     );

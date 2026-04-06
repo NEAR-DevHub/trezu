@@ -13,6 +13,7 @@ use crate::{
     constants::{
         NEAR_ICON, WRAP_NEAR_ICON,
         intents_chains::{ChainIcons, get_chain_metadata_by_name},
+        intents_tokens::find_token_by_defuse_asset_id,
     },
     handlers::proposals::scraper::fetch_ft_metadata,
     handlers::proxy::external::fetch_proxy_api,
@@ -284,9 +285,11 @@ pub async fn fetch_tokens_metadata(
             );
             metadata_responses.push(wrap_near_meta);
         } else {
-            // Provide fallback icon for wrap.near if only icon is missing (but other fields are OK)
+            // Provide fallback icon: wrap.near → WRAP_NEAR_ICON, others → tokens.json static data
             let icon = if is_wrap_near && token.icon.is_none() {
                 Some(WRAP_NEAR_ICON.to_string())
+            } else if token.icon.is_none() {
+                find_token_by_defuse_asset_id(token_id).map(|t| t.icon.clone())
             } else {
                 token.icon.clone()
             };
@@ -545,6 +548,7 @@ pub async fn fetch_metadata_from_counterparties(
 pub async fn fetch_tokens_with_fallback(
     state: &Arc<AppState>,
     token_ids: &[String],
+    include_chain_metadata: bool,
 ) -> HashMap<String, TokenMetadata> {
     if token_ids.is_empty() {
         return HashMap::new();
@@ -554,25 +558,38 @@ pub async fn fetch_tokens_with_fallback(
     let unique_tokens: std::collections::HashSet<String> = token_ids.iter().cloned().collect();
     let token_ids_vec: Vec<String> = unique_tokens.iter().cloned().collect();
 
-    // Step 1: Check counterparties table first (fast path!)
-    log::debug!(
-        "Fetching metadata for {} tokens, checking counterparties first",
-        token_ids_vec.len()
-    );
-    let mut result = fetch_metadata_from_counterparties(&state.db_pool, &token_ids_vec).await;
+    let mut result: HashMap<String, TokenMetadata>;
+    let missing_tokens: Vec<String>;
 
-    log::debug!("Found {} tokens in counterparties table", result.len());
+    // If chain metadata is required, skip counterparties table because it doesn't have chain data
+    if include_chain_metadata {
+        log::debug!(
+            "Chain metadata requested, skipping counterparties and fetching {} tokens from API",
+            token_ids_vec.len()
+        );
+        result = HashMap::new();
+        missing_tokens = token_ids_vec.clone();
+    } else {
+        // Step 1: Check counterparties table first (fast path!)
+        log::debug!(
+            "Fetching metadata for {} tokens, checking counterparties first",
+            token_ids_vec.len()
+        );
+        result = fetch_metadata_from_counterparties(&state.db_pool, &token_ids_vec).await;
 
-    // Step 2: Identify missing tokens that need API fetching
-    let missing_tokens: Vec<String> = unique_tokens
-        .iter()
-        .filter(|id| !result.contains_key(*id))
-        .cloned()
-        .collect();
+        log::debug!("Found {} tokens in counterparties table", result.len());
 
-    if missing_tokens.is_empty() {
-        log::debug!("All tokens found in counterparties, no API calls needed");
-        return result; // All found in DB, no API calls needed!
+        // Step 2: Identify missing tokens that need API fetching
+        missing_tokens = unique_tokens
+            .iter()
+            .filter(|id| !result.contains_key(*id))
+            .cloned()
+            .collect();
+
+        if missing_tokens.is_empty() {
+            log::debug!("All tokens found in counterparties, no API calls needed");
+            return result;
+        }
     }
 
     log::debug!(
@@ -591,6 +608,7 @@ pub async fn fetch_tokens_with_fallback(
         if token_id == "near"
             || token_id.starts_with("intents.near:")
             || token_id.starts_with("nep141:")
+            || token_id.starts_with("nep245:")
         {
             api_tokens.push(token_id.clone());
         } else {
@@ -605,6 +623,8 @@ pub async fn fetch_tokens_with_fallback(
                 "nep141:wrap.near".to_string()
             } else if let Some(stripped) = token_id.strip_prefix("intents.near:") {
                 stripped.to_string()
+            } else if token_id.starts_with("nep141:") || token_id.starts_with("nep245:") {
+                token_id.to_string()
             } else {
                 format!("nep141:{}", token_id)
             }
@@ -767,7 +787,7 @@ pub async fn fetch_tokens_with_defuse_extension(
     state: &Arc<AppState>,
     token_ids: &[String],
 ) -> HashMap<String, TokenMetadata> {
-    let mut result = fetch_tokens_with_fallback(state, token_ids).await;
+    let mut result = fetch_tokens_with_fallback(state, token_ids, false).await;
 
     if result.is_empty() {
         return result;
@@ -924,7 +944,6 @@ pub async fn search_token_by_symbol(
         WHERE UPPER(token_symbol) = UPPER($1)
           AND account_type = 'ft_token'
         ORDER BY discovered_at DESC
-        LIMIT 10
         "#,
         symbol
     )

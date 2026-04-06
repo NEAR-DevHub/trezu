@@ -74,6 +74,10 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
     Router::new()
         // Health check
         .route("/api/health", get(health_check))
+        .route(
+            "/api/public/dashboard/aum",
+            get(handlers::public_dashboard::get_public_dashboard_aum),
+        )
         // Balance changes endpoint
         .route(
             "/api/balance-changes",
@@ -82,6 +86,14 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
         .route(
             "/api/recent-activity",
             get(handlers::balance_changes::history::get_recent_activity),
+        )
+        .route(
+            "/api/recent-activity/senders",
+            get(handlers::balance_changes::history::get_recent_activity_senders),
+        )
+        .route(
+            "/api/recent-activity/recipients",
+            get(handlers::balance_changes::history::get_recent_activity_recipients),
         )
         .route(
             "/api/balance-changes/fill-gaps",
@@ -287,6 +299,22 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
         )
         .route("/api/auth/me", get(auth::handlers::get_me))
         .route("/api/auth/logout", post(auth::handlers::logout))
+        // Chains endpoint
+        .route(
+            "/api/chains",
+            get(handlers::chains::get_chains),
+        )
+        // Address book endpoints
+        .route(
+            "/api/address-book",
+            get(handlers::address_book::list_address_book)
+                .post(handlers::address_book::create_address_book_entries)
+                .delete(handlers::address_book::delete_address_book_entries),
+        )
+        .route(
+            "/api/address-book/export",
+            get(handlers::address_book::export_address_book),
+        )
         // DAO endpoints
         .route(
             "/api/dao/mark-dirty",
@@ -300,6 +328,21 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
         .route(
             "/api/subscription/{account_id}",
             get(handlers::subscription::get_subscription_status),
+        )
+        // Telegram bot endpoints
+        .route(
+            "/api/telegram/webhook",
+            post(handlers::telegram::webhook::handle_telegram_webhook),
+        )
+        .route(
+            "/api/telegram/connect",
+            get(handlers::telegram::connect::get_chat_info)
+                .post(handlers::telegram::connect::connect_treasuries)
+                .delete(handlers::telegram::connect::disconnect_treasury),
+        )
+        .route(
+            "/api/telegram/status",
+            get(handlers::telegram::connect::get_status),
         )
         .with_state(state)
 }

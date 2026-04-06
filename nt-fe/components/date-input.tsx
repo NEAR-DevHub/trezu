@@ -16,7 +16,7 @@ export function DateInput<TFieldValues extends FieldValues = FieldValues>({
     name,
     title,
     minDate,
-    maxDate
+    maxDate,
 }: DateInputProps<TFieldValues>) {
     return (
         <FormField
@@ -31,7 +31,6 @@ export function DateInput<TFieldValues extends FieldValues = FieldValues>({
                         max={maxDate}
                         showCalendarIcon={false}
                         placeholder="mm/dd/yyyy"
-
                         classNames={{
                             trigger: "border-none p-0",
                         }}
@@ -39,7 +38,9 @@ export function DateInput<TFieldValues extends FieldValues = FieldValues>({
                     {fieldState.error ? (
                         <FormMessage />
                     ) : (
-                        <p className="text-muted-foreground text-xs invisible">Invisible</p>
+                        <p className="text-muted-foreground text-xs invisible">
+                            Invisible
+                        </p>
                     )}
                 </InputBlock>
             )}

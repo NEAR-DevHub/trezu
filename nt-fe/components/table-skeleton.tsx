@@ -29,11 +29,13 @@ export function TableSkeleton({ rows = 5, columns = 7 }: TableSkeletonProps) {
                 <TableBody>
                     {Array.from({ length: rows }).map((_, rowIndex) => (
                         <TableRow key={rowIndex}>
-                            {Array.from({ length: columns }).map((_, colIndex) => (
-                                <TableCell key={colIndex}>
-                                    <Skeleton className="h-10 w-full" />
-                                </TableCell>
-                            ))}
+                            {Array.from({ length: columns }).map(
+                                (_, colIndex) => (
+                                    <TableCell key={colIndex}>
+                                        <Skeleton className="h-10 w-full" />
+                                    </TableCell>
+                                ),
+                            )}
                         </TableRow>
                     ))}
                 </TableBody>

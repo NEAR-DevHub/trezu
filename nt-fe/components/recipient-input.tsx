@@ -20,8 +20,19 @@ export function RecipientInput<TFieldValues extends FieldValues = FieldValues>({
             name={name}
             render={({ field, fieldState }) => (
                 <InputBlock title="To" invalid={!!fieldState.error}>
-                    <LargeInput type="text" borderless {...field} placeholder="Recipient address" />
-                    {fieldState.error ? <FormMessage /> : <p className="text-muted-foreground text-xs invisible">Invisible</p>}
+                    <LargeInput
+                        type="text"
+                        borderless
+                        {...field}
+                        placeholder="Recipient address"
+                    />
+                    {fieldState.error ? (
+                        <FormMessage />
+                    ) : (
+                        <p className="text-muted-foreground text-xs invisible">
+                            Invisible
+                        </p>
+                    )}
                 </InputBlock>
             )}
         />

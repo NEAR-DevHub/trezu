@@ -5,6 +5,7 @@ import {
     EXCHANGE_SETTINGS_TOUR,
     MEMBERS_PENDING_TOUR,
     GUEST_SAVE_TOUR,
+    NEW_FEATURE_TOUR,
 } from "./page-tours";
 
 export const TOURS = [
@@ -15,4 +16,5 @@ export const TOURS = [
     EXCHANGE_SETTINGS_TOUR,
     MEMBERS_PENDING_TOUR,
     GUEST_SAVE_TOUR,
+    NEW_FEATURE_TOUR,
 ];

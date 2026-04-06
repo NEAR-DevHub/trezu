@@ -1,12 +1,17 @@
+pub mod address_book;
 pub mod balance_changes;
 pub mod bulkpayment;
+pub mod chains;
 pub mod dao;
 pub mod intents;
 pub mod lookup;
+pub mod notifications;
 pub mod proposals;
 pub mod proxy;
+pub mod public_dashboard;
 pub mod relay;
 pub mod subscription;
+pub mod telegram;
 pub mod token;
 pub mod treasury;
 pub mod user;

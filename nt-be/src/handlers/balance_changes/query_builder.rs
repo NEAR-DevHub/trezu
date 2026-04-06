@@ -5,6 +5,24 @@ use chrono::{DateTime, Utc};
 pub const RELAYER_ACCOUNT: &str = "sponsor.trezu.near";
 
 const RELAYER_WHERE_CONDITION: &str = "counterparty != 'sponsor.trezu.near'";
+pub const FROM_ACCOUNT_EXPR: &str = "CASE \
+        WHEN amount > 0 THEN COALESCE( \
+            NULLIF( \
+                CASE \
+                    WHEN counterparty = 'STAKING_REWARD' AND token_id LIKE 'staking:%' \
+                        THEN substring(token_id FROM 9) \
+                    ELSE counterparty \
+                END, \
+                'UNKNOWN' \
+            ), \
+            signer_id \
+        ) \
+        ELSE account_id \
+    END";
+pub const TO_ACCOUNT_EXPR: &str = "CASE \
+        WHEN amount > 0 THEN account_id \
+        ELSE COALESCE(NULLIF(counterparty, 'UNKNOWN'), receiver_id) \
+    END";
 
 /// Common parameters for filtering balance changes
 #[derive(Debug, Clone)]
@@ -30,6 +48,15 @@ pub struct BalanceChangeFilters {
     // Amount Filtering
     pub min_amount: Option<f64>, // Absolute value, decimal-adjusted
     pub max_amount: Option<f64>, // Absolute value, decimal-adjusted
+
+    // Transaction hash search (partial match against any hash in transaction_hashes)
+    pub transaction_hash_query: Option<String>,
+
+    // "From" filter values (mapped to displayed "from" account logic)
+    pub from_accounts: Option<Vec<String>>,
+    pub from_accounts_not: Option<Vec<String>>,
+    pub to_accounts: Option<Vec<String>>,
+    pub to_accounts_not: Option<Vec<String>>,
 
     // Filter out tiny NEAR amounts (gas/storage noise) — used by recent activity only
     pub exclude_near_dust: bool,
@@ -109,10 +136,13 @@ pub fn build_where_conditions(filters: &BalanceChangeFilters) -> (Vec<String>, u
                     if filters.exclude_swaps_from_direction {
                         // Recent activity: exclude swaps (they have separate tab)
                         // For incoming (amount > 0), only check fulfillment_balance_change_id (the receive leg)
-                        type_conditions.push(format!(
-                            "(amount > 0 AND counterparty != 'STAKING_REWARD' AND NOT EXISTS (SELECT 1 FROM detected_swaps WHERE account_id = '{}' AND fulfillment_balance_change_id = balance_changes.id))",
-                            filters.account_id
-                        ));
+                        type_conditions.push(
+                            "(amount > 0 AND counterparty != 'STAKING_REWARD' \
+                             AND NOT EXISTS (SELECT 1 FROM detected_swaps \
+                                WHERE account_id = $1 \
+                                  AND fulfillment_balance_change_id = balance_changes.id))"
+                                .to_string(),
+                        );
                     } else {
                         // Export/API: include swaps in incoming
                         type_conditions
@@ -123,10 +153,12 @@ pub fn build_where_conditions(filters: &BalanceChangeFilters) -> (Vec<String>, u
                     if filters.exclude_swaps_from_direction {
                         // Recent activity: exclude swaps (they have separate tab)
                         // For outgoing (amount < 0), only check deposit_balance_change_id (the send leg)
-                        type_conditions.push(format!(
-                            "(amount < 0 AND NOT EXISTS (SELECT 1 FROM detected_swaps WHERE account_id = '{}' AND deposit_balance_change_id = balance_changes.id))",
-                            filters.account_id
-                        ));
+                        type_conditions.push(
+                            "(amount < 0 AND NOT EXISTS (SELECT 1 FROM detected_swaps \
+                                WHERE account_id = $1 \
+                                  AND deposit_balance_change_id = balance_changes.id))"
+                                .to_string(),
+                        );
                     } else {
                         // Export/API: include swaps in outgoing
                         type_conditions.push("amount < 0".to_string());
@@ -137,10 +169,13 @@ pub fn build_where_conditions(filters: &BalanceChangeFilters) -> (Vec<String>, u
                 }
                 "exchange" => {
                     // Check if this balance change is part of a detected swap
-                    type_conditions.push(format!(
-                        "EXISTS (SELECT 1 FROM detected_swaps WHERE account_id = '{}' AND (fulfillment_balance_change_id = balance_changes.id OR deposit_balance_change_id = balance_changes.id))",
-                        filters.account_id
-                    ));
+                    type_conditions.push(
+                        "EXISTS (SELECT 1 FROM detected_swaps \
+                            WHERE account_id = $1 \
+                              AND (fulfillment_balance_change_id = balance_changes.id \
+                                   OR deposit_balance_change_id = balance_changes.id))"
+                            .to_string(),
+                    );
                 }
                 _ => {} // Invalid - ignore
             }
@@ -149,6 +184,19 @@ pub fn build_where_conditions(filters: &BalanceChangeFilters) -> (Vec<String>, u
         if !type_conditions.is_empty() {
             conditions.push(format!("({})", type_conditions.join(" OR ")));
         }
+    }
+
+    // Exclude native NEAR "proposal-deposit-" entries from recent-activity.
+    // These are NEAR→wNEAR conversion side-effects, not the actual swap deposit.
+    if filters.exclude_swaps_from_direction {
+        conditions.push(
+            "NOT (balance_changes.token_id = 'near' \
+                AND EXISTS (SELECT 1 FROM detected_swaps \
+                    WHERE account_id = $1 \
+                      AND deposit_balance_change_id = balance_changes.id \
+                      AND solver_transaction_hash LIKE 'proposal-deposit-%'))"
+                .to_string(),
+        );
     }
 
     // Min Amount Filter (absolute value, decimal-adjusted)
@@ -160,6 +208,41 @@ pub fn build_where_conditions(filters: &BalanceChangeFilters) -> (Vec<String>, u
     // Max Amount Filter (absolute value, decimal-adjusted)
     if filters.max_amount.is_some() {
         conditions.push(format!("ABS(amount) <= ${}", param_index));
+        param_index += 1;
+    }
+
+    // Transaction hash query (partial match)
+    if filters.transaction_hash_query.is_some() {
+        conditions.push(format!(
+            "EXISTS (SELECT 1 FROM unnest(transaction_hashes) AS tx_hash WHERE tx_hash ILIKE ${})",
+            param_index
+        ));
+        param_index += 1;
+    }
+
+    // "From" filter:
+    // - Incoming rows: counterparty (unless UNKNOWN), fallback to signer_id
+    // - Outgoing rows: account_id (DAO)
+    if filters.from_accounts.is_some() {
+        conditions.push(format!("({}) = ANY(${})", FROM_ACCOUNT_EXPR, param_index));
+        param_index += 1;
+    }
+    if filters.from_accounts_not.is_some() {
+        conditions.push(format!(
+            "(({}) IS NULL OR NOT (({}) = ANY(${})))",
+            FROM_ACCOUNT_EXPR, FROM_ACCOUNT_EXPR, param_index
+        ));
+        param_index += 1;
+    }
+    if filters.to_accounts.is_some() {
+        conditions.push(format!("({}) = ANY(${})", TO_ACCOUNT_EXPR, param_index));
+        param_index += 1;
+    }
+    if filters.to_accounts_not.is_some() {
+        conditions.push(format!(
+            "(({}) IS NULL OR NOT (({}) = ANY(${})))",
+            TO_ACCOUNT_EXPR, TO_ACCOUNT_EXPR, param_index
+        ));
         param_index += 1;
     }
 
@@ -225,6 +308,11 @@ mod tests {
             transaction_types: None,
             min_amount: None,
             max_amount: None,
+            transaction_hash_query: None,
+            from_accounts: None,
+            from_accounts_not: None,
+            to_accounts: None,
+            to_accounts_not: None,
             exclude_near_dust: false,
             exclude_swaps_from_direction: false,
         };
@@ -247,6 +335,11 @@ mod tests {
             transaction_types: Some(vec!["outgoing".to_string()]),
             min_amount: None,
             max_amount: None,
+            transaction_hash_query: None,
+            from_accounts: None,
+            from_accounts_not: None,
+            to_accounts: None,
+            to_accounts_not: None,
             exclude_near_dust: false,
             exclude_swaps_from_direction: false,
         };

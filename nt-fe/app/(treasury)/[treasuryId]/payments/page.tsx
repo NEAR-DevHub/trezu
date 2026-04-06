@@ -1,55 +1,69 @@
 "use client";
 
-import { PageCard } from "@/components/card";
-import { PageComponentLayout } from "@/components/page-component-layout";
-import { useForm, useFormContext } from "react-hook-form";
-import { Form, FormField } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { ConnectorAction } from "@hot-labs/near-connect";
+import { ArrowDownToLine, Info } from "lucide-react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useForm, useFormContext, useWatch } from "react-hook-form";
+import { useDebounce } from "use-debounce";
 import { z } from "zod";
+import { AmountSummary } from "@/components/amount-summary";
+import { Button } from "@/components/button";
+import { PageCard } from "@/components/card";
+import { CreateRequestButton } from "@/components/create-request-button";
+import { PageComponentLayout } from "@/components/page-component-layout";
+import { PendingButton } from "@/components/pending-button";
 import {
     ReviewStep,
+    type StepProps,
     StepperHeader,
-    StepProps,
     StepWizard,
 } from "@/components/step-wizard";
+import { Textarea } from "@/components/textarea";
+import { Tooltip } from "@/components/tooltip";
+import { type Token, tokenSchema } from "@/components/token-input";
+import { Form, FormField } from "@/components/ui/form";
+import { NEAR_TOKEN } from "@/constants/token";
+import { useAddressBook } from "@/features/address-book";
+import {
+    PAGE_TOUR_NAMES,
+    PAGE_TOUR_STORAGE_KEYS,
+    useManualPageTour,
+    usePageTour,
+} from "@/features/onboarding/steps/page-tours";
+import { type BridgeAsset, useBridgeTokens } from "@/hooks/use-bridge-tokens";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { useTreasury } from "@/hooks/use-treasury";
 import {
     useStorageDepositIsRegistered,
     useToken,
     useTreasuryPolicy,
 } from "@/hooks/use-treasury-queries";
-import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { Textarea } from "@/components/textarea";
-import { useTreasury } from "@/hooks/use-treasury";
-import { useNear } from "@/stores/near-store";
-import { encodeToMarkdown, formatCurrency, jsonToBase64 } from "@/lib/utils";
-import Big from "@/lib/big";
-import { ConnectorAction } from "@hot-labs/near-connect";
-import { NEAR_TOKEN } from "@/constants/token";
-import { AmountSummary } from "@/components/amount-summary";
-import { FunctionCallKind, TransferKind } from "@/lib/proposals-api";
-import { CreateRequestButton } from "@/components/create-request-button";
-import { PendingButton } from "@/components/pending-button";
-import {
-    usePageTour,
-    useManualPageTour,
-    PAGE_TOUR_NAMES,
-    PAGE_TOUR_STORAGE_KEYS,
-} from "@/features/onboarding/steps/page-tours";
-import { Button } from "@/components/button";
-import { ArrowDownToLine } from "lucide-react";
-import Link from "next/link";
-import { useMediaQuery } from "@/hooks/use-media-query";
+import { useIntentsWithdrawalFee } from "@/hooks/use-intents-withdrawal-fee";
 import { trackEvent } from "@/lib/analytics";
+import Big from "@/lib/big";
+import { getBlockchainType } from "@/lib/blockchain-utils";
+import { useNear } from "@/stores/near-store";
+import { buildIntentsTransferProposal } from "../exchange/utils/proposal-builder";
 import { PaymentFormSection } from "./components/payment-form-section";
-import { tokenSchema } from "@/components/token-input";
+import { Address } from "@/components/address";
+import { useQuery } from "@tanstack/react-query";
+import { getIntentsQuote, IntentsQuoteResponse } from "@/lib/api";
+import { cn, encodeToMarkdown, formatCurrency, nanosToMs } from "@/lib/utils";
+import {
+    getNetworkFeeCoverageErrorMessage,
+    NETWORK_FEE_TOOLTIP_TEXT,
+} from "@/lib/intents-fee";
+import { FunctionCallKind, TransferKind } from "@/lib/proposals-api";
 
 const paymentFormSchema = z
     .object({
         address: z
             .string()
             .min(2, "Recipient should be at least 2 characters")
-            .max(64, "Recipient must be less than 64 characters"),
+            .max(128, "Recipient must be less than 128 characters"),
         amount: z
             .string()
             .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
@@ -69,7 +83,18 @@ const paymentFormSchema = z
         }
     });
 
-function Step1({ handleNext }: StepProps) {
+interface Step1Props extends StepProps {
+    feeErrorMessage?: string | null;
+    isFeeLoading?: boolean;
+    quoteErrorMessage?: string | null;
+}
+
+function Step1({
+    handleNext,
+    feeErrorMessage,
+    isFeeLoading,
+    quoteErrorMessage,
+}: Step1Props) {
     const form = useFormContext<PaymentFormValues>();
     const { treasuryId } = useTreasury();
     const isMobile = useMediaQuery("(max-width: 768px)");
@@ -102,7 +127,7 @@ function Step1({ handleNext }: StepProps) {
                             className="flex items-center gap-2 border-2"
                             id="payments-bulk-btn"
                             onClick={() => {
-                                trackEvent("bulk_payments_click", {
+                                trackEvent("bulk-payments-click", {
                                     source: "payments_page",
                                     treasury_id: treasuryId ?? "",
                                 });
@@ -126,14 +151,35 @@ function Step1({ handleNext }: StepProps) {
                 amountName="amount"
                 tokenName="token"
                 recipientName="address"
+                feeErrorMessage={feeErrorMessage || quoteErrorMessage}
                 saveButtonText={saveButtonText}
                 onSave={handleSave}
+                isSubmitting={isFeeLoading}
             />
         </PageCard>
     );
 }
 
-function Step2({ handleBack }: StepProps) {
+interface Step2Props extends StepProps {
+    networkFee?: string | null;
+    showFeeBreakdown: boolean;
+    liveQuote?: IntentsQuoteResponse | null;
+    isLoadingLiveQuote?: boolean;
+    isFetchingLiveQuote?: boolean;
+    hasLiveQuoteError?: boolean;
+    liveQuoteErrorMessage?: string | null;
+}
+
+function Step2({
+    handleBack,
+    networkFee,
+    showFeeBreakdown,
+    liveQuote,
+    isLoadingLiveQuote,
+    isFetchingLiveQuote,
+    hasLiveQuoteError,
+    liveQuoteErrorMessage,
+}: Step2Props) {
     const form = useFormContext<PaymentFormValues>();
     const token = form.watch("token");
     const address = form.watch("address");
@@ -141,8 +187,14 @@ function Step2({ handleBack }: StepProps) {
     const { data: storageDepositData } = useStorageDepositIsRegistered(
         address,
         token.address,
+        token.residency === "Ft",
     );
     const { data: tokenData } = useToken(token.address);
+    const { data: addressBook = [] } = useAddressBook();
+    const contactName = addressBook.find(
+        (e) => e.address.toLowerCase() === address?.toLowerCase(),
+    )?.name;
+    const isSelectedTokenIntents = isIntentsToken(token);
 
     useEffect(() => {
         if (storageDepositData !== undefined) {
@@ -150,10 +202,28 @@ function Step2({ handleBack }: StepProps) {
         }
     }, [storageDepositData, form]);
 
-    const estimatedUSDValue =
-        !!amount && !!tokenData?.price
-            ? Big(amount).mul(tokenData.price)
-            : Big(0);
+    useEffect(() => {
+        if (liveQuote) {
+            form.setValue("proposalData" as any, liveQuote, {
+                shouldValidate: false,
+            });
+        }
+    }, [form, liveQuote]);
+
+    const totalAmountWithFees = Big(amount || "0");
+    const recipientAmountRaw =
+        showFeeBreakdown && networkFee
+            ? Big(amount || "0").minus(networkFee)
+            : Big(amount || "0");
+    const recipientAmount = recipientAmountRaw.lt(0)
+        ? Big(0)
+        : recipientAmountRaw;
+    const estimatedUSDValue = !!tokenData?.price
+        ? totalAmountWithFees.mul(tokenData.price)
+        : Big(0);
+    const recipientEstimatedUSDValue = !!tokenData?.price
+        ? recipientAmount.mul(tokenData.price)
+        : Big(0);
 
     return (
         <PageCard>
@@ -162,7 +232,7 @@ function Step2({ handleBack }: StepProps) {
                 handleBack={handleBack}
             >
                 <AmountSummary
-                    total={amount}
+                    total={totalAmountWithFees}
                     totalUSD={estimatedUSDValue.toNumber()}
                     token={token}
                     showNetworkIcon={true}
@@ -170,11 +240,24 @@ function Step2({ handleBack }: StepProps) {
                     <p>to 1 recipient</p>
                 </AmountSummary>
                 <div className="flex flex-col gap-2">
-                    <p className="font-semibold">Recipient</p>
                     <div className="flex flex-col gap-1 w-full">
-                        <div className="flex justify-between items-center gap-2 w-full text-xs ">
-                            <p className=" font-semibold">{address}</p>
-                            <div className="flex items-center gap-5">
+                        <div className="flex justify-between items-center gap-2 w-full text-xs">
+                            <div className="flex flex-col gap-0.5 min-w-0">
+                                {contactName && (
+                                    <p className="font-semibold">
+                                        {contactName}
+                                    </p>
+                                )}
+                                <Address
+                                    address={address}
+                                    className={cn(
+                                        contactName
+                                            ? "text-muted-foreground"
+                                            : "font-semibold",
+                                    )}
+                                />
+                            </div>
+                            <div className="flex items-center gap-5 min-w-fit">
                                 <img
                                     src={token.icon}
                                     alt={token.symbol}
@@ -182,14 +265,37 @@ function Step2({ handleBack }: StepProps) {
                                 />
                                 <div className="flex flex-col gap-[3px] items-end">
                                     <p className="text-xs font-semibold text-wrap break-all">
-                                        {amount} {token.symbol}
+                                        {recipientAmount.toString()}{" "}
+                                        {token.symbol}
                                     </p>
                                     <p className="text-xxs text-muted-foreground text-wrap break-all">
-                                        ≈ {formatCurrency(estimatedUSDValue)}
+                                        ≈{" "}
+                                        {formatCurrency(
+                                            recipientEstimatedUSDValue,
+                                        )}
                                     </p>
                                 </div>
                             </div>
                         </div>
+                        {showFeeBreakdown && networkFee && (
+                            <div className="flex items-center justify-between gap-2 text-sm my-3">
+                                <div className="flex items-center gap-1 text-muted-foreground">
+                                    <p>Network Fee</p>
+                                    <Tooltip
+                                        content={NETWORK_FEE_TOOLTIP_TEXT}
+                                        side="top"
+                                    >
+                                        <Info
+                                            className="size-3 shrink-0"
+                                            aria-label="Network fee info"
+                                        />
+                                    </Tooltip>
+                                </div>
+                                <p>
+                                    {networkFee} {token.symbol}
+                                </p>
+                            </div>
+                        )}
                         <FormField
                             control={form.control}
                             name="memo"
@@ -217,7 +323,23 @@ function Step2({ handleBack }: StepProps) {
                         { kind: "transfer", action: "AddProposal" },
                         { kind: "call", action: "AddProposal" },
                     ]}
-                    idleMessage="Confirm and Submit Request"
+                    idleMessage={
+                        isSelectedTokenIntents
+                            ? hasLiveQuoteError
+                                ? liveQuoteErrorMessage ||
+                                  "Failed to prepare 1Click transfer route"
+                                : isLoadingLiveQuote || isFetchingLiveQuote
+                                  ? "Preparing 1Click transfer route..."
+                                  : "Confirm and Submit Request"
+                            : "Confirm and Submit Request"
+                    }
+                    disabled={
+                        isSelectedTokenIntents &&
+                        (isLoadingLiveQuote ||
+                            isFetchingLiveQuote ||
+                            hasLiveQuoteError ||
+                            !liveQuote)
+                    }
                 />
             </div>
         </PageCard>
@@ -226,41 +348,139 @@ function Step2({ handleBack }: StepProps) {
 
 type PaymentFormValues = z.infer<typeof paymentFormSchema>;
 
-const buildIntentProposal = (
+const STABLE_TOKEN_PRIORITY: Record<string, number> = {
+    USDC: 2,
+    USDT: 1,
+};
+
+function getNetworkMatchScore(
+    tokenNetwork: string,
+    preferredNetworks: string[],
+): number {
+    const normalizedTokenNetwork = tokenNetwork.trim().toLowerCase();
+    const tokenBlockchain = getBlockchainType(normalizedTokenNetwork);
+    let bestScore = 0;
+
+    preferredNetworks.forEach((preferredNetwork, index) => {
+        const normalizedPreferredNetwork = preferredNetwork
+            .trim()
+            .toLowerCase();
+
+        if (normalizedPreferredNetwork === normalizedTokenNetwork) {
+            bestScore = Math.max(bestScore, 200 - index);
+            return;
+        }
+
+        const preferredBlockchain = getBlockchainType(
+            normalizedPreferredNetwork,
+        );
+
+        if (
+            preferredBlockchain !== "unknown" &&
+            preferredBlockchain === tokenBlockchain
+        ) {
+            bestScore = Math.max(bestScore, 100 - index);
+        }
+    });
+
+    return bestScore;
+}
+
+function pickCompatibleFallbackToken(
+    preferredNetworks: string[],
+    bridgeAssets: BridgeAsset[],
+): Token | null {
+    let bestCandidate: { score: number; token: Token } | null = null;
+
+    for (const asset of bridgeAssets) {
+        for (const network of asset.networks) {
+            const networkScore = getNetworkMatchScore(
+                network.name,
+                preferredNetworks,
+            );
+
+            if (networkScore === 0) {
+                continue;
+            }
+
+            const stablePriority =
+                STABLE_TOKEN_PRIORITY[network.symbol.toUpperCase()] ?? 0;
+            const candidateScore = networkScore * 10 + stablePriority;
+            const candidate: Token = {
+                address: network.id,
+                symbol: network.symbol,
+                decimals: network.decimals,
+                name: asset.name,
+                icon: asset.icon,
+                network: network.name,
+                chainIcons: network.chainIcons ?? undefined,
+                residency: "Intents",
+                minWithdrawalAmount: network.minWithdrawalAmount,
+                minDepositAmount: network.minDepositAmount,
+            };
+
+            if (!bestCandidate || candidateScore > bestCandidate.score) {
+                bestCandidate = {
+                    score: candidateScore,
+                    token: candidate,
+                };
+            }
+        }
+    }
+
+    return bestCandidate?.token ?? null;
+}
+
+function buildIntentTransferDescription(
+    data: PaymentFormValues,
+    quote: Awaited<ReturnType<typeof getIntentsQuote>>,
+): string {
+    const notes = [data.memo?.trim()].filter(Boolean).join(" ");
+
+    return encodeToMarkdown({
+        proposal_action: "payment-transfer",
+        notes,
+        recipient: data.address,
+        depositAddress: quote?.quote.depositAddress,
+        signature: quote?.signature,
+        timeEstimate: quote?.quote.timeEstimate
+            ? `${quote.quote.timeEstimate} seconds`
+            : undefined,
+    });
+}
+
+function isIntentsToken(token: Token): boolean {
+    return (
+        token.address.startsWith("nep141:") ||
+        token.address.startsWith("nep245:")
+    );
+}
+
+function buildIntentsPaymentQuoteRequest(
+    treasuryId: string,
     data: PaymentFormValues,
     parsedAmount: string,
-    gasForIntentAction: string,
-): FunctionCallKind => {
-    const isNetworkWithdrawal = data.token.network !== "near";
-    const tokenContract = data.token.address.replace("nep141:", "");
-
-    const ftWithdrawArgs = isNetworkWithdrawal
-        ? {
-              token: tokenContract,
-              receiver_id: tokenContract,
-              amount: parsedAmount,
-              memo: `WITHDRAW_TO:${data.address}`,
-          }
-        : {
-              token: tokenContract,
-              receiver_id: data.address,
-              amount: parsedAmount,
-          };
+    proposalPeriod?: string,
+) {
+    const deadlineMs = proposalPeriod
+        ? nanosToMs(proposalPeriod)
+        : 24 * 60 * 60 * 1000;
 
     return {
-        FunctionCall: {
-            receiver_id: "intents.near",
-            actions: [
-                {
-                    method_name: "ft_withdraw",
-                    args: jsonToBase64(ftWithdrawArgs),
-                    deposit: "1",
-                    gas: gasForIntentAction,
-                },
-            ],
-        },
+        swapType: "EXACT_INPUT",
+        slippageTolerance: 0,
+        originAsset: data.token.address,
+        depositType: "INTENTS" as const,
+        destinationAsset: data.token.address,
+        amount: parsedAmount,
+        refundTo: treasuryId,
+        refundType: "INTENTS" as const,
+        recipient: data.address,
+        recipientType: "DESTINATION_CHAIN" as const,
+        deadline: new Date(Date.now() + deadlineMs).toISOString(),
+        quoteWaitingTimeMs: 0,
     };
-};
+}
 
 const buildTransferProposal = (
     data: PaymentFormValues,
@@ -283,10 +503,27 @@ export default function PaymentsPage() {
     const { data: policy } = useTreasuryPolicy(treasuryId);
     const [step, setStep] = useState(0);
     const searchParams = useSearchParams();
+    const autoSelectedTokenKeyRef = useRef<string | null>(null);
+
+    const tokenParam = searchParams.get("token");
+    const preferredNetworks = useMemo(
+        () =>
+            (searchParams.get("networks") ?? searchParams.get("network") ?? "")
+                .split(",")
+                .map((network) => network.trim())
+                .filter(Boolean),
+        [searchParams],
+    );
+    const autoSelectionKey = useMemo(
+        () => preferredNetworks.join(","),
+        [preferredNetworks],
+    );
+    const { data: bridgeAssets = [] } = useBridgeTokens(
+        !tokenParam && preferredNetworks.length > 0,
+    );
 
     // Parse token from query params
     const defaultToken = useMemo(() => {
-        const tokenParam = searchParams.get("token");
         if (tokenParam) {
             try {
                 return JSON.parse(decodeURIComponent(tokenParam));
@@ -295,6 +532,19 @@ export default function PaymentsPage() {
             }
         }
         return NEAR_TOKEN;
+    }, [tokenParam]);
+
+    const compatibleDefaultToken = useMemo(() => {
+        if (tokenParam || preferredNetworks.length === 0) {
+            return null;
+        }
+
+        return pickCompatibleFallbackToken(preferredNetworks, bridgeAssets);
+    }, [bridgeAssets, preferredNetworks, tokenParam]);
+
+    const defaultAddress = useMemo(() => {
+        const addressParam = searchParams.get("address");
+        return addressParam ? decodeURIComponent(addressParam) : "";
     }, [searchParams]);
 
     // Onboarding tours
@@ -310,34 +560,175 @@ export default function PaymentsPage() {
     const form = useForm<PaymentFormValues>({
         resolver: zodResolver(paymentFormSchema),
         defaultValues: {
-            address: "",
+            address: defaultAddress,
             amount: "",
             memo: "",
             token: defaultToken,
         },
     });
+    const [watchedToken, watchedAmount, watchedAddress] = useWatch({
+        control: form.control,
+        name: ["token", "amount", "address"],
+    }) as [PaymentFormValues["token"], string, string];
+    const [debouncedAddress] = useDebounce(watchedAddress, 300);
+    const {
+        data: intentsFeeData,
+        isIntentsCrossChainToken,
+        isLoading: isIntentsFeeLoading,
+    } = useIntentsWithdrawalFee({
+        token: watchedToken,
+        destinationAddress: debouncedAddress,
+    });
 
-    // Update token when query param changes
+    const feeErrorMessage = useMemo(() => {
+        if (
+            !isIntentsCrossChainToken ||
+            !watchedAmount ||
+            isNaN(Number(watchedAmount)) ||
+            Number(watchedAmount) <= 0 ||
+            isIntentsFeeLoading ||
+            !intentsFeeData
+        ) {
+            return null;
+        }
+
+        return getNetworkFeeCoverageErrorMessage({
+            amount: watchedAmount,
+            networkFee: Big(intentsFeeData.networkFee),
+            decimals: watchedToken.decimals,
+            symbol: watchedToken.symbol,
+        });
+    }, [
+        intentsFeeData,
+        isIntentsCrossChainToken,
+        isIntentsFeeLoading,
+        watchedAmount,
+        watchedToken?.decimals,
+        watchedToken?.symbol,
+    ]);
+
+    const isSelectedTokenIntents = isIntentsToken(watchedToken);
+    const parsedAmount = useMemo(() => {
+        if (!watchedAmount || Number(watchedAmount) <= 0) {
+            return null;
+        }
+
+        return Big(watchedAmount)
+            .mul(Big(10).pow(watchedToken.decimals))
+            .toFixed();
+    }, [watchedAmount, watchedToken.decimals]);
+
+    const {
+        data: liveQuote,
+        isLoading: isLoadingLiveQuote,
+        isFetching: isFetchingLiveQuote,
+        isError: hasLiveQuoteError,
+        error: liveQuoteError,
+    } = useQuery({
+        queryKey: [
+            "paymentLiveQuote",
+            treasuryId,
+            watchedToken.address,
+            watchedAmount,
+            debouncedAddress,
+        ],
+        queryFn: async (): Promise<IntentsQuoteResponse | null> => {
+            if (!treasuryId || !parsedAmount) {
+                return null;
+            }
+
+            return getIntentsQuote(
+                buildIntentsPaymentQuoteRequest(
+                    treasuryId,
+                    form.getValues(),
+                    parsedAmount,
+                    policy?.proposal_period,
+                ),
+                false,
+            );
+        },
+        enabled:
+            isSelectedTokenIntents &&
+            !!treasuryId &&
+            !!debouncedAddress &&
+            !!parsedAmount &&
+            !!policy?.proposal_period,
+        refetchOnWindowFocus: false,
+        retry: false,
+    });
+
+    const liveQuoteErrorMessage = useMemo(() => {
+        if (!hasLiveQuoteError || !liveQuoteError) return null;
+        const message =
+            liveQuoteError instanceof Error
+                ? liveQuoteError.message
+                : "Failed to prepare 1Click transfer route";
+
+        // Convert raw amount in "at least <raw>" pattern to human-readable format
+        // e.g. "Amount is too low for bridge, try at least 432" → "...at least 0.000433 USDC"
+        // Bump by 1 because the API returns an exclusive minimum
+        return message.replace(/at least (\d+)/i, (_, rawAmount) => {
+            try {
+                const formatted = Big(rawAmount)
+                    .plus(1)
+                    .div(Big(10).pow(watchedToken.decimals))
+                    .toFixed()
+                    .replace(/\.?0+$/, "");
+                return `at least ${formatted} ${watchedToken.symbol}`;
+            } catch {
+                return `at least ${rawAmount}`;
+            }
+        });
+    }, [
+        hasLiveQuoteError,
+        liveQuoteError,
+        watchedToken.decimals,
+        watchedToken.symbol,
+    ]);
+
+    // Update token/address when query params change
     useEffect(() => {
         form.setValue("token", defaultToken);
     }, [defaultToken, form]);
 
+    useEffect(() => {
+        if (defaultAddress) {
+            form.setValue("address", defaultAddress);
+        }
+    }, [defaultAddress, form]);
+
+    useEffect(() => {
+        if (!compatibleDefaultToken || tokenParam) {
+            return;
+        }
+
+        const currentToken = form.getValues("token");
+        const isStillDefaultNearToken =
+            currentToken?.address === NEAR_TOKEN.address &&
+            currentToken?.network === NEAR_TOKEN.network;
+
+        if (
+            !isStillDefaultNearToken ||
+            autoSelectedTokenKeyRef.current === autoSelectionKey
+        ) {
+            return;
+        }
+
+        form.setValue("token", compatibleDefaultToken);
+        autoSelectedTokenKeyRef.current = autoSelectionKey;
+    }, [autoSelectionKey, compatibleDefaultToken, form, tokenParam]);
+
     const onSubmit = async (data: PaymentFormValues) => {
         try {
             const isNEAR = data.token.symbol === "NEAR";
-            const description = {
-                notes: data.memo || "",
-            };
             const proposalBond = policy?.proposal_bond || "0";
-            const gas = "270000000000000";
-            const gasForIntentAction = Big(30).mul(Big(10).pow(12)).toFixed(); // 30 Tgas for ft_withdraw
+            const gas = Big(255).mul(Big(10).pow(12)).toFixed(); // 255 Tgas for storage_deposit
 
             const additionalTransactions: Array<{
                 receiverId: string;
                 actions: ConnectorAction[];
             }> = [];
-            const isSelectedTokenIntents =
-                data.token.address.startsWith("nep141:");
+            const isSelectedTokenIntents = isIntentsToken(data.token);
 
             const needsStorageDeposit =
                 !data.isRegistered && !isNEAR && !isSelectedTokenIntents;
@@ -369,14 +760,45 @@ export default function PaymentsPage() {
                 .mul(Big(10).pow(data.token.decimals))
                 .toFixed();
 
-            const proposalKind = isSelectedTokenIntents
-                ? buildIntentProposal(data, parsedAmount, gasForIntentAction)
-                : buildTransferProposal(data, parsedAmount);
+            let description = encodeToMarkdown({
+                notes: data.memo || "",
+            });
+            let proposalKind: FunctionCallKind | TransferKind;
+
+            if (isSelectedTokenIntents) {
+                const cachedQuote = form.getValues(
+                    "proposalData" as any,
+                ) as IntentsQuoteResponse | null;
+                const quote =
+                    cachedQuote ??
+                    (await getIntentsQuote(
+                        buildIntentsPaymentQuoteRequest(
+                            treasuryId!,
+                            data,
+                            parsedAmount,
+                            policy?.proposal_period,
+                        ),
+                        false,
+                    ));
+
+                if (!quote) {
+                    throw new Error("Failed to create 1Click transfer quote");
+                }
+
+                description = buildIntentTransferDescription(data, quote);
+                proposalKind = buildIntentsTransferProposal(
+                    data.token.address,
+                    quote.quote.depositAddress,
+                    quote.quote.amountIn,
+                );
+            } else {
+                proposalKind = buildTransferProposal(data, parsedAmount);
+            }
 
             await createProposal("Request to send payment submitted", {
                 treasuryId: treasuryId!,
                 proposal: {
-                    description: encodeToMarkdown(description),
+                    description,
                     kind: proposalKind,
                 },
                 proposalBond,
@@ -384,6 +806,11 @@ export default function PaymentsPage() {
                 proposalType: "payment",
             })
                 .then(() => {
+                    trackEvent("payment-submitted", {
+                        treasury_id: treasuryId ?? "",
+                        token_symbol: data.token.symbol,
+                        amount: data.amount,
+                    });
                     form.reset();
                     setStep(0);
                     triggerPendingTour();
@@ -395,6 +822,46 @@ export default function PaymentsPage() {
             console.error("Payments error", error);
         }
     };
+
+    const steps = useMemo(
+        () => [
+            {
+                component: Step1,
+                props: {
+                    feeErrorMessage,
+                    isFeeLoading: isIntentsFeeLoading,
+                    quoteErrorMessage: liveQuoteErrorMessage?.includes(
+                        "at least",
+                    )
+                        ? liveQuoteErrorMessage
+                        : null,
+                },
+            },
+            {
+                component: Step2,
+                props: {
+                    showFeeBreakdown: isIntentsCrossChainToken,
+                    networkFee: intentsFeeData?.networkFee,
+                    liveQuote,
+                    isLoadingLiveQuote,
+                    isFetchingLiveQuote,
+                    hasLiveQuoteError,
+                    liveQuoteErrorMessage,
+                },
+            },
+        ],
+        [
+            feeErrorMessage,
+            isIntentsFeeLoading,
+            isIntentsCrossChainToken,
+            intentsFeeData?.networkFee,
+            liveQuote,
+            isLoadingLiveQuote,
+            isFetchingLiveQuote,
+            hasLiveQuoteError,
+            liveQuoteErrorMessage,
+        ],
+    );
 
     return (
         <PageComponentLayout
@@ -409,14 +876,7 @@ export default function PaymentsPage() {
                     <StepWizard
                         step={step}
                         onStepChange={setStep}
-                        steps={[
-                            {
-                                component: Step1,
-                            },
-                            {
-                                component: Step2,
-                            },
-                        ]}
+                        steps={steps}
                     />
                 </form>
             </Form>

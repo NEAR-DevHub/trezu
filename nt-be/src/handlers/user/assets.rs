@@ -33,6 +33,20 @@ pub enum Balance {
     Vested(LockupBalance),
 }
 
+impl Balance {
+    pub fn total_raw(&self) -> U128 {
+        match self {
+            Balance::Standard { total, .. } => total.parse::<u128>().unwrap_or(0).into(),
+            Balance::Staked(staking) => staking
+                .staked_balance
+                .saturating_add(staking.unstaked_balance)
+                .as_yoctonear()
+                .into(),
+            Balance::Vested(lockup) => lockup.total.as_yoctonear().into(),
+        }
+    }
+}
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UserAssetsQuery {
@@ -315,252 +329,255 @@ pub async fn fetch_near_balance(
         })
 }
 
+pub async fn compute_user_assets(
+    state: &Arc<AppState>,
+    account: &AccountId,
+) -> Result<Vec<SimplifiedToken>, (StatusCode, String)> {
+    // Fetch REF Finance data
+    let ref_data_future = async {
+        let tokens_future = fetch_whitelisted_tokens(state);
+        let balances_future = fetch_user_balances(state, account);
+        let near_balance = fetch_near_balance(state, account);
+        let lockup_balance = fetch_lockup_balance_of_account(state, account);
+        let staking_balance = fetch_staking_balances(state, account);
+
+        tokio::try_join!(
+            tokens_future,
+            balances_future,
+            near_balance,
+            lockup_balance,
+            staking_balance
+        )
+    };
+
+    // Fetch intents balances
+    let intents_data_future = async {
+        let owned_token_ids = fetch_intents_owned_tokens(state, account).await?;
+        if owned_token_ids.is_empty() {
+            return Ok::<_, (StatusCode, String)>(Vec::new());
+        }
+
+        let balances = fetch_intents_balances(state, account, &owned_token_ids).await?;
+
+        // Filter to only tokens with non-zero balances
+        let tokens_with_balances: Vec<(String, String)> = owned_token_ids
+            .into_iter()
+            .zip(balances.into_iter())
+            .filter(|(_, balance)| balance.parse::<u128>().unwrap_or(0) > 0)
+            .collect();
+
+        Ok(tokens_with_balances)
+    };
+
+    // Fetch all data concurrently
+    let (ref_data_result, intents_data_result) = tokio::join!(ref_data_future, intents_data_future);
+
+    // Get whitelisted tokens and user balances
+    let (whitelist_set, user_balances, near_balance, lockup_balance, staking_balance) =
+        ref_data_result?;
+
+    // Get intents balances (already filtered to non-zero)
+    let intents_balances = intents_data_result.unwrap_or_else(|e| {
+        eprintln!("Warning: Failed to fetch intents tokens: {:?}", e);
+        Vec::new()
+    });
+
+    // Build balance map and filter REF Finance tokens to only those with positive balances
+    let balance_map = build_balance_map(&user_balances);
+    let ref_tokens_with_balances: Vec<(String, U128)> = whitelist_set
+        .into_iter()
+        .filter_map(|token_id| {
+            let balance = balance_map
+                .get(&token_id)
+                .cloned()
+                .unwrap_or_else(|| U128::from(0));
+            if balance != U128::from(0) {
+                Some((token_id, balance))
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    let mut token_ids_to_fetch: Vec<String> = ref_tokens_with_balances
+        .iter()
+        .map(|(id, _)| id.clone())
+        .collect();
+    token_ids_to_fetch.extend(
+        intents_balances
+            .iter()
+            .map(|(id, _)| format!("intents.near:{}", id)),
+    );
+    token_ids_to_fetch.push("near".to_string());
+
+    // Fetch metadata for only tokens with positive balances in a single batch request
+    let metadata_map = if !token_ids_to_fetch.is_empty() {
+        fetch_tokens_with_defuse_extension(state, &token_ids_to_fetch).await
+    } else {
+        HashMap::new()
+    };
+
+    // Build a map keyed by defuse asset ID for O(1) lookups
+    // Find wrap.near metadata explicitly instead of assuming it's last
+    let near_token_meta = metadata_map.get("near").cloned().unwrap_or_else(|| {
+        eprintln!("[User Assets] Warning: wrap.near metadata not found, using fallback");
+        TokenMetadataResponse::create_near_metadata(None, None)
+    });
+
+    // Build simplified tokens for REF Finance tokens.
+    // REF token IDs are bare (e.g. "wrap.near"); metadata is keyed as "nep141:wrap.near".
+    let mut all_simplified_tokens: Vec<(SimplifiedToken, U128)> = ref_tokens_with_balances
+        .into_iter()
+        .filter_map(|(token_id, balance)| {
+            let token_meta = if token_id == "near" || token_id == "wrap.near" {
+                &near_token_meta
+            } else {
+                metadata_map.get(&token_id)?
+            };
+
+            let price = token_meta.price.unwrap_or(0.0).to_string();
+
+            let unified_id = find_token_by_symbol(&token_meta.symbol)
+                .map(|u| u.unified_asset_id)
+                .unwrap_or_else(|| token_meta.symbol.to_lowercase());
+
+            Some((
+                SimplifiedToken {
+                    id: unified_id,
+                    contract_id: Some(token_id),
+                    decimals: token_meta.decimals,
+                    balance: Balance::Standard {
+                        total: balance.0.to_string(),
+                        locked: "0".to_string(),
+                    },
+                    price,
+                    symbol: token_meta.symbol.clone(),
+                    name: token_meta.name.clone(),
+                    icon: token_meta.icon.clone(),
+                    network: "near".to_string(),
+                    residency: TokenResidency::Ft,
+                    chain_icons: token_meta.chain_icons.clone(),
+                    chain_name: token_meta
+                        .chain_name
+                        .clone()
+                        .unwrap_or_else(|| "Near Protocol".to_string()),
+                },
+                balance.clone(),
+            ))
+        })
+        .collect();
+
+    all_simplified_tokens.extend(build_intents_tokens(intents_balances, &metadata_map));
+
+    // Add lockup balance if exists
+    if let Some(lockup) = lockup_balance {
+        let total = lockup.total.as_yoctonear().into();
+        all_simplified_tokens.push((
+            SimplifiedToken {
+                id: "near".to_string(),
+                contract_id: None,
+                decimals: near_token_meta.decimals,
+                balance: Balance::Vested(lockup),
+                price: near_token_meta.price.unwrap_or(0.0).to_string(),
+                symbol: near_token_meta.symbol.clone(),
+                name: near_token_meta.name.clone(),
+                icon: near_token_meta.icon.clone(),
+                network: near_token_meta.network.clone().unwrap_or_default(),
+                residency: TokenResidency::Lockup,
+                chain_name: near_token_meta
+                    .chain_name
+                    .clone()
+                    .unwrap_or(near_token_meta.name.clone()),
+                chain_icons: near_token_meta.chain_icons.clone(),
+            },
+            total,
+        ));
+    }
+
+    // Add staking balance if exists
+    if let Some(staking) = staking_balance {
+        let total: U128 = staking
+            .staked_balance
+            .saturating_add(staking.unstaked_balance)
+            .as_yoctonear()
+            .into();
+        all_simplified_tokens.push((
+            SimplifiedToken {
+                id: "near".to_string(),
+                contract_id: None,
+                decimals: near_token_meta.decimals,
+                balance: Balance::Staked(staking),
+                price: near_token_meta.price.unwrap_or(0.0).to_string(),
+                symbol: near_token_meta.symbol.clone(),
+                name: near_token_meta.name.clone(),
+                icon: near_token_meta.icon.clone(),
+                network: near_token_meta.network.clone().unwrap_or_default(),
+                residency: TokenResidency::Staked,
+                chain_name: near_token_meta
+                    .chain_name
+                    .clone()
+                    .unwrap_or(near_token_meta.name.clone()),
+                chain_icons: near_token_meta.chain_icons.clone(),
+            },
+            total,
+        ));
+    }
+
+    all_simplified_tokens.push((
+        SimplifiedToken {
+            id: "near".to_string(),
+            contract_id: None,
+            decimals: near_token_meta.decimals,
+            balance: Balance::Standard {
+                total: near_balance.balance.0.to_string(),
+                locked: "0".to_string(),
+            },
+            price: near_token_meta.price.unwrap_or(0.0).to_string(),
+            symbol: near_token_meta.symbol.clone(),
+            name: near_token_meta.name.clone(),
+            icon: near_token_meta.icon.clone(),
+            network: near_token_meta.network.clone().unwrap_or_default(),
+            residency: TokenResidency::Near,
+            chain_name: near_token_meta
+                .chain_name
+                .clone()
+                .unwrap_or(near_token_meta.name.clone()),
+            chain_icons: near_token_meta.chain_icons.clone(),
+        },
+        near_balance.balance,
+    ));
+
+    // Sort combined list by balance (highest first)
+    all_simplified_tokens = all_simplified_tokens
+        .into_iter()
+        .filter(|(_, balance)| balance.0 > 0)
+        .collect::<Vec<(SimplifiedToken, U128)>>();
+    all_simplified_tokens.sort_by(|(_, a_balance), (_, b_balance)| {
+        b_balance
+            .0
+            .partial_cmp(&a_balance.0)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+
+    Ok(all_simplified_tokens
+        .into_iter()
+        .map(|(token, _)| token)
+        .collect())
+}
+
 pub async fn get_user_assets(
     State(state): State<Arc<AppState>>,
     Query(params): Query<UserAssetsQuery>,
 ) -> Result<Json<Vec<SimplifiedToken>>, (StatusCode, String)> {
     let account = params.account_id.clone();
-
     let cache_key = format!("{}-user-assets", account);
-
     let state_clone = state.clone();
+    let account_clone = account.clone();
+
     let all_simplified_tokens = state
         .cache
         .cached(CacheTier::ShortTerm, cache_key, async move {
-            // Fetch REF Finance data
-            let ref_data_future = async {
-                let tokens_future = fetch_whitelisted_tokens(&state_clone);
-                let balances_future = fetch_user_balances(&state_clone, &account);
-                let near_balance = fetch_near_balance(&state_clone, &account);
-                let lockup_balance = fetch_lockup_balance_of_account(&state_clone, &account);
-                let staking_balance = fetch_staking_balances(&state_clone, &account);
-
-                tokio::try_join!(
-                    tokens_future,
-                    balances_future,
-                    near_balance,
-                    lockup_balance,
-                    staking_balance
-                )
-            };
-
-            // Fetch intents balances
-            let intents_data_future = async {
-                let owned_token_ids = fetch_intents_owned_tokens(&state_clone, &account).await?;
-                if owned_token_ids.is_empty() {
-                    return Ok::<_, (StatusCode, String)>(Vec::new());
-                }
-
-                let balances =
-                    fetch_intents_balances(&state_clone, &account, &owned_token_ids).await?;
-
-                // Filter to only tokens with non-zero balances
-                let tokens_with_balances: Vec<(String, String)> = owned_token_ids
-                    .into_iter()
-                    .zip(balances.into_iter())
-                    .filter(|(_, balance)| balance.parse::<u128>().unwrap_or(0) > 0)
-                    .collect();
-
-                Ok(tokens_with_balances)
-            };
-
-            // Fetch all data concurrently
-            let (ref_data_result, intents_data_result) =
-                tokio::join!(ref_data_future, intents_data_future);
-
-            // Get whitelisted tokens and user balances
-            let (whitelist_set, user_balances, near_balance, lockup_balance, staking_balance) =
-                ref_data_result?;
-
-            // Get intents balances (already filtered to non-zero)
-            let intents_balances = intents_data_result.unwrap_or_else(|e| {
-                eprintln!("Warning: Failed to fetch intents tokens: {:?}", e);
-                Vec::new()
-            });
-
-            // Build balance map and filter REF Finance tokens to only those with positive balances
-            let balance_map = build_balance_map(&user_balances);
-            let ref_tokens_with_balances: Vec<(String, U128)> = whitelist_set
-                .into_iter()
-                .filter_map(|token_id| {
-                    let balance = balance_map
-                        .get(&token_id)
-                        .cloned()
-                        .unwrap_or_else(|| U128::from(0));
-                    if balance != U128::from(0) {
-                        Some((token_id, balance))
-                    } else {
-                        None
-                    }
-                })
-                .collect();
-
-            let mut token_ids_to_fetch: Vec<String> = ref_tokens_with_balances
-                .iter()
-                .map(|(id, _)| id.clone())
-                .collect();
-            token_ids_to_fetch.extend(
-                intents_balances
-                    .iter()
-                    .map(|(id, _)| format!("intents.near:{}", id)),
-            );
-            token_ids_to_fetch.push("near".to_string());
-
-            // Fetch metadata for only tokens with positive balances in a single batch request
-            let metadata_map = if !token_ids_to_fetch.is_empty() {
-                fetch_tokens_with_defuse_extension(&state_clone, &token_ids_to_fetch).await
-            } else {
-                HashMap::new()
-            };
-
-            // Build a map keyed by defuse asset ID for O(1) lookups
-            // Find wrap.near metadata explicitly instead of assuming it's last
-            let near_token_meta = metadata_map.get("near").cloned().unwrap_or_else(|| {
-                eprintln!("[User Assets] Warning: wrap.near metadata not found, using fallback");
-                TokenMetadataResponse::create_near_metadata(None, None)
-            });
-
-            // Build simplified tokens for REF Finance tokens.
-            // REF token IDs are bare (e.g. "wrap.near"); metadata is keyed as "nep141:wrap.near".
-            let mut all_simplified_tokens: Vec<(SimplifiedToken, U128)> = ref_tokens_with_balances
-                .into_iter()
-                .filter_map(|(token_id, balance)| {
-                    let token_meta = if token_id == "near" || token_id == "wrap.near" {
-                        &near_token_meta
-                    } else {
-                        metadata_map.get(&token_id)?
-                    };
-
-                    let price = token_meta.price.unwrap_or(0.0).to_string();
-
-                    let unified_id = find_token_by_symbol(&token_meta.symbol)
-                        .map(|u| u.unified_asset_id)
-                        .unwrap_or_else(|| token_meta.symbol.to_lowercase());
-
-                    Some((
-                        SimplifiedToken {
-                            id: unified_id,
-                            contract_id: Some(token_id),
-                            decimals: token_meta.decimals,
-                            balance: Balance::Standard {
-                                total: balance.0.to_string(),
-                                locked: "0".to_string(),
-                            },
-                            price,
-                            symbol: token_meta.symbol.clone(),
-                            name: token_meta.name.clone(),
-                            icon: token_meta.icon.clone(),
-                            network: "near".to_string(),
-                            residency: TokenResidency::Ft,
-                            chain_icons: token_meta.chain_icons.clone(),
-                            chain_name: token_meta
-                                .chain_name
-                                .clone()
-                                .unwrap_or_else(|| "Near Protocol".to_string()),
-                        },
-                        balance.clone(),
-                    ))
-                })
-                .collect();
-
-            all_simplified_tokens.extend(build_intents_tokens(intents_balances, &metadata_map));
-
-            // Add lockup balance if exists
-            if let Some(lockup) = lockup_balance {
-                let total = lockup.total.as_yoctonear().into();
-                all_simplified_tokens.push((
-                    SimplifiedToken {
-                        id: "near".to_string(),
-                        contract_id: None,
-                        decimals: near_token_meta.decimals,
-                        balance: Balance::Vested(lockup),
-                        price: near_token_meta.price.unwrap_or(0.0).to_string(),
-                        symbol: near_token_meta.symbol.clone(),
-                        name: near_token_meta.name.clone(),
-                        icon: near_token_meta.icon.clone(),
-                        network: near_token_meta.network.clone().unwrap_or_default(),
-                        residency: TokenResidency::Lockup,
-                        chain_name: near_token_meta
-                            .chain_name
-                            .clone()
-                            .unwrap_or(near_token_meta.name.clone()),
-                        chain_icons: near_token_meta.chain_icons.clone(),
-                    },
-                    total,
-                ));
-            }
-
-            // Add staking balance if exists
-            if let Some(staking) = staking_balance {
-                let total: U128 = staking
-                    .staked_balance
-                    .saturating_add(staking.unstaked_balance)
-                    .as_yoctonear()
-                    .into();
-                all_simplified_tokens.push((
-                    SimplifiedToken {
-                        id: "near".to_string(),
-                        contract_id: None,
-                        decimals: near_token_meta.decimals,
-                        balance: Balance::Staked(staking),
-                        price: near_token_meta.price.unwrap_or(0.0).to_string(),
-                        symbol: near_token_meta.symbol.clone(),
-                        name: near_token_meta.name.clone(),
-                        icon: near_token_meta.icon.clone(),
-                        network: near_token_meta.network.clone().unwrap_or_default(),
-                        residency: TokenResidency::Staked,
-                        chain_name: near_token_meta
-                            .chain_name
-                            .clone()
-                            .unwrap_or(near_token_meta.name.clone()),
-                        chain_icons: near_token_meta.chain_icons.clone(),
-                    },
-                    total,
-                ));
-            }
-
-            all_simplified_tokens.push((
-                SimplifiedToken {
-                    id: "near".to_string(),
-                    contract_id: None,
-                    decimals: near_token_meta.decimals,
-                    balance: Balance::Standard {
-                        total: near_balance.balance.0.to_string(),
-                        locked: "0".to_string(),
-                    },
-                    price: near_token_meta.price.unwrap_or(0.0).to_string(),
-                    symbol: near_token_meta.symbol.clone(),
-                    name: near_token_meta.name.clone(),
-                    icon: near_token_meta.icon.clone(),
-                    network: near_token_meta.network.clone().unwrap_or_default(),
-                    residency: TokenResidency::Near,
-                    chain_name: near_token_meta
-                        .chain_name
-                        .clone()
-                        .unwrap_or(near_token_meta.name.clone()),
-                    chain_icons: near_token_meta.chain_icons.clone(),
-                },
-                near_balance.balance,
-            ));
-
-            // Sort combined list by balance (highest first)
-            all_simplified_tokens = all_simplified_tokens
-                .into_iter()
-                .filter(|(_, balance)| balance.0 > 0)
-                .collect::<Vec<(SimplifiedToken, U128)>>();
-            all_simplified_tokens.sort_by(|(_, a_balance), (_, b_balance)| {
-                b_balance
-                    .0
-                    .partial_cmp(&a_balance.0)
-                    .unwrap_or(std::cmp::Ordering::Equal)
-            });
-
-            Ok::<_, (StatusCode, String)>(
-                all_simplified_tokens
-                    .into_iter()
-                    .map(|(token, _)| token)
-                    .collect(),
-            )
+            compute_user_assets(&state_clone, &account_clone).await
         })
         .await?;
 

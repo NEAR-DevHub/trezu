@@ -7,12 +7,19 @@ use near_api::Contract;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
-use crate::{AppState, utils::cache::CacheTier};
+use crate::{
+    AppState,
+    auth::OptionalAuthUser,
+    utils::cache::{CacheKey, CacheTier},
+};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProfileQuery {
     pub account_id: String,
+    /// When provided and the caller is an authenticated DAO member, the address
+    /// book name for this treasury will be returned as `addressBookName`.
+    pub dao_id: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -25,11 +32,13 @@ pub struct BatchProfileQuery {
 #[serde(rename_all = "camelCase")]
 pub struct ProfileData {
     pub name: Option<String>,
+    pub address_book_name: Option<String>,
     pub image: Option<serde_json::Value>,
     pub background_image: Option<String>,
     pub description: Option<String>,
     pub linktree: Option<serde_json::Value>,
     pub tags: Option<serde_json::Value>,
+    pub is_in_address_book: bool,
 }
 
 const SOCIAL_DB_CONTRACT: &str = "social.near";
@@ -61,6 +70,7 @@ async fn fetch_profile(state: &Arc<AppState>, account_id: &str) -> Result<Profil
             .get("name")
             .and_then(|v| v.as_str())
             .map(String::from),
+        address_book_name: None,
         image: profile.get("image").cloned(),
         background_image: profile
             .get("backgroundImage")
@@ -72,6 +82,7 @@ async fn fetch_profile(state: &Arc<AppState>, account_id: &str) -> Result<Profil
             .map(String::from),
         linktree: profile.get("linktree").cloned(),
         tags: profile.get("tags").cloned(),
+        is_in_address_book: false,
     };
 
     Ok(profile_data)
@@ -80,6 +91,7 @@ async fn fetch_profile(state: &Arc<AppState>, account_id: &str) -> Result<Profil
 /// Main handler for single profile endpoint
 pub async fn get_profile(
     State(state): State<Arc<AppState>>,
+    auth: OptionalAuthUser,
     Query(params): Query<ProfileQuery>,
 ) -> Result<Json<ProfileData>, (StatusCode, String)> {
     let account_id = params.account_id.trim().to_string();
@@ -91,10 +103,10 @@ pub async fn get_profile(
         ));
     }
 
-    let cache_key = format!("profile:{}", account_id);
+    let cache_key = CacheKey::new("profile").with(&account_id).build();
     let state_clone = state.clone();
 
-    let profile = state
+    let mut profile = state
         .cache
         .cached(CacheTier::LongTerm, cache_key, async move {
             fetch_profile(&state_clone, &account_id).await.map_err(|e| {
@@ -103,6 +115,29 @@ pub async fn get_profile(
             })
         })
         .await?;
+
+    // If the caller is authenticated and provided a dao_id, check whether the
+    // address has an address book entry in that treasury.
+    if let (Some(user), Some(dao_id)) = (auth.0, params.dao_id)
+        && user
+            .verify_dao_member(&state.db_pool, &dao_id)
+            .await
+            .is_ok()
+    {
+        let ab_name = sqlx::query_scalar!(
+            "SELECT name FROM address_book WHERE dao_id = $1 AND address = $2",
+            dao_id,
+            params.account_id.trim()
+        )
+        .fetch_optional(&state.db_pool)
+        .await
+        .unwrap_or(None);
+
+        if let Some(name) = ab_name {
+            profile.address_book_name = Some(name);
+            profile.is_in_address_book = true;
+        }
+    }
 
     Ok(Json(profile))
 }

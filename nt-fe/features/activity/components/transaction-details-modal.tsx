@@ -1,16 +1,25 @@
 "use client";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/modal";
-import { ArrowRight } from "lucide-react";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/modal";
+import { ChevronRight } from "lucide-react";
 import type { RecentActivity } from "@/lib/api";
 import { FormattedDate } from "@/components/formatted-date";
 import { CopyButton } from "@/components/copy-button";
-import { useReceiptSearch } from "@/hooks/use-receipt-search";
 import { InfoDisplay, InfoItem } from "@/components/info-display";
 import { AmountSummary } from "@/components/amount-summary";
-import { Skeleton } from "@/components/ui/skeleton";
-import { TokenAmountDisplay } from "@/components/token-display";
-import { getActivityLabel } from "../utils/history-utils";
+import { User } from "@/components/user";
+import {
+    getActivityLabel,
+    getFromAccount,
+    getToAccount,
+} from "../utils/history-utils";
+import { ExchangeSummaryCard } from "@/app/(treasury)/[treasuryId]/exchange/components/exchange-summary-card";
+import { formatSmartAmount } from "@/lib/utils";
 import { TransactionHashCell } from "./transaction-hash-cell";
 
 interface TransactionDetailsModalProps {
@@ -18,6 +27,43 @@ interface TransactionDetailsModalProps {
     treasuryId: string;
     isOpen: boolean;
     onClose: () => void;
+}
+
+function AccountValue({
+    value,
+    showCopy = true,
+    useAddressBook = false,
+}: {
+    value: string;
+    showCopy?: boolean;
+    useAddressBook?: boolean;
+}) {
+    const canRenderUser =
+        useAddressBook &&
+        value !== "via NEAR Intents" &&
+        value !== "—" &&
+        value !== "unknown" &&
+        value !== "UNKNOWN" &&
+        !value.includes(" ");
+
+    if (canRenderUser) {
+        return <User accountId={value} useAddressBook withHoverCard={true} />;
+    }
+
+    return (
+        <div className="flex items-center gap-1">
+            <span className="max-w-[300px] truncate">{value}</span>
+            {showCopy ? (
+                <CopyButton
+                    text={value}
+                    variant="ghost"
+                    size="icon-sm"
+                    tooltipContent="Copy Address"
+                    toastMessage="Address copied to clipboard"
+                />
+            ) : null}
+        </div>
+    );
 }
 
 export function TransactionDetailsModal({
@@ -28,12 +74,6 @@ export function TransactionDetailsModal({
 }: TransactionDetailsModalProps) {
     if (!activity) return null;
 
-    const needsReceiptSearch = !activity.transactionHashes?.length;
-    const { data: transactionFromReceipt, isLoading: isLoadingTransaction } =
-        useReceiptSearch(
-            needsReceiptSearch ? activity.receiptIds?.[0] : undefined,
-        );
-
     const isReceived = parseFloat(activity.amount) > 0;
     const isSwap = !!activity.swap;
     const isFunctionCall = activity.actionKind === "FunctionCall";
@@ -42,47 +82,14 @@ export function TransactionDetailsModal({
         tokenSymbol: activity.tokenMetadata?.symbol,
     });
 
-    // Determine From/To based on receiver_id vs treasury account
-    // For outgoing: don't show receiver (stored counterparty is often the contract)
-    const knownCounterparty =
-        activity.counterparty && activity.counterparty !== "UNKNOWN"
-            ? activity.counterparty
-            : null;
-    const fromAccount = isSwap
-        ? "via NEAR Intents"
-        : isReceived
-            ? knownCounterparty || activity.signerId || null
-            : treasuryId;
-
-    const toAccount = isSwap
-        ? treasuryId
-        : isReceived
-            ? treasuryId
-            : null;
+    const fromAccount = getFromAccount(activity, isReceived, treasuryId);
+    const toAccount = getToAccount(activity, isReceived, treasuryId);
 
     const formatAmount = (amount: string, decimals?: number) => {
         const num = parseFloat(amount);
-        const absNum = Math.abs(num);
         const sign = num >= 0 ? "+" : "-";
-
-        const decimalPlaces =
-            absNum >= 1
-                ? 2
-                : Math.min(6, decimals || activity.tokenMetadata.decimals);
-
-        return `${sign}${absNum.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: decimalPlaces,
-        })}`;
-    };
-
-    const formatSwapAmount = (amount: string, decimals: number) => {
-        const num = Math.abs(parseFloat(amount));
-        const decimalPlaces = num >= 1 ? 2 : Math.min(6, decimals);
-        return num.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: decimalPlaces,
-        });
+        const formatted = formatSmartAmount(Math.abs(num));
+        return `${sign}${formatted}`;
     };
 
     return (
@@ -95,100 +102,80 @@ export function TransactionDetailsModal({
                 <div className="space-y-6">
                     {/* Transaction Summary */}
                     {isSwap && activity.swap ? (
-                        <div className="px-3.5 py-3 rounded-xl bg-muted">
-                            <div className="flex flex-col gap-2 p-2 text-xs text-muted-foreground text-center justify-center items-center">
-                                <p className="font-medium text-xs">Exchange</p>
-                                <div className="flex items-center justify-center w-full">
-                                    {/* Sent Token */}
-                                    {activity.swap.sentAmount &&
-                                        activity.swap.sentTokenMetadata ? (
-                                        <div className="flex flex-col items-center gap-2 flex-1">
-                                            <img
-                                                src={
-                                                    activity.swap
-                                                        .sentTokenMetadata
-                                                        .icon || ""
-                                                }
-                                                alt={
-                                                    activity.swap
-                                                        .sentTokenMetadata
-                                                        .symbol
-                                                }
-                                                className="size-9 shrink-0 rounded-full"
-                                            />
-                                            <div className="flex flex-col gap-0.5">
-                                                <p className="text-lg font-semibold text-general-destructive-foreground">
-                                                    -
-                                                    {formatSwapAmount(
-                                                        activity.swap
-                                                            .sentAmount,
-                                                        activity.swap
-                                                            .sentTokenMetadata
-                                                            .decimals,
-                                                    )}{" "}
-                                                    <span className="text-muted-foreground font-medium text-xs">
-                                                        {
-                                                            activity.swap
-                                                                .sentTokenMetadata
-                                                                .symbol
-                                                        }
-                                                    </span>
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="flex-1">
-                                            <span className="text-muted-foreground">
-                                                ?
-                                            </span>
-                                        </div>
+                        <div className="relative flex justify-center items-center gap-4 w-full">
+                            {/* From: Sent Token */}
+                            {activity.swap.sentAmount &&
+                            activity.swap.sentTokenMetadata ? (
+                                <ExchangeSummaryCard
+                                    title="Sell"
+                                    token={{
+                                        address:
+                                            activity.swap.sentTokenMetadata
+                                                .tokenId,
+                                        symbol: activity.swap.sentTokenMetadata
+                                            .symbol,
+                                        decimals:
+                                            activity.swap.sentTokenMetadata
+                                                .decimals,
+                                        name: activity.swap.sentTokenMetadata
+                                            .name,
+                                        icon:
+                                            activity.swap.sentTokenMetadata
+                                                .icon || "",
+                                        network:
+                                            activity.swap.sentTokenMetadata
+                                                .network || "near",
+                                        chainIcons:
+                                            activity.swap.sentTokenMetadata
+                                                .chainIcons,
+                                    }}
+                                    amount={formatSmartAmount(
+                                        activity.swap.sentAmount,
                                     )}
+                                />
+                            ) : null}
 
-                                    {/* Arrow */}
-                                    <ArrowRight className="h-5 w-5 text-muted-foreground shrink-0" />
-
-                                    {/* Received Token */}
-                                    <div className="flex flex-col items-center gap-2 flex-1">
-                                        <img
-                                            src={
-                                                activity.swap
-                                                    .receivedTokenMetadata
-                                                    .icon || ""
-                                            }
-                                            alt={
-                                                activity.swap
-                                                    .receivedTokenMetadata
-                                                    .symbol
-                                            }
-                                            className="size-9 shrink-0 rounded-full"
-                                        />
-                                        <div className="flex flex-col gap-0.5">
-                                            <p className="text-lg font-semibold text-general-success-foreground">
-                                                +
-                                                {formatSwapAmount(
-                                                    activity.swap
-                                                        .receivedAmount,
-                                                    activity.swap
-                                                        .receivedTokenMetadata
-                                                        .decimals,
-                                                )}{" "}
-                                                <span className="text-muted-foreground font-medium text-xs">
-                                                    {
-                                                        activity.swap
-                                                            .receivedTokenMetadata
-                                                            .symbol
-                                                    }
-                                                </span>
-                                            </p>
-                                        </div>
-                                    </div>
+                            {/* Arrow - absolutely positioned */}
+                            <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2">
+                                <div className="rounded-full bg-card border p-1.5 shadow-sm">
+                                    <ChevronRight className="size-6 text-muted-foreground" />
                                 </div>
                             </div>
+
+                            {/* To: Received Token */}
+                            <ExchangeSummaryCard
+                                title="Receive"
+                                token={{
+                                    address:
+                                        activity.swap.receivedTokenMetadata
+                                            .tokenId,
+                                    symbol: activity.swap.receivedTokenMetadata
+                                        .symbol,
+                                    decimals:
+                                        activity.swap.receivedTokenMetadata
+                                            .decimals,
+                                    name: activity.swap.receivedTokenMetadata
+                                        .name,
+                                    icon:
+                                        activity.swap.receivedTokenMetadata
+                                            .icon || "",
+                                    network:
+                                        activity.swap.receivedTokenMetadata
+                                            .network || "near",
+                                    chainIcons:
+                                        activity.swap.receivedTokenMetadata
+                                            .chainIcons,
+                                }}
+                                amount={formatSmartAmount(
+                                    activity.swap.receivedAmount,
+                                )}
+                            />
                         </div>
                     ) : (
                         <AmountSummary
                             title={transactionType}
                             total={formatAmount(activity.amount)}
+                            showNetworkIcon
                             token={{
                                 address: activity.tokenMetadata.tokenId,
                                 symbol: activity.tokenMetadata.symbol,
@@ -197,6 +184,7 @@ export function TransactionDetailsModal({
                                 icon: activity.tokenMetadata.icon || "",
                                 network:
                                     activity.tokenMetadata.network || "near",
+                                chainIcons: activity.tokenMetadata.chainIcons,
                             }}
                         />
                     )}
@@ -220,62 +208,28 @@ export function TransactionDetailsModal({
                             },
                             ...(isSwap && activity.swap
                                 ? [
-                                    ...(activity.swap.sentAmount &&
-                                        activity.swap.sentTokenMetadata
-                                        ? [
-                                            {
-                                                label: "Sent",
-                                                value: (
-                                                    <TokenAmountDisplay
-                                                        icon={
-                                                            activity.swap
-                                                                .sentTokenMetadata
-                                                                .icon
-                                                        }
-                                                        symbol={
-                                                            activity.swap
-                                                                .sentTokenMetadata
-                                                                .symbol
-                                                        }
-                                                        amount={formatSwapAmount(
-                                                            activity.swap
-                                                                .sentAmount,
-                                                            activity.swap
-                                                                .sentTokenMetadata
-                                                                .decimals,
-                                                        )}
-                                                    />
-                                                ),
-                                            } as InfoItem,
-                                        ]
-                                        : []),
-                                    {
-                                        label: "Received",
-                                        value: (
-                                            <TokenAmountDisplay
-                                                icon={
-                                                    activity.swap
-                                                        .receivedTokenMetadata
-                                                        .icon
-                                                }
-                                                symbol={
-                                                    activity.swap
-                                                        .receivedTokenMetadata
-                                                        .symbol
-                                                }
-                                                amount={formatSwapAmount(
-                                                    activity.swap
-                                                        .receivedAmount,
-                                                    activity.swap
-                                                        .receivedTokenMetadata
-                                                        .decimals,
-                                                )}
-                                            />
-                                        ),
-                                    } as InfoItem,
-                                ]
+                                      {
+                                          label: "From",
+                                          value: (
+                                              <AccountValue
+                                                  value={fromAccount}
+                                                  showCopy={false}
+                                                  useAddressBook
+                                              />
+                                          ),
+                                      } as InfoItem,
+                                      {
+                                          label: "To",
+                                          value: (
+                                              <AccountValue
+                                                  value={toAccount}
+                                                  useAddressBook
+                                              />
+                                          ),
+                                      } as InfoItem,
+                                  ]
                                 : isFunctionCall && activity.methodName
-                                    ? [
+                                  ? [
                                         {
                                             label: "Method",
                                             value: activity.methodName,
@@ -283,99 +237,56 @@ export function TransactionDetailsModal({
                                         {
                                             label: "Contract",
                                             value: (
-                                                <div className="flex items-center gap-1">
-                                                    <span className="max-w-[300px] truncate">
-                                                        {activity.receiverId ||
-                                                            activity.counterparty ||
-                                                            "unknown"}
-                                                    </span>
-                                                    <CopyButton
-                                                        text={
-                                                            activity.receiverId ||
-                                                            activity.counterparty ||
-                                                            ""
-                                                        }
-                                                        variant="ghost"
-                                                        size="icon-sm"
-                                                        tooltipContent="Copy Address"
-                                                        toastMessage="Address copied to clipboard"
-                                                    />
-                                                </div>
-                                            ),
-                                        } as InfoItem,
-                                    ]
-                                    : [
-                                        ...(fromAccount
-                                            ? [
-                                                {
-                                                    label: "From",
-                                                    value: (
-                                                        <div className="flex items-center gap-1">
-                                                            <span className="max-w-[300px] truncate">
-                                                                {fromAccount}
-                                                            </span>
-                                                            <CopyButton
-                                                                text={
-                                                                    fromAccount
-                                                                }
-                                                                variant="ghost"
-                                                                size="icon-sm"
-                                                                tooltipContent="Copy Address"
-                                                                toastMessage="Address copied to clipboard"
-                                                            />
-                                                        </div>
-                                                    ),
-                                                } as InfoItem,
-                                            ]
-                                            : []),
-                                        ...(toAccount
-                                            ? [
-                                                {
-                                                    label: "To",
-                                                    value: (
-                                                        <div className="flex items-center gap-1">
-                                                            <span className="max-w-[300px] truncate">
-                                                                {toAccount}
-                                                            </span>
-                                                            <CopyButton
-                                                                text={
-                                                                    toAccount
-                                                                }
-                                                                toastMessage="Address copied to clipboard"
-                                                                tooltipContent="Copy Address"
-                                                                variant="ghost"
-                                                                size="icon-sm"
-                                                            />
-                                                        </div>
-                                                    ),
-                                                } as InfoItem,
-                                            ]
-                                            : []),
-                                    ]),
-                            ...(isLoadingTransaction
-                                ? [
-                                    {
-                                        label: "Transaction",
-                                        value: (
-                                            <Skeleton className="h-5 w-[200px]" />
-                                        ),
-                                    } as InfoItem,
-                                ]
-                                : activity.transactionHashes?.length ||
-                                    activity.receiptIds?.length
-                                    ? [
-                                        {
-                                            label: "Transaction",
-                                            value: (
-                                                <TransactionHashCell
-                                                    transactionHashes={activity.transactionHashes}
-                                                    receiptIds={activity.receiptIds}
-                                                    className="flex items-center gap-2"
+                                                <AccountValue
+                                                    value={
+                                                        activity.receiverId ||
+                                                        activity.counterparty ||
+                                                        "unknown"
+                                                    }
+                                                    useAddressBook
                                                 />
                                             ),
                                         } as InfoItem,
                                     ]
-                                    : []),
+                                  : [
+                                        {
+                                            label: "From",
+                                            value: (
+                                                <AccountValue
+                                                    value={fromAccount}
+                                                    useAddressBook
+                                                />
+                                            ),
+                                        } as InfoItem,
+                                        {
+                                            label: "To",
+                                            value: (
+                                                <AccountValue
+                                                    value={toAccount}
+                                                    useAddressBook
+                                                />
+                                            ),
+                                        } as InfoItem,
+                                    ]),
+                            ...(activity.transactionHashes?.length ||
+                            activity.receiptIds?.length
+                                ? [
+                                      {
+                                          label: "Transaction",
+                                          value: (
+                                              <TransactionHashCell
+                                                  transactionHashes={
+                                                      activity.transactionHashes
+                                                  }
+                                                  receiptIds={
+                                                      activity.receiptIds
+                                                  }
+                                                  className="flex items-center gap-2"
+                                              />
+                                          ),
+                                      } as InfoItem,
+                                  ]
+                                : []),
                         ]}
                     />
                 </div>

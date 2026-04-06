@@ -1,0 +1,123 @@
+name: Cut Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      commit_sha:
+        description: 'Optional commit SHA to release from (defaults to HEAD of main)'
+        required: false
+        type: string
+
+jobs:
+  cut-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.commit_sha || 'main' }}
+          token: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Compute next version and changelog
+        id: version
+        uses: mathieudutour/github-tag-action@v6.2
+        with:
+          github_token: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+          default_bump: ${{ inputs.bump }}
+          tag_prefix: release-
+          dry_run: true
+
+      - name: Create release branch
+        run: |
+          BRANCH="${{ steps.version.outputs.new_tag }}"
+          if git ls-remote --exit-code --heads origin "$BRANCH"; then
+            echo "Error: branch $BRANCH already exists"
+            exit 1
+          fi
+          git checkout -b "$BRANCH"
+          git push origin "$BRANCH"
+
+      - name: Update render.yaml production branches
+        run: |
+          BRANCH="${{ steps.version.outputs.new_tag }}"
+          python3 - "$BRANCH" <<'EOF'
+          import sys, re
+
+          branch = sys.argv[1]
+          with open("render.yaml") as f:
+              content = f.read()
+
+          def update_production_branches(text, new_branch):
+              lines = text.splitlines(keepends=True)
+              result = []
+              i = 0
+              while i < len(lines):
+                  line = lines[i]
+                  if re.match(r'  - type:', line):
+                      block = [line]
+                      j = i + 1
+                      while j < len(lines) and not re.match(r'  - type:|^databases:', lines[j]):
+                          block.append(lines[j])
+                          j += 1
+                      block_text = "".join(block)
+                      if "domains:" in block_text:
+                          block_text = re.sub(
+                              r'(^\s+branch:\s+).+',
+                              r'\g<1>' + new_branch,
+                              block_text,
+                              flags=re.MULTILINE,
+                          )
+                      result.append(block_text)
+                      i = j
+                  else:
+                      result.append(line)
+                      i += 1
+              return "".join(result)
+
+          updated = update_production_branches(content, branch)
+          with open("render.yaml", "w") as f:
+              f.write(updated)
+
+          print(updated)
+          EOF
+
+      - name: Commit render.yaml update to release branch and open PR
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+        run: |
+          BRANCH="${{ steps.version.outputs.new_tag }}"
+          VERSION="${{ steps.version.outputs.new_version }}"
+          git checkout "$BRANCH"
+          git add render.yaml
+          if git diff --cached --quiet; then
+            echo "No changes to render.yaml — production branch already set correctly"
+          else
+            git commit -m "chore: point production deployment to $BRANCH"
+            git push origin "$BRANCH"
+          fi
+          gh pr create \
+            --title "chore: point production deployment to $BRANCH" \
+            --body "Automated PR to update render.yaml production branches to \`$BRANCH\`." \
+            --base main \
+            --head "$BRANCH"
+          gh release create "$BRANCH" \
+            --title "v${VERSION}" \
+            --target "$BRANCH" \
+            --notes "${{ steps.version.outputs.changelog }}"

@@ -179,7 +179,7 @@ function NoRequestsFound() {
                     permissionKind="transfer"
                     onClick={() => router.push(`/${treasuryId}/payments`)}
                     permissionAction="AddProposal"
-                    className="gap-1 w-full"
+                    className="gap-1 w-full shrink"
                 >
                     <ArrowUpRight className="size-3.5" /> Send
                 </AuthButton>
@@ -187,7 +187,7 @@ function NoRequestsFound() {
                     permissionKind="call"
                     onClick={() => router.push(`/${treasuryId}/exchange`)}
                     permissionAction="AddProposal"
-                    className="gap-1 w-full"
+                    className="gap-1 w-full shrink"
                 >
                     <ArrowRightLeft className="size-3.5" /> Exchange
                 </AuthButton>
@@ -291,9 +291,7 @@ export default function RequestsPage() {
             value: "InProgress",
             label: "Pending",
             trigger:
-                !!pendingCount &&
-                pendingCount > 0 &&
-                currentTab !== "InProgress" ? (
+                !!pendingCount && pendingCount > 0 ? (
                     <NumberBadge number={pendingCount} variant="secondary" />
                 ) : undefined,
         },

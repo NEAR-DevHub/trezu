@@ -187,7 +187,7 @@ export function ProposalsTable({
                     const title = getProposalUIKind(proposal);
                     return (
                         <div className="flex items-center gap-5 max-w-[400px] truncate">
-                            <span className="text-sm text-muted-foreground w-6 shrink-0">
+                            <span className="text-sm text-muted-foreground w-6 shrink-0 font-semibold">
                                 #{proposal.id}
                             </span>
                             <ProposalTypeIcon proposal={proposal} />
@@ -384,7 +384,7 @@ export function ProposalsTable({
                         permissionKind="transfer"
                         onClick={() => router.push(`/${treasuryId}/payments`)}
                         permissionAction="AddProposal"
-                        className="gap-1 w-full"
+                        className="gap-1 w-full shrink"
                     >
                         <ArrowUpRight className="size-3.5" /> Send
                     </AuthButton>
@@ -392,7 +392,7 @@ export function ProposalsTable({
                         permissionKind="call"
                         onClick={() => router.push(`/${treasuryId}/exchange`)}
                         permissionAction="AddProposal"
-                        className="gap-1 w-full"
+                        className="gap-1 w-full shrink"
                     >
                         <ArrowRightLeft className="size-3.5" /> Exchange
                     </AuthButton>

@@ -22,6 +22,7 @@ test.beforeAll(async () => {
             name: "WebAssembly Music Treasury",
             accountId: TREASURY_ID,
             paymentThreshold: 1,
+            governanceThreshold: 1,
             governors: ["test.near"],
             financiers: ["test.near"],
             requestors: ["test.near"],
@@ -30,9 +31,7 @@ test.beforeAll(async () => {
     if (res.ok) {
         console.log(`Created DAO ${TREASURY_ID} in sandbox`);
     } else {
-        console.log(
-            `DAO creation returned ${res.status} (may already exist)`,
-        );
+        console.log(`DAO creation returned ${res.status} (may already exist)`);
     }
 });
 
@@ -225,9 +224,7 @@ test("dashboard chart x-axis labels should not overlap on mobile with 3M period"
 
     // Assert mobile uses month-only format (e.g. "Nov", not "11/21/2025")
     for (const tick of tickBoundingBoxes) {
-        expect(tick.text).toMatch(
-            /^[A-Z][a-z]{2}$|^Now$/,
-        );
+        expect(tick.text).toMatch(/^[A-Z][a-z]{2}$|^Now$/);
     }
 });
 
@@ -318,8 +315,6 @@ test("dashboard chart x-axis labels should not overlap on desktop with 3M period
 
     // Assert desktop uses month-only format (e.g. "Nov") for 3M period
     for (const tick of tickBoundingBoxes) {
-        expect(tick.text).toMatch(
-            /^[A-Z][a-z]{2}$|^Now$/,
-        );
+        expect(tick.text).toMatch(/^[A-Z][a-z]{2}$|^Now$/);
     }
 });

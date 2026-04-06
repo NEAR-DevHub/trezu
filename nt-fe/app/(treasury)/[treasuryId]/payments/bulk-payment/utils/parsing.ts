@@ -1,57 +1,29 @@
-import Papa from "papaparse";
+import { parseCsv } from "@/lib/csv-utils";
 import { MAX_RECIPIENTS_PER_BULK_PAYMENT } from "@/lib/bulk-payment-api";
 import {
     validateNearAddress,
     isValidNearAddressFormat,
 } from "@/lib/near-validation";
 import { getBatchStorageDepositIsRegistered } from "@/lib/api";
-import { isNearToken, getBlockchainType, BlockchainType } from "@/lib/blockchain-utils";
-import { getBlockchainDisplayName, validateAddress } from "@/lib/address-validation";
+import {
+    isNearToken,
+    getBlockchainType,
+    BlockchainType,
+} from "@/lib/blockchain-utils";
+import {
+    getBlockchainDisplayName,
+    validateAddress,
+} from "@/lib/address-validation";
+import {
+    estimateIntentsNetworkFee,
+    getNetworkFeeCoverageErrorMessage,
+    isIntentsCrossChainToken,
+} from "@/lib/intents-fee";
 import type { BulkPaymentData } from "../schemas";
 import type { TreasuryAsset } from "@/lib/api";
 import Big from "@/lib/big";
 
-/**
- * Common Papa Parse configuration
- */
-const PAPA_PARSE_CONFIG: Papa.ParseConfig = {
-    delimiter: "", // auto-detect delimiter (tries comma, tab, pipe, semicolon, etc.)
-    skipEmptyLines: "greedy", // Skip lines with only whitespace
-    header: false, // We want arrays, not objects
-    dynamicTyping: false, // Keep everything as strings for consistent parsing
-};
-
-/**
- * Check if Papa Parse result has critical errors
- */
-function hasCriticalParseErrors(errors: Papa.ParseError[]): boolean {
-    const criticalErrors = errors.filter(
-        (err) => err.type === "FieldMismatch" || err.type === "Quotes",
-    );
-    return criticalErrors.length > 0;
-}
-
-/**
- * Parse CSV or paste data using Papa Parse
- */
-export function parseCsv(raw: string): string[][] {
-    if (!raw.trim()) return [];
-
-    const result = Papa.parse<string[]>(raw, PAPA_PARSE_CONFIG);
-
-    // Check for critical parsing errors
-    if (result.errors && result.errors.length > 0) {
-        console.warn("CSV parsing errors:", result.errors);
-        if (hasCriticalParseErrors(result.errors)) {
-            console.error("Critical CSV parsing errors:", result.errors);
-            throw new Error(
-                "Failed to parse CSV data. Please check formatting.",
-            );
-        }
-    }
-
-    return result.data.filter((row: any) => row && row.length > 0);
-}
+export { parseCsv };
 
 /**
  * Detect if the first row/line is a header and return parsing configuration
@@ -73,11 +45,13 @@ export function detectHeaderAndGetConfig(data: string[] | string[][]): {
     if (typeof firstItem === "string") {
         const firstLine = firstItem.toLowerCase().trim();
         // More flexible header detection
-        const hasRecipientHeader = firstLine.includes("recipient") ||
+        const hasRecipientHeader =
+            firstLine.includes("recipient") ||
             firstLine.includes("wallet") ||
             firstLine.includes("receiver") ||
             firstLine.includes("address");
-        const hasAmountHeader = firstLine.includes("amount") ||
+        const hasAmountHeader =
+            firstLine.includes("amount") ||
             firstLine.includes("value") ||
             firstLine.includes("token");
         const hasHeader = hasRecipientHeader && hasAmountHeader;
@@ -108,10 +82,17 @@ export function detectHeaderAndGetConfig(data: string[] | string[][]): {
             const colIdx = (names: string[]) =>
                 firstRow.findIndex((h) => {
                     const cellLower = (h || "").trim().toLowerCase();
-                    return names.some(name => cellLower.startsWith(name.toLowerCase()));
+                    return names.some((name) =>
+                        cellLower.startsWith(name.toLowerCase()),
+                    );
                 });
 
-            const recipientIdx = colIdx(["Recipient", "Wallet", "Receiver", "Address"]);
+            const recipientIdx = colIdx([
+                "Recipient",
+                "Wallet",
+                "Receiver",
+                "Address",
+            ]);
             const amountIdx = colIdx(["Amount", "Value", "Token"]);
 
             return {
@@ -154,12 +135,12 @@ export function extractTokenSymbol(amountStr: string): string | null {
  * Parse amount string handling different formats and decimal separators
  * Returns a normalized string that can be safely used with Big.js
  * Also extracts token symbol if present
- * 
+ *
  * Accepts various formats:
  * - "100" / "100.50" / "100,50"
  * - "100 NEAR" / "100NEAR" / "100 near" (with/without space, case insensitive)
  * - "1,000.50" / "1.000,50" (thousand separators)
- * 
+ *
  * ONLY allows: digits, comma, dot, spaces, and letters (for token symbols)
  * REJECTS: currency symbols ($, €, etc.), special characters
  */
@@ -174,11 +155,11 @@ export function parseAmount(amountStr: string): {
     // Allow: digits (0-9), comma, dot, space, letters (for token symbols), and plus sign at start
     const invalidChars = trimmed.match(/[^0-9,.\s\+A-Za-z]/g);
     if (invalidChars) {
-        const uniqueChars = [...new Set(invalidChars)].join(', ');
+        const uniqueChars = [...new Set(invalidChars)].join(", ");
         return {
             amount: "",
             tokenSymbol: null,
-            error: `Please remove these characters: ${uniqueChars}. Only numbers, commas, and dots are allowed.`
+            error: `Please remove these characters: ${uniqueChars}. Only numbers, commas, and dots are allowed.`,
         };
     }
 
@@ -187,11 +168,11 @@ export function parseAmount(amountStr: string): {
 
     // Remove token symbol from the string (with or without space)
     let normalized = tokenSymbol
-        ? trimmed.replace(new RegExp(`\\s*${tokenSymbol}$`, 'i'), '').trim()
+        ? trimmed.replace(new RegExp(`\\s*${tokenSymbol}$`, "i"), "").trim()
         : trimmed;
 
     // Remove leading plus sign if present
-    if (normalized.startsWith('+')) {
+    if (normalized.startsWith("+")) {
         normalized = normalized.substring(1);
     }
 
@@ -199,7 +180,8 @@ export function parseAmount(amountStr: string): {
     normalized = normalized.replace(/[_\s]/g, "");
 
     // Handle empty or invalid input
-    if (!normalized) return { amount: "", tokenSymbol, error: "Amount cannot be empty." };
+    if (!normalized)
+        return { amount: "", tokenSymbol, error: "Amount cannot be empty." };
 
     // Handle different decimal separators
     const hasComma = normalized.includes(",");
@@ -239,7 +221,7 @@ export function parseAmount(amountStr: string): {
  */
 function validateRecipientAddress(
     address: string,
-    blockchainType: string = "near"
+    blockchainType: string = "near",
 ): string | null {
     if (!address || address.trim() === "") {
         return "Missing recipient address. Please add an address in the first column.";
@@ -302,7 +284,9 @@ export function parsePaymentData(
         // Join all remaining columns as the amount (handles cases like "2,500.75" split by comma delimiter)
         // This way "dave.near,2,500.75" which gets split to ["dave.near", "2", "500.75"]
         // will be reconstructed as "2,500.75"
-        const amountParts = row.slice(amountIdx).filter(part => part && part.trim());
+        const amountParts = row
+            .slice(amountIdx)
+            .filter((part) => part && part.trim());
         const amountStr = amountParts.join(",").trim();
 
         // Validate that both recipient and amount exist
@@ -342,7 +326,11 @@ export function parsePaymentData(
         }
 
         // Validate token symbol matches expected token (if provided)
-        if (expectedTokenSymbol && tokenSymbol && tokenSymbol !== expectedTokenSymbol.toUpperCase()) {
+        if (
+            expectedTokenSymbol &&
+            tokenSymbol &&
+            tokenSymbol !== expectedTokenSymbol.toUpperCase()
+        ) {
             errors.push({
                 row: actualRowNumber,
                 message: `Row ${actualRowNumber}: You entered "${tokenSymbol}" but ${expectedTokenSymbol.toUpperCase()} is selected above. Either remove the token symbol or select ${tokenSymbol} from the dropdown.`,
@@ -354,25 +342,36 @@ export function parsePaymentData(
         let parsedAmount: Big;
         try {
             if (!parsedAmountStr) {
-                throw new Error(`The amount "${amountStr}" is not a valid number. Please use only numbers and decimals (e.g., 100 or 100.50).`);
+                throw new Error(
+                    `The amount "${amountStr}" is not a valid number. Please use only numbers and decimals (e.g., 100 or 100.50).`,
+                );
             }
             parsedAmount = Big(parsedAmountStr);
 
             // Validate amount is positive
             if (parsedAmount.lte(0)) {
-                throw new Error(`The amount must be greater than 0. You entered "${amountStr}".`);
+                throw new Error(
+                    `The amount must be greater than 0. You entered "${amountStr}".`,
+                );
             }
 
             // Validate amount doesn't exceed safe limit
             const MAX_SAFE = Big(Number.MAX_SAFE_INTEGER);
             if (parsedAmount.gt(MAX_SAFE)) {
-                throw new Error(`The amount "${amountStr}" is too large. Please use a smaller number.`);
+                throw new Error(
+                    `The amount "${amountStr}" is too large. Please use a smaller number.`,
+                );
             }
         } catch (error) {
             // Clean up error message - remove any technical jargon
-            let errorMessage = error instanceof Error ? error.message : "Invalid amount. Please use only numbers and decimals (e.g., 100 or 100.50).";
+            let errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : "Invalid amount. Please use only numbers and decimals (e.g., 100 or 100.50).";
             // Strip technical prefixes like "[big.js]" or "Error:"
-            errorMessage = errorMessage.replace(/^\[.*?\]\s*/, '').replace(/^Error:\s*/i, '');
+            errorMessage = errorMessage
+                .replace(/^\[.*?\]\s*/, "")
+                .replace(/^Error:\s*/i, "");
 
             errors.push({
                 row: actualRowNumber,
@@ -391,6 +390,7 @@ export function parsePaymentData(
         }
 
         payments.push({
+            row: actualRowNumber,
             recipient,
             amount: parsedAmountStr, // Store as string to preserve precision
             validationError: validationError || undefined,
@@ -414,7 +414,13 @@ export function parsePaymentData(
     if (payments.length === 0) {
         return {
             payments: [],
-            errors: [{ row: 0, message: "No payment data found. Please add your payments in this format: recipient, amount" }],
+            errors: [
+                {
+                    row: 0,
+                    message:
+                        "No payment data found. Please add your payments in this format: recipient, amount",
+                },
+            ],
         };
     }
 
@@ -426,7 +432,7 @@ export function parsePaymentData(
             errors: [
                 {
                     row: 0,
-                    message: `You have ${payments.length} recipients, but the limit is ${MAX_RECIPIENTS_PER_BULK_PAYMENT} per batch. Please remove ${excess} recipient${excess > 1 ? 's' : ''} or split into multiple batches.`,
+                    message: `You have ${payments.length} recipients, but the limit is ${MAX_RECIPIENTS_PER_BULK_PAYMENT} per batch. Please remove ${excess} recipient${excess > 1 ? "s" : ""} or split into multiple batches.`,
                 },
             ],
         };
@@ -453,7 +459,13 @@ function parseAndValidateData(
         if (rows.length === 0) {
             return {
                 payments: [],
-                errors: [{ row: 0, message: "No payment data provided. Please enter your payments in this format: recipient, amount" }],
+                errors: [
+                    {
+                        row: 0,
+                        message:
+                            "No payment data provided. Please enter your payments in this format: recipient, amount",
+                    },
+                ],
             };
         }
 
@@ -479,9 +491,19 @@ function parseAndValidateData(
         const dataRows = rows.slice(startRow);
 
         // Use unified parser with blockchain parameter
-        return parsePaymentData(dataRows, recipientIdx, amountIdx, startRow, blockchain, expectedTokenSymbol);
+        return parsePaymentData(
+            dataRows,
+            recipientIdx,
+            amountIdx,
+            startRow,
+            blockchain,
+            expectedTokenSymbol,
+        );
     } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : `Failed to parse ${errorPrefix}`;
+        const errorMsg =
+            error instanceof Error
+                ? error.message
+                : `Failed to parse ${errorPrefix}`;
         return {
             payments: [],
             errors: [
@@ -499,7 +521,7 @@ function parseAndValidateData(
  */
 export function parseAndValidateCsv(
     csvData: string,
-    selectedToken?: { symbol?: string; network?: string; residency?: string }
+    selectedToken?: { symbol?: string; network?: string; residency?: string },
 ): {
     payments: BulkPaymentData[];
     errors: Array<{ row: number; message: string }>;
@@ -516,7 +538,7 @@ export function parseAndValidateCsv(
  */
 export function parseAndValidatePasteData(
     pasteData: string,
-    selectedToken?: { symbol?: string; network?: string; residency?: string }
+    selectedToken?: { symbol?: string; network?: string; residency?: string },
 ): {
     payments: BulkPaymentData[];
     errors: Array<{ row: number; message: string }>;
@@ -527,7 +549,12 @@ export function parseAndValidatePasteData(
         ? getBlockchainType(selectedToken.network)
         : "near";
     const tokenSymbol = selectedToken?.symbol;
-    return parseAndValidateData(normalizedInput, "paste data", blockchain, tokenSymbol);
+    return parseAndValidateData(
+        normalizedInput,
+        "paste data",
+        blockchain,
+        tokenSymbol,
+    );
 }
 
 /**
@@ -569,7 +596,10 @@ export async function validateAccountsAndStorage(
                         validationError: validationError || undefined,
                     };
                 } catch (error) {
-                    console.error(`Error validating ${payment.recipient}:`, error);
+                    console.error(
+                        `Error validating ${payment.recipient}:`,
+                        error,
+                    );
                     return {
                         ...payment,
                         validationError: "Failed to validate account",
@@ -628,4 +658,91 @@ export async function validateAccountsAndStorage(
     // For non-NEAR tokens, validation was done during CSV parsing
     // Just return payments as-is
     return payments;
+}
+
+/**
+ * Validate that each payment amount is greater than the estimated network fee.
+ * Uses one validated recipient as representative (same destination chain).
+ */
+export async function validateIntentsFeeCoverage(
+    payments: BulkPaymentData[],
+    selectedToken: {
+        address: string;
+        network?: string;
+        decimals: number;
+        symbol: string;
+        minWithdrawalAmount?: string;
+    },
+): Promise<{ payments: BulkPaymentData[]; networkFee: string | null }> {
+    if (!isIntentsCrossChainToken(selectedToken)) {
+        return { payments, networkFee: null };
+    }
+
+    const representativePayment = payments.find((p) => !p.validationError);
+    if (!representativePayment) {
+        return { payments, networkFee: null };
+    }
+
+    const representativeAddress = representativePayment.recipient;
+    try {
+        const { networkFee } = await estimateIntentsNetworkFee({
+            token: {
+                address: selectedToken.address,
+                decimals: selectedToken.decimals,
+                minWithdrawalAmount: selectedToken.minWithdrawalAmount,
+            },
+            destinationAddress: representativeAddress,
+            destinationBlockchain: getBlockchainType(
+                selectedToken.network || "unknown",
+            ),
+        });
+
+        return {
+            payments: payments.map((payment) => {
+                if (payment.validationError) {
+                    return payment;
+                }
+
+                const rowPrefix =
+                    payment.row && payment.row > 0
+                        ? `Row ${payment.row}: `
+                        : "";
+                const feeErrorMessage = getNetworkFeeCoverageErrorMessage({
+                    amount: payment.amount,
+                    networkFee,
+                    decimals: selectedToken.decimals,
+                    symbol: selectedToken.symbol,
+                    prefix: rowPrefix,
+                });
+
+                if (!feeErrorMessage) {
+                    return payment;
+                }
+
+                return {
+                    ...payment,
+                    validationError: feeErrorMessage,
+                };
+            }),
+            networkFee: networkFee.toString(),
+        };
+    } catch {
+        return {
+            payments: payments.map((payment) => {
+                if (payment.validationError) {
+                    return payment;
+                }
+
+                const rowPrefix =
+                    payment.row && payment.row > 0
+                        ? `Row ${payment.row} (${payment.recipient}): `
+                        : "";
+                return {
+                    ...payment,
+                    validationError: `${rowPrefix}Couldn't estimate network fee for this amount. Please verify and try again.`,
+                };
+            }),
+            networkFee: null,
+        };
+    }
 }

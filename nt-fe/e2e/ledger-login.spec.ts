@@ -1,7 +1,5 @@
 import { test, expect } from "@playwright/test";
 
-test.skip(true, "Disabled: flaky in CI – re-enable once stabilised");
-
 // Mock WebHID API and Ledger device responses - this gets prepended to ledger-executor.js
 const mockWebHID = `
 // ===== MOCK WEBHID FOR TESTING =====
@@ -250,16 +248,16 @@ test("Ledger login flow", async ({ page, context }) => {
     // This is critical because TransportWebHID from the CDN will access navigator.hid
     await context.addInitScript(mockWebHID);
 
-    // Intercept RPC calls to FastNEAR and return mock responses
-    // The ledger-executor.js calls mainnet RPC for access key verification
+    // Intercept RPC calls and return mock responses.
+    // The ledger-executor.js calls rpc.near.org (mainnet) for access key verification.
     await context.route(
-        /rpc\.(mainnet|testnet)\.fastnear\.com/,
+        /rpc\.(mainnet|testnet)?\.?(fastnear\.com|near\.org)/,
         async (route) => {
             const request = route.request();
             const postData = request.postData();
             const body = postData ? JSON.parse(postData) : {};
 
-            console.log("Intercepting FastNEAR RPC:", body.method);
+            console.log("Intercepting NEAR RPC:", body.method);
 
             let result;
             if (body.method === "query") {
@@ -408,45 +406,9 @@ test("Ledger login flow", async ({ page, context }) => {
         .frameLocator('iframe[sandbox*="allow-scripts"]')
         .first();
 
-    // Assert the "Connect Ledger" button appears (mock returns empty from getDevices)
-    const connectLedgerButton = iframe.getByRole("button", {
-        name: /connect ledger/i,
-    });
-    await expect(connectLedgerButton).toBeVisible({ timeout: 10000 });
-    await page.waitForTimeout(1500); // Pause to show the Connect Ledger button
-
-    // Click the Connect Ledger button - the mock will handle requestDevice()
-    // Wait a moment for the iframe to stabilize before clicking
-    await page.waitForTimeout(500);
-    console.log("About to click Connect Ledger button...");
-    await connectLedgerButton.click();
-    console.log("Clicked Connect Ledger button");
-    await page.waitForTimeout(2000); // Pause to show the device connection happening
-
-    // If both USB and Bluetooth are available (e.g. local Mac with BLE),
-    // the iframe shows a transport chooser. In headless CI (no Bluetooth),
-    // only USB is available and the chooser is auto-skipped.
-    const usbOption = iframe.getByRole("button", { name: /USB/i });
-    if (await usbOption.isVisible().catch(() => false)) {
-        console.log("Transport selection dialog visible, selecting USB");
-        await page.waitForTimeout(1000);
-        await usbOption.click();
-        const transportContinueBtn = iframe.getByRole("button", {
-            name: /continue/i,
-        });
-        await transportContinueBtn.click();
-        console.log("Clicked Continue on transport selection");
-        await page.waitForTimeout(2000);
-    } else {
-        console.log("Transport auto-selected (only USB available)");
-    }
-
-    // After transport selection:
-    // 1. GET_APP_AND_VERSION is sent (mock responds with "NEAR" app)
-    // 2. "Select Derivation Path" dialog appears
-    // 3. User clicks Continue (default Account 2 selected)
-    // 4. GET_PUBLIC_KEY is sent (mock responds with test public key)
-    // 5. Account ID input prompt appears
+    // The Ledger executor now auto-triggers device connection on load:
+    //   requestDevice() → mock returns device → GET_APP_AND_VERSION → "Select Derivation Path"
+    // No "Connect Ledger" button click is needed.
 
     // Handle the "Select Derivation Path" dialog - click Continue with default selection
     const continueBtn = iframe.getByRole("button", { name: /continue/i });

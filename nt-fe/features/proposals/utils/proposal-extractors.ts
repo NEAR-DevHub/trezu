@@ -36,7 +36,15 @@ function extractFTTransferData(
             a.method_name === "ft_transfer_call" ||
             a.method_name === "transfer",
     );
+    const actionMTTransfer = actions.find(
+        (a) =>
+            a.method_name === "mt_transfer" ||
+            a.method_name === "mt_transfer_call",
+    );
     const actionWithdraw = actions.find((a) => a.method_name === "ft_withdraw");
+    const actionMTWithdraw = actions.find(
+        (a) => a.method_name === "mt_withdraw",
+    );
 
     if (action) {
         if (
@@ -56,6 +64,15 @@ function extractFTTransferData(
                 receiver: args.receiver_id || "",
             };
         }
+    } else if (actionMTTransfer) {
+        const args = decodeArgs(actionMTTransfer.args);
+        if (args) {
+            return {
+                tokenId: args.token_id || "near",
+                amount: args.amount || "0",
+                receiver: args.receiver_id || "",
+            };
+        }
     } else if (actionWithdraw) {
         const args = decodeArgs(actionWithdraw.args);
         if (!args) {
@@ -70,9 +87,32 @@ function extractFTTransferData(
             : args.receiver_id;
 
         return {
-            tokenId: `nep141:${args.token}`,
+            tokenId:
+                args.token.startsWith("nep141:") ||
+                args.token.startsWith("nep245:")
+                    ? args.token
+                    : `nep141:${args.token}`,
             amount: args.amount || "0",
             receiver,
+        };
+    } else if (actionMTWithdraw) {
+        // NEP-245 withdrawal via mt_withdraw on intents.near
+        const args = decodeArgs(actionMTWithdraw.args);
+        if (!args || !args.amounts || !args.token_ids) {
+            return undefined;
+        }
+
+        const tokenId = args.token_ids[0]
+            ? args.token_ids[0].startsWith("nep245:")
+                ? args.token_ids[0]
+                : `nep245:${args.token}:${args.token_ids[0]}`
+            : `nep245:${functionCall.receiver_id}:${args.token_ids[0]}`;
+
+        return {
+            tokenId,
+            amount: args.amounts[0] || "0",
+            receiver:
+                args.memo?.replace("WITHDRAW_TO:", "") || args.receiver_id,
         };
     }
     return undefined;
@@ -87,6 +127,10 @@ export function extractPaymentRequestData(
     let tokenId = "near";
     let amount = "0";
     let receiver = "";
+    const proposalAction = decodeProposalDescription(
+        "proposal action",
+        proposal.description,
+    );
 
     if ("Transfer" in proposal.kind) {
         const transfer = proposal.kind.Transfer;
@@ -109,6 +153,14 @@ export function extractPaymentRequestData(
     const notes = decodeProposalDescription("notes", proposal.description);
     const title = decodeProposalDescription("title", proposal.description);
     const url = decodeProposalDescription("url", proposal.description);
+    const describedRecipient = decodeProposalDescription(
+        "recipient",
+        proposal.description,
+    );
+
+    if (proposalAction === "payment-transfer" && describedRecipient) {
+        receiver = describedRecipient;
+    }
 
     return {
         tokenId,
@@ -128,16 +180,14 @@ export function extractFunctionCallData(proposal: Proposal): FunctionCallData {
     }
 
     const functionCall = proposal.kind.FunctionCall;
-    const action = functionCall.actions[0];
-    const args = action ? decodeArgs(action.args) : {};
-
     return {
         receiver: functionCall.receiver_id,
-        methodName: action?.method_name || "",
-        actionsCount: functionCall.actions.length,
-        gas: action?.gas || "0",
-        deposit: action?.deposit || "0",
-        args: args || {},
+        actions: functionCall.actions.map((action) => ({
+            methodName: action.method_name,
+            args: decodeArgs(action.args),
+            gas: action.gas,
+            deposit: action.deposit,
+        })),
     };
 }
 
@@ -268,10 +318,10 @@ export function extractVestingData(proposal: Proposal): VestingData {
     const vestingScheduleRaw = args.vesting_schedule?.VestingSchedule;
     const vestingSchedule: VestingSchedule | null = vestingScheduleRaw
         ? {
-            start_timestamp: vestingScheduleRaw.start_timestamp,
-            end_timestamp: vestingScheduleRaw.end_timestamp,
-            cliff_timestamp: vestingScheduleRaw.cliff_timestamp,
-        }
+              start_timestamp: vestingScheduleRaw.start_timestamp,
+              end_timestamp: vestingScheduleRaw.end_timestamp,
+              cliff_timestamp: vestingScheduleRaw.cliff_timestamp,
+          }
         : null;
 
     const whitelistAccountId = args.whitelist_account_id || "";
@@ -313,7 +363,7 @@ export function extractExchangeRequestData(
             a.method_name !== "storage_deposit" &&
             (a.method_name === "mt_transfer" ||
                 a.method_name === "ft_transfer" ||
-                a.method_name === "ft_transfer_call") // Legacy support
+                a.method_name === "ft_transfer_call"), // Legacy support
     );
 
     if (!action) {
@@ -328,10 +378,15 @@ export function extractExchangeRequestData(
     // Extract from description
     // NEW FORMAT: proposals have tokenInAddress and tokenOutAddress
     // LEGACY FORMAT: proposals have tokenIn (symbol), tokenOut (symbol), and destinationNetwork
-    const tokenInSymbol = decodeProposalDescription("tokenIn", proposal.description) || "";
-    const tokenInAddress = decodeProposalDescription("tokenInAddress", proposal.description) || "";
-    const tokenOutSymbol = decodeProposalDescription("tokenOut", proposal.description) || "";
-    const tokenOutAddress = decodeProposalDescription("tokenOutAddress", proposal.description) || "";
+    const tokenInSymbol =
+        decodeProposalDescription("tokenIn", proposal.description) || "";
+    const tokenInAddress =
+        decodeProposalDescription("tokenInAddress", proposal.description) || "";
+    const tokenOutSymbol =
+        decodeProposalDescription("tokenOut", proposal.description) || "";
+    const tokenOutAddress =
+        decodeProposalDescription("tokenOutAddress", proposal.description) ||
+        "";
     const destinationNetwork = decodeProposalDescription(
         "destinationNetwork",
         proposal.description,
@@ -371,17 +426,23 @@ export function extractExchangeRequestData(
     let tokenIn: string;
     let depositAddress: string;
 
-    if (action.method_name === "mt_transfer" || action.method_name === "mt_transfer_call") {
+    if (
+        action.method_name === "mt_transfer" ||
+        action.method_name === "mt_transfer_call"
+    ) {
         // Intents tokens: token_id and depositAddress are in args directly
         tokenIn = args.token_id || "";
         depositAddress = args.receiver_id || "";
-    } else if (action.method_name === "ft_transfer" || action.method_name === "ft_transfer_call") {
+    } else if (
+        action.method_name === "ft_transfer" ||
+        action.method_name === "ft_transfer_call"
+    ) {
         // ft_transfer/ft_transfer_call: depositAddress is directly in receiver_id, tokenIn is the contract being called
         depositAddress = args.receiver_id || "";
 
         // Check if there's a near_deposit action - if so, it's a Native NEAR exchange
         const hasNearDeposit = functionCall.actions.some(
-            (a) => a.method_name === "near_deposit"
+            (a) => a.method_name === "near_deposit",
         );
 
         if (hasNearDeposit && functionCall.receiver_id === "wrap.near") {

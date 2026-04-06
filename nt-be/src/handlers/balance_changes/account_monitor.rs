@@ -88,6 +88,21 @@ pub async fn run_maintenance_cycle(
     .fetch_all(pool)
     .await?;
 
+    // Correct NEAR transfer counterparties unconditionally — runs even if no
+    // monitored accounts are registered, so pre-existing wrong records are fixed.
+    match super::counterparty_correction::correct_near_counterparties(pool, network).await {
+        Ok(count) if count > 0 => {
+            log::info!(
+                "[maintenance] Corrected {} NEAR transfer counterparties",
+                count
+            );
+        }
+        Err(e) => {
+            log::warn!("[maintenance] Error correcting NEAR counterparties: {}", e);
+        }
+        _ => {}
+    }
+
     if accounts.is_empty() {
         return Ok(());
     }

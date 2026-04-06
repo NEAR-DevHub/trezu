@@ -23,10 +23,7 @@ export function jsonToBase64(json: any): string {
 
 export function base64ToJson(base64: string): any {
     const binary = atob(base64);
-    const bytes = Uint8Array.from(
-        binary,
-        (char) => char.charCodeAt(0),
-    );
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
     const decoded = new TextDecoder().decode(bytes);
     return JSON.parse(decoded);
 }
@@ -151,15 +148,33 @@ export function formatProposalStatusDate(
     return isFuture ? `in ${relative}` : `${relative} ago`;
 }
 
-/**
- * Format a date as relative time (e.g., "2 minutes ago", "Yesterday")
- * After 1 week, returns static date format (e.g., "Feb 18, 2026")
- */
-export function formatRelativeTime(date: Date | string | number): string {
+function normalizeDate(
+    date: Date | string | number | null | undefined,
+): Date | null {
+    if (date == null || date === "") {
+        return null;
+    }
+
     const dateObj =
         typeof date === "string" || typeof date === "number"
             ? new Date(date)
             : date;
+
+    return Number.isNaN(dateObj.getTime()) ? null : dateObj;
+}
+
+/**
+ * Format a date as relative time (e.g., "2 minutes ago", "Yesterday")
+ * After 1 week, returns static date format (e.g., "Feb 18, 2026")
+ */
+export function formatRelativeTime(
+    date: Date | string | number | null | undefined,
+): string {
+    const dateObj = normalizeDate(date);
+    if (!dateObj) {
+        return "";
+    }
+
     const now = new Date();
     const diffInSeconds = Math.floor(
         (now.getTime() - dateObj.getTime()) / 1000,
@@ -231,10 +246,11 @@ export interface FormatUserDateOptions {
 }
 
 export function formatUserDate(
-    date: Date | string | number,
+    date: Date | string | number | null | undefined,
     options: FormatUserDateOptions = {},
 ): string {
-    if (!date) return "";
+    const dateObj = normalizeDate(date);
+    if (!dateObj) return "";
 
     const {
         timezone = null,
@@ -243,14 +259,6 @@ export function formatUserDate(
         includeTimezone = true,
         customFormat,
     } = options;
-
-    // Convert to Date object
-    let dateObj: Date;
-    if (typeof date === "string" || typeof date === "number") {
-        dateObj = new Date(date);
-    } else {
-        dateObj = date;
-    }
 
     // If custom format is provided, use date-fns format
     if (customFormat) {
@@ -502,6 +510,38 @@ export const decodeProposalDescription = (key: string, description: string) => {
 
     return null; // Return null if key not found
 };
+
+/** Convert a nanosecond timestamp/duration (string) to milliseconds. */
+export function nanosToMs(nanoseconds: string): number {
+    return Big(nanoseconds).div(1_000_000).toNumber();
+}
+
+/** Convert milliseconds to a nanosecond string. */
+export function msToNanos(ms: number): string {
+    return Big(Math.round(ms)).times(1_000_000).toFixed(0);
+}
+
+/**
+ * Returns a human-readable NEAR token type label based on the tokenId.
+ * - "" or "near" → "Native Token"
+ * - starts with "nep141:" or "nep245:" → "Intents Token"
+ * - anything else (contract address) → "Fungible Token"
+ *
+ * Returns null for non-NEAR networks so callers can fall back to the chain name.
+ */
+export function getNearTokenTypeLabel(
+    tokenId: string,
+    network?: string,
+): string | null {
+    const resolvedNetwork = network?.toLowerCase() ?? "near";
+    if (resolvedNetwork !== "near") return null;
+
+    const id = tokenId.toLowerCase();
+    if (id === "" || id === "near") return "NEAR Native Token";
+    if (id.startsWith("nep141:") || id.startsWith("nep245:"))
+        return "NEAR Intents Token";
+    return "NEAR Fungible Token";
+}
 
 /**
  * Format nanoseconds to human-readable duration

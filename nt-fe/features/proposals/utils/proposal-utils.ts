@@ -123,9 +123,22 @@ function processFTTransferProposal(
 
 function processMTTransferProposal(
     proposal: Proposal,
-): "Exchange" | "Batch Payment Request" | undefined {
+): "Exchange" | "Batch Payment Request" | "Payment Request" | undefined {
     if (!("FunctionCall" in proposal.kind)) return undefined;
     const functionCall = proposal.kind.FunctionCall;
+    const proposalAction = decodeProposalDescription(
+        "proposal action",
+        proposal.description,
+    );
+    // NEP-245 withdrawal via mt_withdraw is always a Payment Request
+    if (
+        functionCall.actions.some(
+            (action) => action.method_name === "mt_withdraw",
+        )
+    ) {
+        return "Payment Request" as const;
+    }
+
     const transfer = functionCall.actions.find(
         (action) =>
             action.method_name === "mt_transfer" ||
@@ -136,6 +149,9 @@ function processMTTransferProposal(
         if (args?.receiver_id === BULK_PAYMENT_CONTRACT_ID) {
             return "Batch Payment Request" as const;
         }
+        if (proposalAction === "payment-transfer") {
+            return "Payment Request" as const;
+        }
         return "Exchange" as const;
     }
     return undefined;
@@ -144,12 +160,27 @@ function processMTTransferProposal(
 function isIntentWithdrawProposal(proposal: Proposal): boolean {
     if (!("FunctionCall" in proposal.kind)) return false;
     const functionCall = proposal.kind.FunctionCall;
-    return (
-        functionCall.receiver_id === "intents.near" &&
+    if (functionCall.receiver_id !== "intents.near") return false;
+
+    // NEP-141 withdrawal via ft_withdraw
+    if (
         functionCall.actions.some(
             (action) => action.method_name === "ft_withdraw",
         )
-    );
+    ) {
+        return true;
+    }
+
+    // NEP-245 withdrawal via mt_withdraw
+    if (
+        functionCall.actions.some(
+            (action) => action.method_name === "mt_withdraw",
+        )
+    ) {
+        return true;
+    }
+
+    return false;
 }
 
 function isLookupTransferProposal(proposal: Proposal): boolean {
@@ -420,7 +451,28 @@ export function getProposalRequiredFunds(
         if (ftWithdrawAction) {
             const args = decodeArgs(ftWithdrawAction.args);
             if (args?.amount && args?.token) {
-                return { tokenId: `nep141:${args.token}`, amount: args.amount };
+                const tokenId =
+                    args.token.startsWith("nep141:") ||
+                    args.token.startsWith("nep245:")
+                        ? args.token
+                        : `nep141:${args.token}`;
+                return { tokenId, amount: args.amount };
+            }
+        }
+
+        // Check for mt_withdraw (NEP-245 Intents withdrawal)
+        const mtWithdrawAction = actions.find(
+            (a) => a.method_name === "mt_withdraw",
+        );
+        if (mtWithdrawAction) {
+            const args = decodeArgs(mtWithdrawAction.args);
+            if (args?.amounts?.[0] && args?.token_ids?.[0]) {
+                const tokenId = args.token_ids[0]
+                    ? args.token_ids[0].startsWith("nep245:")
+                        ? args.token_ids[0]
+                        : `nep245:${args.token}:${args.token_ids[0]}`
+                    : `nep245:${functionCall.receiver_id}:${args.token_ids[0]}`;
+                return { tokenId, amount: args.amounts[0] };
             }
         }
 

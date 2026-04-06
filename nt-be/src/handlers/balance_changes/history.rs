@@ -24,10 +24,10 @@ use urlencoding::encode;
 use crate::AppState;
 use crate::config::get_plan_config;
 use crate::handlers::balance_changes::query_builder::{
-    BalanceChangeFilters, RELAYER_ACCOUNT, build_count_query,
+    BalanceChangeFilters, FROM_ACCOUNT_EXPR, RELAYER_ACCOUNT, TO_ACCOUNT_EXPR, build_count_query,
 };
 use crate::handlers::subscription::plans::get_account_plan_info;
-use crate::handlers::token::TokenMetadata;
+use crate::handlers::token::{TokenMetadata, fetch_tokens_with_fallback};
 use crate::routes::{BalanceChangesQuery, EnrichedBalanceChange, get_balance_changes_internal};
 use crate::utils::serde::comma_separated;
 
@@ -170,8 +170,14 @@ pub async fn get_balance_chart(
         transaction_types: None, // Include all transaction types for balance chart
         min_amount: None,
         max_amount: None,
+        tx_hash: None,
+        from_accounts: None,
+        from_accounts_not: None,
+        to_accounts: None,
+        to_accounts_not: None,
         include_metadata: Some(false), // Chart doesn't need metadata
         include_prices: Some(true),    // Chart needs prices for USD values
+        include_chain_metadata: Some(false), // Chart doesn't need chain metadata
         exclude_near_dust: false,
         exclude_swaps_from_direction: false, // Balance chart: include swaps
     };
@@ -681,8 +687,14 @@ fn build_export_query(
         transaction_types: transaction_types.cloned(),
         min_amount: None,
         max_amount: None,
+        tx_hash: None,
+        from_accounts: None,
+        from_accounts_not: None,
+        to_accounts: None,
+        to_accounts_not: None,
         include_metadata: Some(true), // Export needs metadata (symbol, contract)
         include_prices: Some(true),   // Export needs prices (USD values)
+        include_chain_metadata: Some(false), // Export doesn't need chain metadata
         exclude_near_dust: false,
         exclude_swaps_from_direction: false, // Export: include swaps in incoming/outgoing
     }
@@ -1370,6 +1382,15 @@ pub struct RecentActivityQuery {
     pub transaction_type: Option<String>, // "outgoing" | "incoming" | "staking_rewards" | "exchange" (single selection for tabs)
     pub token_symbol: Option<String>,
     pub token_symbol_not: Option<String>,
+    pub tx_hash: Option<String>,
+    #[serde(rename = "from", default, deserialize_with = "comma_separated")]
+    pub from_account: Option<Vec<String>>,
+    #[serde(rename = "fromNot", default, deserialize_with = "comma_separated")]
+    pub from_account_not: Option<Vec<String>>,
+    #[serde(rename = "to", default, deserialize_with = "comma_separated")]
+    pub to_account: Option<Vec<String>>,
+    #[serde(rename = "toNot", default, deserialize_with = "comma_separated")]
+    pub to_account_not: Option<Vec<String>>,
     pub start_date: Option<String>,
     pub end_date: Option<String>,
 }
@@ -1379,6 +1400,32 @@ pub struct RecentActivityQuery {
 pub struct RecentActivityResponse {
     pub data: Vec<RecentActivity>,
     pub total: i64,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RecentActivitySendersQuery {
+    pub account_id: String,
+    pub transaction_type: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RecentActivitySendersResponse {
+    pub options: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RecentActivityRecipientsQuery {
+    pub account_id: String,
+    pub transaction_type: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RecentActivityRecipientsResponse {
+    pub options: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -1530,6 +1577,11 @@ pub async fn get_recent_activity(
         transaction_types: transaction_types_for_query.clone(),
         min_amount: None,
         max_amount: None,
+        transaction_hash_query: params.tx_hash.clone(),
+        from_accounts: params.from_account.clone(),
+        from_accounts_not: params.from_account_not.clone(),
+        to_accounts: params.to_account.clone(),
+        to_accounts_not: params.to_account_not.clone(),
         exclude_near_dust: true,
         exclude_swaps_from_direction: true, // Recent activity: exclude swaps from incoming/outgoing (separate tab)
     };
@@ -1553,6 +1605,21 @@ pub async fn get_recent_activity(
         count_query = count_query.bind(tokens);
     } else if let Some(ref exclude_tokens) = filters.exclude_token_ids {
         count_query = count_query.bind(exclude_tokens);
+    }
+    if let Some(ref tx_hash_query) = filters.transaction_hash_query {
+        count_query = count_query.bind(format!("%{}%", tx_hash_query));
+    }
+    if let Some(ref from_accounts) = filters.from_accounts {
+        count_query = count_query.bind(from_accounts);
+    }
+    if let Some(ref from_accounts_not) = filters.from_accounts_not {
+        count_query = count_query.bind(from_accounts_not);
+    }
+    if let Some(ref to_accounts) = filters.to_accounts {
+        count_query = count_query.bind(to_accounts);
+    }
+    if let Some(ref to_accounts_not) = filters.to_accounts_not {
+        count_query = count_query.bind(to_accounts_not);
     }
 
     let total: i64 = count_query.fetch_one(&state.db_pool).await.unwrap_or(0);
@@ -1581,13 +1648,19 @@ pub async fn get_recent_activity(
         transaction_types: transaction_types_for_query,
         min_amount: None,
         max_amount: None,
+        tx_hash: params.tx_hash.clone(),
+        from_accounts: params.from_account.clone(),
+        from_accounts_not: params.from_account_not.clone(),
+        to_accounts: params.to_account.clone(),
+        to_accounts_not: params.to_account_not.clone(),
         include_metadata: Some(true),
         include_prices: Some(true),
+        include_chain_metadata: Some(false), // Recent activity doesn't need chain metadata here (will be added for swaps later)
         exclude_near_dust: true,
         exclude_swaps_from_direction: true, // Recent activity: exclude swaps from incoming/outgoing (separate Exchange tab)
     };
 
-    let enriched_changes = get_balance_changes_internal(&state, &balance_query)
+    let mut enriched_changes = get_balance_changes_internal(&state, &balance_query)
         .await
         .map_err(|e| {
             log::error!("Failed to fetch recent activity: {}", e);
@@ -1599,6 +1672,34 @@ pub async fn get_recent_activity(
                 })),
             )
         })?;
+
+    // Enrich all recent-activity rows with chain metadata
+    let activity_token_ids: Vec<String> = enriched_changes
+        .iter()
+        .map(|c| c.token_id.clone())
+        .collect::<std::collections::HashSet<_>>()
+        .into_iter()
+        .collect();
+
+    if !activity_token_ids.is_empty() {
+        let chain_metadata_map =
+            fetch_tokens_with_fallback(&state, &activity_token_ids, true).await;
+        for change in &mut enriched_changes {
+            if let Some(ref mut metadata) = change.token_metadata
+                && let Some(chain_meta) = chain_metadata_map.get(&change.token_id)
+            {
+                if chain_meta.network.is_some() {
+                    metadata.network = chain_meta.network.clone();
+                }
+                if chain_meta.chain_name.is_some() {
+                    metadata.chain_name = chain_meta.chain_name.clone();
+                }
+                if chain_meta.chain_icons.is_some() {
+                    metadata.chain_icons = chain_meta.chain_icons.clone();
+                }
+            }
+        }
+    }
 
     // Look up detected swaps for both fulfillment and deposit IDs on this page
     let change_ids: Vec<i64> = enriched_changes.iter().map(|c| c.id).collect();
@@ -1699,16 +1800,21 @@ pub async fn get_recent_activity(
         }
     }
 
-    // Fetch metadata for any swap tokens not already in our map
-    let additional_token_ids: Vec<String> = swap_token_ids
+    // Fetch chain metadata only for swap tokens that are missing it.
+    let swap_token_ids_vec: Vec<String> = swap_token_ids
         .into_iter()
-        .filter(|id| !metadata_map.contains_key(id))
+        .filter(|token_id| {
+            metadata_map.get(token_id).is_none_or(|meta| {
+                meta.chain_icons.is_none() || meta.network.is_none() || meta.chain_name.is_none()
+            })
+        })
         .collect();
 
-    if !additional_token_ids.is_empty() {
-        use crate::handlers::token::fetch_tokens_with_fallback;
-        let additional_metadata = fetch_tokens_with_fallback(&state, &additional_token_ids).await;
-        metadata_map.extend(additional_metadata);
+    if !swap_token_ids_vec.is_empty() {
+        let swap_metadata_with_chain =
+            fetch_tokens_with_fallback(&state, &swap_token_ids_vec, true).await;
+        // Override the metadata_map with chain-enriched versions
+        metadata_map.extend(swap_metadata_with_chain);
     }
 
     // Convert enriched changes to RecentActivity format with swap info
@@ -1798,4 +1904,126 @@ pub async fn get_recent_activity(
         data: paginated_activities,
         total: actual_total,
     }))
+}
+
+pub async fn get_recent_activity_senders(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<RecentActivitySendersQuery>,
+) -> Result<Json<RecentActivitySendersResponse>, (StatusCode, Json<serde_json::Value>)> {
+    // Keep options endpoint unfiltered by date/token/hash/from, but honor transactionType tab.
+    let transaction_types_for_query = match params.transaction_type.as_deref() {
+        Some(t) => Some(vec![t.to_string()]),
+        None => None,
+    };
+
+    let filters = BalanceChangeFilters {
+        account_id: params.account_id.clone(),
+        date_cutoff: None,
+        start_date: None,
+        end_date: None,
+        token_ids: None,
+        exclude_token_ids: None,
+        transaction_types: transaction_types_for_query,
+        min_amount: None,
+        max_amount: None,
+        transaction_hash_query: None,
+        from_accounts: None,
+        from_accounts_not: None,
+        to_accounts: None,
+        to_accounts_not: None,
+        exclude_near_dust: true,
+        exclude_swaps_from_direction: true,
+    };
+
+    let (conditions, _) =
+        crate::handlers::balance_changes::query_builder::build_where_conditions(&filters);
+    let mut where_clause = conditions.join(" AND ");
+    where_clause.push_str(&format!(" AND ({}) IS NOT NULL", FROM_ACCOUNT_EXPR));
+    where_clause.push_str(&format!(" AND ({}) != 'STAKING_REWARD'", FROM_ACCOUNT_EXPR));
+
+    let query = format!(
+        "SELECT DISTINCT \
+            ({}) AS from_account \
+         FROM balance_changes \
+         WHERE {} \
+         ORDER BY from_account ASC",
+        FROM_ACCOUNT_EXPR, where_clause
+    );
+
+    let options_query =
+        sqlx::query_scalar::<sqlx::Postgres, String>(&query).bind(&params.account_id);
+
+    let options = options_query.fetch_all(&state.db_pool).await.map_err(|e| {
+        log::error!("Failed to fetch recent activity senders: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({
+                "error": "Failed to fetch recent activity senders",
+                "details": e.to_string()
+            })),
+        )
+    })?;
+
+    Ok(Json(RecentActivitySendersResponse { options }))
+}
+
+pub async fn get_recent_activity_recipients(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<RecentActivityRecipientsQuery>,
+) -> Result<Json<RecentActivityRecipientsResponse>, (StatusCode, Json<serde_json::Value>)> {
+    // Keep options endpoint unfiltered by date/token/hash/to, but honor transactionType tab.
+    let transaction_types_for_query = match params.transaction_type.as_deref() {
+        Some(t) => Some(vec![t.to_string()]),
+        None => None,
+    };
+
+    let filters = BalanceChangeFilters {
+        account_id: params.account_id.clone(),
+        date_cutoff: None,
+        start_date: None,
+        end_date: None,
+        token_ids: None,
+        exclude_token_ids: None,
+        transaction_types: transaction_types_for_query,
+        min_amount: None,
+        max_amount: None,
+        transaction_hash_query: None,
+        from_accounts: None,
+        from_accounts_not: None,
+        to_accounts: None,
+        to_accounts_not: None,
+        exclude_near_dust: true,
+        exclude_swaps_from_direction: true,
+    };
+
+    let (conditions, _) =
+        crate::handlers::balance_changes::query_builder::build_where_conditions(&filters);
+    let mut where_clause = conditions.join(" AND ");
+    where_clause.push_str(&format!(" AND ({}) IS NOT NULL", TO_ACCOUNT_EXPR));
+    where_clause.push_str(&format!(" AND ({}) != 'STAKING_REWARD'", TO_ACCOUNT_EXPR));
+
+    let query = format!(
+        "SELECT DISTINCT \
+            ({}) AS to_account \
+         FROM balance_changes \
+         WHERE {} \
+         ORDER BY to_account ASC",
+        TO_ACCOUNT_EXPR, where_clause
+    );
+
+    let options_query =
+        sqlx::query_scalar::<sqlx::Postgres, String>(&query).bind(&params.account_id);
+
+    let options = options_query.fetch_all(&state.db_pool).await.map_err(|e| {
+        log::error!("Failed to fetch recent activity recipients: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({
+                "error": "Failed to fetch recent activity recipients",
+                "details": e.to_string()
+            })),
+        )
+    })?;
+
+    Ok(Json(RecentActivityRecipientsResponse { options }))
 }

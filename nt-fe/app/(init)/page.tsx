@@ -7,13 +7,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/button";
-import Logo from "@/components/logo";
-import { useTreasury } from "@/hooks/use-treasury";
-import { useNear } from "@/stores/near-store";
-import { QueryProvider } from "@/components/query-provider";
-import { NearInitializer } from "@/components/near-initializer";
+import { toast } from "sonner";
 import { AuthProvider } from "@/components/auth-provider";
+import { Button } from "@/components/button";
+import { Input } from "@/components/input";
+import Logo from "@/components/logo";
 import {
     Dialog,
     DialogContent,
@@ -21,17 +19,19 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/modal";
+import { NearInitializer } from "@/components/near-initializer";
+import { QueryProvider } from "@/components/query-provider";
 import {
+    APP_ACTIVE_TREASURY,
     APP_WALLET_SETUP_URL,
     LANDING_PAGE,
-    APP_ACTIVE_TREASURY,
 } from "@/constants/config";
-import { trackEvent } from "@/lib/analytics";
-import { cn } from "@/lib/utils";
+import { useTreasury } from "@/hooks/use-treasury";
 import { useTreasuryCreationStatus } from "@/hooks/use-treasury-queries";
+import { trackEvent } from "@/lib/analytics";
 import { submitWhitelistRequest } from "@/lib/api";
-import { toast } from "sonner";
-import { Input } from "@/components/input";
+import { cn } from "@/lib/utils";
+import { useNear } from "@/stores/near-store";
 
 interface WalletSuggestionModalProps {
     open: boolean;
@@ -248,6 +248,7 @@ export function Content() {
                 accountId: accountId ?? undefined,
             });
             setSubmitted(true);
+            trackEvent("waitlist-submitted", { account_id: accountId });
         } catch {
             toast.error("Failed to submit. Please try again.");
         } finally {
@@ -492,6 +493,9 @@ export function Content() {
                                             className="w-full max-w-md"
                                             onClick={() => {
                                                 if (authError) clearError();
+                                                trackEvent(
+                                                    "wallet-connect-clicked",
+                                                );
                                                 connect();
                                             }}
                                             disabled={
@@ -510,7 +514,7 @@ export function Content() {
                                             className="font-medium text-sm text-foreground hover:text-foreground/80"
                                             onClick={() => {
                                                 trackEvent(
-                                                    "wallet_missing_click",
+                                                    "wallet-missing-click",
                                                     {
                                                         source: "welcome_page",
                                                     },

@@ -18,9 +18,12 @@ import {
     searchIntentsTokens,
     SearchTokensParams,
     getRecentActivity,
+    getRecentActivityRecipients,
+    getRecentActivitySenders,
     getExportHistory,
     getTreasuryCreationStatus,
 } from "@/lib/api";
+import { useTreasury } from "./use-treasury";
 
 /**
  * Query hook to get user's treasuries with config data
@@ -129,11 +132,12 @@ export function useTreasuryPolicy(
 export function useStorageDepositIsRegistered(
     accountId: string | null | undefined,
     tokenId: string | null | undefined,
+    enabled: boolean = true,
 ) {
     return useQuery({
         queryKey: ["storageDepositIsRegistered", accountId, tokenId],
         queryFn: () => getStorageDepositIsRegistered(accountId!, tokenId!),
-        enabled: !!accountId && !!tokenId,
+        enabled: enabled && !!accountId && !!tokenId,
         staleTime: 1000 * 60 * 5, // 5 minutes (storage deposits don't change frequently)
     });
 }
@@ -188,9 +192,10 @@ export function useLockupPool(accountId: string | null | undefined) {
  * Data is cached on the backend from social.near contract
  */
 export function useProfile(accountId: string | null | undefined) {
+    const { treasuryId, isGuestTreasury } = useTreasury();
     return useQuery({
-        queryKey: ["profile", accountId],
-        queryFn: () => getProfile(accountId!),
+        queryKey: ["profile", accountId, treasuryId, isGuestTreasury],
+        queryFn: () => getProfile(accountId!, treasuryId),
         enabled: !!accountId,
         staleTime: 1000 * 60 * 10, // 10 minutes (profile data doesn't change frequently)
     });
@@ -283,6 +288,11 @@ export function useRecentActivity(
     transactionType?: string,
     tokenSymbol?: string,
     tokenSymbolNot?: string,
+    txHash?: string,
+    fromAccount?: string[],
+    fromAccountNot?: string[],
+    toAccount?: string[],
+    toAccountNot?: string[],
     startDate?: string,
     endDate?: string,
 ) {
@@ -296,6 +306,11 @@ export function useRecentActivity(
             transactionType,
             tokenSymbol,
             tokenSymbolNot,
+            txHash,
+            fromAccount,
+            fromAccountNot,
+            toAccount,
+            toAccountNot,
             startDate,
             endDate,
         ],
@@ -308,11 +323,40 @@ export function useRecentActivity(
                 transactionType,
                 tokenSymbol,
                 tokenSymbolNot,
+                txHash,
+                fromAccount,
+                fromAccountNot,
+                toAccount,
+                toAccountNot,
                 startDate,
                 endDate,
             ),
         enabled: !!accountId,
         staleTime: 1000 * 5, // 5 seconds (activity changes frequently)
+    });
+}
+
+export function useRecentActivitySenders(
+    accountId: string | null | undefined,
+    transactionType?: string,
+) {
+    return useQuery({
+        queryKey: ["recentActivitySenders", accountId, transactionType],
+        queryFn: () => getRecentActivitySenders(accountId!, transactionType),
+        enabled: !!accountId,
+        staleTime: 1000 * 30,
+    });
+}
+
+export function useRecentActivityRecipients(
+    accountId: string | null | undefined,
+    transactionType?: string,
+) {
+    return useQuery({
+        queryKey: ["recentActivityRecipients", accountId, transactionType],
+        queryFn: () => getRecentActivityRecipients(accountId!, transactionType),
+        enabled: !!accountId,
+        staleTime: 1000 * 30,
     });
 }
 

@@ -2,10 +2,11 @@
 
 import { ChevronDown, ChevronLeft } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { NEAR_CHAIN_ICONS } from "@/constants/token";
-import { useAggregatedTokens, useAssets } from "@/hooks/use-assets";
-import { useBridgeTokens } from "@/hooks/use-bridge-tokens";
-import { useTreasury } from "@/hooks/use-treasury";
+import {
+    useMergedTokens,
+    type MergedNetwork,
+    type MergedToken,
+} from "@/hooks/use-merged-tokens";
 import type { ChainIcons } from "@/lib/api";
 import Big from "@/lib/big";
 import { cn, formatBalance, formatSmartAmount } from "@/lib/utils";
@@ -23,35 +24,6 @@ import { NetworkIconDisplay } from "./token-display";
 import { TokenDisplay } from "./token-display-with-network";
 import { ScrollArea } from "./ui/scroll-area";
 
-interface SelectListItem {
-    id: string;
-    name: string;
-    symbol?: string;
-    icon?: string;
-    gradient?: string;
-}
-
-// Core data types
-interface Network {
-    id: string;
-    name: string;
-    symbol?: string;
-    chainIcons: ChainIcons | null;
-    chainId: string;
-    decimals: number;
-    residency?: string;
-    lockedBalance?: string;
-    minWithdrawalAmount?: string;
-    minDepositAmount?: string;
-}
-
-interface Asset {
-    id: string;
-    name: string;
-    icon?: string;
-    networks: Network[];
-}
-
 // Selected token (asset + specific network)
 export interface SelectedTokenData {
     address: string;
@@ -62,30 +34,6 @@ export interface SelectedTokenData {
     network: string;
     chainIcons?: ChainIcons;
     residency?: string;
-    minWithdrawalAmount?: string; // Raw amount in smallest unit
-    minDepositAmount?: string; // Raw amount in smallest unit
-}
-
-// List item types (for display only)
-interface TokenListItem extends SelectListItem {
-    assetId: string;
-    assetName: string;
-    networks: Network[];
-    networkCount: number;
-    totalBalance?: number;
-    totalBalanceUSD?: number;
-}
-
-interface NetworkListItem extends SelectListItem {
-    networkId: string;
-    networkName: string;
-    chainId: string;
-    chainIcons: ChainIcons | null;
-    decimals: number;
-    balance?: string;
-    balanceUSD?: number;
-    residency?: string;
-    lockedBalance?: string;
     minWithdrawalAmount?: string;
     minDepositAmount?: string;
 }
@@ -121,6 +69,13 @@ interface TokenSelectProps {
         network: string;
         residency?: string;
     }) => boolean;
+    disableTokenMessage?: string;
+    disableTokens?: (token: {
+        address: string;
+        symbol: string;
+        network: string;
+        residency?: string;
+    }) => boolean;
 }
 
 export default function TokenSelect({
@@ -129,432 +84,139 @@ export default function TokenSelect({
     disabled,
     locked,
     lockedTokenData,
+    disableTokenMessage,
+    disableTokens,
     classNames,
     showOnlyOwnedAssets = false,
     iconSize = "md",
     filterTokens,
 }: TokenSelectProps) {
-    const { treasuryId } = useTreasury();
-    const { data: { tokens: treasuryAssets = [] } = {} } = useAssets(
-        treasuryId,
-        {
-            onlyPositiveBalance: false,
-            onlySupportedTokens: true,
-        },
-    );
-    const aggregatedTreasuryTokens = useAggregatedTokens(treasuryAssets);
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
-    const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+    const [selectedAsset, setSelectedAsset] = useState<MergedToken | null>(
+        null,
+    );
     const [step, setStep] = useState<"token" | "network">("token");
 
-    const { data: assets = [], isLoading } = useBridgeTokens(
-        !showOnlyOwnedAssets && open,
-    );
+    const { tokens, isLoading } = useMergedTokens({
+        enabled: !showOnlyOwnedAssets && open,
+        showOnlyOwned: showOnlyOwnedAssets,
+    });
 
-    // Auto-select first token
+    // Auto-select first available token on initial load.
     useEffect(() => {
-        if (treasuryAssets.length > 0 && !selectedToken && !locked) {
-            const firstToken = treasuryAssets[0];
+        if (tokens.length > 0 && !selectedToken && !locked) {
+            const firstToken = tokens[0];
+            const firstNetwork = firstToken.networks[0];
+            if (!firstNetwork) return;
             setSelectedToken({
-                address: firstToken.id,
-                symbol: firstToken.symbol,
-                decimals: firstToken.decimals,
-                name: firstToken.name || firstToken.symbol,
+                address: firstNetwork.id,
+                symbol: firstNetwork.symbol,
+                decimals: firstNetwork.decimals,
+                name: firstToken.name || firstNetwork.symbol,
                 icon: firstToken.icon || "",
-                network: firstToken.network,
-                chainIcons: firstToken.chainIcons || undefined,
-                residency: firstToken.residency,
+                network: firstNetwork.name,
+                chainIcons: firstNetwork.chainIcons || undefined,
+                residency: firstNetwork.residency,
+                minWithdrawalAmount: firstNetwork.minWithdrawalAmount,
+                minDepositAmount: firstNetwork.minDepositAmount,
             });
         }
-    }, [treasuryAssets, selectedToken, locked, setSelectedToken]);
+    }, [tokens, selectedToken, locked, setSelectedToken]);
 
-    const { yourAssets, otherAssets, hasAnyBalance } = useMemo(() => {
+    // Source-agnostic list for rendering/selecting.
+    const filteredTokens = useMemo(() => {
         const searchLower = search.toLowerCase();
 
-        const ownedTokensMap = new Map(
-            aggregatedTreasuryTokens.map((token) => [token.id, token]),
-        );
-        const bridgeAssetsMap = new Map(
-            assets.map((asset) => [asset.id, asset]),
-        );
+        const matchesSearch = (t: MergedToken) =>
+            !searchLower ||
+            t.id.includes(searchLower) ||
+            t.name.toLowerCase().includes(searchLower) ||
+            t.symbol.toLowerCase().includes(searchLower) ||
+            t.networks.some((n) =>
+                n.symbol.toLowerCase().includes(searchLower),
+            );
 
-        // Helper function to map treasury network to Network object
-        const mapTreasuryNetwork = (n: any) => ({
-            id: n.contractId ?? n.id,
-            name: n.network,
-            chainIcons:
-                n.chainIcons ||
-                (n.id === "near" && n.residency === "Near"
-                    ? NEAR_CHAIN_ICONS
-                    : null),
-            chainId: n.network,
-            decimals: n.decimals,
-            residency: n.residency,
-            lockedBalance:
-                n.balance.type === "Standard"
-                    ? n.balance.locked.toFixed(0)
-                    : undefined,
-            balance: n.availableBalanceRaw,
-            balanceUSD: n.availableBalanceUSD,
-        });
+        const applyNetworkFilter = (t: MergedToken): MergedToken | null => {
+            if (!filterTokens) return t;
+            const filtered = t.networks.filter((n) =>
+                filterTokens({
+                    address: n.id,
+                    symbol: n.symbol,
+                    network: n.name,
+                    residency: n.residency,
+                }),
+            );
+            if (filtered.length === 0) return null;
+            return { ...t, networks: filtered };
+        };
 
-        // 1. Process owned assets with bridge data overlay
-        const ownedAssets = aggregatedTreasuryTokens
-            .filter(
-                (token) =>
-                    token.id.toLowerCase().includes(searchLower) ||
-                    token.name?.toLowerCase().includes(searchLower),
-            )
-            .map((treasuryToken): TokenListItem | null => {
-                const bridgeAsset = bridgeAssetsMap.get(
-                    treasuryToken.id.toLowerCase(),
-                );
+        const filteredTokensList: MergedToken[] = [];
 
-                // Fallback: Treasury-only token (not in bridge API)
-                if (!bridgeAsset) {
-                    return {
-                        id: treasuryToken.id,
-                        name: treasuryToken.id.toUpperCase(),
-                        symbol: treasuryToken.id,
-                        icon: treasuryToken.icon || "",
-                        assetId: treasuryToken.id,
-                        assetName: treasuryToken.name,
-                        networks:
-                            treasuryToken.networks.map(mapTreasuryNetwork),
-                        networkCount: treasuryToken.networks.length,
-                        totalBalance: Number(
-                            treasuryToken.availableTotalBalance,
-                        ),
-                        totalBalanceUSD: treasuryToken.availableTotalBalanceUSD,
-                    };
-                }
-
-                // Create lookup maps for treasury networks
-                // n.id = unified asset id (e.g. "btc"), n.contractId = defuse id (e.g. "nep141:btc.omft.near")
-                // bridgeNetwork.id = defuse id, bridgeNetwork.name = chain name (e.g. "bitcoin")
-                const treasuryNetworksByContractId = new Map(
-                    treasuryToken.networks
-                        .filter((n) => n.contractId)
-                        .map((n) => [n.contractId!, n]),
-                );
-                // Chain-name fallback map: only include treasury networks WITHOUT a contractId.
-                // Networks with a contractId must match via contractId; if they don't match,
-                // they fall through as unmatched treasury-only entries (e.g. NEAR Near/Ft/Staked).
-                const treasuryNetworksByChainMap = new Map<
-                    string,
-                    typeof treasuryToken.networks
-                >();
-                for (const n of treasuryToken.networks) {
-                    if (n.contractId) continue;
-                    const existing =
-                        treasuryNetworksByChainMap.get(n.network) ?? [];
-                    existing.push(n);
-                    treasuryNetworksByChainMap.set(n.network, existing);
-                }
-
-                // Track matched treasury networks by a unique key to avoid duplicates
-                const treasuryNetworkKey = (n: any): string =>
-                    n.contractId ?? `${n.id}:${n.residency}`;
-                const matchedTreasuryNetworkKeys = new Set<string>();
-
-                // Merge bridge networks with treasury balance data.
-                // If multiple treasury entries match a single bridge network (same chain,
-                // different residency), expand into one entry per treasury network.
-                const mergedNetworks: (Network & {
-                    balance?: string;
-                    balanceUSD?: number;
-                })[] = [];
-
-                for (const bridgeNetwork of bridgeAsset.networks) {
-                    // Prefer contractId match first (exact), then fall back to chain name
-                    const contractIdMatch = treasuryNetworksByContractId.get(
-                        bridgeNetwork.id,
-                    );
-                    const chainMatches = contractIdMatch
-                        ? [contractIdMatch]
-                        : (treasuryNetworksByChainMap.get(bridgeNetwork.name) ??
-                          []);
-
-                    if (chainMatches.length === 0) {
-                        // No treasury match — bridge-only network
-                        mergedNetworks.push({
-                            id: bridgeNetwork.id,
-                            name: bridgeNetwork.name,
-                            symbol: bridgeNetwork.symbol,
-                            chainIcons: bridgeNetwork.chainIcons,
-                            chainId: bridgeNetwork.chainId,
-                            decimals: bridgeNetwork.decimals,
-                            minWithdrawalAmount:
-                                bridgeNetwork.minWithdrawalAmount,
-                            minDepositAmount: bridgeNetwork.minDepositAmount,
-                        });
-                    } else {
-                        for (const treasuryNetwork of chainMatches) {
-                            matchedTreasuryNetworkKeys.add(
-                                treasuryNetworkKey(treasuryNetwork),
-                            );
-                            mergedNetworks.push({
-                                id: bridgeNetwork.id,
-                                name: bridgeNetwork.name,
-                                symbol: bridgeNetwork.symbol,
-                                chainIcons: bridgeNetwork.chainIcons,
-                                chainId: bridgeNetwork.chainId,
-                                decimals: bridgeNetwork.decimals,
-                                residency: treasuryNetwork.residency,
-                                minWithdrawalAmount:
-                                    bridgeNetwork.minWithdrawalAmount,
-                                minDepositAmount:
-                                    bridgeNetwork.minDepositAmount,
-                                lockedBalance:
-                                    treasuryNetwork.balance.type === "Standard"
-                                        ? treasuryNetwork.balance.locked.toFixed(
-                                              0,
-                                          )
-                                        : undefined,
-                                balance: treasuryNetwork.availableBalanceRaw,
-                                balanceUSD: treasuryNetwork.availableBalanceUSD,
-                            });
-                        }
-                    }
-                }
-
-                // Add unmatched treasury networks (not covered by any bridge network)
-                treasuryToken.networks.forEach((tn) => {
-                    if (
-                        !matchedTreasuryNetworkKeys.has(treasuryNetworkKey(tn))
-                    ) {
-                        mergedNetworks.push(mapTreasuryNetwork(tn));
-                    }
-                });
-
-                return {
-                    id: treasuryToken.id,
-                    name: treasuryToken.id.toUpperCase(),
-                    symbol: treasuryToken.id,
-                    icon: treasuryToken.icon || bridgeAsset.icon || "",
-                    assetId: bridgeAsset.id,
-                    assetName: bridgeAsset.name,
-                    networks: mergedNetworks,
-                    networkCount: mergedNetworks.length,
-                    totalBalance: Number(treasuryToken.availableTotalBalance),
-                    totalBalanceUSD: treasuryToken.availableTotalBalanceUSD,
-                };
-            })
-            .filter((item): item is TokenListItem => item !== null)
-            .sort((a, b) => {
-                // Sort by USD value descending (highest first)
-                const aUSD = a.totalBalanceUSD || 0;
-                const bUSD = b.totalBalanceUSD || 0;
-                return bUSD - aUSD;
-            });
-
-        // 2. Early return for showOnlyOwnedAssets
-        if (showOnlyOwnedAssets) {
-            return {
-                yourAssets: ownedAssets,
-                otherAssets: [],
-                hasAnyBalance: ownedAssets.length > 0,
-            };
+        for (const token of tokens) {
+            if (!matchesSearch(token)) continue;
+            const filtered = applyNetworkFilter(token);
+            if (!filtered) continue;
+            filteredTokensList.push(filtered);
         }
 
-        // 3. Process other assets (not owned)
-        const otherAssetsFiltered = assets
-            .filter(
-                (token) =>
-                    !ownedTokensMap.has(token.id.toUpperCase()) &&
-                    (token.id.toLowerCase().includes(searchLower) ||
-                        token.name?.toLowerCase().includes(searchLower) ||
-                        token.networks[0]?.symbol
-                            ?.toLowerCase()
-                            .includes(searchLower)),
-            )
-            .map(
-                (token): TokenListItem => ({
-                    id: token.id,
-                    name: token.name,
-                    icon: token.icon,
-                    assetId: token.id,
-                    assetName: token.name,
-                    networks: token.networks,
-                    networkCount: token.networks.length,
-                    totalBalance: undefined,
-                    totalBalanceUSD: undefined,
-                }),
-            )
-            .sort((a, b) => (a.symbol || "").localeCompare(b.symbol || ""));
+        return filteredTokensList;
+    }, [tokens, search, filterTokens]);
 
-        return {
-            yourAssets: ownedAssets,
-            otherAssets: otherAssetsFiltered,
-            hasAnyBalance: ownedAssets.length > 0,
-        };
-    }, [assets, search, showOnlyOwnedAssets, aggregatedTreasuryTokens]);
-
-    // Apply custom filter if provided
-    const { yourAssets: filteredYourAssets, otherAssets: filteredOtherAssets } =
-        useMemo(() => {
-            if (!filterTokens) {
-                return { yourAssets, otherAssets, hasAnyBalance };
-            }
-
-            const applyFilter = (assets: typeof yourAssets) =>
-                assets
-                    .map((asset) => {
-                        const filteredNetworks = asset.networks.filter(
-                            (network) =>
-                                filterTokens({
-                                    address: network.id,
-                                    symbol: network.symbol ?? "",
-                                    network: network.name,
-                                    residency: network.residency,
-                                }),
-                        );
-
-                        if (filteredNetworks.length === 0) return null;
-
-                        const baseAssetName =
-                            asset.assetName || asset.name.split(" • ")[0];
-
-                        return {
-                            ...asset,
-                            name: baseAssetName,
-                            networks: filteredNetworks,
-                            networkCount: filteredNetworks.length,
-                        };
-                    })
-                    .filter(
-                        (asset): asset is NonNullable<typeof asset> =>
-                            asset !== null,
-                    );
-
-            const filteredOwned = applyFilter(yourAssets);
-            const filteredOther: any[] = applyFilter(otherAssets);
-
-            return {
-                yourAssets: filteredOwned,
-                otherAssets: filteredOther,
-                hasAnyBalance: filteredOwned.length > 0,
-            };
-        }, [yourAssets, otherAssets, hasAnyBalance, filterTokens]);
-
-    const networkItems = useMemo(() => {
-        if (!selectedAsset) return [];
-
-        const items = selectedAsset.networks.map(
-            (network: Network, idx: number): NetworkListItem => {
-                const treasuryNetwork = network as any;
-                const balance = treasuryNetwork.balance?.toString();
-                const balanceUSD = treasuryNetwork.balanceUSD;
-
-                return {
-                    id: `${network.chainId}-${idx}`,
-                    name: network.name,
-                    symbol: network.symbol,
-                    icon: selectedAsset.icon,
-                    networkId: network.id,
-                    networkName: network.name,
-                    chainId: network.chainId,
-                    chainIcons: network.chainIcons,
-                    decimals: network.decimals,
-                    balance,
-                    balanceUSD,
-                    residency: network.residency,
-                    lockedBalance: network.lockedBalance,
-                    minWithdrawalAmount: network.minWithdrawalAmount,
-                    minDepositAmount: network.minDepositAmount,
-                };
-            },
+    const { yourAssets, otherAssets } = useMemo(() => {
+        const yourAssetsFiltered = filteredTokens.filter(
+            (token) => (token.totalBalance ?? 0) > 0,
+        );
+        const otherAssetsFiltered = filteredTokens.filter(
+            (token) => (token.totalBalance ?? 0) <= 0,
         );
 
-        // Sort networks: ones with balance first (by USD value), then alphabetically
-        items.sort((a, b) => {
-            const aBalanceUSD = a.balanceUSD || 0;
-            const bBalanceUSD = b.balanceUSD || 0;
+        return {
+            yourAssets: yourAssetsFiltered,
+            otherAssets: otherAssetsFiltered,
+        };
+    }, [filteredTokens]);
 
-            if (aBalanceUSD > 0 === bBalanceUSD > 0) {
-                if (aBalanceUSD !== bBalanceUSD) {
-                    return bBalanceUSD - aBalanceUSD;
-                }
-                return a.name.localeCompare(b.name);
-            }
+    const networkItems = useMemo((): MergedNetwork[] => {
+        if (!selectedAsset) return [];
 
-            return bBalanceUSD > 0 ? 1 : -1;
+        return [...selectedAsset.networks].sort((a, b) => {
+            const aUSD = a.balanceUSD ?? 0;
+            const bUSD = b.balanceUSD ?? 0;
+            if (aUSD > 0 !== bUSD > 0) return bUSD > 0 ? 1 : -1;
+            if (aUSD !== bUSD) return bUSD - aUSD;
+            return a.name.localeCompare(b.name);
         });
-
-        return items;
     }, [selectedAsset]);
 
-    const handleTokenClick = useCallback((item: TokenListItem) => {
-        setSelectedAsset({
-            id: item.assetId,
-            name: item.assetName,
-            icon: item.icon,
-            networks: item.networks,
-        });
+    const handleTokenClick = useCallback((token: MergedToken) => {
+        setSelectedAsset(token);
         setStep("network");
     }, []);
 
     const handleNetworkClick = useCallback(
-        (item: NetworkListItem) => {
+        (network: MergedNetwork) => {
             if (!selectedAsset) return;
 
-            // Check if this is a treasury token (has residency defined and not "Intents")
-            const isTreasuryToken =
-                item.residency && item.residency !== "Intents";
-
-            if (isTreasuryToken) {
-                // Treasury token — prioritize contractId match, fall back to
-                // network name for native tokens that have no contractId (e.g. NEAR)
-                const allTreasuryNetworks = aggregatedTreasuryTokens.flatMap(
-                    (t) => t.networks,
-                );
-                const treasuryToken =
-                    allTreasuryNetworks.find(
-                        (n) =>
-                            n.contractId === item.networkId &&
-                            n.residency === item.residency,
-                    ) ??
-                    allTreasuryNetworks.find(
-                        (n) =>
-                            !n.contractId &&
-                            n.network === item.networkName &&
-                            n.residency === item.residency,
-                    );
-
-                if (treasuryToken) {
-                    setSelectedToken({
-                        address: treasuryToken.contractId ?? treasuryToken.id,
-                        symbol: treasuryToken.symbol,
-                        decimals: treasuryToken.decimals,
-                        name: treasuryToken.name || treasuryToken.symbol,
-                        icon: treasuryToken.icon || "",
-                        network: treasuryToken.network,
-                        chainIcons: treasuryToken.chainIcons || undefined,
-                        residency: treasuryToken.residency,
-                    });
-                }
-            } else {
-                setSelectedToken({
-                    address: item.networkId,
-                    symbol: item.symbol ?? "",
-                    decimals: item.decimals,
-                    name: selectedAsset.name,
-                    icon: selectedAsset.icon || "",
-                    network: item.networkName,
-                    chainIcons: item.chainIcons || undefined,
-                    residency: "Intents",
-                    minWithdrawalAmount: item.minWithdrawalAmount,
-                    minDepositAmount: item.minDepositAmount,
-                });
-            }
+            setSelectedToken({
+                address: network.id,
+                symbol: network.symbol,
+                decimals: network.decimals,
+                name: selectedAsset.name,
+                icon: selectedAsset.icon || "",
+                network: network.name,
+                chainIcons: network.chainIcons || undefined,
+                residency: network.residency,
+                minWithdrawalAmount: network.minWithdrawalAmount,
+                minDepositAmount: network.minDepositAmount,
+            });
 
             setOpen(false);
             setSearch("");
             setStep("token");
             setSelectedAsset(null);
         },
-        [selectedAsset, aggregatedTreasuryTokens, setSelectedToken],
+        [selectedAsset, setSelectedToken],
     );
 
     const handleBack = useCallback(() => {
@@ -591,6 +253,39 @@ export default function TokenSelect({
             </div>
         );
     }
+
+    const renderTokenButton = (token: MergedToken) => (
+        <Button
+            key={token.id}
+            onClick={() => handleTokenClick(token)}
+            variant="ghost"
+            type="button"
+            className="w-full flex items-center gap-1 py-3 rounded-lg h-auto justify-start pl-1!"
+        >
+            <SelectListIcon
+                icon={token.icon}
+                alt={token.symbol || token.name}
+            />
+            <div className="flex-1 text-left">
+                <div className="font-semibold">
+                    {token.symbol || token.name}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                    {`${token.networks.length} Network${token.networks.length > 1 ? "s" : ""}`}
+                </div>
+            </div>
+            {token.totalBalance !== undefined && token.totalBalance > 0 && (
+                <div className="flex flex-col items-end">
+                    <span className="font-semibold">
+                        {formatSmartAmount(token.totalBalance)}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                        ≈${token.totalBalanceUSD?.toFixed(2) || "0.00"}
+                    </span>
+                </div>
+            )}
+        </Button>
+    );
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -673,204 +368,31 @@ export default function TokenSelect({
                             </div>
                         ) : (
                             <ScrollArea className="h-[400px]">
-                                {showOnlyOwnedAssets ? (
-                                    <>
-                                        {filteredYourAssets.map((token) => (
-                                            <Button
-                                                key={token.id}
-                                                onClick={() =>
-                                                    handleTokenClick(token)
-                                                }
-                                                variant="ghost"
-                                                type="button"
-                                                className="w-full flex items-center gap-1 py-3 rounded-lg h-auto justify-start pl-1!"
-                                            >
-                                                <SelectListIcon
-                                                    icon={token.icon}
-                                                    gradient={token.gradient}
-                                                    alt={
-                                                        token.symbol ||
-                                                        token.name
-                                                    }
-                                                />
-                                                <div className="flex-1 text-left">
-                                                    <div className="font-semibold">
-                                                        {token.symbol ||
-                                                            token.name}
-                                                    </div>
-                                                    <div className="text-sm text-muted-foreground">
-                                                        {`${token.networks.length} Network${token.networks.length > 1 ? "s" : ""}`}
-                                                    </div>
-                                                </div>
-                                                {token.totalBalance !==
-                                                    undefined &&
-                                                    token.totalBalance > 0 && (
-                                                        <div className="flex flex-col items-end">
-                                                            <span className="font-semibold">
-                                                                {formatSmartAmount(
-                                                                    token.totalBalance,
-                                                                )}
-                                                            </span>
-                                                            <span className="text-sm text-muted-foreground">
-                                                                ≈$
-                                                                {token.totalBalanceUSD?.toFixed(
-                                                                    2,
-                                                                ) || "0.00"}
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                            </Button>
-                                        ))}
-                                        {filteredYourAssets.length === 0 && (
-                                            <div className="text-center py-8 text-muted-foreground">
-                                                No tokens with balance found
-                                            </div>
-                                        )}
-                                    </>
-                                ) : hasAnyBalance ? (
-                                    <>
-                                        {filteredYourAssets.length > 0 && (
-                                            <div className="mb-4">
-                                                <div className="text-xs font-medium text-muted-foreground uppercase px-2 py-2">
-                                                    Your Asset
-                                                </div>
-                                                {filteredYourAssets.map(
-                                                    (token) => (
-                                                        <Button
-                                                            key={token.id}
-                                                            onClick={() =>
-                                                                handleTokenClick(
-                                                                    token,
-                                                                )
-                                                            }
-                                                            variant="ghost"
-                                                            type="button"
-                                                            className="w-full flex items-center gap-1 py-3 rounded-lg h-auto justify-start pl-1!"
-                                                        >
-                                                            <SelectListIcon
-                                                                icon={
-                                                                    token.icon
-                                                                }
-                                                                gradient={
-                                                                    token.gradient
-                                                                }
-                                                                alt={
-                                                                    token.symbol ||
-                                                                    token.name
-                                                                }
-                                                            />
-                                                            <div className="flex-1 text-left">
-                                                                <div className="font-semibold">
-                                                                    {token.symbol ||
-                                                                        token.name}
-                                                                </div>
-                                                                <div className="text-sm text-muted-foreground">
-                                                                    {`${token.networks.length} Network${token.networks.length > 1 ? "s" : ""}`}
-                                                                </div>
-                                                            </div>
-                                                            {token.totalBalance !==
-                                                                undefined &&
-                                                                token.totalBalance >
-                                                                    0 && (
-                                                                    <div className="flex flex-col items-end">
-                                                                        <span className="font-semibold">
-                                                                            {formatSmartAmount(
-                                                                                token.totalBalance,
-                                                                            )}
-                                                                        </span>
-                                                                        <span className="text-sm text-muted-foreground">
-                                                                            ≈$
-                                                                            {token.totalBalanceUSD?.toFixed(
-                                                                                2,
-                                                                            ) ||
-                                                                                "0.00"}
-                                                                        </span>
-                                                                    </div>
-                                                                )}
-                                                        </Button>
-                                                    ),
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {filteredOtherAssets.length > 0 && (
-                                            <div>
-                                                <div className="text-xs font-medium text-muted-foreground uppercase px-2 py-2">
-                                                    Other Asset
-                                                </div>
-                                                {filteredOtherAssets.map(
-                                                    (token) => (
-                                                        <Button
-                                                            key={token.id}
-                                                            onClick={() =>
-                                                                handleTokenClick(
-                                                                    token,
-                                                                )
-                                                            }
-                                                            variant="ghost"
-                                                            type="button"
-                                                            className="w-full flex items-center gap-1 py-3 rounded-lg h-auto justify-start pl-1!"
-                                                        >
-                                                            <SelectListIcon
-                                                                icon={
-                                                                    token.icon
-                                                                }
-                                                                gradient={
-                                                                    token.gradient
-                                                                }
-                                                                alt={
-                                                                    token.id ||
-                                                                    token.name
-                                                                }
-                                                            />
-                                                            <div className="flex-1 text-left">
-                                                                <div className="font-semibold">
-                                                                    {token.id.toUpperCase() ||
-                                                                        token.name}
-                                                                </div>
-                                                                <div className="text-sm text-muted-foreground">
-                                                                    {`${token.networks.length} Network${token.networks.length > 1 ? "s" : ""}`}
-                                                                </div>
-                                                            </div>
-                                                        </Button>
-                                                    ),
-                                                )}
-                                            </div>
-                                        )}
-                                    </>
-                                ) : (
-                                    filteredOtherAssets.map((token) => (
-                                        <Button
-                                            key={token.id}
-                                            onClick={() =>
-                                                handleTokenClick(token)
-                                            }
-                                            variant="ghost"
-                                            type="button"
-                                            className="w-full flex items-center gap-1 py-3 rounded-lg h-auto justify-start pl-1!"
-                                        >
-                                            <SelectListIcon
-                                                icon={token.icon}
-                                                gradient={token.gradient}
-                                                alt={token.symbol || token.name}
-                                            />
-                                            <div className="flex-1 text-left">
-                                                <div className="font-semibold">
-                                                    {token.symbol || token.name}
-                                                </div>
-                                                <div className="text-sm text-muted-foreground">
-                                                    {`${token.networks.length} Network${token.networks.length > 1 ? "s" : ""}`}
-                                                </div>
-                                            </div>
-                                        </Button>
-                                    ))
-                                )}
-                                {filteredYourAssets.length === 0 &&
-                                    filteredOtherAssets.length === 0 && (
-                                        <div className="text-center py-8 text-muted-foreground">
-                                            No tokens found
+                                {yourAssets.length > 0 && (
+                                    <div className="mb-4">
+                                        <div className="text-xs font-medium text-muted-foreground uppercase px-2 py-2">
+                                            Your Assets
                                         </div>
-                                    )}
+                                        {yourAssets.map(renderTokenButton)}
+                                    </div>
+                                )}
+
+                                {otherAssets.length > 0 && (
+                                    <div>
+                                        <div className="text-xs font-medium text-muted-foreground uppercase px-2 py-2">
+                                            Other Assets
+                                        </div>
+                                        {otherAssets.map(renderTokenButton)}
+                                    </div>
+                                )}
+
+                                {filteredTokens.length === 0 && (
+                                    <div className="text-center py-8 text-muted-foreground">
+                                        {showOnlyOwnedAssets
+                                            ? "No tokens with balance found"
+                                            : "No tokens found"}
+                                    </div>
+                                )}
                             </ScrollArea>
                         )}
                     </div>
@@ -878,8 +400,8 @@ export default function TokenSelect({
                 {step === "network" && selectedAsset && (
                     <ScrollArea className="h-[400px]">
                         {(() => {
-                            const networksWithBalance = networkItems.filter(
-                                (item) => {
+                            const withBalance = networkItems
+                                .filter((item) => {
                                     if (
                                         !item.balance ||
                                         item.balance.trim() === "" ||
@@ -896,10 +418,18 @@ export default function TokenSelect({
                                     } catch {
                                         return false;
                                     }
-                                },
-                            );
-                            const networksWithoutBalance = networkItems.filter(
-                                (item) => {
+                                })
+                                .sort((a, b) => {
+                                    const aDisabled = disableTokens?.({
+                                        address: a.id,
+                                        symbol: a.symbol,
+                                        network: a.name,
+                                        residency: a.residency,
+                                    });
+                                    return aDisabled ? 1 : -1;
+                                });
+                            const withoutBalance = networkItems
+                                .filter((item) => {
                                     if (
                                         !item.balance ||
                                         item.balance.trim() === "" ||
@@ -916,66 +446,90 @@ export default function TokenSelect({
                                     } catch {
                                         return true;
                                     }
-                                },
-                            );
+                                })
+                                .sort((a, b) => {
+                                    const aDisabled = disableTokens?.({
+                                        address: a.id,
+                                        symbol: a.symbol,
+                                        network: a.name,
+                                        residency: a.residency,
+                                    });
+                                    return aDisabled ? 1 : -1;
+                                });
 
                             const renderNetworkButton = (
-                                item: NetworkListItem,
-                            ) => (
-                                <Button
-                                    key={item.id}
-                                    onClick={() => handleNetworkClick(item)}
-                                    variant="ghost"
-                                    type="button"
-                                    className="w-full flex items-center gap-1 py-3 rounded-lg h-auto justify-start pl-1!"
-                                >
-                                    <div className="pl-3 w-full">
-                                        <div className="flex items-center gap-3">
-                                            <NetworkIconDisplay
-                                                chainIcons={item.chainIcons}
-                                                networkName={item.name}
-                                                residency={item.residency}
-                                            />
+                                item: MergedNetwork,
+                                idx: number,
+                            ) => {
+                                const isDisabled = disableTokens?.({
+                                    address: item.id,
+                                    symbol: item.symbol,
+                                    network: item.name,
+                                    residency: item.residency,
+                                });
+                                return (
+                                    <Button
+                                        key={`${item.id}-${idx}`}
+                                        onClick={() => handleNetworkClick(item)}
+                                        variant="ghost"
+                                        type="button"
+                                        disabled={isDisabled}
+                                        tooltipContent={
+                                            isDisabled
+                                                ? disableTokenMessage
+                                                : undefined
+                                        }
+                                        className="w-full flex items-center gap-1 py-3 rounded-lg h-auto justify-start pl-1!"
+                                    >
+                                        <div className="pl-3 w-full">
+                                            <div className="flex items-center gap-3">
+                                                <NetworkIconDisplay
+                                                    chainIcons={item.chainIcons}
+                                                    networkName={item.name}
+                                                    residency={item.residency}
+                                                />
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="flex-1" />
-                                    {networksWithBalance.includes(item) && (
-                                        <div className="flex flex-col items-end">
-                                            <span className="font-semibold">
-                                                {formatSmartAmount(
-                                                    formatBalance(
-                                                        item.balance!,
-                                                        item.decimals!,
-                                                    ),
-                                                )}
-                                            </span>
-                                            <span className="text-sm text-muted-foreground">
-                                                ≈$
-                                                {item.balanceUSD?.toFixed(2) ||
-                                                    "0.00"}
-                                            </span>
-                                        </div>
-                                    )}
-                                </Button>
-                            );
+                                        <div className="flex-1" />
+                                        {withBalance.includes(item) && (
+                                            <div className="flex flex-col items-end">
+                                                <span className="font-semibold">
+                                                    {formatSmartAmount(
+                                                        formatBalance(
+                                                            item.balance!,
+                                                            item.decimals!,
+                                                        ),
+                                                    )}
+                                                </span>
+                                                <span className="text-sm text-muted-foreground">
+                                                    ≈$
+                                                    {item.balanceUSD?.toFixed(
+                                                        2,
+                                                    ) || "0.00"}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </Button>
+                                );
+                            };
 
-                            if (networksWithBalance.length > 0) {
+                            if (withBalance.length > 0) {
                                 return (
                                     <>
                                         <div className="mb-4">
                                             <div className="text-xs font-medium text-muted-foreground uppercase px-2 py-2">
                                                 Networks with assets
                                             </div>
-                                            {networksWithBalance.map(
+                                            {withBalance.map(
                                                 renderNetworkButton,
                                             )}
                                         </div>
-                                        {networksWithoutBalance.length > 0 && (
+                                        {withoutBalance.length > 0 && (
                                             <div className="flex flex-col gap-2">
                                                 <div className="text-xs font-medium text-muted-foreground uppercase px-2 py-2">
                                                     Supported Networks
                                                 </div>
-                                                {networksWithoutBalance.map(
+                                                {withoutBalance.map(
                                                     renderNetworkButton,
                                                 )}
                                             </div>

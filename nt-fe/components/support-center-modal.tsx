@@ -14,7 +14,7 @@ import {
     LANDING_PAGE,
 } from "@/constants/config";
 import Link from "next/link";
-import { CirclePlay, Eye, File, Headphones } from "lucide-react";
+import { BarChart3, CirclePlay, Eye, File, Headphones } from "lucide-react";
 import Gleap from "gleap";
 import { LogoInlined } from "./logo";
 
@@ -102,6 +102,13 @@ const resourceItems: SupportItemProps[] = [
         title: "Follow Us on X",
         description: "Stay updated with our latest releases and insights.",
         href: APP_TWITTER_URL,
+    },
+    {
+        icon: <BarChart3 className="size-5" />,
+        title: "Stats",
+        description:
+            "View total assets under management across all sputnik DAOs.",
+        href: "/stats",
     },
 ];
 

@@ -273,9 +273,11 @@ export default function BalanceWithGraph({
     }
 
     // Fetch balance chart data with USD values
-    const { data: balanceChartData, isLoading } = useBalanceChart(
-        frozenChartParams.current,
-    );
+    const {
+        data: balanceChartData,
+        isLoading,
+        isFetching,
+    } = useBalanceChart(frozenChartParams.current);
 
     // Transform chart data for display
     const chartData = useMemo(() => {
@@ -794,7 +796,7 @@ export default function BalanceWithGraph({
                     </SelectContent>
                 </Select>
             </div>
-            {isLoading ? (
+            {isLoading || (isFetching && chartData.data.length === 0) ? (
                 <div className="h-56 w-full space-y-3 p-4">
                     <Skeleton className="h-50 w-full" />
                 </div>

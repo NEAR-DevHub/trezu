@@ -9,27 +9,27 @@
  * geoip-lite uses these same ISO codes.
  */
 export const SANCTIONED_COUNTRY_CODES: ReadonlySet<string> = new Set([
-  "AF", // Afghanistan
-  "BY", // Belarus
-  "CF", // Central African Republic
-  "CD", // Democratic Republic of Congo
-  "CU", // Cuba
-  "GW", // Guinea-Bissau
-  "HT", // Haiti
-  "IR", // Iran
-  "KP", // North Korea (DPRK)
-  "LY", // Libya
-  "ML", // Mali
-  "MM", // Myanmar (Burma)
-  "NI", // Nicaragua
-  "RU", // Russia
-  "SD", // Sudan
-  "SO", // Somalia
-  "SS", // South Sudan
-  "SY", // Syria
-  "VE", // Venezuela
-  "YE", // Yemen
-  "ZW", // Zimbabwe
+    "AF", // Afghanistan
+    "BY", // Belarus
+    "CF", // Central African Republic
+    "CD", // Democratic Republic of Congo
+    "CU", // Cuba
+    "GW", // Guinea-Bissau
+    "HT", // Haiti
+    "IR", // Iran
+    "KP", // North Korea (DPRK)
+    "LY", // Libya
+    "ML", // Mali
+    "MM", // Myanmar (Burma)
+    "NI", // Nicaragua
+    "RU", // Russia
+    "SD", // Sudan
+    "SO", // Somalia
+    "SS", // South Sudan
+    "SY", // Syria
+    "VE", // Venezuela
+    "YE", // Yemen
+    "ZW", // Zimbabwe
 ]);
 
 /**
@@ -40,18 +40,18 @@ export const SANCTIONED_COUNTRY_CODES: ReadonlySet<string> = new Set([
  * resolve as "UA" but are in sanctioned regions.
  */
 export const SANCTIONED_REGIONS: ReadonlyMap<
-  string,
-  ReadonlySet<string>
+    string,
+    ReadonlySet<string>
 > = new Map([
-  [
-    "UA",
-    new Set([
-      "43", // Crimea
-      "40", // Sevastopol
-      "14", // Donetsk
-      "09", // Luhansk
-      "23", // Zaporizhzhia
-      "65", // Kherson
-    ]),
-  ],
+    [
+        "UA",
+        new Set([
+            "43", // Crimea
+            "40", // Sevastopol
+            "14", // Donetsk
+            "09", // Luhansk
+            "23", // Zaporizhzhia
+            "65", // Kherson
+        ]),
+    ],
 ]);

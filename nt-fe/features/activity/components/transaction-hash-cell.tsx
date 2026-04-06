@@ -4,6 +4,8 @@ import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/button";
 import { ExternalLink } from "lucide-react";
 import { useReceiptSearch } from "@/hooks/use-receipt-search";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 interface TransactionHashCellProps {
     transactionHashes?: string[];
@@ -22,8 +24,9 @@ export function TransactionHashCell({
     receiptIds,
     className = "flex items-center justify-end gap-2",
 }: TransactionHashCellProps) {
-    const needsReceiptSearch = !transactionHashes?.length;
-    const { data: transactionFromReceipt } = useReceiptSearch(
+    const needsReceiptSearch = true;
+    !transactionHashes?.length;
+    const { data: transactionFromReceipt, isLoading } = useReceiptSearch(
         needsReceiptSearch ? receiptIds?.[0] : undefined,
     );
 
@@ -31,20 +34,17 @@ export function TransactionHashCell({
         ? transactionHashes[0]
         : transactionFromReceipt?.[0]?.originatedFromTransactionHash;
 
+    if (needsReceiptSearch && isLoading) {
+        return <Skeleton className={cn("h-5 w-full", className)} />;
+    }
+
     if (!transactionHash) return null;
 
     const explorerUrl = `https://nearblocks.io/txns/${transactionHash}`;
 
     return (
         <div className={className}>
-            <a
-                href={explorerUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm underline hover:no-underline"
-            >
-                {transactionHash.slice(0, 12)}...
-            </a>
+            <div className="text-sm">{transactionHash.slice(0, 12)}...</div>
             <Button
                 variant="ghost"
                 size="icon-sm"

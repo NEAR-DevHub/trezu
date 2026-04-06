@@ -21,24 +21,40 @@ export function isFTNEAR(address: string, residency?: string): boolean {
 /**
  * Checks if this is a NEAR deposit conversion (native NEAR → FT NEAR)
  */
-export function isNEARDeposit(sellToken: { address: string; residency?: string }, receiveToken: { address: string; residency?: string }): boolean {
-    return isNativeNEAR(sellToken.address, sellToken.residency) &&
-        isFTNEAR(receiveToken.address, receiveToken.residency);
+export function isNEARDeposit(
+    sellToken: { address: string; residency?: string },
+    receiveToken: { address: string; residency?: string },
+): boolean {
+    return (
+        isNativeNEAR(sellToken.address, sellToken.residency) &&
+        isFTNEAR(receiveToken.address, receiveToken.residency)
+    );
 }
 
 /**
  * Checks if this is a NEAR withdraw conversion (FT NEAR → native NEAR)
  */
-export function isNEARWithdraw(sellToken: { address: string; residency?: string }, receiveToken: { address: string; residency?: string }): boolean {
-    return isFTNEAR(sellToken.address, sellToken.residency) &&
-        isNativeNEAR(receiveToken.address, receiveToken.residency);
+export function isNEARWithdraw(
+    sellToken: { address: string; residency?: string },
+    receiveToken: { address: string; residency?: string },
+): boolean {
+    return (
+        isFTNEAR(sellToken.address, sellToken.residency) &&
+        isNativeNEAR(receiveToken.address, receiveToken.residency)
+    );
 }
 
 /**
  * Checks if this is a NEAR wrap/unwrap conversion (1:1 exchange)
  */
-export function isNEARWrapConversion(sellToken: { address: string; residency?: string }, receiveToken: { address: string; residency?: string }): boolean {
-    return isNEARDeposit(sellToken, receiveToken) || isNEARWithdraw(sellToken, receiveToken);
+export function isNEARWrapConversion(
+    sellToken: { address: string; residency?: string },
+    receiveToken: { address: string; residency?: string },
+): boolean {
+    return (
+        isNEARDeposit(sellToken, receiveToken) ||
+        isNEARWithdraw(sellToken, receiveToken)
+    );
 }
 
 /**
@@ -49,8 +65,8 @@ export function formatAssetForIntentsAPI(tokenAddress: string): string {
     return tokenAddress.startsWith("nep")
         ? tokenAddress
         : tokenAddress === "near"
-            ? "nep141:wrap.near"
-            : `nep141:${tokenAddress}`;
+          ? "nep141:wrap.near"
+          : `nep141:${tokenAddress}`;
 }
 
 /**

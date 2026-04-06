@@ -35,4 +35,3 @@ export function validateMinimumWithdrawal(
         return null;
     }
 }
-

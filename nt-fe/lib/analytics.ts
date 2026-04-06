@@ -1,5 +1,7 @@
 "use client";
 
+import posthog from "posthog-js";
+
 type AnalyticsParamValue = string | number | boolean | null | undefined;
 type AnalyticsParams = Record<string, AnalyticsParamValue>;
 
@@ -12,11 +14,12 @@ declare global {
 }
 
 export function trackEvent(eventName: string, params: AnalyticsParams = {}) {
-    if (!GA_MEASUREMENT_ID) return;
-    if (typeof window === "undefined") return;
+    posthog.capture(eventName, params);
 
-    window.gtag?.("event", eventName, {
-        send_to: GA_MEASUREMENT_ID,
-        ...params,
-    });
+    if (GA_MEASUREMENT_ID && typeof window !== "undefined") {
+        window.gtag?.("event", eventName, {
+            send_to: GA_MEASUREMENT_ID,
+            ...params,
+        });
+    }
 }

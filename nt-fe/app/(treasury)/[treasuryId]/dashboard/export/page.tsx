@@ -24,7 +24,10 @@ import { useNear } from "@/stores/near-store";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useExportHistory } from "@/hooks/use-treasury-queries";
 import { APP_CONTACT_US_URL } from "@/constants/config";
-import { DateTimePicker, DEFAULT_DATE_PRESETS } from "@/components/datepicker";
+import {
+    DatePickerPopover,
+    DEFAULT_DATE_PRESETS,
+} from "@/components/datepicker";
 import { Input } from "@/components/input";
 import {
     FormField,
@@ -60,11 +63,6 @@ import { ExportHistoryItem } from "@/lib/api";
 import { Download, Loader2 } from "lucide-react";
 import { User } from "@/components/user";
 import { FormattedDate } from "@/components/formatted-date";
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover";
 import { CreditsQuotaDisplay } from "@/components/credits-quota-display";
 import {
     useReactTable,
@@ -288,7 +286,7 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
                                     className={cn(
                                         "text-xs font-medium uppercase text-muted-foreground",
                                         header.column.id === "status" &&
-                                        "text-right",
+                                            "text-right",
                                     )}
                                 >
                                     {flexRender(
@@ -309,7 +307,7 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
                                     className={cn(
                                         "align-top",
                                         cell.column.id === "status" &&
-                                        "text-right",
+                                            "text-right",
                                     )}
                                 >
                                     {flexRender(
@@ -362,7 +360,8 @@ export default function ExportActivityPage() {
 
     // Create custom date presets based on plan's history limit
     const datePresets = useMemo(() => {
-        const historyMonths = planDetails?.planConfig?.limits?.historyLookupMonths;
+        const historyMonths =
+            planDetails?.planConfig?.limits?.historyLookupMonths;
         const presets = [...DEFAULT_DATE_PRESETS];
 
         if (historyMonths) {
@@ -372,7 +371,7 @@ export default function ExportActivityPage() {
             if (years >= 1) {
                 // Add "Last 1 year" preset
                 presets.push({
-                    label: 'Last 1 year',
+                    label: "Last 1 year",
                     value: {
                         from: subMonths(startOfDay(new Date()), 12),
                         to: endOfDay(new Date()),
@@ -383,7 +382,7 @@ export default function ExportActivityPage() {
             if (years >= 2) {
                 // Add "Last 2 years" preset
                 presets.push({
-                    label: 'Last 2 years',
+                    label: "Last 2 years",
                     value: {
                         from: subMonths(startOfDay(new Date()), 24),
                         to: endOfDay(new Date()),
@@ -431,7 +430,7 @@ export default function ExportActivityPage() {
             return;
         }
 
-        trackEvent("export_generate_click", {
+        trackEvent("export-generate-click", {
             source: "dashboard_export_page",
             treasury_id: treasuryId,
             document_type: documentType,
@@ -609,8 +608,7 @@ export default function ExportActivityPage() {
         return credits > 0;
     }, [planDetails]);
 
-    const exportCreditsRemaining =
-        planDetails?.exportCredits ?? 0;
+    const exportCreditsRemaining = planDetails?.exportCredits ?? 0;
     const exportCreditsTotal =
         planDetails?.planConfig?.limits?.monthlyExportCredits ??
         planDetails?.planConfig?.limits?.trialExportCredits ??
@@ -677,12 +675,12 @@ export default function ExportActivityPage() {
                                                 Export Recent Transactions
                                             </p>
                                             <p className="text-sm text-muted-foreground">
-                                                Export generation and downloads are
-                                                available to team members only.
+                                                Export generation and downloads
+                                                are available to team members
+                                                only.
                                             </p>
                                         </div>
                                     </div>
-
                                 </div>
 
                                 {/* No Credits Alert */}
@@ -756,7 +754,7 @@ export default function ExportActivityPage() {
                                                                 style={{
                                                                     borderColor:
                                                                         documentType ===
-                                                                            type.value
+                                                                        type.value
                                                                             ? "var(--general-unofficial-border-5)"
                                                                             : "var(--general-unofficial-border-3)",
                                                                 }}
@@ -773,107 +771,75 @@ export default function ExportActivityPage() {
                                                 <label className="text-sm font-medium mb-2 block">
                                                     Time Range
                                                 </label>
-                                                <Popover>
-                                                    <PopoverTrigger asChild>
-                                                        <Button
-                                                            variant="outline"
-                                                            className="w-full justify-start bg-transparent! border-2 font-normal"
-                                                        >
-                                                            <Calendar className="h-4 w-4" />
-                                                            <span className="text-sm">
-                                                                {dateRange?.from &&
-                                                                    dateRange?.to ? (
-                                                                    <>
-                                                                        {format(
-                                                                            dateRange.from,
-                                                                            "MMM dd, yyyy",
-                                                                        )}{" "}
-                                                                        -{" "}
-                                                                        {format(
-                                                                            dateRange.to,
-                                                                            "MMM dd, yyyy",
-                                                                        )}
-                                                                    </>
-                                                                ) : (
-                                                                    "Select date range"
-                                                                )}
-                                                            </span>
-                                                        </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent
-                                                        className="w-auto p-0"
-                                                        align="start"
-                                                        side="bottom"
-                                                    >
-                                                        <DateTimePicker
-                                                            mode="range"
-                                                            value={
-                                                                dateRange
-                                                                    ? {
-                                                                        from: dateRange.from,
-                                                                        to: dateRange.to,
-                                                                    }
-                                                                    : undefined
-                                                            }
-                                                            onChange={(
-                                                                range: any,
-                                                            ) => {
-                                                                if (
-                                                                    range &&
-                                                                    typeof range ===
-                                                                    "object" &&
-                                                                    "from" in
-                                                                    range
-                                                                ) {
-                                                                    form.setValue(
-                                                                        "dateRange",
-                                                                        {
-                                                                            from: range.from
-                                                                                ? startOfDay(
-                                                                                    range.from,
-                                                                                )
-                                                                                : startOfDay(
-                                                                                    new Date(),
-                                                                                ),
-                                                                            to: range.to
-                                                                                ? endOfDay(
-                                                                                    range.to,
-                                                                                )
-                                                                                : endOfDay(
-                                                                                    new Date(),
-                                                                                ),
-                                                                        },
-                                                                        {
-                                                                            shouldValidate: true,
-                                                                        },
-                                                                    );
-                                                                } else {
-                                                                    form.setValue(
-                                                                        "dateRange",
-                                                                        {
-                                                                            from: startOfDay(
-                                                                                new Date(),
-                                                                            ),
-                                                                            to: endOfDay(
-                                                                                new Date(),
-                                                                            ),
-                                                                        },
-                                                                        {
-                                                                            shouldValidate: true,
-                                                                        },
-                                                                    );
-                                                                }
-                                                            }}
-                                                            defaultMonth={
-                                                                defaultMonth
-                                                            }
-                                                            numberOfMonths={1}
-                                                            min={minDate}
-                                                            max={new Date()}
-                                                            presets={datePresets}
-                                                        />
-                                                    </PopoverContent>
-                                                </Popover>
+                                                <DatePickerPopover
+                                                    mode="range"
+                                                    value={
+                                                        dateRange
+                                                            ? {
+                                                                  from: dateRange.from,
+                                                                  to: dateRange.to,
+                                                              }
+                                                            : undefined
+                                                    }
+                                                    onChange={(range: any) => {
+                                                        if (
+                                                            range &&
+                                                            typeof range ===
+                                                                "object" &&
+                                                            "from" in range
+                                                        ) {
+                                                            form.setValue(
+                                                                "dateRange",
+                                                                {
+                                                                    from: range.from
+                                                                        ? startOfDay(
+                                                                              range.from,
+                                                                          )
+                                                                        : startOfDay(
+                                                                              new Date(),
+                                                                          ),
+                                                                    to: range.to
+                                                                        ? endOfDay(
+                                                                              range.to,
+                                                                          )
+                                                                        : endOfDay(
+                                                                              new Date(),
+                                                                          ),
+                                                                },
+                                                                {
+                                                                    shouldValidate: true,
+                                                                },
+                                                            );
+                                                        } else {
+                                                            form.setValue(
+                                                                "dateRange",
+                                                                {
+                                                                    from: startOfDay(
+                                                                        new Date(),
+                                                                    ),
+                                                                    to: endOfDay(
+                                                                        new Date(),
+                                                                    ),
+                                                                },
+                                                                {
+                                                                    shouldValidate: true,
+                                                                },
+                                                            );
+                                                        }
+                                                    }}
+                                                    defaultMonth={defaultMonth}
+                                                    numberOfMonths={1}
+                                                    min={minDate}
+                                                    max={new Date()}
+                                                    presets={datePresets}
+                                                    align="start"
+                                                    side="bottom"
+                                                    classNames={{
+                                                        trigger:
+                                                            "w-full justify-start bg-transparent! border-2 font-normal",
+                                                    }}
+                                                    placeholder="Select date range"
+                                                />
                                             </div>
 
                                             {/* Asset Selection */}
@@ -1055,10 +1021,10 @@ export default function ExportActivityPage() {
                                                 {!isMember || !accountId
                                                     ? "You don't have permission to export"
                                                     : !canGenerateExport
-                                                        ? "You’ve used all your quota"
-                                                        : isExporting
-                                                            ? "Exporting..."
-                                                            : "Export"}
+                                                      ? "You’ve used all your quota"
+                                                      : isExporting
+                                                        ? "Exporting..."
+                                                        : "Export"}
                                             </Button>
                                         </div>
                                     </TabsContent>
@@ -1068,7 +1034,7 @@ export default function ExportActivityPage() {
                                         className="mt-4"
                                     >
                                         {!exportHistoryData ||
-                                            exportHistoryData.data.length === 0 ? (
+                                        exportHistoryData.data.length === 0 ? (
                                             <EmptyState
                                                 icon={FileX}
                                                 title="No exports yet"
@@ -1095,9 +1061,7 @@ export default function ExportActivityPage() {
                             }}
                             className="gap-3 w-full"
                         >
-                            <p className="font-semibold">
-                                Export Requirements
-                            </p>
+                            <p className="font-semibold">Export Requirements</p>
                             <div className="space-y-3 text-sm">
                                 <div className="flex gap-2.5">
                                     <Calendar className="w-5 h-5 shrink-0 mt-0.5" />
@@ -1170,11 +1134,18 @@ export default function ExportActivityPage() {
                                             Looking for more flexibility?
                                         </span>
                                         <Button
-                                            variant={exportCreditsRemaining === 0 ? "default" : "secondary"}
+                                            variant={
+                                                exportCreditsRemaining === 0
+                                                    ? "default"
+                                                    : "secondary"
+                                            }
                                             className="px-2! py-3!"
                                             size="sm"
                                             onClick={() => {
-                                                window.open(APP_CONTACT_US_URL, "_blank");
+                                                window.open(
+                                                    APP_CONTACT_US_URL,
+                                                    "_blank",
+                                                );
                                             }}
                                         >
                                             Contact Us

@@ -291,6 +291,10 @@ export interface RecentActivityResponse {
     total: number;
 }
 
+export interface RecentActivityParticipantsResponse {
+    options: string[];
+}
+
 /**
  * Get recent activity (enriched balance changes) for an account
  * Returns transaction history with token metadata already included
@@ -303,6 +307,11 @@ export async function getRecentActivity(
     transactionType?: string,
     tokenSymbol?: string,
     tokenSymbolNot?: string,
+    txHash?: string,
+    fromAccount?: string[],
+    fromAccountNot?: string[],
+    toAccount?: string[],
+    toAccountNot?: string[],
     startDate?: string,
     endDate?: string,
 ): Promise<RecentActivityResponse | null> {
@@ -327,6 +336,21 @@ export async function getRecentActivity(
         if (tokenSymbolNot) {
             params.tokenSymbolNot = tokenSymbolNot;
         }
+        if (txHash) {
+            params.txHash = txHash;
+        }
+        if (fromAccount && fromAccount.length > 0) {
+            params.from = fromAccount.join(",");
+        }
+        if (fromAccountNot && fromAccountNot.length > 0) {
+            params.fromNot = fromAccountNot.join(",");
+        }
+        if (toAccount && toAccount.length > 0) {
+            params.to = toAccount.join(",");
+        }
+        if (toAccountNot && toAccountNot.length > 0) {
+            params.toNot = toAccountNot.join(",");
+        }
         if (startDate) {
             params.startDate = startDate;
         }
@@ -340,6 +364,58 @@ export async function getRecentActivity(
     } catch (error) {
         console.error("Error getting recent activity", error);
         return null;
+    }
+}
+
+export async function getRecentActivitySenders(
+    accountId: string,
+    transactionType?: string,
+): Promise<string[]> {
+    if (!accountId) return [];
+
+    try {
+        const url = `${BACKEND_API_BASE}/recent-activity/senders`;
+        const response = await axios.get<RecentActivityParticipantsResponse>(
+            url,
+            {
+                params: {
+                    accountId,
+                    ...(transactionType && transactionType !== "all"
+                        ? { transactionType }
+                        : {}),
+                },
+            },
+        );
+        return response.data.options ?? [];
+    } catch (error) {
+        console.error("Error getting recent activity senders", error);
+        return [];
+    }
+}
+
+export async function getRecentActivityRecipients(
+    accountId: string,
+    transactionType?: string,
+): Promise<string[]> {
+    if (!accountId) return [];
+
+    try {
+        const url = `${BACKEND_API_BASE}/recent-activity/recipients`;
+        const response = await axios.get<RecentActivityParticipantsResponse>(
+            url,
+            {
+                params: {
+                    accountId,
+                    ...(transactionType && transactionType !== "all"
+                        ? { transactionType }
+                        : {}),
+                },
+            },
+        );
+        return response.data.options ?? [];
+    } catch (error) {
+        console.error("Error getting recent activity recipients", error);
+        return [];
     }
 }
 
@@ -515,13 +591,15 @@ export async function getTokenMetadata(
     tokenId: string,
 ): Promise<TokenMetadata | null> {
     if (!tokenId) return null;
-
     let token = tokenId;
-    if (
+    const noPrefixNoNear =
         !token.startsWith("nep141:") &&
         !token.startsWith("nep245:") &&
-        token.toLowerCase() !== "near"
-    ) {
+        token.toLowerCase() !== "near";
+
+    if (noPrefixNoNear && token.split(":").length === 2) {
+        token = `nep245:${token}`;
+    } else if (noPrefixNoNear) {
         token = `nep141:${token}`;
     }
 
@@ -602,11 +680,13 @@ export async function getLockupContract(
 
 export interface ProfileData {
     name?: string;
+    addressBookName?: string;
     image?: string;
     backgroundImage?: string;
     description?: string;
     linktree?: any;
     tags?: any;
+    isInAddressBook?: boolean;
 }
 
 /**
@@ -615,6 +695,7 @@ export interface ProfileData {
  */
 export async function getProfile(
     accountId: string,
+    daoId?: string,
 ): Promise<ProfileData | null> {
     if (!accountId) return null;
 
@@ -622,7 +703,8 @@ export async function getProfile(
         const url = `${BACKEND_API_BASE}/user/profile`;
 
         const response = await axios.get<ProfileData>(url, {
-            params: { accountId },
+            params: { accountId, ...(daoId ? { daoId } : {}) },
+            withCredentials: true,
         });
 
         return response.data;

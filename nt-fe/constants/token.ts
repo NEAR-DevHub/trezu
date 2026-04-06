@@ -3,7 +3,7 @@ import { ChainIcons } from "@/lib/api";
 
 export const NEAR_CHAIN_ICONS: ChainIcons = {
     dark: "https://near-intents.org/static/icons/network/near.svg",
-    light: "https://near-intents.org/static/icons/network/near_dark.svg"
+    light: "https://near-intents.org/static/icons/network/near_dark.svg",
 };
 
 export const NEAR_TOKEN = {
@@ -15,4 +15,4 @@ export const NEAR_TOKEN = {
     name: "NEAR",
     chainIcons: NEAR_CHAIN_ICONS,
     residency: "Near",
-} satisfies Token
+} satisfies Token;

@@ -4,7 +4,13 @@ import { useNextStep } from "nextstepjs";
 import type { Tour } from "nextstepjs";
 import { useEffect, useCallback, useRef } from "react";
 import { useTreasury } from "@/hooks/use-treasury";
+import { useNear } from "@/stores/near-store";
 import { useResponsiveSidebar } from "@/stores/sidebar-store";
+import { useAddressBook } from "@/features/address-book";
+
+export const FEATURE_VERSION = 1 as const;
+export const NEW_FEATURE_TOUR_NAME = `NEW_FEATURE_${FEATURE_VERSION}` as const;
+export const NEW_FEATURE_STORAGE_KEY = "new-feature-tour-shown" as const;
 
 // Tour names
 export const PAGE_TOUR_NAMES = {
@@ -13,6 +19,7 @@ export const PAGE_TOUR_NAMES = {
     EXCHANGE_SETTINGS: "exchange-settings",
     MEMBERS_PENDING: "members-pending",
     GUEST_SAVE: "guest-save",
+    NEW_FEATURE: NEW_FEATURE_TOUR_NAME,
 } as const;
 
 // Local storage keys
@@ -22,6 +29,7 @@ export const PAGE_TOUR_STORAGE_KEYS = {
     EXCHANGE_SETTINGS_SHOWN: "exchange-settings-tour-shown",
     MEMBERS_PENDING_SHOWN: "members-pending-tour-shown",
     GUEST_SAVE_SHOWN: "guest-save-tour-shown",
+    NEW_FEATURE_SHOWN: NEW_FEATURE_STORAGE_KEY,
 } as const;
 
 // Selector IDs
@@ -32,6 +40,24 @@ export const PAGE_TOUR_SELECTORS = {
     MEMBERS_PENDING_BTN: "#members-pending-btn",
     GUEST_BADGE: "#guest-badge",
     GUEST_SAVE_BTN: "#guest-save-btn",
+    ADDRESS_BOOK_NEW: "#address-book-new",
+} as const;
+
+export const NEW_FEATURE_ANNOUNCEMENT = {
+    version: FEATURE_VERSION,
+    tourName: NEW_FEATURE_TOUR_NAME,
+    storageKey: NEW_FEATURE_STORAGE_KEY,
+    selector: PAGE_TOUR_SELECTORS.ADDRESS_BOOK_NEW,
+    ctaLabel: "Try It",
+    href: (treasuryId?: string | null) =>
+        treasuryId ? `/${treasuryId}/address-book` : "/address-book",
+    content: (
+        <>
+            New! 🎉 Save frequently used addresses for faster, error-free
+            payouts.
+            <br /> Your contacts stay private and visible only to your team.
+        </>
+    ),
 } as const;
 
 const defaultStepProps = {
@@ -127,6 +153,23 @@ export const GUEST_SAVE_TOUR: Tour = {
     ],
 };
 
+export const NEW_FEATURE_TOUR: Tour = {
+    tour: NEW_FEATURE_ANNOUNCEMENT.tourName,
+    steps: [
+        {
+            ...defaultStepProps,
+            content: NEW_FEATURE_ANNOUNCEMENT.content,
+            title: NEW_FEATURE_ANNOUNCEMENT.ctaLabel,
+            selector: NEW_FEATURE_ANNOUNCEMENT.selector,
+            side: "right",
+        },
+    ],
+};
+
+function getVersionedStorageKey(storageKey: string, version = 1) {
+    return `${storageKey}:v${version}`;
+}
+
 /**
  * Hook to trigger the guest save tour when a connected user views a guest treasury for the first time.
  */
@@ -176,37 +219,79 @@ export function useGuestSaveTour(
  * Hook to trigger a one-time page tour on mount.
  * Checks localStorage and guest status before showing.
  */
-export function usePageTour(tourName: string, storageKey: string) {
-    const { startNextStep } = useNextStep();
+export function usePageTour(
+    tourName: string,
+    storageKey: string,
+    options?: {
+        version?: number;
+        enabled?: boolean;
+        delay?: number;
+    },
+) {
+    const { startNextStep, currentTour } = useNextStep();
     const { isGuestTreasury, isLoading } = useTreasury();
     const hasTriggered = useRef(false);
+    const version = options?.version ?? 1;
+    const enabled = options?.enabled ?? true;
+    const delay = options?.delay ?? 500;
+    const versionedStorageKey = getVersionedStorageKey(storageKey, version);
+
+    useEffect(() => {
+        hasTriggered.current = false;
+    }, [versionedStorageKey]);
 
     const triggerTour = useCallback(() => {
         if (hasTriggered.current) return;
-        const alreadyShown = localStorage.getItem(storageKey) === "true";
+        if (currentTour || !enabled) return;
+
+        const alreadyShown =
+            localStorage.getItem(versionedStorageKey) === "true";
         if (alreadyShown) return;
 
         hasTriggered.current = true;
-        localStorage.setItem(storageKey, "true");
+        localStorage.setItem(versionedStorageKey, "true");
         startNextStep(tourName);
-    }, [storageKey, tourName, startNextStep]);
+    }, [currentTour, enabled, versionedStorageKey, tourName, startNextStep]);
 
     // Auto-trigger on mount (with delay for DOM readiness)
     useEffect(() => {
-        if (isGuestTreasury || isLoading) return;
+        if (isGuestTreasury || isLoading || !enabled || currentTour) return;
 
-        const alreadyShown = localStorage.getItem(storageKey) === "true";
+        const alreadyShown =
+            localStorage.getItem(versionedStorageKey) === "true";
         if (alreadyShown) return;
 
         const timeout = setTimeout(() => {
             triggerTour();
-        }, 500);
+        }, delay);
 
         return () => clearTimeout(timeout);
-    }, [isGuestTreasury, isLoading, storageKey, triggerTour]);
+    }, [
+        currentTour,
+        delay,
+        enabled,
+        isGuestTreasury,
+        isLoading,
+        triggerTour,
+        versionedStorageKey,
+    ]);
 
     // Return triggerTour for manual triggering (e.g., after form submit)
     return { triggerTour };
+}
+
+export function useNewFeatureTour(enabled = true) {
+    const { accountId } = useNear();
+    const { data: addressBook } = useAddressBook();
+
+    return usePageTour(
+        NEW_FEATURE_ANNOUNCEMENT.tourName,
+        `${NEW_FEATURE_ANNOUNCEMENT.storageKey}:${accountId ?? "anonymous"}`,
+        {
+            version: NEW_FEATURE_ANNOUNCEMENT.version,
+            enabled: enabled && addressBook && addressBook.length === 0,
+        },
+    );
 }
 
 /**

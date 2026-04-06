@@ -71,6 +71,8 @@ interface ResponsiveInputProps extends InputProps {
     icon?: React.ElementType;
     /** Placeholder text for the mobile expanded input. Falls back to `placeholder` if not provided. */
     mobilePlaceholder?: string;
+    /** Called when the mobile search input expands/collapses. */
+    onSearchActiveChange?: (active: boolean) => void;
 }
 
 /**
@@ -87,6 +89,7 @@ export function ResponsiveInput({
     mobilePlaceholder,
     search: _search,
     icon: Icon = Search,
+    onSearchActiveChange,
     ...props
 }: ResponsiveInputProps) {
     const [isOpen, setIsOpen] = useState(false);
@@ -113,11 +116,12 @@ export function ResponsiveInput({
 
     const handleClose = useCallback(() => {
         setIsOpen(false);
+        onSearchActiveChange?.(false);
         onChange?.({
             target: { value: "" },
         } as React.ChangeEvent<HTMLInputElement>);
         onDebouncedChange?.("");
-    }, [onChange, onDebouncedChange]);
+    }, [onChange, onDebouncedChange, onSearchActiveChange]);
 
     useEffect(() => {
         return () => {
@@ -146,7 +150,10 @@ export function ResponsiveInput({
                     size="icon"
                     aria-label="Open"
                     className="flex md:hidden"
-                    onClick={() => setIsOpen(true)}
+                    onClick={() => {
+                        setIsOpen(true);
+                        onSearchActiveChange?.(true);
+                    }}
                 >
                     <Icon className="size-4" />
                 </Button>

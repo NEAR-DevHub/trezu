@@ -17,6 +17,7 @@ use super::swap_detector::{
 };
 use super::transfer_hints::tx_resolver::{TxActionInfo, resolve_receipt_block_height};
 use super::utils::block_timestamp_to_datetime;
+use bigdecimal::Zero;
 use near_api::NetworkConfig;
 use serde::Deserialize;
 use sqlx::PgPool;
@@ -612,11 +613,17 @@ pub async fn run_enrichment_cycle(
             if let Some(cached) = receipt_block_cache.get(&outcome.id) {
                 cached.clone()
             } else {
+                // Only resolve counterparty data (predecessor + child receipts) for
+                // native NEAR events where tx-level signer/receiver is unreliable.
+                let has_near_event = events
+                    .iter()
+                    .any(|e| e.token_id.eq_ignore_ascii_case("near"));
                 let resolved = match resolve_receipt_block_height(
                     network,
                     tx_hash,
                     signer,
                     &outcome.id,
+                    has_near_event,
                 )
                 .await
                 {
@@ -713,6 +720,33 @@ pub async fn run_enrichment_cycle(
                 .cloned()
                 .unwrap_or(serde_json::json!({"source": "goldsky"}));
 
+            // For native NEAR events (Path B/C), the parsed counterparty comes from
+            // transaction-level signer_id/receiver_id which is often the approver or
+            // meta-tx relayer, not the actual sender/recipient of funds.
+            //
+            // Use receipt-level data from tx_status to find the real counterparty:
+            //   - Incoming (amount > 0): receipt_predecessor_id is the sender
+            //   - Outgoing (amount < 0): transfer_receiver_id is the recipient
+            let effective_counterparty = if event.token_id.eq_ignore_ascii_case("near") {
+                if amount > bigdecimal::BigDecimal::zero() {
+                    // Incoming: predecessor created the Transfer receipt → sender
+                    tx_action_info
+                        .as_ref()
+                        .and_then(|info| info.receipt_predecessor_id.as_deref())
+                        .filter(|p| *p != event.account_id)
+                        .unwrap_or(&event.counterparty)
+                } else {
+                    // Outgoing: child receipt executor → recipient
+                    tx_action_info
+                        .as_ref()
+                        .and_then(|info| info.transfer_receiver_id.as_deref())
+                        .filter(|r| *r != event.account_id)
+                        .unwrap_or(&event.counterparty)
+                }
+            } else {
+                &event.counterparty
+            };
+
             match upsert_balance_change(
                 app_pool,
                 &event.account_id,
@@ -726,7 +760,7 @@ pub async fn run_enrichment_cycle(
                 &transaction_hashes,
                 outcome.signer_id.as_deref(),
                 outcome.receiver_id.as_deref(),
-                &event.counterparty,
+                effective_counterparty,
                 effective_action_kind,
                 effective_method_name,
                 &effective_actions,

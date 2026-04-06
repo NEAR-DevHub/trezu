@@ -1,4 +1,11 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/modal";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from "@/components/modal";
 import { Button } from "@/components/button";
 
 interface InsufficientBalanceModalProps {
@@ -8,8 +15,14 @@ interface InsufficientBalanceModalProps {
     actionType: "vote" | "proposal";
 }
 
-export function InsufficientBalanceModal({ isOpen, onClose, requiredAmount, actionType }: InsufficientBalanceModalProps) {
-    const actionText = actionType === "vote" ? "cast this vote" : "create this request";
+export function InsufficientBalanceModal({
+    isOpen,
+    onClose,
+    requiredAmount,
+    actionType,
+}: InsufficientBalanceModalProps) {
+    const actionText =
+        actionType === "vote" ? "cast this vote" : "create this request";
     const actionName = actionType === "vote" ? "Voting" : "Creating a request";
 
     return (
@@ -19,7 +32,10 @@ export function InsufficientBalanceModal({ isOpen, onClose, requiredAmount, acti
                     <DialogTitle>Insufficient NEAR Balance</DialogTitle>
                 </DialogHeader>
                 <DialogDescription>
-                    You don't have enough NEAR tokens in your wallet to {actionText}. {actionName} requires a minimum balance of <strong>{requiredAmount} NEAR</strong>. Please add NEAR to your wallet and try again.
+                    You don't have enough NEAR tokens in your wallet to{" "}
+                    {actionText}. {actionName} requires a minimum balance of{" "}
+                    <strong>{requiredAmount} NEAR</strong>. Please add NEAR to
+                    your wallet and try again.
                 </DialogDescription>
                 <DialogFooter>
                     <Button className="w-full" onClick={onClose}>

@@ -5,7 +5,7 @@ import { useFormContext } from "react-hook-form";
 import { PageCard } from "@/components/card";
 import { Button } from "@/components/button";
 import { Textarea } from "@/components/textarea";
-import { Edit2, Trash2 } from "lucide-react";
+import { Edit2, Info, Trash2 } from "lucide-react";
 import { StepProps, ReviewStep } from "@/components/step-wizard";
 import { WarningAlert } from "@/components/warning-alert";
 import { TokenDisplay } from "@/components/token-display-with-network";
@@ -18,18 +18,23 @@ import {
     DialogDescription,
     DialogFooter,
 } from "@/components/modal";
+import { NumberBadge } from "@/components/number-badge";
 import type { BulkPaymentFormValues, BulkPaymentData } from "../schemas";
-import { formatBalance, formatSmartAmount } from "@/lib/utils";
+import { cn, formatBalance, formatSmartAmount } from "@/lib/utils";
 import { validateAccountsAndStorage } from "../utils";
-import { validateMinimumWithdrawal } from "@/lib/payment-validation";
 import { useToken, useTokenBalance } from "@/hooks/use-treasury-queries";
 import { useTreasury } from "@/hooks/use-treasury";
+import { useAddressBook } from "@/features/address-book";
 import { AmountSummary } from "@/components/amount-summary";
 import { CreateRequestButton } from "@/components/create-request-button";
 import { trackEvent } from "@/lib/analytics";
+import { NETWORK_FEE_TOOLTIP_TEXT } from "@/lib/intents-fee";
+import { Tooltip } from "@/components/tooltip";
+import { Address } from "@/components/address";
 
 interface ReviewPaymentsStepProps extends StepProps {
     initialPaymentData: BulkPaymentData[];
+    networkFeePerRecipient: string | null;
     onEditPayment: (index: number) => void;
     onPaymentDataChange: (data: BulkPaymentData[]) => void;
     onSubmit: () => void;
@@ -38,6 +43,7 @@ interface ReviewPaymentsStepProps extends StepProps {
 export function ReviewPaymentsStep({
     handleBack,
     initialPaymentData,
+    networkFeePerRecipient,
     onEditPayment,
     onPaymentDataChange,
     onSubmit,
@@ -57,6 +63,7 @@ export function ReviewPaymentsStep({
     } | null>(null);
 
     const { treasuryId } = useTreasury();
+    const { data: addressBook = [] } = useAddressBook();
     const { data: selectedTokenData } = useToken(selectedToken?.address || "");
     const { data: selectedTokenBalanceData } = useTokenBalance(
         treasuryId,
@@ -76,41 +83,8 @@ export function ReviewPaymentsStep({
                     paymentData,
                     selectedToken,
                 );
-
-                // Add minimum withdrawal validation
-                const paymentsWithMinValidation = validatedPayments.map(
-                    (payment) => {
-                        // Check minimum withdrawal amount
-                        const minWithdrawalError = validateMinimumWithdrawal(
-                            payment.amount,
-                            selectedToken.minWithdrawalAmount,
-                            selectedToken.decimals,
-                            selectedToken.symbol,
-                        );
-
-                        // Combine errors if both exist
-                        if (payment.validationError && minWithdrawalError) {
-                            return {
-                                ...payment,
-                                validationError: `${payment.validationError}; ${minWithdrawalError}`,
-                            };
-                        }
-
-                        // Use whichever error exists
-                        if (minWithdrawalError) {
-                            return {
-                                ...payment,
-                                validationError: minWithdrawalError,
-                            };
-                        }
-
-                        return payment;
-                    },
-                );
-
-                setPaymentData(paymentsWithMinValidation);
-                onPaymentDataChange(paymentsWithMinValidation);
-                setValidationComplete(true);
+                setPaymentData(validatedPayments);
+                onPaymentDataChange(validatedPayments);
             } finally {
                 setIsValidatingAccounts(false);
             }
@@ -134,7 +108,7 @@ export function ReviewPaymentsStep({
     };
 
     const handleProceedClick = () => {
-        trackEvent("bulk_payments_submit_click", {
+        trackEvent("bulk-payments-submit-click", {
             source: "bulk_payments_review_step",
             treasury_id: treasuryId ?? "",
         });
@@ -153,6 +127,9 @@ export function ReviewPaymentsStep({
     const hasValidationErrors = paymentData.some(
         (payment) => payment.validationError,
     );
+    const totalNetworkFee = networkFeePerRecipient
+        ? Big(networkFeePerRecipient).mul(paymentData.length)
+        : null;
 
     // Calculate total USD value and check insufficient balance
     let totalUSDValue = Big(0);
@@ -191,10 +168,14 @@ export function ReviewPaymentsStep({
                     token={selectedToken}
                     showNetworkIcon={true}
                 >
-                    <p className="font-normal">to {paymentData.length} {paymentData.length === 1 ? 'recipient' : 'recipients'}</p>
+                    <p className="font-normal">
+                        to {paymentData.length}{" "}
+                        {paymentData.length === 1 ? "recipient" : "recipients"}
+                    </p>
                     {hasInsufficientBalance && (
                         <p className="text-general-info-foreground text-sm mt-2 font-normal">
-                            Insufficient tokens. You can submit the request and top up before approval.
+                            Insufficient tokens. You can submit the request and
+                            top up before approval.
                         </p>
                     )}
                 </AmountSummary>
@@ -211,9 +192,10 @@ export function ReviewPaymentsStep({
                             {paymentData.map((_, index) => (
                                 <div key={index} className="space-y-3">
                                     <div className="flex items-start gap-3">
-                                        <div className="flex items-center justify-center w-6 h-6 rounded-full text-sm font-semibold shrink-0 bg-secondary text-foreground">
-                                            {index + 1}
-                                        </div>
+                                        <NumberBadge
+                                            number={index + 1}
+                                            variant="secondary"
+                                        />
                                         <div className="flex-1">
                                             <div className="flex justify-between mb-2">
                                                 <div className="flex flex-col gap-2 justify-between flex-1">
@@ -271,29 +253,55 @@ export function ReviewPaymentsStep({
                                 return (
                                     <div
                                         key={index}
-                                        className={`space-y-3 ${index < paymentData.length - 1
-                                            ? "border-b border-border pb-4"
-                                            : ""
-                                            }`}
+                                        className={`space-y-3 ${
+                                            index < paymentData.length - 1
+                                                ? "border-b border-border pb-4"
+                                                : ""
+                                        }`}
                                     >
                                         <div className="flex items-start gap-3">
-                                            <div
-                                                className={`flex items-center justify-center w-6 h-6 rounded-full text-sm font-semibold shrink-0 ${payment.validationError
-                                                    ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                                                    : "bg-secondary text-foreground"
-                                                    }`}
-                                            >
-                                                {index + 1}
-                                            </div>
+                                            <NumberBadge
+                                                number={index + 1}
+                                                variant={
+                                                    payment.validationError
+                                                        ? "error"
+                                                        : "secondary"
+                                                }
+                                            />
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-start justify-between gap-3 mb-2">
                                                     <div className="flex flex-col gap-2 justify-between min-w-0 flex-1 lg:flex-auto">
-                                                        <div className="flex gap-2">
-                                                            <span className="font-semibold text-sm text-foreground truncate lg:break-all">
-                                                                {
-                                                                    payment.recipient
-                                                                }
-                                                            </span>
+                                                        <div className="flex flex-col gap-0.5">
+                                                            {(() => {
+                                                                const contact =
+                                                                    addressBook.find(
+                                                                        (e) =>
+                                                                            e.address.toLowerCase() ===
+                                                                            payment.recipient.toLowerCase(),
+                                                                    );
+                                                                return (
+                                                                    <>
+                                                                        {contact && (
+                                                                            <span className="font-semibold text-sm text-foreground">
+                                                                                {
+                                                                                    contact.name
+                                                                                }
+                                                                            </span>
+                                                                        )}
+
+                                                                        <Address
+                                                                            address={
+                                                                                payment.recipient
+                                                                            }
+                                                                            className={cn(
+                                                                                contact
+                                                                                    ? "text-xs text-muted-foreground"
+                                                                                    : "font-semibold text-sm text-foreground",
+                                                                            )}
+                                                                        />
+                                                                    </>
+                                                                );
+                                                            })()}
                                                         </div>
                                                         {payment.validationError && (
                                                             <div className="text-xs text-red-600 dark:text-red-400 mb-2">
@@ -308,15 +316,22 @@ export function ReviewPaymentsStep({
                                                         <div className="flex flex-col gap-2 items-end">
                                                             <div className="flex items-center gap-2">
                                                                 <TokenDisplay
-                                                                    symbol={selectedToken.symbol}
-                                                                    icon={selectedToken.icon || ""}
-                                                                    chainIcons={selectedToken.chainIcons}
+                                                                    symbol={
+                                                                        selectedToken.symbol
+                                                                    }
+                                                                    icon={
+                                                                        selectedToken.icon ||
+                                                                        ""
+                                                                    }
+                                                                    chainIcons={
+                                                                        selectedToken.chainIcons
+                                                                    }
                                                                     iconSize="md"
                                                                 />
                                                                 <div className="text-right">
                                                                     <div className="text-sm font-semibold whitespace-nowrap">
                                                                         {formatSmartAmount(
-                                                                            payment.amount
+                                                                            payment.amount,
                                                                         )}{" "}
                                                                         {
                                                                             selectedToken.symbol
@@ -370,6 +385,26 @@ export function ReviewPaymentsStep({
                         </>
                     )}
                 </div>
+
+                {!isValidatingAccounts && totalNetworkFee && (
+                    <div className="flex items-center justify-between gap-2 text-sm py-3 border-t border-border">
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                            <p>Network Fee</p>
+                            <Tooltip
+                                content={NETWORK_FEE_TOOLTIP_TEXT}
+                                side="top"
+                            >
+                                <Info
+                                    className="size-3 shrink-0"
+                                    aria-label="Network fee info"
+                                />
+                            </Tooltip>
+                        </div>
+                        <p>
+                            {totalNetworkFee.toString()} {selectedToken.symbol}
+                        </p>
+                    </div>
+                )}
 
                 {/* Comment */}
                 {!isValidatingAccounts && (

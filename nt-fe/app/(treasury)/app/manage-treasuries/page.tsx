@@ -27,6 +27,7 @@ import { useUserTreasuriesWithOptions } from "@/hooks/use-treasury-queries";
 import { useNear } from "@/stores/near-store";
 import type { Treasury } from "@/lib/api";
 import { StepperHeader } from "@/components/step-wizard";
+import { useTreasury } from "@/hooks/use-treasury";
 
 function TreasuryRowSkeleton() {
     return (
@@ -137,6 +138,7 @@ function TreasuryRow({
 export default function ManageTreasuriesPage() {
     const router = useRouter();
     const { accountId, isInitializing } = useNear();
+    const { lastTreasuryId } = useTreasury();
     const { data: treasuries = [], isLoading } = useUserTreasuriesWithOptions(
         accountId,
         { includeHidden: true },
@@ -173,7 +175,7 @@ export default function ManageTreasuriesPage() {
         <PageComponentLayout
             title="Manage Treasuries"
             description="Control which treasuries appear in your account"
-            backButton="/"
+            backButton={lastTreasuryId ? `/${lastTreasuryId}` : "/"}
             hideCollapseButton
         >
             <div className="max-w-[720px] mx-auto">
