@@ -535,7 +535,7 @@ export default function BalanceWithGraph({
     }
 
     return (
-        <PageCard>
+        <PageCard id="balance-with-graph">
             <div className="mb-6">
                 <div className="flex justify-between gap-4">
                     <div className="flex-1">

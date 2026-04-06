@@ -177,7 +177,16 @@ export function WelcomeTooltip() {
 
     const handleStartTour = () => {
         handleDismiss();
-        startNextStep(TOUR_NAMES.DASHBOARD);
+        // Scroll the balance card (which contains the tour targets) into view
+        const balanceCard = document.getElementById("balance-with-graph");
+        if (balanceCard) {
+            balanceCard.scrollIntoView({ behavior: "smooth", block: "start" });
+        } else {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+        setTimeout(() => {
+            startNextStep(TOUR_NAMES.DASHBOARD);
+        }, 600);
     };
 
     if (
