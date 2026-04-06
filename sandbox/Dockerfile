@@ -39,10 +39,11 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY sandbox/sandbox-init/Cargo.toml ./
-COPY sandbox/sandbox-init/src ./src
+COPY sandbox/sandbox-init/Cargo.toml sandbox-init/
+COPY sandbox/sandbox-init/src sandbox-init/src
+COPY sandbox/contracts/ contracts/
 
-RUN cargo build --release
+RUN cd sandbox-init && cargo build --release
 
 # ============================================================================
 # Stage 3: Build the Treasury Backend (nt-be)
@@ -91,7 +92,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy built binaries
-COPY --from=sandbox-builder /build/target/release/sandbox-init /usr/local/bin/
+COPY --from=sandbox-builder /build/sandbox-init/target/release/sandbox-init /usr/local/bin/
 COPY --from=api-builder /build/target/release/nt-be /usr/local/bin/
 COPY --from=indexer-builder /app/target/release/sputnik-indexer /usr/local/bin/
 
@@ -107,6 +108,7 @@ RUN chmod +x /usr/local/bin/start-sandbox.sh /usr/local/bin/start-postgres.sh
 # Copy additional contracts (DAO factory, wrap.near, etc.)
 COPY sandbox/contracts/ /app/contracts/
 
+
 # Create directories
 RUN mkdir -p /data /var/log
 
@@ -115,7 +117,7 @@ RUN mkdir -p /data /var/log
 # 8080 - Treasury API
 # 5001 - Sputnik Indexer
 # 5432 - PostgreSQL
-EXPOSE 3030 8080 5001 5432
+EXPOSE 3030 4000 8080 5001 5432
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8080/api/health || exit 1

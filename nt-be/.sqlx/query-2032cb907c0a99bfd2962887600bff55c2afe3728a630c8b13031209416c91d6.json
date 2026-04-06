@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO dao_notifications (dao_id, event_type, source_id, source_table, payload)\n            VALUES ($1, $2, $3, 'balance_changes', $4)\n            ON CONFLICT (source_table, source_id, dao_id, event_type) DO NOTHING\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Int8",
+        "Jsonb"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "2032cb907c0a99bfd2962887600bff55c2afe3728a630c8b13031209416c91d6"
+}

@@ -160,11 +160,13 @@ pub async fn backfill_batch(
                 let usd_value = compute_usd_value(&rec.amount, price);
 
                 if let Some(val) = usd_value {
-                    sqlx::query("UPDATE balance_changes SET usd_value = $1 WHERE id = $2")
-                        .bind(&val)
-                        .bind(rec.id)
-                        .execute(pool)
-                        .await?;
+                    sqlx::query!(
+                        "UPDATE balance_changes SET usd_value = $1 WHERE id = $2",
+                        val,
+                        rec.id,
+                    )
+                    .execute(pool)
+                    .await?;
                     updated += 1;
                 }
             }

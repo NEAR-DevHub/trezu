@@ -1,0 +1,36 @@
+{
+  "correlationId": "7dc778af-d670-49fd-bdad-5b16cfe9078a",
+  "quote": {
+    "amountIn": "10000000000000000000000",
+    "amountInFormatted": "0.01",
+    "amountInUsd": "0.0128",
+    "amountOut": "10000000000000000000000",
+    "amountOutFormatted": "0.01",
+    "amountOutUsd": "0.0128",
+    "deadline": "2026-03-25T18:02:59.595Z",
+    "depositAddress": "4771565834a9388675e63d1809639567bcaa8f172f76eb7387993196d9645c9f",
+    "minAmountIn": "10000000000000000000000",
+    "minAmountOut": "9900000000000000000000",
+    "timeEstimate": 10,
+    "timeWhenInactive": "2026-03-25T18:02:59.595Z"
+  },
+  "quoteRequest": {
+    "amount": "10000000000000000000000",
+    "deadline": "2026-03-24T18:12:59.517Z",
+    "depositMode": "SIMPLE",
+    "depositType": "INTENTS",
+    "destinationAsset": "nep141:wrap.near",
+    "dry": false,
+    "originAsset": "nep141:wrap.near",
+    "quoteWaitingTimeMs": 5000,
+    "recipient": "petersalomonsendev.near",
+    "recipientType": "CONFIDENTIAL_INTENTS",
+    "refundTo": "petersalomonsendev.near",
+    "refundType": "CONFIDENTIAL_INTENTS",
+    "slippageTolerance": 100,
+    "swapType": "EXACT_INPUT",
+    "userAccountId": "petersalomonsendev.near"
+  },
+  "signature": "ed25519:3RemGtP6m44FCuTY6x4Mf6kA54rLRyBu8gGMv2gMG2X9525f91NRgYRqqZTDWW7G2PjyhaEQbsLwZVnuDF4T9PfM",
+  "timestamp": "2026-03-24T18:02:59.553Z"
+}

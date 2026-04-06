@@ -9,6 +9,35 @@ use wiremock::{
     matchers::{method, path_regex},
 };
 
+/// Create a JWT for integration tests using the test JWT secret.
+pub fn create_test_jwt(account_id: &str) -> String {
+    use base64::Engine;
+    use hmac::{Hmac, Mac};
+    use sha2::Sha256;
+
+    let jwt_secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| "test-jwt-secret".to_string());
+    let now = chrono::Utc::now();
+    let exp = now + chrono::Duration::hours(24);
+
+    let header =
+        base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(r#"{"alg":"HS256","typ":"JWT"}"#);
+    let payload = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(
+        serde_json::json!({
+            "sub": account_id,
+            "exp": exp.timestamp(),
+            "iat": now.timestamp(),
+        })
+        .to_string(),
+    );
+
+    type HmacSha256 = Hmac<Sha256>;
+    let mut mac = HmacSha256::new_from_slice(jwt_secret.as_bytes()).unwrap();
+    mac.update(format!("{}.{}", header, payload).as_bytes());
+    let sig = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(mac.finalize().into_bytes());
+
+    format!("{}.{}.{}", header, payload, sig)
+}
+
 static INIT: Once = Once::new();
 
 /// Load test environment variables. Safe to call multiple times - only runs once.

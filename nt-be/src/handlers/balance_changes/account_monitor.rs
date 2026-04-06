@@ -381,11 +381,11 @@ pub async fn run_maintenance_cycle(
 
         // 11. Conditional clear: only clear dirty_at if it hasn't changed since we started
         if let Some(dirty_at) = original_dirty_at {
-            let result = sqlx::query(
+            let result = sqlx::query!(
                 "UPDATE monitored_accounts SET dirty_at = NULL WHERE account_id = $1 AND dirty_at = $2",
+                account_id,
+                dirty_at,
             )
-            .bind(account_id)
-            .bind(dirty_at)
             .execute(pool)
             .await;
 

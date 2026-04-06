@@ -185,7 +185,7 @@ async fn cache_prices_batch(
         .map(|&p| BigDecimal::try_from(p))
         .collect::<Result<Vec<_>, _>>()?;
 
-    sqlx::query(
+    sqlx::query!(
         r#"
         INSERT INTO historical_prices (asset_id, price_date, price_usd, source)
         SELECT $1, unnest($2::date[]), unnest($3::numeric[]), $4
@@ -193,11 +193,11 @@ async fn cache_prices_batch(
             price_usd = EXCLUDED.price_usd,
             fetched_at = NOW()
         "#,
+        asset_id,
+        &dates,
+        &price_values,
+        source,
     )
-    .bind(asset_id)
-    .bind(&dates)
-    .bind(&price_values)
-    .bind(source)
     .execute(pool)
     .await?;
 

@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        DELETE FROM public_dashboard_daily_balances\n        WHERE snapshot_date = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Date"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d6384ca6ade183cd884df56891cb815b69391420c39642573b57d7bc9e740470"
+}

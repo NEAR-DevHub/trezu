@@ -555,6 +555,56 @@ export interface SwapStatusResponse {
 /**
  * Get swap execution status for an asset exchange proposal
  */
+/**
+ * Get the last proposal ID from the DAO contract via NEAR RPC.
+ * Returns the count of proposals (the next proposal will have ID = count).
+ */
+export async function getLastProposalId(daoId: string): Promise<number> {
+    const rpcUrl =
+        process.env.NEXT_PUBLIC_NEAR_RPC_URL ||
+        "https://archival-rpc.mainnet.fastnear.com";
+
+    const resp = await fetch(rpcUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: 1,
+            method: "query",
+            params: {
+                request_type: "call_function",
+                finality: "final",
+                account_id: daoId,
+                method_name: "get_last_proposal_id",
+                args_base64: Buffer.from("{}").toString("base64"),
+            },
+        }),
+    });
+
+    if (!resp.ok) {
+        throw new Error(
+            `RPC request failed with status ${resp.status}: ${resp.statusText}`,
+        );
+    }
+
+    const data = await resp.json();
+
+    if (data?.error) {
+        throw new Error(
+            `RPC error: ${data.error.message || JSON.stringify(data.error)}`,
+        );
+    }
+
+    const resultBytes: number[] = data?.result?.result;
+    if (!resultBytes) {
+        throw new Error(
+            "Failed to query get_last_proposal_id: no result bytes in RPC response",
+        );
+    }
+    const decoded = new TextDecoder().decode(new Uint8Array(resultBytes));
+    return JSON.parse(decoded) as number;
+}
+
 export async function getSwapStatus(
     depositAddress: string,
     depositMemo?: string,
