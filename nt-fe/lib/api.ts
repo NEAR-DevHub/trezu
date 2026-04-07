@@ -820,6 +820,7 @@ export interface CreateTreasuryRequest {
     governors: string[];
     financiers: string[];
     requestors: string[];
+    isConfidential?: boolean;
 }
 
 export interface CreateTreasuryResponse {

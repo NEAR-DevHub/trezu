@@ -1,0 +1,300 @@
+//! Confidential treasury setup — authenticates a newly created DAO with the
+//! 1Click confidential intents API, then updates its policy to the user's
+//! desired configuration.
+//!
+//! Flow (all executed by the backend signer which is the sole initial member):
+//! 1. Submit auth proposal (v1.signer sign call) → vote → extract MPC signature
+//! 2. Authenticate with 1Click API using the MPC signature
+//! 3. Submit ChangePolicy proposal (user's real config) → vote
+
+use std::sync::Arc;
+
+use base64::Engine;
+use near_api::{AccountId, Contract, NearGas, NearToken};
+use reqwest::StatusCode;
+use serde_json::{Value, json};
+
+use crate::AppState;
+use crate::constants::INTENTS_CONTRACT_ID;
+use crate::handlers::intents::confidential::config::oneclick_api_key;
+use crate::handlers::intents::confidential::prepare_auth::build_auth_proposal;
+use crate::handlers::relay::confidential::{extract_mpc_signature, fetch_mpc_public_key};
+
+/// Run the full confidential setup for a newly created treasury.
+///
+/// The treasury must have been created with `state.signer_id` as the sole
+/// Admin+Approver member (threshold=1) so this function can submit and
+/// immediately approve proposals.
+pub async fn setup_confidential_treasury(
+    state: &Arc<AppState>,
+    treasury_id: &AccountId,
+    target_policy: Value,
+) -> Result<(), (StatusCode, String)> {
+    let treasury_id_public_key = fetch_mpc_public_key(state, treasury_id.as_str()).await?;
+
+    let public_key_args = json!({
+        "public_key": treasury_id_public_key,
+    });
+    let public_key_args_b64 =
+        base64::engine::general_purpose::STANDARD.encode(public_key_args.to_string());
+    // Step 1: Add Public Key to intents.near
+    submit_and_approve_proposal(
+        state,
+        treasury_id,
+        json!({
+        "proposal": {
+            "description": "Add public key to intents.near",
+            "kind": {
+                "FunctionCall": {
+                    "receiver_id": INTENTS_CONTRACT_ID,
+                    "actions": [{
+                        "method_name": "add_public_key",
+                        "args": public_key_args_b64,
+                        "deposit": "1",
+                        "gas": NearGas::from_tgas(5),
+                    }],
+                }
+            }
+        }}),
+    )
+    .await?;
+
+    // ── Step 1: Auth proposal ───────────────────────────────────────────
+    log::info!(
+        "Confidential setup: creating auth proposal for {}",
+        treasury_id
+    );
+
+    // Step 2: Build auth proposal
+    let (auth_proposal, auth_payload) = build_auth_proposal(state, treasury_id.as_str()).await?;
+
+    let (proposal_id, vote_result_debug) =
+        submit_and_approve_proposal(state, treasury_id, auth_proposal).await?;
+
+    log::info!(
+        "Confidential setup: auth proposal #{} approved for {}",
+        proposal_id,
+        treasury_id
+    );
+
+    // ── Step 3: Authenticate with 1Click ────────────────────────────────
+    let sig_bytes = extract_mpc_signature(&vote_result_debug).ok_or_else(|| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to extract MPC signature from auth proposal result".to_string(),
+        )
+    })?;
+    let sig_b58 = format!("ed25519:{}", bs58::encode(&sig_bytes).into_string());
+
+    authenticate_with_1click(
+        state,
+        treasury_id,
+        &treasury_id_public_key,
+        &auth_payload,
+        &sig_b58,
+    )
+    .await?;
+
+    log::info!(
+        "Confidential setup: DAO {} authenticated with 1Click",
+        treasury_id
+    );
+
+    // ── Step 4: Change policy to user's config ──────────────────────────
+    let change_policy_proposal = json!({
+        "proposal": {
+            "description": "Set treasury policy to user configuration",
+            "kind": {
+                "ChangePolicy": {
+                    "policy": target_policy,
+                }
+            }
+        }
+    });
+
+    let (policy_proposal_id, _) =
+        submit_and_approve_proposal(state, treasury_id, change_policy_proposal).await?;
+
+    log::info!(
+        "Confidential setup: policy proposal #{} approved for {}",
+        policy_proposal_id,
+        treasury_id
+    );
+
+    Ok(())
+}
+
+/// Submit a proposal and immediately approve it.
+///
+/// Returns `(proposal_id, vote_result_debug)`. The debug string can be
+/// inspected for MPC signatures when the proposal triggers a v1.signer call.
+///
+/// Assumes `state.signer_id` is a member with sufficient permissions and
+/// the vote threshold is 1.
+async fn submit_and_approve_proposal(
+    state: &Arc<AppState>,
+    treasury_id: &AccountId,
+    proposal: Value,
+) -> Result<(u64, String), (StatusCode, String)> {
+    // Submit proposal
+    near_api::Contract(treasury_id.clone())
+        .call_function("add_proposal", proposal)
+        .transaction()
+        .gas(NearGas::from_tgas(100))
+        .with_signer(state.signer_id.clone(), state.signer.clone())
+        .send_to(&state.network)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to submit proposal: {}", e),
+            )
+        })?
+        .into_result()
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Proposal submission failed: {}", e),
+            )
+        })?;
+
+    // Get the proposal ID (last_id - 1)
+    let last_id: u64 = Contract(treasury_id.clone())
+        .call_function("get_last_proposal_id", ())
+        .read_only::<u64>()
+        .fetch_from(&state.network)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to get last proposal ID: {}", e),
+            )
+        })?
+        .data;
+    let proposal_id = last_id - 1;
+
+    // Fetch the proposal to get its kind (required by act_proposal)
+    let proposal_data: Value = Contract(treasury_id.clone())
+        .call_function("get_proposal", json!({"id": proposal_id}))
+        .read_only::<Value>()
+        .fetch_from(&state.network)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to fetch proposal #{}: {}", proposal_id, e),
+            )
+        })?
+        .data;
+    let kind = &proposal_data["kind"];
+
+    // Vote to approve
+    let result = near_api::Contract(treasury_id.clone())
+        .call_function(
+            "act_proposal",
+            json!({
+                "id": proposal_id,
+                "action": "VoteApprove",
+                "proposal": kind,
+            }),
+        )
+        .transaction()
+        .max_gas()
+        .deposit(NearToken::from_yoctonear(0))
+        .with_signer(state.signer_id.clone(), state.signer.clone())
+        .send_to(&state.network)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to vote on proposal #{}: {}", proposal_id, e),
+            )
+        })?;
+
+    Ok((proposal_id, format!("{:?}", result)))
+}
+
+/// Authenticate the DAO with the 1Click API using an MPC signature.
+async fn authenticate_with_1click(
+    state: &Arc<AppState>,
+    treasury_id: &AccountId,
+    treasury_id_public_key: &String,
+    auth_payload: &Value,
+    signature: &str,
+) -> Result<(), (StatusCode, String)> {
+    let url = format!(
+        "{}/v0/auth/authenticate",
+        state.env_vars.confidential_api_url
+    );
+
+    let body = json!({
+        "signedData": {
+            "standard": "nep413",
+            "payload": auth_payload,
+            "public_key": treasury_id_public_key,
+            "signature": signature,
+        }
+    });
+
+    let mut req = state
+        .http_client
+        .post(&url)
+        .header("content-type", "application/json");
+
+    if let Some(api_key) = oneclick_api_key() {
+        req = req.header("x-api-key", api_key);
+    }
+
+    let response = req.json(&body).send().await.map_err(|e| {
+        (
+            StatusCode::BAD_GATEWAY,
+            format!("1Click auth request failed: {}", e),
+        )
+    })?;
+
+    let status = response.status();
+    let resp_body: Value = response.json().await.unwrap_or_default();
+
+    if !status.is_success() {
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            format!("1Click auth failed ({}): {:?}", status, resp_body),
+        ));
+    }
+
+    // Store JWT tokens in monitored_accounts
+    if let (Some(access_token), Some(refresh_token)) = (
+        resp_body.get("accessToken").and_then(|v| v.as_str()),
+        resp_body.get("refreshToken").and_then(|v| v.as_str()),
+    ) {
+        let expires_in = resp_body
+            .get("expiresIn")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(3600);
+        let expires_at = chrono::Utc::now() + chrono::Duration::seconds(expires_in);
+
+        let _ = sqlx::query!(
+            r#"
+            UPDATE monitored_accounts
+            SET confidential_access_token = $1,
+                confidential_refresh_token = $2,
+                confidential_token_expires_at = $3
+            WHERE account_id = $4
+            "#,
+            access_token,
+            refresh_token,
+            expires_at,
+            treasury_id.as_str(),
+        )
+        .execute(&state.db_pool)
+        .await;
+
+        log::info!(
+            "Stored confidential JWT for DAO {} (expires in {}s)",
+            treasury_id,
+            expires_in
+        );
+    }
+
+    Ok(())
+}

@@ -8,12 +8,10 @@ use axum::{Json, extract::State, http::StatusCode};
 use base64::Engine;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use sha2::Digest;
 use std::sync::Arc;
 
+use crate::constants::{INTENTS_CONTRACT_ID, V1_SIGNER_CONTRACT_ID};
 use crate::{AppState, auth::AuthUser};
-
-const V1_SIGNER_CONTRACT: &str = "v1.signer";
 const V1_SIGNER_GAS: &str = "250000000000000";
 
 #[derive(Deserialize, Debug)]
@@ -41,10 +39,8 @@ pub struct AuthPayload {
 }
 
 /// Fetch the current salt from the intents.near contract.
-async fn fetch_salt(state: &Arc<AppState>) -> Result<[u8; 4], String> {
-    let intents: near_api::AccountId = "intents.near".parse().unwrap();
-
-    let result = near_api::Contract(intents)
+pub(crate) async fn fetch_salt(state: &Arc<AppState>) -> Result<[u8; 4], String> {
+    let result = near_api::Contract(INTENTS_CONTRACT_ID.into())
         .call_function("current_salt", ())
         .read_only::<String>()
         .fetch_from(&state.network)
@@ -60,7 +56,7 @@ async fn fetch_salt(state: &Arc<AppState>) -> Result<[u8; 4], String> {
 }
 
 /// Build a 32-byte nonce matching the 1Click API expected format.
-fn build_nonce(salt: &[u8; 4], deadline: &chrono::DateTime<chrono::Utc>) -> [u8; 32] {
+pub(crate) fn build_nonce(salt: &[u8; 4], deadline: &chrono::DateTime<chrono::Utc>) -> [u8; 32] {
     let deadline_ns = (deadline.timestamp_millis() as u64) * 1_000_000;
     let now_ns = (chrono::Utc::now().timestamp_millis() as u64) * 1_000_000;
     let random_tail: [u8; 7] = rand::random();
@@ -72,6 +68,83 @@ fn build_nonce(salt: &[u8; 4], deadline: &chrono::DateTime<chrono::Utc>) -> [u8;
     nonce[17..25].copy_from_slice(&now_ns.to_le_bytes());
     nonce[25..32].copy_from_slice(&random_tail);
     nonce
+}
+
+/// Build the auth proposal JSON and NEP-413 auth payload for a DAO.
+///
+/// Returns `(proposal, auth_payload_json)` — the proposal is ready to pass to
+/// `add_proposal`, and the auth payload is used later when authenticating with
+/// the 1Click API.
+pub(crate) async fn build_auth_proposal(
+    state: &Arc<AppState>,
+    dao_id: &str,
+) -> Result<(serde_json::Value, serde_json::Value), (StatusCode, String)> {
+    let deadline = chrono::Utc::now() + chrono::Duration::days(7);
+    let deadline_str = deadline.format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string();
+
+    let auth_message = json!({
+        "deadline": deadline_str,
+        "intents": [],
+        "signer_id": dao_id,
+    })
+    .to_string();
+
+    let salt = fetch_salt(state).await.map_err(|e| {
+        (
+            StatusCode::BAD_GATEWAY,
+            format!("Failed to fetch salt: {}", e),
+        )
+    })?;
+    let nonce = build_nonce(&salt, &deadline);
+    let nonce_b64 = base64::engine::general_purpose::STANDARD.encode(nonce);
+
+    let nep413_payload = near_api::signer::NEP413Payload {
+        message: auth_message.clone(),
+        nonce,
+        recipient: INTENTS_CONTRACT_ID.to_string(),
+        callback_url: None,
+    };
+    let hash = nep413_payload.compute_hash().map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to compute NEP-413 hash: {}", e),
+        )
+    })?;
+    let hash_hex = hex::encode(hash.0);
+
+    let sign_args = json!({
+        "request": {
+            "path": dao_id,
+            "payload_v2": { "Eddsa": hash_hex },
+            "domain_id": 1,
+        }
+    });
+    let sign_args_b64 = base64::engine::general_purpose::STANDARD.encode(sign_args.to_string());
+
+    let proposal = json!({
+        "proposal": {
+            "description": "Authenticate DAO for confidential intents",
+            "kind": {
+                "FunctionCall": {
+                        "receiver_id": V1_SIGNER_CONTRACT_ID,
+                        "actions": [{
+                        "method_name": "sign",
+                        "args": sign_args_b64,
+                        "deposit": "1",
+                        "gas": V1_SIGNER_GAS,
+                    }]
+                }
+            }
+        }
+    });
+
+    let auth_payload = json!({
+        "message": auth_message,
+        "nonce": nonce_b64,
+        "recipient": INTENTS_CONTRACT_ID.to_string(),
+    });
+
+    Ok((proposal, auth_payload))
 }
 
 /// POST /api/confidential-intents/prepare-auth
@@ -87,79 +160,29 @@ pub async fn prepare_auth(
         .verify_dao_member(&state.db_pool, &request.dao_id)
         .await
         .map_err(|e| (StatusCode::FORBIDDEN, format!("Not a DAO member: {}", e)))?;
-    // Build auth message (empty intents = auth-only)
-    let deadline = chrono::Utc::now() + chrono::Duration::days(7);
-    let deadline_str = deadline.format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string();
 
-    let auth_message = json!({
-        "deadline": deadline_str,
-        "intents": [],
-        "signer_id": request.dao_id,
-    })
-    .to_string();
+    let (proposal_with_wrapper, auth_payload_json) =
+        build_auth_proposal(&state, &request.dao_id).await?;
 
-    // Fetch salt from intents.near and build nonce
-    let salt = fetch_salt(&state).await.map_err(|e| {
-        (
-            StatusCode::BAD_GATEWAY,
-            format!("Failed to fetch salt: {}", e),
-        )
-    })?;
-    let nonce = build_nonce(&salt, &deadline);
-    let nonce_b64 = base64::engine::general_purpose::STANDARD.encode(nonce);
-
-    // Compute NEP-413 hash
-    let nep413_tag: u32 = (1u32 << 31) + 413;
-    let mut borsh_bytes = nep413_tag.to_le_bytes().to_vec();
-
-    // Borsh String: message
-    borsh_bytes.extend_from_slice(&(auth_message.len() as u32).to_le_bytes());
-    borsh_bytes.extend_from_slice(auth_message.as_bytes());
-
-    // Borsh [u8; 32]: nonce (fixed-size)
-    borsh_bytes.extend_from_slice(&nonce);
-
-    // Borsh String: recipient
-    let recipient = "intents.near";
-    borsh_bytes.extend_from_slice(&(recipient.len() as u32).to_le_bytes());
-    borsh_bytes.extend_from_slice(recipient.as_bytes());
-
-    // Borsh Option<String>: callback_url = None
-    borsh_bytes.push(0);
-
-    let hash = sha2::Sha256::digest(&borsh_bytes);
-    let hash_hex = hex::encode(hash);
-
-    // Build v1.signer sign args
-    let sign_args = json!({
-        "request": {
-            "path": request.dao_id,
-            "payload_v2": { "Eddsa": hash_hex },
-            "domain_id": 1,
-        }
-    });
-
-    let sign_args_b64 = base64::engine::general_purpose::STANDARD.encode(sign_args.to_string());
-
-    let proposal = json!({
-        "description": "Authenticate DAO for confidential intents",
-        "kind": {
-            "FunctionCall": {
-                "receiver_id": V1_SIGNER_CONTRACT,
-                "actions": [{
-                    "method_name": "sign",
-                    "args": sign_args_b64,
-                    "deposit": "1",
-                    "gas": V1_SIGNER_GAS,
-                }]
-            }
-        }
-    });
+    // build_auth_proposal wraps in {"proposal": ...}, unwrap for the handler response
+    let proposal = proposal_with_wrapper
+        .get("proposal")
+        .cloned()
+        .unwrap_or(proposal_with_wrapper);
 
     let auth_payload = AuthPayload {
-        message: auth_message,
-        nonce: nonce_b64,
-        recipient: recipient.to_string(),
+        message: auth_payload_json["message"]
+            .as_str()
+            .unwrap_or_default()
+            .to_string(),
+        nonce: auth_payload_json["nonce"]
+            .as_str()
+            .unwrap_or_default()
+            .to_string(),
+        recipient: auth_payload_json["recipient"]
+            .as_str()
+            .unwrap_or_default()
+            .to_string(),
     };
 
     // Store as pending auth for auto-submission after approval
