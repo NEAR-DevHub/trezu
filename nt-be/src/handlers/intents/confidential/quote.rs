@@ -66,7 +66,7 @@ pub async fn get_confidential_quote(
         .header("content-type", "application/json")
         .header("Authorization", format!("Bearer {}", access_token));
 
-    if let Some(api_key) = super::config::oneclick_api_key() {
+    if let Some(api_key) = &state.env_vars.oneclick_api_key {
         req = req.header("x-api-key", api_key);
     }
 

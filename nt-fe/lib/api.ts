@@ -1335,31 +1335,6 @@ export async function generateIntent(request: {
 }
 
 /**
- * Fetch confidential balances for a DAO.
- * Returns token balances from the 1Click confidential intents system.
- */
-export interface ConfidentialBalance {
-    available: string;
-    source: string;
-    tokenId: string;
-}
-
-export interface ConfidentialBalancesResponse {
-    balances: ConfidentialBalance[];
-}
-
-export async function getConfidentialBalances(
-    daoId: string,
-): Promise<ConfidentialBalancesResponse> {
-    const url = `${BACKEND_API_BASE}/confidential-intents/balances`;
-    const response = await axios.get(url, {
-        params: { daoId },
-        withCredentials: true,
-    });
-    return response.data;
-}
-
-/**
  * Prepare a confidential auth proposal for a DAO.
  * Returns the v1.signer proposal args to submit to the DAO.
  * The backend stores the auth payload for auto-submission after approval.

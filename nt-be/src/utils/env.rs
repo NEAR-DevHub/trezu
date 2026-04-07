@@ -34,6 +34,7 @@ pub struct EnvVars {
     pub oneclick_app_fee_bps: Option<u32>,
     pub oneclick_app_fee_recipient: Option<String>,
     pub oneclick_referral: Option<String>,
+    pub oneclick_api_key: Option<String>,
     // JWT authentication configuration
     pub jwt_secret: String,
     pub jwt_expiry_hours: u64,
@@ -144,6 +145,9 @@ impl Default for EnvVars {
                 .ok()
                 .filter(|s| !s.is_empty())
                 .or_else(|| Some("trezu".to_string())),
+            oneclick_api_key: std::env::var("ONECLICK_API_KEY")
+                .ok()
+                .filter(|s| !s.is_empty()),
             // JWT configuration
             jwt_secret: std::env::var("JWT_SECRET").expect("JWT_SECRET is not set"),
             jwt_expiry_hours: std::env::var("JWT_EXPIRY_HOURS")

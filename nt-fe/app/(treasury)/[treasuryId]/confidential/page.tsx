@@ -21,7 +21,7 @@ import { useNear } from "@/stores/near-store";
 import { formatBalance } from "@/lib/utils";
 import { CreateRequestButton } from "@/components/create-request-button";
 import { Loader2, Shield, ShieldCheck } from "lucide-react";
-import { getConfidentialBalances, prepareConfidentialAuth } from "@/lib/api";
+import { prepareConfidentialAuth } from "@/lib/api";
 import { PendingButton } from "@/components/pending-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WarningAlert } from "@/components/warning-alert";
@@ -78,22 +78,6 @@ function ConfidentialBalance({
     const [balances, setBalances] = useState<ConfidentialToken[] | null>(null);
     const [needsAuth, setNeedsAuth] = useState(false);
     const [isAuthenticating, setIsAuthenticating] = useState(false);
-
-    useEffect(() => {
-        if (!treasuryId) return;
-        getConfidentialBalances(treasuryId)
-            .then((resp: any) => {
-                setBalances(resp.balances || []);
-                setNeedsAuth(false);
-            })
-            .catch((err) => {
-                setBalances(null);
-                const status = err?.response?.status;
-                if (status === 401 || status === 502 || status === 403) {
-                    setNeedsAuth(true);
-                }
-            });
-    }, [treasuryId]);
 
     const handleAuthenticate = async () => {
         if (!treasuryId) return;
@@ -441,21 +425,6 @@ export default function ConfidentialPage() {
     >("loading");
     const [isAuthenticating, setIsAuthenticating] = useState(false);
     const [authProposalId, setAuthProposalId] = useState<number | null>(null);
-
-    // Check if the DAO is authenticated with the 1Click API
-    useEffect(() => {
-        if (!selectedTreasury) return;
-        getConfidentialBalances(selectedTreasury)
-            .then(() => setAuthState("authenticated"))
-            .catch((err) => {
-                const status = err?.response?.status;
-                if (status === 401 || status === 502 || status === 403) {
-                    setAuthState("needs_auth");
-                } else {
-                    setAuthState("needs_auth");
-                }
-            });
-    }, [selectedTreasury]);
 
     const handleAuthProposal = (proposalId: number) => {
         setAuthProposalId(proposalId);

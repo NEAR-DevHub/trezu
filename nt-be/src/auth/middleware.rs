@@ -1,5 +1,6 @@
 use crate::AppState;
 use crate::auth::{AuthError, jwt::hash_token, verify_jwt};
+use axum::http::StatusCode;
 use axum::{extract::FromRequestParts, http::request::Parts};
 use axum_extra::extract::CookieJar;
 use std::sync::Arc;
@@ -36,6 +37,19 @@ impl AuthUser {
         .map_err(|e| AuthError::DatabaseError(e.to_string()))?;
 
         member.map(|_| ()).ok_or(AuthError::NotDaoMember)
+    }
+
+    pub async fn verify_member_if_confidential(
+        &self,
+        db: &sqlx::PgPool,
+        dao_id: &str,
+    ) -> Result<bool, (StatusCode, String)> {
+        OptionalAuthUser::verify_member_if_confidential(
+            &OptionalAuthUser(Some(self.clone())),
+            db,
+            dao_id,
+        )
+        .await
     }
 }
 
@@ -86,6 +100,65 @@ impl FromRequestParts<Arc<AppState>> for AuthUser {
 /// Optional auth user - doesn't fail if no token is present
 #[derive(Debug, Clone)]
 pub struct OptionalAuthUser(pub Option<AuthUser>);
+
+impl OptionalAuthUser {
+    /// If the given account is a confidential treasury, verify that the caller
+    /// is an authenticated DAO policy member.
+    ///
+    /// Returns `true` if the account is confidential, `false` otherwise.
+    /// Fails with 401/403 when confidential but the caller is missing or not a member.
+    pub async fn verify_member_if_confidential(
+        &self,
+        db: &sqlx::PgPool,
+        dao_id: &str,
+    ) -> Result<bool, (StatusCode, String)> {
+        let row = sqlx::query!(
+            r#"
+            SELECT
+                ma.is_confidential_account,
+                dm.account_id AS "member_account_id?"
+            FROM monitored_accounts ma
+            LEFT JOIN dao_members dm
+                ON dm.dao_id = ma.account_id
+                AND dm.account_id = $2
+                AND dm.is_policy_member = true
+            WHERE ma.account_id = $1
+            "#,
+            dao_id,
+            self.0.as_ref().map(|u| u.account_id.as_str()),
+        )
+        .fetch_optional(db)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to check confidential status: {}", e),
+            )
+        })?;
+
+        let is_confidential = row
+            .as_ref()
+            .and_then(|r| r.is_confidential_account)
+            .unwrap_or(false);
+
+        if !is_confidential {
+            return Ok(false);
+        }
+
+        if self.0.is_none() {
+            return Err((
+                StatusCode::UNAUTHORIZED,
+                "Authentication required for confidential treasury".to_string(),
+            ));
+        }
+
+        if row.unwrap().member_account_id.is_none() {
+            return Err((StatusCode::FORBIDDEN, "Not a DAO member".to_string()));
+        }
+
+        Ok(true)
+    }
+}
 
 impl FromRequestParts<Arc<AppState>> for OptionalAuthUser {
     type Rejection = std::convert::Infallible;

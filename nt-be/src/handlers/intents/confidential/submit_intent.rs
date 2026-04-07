@@ -42,7 +42,7 @@ pub async fn submit_intent(
         .http_client
         .post(&url)
         .header("content-type", "application/json");
-    if let Some(api_key) = super::config::oneclick_api_key() {
+    if let Some(api_key) = &state.env_vars.oneclick_api_key {
         req = req.header("x-api-key", api_key);
     }
     let response = req.json(&body).send().await.map_err(|e| {

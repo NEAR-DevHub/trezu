@@ -145,7 +145,7 @@ All confidential endpoints are under `/api/confidential-intents/` and require au
 | `POST /api/confidential-intents/prepare-auth` | `prepare_auth.rs` | Build auth proposal args |
 | `POST /api/confidential-intents/quote` | `quote.rs` | Get shield quote |
 | `POST /api/confidential-intents/generate-intent` | `generate_intent.rs` | Generate intent + store for auto-submit |
-| `GET /api/confidential-intents/balances` | `balances.rs` | View confidential balances |
+| `GET /api/user/assets` | `assets.rs` | View balance depending on whether the user is a confidential treasury member |
 
 Note: `authenticate` and `submit-intent` are not exposed as frontend-facing endpoints. The backend handles both automatically via the relay's auto-submit flow after proposal approval.
 

@@ -52,7 +52,7 @@ async fn test_confidential_endpoints() {
     );
 
     let resp = client
-        .get(server.url("/api/confidential-intents/balances?daoId=test.sputnik-dao.near"))
+        .get(server.url("/api/user/assets?accountId=test.sputnik-dao.near"))
         .send()
         .await
         .unwrap();

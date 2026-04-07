@@ -292,10 +292,6 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
             post(handlers::intents::confidential::generate_intent::generate_intent),
         )
         .route(
-            "/api/confidential-intents/balances",
-            get(handlers::intents::confidential::balances::get_balances),
-        )
-        .route(
             "/api/confidential-intents/prepare-auth",
             post(handlers::intents::confidential::prepare_auth::prepare_auth),
         )
