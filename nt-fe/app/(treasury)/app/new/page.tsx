@@ -465,7 +465,7 @@ const TREASURY_TYPES = [
         description:
             "All balances, activities, and transactions are visible to anyone on the blockchain. This option is best for transparent organizations and public DAOs.",
         visibleOnChain: [
-            <Feature title="Balance, Transactions, etc." icon="anyone" />,
+            <Feature title="Balance, Transactions" icon="anyone" />,
             <Feature title="Members, Voting" icon="anyone" />,
         ],
         featuresAvailable: {
@@ -479,7 +479,7 @@ const TREASURY_TYPES = [
         description:
             "All balances, activities, and transfers private on the blockchain. Only your team can view this information. Best for private companies, family offices, or teams that want financial privacy.",
         visibleOnChain: [
-            <Feature title="Balance, Transactions, etc." icon="team" />,
+            <Feature title="Balance, Transactions" icon="team" />,
             <Feature title="Members, Voting" icon="anyone" />,
         ],
         featuresAvailable: {
@@ -846,7 +846,7 @@ export default function NewTreasuryPage() {
                 }}
             />
             <CreationDisabledModal
-                open={!creationAvailable && false}
+                open={!creationAvailable}
                 onClose={() => router.push("/")}
             />
             <PageComponentLayout

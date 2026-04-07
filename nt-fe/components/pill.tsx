@@ -14,7 +14,7 @@ interface PillProps {
 
 const variants = {
     default: "",
-    primary: "bg-primary text-primary-foreground",
+    primary: "bg-popover-foreground text-popover",
     card: "bg-card text-card-foreground",
     secondary: "bg-secondary text-secondary-foreground",
     info: "bg-general-info-background-faded text-general-info-foreground",
