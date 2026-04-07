@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 use crate::AppState;
+use crate::auth::OptionalAuthUser;
 use crate::utils::cache::{CacheKey, CacheTier};
 use crate::utils::jsonrpc::{JsonRpcRequest, JsonRpcResponse};
 
@@ -22,11 +23,15 @@ pub struct DepositAddressResult {
 /// Fetch deposit address for a specific account and chain
 pub async fn get_deposit_address(
     State(state): State<Arc<AppState>>,
+    auth: OptionalAuthUser,
     Json(request): Json<DepositAddressRequest>,
 ) -> Result<Json<DepositAddressResult>, (StatusCode, String)> {
     let account_id = request.account_id.clone();
     let chain = request.chain.clone();
 
+    let confidential = auth
+        .verify_member_if_confidential(&state.db_pool, &account_id)
+        .await?;
     let cache_key = CacheKey::new("bridge:deposit-address")
         .with(&account_id)
         .with(&chain)

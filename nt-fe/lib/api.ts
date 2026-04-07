@@ -126,6 +126,7 @@ export async function getTreasuryAssets(
 
         const response = await axios.get<TreasuryAssetRaw[]>(url, {
             params: { accountId: treasuryId },
+            withCredentials: true,
         });
 
         // Transform raw tokens with USD values

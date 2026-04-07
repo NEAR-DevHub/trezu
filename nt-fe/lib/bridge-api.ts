@@ -41,6 +41,7 @@ export const fetchDepositAddress = async (
                 accountId: accountId,
                 chain: chainId,
             },
+            { withCredentials: true },
         );
 
         return response.data || null;
