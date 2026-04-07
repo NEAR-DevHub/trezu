@@ -6,7 +6,6 @@ use base64::{Engine, prelude::BASE64_STANDARD};
 use bigdecimal::BigDecimal;
 use futures::stream::Stream;
 use near_api::{AccountId, Contract, NearToken, Tokens};
-use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 

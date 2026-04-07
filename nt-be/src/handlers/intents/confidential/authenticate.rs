@@ -20,7 +20,6 @@ pub struct AuthenticateRequest {
 #[serde(rename_all = "camelCase")]
 struct AuthenticateResponse {
     access_token: String,
-    refresh_token: String,
     /// Access token lifetime in seconds
     expires_in: i64,
 }
@@ -102,12 +101,10 @@ pub async fn authenticate(
         r#"
         UPDATE monitored_accounts
         SET confidential_access_token = $1,
-            confidential_refresh_token = $2,
-            confidential_token_expires_at = $3
-        WHERE account_id = $4
+            confidential_token_expires_at = $2
+        WHERE account_id = $3
         "#,
         auth_response.access_token,
-        auth_response.refresh_token,
         expires_at,
         request.dao_id,
     )
@@ -249,7 +246,14 @@ pub async fn refresh_dao_jwt(
         ));
     }
 
-    let auth_response: AuthenticateResponse = response.json().await.map_err(|e| {
+    let json_value: serde_json::Value = response.json().await.map_err(|e| {
+        (
+            StatusCode::BAD_GATEWAY,
+            format!("Failed to parse refresh response: {}", e),
+        )
+    })?;
+    println!("json_value: {:?}", json_value);
+    let auth_response: AuthenticateResponse = serde_json::from_value(json_value).map_err(|e| {
         (
             StatusCode::BAD_GATEWAY,
             format!("Failed to parse refresh response: {}", e),
@@ -263,12 +267,10 @@ pub async fn refresh_dao_jwt(
         r#"
         UPDATE monitored_accounts
         SET confidential_access_token = $1,
-            confidential_refresh_token = $2,
-            confidential_token_expires_at = $3
-        WHERE account_id = $4
+            confidential_token_expires_at = $2
+        WHERE account_id = $3
         "#,
         auth_response.access_token,
-        auth_response.refresh_token,
         new_expires_at,
         dao_id,
     )
