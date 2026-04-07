@@ -6,7 +6,6 @@ import { Database, Minus, Plus, UsersRound, Vote } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { type ArrayPath, useForm, useFormContext } from "react-hook-form";
-import { toast } from "sonner";
 import z from "zod";
 import { Alert, AlertDescription } from "@/components/alert";
 import { Button } from "@/components/button";
@@ -34,8 +33,12 @@ import { trackEvent } from "@/lib/analytics";
 import {
     type CreateTreasuryRequest,
     checkHandleUnused,
-    createTreasury,
+    createTreasuryStream,
 } from "@/lib/api";
+import {
+    CreationProgressModal,
+    type CreationStep,
+} from "@/components/creation-progress-modal";
 import { useNear } from "@/stores/near-store";
 
 const treasuryFormSchema = z
@@ -458,6 +461,39 @@ function Step3({ handleBack }: StepProps) {
     );
 }
 
+const NON_CONFIDENTIAL_STEPS: CreationStep[] = [
+    {
+        id: "creating_dao",
+        label: "Creating your treasury on NEAR",
+        status: "pending",
+    },
+    { id: "finalizing", label: "Finalizing setup", status: "pending" },
+];
+
+const CONFIDENTIAL_STEPS: CreationStep[] = [
+    {
+        id: "creating_dao",
+        label: "Creating your treasury on NEAR",
+        status: "pending",
+    },
+    {
+        id: "adding_public_key",
+        label: "Registering public key",
+        status: "pending",
+    },
+    {
+        id: "authenticating",
+        label: "Setting up confidential transactions",
+        status: "pending",
+    },
+    {
+        id: "setting_policy",
+        label: "Configuring treasury members",
+        status: "pending",
+    },
+    { id: "finalizing", label: "Finalizing setup", status: "pending" },
+];
+
 export default function NewTreasuryPage() {
     const { accountId, isInitializing } = useNear();
     const { treasuries } = useTreasury();
@@ -466,6 +502,12 @@ export default function NewTreasuryPage() {
     const router = useRouter();
     const queryClient = useQueryClient();
     const [step, setStep] = useState(0);
+    const [progressOpen, setProgressOpen] = useState(false);
+    const [progressSteps, setProgressSteps] = useState<CreationStep[]>([]);
+    const [progressError, setProgressError] = useState<string | null>(null);
+    const [createdTreasuryId, setCreatedTreasuryId] = useState<string | null>(
+        null,
+    );
     const form = useForm<TreasuryFormValues>({
         resolver: zodResolver(treasuryFormSchema),
         defaultValues: {
@@ -496,33 +538,49 @@ export default function NewTreasuryPage() {
     }, [accountId, isInitializing]);
 
     const onSubmit = async (data: TreasuryFormValues) => {
+        const governors = data.members
+            .filter((m) => m.roles.includes("governance"))
+            .map((m) => m.accountId);
+        const financiers = data.members
+            .filter((m) => m.roles.includes("financial"))
+            .map((m) => m.accountId);
+        const requestors = data.members
+            .filter((m) => m.roles.includes("requestor"))
+            .map((m) => m.accountId);
+
+        const request: CreateTreasuryRequest = {
+            name: data.details.treasuryName,
+            accountId: `${data.details.accountName}.sputnik-dao.near`,
+            paymentThreshold: data.details.paymentThreshold,
+            governanceThreshold: data.details.governanceThreshold,
+            governors,
+            isConfidential: true,
+            financiers,
+            requestors,
+        };
+
+        const initialSteps = request.isConfidential
+            ? CONFIDENTIAL_STEPS
+            : NON_CONFIDENTIAL_STEPS;
+
+        setProgressSteps(initialSteps.map((s) => ({ ...s })));
+        setProgressError(null);
+        setCreatedTreasuryId(null);
+        setProgressOpen(true);
+
         try {
-            // Extract unique account IDs for each role
-            const governors = data.members
-                .filter((m) => m.roles.includes("governance"))
-                .map((m) => m.accountId);
-            const financiers = data.members
-                .filter((m) => m.roles.includes("financial"))
-                .map((m) => m.accountId);
-            const requestors = data.members
-                .filter((m) => m.roles.includes("requestor"))
-                .map((m) => m.accountId);
-
-            const request: CreateTreasuryRequest = {
-                name: data.details.treasuryName,
-                accountId: `${data.details.accountName}.sputnik-dao.near`,
-                paymentThreshold: data.details.paymentThreshold,
-                governanceThreshold: data.details.governanceThreshold,
-                governors,
-                isConfidential: false,
-                financiers,
-                requestors,
-            };
-
-            await createTreasury(request)
-                .then((response) => {
+            await createTreasuryStream(request, (event) => {
+                if (event.step === "done") {
+                    const treasuryId = event.treasury!;
+                    setProgressSteps((prev) =>
+                        prev.map((s) => ({
+                            ...s,
+                            status: "completed" as const,
+                        })),
+                    );
+                    setCreatedTreasuryId(treasuryId);
                     trackEvent("treasury-created", {
-                        treasury_id: response.treasury,
+                        treasury_id: treasuryId,
                         source: "/app/new",
                         members_count:
                             request.governors.length +
@@ -532,21 +590,57 @@ export default function NewTreasuryPage() {
                     queryClient.invalidateQueries({
                         queryKey: ["userTreasuries", accountId],
                     });
-                    toast.success("Treasury created successfully");
-                    router.push(`/${response.treasury}`);
-                })
-                .catch((error) => {
-                    console.error("Treasury creation error", error);
-                    toast.error("Failed to create treasury");
-                });
+                } else if (event.step === "error") {
+                    setProgressSteps((prev) =>
+                        prev.map((s) =>
+                            s.status === "in_progress"
+                                ? { ...s, status: "error" as const }
+                                : s,
+                        ),
+                    );
+                    setProgressError(
+                        event.message ?? "An unexpected error occurred",
+                    );
+                } else {
+                    setProgressSteps((prev) =>
+                        prev.map((s) => {
+                            if (s.id === event.step) {
+                                return {
+                                    ...s,
+                                    status: event.status as CreationStep["status"],
+                                };
+                            }
+                            return s;
+                        }),
+                    );
+                }
+            });
         } catch (error) {
             console.error("Treasury creation error", error);
-            toast.error("Failed to create treasury");
+            setProgressSteps((prev) =>
+                prev.map((s) =>
+                    s.status === "in_progress"
+                        ? { ...s, status: "error" as const }
+                        : s,
+                ),
+            );
+            setProgressError("Failed to create treasury. Please try again.");
         }
     };
 
     return (
         <>
+            <CreationProgressModal
+                open={progressOpen}
+                steps={progressSteps}
+                error={progressError}
+                treasuryId={createdTreasuryId}
+                onNavigate={() => {
+                    if (createdTreasuryId) {
+                        router.push(`/${createdTreasuryId}`);
+                    }
+                }}
+            />
             <CreationDisabledModal
                 open={!creationAvailable}
                 onClose={() => router.push("/")}

@@ -1,11 +1,14 @@
 use std::sync::Arc;
 
+use axum::response::sse::{Event, KeepAlive, Sse};
 use axum::{Json, extract::State};
 use base64::{Engine, prelude::BASE64_STANDARD};
 use bigdecimal::BigDecimal;
+use futures::stream::Stream;
 use near_api::{AccountId, Contract, NearToken, Tokens};
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
+use tokio::sync::mpsc;
 
 use crate::{
     AppState,
@@ -177,10 +180,64 @@ fn prepare_args(
     }))
 }
 
-pub async fn create_treasury(
+#[derive(Serialize, Clone)]
+pub struct ProgressEvent {
+    pub step: &'static str,
+    pub status: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub treasury: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+
+/// Send a progress update through the channel.
+pub async fn send_progress(
+    tx: &mpsc::Sender<ProgressEvent>,
+    step: &'static str,
+    status: &'static str,
+) {
+    let _ = tx
+        .send(ProgressEvent {
+            step,
+            status,
+            treasury: None,
+            message: None,
+        })
+        .await;
+}
+
+pub async fn create_treasury_stream(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<CreateTreasuryRequest>,
-) -> Result<Json<CreateTreasuryResponse>, (StatusCode, String)> {
+) -> Sse<impl Stream<Item = Result<Event, std::convert::Infallible>>> {
+    let (tx, mut rx) = mpsc::channel::<ProgressEvent>(32);
+
+    tokio::spawn(async move {
+        if let Err(evt) = run_creation(state, payload, tx.clone()).await {
+            let _ = tx.send(evt).await;
+        }
+    });
+
+    let stream = async_stream::stream! {
+        while let Some(evt) = rx.recv().await {
+            let is_terminal = evt.step == "done" || evt.step == "error";
+            if let Ok(json) = serde_json::to_string(&evt) {
+                yield Ok(Event::default().data(json));
+            }
+            if is_terminal {
+                break;
+            }
+        }
+    };
+
+    Sse::new(stream).keep_alive(KeepAlive::default())
+}
+
+async fn run_creation(
+    state: Arc<AppState>,
+    payload: CreateTreasuryRequest,
+    tx: mpsc::Sender<ProgressEvent>,
+) -> Result<(), ProgressEvent> {
     let treasury = payload.account_id.clone();
     let is_confidential = payload.is_confidential;
 
@@ -189,10 +246,17 @@ pub async fn create_treasury(
         if let Err(e) = state.telegram_client.send_message(&message).await {
             log::warn!("Failed to send Telegram notification: {}", e);
         }
-        return Err((StatusCode::SERVICE_UNAVAILABLE, message));
+        return Err(ProgressEvent {
+            step: "error",
+            status: "error",
+            treasury: None,
+            message: Some(message),
+        });
     }
 
-    // Build the user's desired policy (used for both normal and confidential flows)
+    // ── Step 1: Create DAO ─────────────────────────────────────────────
+    send_progress(&tx, "creating_dao", "in_progress").await;
+
     let user_policy = build_policy(
         &payload.requestors,
         &payload.governors,
@@ -201,8 +265,6 @@ pub async fn create_treasury(
         payload.payment_threshold,
     );
 
-    // For confidential setup: create the DAO with the sponsor as the sole member
-    // so we can submit and auto-approve the auth proposal before handing off to the user.
     let creation_policy = if is_confidential {
         let sponsor = vec![state.signer_id.clone()];
         build_policy(&sponsor, &sponsor, &sponsor, 1, 1)
@@ -212,7 +274,12 @@ pub async fn create_treasury(
 
     let args = prepare_args(&payload, &creation_policy).map_err(|e| {
         eprintln!("Error preparing args: {}", e);
-        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+        ProgressEvent {
+            step: "error",
+            status: "error",
+            treasury: None,
+            message: Some(e.to_string()),
+        }
     })?;
 
     Contract(TREASURY_FACTORY_CONTRACT_ID.into())
@@ -225,19 +292,30 @@ pub async fn create_treasury(
         .await
         .map_err(|e| {
             eprintln!("Error creating treasury: {}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+            ProgressEvent {
+                step: "error",
+                status: "error",
+                treasury: None,
+                message: Some(format!("Failed to create treasury: {e}")),
+            }
         })?
         .into_result()
         .map_err(|e| {
             eprintln!("Error creating treasury: {}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+            ProgressEvent {
+                step: "error",
+                status: "error",
+                treasury: None,
+                message: Some(format!("Failed to create treasury: {e}")),
+            }
         })?;
+
+    send_progress(&tx, "creating_dao", "completed").await;
 
     if let Err(e) = register_or_refresh_monitored_account(&state.db_pool, treasury.as_str()).await {
         log::warn!("Failed to add treasury to monitored accounts: {:?}", e);
     }
 
-    // Record NEAR spent on treasury creation and mark as created by our platform
     let creation_cost: BigDecimal = TREASURY_CREATE_DEPOSIT.as_yoctonear().into();
     if let Err(e) = sqlx::query!(
         r#"
@@ -260,29 +338,39 @@ pub async fn create_treasury(
         );
     }
 
-    // ── Confidential setup ──────────────────────────────────────────────
-    // Authenticate the DAO with 1Click, then change the policy to the
-    // user's desired config (removing the sponsor).
+    // ── Confidential setup ─────────────────────────────────────────────
     if is_confidential {
-        confidential_setup::setup_confidential_treasury(&state, &treasury, user_policy).await?;
+        confidential_setup::setup_confidential_treasury(&state, &treasury, user_policy, Some(&tx))
+            .await
+            .map_err(|(_, msg)| ProgressEvent {
+                step: "error",
+                status: "error",
+                treasury: None,
+                message: Some(msg),
+            })?;
     }
 
-    // Register new DAO in local cache for immediate visibility
+    // ── Finalize ───────────────────────────────────────────────────────
+    send_progress(&tx, "finalizing", "in_progress").await;
+
     if let Err(e) = register_new_dao(&state.db_pool, treasury.as_str()).await {
         log::warn!("Failed to register new DAO in cache: {}", e);
     }
 
-    // Fetch balance after treasury creation to track the cost
     let balance_after = Tokens::account(state.signer_id.clone())
         .near_balance()
         .fetch_from(&state.network)
         .await
         .map_err(|e| {
             eprintln!("Error fetching near balance: {}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+            ProgressEvent {
+                step: "error",
+                status: "error",
+                treasury: None,
+                message: Some(format!("Failed to fetch balance: {e}")),
+            }
         })?;
 
-    // Send success notification
     let conf_label = if is_confidential {
         " (confidential)"
     } else {
@@ -296,5 +384,17 @@ pub async fn create_treasury(
         log::warn!("Failed to send Telegram notification: {}", e);
     }
 
-    Ok(Json(CreateTreasuryResponse { treasury }))
+    send_progress(&tx, "finalizing", "completed").await;
+
+    // ── Done ───────────────────────────────────────────────────────────
+    let _ = tx
+        .send(ProgressEvent {
+            step: "done",
+            status: "completed",
+            treasury: Some(treasury.to_string()),
+            message: None,
+        })
+        .await;
+
+    Ok(())
 }

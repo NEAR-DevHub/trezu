@@ -13,7 +13,9 @@ use base64::Engine;
 use near_api::{AccountId, Contract, NearGas, NearToken};
 use reqwest::StatusCode;
 use serde_json::{Value, json};
+use tokio::sync::mpsc;
 
+use super::create::{ProgressEvent, send_progress};
 use crate::AppState;
 use crate::constants::INTENTS_CONTRACT_ID;
 use crate::handlers::intents::confidential::config::oneclick_api_key;
@@ -29,7 +31,13 @@ pub async fn setup_confidential_treasury(
     state: &Arc<AppState>,
     treasury_id: &AccountId,
     target_policy: Value,
+    progress: Option<&mpsc::Sender<ProgressEvent>>,
 ) -> Result<(), (StatusCode, String)> {
+    // ── Add Public Key to intents.near ──────────────────────────────────
+    if let Some(tx) = progress {
+        send_progress(tx, "adding_public_key", "in_progress").await;
+    }
+
     let treasury_id_public_key = fetch_mpc_public_key(state, treasury_id.as_str()).await?;
 
     let public_key_args = json!({
@@ -37,7 +45,6 @@ pub async fn setup_confidential_treasury(
     });
     let public_key_args_b64 =
         base64::engine::general_purpose::STANDARD.encode(public_key_args.to_string());
-    // Step 1: Add Public Key to intents.near
     submit_and_approve_proposal(
         state,
         treasury_id,
@@ -59,13 +66,20 @@ pub async fn setup_confidential_treasury(
     )
     .await?;
 
-    // ── Step 1: Auth proposal ───────────────────────────────────────────
+    if let Some(tx) = progress {
+        send_progress(tx, "adding_public_key", "completed").await;
+    }
+
+    // ── Auth proposal ───────────────────────────────────────────────────
+    if let Some(tx) = progress {
+        send_progress(tx, "authenticating", "in_progress").await;
+    }
+
     log::info!(
         "Confidential setup: creating auth proposal for {}",
         treasury_id
     );
 
-    // Step 2: Build auth proposal
     let (auth_proposal, auth_payload) = build_auth_proposal(state, treasury_id.as_str()).await?;
 
     let (proposal_id, vote_result_debug) =
@@ -77,7 +91,7 @@ pub async fn setup_confidential_treasury(
         treasury_id
     );
 
-    // ── Step 3: Authenticate with 1Click ────────────────────────────────
+    // ── Authenticate with 1Click ────────────────────────────────────────
     let sig_bytes = extract_mpc_signature(&vote_result_debug).ok_or_else(|| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -100,7 +114,15 @@ pub async fn setup_confidential_treasury(
         treasury_id
     );
 
-    // ── Step 4: Change policy to user's config ──────────────────────────
+    if let Some(tx) = progress {
+        send_progress(tx, "authenticating", "completed").await;
+    }
+
+    // ── Change policy to user's config ──────────────────────────────────
+    if let Some(tx) = progress {
+        send_progress(tx, "setting_policy", "in_progress").await;
+    }
+
     let change_policy_proposal = json!({
         "proposal": {
             "description": "Set treasury policy to user configuration",
@@ -120,6 +142,10 @@ pub async fn setup_confidential_treasury(
         policy_proposal_id,
         treasury_id
     );
+
+    if let Some(tx) = progress {
+        send_progress(tx, "setting_policy", "completed").await;
+    }
 
     Ok(())
 }
@@ -142,6 +168,7 @@ async fn submit_and_approve_proposal(
         .transaction()
         .gas(NearGas::from_tgas(100))
         .with_signer(state.signer_id.clone(), state.signer.clone())
+        .wait_until(near_openapi_types::TxExecutionStatus::ExecutedOptimistic)
         .send_to(&state.network)
         .await
         .map_err(|e| {
