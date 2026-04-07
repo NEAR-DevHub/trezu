@@ -514,6 +514,7 @@ export default function NewTreasuryPage() {
                 paymentThreshold: data.details.paymentThreshold,
                 governanceThreshold: data.details.governanceThreshold,
                 governors,
+                isConfidential: false,
                 financiers,
                 requestors,
             };

@@ -5,7 +5,8 @@
 //! MPC signature is in the execution result, the signed intent is submitted to
 //! the 1Click API automatically.
 
-use crate::AppState;
+use crate::{AppState, utils::cache::CacheKey};
+use reqwest::StatusCode;
 use serde_json::Value;
 use sqlx::PgPool;
 use std::sync::Arc;
@@ -13,7 +14,10 @@ use std::sync::Arc;
 use crate::handlers::intents::confidential::config::oneclick_api_key;
 
 /// Fetch the Ed25519 derived public key for a DAO's path from v1.signer.
-async fn fetch_mpc_public_key(state: &Arc<AppState>, dao_id: &str) -> Result<String, String> {
+pub(crate) async fn fetch_mpc_public_key(
+    state: &Arc<AppState>,
+    dao_id: &str,
+) -> Result<String, (StatusCode, String)> {
     let v1_signer: near_api::AccountId = "v1.signer".parse().unwrap();
     let args = serde_json::json!({
         "path": dao_id,
@@ -21,13 +25,20 @@ async fn fetch_mpc_public_key(state: &Arc<AppState>, dao_id: &str) -> Result<Str
         "domain_id": 1,
     });
 
-    let args_bytes = serde_json::to_vec(&args).unwrap();
-    let result = near_api::Contract(v1_signer)
-        .call_function_raw("derived_public_key", args_bytes)
-        .read_only::<String>()
-        .fetch_from(&state.network)
-        .await
-        .map_err(|e| format!("Failed to query v1.signer: {}", e))?;
+    let result = state
+        .cache
+        .cached_contract_call(
+            crate::utils::cache::CacheTier::LongTerm,
+            CacheKey::new("mpc-public-key").with(dao_id).build(),
+            async move {
+                near_api::Contract(v1_signer)
+                    .call_function("derived_public_key", args)
+                    .read_only::<String>()
+                    .fetch_from(&state.network)
+                    .await
+            },
+        )
+        .await?;
 
     Ok(result.data)
 }
@@ -71,7 +82,7 @@ pub async fn store_pending_intent(
 
 /// Extract MPC signature from the execution result debug string.
 /// Searches for the base64 marker "eyJzY2hlbWUi" (= `{"scheme"`).
-fn extract_mpc_signature(result_debug: &str) -> Option<Vec<u8>> {
+pub(crate) fn extract_mpc_signature(result_debug: &str) -> Option<Vec<u8>> {
     let marker = "eyJzY2hlbWUi";
     let start = result_debug.find(marker)?;
     let rest = &result_debug[start..];
@@ -167,7 +178,11 @@ pub async fn try_auto_submit_intent(state: &Arc<AppState>, treasury_id: &str, re
     let mpc_public_key = match fetch_mpc_public_key(state, treasury_id).await {
         Ok(key) => key,
         Err(e) => {
-            log::error!("Failed to fetch MPC public key for {}: {}", treasury_id, e);
+            log::error!(
+                "Failed to fetch MPC public key for {}: {:?}",
+                treasury_id,
+                e
+            );
             return;
         }
     };

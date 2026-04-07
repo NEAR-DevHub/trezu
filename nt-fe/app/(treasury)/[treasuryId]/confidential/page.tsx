@@ -1,5 +1,6 @@
 "use client";
 
+import { features } from "@/constants/features";
 import { PageCard } from "@/components/card";
 import { TokenInput, tokenSchema } from "@/components/token-input";
 import { PageComponentLayout } from "@/components/page-component-layout";
@@ -26,6 +27,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { WarningAlert } from "@/components/warning-alert";
 import { InfoDisplay } from "@/components/info-display";
 import { CopyButton } from "@/components/copy-button";
+import { notFound } from "next/navigation";
 import {
     DRY_QUOTE_REFRESH_INTERVAL,
     PROPOSAL_REFRESH_INTERVAL,
@@ -426,6 +428,8 @@ interface SubmittedProposal {
 }
 
 export default function ConfidentialPage() {
+    if (!features.confidential) notFound();
+
     const { treasuryId: selectedTreasury } = useTreasury();
     const { createProposal } = useNear();
     const { data: policy } = useTreasuryPolicy(selectedTreasury);
