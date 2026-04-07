@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS ft_lockup_dao_schedules (
     token_account_id TEXT NOT NULL,
     session_interval_seconds BIGINT,
     start_timestamp_seconds BIGINT,
-    is_ft_registered BOOLEAN NOT NULL DEFAULT FALSE,
+    ft_registered_at TIMESTAMPTZ,
     next_claim_at TIMESTAMPTZ,
     last_account_sync_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (dao_account_id, instance_id)

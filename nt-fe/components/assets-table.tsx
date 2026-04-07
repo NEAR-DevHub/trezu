@@ -131,7 +131,9 @@ function networkLockedRaw(asset: NetworkAsset): Big.Big {
 
 function networkEarningRaw(asset: NetworkAsset): Big.Big {
     if (asset.balance.type === "Staked") {
-        return asset.balance.staking.stakedBalance;
+        return asset.balance.staking.stakedBalance.add(
+            asset.balance.staking.unstakedBalance,
+        );
     }
     if (asset.balance.type === "Vested") {
         return asset.balance.lockup.staked;

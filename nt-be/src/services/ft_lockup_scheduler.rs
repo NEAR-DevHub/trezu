@@ -10,7 +10,7 @@ use tokio::{sync::Semaphore, task::JoinSet};
 
 use crate::{
     AppState,
-    handlers::user::assets::{
+    handlers::user::ft_lockups::{
         FtLockupAccountData, fetch_ft_lockup_account_data, fetch_ft_lockup_contract_metadata,
         fetch_ft_lockup_instance_accounts, fetch_ft_lockup_instance_ids,
     },
@@ -285,14 +285,14 @@ async fn mark_claim_failure(
     sqlx::query(
         r#"
         UPDATE ft_lockup_dao_schedules
-        SET next_claim_at = NOW() + ($3 || ' seconds')::interval
+        SET next_claim_at = NOW() + ($3::double precision * INTERVAL '1 second')
         WHERE dao_account_id = $1
           AND instance_id = $2
         "#,
     )
     .bind(dao_account_id)
     .bind(instance_id)
-    .bind(CLAIM_RETRY_BACKOFF_SECS)
+    .bind(CLAIM_RETRY_BACKOFF_SECS as f64)
     .execute(pool)
     .await?;
 
@@ -338,7 +338,7 @@ async fn register_ft_once(
     sqlx::query(
         r#"
         UPDATE ft_lockup_dao_schedules
-        SET is_ft_registered = TRUE,
+        SET ft_registered_at = COALESCE(ft_registered_at, NOW()),
             last_account_sync_at = NOW()
         WHERE dao_account_id = $1
           AND instance_id = $2
@@ -361,7 +361,7 @@ pub async fn run_due_ft_lockup_claims(
 
     let due_rows = sqlx::query(
         r#"
-        SELECT dao_account_id, instance_id, token_account_id, is_ft_registered
+        SELECT dao_account_id, instance_id, token_account_id, ft_registered_at
         FROM ft_lockup_dao_schedules
         WHERE (next_claim_at IS NULL OR next_claim_at <= NOW())
         ORDER BY COALESCE(next_claim_at, NOW()) ASC
@@ -387,7 +387,7 @@ pub async fn run_due_ft_lockup_claims(
         let dao_account_id: String = row.get("dao_account_id");
         let instance_id: String = row.get("instance_id");
         let token_account_id: String = row.get("token_account_id");
-        let is_ft_registered: bool = row.get("is_ft_registered");
+        let ft_registered_at: Option<DateTime<Utc>> = row.get("ft_registered_at");
 
         join_set.spawn(async move {
             let _permit = sem
@@ -418,7 +418,7 @@ pub async fn run_due_ft_lockup_claims(
                 }
             };
 
-            if !is_ft_registered
+            if ft_registered_at.is_none()
                 && let Err(e) = register_ft_once(
                     &state,
                     &token_account_id,

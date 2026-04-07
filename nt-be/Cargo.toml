@@ -55,10 +55,6 @@ teloxide = { version = "0.17.0", features = ["rustls"], default-features = false
 name = "rpc_cache_proxy"
 path = "src/bin/rpc_cache_proxy.rs"
 
-[[bin]]
-name = "ft_lockup_claimer"
-path = "src/bin/ft_lockup_claimer.rs"
-
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }
 reqwest = { version = "0.12", features = ["json"] }

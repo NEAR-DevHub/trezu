@@ -51,7 +51,7 @@ function getTokenBucketRaw(token: TreasuryAsset): {
         const staked = token.balance.staking.stakedBalance;
         const unstaked = token.balance.staking.unstakedBalance;
         totalRaw = staked.add(unstaked);
-        earningRaw = staked;
+        earningRaw = staked.add(unstaked);
     } else if (token.balance.type === "Vested") {
         const lockup = token.balance.lockup;
         const staked = lockup.staked;
