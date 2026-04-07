@@ -826,24 +826,61 @@ export interface CreateTreasuryRequest {
 export interface CreateTreasuryResponse {
     treasury: string;
 }
+export interface CreationProgressEvent {
+    step: string;
+    status: string;
+    treasury?: string;
+    message?: string;
+}
 
-/**
- * Create a new treasury
- * Sends a request to the backend to deploy a new treasury contract
- * Returns the created treasury account ID
- */
-export async function createTreasury(
+export async function createTreasuryStream(
     request: CreateTreasuryRequest,
-): Promise<CreateTreasuryResponse> {
-    try {
-        const url = `${BACKEND_API_BASE}/treasury/create`;
+    onProgress: (event: CreationProgressEvent) => void,
+): Promise<void> {
+    const url = `${BACKEND_API_BASE}/treasury/create-stream`;
 
-        const response = await axios.post<CreateTreasuryResponse>(url, request);
+    const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(request),
+    });
 
-        return response.data;
-    } catch (error) {
-        console.error("Error creating treasury", error);
-        throw error;
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(
+            text || `Treasury creation failed (${response.status})`,
+        );
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error("No response stream");
+
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (trimmed.startsWith("data:")) {
+                const json = trimmed.slice(5).trim();
+                if (json) {
+                    try {
+                        const event: CreationProgressEvent = JSON.parse(json);
+                        onProgress(event);
+                    } catch {
+                        // skip malformed events
+                    }
+                }
+            }
+        }
     }
 }
 

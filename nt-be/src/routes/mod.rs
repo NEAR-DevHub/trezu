@@ -138,8 +138,8 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
             get(handlers::treasury::check_handle_unused::check_handle_unused)
         )
         .route(
-            "/api/treasury/create",
-            post(handlers::treasury::create::create_treasury)
+            "/api/treasury/create-stream",
+            post(handlers::treasury::create::create_treasury_stream)
         )
         .route(
             "/api/treasury/creation-status",

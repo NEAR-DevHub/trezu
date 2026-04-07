@@ -6,13 +6,15 @@ interface PillProps {
     id?: string;
     title: string;
     info?: string;
-    variant?: "default" | "card" | "secondary" | "info";
+    icon?: React.ReactNode;
+    variant?: "default" | "card" | "secondary" | "info" | "primary";
     side?: "top" | "bottom" | "left" | "right";
     className?: string;
 }
 
 const variants = {
     default: "",
+    primary: "bg-primary text-primary-foreground",
     card: "bg-card text-card-foreground",
     secondary: "bg-secondary text-secondary-foreground",
     info: "bg-general-info-background-faded text-general-info-foreground",
@@ -22,6 +24,7 @@ export function Pill({
     id,
     title,
     info,
+    icon,
     variant = "default",
     side,
     className,
@@ -36,6 +39,7 @@ export function Pill({
             )}
         >
             {info && <Info className="size-3 shrink-0" />}
+            {!info && icon}
             {title}
         </div>
     );
