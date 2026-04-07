@@ -15,6 +15,7 @@ use reqwest::StatusCode;
 use serde_json::{Value, json};
 
 use crate::AppState;
+use crate::constants::INTENTS_CONTRACT_ID;
 use crate::handlers::intents::confidential::config::oneclick_api_key;
 use crate::handlers::intents::confidential::prepare_auth::build_auth_proposal;
 use crate::handlers::relay::confidential::{extract_mpc_signature, fetch_mpc_public_key};
@@ -45,7 +46,7 @@ pub async fn setup_confidential_treasury(
             "description": "Add public key to intents.near",
             "kind": {
                 "FunctionCall": {
-                    "receiver_id": "intents.near",
+                    "receiver_id": INTENTS_CONTRACT_ID,
                     "actions": [{
                         "method_name": "add_public_key",
                         "args": public_key_args_b64,

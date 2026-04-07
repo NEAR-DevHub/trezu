@@ -6,15 +6,12 @@
 
 use axum::{Json, extract::State, http::StatusCode};
 use base64::Engine;
-use near_account_id::AccountIdRef;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::sync::Arc;
 
+use crate::constants::{INTENTS_CONTRACT_ID, V1_SIGNER_CONTRACT_ID};
 use crate::{AppState, auth::AuthUser};
-
-const V1_SIGNER_CONTRACT: &AccountIdRef = AccountIdRef::new_or_panic("v1.signer");
-const INTENTS_CONTRACT: &AccountIdRef = AccountIdRef::new_or_panic("intents.near");
 const V1_SIGNER_GAS: &str = "250000000000000";
 
 #[derive(Deserialize, Debug)]
@@ -43,7 +40,7 @@ pub struct AuthPayload {
 
 /// Fetch the current salt from the intents.near contract.
 pub(crate) async fn fetch_salt(state: &Arc<AppState>) -> Result<[u8; 4], String> {
-    let result = near_api::Contract(INTENTS_CONTRACT.into())
+    let result = near_api::Contract(INTENTS_CONTRACT_ID.into())
         .call_function("current_salt", ())
         .read_only::<String>()
         .fetch_from(&state.network)
@@ -104,7 +101,7 @@ pub(crate) async fn build_auth_proposal(
     let nep413_payload = near_api::signer::NEP413Payload {
         message: auth_message.clone(),
         nonce,
-        recipient: INTENTS_CONTRACT.to_string(),
+        recipient: INTENTS_CONTRACT_ID.to_string(),
         callback_url: None,
     };
     let hash = nep413_payload.compute_hash().map_err(|e| {
@@ -129,8 +126,8 @@ pub(crate) async fn build_auth_proposal(
             "description": "Authenticate DAO for confidential intents",
             "kind": {
                 "FunctionCall": {
-                    "receiver_id": V1_SIGNER_CONTRACT,
-                    "actions": [{
+                        "receiver_id": V1_SIGNER_CONTRACT_ID,
+                        "actions": [{
                         "method_name": "sign",
                         "args": sign_args_b64,
                         "deposit": "1",
@@ -144,7 +141,7 @@ pub(crate) async fn build_auth_proposal(
     let auth_payload = json!({
         "message": auth_message,
         "nonce": nonce_b64,
-        "recipient": INTENTS_CONTRACT.to_string(),
+        "recipient": INTENTS_CONTRACT_ID.to_string(),
     });
 
     Ok((proposal, auth_payload))

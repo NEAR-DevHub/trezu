@@ -5,7 +5,7 @@
 //! MPC signature is in the execution result, the signed intent is submitted to
 //! the 1Click API automatically.
 
-use crate::{AppState, utils::cache::CacheKey};
+use crate::{AppState, constants::V1_SIGNER_CONTRACT_ID, utils::cache::CacheKey};
 use reqwest::StatusCode;
 use serde_json::Value;
 use sqlx::PgPool;
@@ -18,7 +18,6 @@ pub(crate) async fn fetch_mpc_public_key(
     state: &Arc<AppState>,
     dao_id: &str,
 ) -> Result<String, (StatusCode, String)> {
-    let v1_signer: near_api::AccountId = "v1.signer".parse().unwrap();
     let args = serde_json::json!({
         "path": dao_id,
         "predecessor": dao_id,
@@ -31,7 +30,7 @@ pub(crate) async fn fetch_mpc_public_key(
             crate::utils::cache::CacheTier::LongTerm,
             CacheKey::new("mpc-public-key").with(dao_id).build(),
             async move {
-                near_api::Contract(v1_signer)
+                near_api::Contract(V1_SIGNER_CONTRACT_ID.into())
                     .call_function("derived_public_key", args)
                     .read_only::<String>()
                     .fetch_from(&state.network)
