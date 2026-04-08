@@ -65,7 +65,6 @@ export function PaymentFormSection<
     const [selectedContact, setSelectedContact] =
         useState<AddressBookEntry | null>(null);
 
-    const { treasuryId } = useTreasury();
     const { data: addressBook = [] } = useAddressBook();
     const { data: chains = [] } = useChains();
 

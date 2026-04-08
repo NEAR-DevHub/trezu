@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM telegram_treasury_connections WHERE dao_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "bcbb04b456cd8ed41a2f9e6196d7ffc3410bf889f02926f9c6f88161975477dd"
+}

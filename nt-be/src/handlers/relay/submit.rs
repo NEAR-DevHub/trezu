@@ -33,7 +33,8 @@ pub struct RelayRequest {
     pub signed_delegate_action: Base64VecU8,
     /// Optional proposal type hint for metrics. Only set on the actual proposal call,
     /// NOT on helper calls like storage_deposit.
-    /// "swap" | "payment" | "vote" | any other string → "other_proposals_submitted"
+    /// "swap" → swap_proposals, "payment" → payment_proposals, "vote" → votes_casted,
+    /// "confidential_transfer" and others → other_proposals_submitted.
     /// Absent/null → no metric recorded.
     #[serde(default)]
     pub proposal_type: Option<String>,
@@ -64,8 +65,12 @@ const MAX_SPONSORING: NearToken = NearToken::from_millinear(1200);
 const TOKEN_STORAGE_BUFFER: NearToken = NearToken::from_micronear(1250).saturating_mul(25);
 const SPUTNIK_DAO_SUFFIX: &str = ".sputnik-dao.near";
 
-fn extract_nep141_contract(asset_id: &str) -> Option<&str> {
-    asset_id.strip_prefix("nep141:")
+fn extract_intents_contract(asset_id: &str) -> Option<&str> {
+    asset_id.strip_prefix("nep141:").or_else(|| {
+        asset_id
+            .strip_prefix("nep245:")
+            .and_then(|s| s.split(":").next())
+    })
 }
 
 fn extract_intents_whitelist_contracts(supported_tokens: &Value) -> HashSet<String> {
@@ -86,7 +91,7 @@ fn extract_intents_whitelist_contracts(supported_tokens: &Value) -> HashSet<Stri
 
         for field in ["intents_token_id", "defuse_asset_identifier"] {
             if let Some(asset_id) = token.get(field).and_then(Value::as_str)
-                && let Some(contract_id) = extract_nep141_contract(asset_id)
+                && let Some(contract_id) = extract_intents_contract(asset_id)
             {
                 contracts.insert(contract_id.to_string());
             }
@@ -335,17 +340,20 @@ pub async fn relay_delegate_action(
         .await;
 
     match execution_result {
-        Ok(result) => match result.into_result() {
-            Ok(_) => {
-                // Step 7: Decrement gas-covered credits and accumulate paid_near in one query
-                let near_spent = if should_balance_storage {
-                    storage_cost.saturating_add(deposits)
-                } else {
-                    deposits
-                };
-                let near_spent_yocto: BigDecimal = near_spent.as_yoctonear().into();
-                let db_result = sqlx::query_as::<_, (i32,)>(
-                    r#"
+        Ok(result) => {
+            // Capture the debug representation before consuming the result
+            let result_debug = format!("{:?}", result);
+            match result.into_result() {
+                Ok(_) => {
+                    // Step 7: Decrement gas-covered credits and accumulate paid_near in one query
+                    let near_spent = if should_balance_storage {
+                        storage_cost.saturating_add(deposits)
+                    } else {
+                        deposits
+                    };
+                    let near_spent_yocto: BigDecimal = near_spent.as_yoctonear().into();
+                    let db_result = sqlx::query_as::<_, (i32,)>(
+                        r#"
                     UPDATE monitored_accounts
                     SET gas_covered_transactions = GREATEST(gas_covered_transactions - 1, 0),
                         paid_near = paid_near + $2,
@@ -353,75 +361,94 @@ pub async fn relay_delegate_action(
                     WHERE account_id = $1
                     RETURNING gas_covered_transactions
                     "#,
-                )
-                .bind(request.treasury_id.as_str())
-                .bind(near_spent_yocto)
-                .fetch_optional(&state.db_pool)
-                .await;
-
-                match db_result {
-                    Ok(Some((new_credits,))) => {
-                        log::info!(
-                            "Decremented gas credits for treasury {}. New balance: {}",
-                            request.treasury_id.as_str(),
-                            new_credits
-                        );
-                    }
-                    Ok(None) => {
-                        log::warn!(
-                            "Treasury {} not found for credit decrement",
-                            request.treasury_id.as_str()
-                        );
-                    }
-                    Err(e) => {
-                        log::error!(
-                            "Failed to decrement gas credits for {}: {}",
-                            request.treasury_id.as_str(),
-                            e
-                        );
-                        // Don't fail - the relay already succeeded
-                    }
-                }
-
-                // Record usage metrics in one round-trip.
-                // gas_covered_transactions fires for every relayed action.
-                // The proposal metric only fires when proposalType is explicitly provided.
-                let proposal_metric = match request.proposal_type.as_deref() {
-                    Some("swap") => "swap_proposals",
-                    Some("payment") => "payment_proposals",
-                    Some("vote") => "votes_casted",
-                    Some(_) => "other_proposals_submitted",
-                    None => "",
-                };
-                if proposal_metric.is_empty() {
-                    crate::services::platform_metrics::record_event(
-                        &state.db_pool,
-                        request.treasury_id.as_str(),
-                        "gas_covered_transactions",
                     )
+                    .bind(request.treasury_id.as_str())
+                    .bind(near_spent_yocto)
+                    .fetch_optional(&state.db_pool)
                     .await;
-                } else {
-                    crate::services::platform_metrics::record_events(
-                        &state.db_pool,
-                        request.treasury_id.as_str(),
-                        &["gas_covered_transactions", proposal_metric],
-                    )
-                    .await;
-                }
 
-                Ok(Json(RelayResponse {
-                    success: true,
-                    error: None,
-                }))
+                    match db_result {
+                        Ok(Some((new_credits,))) => {
+                            log::info!(
+                                "Decremented gas credits for treasury {}. New balance: {}",
+                                request.treasury_id.as_str(),
+                                new_credits
+                            );
+                        }
+                        Ok(None) => {
+                            log::warn!(
+                                "Treasury {} not found for credit decrement",
+                                request.treasury_id.as_str()
+                            );
+                        }
+                        Err(e) => {
+                            log::error!(
+                                "Failed to decrement gas credits for {}: {}",
+                                request.treasury_id.as_str(),
+                                e
+                            );
+                            // Don't fail - the relay already succeeded
+                        }
+                    }
+
+                    // Record usage metrics in one round-trip.
+                    // gas_covered_transactions fires for every relayed action.
+                    // The proposal metric only fires when proposalType is explicitly provided.
+                    let proposal_metric = match request.proposal_type.as_deref() {
+                        Some("swap") => "swap_proposals",
+                        Some("payment") => "payment_proposals",
+                        Some("vote") => "votes_casted",
+                        Some(_) => "other_proposals_submitted",
+                        None => "",
+                    };
+                    if proposal_metric.is_empty() {
+                        crate::services::platform_metrics::record_event(
+                            &state.db_pool,
+                            request.treasury_id.as_str(),
+                            "gas_covered_transactions",
+                        )
+                        .await;
+                    } else {
+                        crate::services::platform_metrics::record_events(
+                            &state.db_pool,
+                            request.treasury_id.as_str(),
+                            &["gas_covered_transactions", proposal_metric],
+                        )
+                        .await;
+                    }
+
+                    // If this is a vote on a confidential_transfer proposal, try to extract
+                    // the MPC signature and auto-submit the signed intent.
+                    if request.proposal_type.as_deref() == Some("vote") {
+                        tokio::spawn({
+                            let state = state.clone();
+                            let treasury_id = request.treasury_id.to_string();
+                            let result_debug = result_debug.clone();
+                            async move {
+                                crate::handlers::relay::confidential::try_auto_submit_intent(
+                                    &state,
+                                    &treasury_id,
+                                    &result_debug,
+                                )
+                                .await;
+                            }
+                        });
+                    }
+
+                    Ok(Json(RelayResponse {
+                        success: true,
+                        error: None,
+                    }))
+                }
+                Err(e) => {
+                    log::error!("Delegate action execution failed: {:?}", e);
+                    Err(error_response(
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("Execution failed: {}", e),
+                    ))
+                }
             }
-            Err(e) => {
-                log::error!("Delegate action execution failed: {:?}", e);
-                Err(error_response(
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Execution failed: {}", e),
-                ))
-            }
-        },
+        }
         Err(e) => {
             log::error!("Failed to relay delegate action: {:?}", e);
             Err(error_response(

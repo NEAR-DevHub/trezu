@@ -138,8 +138,8 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
             get(handlers::treasury::check_handle_unused::check_handle_unused)
         )
         .route(
-            "/api/treasury/create",
-            post(handlers::treasury::create::create_treasury)
+            "/api/treasury/create-stream",
+            post(handlers::treasury::create::create_treasury_stream)
         )
         .route(
             "/api/treasury/creation-status",
@@ -285,6 +285,23 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
         .route(
             "/api/intents/swap-status",
             get(handlers::intents::swap_status::get_swap_status),
+        )
+        // Confidential intents endpoints (all require DAO membership auth)
+        .route(
+            "/api/confidential-intents/quote",
+            post(handlers::intents::confidential::quote::get_confidential_quote),
+        )
+        .route(
+            "/api/confidential-intents/generate-intent",
+            post(handlers::intents::confidential::generate_intent::generate_intent),
+        )
+        .route(
+            "/api/confidential-intents/balances",
+            get(handlers::intents::confidential::balances::get_balances),
+        )
+        .route(
+            "/api/confidential-intents/prepare-auth",
+            post(handlers::intents::confidential::prepare_auth::prepare_auth),
         )
         // Proxy endpoints - catch-all for external API
         .route(

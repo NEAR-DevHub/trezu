@@ -16,7 +16,7 @@ import {
 import Link from "next/link";
 import { BarChart3, CirclePlay, Eye, File, Headphones } from "lucide-react";
 import Gleap from "gleap";
-import { LogoInlined } from "./logo";
+import { LogoInlined } from "./icons/logo";
 
 function XIcon({ className }: { className?: string }) {
     return (

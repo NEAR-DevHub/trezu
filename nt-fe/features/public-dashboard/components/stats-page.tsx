@@ -4,7 +4,7 @@ import { ChartSpline } from "lucide-react";
 import { QueryProvider } from "@/components/query-provider";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { PageCard } from "@/components/card";
-import Logo from "@/components/logo";
+import Logo from "@/components/icons/logo";
 import { usePublicDashboard } from "../hooks/use-public-dashboard";
 import { AumStatCard, AumStatCardSkeleton } from "./aum-stat-card";
 import { TopTokensTable, TopTokensTableSkeleton } from "./top-tokens-table";

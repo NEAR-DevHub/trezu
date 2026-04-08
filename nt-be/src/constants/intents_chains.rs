@@ -128,12 +128,20 @@ pub static CHAIN_METADATA: Lazy<HashMap<String, ChainMetadata>> = Lazy::new(|| {
         ChainMetadata::new("BeraChain", "berachain.svg", "berachain.svg"),
     );
     metadata.insert(
+        "bera".to_string(),
+        ChainMetadata::alias("berachain", metadata.get("berachain").unwrap()),
+    );
+    metadata.insert(
         "tron".to_string(),
         ChainMetadata::new("Tron", "tron.svg", "tron.svg"),
     );
     metadata.insert(
         "polygon".to_string(),
         ChainMetadata::new("Polygon", "polygon.svg", "polygon.svg"),
+    );
+    metadata.insert(
+        "pol".to_string(),
+        ChainMetadata::alias("polygon", metadata.get("polygon").unwrap()),
     );
     metadata.insert(
         "bsc".to_string(),
@@ -150,6 +158,10 @@ pub static CHAIN_METADATA: Lazy<HashMap<String, ChainMetadata>> = Lazy::new(|| {
     metadata.insert(
         "optimism".to_string(),
         ChainMetadata::new("Optimism", "optimism.svg", "optimism_dark.svg"),
+    );
+    metadata.insert(
+        "op".to_string(),
+        ChainMetadata::alias("optimism", metadata.get("optimism").unwrap()),
     );
     metadata.insert(
         "avalanche".to_string(),
@@ -193,7 +205,7 @@ pub static CHAIN_METADATA: Lazy<HashMap<String, ChainMetadata>> = Lazy::new(|| {
     );
     metadata.insert(
         "scroll".to_string(),
-        ChainMetadata::new("Scroll", "scroll-white.svg", "scroll.svg"),
+        ChainMetadata::new("Scroll", "scroll.svg", "scroll.svg"),
     );
     metadata.insert(
         "aleo".to_string(),
@@ -206,6 +218,10 @@ pub static CHAIN_METADATA: Lazy<HashMap<String, ChainMetadata>> = Lazy::new(|| {
     metadata.insert(
         "layerx".to_string(),
         ChainMetadata::new("LayerX", "layerx_white.svg", "layerx.svg"),
+    );
+    metadata.insert(
+        "xlayer".to_string(),
+        ChainMetadata::alias("layerx", metadata.get("layerx").unwrap()),
     );
     metadata.insert(
         "dash".to_string(),

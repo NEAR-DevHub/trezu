@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { AuthProvider } from "@/components/auth-provider";
 import { Button } from "@/components/button";
 import { Input } from "@/components/input";
-import Logo from "@/components/logo";
+import Logo from "@/components/icons/logo";
 import {
     Dialog,
     DialogContent,

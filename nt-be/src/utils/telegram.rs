@@ -2,7 +2,7 @@ use teloxide::{
     Bot,
     payloads::SendMessageSetters,
     requests::Requester,
-    types::{ChatId, InlineKeyboardButton, InlineKeyboardMarkup},
+    types::{ChatId, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode},
 };
 use url::Url;
 
@@ -11,7 +11,7 @@ use url::Url;
 /// Provides helper methods for common messaging patterns used across the app:
 /// - `send_message`: send a plain notification to the configured internal alerts channel
 /// - `send_message_to_chat`: send a plain message to any chat by ID
-/// - `send_message_with_button`: send a message with an inline URL button to any chat
+/// - `send_message_with_button`: send a message with an inline URL button to any chat (HTML parse mode)
 ///
 /// All methods silently succeed when the bot is not configured (missing token).
 #[derive(Clone, Default, Debug)]
@@ -113,6 +113,7 @@ impl TelegramClient {
 
         let sent = bot
             .send_message(ChatId(chat_id), text)
+            .parse_mode(ParseMode::Html)
             .reply_markup(keyboard)
             .await?;
         Ok(sent.id.0)

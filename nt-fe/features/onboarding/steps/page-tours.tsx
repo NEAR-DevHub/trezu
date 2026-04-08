@@ -284,12 +284,20 @@ export function useNewFeatureTour(enabled = true) {
     const { accountId } = useNear();
     const { data: addressBook } = useAddressBook();
 
+    const welcomeDismissed =
+        typeof window !== "undefined" &&
+        localStorage.getItem("welcome-dismissed") === "true";
+
     return usePageTour(
         NEW_FEATURE_ANNOUNCEMENT.tourName,
         `${NEW_FEATURE_ANNOUNCEMENT.storageKey}:${accountId ?? "anonymous"}`,
         {
             version: NEW_FEATURE_ANNOUNCEMENT.version,
-            enabled: enabled && addressBook && addressBook.length === 0,
+            enabled:
+                enabled &&
+                welcomeDismissed &&
+                addressBook &&
+                addressBook.length === 0,
         },
     );
 }

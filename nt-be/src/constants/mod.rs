@@ -7,7 +7,7 @@ pub const REF_FINANCE_CONTRACT_ID: &AccountIdRef =
     AccountIdRef::new_or_panic("v2.ref-finance.near");
 
 pub const INTENTS_CONTRACT_ID: &AccountIdRef = AccountIdRef::new_or_panic("intents.near");
-
+pub const V1_SIGNER_CONTRACT_ID: &AccountIdRef = AccountIdRef::new_or_panic("v1.signer");
 pub const LOCKUP_CONTRACT_ID: &AccountIdRef = AccountIdRef::new_or_panic("lockup.near");
 
 pub const NEAR_ICON: &str = "https://s2.coinmarketcap.com/static/img/coins/128x128/6535.png";

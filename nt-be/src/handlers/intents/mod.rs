@@ -1,4 +1,5 @@
 pub mod bridge_tokens;
+pub mod confidential;
 pub mod deposit_address;
 pub mod quote;
 pub mod search_tokens;

@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO historical_prices (asset_id, price_date, price_usd, source)\n        SELECT $1, unnest($2::date[]), unnest($3::numeric[]), $4\n        ON CONFLICT (asset_id, price_date, source) DO UPDATE SET\n            price_usd = EXCLUDED.price_usd,\n            fetched_at = NOW()\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "DateArray",
+        "NumericArray",
+        "Varchar"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "7c3c084ea3748bafcb3aa0a9a27d96ffcfaff719815fe75d88fb6826ce55193d"
+}

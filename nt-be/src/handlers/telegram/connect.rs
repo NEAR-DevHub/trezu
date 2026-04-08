@@ -209,7 +209,7 @@ pub async fn connect_treasuries(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     for dao_id in &body.treasury_ids {
-        sqlx::query(
+        sqlx::query!(
             r#"
             INSERT INTO telegram_treasury_connections (dao_id, chat_id, connected_by)
             VALUES ($1, $2, $3)
@@ -218,20 +218,22 @@ pub async fn connect_treasuries(
                 connected_by = EXCLUDED.connected_by,
                 connected_at = now()
             "#,
+            dao_id,
+            chat_id,
+            user_id,
         )
-        .bind(dao_id)
-        .bind(chat_id)
-        .bind(user_id)
         .execute(&mut *tx)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     }
 
-    sqlx::query("UPDATE telegram_connect_tokens SET used_at = now() WHERE token = $1")
-        .bind(body.token)
-        .execute(&mut *tx)
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    sqlx::query!(
+        "UPDATE telegram_connect_tokens SET used_at = now() WHERE token = $1",
+        body.token,
+    )
+    .execute(&mut *tx)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     tx.commit()
         .await
@@ -336,11 +338,13 @@ pub async fn disconnect_treasury(
         .await
         .map_err(|_| (StatusCode::FORBIDDEN, "Not a policy member".to_string()))?;
 
-    sqlx::query("DELETE FROM telegram_treasury_connections WHERE dao_id = $1")
-        .bind(&body.dao_id)
-        .execute(&state.db_pool)
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    sqlx::query!(
+        "DELETE FROM telegram_treasury_connections WHERE dao_id = $1",
+        body.dao_id
+    )
+    .execute(&state.db_pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     Ok(StatusCode::NO_CONTENT)
 }

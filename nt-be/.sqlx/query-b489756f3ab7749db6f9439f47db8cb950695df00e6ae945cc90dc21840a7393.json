@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE telegram_connect_tokens SET used_at = now() WHERE token = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b489756f3ab7749db6f9439f47db8cb950695df00e6ae945cc90dc21840a7393"
+}

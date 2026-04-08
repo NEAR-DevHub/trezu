@@ -12,7 +12,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { NearConnector } from "@hot-labs/near-connect";
 import type { Network, EventMap } from "@hot-labs/near-connect/build/types";
 import axios from "axios";
-import Logo from "@/components/logo";
+import Logo from "@/components/icons/logo";
 import { extractProposalData } from "@/features/proposals/utils/proposal-extractors";
 import { TransferExpanded } from "@/features/proposals/components/expanded-view/transfer-expanded";
 import { FunctionCallExpanded } from "@/features/proposals/components/expanded-view/function-call-expanded";

@@ -604,13 +604,15 @@ export async function getTokenMetadata(
     tokenId: string,
 ): Promise<TokenMetadata | null> {
     if (!tokenId) return null;
-
     let token = tokenId;
-    if (
+    const noPrefixNoNear =
         !token.startsWith("nep141:") &&
         !token.startsWith("nep245:") &&
-        token.toLowerCase() !== "near"
-    ) {
+        token.toLowerCase() !== "near";
+
+    if (noPrefixNoNear && token.split(":").length === 2) {
+        token = `nep245:${token}`;
+    } else if (noPrefixNoNear) {
         token = `nep141:${token}`;
     }
 
@@ -861,29 +863,67 @@ export interface CreateTreasuryRequest {
     governors: string[];
     financiers: string[];
     requestors: string[];
+    isConfidential?: boolean;
 }
 
 export interface CreateTreasuryResponse {
     treasury: string;
 }
+export interface CreationProgressEvent {
+    step: string;
+    status: string;
+    treasury?: string;
+    message?: string;
+}
 
-/**
- * Create a new treasury
- * Sends a request to the backend to deploy a new treasury contract
- * Returns the created treasury account ID
- */
-export async function createTreasury(
+export async function createTreasuryStream(
     request: CreateTreasuryRequest,
-): Promise<CreateTreasuryResponse> {
-    try {
-        const url = `${BACKEND_API_BASE}/treasury/create`;
+    onProgress: (event: CreationProgressEvent) => void,
+): Promise<void> {
+    const url = `${BACKEND_API_BASE}/treasury/create-stream`;
 
-        const response = await axios.post<CreateTreasuryResponse>(url, request);
+    const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(request),
+    });
 
-        return response.data;
-    } catch (error) {
-        console.error("Error creating treasury", error);
-        throw error;
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(
+            text || `Treasury creation failed (${response.status})`,
+        );
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error("No response stream");
+
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (trimmed.startsWith("data:")) {
+                const json = trimmed.slice(5).trim();
+                if (json) {
+                    try {
+                        const event: CreationProgressEvent = JSON.parse(json);
+                        onProgress(event);
+                    } catch {
+                        // skip malformed events
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -1269,6 +1309,117 @@ export async function getIntentsQuote(
             error.response?.data || error?.message || "Failed to get quote";
         throw new Error(message);
     }
+}
+
+// ======================================================================
+// Confidential Intents API
+// ======================================================================
+
+export interface GenerateIntentPayload {
+    message: string; // JSON string of the intent
+    nonce: string; // base64-encoded versioned nonce
+    recipient: string; // "intents.near"
+}
+
+export interface GenerateIntentResponse {
+    intent: {
+        standard: string; // "nep413"
+        payload: GenerateIntentPayload;
+    };
+    correlationId: string;
+}
+
+/**
+ * Generate a NEP-413 intent payload to sign.
+ * Called after getting a quote — uses the depositAddress from the quote.
+ */
+/**
+ * Get confidential shield quote from the dedicated endpoint.
+ * Requires DAO membership auth. Uses 1Click test API with JWT.
+ */
+export async function getConfidentialQuote(
+    daoId: string,
+    request: {
+        dry?: boolean;
+        swapType?: string;
+        slippageTolerance?: number;
+        originAsset: string;
+        destinationAsset: string;
+        amount: string;
+        deadline: string;
+        quoteWaitingTimeMs?: number;
+    },
+): Promise<IntentsQuoteResponse | null> {
+    try {
+        const url = `${BACKEND_API_BASE}/confidential-intents/quote`;
+        const response = await axios.post<IntentsQuoteResponse>(
+            url,
+            { daoId, ...request },
+            { withCredentials: true },
+        );
+        return response.data;
+    } catch (error: any) {
+        if (error?.response?.status === 404) return null;
+        throw error;
+    }
+}
+
+export async function generateIntent(request: {
+    type: string;
+    standard: string;
+    depositAddress: string;
+    signerId: string;
+}): Promise<GenerateIntentResponse> {
+    const url = `${BACKEND_API_BASE}/confidential-intents/generate-intent`;
+    const response = await axios.post<GenerateIntentResponse>(url, request, {
+        withCredentials: true,
+    });
+    return response.data;
+}
+
+/**
+ * Fetch confidential balances for a DAO.
+ * Returns token balances from the 1Click confidential intents system.
+ */
+export interface ConfidentialBalance {
+    available: string;
+    source: string;
+    tokenId: string;
+}
+
+export interface ConfidentialBalancesResponse {
+    balances: ConfidentialBalance[];
+}
+
+export async function getConfidentialBalances(
+    daoId: string,
+): Promise<ConfidentialBalancesResponse> {
+    const url = `${BACKEND_API_BASE}/confidential-intents/balances`;
+    const response = await axios.get(url, {
+        params: { daoId },
+        withCredentials: true,
+    });
+    return response.data;
+}
+
+/**
+ * Prepare a confidential auth proposal for a DAO.
+ * Returns the v1.signer proposal args to submit to the DAO.
+ * The backend stores the auth payload for auto-submission after approval.
+ */
+export async function prepareConfidentialAuth(daoId: string): Promise<{
+    proposal: {
+        description: string;
+        kind: Record<string, unknown>;
+    };
+}> {
+    const url = `${BACKEND_API_BASE}/confidential-intents/prepare-auth`;
+    const response = await axios.post(
+        url,
+        { daoId },
+        { withCredentials: true },
+    );
+    return response.data;
 }
 
 /**

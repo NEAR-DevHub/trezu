@@ -212,6 +212,13 @@ async fn main() {
         log::info!("Goldsky enrichment worker disabled (GOLDSKY_DATABASE_URL not set)");
     }
 
+    // Spawn notification worker (event detection + Telegram dispatch)
+    nt_be::handlers::notifications::run_notification_loop(
+        state.clone(),
+        state.telegram_client.clone(),
+        state.env_vars.frontend_base_url.clone(),
+    );
+
     // Spawn DAO list sync service (fetches DAOs from sputnik-dao.near every 5 minutes)
     {
         let pool = state.db_pool.clone();

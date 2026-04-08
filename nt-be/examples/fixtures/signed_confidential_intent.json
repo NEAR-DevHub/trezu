@@ -1,0 +1,14 @@
+[
+  {
+    "signedIntent": {
+      "payload": {
+        "message": "{\"deadline\":\"2026-03-22T18:10:41.644Z\",\"intents\":[{\"intent\":\"transfer\",\"receiver_id\":\"d32b552aa188face5952516a370bc5a9d91f77a19c48d5b7b16e6c59eb79b08e\",\"tokens\":{\"nep141:wrap.near\":\"100000000000000000000000\"}}],\"signer_id\":\"petersalomonsendev.sputnik-dao.near\"}",
+        "nonce": "Vij2xgAlKBKzQIplM0Q8nxhAihair+2eGOK624Oz8Uc=",
+        "recipient": "intents.near"
+      },
+      "public_key": "ed25519:7pPtVUyLDRXvzkgAUtfGeUK9ZWaSWd256tSgvazfZKZg",
+      "signature": "ed25519:rhiMsiZxsexdg8ccHfMXNnrAgvgUeHcSMPp3MBcnXuEg5XGDwY91vmzEh8vfdQd45rQbc8cB1mqp9xHwqUnLnzZ",
+      "standard": "nep413"
+    }
+  }
+]

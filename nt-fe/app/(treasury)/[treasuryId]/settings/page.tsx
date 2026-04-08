@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { TabGroup } from "@/components/tab-group";
+import { features } from "@/constants/features";
 import { GeneralTab } from "./components/general-tab";
 import { IntegrationsTab } from "./components/integrations-tab";
 import { PreferencesTab } from "./components/preferences-tab";
@@ -15,7 +16,9 @@ export default function SettingsPage() {
         { value: "general", label: "General" },
         { value: "voting", label: "Voting" },
         { value: "preferences", label: "Preferences" },
-        { value: "integrations", label: "Integrations" },
+        ...(features.integrations
+            ? [{ value: "integrations", label: "Integrations" }]
+            : []),
     ];
 
     return (
@@ -35,7 +38,9 @@ export default function SettingsPage() {
                 {activeTab === "general" && <GeneralTab />}
                 {activeTab === "voting" && <VotingTab />}
                 {activeTab === "preferences" && <PreferencesTab />}
-                {activeTab === "integrations" && <IntegrationsTab />}
+                {activeTab === "integrations" && features.integrations && (
+                    <IntegrationsTab />
+                )}
             </div>
         </PageComponentLayout>
     );

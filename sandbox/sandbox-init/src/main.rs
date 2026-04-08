@@ -1,9 +1,11 @@
 //! NEAR Sandbox Initializer for Treasury Test Environment
 //!
 //! This binary starts a NEAR sandbox with persistent storage, deploys the required contracts,
-//! and keeps the sandbox running for testing.
+//! and runs a mock HTTP server for test helpers (mock 1Click API, delegate action signing).
 //!
 //! Supports persistent mode where blockchain state survives container restarts.
+
+mod mock_server;
 
 use anyhow::{Context, Result};
 use base64::Engine;
@@ -581,6 +583,78 @@ async fn deploy_dao_contract(
     Ok(())
 }
 
+/// Deploy the mock v1.signer contract (compiled from WAT at build time)
+async fn deploy_mock_signer(
+    network_config: &NetworkConfig,
+    parent_id: &AccountId,
+) -> Result<()> {
+    let contract_id: AccountId = "v1.signer".parse().unwrap();
+    info!("Deploying mock v1.signer contract to {}", contract_id);
+
+    // Create v1.signer as a sub-account of signer
+    create_account(
+        &contract_id,
+        parent_id,
+        NearToken::from_near(50),
+        network_config,
+    )
+    .await?;
+
+    // Compile WAT → WASM
+    let wat_source = include_str!("../../contracts/mock_signer.wat");
+    let wasm_bytes = wat::parse_str(wat_source)
+        .context("Failed to compile mock_signer.wat to WASM")?;
+
+    info!("Compiled mock signer WAT to {} bytes of WASM", wasm_bytes.len());
+
+    near_api::Contract::deploy(contract_id.clone())
+        .use_code(wasm_bytes)
+        .without_init_call()
+        .with_signer(get_genesis_signer())
+        .send_to(network_config)
+        .await
+        .context("Failed to deploy mock v1.signer")?
+        .assert_success();
+
+    info!("Successfully deployed mock v1.signer contract");
+    Ok(())
+}
+
+/// Deploy the mock v2.ref-finance.near contract (compiled from WAT)
+async fn deploy_mock_ref_finance(
+    network_config: &NetworkConfig,
+) -> Result<()> {
+    let contract_id: AccountId = "v2.ref-finance.near".parse().unwrap();
+    let parent_id: AccountId = "ref-finance.near".parse().unwrap();
+    info!("Deploying mock v2.ref-finance.near contract");
+
+    create_account(
+        &contract_id,
+        &parent_id,
+        NearToken::from_near(10),
+        network_config,
+    )
+    .await?;
+
+    let wat_source = include_str!("../../contracts/mock_ref_finance.wat");
+    let wasm_bytes = wat::parse_str(wat_source)
+        .context("Failed to compile mock_ref_finance.wat to WASM")?;
+
+    info!("Compiled mock ref-finance WAT to {} bytes of WASM", wasm_bytes.len());
+
+    near_api::Contract::deploy(contract_id.clone())
+        .use_code(wasm_bytes)
+        .without_init_call()
+        .with_signer(get_genesis_signer())
+        .send_to(network_config)
+        .await
+        .context("Failed to deploy mock v2.ref-finance.near")?
+        .assert_success();
+
+    info!("Successfully deployed mock v2.ref-finance.near contract");
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     // Initialize tracing
@@ -636,6 +710,18 @@ async fn main() -> Result<()> {
         GenesisAccount {
             account_id: "sputnik-dao.near".parse().unwrap(),
             balance: NearToken::from_near(1000),
+            private_key: genesis_account.private_key.clone(),
+            public_key: genesis_account.public_key.clone(),
+        },
+        GenesisAccount {
+            account_id: "signer".parse().unwrap(),
+            balance: NearToken::from_near(100),
+            private_key: genesis_account.private_key.clone(),
+            public_key: genesis_account.public_key.clone(),
+        },
+        GenesisAccount {
+            account_id: "ref-finance.near".parse().unwrap(),
+            balance: NearToken::from_near(50),
             private_key: genesis_account.private_key.clone(),
             public_key: genesis_account.public_key.clone(),
         },
@@ -770,6 +856,16 @@ async fn main() -> Result<()> {
         } else {
             info!("DAO contract not found at {}, skipping", dao_wasm);
         }
+        // Deploy mock v1.signer contract (WAT → WASM)
+        let signer_id: AccountId = "signer".parse().unwrap();
+        if let Err(e) = deploy_mock_signer(&network_config, &signer_id).await {
+            error!("Failed to deploy mock v1.signer: {}", e);
+        }
+
+        // Deploy mock v2.ref-finance.near contract (WAT → WASM)
+        if let Err(e) = deploy_mock_ref_finance(&network_config).await {
+            error!("Failed to deploy mock v2.ref-finance.near: {}", e);
+        }
     } else {
         info!("================================================");
         info!("Resuming from persistent storage - skipping contract deployment");
@@ -796,9 +892,17 @@ async fn main() -> Result<()> {
     info!("  - omft.near");
     info!("  - sputnik-dao.near (DAO factory)");
     info!("  - {}", bulk_payment_id);
+    info!("  - v1.signer (mock MPC signer)");
+    info!("  - v2.ref-finance.near (mock token whitelist)");
     info!("");
     info!("Persistent home directory: {:?}", sandbox_home);
     info!("");
+
+    // Start mock HTTP server (mock 1Click API + test helpers)
+    let genesis_key = GenesisAccount::default().private_key;
+    tokio::spawn(async move {
+        mock_server::start(genesis_key).await;
+    });
 
     // Keep the sandbox running
     info!("Sandbox is running. Press Ctrl+C to stop.");

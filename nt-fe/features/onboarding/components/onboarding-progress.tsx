@@ -1,14 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ArrowDownToLine, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/button";
 import { StepIcon } from "@/features/proposals/components/expanded-view/common/proposal-sidebar";
 import { useAssets } from "@/hooks/use-assets";
-import { TreasuryAsset } from "@/lib/api";
-import Big from "@/lib/big";
 import { useProposals } from "@/hooks/use-proposals";
 import { useTreasury } from "@/hooks/use-treasury";
 import { availableBalance } from "@/lib/balance";

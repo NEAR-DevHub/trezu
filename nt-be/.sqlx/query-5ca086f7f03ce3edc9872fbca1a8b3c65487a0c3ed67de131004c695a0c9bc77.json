@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO goldsky_cursors (consumer_name, last_processed_id, last_processed_block, updated_at)\n         VALUES ($1, $2, $3, NOW())\n         ON CONFLICT (consumer_name) DO UPDATE SET\n           last_processed_id = EXCLUDED.last_processed_id,\n           last_processed_block = EXCLUDED.last_processed_block,\n           updated_at = NOW()",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "5ca086f7f03ce3edc9872fbca1a8b3c65487a0c3ed67de131004c695a0c9bc77"
+}

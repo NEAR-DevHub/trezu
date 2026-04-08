@@ -357,7 +357,7 @@ async fn store_daily_balance_snapshot(
 ) -> Result<(), sqlx::Error> {
     let mut tx = pool.begin().await?;
 
-    sqlx::query(
+    sqlx::query!(
         r#"
         INSERT INTO public_dashboard_daily_runs (
             snapshot_date, dao_count, trezu_dao_count, failed_dao_count,
@@ -370,26 +370,26 @@ async fn store_daily_balance_snapshot(
             failed_dao_count = EXCLUDED.failed_dao_count,
             computed_at = NOW()
         "#,
+        snapshot_date,
+        dao_count,
+        trezu_dao_count,
+        failed_dao_count,
     )
-    .bind(snapshot_date)
-    .bind(dao_count)
-    .bind(trezu_dao_count)
-    .bind(failed_dao_count)
     .execute(&mut *tx)
     .await?;
 
-    sqlx::query(
+    sqlx::query!(
         r#"
         DELETE FROM public_dashboard_daily_balances
         WHERE snapshot_date = $1
         "#,
+        snapshot_date,
     )
-    .bind(snapshot_date)
     .execute(&mut *tx)
     .await?;
 
     for balance in balances {
-        sqlx::query(
+        sqlx::query!(
             r#"
             INSERT INTO public_dashboard_daily_balances (
                 snapshot_date,
@@ -403,15 +403,15 @@ async fn store_daily_balance_snapshot(
             )
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             "#,
+            snapshot_date,
+            &balance.dao_id,
+            balance.is_trezu,
+            &balance.token.token_id,
+            balance.token.contract_id,
+            &balance.token.total_amount_raw,
+            &balance.token.price_usd,
+            &balance.token.total_usd,
         )
-        .bind(snapshot_date)
-        .bind(&balance.dao_id)
-        .bind(balance.is_trezu)
-        .bind(&balance.token.token_id)
-        .bind(&balance.token.contract_id)
-        .bind(&balance.token.total_amount_raw)
-        .bind(&balance.token.price_usd)
-        .bind(&balance.token.total_usd)
         .execute(&mut *tx)
         .await?;
     }

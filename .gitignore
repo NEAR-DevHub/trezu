@@ -5,3 +5,8 @@ node_modules
 nt-fe/screenshots/
 sandbox/sandbox-init/target
 .env.local
+nt-be/examples/playwright/test-results/
+nt-be/examples/playwright/fixtures/*.png
+nt-be/examples/fixtures/auth_response.json
+nt-be/examples/fixtures/mpc_auth_result.txt
+test-results/

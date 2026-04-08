@@ -10,7 +10,7 @@ import { PageCard } from "@/components/card";
 import { CopyButton } from "@/components/copy-button";
 import { EmptyState } from "@/components/empty-state";
 import { InfoAlert } from "@/components/info-alert";
-import Logo from "@/components/logo";
+import Logo from "@/components/icons/logo";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { StepperHeader } from "@/components/step-wizard";
 import { TreasuryLogo } from "@/components/treasury-info";

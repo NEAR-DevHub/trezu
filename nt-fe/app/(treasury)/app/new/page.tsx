@@ -2,11 +2,19 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { Database, Minus, Plus, UsersRound, Vote } from "lucide-react";
+import {
+    Clock10,
+    Database,
+    Globe,
+    Minus,
+    Plus,
+    Shield,
+    UsersRound,
+    Vote,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { type ArrayPath, useForm, useFormContext } from "react-hook-form";
-import { toast } from "sonner";
 import z from "zod";
 import { Alert, AlertDescription } from "@/components/alert";
 import { Button } from "@/components/button";
@@ -34,9 +42,26 @@ import { trackEvent } from "@/lib/analytics";
 import {
     type CreateTreasuryRequest,
     checkHandleUnused,
-    createTreasury,
+    createTreasuryStream,
 } from "@/lib/api";
+import {
+    CreationProgressModal,
+    type CreationStep,
+} from "@/components/creation-progress-modal";
 import { useNear } from "@/stores/near-store";
+import { InfoAlert } from "@/components/info-alert";
+import { TreasuryTypeIcon } from "@/components/icons/shield";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
+import { Pill } from "@/components/pill";
+import { cn } from "@/lib/utils";
+import { features } from "@/constants/features";
 
 const treasuryFormSchema = z
     .object({
@@ -69,6 +94,7 @@ const treasuryFormSchema = z
                     path: ["accountName"],
                 },
             ),
+        isConfidential: z.boolean(),
         members: memberSchema,
     })
     .refine((data) => {
@@ -267,7 +293,7 @@ function Threshold({
 function Step2({ handleBack, handleNext }: StepProps) {
     const form = useFormContext<TreasuryFormValues>();
 
-    const handleReview = async () => {
+    const handleContinue = async () => {
         const isValid = await form.trigger(["members"]);
         if (isValid && handleNext) {
             trackEvent("treasury-creation-step-2-completed", {
@@ -313,6 +339,8 @@ function Step2({ handleBack, handleNext }: StepProps) {
                 handleBack={handleBack}
             />
 
+            <InfoAlert message="You can add or update members now and edit this later at any time." />
+
             <div className="flex flex-col gap-8">
                 <MemberInput
                     control={form.control}
@@ -356,10 +384,182 @@ function Step2({ handleBack, handleNext }: StepProps) {
                         />
                     </div>
                 </div>
-                <InlineNextButton
-                    text="Review Treasury"
-                    onClick={handleReview}
-                />
+                <InlineNextButton text="Continue" onClick={handleContinue} />
+            </div>
+        </PageCard>
+    );
+}
+
+export function TreasuryTypePill({
+    type,
+}: {
+    type: "confidential" | "public";
+}) {
+    const pillStyle = type === "confidential" ? "primary" : "card";
+    const pillTitle = type === "confidential" ? "Confidential" : "Public";
+    const pillIcon =
+        type === "confidential" ? (
+            <Shield className="size-3 text-primary-foreground" />
+        ) : (
+            <Globe className="size-3 text-foreground" />
+        );
+
+    return (
+        <Pill
+            icon={pillIcon}
+            title={pillTitle}
+            variant={pillStyle}
+            className="shrink-0 h-fit"
+        />
+    );
+}
+
+export function Feature({
+    title,
+    icon,
+}: {
+    title: string;
+    icon: "anyone" | "team" | "soon";
+}) {
+    const pillStyle =
+        icon === "anyone"
+            ? "secondary"
+            : icon === "team"
+              ? "primary"
+              : "secondary";
+    const pillTitle =
+        icon === "anyone" ? "Anyone" : icon === "team" ? "Team Only" : "Soon";
+    const pillIcon =
+        icon === "anyone" ? (
+            <Globe className="size-3 text-foreground" />
+        ) : icon === "team" ? (
+            <Shield className="size-3 text-primary-foreground" />
+        ) : (
+            <Clock10 className="size-3 text-foreground" />
+        );
+
+    return (
+        <div className="flex w-full items-center gap-2">
+            <p
+                className={cn(
+                    "text-foreground text-sm w-full",
+                    icon === "soon" && "text-muted-foreground",
+                )}
+            >
+                {title}
+            </p>
+            <Pill
+                icon={pillIcon}
+                title={pillTitle}
+                variant={pillStyle}
+                className="shrink-0"
+            />
+        </div>
+    );
+}
+
+const TREASURY_TYPES = [
+    {
+        isConfidential: false,
+        label: "Public",
+        description:
+            "All balances, activities, and transactions are visible to anyone on the blockchain. This option is best for transparent organizations and public DAOs.",
+        visibleOnChain: [
+            <Feature title="Balance, Transactions" icon="anyone" />,
+            <Feature title="Members, Voting" icon="anyone" />,
+        ],
+        featuresAvailable: {
+            generalText: "All features available",
+            features: [],
+        },
+    },
+    {
+        isConfidential: true,
+        label: "Confidential",
+        description:
+            "All balances, activities, and transfers private on the blockchain. Only your team can view this information. Best for private companies, family offices, or teams that want financial privacy.",
+        visibleOnChain: [
+            <Feature title="Balance, Transactions" icon="team" />,
+            <Feature title="Members, Voting" icon="anyone" />,
+        ],
+        featuresAvailable: {
+            generalText: "Most features supported",
+            features: [
+                <Feature title="Recent Transactions Export" icon="soon" />,
+                <Feature title="Bulk Payment" icon="soon" />,
+            ],
+        },
+    },
+] as const;
+
+function Step3({ handleBack, handleNext }: StepProps) {
+    const form = useFormContext<TreasuryFormValues>();
+    const handleSelect = (type: "confidential" | "public") => {
+        form.setValue("isConfidential", type === "confidential");
+        trackEvent("treasury-creation-step-3-completed", {
+            treasury_type: type,
+        });
+        if (handleNext) {
+            handleNext();
+        }
+    };
+    return (
+        <PageCard>
+            <StepperHeader title="Treasury Type" handleBack={handleBack} />
+            <InfoAlert message="You can select only one time per tresury and you cannot change it later." />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {TREASURY_TYPES.map((type) => (
+                    <Card key={type.isConfidential ? "confidential" : "public"}>
+                        <CardHeader className="px-4">
+                            <div className="flex items-center gap-2">
+                                <TreasuryTypeIcon
+                                    type={
+                                        type.isConfidential
+                                            ? "confidential"
+                                            : "public"
+                                    }
+                                />
+                                <CardTitle>{type.label}</CardTitle>
+                            </div>
+                            <CardDescription className="text-xs">
+                                {type.description}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="px-4 flex flex-col gap-6">
+                            <div className="flex flex-col gap-2">
+                                <p className="text-xs text-muted-foreground uppercase">
+                                    Visible on chain
+                                </p>
+                                {type.visibleOnChain}
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <p className="text-xs text-muted-foreground uppercase">
+                                    Features available
+                                </p>
+                                <p className="text-sm text-foreground">
+                                    {type.featuresAvailable.generalText}
+                                </p>
+                                {type.featuresAvailable.features}
+                            </div>
+                        </CardContent>
+                        <CardFooter className="mt-auto px-4">
+                            <Button
+                                variant="default"
+                                type="button"
+                                className="w-full"
+                                onClick={() =>
+                                    handleSelect(
+                                        type.isConfidential
+                                            ? "confidential"
+                                            : "public",
+                                    )
+                                }
+                            >
+                                Select
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                ))}
             </div>
         </PageCard>
     );
@@ -380,13 +580,14 @@ const VISUAL = [
     },
 ] as const;
 
-function Step3({ handleBack }: StepProps) {
+function Step4({ handleBack }: StepProps) {
     const form = useFormContext<TreasuryFormValues>();
     const { details } = form.watch();
     const { members } = form.watch();
+    const { isConfidential } = form.watch();
 
     useEffect(() => {
-        trackEvent("treasury-creation-step-3-viewed");
+        trackEvent("treasury-creation-step-4-viewed");
     }, []);
     const financialMembers = members.filter((m: Member) =>
         m.roles.includes("financial"),
@@ -405,18 +606,23 @@ function Step3({ handleBack }: StepProps) {
 
             <div className="flex flex-col gap-2">
                 <InputBlock invalid={false}>
-                    <div className="flex gap-3.5 px-3.5 py-3 items-center">
-                        <div className="size-10 rounded-[7px] bg-foreground/10 flex items-center justify-center">
-                            <Database className="size-5 text-foreground" />
+                    <div className="flex gap-3 justify-between items-center w-full">
+                        <div className="flex gap-3.5 px-3.5 py-3 items-center">
+                            <div className="size-10 rounded-[7px] bg-foreground/10 flex items-center justify-center">
+                                <Database className="size-5 text-foreground" />
+                            </div>
+                            <div className="flex flex-col gap-0.5">
+                                <p className="font-bold text-2xl">
+                                    {details.treasuryName}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    {details.accountName}.sputnik-dao.near
+                                </p>
+                            </div>
                         </div>
-                        <div className="flex flex-col gap-0.5">
-                            <p className="font-bold text-2xl">
-                                {details.treasuryName}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                                {details.accountName}.sputnik-dao.near
-                            </p>
-                        </div>
+                        <TreasuryTypePill
+                            type={isConfidential ? "confidential" : "public"}
+                        />
                     </div>
                 </InputBlock>
                 <div className="grid md:grid-cols-3 grid-cols-1 gap-2">
@@ -458,6 +664,39 @@ function Step3({ handleBack }: StepProps) {
     );
 }
 
+const NON_CONFIDENTIAL_STEPS: CreationStep[] = [
+    {
+        id: "creating_dao",
+        label: "Creating your treasury on NEAR",
+        status: "pending",
+    },
+    { id: "finalizing", label: "Finalizing setup", status: "pending" },
+];
+
+const CONFIDENTIAL_STEPS: CreationStep[] = [
+    {
+        id: "creating_dao",
+        label: "Creating your treasury on NEAR",
+        status: "pending",
+    },
+    {
+        id: "adding_public_key",
+        label: "Registering public key",
+        status: "pending",
+    },
+    {
+        id: "authenticating",
+        label: "Setting up confidential transactions",
+        status: "pending",
+    },
+    {
+        id: "setting_policy",
+        label: "Configuring treasury members",
+        status: "pending",
+    },
+    { id: "finalizing", label: "Finalizing setup", status: "pending" },
+];
+
 export default function NewTreasuryPage() {
     const { accountId, isInitializing } = useNear();
     const { treasuries } = useTreasury();
@@ -466,6 +705,12 @@ export default function NewTreasuryPage() {
     const router = useRouter();
     const queryClient = useQueryClient();
     const [step, setStep] = useState(0);
+    const [progressOpen, setProgressOpen] = useState(false);
+    const [progressSteps, setProgressSteps] = useState<CreationStep[]>([]);
+    const [progressError, setProgressError] = useState<string | null>(null);
+    const [createdTreasuryId, setCreatedTreasuryId] = useState<string | null>(
+        null,
+    );
     const form = useForm<TreasuryFormValues>({
         resolver: zodResolver(treasuryFormSchema),
         defaultValues: {
@@ -475,6 +720,7 @@ export default function NewTreasuryPage() {
                 treasuryName: "",
                 accountName: "",
             },
+            isConfidential: false,
             members: [
                 {
                     accountId: "",
@@ -496,32 +742,49 @@ export default function NewTreasuryPage() {
     }, [accountId, isInitializing]);
 
     const onSubmit = async (data: TreasuryFormValues) => {
+        const governors = data.members
+            .filter((m) => m.roles.includes("governance"))
+            .map((m) => m.accountId);
+        const financiers = data.members
+            .filter((m) => m.roles.includes("financial"))
+            .map((m) => m.accountId);
+        const requestors = data.members
+            .filter((m) => m.roles.includes("requestor"))
+            .map((m) => m.accountId);
+
+        const request: CreateTreasuryRequest = {
+            name: data.details.treasuryName,
+            accountId: `${data.details.accountName}.sputnik-dao.near`,
+            paymentThreshold: data.details.paymentThreshold,
+            governanceThreshold: data.details.governanceThreshold,
+            governors,
+            isConfidential: data.isConfidential,
+            financiers,
+            requestors,
+        };
+
+        const initialSteps = request.isConfidential
+            ? CONFIDENTIAL_STEPS
+            : NON_CONFIDENTIAL_STEPS;
+
+        setProgressSteps(initialSteps.map((s) => ({ ...s })));
+        setProgressError(null);
+        setCreatedTreasuryId(null);
+        setProgressOpen(true);
+
         try {
-            // Extract unique account IDs for each role
-            const governors = data.members
-                .filter((m) => m.roles.includes("governance"))
-                .map((m) => m.accountId);
-            const financiers = data.members
-                .filter((m) => m.roles.includes("financial"))
-                .map((m) => m.accountId);
-            const requestors = data.members
-                .filter((m) => m.roles.includes("requestor"))
-                .map((m) => m.accountId);
-
-            const request: CreateTreasuryRequest = {
-                name: data.details.treasuryName,
-                accountId: `${data.details.accountName}.sputnik-dao.near`,
-                paymentThreshold: data.details.paymentThreshold,
-                governanceThreshold: data.details.governanceThreshold,
-                governors,
-                financiers,
-                requestors,
-            };
-
-            await createTreasury(request)
-                .then((response) => {
+            await createTreasuryStream(request, (event) => {
+                if (event.step === "done") {
+                    const treasuryId = event.treasury!;
+                    setProgressSteps((prev) =>
+                        prev.map((s) => ({
+                            ...s,
+                            status: "completed" as const,
+                        })),
+                    );
+                    setCreatedTreasuryId(treasuryId);
                     trackEvent("treasury-created", {
-                        treasury_id: response.treasury,
+                        treasury_id: treasuryId,
                         source: "/app/new",
                         members_count:
                             request.governors.length +
@@ -531,21 +794,57 @@ export default function NewTreasuryPage() {
                     queryClient.invalidateQueries({
                         queryKey: ["userTreasuries", accountId],
                     });
-                    toast.success("Treasury created successfully");
-                    router.push(`/${response.treasury}`);
-                })
-                .catch((error) => {
-                    console.error("Treasury creation error", error);
-                    toast.error("Failed to create treasury");
-                });
+                } else if (event.step === "error") {
+                    setProgressSteps((prev) =>
+                        prev.map((s) =>
+                            s.status === "in_progress"
+                                ? { ...s, status: "error" as const }
+                                : s,
+                        ),
+                    );
+                    setProgressError(
+                        event.message ?? "An unexpected error occurred",
+                    );
+                } else {
+                    setProgressSteps((prev) =>
+                        prev.map((s) => {
+                            if (s.id === event.step) {
+                                return {
+                                    ...s,
+                                    status: event.status as CreationStep["status"],
+                                };
+                            }
+                            return s;
+                        }),
+                    );
+                }
+            });
         } catch (error) {
             console.error("Treasury creation error", error);
-            toast.error("Failed to create treasury");
+            setProgressSteps((prev) =>
+                prev.map((s) =>
+                    s.status === "in_progress"
+                        ? { ...s, status: "error" as const }
+                        : s,
+                ),
+            );
+            setProgressError("Failed to create treasury. Please try again.");
         }
     };
 
     return (
         <>
+            <CreationProgressModal
+                open={progressOpen}
+                steps={progressSteps}
+                error={progressError}
+                treasuryId={createdTreasuryId}
+                onNavigate={() => {
+                    if (createdTreasuryId) {
+                        router.push(`/${createdTreasuryId}`);
+                    }
+                }}
+            />
             <CreationDisabledModal
                 open={!creationAvailable}
                 onClose={() => router.push("/")}
@@ -559,23 +858,35 @@ export default function NewTreasuryPage() {
                 <Form {...form}>
                     <form
                         onSubmit={form.handleSubmit(onSubmit)}
-                        className="flex flex-col gap-4 max-w-[600px] mx-auto"
+                        className="flex flex-col gap-4 max-w-[668px] mx-auto"
                     >
                         <StepWizard
                             step={step}
                             onStepChange={setStep}
-                            stepTitles={["Details", "Members", "Review"]}
-                            steps={[
-                                {
-                                    component: Step1,
-                                },
-                                {
-                                    component: Step2,
-                                },
-                                {
-                                    component: Step3,
-                                },
-                            ]}
+                            stepTitles={
+                                features.confidential
+                                    ? [
+                                          "Details",
+                                          "Members",
+                                          "Treasury Type",
+                                          "Review",
+                                      ]
+                                    : ["Details", "Members", "Review"]
+                            }
+                            steps={
+                                features.confidential
+                                    ? [
+                                          { component: Step1 },
+                                          { component: Step2 },
+                                          { component: Step3 },
+                                          { component: Step4 },
+                                      ]
+                                    : [
+                                          { component: Step1 },
+                                          { component: Step2 },
+                                          { component: Step4 },
+                                      ]
+                            }
                         />
                     </form>
                 </Form>
