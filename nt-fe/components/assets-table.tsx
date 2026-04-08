@@ -684,24 +684,10 @@ function AvailableView({
                                     )}
                                 />
                             </TableCell>
+                            <TableCell />
                             <TableCell className="p-4">
                                 {!isLockupUnlocked && (
                                     <div className="flex gap-1 justify-end">
-                                        <AuthButton
-                                            permissionKind="transfer"
-                                            permissionAction="AddProposal"
-                                            variant="ghost"
-                                            size="icon"
-                                            className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-                                            tooltipContent="Send"
-                                            onClick={() =>
-                                                onNavigate?.(
-                                                    `/${treasuryId}/payments?token=${tokenParam}`,
-                                                )
-                                            }
-                                        >
-                                            <ArrowUpRight className="size-4 text-primary" />
-                                        </AuthButton>
                                         <AuthButton
                                             permissionKind="call"
                                             permissionAction="AddProposal"
@@ -717,10 +703,24 @@ function AvailableView({
                                         >
                                             <ArrowLeftRight className="size-4 text-primary" />
                                         </AuthButton>
+                                        <AuthButton
+                                            permissionKind="transfer"
+                                            permissionAction="AddProposal"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                                            tooltipContent="Send"
+                                            onClick={() =>
+                                                onNavigate?.(
+                                                    `/${treasuryId}/payments?token=${tokenParam}`,
+                                                )
+                                            }
+                                        >
+                                            <ArrowUpRight className="size-4 text-primary" />
+                                        </AuthButton>
                                     </div>
                                 )}
                             </TableCell>
-                            <TableCell />
                             <TableCell />
                         </TableRow>
                     );
@@ -911,7 +911,7 @@ function LockedView({
                 return (
                     <TableRow
                         key={networkRowKey(asset.id, "locked", network)}
-                        className="bg-muted/30 cursor-pointer hover:bg-muted/50"
+                        className="bg-muted/30 cursor-pointer hover:bg-muted/50 group"
                         onClick={() => onSelectLockup?.(network)}
                     >
                         <TableCell className="p-4 pl-16">
@@ -995,7 +995,9 @@ function LockedView({
                                 )}
                             />
                         </TableCell>
-                        <TableCell />
+                        <TableCell className="p-4 text-right">
+                            <ChevronRight className="size-4 ml-auto text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </TableCell>
                     </TableRow>
                 );
             })}
@@ -1123,7 +1125,7 @@ function EarningView({
                             return (
                                 <TableRow
                                     key={`${asset.id}-earning-${networkIdx}-${poolIdx}`}
-                                    className="bg-muted/30 cursor-pointer hover:bg-muted/50"
+                                    className="bg-muted/30 cursor-pointer hover:bg-muted/50 group"
                                     onClick={() =>
                                         onSelectPool?.(network, pool.poolId)
                                     }
@@ -1162,7 +1164,9 @@ function EarningView({
                                             )}
                                         />
                                     </TableCell>
-                                    <TableCell />
+                                    <TableCell className="p-4 text-right">
+                                        <ChevronRight className="size-4 ml-auto text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    </TableCell>
                                 </TableRow>
                             );
                         },
@@ -1186,7 +1190,7 @@ function EarningView({
                     return [
                         <TableRow
                             key={`${asset.id}-earning-lockup-${networkIdx}`}
-                            className="bg-muted/30 cursor-pointer hover:bg-muted/50"
+                            className="bg-muted/30 cursor-pointer hover:bg-muted/50 group"
                             onClick={() =>
                                 onSelectPool?.(network, lockupPoolId)
                             }
@@ -1225,7 +1229,9 @@ function EarningView({
                                     )}
                                 />
                             </TableCell>
-                            <TableCell />
+                            <TableCell className="p-4 text-right">
+                                <ChevronRight className="size-4 ml-auto text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </TableCell>
                         </TableRow>,
                     ];
                 }
@@ -1628,7 +1634,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
         <div className="overflow-hidden">
             {hasLockedOrEarning && (
                 <>
-                    <div className="sm:hidden">
+                    <div className="px-4 pt-4 sm:hidden">
                         <Select
                             value={view}
                             onValueChange={(next) => {
@@ -1656,7 +1662,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
 
                     <div
                         className={cn(
-                            "hidden sm:grid",
+                            "hidden sm:grid pt-4",
                             visibleViews.length === 2
                                 ? "grid-cols-2"
                                 : "grid-cols-3",
@@ -1699,386 +1705,413 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                 </>
             )}
 
-            <Table>
-                <TableHeader className="bg-transparent border-t-0">
-                    <TableRow className="hover:bg-transparent">
-                        {renderSortableHead("token", "Token", {
-                            headClassName: "pl-0 sm:pl-4",
-                            buttonClassName: cn("justify-start"),
-                        })}
-                        {view === "available" && (
-                            <>
-                                {renderSortableHead("balance", "Balance", {
-                                    headClassName: "text-right",
-                                    buttonClassName: "ml-auto",
-                                })}
-                                {renderSortableHead("price", "Coin Price", {
-                                    headClassName:
-                                        "text-right hidden sm:table-cell",
-                                    buttonClassName: "ml-auto",
-                                })}
-                                {renderSortableHead("weight", "Weight", {
-                                    headClassName:
-                                        "text-right hidden sm:table-cell",
-                                    buttonClassName: "ml-auto",
-                                })}
-                            </>
-                        )}
-                        {view === "locked" && (
-                            <>
-                                {renderSortableHead("locked", "Locked", {
-                                    headClassName: "text-right",
-                                    buttonClassName: "ml-auto",
-                                })}
-                                {renderSortableHead("unlocked", "Unlocked", {
-                                    headClassName:
-                                        "text-right hidden sm:table-cell",
-                                    buttonClassName: "ml-auto",
-                                })}
-                                {renderSortableHead("price", "Coin Price", {
-                                    headClassName:
-                                        "text-right hidden sm:table-cell",
-                                    buttonClassName: "ml-auto",
-                                })}
-                                {renderSortableHead(
-                                    "totalAllocated",
-                                    "Total Allocated",
-                                    {
-                                        headClassName:
-                                            "text-right hidden sm:table-cell",
-                                        buttonClassName: "ml-auto",
-                                    },
-                                )}
-                            </>
-                        )}
-                        {view === "earning" && (
-                            <>
-                                {renderSortableHead(
-                                    "earningTotal",
-                                    "Total Balance",
-                                    {
+            <div className={cn(hasLockedOrEarning && "p-4 pt-0")}>
+                <Table>
+                    <TableHeader className="bg-transparent border-t-0">
+                        <TableRow className="hover:bg-transparent">
+                            {renderSortableHead("token", "Token", {
+                                headClassName: "pl-0 sm:pl-4",
+                                buttonClassName: cn("justify-start"),
+                            })}
+                            {view === "available" && (
+                                <>
+                                    {renderSortableHead("balance", "Balance", {
                                         headClassName: "text-right",
                                         buttonClassName: "ml-auto",
-                                    },
-                                )}
-                                {renderSortableHead("price", "Coin Price", {
-                                    headClassName:
-                                        "text-right hidden sm:table-cell",
-                                    buttonClassName: "ml-auto",
-                                })}
-                                {renderSortableHead(
-                                    "withdrawable",
-                                    "Available To Withdraw",
-                                    {
+                                    })}
+                                    {renderSortableHead("price", "Coin Price", {
                                         headClassName:
                                             "text-right hidden sm:table-cell",
                                         buttonClassName: "ml-auto",
-                                    },
-                                )}
-                            </>
-                        )}
-                        <TableHead className="w-10 hidden sm:table-cell" />
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {viewAssets.map(({ asset, weight }) => {
-                        const isExpanded = !!expanded[asset.id];
-                        const primaryDecimals =
-                            asset.networks[0]?.decimals ?? DEFAULT_DECIMALS;
-                        const availableNetworks = asset.networks.filter(
-                            (n) =>
-                                n.residency !== "Staked" &&
-                                networkAvailableRawForAvailableView(n).gt(0),
-                        );
-                        const lockedNetworks = asset.networks.filter((n) => {
-                            if (n.residency === "Staked") return false;
-                            return (
-                                networkLockedRaw(n).gt(0) ||
-                                (n.residency === "Lockup" &&
-                                    networkAvailableRaw(n).gt(0))
-                            );
-                        });
-                        const ftLockupInstanceCount = lockedNetworks.filter(
-                            (n) => !!n.lockupInstanceId,
-                        ).length;
-                        const earningNetworks = asset.networks.filter(
-                            (n) =>
-                                ((n.residency === "Staked" &&
-                                    n.balance.type === "Staked" &&
-                                    n.balance.staking.pools.some((pool) =>
-                                        pool.stakedBalance.gt(0),
-                                    )) ||
-                                    (n.balance.type === "Vested" &&
-                                        n.balance.lockup.staked.gt(0))) &&
-                                networkEarningRaw(n).gt(0),
-                        );
-                        const earningFromLockedRaw = lockedNetworks.reduce(
-                            (sum, n) =>
-                                n.balance.type === "Vested"
-                                    ? sum.add(n.balance.lockup.staked)
-                                    : sum,
-                            Big(0),
-                        );
-                        const allocatedLockedRaw = lockedNetworks.reduce(
-                            (sum, n) =>
-                                sum.add(
-                                    networkLockedRaw(n).add(
-                                        networkAvailableRaw(n),
+                                    })}
+                                    {renderSortableHead("weight", "Weight", {
+                                        headClassName:
+                                            "text-right hidden sm:table-cell",
+                                        buttonClassName: "ml-auto",
+                                    })}
+                                </>
+                            )}
+                            {view === "locked" && (
+                                <>
+                                    {renderSortableHead("locked", "Locked", {
+                                        headClassName: "text-right",
+                                        buttonClassName: "ml-auto",
+                                    })}
+                                    {renderSortableHead(
+                                        "unlocked",
+                                        "Unlocked",
+                                        {
+                                            headClassName:
+                                                "text-right hidden sm:table-cell",
+                                            buttonClassName: "ml-auto",
+                                        },
+                                    )}
+                                    {renderSortableHead("price", "Coin Price", {
+                                        headClassName:
+                                            "text-right hidden sm:table-cell",
+                                        buttonClassName: "ml-auto",
+                                    })}
+                                    {renderSortableHead(
+                                        "totalAllocated",
+                                        "Total Allocated",
+                                        {
+                                            headClassName:
+                                                "text-right hidden sm:table-cell",
+                                            buttonClassName: "ml-auto",
+                                        },
+                                    )}
+                                </>
+                            )}
+                            {view === "earning" && (
+                                <>
+                                    {renderSortableHead(
+                                        "earningTotal",
+                                        "Total Balance",
+                                        {
+                                            headClassName: "text-right",
+                                            buttonClassName: "ml-auto",
+                                        },
+                                    )}
+                                    {renderSortableHead("price", "Coin Price", {
+                                        headClassName:
+                                            "text-right hidden sm:table-cell",
+                                        buttonClassName: "ml-auto",
+                                    })}
+                                    {renderSortableHead(
+                                        "withdrawable",
+                                        "Available To Withdraw",
+                                        {
+                                            headClassName:
+                                                "text-right hidden sm:table-cell",
+                                            buttonClassName: "ml-auto",
+                                        },
+                                    )}
+                                </>
+                            )}
+                            <TableHead className="w-10 hidden sm:table-cell" />
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {viewAssets.map(({ asset, weight }) => {
+                            const isExpanded = !!expanded[asset.id];
+                            const primaryDecimals =
+                                asset.networks[0]?.decimals ?? DEFAULT_DECIMALS;
+                            const availableNetworks = asset.networks.filter(
+                                (n) =>
+                                    n.residency !== "Staked" &&
+                                    networkAvailableRawForAvailableView(n).gt(
+                                        0,
                                     ),
-                                ),
-                            Big(0),
-                        );
-                        const hasLockedEarningNotice =
-                            view === "locked" && earningFromLockedRaw.gt(0);
-                        const isFullLockedInEarning =
-                            allocatedLockedRaw.gt(0) &&
-                            earningFromLockedRaw.gte(allocatedLockedRaw);
-
-                        const availableRaw = availableNetworks.reduce(
-                            (sum, n) =>
-                                sum.add(networkAvailableRawForAvailableView(n)),
-                            Big(0),
-                        );
-                        const availableUsd = availableNetworks.reduce(
-                            (sum, n) =>
-                                sum +
-                                toUsd(
-                                    networkAvailableRawForAvailableView(n),
-                                    n.decimals,
-                                    n.price,
-                                ),
-                            0,
-                        );
-
-                        const lockedRaw = lockedNetworks.reduce(
-                            (sum, n) => sum.add(networkLockedRaw(n)),
-                            Big(0),
-                        );
-                        const unlockedRaw = lockedNetworks.reduce(
-                            (sum, n) => sum.add(networkAvailableRaw(n)),
-                            Big(0),
-                        );
-                        const totalAllocatedRaw = lockedRaw.add(unlockedRaw);
-                        const lockedUsd = lockedNetworks.reduce(
-                            (sum, n) =>
-                                sum +
-                                toUsd(networkLockedRaw(n), n.decimals, n.price),
-                            0,
-                        );
-                        const unlockedUsd = lockedNetworks.reduce(
-                            (sum, n) =>
-                                sum +
-                                toUsd(
-                                    networkAvailableRaw(n),
-                                    n.decimals,
-                                    n.price,
-                                ),
-                            0,
-                        );
-                        const totalAllocatedUsd = lockedUsd + unlockedUsd;
-
-                        const earningRaw = earningNetworks.reduce(
-                            (sum, n) => sum.add(networkEarningRaw(n)),
-                            Big(0),
-                        );
-                        const earningWithdrawRaw = earningNetworks.reduce(
-                            (sum, n) =>
-                                n.balance.type === "Vested"
-                                    ? sum.add(
-                                          n.balance.lockup.canWithdraw
-                                              ? n.balance.lockup.unstakedBalance
-                                              : Big(0),
-                                      )
-                                    : sum.add(availableBalance(n.balance)),
-                            Big(0),
-                        );
-                        const earningUsd = earningNetworks.reduce(
-                            (sum, n) =>
-                                sum +
-                                toUsd(
-                                    networkEarningRaw(n),
-                                    n.decimals,
-                                    n.price,
-                                ),
-                            0,
-                        );
-                        const earningWithdrawUsd = earningNetworks.reduce(
-                            (sum, n) =>
-                                sum +
-                                toUsd(
+                            );
+                            const lockedNetworks = asset.networks.filter(
+                                (n) => {
+                                    if (n.residency === "Staked") return false;
+                                    return (
+                                        networkLockedRaw(n).gt(0) ||
+                                        (n.residency === "Lockup" &&
+                                            networkAvailableRaw(n).gt(0))
+                                    );
+                                },
+                            );
+                            const ftLockupInstanceCount = lockedNetworks.filter(
+                                (n) => !!n.lockupInstanceId,
+                            ).length;
+                            const earningNetworks = asset.networks.filter(
+                                (n) =>
+                                    ((n.residency === "Staked" &&
+                                        n.balance.type === "Staked" &&
+                                        n.balance.staking.pools.some((pool) =>
+                                            pool.stakedBalance.gt(0),
+                                        )) ||
+                                        (n.balance.type === "Vested" &&
+                                            n.balance.lockup.staked.gt(0))) &&
+                                    networkEarningRaw(n).gt(0),
+                            );
+                            const earningFromLockedRaw = lockedNetworks.reduce(
+                                (sum, n) =>
                                     n.balance.type === "Vested"
-                                        ? n.balance.lockup.canWithdraw
-                                            ? n.balance.lockup.unstakedBalance
-                                            : Big(0)
-                                        : availableBalance(n.balance),
-                                    n.decimals,
-                                    n.price,
-                                ),
-                            0,
-                        );
+                                        ? sum.add(n.balance.lockup.staked)
+                                        : sum,
+                                Big(0),
+                            );
+                            const allocatedLockedRaw = lockedNetworks.reduce(
+                                (sum, n) =>
+                                    sum.add(
+                                        networkLockedRaw(n).add(
+                                            networkAvailableRaw(n),
+                                        ),
+                                    ),
+                                Big(0),
+                            );
+                            const hasLockedEarningNotice =
+                                view === "locked" && earningFromLockedRaw.gt(0);
+                            const isFullLockedInEarning =
+                                allocatedLockedRaw.gt(0) &&
+                                earningFromLockedRaw.gte(allocatedLockedRaw);
 
-                        return (
-                            <Fragment key={asset.id}>
-                                <TableRow
-                                    className="cursor-pointer"
-                                    onClick={() => {
-                                        if (isMobile) {
-                                            setSelectedMobileAsset(asset);
-                                            setIsMobileViewModalOpen(true);
-                                            return;
-                                        }
-                                        setExpanded((prev) => ({
-                                            ...prev,
-                                            [asset.id]: !prev[asset.id],
-                                        }));
-                                    }}
-                                >
-                                    <TableCell className="py-4 pr-4 pl-0 sm:p-4 sm:pl-4">
-                                        <div className="flex items-center gap-3">
-                                            <img
-                                                src={asset.icon}
-                                                alt={asset.name}
-                                                className="h-10 w-10 rounded-full"
-                                            />
-                                            <div>
-                                                <p className="font-semibold">
-                                                    {asset.id}
-                                                </p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {asset.name}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </TableCell>
+                            const availableRaw = availableNetworks.reduce(
+                                (sum, n) =>
+                                    sum.add(
+                                        networkAvailableRawForAvailableView(n),
+                                    ),
+                                Big(0),
+                            );
+                            const availableUsd = availableNetworks.reduce(
+                                (sum, n) =>
+                                    sum +
+                                    toUsd(
+                                        networkAvailableRawForAvailableView(n),
+                                        n.decimals,
+                                        n.price,
+                                    ),
+                                0,
+                            );
 
-                                    {view === "available" && (
-                                        <AvailableView
-                                            asset={asset}
-                                            isMobile={false}
-                                            isExpanded={false}
-                                            primaryDecimals={primaryDecimals}
-                                            availableRaw={availableRaw}
-                                            availableUsd={availableUsd}
-                                            weight={weight}
-                                        />
-                                    )}
+                            const lockedRaw = lockedNetworks.reduce(
+                                (sum, n) => sum.add(networkLockedRaw(n)),
+                                Big(0),
+                            );
+                            const unlockedRaw = lockedNetworks.reduce(
+                                (sum, n) => sum.add(networkAvailableRaw(n)),
+                                Big(0),
+                            );
+                            const totalAllocatedRaw =
+                                lockedRaw.add(unlockedRaw);
+                            const lockedUsd = lockedNetworks.reduce(
+                                (sum, n) =>
+                                    sum +
+                                    toUsd(
+                                        networkLockedRaw(n),
+                                        n.decimals,
+                                        n.price,
+                                    ),
+                                0,
+                            );
+                            const unlockedUsd = lockedNetworks.reduce(
+                                (sum, n) =>
+                                    sum +
+                                    toUsd(
+                                        networkAvailableRaw(n),
+                                        n.decimals,
+                                        n.price,
+                                    ),
+                                0,
+                            );
+                            const totalAllocatedUsd = lockedUsd + unlockedUsd;
 
-                                    {view === "locked" && (
-                                        <LockedView
-                                            asset={asset}
-                                            isMobile={false}
-                                            isExpanded={false}
-                                            primaryDecimals={primaryDecimals}
-                                            lockedRaw={lockedRaw}
-                                            lockedUsd={lockedUsd}
-                                            unlockedRaw={unlockedRaw}
-                                            unlockedUsd={unlockedUsd}
-                                            totalAllocatedRaw={
-                                                totalAllocatedRaw
+                            const earningRaw = earningNetworks.reduce(
+                                (sum, n) => sum.add(networkEarningRaw(n)),
+                                Big(0),
+                            );
+                            const earningWithdrawRaw = earningNetworks.reduce(
+                                (sum, n) =>
+                                    n.balance.type === "Vested"
+                                        ? sum.add(
+                                              n.balance.lockup.canWithdraw
+                                                  ? n.balance.lockup
+                                                        .unstakedBalance
+                                                  : Big(0),
+                                          )
+                                        : sum.add(availableBalance(n.balance)),
+                                Big(0),
+                            );
+                            const earningUsd = earningNetworks.reduce(
+                                (sum, n) =>
+                                    sum +
+                                    toUsd(
+                                        networkEarningRaw(n),
+                                        n.decimals,
+                                        n.price,
+                                    ),
+                                0,
+                            );
+                            const earningWithdrawUsd = earningNetworks.reduce(
+                                (sum, n) =>
+                                    sum +
+                                    toUsd(
+                                        n.balance.type === "Vested"
+                                            ? n.balance.lockup.canWithdraw
+                                                ? n.balance.lockup
+                                                      .unstakedBalance
+                                                : Big(0)
+                                            : availableBalance(n.balance),
+                                        n.decimals,
+                                        n.price,
+                                    ),
+                                0,
+                            );
+
+                            return (
+                                <Fragment key={asset.id}>
+                                    <TableRow
+                                        className="cursor-pointer"
+                                        onClick={() => {
+                                            if (isMobile) {
+                                                setSelectedMobileAsset(asset);
+                                                setIsMobileViewModalOpen(true);
+                                                return;
                                             }
-                                            totalAllocatedUsd={
-                                                totalAllocatedUsd
-                                            }
-                                        />
-                                    )}
-
-                                    {view === "earning" && (
-                                        <EarningView
-                                            asset={asset}
-                                            isMobile={false}
-                                            isExpanded={false}
-                                            primaryDecimals={primaryDecimals}
-                                            earningRaw={earningRaw}
-                                            earningUsd={earningUsd}
-                                            earningWithdrawRaw={
-                                                earningWithdrawRaw
-                                            }
-                                            earningWithdrawUsd={
-                                                earningWithdrawUsd
-                                            }
-                                        />
-                                    )}
-
-                                    <TableCell className="p-4 text-right hidden sm:table-cell">
-                                        {isExpanded ? (
-                                            <ChevronDown className="size-4 text-primary ml-auto" />
-                                        ) : (
-                                            <ChevronRight className="size-4 text-primary ml-auto" />
-                                        )}
-                                    </TableCell>
-                                </TableRow>
-
-                                <ExpandedRows
-                                    view={view}
-                                    isMobile={isMobile}
-                                    isExpanded={isExpanded}
-                                    asset={asset}
-                                    availableNetworks={availableNetworks}
-                                    lockedNetworks={lockedNetworks}
-                                    earningNetworks={earningNetworks}
-                                    ftLockupInstanceCount={
-                                        ftLockupInstanceCount
-                                    }
-                                    treasuryId={treasuryId ?? null}
-                                    onNavigate={(href) => router.push(href)}
-                                    onSelectLockup={(network) => {
-                                        setSelectedLockupNetwork(network);
-                                        setIsLockupModalOpen(true);
-                                    }}
-                                    onSelectPool={(network, poolId) => {
-                                        setSelectedStakingNetwork(network);
-                                        setSelectedPoolId(poolId);
-                                        setIsStakingModalOpen(true);
-                                    }}
-                                />
-
-                                {hasLockedEarningNotice && (
-                                    <TableRow className="hover:bg-transparent">
-                                        <TableCell
-                                            className="p-0 whitespace-normal"
-                                            colSpan={6}
-                                        >
-                                            <div className="mb-3 mt-2 flex items-start sm:items-center gap-2 rounded-lg bg-muted/60 px-4 py-2 text-xs">
-                                                <Info className="size-4 shrink-0" />
-                                                <p className="text-foreground leading-relaxed wrap-break-word">
-                                                    {isFullLockedInEarning
-                                                        ? "Your full allocated balance"
-                                                        : "Part of your allocated balance"}{" "}
-                                                    (
-                                                    {formatSmartAmount(
-                                                        displayAmount(
-                                                            earningFromLockedRaw,
-                                                            primaryDecimals,
-                                                        ),
-                                                    )}{" "}
-                                                    {asset.id}) is currently
-                                                    earning.
-                                                    {isFullLockedInEarning &&
-                                                        " It will appear here once you stop earning."}{" "}
-                                                    <button
-                                                        type="button"
-                                                        className="underline underline-offset-2"
-                                                        onClick={(event) => {
-                                                            event.stopPropagation();
-                                                            setActiveView(
-                                                                "earning",
-                                                            );
-                                                        }}
-                                                    >
-                                                        {isFullLockedInEarning
-                                                            ? "See in Earning tab"
-                                                            : "See in Earning"}
-                                                    </button>
-                                                </p>
+                                            setExpanded((prev) => ({
+                                                ...prev,
+                                                [asset.id]: !prev[asset.id],
+                                            }));
+                                        }}
+                                    >
+                                        <TableCell className="py-4 pr-4 pl-0 sm:p-4 sm:pl-4">
+                                            <div className="flex items-center gap-3">
+                                                <img
+                                                    src={asset.icon}
+                                                    alt={asset.name}
+                                                    className="h-10 w-10 rounded-full"
+                                                />
+                                                <div>
+                                                    <p className="font-semibold">
+                                                        {asset.id}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {asset.name}
+                                                    </p>
+                                                </div>
                                             </div>
                                         </TableCell>
+
+                                        {view === "available" && (
+                                            <AvailableView
+                                                asset={asset}
+                                                isMobile={false}
+                                                isExpanded={false}
+                                                primaryDecimals={
+                                                    primaryDecimals
+                                                }
+                                                availableRaw={availableRaw}
+                                                availableUsd={availableUsd}
+                                                weight={weight}
+                                            />
+                                        )}
+
+                                        {view === "locked" && (
+                                            <LockedView
+                                                asset={asset}
+                                                isMobile={false}
+                                                isExpanded={false}
+                                                primaryDecimals={
+                                                    primaryDecimals
+                                                }
+                                                lockedRaw={lockedRaw}
+                                                lockedUsd={lockedUsd}
+                                                unlockedRaw={unlockedRaw}
+                                                unlockedUsd={unlockedUsd}
+                                                totalAllocatedRaw={
+                                                    totalAllocatedRaw
+                                                }
+                                                totalAllocatedUsd={
+                                                    totalAllocatedUsd
+                                                }
+                                            />
+                                        )}
+
+                                        {view === "earning" && (
+                                            <EarningView
+                                                asset={asset}
+                                                isMobile={false}
+                                                isExpanded={false}
+                                                primaryDecimals={
+                                                    primaryDecimals
+                                                }
+                                                earningRaw={earningRaw}
+                                                earningUsd={earningUsd}
+                                                earningWithdrawRaw={
+                                                    earningWithdrawRaw
+                                                }
+                                                earningWithdrawUsd={
+                                                    earningWithdrawUsd
+                                                }
+                                            />
+                                        )}
+
+                                        <TableCell className="p-4 text-right hidden sm:table-cell">
+                                            {isExpanded ? (
+                                                <ChevronDown className="size-4 text-primary ml-auto" />
+                                            ) : (
+                                                <ChevronRight className="size-4 text-primary ml-auto" />
+                                            )}
+                                        </TableCell>
                                     </TableRow>
-                                )}
-                            </Fragment>
-                        );
-                    })}
-                </TableBody>
-            </Table>
+
+                                    <ExpandedRows
+                                        view={view}
+                                        isMobile={isMobile}
+                                        isExpanded={isExpanded}
+                                        asset={asset}
+                                        availableNetworks={availableNetworks}
+                                        lockedNetworks={lockedNetworks}
+                                        earningNetworks={earningNetworks}
+                                        ftLockupInstanceCount={
+                                            ftLockupInstanceCount
+                                        }
+                                        treasuryId={treasuryId ?? null}
+                                        onNavigate={(href) => router.push(href)}
+                                        onSelectLockup={(network) => {
+                                            setSelectedLockupNetwork(network);
+                                            setIsLockupModalOpen(true);
+                                        }}
+                                        onSelectPool={(network, poolId) => {
+                                            setSelectedStakingNetwork(network);
+                                            setSelectedPoolId(poolId);
+                                            setIsStakingModalOpen(true);
+                                        }}
+                                    />
+
+                                    {hasLockedEarningNotice && (
+                                        <TableRow className="hover:bg-transparent">
+                                            <TableCell
+                                                className="p-0 whitespace-normal"
+                                                colSpan={6}
+                                            >
+                                                <div className="mb-3 mt-2 flex items-start sm:items-center gap-2 rounded-lg bg-muted/60 px-4 py-2 text-xs">
+                                                    <Info className="size-4 shrink-0" />
+                                                    <p className="text-foreground leading-relaxed wrap-break-word">
+                                                        {isFullLockedInEarning
+                                                            ? "Your full allocated balance"
+                                                            : "Part of your allocated balance"}{" "}
+                                                        (
+                                                        {formatSmartAmount(
+                                                            displayAmount(
+                                                                earningFromLockedRaw,
+                                                                primaryDecimals,
+                                                            ),
+                                                        )}{" "}
+                                                        {asset.id}) is currently
+                                                        earning.
+                                                        {isFullLockedInEarning &&
+                                                            " It will appear here once you stop earning."}{" "}
+                                                        <button
+                                                            type="button"
+                                                            className="underline underline-offset-2"
+                                                            onClick={(
+                                                                event,
+                                                            ) => {
+                                                                event.stopPropagation();
+                                                                setActiveView(
+                                                                    "earning",
+                                                                );
+                                                            }}
+                                                        >
+                                                            {isFullLockedInEarning
+                                                                ? "See in Earning tab"
+                                                                : "See in Earning"}
+                                                        </button>
+                                                    </p>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </Fragment>
+                            );
+                        })}
+                    </TableBody>
+                </Table>
+            </div>
             <EarningPoolDetailsModal
                 isOpen={isStakingModalOpen}
                 onClose={() => {

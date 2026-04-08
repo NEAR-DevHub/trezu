@@ -36,7 +36,11 @@ export default function Assets({ tokens, isLoading }: Props) {
     };
 
     return (
-        <PageCard className="flex flex-col gap-5">
+        <PageCard
+            className={
+                hasTabs ? "flex flex-col gap-0 p-0" : "flex flex-col gap-5"
+            }
+        >
             {!hasTabs && (
                 <div className="flex justify-between">
                     <StepperHeader title="Assets" />
