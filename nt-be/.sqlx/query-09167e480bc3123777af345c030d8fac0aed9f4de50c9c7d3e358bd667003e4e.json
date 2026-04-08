@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT dao_account_id, instance_id, token_account_id, ft_registered_at\n        FROM ft_lockup_dao_schedules\n        WHERE (next_claim_at IS NULL OR next_claim_at <= NOW())\n        ORDER BY COALESCE(next_claim_at, NOW()) ASC\n        LIMIT $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "dao_account_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "instance_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "token_account_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "ft_registered_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "09167e480bc3123777af345c030d8fac0aed9f4de50c9c7d3e358bd667003e4e"
+}

@@ -161,6 +161,7 @@ pub struct LockupBalance {
     pub staked: NearToken,
     pub unstaked_balance: NearToken,
     pub can_withdraw: bool,
+    pub staking_pool_id: Option<String>,
 }
 
 #[allow(clippy::type_complexity)]
@@ -187,7 +188,7 @@ pub fn blockchain_lockup_builder(
                 .read_only::<NearToken>(),
         )
         .add_query_builder(
-            near_api::Contract(pool_account_id)
+            near_api::Contract(pool_account_id.clone())
                 .call_function(
                     "get_account",
                     serde_json::json!({ "account_id": lockup_account_id.to_string() }),
@@ -213,6 +214,7 @@ pub fn blockchain_lockup_builder(
                     unstaked_balance: staking_account.data.unstaked_balance,
                     can_withdraw: staking_account.data.can_withdraw,
                     total_allocated: lockup_original_amount,
+                    staking_pool_id: Some(pool_account_id.to_string()),
                 }
             },
         )

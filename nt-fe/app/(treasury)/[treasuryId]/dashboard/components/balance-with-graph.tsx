@@ -1,33 +1,38 @@
-import { TreasuryAsset } from "@/lib/api";
-import { useState, useMemo, useCallback, useRef } from "react";
-import BalanceChart from "./chart";
-import { Button } from "@/components/button";
 import {
     ArrowLeftRight,
     ArrowUpRightIcon,
-    Download,
     Coins,
+    Download,
     Info,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { AuthButton } from "@/components/auth-button";
+import { Button } from "@/components/button";
+import { PageCard } from "@/components/card";
+import { Tooltip } from "@/components/tooltip";
 import {
     Select,
-    SelectTrigger,
-    SelectValue,
     SelectContent,
     SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select";
-import { useBalanceChart } from "@/hooks/use-treasury-queries";
-import { useTreasury } from "@/hooks/use-treasury";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { PageCard } from "@/components/card";
-import { cn, formatBalance, formatCurrency } from "@/lib/utils";
-import type { ChartInterval } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AuthButton } from "@/components/auth-button";
-import Big from "@/lib/big";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useTreasury } from "@/hooks/use-treasury";
+import { useBalanceChart } from "@/hooks/use-treasury-queries";
+import type { ChartInterval, TreasuryAsset } from "@/lib/api";
 import { availableBalance, totalBalance } from "@/lib/balance";
-import { useRouter } from "next/navigation";
-import { Tooltip } from "@/components/tooltip";
+import Big from "@/lib/big";
+import {
+    getDashboardBalanceView,
+    getDashboardBucketVisibility,
+    getDashboardBreakdownItems,
+} from "@/lib/dashboard-balance-view";
+import { formatBalance, formatCurrency } from "@/lib/utils";
+import BalanceChart from "./chart";
 
 interface ChartCaveatEntry {
     title: string;
@@ -104,11 +109,12 @@ const formatTimestampForPeriod = (
         case "3M":
             // Monthly label: "Nov"
             return date.toLocaleDateString("en-US", { month: "short" });
-        case "1Y":
+        case "1Y": {
             // Show month and year: "Mar '25"
             const month = date.toLocaleDateString("en-US", { month: "short" });
             const year = date.toLocaleDateString("en-US", { year: "2-digit" });
             return `${month} '${year}`;
+        }
         default:
             return date.toLocaleDateString();
     }
@@ -228,19 +234,26 @@ export default function BalanceWithGraph({
         selectedToken === "all"
             ? null
             : groupedTokens.find((group) => group.symbol === selectedToken);
+    const headerScopedTokens = useMemo(() => {
+        return selectedTokenGroup?.tokens ?? tokens;
+    }, [selectedTokenGroup, tokens]);
 
-    // Exclude lockups from displayed total balance USD
-    const balance = selectedTokenGroup
-        ? selectedTokenGroup.tokens
-              .filter((t) => t.residency !== "Lockup")
-              .reduce((sum, t) => sum + t.balanceUSD, 0)
-        : tokens
-              .filter((t) => t.residency !== "Lockup")
-              .reduce((sum, t) => sum + t.balanceUSD, 0);
+    const balanceView = useMemo(() => {
+        return getDashboardBalanceView(headerScopedTokens);
+    }, [headerScopedTokens]);
+    const balanceBreakdownItems = useMemo(() => {
+        return getDashboardBreakdownItems(headerScopedTokens);
+    }, [headerScopedTokens]);
+    const bucketVisibility = useMemo(
+        () => getDashboardBucketVisibility(headerScopedTokens),
+        [headerScopedTokens],
+    );
+    const showBreakdown =
+        bucketVisibility.showLocked || bucketVisibility.showEarning;
 
     // Calculate time range for chart API
     const chartParams = useMemo(() => {
-        if (!treasuryId) return null;
+        if (!treasuryId || isConfidential) return null;
 
         const endTime = new Date();
         const hoursBack = PERIOD_TO_HOURS[selectedPeriod];
@@ -249,7 +262,10 @@ export default function BalanceWithGraph({
         );
 
         // Validate dates
-        if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+        if (
+            Number.isNaN(startTime.getTime()) ||
+            Number.isNaN(endTime.getTime())
+        ) {
             return null;
         }
 
@@ -262,7 +278,7 @@ export default function BalanceWithGraph({
         };
 
         return params;
-    }, [treasuryId, selectedPeriod, selectedTokenGroup]);
+    }, [treasuryId, selectedPeriod, selectedTokenGroup, isConfidential]);
 
     // Freeze chartParams while hovering so that parent re-renders (from other
     // queries like useAssets) don't change the query key, which would flip
@@ -486,7 +502,6 @@ export default function BalanceWithGraph({
 
     const hasLockupTokens = tokens.some((t) => t.residency === "Lockup");
 
-    // Symbols that have both included (non-lockup with prices) and excluded (lockup) residencies
     const partiallyExcludedSymbols = useMemo(() => {
         if (!hasLockupTokens) return [];
         return groupedTokens
@@ -542,72 +557,121 @@ export default function BalanceWithGraph({
                     <div className="flex-1">
                         <h3 className="text-xs font-medium text-muted-foreground flex items-center gap-1">
                             Total Balance
-                            <div className={cn(isHidden ? "hidden" : "")}>
-                                {selectedToken === "all" ? (
-                                    <ChartCaveatsTooltip
-                                        entries={[
-                                            ...(chartExcludedSymbols.length > 0
-                                                ? [
-                                                      {
-                                                          title: "Excluded tokens",
-                                                          tokens: chartExcludedSymbols.join(
-                                                              ", ",
-                                                          ),
-                                                          reason: "No price history. Select a token to see its balance changes.",
-                                                      },
-                                                  ]
-                                                : []),
-                                            ...(partiallyExcludedSymbols.length >
-                                            0
-                                                ? [
-                                                      {
-                                                          title: "Partially excluded",
-                                                          tokens: partiallyExcludedSymbols.join(
-                                                              ", ",
-                                                          ),
-                                                          reason: "Vesting balance not counted.",
-                                                      },
-                                                  ]
-                                                : []),
-                                            ...(hasLockupTokens &&
-                                            partiallyExcludedSymbols.length ===
+                            {!isConfidential && (
+                                <div
+                                    className={cn(
+                                        isConfidential ? "hidden" : "",
+                                    )}
+                                >
+                                    {selectedToken === "all" ? (
+                                        <ChartCaveatsTooltip
+                                            entries={[
+                                                ...(chartExcludedSymbols.length >
                                                 0
-                                                ? [
-                                                      {
-                                                          title: "Excluded tokens",
-                                                          tokens: "Vesting tokens",
-                                                          reason: "Vesting is not supported in the chart.",
-                                                      },
-                                                  ]
-                                                : []),
-                                        ]}
-                                    />
-                                ) : (
-                                    <ChartCaveatsTooltip
-                                        entries={
-                                            selectedTokenGroup?.tokens.some(
-                                                (t) => t.residency === "Lockup",
-                                            )
-                                                ? [
-                                                      {
-                                                          title: "Partially excluded",
-                                                          tokens: selectedToken,
-                                                          reason: "Vesting balance not counted.",
-                                                      },
-                                                  ]
-                                                : []
-                                        }
-                                    />
-                                )}
-                            </div>
+                                                    ? [
+                                                          {
+                                                              title: "Excluded tokens",
+                                                              tokens: chartExcludedSymbols.join(
+                                                                  ", ",
+                                                              ),
+                                                              reason: "No price history. Select a token to see its balance changes.",
+                                                          },
+                                                      ]
+                                                    : []),
+                                                ...(partiallyExcludedSymbols.length >
+                                                0
+                                                    ? [
+                                                          {
+                                                              title: "Partially excluded",
+                                                              tokens: partiallyExcludedSymbols.join(
+                                                                  ", ",
+                                                              ),
+                                                              reason: "Vesting balance not counted.",
+                                                          },
+                                                      ]
+                                                    : []),
+                                                ...(hasLockupTokens &&
+                                                partiallyExcludedSymbols.length ===
+                                                    0
+                                                    ? [
+                                                          {
+                                                              title: "Excluded tokens",
+                                                              tokens: "Vesting tokens",
+                                                              reason: "Vesting is not supported in the chart.",
+                                                          },
+                                                      ]
+                                                    : []),
+                                            ]}
+                                        />
+                                    ) : (
+                                        <ChartCaveatsTooltip
+                                            entries={
+                                                selectedTokenGroup?.tokens.some(
+                                                    (t) =>
+                                                        t.residency ===
+                                                        "Lockup",
+                                                )
+                                                    ? [
+                                                          {
+                                                              title: "Partially excluded",
+                                                              tokens: selectedToken,
+                                                              reason: "Vesting balance not counted.",
+                                                          },
+                                                      ]
+                                                    : []
+                                            }
+                                        />
+                                    )}
+                                </div>
+                            )}
                         </h3>
                         <p className="text-3xl font-bold mt-2">
                             {!isHidden
-                                ? formatCurrency(Number(balance))
+                                ? formatCurrency(balanceView.totalUsd)
                                 : "••••••"}
                         </p>
+                        {showBreakdown && (
+                            <>
+                                <div className="mt-2 hidden md:flex items-center gap-2 text-sm text-muted-foreground">
+                                    {balanceBreakdownItems.map((item, idx) => (
+                                        <div
+                                            key={item.label}
+                                            className="contents"
+                                        >
+                                            {idx > 0 && (
+                                                <span
+                                                    aria-hidden="true"
+                                                    className="h-3 w-px bg-border"
+                                                />
+                                            )}
+                                            <span>
+                                                {item.label}{" "}
+                                                <span className="font-semibold text-foreground">
+                                                    {formatCurrency(item.value)}
+                                                </span>
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="mt-4 border-t border-border/70 pt-3 space-y-3 md:hidden">
+                                    {balanceBreakdownItems.map((item) => (
+                                        <div
+                                            key={item.label}
+                                            className="flex items-center justify-between text-base"
+                                        >
+                                            <span className="text-muted-foreground">
+                                                {item.label}
+                                            </span>
+                                            <span className="font-semibold text-foreground">
+                                                {formatCurrency(item.value)}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        )}
                     </div>
-                    {!isHidden && (
+                    {!isConfidential && (
                         <div className="hidden md:flex md:flex-row items-end flex-col gap-1 md:gap-2 md:items-center">
                             <Select
                                 value={selectedToken}
@@ -618,8 +682,9 @@ export default function BalanceWithGraph({
                                     className="min-w-[140px] w-full"
                                     disabled={
                                         isLoadingTokens ||
-                                        isLoading ||
-                                        chartData.data.length === 0
+                                        (!isConfidential &&
+                                            (isLoading ||
+                                                chartData.data.length === 0))
                                     }
                                 >
                                     <SelectValue>
@@ -676,31 +741,33 @@ export default function BalanceWithGraph({
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <ToggleGroup
-                                type="single"
-                                size="sm"
-                                variant={"default"}
-                                className="border border-input"
-                                disabled={
-                                    isLoadingTokens ||
-                                    isLoading ||
-                                    chartData.data.length === 0
-                                }
-                                value={selectedPeriod}
-                                onValueChange={(e) =>
-                                    e && setSelectedPeriod(e as TimePeriod)
-                                }
-                            >
-                                {TIME_PERIODS.map((e) => (
-                                    <ToggleGroupItem
-                                        key={e}
-                                        value={e}
-                                        className="hover:text-foreground"
-                                    >
-                                        {e}
-                                    </ToggleGroupItem>
-                                ))}
-                            </ToggleGroup>
+                            {!isConfidential && (
+                                <ToggleGroup
+                                    type="single"
+                                    size="sm"
+                                    variant={"default"}
+                                    className="border border-input"
+                                    disabled={
+                                        isLoadingTokens ||
+                                        isLoading ||
+                                        chartData.data.length === 0
+                                    }
+                                    value={selectedPeriod}
+                                    onValueChange={(e) =>
+                                        e && setSelectedPeriod(e as TimePeriod)
+                                    }
+                                >
+                                    {TIME_PERIODS.map((e) => (
+                                        <ToggleGroupItem
+                                            key={e}
+                                            value={e}
+                                            className="hover:text-foreground"
+                                        >
+                                            {e}
+                                        </ToggleGroupItem>
+                                    ))}
+                                </ToggleGroup>
+                            )}
                         </div>
                     )}
                 </div>
@@ -740,11 +807,19 @@ export default function BalanceWithGraph({
             <div
                 className={cn(
                     "mt-3 flex gap-2 md:hidden",
-                    isHidden ? "hidden" : "",
+                    isConfidential ? "hidden" : "",
                 )}
             >
                 <Select value={selectedToken} onValueChange={setSelectedToken}>
-                    <SelectTrigger size="sm" className="w-[140px]">
+                    <SelectTrigger
+                        size="sm"
+                        className="w-[140px]"
+                        disabled={
+                            isLoadingTokens ||
+                            (!isConfidential &&
+                                (isLoading || chartData.data.length === 0))
+                        }
+                    >
                         <SelectValue>
                             {selectedToken === "all" ? (
                                 <div className="flex items-center gap-2">
@@ -792,23 +867,25 @@ export default function BalanceWithGraph({
                         ))}
                     </SelectContent>
                 </Select>
-                <Select
-                    value={selectedPeriod}
-                    onValueChange={(value) =>
-                        setSelectedPeriod(value as TimePeriod)
-                    }
-                >
-                    <SelectTrigger size="sm" className="w-[92px]">
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {TIME_PERIODS.map((period) => (
-                            <SelectItem key={period} value={period}>
-                                {period}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                {!isConfidential && (
+                    <Select
+                        value={selectedPeriod}
+                        onValueChange={(value) =>
+                            setSelectedPeriod(value as TimePeriod)
+                        }
+                    >
+                        <SelectTrigger size="sm" className="w-[92px]">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {TIME_PERIODS.map((period) => (
+                                <SelectItem key={period} value={period}>
+                                    {period}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                )}
             </div>
             <div className={cn(isConfidential ? "hidden" : "")}>
                 {isLoading || (isFetching && chartData.data.length === 0) ? (

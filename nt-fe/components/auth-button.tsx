@@ -46,10 +46,11 @@ function ErrorMessage({
     return (
         <Button
             {...props}
+            disabled
             tooltipContent={message}
             aria-disabled
             className={cn(
-                "w-full shrink pointer-events-none opacity-50",
+                "w-full shrink opacity-50 cursor-not-allowed",
                 className,
             )}
         >

@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE ft_lockup_dao_schedules\n        SET next_claim_at = NOW() + ($3::double precision * INTERVAL '1 second')\n        WHERE dao_account_id = $1\n          AND instance_id = $2\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Float8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "20f7b753b2fef70f6dc6cf134fd21c1c9b11a6aded908ccd32e94e51ddcaf125"
+}

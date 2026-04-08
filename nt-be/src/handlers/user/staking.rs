@@ -1,7 +1,11 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use axum::http::StatusCode;
+use axum::{
+    Json,
+    extract::{Query, State},
+    http::StatusCode,
+};
 use near_api::{AccountId, Contract, NearToken};
 use serde::{Deserialize, Serialize};
 
@@ -40,6 +44,139 @@ pub struct StakingPoolAccountInfo {
     pub staked_balance: NearToken,
     pub unstaked_balance: NearToken,
     pub can_withdraw: bool,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct StakingValidatorQuery {
+    pub pool_id: AccountId,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct StakingValidatorDetails {
+    pub pool_id: String,
+    pub apy: Option<f64>,
+    pub fee_percent: Option<f64>,
+}
+
+#[derive(Deserialize, Debug)]
+struct RewardFeeFraction {
+    numerator: u64,
+    denominator: u64,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct NearblocksValidatorsResponse {
+    last_epoch_apy: String,
+}
+
+async fn fetch_nearblocks_last_epoch_apy(
+    state: &Arc<AppState>,
+) -> Result<f64, (StatusCode, String)> {
+    let cache_key = CacheKey::new("nearblocks-last-epoch-apy").build();
+    let state_clone = state.clone();
+
+    state
+        .cache
+        .cached(CacheTier::VeryLongTerm, cache_key, async move {
+            let mut request = state_clone
+                .http_client
+                .get("https://api.nearblocks.io/v1/validators")
+                .header("accept", "application/json");
+            if let Some(api_key) = state_clone.env_vars.nearblocks_api_key.as_ref() {
+                request = request.header("Authorization", format!("Bearer {}", api_key));
+            }
+
+            let response = request.send().await.map_err(|e| {
+                (
+                    StatusCode::BAD_GATEWAY,
+                    format!("Failed to fetch validators from Nearblocks: {}", e),
+                )
+            })?;
+            let response = response.error_for_status().map_err(|e| {
+                (
+                    StatusCode::BAD_GATEWAY,
+                    format!("Nearblocks validators endpoint error: {}", e),
+                )
+            })?;
+
+            let payload: NearblocksValidatorsResponse = response.json().await.map_err(|e| {
+                (
+                    StatusCode::BAD_GATEWAY,
+                    format!("Failed to parse Nearblocks validators response: {}", e),
+                )
+            })?;
+
+            let apy = payload.last_epoch_apy.parse::<f64>().map_err(|e| {
+                (
+                    StatusCode::BAD_GATEWAY,
+                    format!("Invalid lastEpochApy in Nearblocks response: {}", e),
+                )
+            })?;
+            Ok::<_, (StatusCode, String)>(apy)
+        })
+        .await
+}
+
+async fn fetch_staking_validator_details(
+    state: &Arc<AppState>,
+    pool_id: &AccountId,
+) -> Result<StakingValidatorDetails, (StatusCode, String)> {
+    let cache_key = CacheKey::new("staking-validator-details")
+        .with(pool_id)
+        .build();
+    let state_clone = state.clone();
+    let pool_id_clone = pool_id.clone();
+
+    state
+        .cache
+        .cached(CacheTier::VeryLongTerm, cache_key, async move {
+            let last_epoch_apy = fetch_nearblocks_last_epoch_apy(&state_clone).await?;
+            let fee = Contract(pool_id_clone.clone())
+                .call_function("get_reward_fee_fraction", serde_json::json!({}))
+                .read_only::<RewardFeeFraction>()
+                .fetch_from(&state_clone.network)
+                .await
+                .map_err(|e| {
+                    (
+                        StatusCode::BAD_GATEWAY,
+                        format!(
+                            "Failed to fetch validator fee fraction from pool {}: {}",
+                            pool_id_clone, e
+                        ),
+                    )
+                })?
+                .data;
+            let fee_percent = if fee.denominator == 0 {
+                None
+            } else {
+                Some((fee.numerator as f64 / fee.denominator as f64) * 100.0)
+            };
+            let validator_fee = (fee_percent.unwrap_or(0.0) / 100.0).clamp(0.0, 1.0);
+            let adjusted_apy = last_epoch_apy - (last_epoch_apy * validator_fee);
+            let apy = if adjusted_apy.is_finite() {
+                Some(adjusted_apy.max(0.0))
+            } else {
+                None
+            };
+
+            Ok::<_, (StatusCode, String)>(StakingValidatorDetails {
+                pool_id: pool_id_clone.to_string(),
+                apy,
+                fee_percent,
+            })
+        })
+        .await
+}
+
+pub async fn get_staking_validator_details(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<StakingValidatorQuery>,
+) -> Result<Json<StakingValidatorDetails>, (StatusCode, String)> {
+    let details = fetch_staking_validator_details(&state, &params.pool_id).await?;
+    Ok(Json(details))
 }
 
 /// Fetch staking pools from FastNear API

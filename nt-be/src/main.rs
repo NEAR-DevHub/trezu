@@ -104,7 +104,7 @@ async fn main() {
     }
 
     // TODO: Re-enable once we have a DefiLlama API key or higher rate limit
-    // // Spawn usd_value backfill service
+    // Spawn usd_value backfill service
     // {
     //     let pool = state.db_pool.clone();
     //     let http_client = state.http_client.clone();
@@ -251,6 +251,16 @@ async fn main() {
         tokio::spawn(async move {
             nt_be::services::run_public_dashboard_refresh_service(state_clone).await;
         });
+    }
+
+    // Spawn FT lockup DAO schedule refresh service (every 6 hours).
+    if !state.env_vars.disable_ft_lockup_scheduler {
+        let state_clone = state.clone();
+        tokio::spawn(async move {
+            nt_be::services::run_ft_lockup_schedule_refresh_service(state_clone).await;
+        });
+    } else {
+        log::info!("FT lockup scheduler disabled (DISABLE_FT_LOCKUP_SCHEDULER=true)");
     }
 
     // Configure CORS - must specify exact origins, methods, and headers when using credentials
