@@ -3,16 +3,17 @@
  *
  * Verifies that confidential treasuries use the same deposit UI
  * (dashboard deposit modal) as public treasuries:
- * 1. Create a confidential DAO on sandbox
- * 2. Navigate to the dashboard (not /confidential page)
- * 3. Open the deposit modal
- * 4. Select asset and network
+ * 1. Create a regular DAO on sandbox (avoids complex confidential setup)
+ * 2. Override isConfidential flag in API responses via route interception
+ * 3. Navigate to the dashboard (not /confidential page)
+ * 4. Open the deposit modal
  * 5. Verify deposit address is fetched via intents API
  *    (not the direct treasury account ID)
  *
  * Bridge RPC (bridge-tokens, deposit-address) is mocked at the Playwright
  * route level since the sandbox doesn't include a bridge RPC mock.
- * All other backend calls go to the real sandbox.
+ * The isConfidential flag is injected via API response overrides so we
+ * don't need the backend's complex MPC-based confidential DAO creation.
  */
 import { test, expect, BrowserContext, Route } from "@playwright/test";
 import {
@@ -126,7 +127,8 @@ async function setupSandbox(): Promise<string> {
         // May already exist
     }
 
-    // Create the confidential DAO via the backend API
+    // Create a regular DAO (isConfidential is injected via route interception
+    // to avoid the complex MPC-based confidential setup on sandbox)
     try {
         const configResp = await fetch(
             `${BACKEND_URL}/api/treasury/config?treasuryId=${DAO_ID}`,
@@ -145,7 +147,6 @@ async function setupSandbox(): Promise<string> {
                 governors: [ACCOUNT_ID],
                 financiers: [ACCOUNT_ID],
                 requestors: [ACCOUNT_ID],
-                isConfidential: true,
             }),
         });
         if (!createResp.ok) {
@@ -153,8 +154,7 @@ async function setupSandbox(): Promise<string> {
                 `Failed to create DAO: ${createResp.status} ${await createResp.text()}`,
             );
         }
-        // Confidential DAO creation has extra steps (MPC auth, policy change)
-        await new Promise((r) => setTimeout(r, 5000));
+        await new Promise((r) => setTimeout(r, 3000));
     }
 
     // Fund the DAO
@@ -178,6 +178,57 @@ async function setupSandbox(): Promise<string> {
     return session.token;
 }
 
+/**
+ * Proxy a backend request with JWT auth, optionally transforming the
+ * JSON response body before fulfilling. When `transform` is provided
+ * the response is parsed as JSON, passed through the callback, and
+ * the modified result is returned to the browser.
+ */
+async function proxyWithJwt(
+    route: Route,
+    jwt: string,
+    transform?: (data: any) => any,
+) {
+    const url = route.request().url();
+    const method = route.request().method();
+    const headers: Record<string, string> = {
+        cookie: `auth_token=${jwt}`,
+    };
+    const reqHeaders = route.request().headers();
+    if (reqHeaders["content-type"]) {
+        headers["content-type"] = reqHeaders["content-type"];
+    }
+
+    const resp = await fetch(url, {
+        method,
+        headers,
+        body: method !== "GET" ? route.request().postData() : undefined,
+    });
+
+    if (transform && resp.ok) {
+        const data = await resp.json();
+        const transformed = transform(data);
+        return route.fulfill({
+            status: resp.status,
+            contentType: "application/json",
+            body: JSON.stringify(transformed),
+        });
+    }
+
+    const body = Buffer.from(await resp.arrayBuffer());
+    const respHeaders: Record<string, string> = {};
+    resp.headers.forEach((val, key) => {
+        if (!key.startsWith("access-control-")) {
+            respHeaders[key] = val;
+        }
+    });
+    return route.fulfill({
+        status: resp.status,
+        headers: respHeaders,
+        body,
+    });
+}
+
 test("Confidential deposit — dashboard deposit modal flow", async ({
     page,
     context,
@@ -190,7 +241,8 @@ test("Confidential deposit — dashboard deposit modal flow", async ({
     // must always go through the intents API, even for NEAR-on-NEAR)
     let depositAddressRequested = false;
 
-    // Intercept backend requests: inject JWT, mock bridge endpoints
+    // Intercept backend requests: inject JWT, mock bridge endpoints,
+    // and override isConfidential in treasury-related responses
     await context.route("http://localhost:8080/**", async (route) => {
         const url = route.request().url();
 
@@ -229,34 +281,29 @@ test("Confidential deposit — dashboard deposit modal flow", async ({
             });
         }
 
-        // Proxy all other requests to the real sandbox backend with JWT
-        const method = route.request().method();
-        const headers: Record<string, string> = {
-            cookie: `auth_token=${sandboxJwt}`,
-        };
-        const reqHeaders = route.request().headers();
-        if (reqHeaders["content-type"]) {
-            headers["content-type"] = reqHeaders["content-type"];
+        // Override isConfidential in user/treasuries response
+        if (url.includes("/api/user/treasuries")) {
+            return proxyWithJwt(route, sandboxJwt, (data) => {
+                if (Array.isArray(data)) {
+                    for (const t of data) {
+                        t.isConfidential = true;
+                        if (t.config) t.config.isConfidential = true;
+                    }
+                }
+                return data;
+            });
         }
 
-        const resp = await fetch(url, {
-            method,
-            headers,
-            body: method !== "GET" ? route.request().postData() : undefined,
-        });
+        // Override isConfidential in treasury/config response
+        if (url.includes("/api/treasury/config")) {
+            return proxyWithJwt(route, sandboxJwt, (data) => {
+                data.isConfidential = true;
+                return data;
+            });
+        }
 
-        const body = Buffer.from(await resp.arrayBuffer());
-        const respHeaders: Record<string, string> = {};
-        resp.headers.forEach((val, key) => {
-            if (!key.startsWith("access-control-")) {
-                respHeaders[key] = val;
-            }
-        });
-        await route.fulfill({
-            status: resp.status,
-            headers: respHeaders,
-            body,
-        });
+        // Proxy all other requests to the real sandbox backend with JWT
+        return proxyWithJwt(route, sandboxJwt);
     });
 
     // Route NEAR RPC calls to sandbox instead of mainnet
