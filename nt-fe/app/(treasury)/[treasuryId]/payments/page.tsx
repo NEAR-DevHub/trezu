@@ -486,7 +486,7 @@ const buildTransferProposal = (
     data: PaymentFormValues,
     parsedAmount: string,
 ): TransferKind => {
-    const isNEAR = data.token.symbol === "NEAR";
+    const isNEAR = data.token.address === NEAR_TOKEN.address;
     return {
         Transfer: {
             token_id: isNEAR ? "" : data.token.address,
