@@ -313,9 +313,9 @@ test("Confidential deposit — dashboard deposit modal flow", async ({
     await depositButton.click();
 
     // Deposit modal should open with the standard heading
-    await expect(
-        page.getByRole("heading", { name: "Deposit" }),
-    ).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("heading", { name: "Deposit" })).toBeVisible({
+        timeout: 10_000,
+    });
 
     // Should show asset/network selection prompt
     await expect(
