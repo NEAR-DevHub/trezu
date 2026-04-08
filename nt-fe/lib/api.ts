@@ -34,6 +34,7 @@ export interface TreasuryConfig {
     metadata?: TreasuryMetadata;
     name?: string;
     purpose?: string;
+    isConfidential: boolean;
 }
 
 export interface Treasury {
@@ -42,6 +43,7 @@ export interface Treasury {
     isMember: boolean;
     isSaved: boolean;
     isHidden: boolean;
+    isConfidential: boolean;
 }
 
 /**

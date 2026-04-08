@@ -25,6 +25,7 @@ pub struct Treasury {
     pub is_member: bool,
     pub is_saved: bool,
     pub is_hidden: bool,
+    pub is_confidential: bool,
 }
 
 #[derive(Deserialize)]
@@ -70,9 +71,11 @@ pub async fn get_user_treasuries(
             dao_id,
             is_policy_member AS "is_member!",
             is_saved AS "is_saved!",
-            is_hidden AS "is_hidden!"
-        FROM dao_members
-        WHERE account_id = $1
+            is_hidden AS "is_hidden!",
+            COALESCE(ma.is_confidential_account, false) AS "is_confidential!"
+        FROM dao_members dm
+        LEFT JOIN monitored_accounts ma ON ma.account_id = dm.dao_id
+        WHERE dm.account_id = $1
           AND (is_policy_member = true OR is_saved = true)
         ORDER BY dao_id
         "#,
@@ -112,6 +115,7 @@ pub async fn get_user_treasuries(
             is_member: row.is_member,
             is_saved: row.is_saved,
             is_hidden: row.is_hidden,
+            is_confidential: row.is_confidential,
         })
     }
 

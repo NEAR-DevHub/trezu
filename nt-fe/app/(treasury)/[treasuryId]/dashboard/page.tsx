@@ -19,10 +19,11 @@ import { useTreasury } from "@/hooks/use-treasury";
 import { CreateBanner } from "@/features/onboarding/components/create-banner";
 
 export default function AppPage() {
-    const { treasuryId } = useTreasury();
+    const { treasuryId, isConfidential, isGuestTreasury } = useTreasury();
+    const isHidden = isConfidential && isGuestTreasury;
     const { data, isLoading, isPending } = useAssets(treasuryId);
     const isAssetsLoading = isLoading || isPending;
-    const { tokens, totalBalanceUSD } = data || {
+    const { tokens } = data || {
         tokens: [],
         totalBalanceUSD: 0,
     };
@@ -42,8 +43,8 @@ export default function AppPage() {
                         onDepositClick={() => setIsDepositModalOpen(true)}
                     />
                     <BalanceWithGraph
-                        totalBalanceUSD={totalBalanceUSD}
                         tokens={tokens}
+                        isHidden={isHidden}
                         onDepositClick={() => setIsDepositModalOpen(true)}
                         isLoading={isAssetsLoading}
                     />

@@ -60,8 +60,8 @@ function ChartCaveatsTooltip({ entries }: { entries: ChartCaveatEntry[] }) {
 }
 
 interface Props {
-    totalBalanceUSD: number | Big.Big;
     tokens: TreasuryAsset[];
+    isHidden: boolean;
     onDepositClick: () => void;
     isLoading?: boolean;
 }
@@ -138,8 +138,8 @@ interface GroupedToken {
 }
 
 export default function BalanceWithGraph({
-    totalBalanceUSD,
     tokens,
+    isHidden,
     onDepositClick,
     isLoading: isLoadingTokens,
 }: Props) {
@@ -508,7 +508,7 @@ export default function BalanceWithGraph({
 
     if (isLoadingTokens) {
         return (
-            <PageCard>
+            <PageCard className="relative">
                 <div className="flex justify-around gap-4 mb-6">
                     <div className="flex-1">
                         <h3 className="text-xs font-medium text-muted-foreground">
@@ -516,6 +516,7 @@ export default function BalanceWithGraph({
                         </h3>
                         <Skeleton className="h-9 w-40 mt-2" />
                     </div>
+
                     <div className="flex md:flex-row items-end flex-col gap-1 md:gap-2 md:items-center">
                         <Skeleton className="h-8 w-[140px]" />
                         <Skeleton className="h-8 w-[160px]" />

@@ -48,11 +48,19 @@ export function useTreasury() {
         }
     }, [treasuryId, treasuryNotFound, setLastTreasuryId]);
 
+    console.log(
+        currentTreasury?.isConfidential,
+        guestTreasuryConfig?.isConfidential,
+    );
     return {
         isGuestTreasury,
         isSaved: currentTreasury?.isSaved,
         isLoading,
         treasuryId,
+        isConfidential:
+            (currentTreasury?.isConfidential ||
+                guestTreasuryConfig?.isConfidential) ??
+            false,
         lastTreasuryId,
         config: currentTreasury?.config || guestTreasuryConfig,
         treasuries: visibleTreasuries,

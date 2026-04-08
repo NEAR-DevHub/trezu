@@ -49,6 +49,7 @@ impl From<sqlx::Error> for RegisterMonitoredAccountError {
 pub async fn register_or_refresh_monitored_account(
     pool: &PgPool,
     account_id: &str,
+    is_confidential: bool,
 ) -> Result<RegisterMonitoredAccountResult, RegisterMonitoredAccountError> {
     let existing = sqlx::query_scalar!(
         r#"
@@ -102,8 +103,8 @@ pub async fn register_or_refresh_monitored_account(
 
     let account = sqlx::query_as::<_, MonitoredAccount>(
         r#"
-        INSERT INTO monitored_accounts (account_id, enabled, export_credits, batch_payment_credits, gas_covered_transactions, plan_type, credits_reset_at, dirty_at)
-        VALUES ($1, true, $2, $3, $4, 'plus', $5, NOW())
+        INSERT INTO monitored_accounts (account_id, enabled, export_credits, batch_payment_credits, gas_covered_transactions, plan_type, credits_reset_at, dirty_at, is_confidential_account)
+        VALUES ($1, true, $2, $3, $4, 'plus', $5, NOW(), $6)
         RETURNING account_id, enabled, last_synced_at, created_at, updated_at,
                   export_credits, batch_payment_credits, plan_type, credits_reset_at, dirty_at, is_confidential_account
         "#,
@@ -113,6 +114,7 @@ pub async fn register_or_refresh_monitored_account(
     .bind(batch_payment_credits)
     .bind(gas_covered_transactions)
     .bind(credits_reset_at)
+    .bind(is_confidential)
     .fetch_one(pool)
     .await?;
 

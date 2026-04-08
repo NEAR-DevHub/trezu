@@ -40,10 +40,12 @@ pub struct TreasuryConfigFromContract {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct TreasuryConfig {
     pub metadata: Option<TreasuryMetadata>,
     pub name: Option<String>,
     pub purpose: Option<String>,
+    pub is_confidential: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -73,37 +75,52 @@ pub async fn fetch_treasury_config(
         state.network.clone()
     };
 
-    let treasury_id = treasury_id.clone();
-    let state_clone = state.clone();
+    let result = {
+        let treasury_id = treasury_id.clone();
+        let state_clone = state.clone();
 
-    let result = state
-        .cache
-        .cached_contract_call(CacheTier::ShortTerm, cache_key, async move {
-            let at = if at_before > 0 {
-                state_clone
-                    .find_block_height(chrono::DateTime::<chrono::Utc>::from_timestamp_nanos(
-                        at_before as i64,
-                    ))
+        state
+            .cache
+            .cached_contract_call(CacheTier::ShortTerm, cache_key, async move {
+                let at = if at_before > 0 {
+                    state_clone
+                        .find_block_height(chrono::DateTime::<chrono::Utc>::from_timestamp_nanos(
+                            at_before as i64,
+                        ))
+                        .await
+                        .map(|at| Reference::AtBlock(at - 1))
+                        .unwrap_or(Reference::Optimistic)
+                } else {
+                    Reference::Optimistic
+                };
+                Contract(treasury_id)
+                    .call_function("get_config", ())
+                    .read_only::<TreasuryConfigFromContract>()
+                    .at(at)
+                    .fetch_from(&network)
                     .await
-                    .map(|at| Reference::AtBlock(at - 1))
-                    .unwrap_or(Reference::Optimistic)
-            } else {
-                Reference::Optimistic
-            };
-            Contract(treasury_id)
-                .call_function("get_config", ())
-                .read_only::<TreasuryConfigFromContract>()
-                .at(at)
-                .fetch_from(&network)
-                .await
-                .map(|r| r.data)
-        })
-        .await?;
+                    .map(|r| r.data)
+            })
+            .await?
+    };
+    let is_confidential = sqlx::query_scalar!(
+        "SELECT is_confidential_account FROM monitored_accounts WHERE account_id = $1",
+        treasury_id.as_str()
+    )
+    .fetch_optional(&state.db_pool)
+    .await
+    .map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to check confidential status: {}", e),
+        )
+    })?;
 
     Ok(TreasuryConfig {
         metadata: result.metadata,
         name: result.name,
         purpose: result.purpose,
+        is_confidential: matches!(is_confidential, Some(Some(true))),
     })
 }
 

@@ -58,7 +58,7 @@ pub async fn add_monitored_account(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<AddAccountRequest>,
 ) -> Result<Json<AddAccountResponse>, (StatusCode, Json<Value>)> {
-    let result = register_or_refresh_monitored_account(&state.db_pool, &payload.account_id)
+    let result = register_or_refresh_monitored_account(&state.db_pool, &payload.account_id, false)
         .await
         .map_err(|e| match e {
             RegisterMonitoredAccountError::NotSputnikDao => (
