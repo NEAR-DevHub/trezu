@@ -178,57 +178,6 @@ async function setupSandbox(): Promise<string> {
     return session.token;
 }
 
-/**
- * Proxy a backend request with JWT auth, optionally transforming the
- * JSON response body before fulfilling. When `transform` is provided
- * the response is parsed as JSON, passed through the callback, and
- * the modified result is returned to the browser.
- */
-async function proxyWithJwt(
-    route: Route,
-    jwt: string,
-    transform?: (data: any) => any,
-) {
-    const url = route.request().url();
-    const method = route.request().method();
-    const headers: Record<string, string> = {
-        cookie: `auth_token=${jwt}`,
-    };
-    const reqHeaders = route.request().headers();
-    if (reqHeaders["content-type"]) {
-        headers["content-type"] = reqHeaders["content-type"];
-    }
-
-    const resp = await fetch(url, {
-        method,
-        headers,
-        body: method !== "GET" ? route.request().postData() : undefined,
-    });
-
-    if (transform && resp.ok) {
-        const data = await resp.json();
-        const transformed = transform(data);
-        return route.fulfill({
-            status: resp.status,
-            contentType: "application/json",
-            body: JSON.stringify(transformed),
-        });
-    }
-
-    const body = Buffer.from(await resp.arrayBuffer());
-    const respHeaders: Record<string, string> = {};
-    resp.headers.forEach((val, key) => {
-        if (!key.startsWith("access-control-")) {
-            respHeaders[key] = val;
-        }
-    });
-    return route.fulfill({
-        status: resp.status,
-        headers: respHeaders,
-        body,
-    });
-}
-
 test("Confidential deposit — dashboard deposit modal flow", async ({
     page,
     context,
@@ -258,6 +207,40 @@ test("Confidential deposit — dashboard deposit modal flow", async ({
             });
         }
 
+        // Mock user/treasuries — fully mocked to avoid indexer race
+        // condition (membership may not be synced yet after DAO creation)
+        if (url.includes("/api/user/treasuries")) {
+            return route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify([
+                    {
+                        daoId: DAO_ID,
+                        config: {
+                            name: "Confidential Deposit Test",
+                            isConfidential: true,
+                        },
+                        isMember: true,
+                        isSaved: true,
+                        isHidden: false,
+                        isConfidential: true,
+                    },
+                ]),
+            });
+        }
+
+        // Mock treasury/config with isConfidential: true
+        if (url.includes("/api/treasury/config")) {
+            return route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    name: "Confidential Deposit Test",
+                    isConfidential: true,
+                }),
+            });
+        }
+
         // Mock bridge-tokens (Bridge RPC not available in sandbox)
         if (url.includes("/api/intents/bridge-tokens")) {
             return route.fulfill({
@@ -281,29 +264,34 @@ test("Confidential deposit — dashboard deposit modal flow", async ({
             });
         }
 
-        // Override isConfidential in user/treasuries response
-        if (url.includes("/api/user/treasuries")) {
-            return proxyWithJwt(route, sandboxJwt, (data) => {
-                if (Array.isArray(data)) {
-                    for (const t of data) {
-                        t.isConfidential = true;
-                        if (t.config) t.config.isConfidential = true;
-                    }
-                }
-                return data;
-            });
-        }
-
-        // Override isConfidential in treasury/config response
-        if (url.includes("/api/treasury/config")) {
-            return proxyWithJwt(route, sandboxJwt, (data) => {
-                data.isConfidential = true;
-                return data;
-            });
-        }
-
         // Proxy all other requests to the real sandbox backend with JWT
-        return proxyWithJwt(route, sandboxJwt);
+        const method = route.request().method();
+        const headers: Record<string, string> = {
+            cookie: `auth_token=${sandboxJwt}`,
+        };
+        const reqHeaders = route.request().headers();
+        if (reqHeaders["content-type"]) {
+            headers["content-type"] = reqHeaders["content-type"];
+        }
+
+        const resp = await fetch(url, {
+            method,
+            headers,
+            body: method !== "GET" ? route.request().postData() : undefined,
+        });
+
+        const body = Buffer.from(await resp.arrayBuffer());
+        const respHeaders: Record<string, string> = {};
+        resp.headers.forEach((val, key) => {
+            if (!key.startsWith("access-control-")) {
+                respHeaders[key] = val;
+            }
+        });
+        await route.fulfill({
+            status: resp.status,
+            headers: respHeaders,
+            body,
+        });
     });
 
     // Route NEAR RPC calls to sandbox instead of mainnet
@@ -354,7 +342,7 @@ test("Confidential deposit — dashboard deposit modal flow", async ({
     await expect(depositButton).toContainText("Deposit");
 
     // ════════════════════════════════════════════════════
-    // Phase 2: Open deposit modal and complete deposit flow
+    // Phase 2: Open deposit modal and select NEAR asset
     // ════════════════════════════════════════════════════
 
     await depositButton.click();
@@ -369,13 +357,44 @@ test("Confidential deposit — dashboard deposit modal flow", async ({
         page.getByText("Select asset and network to see deposit address"),
     ).toBeVisible();
 
-    // NEAR asset should be auto-selected (first in bridge tokens list)
-    await expect(page.getByText("Near").first()).toBeVisible({
-        timeout: 10_000,
+    // Open the asset selector to pick NEAR explicitly
+    // (auto-selection may pick USDC which has multiple networks)
+    const assetSelectButton = page.locator("button", {
+        hasText: "Select Asset",
     });
+    // The asset selector button shows either "Select Asset" or the auto-selected asset
+    const assetTrigger = (await assetSelectButton.isVisible())
+        ? assetSelectButton
+        : page
+              .locator("button")
+              .filter({ hasText: /USD Coin|Near/ })
+              .first();
+    await assetTrigger.click();
 
-    // NEAR has only one network → should auto-select, triggering address fetch
-    // Wait for deposit address section to appear
+    // Asset selection modal should open
+    await expect(
+        page.getByRole("heading", { name: "Select Asset" }),
+    ).toBeVisible({ timeout: 10_000 });
+
+    // ════════════════════════════════════════════════════
+    // Phase 3: Verify "Other" asset is not available
+    // (confidential treasuries restrict to bridge assets only)
+    // ════════════════════════════════════════════════════
+
+    // "Other" option should NOT be present for confidential treasuries
+    await expect(page.getByText("Other", { exact: true })).not.toBeVisible();
+
+    // Bridge assets should be listed
+    await expect(page.getByText("USD Coin")).toBeVisible();
+
+    // Select NEAR — it has only 1 network so network auto-selects
+    await page.getByText("Near").click();
+
+    // ════════════════════════════════════════════════════
+    // Phase 4: Verify deposit address comes from intents API
+    // ════════════════════════════════════════════════════
+
+    // NEAR has one network → auto-selects, triggering deposit address fetch
     await expect(page.getByText("Deposit Address")).toBeVisible({
         timeout: 15_000,
     });
@@ -396,27 +415,4 @@ test("Confidential deposit — dashboard deposit modal flow", async ({
 
     // Verify info message about depositing from the correct network
     await expect(page.getByText(/Only deposit/)).toBeVisible();
-
-    // ════════════════════════════════════════════════════
-    // Phase 3: Verify "Other" asset is not available
-    // (confidential treasuries restrict to bridge assets only)
-    // ════════════════════════════════════════════════════
-
-    // Open the asset selector
-    const assetButton = page
-        .locator("button")
-        .filter({ hasText: "Near" })
-        .first();
-    await assetButton.click();
-
-    // The asset selection modal should open
-    await expect(
-        page.getByRole("heading", { name: "Select Asset" }),
-    ).toBeVisible({ timeout: 10_000 });
-
-    // "Other" option should NOT be present for confidential treasuries
-    await expect(page.getByText("Other", { exact: true })).not.toBeVisible();
-
-    // Bridge assets should be listed
-    await expect(page.getByText("USD Coin")).toBeVisible();
 });
