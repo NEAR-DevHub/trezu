@@ -78,160 +78,6 @@ fn compute_list_hash(
     hex::encode(hasher.finalize())
 }
 
-/// DAO Proposal types for verification
-#[derive(Debug, Deserialize)]
-#[allow(dead_code)]
-struct Proposal {
-    id: u64,
-    proposer: String,
-    description: String,
-    kind: ProposalKind,
-    status: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(untagged)]
-#[allow(dead_code)]
-enum ProposalKind {
-    FunctionCall {
-        #[serde(rename = "FunctionCall")]
-        function_call: FunctionCallKind,
-    },
-    Other(serde_json::Value),
-}
-
-#[derive(Debug, Deserialize)]
-#[allow(dead_code)]
-struct FunctionCallKind {
-    receiver_id: String,
-    actions: Vec<ActionCall>,
-}
-
-#[derive(Debug, Deserialize)]
-#[allow(dead_code)]
-struct ActionCall {
-    method_name: String,
-    args: String, // base64 encoded
-    deposit: String,
-    gas: String,
-}
-
-/// Verify that a pending DAO proposal exists with the given list_id
-async fn verify_dao_proposal(
-    state: &AppState,
-    dao_contract_id: &str,
-    list_id: &str,
-) -> Result<bool, (StatusCode, String)> {
-    // Get the last proposal ID to know the total number of proposals
-    let last_proposal_id: u64 = near_api::Contract(dao_contract_id.parse().unwrap())
-        .call_function("get_last_proposal_id", ())
-        .read_only::<u64>()
-        .fetch_from(&state.network)
-        .await
-        .map_err(|e| {
-            log::error!("Failed to fetch last proposal ID: {}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to fetch last proposal ID: {}", e),
-            )
-        })?
-        .data;
-
-    // Calculate the starting index to get the last 100 proposals
-    // If there are fewer than 100 proposals, start from 0
-    let limit = 100u64;
-    let from_index = last_proposal_id.saturating_sub(limit - 1);
-
-    // Get the last 100 proposals from the DAO
-    let proposals: Vec<Proposal> = near_api::Contract(dao_contract_id.parse().unwrap())
-        .call_function(
-            "get_proposals",
-            serde_json::json!({
-                "from_index": from_index,
-                "limit": limit
-            }),
-        )
-        .read_only::<Vec<Proposal>>()
-        .fetch_from(&state.network)
-        .await
-        .map_err(|e| {
-            log::error!("Failed to fetch DAO proposals: {}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to fetch DAO proposals: {}", e),
-            )
-        })?
-        .data;
-
-    // Look for a pending proposal with this list_id
-    for proposal in proposals {
-        if proposal.status != "InProgress" {
-            continue;
-        }
-
-        // Check if this is a FunctionCall proposal
-        if let ProposalKind::FunctionCall { function_call } = &proposal.kind {
-            // First, check the description for the list_id (fastest check)
-            if proposal.description.contains(list_id) {
-                return Ok(true);
-            }
-
-            // Check each action for bulk payment related methods
-            for action in &function_call.actions {
-                // Case 1: Direct approve_list call (NEAR tokens)
-                if action.method_name == "approve_list"
-                    && function_call.receiver_id == state.bulk_payment_contract_id.as_str()
-                {
-                    // Decode the base64 args and check for matching list_id
-                    if let Ok(decoded) = base64::Engine::decode(
-                        &base64::engine::general_purpose::STANDARD,
-                        &action.args,
-                    ) && let Ok(args) = serde_json::from_slice::<serde_json::Value>(&decoded)
-                        && let Some(proposal_list_id) = args.get("list_id").and_then(|v| v.as_str())
-                        && proposal_list_id == list_id
-                    {
-                        return Ok(true);
-                    }
-                }
-
-                // Case 2: ft_transfer_call (FT tokens)
-                if action.method_name == "ft_transfer_call" {
-                    // Decode the base64 args and check for matching list_id in msg field
-                    if let Ok(decoded) = base64::Engine::decode(
-                        &base64::engine::general_purpose::STANDARD,
-                        &action.args,
-                    ) && let Ok(args) = serde_json::from_slice::<serde_json::Value>(&decoded)
-                        && let Some(receiver_id) = args.get("receiver_id").and_then(|v| v.as_str())
-                        && receiver_id == state.bulk_payment_contract_id.as_str()
-                        && let Some(msg) = args.get("msg").and_then(|v| v.as_str())
-                        && msg == list_id
-                    {
-                        return Ok(true);
-                    }
-                }
-
-                // Case 3: mt_transfer_call (MT tokens / Intents)
-                if action.method_name == "mt_transfer_call" {
-                    // Decode the base64 args and check for matching list_id in msg field
-                    if let Ok(decoded) = base64::Engine::decode(
-                        &base64::engine::general_purpose::STANDARD,
-                        &action.args,
-                    ) && let Ok(args) = serde_json::from_slice::<serde_json::Value>(&decoded)
-                        && let Some(receiver_id) = args.get("receiver_id").and_then(|v| v.as_str())
-                        && receiver_id == state.bulk_payment_contract_id.as_str()
-                        && let Some(msg) = args.get("msg").and_then(|v| v.as_str())
-                        && msg == list_id
-                    {
-                        return Ok(true);
-                    }
-                }
-            }
-        }
-    }
-
-    Ok(false)
-}
-
 fn calculate_storage_cost(num_records: u128) -> NearToken {
     STORAGE_COST_PER_BYTE
         .saturating_mul(BYTES_PER_RECORD)
@@ -259,13 +105,12 @@ fn serialize_args(
 ///
 /// This endpoint verifies:
 /// 1. The list_id matches the SHA-256 hash of the payload
-/// 2. A pending DAO proposal exists with this list_id
-/// 3. The submitter is the same as the authenticated user
+/// 2. The authenticated user is a policy member of the DAO
 ///
 /// Then submits the list to the contract.
 pub async fn submit_list(
     State(state): State<Arc<AppState>>,
-    _: AuthUser,
+    auth_user: AuthUser,
     Json(request): Json<SubmitListRequest>,
 ) -> Result<Json<SubmitListResponse>, (StatusCode, Json<SubmitListResponse>)> {
     if request.payments.len() > MAX_RECIPIENTS_PER_BULK_PAYMENT {
@@ -304,7 +149,25 @@ pub async fn submit_list(
         ));
     }
 
-    // Step 2: Check if treasury has available batch payment credits
+    // Step 2: Ensure the caller is a DAO policy member
+    if let Err(e) = auth_user
+        .verify_dao_member(&state.db_pool, &request.dao_contract_id)
+        .await
+    {
+        return Err((
+            StatusCode::FORBIDDEN,
+            Json(SubmitListResponse {
+                success: false,
+                list_id: None,
+                error: Some(format!(
+                    "Only DAO policy members can submit bulk payment lists: {}",
+                    e
+                )),
+            }),
+        ));
+    }
+
+    // Step 3: Check if treasury has available batch payment credits
     let account_plan = get_account_plan_info(&state.db_pool, &request.dao_contract_id)
         .await
         .map_err(|e| {
@@ -350,36 +213,6 @@ pub async fn submit_list(
                 "Treasury {} not found in monitored accounts. Proceeding without credit check.",
                 request.dao_contract_id
             );
-        }
-    }
-
-    // Step 3: Verify that a pending DAO proposal exists with this list_id
-    match verify_dao_proposal(&state, &request.dao_contract_id, &request.list_id).await {
-        Ok(true) => {
-            // Proposal exists, proceed
-        }
-        Ok(false) => {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                Json(SubmitListResponse {
-                    success: false,
-                    list_id: None,
-                    error: Some(format!(
-                        "No pending DAO proposal found with list_id: {}",
-                        request.list_id
-                    )),
-                }),
-            ));
-        }
-        Err((status, msg)) => {
-            return Err((
-                status,
-                Json(SubmitListResponse {
-                    success: false,
-                    list_id: None,
-                    error: Some(msg),
-                }),
-            ));
         }
     }
 
