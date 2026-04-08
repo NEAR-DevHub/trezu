@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE ft_lockup_dao_schedules\n        SET ft_registered_at = COALESCE(ft_registered_at, NOW()),\n            last_account_sync_at = NOW()\n        WHERE dao_account_id = $1\n          AND instance_id = $2\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "5c7813582a9dccd3590ecfc7771ee6ee287bf4fbeecc67e71cd9e378b070233b"
+}

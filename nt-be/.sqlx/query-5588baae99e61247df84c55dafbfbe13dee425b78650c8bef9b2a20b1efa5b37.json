@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        DELETE FROM ft_lockup_dao_schedules\n        WHERE dao_account_id = $1\n          AND instance_id = $2\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "5588baae99e61247df84c55dafbfbe13dee425b78650c8bef9b2a20b1efa5b37"
+}
