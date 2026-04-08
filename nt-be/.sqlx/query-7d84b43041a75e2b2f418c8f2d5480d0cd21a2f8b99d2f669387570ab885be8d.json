@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO ft_lockup_dao_schedules (\n            dao_account_id,\n            instance_id,\n            token_account_id,\n            session_interval_seconds,\n            start_timestamp_seconds,\n            next_claim_at,\n            last_account_sync_at\n        )\n        VALUES ($1, $2, $3, $4, $5, $6, NOW())\n        ON CONFLICT (dao_account_id, instance_id) DO UPDATE SET\n            token_account_id = EXCLUDED.token_account_id,\n            session_interval_seconds = EXCLUDED.session_interval_seconds,\n            start_timestamp_seconds = EXCLUDED.start_timestamp_seconds,\n            next_claim_at = EXCLUDED.next_claim_at,\n            last_account_sync_at = NOW()\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Int8",
+        "Int8",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "7d84b43041a75e2b2f418c8f2d5480d0cd21a2f8b99d2f669387570ab885be8d"
+}

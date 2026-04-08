@@ -1,6 +1,7 @@
 use crate::{
     handlers::user::{
         balance::TokenBalanceResponse,
+        ft_lockups::fetch_ft_lockup_positions,
         lockup::{LockupBalance, fetch_lockup_balance_of_account},
         staking::{StakingBalance, fetch_staking_balances},
     },
@@ -83,9 +84,22 @@ pub enum TokenResidency {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
+pub struct FtLockupSchedule {
+    pub start_timestamp: Option<u64>,
+    pub session_interval: Option<u64>,
+    pub session_num: Option<u32>,
+    pub last_claim_session: Option<u32>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct SimplifiedToken {
     pub id: String,
     pub contract_id: Option<String>,
+    /// FT lockup instance contract ID (one token can have multiple lockup sessions).
+    pub lockup_instance_id: Option<String>,
+    /// Optional schedule metadata for FT lockup session rows.
+    pub ft_lockup_schedule: Option<FtLockupSchedule>,
     pub residency: TokenResidency,
     pub network: String,
     pub chain_name: String,
@@ -117,6 +131,35 @@ where
 #[derive(Deserialize, Debug)]
 pub struct FastNearResponse {
     pub tokens: Option<Vec<FastNearToken>>,
+}
+
+fn canonical_token_id(token_id: &str) -> &str {
+    token_id
+        .strip_prefix("intents.near:")
+        .unwrap_or(token_id)
+        .strip_prefix("nep141:")
+        .unwrap_or(token_id)
+}
+
+fn is_near_or_wrap_near(token_id: &str) -> bool {
+    matches!(canonical_token_id(token_id), "near" | "wrap.near")
+}
+
+fn resolve_token_meta_and_unified_id<'a>(
+    token_id: &str,
+    metadata_map: &'a HashMap<String, TokenMetadataResponse>,
+    near_token_meta: &'a TokenMetadataResponse,
+) -> Option<(&'a TokenMetadataResponse, String)> {
+    if is_near_or_wrap_near(token_id) {
+        return Some((near_token_meta, "near".to_string()));
+    }
+
+    let token_meta = metadata_map.get(token_id)?;
+    let unified_id = find_token_by_symbol(&token_meta.symbol)
+        .map(|u| u.unified_asset_id)
+        .unwrap_or_else(|| token_meta.symbol.to_lowercase());
+
+    Some((token_meta, unified_id))
 }
 
 /// Fetch full account data from the FastNear API.
@@ -171,7 +214,7 @@ pub(crate) async fn fetch_whitelisted_tokens(
 
     state
         .cache
-        .cached(CacheTier::LongTerm, cache_key, async move {
+        .cached(CacheTier::VeryLongTerm, cache_key, async move {
             fetch_whitelisted_tokens_from_rpc(&state_clone).await
         })
         .await
@@ -292,6 +335,8 @@ fn build_intents_tokens(
                 SimplifiedToken {
                     id: unified_id,
                     contract_id: Some(token_id),
+                    lockup_instance_id: None,
+                    ft_lockup_schedule: None,
                     decimals: metadata.decimals,
                     balance: Balance::Standard {
                         total: balance_raw.0.to_string(),
@@ -340,14 +385,32 @@ pub async fn compute_user_assets(
         let near_balance = fetch_near_balance(state, account);
         let lockup_balance = fetch_lockup_balance_of_account(state, account);
         let staking_balance = fetch_staking_balances(state, account);
+        let ft_lockup_positions = fetch_ft_lockup_positions(state, account);
 
-        tokio::try_join!(
+        let (
+            whitelist_set,
+            user_balances,
+            near_balance,
+            lockup_balance,
+            staking_balance,
+            ft_lockup_positions,
+        ) = tokio::try_join!(
             tokens_future,
             balances_future,
             near_balance,
             lockup_balance,
-            staking_balance
-        )
+            staking_balance,
+            ft_lockup_positions
+        )?;
+
+        Ok::<_, (StatusCode, String)>((
+            whitelist_set,
+            user_balances,
+            near_balance,
+            lockup_balance,
+            staking_balance,
+            ft_lockup_positions,
+        ))
     };
 
     // Fetch intents balances
@@ -373,8 +436,14 @@ pub async fn compute_user_assets(
     let (ref_data_result, intents_data_result) = tokio::join!(ref_data_future, intents_data_future);
 
     // Get whitelisted tokens and user balances
-    let (whitelist_set, user_balances, near_balance, lockup_balance, staking_balance) =
-        ref_data_result?;
+    let (
+        whitelist_set,
+        user_balances,
+        near_balance,
+        lockup_balance,
+        staking_balance,
+        ft_lockup_positions,
+    ) = ref_data_result?;
 
     // Get intents balances (already filtered to non-zero)
     let intents_balances = intents_data_result.unwrap_or_else(|e| {
@@ -408,6 +477,11 @@ pub async fn compute_user_assets(
             .iter()
             .map(|(id, _)| format!("intents.near:{}", id)),
     );
+    token_ids_to_fetch.extend(
+        ft_lockup_positions
+            .iter()
+            .map(|p| p.token_account_id.clone()),
+    );
     token_ids_to_fetch.push("near".to_string());
 
     // Fetch metadata for only tokens with positive balances in a single batch request
@@ -429,22 +503,17 @@ pub async fn compute_user_assets(
     let mut all_simplified_tokens: Vec<(SimplifiedToken, U128)> = ref_tokens_with_balances
         .into_iter()
         .filter_map(|(token_id, balance)| {
-            let token_meta = if token_id == "near" || token_id == "wrap.near" {
-                &near_token_meta
-            } else {
-                metadata_map.get(&token_id)?
-            };
+            let (token_meta, unified_id) =
+                resolve_token_meta_and_unified_id(&token_id, &metadata_map, &near_token_meta)?;
 
             let price = token_meta.price.unwrap_or(0.0).to_string();
-
-            let unified_id = find_token_by_symbol(&token_meta.symbol)
-                .map(|u| u.unified_asset_id)
-                .unwrap_or_else(|| token_meta.symbol.to_lowercase());
 
             Some((
                 SimplifiedToken {
                     id: unified_id,
                     contract_id: Some(token_id),
+                    lockup_instance_id: None,
+                    ft_lockup_schedule: None,
                     decimals: token_meta.decimals,
                     balance: Balance::Standard {
                         total: balance.0.to_string(),
@@ -469,6 +538,65 @@ pub async fn compute_user_assets(
 
     all_simplified_tokens.extend(build_intents_tokens(intents_balances, &metadata_map));
 
+    // Add FT lockup balances as standard token balances with a locked portion.
+    // Note: the same FT token contract can be deposited in multiple lockup sessions
+    // (different ft-lockup instances), so we keep each session as its own row.
+    // total   = deposited - claimed
+    // locked  = unreleased = deposited - claimed - unclaimed
+    // available = total - locked = unclaimed
+    for position in ft_lockup_positions {
+        let Some((token_meta, unified_id)) = resolve_token_meta_and_unified_id(
+            &position.token_account_id,
+            &metadata_map,
+            &near_token_meta,
+        ) else {
+            continue;
+        };
+
+        let total_raw = position
+            .deposited_amount
+            .saturating_sub(position.claimed_amount);
+        if total_raw == 0 {
+            continue;
+        }
+
+        let locked_raw = position
+            .deposited_amount
+            .saturating_sub(position.claimed_amount)
+            .saturating_sub(position.unclaimed_amount);
+
+        all_simplified_tokens.push((
+            SimplifiedToken {
+                id: unified_id,
+                contract_id: Some(position.token_account_id),
+                lockup_instance_id: Some(position.instance_id),
+                ft_lockup_schedule: Some(FtLockupSchedule {
+                    start_timestamp: position.start_timestamp,
+                    session_interval: position.session_interval,
+                    session_num: position.session_num,
+                    last_claim_session: position.last_claim_session,
+                }),
+                decimals: token_meta.decimals,
+                balance: Balance::Standard {
+                    total: total_raw.to_string(),
+                    locked: locked_raw.to_string(),
+                },
+                price: token_meta.price.unwrap_or(0.0).to_string(),
+                symbol: token_meta.symbol.clone(),
+                name: token_meta.name.clone(),
+                icon: token_meta.icon.clone(),
+                network: token_meta.network.clone().unwrap_or_default(),
+                residency: TokenResidency::Ft,
+                chain_icons: token_meta.chain_icons.clone(),
+                chain_name: token_meta
+                    .chain_name
+                    .clone()
+                    .unwrap_or_else(|| "Near Protocol".to_string()),
+            },
+            total_raw.into(),
+        ));
+    }
+
     // Add lockup balance if exists
     if let Some(lockup) = lockup_balance {
         let total = lockup.total.as_yoctonear().into();
@@ -476,6 +604,8 @@ pub async fn compute_user_assets(
             SimplifiedToken {
                 id: "near".to_string(),
                 contract_id: None,
+                lockup_instance_id: None,
+                ft_lockup_schedule: None,
                 decimals: near_token_meta.decimals,
                 balance: Balance::Vested(lockup),
                 price: near_token_meta.price.unwrap_or(0.0).to_string(),
@@ -505,6 +635,8 @@ pub async fn compute_user_assets(
             SimplifiedToken {
                 id: "near".to_string(),
                 contract_id: None,
+                lockup_instance_id: None,
+                ft_lockup_schedule: None,
                 decimals: near_token_meta.decimals,
                 balance: Balance::Staked(staking),
                 price: near_token_meta.price.unwrap_or(0.0).to_string(),
@@ -527,6 +659,8 @@ pub async fn compute_user_assets(
         SimplifiedToken {
             id: "near".to_string(),
             contract_id: None,
+            lockup_instance_id: None,
+            ft_lockup_schedule: None,
             decimals: near_token_meta.decimals,
             balance: Balance::Standard {
                 total: near_balance.balance.0.to_string(),

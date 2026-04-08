@@ -283,6 +283,17 @@
     .scrollbar-hide::-webkit-scrollbar {
         display: none;
     }
+
+    .lockup-grant-box {
+        border-radius: 10px;
+        background: #eff6ff;
+        box-shadow: 2px 4px 17.9px 1px rgba(145, 162, 224, 0.13) inset;
+    }
+
+    .dark .lockup-grant-box {
+        background: #172554;
+        box-shadow: 2px 4px 17.9px 1px rgba(161, 179, 245, 0.25) inset;
+    }
 }
 
 input::-webkit-outer-spin-button,

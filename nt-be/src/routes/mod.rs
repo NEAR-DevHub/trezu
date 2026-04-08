@@ -186,6 +186,10 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
             "/api/user/lockup",
             get(handlers::user::lockup::get_user_lockup),
         )
+        .route(
+            "/api/user/staking-validator",
+            get(handlers::user::staking::get_staking_validator_details),
+        )
         // Proposals endpoints
         .route(
             "/api/proposals/{dao_id}",

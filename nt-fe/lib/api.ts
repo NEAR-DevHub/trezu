@@ -74,9 +74,18 @@ export async function getUserTreasuries(
 
 export type TokenResidency = "Near" | "Ft" | "Intents" | "Lockup" | "Staked";
 
+export interface FtLockupSchedule {
+    startTimestamp?: number;
+    sessionInterval?: number;
+    sessionNum?: number;
+    lastClaimSession?: number;
+}
+
 export interface TreasuryAsset {
     id: string;
     contractId?: string;
+    lockupInstanceId?: string;
+    ftLockupSchedule?: FtLockupSchedule;
     residency: TokenResidency;
     network: string;
     chainName: string;
@@ -99,6 +108,8 @@ export interface TreasuryAssets {
 interface TreasuryAssetRaw {
     id: string;
     contractId?: string;
+    lockupInstanceId?: string;
+    ftLockupSchedule?: FtLockupSchedule;
     residency: TokenResidency;
     network: string;
     chainName: string;
@@ -138,6 +149,8 @@ export async function getTreasuryAssets(
             return {
                 id: token.id,
                 contractId: token.contractId,
+                lockupInstanceId: token.lockupInstanceId,
+                ftLockupSchedule: token.ftLockupSchedule,
                 residency: token.residency,
                 network: token.network,
                 symbol: token.symbol === "wNEAR" ? "NEAR" : token.symbol,
@@ -674,6 +687,36 @@ export async function getLockupContract(
         return response.data;
     } catch (error) {
         console.error(`Error getting lockup contract for ${accountId}`, error);
+        return null;
+    }
+}
+
+export interface StakingValidatorDetails {
+    poolId: string;
+    apy?: number;
+    feePercent?: number;
+}
+
+/**
+ * Get staking validator metadata (APY + fee) for a pool.
+ * Data is fetched/cached by backend from PikeSpeak.
+ */
+export async function getStakingValidatorDetails(
+    poolId: string,
+): Promise<StakingValidatorDetails | null> {
+    if (!poolId) return null;
+
+    try {
+        const url = `${BACKEND_API_BASE}/user/staking-validator`;
+        const response = await axios.get<StakingValidatorDetails>(url, {
+            params: { poolId },
+        });
+        return response.data;
+    } catch (error) {
+        console.error(
+            `Error getting staking validator details for ${poolId}`,
+            error,
+        );
         return null;
     }
 }
