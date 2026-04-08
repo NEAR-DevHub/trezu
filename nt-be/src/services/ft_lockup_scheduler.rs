@@ -5,7 +5,7 @@ use near_api::{
     AccountId, Contract, NearGas, NearToken, Transaction,
     types::{Action, transaction::actions::FunctionCallAction},
 };
-use sqlx::{PgPool, Row};
+use sqlx::PgPool;
 use tokio::{sync::Semaphore, task::JoinSet};
 
 use crate::{
@@ -76,15 +76,15 @@ async fn delete_schedule_row(
     dao_account_id: &str,
     instance_id: &str,
 ) -> Result<(), sqlx::Error> {
-    sqlx::query(
+    sqlx::query!(
         r#"
         DELETE FROM ft_lockup_dao_schedules
         WHERE dao_account_id = $1
           AND instance_id = $2
         "#,
+        dao_account_id,
+        instance_id
     )
-    .bind(dao_account_id)
-    .bind(instance_id)
     .execute(pool)
     .await?;
     Ok(())
@@ -116,7 +116,7 @@ async fn upsert_schedule_row(
 
     let session_interval_seconds = u64_to_i64_opt(account_data.session_interval);
     let start_timestamp_seconds = u64_to_i64_opt(account_data.start_timestamp);
-    sqlx::query(
+    sqlx::query!(
         r#"
         INSERT INTO ft_lockup_dao_schedules (
             dao_account_id,
@@ -135,13 +135,13 @@ async fn upsert_schedule_row(
             next_claim_at = EXCLUDED.next_claim_at,
             last_account_sync_at = NOW()
         "#,
+        dao_account_id,
+        instance_id,
+        token_account_id,
+        session_interval_seconds,
+        start_timestamp_seconds,
+        next_claim_at
     )
-    .bind(dao_account_id)
-    .bind(instance_id)
-    .bind(token_account_id)
-    .bind(session_interval_seconds)
-    .bind(start_timestamp_seconds)
-    .bind(next_claim_at)
     .execute(pool)
     .await?;
 
@@ -282,17 +282,17 @@ async fn mark_claim_failure(
     dao_account_id: &str,
     instance_id: &str,
 ) -> Result<(), sqlx::Error> {
-    sqlx::query(
+    sqlx::query!(
         r#"
         UPDATE ft_lockup_dao_schedules
         SET next_claim_at = NOW() + ($3::double precision * INTERVAL '1 second')
         WHERE dao_account_id = $1
           AND instance_id = $2
         "#,
+        dao_account_id,
+        instance_id,
+        CLAIM_RETRY_BACKOFF_SECS as f64
     )
-    .bind(dao_account_id)
-    .bind(instance_id)
-    .bind(CLAIM_RETRY_BACKOFF_SECS as f64)
     .execute(pool)
     .await?;
 
@@ -335,7 +335,7 @@ async fn register_ft_once(
             .into_result()?;
     }
 
-    sqlx::query(
+    sqlx::query!(
         r#"
         UPDATE ft_lockup_dao_schedules
         SET ft_registered_at = COALESCE(ft_registered_at, NOW()),
@@ -343,9 +343,9 @@ async fn register_ft_once(
         WHERE dao_account_id = $1
           AND instance_id = $2
         "#,
+        dao_account_id,
+        instance_id
     )
-    .bind(dao_account_id)
-    .bind(instance_id)
     .execute(&state.db_pool)
     .await?;
 
@@ -359,7 +359,7 @@ pub async fn run_due_ft_lockup_claims(
 ) -> Result<FtLockupClaimSummary, Box<dyn std::error::Error + Send + Sync>> {
     let limit = batch_limit.unwrap_or(DEFAULT_CLAIM_BATCH_LIMIT).max(1);
 
-    let due_rows = sqlx::query(
+    let due_rows = sqlx::query!(
         r#"
         SELECT dao_account_id, instance_id, token_account_id, ft_registered_at
         FROM ft_lockup_dao_schedules
@@ -367,8 +367,8 @@ pub async fn run_due_ft_lockup_claims(
         ORDER BY COALESCE(next_claim_at, NOW()) ASC
         LIMIT $1
         "#,
+        limit
     )
-    .bind(limit)
     .fetch_all(&state.db_pool)
     .await?;
 
@@ -384,10 +384,10 @@ pub async fn run_due_ft_lockup_claims(
     for row in due_rows {
         let state = state.clone();
         let sem = semaphore.clone();
-        let dao_account_id: String = row.get("dao_account_id");
-        let instance_id: String = row.get("instance_id");
-        let token_account_id: String = row.get("token_account_id");
-        let ft_registered_at: Option<DateTime<Utc>> = row.get("ft_registered_at");
+        let dao_account_id = row.dao_account_id;
+        let instance_id = row.instance_id;
+        let token_account_id = row.token_account_id;
+        let ft_registered_at = row.ft_registered_at;
 
         join_set.spawn(async move {
             let _permit = sem
