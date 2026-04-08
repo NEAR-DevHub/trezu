@@ -143,7 +143,7 @@ export default function BalanceWithGraph({
     onDepositClick,
     isLoading: isLoadingTokens,
 }: Props) {
-    const { treasuryId } = useTreasury();
+    const { treasuryId, isConfidential } = useTreasury();
     const [selectedToken, setSelectedToken] = useState<string>("all");
     const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>("1W");
     const [isChartHovered, setIsChartHovered] = useState(false);
@@ -810,7 +810,7 @@ export default function BalanceWithGraph({
                     </SelectContent>
                 </Select>
             </div>
-            <div className={cn(isHidden ? "hidden" : "")}>
+            <div className={cn(isConfidential ? "hidden" : "")}>
                 {isLoading || (isFetching && chartData.data.length === 0) ? (
                     <div className="h-56 w-full space-y-3 p-4">
                         <Skeleton className="h-50 w-full" />

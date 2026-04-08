@@ -83,21 +83,22 @@ interface NetworkBalanceDisplay {
     amountUSD: number;
 }
 
+const STABLE_EMPTY_ARRAY: never[] = [];
+
 export function DepositModal({
     isOpen,
     onClose,
     prefillTokenSymbol,
     prefillNetworkId,
 }: DepositModalProps) {
-    const { treasuryId } = useTreasury();
+    const { treasuryId, isConfidential } = useTreasury();
     const { theme } = useThemeStore();
-    const { data: { tokens: treasuryAssets = [] } = {} } = useAssets(
-        treasuryId,
-        {
-            onlyPositiveBalance: false,
-            onlySupportedTokens: true,
-        },
-    );
+    const {
+        data: { tokens: treasuryAssets } = { tokens: STABLE_EMPTY_ARRAY },
+    } = useAssets(treasuryId, {
+        onlyPositiveBalance: false,
+        onlySupportedTokens: true,
+    });
     const aggregatedTreasuryTokens = useAggregatedTokens(treasuryAssets);
     // Prevent old async responses from updating state.
     const latestAddressRequestRef = useRef(0);
@@ -134,6 +135,9 @@ export function DepositModal({
         [],
     );
     const [depositAddress, setDepositAddress] = useState<string | null>(null);
+    const [minDepositAmount, setMinDepositAmount] = useState<string | null>(
+        null,
+    );
     const [isLoadingAddress, setIsLoadingAddress] = useState(false);
 
     const selectedAsset = form.watch("asset");
@@ -388,13 +392,18 @@ export function DepositModal({
 
         const formattedAssets: SelectOption[] = [...yourAssets, ...otherAssets];
 
-        // Add "Other" at the end
-        formattedAssets.push(otherAsset);
-        newAssetNetworksMap.set(
-            "other",
-            otherAsset.networks!.map(toNetworkOption),
-        );
+        // Add "Other" at the end (not for confidential — it only supports NEAR network)
+        if (!isConfidential) {
+            formattedAssets.push(otherAsset);
+            newAssetNetworksMap.set(
+                "other",
+                otherAsset.networks!.map(toNetworkOption),
+            );
+        }
 
+        console.log(
+            `[DepositModal] main useEffect: setting state (allAssets: ${formattedAssets.length}, networks map size: ${newAssetNetworksMap.size})`,
+        );
         setAllAssets(formattedAssets);
         setAssetNetworksMap(newAssetNetworksMap);
         setNetworkBalancesByAsset(networkBalancesByAssetId);
@@ -406,7 +415,9 @@ export function DepositModal({
             },
             {
                 title: "Other Assets",
-                options: [...otherAssets, otherAsset],
+                options: isConfidential
+                    ? otherAssets
+                    : [...otherAssets, otherAsset],
             },
         ]);
 
@@ -536,15 +547,18 @@ export function DepositModal({
             const requestId = ++latestAddressRequestRef.current;
 
             // All NEAR networks deposit directly to treasury account ID
-            const isNearNetwork = (
-                selectedNetwork.chainId ?? selectedNetwork.id
-            )
-                .toLowerCase()
-                .includes("near");
-            if (isNearNetwork) {
-                if (requestId !== latestAddressRequestRef.current) return;
-                setDepositAddress(treasuryId);
-                return;
+            // (except confidential treasuries which always go through intents)
+            if (!isConfidential) {
+                const isNearNetwork = (
+                    selectedNetwork.chainId ?? selectedNetwork.id
+                )
+                    .toLowerCase()
+                    .includes("near");
+                if (isNearNetwork) {
+                    if (requestId !== latestAddressRequestRef.current) return;
+                    setDepositAddress(treasuryId);
+                    return;
+                }
             }
 
             setIsLoadingAddress(true);
@@ -554,15 +568,19 @@ export function DepositModal({
                 const result = await fetchDepositAddress(
                     treasuryId,
                     selectedNetwork.chainId ?? selectedNetwork.id,
+                    selectedNetwork.id,
+                    selectedBridgeNetwork?.minDepositAmount,
                 );
 
                 if (result && result.address) {
                     if (requestId !== latestAddressRequestRef.current) return;
                     setDepositAddress(result.address);
+                    setMinDepositAmount(result.minAmount ?? null);
                     form.clearErrors("network");
                 } else {
                     if (requestId !== latestAddressRequestRef.current) return;
                     setDepositAddress(null);
+                    setMinDepositAmount(null);
                     form.setError("network", {
                         type: "manual",
                         message:
@@ -578,6 +596,7 @@ export function DepositModal({
                         "Failed to fetch deposit address. Please try again.",
                 });
                 setDepositAddress(null);
+                setMinDepositAmount(null);
             } finally {
                 if (requestId !== latestAddressRequestRef.current) return;
                 setIsLoadingAddress(false);
@@ -589,13 +608,20 @@ export function DepositModal({
         } else {
             setDepositAddress(null);
         }
-    }, [selectedAsset, selectedNetwork, treasuryId, form]);
+    }, [
+        selectedAsset,
+        selectedNetwork,
+        treasuryId,
+        isConfidential,
+        selectedBridgeNetwork,
+    ]);
 
     // Reset all state when modal closes
     const handleClose = useCallback(() => {
         latestAddressRequestRef.current += 1;
         form.reset();
         setDepositAddress(null);
+        setMinDepositAmount(null);
         setFilteredNetworks([]);
         setSelectedNetworkBalances(new Map());
         setModalType(null);
@@ -934,15 +960,19 @@ export function DepositModal({
                                         </span>
                                     </div>
 
-                                    {selectedBridgeNetwork?.minDepositAmount && (
+                                    {(minDepositAmount ||
+                                        selectedBridgeNetwork?.minDepositAmount) && (
                                         <div className="flex gap-2 items-start text-sm text-muted-foreground">
                                             <CircleCheck className="h-4 w-4 shrink-0 mt-0.5" />
                                             <span>
                                                 Minimum deposit is{" "}
                                                 <span className="text-foreground font-semibold">
                                                     {formatBalance(
-                                                        selectedBridgeNetwork.minDepositAmount,
-                                                        selectedBridgeNetwork.decimals,
+                                                        minDepositAmount ??
+                                                            selectedBridgeNetwork!
+                                                                .minDepositAmount!,
+                                                        selectedBridgeNetwork?.decimals ??
+                                                            0,
                                                     )}{" "}
                                                     {selectedNetwork?.symbol}
                                                 </span>
