@@ -116,7 +116,7 @@ export async function buildApproveListProposal(params: {
     } = params;
     const isNEAR = tokenResidency === "Near";
     const isIntents = tokenResidency === "Intents";
-    const gas = "300000000000000"; // 300 TGas
+    const gas = "270000000000000"; // 270 TGas
 
     if (isNEAR) {
         // For NEAR: FunctionCall proposal with deposit for approve_list

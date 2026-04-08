@@ -294,6 +294,51 @@ async function apiRequest(endpoint, method = 'GET', body = null, expectError = f
   }
 }
 
+/**
+ * Ensure DAO membership is synced in backend DB for AuthUser.verify_dao_member checks.
+ * Polls /api/user/treasuries until the DAO appears as isMember=true.
+ */
+async function waitForDaoMembershipSync(accountId, daoAccountId, timeoutMs = 60000) {
+  console.log(`\n⏳ Waiting for DAO membership sync (${daoAccountId} -> ${accountId})...`);
+
+  // Ensure DAO exists in backend tables and user has a row in dao_members.
+  // This endpoint internally registers the DAO in `daos` (if missing).
+  await apiRequest('/api/user/treasuries/save', 'POST', {
+    accountId,
+    daoId: daoAccountId,
+  }, true);
+
+  // Register/refresh monitored account (used by policy sync stale/active paths).
+  await apiRequest('/api/monitored-accounts', 'POST', { accountId: daoAccountId }, true);
+
+  // Explicitly mark dirty to trigger high-priority sync cycle.
+  await apiRequest('/api/dao/mark-dirty', 'POST', { daoId: daoAccountId }, true);
+
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    const treasuries = await apiRequest(
+      `/api/user/treasuries?accountId=${encodeURIComponent(accountId)}`,
+      'GET',
+      null,
+      true,
+    );
+
+    if (Array.isArray(treasuries)) {
+      const match = treasuries.find((t) => t.daoId === daoAccountId || t.dao_id === daoAccountId);
+      if (match?.isMember === true || match?.is_member === true) {
+        console.log('✅ DAO membership synced in backend');
+        return;
+      }
+    }
+
+    // Keep nudging dirty flag in case another process clears it before this DAO is synced.
+    await apiRequest('/api/dao/mark-dirty', 'POST', { daoId: daoAccountId }, true);
+    await sleep(2000);
+  }
+
+  throw new Error(`Timed out waiting for DAO membership sync for ${daoAccountId}`);
+}
+
 // ============================================================================
 // NEAR Connection Setup
 // ============================================================================
@@ -413,11 +458,6 @@ async function createProposal(account, daoAccountId, description, receiverId, me
     attachedDeposit: parseNEAR('0.1'), // Proposal bond
   });
   
-  // Extract proposal ID from logs
-  const logs = result.receipts_outcome
-    .flatMap(o => o.outcome.logs)
-    .join('\n');
-  
   // Proposal ID is typically logged or we can query it
   // For simplicity, assume proposals are sequential starting from 0
   const proposalId = await getLastProposalId(account, daoAccountId);
@@ -465,18 +505,6 @@ async function approveProposal(account, daoAccountId, proposalId) {
   console.log(`✅ Proposal ${proposalId} approved`);
 }
 
-/**
- * Get proposal status
- */
-async function getProposalStatus(account, daoAccountId, proposalId) {
-  const proposal = await account.viewFunction({
-    contractId: daoAccountId,
-    methodName: 'get_proposal',
-    args: { id: proposalId },
-  });
-  return proposal.status;
-}
-
 // ============================================================================
 // Bulk Payment Contract Operations
 // ============================================================================
@@ -502,37 +530,6 @@ async function viewPaymentList(account, listId) {
     args: { list_id: listId },
   });
   return list;
-}
-
-/**
- * Check recipient balances
- */
-async function checkRecipientBalances(near, recipients) {
-  console.log('\n🔍 Checking recipient balances...');
-  
-  const balances = [];
-  for (const recipient of recipients) {
-    try {
-      const account = await near.account(recipient.recipient);
-      const balance = await account.getAccountBalance();
-      balances.push({
-        recipient: recipient.recipient,
-        expected: recipient.amount,
-        actual: balance.total,
-        received: BigInt(balance.total) >= BigInt(recipient.amount),
-      });
-    } catch (e) {
-      // Account may not exist yet for implicit accounts
-      balances.push({
-        recipient: recipient.recipient,
-        expected: recipient.amount,
-        actual: '0',
-        received: false,
-      });
-    }
-  }
-  
-  return balances;
 }
 
 // ============================================================================
@@ -744,36 +741,37 @@ assert.ok(wrongHashResponse.error.includes('does not match computed hash'),
   `Error should mention hash mismatch: ${wrongHashResponse.error}`);
 console.log(`✅ API correctly rejected tampered payload: ${wrongHashResponse.error}`);
 
-// Step 7c: Verify API rejects submission WITHOUT a DAO proposal
-console.log('\n🔒 Testing API rejection without DAO proposal...');
-const rejectResponse = await apiRequest('/api/bulk-payment/submit-list', 'POST', {
+// Step 8: Verify submit-list fails for a non-DAO-member account.
+console.log('\n🔒 Testing submit-list rejection for non-DAO-member...');
+const outsiderAccountId = `outsider${testRunNonce % 10000000}.${CONFIG.GENESIS_ACCOUNT_ID}`;
+const outsiderKeyPair = KeyPair.fromRandom('ed25519');
+await account.createAccount(
+  outsiderAccountId,
+  outsiderKeyPair.getPublicKey(),
+  parseNEAR('1')
+);
+await authenticate(outsiderKeyPair, outsiderAccountId);
+const nonMemberSubmitResponse = await apiRequest('/api/bulk-payment/submit-list', 'POST', {
   listId: listId,
   timestamp,
   submitterId: daoAccountId,
   daoContractId: daoAccountId,
   tokenId: 'native',
   payments,
-}, true); // expectError = true
-
-assert.equal(rejectResponse.success, false, 'Submit without DAO proposal must fail');
-assert.ok(rejectResponse.error.includes('No pending DAO proposal found'),
-  `Error should mention missing DAO proposal: ${rejectResponse.error}`);
-console.log(`✅ API correctly rejected submission: ${rejectResponse.error}`);
-
-// Step 8: Create DAO proposal with list_id BEFORE submitting to API
-// This is a security requirement - the API will verify this proposal exists
-console.log('\n📝 Creating DAO proposal with list_id before API submission...');
-const submitListProposalId = await createProposal(
-  account,
-  daoAccountId,
-  `Bulk payment list: ${listId}`, // Include list_id in description for verification
-  CONFIG.BULK_PAYMENT_CONTRACT_ID,
-  'approve_list', // The approval method that will eventually be called
-  { list_id: listId },
-  totalPaymentAmount.toString()
+}, true);
+assert.equal(nonMemberSubmitResponse.success, false, 'Non-member submit must fail');
+assert.ok(
+  nonMemberSubmitResponse.error.includes('Not a DAO policy member'),
+  `Error should mention DAO membership requirement: ${nonMemberSubmitResponse.error}`
 );
+console.log(`✅ Non-member submit rejected as expected: ${nonMemberSubmitResponse.error}`);
 
-// Step 9: Submit payment list via API (requires DAO proposal to exist)
+// Step 9: Re-authenticate as DAO member and wait for backend membership sync.
+await authenticate(authKeyPair, account.accountId);
+await waitForDaoMembershipSync(account.accountId, daoAccountId);
+
+// Step 10: Submit payment list via API as DAO member.
+// New flow: submit-list is validated by hash + DAO membership, not pending proposal existence.
 console.log('\n📤 Submitting payment list via API...');
 const submitResponse = await apiRequest('/api/bulk-payment/submit-list', 'POST', {
   listId: listId,
@@ -788,7 +786,19 @@ assert.equal(submitResponse.success, true, `Submit must succeed: ${submitRespons
 assert.equal(submitResponse.listId, listId, 'Returned listId must match submitted');
 console.log(`✅ Payment list submitted with ID: ${listId}`);
 
-// Step 9b: Verify worker does NOT call payout_batch while list is still pending
+// Step 11: Create DAO proposal with list_id after successful API submission
+console.log('\n📝 Creating DAO proposal with list_id after API submission...');
+const submitListProposalId = await createProposal(
+  account,
+  daoAccountId,
+  `Bulk payment list: ${listId}`,
+  CONFIG.BULK_PAYMENT_CONTRACT_ID,
+  'approve_list',
+  { list_id: listId },
+  totalPaymentAmount.toString()
+);
+
+// Step 11b: Verify worker does NOT call payout_batch while list is still pending
 // The list is submitted but not yet approved. Wait for several worker poll cycles
 // (worker polls every 5s) then scan blocks for any payout_batch transactions.
 console.log('\n🔍 Verifying worker does not call payout_batch on pending list...');
@@ -858,13 +868,13 @@ if (payoutBatchCallsFound > 0) {
 }
 console.log(`✅ No payout_batch calls found during ${endBlockHeight - startBlockHeight} blocks while list was pending`);
 
-// Step 10: Approve the payment list proposal (already created in Step 8)
+// Step 12: Approve the payment list proposal (created in Step 11)
 await approveProposal(account, daoAccountId, submitListProposalId);
 
 // Wait for execution
 await sleep(2000);
 
-// Step 11: Verify list is approved
+// Step 13: Verify list is approved
 console.log('\n🔍 Verifying payment list status...');
 const listStatus = await viewPaymentList(account, listId);
 console.log(`📊 List status: ${listStatus.status}`);
@@ -873,7 +883,7 @@ console.log(`📊 Total payments: ${listStatus.payments.length}`);
 assert.equal(listStatus.status, 'Approved', `Payment list must be Approved, got: ${listStatus.status}`);
 assert.equal(listStatus.payments.length, CONFIG.NUM_RECIPIENTS, `Must have ${CONFIG.NUM_RECIPIENTS} payments`);
 
-// Step 12: Wait for payout processing (background worker processes approved lists)
+// Step 14: Wait for payout processing (background worker processes approved lists)
 console.log('\n⏳ Waiting for payout processing...');
 let allProcessed = false;
 let attempts = 0;
@@ -898,7 +908,7 @@ while (!allProcessed && attempts < maxAttempts) {
 
 assert.equal(allProcessed, true, 'All payments must complete within timeout');
 
-// Step 13: Verify all payments have block_height registered
+// Step 15: Verify all payments have block_height registered
 console.log('\n🔍 Verifying all payments have block_height...');
 const finalStatus = await viewPaymentList(account, listId);
 
@@ -926,7 +936,7 @@ assert.equal(
 );
 console.log(`✅ All payments have block_height registered`);
 
-// Step 14: Verify payment transactions using the API endpoint
+// Step 16: Verify payment transactions using the API endpoint
 console.log('\n🔗 Verifying payment transactions via API...');
 
 // Verify ALL recipients (implicit, created named, and non-existent named)
@@ -1049,7 +1059,7 @@ assert.equal(namedFailures, nonExistentNamedRecipients.length,
 
 console.log(`✅ All transaction verifications passed!`);
 
-// Step 15: Verify recipient balances for sample accounts
+// Step 17: Verify recipient balances for sample accounts
 console.log('\n🔍 Verifying recipient balances for samples...');
 
 // Sample a few from each category
@@ -1076,7 +1086,7 @@ for (const recipient of sampleCreated) {
     `Named account ${recipient} must have balance >= ${payment.amount}, got ${balance.total}`);
 }
 
-// Step 16: Final verification
+// Step 18: Final verification
 console.log('\n=====================================');
 console.log('📊 Test Summary');
 console.log('=====================================');
@@ -1106,3 +1116,4 @@ process.exit(0);
   }
   process.exit(1);
 }
+
