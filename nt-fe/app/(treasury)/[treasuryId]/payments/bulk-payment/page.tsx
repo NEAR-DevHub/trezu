@@ -139,9 +139,12 @@ export default function BulkPaymentPage() {
             loadingToastId = toast(
                 <BulkPaymentToast
                     steps={[
-                        { label: "Submitting proposal", status: "loading" },
                         {
                             label: "Submitting bulk payment list",
+                            status: "loading",
+                        },
+                        {
+                            label: "Submitting proposal",
                             status: "pending",
                         },
                     ]}
@@ -281,6 +284,45 @@ export default function BulkPaymentPage() {
                 }
             }
 
+            // Submit payment list to backend first.
+            const submitResult = await submitPaymentList({
+                listId,
+                timestamp,
+                submitterId: selectedTreasury,
+                daoContractId: selectedTreasury,
+                tokenId: tokenIdForHash,
+                payments,
+            });
+
+            if (!submitResult.success) {
+                throw new Error(
+                    submitResult.error || "Failed to submit payment list",
+                );
+            }
+
+            // Update toast after successful list submission.
+            toast(
+                <BulkPaymentToast
+                    steps={[
+                        {
+                            label: "Submitting bulk payment list",
+                            status: "completed",
+                        },
+                        {
+                            label: "Submitting proposal",
+                            status: "loading",
+                        },
+                    ]}
+                />,
+                {
+                    id: loadingToastId,
+                    duration: Infinity,
+                    classNames: {
+                        toast: "!p-3",
+                    },
+                },
+            );
+
             // Create proposal (throws on failure)
             await createProposal(
                 "Bulk payment proposal submitted",
@@ -297,98 +339,50 @@ export default function BulkPaymentPage() {
                 false,
             );
 
-            // Update toast
-            toast(
-                <BulkPaymentToast
-                    steps={[
-                        {
-                            label: "Submitting proposal",
-                            status: "completed",
-                        },
-                        {
-                            label: "Submitting bulk payment list",
-                            status: "loading",
-                        },
-                    ]}
-                />,
-                {
-                    id: loadingToastId,
-                    duration: Infinity,
-                    classNames: {
-                        toast: "!p-3",
-                    },
+            trackEvent("bulk-payment-submitted", {
+                treasury_id: selectedTreasury ?? "",
+                token_symbol: selectedToken.symbol,
+                recipients_count: paymentData.length,
+            });
+
+            toast.dismiss(loadingToastId);
+
+            toast.success("Bulk Payment Request submitted", {
+                duration: 10000,
+                action: {
+                    label: "View Request",
+                    onClick: () =>
+                        router.push(
+                            `/${selectedTreasury}/requests?tab=InProgress`,
+                        ),
                 },
-            );
+                classNames: {
+                    toast: "!p-2 !px-4",
+                    actionButton:
+                        "!bg-transparent !text-foreground hover:!bg-muted !border-0",
+                    title: "!border-r !border-r-border !pr-4",
+                },
+            });
 
-            // Submit payment list to backend
-            try {
-                const submitResult = await submitPaymentList({
-                    listId,
-                    timestamp,
-                    submitterId: selectedTreasury,
-                    daoContractId: selectedTreasury,
-                    tokenId: tokenIdForHash,
-                    payments,
-                });
+            await queryClient.invalidateQueries({
+                queryKey: ["subscription", selectedTreasury],
+            });
 
-                if (!submitResult.success) {
-                    throw new Error(
-                        submitResult.error || "Failed to submit payment list",
-                    );
-                }
-
-                trackEvent("bulk-payment-submitted", {
-                    treasury_id: selectedTreasury ?? "",
-                    token_symbol: selectedToken.symbol,
-                    recipients_count: paymentData.length,
-                });
-
-                toast.dismiss(loadingToastId);
-
-                toast.success("Bulk Payment Request submitted", {
-                    duration: 10000,
-                    action: {
-                        label: "View Request",
-                        onClick: () =>
-                            router.push(
-                                `/${selectedTreasury}/requests?tab=InProgress`,
-                            ),
-                    },
-                    classNames: {
-                        toast: "!p-2 !px-4",
-                        actionButton:
-                            "!bg-transparent !text-foreground hover:!bg-muted !border-0",
-                        title: "!border-r !border-r-border !pr-4",
-                    },
-                });
-
-                await queryClient.invalidateQueries({
-                    queryKey: ["subscription", selectedTreasury],
-                });
-
-                form.reset();
-                setStep(0);
-                setPaymentData([]);
-                setNetworkFeePerRecipient(null);
-            } catch (error) {
-                console.error(
-                    "Failed to submit payment list to backend:",
-                    error,
-                );
-                toast.dismiss(loadingToastId);
-                toast.error(
-                    error instanceof Error
-                        ? error.message
-                        : "Failed to submit bulk payment list",
-                );
-            }
+            form.reset();
+            setStep(0);
+            setPaymentData([]);
+            setNetworkFeePerRecipient(null);
         } catch (error) {
-            // Only show error if it's not a wallet rejection (createProposal handles those)
             console.error("Failed to submit bulk payment:", error);
             if (loadingToastId) {
                 toast.dismiss(loadingToastId);
             }
-            // Don't show additional error toast as createProposal already handles user rejections
+            // createProposal already handles wallet rejection UI; submit list errors need a toast.
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "Failed to submit bulk payment",
+            );
         }
     };
 
