@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChevronDown, CircleCheck } from "lucide-react";
+import { ChevronDown, CircleCheck, TriangleAlert } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -133,7 +133,10 @@ export function DepositModal({
     const [filteredNetworks, setFilteredNetworks] = useState<SelectOption[]>(
         [],
     );
-    const [depositAddress, setDepositAddress] = useState<string | null>(null);
+    const [depositInfo, setDepositInfo] = useState<{
+        address: string;
+        memo: string | null;
+    } | null>(null);
     const [isLoadingAddress, setIsLoadingAddress] = useState(false);
 
     const selectedAsset = form.watch("asset");
@@ -488,7 +491,7 @@ export function DepositModal({
             form.clearErrors("asset");
             form.clearErrors("network");
 
-            setDepositAddress(null);
+            setDepositInfo(null);
 
             const availableNetworks = assetNetworksMap.get(asset.id) || [];
             setFilteredNetworks(
@@ -521,7 +524,7 @@ export function DepositModal({
             form.clearErrors("network");
             form.clearErrors("asset");
 
-            setDepositAddress(null);
+            setDepositInfo(null);
         },
         [form],
     );
@@ -530,7 +533,7 @@ export function DepositModal({
     useEffect(() => {
         const fetchAddress = async () => {
             if (!treasuryId || !selectedNetwork || !selectedAsset) {
-                setDepositAddress(null);
+                setDepositInfo(null);
                 return;
             }
             const requestId = ++latestAddressRequestRef.current;
@@ -543,7 +546,7 @@ export function DepositModal({
                 .includes("near");
             if (isNearNetwork) {
                 if (requestId !== latestAddressRequestRef.current) return;
-                setDepositAddress(treasuryId);
+                setDepositInfo({ address: treasuryId, memo: null });
                 return;
             }
 
@@ -558,11 +561,14 @@ export function DepositModal({
 
                 if (result && result.address) {
                     if (requestId !== latestAddressRequestRef.current) return;
-                    setDepositAddress(result.address);
+                    setDepositInfo({
+                        address: result.address,
+                        memo: result.memo || null,
+                    });
                     form.clearErrors("network");
                 } else {
                     if (requestId !== latestAddressRequestRef.current) return;
-                    setDepositAddress(null);
+                    setDepositInfo(null);
                     form.setError("network", {
                         type: "manual",
                         message:
@@ -577,7 +583,7 @@ export function DepositModal({
                         err.message ||
                         "Failed to fetch deposit address. Please try again.",
                 });
-                setDepositAddress(null);
+                setDepositInfo(null);
             } finally {
                 if (requestId !== latestAddressRequestRef.current) return;
                 setIsLoadingAddress(false);
@@ -587,7 +593,7 @@ export function DepositModal({
         if (selectedAsset && selectedNetwork && treasuryId) {
             fetchAddress();
         } else {
-            setDepositAddress(null);
+            setDepositInfo(null);
         }
     }, [selectedAsset, selectedNetwork, treasuryId, form]);
 
@@ -595,7 +601,7 @@ export function DepositModal({
     const handleClose = useCallback(() => {
         latestAddressRequestRef.current += 1;
         form.reset();
-        setDepositAddress(null);
+        setDepositInfo(null);
         setFilteredNetworks([]);
         setSelectedNetworkBalances(new Map());
         setModalType(null);
@@ -858,7 +864,7 @@ export function DepositModal({
                             </div>
                         )}
 
-                        {depositAddress && !isLoadingAddress && (
+                        {depositInfo && !isLoadingAddress && (
                             <div className="mt-6 space-y-3">
                                 <div>
                                     <h3 className="font-semibold mb-1">
@@ -876,7 +882,7 @@ export function DepositModal({
                                         <div className="shrink-0">
                                             <div className="w-24 h-24 sm:w-40 sm:h-40 rounded-lg flex items-center justify-center p-2">
                                                 <QRCode
-                                                    value={depositAddress}
+                                                    value={depositInfo.address}
                                                     size={112}
                                                     style={{
                                                         height: "auto",
@@ -895,11 +901,11 @@ export function DepositModal({
                                             <div className="rounded-lg flex justify-between gap-2">
                                                 <code className="font-mono break-all text-xs sm:text-sm">
                                                     {formatAddress(
-                                                        depositAddress,
+                                                        depositInfo.address,
                                                     )}
                                                 </code>
                                                 <CopyButton
-                                                    text={depositAddress}
+                                                    text={depositInfo.address}
                                                     toastMessage="Address copied to clipboard"
                                                     variant="unstyled"
                                                     size="icon-sm"
@@ -907,9 +913,50 @@ export function DepositModal({
                                                     iconClassName="w-5 h-5 text-muted-foreground"
                                                 />
                                             </div>
+
+                                            {/* Memo field */}
+                                            {depositInfo.memo && (
+                                                <>
+                                                    <label className="text-sm text-muted-foreground">
+                                                        Memo
+                                                    </label>
+                                                    <div className="rounded-lg flex justify-between gap-2">
+                                                        <code className="font-mono break-all text-xs sm:text-sm">
+                                                            {depositInfo.memo}
+                                                        </code>
+                                                        <CopyButton
+                                                            text={
+                                                                depositInfo.memo
+                                                            }
+                                                            toastMessage="Memo copied to clipboard"
+                                                            variant="unstyled"
+                                                            size="icon-sm"
+                                                            className="shrink-0"
+                                                            iconClassName="w-5 h-5 text-muted-foreground"
+                                                        />
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Memo warning */}
+                                {depositInfo.memo && (
+                                    <div className="flex gap-2 items-start text-sm bg-destructive/10 text-destructive rounded-lg p-3">
+                                        <TriangleAlert className="h-4 w-4 shrink-0 mt-0.5" />
+                                        <span>
+                                            You{" "}
+                                            <span className="font-semibold">
+                                                must
+                                            </span>{" "}
+                                            include the memo when sending funds
+                                            to this address. Sending without the
+                                            memo may result in permanent loss of
+                                            funds.
+                                        </span>
+                                    </div>
+                                )}
 
                                 {/* Warning Messages with CircleCheck Icons */}
                                 <div className="space-y-2 mt-4">
