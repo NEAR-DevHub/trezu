@@ -301,13 +301,23 @@ async function apiRequest(endpoint, method = 'GET', body = null, expectError = f
 async function waitForDaoMembershipSync(accountId, daoAccountId, timeoutMs = 60000) {
   console.log(`\n⏳ Waiting for DAO membership sync (${daoAccountId} -> ${accountId})...`);
 
-  // Register/refresh monitored account to mark DAO dirty and trigger sync.
+  // Ensure DAO exists in backend tables and user has a row in dao_members.
+  // This endpoint internally registers the DAO in `daos` (if missing).
+  await apiRequest('/api/user/treasuries/save', 'POST', {
+    accountId,
+    daoId: daoAccountId,
+  }, true);
+
+  // Register/refresh monitored account (used by policy sync stale/active paths).
   await apiRequest('/api/monitored-accounts', 'POST', { accountId: daoAccountId }, true);
+
+  // Explicitly mark dirty to trigger high-priority sync cycle.
+  await apiRequest('/api/dao/mark-dirty', 'POST', { daoId: daoAccountId }, true);
 
   const startedAt = Date.now();
   while (Date.now() - startedAt < timeoutMs) {
     const treasuries = await apiRequest(
-      `/api/user/treasuries?account_id=${encodeURIComponent(accountId)}`,
+      `/api/user/treasuries?accountId=${encodeURIComponent(accountId)}`,
       'GET',
       null,
       true,
@@ -321,6 +331,8 @@ async function waitForDaoMembershipSync(accountId, daoAccountId, timeoutMs = 600
       }
     }
 
+    // Keep nudging dirty flag in case another process clears it before this DAO is synced.
+    await apiRequest('/api/dao/mark-dirty', 'POST', { daoId: daoAccountId }, true);
     await sleep(2000);
   }
 
@@ -491,18 +503,6 @@ async function approveProposal(account, daoAccountId, proposalId) {
   });
 
   console.log(`✅ Proposal ${proposalId} approved`);
-}
-
-/**
- * Get proposal status
- */
-async function getProposalStatus(account, daoAccountId, proposalId) {
-  const proposal = await account.viewFunction({
-    contractId: daoAccountId,
-    methodName: 'get_proposal',
-    args: { id: proposalId },
-  });
-  return proposal.status;
 }
 
 // ============================================================================
@@ -1116,3 +1116,4 @@ process.exit(0);
   }
   process.exit(1);
 }
+
