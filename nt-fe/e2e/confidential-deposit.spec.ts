@@ -357,23 +357,21 @@ test("Confidential deposit — dashboard deposit modal flow", async ({
         page.getByText("Select asset and network to see deposit address"),
     ).toBeVisible();
 
-    // Open the asset selector to pick NEAR explicitly
-    // (auto-selection may pick USDC which has multiple networks)
-    const assetSelectButton = page.locator("button", {
-        hasText: "Select Asset",
-    });
-    // The asset selector button shows either "Select Asset" or the auto-selected asset
-    const assetTrigger = (await assetSelectButton.isVisible())
-        ? assetSelectButton
-        : page
-              .locator("button")
-              .filter({ hasText: /USD Coin|Near/ })
-              .first();
+    // Open the asset selector to pick NEAR explicitly.
+    // Auto-selection may pick USDC (multiple networks → no auto network select).
+    // The button shows either the "Select Asset" placeholder or the auto-selected
+    // asset name. Use a single regex to match either state.
+    const assetTrigger = page
+        .locator("button")
+        .filter({ hasText: /Select Asset|USD Coin|Near/ })
+        .first();
+    await expect(assetTrigger).toBeVisible({ timeout: 10_000 });
     await assetTrigger.click();
 
-    // Asset selection modal should open
+    // Asset selection modal opens as a nested dialog on top of the deposit modal
+    const assetPickerDialog = page.getByRole("dialog").last();
     await expect(
-        page.getByRole("heading", { name: "Select Asset" }),
+        assetPickerDialog.getByRole("heading", { name: "Select Asset" }),
     ).toBeVisible({ timeout: 10_000 });
 
     // ════════════════════════════════════════════════════
@@ -382,19 +380,26 @@ test("Confidential deposit — dashboard deposit modal flow", async ({
     // ════════════════════════════════════════════════════
 
     // "Other" option should NOT be present for confidential treasuries
-    await expect(page.getByText("Other", { exact: true })).not.toBeVisible();
+    await expect(
+        assetPickerDialog.getByText("Other", { exact: true }),
+    ).not.toBeVisible();
 
     // Bridge assets should be listed
-    await expect(page.getByText("USD Coin")).toBeVisible();
+    await expect(assetPickerDialog.getByText("USD Coin")).toBeVisible();
 
-    // Select NEAR — it has only 1 network so network auto-selects
-    await page.getByText("Near").click();
+    // Select NEAR — it has only 1 network so network auto-selects.
+    // Use exact match to avoid matching "Near Protocol" network labels.
+    await assetPickerDialog
+        .locator('[class*="capitalize"]')
+        .getByText("Near", { exact: true })
+        .click();
 
     // ════════════════════════════════════════════════════
     // Phase 4: Verify deposit address comes from intents API
     // ════════════════════════════════════════════════════
 
-    // NEAR has one network → auto-selects, triggering deposit address fetch
+    // NEAR has one network → auto-selects, triggering deposit address fetch.
+    // Wait for the deposit address section to appear.
     await expect(page.getByText("Deposit Address")).toBeVisible({
         timeout: 15_000,
     });
