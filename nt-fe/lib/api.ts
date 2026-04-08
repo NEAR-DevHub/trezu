@@ -228,6 +228,7 @@ export async function getBalanceChart(
 
         const response = await axios.get<BalanceChartData>(
             `${url}?${queryParams.toString()}`,
+            { withCredentials: true },
         );
 
         return response.data;
@@ -362,6 +363,7 @@ export async function getRecentActivity(
         }
         const response = await axios.get<RecentActivityResponse>(url, {
             params,
+            withCredentials: true,
         });
         return response.data;
     } catch (error) {
@@ -387,6 +389,7 @@ export async function getRecentActivitySenders(
                         ? { transactionType }
                         : {}),
                 },
+                withCredentials: true,
             },
         );
         return response.data.options ?? [];
@@ -413,6 +416,7 @@ export async function getRecentActivityRecipients(
                         ? { transactionType }
                         : {}),
                 },
+                withCredentials: true,
             },
         );
         return response.data.options ?? [];
@@ -1152,7 +1156,7 @@ export async function saveUserTreasury(
 
     try {
         const url = `${BACKEND_API_BASE}/user/treasuries/save`;
-        await axios.post(url, { accountId, daoId });
+        await axios.post(url, { accountId, daoId }, { withCredentials: true });
     } catch (error) {
         console.error(
             `Failed to save treasury ${daoId} for ${accountId}`,
@@ -1174,7 +1178,11 @@ export async function setUserTreasuryHidden(
 
     try {
         const url = `${BACKEND_API_BASE}/user/treasuries/hide`;
-        await axios.post(url, { accountId, daoId, hidden });
+        await axios.post(
+            url,
+            { accountId, daoId, hidden },
+            { withCredentials: true },
+        );
     } catch (error) {
         console.error(
             `Failed to set hidden=${hidden} for treasury ${daoId} and ${accountId}`,
@@ -1195,7 +1203,7 @@ export async function removeUserTreasury(
 
     try {
         const url = `${BACKEND_API_BASE}/user/treasuries/remove`;
-        await axios.post(url, { accountId, daoId });
+        await axios.post(url, { accountId, daoId }, { withCredentials: true });
     } catch (error) {
         console.error(
             `Failed to remove saved treasury ${daoId} for ${accountId}`,
@@ -1439,6 +1447,7 @@ export async function getExportHistory(
             params: {
                 accountId,
             },
+            withCredentials: true,
         },
     );
     return response.data;

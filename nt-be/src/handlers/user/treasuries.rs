@@ -1,3 +1,4 @@
+use crate::auth::AuthUser;
 use crate::handlers::treasury::config::{TreasuryConfig, fetch_treasury_config};
 use crate::services::register_new_dao;
 use axum::{
@@ -143,8 +144,16 @@ pub async fn get_user_treasuries(
 
 pub async fn save_user_treasury(
     State(state): State<Arc<AppState>>,
+    user: AuthUser,
     Json(payload): Json<SaveUserTreasuryRequest>,
 ) -> Result<StatusCode, (StatusCode, String)> {
+    if user.account_id != payload.account_id.as_str() {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "You are not allowed to save this treasury".to_string(),
+        ));
+    }
+
     save_user_treasury_in_db(
         &state.db_pool,
         payload.account_id.as_str(),
@@ -169,8 +178,16 @@ pub async fn save_user_treasury(
 
 pub async fn hide_user_treasury(
     State(state): State<Arc<AppState>>,
+    user: AuthUser,
     Json(payload): Json<HideUserTreasuryRequest>,
 ) -> Result<StatusCode, (StatusCode, String)> {
+    if user.account_id != payload.account_id.as_str() {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "You are not allowed to hide this treasury".to_string(),
+        ));
+    }
+
     let hidden = payload.hidden.unwrap_or(true);
 
     set_user_treasury_hidden_in_db(
@@ -198,8 +215,16 @@ pub async fn hide_user_treasury(
 
 pub async fn remove_user_treasury(
     State(state): State<Arc<AppState>>,
+    user: AuthUser,
     Json(payload): Json<RemoveUserTreasuryRequest>,
 ) -> Result<StatusCode, (StatusCode, String)> {
+    if user.account_id != payload.account_id.as_str() {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "You are not allowed to remove this treasury".to_string(),
+        ));
+    }
+
     remove_user_treasury_in_db(
         &state.db_pool,
         payload.account_id.as_str(),

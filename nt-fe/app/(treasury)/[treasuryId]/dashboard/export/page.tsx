@@ -485,7 +485,7 @@ export default function ExportActivityPage() {
 
             const url = `${BACKEND_API_BASE}/api/balance-history/export?${params.toString()}`;
 
-            const response = await fetch(url);
+            const response = await fetch(url, { credentials: "include" });
 
             if (!response.ok) {
                 const errorText = await response.text();
