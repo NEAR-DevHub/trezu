@@ -119,7 +119,8 @@ pub async fn get_quote(
     if let (Some(fee_bps), Some(recipient)) = (
         state.env_vars.oneclick_app_fee_bps,
         state.env_vars.oneclick_app_fee_recipient.as_ref(),
-    ) {
+    ) && oneclick_request.origin_asset != oneclick_request.destination_asset
+    {
         oneclick_request.app_fees = Some(vec![AppFee {
             recipient: recipient.clone(),
             fee: fee_bps,
