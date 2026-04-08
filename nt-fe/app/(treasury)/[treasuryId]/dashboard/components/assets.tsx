@@ -8,13 +8,14 @@ import { StepperHeader } from "@/components/step-wizard";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useEffect, useMemo, useState } from "react";
 import { useAggregatedTokens } from "@/hooks/use-assets";
+import { ConfidentialState } from "@/components/confidential-state";
 
 interface Props {
     tokens: TreasuryAsset[];
-    isLoading?: boolean;
+    state: "loading" | "hidden" | "ready";
 }
 
-export default function Assets({ tokens, isLoading }: Props) {
+export default function Assets({ tokens, state }: Props) {
     const aggregatedTokens = useAggregatedTokens(tokens);
     const [filterLessThanDollar, setFilterLessThanDollar] = useState(false);
 
@@ -33,6 +34,8 @@ export default function Assets({ tokens, isLoading }: Props) {
     );
 
     const shouldShowLessThanDollar = total > 1 && isThereSomethingToHide;
+    const isLoading = state === "loading";
+    const isHidden = state === "hidden";
 
     // Auto-check "Hide assets <1 USD" on initial load only
     const [initialized, setInitialized] = useState(false);
@@ -52,6 +55,10 @@ export default function Assets({ tokens, isLoading }: Props) {
     );
 
     const renderContent = () => {
+        if (isHidden) {
+            return <ConfidentialState skeleton={<AssetsTableSkeleton />} />;
+        }
+
         if (isLoading) {
             return <AssetsTableSkeleton />;
         }

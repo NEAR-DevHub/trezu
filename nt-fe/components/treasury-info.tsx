@@ -24,14 +24,16 @@ export function TreasuryLogo({ logo }: { logo?: string }) {
 
 export function TreasuryBalance({
     daoId,
+    isConfidential,
     className,
     skeletonClassName,
 }: {
     daoId: string;
+    isConfidential?: boolean;
     className?: string;
     skeletonClassName?: string;
 }) {
-    const { data, isLoading } = useAssets(daoId);
+    const { data, isLoading } = useAssets(daoId, { enabled: !isConfidential });
     if (isLoading)
         return <Skeleton className={skeletonClassName ?? "h-4 w-16"} />;
     if (!data?.tokens) return null;
@@ -40,7 +42,7 @@ export function TreasuryBalance({
         .reduce((sum, t) => sum + t.balanceUSD, 0);
     return (
         <span className={cn("text-sm text-muted-foreground", className)}>
-            {formatCurrency(balanceExcludingLockup)}
+            {isConfidential ? "••••••" : formatCurrency(balanceExcludingLockup)}
         </span>
     );
 }

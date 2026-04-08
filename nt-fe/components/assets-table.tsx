@@ -850,8 +850,8 @@ export function AssetsTableSkeleton() {
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {Array.from({ length: 4 }).map((_, index) => (
-                    <TableRow key={index}>
+                {Array.from({ length: 3 }).map((_, index) => (
+                    <TableRow key={index} className="hover:bg-transparent">
                         <TableCell className="p-4 pl-0">
                             <div className="flex items-center gap-3">
                                 <Skeleton className="h-10 w-10 rounded-full" />
@@ -881,12 +881,6 @@ export function AssetsTableSkeleton() {
                         </TableCell>
                         <TableCell className="p-4 hidden sm:table-cell">
                             <Skeleton className="h-4 w-16 ml-auto" />
-                        </TableCell>
-                        <TableCell className="p-4 hidden sm:table-cell">
-                            <div className="flex items-center justify-end gap-3">
-                                <Skeleton className="h-2 w-[100px] rounded-full" />
-                                <Skeleton className="h-4 w-12" />
-                            </div>
                         </TableCell>
                         <TableCell className="p-4 hidden sm:table-cell">
                             <Skeleton className="h-8 w-8 rounded" />

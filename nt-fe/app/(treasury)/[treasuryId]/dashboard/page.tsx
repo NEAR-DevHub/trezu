@@ -21,7 +21,9 @@ import { CreateBanner } from "@/features/onboarding/components/create-banner";
 export default function AppPage() {
     const { treasuryId, isConfidential, isGuestTreasury } = useTreasury();
     const isHidden = isConfidential && isGuestTreasury;
-    const { data, isLoading, isPending } = useAssets(treasuryId);
+    const { data, isLoading, isPending } = useAssets(treasuryId, {
+        enabled: !isHidden,
+    });
     const isAssetsLoading = isLoading || isPending;
     const { tokens } = data || {
         tokens: [],
@@ -48,7 +50,16 @@ export default function AppPage() {
                         onDepositClick={() => setIsDepositModalOpen(true)}
                         isLoading={isAssetsLoading}
                     />
-                    <Assets tokens={tokens} isLoading={isAssetsLoading} />
+                    <Assets
+                        tokens={tokens}
+                        state={
+                            isHidden
+                                ? "hidden"
+                                : isAssetsLoading
+                                  ? "loading"
+                                  : "ready"
+                        }
+                    />
                     <RecentActivity />
                 </div>
                 <div className="flex flex-col gap-5 w-full lg:w-2/5">

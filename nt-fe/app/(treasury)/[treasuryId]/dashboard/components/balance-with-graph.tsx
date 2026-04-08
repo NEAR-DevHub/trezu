@@ -20,7 +20,7 @@ import { useBalanceChart } from "@/hooks/use-treasury-queries";
 import { useTreasury } from "@/hooks/use-treasury";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { PageCard } from "@/components/card";
-import { formatBalance, formatCurrency } from "@/lib/utils";
+import { cn, formatBalance, formatCurrency } from "@/lib/utils";
 import type { ChartInterval } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AuthButton } from "@/components/auth-button";
@@ -542,159 +542,167 @@ export default function BalanceWithGraph({
                     <div className="flex-1">
                         <h3 className="text-xs font-medium text-muted-foreground flex items-center gap-1">
                             Total Balance
-                            {selectedToken === "all" ? (
-                                <ChartCaveatsTooltip
-                                    entries={[
-                                        ...(chartExcludedSymbols.length > 0
-                                            ? [
-                                                  {
-                                                      title: "Excluded tokens",
-                                                      tokens: chartExcludedSymbols.join(
-                                                          ", ",
-                                                      ),
-                                                      reason: "No price history. Select a token to see its balance changes.",
-                                                  },
-                                              ]
-                                            : []),
-                                        ...(partiallyExcludedSymbols.length > 0
-                                            ? [
-                                                  {
-                                                      title: "Partially excluded",
-                                                      tokens: partiallyExcludedSymbols.join(
-                                                          ", ",
-                                                      ),
-                                                      reason: "Vesting balance not counted.",
-                                                  },
-                                              ]
-                                            : []),
-                                        ...(hasLockupTokens &&
-                                        partiallyExcludedSymbols.length === 0
-                                            ? [
-                                                  {
-                                                      title: "Excluded tokens",
-                                                      tokens: "Vesting tokens",
-                                                      reason: "Vesting is not supported in the chart.",
-                                                  },
-                                              ]
-                                            : []),
-                                    ]}
-                                />
-                            ) : (
-                                <ChartCaveatsTooltip
-                                    entries={
-                                        selectedTokenGroup?.tokens.some(
-                                            (t) => t.residency === "Lockup",
-                                        )
-                                            ? [
-                                                  {
-                                                      title: "Partially excluded",
-                                                      tokens: selectedToken,
-                                                      reason: "Vesting balance not counted.",
-                                                  },
-                                              ]
-                                            : []
-                                    }
-                                />
-                            )}
+                            <div className={cn(isHidden ? "hidden" : "")}>
+                                {selectedToken === "all" ? (
+                                    <ChartCaveatsTooltip
+                                        entries={[
+                                            ...(chartExcludedSymbols.length > 0
+                                                ? [
+                                                      {
+                                                          title: "Excluded tokens",
+                                                          tokens: chartExcludedSymbols.join(
+                                                              ", ",
+                                                          ),
+                                                          reason: "No price history. Select a token to see its balance changes.",
+                                                      },
+                                                  ]
+                                                : []),
+                                            ...(partiallyExcludedSymbols.length >
+                                            0
+                                                ? [
+                                                      {
+                                                          title: "Partially excluded",
+                                                          tokens: partiallyExcludedSymbols.join(
+                                                              ", ",
+                                                          ),
+                                                          reason: "Vesting balance not counted.",
+                                                      },
+                                                  ]
+                                                : []),
+                                            ...(hasLockupTokens &&
+                                            partiallyExcludedSymbols.length ===
+                                                0
+                                                ? [
+                                                      {
+                                                          title: "Excluded tokens",
+                                                          tokens: "Vesting tokens",
+                                                          reason: "Vesting is not supported in the chart.",
+                                                      },
+                                                  ]
+                                                : []),
+                                        ]}
+                                    />
+                                ) : (
+                                    <ChartCaveatsTooltip
+                                        entries={
+                                            selectedTokenGroup?.tokens.some(
+                                                (t) => t.residency === "Lockup",
+                                            )
+                                                ? [
+                                                      {
+                                                          title: "Partially excluded",
+                                                          tokens: selectedToken,
+                                                          reason: "Vesting balance not counted.",
+                                                      },
+                                                  ]
+                                                : []
+                                        }
+                                    />
+                                )}
+                            </div>
                         </h3>
                         <p className="text-3xl font-bold mt-2">
-                            {formatCurrency(Number(balance))}
+                            {!isHidden
+                                ? formatCurrency(Number(balance))
+                                : "••••••"}
                         </p>
                     </div>
-                    <div className="hidden md:flex md:flex-row items-end flex-col gap-1 md:gap-2 md:items-center">
-                        <Select
-                            value={selectedToken}
-                            onValueChange={setSelectedToken}
-                        >
-                            <SelectTrigger
+                    {!isHidden && (
+                        <div className="hidden md:flex md:flex-row items-end flex-col gap-1 md:gap-2 md:items-center">
+                            <Select
+                                value={selectedToken}
+                                onValueChange={setSelectedToken}
+                            >
+                                <SelectTrigger
+                                    size="sm"
+                                    className="min-w-[140px] w-full"
+                                    disabled={
+                                        isLoadingTokens ||
+                                        isLoading ||
+                                        chartData.data.length === 0
+                                    }
+                                >
+                                    <SelectValue>
+                                        {selectedToken === "all" ? (
+                                            <div className="flex items-center gap-2">
+                                                <Coins className="size-4" />
+                                                <span>All Tokens</span>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-2">
+                                                {selectedTokenGroup?.icon && (
+                                                    <img
+                                                        src={
+                                                            selectedTokenGroup.icon
+                                                        }
+                                                        alt={
+                                                            selectedTokenGroup.symbol
+                                                        }
+                                                        width={16}
+                                                        height={16}
+                                                        className="rounded-full"
+                                                    />
+                                                )}
+                                                <span>{selectedToken}</span>
+                                            </div>
+                                        )}
+                                    </SelectValue>
+                                </SelectTrigger>
+                                <SelectContent className="max-h-[300px] overflow-y-auto">
+                                    <SelectItem value="all">
+                                        <div className="flex items-center gap-2">
+                                            <Coins className="size-4" />
+                                            <span>All Tokens</span>
+                                        </div>
+                                    </SelectItem>
+                                    {groupedTokens.map((group) => (
+                                        <SelectItem
+                                            key={group.symbol}
+                                            value={group.symbol}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                {group.icon && (
+                                                    <img
+                                                        src={group.icon}
+                                                        alt={group.symbol}
+                                                        width={16}
+                                                        height={16}
+                                                        className="rounded-full"
+                                                    />
+                                                )}
+                                                <span>{group.symbol}</span>
+                                            </div>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <ToggleGroup
+                                type="single"
                                 size="sm"
-                                className="min-w-[140px] w-full"
+                                variant={"default"}
+                                className="border border-input"
                                 disabled={
                                     isLoadingTokens ||
                                     isLoading ||
                                     chartData.data.length === 0
                                 }
+                                value={selectedPeriod}
+                                onValueChange={(e) =>
+                                    e && setSelectedPeriod(e as TimePeriod)
+                                }
                             >
-                                <SelectValue>
-                                    {selectedToken === "all" ? (
-                                        <div className="flex items-center gap-2">
-                                            <Coins className="size-4" />
-                                            <span>All Tokens</span>
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center gap-2">
-                                            {selectedTokenGroup?.icon && (
-                                                <img
-                                                    src={
-                                                        selectedTokenGroup.icon
-                                                    }
-                                                    alt={
-                                                        selectedTokenGroup.symbol
-                                                    }
-                                                    width={16}
-                                                    height={16}
-                                                    className="rounded-full"
-                                                />
-                                            )}
-                                            <span>{selectedToken}</span>
-                                        </div>
-                                    )}
-                                </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent className="max-h-[300px] overflow-y-auto">
-                                <SelectItem value="all">
-                                    <div className="flex items-center gap-2">
-                                        <Coins className="size-4" />
-                                        <span>All Tokens</span>
-                                    </div>
-                                </SelectItem>
-                                {groupedTokens.map((group) => (
-                                    <SelectItem
-                                        key={group.symbol}
-                                        value={group.symbol}
+                                {TIME_PERIODS.map((e) => (
+                                    <ToggleGroupItem
+                                        key={e}
+                                        value={e}
+                                        className="hover:text-foreground"
                                     >
-                                        <div className="flex items-center gap-2">
-                                            {group.icon && (
-                                                <img
-                                                    src={group.icon}
-                                                    alt={group.symbol}
-                                                    width={16}
-                                                    height={16}
-                                                    className="rounded-full"
-                                                />
-                                            )}
-                                            <span>{group.symbol}</span>
-                                        </div>
-                                    </SelectItem>
+                                        {e}
+                                    </ToggleGroupItem>
                                 ))}
-                            </SelectContent>
-                        </Select>
-                        <ToggleGroup
-                            type="single"
-                            size="sm"
-                            variant={"default"}
-                            className="border border-input"
-                            disabled={
-                                isLoadingTokens ||
-                                isLoading ||
-                                chartData.data.length === 0
-                            }
-                            value={selectedPeriod}
-                            onValueChange={(e) =>
-                                e && setSelectedPeriod(e as TimePeriod)
-                            }
-                        >
-                            {TIME_PERIODS.map((e) => (
-                                <ToggleGroupItem
-                                    key={e}
-                                    value={e}
-                                    className="hover:text-foreground"
-                                >
-                                    {e}
-                                </ToggleGroupItem>
-                            ))}
-                        </ToggleGroup>
-                    </div>
+                            </ToggleGroup>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -729,7 +737,12 @@ export default function BalanceWithGraph({
                     <Database className="size-4" /> Earn
                 </AuthButton> */}
             </div>
-            <div className="mt-3 flex gap-2 md:hidden">
+            <div
+                className={cn(
+                    "mt-3 flex gap-2 md:hidden",
+                    isHidden ? "hidden" : "",
+                )}
+            >
                 <Select value={selectedToken} onValueChange={setSelectedToken}>
                     <SelectTrigger size="sm" className="w-[140px]">
                         <SelectValue>
@@ -797,19 +810,21 @@ export default function BalanceWithGraph({
                     </SelectContent>
                 </Select>
             </div>
-            {isLoading || (isFetching && chartData.data.length === 0) ? (
-                <div className="h-56 w-full space-y-3 p-4">
-                    <Skeleton className="h-50 w-full" />
-                </div>
-            ) : (
-                <BalanceChart
-                    data={displayChartData.data}
-                    symbol={selectedTokenGroup?.symbol}
-                    timePeriod={selectedPeriod}
-                    onMouseEnter={handleChartMouseEnter}
-                    onMouseLeave={handleChartMouseLeave}
-                />
-            )}
+            <div className={cn(isHidden ? "hidden" : "")}>
+                {isLoading || (isFetching && chartData.data.length === 0) ? (
+                    <div className="h-56 w-full space-y-3 p-4">
+                        <Skeleton className="h-50 w-full" />
+                    </div>
+                ) : (
+                    <BalanceChart
+                        data={displayChartData.data}
+                        symbol={selectedTokenGroup?.symbol}
+                        timePeriod={selectedPeriod}
+                        onMouseEnter={handleChartMouseEnter}
+                        onMouseLeave={handleChartMouseLeave}
+                    />
+                )}
+            </div>
         </PageCard>
     );
 }
