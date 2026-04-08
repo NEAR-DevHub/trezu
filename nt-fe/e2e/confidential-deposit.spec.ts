@@ -388,11 +388,8 @@ test("Confidential deposit — dashboard deposit modal flow", async ({
     await expect(assetPickerDialog.getByText("USD Coin")).toBeVisible();
 
     // Select NEAR — it has only 1 network so network auto-selects.
-    // Use exact match to avoid matching "Near Protocol" network labels.
-    await assetPickerDialog
-        .locator('[class*="capitalize"]')
-        .getByText("Near", { exact: true })
-        .click();
+    // Use exact match to avoid matching the "NEAR" symbol text (uppercase).
+    await assetPickerDialog.getByText("Near", { exact: true }).first().click();
 
     // ════════════════════════════════════════════════════
     // Phase 4: Verify deposit address comes from intents API
