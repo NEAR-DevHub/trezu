@@ -57,6 +57,7 @@ import { ExportButton } from "@/components/export-button";
 import Link from "next/link";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { StepperHeader } from "@/components/step-wizard";
+import { ConfidentialState } from "@/components/confidential-state";
 
 const ITEMS_ON_DASHBOARD = 10;
 const MAX_ITEMS = 100;
@@ -140,8 +141,27 @@ const groupStakingActivities = (
     return grouped;
 };
 
+export function RecentActivitySkeleton() {
+    return (
+        <div className="space-y-4 px-4 py-2">
+            {[...Array(3)].map((_, i) => (
+                <div key={i} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <Skeleton className="h-10 w-10 rounded-full" />
+                        <div className="space-y-2">
+                            <Skeleton className="h-10 w-50" />
+                        </div>
+                    </div>
+                    <div className="text-right space-y-2">
+                        <Skeleton className="h-10 w-24" />
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}
 export function RecentActivity() {
-    const { treasuryId } = useTreasury();
+    const { treasuryId, isConfidential, isGuestTreasury } = useTreasury();
     const [hideSmallTransactions, setHideSmallTransactions] = useState(false);
     const [selectedActivity, setSelectedActivity] =
         useState<RecentActivityType | null>(null);
@@ -156,6 +176,7 @@ export function RecentActivity() {
         0,
         hideSmallTransactions ? 1 : undefined,
     );
+    const isHidden = isConfidential && isGuestTreasury;
 
     const { data: planDetails } = useSubscription(treasuryId);
 
@@ -438,10 +459,6 @@ export function RecentActivity() {
                 <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3 px-4">
                     <div className="space-y-1">
                         <StepperHeader title="Recent Transactions" />
-                        <CardDescription>
-                            Sent and received transactions ({historyDescription}
-                            )
-                        </CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
                         {/* TODO: Uncomment after price integration */}
@@ -460,41 +477,35 @@ export function RecentActivity() {
                                 Hide transactions &lt;1USD
                             </label>
                         </div> */}
-                        <ExportButton />
-                        <Link href={`/${treasuryId}/dashboard/activity`}>
-                            <Button
-                                variant="secondary"
-                                size={isMobile ? "icon" : "default"}
-                                className="h-9 px-3"
-                            >
-                                <span className="hidden sm:inline">
-                                    View All
-                                </span>
-                                <ChevronRight className="h-4 w-4" />
-                            </Button>
-                        </Link>
+                        {!isHidden && (
+                            <>
+                                {" "}
+                                <ExportButton />
+                                <Link
+                                    href={`/${treasuryId}/dashboard/activity`}
+                                >
+                                    <Button
+                                        variant="secondary"
+                                        size={isMobile ? "icon" : "default"}
+                                        className="h-9 px-3"
+                                    >
+                                        <span className="hidden sm:inline">
+                                            View All
+                                        </span>
+                                        <ChevronRight className="h-4 w-4" />
+                                    </Button>
+                                </Link>
+                            </>
+                        )}
                     </div>
                 </CardHeader>
                 <CardContent className="px-2">
-                    {isLoading ? (
-                        <div className="space-y-4 px-4 py-2">
-                            {[...Array(3)].map((_, i) => (
-                                <div
-                                    key={i}
-                                    className="flex items-center justify-between"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <Skeleton className="h-10 w-10 rounded-full" />
-                                        <div className="space-y-2">
-                                            <Skeleton className="h-10 w-50" />
-                                        </div>
-                                    </div>
-                                    <div className="text-right space-y-2">
-                                        <Skeleton className="h-10 w-24" />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                    {isHidden ? (
+                        <ConfidentialState
+                            skeleton={<RecentActivitySkeleton />}
+                        />
+                    ) : isLoading ? (
+                        <RecentActivitySkeleton />
                     ) : activities.length === 0 ? (
                         <EmptyState
                             icon={Clock}

@@ -59,7 +59,7 @@ pub async fn authenticate(
         .http_client
         .post(&url)
         .header("content-type", "application/json");
-    if let Some(api_key) = super::config::oneclick_api_key() {
+    if let Some(api_key) = &state.env_vars.oneclick_api_key {
         req = req.header("x-api-key", api_key);
     }
     let response = req.json(&request.signed_data).send().await.map_err(|e| {
@@ -202,7 +202,7 @@ pub async fn refresh_dao_jwt(
         .http_client
         .post(&url)
         .header("content-type", "application/json");
-    if let Some(api_key) = super::config::oneclick_api_key() {
+    if let Some(api_key) = &state.env_vars.oneclick_api_key {
         req = req.header("x-api-key", api_key);
     }
     let response = req

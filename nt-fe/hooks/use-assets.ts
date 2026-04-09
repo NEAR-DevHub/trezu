@@ -34,12 +34,13 @@ export function useAssets(
     options?: {
         onlyPositiveBalance?: boolean;
         onlySupportedTokens?: boolean;
+        enabled?: boolean;
     },
 ) {
     return useQuery({
         queryKey: ["treasuryAssets", treasuryId, options?.onlyPositiveBalance],
         queryFn: () => getTreasuryAssets(treasuryId!),
-        enabled: !!treasuryId,
+        enabled: !!treasuryId && !!options?.enabled,
         staleTime: 1000 * 5, // 5 seconds (assets change frequently)
         select: (data) => {
             return {

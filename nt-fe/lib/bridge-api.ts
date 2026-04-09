@@ -29,6 +29,8 @@ export async function fetchBridgeTokens() {
 export const fetchDepositAddress = async (
     accountId: string,
     chainId: string,
+    tokenId?: string,
+    amount?: string,
 ) => {
     try {
         if (!accountId || !chainId) {
@@ -40,7 +42,10 @@ export const fetchDepositAddress = async (
             {
                 accountId: accountId,
                 chain: chainId,
+                tokenId: tokenId,
+                amount: amount,
             },
+            { withCredentials: true },
         );
 
         return response.data || null;

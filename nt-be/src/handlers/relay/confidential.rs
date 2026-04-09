@@ -11,8 +11,6 @@ use serde_json::Value;
 use sqlx::PgPool;
 use std::sync::Arc;
 
-use crate::handlers::intents::confidential::config::oneclick_api_key;
-
 /// Fetch the Ed25519 derived public key for a DAO's path from v1.signer.
 pub(crate) async fn fetch_mpc_public_key(
     state: &Arc<AppState>,
@@ -229,7 +227,7 @@ pub async fn try_auto_submit_intent(state: &Arc<AppState>, treasury_id: &str, re
         .post(&url)
         .header("content-type", "application/json");
 
-    if let Some(api_key) = oneclick_api_key() {
+    if let Some(api_key) = &state.env_vars.oneclick_api_key {
         req = req.header("x-api-key", api_key);
     }
 

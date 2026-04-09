@@ -559,7 +559,8 @@ async fn refresh_public_dashboard_snapshot_for_date(
                 .acquire_owned()
                 .await
                 .expect("semaphore should not close");
-            let result = compute_user_assets(&state, &account_id).await;
+            // TODO: we need to decide whether confidential treasuries should be included in the public dashboard
+            let result = compute_user_assets(&state, &account_id, false).await;
             (account_id, is_trezu, result)
         });
     }

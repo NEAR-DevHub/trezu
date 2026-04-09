@@ -14,6 +14,19 @@ async fn test_confidential_endpoints() {
     let server = TestServer::start().await;
     let client = reqwest::Client::new();
 
+    // Add test.sputnik-dao.near to the database as confidential account
+    let db_url =
+        std::env::var("DATABASE_URL").expect("DATABASE_URL must be set for integration tests");
+    let pool = sqlx::PgPool::connect(&db_url)
+        .await
+        .expect("Failed to connect to test DB");
+    sqlx::query("INSERT INTO monitored_accounts (account_id, enabled, is_confidential_account) VALUES ($1, true, true) ON CONFLICT DO NOTHING")
+        .bind("test.sputnik-dao.near")
+        .execute(&pool)
+        .await
+        .unwrap();
+    pool.close().await;
+
     // ── All confidential endpoints require auth ──
 
     let resp = client
@@ -52,7 +65,7 @@ async fn test_confidential_endpoints() {
     );
 
     let resp = client
-        .get(server.url("/api/confidential-intents/balances?daoId=test.sputnik-dao.near"))
+        .get(server.url("/api/user/assets?accountId=test.sputnik-dao.near"))
         .send()
         .await
         .unwrap();

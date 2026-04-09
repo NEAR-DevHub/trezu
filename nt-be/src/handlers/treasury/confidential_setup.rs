@@ -18,7 +18,6 @@ use tokio::sync::mpsc;
 use super::create::{ProgressEvent, send_progress};
 use crate::AppState;
 use crate::constants::INTENTS_CONTRACT_ID;
-use crate::handlers::intents::confidential::config::oneclick_api_key;
 use crate::handlers::intents::confidential::prepare_auth::build_auth_proposal;
 use crate::handlers::relay::confidential::{extract_mpc_signature, fetch_mpc_public_key};
 
@@ -268,7 +267,7 @@ async fn authenticate_with_1click(
         .post(&url)
         .header("content-type", "application/json");
 
-    if let Some(api_key) = oneclick_api_key() {
+    if let Some(api_key) = &state.env_vars.oneclick_api_key {
         req = req.header("x-api-key", api_key);
     }
 

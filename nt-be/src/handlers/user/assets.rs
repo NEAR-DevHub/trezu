@@ -24,6 +24,7 @@ use crate::{
         intents_chains::ChainIcons,
         intents_tokens::{find_token_by_symbol, find_unified_asset_id},
     },
+    handlers::intents::confidential::authenticate::refresh_dao_jwt,
     handlers::token::{TokenMetadata as TokenMetadataResponse, fetch_tokens_with_defuse_extension},
 };
 
@@ -374,99 +375,185 @@ pub async fn fetch_near_balance(
         })
 }
 
+#[derive(Deserialize, Debug)]
+struct ConfidentialBalanceEntry {
+    available: String,
+    #[serde(rename = "tokenId")]
+    token_id: String,
+}
+
+#[derive(Deserialize, Debug)]
+struct ConfidentialBalancesResponse {
+    balances: Vec<ConfidentialBalanceEntry>,
+}
+
+/// Fetch confidential balances from the 1Click API and return them as
+/// `(token_id, balance)` pairs in the same format that intents tokens use,
+/// so `build_intents_tokens` can map them to `SimplifiedToken`.
+async fn fetch_confidential_balances(
+    state: &Arc<AppState>,
+    account: &AccountId,
+) -> Result<Vec<(String, String)>, (StatusCode, String)> {
+    let dao_id = account.as_ref();
+
+    let access_token = refresh_dao_jwt(state, dao_id).await?;
+
+    let url = format!(
+        "{}/v0/account/balances",
+        state.env_vars.confidential_api_url
+    );
+
+    let mut req = state
+        .http_client
+        .get(&url)
+        .header("Authorization", format!("Bearer {}", access_token));
+    if let Some(api_key) = &state.env_vars.oneclick_api_key {
+        req = req.header("x-api-key", api_key);
+    }
+
+    let response = req.send().await.map_err(|e| {
+        log::error!("Error fetching confidential balances for {}: {}", dao_id, e);
+        (
+            StatusCode::BAD_GATEWAY,
+            format!("Failed to fetch confidential balances: {}", e),
+        )
+    })?;
+
+    let status = response.status();
+    if !status.is_success() {
+        let body = response.text().await.unwrap_or_default();
+        log::error!("1Click API returned {} for {}: {}", status, dao_id, body);
+        return Err((
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY),
+            format!("1Click API error: {}", body),
+        ));
+    }
+
+    let parsed: ConfidentialBalancesResponse = response.json().await.map_err(|e| {
+        (
+            StatusCode::BAD_GATEWAY,
+            format!("Failed to parse confidential balances: {}", e),
+        )
+    })?;
+
+    Ok(parsed
+        .balances
+        .into_iter()
+        .filter(|b| b.available.parse::<u128>().unwrap_or(0) > 0)
+        .map(|b| (b.token_id, b.available))
+        .collect())
+}
+
 pub async fn compute_user_assets(
     state: &Arc<AppState>,
     account: &AccountId,
+    is_confidential: bool,
 ) -> Result<Vec<SimplifiedToken>, (StatusCode, String)> {
-    // Fetch REF Finance data
-    let ref_data_future = async {
-        let tokens_future = fetch_whitelisted_tokens(state);
-        let balances_future = fetch_user_balances(state, account);
-        let near_balance = fetch_near_balance(state, account);
-        let lockup_balance = fetch_lockup_balance_of_account(state, account);
-        let staking_balance = fetch_staking_balances(state, account);
-        let ft_lockup_positions = fetch_ft_lockup_positions(state, account);
+    // ── Fetch raw balances ──────────────────────────────────────────────
+    // Confidential treasuries: balances only from the private (1Click) intents API;
+    // no on-chain FT/NEAR/lockup/staking or public intents discovery.
+    // Regular treasuries: FT whitelist, public intents, NEAR, lockups, staking, FT lockups.
 
-        let (
-            whitelist_set,
-            user_balances,
-            near_balance,
-            lockup_balance,
-            staking_balance,
-            ft_lockup_positions,
-        ) = tokio::try_join!(
-            tokens_future,
-            balances_future,
-            near_balance,
-            lockup_balance,
-            staking_balance,
-            ft_lockup_positions
-        )?;
+    let intents_balances: Vec<(String, String)>;
+    let ref_tokens_with_balances: Vec<(String, U128)>;
+    let near_balance: Option<TokenBalanceResponse>;
+    let lockup_balance: Option<LockupBalance>;
+    let staking_balance: Option<StakingBalance>;
+    let ft_lockup_positions;
 
-        Ok::<_, (StatusCode, String)>((
-            whitelist_set,
-            user_balances,
-            near_balance,
-            lockup_balance,
-            staking_balance,
-            ft_lockup_positions,
-        ))
-    };
+    if is_confidential {
+        intents_balances = fetch_confidential_balances(state, account).await?;
+        ref_tokens_with_balances = Vec::new();
+        near_balance = None;
+        lockup_balance = None;
+        staking_balance = None;
+        ft_lockup_positions = Vec::new();
+    } else {
+        let ref_data_future = async {
+            let tokens_future = fetch_whitelisted_tokens(state);
+            let balances_future = fetch_user_balances(state, account);
+            let near_balance = fetch_near_balance(state, account);
+            let lockup_balance = fetch_lockup_balance_of_account(state, account);
+            let staking_balance = fetch_staking_balances(state, account);
+            let ft_lockup_positions_future = fetch_ft_lockup_positions(state, account);
 
-    // Fetch intents balances
-    let intents_data_future = async {
-        let owned_token_ids = fetch_intents_owned_tokens(state, account).await?;
-        if owned_token_ids.is_empty() {
-            return Ok::<_, (StatusCode, String)>(Vec::new());
-        }
+            let (
+                whitelist_set,
+                user_balances,
+                near_balance,
+                lockup_balance,
+                staking_balance,
+                ft_lockup_positions,
+            ) = tokio::try_join!(
+                tokens_future,
+                balances_future,
+                near_balance,
+                lockup_balance,
+                staking_balance,
+                ft_lockup_positions_future
+            )?;
 
-        let balances = fetch_intents_balances(state, account, &owned_token_ids).await?;
+            Ok::<_, (StatusCode, String)>((
+                whitelist_set,
+                user_balances,
+                near_balance,
+                lockup_balance,
+                staking_balance,
+                ft_lockup_positions,
+            ))
+        };
 
-        // Filter to only tokens with non-zero balances
-        let tokens_with_balances: Vec<(String, String)> = owned_token_ids
+        let intents_data_future = async {
+            let owned_token_ids = fetch_intents_owned_tokens(state, account).await?;
+            if owned_token_ids.is_empty() {
+                return Ok::<_, (StatusCode, String)>(Vec::new());
+            }
+
+            let balances = fetch_intents_balances(state, account, &owned_token_ids).await?;
+
+            let tokens_with_balances: Vec<(String, String)> = owned_token_ids
+                .into_iter()
+                .zip(balances.into_iter())
+                .filter(|(_, balance)| balance.parse::<u128>().unwrap_or(0) > 0)
+                .collect();
+
+            Ok(tokens_with_balances)
+        };
+
+        let (ref_data_result, intents_data_result) =
+            tokio::join!(ref_data_future, intents_data_future);
+
+        let (whitelist_set, user_balances, near_bal, lockup_bal, staking_bal, ft_lockup_pos) =
+            ref_data_result?;
+
+        intents_balances = intents_data_result.unwrap_or_else(|e| {
+            eprintln!("Warning: Failed to fetch intents tokens: {:?}", e);
+            Vec::new()
+        });
+
+        let balance_map = build_balance_map(&user_balances);
+        ref_tokens_with_balances = whitelist_set
             .into_iter()
-            .zip(balances.into_iter())
-            .filter(|(_, balance)| balance.parse::<u128>().unwrap_or(0) > 0)
+            .filter_map(|token_id| {
+                let balance = balance_map
+                    .get(&token_id)
+                    .cloned()
+                    .unwrap_or_else(|| U128::from(0));
+                if balance != U128::from(0) {
+                    Some((token_id, balance))
+                } else {
+                    None
+                }
+            })
             .collect();
 
-        Ok(tokens_with_balances)
-    };
+        near_balance = Some(near_bal);
+        lockup_balance = lockup_bal;
+        staking_balance = staking_bal;
+        ft_lockup_positions = ft_lockup_pos;
+    }
 
-    // Fetch all data concurrently
-    let (ref_data_result, intents_data_result) = tokio::join!(ref_data_future, intents_data_future);
-
-    // Get whitelisted tokens and user balances
-    let (
-        whitelist_set,
-        user_balances,
-        near_balance,
-        lockup_balance,
-        staking_balance,
-        ft_lockup_positions,
-    ) = ref_data_result?;
-
-    // Get intents balances (already filtered to non-zero)
-    let intents_balances = intents_data_result.unwrap_or_else(|e| {
-        eprintln!("Warning: Failed to fetch intents tokens: {:?}", e);
-        Vec::new()
-    });
-
-    // Build balance map and filter REF Finance tokens to only those with positive balances
-    let balance_map = build_balance_map(&user_balances);
-    let ref_tokens_with_balances: Vec<(String, U128)> = whitelist_set
-        .into_iter()
-        .filter_map(|token_id| {
-            let balance = balance_map
-                .get(&token_id)
-                .cloned()
-                .unwrap_or_else(|| U128::from(0));
-            if balance != U128::from(0) {
-                Some((token_id, balance))
-            } else {
-                None
-            }
-        })
-        .collect();
+    // ── Fetch metadata (shared path) ────────────────────────────────────
 
     let mut token_ids_to_fetch: Vec<String> = ref_tokens_with_balances
         .iter()
@@ -484,22 +571,20 @@ pub async fn compute_user_assets(
     );
     token_ids_to_fetch.push("near".to_string());
 
-    // Fetch metadata for only tokens with positive balances in a single batch request
     let metadata_map = if !token_ids_to_fetch.is_empty() {
         fetch_tokens_with_defuse_extension(state, &token_ids_to_fetch).await
     } else {
         HashMap::new()
     };
 
-    // Build a map keyed by defuse asset ID for O(1) lookups
-    // Find wrap.near metadata explicitly instead of assuming it's last
+    // ── Build SimplifiedToken list ──────────────────────────────────────
+
     let near_token_meta = metadata_map.get("near").cloned().unwrap_or_else(|| {
         eprintln!("[User Assets] Warning: wrap.near metadata not found, using fallback");
         TokenMetadataResponse::create_near_metadata(None, None)
     });
 
-    // Build simplified tokens for REF Finance tokens.
-    // REF token IDs are bare (e.g. "wrap.near"); metadata is keyed as "nep141:wrap.near".
+    // REF Finance FT tokens (non-confidential only)
     let mut all_simplified_tokens: Vec<(SimplifiedToken, U128)> = ref_tokens_with_balances
         .into_iter()
         .filter_map(|(token_id, balance)| {
@@ -536,6 +621,7 @@ pub async fn compute_user_assets(
         })
         .collect();
 
+    // Intents tokens (both confidential and regular)
     all_simplified_tokens.extend(build_intents_tokens(intents_balances, &metadata_map));
 
     // Add FT lockup balances as standard token balances with a locked portion.
@@ -597,7 +683,7 @@ pub async fn compute_user_assets(
         ));
     }
 
-    // Add lockup balance if exists
+    // NEAR-native balances (non-confidential only)
     if let Some(lockup) = lockup_balance {
         let total = lockup.total.as_yoctonear().into();
         all_simplified_tokens.push((
@@ -624,7 +710,6 @@ pub async fn compute_user_assets(
         ));
     }
 
-    // Add staking balance if exists
     if let Some(staking) = staking_balance {
         let total: U128 = staking
             .staked_balance
@@ -655,31 +740,33 @@ pub async fn compute_user_assets(
         ));
     }
 
-    all_simplified_tokens.push((
-        SimplifiedToken {
-            id: "near".to_string(),
-            contract_id: None,
-            lockup_instance_id: None,
-            ft_lockup_schedule: None,
-            decimals: near_token_meta.decimals,
-            balance: Balance::Standard {
-                total: near_balance.balance.0.to_string(),
-                locked: "0".to_string(),
+    if let Some(near_bal) = near_balance {
+        all_simplified_tokens.push((
+            SimplifiedToken {
+                id: "near".to_string(),
+                contract_id: None,
+                lockup_instance_id: None,
+                ft_lockup_schedule: None,
+                decimals: near_token_meta.decimals,
+                balance: Balance::Standard {
+                    total: near_bal.balance.0.to_string(),
+                    locked: "0".to_string(),
+                },
+                price: near_token_meta.price.unwrap_or(0.0).to_string(),
+                symbol: near_token_meta.symbol.clone(),
+                name: near_token_meta.name.clone(),
+                icon: near_token_meta.icon.clone(),
+                network: near_token_meta.network.clone().unwrap_or_default(),
+                residency: TokenResidency::Near,
+                chain_name: near_token_meta
+                    .chain_name
+                    .clone()
+                    .unwrap_or(near_token_meta.name.clone()),
+                chain_icons: near_token_meta.chain_icons.clone(),
             },
-            price: near_token_meta.price.unwrap_or(0.0).to_string(),
-            symbol: near_token_meta.symbol.clone(),
-            name: near_token_meta.name.clone(),
-            icon: near_token_meta.icon.clone(),
-            network: near_token_meta.network.clone().unwrap_or_default(),
-            residency: TokenResidency::Near,
-            chain_name: near_token_meta
-                .chain_name
-                .clone()
-                .unwrap_or(near_token_meta.name.clone()),
-            chain_icons: near_token_meta.chain_icons.clone(),
-        },
-        near_balance.balance,
-    ));
+            near_bal.balance,
+        ));
+    }
 
     // Sort combined list by balance (highest first)
     all_simplified_tokens = all_simplified_tokens
@@ -701,9 +788,14 @@ pub async fn compute_user_assets(
 
 pub async fn get_user_assets(
     State(state): State<Arc<AppState>>,
+    auth: crate::auth::OptionalAuthUser,
     Query(params): Query<UserAssetsQuery>,
 ) -> Result<Json<Vec<SimplifiedToken>>, (StatusCode, String)> {
     let account = params.account_id.clone();
+    let is_confidential = auth
+        .verify_member_if_confidential(&state.db_pool, params.account_id.as_str())
+        .await?;
+
     let cache_key = format!("{}-user-assets", account);
     let state_clone = state.clone();
     let account_clone = account.clone();
@@ -711,7 +803,7 @@ pub async fn get_user_assets(
     let all_simplified_tokens = state
         .cache
         .cached(CacheTier::ShortTerm, cache_key, async move {
-            compute_user_assets(&state_clone, &account_clone).await
+            compute_user_assets(&state_clone, &account_clone, is_confidential).await
         })
         .await?;
 

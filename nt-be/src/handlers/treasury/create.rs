@@ -311,7 +311,9 @@ async fn run_creation(
 
     send_progress(&tx, "creating_dao", "completed").await;
 
-    if let Err(e) = register_or_refresh_monitored_account(&state.db_pool, treasury.as_str()).await {
+    if let Err(e) =
+        register_or_refresh_monitored_account(&state.db_pool, treasury.as_str(), true).await
+    {
         log::warn!("Failed to add treasury to monitored accounts: {:?}", e);
     }
 

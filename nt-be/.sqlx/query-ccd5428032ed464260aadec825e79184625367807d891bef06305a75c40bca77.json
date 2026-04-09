@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                ma.is_confidential_account,\n                dm.account_id AS \"member_account_id?\"\n            FROM monitored_accounts ma\n            LEFT JOIN dao_members dm\n                ON dm.dao_id = ma.account_id\n                AND dm.account_id = $2\n                AND dm.is_policy_member = true\n            WHERE ma.account_id = $1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "is_confidential_account",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 1,
+        "name": "member_account_id?",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      true,
+      false
+    ]
+  },
+  "hash": "ccd5428032ed464260aadec825e79184625367807d891bef06305a75c40bca77"
+}

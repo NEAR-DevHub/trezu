@@ -34,6 +34,7 @@ export interface TreasuryConfig {
     metadata?: TreasuryMetadata;
     name?: string;
     purpose?: string;
+    isConfidential: boolean;
 }
 
 export interface Treasury {
@@ -42,6 +43,7 @@ export interface Treasury {
     isMember: boolean;
     isSaved: boolean;
     isHidden: boolean;
+    isConfidential: boolean;
 }
 
 /**
@@ -137,6 +139,7 @@ export async function getTreasuryAssets(
 
         const response = await axios.get<TreasuryAssetRaw[]>(url, {
             params: { accountId: treasuryId },
+            withCredentials: true,
         });
 
         // Transform raw tokens with USD values
@@ -238,6 +241,7 @@ export async function getBalanceChart(
 
         const response = await axios.get<BalanceChartData>(
             `${url}?${queryParams.toString()}`,
+            { withCredentials: true },
         );
 
         return response.data;
@@ -372,6 +376,7 @@ export async function getRecentActivity(
         }
         const response = await axios.get<RecentActivityResponse>(url, {
             params,
+            withCredentials: true,
         });
         return response.data;
     } catch (error) {
@@ -397,6 +402,7 @@ export async function getRecentActivitySenders(
                         ? { transactionType }
                         : {}),
                 },
+                withCredentials: true,
             },
         );
         return response.data.options ?? [];
@@ -423,6 +429,7 @@ export async function getRecentActivityRecipients(
                         ? { transactionType }
                         : {}),
                 },
+                withCredentials: true,
             },
         );
         return response.data.options ?? [];
@@ -1192,7 +1199,7 @@ export async function saveUserTreasury(
 
     try {
         const url = `${BACKEND_API_BASE}/user/treasuries/save`;
-        await axios.post(url, { accountId, daoId });
+        await axios.post(url, { accountId, daoId }, { withCredentials: true });
     } catch (error) {
         console.error(
             `Failed to save treasury ${daoId} for ${accountId}`,
@@ -1214,7 +1221,11 @@ export async function setUserTreasuryHidden(
 
     try {
         const url = `${BACKEND_API_BASE}/user/treasuries/hide`;
-        await axios.post(url, { accountId, daoId, hidden });
+        await axios.post(
+            url,
+            { accountId, daoId, hidden },
+            { withCredentials: true },
+        );
     } catch (error) {
         console.error(
             `Failed to set hidden=${hidden} for treasury ${daoId} and ${accountId}`,
@@ -1235,7 +1246,7 @@ export async function removeUserTreasury(
 
     try {
         const url = `${BACKEND_API_BASE}/user/treasuries/remove`;
-        await axios.post(url, { accountId, daoId });
+        await axios.post(url, { accountId, daoId }, { withCredentials: true });
     } catch (error) {
         console.error(
             `Failed to remove saved treasury ${daoId} for ${accountId}`,
@@ -1378,31 +1389,6 @@ export async function generateIntent(request: {
 }
 
 /**
- * Fetch confidential balances for a DAO.
- * Returns token balances from the 1Click confidential intents system.
- */
-export interface ConfidentialBalance {
-    available: string;
-    source: string;
-    tokenId: string;
-}
-
-export interface ConfidentialBalancesResponse {
-    balances: ConfidentialBalance[];
-}
-
-export async function getConfidentialBalances(
-    daoId: string,
-): Promise<ConfidentialBalancesResponse> {
-    const url = `${BACKEND_API_BASE}/confidential-intents/balances`;
-    const response = await axios.get(url, {
-        params: { daoId },
-        withCredentials: true,
-    });
-    return response.data;
-}
-
-/**
  * Prepare a confidential auth proposal for a DAO.
  * Returns the v1.signer proposal args to submit to the DAO.
  * The backend stores the auth payload for auto-submission after approval.
@@ -1504,6 +1490,7 @@ export async function getExportHistory(
             params: {
                 accountId,
             },
+            withCredentials: true,
         },
     );
     return response.data;

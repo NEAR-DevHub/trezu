@@ -2,7 +2,7 @@ use axum::{
     Json, Router,
     extract::State,
     http::StatusCode,
-    routing::{get, patch, post},
+    routing::{get, post},
 };
 use serde_json::{Value, json};
 use std::sync::Arc;
@@ -258,12 +258,6 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
         .route(
             "/api/monitored-accounts",
             post(monitored_accounts::add_monitored_account)
-                .get(monitored_accounts::list_monitored_accounts),
-        )
-        .route(
-            "/api/monitored-accounts/{account_id}",
-            patch(monitored_accounts::update_monitored_account)
-                .delete(monitored_accounts::delete_monitored_account),
         )
         // Intents endpoints
         .route(
@@ -294,10 +288,6 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
         .route(
             "/api/confidential-intents/generate-intent",
             post(handlers::intents::confidential::generate_intent::generate_intent),
-        )
-        .route(
-            "/api/confidential-intents/balances",
-            get(handlers::intents::confidential::balances::get_balances),
         )
         .route(
             "/api/confidential-intents/prepare-auth",

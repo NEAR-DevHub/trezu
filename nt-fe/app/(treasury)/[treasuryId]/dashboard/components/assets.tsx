@@ -4,21 +4,26 @@ import { PageCard } from "@/components/card";
 import { EmptyState } from "@/components/empty-state";
 import { StepperHeader } from "@/components/step-wizard";
 import { useAggregatedTokens } from "@/hooks/use-assets";
+import { ConfidentialState } from "@/components/confidential-state";
 import type { TreasuryAsset } from "@/lib/api";
 import { getDashboardBucketVisibility } from "@/lib/dashboard-balance-view";
 
 interface Props {
     tokens: TreasuryAsset[];
-    isLoading?: boolean;
+    state: "loading" | "hidden" | "ready";
 }
 
-export default function Assets({ tokens, isLoading }: Props) {
+export default function Assets({ tokens, state }: Props) {
     const aggregatedTokens = useAggregatedTokens(tokens);
     const bucketVisibility = getDashboardBucketVisibility(tokens);
     const hasTabs = bucketVisibility.showLocked || bucketVisibility.showEarning;
 
     const renderContent = () => {
-        if (isLoading) {
+        if (state === "hidden") {
+            return <ConfidentialState skeleton={<AssetsTableSkeleton />} />;
+        }
+
+        if (state === "loading") {
             return <AssetsTableSkeleton />;
         }
 

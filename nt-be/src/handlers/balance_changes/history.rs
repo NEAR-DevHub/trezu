@@ -21,7 +21,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use urlencoding::encode;
 
-use crate::AppState;
 use crate::config::get_plan_config;
 use crate::handlers::balance_changes::query_builder::{
     BalanceChangeFilters, FROM_ACCOUNT_EXPR, RELAYER_ACCOUNT, TO_ACCOUNT_EXPR, build_count_query,
@@ -30,6 +29,7 @@ use crate::handlers::subscription::plans::get_account_plan_info;
 use crate::handlers::token::{TokenMetadata, fetch_tokens_with_fallback};
 use crate::routes::{BalanceChangesQuery, EnrichedBalanceChange, get_balance_changes_internal};
 use crate::utils::serde::comma_separated;
+use crate::{AppState, auth::OptionalAuthUser};
 
 #[derive(Debug, Serialize, sqlx::FromRow)]
 #[serde(rename_all = "camelCase")]
@@ -117,8 +117,12 @@ pub struct ChartResponse {
 /// Response format: { "token_id": [...], "lastSyncedAt": "..." }
 pub async fn get_balance_chart(
     State(state): State<Arc<AppState>>,
+    user: OptionalAuthUser,
     Query(params): Query<ChartRequest>,
 ) -> Result<Json<ChartResponse>, (StatusCode, String)> {
+    user.verify_member_if_confidential(&state.db_pool, params.account_id.as_str())
+        .await?;
+
     let last_synced_at = sqlx::query_scalar::<_, Option<DateTime<Utc>>>(
         "SELECT last_synced_at FROM monitored_accounts WHERE account_id = $1",
     )
@@ -263,8 +267,12 @@ pub struct ExportRequest {
 /// Creates export history record and decrements credits
 pub async fn export_balance(
     State(state): State<Arc<AppState>>,
+    user: OptionalAuthUser,
     Query(params): Query<ExportRequest>,
 ) -> Result<Response, (StatusCode, String)> {
+    user.verify_member_if_confidential(&state.db_pool, params.account_id.as_str())
+        .await?;
+
     // Validate format
     if !["csv", "json", "xlsx"].contains(&params.format.as_str()) {
         return Err((
@@ -1211,8 +1219,12 @@ pub struct ExportHistoryResponse {
 /// Get export history for an account
 pub async fn get_export_history(
     State(state): State<Arc<AppState>>,
+    user: OptionalAuthUser,
     Query(params): Query<ExportHistoryQuery>,
 ) -> Result<Json<ExportHistoryResponse>, (StatusCode, String)> {
+    user.verify_member_if_confidential(&state.db_pool, params.account_id.as_str())
+        .await?;
+
     let limit = params.limit.unwrap_or(10).min(100);
     let offset = params.offset.unwrap_or(0);
 
@@ -1468,8 +1480,13 @@ pub struct RecentActivity {
 
 pub async fn get_recent_activity(
     State(state): State<Arc<AppState>>,
+    user: OptionalAuthUser,
     Query(params): Query<RecentActivityQuery>,
 ) -> Result<Json<RecentActivityResponse>, (StatusCode, Json<serde_json::Value>)> {
+    user.verify_member_if_confidential(&state.db_pool, params.account_id.as_str())
+        .await
+        .map_err(|(status, message)| (status, Json(serde_json::json!({ "error": message }))))?;
+
     let limit = params.limit.unwrap_or(10).min(100);
     let offset = params.offset.unwrap_or(0);
 
@@ -1908,8 +1925,13 @@ pub async fn get_recent_activity(
 
 pub async fn get_recent_activity_senders(
     State(state): State<Arc<AppState>>,
+    user: OptionalAuthUser,
     Query(params): Query<RecentActivitySendersQuery>,
 ) -> Result<Json<RecentActivitySendersResponse>, (StatusCode, Json<serde_json::Value>)> {
+    user.verify_member_if_confidential(&state.db_pool, params.account_id.as_str())
+        .await
+        .map_err(|(status, message)| (status, Json(serde_json::json!({ "error": message }))))?;
+
     // Keep options endpoint unfiltered by date/token/hash/from, but honor transactionType tab.
     let transaction_types_for_query = match params.transaction_type.as_deref() {
         Some(t) => Some(vec![t.to_string()]),
@@ -1969,8 +1991,13 @@ pub async fn get_recent_activity_senders(
 
 pub async fn get_recent_activity_recipients(
     State(state): State<Arc<AppState>>,
+    user: OptionalAuthUser,
     Query(params): Query<RecentActivityRecipientsQuery>,
 ) -> Result<Json<RecentActivityRecipientsResponse>, (StatusCode, Json<serde_json::Value>)> {
+    user.verify_member_if_confidential(&state.db_pool, params.account_id.as_str())
+        .await
+        .map_err(|(status, message)| (status, Json(serde_json::json!({ "error": message }))))?;
+
     // Keep options endpoint unfiltered by date/token/hash/to, but honor transactionType tab.
     let transaction_types_for_query = match params.transaction_type.as_deref() {
         Some(t) => Some(vec![t.to_string()]),

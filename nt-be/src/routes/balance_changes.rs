@@ -11,11 +11,11 @@ use sqlx::types::chrono::{DateTime, Utc};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
-use crate::AppState;
 use crate::handlers::balance_changes::completeness;
 use crate::handlers::balance_changes::{gap_filler, query_builder::*};
 use crate::handlers::token::{TokenMetadata, fetch_tokens_with_fallback};
 use crate::utils::serde::comma_separated;
+use crate::{AppState, auth::OptionalAuthUser};
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -399,8 +399,13 @@ pub async fn get_balance_changes_internal(
 
 pub async fn get_balance_changes(
     State(state): State<Arc<AppState>>,
+    user: OptionalAuthUser,
     Query(mut params): Query<BalanceChangesQuery>,
 ) -> Result<Json<Vec<EnrichedBalanceChange>>, (StatusCode, Json<Value>)> {
+    user.verify_member_if_confidential(&state.db_pool, params.account_id.as_str())
+        .await
+        .map_err(|(status, message)| (status, Json(serde_json::json!({ "error": message }))))?;
+
     // Apply default limit for public API if not specified
     if params.limit.is_none() {
         params.limit = Some(100);
@@ -441,8 +446,13 @@ pub struct FillGapsResponse {
 
 pub async fn fill_gaps(
     State(state): State<Arc<AppState>>,
+    user: OptionalAuthUser,
     Json(params): Json<FillGapsRequest>,
 ) -> Result<Json<FillGapsResponse>, (StatusCode, Json<Value>)> {
+    user.verify_member_if_confidential(&state.db_pool, params.account_id.as_str())
+        .await
+        .map_err(|(status, message)| (status, Json(serde_json::json!({ "error": message }))))?;
+
     // Get current block height from RPC if not specified
     let up_to_block = if let Some(block) = params.up_to_block {
         block
@@ -517,8 +527,13 @@ pub struct CompletenessQuery {
 
 pub async fn get_completeness(
     State(state): State<Arc<AppState>>,
+    user: OptionalAuthUser,
     Query(params): Query<CompletenessQuery>,
 ) -> Result<Json<completeness::CompletenessResponse>, (StatusCode, Json<Value>)> {
+    user.verify_member_if_confidential(&state.db_pool, params.account_id.as_str())
+        .await
+        .map_err(|(status, message)| (status, Json(serde_json::json!({ "error": message }))))?;
+
     match completeness::check_completeness(
         &state.db_pool,
         &params.account_id,

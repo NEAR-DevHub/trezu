@@ -40,6 +40,10 @@ export function useTreasury() {
         isLoadingTreasuries || isLoadingGuestConfig || isInitializing;
     const treasuryNotFound =
         !isLoading && !!treasuryId && !currentTreasury && !guestTreasuryConfig;
+    const isConfidential =
+        (currentTreasury?.isConfidential ||
+            guestTreasuryConfig?.isConfidential) ??
+        false;
 
     // Store the latest treasury ID when it changes
     useEffect(() => {
@@ -53,6 +57,7 @@ export function useTreasury() {
         isSaved: currentTreasury?.isSaved,
         isLoading,
         treasuryId,
+        isConfidential,
         lastTreasuryId,
         config: currentTreasury?.config || guestTreasuryConfig,
         treasuries: visibleTreasuries,

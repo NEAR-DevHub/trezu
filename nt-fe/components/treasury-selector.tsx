@@ -41,7 +41,14 @@ export function TreasurySelector({
     const { accountId } = useNear();
     const { open } = useOpenTreasury();
 
-    const { isLoading, treasuryId, config, treasuries } = useTreasury();
+    const {
+        isLoading,
+        treasuryId,
+        config,
+        treasuries,
+        isConfidential,
+        isGuestTreasury,
+    } = useTreasury();
     const lockSelectOutside = useOnboardingStore(
         (state) => state.lockSelectOutside,
     );
@@ -149,6 +156,10 @@ export function TreasurySelector({
                                             daoId={treasuryId}
                                             className="text-xs font-medium truncate max-w-full"
                                             skeletonClassName="h-3 w-20"
+                                            isConfidential={
+                                                isConfidential &&
+                                                isGuestTreasury
+                                            }
                                         />
                                     )}
                                 </div>
@@ -216,6 +227,9 @@ export function TreasurySelector({
                                                     daoId={treasury.daoId}
                                                     className="text-xs"
                                                     skeletonClassName="size-4"
+                                                    isConfidential={
+                                                        treasury.isConfidential
+                                                    }
                                                 />
                                             </div>
                                         </div>

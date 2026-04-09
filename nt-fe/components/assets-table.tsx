@@ -2188,7 +2188,7 @@ export function AssetsTableSkeleton() {
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {[0, 1, 2, 3].map((idx) => (
+                {[0, 1, 2].map((idx) => (
                     <TableRow key={`skeleton-row-${idx}`}>
                         <TableCell className="py-4 pr-4 pl-0 sm:p-4 sm:pl-4">
                             <div className="flex items-center gap-3">
