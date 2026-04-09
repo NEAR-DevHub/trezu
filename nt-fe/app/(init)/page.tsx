@@ -32,6 +32,7 @@ import { trackEvent } from "@/lib/analytics";
 import { submitWhitelistRequest } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
+import { useOnboardingStore } from "@/stores/onboarding-store";
 
 interface WalletSuggestionModalProps {
     open: boolean;
@@ -260,6 +261,9 @@ export function Content() {
         authError,
         clearError,
     } = useNear();
+    const requestCreateTreasuryPromptOpen = useOnboardingStore(
+        (state) => state.requestCreateTreasuryPromptOpen,
+    );
     const { lastTreasuryId, treasuries, isLoading } = useTreasury();
     const { data: creationStatus } = useTreasuryCreationStatus();
     const creationAvailable = creationStatus?.creationAvailable;
@@ -339,6 +343,9 @@ export function Content() {
             if (!isLoading && treasuries.length > 0) {
                 router.push(`/${preferredTreasuryId}`);
                 return;
+            }
+            if (treasuries.length === 0) {
+                requestCreateTreasuryPromptOpen();
             }
             return;
         }

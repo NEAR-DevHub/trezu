@@ -5,30 +5,33 @@ import { usePathname, useRouter } from "next/navigation";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useTreasuryCreationStatus } from "@/hooks/use-treasury-queries";
 import { useNear } from "@/stores/near-store";
-import { APP_ACTIVE_TREASURY } from "@/constants/config";
-import { NoTreasuryModal } from "./no-treasury-modal";
+import { useOnboardingStore } from "@/stores/onboarding-store";
+import { CreateTreasuryPromptModal } from "./create-treasury-prompt-modal";
 
-const MODAL_SUPPRESSED_PATHS = new Set(["/app/new", APP_ACTIVE_TREASURY]);
+const MODAL_SUPPRESSED_PATHS = new Set(["/app/new"]);
 
-export function NoTreasuryModalController() {
+export function CreateTreasuryPromptController() {
     const router = useRouter();
     const pathname = usePathname();
     const [open, setOpen] = useState(false);
-    // Show once per explicit login completion (not on refresh/session restore).
-    const promptedLoginKeyRef = useRef<string | null>(null);
+    const lastHandledOpenRequestIdRef = useRef(0);
     const prevIsAuthenticatingRef = useRef(false);
+    const lastHandledLoginNonceRef = useRef(0);
     const [loginNonce, setLoginNonce] = useState(0);
     const { accountId, isInitializing, isAuthenticating } = useNear();
+    const createTreasuryPromptOpenRequestId = useOnboardingStore(
+        (state) => state.createTreasuryPromptOpenRequestId,
+    );
     const { treasuries, isLoading } = useTreasury();
     const { data: creationStatus } = useTreasuryCreationStatus();
 
     const creationAvailable = creationStatus?.creationAvailable ?? true;
+    const isOnboardingPath = pathname === "/";
     const isSuppressedPath = pathname
         ? MODAL_SUPPRESSED_PATHS.has(pathname)
         : false;
-    const shouldShowModal =
+    const canOpenPrompt =
         !!accountId &&
-        loginNonce > 0 &&
         creationAvailable &&
         !isInitializing &&
         !isLoading &&
@@ -37,7 +40,9 @@ export function NoTreasuryModalController() {
 
     useEffect(() => {
         if (!accountId) {
-            promptedLoginKeyRef.current = null;
+            lastHandledOpenRequestIdRef.current = 0;
+            lastHandledLoginNonceRef.current = 0;
+            setLoginNonce(0);
             setOpen(false);
         }
     }, [accountId]);
@@ -48,29 +53,47 @@ export function NoTreasuryModalController() {
 
         if (justCompletedLogin) {
             setLoginNonce((prev) => prev + 1);
-            promptedLoginKeyRef.current = null;
         }
 
         prevIsAuthenticatingRef.current = isAuthenticating;
     }, [isAuthenticating, accountId]);
 
     useEffect(() => {
-        if (!shouldShowModal) {
-            setOpen(false);
+        if (!canOpenPrompt) {
+            if (!isOnboardingPath) {
+                setOpen(false);
+            }
             return;
         }
 
-        const loginKey = `${accountId}:${loginNonce}`;
-        if (promptedLoginKeyRef.current !== loginKey) {
-            promptedLoginKeyRef.current = loginKey;
+        if (loginNonce > 0 && lastHandledLoginNonceRef.current !== loginNonce) {
+            lastHandledLoginNonceRef.current = loginNonce;
             setOpen(true);
         }
-    }, [shouldShowModal, accountId, loginNonce]);
+    }, [canOpenPrompt, isOnboardingPath, loginNonce]);
+
+    useEffect(() => {
+        if (!canOpenPrompt) {
+            if (!isOnboardingPath) {
+                setOpen(false);
+            }
+            return;
+        }
+
+        if (
+            createTreasuryPromptOpenRequestId >
+            lastHandledOpenRequestIdRef.current
+        ) {
+            lastHandledOpenRequestIdRef.current =
+                createTreasuryPromptOpenRequestId;
+            setOpen(true);
+        }
+    }, [canOpenPrompt, isOnboardingPath, createTreasuryPromptOpenRequestId]);
 
     const handleOpenChange = (nextOpen: boolean) => setOpen(nextOpen);
 
     return (
-        <NoTreasuryModal
+        <CreateTreasuryPromptModal
             open={open}
             onOpenChange={handleOpenChange}
             onCreateTreasury={() => {

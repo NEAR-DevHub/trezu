@@ -12,17 +12,17 @@ import {
 } from "@/components/modal";
 import { APP_ACTIVE_TREASURY } from "@/constants/config";
 
-interface NoTreasuryModalProps {
+interface CreateTreasuryPromptModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onCreateTreasury: () => void;
 }
 
-export function NoTreasuryModal({
+export function CreateTreasuryPromptModal({
     open,
     onOpenChange,
     onCreateTreasury,
-}: NoTreasuryModalProps) {
+}: CreateTreasuryPromptModalProps) {
     const pathname = usePathname();
     const isOnboardingPath = pathname === "/";
     const descriptionSuffix = isOnboardingPath
