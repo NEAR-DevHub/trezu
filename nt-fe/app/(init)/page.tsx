@@ -23,7 +23,6 @@ import { NearInitializer } from "@/components/near-initializer";
 import { QueryProvider } from "@/components/query-provider";
 import {
     APP_ACTIVE_TREASURY,
-    DEMO_TREASURY_ID,
     APP_WALLET_SETUP_URL,
     LANDING_PAGE,
 } from "@/constants/config";
@@ -37,12 +36,6 @@ import { useNear } from "@/stores/near-store";
 interface WalletSuggestionModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-}
-
-interface PostConnectModalProps {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-    onCreateTreasury: () => void;
 }
 
 interface WalletSuggestionItemProps {
@@ -248,45 +241,11 @@ function OnboardingChoiceCard({
     );
 }
 
-function PostConnectModal({
-    open,
-    onOpenChange,
-    onCreateTreasury,
-}: PostConnectModalProps) {
-    return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
-                <DialogHeader className="mb-1">
-                    <DialogTitle className="text-left">
-                        You're almost set
-                    </DialogTitle>
-                </DialogHeader>
-                <DialogDescription className="text-muted-foreground">
-                    Your wallet is connected, but you haven't created a treasury
-                    yet. Create an account to start using Trezu, or check out
-                    the demo.
-                </DialogDescription>
-                <div className="flex flex-col gap-3 mt-2">
-                    <Button className="w-full" onClick={onCreateTreasury}>
-                        Create a Treasury
-                    </Button>
-                    <Button variant="secondary" className="w-full" asChild>
-                        <Link href={`/${DEMO_TREASURY_ID}`}>
-                            Explore the Trezu Demo
-                        </Link>
-                    </Button>
-                </div>
-            </DialogContent>
-        </Dialog>
-    );
-}
-
 export function Content() {
     const router = useRouter();
     const [isWelcomeImageLoaded, setIsWelcomeImageLoaded] = useState(false);
     const [isWelcomeImageFailed, setIsWelcomeImageFailed] = useState(false);
     const [isWalletSuggestionOpen, setIsWalletSuggestionOpen] = useState(false);
-    const [isPostConnectModalOpen, setIsPostConnectModalOpen] = useState(false);
     const [onboardingPath, setOnboardingPath] = useState<
         "new_user" | "existing_user" | null
     >(null);
@@ -316,19 +275,22 @@ export function Content() {
     const isNewUserOptionLoading = isAuthenticating || isInitializing;
     const isExistingUserOptionLoading =
         isAuthenticating || isInitializing || isResolvingExistingUserTreasury;
+    const preferredTreasuryId =
+        (lastTreasuryId &&
+            treasuries.some((treasury) => treasury.daoId === lastTreasuryId) &&
+            lastTreasuryId) ||
+        treasuries[0]?.daoId;
 
     useEffect(() => {
-        if (!isLoading && treasuries.length > 0) {
-            router.push(`/${treasuries[0].daoId}`);
+        if (!isLoading && preferredTreasuryId) {
+            router.push(`/${preferredTreasuryId}`);
         } else if (
             accountId &&
             treasuries.length === 0 &&
             !isLoading &&
             !isInitializing
         ) {
-            if (onboardingPath === "existing_user") {
-                setIsPostConnectModalOpen(true);
-            } else if (creationAvailable) {
+            if (onboardingPath === "new_user" && creationAvailable) {
                 router.push(`/app/new`);
             }
         }
@@ -339,15 +301,10 @@ export function Content() {
         accountId,
         isInitializing,
         lastTreasuryId,
+        preferredTreasuryId,
         creationAvailable,
         onboardingPath,
     ]);
-
-    useEffect(() => {
-        if (!accountId && isPostConnectModalOpen) {
-            setIsPostConnectModalOpen(false);
-        }
-    }, [accountId, isPostConnectModalOpen]);
 
     const handleWhitelistSubmit = async () => {
         if (!contact.trim()) return;
@@ -380,11 +337,8 @@ export function Content() {
 
         if (accountId) {
             if (!isLoading && treasuries.length > 0) {
-                router.push(`/${lastTreasuryId || treasuries[0].daoId}`);
+                router.push(`/${preferredTreasuryId}`);
                 return;
-            }
-            if (!isLoading) {
-                setIsPostConnectModalOpen(true);
             }
             return;
         }
@@ -716,14 +670,6 @@ export function Content() {
             <WalletSuggestionModal
                 open={isWalletSuggestionOpen}
                 onOpenChange={setIsWalletSuggestionOpen}
-            />
-            <PostConnectModal
-                open={isPostConnectModalOpen}
-                onOpenChange={setIsPostConnectModalOpen}
-                onCreateTreasury={() => {
-                    setIsPostConnectModalOpen(false);
-                    router.push("/app/new");
-                }}
             />
         </div>
     );

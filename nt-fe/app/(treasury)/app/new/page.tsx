@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import {
     ArrowLeftIcon,
-    Check,
     Clock10,
     Database,
     Globe,
@@ -22,6 +21,7 @@ import { Alert, AlertDescription } from "@/components/alert";
 import { Button } from "@/components/button";
 import { PageCard } from "@/components/card";
 import { CreationDisabledModal } from "@/components/creation-disabled-modal";
+import { SelectableOptionButton } from "@/components/selectable-option-button";
 import { InputBlock } from "@/components/input-block";
 import { LargeInput } from "@/components/large-input";
 import {
@@ -346,61 +346,7 @@ function createClearErrorsOnChange<T>(
     };
 }
 
-function QuestionOptionButton({
-    option,
-    selected,
-    onClick,
-}: {
-    option: QuestionnaireOption;
-    selected: boolean;
-    onClick: () => void;
-}) {
-    return (
-        <Button
-            type="button"
-            variant="unstyled"
-            onClick={onClick}
-            className={cn(
-                "w-full rounded-lg border px-3.5 py-2 h-auto justify-between hover:bg-general-secondary/30",
-                selected
-                    ? "border-foreground bg-general-secondary"
-                    : "border-input",
-            )}
-        >
-            <div className="flex items-center gap-3 min-w-0">
-                {option.iconSrc ? (
-                    <img
-                        src={option.iconSrc}
-                        alt={option.label}
-                        className="size-6 rounded-full object-cover shrink-0"
-                    />
-                ) : option.iconClassName ? (
-                    <div
-                        className={cn(
-                            "size-6 rounded-full grid place-content-center text-xs font-semibold shrink-0",
-                            option.iconClassName,
-                        )}
-                    ></div>
-                ) : null}
-                <span className="text-base font-normal text-foreground truncate">
-                    {option.label}
-                </span>
-            </div>
-            <div
-                className={cn(
-                    "size-6 rounded-md border grid place-content-center shrink-0",
-                    selected
-                        ? "bg-foreground border-foreground text-background"
-                        : "bg-muted/30 border-input text-transparent",
-                )}
-            >
-                <Check className="size-4" />
-            </div>
-        </Button>
-    );
-}
-
-function AboutYouStep({
+function OnboardingQuestionsStep({
     handleNext,
     onboardingSessionId,
     setOnboardingSessionId,
@@ -530,7 +476,7 @@ function AboutYouStep({
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {currentQuestion.options.map((option) => (
-                        <QuestionOptionButton
+                        <SelectableOptionButton
                             key={option.id}
                             option={option}
                             selected={selectedValues.includes(option.id)}
@@ -810,11 +756,7 @@ function Step2({ handleBack, handleNext }: StepProps) {
 
     return (
         <PageCard>
-            <StepperHeader
-                title="Add Members"
-                description="You can add or update members now and edit this later at any time."
-                handleBack={handleBack}
-            />
+            <StepperHeader title="Add Members" handleBack={handleBack} />
 
             <InfoAlert message="You can add or update members now and edit this later at any time." />
 
@@ -1209,9 +1151,6 @@ const CREATION_STEP_TITLES = [
 ];
 
 export default function NewTreasuryPage() {
-    // TEST ONLY: set to true to bypass on-chain treasury creation.
-    const SKIP_TREASURY_CREATION_FOR_TESTING = true;
-
     const { accountId, connect, isAuthenticating } = useNear();
     const { treasuries } = useTreasury();
     const { data: creationStatus } = useTreasuryCreationStatus();
@@ -1321,18 +1260,6 @@ export default function NewTreasuryPage() {
         setProgressOpen(true);
 
         try {
-            if (SKIP_TREASURY_CREATION_FOR_TESTING) {
-                const treasuryId = request.accountId;
-                setProgressSteps((prev) =>
-                    prev.map((s) => ({
-                        ...s,
-                        status: "completed" as const,
-                    })),
-                );
-                setCreatedTreasuryId(treasuryId);
-                return;
-            }
-
             await createTreasuryStream(request, (event) => {
                 if (event.step === "done") {
                     const treasuryId = event.treasury!;
@@ -1445,32 +1372,66 @@ export default function NewTreasuryPage() {
                             onStepChange={setStep}
                             stepTitles={CREATION_STEP_TITLES}
                             stepLabelClassName="hidden md:inline"
-                            steps={[
-                                {
-                                    component: AboutYouStep,
-                                    props: {
-                                        onboardingSessionId:
-                                            onboardingSessionIdRef.current,
-                                        setOnboardingSessionId: (
-                                            id: string,
-                                        ) => {
-                                            onboardingSessionIdRef.current = id;
-                                        },
-                                        accountId,
-                                    },
-                                },
-                                { component: Step1 },
-                                { component: Step2 },
-                                { component: Step3 },
-                                {
-                                    component: Step4,
-                                    props: {
-                                        accountId,
-                                        connectWallet: connect,
-                                        isConnectingWallet: isAuthenticating,
-                                    },
-                                },
-                            ]}
+                            steps={
+                                features.confidential
+                                    ? [
+                                          {
+                                              component:
+                                                  OnboardingQuestionsStep,
+                                              props: {
+                                                  onboardingSessionId:
+                                                      onboardingSessionIdRef.current,
+                                                  setOnboardingSessionId: (
+                                                      id: string,
+                                                  ) => {
+                                                      onboardingSessionIdRef.current =
+                                                          id;
+                                                  },
+                                                  accountId,
+                                              },
+                                          },
+                                          { component: Step1 },
+                                          { component: Step2 },
+                                          { component: Step3 },
+                                          {
+                                              component: Step4,
+                                              props: {
+                                                  accountId,
+                                                  connectWallet: connect,
+                                                  isConnectingWallet:
+                                                      isAuthenticating,
+                                              },
+                                          },
+                                      ]
+                                    : [
+                                          {
+                                              component:
+                                                  OnboardingQuestionsStep,
+                                              props: {
+                                                  onboardingSessionId:
+                                                      onboardingSessionIdRef.current,
+                                                  setOnboardingSessionId: (
+                                                      id: string,
+                                                  ) => {
+                                                      onboardingSessionIdRef.current =
+                                                          id;
+                                                  },
+                                                  accountId,
+                                              },
+                                          },
+                                          { component: Step1 },
+                                          { component: Step2 },
+                                          {
+                                              component: Step4,
+                                              props: {
+                                                  accountId,
+                                                  connectWallet: connect,
+                                                  isConnectingWallet:
+                                                      isAuthenticating,
+                                              },
+                                          },
+                                      ]
+                            }
                         />
                     </form>
                 </Form>
