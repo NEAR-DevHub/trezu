@@ -6,8 +6,16 @@ use std::sync::Arc;
 use std::time::Duration;
 use tower_http::cors::{AllowOrigin, Any, CorsLayer};
 
-#[tokio::main]
-async fn main() {
+fn main() {
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .thread_stack_size(4 * 1024 * 1024) // 8 MB stack per worker thread
+        .build()
+        .unwrap()
+        .block_on(async_main());
+}
+
+async fn async_main() {
     dotenvy::dotenv().ok();
 
     // Initialize logging

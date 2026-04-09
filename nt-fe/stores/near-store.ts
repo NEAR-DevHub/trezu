@@ -370,6 +370,35 @@ export const useNearStore = create<NearStore>((set, get) => ({
         try {
             const user = await getAuthMe();
             if (user) {
+                // Verify the wallet connector still has accounts (e.g. localStorage wasn't cleared).
+                // If wallet state is gone, the session cookie is useless — log out.
+                const { connector, init } = get();
+                const conn = connector ?? (await init());
+                let walletValid = false;
+                if (conn) {
+                    try {
+                        await conn.wallet();
+                        walletValid = true;
+                    } catch {
+                        // Wallet has no accounts — localStorage was likely cleared
+                    }
+                }
+
+                if (!walletValid) {
+                    try {
+                        await authLogout();
+                    } catch {
+                        // ignore logout errors
+                    }
+                    set({
+                        isAuthenticated: false,
+                        hasAcceptedTerms: false,
+                        user: null,
+                        walletAccountId: null,
+                    });
+                    return;
+                }
+
                 set({
                     isAuthenticated: true,
                     hasAcceptedTerms: user.termsAccepted,
