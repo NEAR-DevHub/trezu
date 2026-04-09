@@ -55,3 +55,50 @@ See individual README files for setup instructions:
 - Frontend: [nt-fe/README.md](./nt-fe/README.md)
 - Contracts: [contracts/README.md](./contracts/README.md)
 - Local sandbox: [sandbox/README.md](./sandbox/README.md)
+
+### Telegram Bot (Local Development)
+
+The platform supports Telegram notifications for treasury events. To develop and test the Telegram integration locally:
+
+#### 1. Create a Bot
+
+Open Telegram, message [@BotFather](https://t.me/BotFather), and run `/newbot`. Save the bot token it gives you.
+
+#### 2. Expose Your Local Backend via ngrok
+
+Telegram requires an HTTPS URL to deliver webhook updates. Use [ngrok](https://ngrok.com/) to tunnel to your local backend (port 3002 by default):
+
+```bash
+ngrok http 3002
+```
+
+Copy the `https://` forwarding URL from the ngrok output (e.g. `https://ab12-34-56.ngrok-free.app`).
+
+#### 3. Register the Webhook
+
+Open this URL in your browser (replace the placeholders):
+
+```
+https://api.telegram.org/bot<BOT_TOKEN>/setWebhook?url=<NGROK_URL>/api/telegram/webhook&secret_token=1234567890
+```
+
+You should see `{"ok":true,"result":true,"description":"Webhook was set"}`.
+
+#### 4. Set Environment Variables
+
+> **Note:** Telegram rejects `localhost` URLs in bot messages (e.g. connect-treasury links). Use `127.0.0.1` instead.
+
+Backend (`nt-be`):
+```bash
+export TELEGRAM_BOT_TOKEN=<your-bot-token>
+export TELEGRAM_WEBHOOK_SECRET=1234567890
+export FRONTEND_BASE_URL=http://127.0.0.1:3001
+```
+
+Frontend (root `.env`):
+```bash
+export CORS_ALLOWED_ORIGINS=http://127.0.0.1:3001
+export NEXT_PUBLIC_BACKEND_API_BASE=http://127.0.0.1:3002
+```
+
+Then start the backend and frontend as usual. Add the bot to a Telegram group — it should respond with a "Connect Treasury" button linking to your local frontend.
