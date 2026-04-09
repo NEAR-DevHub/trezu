@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO confidential_intents (dao_id, payload_hash, intent_payload, intent_type)\n        VALUES ($1, $2, $3, 'auth')\n        ON CONFLICT (dao_id, payload_hash) DO UPDATE SET\n            intent_payload = EXCLUDED.intent_payload,\n            intent_type = 'auth',\n            status = 'pending',\n            updated_at = NOW()\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Jsonb"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "9af7cdd4de1be8f82488cfabad9f603cbf2305210da79c85aa3b38041ac1efb4"
+}
