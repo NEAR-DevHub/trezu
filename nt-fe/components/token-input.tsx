@@ -2,8 +2,9 @@
 
 import { useMemo } from "react";
 import { Button } from "./button";
-import { useToken, useTokenBalance } from "@/hooks/use-treasury-queries";
 import { useTreasury } from "@/hooks/use-treasury";
+import { useAssets } from "@/hooks/use-assets";
+import { availableBalance } from "@/lib/balance";
 import { cn, formatBalance, formatCurrency } from "@/lib/utils";
 import TokenSelect, { SelectedTokenData } from "./token-select";
 import { LargeInput } from "./large-input";
@@ -31,6 +32,8 @@ export const tokenSchema = z.object({
     residency: z.string().optional(),
     minWithdrawalAmount: z.string().optional(),
     minDepositAmount: z.string().optional(),
+    balance: z.string().optional(),
+    price: z.number().optional(),
 });
 
 export type Token = z.infer<typeof tokenSchema>;
@@ -104,34 +107,46 @@ export function TokenInput<
     const amount = useWatch({ control, name: amountName });
     const token = useWatch({ control, name: tokenName }) as Token;
 
-    // Get token price for USD estimation
-    const { data: tokenData, isLoading: isTokenLoading } = useToken(
-        token?.address || "",
-    );
-    const { data: tokenBalanceData } = useTokenBalance(
-        treasuryId,
-        token?.address || "",
-        tokenData?.network,
-    );
+    // Use balance & price from useAssets (passed through token-select)
+    const { data: assetsData } = useAssets(treasuryId, {
+        enabled: true,
+        onlySupportedTokens: true,
+    });
+
+    // Find the matching asset from useAssets to get fresh balance/price
+    const matchedAsset = useMemo(() => {
+        if (!assetsData?.tokens || !token?.address) return null;
+        return assetsData.tokens.find(
+            (t) =>
+                (t.contractId ?? t.id) === token.address &&
+                t.network === token.network,
+        );
+    }, [assetsData?.tokens, token?.address, token?.network]);
+
+    const tokenBalance = matchedAsset
+        ? availableBalance(matchedAsset.balance).toFixed(0)
+        : token?.balance;
+    const tokenPrice = matchedAsset?.price ?? token?.price;
+    const tokenDecimals = matchedAsset?.decimals ?? token?.decimals;
 
     const hasInsufficientBalance = useMemo(() => {
         if (!showInsufficientBalance) return false;
-        if (!tokenBalanceData || !amount || isNaN(amount) || amount <= 0) {
+        if (!tokenBalance || !amount || isNaN(amount) || amount <= 0) {
             return false;
         }
 
-        const decimals = token?.decimals || 24;
+        const decimals = tokenDecimals || 24;
         const amountInSmallestUnits = Big(amount).mul(Big(10).pow(decimals));
 
-        return amountInSmallestUnits.gt(tokenBalanceData.balance);
-    }, [showInsufficientBalance, tokenBalanceData, amount, token?.decimals]);
+        return amountInSmallestUnits.gt(tokenBalance);
+    }, [showInsufficientBalance, tokenBalance, amount, tokenDecimals]);
 
     const estimatedUSDValue = useMemo(() => {
-        if (!tokenData?.price || !amount || isNaN(amount) || amount <= 0) {
+        if (!tokenPrice || !amount || isNaN(amount) || amount <= 0) {
             return null;
         }
-        return amount * tokenData.price;
-    }, [amount, tokenData?.price]);
+        return amount * tokenPrice;
+    }, [amount, tokenPrice]);
 
     return (
         <FormField
@@ -144,13 +159,13 @@ export function TokenInput<
                     invalid={!!fieldState.error}
                     topRightContent={
                         <div className="flex items-center gap-2">
-                            {tokenBalanceData && token?.decimals && (
+                            {tokenBalance && tokenDecimals && (
                                 <>
                                     <p className="text-xs text-muted-foreground">
                                         Balance:{" "}
                                         {formatBalance(
-                                            tokenBalanceData.balance,
-                                            token.decimals,
+                                            tokenBalance,
+                                            tokenDecimals,
                                         )}{" "}
                                         {token.symbol.toUpperCase()}
                                     </p>
@@ -162,21 +177,19 @@ export function TokenInput<
                                             size="sm"
                                             onClick={() => {
                                                 if (
-                                                    tokenBalanceData &&
-                                                    token.decimals
+                                                    tokenBalance &&
+                                                    tokenDecimals
                                                 ) {
                                                     setValue(
                                                         amountName,
-                                                        Big(
-                                                            tokenBalanceData.balance,
-                                                        )
+                                                        Big(tokenBalance)
                                                             .div(
                                                                 Big(10).pow(
-                                                                    token.decimals,
+                                                                    tokenDecimals,
                                                                 ),
                                                             )
                                                             .toFixed(
-                                                                token.decimals,
+                                                                tokenDecimals,
                                                             ) as PathValue<
                                                             TFieldValues,
                                                             Path<TFieldValues>
@@ -256,13 +269,9 @@ export function TokenInput<
                                     "visible",
                             )}
                         >
-                            {!isTokenLoading &&
-                            estimatedUSDValue !== null &&
-                            estimatedUSDValue > 0
+                            {estimatedUSDValue !== null && estimatedUSDValue > 0
                                 ? `≈ ${formatCurrency(estimatedUSDValue)}`
-                                : isTokenLoading
-                                  ? "Loading price..."
-                                  : "Invisible"}
+                                : "Invisible"}
                         </p>
                         {hasInsufficientBalance && (
                             <p className="text-general-info-foreground text-sm mt-2">

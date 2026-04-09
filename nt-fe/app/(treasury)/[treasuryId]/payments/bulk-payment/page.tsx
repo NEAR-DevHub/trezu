@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { PageComponentLayout } from "@/components/page-component-layout";
@@ -38,9 +38,16 @@ import { needsStorageDepositCheck } from "./utils";
 export default function BulkPaymentPage() {
     const router = useRouter();
     const queryClient = useQueryClient();
-    const { treasuryId: selectedTreasury } = useTreasury();
+    const { treasuryId: selectedTreasury, isConfidential } = useTreasury();
     const { createProposal } = useNear();
     const { data: policy } = useTreasuryPolicy(selectedTreasury);
+
+    useEffect(() => {
+        if (isConfidential) {
+            toast.warning("Bulk payments are coming soon!");
+            router.replace(`/${selectedTreasury}/payments`);
+        }
+    }, [isConfidential, selectedTreasury, router]);
 
     const [step, setStep] = useState(0);
 

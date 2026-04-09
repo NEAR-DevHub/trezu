@@ -139,6 +139,7 @@ export function useExchangeQuote({
 
                 const quote = await getIntentsQuote(
                     {
+                        daoId: selectedTreasury,
                         swapType: "EXACT_INPUT",
                         slippageTolerance: Math.round(slippageTolerance * 100), // Convert to basis points
                         originAsset,

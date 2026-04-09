@@ -67,7 +67,9 @@ async fn get_confidential_deposit_address(
             "quoteWaitingTimeMs": 5000,
         });
 
-        match send_quote_request(state, &url, &access_token, &quote_body).await {
+        match super::quote::send_oneclick_request(state, &url, &quote_body, Some(&access_token))
+            .await
+        {
             Ok(response_body) => {
                 let quote_deposit_address = response_body
                     .get("quote")
@@ -105,57 +107,6 @@ async fn get_confidential_deposit_address(
     }
 
     Err((StatusCode::BAD_GATEWAY, last_error))
-}
-
-/// Send a quote request to the confidential API and return the parsed JSON response.
-async fn send_quote_request(
-    state: &Arc<AppState>,
-    url: &str,
-    access_token: &str,
-    body: &serde_json::Value,
-) -> Result<serde_json::Value, (StatusCode, String)> {
-    let mut req = state
-        .http_client
-        .post(url)
-        .header("content-type", "application/json")
-        .header("Authorization", format!("Bearer {}", access_token));
-
-    if let Some(api_key) = &state.env_vars.oneclick_api_key {
-        req = req.header("x-api-key", api_key);
-    }
-
-    let response = req.json(body).send().await.map_err(|e| {
-        log::error!(
-            "Error calling confidential quote API for deposit address: {}",
-            e
-        );
-        (
-            StatusCode::BAD_GATEWAY,
-            format!("Failed to get confidential quote: {}", e),
-        )
-    })?;
-
-    let status = response.status();
-    let response_body: serde_json::Value = response.json().await.map_err(|e| {
-        (
-            StatusCode::BAD_GATEWAY,
-            format!("Failed to parse confidential quote response: {}", e),
-        )
-    })?;
-
-    if !status.is_success() {
-        let error_message = response_body
-            .get("error")
-            .or_else(|| response_body.get("message"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("Unknown error from confidential quote API");
-        return Err((
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY),
-            error_message.to_string(),
-        ));
-    }
-
-    Ok(response_body)
 }
 
 /// Fetch deposit address from the bridge RPC for a given account and chain.

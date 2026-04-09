@@ -180,6 +180,7 @@ mod tests {
         // Step 1: Get a live quote for shielding wNEAR
         println!("=== Step 1: Getting live shield quote ===");
         let quote_request = QuoteRequest {
+            dao_id: None,
             dry: Some(false), // Live quote — returns depositAddress
             swap_type: Some("EXACT_INPUT".to_string()),
             slippage_tolerance: Some(100),
@@ -195,7 +196,7 @@ mod tests {
             quote_waiting_time_ms: Some(5000),
         };
 
-        let quote_result = get_quote(State(state.clone()), Json(quote_request)).await;
+        let quote_result = get_quote(State(state.clone()), crate::auth::OptionalAuthUser(None), Json(quote_request)).await;
 
         let quote_response = match quote_result {
             Ok(response) => {

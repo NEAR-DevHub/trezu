@@ -1,24 +1,19 @@
 use axum::{Json, extract::State, http::StatusCode};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::Value;
+
 use std::sync::Arc;
 
 use crate::AppState;
-
-/// App fee configuration for the quote request
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct AppFee {
-    /// NEAR account to receive the fee
-    pub recipient: String,
-    /// Fee in basis points (100 = 1%)
-    pub fee: u32,
-}
+use crate::auth::OptionalAuthUser;
 
 /// Quote request body - matches 1click API /v0/quote
 /// Client-provided appFees and referral are ignored and overridden by server config
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct QuoteRequest {
+    /// DAO account ID — used to check confidentiality and route accordingly
+    pub dao_id: Option<String>,
     /// Set to true for testing without executing
     #[serde(default)]
     pub dry: Option<bool>,
@@ -46,131 +41,49 @@ pub struct QuoteRequest {
     pub deadline: String,
     /// Time to wait for quote in milliseconds
     pub quote_waiting_time_ms: Option<u32>,
-    // Note: appFees and referral are intentionally NOT included here
-    // They will be injected from server-side environment variables
 }
 
-/// Internal request sent to 1click API with injected appFees and referral
-#[derive(Serialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct OneClickQuoteRequest {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub dry: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub swap_type: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub slippage_tolerance: Option<u32>,
-    pub origin_asset: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub deposit_type: Option<String>,
-    pub destination_asset: String,
-    pub amount: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub refund_to: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub refund_type: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub recipient: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub recipient_type: Option<String>,
-    pub deadline: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub quote_waiting_time_ms: Option<u32>,
-    /// App fees injected from server config
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub app_fees: Option<Vec<AppFee>>,
-    /// Referral injected from server config
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub referral: Option<String>,
-}
-
-impl From<QuoteRequest> for OneClickQuoteRequest {
-    fn from(req: QuoteRequest) -> Self {
-        OneClickQuoteRequest {
-            dry: req.dry,
-            swap_type: req.swap_type,
-            slippage_tolerance: req.slippage_tolerance,
-            origin_asset: req.origin_asset,
-            deposit_type: req.deposit_type,
-            destination_asset: req.destination_asset,
-            amount: req.amount,
-            refund_to: req.refund_to,
-            refund_type: req.refund_type,
-            recipient: req.recipient,
-            recipient_type: req.recipient_type,
-            deadline: req.deadline.clone(),
-            quote_waiting_time_ms: req.quote_waiting_time_ms,
-            app_fees: None,
-            referral: None,
-        }
-    }
-}
-
-/// Proxy endpoint for 1click API quote
-/// Injects server-side appFees and referral from environment variables
-pub async fn get_quote(
-    State(state): State<Arc<AppState>>,
-    Json(request): Json<QuoteRequest>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-    // Convert client request to internal request
-    let mut oneclick_request: OneClickQuoteRequest = request.into();
-
-    // Inject app fees from environment if configured
-    if let (Some(fee_bps), Some(recipient)) = (
-        state.env_vars.oneclick_app_fee_bps,
-        state.env_vars.oneclick_app_fee_recipient.as_ref(),
-    ) && oneclick_request.origin_asset != oneclick_request.destination_asset
-    {
-        oneclick_request.app_fees = Some(vec![AppFee {
-            recipient: recipient.clone(),
-            fee: fee_bps,
-        }]);
-    }
-
-    // Inject referral from environment if configured
-    if let Some(referral) = state.env_vars.oneclick_referral.as_ref() {
-        oneclick_request.referral = Some(referral.clone());
-    }
-
-    // Build the request to 1click API
-    let url = format!("{}/v0/quote", state.env_vars.oneclick_api_url);
-
-    let mut request_builder = state
+/// Send a JSON body to a 1click-style API endpoint and return the parsed response.
+/// Handles auth headers, error extraction, and status propagation.
+pub async fn send_oneclick_request(
+    state: &Arc<AppState>,
+    url: &str,
+    body: &Value,
+    access_token: Option<&str>,
+) -> Result<Value, (StatusCode, String)> {
+    let mut req = state
         .http_client
-        .post(&url)
-        .header("content-type", "application/json")
-        .json(&oneclick_request);
+        .post(url)
+        .header("content-type", "application/json");
 
-    // Add JWT authentication if configured
-    if let Some(jwt_token) = state.env_vars.oneclick_jwt_token.as_ref() {
-        request_builder = request_builder.header("Authorization", format!("Bearer {}", jwt_token));
+    if let Some(token) = access_token {
+        req = req.header("Authorization", format!("Bearer {}", token));
     }
 
-    // Make the request
-    let response = request_builder.send().await.map_err(|e| {
-        eprintln!("Error calling 1click API: {}", e);
+    if let Some(api_key) = &state.env_vars.oneclick_api_key {
+        req = req.header("x-api-key", api_key);
+    }
+
+    let response = req.json(body).send().await.map_err(|e| {
+        log::error!("Error calling 1click API at {}: {}", url, e);
         (
             StatusCode::BAD_GATEWAY,
-            format!("Failed to fetch quote from 1click API: {}", e),
+            format!("Failed to call 1click API: {}", e),
         )
     })?;
 
     let status = response.status();
-
-    // Parse response body
-    let body: Value = response.json().await.map_err(|e| {
-        eprintln!("Error parsing 1click API response: {}", e);
+    let response_body: Value = response.json().await.map_err(|e| {
         (
             StatusCode::BAD_GATEWAY,
-            "Failed to parse 1click API response".to_string(),
+            format!("Failed to parse 1click API response: {}", e),
         )
     })?;
 
-    // If 1click API returned an error, propagate it with appropriate status
     if !status.is_success() {
-        let error_message = body
+        let error_message = response_body
             .get("error")
-            .or_else(|| body.get("message"))
+            .or_else(|| response_body.get("message"))
             .and_then(|v| v.as_str())
             .unwrap_or("Unknown error from 1click API");
 
@@ -180,7 +93,79 @@ pub async fn get_quote(
         ));
     }
 
-    Ok(Json(body))
+    Ok(response_body)
+}
+
+/// Build the camelCase JSON body from a QuoteRequest, injecting server-side
+/// appFees and referral from env config.
+fn build_quote_body(state: &AppState, request: &QuoteRequest) -> Value {
+    let mut body = serde_json::json!({
+        "dry": request.dry,
+        "swapType": request.swap_type,
+        "slippageTolerance": request.slippage_tolerance,
+        "originAsset": request.origin_asset,
+        "depositType": request.deposit_type,
+        "destinationAsset": request.destination_asset,
+        "amount": request.amount,
+        "refundTo": request.refund_to,
+        "refundType": request.refund_type,
+        "recipient": request.recipient,
+        "recipientType": request.recipient_type,
+        "deadline": request.deadline,
+        "quoteWaitingTimeMs": request.quote_waiting_time_ms,
+    });
+
+    // Inject app fees when origin != destination
+    if let (Some(fee_bps), Some(recipient)) = (
+        state.env_vars.oneclick_app_fee_bps,
+        state.env_vars.oneclick_app_fee_recipient.as_ref(),
+    ) {
+        if request.origin_asset != request.destination_asset {
+            body["appFees"] = serde_json::json!([{ "recipient": recipient, "fee": fee_bps }]);
+        }
+    }
+
+    // Inject referral
+    if let Some(referral) = state.env_vars.oneclick_referral.as_ref() {
+        body["referral"] = serde_json::json!(referral);
+    }
+
+    body
+}
+
+/// Proxy endpoint for 1click API quote.
+/// When `dao_id` is provided and the DAO is confidential, routes to the
+/// confidential API with DAO JWT and API key.
+/// Otherwise proxies to the regular 1click API.
+/// Server-side appFees and referral are injected in both paths.
+pub async fn get_quote(
+    State(state): State<Arc<AppState>>,
+    auth: OptionalAuthUser,
+    Json(request): Json<QuoteRequest>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let body = build_quote_body(&state, &request);
+
+    // Check confidentiality when dao_id is provided
+    if let Some(dao_id) = &request.dao_id {
+        let confidential = auth
+            .verify_member_if_confidential(&state.db_pool, dao_id)
+            .await?;
+
+        if confidential {
+            let access_token =
+                super::confidential::authenticate::refresh_dao_jwt(&state, dao_id).await?;
+            let url = format!("{}/v0/quote", state.env_vars.confidential_api_url);
+            return send_oneclick_request(&state, &url, &body, Some(&access_token))
+                .await
+                .map(Json);
+        }
+    }
+
+    let url = format!("{}/v0/quote", state.env_vars.oneclick_api_url);
+    let access_token = state.env_vars.oneclick_jwt_token.as_deref();
+    send_oneclick_request(&state, &url, &body, access_token)
+        .await
+        .map(Json)
 }
 
 #[cfg(test)]
@@ -226,6 +211,7 @@ mod tests {
         // Request format based on 1click API documentation
         // See: https://docs.near-intents.org/near-intents/integration/distribution-channels/1click-api
         QuoteRequest {
+            dao_id: None,
             dry: Some(true),
             swap_type: Some("EXACT_INPUT".to_string()),
             slippage_tolerance: Some(100), // 1% in basis points
@@ -297,7 +283,7 @@ mod tests {
         let state = create_test_state(&mock_server.uri(), None).await;
         let request = create_test_request();
 
-        let result = get_quote(State(state), Json(request)).await;
+        let result = get_quote(State(state), OptionalAuthUser(None), Json(request)).await;
 
         assert!(result.is_ok());
         let response = result.unwrap();
@@ -333,6 +319,7 @@ mod tests {
         let state = create_test_state(&mock_server.uri(), None).await;
 
         let request = QuoteRequest {
+            dao_id: None,
             dry: Some(true),
             swap_type: None,
             slippage_tolerance: None,
@@ -348,7 +335,7 @@ mod tests {
             quote_waiting_time_ms: None,
         };
 
-        let result = get_quote(State(state), Json(request)).await;
+        let result = get_quote(State(state), OptionalAuthUser(None), Json(request)).await;
 
         assert!(result.is_err());
         let (status, message) = result.unwrap_err();
@@ -382,6 +369,7 @@ mod tests {
         let state = create_test_state(&mock_server.uri(), Some(env_vars)).await;
 
         let request = QuoteRequest {
+            dao_id: None,
             dry: Some(true),
             swap_type: None,
             slippage_tolerance: None,
@@ -397,110 +385,8 @@ mod tests {
             quote_waiting_time_ms: None,
         };
 
-        let result = get_quote(State(state), Json(request)).await;
+        let result = get_quote(State(state), OptionalAuthUser(None), Json(request)).await;
         assert!(result.is_ok());
-    }
-
-    #[tokio::test]
-    async fn test_quote_request_serialization() {
-        // Test that the request is properly serialized with camelCase
-        let request = create_test_request();
-        let oneclick_request: OneClickQuoteRequest = request.into();
-
-        let json = serde_json::to_value(&oneclick_request).unwrap();
-
-        // Verify camelCase field names
-        assert!(json.get("originAsset").is_some());
-        assert!(json.get("destinationAsset").is_some());
-        assert!(json.get("slippageTolerance").is_some());
-        assert_eq!(json.get("originAsset").unwrap(), "nep141:wrap.near");
-    }
-
-    #[tokio::test]
-    async fn test_app_fees_injection() {
-        // Test that app fees are correctly constructed
-        let fee_bps = 50u32;
-        let recipient = "treasury.near".to_string();
-
-        let app_fee = AppFee {
-            recipient: recipient.clone(),
-            fee: fee_bps,
-        };
-
-        let json = serde_json::to_value(&app_fee).unwrap();
-        assert_eq!(json.get("recipient").unwrap(), "treasury.near");
-        assert_eq!(json.get("fee").unwrap(), 50);
-    }
-
-    #[tokio::test]
-    async fn test_oneclick_request_with_app_fees() {
-        let request = QuoteRequest {
-            dry: Some(true),
-            swap_type: None,
-            slippage_tolerance: None,
-            origin_asset: "nep141:wrap.near".to_string(),
-            deposit_type: None,
-            destination_asset: "nep141:usdt.tether-token.near".to_string(),
-            amount: "1000000".to_string(),
-            refund_to: None,
-            refund_type: None,
-            recipient: None,
-            recipient_type: None,
-            deadline: "2026-01-18T16:30:00.000Z".to_string(),
-            quote_waiting_time_ms: None,
-        };
-
-        let mut oneclick_request: OneClickQuoteRequest = request.into();
-        oneclick_request.app_fees = Some(vec![AppFee {
-            recipient: "treasury.near".to_string(),
-            fee: 50,
-        }]);
-        oneclick_request.referral = Some("near-treasury".to_string());
-
-        let json = serde_json::to_value(&oneclick_request).unwrap();
-
-        // Verify appFees is present and correct
-        let app_fees = json.get("appFees").unwrap().as_array().unwrap();
-        assert_eq!(app_fees.len(), 1);
-        assert_eq!(app_fees[0]["recipient"], "treasury.near");
-        assert_eq!(app_fees[0]["fee"], 50);
-
-        // Verify referral is present
-        assert_eq!(json.get("referral").unwrap(), "near-treasury");
-    }
-
-    #[tokio::test]
-    async fn test_oneclick_request_without_optional_fields() {
-        let request = QuoteRequest {
-            dry: None,
-            swap_type: None,
-            slippage_tolerance: None,
-            origin_asset: "nep141:wrap.near".to_string(),
-            deposit_type: None,
-            destination_asset: "nep141:usdt.tether-token.near".to_string(),
-            amount: "1000000".to_string(),
-            refund_to: None,
-            refund_type: None,
-            recipient: None,
-            recipient_type: None,
-            deadline: "2026-01-18T16:30:00.000Z".to_string(),
-            quote_waiting_time_ms: None,
-        };
-
-        let oneclick_request: OneClickQuoteRequest = request.into();
-        let json = serde_json::to_value(&oneclick_request).unwrap();
-
-        // Verify optional fields are not present (skip_serializing_if works)
-        assert!(json.get("dry").is_none());
-        assert!(json.get("swapType").is_none());
-        assert!(json.get("appFees").is_none());
-        assert!(json.get("referral").is_none());
-
-        // Required fields should be present
-        assert!(json.get("originAsset").is_some());
-        assert!(json.get("destinationAsset").is_some());
-        assert!(json.get("amount").is_some());
-        assert!(json.get("deadline").is_some()); // deadline is now required
     }
 
     /// Integration test that calls the real 1click API
@@ -538,6 +424,7 @@ mod tests {
         // Generate a deadline 10 minutes in the future
         let deadline = chrono::Utc::now() + chrono::Duration::minutes(10);
         let request = QuoteRequest {
+            dao_id: None,
             dry: Some(true), // Important: dry run only
             swap_type: Some("EXACT_INPUT".to_string()),
             slippage_tolerance: Some(100),
@@ -553,7 +440,7 @@ mod tests {
             quote_waiting_time_ms: Some(5000),
         };
 
-        let result = get_quote(State(state), Json(request)).await;
+        let result = get_quote(State(state), OptionalAuthUser(None), Json(request)).await;
 
         match result {
             Ok(response) => {

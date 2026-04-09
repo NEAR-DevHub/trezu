@@ -60,44 +60,9 @@ pub async fn get_confidential_quote(
         "quoteWaitingTimeMs": request.quote_waiting_time_ms,
     });
 
-    let mut req = state
-        .http_client
-        .post(&url)
-        .header("content-type", "application/json")
-        .header("Authorization", format!("Bearer {}", access_token));
-
-    if let Some(api_key) = &state.env_vars.oneclick_api_key {
-        req = req.header("x-api-key", api_key);
-    }
-
-    let response = req.json(&body).send().await.map_err(|e| {
-        log::error!("Error calling 1Click confidential quote API: {}", e);
-        (
-            StatusCode::BAD_GATEWAY,
-            format!("Failed to get quote: {}", e),
-        )
-    })?;
-
-    let status = response.status();
-    let response_body: Value = response.json().await.map_err(|e| {
-        (
-            StatusCode::BAD_GATEWAY,
-            format!("Failed to parse quote response: {}", e),
-        )
-    })?;
-
-    if !status.is_success() {
-        let error_message = response_body
-            .get("error")
-            .or_else(|| response_body.get("message"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("Unknown error from 1Click API");
-
-        return Err((
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY),
-            error_message.to_string(),
-        ));
-    }
+    let response_body =
+        crate::handlers::intents::quote::send_oneclick_request(&state, &url, &body, Some(&access_token))
+            .await?;
 
     Ok(Json(response_body))
 }

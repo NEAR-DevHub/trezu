@@ -1257,6 +1257,7 @@ export async function removeUserTreasury(
 }
 
 export interface IntentsQuoteRequest {
+    daoId?: string;
     dry?: boolean;
     swapType?: string;
     slippageTolerance?: number;
@@ -1306,10 +1307,14 @@ export async function getIntentsQuote(
 ): Promise<IntentsQuoteResponse | null> {
     try {
         const url = `${BACKEND_API_BASE}/intents/quote`;
-        const response = await axios.post<IntentsQuoteResponse>(url, {
-            ...request,
-            dry,
-        });
+        const response = await axios.post<IntentsQuoteResponse>(
+            url,
+            {
+                ...request,
+                dry,
+            },
+            { withCredentials: true },
+        );
         return response.data;
     } catch (error: any) {
         console.error(
