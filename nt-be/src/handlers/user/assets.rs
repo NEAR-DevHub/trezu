@@ -24,7 +24,7 @@ use crate::{
         intents_chains::ChainIcons,
         intents_tokens::{find_token_by_symbol, find_unified_asset_id},
     },
-    handlers::intents::confidential::authenticate::refresh_dao_jwt,
+    handlers::intents::confidential::refresh_dao_jwt,
     handlers::token::{TokenMetadata as TokenMetadataResponse, fetch_tokens_with_defuse_extension},
 };
 

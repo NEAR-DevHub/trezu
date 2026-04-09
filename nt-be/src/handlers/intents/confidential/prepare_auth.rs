@@ -4,14 +4,14 @@
 //! v1.signer proposal args. Also stores the auth payload so the relay
 //! can auto-authenticate after the proposal is approved.
 
-use axum::{Json, extract::State, http::StatusCode};
+use axum::http::StatusCode;
 use base64::Engine;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::sync::Arc;
 
+use crate::AppState;
 use crate::constants::{INTENTS_CONTRACT_ID, V1_SIGNER_CONTRACT_ID};
-use crate::{AppState, auth::AuthUser};
 const V1_SIGNER_GAS: &str = "250000000000000";
 
 #[derive(Deserialize, Debug)]
@@ -145,92 +145,4 @@ pub(crate) async fn build_auth_proposal(
     });
 
     Ok((proposal, auth_payload))
-}
-
-/// POST /api/confidential-intents/prepare-auth
-///
-/// Builds a v1.signer signing proposal for DAO authentication.
-/// The auth payload is stored for auto-submission after approval.
-pub async fn prepare_auth(
-    State(state): State<Arc<AppState>>,
-    auth_user: AuthUser,
-    Json(request): Json<PrepareAuthRequest>,
-) -> Result<Json<PrepareAuthResponse>, (StatusCode, String)> {
-    auth_user
-        .verify_dao_member(&state.db_pool, &request.dao_id)
-        .await
-        .map_err(|e| (StatusCode::FORBIDDEN, format!("Not a DAO member: {}", e)))?;
-
-    let (proposal_with_wrapper, auth_payload_json) =
-        build_auth_proposal(&state, &request.dao_id).await?;
-
-    // build_auth_proposal wraps in {"proposal": ...}, unwrap for the handler response
-    let proposal = proposal_with_wrapper
-        .get("proposal")
-        .cloned()
-        .unwrap_or(proposal_with_wrapper);
-
-    let auth_payload = AuthPayload {
-        message: auth_payload_json["message"]
-            .as_str()
-            .unwrap_or_default()
-            .to_string(),
-        nonce: auth_payload_json["nonce"]
-            .as_str()
-            .unwrap_or_default()
-            .to_string(),
-        recipient: auth_payload_json["recipient"]
-            .as_str()
-            .unwrap_or_default()
-            .to_string(),
-    };
-
-    // Store as pending auth for auto-submission after approval
-    let payload_json = serde_json::to_value(&auth_payload).map_err(|e| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Failed to serialize auth payload: {}", e),
-        )
-    })?;
-
-    let payload_hash = crate::handlers::relay::confidential::compute_nep413_hash(&payload_json)
-        .ok_or_else(|| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Failed to compute NEP-413 payload hash for auth".to_string(),
-            )
-        })?;
-
-    sqlx::query!(
-        r#"
-        INSERT INTO confidential_intents (dao_id, payload_hash, intent_payload, intent_type)
-        VALUES ($1, $2, $3, 'auth')
-        ON CONFLICT (dao_id, payload_hash) DO UPDATE SET
-            intent_payload = EXCLUDED.intent_payload,
-            intent_type = 'auth',
-            status = 'pending',
-            updated_at = NOW()
-        "#,
-        &request.dao_id,
-        &payload_hash,
-        &payload_json,
-    )
-    .execute(&state.db_pool)
-    .await
-    .map_err(|e| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Failed to store pending auth: {}", e),
-        )
-    })?;
-
-    log::info!(
-        "Prepared confidential auth proposal for DAO {}",
-        request.dao_id
-    );
-
-    Ok(Json(PrepareAuthResponse {
-        proposal,
-        auth_payload,
-    }))
 }
