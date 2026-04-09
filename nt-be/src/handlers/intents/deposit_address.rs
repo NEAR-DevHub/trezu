@@ -34,8 +34,7 @@ async fn get_confidential_deposit_address(
     token_id: &str,
     mut amount: u128,
 ) -> Result<DepositAddressResult, (StatusCode, String)> {
-    let access_token =
-        super::confidential::authenticate::refresh_dao_jwt(state, account_id).await?;
+    let access_token = super::confidential::refresh_dao_jwt(state, account_id).await?;
 
     let url = format!("{}/v0/quote", state.env_vars.confidential_api_url);
 

@@ -77,7 +77,7 @@ pub async fn generate_intent(
         .signer_id
         .strip_prefix("near:")
         .unwrap_or(&request.signer_id);
-    let access_token = super::authenticate::refresh_dao_jwt(&state, dao_id).await?;
+    let access_token = super::refresh_dao_jwt(&state, dao_id).await?;
 
     let mut req = state
         .http_client

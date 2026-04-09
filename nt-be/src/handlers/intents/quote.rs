@@ -151,8 +151,7 @@ pub async fn get_quote(
             .await?;
 
         if confidential {
-            let access_token =
-                super::confidential::authenticate::refresh_dao_jwt(&state, dao_id).await?;
+            let access_token = super::confidential::refresh_dao_jwt(&state, dao_id).await?;
             let url = format!("{}/v0/quote", state.env_vars.confidential_api_url);
             return send_oneclick_request(&state, &url, &body, Some(&access_token))
                 .await
