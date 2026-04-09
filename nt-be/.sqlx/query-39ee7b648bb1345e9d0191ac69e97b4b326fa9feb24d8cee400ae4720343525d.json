@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO onboarding_sessions (\n            onboarding_session_id,\n            account_id,\n            treasury_account_id,\n            completed_steps,\n            answers\n        )\n        VALUES ($1, $2, $3, $4, $5::jsonb)\n        ON CONFLICT (onboarding_session_id)\n        DO UPDATE SET\n            account_id = COALESCE(\n                EXCLUDED.account_id,\n                onboarding_sessions.account_id\n            ),\n            treasury_account_id = COALESCE(\n                EXCLUDED.treasury_account_id,\n                onboarding_sessions.treasury_account_id\n            ),\n            completed_steps = GREATEST(\n                onboarding_sessions.completed_steps,\n                EXCLUDED.completed_steps\n            ),\n            answers = EXCLUDED.answers,\n            updated_at = NOW()\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Int4",
+        "Jsonb"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "39ee7b648bb1345e9d0191ac69e97b4b326fa9feb24d8cee400ae4720343525d"
+}

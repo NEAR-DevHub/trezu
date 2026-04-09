@@ -32,6 +32,24 @@ pub struct CreateTreasuryRequest {
     pub requestors: Vec<AccountId>,
     #[serde(default)]
     pub is_confidential: bool,
+    #[serde(default)]
+    pub onboarding_questionnaire: Option<OnboardingQuestionnaire>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OnboardingQuestionAnswer {
+    pub selected: Vec<String>,
+    #[serde(default)]
+    pub other: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OnboardingQuestionnaire {
+    pub networks: OnboardingQuestionAnswer,
+    pub use_cases: OnboardingQuestionAnswer,
+    pub discovery_sources: OnboardingQuestionAnswer,
 }
 
 #[derive(Serialize, Deserialize)]

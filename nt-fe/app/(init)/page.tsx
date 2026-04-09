@@ -1,7 +1,7 @@
 "use client";
 
 import { GradFlow } from "gradflow";
-import { ArrowUpRight, Loader2 } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -23,6 +23,7 @@ import { NearInitializer } from "@/components/near-initializer";
 import { QueryProvider } from "@/components/query-provider";
 import {
     APP_ACTIVE_TREASURY,
+    DEMO_TREASURY_ID,
     APP_WALLET_SETUP_URL,
     LANDING_PAGE,
 } from "@/constants/config";
@@ -36,6 +37,12 @@ import { useNear } from "@/stores/near-store";
 interface WalletSuggestionModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+}
+
+interface PostConnectModalProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onCreateTreasury: () => void;
 }
 
 interface WalletSuggestionItemProps {
@@ -190,11 +197,99 @@ function GradientTitle() {
     );
 }
 
+function OnboardingChoiceCard({
+    title,
+    description,
+    active,
+    disabled,
+    onClick,
+}: {
+    title: string;
+    description: string;
+    active: boolean;
+    disabled?: boolean;
+    onClick: () => void;
+}) {
+    return (
+        <Button
+            type="button"
+            onClick={onClick}
+            disabled={disabled}
+            className={cn(
+                "w-full max-w-md rounded-xl px-5 py-2 h-auto text-left transition-colors border",
+                "flex items-center justify-between gap-3",
+                active
+                    ? "bg-black text-white border-black hover:bg-black/95"
+                    : "bg-secondary text-foreground border-transparent hover:bg-secondary/80",
+            )}
+        >
+            <div className="flex flex-col gap-1 min-w-0 text-sm">
+                <p className="font-medium text-base">{title}</p>
+                <p
+                    className={cn(
+                        "",
+                        active ? "text-secondary" : "text-muted-foreground",
+                    )}
+                >
+                    {description}
+                </p>
+            </div>
+            {disabled ? (
+                <Loader2 className="size-4 shrink-0 animate-spin" />
+            ) : (
+                <ArrowRight
+                    className={cn(
+                        "size-5 shrink-0",
+                        active ? "text-white" : "text-foreground",
+                    )}
+                />
+            )}
+        </Button>
+    );
+}
+
+function PostConnectModal({
+    open,
+    onOpenChange,
+    onCreateTreasury,
+}: PostConnectModalProps) {
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader className="mb-1">
+                    <DialogTitle className="text-left">
+                        You're almost set
+                    </DialogTitle>
+                </DialogHeader>
+                <DialogDescription className="text-muted-foreground">
+                    Your wallet is connected, but you haven't created a treasury
+                    yet. Create an account to start using Trezu, or check out
+                    the demo.
+                </DialogDescription>
+                <div className="flex flex-col gap-3 mt-2">
+                    <Button className="w-full" onClick={onCreateTreasury}>
+                        Create a Treasury
+                    </Button>
+                    <Button variant="secondary" className="w-full" asChild>
+                        <Link href={`/${DEMO_TREASURY_ID}`}>
+                            Explore the Trezu Demo
+                        </Link>
+                    </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 export function Content() {
     const router = useRouter();
     const [isWelcomeImageLoaded, setIsWelcomeImageLoaded] = useState(false);
     const [isWelcomeImageFailed, setIsWelcomeImageFailed] = useState(false);
     const [isWalletSuggestionOpen, setIsWalletSuggestionOpen] = useState(false);
+    const [isPostConnectModalOpen, setIsPostConnectModalOpen] = useState(false);
+    const [onboardingPath, setOnboardingPath] = useState<
+        "new_user" | "existing_user" | null
+    >(null);
     const [contact, setContact] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
@@ -216,18 +311,26 @@ export function Content() {
         !isInitializing &&
         treasuries.length === 0 &&
         !creationAvailable;
+    const isResolvingExistingUserTreasury =
+        onboardingPath === "existing_user" && !!accountId && isLoading;
+    const isNewUserOptionLoading = isAuthenticating || isInitializing;
+    const isExistingUserOptionLoading =
+        isAuthenticating || isInitializing || isResolvingExistingUserTreasury;
 
     useEffect(() => {
         if (!isLoading && treasuries.length > 0) {
-            router.push(`/${lastTreasuryId || treasuries[0].daoId}`);
+            router.push(`/${treasuries[0].daoId}`);
         } else if (
             accountId &&
             treasuries.length === 0 &&
             !isLoading &&
-            !isInitializing &&
-            creationAvailable
+            !isInitializing
         ) {
-            router.push(`/app/new`);
+            if (onboardingPath === "existing_user") {
+                setIsPostConnectModalOpen(true);
+            } else if (creationAvailable) {
+                router.push(`/app/new`);
+            }
         }
     }, [
         treasuries,
@@ -237,7 +340,14 @@ export function Content() {
         isInitializing,
         lastTreasuryId,
         creationAvailable,
+        onboardingPath,
     ]);
+
+    useEffect(() => {
+        if (!accountId && isPostConnectModalOpen) {
+            setIsPostConnectModalOpen(false);
+        }
+    }, [accountId, isPostConnectModalOpen]);
 
     const handleWhitelistSubmit = async () => {
         if (!contact.trim()) return;
@@ -256,11 +366,34 @@ export function Content() {
         }
     };
 
-    const buttonText = isInitializing
-        ? "Loading..."
-        : isAuthenticating || isLoading
-          ? "Authenticating..."
-          : "Connect Wallet";
+    const triggerWalletConnect = (path: "new_user" | "existing_user") => {
+        if (authError) clearError();
+        setOnboardingPath(path);
+
+        if (path === "new_user") {
+            trackEvent("onboarding-path-selected", {
+                path: "new_user",
+            });
+            router.push("/app/new");
+            return;
+        }
+
+        if (accountId) {
+            if (!isLoading && treasuries.length > 0) {
+                router.push(`/${lastTreasuryId || treasuries[0].daoId}`);
+                return;
+            }
+            if (!isLoading) {
+                setIsPostConnectModalOpen(true);
+            }
+            return;
+        }
+
+        trackEvent("wallet-connect-clicked", {
+            source: "welcome-existing-user",
+        });
+        connect();
+    };
 
     return (
         <div className="relative h-screen w-full overflow-hidden">
@@ -362,8 +495,9 @@ export function Content() {
                                                 delay: 0.62,
                                             }}
                                         >
-                                            Use your wallet to sign in into your
-                                            treasury.
+                                            {!accountId
+                                                ? "Choose an option below to get started."
+                                                : "Use your wallet to sign in into your treasury."}
                                         </motion.p>
                                     </div>
                                 ) : showWhitelist && !submitted ? (
@@ -488,42 +622,34 @@ export function Content() {
                                     )
                                 ) : (
                                     <>
-                                        <Button
-                                            size="default"
-                                            className="w-full max-w-md"
-                                            onClick={() => {
-                                                if (authError) clearError();
-                                                trackEvent(
-                                                    "wallet-connect-clicked",
-                                                );
-                                                connect();
-                                            }}
-                                            disabled={
-                                                isAuthenticating ||
-                                                isInitializing
+                                        <OnboardingChoiceCard
+                                            title="I'm new to Trezu"
+                                            description="I've heard about Trezu but don't have a treasury yet."
+                                            active={
+                                                onboardingPath !==
+                                                "existing_user"
                                             }
-                                        >
-                                            {(isAuthenticating ||
-                                                isInitializing) && (
-                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                            )}
-                                            {buttonText}
-                                        </Button>
-                                        <Button
-                                            variant="link"
-                                            className="font-medium text-sm text-foreground hover:text-foreground/80"
-                                            onClick={() => {
-                                                trackEvent(
-                                                    "wallet-missing-click",
-                                                    {
-                                                        source: "welcome_page",
-                                                    },
-                                                );
-                                                setIsWalletSuggestionOpen(true);
-                                            }}
-                                        >
-                                            I don&apos;t have a wallet
-                                        </Button>
+                                            onClick={() =>
+                                                triggerWalletConnect("new_user")
+                                            }
+                                            disabled={isNewUserOptionLoading}
+                                        />
+                                        <OnboardingChoiceCard
+                                            title="I already use Trezu"
+                                            description="I have an account and manage a treasury."
+                                            active={
+                                                onboardingPath ===
+                                                "existing_user"
+                                            }
+                                            onClick={() =>
+                                                triggerWalletConnect(
+                                                    "existing_user",
+                                                )
+                                            }
+                                            disabled={
+                                                isExistingUserOptionLoading
+                                            }
+                                        />
                                     </>
                                 )}
                             </motion.div>
@@ -590,6 +716,14 @@ export function Content() {
             <WalletSuggestionModal
                 open={isWalletSuggestionOpen}
                 onOpenChange={setIsWalletSuggestionOpen}
+            />
+            <PostConnectModal
+                open={isPostConnectModalOpen}
+                onOpenChange={setIsPostConnectModalOpen}
+                onCreateTreasury={() => {
+                    setIsPostConnectModalOpen(false);
+                    router.push("/app/new");
+                }}
             />
         </div>
     );

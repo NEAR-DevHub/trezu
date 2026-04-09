@@ -3,6 +3,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+    ArrowLeftIcon,
+    Check,
     Clock10,
     Database,
     Globe,
@@ -13,7 +15,7 @@ import {
     Vote,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { type ArrayPath, useForm, useFormContext } from "react-hook-form";
 import z from "zod";
 import { Alert, AlertDescription } from "@/components/alert";
@@ -36,13 +38,16 @@ import {
     StepWizard,
 } from "@/components/step-wizard";
 import { Form, FormField, FormMessage } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useTreasuryCreationStatus } from "@/hooks/use-treasury-queries";
 import { trackEvent } from "@/lib/analytics";
 import {
     type CreateTreasuryRequest,
+    type TreasuryOnboardingQuestionnaire,
     checkHandleUnused,
     createTreasuryStream,
+    saveOnboardingQuestionnaireProgress,
 } from "@/lib/api";
 import {
     CreationProgressModal,
@@ -51,6 +56,7 @@ import {
 import { useNear } from "@/stores/near-store";
 import { InfoAlert } from "@/components/info-alert";
 import { TreasuryTypeIcon } from "@/components/icons/shield";
+import { getNearIntentsNetworkIconSrc } from "@/constants/network-icons";
 import {
     Card,
     CardContent,
@@ -61,10 +67,19 @@ import {
 } from "@/components/ui/card";
 import { Pill } from "@/components/pill";
 import { cn } from "@/lib/utils";
-import { features } from "@/constants/features";
+
+const questionnaireAnswerSchema = z.object({
+    selected: z.array(z.string()),
+    other: z.string().max(280).optional(),
+});
 
 const treasuryFormSchema = z
     .object({
+        about: z.object({
+            networks: questionnaireAnswerSchema,
+            useCases: questionnaireAnswerSchema,
+            discoverySources: questionnaireAnswerSchema,
+        }),
         details: z
             .object({
                 treasuryName: z
@@ -106,6 +121,213 @@ const treasuryFormSchema = z
 
 type TreasuryFormValues = z.infer<typeof treasuryFormSchema>;
 
+interface QuestionnaireOption {
+    id: string;
+    label: string;
+    iconClassName?: string;
+    iconSrc?: string;
+}
+
+type QuestionnaireBaseFieldName =
+    | "about.networks"
+    | "about.useCases"
+    | "about.discoverySources";
+
+type QuestionnaireFieldName =
+    | `${QuestionnaireBaseFieldName}.selected`
+    | `${QuestionnaireBaseFieldName}.other`;
+
+const NETWORK_OPTIONS: QuestionnaireOption[] = [
+    {
+        id: "near",
+        label: "NEAR",
+        iconSrc:
+            "https://s2.coinmarketcap.com/static/img/coins/128x128/6535.png",
+    },
+    {
+        id: "bitcoin",
+        label: "Bitcoin",
+        iconSrc: getNearIntentsNetworkIconSrc("btc"),
+    },
+    {
+        id: "ethereum",
+        label: "Ethereum",
+        iconSrc: getNearIntentsNetworkIconSrc("ethereum"),
+    },
+    {
+        id: "solana",
+        label: "Solana",
+        iconSrc: getNearIntentsNetworkIconSrc("solana"),
+    },
+    {
+        id: "arbitrum",
+        label: "Arbitrum",
+        iconSrc: getNearIntentsNetworkIconSrc("arbitrum"),
+    },
+    {
+        id: "base",
+        label: "Base",
+        iconSrc: getNearIntentsNetworkIconSrc("base"),
+    },
+    {
+        id: "optimism",
+        label: "Optimism",
+        iconSrc: getNearIntentsNetworkIconSrc("optimism"),
+    },
+    {
+        id: "polygon",
+        label: "Polygon",
+        iconSrc: getNearIntentsNetworkIconSrc("polygon"),
+    },
+    {
+        id: "gnosis",
+        label: "Gnosis",
+        iconSrc: getNearIntentsNetworkIconSrc("gnosis"),
+    },
+    {
+        id: "avalanche",
+        label: "Avalanche",
+        iconSrc: getNearIntentsNetworkIconSrc("avalanche"),
+    },
+    {
+        id: "bnb-chain",
+        label: "BNB Chain",
+        iconSrc: getNearIntentsNetworkIconSrc("bsc"),
+    },
+    {
+        id: "other",
+        label: "Other",
+        iconClassName: "bg-general-secondary text-muted-foreground",
+    },
+];
+
+const USE_CASE_OPTIONS: QuestionnaireOption[] = [
+    {
+        id: "team-payroll-grants",
+        label: "Team payroll & grants",
+    },
+    {
+        id: "company-assets-management",
+        label: "Company assets management",
+    },
+    {
+        id: "dao-treasury-management",
+        label: "DAO treasury management",
+    },
+    {
+        id: "investment-portfolio",
+        label: "Investment portfolio",
+    },
+    {
+        id: "operational-spending",
+        label: "Operational spending",
+    },
+    {
+        id: "other",
+        label: "Other",
+    },
+];
+
+const DISCOVERY_OPTIONS: QuestionnaireOption[] = [
+    {
+        id: "google-search",
+        label: "Google Search",
+    },
+    {
+        id: "youtube",
+        label: "Youtube",
+    },
+    {
+        id: "twitter",
+        label: "Twitter",
+    },
+    {
+        id: "recommendation",
+        label: "Recommendation",
+    },
+    {
+        id: "near-community",
+        label: "Near Community",
+    },
+    {
+        id: "other",
+        label: "Other",
+    },
+];
+
+const QUESTIONNAIRE_STEPS = [
+    {
+        title: "A few quick questions to begin.",
+        question: "Which networks do you use most often?",
+        progress: "1/3",
+        fieldName: "about.networks" as const,
+        placeholder: "Enter network name",
+        options: NETWORK_OPTIONS,
+    },
+    {
+        title: "",
+        question: "What do you plan to use Trezu for?",
+        progress: "2/3",
+        fieldName: "about.useCases" as const,
+        placeholder: "Describe your use case",
+        options: USE_CASE_OPTIONS,
+    },
+    {
+        title: "",
+        question: "How did you hear about Trezu?",
+        progress: "3/3",
+        fieldName: "about.discoverySources" as const,
+        placeholder: "Type your answer here",
+        options: DISCOVERY_OPTIONS,
+    },
+];
+
+function getQuestionKey(fieldName: QuestionnaireBaseFieldName): string {
+    switch (fieldName) {
+        case "about.networks":
+            return "networks";
+        case "about.useCases":
+            return "use_cases";
+        case "about.discoverySources":
+            return "discovery_sources";
+    }
+}
+
+function getQuestionnaireSummary(about: TreasuryFormValues["about"]) {
+    return {
+        networks_selected: about.networks.selected,
+        networks_count: about.networks.selected.length,
+        networks_other: about.networks.other?.trim() || undefined,
+        use_cases_selected: about.useCases.selected,
+        use_cases_count: about.useCases.selected.length,
+        use_cases_other: about.useCases.other?.trim() || undefined,
+        discovery_sources_selected: about.discoverySources.selected,
+        discovery_sources_count: about.discoverySources.selected.length,
+        discovery_sources_other:
+            about.discoverySources.other?.trim() || undefined,
+    };
+}
+
+function sanitizeQuestionAnswer(answer: {
+    selected: string[];
+    other?: string;
+}) {
+    return {
+        selected: answer.selected,
+        other: answer.other?.trim() ? answer.other.trim() : undefined,
+    };
+}
+
+function buildOnboardingQuestionnaire(
+    about: TreasuryFormValues["about"],
+): TreasuryOnboardingQuestionnaire {
+    return {
+        networks: sanitizeQuestionAnswer(about.networks),
+        useCases: sanitizeQuestionAnswer(about.useCases),
+        discoverySources: sanitizeQuestionAnswer(about.discoverySources),
+    };
+}
+
 /**
  * Helper to clear form errors before updating field value
  * Ensures errors disappear immediately when user starts typing
@@ -124,7 +346,238 @@ function createClearErrorsOnChange<T>(
     };
 }
 
-function Step1({ handleNext }: StepProps) {
+function QuestionOptionButton({
+    option,
+    selected,
+    onClick,
+}: {
+    option: QuestionnaireOption;
+    selected: boolean;
+    onClick: () => void;
+}) {
+    return (
+        <Button
+            type="button"
+            variant="unstyled"
+            onClick={onClick}
+            className={cn(
+                "w-full rounded-lg border px-3.5 py-2 h-auto justify-between hover:bg-general-secondary/30",
+                selected
+                    ? "border-foreground bg-general-secondary"
+                    : "border-input",
+            )}
+        >
+            <div className="flex items-center gap-3 min-w-0">
+                {option.iconSrc ? (
+                    <img
+                        src={option.iconSrc}
+                        alt={option.label}
+                        className="size-6 rounded-full object-cover shrink-0"
+                    />
+                ) : option.iconClassName ? (
+                    <div
+                        className={cn(
+                            "size-6 rounded-full grid place-content-center text-xs font-semibold shrink-0",
+                            option.iconClassName,
+                        )}
+                    ></div>
+                ) : null}
+                <span className="text-base font-normal text-foreground truncate">
+                    {option.label}
+                </span>
+            </div>
+            <div
+                className={cn(
+                    "size-6 rounded-md border grid place-content-center shrink-0",
+                    selected
+                        ? "bg-foreground border-foreground text-background"
+                        : "bg-muted/30 border-input text-transparent",
+                )}
+            >
+                <Check className="size-4" />
+            </div>
+        </Button>
+    );
+}
+
+function AboutYouStep({
+    handleNext,
+    onboardingSessionId,
+    setOnboardingSessionId,
+    accountId,
+}: StepProps & {
+    onboardingSessionId: string | null;
+    setOnboardingSessionId: (id: string) => void;
+    accountId: string | null;
+}) {
+    const form = useFormContext<TreasuryFormValues>();
+    const [questionIndex, setQuestionIndex] = useState(0);
+    const currentQuestion = QUESTIONNAIRE_STEPS[questionIndex];
+    const questionKey = getQuestionKey(currentQuestion.fieldName);
+    const currentValue = form.watch(currentQuestion.fieldName);
+    const selectedValues = currentValue?.selected ?? [];
+    const hasOtherSelected = selectedValues.includes("other");
+    const hasValidOtherText = !!currentValue?.other?.trim();
+    const canContinue =
+        selectedValues.length > 0 && (!hasOtherSelected || hasValidOtherText);
+
+    const updateSelection = (optionId: string) => {
+        const isSelected = selectedValues.includes(optionId);
+        const nextSelected = isSelected
+            ? selectedValues.filter((id) => id !== optionId)
+            : [...selectedValues, optionId];
+
+        form.setValue(
+            `${currentQuestion.fieldName}.selected` as QuestionnaireFieldName,
+            nextSelected,
+            { shouldDirty: true },
+        );
+
+        if (optionId === "other" && isSelected) {
+            form.setValue(
+                `${currentQuestion.fieldName}.other` as QuestionnaireFieldName,
+                "",
+                { shouldDirty: true },
+            );
+        }
+    };
+
+    const advanceQuestion = () => {
+        if (questionIndex === QUESTIONNAIRE_STEPS.length - 1) {
+            handleNext?.();
+            return;
+        }
+        setQuestionIndex((prev) => prev + 1);
+    };
+
+    const moveNext = () => {
+        trackEvent("onboarding-question-continued", {
+            question_key: questionKey,
+            question_index: questionIndex + 1,
+            selected_count: selectedValues.length,
+        });
+
+        const about = form.getValues("about");
+        const questionnaire = buildOnboardingQuestionnaire(about);
+        void saveOnboardingQuestionnaireProgress({
+            onboardingSessionId: onboardingSessionId ?? undefined,
+            questionnaire,
+            completedSteps: questionIndex + 1,
+            accountId: accountId ?? undefined,
+        })
+            .then((response) => {
+                if (!onboardingSessionId) {
+                    setOnboardingSessionId(response.onboardingSessionId);
+                }
+            })
+            .catch((error) => {
+                console.error(
+                    "Failed to save onboarding questionnaire progress",
+                    error,
+                );
+            });
+
+        advanceQuestion();
+    };
+
+    const handleSkip = () => {
+        trackEvent("onboarding-question-skipped", {
+            question_key: questionKey,
+            question_index: questionIndex + 1,
+            selected_count: selectedValues.length,
+        });
+        form.setValue(
+            `${currentQuestion.fieldName}.selected` as QuestionnaireFieldName,
+            [],
+            { shouldDirty: true },
+        );
+        form.setValue(
+            `${currentQuestion.fieldName}.other` as QuestionnaireFieldName,
+            "",
+            { shouldDirty: true },
+        );
+        advanceQuestion();
+    };
+
+    return (
+        <PageCard>
+            <div className="flex flex-col gap-5">
+                <div className="flex items-center gap-2">
+                    {questionIndex > 0 && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            type="button"
+                            onClick={() => setQuestionIndex((prev) => prev - 1)}
+                            className="shrink-0 mt-[5px]"
+                        >
+                            <ArrowLeftIcon className="size-4" />
+                        </Button>
+                    )}
+                    <div className="flex items-start justify-between gap-4 w-full">
+                        <div className="flex flex-col gap-1">
+                            <p className="text-muted-foreground font-semibold">
+                                {currentQuestion.title}
+                            </p>
+                            <h3 className="font-semibold leading-tight">
+                                {currentQuestion.question}
+                            </h3>
+                        </div>
+                        <p className="text-muted-foreground shrink-0 text-sm">
+                            {currentQuestion.progress}
+                        </p>
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {currentQuestion.options.map((option) => (
+                        <QuestionOptionButton
+                            key={option.id}
+                            option={option}
+                            selected={selectedValues.includes(option.id)}
+                            onClick={() => updateSelection(option.id)}
+                        />
+                    ))}
+                </div>
+                {hasOtherSelected && (
+                    <Textarea
+                        value={currentValue?.other ?? ""}
+                        onChange={(event) => {
+                            form.setValue(
+                                `${currentQuestion.fieldName}.other` as QuestionnaireFieldName,
+                                event.target.value,
+                                { shouldDirty: true },
+                            );
+                        }}
+                        className="min-h-24 bg-background border-input"
+                        placeholder={currentQuestion.placeholder}
+                    />
+                )}
+                <div className="flex flex-col gap-2">
+                    <div className="rounded-lg border bg-card p-0 overflow-hidden">
+                        <Button
+                            type="button"
+                            className="w-full rounded-none border-0"
+                            onClick={moveNext}
+                            disabled={!canContinue}
+                        >
+                            Continue
+                        </Button>
+                    </div>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        className="w-full"
+                        onClick={handleSkip}
+                    >
+                        Skip
+                    </Button>
+                </div>
+            </div>
+        </PageCard>
+    );
+}
+
+function Step1({ handleNext, handleBack }: StepProps) {
     const form = useFormContext<TreasuryFormValues>();
     const [accountNameEdited, setAccountNameEdited] = useState(false);
 
@@ -141,7 +594,7 @@ function Step1({ handleNext }: StepProps) {
 
     return (
         <PageCard>
-            <StepperHeader title="Create a Treasury" />
+            <StepperHeader title="Create a Treasury" handleBack={handleBack} />
 
             <FormField
                 control={form.control}
@@ -254,12 +707,12 @@ function Threshold({
     const canIncrement = value < max;
 
     return (
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
             <div className="flex flex-col flex-1 min-w-0">
                 <h3 className="font-medium text-sm">{title}</h3>
                 <p className="text-sm text-muted-foreground">{description}</p>
             </div>
-            <div className="flex items-center gap-4 shrink-0">
+            <div className="flex items-center gap-4 shrink-0 w-full sm:w-auto justify-start sm:justify-end">
                 <Button
                     type="button"
                     variant="secondary"
@@ -292,9 +745,27 @@ function Threshold({
 
 function Step2({ handleBack, handleNext }: StepProps) {
     const form = useFormContext<TreasuryFormValues>();
+    const { accountId } = useNear();
 
     const handleContinue = async () => {
-        const isValid = await form.trigger(["members"]);
+        const members = form.getValues("members");
+        const memberFieldsToValidate = members.flatMap((_, index) => {
+            if (index === 0 && !accountId) return [];
+            return [
+                `members.${index}.accountId`,
+                `members.${index}.roles`,
+            ] as const;
+        });
+
+        const isValid =
+            memberFieldsToValidate.length > 0
+                ? await form.trigger(memberFieldsToValidate as any)
+                : true;
+
+        if (!accountId) {
+            form.clearErrors("members.0.accountId");
+        }
+
         if (isValid && handleNext) {
             trackEvent("treasury-creation-step-2-completed", {
                 members_count: form.getValues("members").length,
@@ -330,6 +801,12 @@ function Step2({ handleBack, handleNext }: StepProps) {
             );
         }
     }, [governanceMembers]);
+
+    useEffect(() => {
+        if (!accountId) {
+            form.clearErrors("members.0.accountId");
+        }
+    }, [accountId, form]);
 
     return (
         <PageCard>
@@ -580,7 +1057,16 @@ const VISUAL = [
     },
 ] as const;
 
-function Step4({ handleBack }: StepProps) {
+function Step4({
+    handleBack,
+    accountId,
+    connectWallet,
+    isConnectingWallet,
+}: StepProps & {
+    accountId: string | null;
+    connectWallet: () => Promise<void>;
+    isConnectingWallet: boolean;
+}) {
     const form = useFormContext<TreasuryFormValues>();
     const { details } = form.watch();
     const { members } = form.watch();
@@ -607,15 +1093,15 @@ function Step4({ handleBack }: StepProps) {
             <div className="flex flex-col gap-2">
                 <InputBlock invalid={false}>
                     <div className="flex gap-3 justify-between items-center w-full">
-                        <div className="flex gap-3.5 px-3.5 py-3 items-center">
+                        <div className="flex gap-3.5 px-3.5 py-3 items-center max-md:min-w-0">
                             <div className="size-10 rounded-[7px] bg-foreground/10 flex items-center justify-center">
                                 <Database className="size-5 text-foreground" />
                             </div>
-                            <div className="flex flex-col gap-0.5">
-                                <p className="font-bold text-2xl">
+                            <div className="flex flex-col gap-0.5 max-md:min-w-0">
+                                <p className="font-bold text-2xl max-md:text-xl max-md:truncate">
                                     {details.treasuryName}
                                 </p>
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-xs text-muted-foreground max-md:truncate">
                                     {details.accountName}.sputnik-dao.near
                                 </p>
                             </div>
@@ -632,12 +1118,16 @@ function Step4({ handleBack }: StepProps) {
                         governanceThresholdVisual,
                     ].map((item, index) => (
                         <InputBlock invalid={false} key={index}>
-                            <div className="flex flex-col px-3.5 py-3 gap-1 items-center justify-center">
+                            <div className="flex flex-col px-3.5 py-3 gap-1 items-center justify-center max-md:flex-row max-md:gap-2 max-md:justify-start">
                                 {VISUAL[index].icon}
-                                <p className="font-semibold text-xl">{item}</p>
-                                <p className="text-xs text-muted-foreground">
-                                    {VISUAL[index].title}
-                                </p>
+                                <div className="flex flex-col items-center gap-0.5 max-md:flex-row max-md:items-baseline max-md:gap-1.5">
+                                    <p className="font-semibold text-xl">
+                                        {item}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {VISUAL[index].title}
+                                    </p>
+                                </div>
                             </div>
                         </InputBlock>
                     ))}
@@ -657,8 +1147,21 @@ function Step4({ handleBack }: StepProps) {
             </Alert>
 
             <InlineNextButton
-                text="Create Treasury"
-                loading={form.formState.isSubmitting}
+                text={
+                    accountId
+                        ? "Create Treasury"
+                        : "Connect Wallet To Create Treasury"
+                }
+                loading={
+                    accountId ? form.formState.isSubmitting : isConnectingWallet
+                }
+                onClick={
+                    accountId
+                        ? undefined
+                        : () => {
+                              connectWallet();
+                          }
+                }
             />
         </PageCard>
     );
@@ -697,8 +1200,19 @@ const CONFIDENTIAL_STEPS: CreationStep[] = [
     { id: "finalizing", label: "Finalizing setup", status: "pending" },
 ];
 
+const CREATION_STEP_TITLES = [
+    "About You",
+    "Details",
+    "Members",
+    "Treasury Type",
+    "Review",
+];
+
 export default function NewTreasuryPage() {
-    const { accountId, isInitializing } = useNear();
+    // TEST ONLY: set to true to bypass on-chain treasury creation.
+    const SKIP_TREASURY_CREATION_FOR_TESTING = true;
+
+    const { accountId, connect, isAuthenticating } = useNear();
     const { treasuries } = useTreasury();
     const { data: creationStatus } = useTreasuryCreationStatus();
     const creationAvailable = creationStatus?.creationAvailable ?? true;
@@ -711,9 +1225,16 @@ export default function NewTreasuryPage() {
     const [createdTreasuryId, setCreatedTreasuryId] = useState<string | null>(
         null,
     );
+    const viewedStepsRef = useRef<Set<number>>(new Set());
+    const onboardingSessionIdRef = useRef<string | null>(null);
     const form = useForm<TreasuryFormValues>({
         resolver: zodResolver(treasuryFormSchema),
         defaultValues: {
+            about: {
+                networks: { selected: [], other: "" },
+                useCases: { selected: [], other: "" },
+                discoverySources: { selected: [], other: "" },
+            },
             details: {
                 paymentThreshold: 1,
                 governanceThreshold: 1,
@@ -736,12 +1257,28 @@ export default function NewTreasuryPage() {
     }, [accountId]);
 
     useEffect(() => {
-        if (!isInitializing && !accountId) {
-            router.push("/");
-        }
-    }, [accountId, isInitializing]);
+        trackEvent("treasury-create-page-viewed", {
+            source: "/app/new",
+            has_account_id: !!accountId,
+            treasuries_count: treasuries?.length ?? 0,
+        });
+    }, []);
+
+    useEffect(() => {
+        if (viewedStepsRef.current.has(step)) return;
+        viewedStepsRef.current.add(step);
+        trackEvent("treasury-create-step-viewed", {
+            step_index: step + 1,
+            step_title: CREATION_STEP_TITLES[step] ?? `step_${step + 1}`,
+        });
+    }, [step]);
 
     const onSubmit = async (data: TreasuryFormValues) => {
+        if (!accountId) {
+            await connect();
+            return;
+        }
+
         const governors = data.members
             .filter((m) => m.roles.includes("governance"))
             .map((m) => m.accountId);
@@ -751,6 +1288,9 @@ export default function NewTreasuryPage() {
         const requestors = data.members
             .filter((m) => m.roles.includes("requestor"))
             .map((m) => m.accountId);
+        const onboardingQuestionnaire = buildOnboardingQuestionnaire(
+            data.about,
+        );
 
         const request: CreateTreasuryRequest = {
             name: data.details.treasuryName,
@@ -761,7 +1301,15 @@ export default function NewTreasuryPage() {
             isConfidential: data.isConfidential,
             financiers,
             requestors,
+            onboardingQuestionnaire,
         };
+
+        console.log(request);
+        trackEvent("treasury-create-submit-clicked", {
+            ...getQuestionnaireSummary(data.about),
+            members_count: data.members.length,
+            treasury_type: data.isConfidential ? "confidential" : "public",
+        });
 
         const initialSteps = request.isConfidential
             ? CONFIDENTIAL_STEPS
@@ -773,6 +1321,18 @@ export default function NewTreasuryPage() {
         setProgressOpen(true);
 
         try {
+            if (SKIP_TREASURY_CREATION_FOR_TESTING) {
+                const treasuryId = request.accountId;
+                setProgressSteps((prev) =>
+                    prev.map((s) => ({
+                        ...s,
+                        status: "completed" as const,
+                    })),
+                );
+                setCreatedTreasuryId(treasuryId);
+                return;
+            }
+
             await createTreasuryStream(request, (event) => {
                 if (event.step === "done") {
                     const treasuryId = event.treasury!;
@@ -783,6 +1343,26 @@ export default function NewTreasuryPage() {
                         })),
                     );
                     setCreatedTreasuryId(treasuryId);
+                    void saveOnboardingQuestionnaireProgress({
+                        onboardingSessionId:
+                            onboardingSessionIdRef.current ?? undefined,
+                        questionnaire: onboardingQuestionnaire,
+                        completedSteps: QUESTIONNAIRE_STEPS.length,
+                        accountId: accountId ?? undefined,
+                        treasuryAccountId: treasuryId,
+                    })
+                        .then((response) => {
+                            if (!onboardingSessionIdRef.current) {
+                                onboardingSessionIdRef.current =
+                                    response.onboardingSessionId;
+                            }
+                        })
+                        .catch((error) => {
+                            console.error(
+                                "Failed to link onboarding questionnaire to treasury",
+                                error,
+                            );
+                        });
                     trackEvent("treasury-created", {
                         treasury_id: treasuryId,
                         source: "/app/new",
@@ -863,17 +1443,33 @@ export default function NewTreasuryPage() {
                         <StepWizard
                             step={step}
                             onStepChange={setStep}
-                            stepTitles={[
-                                "Details",
-                                "Members",
-                                "Treasury Type",
-                                "Review",
-                            ]}
+                            stepTitles={CREATION_STEP_TITLES}
+                            stepLabelClassName="hidden md:inline"
                             steps={[
+                                {
+                                    component: AboutYouStep,
+                                    props: {
+                                        onboardingSessionId:
+                                            onboardingSessionIdRef.current,
+                                        setOnboardingSessionId: (
+                                            id: string,
+                                        ) => {
+                                            onboardingSessionIdRef.current = id;
+                                        },
+                                        accountId,
+                                    },
+                                },
                                 { component: Step1 },
                                 { component: Step2 },
                                 { component: Step3 },
-                                { component: Step4 },
+                                {
+                                    component: Step4,
+                                    props: {
+                                        accountId,
+                                        connectWallet: connect,
+                                        isConnectingWallet: isAuthenticating,
+                                    },
+                                },
                             ]}
                         />
                     </form>
