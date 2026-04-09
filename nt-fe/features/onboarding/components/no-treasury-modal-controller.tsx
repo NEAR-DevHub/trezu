@@ -9,27 +9,26 @@ import { APP_ACTIVE_TREASURY } from "@/constants/config";
 import { NoTreasuryModal } from "./no-treasury-modal";
 
 const MODAL_SUPPRESSED_PATHS = new Set(["/app/new", APP_ACTIVE_TREASURY]);
-const DISMISSED_KEY_PREFIX = "no-treasury-modal-dismissed";
 
 export function NoTreasuryModalController() {
     const router = useRouter();
     const pathname = usePathname();
     const [open, setOpen] = useState(false);
-    // On onboarding ("/"), show once per visit regardless of localStorage dismissal.
-    // Outside onboarding, localStorage controls whether the modal stays hidden.
-    const onboardingShownRef = useRef(false);
-    const { accountId, isInitializing } = useNear();
+    // Show once per explicit login completion (not on refresh/session restore).
+    const promptedLoginKeyRef = useRef<string | null>(null);
+    const prevIsAuthenticatingRef = useRef(false);
+    const [loginNonce, setLoginNonce] = useState(0);
+    const { accountId, isInitializing, isAuthenticating } = useNear();
     const { treasuries, isLoading } = useTreasury();
     const { data: creationStatus } = useTreasuryCreationStatus();
-    const dismissedStorageKey = `${DISMISSED_KEY_PREFIX}:${accountId ?? "guest"}`;
 
     const creationAvailable = creationStatus?.creationAvailable ?? true;
-    const isOnboardingPath = pathname === "/";
     const isSuppressedPath = pathname
         ? MODAL_SUPPRESSED_PATHS.has(pathname)
         : false;
     const shouldShowModal =
         !!accountId &&
+        loginNonce > 0 &&
         creationAvailable &&
         !isInitializing &&
         !isLoading &&
@@ -37,10 +36,23 @@ export function NoTreasuryModalController() {
         !isSuppressedPath;
 
     useEffect(() => {
-        if (pathname !== "/") {
-            onboardingShownRef.current = false;
+        if (!accountId) {
+            promptedLoginKeyRef.current = null;
+            setOpen(false);
         }
-    }, [pathname]);
+    }, [accountId]);
+
+    useEffect(() => {
+        const justCompletedLogin =
+            prevIsAuthenticatingRef.current && !isAuthenticating && !!accountId;
+
+        if (justCompletedLogin) {
+            setLoginNonce((prev) => prev + 1);
+            promptedLoginKeyRef.current = null;
+        }
+
+        prevIsAuthenticatingRef.current = isAuthenticating;
+    }, [isAuthenticating, accountId]);
 
     useEffect(() => {
         if (!shouldShowModal) {
@@ -48,26 +60,14 @@ export function NoTreasuryModalController() {
             return;
         }
 
-        if (isOnboardingPath) {
-            if (!onboardingShownRef.current) {
-                onboardingShownRef.current = true;
-                setOpen(true);
-            }
-            return;
+        const loginKey = `${accountId}:${loginNonce}`;
+        if (promptedLoginKeyRef.current !== loginKey) {
+            promptedLoginKeyRef.current = loginKey;
+            setOpen(true);
         }
+    }, [shouldShowModal, accountId, loginNonce]);
 
-        const isDismissed =
-            localStorage.getItem(dismissedStorageKey) === "true";
-        setOpen(!isDismissed);
-    }, [shouldShowModal, isOnboardingPath, dismissedStorageKey]);
-
-    const handleOpenChange = (nextOpen: boolean) => {
-        setOpen(nextOpen);
-
-        if (!nextOpen && accountId) {
-            localStorage.setItem(dismissedStorageKey, "true");
-        }
-    };
+    const handleOpenChange = (nextOpen: boolean) => setOpen(nextOpen);
 
     return (
         <NoTreasuryModal
