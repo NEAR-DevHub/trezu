@@ -1,12 +1,9 @@
 import { test, expect, Page, Route } from "@playwright/test";
+import { createTreasury } from "./helpers/create-treasury";
 import FINAL_ASSETS from "./fixtures/assets.json";
 
 const TREASURY_ID = "webassemblymusic-treasury.sputnik-dao.near";
 const DASHBOARD_URL = `/${TREASURY_ID}`;
-const BACKEND_URL =
-    process.env.BACKEND_URL ||
-    process.env.NEXT_PUBLIC_BACKEND_API_BASE ||
-    "http://localhost:8080";
 
 // Use mobile viewport to reproduce the overlap issue
 test.use({
@@ -15,23 +12,17 @@ test.use({
 });
 
 test.beforeAll(async () => {
-    const res = await fetch(`${BACKEND_URL}/api/treasury/create`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+    try {
+        await createTreasury({
             name: "WebAssembly Music Treasury",
             accountId: TREASURY_ID,
-            paymentThreshold: 1,
-            governanceThreshold: 1,
             governors: ["test.near"],
             financiers: ["test.near"],
             requestors: ["test.near"],
-        }),
-    });
-    if (res.ok) {
+        });
         console.log(`Created DAO ${TREASURY_ID} in sandbox`);
-    } else {
-        console.log(`DAO creation returned ${res.status} (may already exist)`);
+    } catch (e) {
+        console.log(`DAO creation failed (may already exist): ${e}`);
     }
 });
 

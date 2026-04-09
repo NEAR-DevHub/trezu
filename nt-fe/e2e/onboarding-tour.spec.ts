@@ -1,11 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
+import { createTreasury } from "./helpers/create-treasury";
 
 const TREASURY_ID = "onboarding-e2e-test.sputnik-dao.near";
 const ACCOUNT_ID = "test.near";
-const BACKEND_URL =
-    process.env.BACKEND_URL ||
-    process.env.NEXT_PUBLIC_BACKEND_API_BASE ||
-    "http://localhost:8080";
 
 const TREASURY_POLICY = {
     roles: [
@@ -121,23 +118,17 @@ test.use({ locale: "en-US" });
 
 // Create the treasury in the sandbox backend
 test.beforeAll(async () => {
-    const res = await fetch(`${BACKEND_URL}/api/treasury/create`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+    try {
+        await createTreasury({
             name: "Onboarding E2E Test Treasury",
             accountId: TREASURY_ID,
-            paymentThreshold: 1,
-            governanceThreshold: 1,
             governors: [ACCOUNT_ID],
             financiers: [ACCOUNT_ID],
             requestors: [ACCOUNT_ID],
-        }),
-    });
-    if (res.ok) {
+        });
         console.log(`Created DAO ${TREASURY_ID} in sandbox`);
-    } else {
-        console.log(`DAO creation returned ${res.status} (may already exist)`);
+    } catch (e) {
+        console.log(`DAO creation failed (may already exist): ${e}`);
     }
 });
 
