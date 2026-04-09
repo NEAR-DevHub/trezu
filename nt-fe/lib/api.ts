@@ -1343,6 +1343,8 @@ export interface GenerateIntentResponse {
         payload: GenerateIntentPayload;
     };
     correlationId: string;
+    /** NEP-413 payload hash (hex) — use directly in payload_v2.Eddsa */
+    payloadHash: string;
 }
 
 /**

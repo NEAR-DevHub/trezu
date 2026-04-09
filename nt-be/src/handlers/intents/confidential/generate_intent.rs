@@ -80,7 +80,7 @@ pub async fn generate_intent(
     })?;
 
     let status = response.status();
-    let response_body: Value = response.json().await.map_err(|e| {
+    let mut response_body: Value = response.json().await.map_err(|e| {
         (
             StatusCode::BAD_GATEWAY,
             format!("Failed to parse generate-intent response: {}", e),
@@ -108,22 +108,35 @@ pub async fn generate_intent(
         .unwrap_or(&request.signer_id);
     if let Some(payload) = response_body.get("intent").and_then(|i| i.get("payload")) {
         let correlation_id = response_body.get("correlationId").and_then(|v| v.as_str());
+
+        // Compute the NEP-413 hash — this is the same value used in payload_v2.Eddsa
+        // on-chain, serving as the unique key to match intents to proposals.
+        let payload_hash =
+            crate::handlers::relay::confidential::compute_nep413_hash(payload).ok_or_else(
+                || {
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "Failed to compute NEP-413 payload hash".to_string(),
+                    )
+                },
+            )?;
+
         if let Err(e) = crate::handlers::relay::confidential::store_pending_intent(
             &state.db_pool,
             dao_id,
-            // proposal_id = -1 is a sentinel for "not yet linked to a proposal".
-            // The UNIQUE(dao_id, proposal_id) constraint means only one pending intent
-            // per DAO exists at a time. If a second intent is generated before the first
-            // is submitted, the ON CONFLICT upsert overwrites the previous one. This is
-            // intentional: the most recently generated intent is always the one that
-            // should be signed and submitted.
-            -1,
+            &payload_hash,
             payload,
             correlation_id,
         )
         .await
         {
             log::warn!("Failed to store pending intent for {}: {}", dao_id, e);
+        }
+
+        // Include the payload hash in the response so the frontend can use it
+        // directly in the v1.signer proposal (single source of truth).
+        if let Value::Object(ref mut map) = response_body {
+            map.insert("payloadHash".to_string(), Value::String(payload_hash));
         }
     }
 
