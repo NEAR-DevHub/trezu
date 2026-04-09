@@ -60,9 +60,13 @@ pub async fn get_confidential_quote(
         "quoteWaitingTimeMs": request.quote_waiting_time_ms,
     });
 
-    let response_body =
-        crate::handlers::intents::quote::send_oneclick_request(&state, &url, &body, Some(&access_token))
-            .await?;
+    let response_body = crate::handlers::intents::quote::send_oneclick_request(
+        &state,
+        &url,
+        &body,
+        Some(&access_token),
+    )
+    .await?;
 
     Ok(Json(response_body))
 }

@@ -119,10 +119,9 @@ fn build_quote_body(state: &AppState, request: &QuoteRequest) -> Value {
     if let (Some(fee_bps), Some(recipient)) = (
         state.env_vars.oneclick_app_fee_bps,
         state.env_vars.oneclick_app_fee_recipient.as_ref(),
-    ) {
-        if request.origin_asset != request.destination_asset {
-            body["appFees"] = serde_json::json!([{ "recipient": recipient, "fee": fee_bps }]);
-        }
+    ) && request.origin_asset != request.destination_asset
+    {
+        body["appFees"] = serde_json::json!([{ "recipient": recipient, "fee": fee_bps }]);
     }
 
     // Inject referral

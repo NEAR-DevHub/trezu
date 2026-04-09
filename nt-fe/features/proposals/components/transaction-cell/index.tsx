@@ -9,15 +9,15 @@ import { extractProposalData } from "../../utils/proposal-extractors";
 import {
     PaymentRequestData,
     BatchPaymentRequestData,
+    ConfidentialRequestData,
     FunctionCallData,
     StakingData,
     VestingData,
     SwapRequestData,
     UnknownData,
 } from "../../types/index";
+import { ConfidentialRequestCell } from "./confidential-request-cell";
 import { ChangeConfigCell } from "./change-config-cell";
-import { Policy } from "@/types/policy";
-import { TreasuryConfig } from "@/lib/api";
 
 interface TransactionCellProps {
     proposal: Proposal;
@@ -42,6 +42,16 @@ export function TransactionCell({
             return (
                 <TokenCell
                     data={paymentData}
+                    timestamp={timestamp}
+                    textOnly={textOnly}
+                />
+            );
+        }
+        case "Confidential Request": {
+            const confidentialData = data as ConfidentialRequestData;
+            return (
+                <ConfidentialRequestCell
+                    data={confidentialData}
                     timestamp={timestamp}
                     textOnly={textOnly}
                 />

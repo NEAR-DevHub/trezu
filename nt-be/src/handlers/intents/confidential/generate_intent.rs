@@ -15,10 +15,12 @@ pub struct GenerateIntentRequest {
     pub r#type: String,
     /// The signing standard: "nep413" for NEAR
     pub standard: String,
-    /// Deposit address from the quote response
-    pub deposit_address: String,
     /// Intents user ID (e.g., "near:mydao.sputnik-dao.near")
     pub signer_id: String,
+    /// Full quote response blob — depositAddress is extracted from
+    /// `quote.depositAddress`. Also stored so the UI can display
+    /// amounts, tokens, recipient, etc. for confidential proposals.
+    pub quote_metadata: Value,
 }
 
 /// Proxy endpoint for 1Click API generate-intent.
@@ -42,6 +44,20 @@ pub async fn generate_intent(
         .await
         .map_err(|e| (StatusCode::FORBIDDEN, format!("Not a DAO member: {}", e)))?;
 
+    // Extract deposit_address from quote_metadata.quote.depositAddress
+    let deposit_address = request
+        .quote_metadata
+        .get("quote")
+        .and_then(|q| q.get("depositAddress"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                "quote_metadata.quote.depositAddress is required".to_string(),
+            )
+        })?;
+
     log::info!(
         "generate_intent called: type={}, signerId={}",
         request.r#type,
@@ -52,7 +68,7 @@ pub async fn generate_intent(
     let body = serde_json::json!({
         "type": request.r#type,
         "standard": request.standard,
-        "depositAddress": request.deposit_address,
+        "depositAddress": deposit_address,
         "signerId": request.signer_id,
     });
 
@@ -111,15 +127,13 @@ pub async fn generate_intent(
 
         // Compute the NEP-413 hash — this is the same value used in payload_v2.Eddsa
         // on-chain, serving as the unique key to match intents to proposals.
-        let payload_hash =
-            crate::handlers::relay::confidential::compute_nep413_hash(payload).ok_or_else(
-                || {
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        "Failed to compute NEP-413 payload hash".to_string(),
-                    )
-                },
-            )?;
+        let payload_hash = crate::handlers::relay::confidential::compute_nep413_hash(payload)
+            .ok_or_else(|| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Failed to compute NEP-413 payload hash".to_string(),
+                )
+            })?;
 
         if let Err(e) = crate::handlers::relay::confidential::store_pending_intent(
             &state.db_pool,
@@ -127,6 +141,7 @@ pub async fn generate_intent(
             &payload_hash,
             payload,
             correlation_id,
+            Some(&request.quote_metadata),
         )
         .await
         {
@@ -209,7 +224,12 @@ mod tests {
             quote_waiting_time_ms: Some(5000),
         };
 
-        let quote_result = get_quote(State(state.clone()), crate::auth::OptionalAuthUser(None), Json(quote_request)).await;
+        let quote_result = get_quote(
+            State(state.clone()),
+            crate::auth::OptionalAuthUser(None),
+            Json(quote_request),
+        )
+        .await;
 
         let quote_response = match quote_result {
             Ok(response) => {
@@ -238,8 +258,8 @@ mod tests {
         let generate_request = GenerateIntentRequest {
             r#type: "swap_transfer".to_string(),
             standard: "nep413".to_string(),
-            deposit_address: deposit_address.to_string(),
             signer_id: format!("near:{}", dao_id),
+            quote_metadata: quote_response.clone(),
         };
 
         let auth_user = crate::auth::AuthUser {

@@ -17,7 +17,7 @@ import {
 import { TokenInput, tokenSchema } from "@/components/token-input";
 import { Form, FormField } from "@/components/ui/form";
 import { Textarea } from "@/components/textarea";
-import { NEAR_TOKEN } from "@/constants/token";
+import { default_near_token } from "@/constants/token";
 import { useToken, useTreasuryPolicy } from "@/hooks/use-treasury-queries";
 import {
     encodeToMarkdown,
@@ -291,7 +291,7 @@ function Step3({ handleBack }: StepProps) {
 }
 
 export default function VestingPage() {
-    const { treasuryId } = useTreasury();
+    const { treasuryId, isConfidential } = useTreasury();
     const { createProposal } = useNear();
     const { data: policy } = useTreasuryPolicy(treasuryId);
     const [step, setStep] = useState(0);
@@ -308,7 +308,7 @@ export default function VestingPage() {
                 endDate: undefined,
                 allowCancel: false,
                 allowEarn: false,
-                token: NEAR_TOKEN,
+                token: default_near_token(isConfidential),
             },
         },
     });

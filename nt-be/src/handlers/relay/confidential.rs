@@ -78,14 +78,16 @@ pub async fn store_pending_intent(
     payload_hash: &str,
     intent_payload: &Value,
     correlation_id: Option<&str>,
+    quote_metadata: Option<&Value>,
 ) -> Result<(), String> {
     sqlx::query!(
         r#"
-        INSERT INTO confidential_intents (dao_id, payload_hash, intent_payload, correlation_id)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO confidential_intents (dao_id, payload_hash, intent_payload, correlation_id, quote_metadata)
+        VALUES ($1, $2, $3, $4, $5)
         ON CONFLICT (dao_id, payload_hash) DO UPDATE SET
             intent_payload = EXCLUDED.intent_payload,
             correlation_id = EXCLUDED.correlation_id,
+            quote_metadata = EXCLUDED.quote_metadata,
             intent_type = 'shield',
             status = 'pending',
             submit_result = NULL,
@@ -95,6 +97,7 @@ pub async fn store_pending_intent(
         payload_hash,
         intent_payload,
         correlation_id,
+        quote_metadata,
     )
     .execute(pool)
     .await

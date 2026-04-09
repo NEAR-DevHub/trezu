@@ -231,6 +231,34 @@ export interface Proposal {
     votes: {
         [account: string]: Vote;
     };
+    /** Populated by backend for confidential (v1.signer) proposals */
+    confidential_metadata?: {
+        quote_metadata?: {
+            quote: {
+                amountIn: string;
+                amountInFormatted: string;
+                amountInUsd: string;
+                amountOut: string;
+                amountOutFormatted: string;
+                amountOutUsd: string;
+                minAmountOut: string;
+                timeEstimate: number;
+                depositAddress: string;
+                deadline: string;
+            };
+            quoteRequest: {
+                originAsset: string;
+                destinationAsset: string;
+                recipient: string;
+                amount: string;
+                [key: string]: unknown;
+            };
+            signature: string;
+            timestamp: string;
+        };
+        status?: string;
+        correlation_id?: string;
+    };
 }
 
 export interface ProposalsResponse {
@@ -380,7 +408,10 @@ export async function getProposals(
                 params.sort_direction = filters.sort_direction;
         }
 
-        const response = await axios.get<ProposalsResponse>(url, { params });
+        const response = await axios.get<ProposalsResponse>(url, {
+            params,
+            withCredentials: true,
+        });
 
         return response.data;
     } catch (error) {

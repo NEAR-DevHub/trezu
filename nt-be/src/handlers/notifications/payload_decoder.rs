@@ -69,6 +69,7 @@ fn classify_proposal_kind(proposal_json: &Value) -> Option<String> {
         votes: HashMap::new(),
         submission_time: U64(0),
         last_actions_log: None,
+        confidential_metadata: None,
     };
 
     let bulk_contract_id: AccountId = BULK_PAYMENT_CONTRACT_ID.parse().ok()?;

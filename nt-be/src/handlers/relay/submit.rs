@@ -252,10 +252,9 @@ pub async fn relay_delegate_action(
     let action_receiver_id = signed_delegate_action.delegate_action.receiver_id.clone();
 
     // Extract v1.signer payload hash before the delegate action is consumed.
-    let confidential_payload_hash =
-        crate::handlers::relay::confidential::extract_v1_signer_hash(
-            &signed_delegate_action.delegate_action.actions,
-        );
+    let confidential_payload_hash = crate::handlers::relay::confidential::extract_v1_signer_hash(
+        &signed_delegate_action.delegate_action.actions,
+    );
 
     let allowed_contracts = fetch_allowed_receiver_contracts(&state, &request.treasury_id).await?;
     if !allowed_contracts.contains(action_receiver_id.as_str()) {
@@ -425,23 +424,23 @@ pub async fn relay_delegate_action(
 
                     // If this is a vote on a confidential_transfer proposal (v1.signer),
                     // try to extract the MPC signature and auto-submit the signed intent.
-                    if request.proposal_type.as_deref() == Some("vote") {
-                        if let Some(payload_hash) = confidential_payload_hash.clone() {
-                            tokio::spawn({
-                                let state = state.clone();
-                                let treasury_id = request.treasury_id.to_string();
-                                let result_debug = result_debug.clone();
-                                async move {
-                                    crate::handlers::relay::confidential::try_auto_submit_intent(
-                                        &state,
-                                        &treasury_id,
-                                        &payload_hash,
-                                        &result_debug,
-                                    )
-                                    .await;
-                                }
-                            });
-                        }
+                    if request.proposal_type.as_deref() == Some("vote")
+                        && let Some(payload_hash) = confidential_payload_hash.clone()
+                    {
+                        tokio::spawn({
+                            let state = state.clone();
+                            let treasury_id = request.treasury_id.to_string();
+                            let result_debug = result_debug.clone();
+                            async move {
+                                crate::handlers::relay::confidential::try_auto_submit_intent(
+                                    &state,
+                                    &treasury_id,
+                                    &payload_hash,
+                                    &result_debug,
+                                )
+                                .await;
+                            }
+                        });
                     }
 
                     Ok(Json(RelayResponse {

@@ -193,15 +193,13 @@ pub async fn prepare_auth(
         )
     })?;
 
-    let payload_hash =
-        crate::handlers::relay::confidential::compute_nep413_hash(&payload_json).ok_or_else(
-            || {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "Failed to compute NEP-413 payload hash for auth".to_string(),
-                )
-            },
-        )?;
+    let payload_hash = crate::handlers::relay::confidential::compute_nep413_hash(&payload_json)
+        .ok_or_else(|| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to compute NEP-413 payload hash for auth".to_string(),
+            )
+        })?;
 
     sqlx::query!(
         r#"

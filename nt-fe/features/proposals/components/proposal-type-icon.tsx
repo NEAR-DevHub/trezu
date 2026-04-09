@@ -24,6 +24,7 @@ export function ProposalTypeIcon({ proposal }: ProposalTypeIconProps) {
     switch (type) {
         case "Payment Request":
         case "Batch Payment Request":
+        case "Confidential Request":
             return (
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg dark:bg-blue-500/10 bg-blue-100">
                     <CreditCard className="size-5 shrink-0 dark:text-blue-300 text-blue-800" />

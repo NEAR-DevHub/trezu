@@ -95,11 +95,15 @@ export function useConfidentialQuote({
                 }
 
                 // Generate the intent payload (stored by the backend for auto-submission)
+                // Pass the full quote response as quoteMetadata so the backend can
+                // store it for displaying proposal details in the requests page.
+                const { correlationId: _, ...quoteMetadata } =
+                    quote as unknown as Record<string, unknown>;
                 const intent = await generateIntent({
                     type: "swap_transfer",
                     standard: "nep413",
-                    depositAddress: quote.quote.depositAddress,
                     signerId: selectedTreasury,
+                    quoteMetadata,
                 });
 
                 // Store both for proposal building

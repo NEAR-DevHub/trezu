@@ -21,8 +21,8 @@ export function buildConfidentialProposal(params: ConfidentialProposalParams) {
 
     // Opaque description — does NOT reveal amounts or tokens
     const description = encodeToMarkdown({
-        proposal_action: "confidential-transfer",
-        notes: "Confidential transfer via private intents. Details are hidden for privacy.",
+        proposal_action: "confidential",
+        notes: "Confidential proposal via private intents. Details are hidden for privacy.",
         correlationId: intentResponse.correlationId,
     });
 

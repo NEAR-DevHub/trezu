@@ -819,11 +819,15 @@ export default function PaymentsPage() {
 
                 if (isConfidential) {
                     // Confidential path: generate intent + build v1.signer proposal
+                    // Pass the full quote (minus correlationId, already stored separately)
+                    // so the backend can persist it for displaying proposal details.
+                    const { correlationId: _, ...quoteMetadata } =
+                        quote as unknown as Record<string, unknown>;
                     const intentResponse = await generateIntent({
                         type: "swap_transfer",
                         standard: "nep413",
-                        depositAddress: quote.quote.depositAddress,
                         signerId: treasuryId!,
+                        quoteMetadata,
                     });
 
                     const confidentialResult = await buildConfidentialProposal({

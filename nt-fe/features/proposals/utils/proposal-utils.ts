@@ -241,7 +241,14 @@ export function getProposalUIKind(proposal: Proposal): ProposalUIKind {
     switch (proposalType) {
         case "transfer":
             return "Payment Request";
-        case "call":
+        case "call": {
+            const proposalAction = decodeProposalDescription(
+                "proposal action",
+                proposal.description,
+            );
+            if (proposalAction === "confidential") {
+                return "Confidential Request";
+            }
             if (isVestingProposal(proposal)) {
                 return "Vesting";
             }
@@ -261,6 +268,7 @@ export function getProposalUIKind(proposal: Proposal): ProposalUIKind {
                 return stakingTypeResult;
             }
             return "Function Call";
+        }
         case "policy":
             return "Change Policy";
         case "config":

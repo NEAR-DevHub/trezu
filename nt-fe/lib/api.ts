@@ -1385,8 +1385,8 @@ export async function getConfidentialQuote(
 export async function generateIntent(request: {
     type: string;
     standard: string;
-    depositAddress: string;
     signerId: string;
+    quoteMetadata: Record<string, unknown>;
 }): Promise<GenerateIntentResponse> {
     const url = `${BACKEND_API_BASE}/confidential-intents/generate-intent`;
     const response = await axios.post<GenerateIntentResponse>(url, request, {

@@ -88,6 +88,36 @@ pub struct Proposal {
     pub votes: HashMap<String, Vote>,
     pub submission_time: U64,
     pub last_actions_log: Option<Vec<ProposalLog>>,
+    /// Populated by the backend for confidential proposals (v1.signer).
+    /// Contains quote_metadata, status, and correlation_id from confidential_intents table.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub confidential_metadata: Option<Value>,
+}
+
+/// Extract the payload_hash from a proposal's `kind` JSON if it's a v1.signer signing proposal.
+/// Returns `None` for non-confidential proposals.
+pub fn extract_payload_hash_from_kind(kind: &Value) -> Option<String> {
+    let func_call = kind.get("FunctionCall")?;
+    if func_call.get("receiver_id")?.as_str()? != "v1.signer" {
+        return None;
+    }
+    let actions = func_call.get("actions")?.as_array()?;
+    let first_action = actions.first()?;
+    if first_action.get("method_name")?.as_str()? != "sign" {
+        return None;
+    }
+    let args_b64 = first_action.get("args")?.as_str()?;
+    use base64::Engine;
+    let args_bytes = base64::engine::general_purpose::STANDARD
+        .decode(args_b64)
+        .ok()?;
+    let args: Value = serde_json::from_slice(&args_bytes).ok()?;
+    let hash = args
+        .get("request")?
+        .get("payload_v2")?
+        .get("Eddsa")?
+        .as_str()?;
+    Some(hash.to_string())
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
