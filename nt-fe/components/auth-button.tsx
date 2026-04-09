@@ -43,6 +43,10 @@ function ErrorMessage({
     children,
     ...props
 }: ErrorMessageProps) {
+    const isIconSize =
+        props.size === "icon" ||
+        props.size === "icon-sm" ||
+        props.size === "icon-lg";
     return (
         <Button
             {...props}
@@ -50,7 +54,9 @@ function ErrorMessage({
             tooltipContent={message}
             aria-disabled
             className={cn(
-                "w-full shrink opacity-50 cursor-not-allowed",
+                isIconSize
+                    ? "shrink-0 opacity-50 cursor-not-allowed"
+                    : "w-full shrink opacity-50 cursor-not-allowed",
                 className,
             )}
         >
