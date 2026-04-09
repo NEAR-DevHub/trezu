@@ -9,6 +9,7 @@ import { Policy, VotePolicy } from "@/types/policy";
 export type ProposalUIKind =
     | "Batch Payment Request"
     | "Payment Request"
+    | "Confidential Request"
     | "Exchange"
     | "Function Call"
     | "Change Policy"
@@ -163,6 +164,38 @@ export interface VestingData {
     notes: string;
 }
 
+/**
+ * Data structure for Confidential Transfer proposals (v1.signer signing proposals).
+ * Quote metadata is populated from the backend's confidential_intents table.
+ */
+export interface ConfidentialRequestData {
+    correlationId?: string;
+    payloadHash?: string;
+    status?: string;
+    /** Token being sent (intents asset ID, e.g. "nep141:wrap.near") */
+    originAsset?: string;
+    /** Token being received */
+    destinationAsset?: string;
+    /** Raw amount in */
+    amountIn?: string;
+    /** Human-readable amount in */
+    amountInFormatted?: string;
+    /** Raw amount out */
+    amountOut?: string;
+    /** Human-readable amount out */
+    amountOutFormatted?: string;
+    /** Recipient address */
+    recipient?: string;
+    /** Estimated time in seconds */
+    timeEstimate?: number;
+    /** Deposit address for swap tracking */
+    depositAddress?: string;
+    /** Quote signature */
+    signature?: string;
+    /** Quote deadline */
+    deadline?: string;
+}
+
 export interface SwapRequestData {
     source: "exchange" | "wrap.near";
     timeEstimate?: string;
@@ -259,6 +292,7 @@ export interface FactoryInfoUpdateData {
  */
 export interface ProposalTypeDataMap {
     "Payment Request": PaymentRequestData;
+    "Confidential Request": ConfidentialRequestData;
     "Function Call": FunctionCallData;
     "Change Policy": ChangePolicyData;
     "Update General Settings": ChangeConfigData;
@@ -298,6 +332,7 @@ export type ProposalDataExtractor<T extends ProposalUIKind> = (
 export type AnyProposalData =
     | PaymentRequestData
     | BatchPaymentRequestData
+    | ConfidentialRequestData
     | FunctionCallData
     | ChangePolicyData
     | ChangeConfigData

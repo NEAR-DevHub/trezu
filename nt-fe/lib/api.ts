@@ -1257,6 +1257,7 @@ export async function removeUserTreasury(
 }
 
 export interface IntentsQuoteRequest {
+    daoId?: string;
     dry?: boolean;
     swapType?: string;
     slippageTolerance?: number;
@@ -1306,10 +1307,14 @@ export async function getIntentsQuote(
 ): Promise<IntentsQuoteResponse | null> {
     try {
         const url = `${BACKEND_API_BASE}/intents/quote`;
-        const response = await axios.post<IntentsQuoteResponse>(url, {
-            ...request,
-            dry,
-        });
+        const response = await axios.post<IntentsQuoteResponse>(
+            url,
+            {
+                ...request,
+                dry,
+            },
+            { withCredentials: true },
+        );
         return response.data;
     } catch (error: any) {
         console.error(
@@ -1338,6 +1343,8 @@ export interface GenerateIntentResponse {
         payload: GenerateIntentPayload;
     };
     correlationId: string;
+    /** NEP-413 payload hash (hex) — use directly in payload_v2.Eddsa */
+    payloadHash: string;
 }
 
 /**
@@ -1378,8 +1385,8 @@ export async function getConfidentialQuote(
 export async function generateIntent(request: {
     type: string;
     standard: string;
-    depositAddress: string;
     signerId: string;
+    quoteMetadata: Record<string, unknown>;
 }): Promise<GenerateIntentResponse> {
     const url = `${BACKEND_API_BASE}/confidential-intents/generate-intent`;
     const response = await axios.post<GenerateIntentResponse>(url, request, {

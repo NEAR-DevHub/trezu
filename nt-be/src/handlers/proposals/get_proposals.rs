@@ -9,12 +9,17 @@ use std::sync::Arc;
 
 use crate::handlers::proposals::{
     filters::{ProposalFilters, SortBy},
-    scraper::{Policy, Proposal, fetch_policy, fetch_proposal, fetch_proposals},
+    scraper::{
+        Policy, Proposal, extract_payload_hash_from_kind, fetch_policy, fetch_proposal,
+        fetch_proposals,
+    },
 };
 use crate::{
     AppState,
+    auth::OptionalAuthUser,
     utils::cache::{CacheKey, CacheTier},
 };
+use sqlx::PgPool;
 
 #[derive(Deserialize)]
 pub struct GetProposalsQuery {
@@ -63,6 +68,7 @@ pub struct PaginatedProposals {
 
 pub async fn get_proposals(
     State(state): State<Arc<AppState>>,
+    auth_user: OptionalAuthUser,
     Path(dao_id): Path<AccountId>,
     Query(query): Query<GetProposalsQuery>,
 ) -> Result<(StatusCode, Json<PaginatedProposals>), (StatusCode, String)> {
@@ -156,6 +162,17 @@ pub async fn get_proposals(
         _ => filtered_proposals,
     };
 
+    // Enrich confidential proposals with quote metadata — only for authenticated DAO members.
+    // If auth fails or user is not a member, still return proposals without enrichment.
+    let mut proposals = proposals;
+    let should_enrich = auth_user
+        .verify_member_if_confidential(&state.db_pool, dao_id.as_ref())
+        .await
+        .unwrap_or(false);
+    if should_enrich {
+        enrich_confidential_proposals(&mut proposals, &state.db_pool, dao_id.as_ref()).await;
+    }
+
     let response = PaginatedProposals {
         proposals,
         total,
@@ -168,6 +185,7 @@ pub async fn get_proposals(
 
 pub async fn get_proposal(
     State(state): State<Arc<AppState>>,
+    auth_user: OptionalAuthUser,
     Path((dao_id, proposal_id)): Path<(AccountId, u64)>,
 ) -> Result<(StatusCode, Json<Proposal>), (StatusCode, String)> {
     // Create cache key for specific proposal
@@ -177,12 +195,26 @@ pub async fn get_proposal(
         .build();
 
     // Try to get from cache first
-    let proposal: Proposal = state
+    let mut proposal: Proposal = state
         .cache
         .cached_contract_call(CacheTier::ShortTerm, cache_key, async {
             fetch_proposal(&state.network, &dao_id, proposal_id).await
         })
         .await?;
+
+    // Enrich if confidential — only for authenticated DAO members
+    let is_confidential = auth_user
+        .verify_member_if_confidential(&state.db_pool, dao_id.as_ref())
+        .await
+        .unwrap_or(false);
+    if is_confidential {
+        enrich_confidential_proposals(
+            std::slice::from_mut(&mut proposal),
+            &state.db_pool,
+            dao_id.as_ref(),
+        )
+        .await;
+    }
 
     Ok((StatusCode::OK, Json(proposal)))
 }
@@ -276,4 +308,61 @@ pub async fn get_dao_approvers(
     };
 
     Ok((StatusCode::OK, Json(response)))
+}
+
+/// Enrich confidential proposals (v1.signer) with quote_metadata, status, and
+/// correlation_id from the `confidential_intents` table.
+/// Operates in-place on the proposals slice; non-confidential proposals are untouched.
+async fn enrich_confidential_proposals(proposals: &mut [Proposal], pool: &PgPool, dao_id: &str) {
+    // Collect (index, payload_hash) pairs for all confidential proposals
+    let hash_indices: Vec<(usize, String)> = proposals
+        .iter()
+        .enumerate()
+        .filter_map(|(i, p)| extract_payload_hash_from_kind(&p.kind).map(|hash| (i, hash)))
+        .collect();
+
+    if hash_indices.is_empty() {
+        return;
+    }
+
+    let hashes: Vec<&str> = hash_indices.iter().map(|(_, h)| h.as_str()).collect();
+
+    // Batch query all matching intents
+    let rows = sqlx::query_as::<_, (String, Option<serde_json::Value>, String, Option<String>)>(
+        "SELECT payload_hash, quote_metadata, status, correlation_id FROM confidential_intents WHERE dao_id = $1 AND payload_hash = ANY($2)",
+    )
+    .bind(dao_id)
+    .bind(&hashes)
+    .fetch_all(pool)
+    .await;
+
+    let rows = match rows {
+        Ok(rows) => rows,
+        Err(e) => {
+            log::warn!("Failed to fetch confidential intent metadata: {}", e);
+            return;
+        }
+    };
+
+    // Build lookup map: payload_hash → metadata
+    let metadata_map: std::collections::HashMap<&str, serde_json::Value> = rows
+        .iter()
+        .map(|(hash, quote_meta, status, correlation_id)| {
+            (
+                hash.as_str(),
+                serde_json::json!({
+                    "quote_metadata": quote_meta,
+                    "status": status,
+                    "correlation_id": correlation_id,
+                }),
+            )
+        })
+        .collect();
+
+    // Attach metadata to proposals
+    for (idx, hash) in &hash_indices {
+        if let Some(metadata) = metadata_map.get(hash.as_str()) {
+            proposals[*idx].confidential_metadata = Some(metadata.clone());
+        }
+    }
 }

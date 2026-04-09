@@ -25,7 +25,7 @@ import { Textarea } from "@/components/textarea";
 import { Tooltip } from "@/components/tooltip";
 import { type Token, tokenSchema } from "@/components/token-input";
 import { Form, FormField } from "@/components/ui/form";
-import { NEAR_TOKEN } from "@/constants/token";
+import { default_near_token } from "@/constants/token";
 import { useAddressBook } from "@/features/address-book";
 import {
     PAGE_TOUR_NAMES,
@@ -47,6 +47,8 @@ import Big from "@/lib/big";
 import { getBlockchainType } from "@/lib/blockchain-utils";
 import { useNear } from "@/stores/near-store";
 import { buildIntentsTransferProposal } from "../exchange/utils/proposal-builder";
+import { buildConfidentialProposal } from "../confidential/utils/proposal-builder";
+import { generateIntent } from "@/lib/api";
 import { PaymentFormSection } from "./components/payment-form-section";
 import { Address } from "@/components/address";
 import { useQuery } from "@tanstack/react-query";
@@ -96,7 +98,7 @@ function Step1({
     quoteErrorMessage,
 }: Step1Props) {
     const form = useFormContext<PaymentFormValues>();
-    const { treasuryId } = useTreasury();
+    const { treasuryId, isConfidential } = useTreasury();
     const isMobile = useMediaQuery("(max-width: 768px)");
     const address = form.watch("address");
     const amount = form.watch("amount");
@@ -120,25 +122,41 @@ function Step1({
             <div className="flex justify-between items-center">
                 <StepperHeader title="New Payment" />
                 <div className="flex items-center gap-2">
-                    <Link href={`/${treasuryId}/payments/bulk-payment`}>
+                    {isConfidential ? (
                         <Button
-                            variant="ghost"
+                            variant="outline"
                             size={isMobile ? "icon" : "default"}
-                            className="flex items-center gap-2 border-2"
+                            className="flex items-center gap-2"
                             id="payments-bulk-btn"
-                            onClick={() => {
-                                trackEvent("bulk-payments-click", {
-                                    source: "payments_page",
-                                    treasury_id: treasuryId ?? "",
-                                });
-                            }}
+                            disabled
+                            tooltipContent="Coming soon"
                         >
                             <ArrowDownToLine className="w-4 h-4" />
                             <span className="hidden md:block">
                                 Bulk Payments
                             </span>
                         </Button>
-                    </Link>
+                    ) : (
+                        <Link href={`/${treasuryId}/payments/bulk-payment`}>
+                            <Button
+                                variant="ghost"
+                                size={isMobile ? "icon" : "default"}
+                                className="flex items-center gap-2 border-2"
+                                id="payments-bulk-btn"
+                                onClick={() => {
+                                    trackEvent("bulk-payments-click", {
+                                        source: "payments_page",
+                                        treasury_id: treasuryId ?? "",
+                                    });
+                                }}
+                            >
+                                <ArrowDownToLine className="w-4 h-4" />
+                                <span className="hidden md:block">
+                                    Bulk Payments
+                                </span>
+                            </Button>
+                        </Link>
+                    )}
                     <PendingButton
                         id="payments-pending-btn"
                         types={["Payments"]}
@@ -460,6 +478,7 @@ function buildIntentsPaymentQuoteRequest(
     treasuryId: string,
     data: PaymentFormValues,
     parsedAmount: string,
+    isConfidential: boolean,
     proposalPeriod?: string,
 ) {
     const deadlineMs = proposalPeriod
@@ -467,14 +486,19 @@ function buildIntentsPaymentQuoteRequest(
         : 24 * 60 * 60 * 1000;
 
     return {
+        daoId: treasuryId,
         swapType: "EXACT_INPUT",
         slippageTolerance: 0,
         originAsset: data.token.address,
-        depositType: "INTENTS" as const,
+        depositType: isConfidential
+            ? ("CONFIDENTIAL_INTENTS" as const)
+            : ("INTENTS" as const),
         destinationAsset: data.token.address,
         amount: parsedAmount,
         refundTo: treasuryId,
-        refundType: "INTENTS" as const,
+        refundType: isConfidential
+            ? ("CONFIDENTIAL_INTENTS" as const)
+            : ("INTENTS" as const),
         recipient: data.address,
         recipientType: "DESTINATION_CHAIN" as const,
         deadline: new Date(Date.now() + deadlineMs).toISOString(),
@@ -485,8 +509,10 @@ function buildIntentsPaymentQuoteRequest(
 const buildTransferProposal = (
     data: PaymentFormValues,
     parsedAmount: string,
+    isConfidential: boolean,
 ): TransferKind => {
-    const isNEAR = data.token.address === NEAR_TOKEN.address;
+    const isNEAR =
+        data.token.address === default_near_token(isConfidential).address;
     return {
         Transfer: {
             token_id: isNEAR ? "" : data.token.address,
@@ -498,7 +524,7 @@ const buildTransferProposal = (
 };
 
 export default function PaymentsPage() {
-    const { treasuryId } = useTreasury();
+    const { treasuryId, isConfidential } = useTreasury();
     const { createProposal } = useNear();
     const { data: policy } = useTreasuryPolicy(treasuryId);
     const [step, setStep] = useState(0);
@@ -528,11 +554,11 @@ export default function PaymentsPage() {
             try {
                 return JSON.parse(decodeURIComponent(tokenParam));
             } catch {
-                return NEAR_TOKEN;
+                return default_near_token(isConfidential);
             }
         }
-        return NEAR_TOKEN;
-    }, [tokenParam]);
+        return default_near_token(isConfidential);
+    }, [tokenParam, isConfidential]);
 
     const compatibleDefaultToken = useMemo(() => {
         if (tokenParam || preferredNetworks.length === 0) {
@@ -551,6 +577,9 @@ export default function PaymentsPage() {
     usePageTour(
         PAGE_TOUR_NAMES.PAYMENTS_BULK,
         PAGE_TOUR_STORAGE_KEYS.PAYMENTS_BULK_SHOWN,
+        {
+            enabled: !isConfidential,
+        },
     );
     const { triggerTour: triggerPendingTour } = useManualPageTour(
         PAGE_TOUR_NAMES.PAYMENTS_PENDING,
@@ -642,6 +671,7 @@ export default function PaymentsPage() {
                     treasuryId,
                     form.getValues(),
                     parsedAmount,
+                    isConfidential,
                     policy?.proposal_period,
                 ),
                 false,
@@ -703,9 +733,10 @@ export default function PaymentsPage() {
         }
 
         const currentToken = form.getValues("token");
+        const defaultNearToken = default_near_token(isConfidential);
         const isStillDefaultNearToken =
-            currentToken?.address === NEAR_TOKEN.address &&
-            currentToken?.network === NEAR_TOKEN.network;
+            currentToken?.address === defaultNearToken.address &&
+            currentToken?.network === defaultNearToken.network;
 
         if (
             !isStillDefaultNearToken ||
@@ -776,6 +807,7 @@ export default function PaymentsPage() {
                             treasuryId!,
                             data,
                             parsedAmount,
+                            isConfidential,
                             policy?.proposal_period,
                         ),
                         false,
@@ -785,14 +817,41 @@ export default function PaymentsPage() {
                     throw new Error("Failed to create 1Click transfer quote");
                 }
 
-                description = buildIntentTransferDescription(data, quote);
-                proposalKind = buildIntentsTransferProposal(
-                    data.token.address,
-                    quote.quote.depositAddress,
-                    quote.quote.amountIn,
-                );
+                if (isConfidential) {
+                    // Confidential path: generate intent + build v1.signer proposal
+                    // Pass the full quote (minus correlationId, already stored separately)
+                    // so the backend can persist it for displaying proposal details.
+                    const { correlationId: _, ...quoteMetadata } =
+                        quote as unknown as Record<string, unknown>;
+                    const intentResponse = await generateIntent({
+                        type: "swap_transfer",
+                        standard: "nep413",
+                        signerId: treasuryId!,
+                        quoteMetadata,
+                    });
+
+                    const confidentialResult = await buildConfidentialProposal({
+                        intentResponse,
+                        treasuryId: treasuryId!,
+                    });
+
+                    description = confidentialResult.proposal.description;
+                    proposalKind = confidentialResult.proposal
+                        .kind as FunctionCallKind;
+                } else {
+                    description = buildIntentTransferDescription(data, quote);
+                    proposalKind = buildIntentsTransferProposal(
+                        data.token.address,
+                        quote.quote.depositAddress,
+                        quote.quote.amountIn,
+                    );
+                }
             } else {
-                proposalKind = buildTransferProposal(data, parsedAmount);
+                proposalKind = buildTransferProposal(
+                    data,
+                    parsedAmount,
+                    isConfidential,
+                );
             }
 
             await createProposal("Request to send payment submitted", {

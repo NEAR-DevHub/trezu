@@ -193,17 +193,26 @@ pub async fn prepare_auth(
         )
     })?;
 
+    let payload_hash = crate::handlers::relay::confidential::compute_nep413_hash(&payload_json)
+        .ok_or_else(|| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to compute NEP-413 payload hash for auth".to_string(),
+            )
+        })?;
+
     sqlx::query!(
         r#"
-        INSERT INTO confidential_intents (dao_id, proposal_id, intent_payload, intent_type)
-        VALUES ($1, -1, $2, 'auth')
-        ON CONFLICT (dao_id, proposal_id) DO UPDATE SET
+        INSERT INTO confidential_intents (dao_id, payload_hash, intent_payload, intent_type)
+        VALUES ($1, $2, $3, 'auth')
+        ON CONFLICT (dao_id, payload_hash) DO UPDATE SET
             intent_payload = EXCLUDED.intent_payload,
             intent_type = 'auth',
             status = 'pending',
             updated_at = NOW()
         "#,
         &request.dao_id,
+        &payload_hash,
         &payload_json,
     )
     .execute(&state.db_pool)

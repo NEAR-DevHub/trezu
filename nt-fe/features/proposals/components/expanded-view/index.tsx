@@ -20,11 +20,13 @@ import {
     FunctionCallData,
     ChangePolicyData,
     ChangeConfigData,
+    ConfidentialRequestData,
     StakingData,
     VestingData,
     SwapRequestData,
     BatchPaymentRequestData,
 } from "../../types/index";
+import { ConfidentialRequestExpanded } from "./confidential-request-expanded";
 import { BatchPaymentRequestExpanded } from "./batch-payment-expanded";
 import { useNear } from "@/stores/near-store";
 import { getProposalStatus } from "../../utils/proposal-utils";
@@ -40,6 +42,10 @@ function ExpandedViewInternal({ proposal }: InternalExpandedViewProps) {
         case "Payment Request": {
             const paymentData = data as PaymentRequestData;
             return <TransferExpanded data={paymentData} />;
+        }
+        case "Confidential Request": {
+            const confidentialData = data as ConfidentialRequestData;
+            return <ConfidentialRequestExpanded data={confidentialData} />;
         }
         case "Function Call": {
             const functionCallData = data as FunctionCallData;

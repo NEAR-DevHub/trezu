@@ -15,9 +15,25 @@ use near_api::{
 };
 use serde_json::{Value, json};
 
-const ACCOUNT_ID: &str = "petersalomonsendev.near";
-const DAO_ID: &str = "petersalomonsendev.sputnik-dao.near";
-const MPC_PUBLIC_KEY: &str = "ed25519:7pPtVUyLDRXvzkgAUtfGeUK9ZWaSWd256tSgvazfZKZg";
+const ACCOUNT_ID: &str = "test-account-yurtur.near";
+const DAO_ID: &str = "test-please-work.sputnik-dao.near";
+const V1_SIGNER_CONTRACT_ID: &str = "v1.signer";
+
+async fn fetch_mpc_public_key(dao_id: &str) -> Result<String, Box<dyn std::error::Error>> {
+    let args = serde_json::json!({
+        "path": dao_id,
+        "predecessor": dao_id,
+        "domain_id": 1,
+    });
+
+    let result = near_api::Contract(V1_SIGNER_CONTRACT_ID.parse().unwrap())
+        .call_function("derived_public_key", args)
+        .read_only::<String>()
+        .fetch_from(&near_api::NetworkConfig::mainnet())
+        .await?;
+
+    Ok(result.data)
+}
 
 fn oneclick_url() -> String {
     std::env::var("ONECLICK_API_URL")
@@ -289,6 +305,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Step 3: Authenticate the DAO with the MPC signature
     println!("\n=== Step 3: Authenticate DAO ===\n");
 
+    let mpc_public_key = fetch_mpc_public_key(DAO_ID).await?;
+    println!("Fetched MPC public key: {}", mpc_public_key);
+
     let auth_body = json!({
         "signedData": {
             "standard": "nep413",
@@ -297,7 +316,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "nonce": auth_nonce_b64,
                 "recipient": "intents.near"
             },
-            "public_key": MPC_PUBLIC_KEY,
+            "public_key": mpc_public_key,
             "signature": sig_str,
         }
     });

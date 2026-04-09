@@ -15,10 +15,12 @@ pub struct GenerateIntentRequest {
     pub r#type: String,
     /// The signing standard: "nep413" for NEAR
     pub standard: String,
-    /// Deposit address from the quote response
-    pub deposit_address: String,
     /// Intents user ID (e.g., "near:mydao.sputnik-dao.near")
     pub signer_id: String,
+    /// Full quote response blob — depositAddress is extracted from
+    /// `quote.depositAddress`. Also stored so the UI can display
+    /// amounts, tokens, recipient, etc. for confidential proposals.
+    pub quote_metadata: Value,
 }
 
 /// Proxy endpoint for 1Click API generate-intent.
@@ -42,6 +44,20 @@ pub async fn generate_intent(
         .await
         .map_err(|e| (StatusCode::FORBIDDEN, format!("Not a DAO member: {}", e)))?;
 
+    // Extract deposit_address from quote_metadata.quote.depositAddress
+    let deposit_address = request
+        .quote_metadata
+        .get("quote")
+        .and_then(|q| q.get("depositAddress"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                "quote_metadata.quote.depositAddress is required".to_string(),
+            )
+        })?;
+
     log::info!(
         "generate_intent called: type={}, signerId={}",
         request.r#type,
@@ -52,7 +68,7 @@ pub async fn generate_intent(
     let body = serde_json::json!({
         "type": request.r#type,
         "standard": request.standard,
-        "depositAddress": request.deposit_address,
+        "depositAddress": deposit_address,
         "signerId": request.signer_id,
     });
 
@@ -80,7 +96,7 @@ pub async fn generate_intent(
     })?;
 
     let status = response.status();
-    let response_body: Value = response.json().await.map_err(|e| {
+    let mut response_body: Value = response.json().await.map_err(|e| {
         (
             StatusCode::BAD_GATEWAY,
             format!("Failed to parse generate-intent response: {}", e),
@@ -108,22 +124,34 @@ pub async fn generate_intent(
         .unwrap_or(&request.signer_id);
     if let Some(payload) = response_body.get("intent").and_then(|i| i.get("payload")) {
         let correlation_id = response_body.get("correlationId").and_then(|v| v.as_str());
+
+        // Compute the NEP-413 hash — this is the same value used in payload_v2.Eddsa
+        // on-chain, serving as the unique key to match intents to proposals.
+        let payload_hash = crate::handlers::relay::confidential::compute_nep413_hash(payload)
+            .ok_or_else(|| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Failed to compute NEP-413 payload hash".to_string(),
+                )
+            })?;
+
         if let Err(e) = crate::handlers::relay::confidential::store_pending_intent(
             &state.db_pool,
             dao_id,
-            // proposal_id = -1 is a sentinel for "not yet linked to a proposal".
-            // The UNIQUE(dao_id, proposal_id) constraint means only one pending intent
-            // per DAO exists at a time. If a second intent is generated before the first
-            // is submitted, the ON CONFLICT upsert overwrites the previous one. This is
-            // intentional: the most recently generated intent is always the one that
-            // should be signed and submitted.
-            -1,
+            &payload_hash,
             payload,
             correlation_id,
+            Some(&request.quote_metadata),
         )
         .await
         {
             log::warn!("Failed to store pending intent for {}: {}", dao_id, e);
+        }
+
+        // Include the payload hash in the response so the frontend can use it
+        // directly in the v1.signer proposal (single source of truth).
+        if let Value::Object(ref mut map) = response_body {
+            map.insert("payloadHash".to_string(), Value::String(payload_hash));
         }
     }
 
@@ -180,6 +208,7 @@ mod tests {
         // Step 1: Get a live quote for shielding wNEAR
         println!("=== Step 1: Getting live shield quote ===");
         let quote_request = QuoteRequest {
+            dao_id: None,
             dry: Some(false), // Live quote — returns depositAddress
             swap_type: Some("EXACT_INPUT".to_string()),
             slippage_tolerance: Some(100),
@@ -195,7 +224,12 @@ mod tests {
             quote_waiting_time_ms: Some(5000),
         };
 
-        let quote_result = get_quote(State(state.clone()), Json(quote_request)).await;
+        let quote_result = get_quote(
+            State(state.clone()),
+            crate::auth::OptionalAuthUser(None),
+            Json(quote_request),
+        )
+        .await;
 
         let quote_response = match quote_result {
             Ok(response) => {
@@ -224,8 +258,8 @@ mod tests {
         let generate_request = GenerateIntentRequest {
             r#type: "swap_transfer".to_string(),
             standard: "nep413".to_string(),
-            deposit_address: deposit_address.to_string(),
             signer_id: format!("near:{}", dao_id),
+            quote_metadata: quote_response.clone(),
         };
 
         let auth_user = crate::auth::AuthUser {

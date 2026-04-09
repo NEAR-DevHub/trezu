@@ -24,6 +24,7 @@ export interface MergedNetwork {
     residency?: string;
     balance?: string;
     balanceUSD?: number;
+    price?: number;
     lockedBalance?: string;
     minWithdrawalAmount?: string;
     minDepositAmount?: string;
@@ -68,6 +69,7 @@ const mapTreasuryNetwork = (n: TreasuryNetwork): MergedNetwork => ({
         n.balance.type === "Standard" ? n.balance.locked.toFixed(0) : undefined,
     balance: n.availableBalanceRaw,
     balanceUSD: n.availableBalanceUSD,
+    price: n.price,
 });
 
 // Overlay bridge metadata with treasury balances/residency, but keep treasury
@@ -95,6 +97,7 @@ const mapBridgeMatchedNetwork = (
             : undefined,
     balance: treasuryNetwork.availableBalanceRaw,
     balanceUSD: treasuryNetwork.availableBalanceUSD,
+    price: treasuryNetwork.price,
 });
 
 // Expand bridge entries to selectable variants (Intents + optional Ft).

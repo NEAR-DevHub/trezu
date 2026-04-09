@@ -1,15 +1,46 @@
 //! Auto-submit confidential intents after DAO proposal approval.
 //!
 //! When a confidential_transfer proposal is created, the intent payload is stored
-//! in `confidential_intents`. When a vote approves the proposal and the
-//! MPC signature is in the execution result, the signed intent is submitted to
-//! the 1Click API automatically.
+//! in `confidential_intents` keyed by its NEP-413 payload hash. When a vote
+//! approves the proposal and the MPC signature is in the execution result, the
+//! signed intent is submitted to the 1Click API automatically.
 
 use crate::{AppState, constants::V1_SIGNER_CONTRACT_ID, utils::cache::CacheKey};
+use base64::Engine;
+use near_api::types::{Action, transaction::delegate_action::NonDelegateAction};
 use reqwest::StatusCode;
 use serde_json::Value;
 use sqlx::PgPool;
-use std::sync::Arc;
+use std::{ops::Deref, sync::Arc};
+
+/// Compute the NEP-413 payload hash (the value used in `payload_v2.Eddsa`).
+///
+/// Takes the intent payload JSON (`{ message, nonce, recipient }`) and returns
+/// the lowercase hex SHA-256 digest that v1.signer signs.
+pub fn compute_nep413_hash(payload: &Value) -> Option<String> {
+    let message = payload.get("message")?.as_str()?.to_string();
+    let nonce_b64 = payload.get("nonce")?.as_str()?;
+    let recipient = payload.get("recipient")?.as_str()?.to_string();
+
+    let nonce_bytes = base64::engine::general_purpose::STANDARD
+        .decode(nonce_b64)
+        .ok()?;
+    if nonce_bytes.len() != 32 {
+        return None;
+    }
+    let mut nonce = [0u8; 32];
+    nonce.copy_from_slice(&nonce_bytes);
+
+    near_api::signer::NEP413Payload {
+        message,
+        nonce,
+        recipient,
+        callback_url: None,
+    }
+    .compute_hash()
+    .ok()
+    .map(|hash| hex::encode(hash.0))
+}
 
 /// Fetch the Ed25519 derived public key for a DAO's path from v1.signer.
 pub(crate) async fn fetch_mpc_public_key(
@@ -44,35 +75,38 @@ pub(crate) async fn fetch_mpc_public_key(
 pub async fn store_pending_intent(
     pool: &PgPool,
     dao_id: &str,
-    proposal_id: i32,
+    payload_hash: &str,
     intent_payload: &Value,
     correlation_id: Option<&str>,
+    quote_metadata: Option<&Value>,
 ) -> Result<(), String> {
     sqlx::query!(
         r#"
-        INSERT INTO confidential_intents (dao_id, proposal_id, intent_payload, correlation_id)
-        VALUES ($1, $2, $3, $4)
-        ON CONFLICT (dao_id, proposal_id) DO UPDATE SET
+        INSERT INTO confidential_intents (dao_id, payload_hash, intent_payload, correlation_id, quote_metadata)
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (dao_id, payload_hash) DO UPDATE SET
             intent_payload = EXCLUDED.intent_payload,
             correlation_id = EXCLUDED.correlation_id,
+            quote_metadata = EXCLUDED.quote_metadata,
             intent_type = 'shield',
             status = 'pending',
             submit_result = NULL,
             updated_at = NOW()
         "#,
         dao_id,
-        proposal_id,
+        payload_hash,
         intent_payload,
         correlation_id,
+        quote_metadata,
     )
     .execute(pool)
     .await
     .map_err(|e| format!("Failed to store pending intent: {}", e))?;
 
     log::info!(
-        "Stored pending confidential intent for {}/proposal#{}",
+        "Stored pending confidential intent for {} (hash={})",
         dao_id,
-        proposal_id
+        payload_hash
     );
     Ok(())
 }
@@ -111,19 +145,66 @@ pub(crate) fn extract_mpc_signature(result_debug: &str) -> Option<Vec<u8>> {
     bytes
 }
 
+/// Extract the `payload_v2.Eddsa` hash from a delegate action's `act_proposal` call.
+///
+/// Looks for a `FunctionCall` with `method_name == "act_proposal"`, then checks if
+/// `proposal.FunctionCall.receiver_id == "v1.signer"` and extracts the hash from the
+/// inner `sign` action's args.
+pub fn extract_v1_signer_hash(actions: &[NonDelegateAction]) -> Option<String> {
+    for action in actions {
+        if let Action::FunctionCall(fc) = action.deref() {
+            if fc.method_name != "act_proposal" {
+                continue;
+            }
+            let args: Value = serde_json::from_slice(&fc.args).ok()?;
+            let proposal = args.get("proposal")?;
+            let func_call = proposal.get("FunctionCall")?;
+
+            if func_call.get("receiver_id")?.as_str()? != "v1.signer" {
+                return None;
+            }
+
+            let inner_actions = func_call.get("actions")?.as_array()?;
+            let first_action = inner_actions.first()?;
+            let inner_args_b64 = first_action.get("args")?.as_str()?;
+
+            use base64::Engine;
+            let inner_args_bytes = base64::engine::general_purpose::STANDARD
+                .decode(inner_args_b64)
+                .ok()?;
+            let inner_args: Value = serde_json::from_slice(&inner_args_bytes).ok()?;
+
+            let hash = inner_args
+                .get("request")?
+                .get("payload_v2")?
+                .get("Eddsa")?
+                .as_str()?;
+
+            return Some(hash.to_string());
+        }
+    }
+    None
+}
+
 /// Try to auto-submit a confidential intent after a vote relay succeeds.
 ///
 /// This is called in a background task after a successful vote relay.
-/// It checks all pending intents for the treasury and tries to match
-/// the MPC signature in the execution result.
-pub async fn try_auto_submit_intent(state: &Arc<AppState>, treasury_id: &str, result_debug: &str) {
+/// It uses the payload hash extracted from the delegate action to find the
+/// matching pending intent.
+pub async fn try_auto_submit_intent(
+    state: &Arc<AppState>,
+    treasury_id: &str,
+    payload_hash: &str,
+    result_debug: &str,
+) {
     // Extract MPC signature from execution result
     let sig_bytes = match extract_mpc_signature(result_debug) {
         Some(bytes) => bytes,
         None => {
-            log::debug!(
-                "No MPC signature found in vote result for {} — not a confidential proposal",
-                treasury_id
+            log::warn!(
+                "No MPC signature found in vote result for {} (hash={})",
+                treasury_id,
+                payload_hash
             );
             return;
         }
@@ -131,40 +212,39 @@ pub async fn try_auto_submit_intent(state: &Arc<AppState>, treasury_id: &str, re
 
     let sig_b58 = format!("ed25519:{}", bs58::encode(&sig_bytes).into_string());
     log::info!(
-        "Extracted MPC signature for {} — looking for pending intent",
-        treasury_id
+        "Extracted MPC signature for {} (hash={}) — looking for pending intent",
+        treasury_id,
+        payload_hash
     );
 
-    // Find the most recent pending intent or auth for this treasury.
-    // Because generate_intent stores pending intents with proposal_id = -1 and the
-    // UNIQUE(dao_id, proposal_id) constraint, there is at most one pending row per DAO
-    // at any time. The ORDER BY + LIMIT 1 is a safety net in case the schema evolves.
-    let pending = sqlx::query_as::<_, (i32, Value, Option<String>, String)>(
+    // Find the pending intent matching this payload hash.
+    let pending = sqlx::query_as::<_, (Value, Option<String>, String)>(
         r#"
-        SELECT proposal_id, intent_payload, correlation_id, intent_type
+        SELECT intent_payload, correlation_id, intent_type
         FROM confidential_intents
-        WHERE dao_id = $1 AND status = 'pending'
-        ORDER BY created_at DESC
-        LIMIT 1
+        WHERE dao_id = $1 AND payload_hash = $2 AND status = 'pending'
         "#,
     )
     .bind(treasury_id)
+    .bind(payload_hash)
     .fetch_optional(&state.db_pool)
     .await;
 
-    let (proposal_id, intent_payload, _correlation_id, intent_type) = match pending {
+    let (intent_payload, _correlation_id, intent_type) = match pending {
         Ok(Some(row)) => row,
         Ok(None) => {
             log::warn!(
-                "MPC signature found but no pending intent for {}",
-                treasury_id
+                "MPC signature found but no pending intent for {} (hash={})",
+                treasury_id,
+                payload_hash
             );
             return;
         }
         Err(e) => {
             log::error!(
-                "DB error looking up pending intent for {}: {}",
+                "DB error looking up pending intent for {} (hash={}): {}",
                 treasury_id,
+                payload_hash,
                 e
             );
             return;
@@ -185,10 +265,10 @@ pub async fn try_auto_submit_intent(state: &Arc<AppState>, treasury_id: &str, re
     };
 
     log::info!(
-        "Auto-submitting {} for {}/proposal#{} (mpc_key={})",
+        "Auto-submitting {} for {} (hash={}, mpc_key={})",
         intent_type,
         treasury_id,
-        proposal_id,
+        payload_hash,
         mpc_public_key
     );
 
@@ -240,10 +320,10 @@ pub async fn try_auto_submit_intent(state: &Arc<AppState>, treasury_id: &str, re
 
             if status.is_success() {
                 log::info!(
-                    "Successfully submitted {} for {}/proposal#{}: {:?}",
+                    "Successfully submitted {} for {} (hash={}): {:?}",
                     intent_type,
                     treasury_id,
-                    proposal_id,
+                    payload_hash,
                     resp_body
                 );
 
@@ -284,27 +364,27 @@ pub async fn try_auto_submit_intent(state: &Arc<AppState>, treasury_id: &str, re
                 }
 
                 let _ = sqlx::query!(
-                    "UPDATE confidential_intents SET status = 'submitted', submit_result = $1, updated_at = NOW() WHERE dao_id = $2 AND proposal_id = $3",
+                    "UPDATE confidential_intents SET status = 'submitted', submit_result = $1, updated_at = NOW() WHERE dao_id = $2 AND payload_hash = $3",
                     &resp_body,
                     treasury_id,
-                    proposal_id,
+                    payload_hash,
                 )
                 .execute(&state.db_pool)
                 .await;
             } else {
                 log::error!(
-                    "1Click {} failed ({}) for {}/proposal#{}: {:?}",
+                    "1Click {} failed ({}) for {} (hash={}): {:?}",
                     intent_type,
                     status,
                     treasury_id,
-                    proposal_id,
+                    payload_hash,
                     resp_body
                 );
                 let _ = sqlx::query!(
-                    "UPDATE confidential_intents SET status = 'failed', submit_result = $1, updated_at = NOW() WHERE dao_id = $2 AND proposal_id = $3",
+                    "UPDATE confidential_intents SET status = 'failed', submit_result = $1, updated_at = NOW() WHERE dao_id = $2 AND payload_hash = $3",
                     &resp_body,
                     treasury_id,
-                    proposal_id,
+                    payload_hash,
                 )
                 .execute(&state.db_pool)
                 .await;
@@ -312,17 +392,17 @@ pub async fn try_auto_submit_intent(state: &Arc<AppState>, treasury_id: &str, re
         }
         Err(e) => {
             log::error!(
-                "Failed to call 1Click {} for {}/proposal#{}: {}",
+                "Failed to call 1Click {} for {} (hash={}): {}",
                 intent_type,
                 treasury_id,
-                proposal_id,
+                payload_hash,
                 e
             );
             let _ = sqlx::query!(
-                "UPDATE confidential_intents SET status = 'failed', submit_result = $1, updated_at = NOW() WHERE dao_id = $2 AND proposal_id = $3",
+                "UPDATE confidential_intents SET status = 'failed', submit_result = $1, updated_at = NOW() WHERE dao_id = $2 AND payload_hash = $3",
                 serde_json::json!({"error": e.to_string()}),
                 treasury_id,
-                proposal_id,
+                payload_hash,
             )
             .execute(&state.db_pool)
             .await;

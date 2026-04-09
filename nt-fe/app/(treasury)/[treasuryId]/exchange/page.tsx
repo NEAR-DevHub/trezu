@@ -25,7 +25,6 @@ import { TokenInput, tokenSchema } from "@/components/token-input";
 import { Form } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WarningAlert } from "@/components/warning-alert";
-import { NEAR_TOKEN } from "@/constants/token";
 import {
     PAGE_TOUR_NAMES,
     PAGE_TOUR_STORAGE_KEYS,

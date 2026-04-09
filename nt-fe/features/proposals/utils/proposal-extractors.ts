@@ -13,6 +13,7 @@ import {
     VestingSchedule,
     AnyProposalData,
     BatchPaymentRequestData,
+    ConfidentialRequestData,
     MembersData,
     UpgradeData,
     SetStakingContractData,
@@ -712,6 +713,52 @@ export function extractUnknownData(proposal: Proposal): UnknownData {
 }
 
 /**
+ * Extract Confidential Transfer data from proposal.
+ * Quote metadata is populated by the backend from the confidential_intents table.
+ */
+export function extractConfidentialRequestData(
+    proposal: Proposal,
+): ConfidentialRequestData {
+    const correlationId =
+        decodeProposalDescription("correlationId", proposal.description) ??
+        undefined;
+
+    // Extract payloadHash from the v1.signer FunctionCall args
+    let payloadHash: string | undefined;
+    if ("FunctionCall" in proposal.kind) {
+        const action = proposal.kind.FunctionCall.actions[0];
+        if (action?.args) {
+            try {
+                const args = decodeArgs(action.args);
+                payloadHash = args?.request?.payload_v2?.Eddsa;
+            } catch {
+                // ignore decode errors
+            }
+        }
+    }
+
+    const meta = proposal.confidential_metadata;
+    const quote = meta?.quote_metadata;
+
+    return {
+        correlationId,
+        payloadHash,
+        status: meta?.status,
+        originAsset: quote?.quoteRequest?.originAsset,
+        destinationAsset: quote?.quoteRequest?.destinationAsset,
+        amountIn: quote?.quote?.amountIn,
+        amountInFormatted: quote?.quote?.amountInFormatted,
+        amountOut: quote?.quote?.amountOut,
+        amountOutFormatted: quote?.quote?.amountOutFormatted,
+        recipient: quote?.quoteRequest?.recipient,
+        timeEstimate: quote?.quote?.timeEstimate,
+        depositAddress: quote?.quote?.depositAddress,
+        signature: quote?.signature,
+        deadline: quote?.quote?.deadline,
+    };
+}
+
+/**
  * Main extractor that routes to the appropriate extractor based on proposal type
  */
 export function extractProposalData(proposal: Proposal): {
@@ -724,6 +771,9 @@ export function extractProposalData(proposal: Proposal): {
     switch (type) {
         case "Payment Request":
             data = extractPaymentRequestData(proposal);
+            break;
+        case "Confidential Request":
+            data = extractConfidentialRequestData(proposal);
             break;
         case "Function Call":
             data = extractFunctionCallData(proposal);
