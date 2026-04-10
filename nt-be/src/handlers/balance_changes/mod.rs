@@ -3,6 +3,7 @@ pub mod balance;
 pub mod binary_search;
 pub mod block_info;
 pub mod completeness;
+pub mod confidential_monitor;
 pub mod counterparty;
 pub mod counterparty_correction;
 pub mod gap_detector;
