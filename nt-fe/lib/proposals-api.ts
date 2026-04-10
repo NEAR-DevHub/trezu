@@ -430,7 +430,9 @@ export async function getProposal(
 
     try {
         const url = `${BACKEND_API_BASE}/proposal/${daoId}/${proposalId}`;
-        const response = await axios.get<Proposal>(url);
+        const response = await axios.get<Proposal>(url, {
+            withCredentials: true,
+        });
         return response.data;
     } catch (error) {
         console.error(
@@ -468,7 +470,9 @@ export async function getDaoProposers(daoId: string): Promise<string[]> {
 
     try {
         const url = `${BACKEND_API_BASE}/proposals/${daoId}/proposers`;
-        const response = await axios.get<ProposersResponse>(url);
+        const response = await axios.get<ProposersResponse>(url, {
+            withCredentials: true,
+        });
         return response.data.proposers;
     } catch (error) {
         console.error(`Error getting proposers for DAO ${daoId}`, error);
@@ -486,7 +490,9 @@ export async function getDaoApprovers(daoId: string): Promise<string[]> {
 
     try {
         const url = `${BACKEND_API_BASE}/proposals/${daoId}/approvers`;
-        const response = await axios.get<ApproversResponse>(url);
+        const response = await axios.get<ApproversResponse>(url, {
+            withCredentials: true,
+        });
         return response.data.approvers;
     } catch (error) {
         console.error(`Error getting approvers for DAO ${daoId}`, error);

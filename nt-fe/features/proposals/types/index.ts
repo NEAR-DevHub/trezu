@@ -1,6 +1,6 @@
 import { ProposalPermissionKind } from "@/lib/config-utils";
 import { Proposal } from "@/lib/proposals-api";
-import { Policy, VotePolicy } from "@/types/policy";
+import { Policy } from "@/types/policy";
 
 /**
  * UI representation of proposal kinds
@@ -168,32 +168,17 @@ export interface VestingData {
  * Data structure for Confidential Transfer proposals (v1.signer signing proposals).
  * Quote metadata is populated from the backend's confidential_intents table.
  */
+export type MappedConfidentialRequest =
+    | { type: "swap"; data: SwapRequestData }
+    | { type: "payment"; data: PaymentRequestData }
+    | null;
+
 export interface ConfidentialRequestData {
     correlationId?: string;
     payloadHash?: string;
     status?: string;
-    /** Token being sent (intents asset ID, e.g. "nep141:wrap.near") */
-    originAsset?: string;
-    /** Token being received */
-    destinationAsset?: string;
-    /** Raw amount in */
-    amountIn?: string;
-    /** Human-readable amount in */
-    amountInFormatted?: string;
-    /** Raw amount out */
-    amountOut?: string;
-    /** Human-readable amount out */
-    amountOutFormatted?: string;
-    /** Recipient address */
-    recipient?: string;
-    /** Estimated time in seconds */
-    timeEstimate?: number;
-    /** Deposit address for swap tracking */
-    depositAddress?: string;
-    /** Quote signature */
-    signature?: string;
-    /** Quote deadline */
-    deadline?: string;
+    mapped?: MappedConfidentialRequest;
+    title: string;
 }
 
 export interface SwapRequestData {

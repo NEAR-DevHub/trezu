@@ -18,6 +18,7 @@ import {
 } from "../../types/index";
 import { ConfidentialRequestCell } from "./confidential-request-cell";
 import { ChangeConfigCell } from "./change-config-cell";
+import { useTreasury } from "@/hooks/use-treasury";
 
 interface TransactionCellProps {
     proposal: Proposal;
@@ -33,7 +34,8 @@ export function TransactionCell({
     withDate,
     textOnly = false,
 }: TransactionCellProps) {
-    const { type, data } = extractProposalData(proposal);
+    const { treasuryId } = useTreasury();
+    const { type, data } = extractProposalData(proposal, treasuryId);
     const timestamp = withDate ? proposal.submission_time : undefined;
 
     switch (type) {

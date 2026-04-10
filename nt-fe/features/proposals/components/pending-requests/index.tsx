@@ -17,7 +17,7 @@ import { TransactionCell } from "../transaction-cell";
 import { getProposalUIKind } from "../../utils/proposal-utils";
 import { useProposalInsufficientBalance } from "../../hooks/use-proposal-insufficient-balance";
 import { VoteModal } from "../vote-modal";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 import { DepositModal } from "@/app/(treasury)/[treasuryId]/dashboard/components/deposit-modal";
@@ -25,6 +25,7 @@ import { EmptyState } from "@/components/empty-state";
 import { NotEnoughBalance } from "../not-enough-balance";
 import { FormattedDate } from "@/components/formatted-date";
 import { Policy } from "@/types/policy";
+import { extractConfidentialRequestData } from "../../utils/proposal-extractors";
 
 const MAX_DISPLAYED_REQUESTS = 4;
 
@@ -79,13 +80,20 @@ export function PendingRequestItem({
     );
     const { accountId } = useNear();
     const isUserVoter = !!proposal.votes[accountId ?? ""];
+    let title = useMemo(() => {
+        let title = type as string;
+        if (type === "Confidential Request") {
+            title = extractConfidentialRequestData(proposal, treasuryId).title;
+        }
+        return title;
+    }, [type, proposal]);
 
     return (
         <Link href={`/${treasuryId}/requests/${proposal.id}`}>
             <PageCard className="flex relative flex-row gap-3.5 justify-between w-full group">
-                <ProposalTypeIcon proposal={proposal} />
-                <div className="flex flex-col items-start w-full gap-px">
-                    <span className="leading-none font-semibold">{type}</span>
+                <ProposalTypeIcon proposal={proposal} treasuryId={treasuryId} />
+                <div className="flex flex-col items-start w-full gap-1">
+                    <span className="leading-none font-semibold">{title}</span>
                     <TransactionCell proposal={proposal} textOnly />
                     <FormattedDate
                         proposal={proposal}

@@ -243,6 +243,9 @@ export function VotingDurationImpactModal({
                                                                         proposal={
                                                                             proposal
                                                                         }
+                                                                        treasuryId={
+                                                                            treasuryId
+                                                                        }
                                                                     />
                                                                     <div className="flex flex-col min-w-0">
                                                                         <span className="text-sm font-medium truncate">
@@ -343,6 +346,9 @@ export function VotingDurationImpactModal({
                                                             <ProposalTypeIcon
                                                                 proposal={
                                                                     proposal
+                                                                }
+                                                                treasuryId={
+                                                                    treasuryId
                                                                 }
                                                             />
                                                             <div className="flex flex-col min-w-0">

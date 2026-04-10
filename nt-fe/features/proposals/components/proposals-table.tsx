@@ -33,6 +33,7 @@ import { FormattedDate } from "@/components/formatted-date";
 import { TooltipUser } from "@/components/user";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getProposalStatus, getProposalUIKind } from "../utils/proposal-utils";
+import { extractConfidentialRequestData } from "../utils/proposal-extractors";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Pagination } from "@/components/pagination";
 import { ProposalStatusPill } from "./proposal-status-pill";
@@ -184,13 +185,22 @@ export function ProposalsTable({
                 ),
                 cell: (info) => {
                     const proposal = info.row.original;
-                    const title = getProposalUIKind(proposal);
+                    let title: string = getProposalUIKind(proposal);
+                    if (title === "Confidential Request") {
+                        title = extractConfidentialRequestData(
+                            proposal,
+                            treasuryId,
+                        ).title;
+                    }
                     return (
                         <div className="flex items-center gap-5 max-w-[400px] truncate">
                             <span className="text-sm text-muted-foreground w-6 shrink-0 font-semibold">
                                 #{proposal.id}
                             </span>
-                            <ProposalTypeIcon proposal={proposal} />
+                            <ProposalTypeIcon
+                                proposal={proposal}
+                                treasuryId={treasuryId}
+                            />
                             <div className="flex flex-col items-start">
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm font-medium">

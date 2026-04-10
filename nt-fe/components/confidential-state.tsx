@@ -1,5 +1,5 @@
 import { EmptyState } from "./empty-state";
-import { TreasuryType, TreasuryTypeIcon } from "./icons/shield";
+import { TreasuryTypeIcon } from "./icons/shield";
 
 export function ConfidentialState({
     skeleton,
@@ -7,7 +7,7 @@ export function ConfidentialState({
     skeleton?: React.ReactNode;
 }) {
     return (
-        <div className="relative">
+        <div className="relative **:data-[slot=skeleton]:animate-none!">
             {skeleton}
             <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 flex items-center justify-center max-h-[96px]">
                 <EmptyState

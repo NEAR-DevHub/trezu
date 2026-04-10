@@ -14,6 +14,7 @@ import {
     AnyProposalData,
     BatchPaymentRequestData,
     ConfidentialRequestData,
+    MappedConfidentialRequest,
     MembersData,
     UpgradeData,
     SetStakingContractData,
@@ -26,6 +27,7 @@ import { ProposalUIKind } from "../types/index";
 import { Policy } from "@/types/policy";
 import { getKindFromProposal } from "@/lib/config-utils";
 import { FunctionCallAction } from "@/lib/proposals-api";
+import { IntentsQuoteResponse } from "@/lib/api";
 
 function extractFTTransferData(
     functionCall: FunctionCallKind["FunctionCall"],
@@ -718,6 +720,7 @@ export function extractUnknownData(proposal: Proposal): UnknownData {
  */
 export function extractConfidentialRequestData(
     proposal: Proposal,
+    treasuryId?: string,
 ): ConfidentialRequestData {
     const correlationId =
         decodeProposalDescription("correlationId", proposal.description) ??
@@ -738,30 +741,65 @@ export function extractConfidentialRequestData(
     }
 
     const meta = proposal.confidential_metadata;
-    const quote = meta?.quote_metadata;
+    const quoteMeta = meta?.quote_metadata;
+
+    let mapped: MappedConfidentialRequest = null;
+    let title = "Confidential Request";
+    if (quoteMeta) {
+        const quoteResponse = {
+            ...quoteMeta,
+            correlationId,
+        } as unknown as IntentsQuoteResponse;
+        const quote = quoteResponse.quote;
+        const quoteRequest = quoteResponse.quoteRequest;
+        const isSwap = quoteRequest.recipient === treasuryId;
+
+        if (isSwap) {
+            mapped = {
+                type: "swap",
+                data: {
+                    source: "exchange",
+                    timeEstimate: quote.timeEstimate.toString(),
+                    quoteSignature: quoteResponse.signature,
+                    depositAddress: quote.depositAddress,
+                    tokenInAddress: quoteRequest.originAsset,
+                    amountIn: quote.amountIn,
+                    tokenOutAddress: quoteRequest.destinationAsset,
+                    amountOut: quote.amountOut,
+                    slippage: quoteRequest.slippageTolerance?.toString(),
+                    quoteDeadline: quote.deadline,
+                } as SwapRequestData,
+            };
+            title = "Confidential Exchange";
+        } else {
+            mapped = {
+                type: "payment",
+                data: {
+                    tokenId: quoteRequest.originAsset,
+                    amount: quote.amountIn,
+                    receiver: quoteRequest.recipient ?? "",
+                } as PaymentRequestData,
+            };
+            title = "Confidential Payment";
+        }
+    }
 
     return {
         correlationId,
         payloadHash,
         status: meta?.status,
-        originAsset: quote?.quoteRequest?.originAsset,
-        destinationAsset: quote?.quoteRequest?.destinationAsset,
-        amountIn: quote?.quote?.amountIn,
-        amountInFormatted: quote?.quote?.amountInFormatted,
-        amountOut: quote?.quote?.amountOut,
-        amountOutFormatted: quote?.quote?.amountOutFormatted,
-        recipient: quote?.quoteRequest?.recipient,
-        timeEstimate: quote?.quote?.timeEstimate,
-        depositAddress: quote?.quote?.depositAddress,
-        signature: quote?.signature,
-        deadline: quote?.quote?.deadline,
+        mapped,
+        title,
     };
 }
 
 /**
  * Main extractor that routes to the appropriate extractor based on proposal type
  */
-export function extractProposalData(proposal: Proposal): {
+export function extractProposalData(
+    proposal: Proposal,
+    treasuryId?: string,
+): {
     type: ProposalUIKind;
     data: AnyProposalData;
 } {
@@ -773,7 +811,7 @@ export function extractProposalData(proposal: Proposal): {
             data = extractPaymentRequestData(proposal);
             break;
         case "Confidential Request":
-            data = extractConfidentialRequestData(proposal);
+            data = extractConfidentialRequestData(proposal, treasuryId);
             break;
         case "Function Call":
             data = extractFunctionCallData(proposal);
