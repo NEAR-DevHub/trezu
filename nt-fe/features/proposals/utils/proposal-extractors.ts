@@ -765,8 +765,10 @@ export function extractConfidentialRequestData(
                     tokenInAddress: quoteRequest.originAsset,
                     amountIn: quote.amountIn,
                     tokenOutAddress: quoteRequest.destinationAsset,
-                    amountOut: quote.amountOut,
-                    slippage: quoteRequest.slippageTolerance?.toString(),
+                    amountOut: quote.amountOutFormatted,
+                    slippage: (
+                        (quoteRequest.slippageTolerance ?? 0) / 100
+                    ).toString(),
                     quoteDeadline: quote.deadline,
                 } as SwapRequestData,
             };

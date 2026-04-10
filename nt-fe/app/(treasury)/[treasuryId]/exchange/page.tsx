@@ -33,7 +33,9 @@ import {
 import { useTreasury } from "@/hooks/use-treasury";
 import { useToken, useTreasuryPolicy } from "@/hooks/use-treasury-queries";
 import type { IntentsQuoteResponse } from "@/lib/api";
-import { cn, formatBalance, formatSmartAmount } from "@/lib/utils";
+import { generateIntent } from "@/lib/api";
+import { formatBalance, formatSmartAmount } from "@/lib/utils";
+import { buildConfidentialProposal } from "../confidential/utils/proposal-builder";
 import { useNear } from "@/stores/near-store";
 import { useThemeStore } from "@/stores/theme-store";
 import { ExchangeSettingsModal } from "./components/exchange-settings-modal";
@@ -78,7 +80,7 @@ function Step1({ handleNext }: StepProps) {
     const form = useFormContext<
         ExchangeFormValues & { slippageTolerance?: number }
     >();
-    const { treasuryId: selectedTreasury } = useTreasury();
+    const { treasuryId: selectedTreasury, isConfidential } = useTreasury();
     const { theme } = useThemeStore();
     const sellToken = form.watch("sellToken");
     const receiveToken = form.watch("receiveToken");
@@ -90,7 +92,7 @@ function Step1({ handleNext }: StepProps) {
     const isSellTokenFTNEAR =
         sellToken.address === "wrap.near" && sellToken.residency === "Ft";
 
-    // Filter function for receive token - hide native NEAR unless FT NEAR is selected
+    // Filter function for receive token
     const filterReceiveTokens = useCallback(
         (token: {
             address: string;
@@ -98,6 +100,10 @@ function Step1({ handleNext }: StepProps) {
             network: string;
             residency?: string;
         }) => {
+            // Confidential treasury: only show intents tokens
+            if (isConfidential) {
+                return token.residency === "Intents";
+            }
             // Hide native NEAR unless selling FT NEAR (for unwrapping)
             if (token.residency === "Near") {
                 return isSellTokenFTNEAR;
@@ -105,7 +111,7 @@ function Step1({ handleNext }: StepProps) {
             // FT NEAR and Intents NEAR are always visible
             return true;
         },
-        [isSellTokenFTNEAR],
+        [isSellTokenFTNEAR, isConfidential],
     );
 
     // Reset receive token if it's no longer valid based on filter
@@ -164,6 +170,22 @@ function Step1({ handleNext }: StepProps) {
         !isNaN(Number(debouncedSellAmount)) &&
         Number(debouncedSellAmount) > 0;
 
+    // Filter function for sell token - confidential treasury only shows intents tokens
+    const filterSellTokens = useCallback(
+        (token: {
+            address: string;
+            symbol: string;
+            network: string;
+            residency?: string;
+        }) => {
+            if (isConfidential) {
+                return token.residency === "Intents";
+            }
+            return true;
+        },
+        [isConfidential],
+    );
+
     const { data: quoteData, isLoading: isLoadingQuote } = useExchangeQuote({
         selectedTreasury,
         sellToken,
@@ -174,6 +196,7 @@ function Step1({ handleNext }: StepProps) {
         enabled: Boolean(selectedTreasury && hasValidAmount && !areSameTokens),
         isDryRun: true,
         refetchInterval: DRY_QUOTE_REFRESH_INTERVAL,
+        isConfidential,
     });
 
     // Validate tokens when they change
@@ -246,6 +269,9 @@ function Step1({ handleNext }: StepProps) {
                     tokenName="sellToken"
                     showInsufficientBalance={true}
                     dynamicFontSize={true}
+                    tokenSelect={{
+                        filterTokens: filterSellTokens,
+                    }}
                 />
                 {/* Swap Arrow */}
                 <div className="flex justify-center absolute bottom-[-25px] left-1/2 -translate-x-1/2">
@@ -334,7 +360,7 @@ function Step1({ handleNext }: StepProps) {
 
 function Step2({ handleBack }: StepProps) {
     const form = useFormContext<ExchangeFormValues>();
-    const { treasuryId: selectedTreasury } = useTreasury();
+    const { treasuryId: selectedTreasury, isConfidential } = useTreasury();
     const sellToken = form.watch("sellToken");
     const receiveToken = form.watch("receiveToken");
     const sellAmount = form.watch("sellAmount");
@@ -357,6 +383,7 @@ function Step2({ handleBack }: StepProps) {
         enabled: Boolean(selectedTreasury && sellAmount),
         isDryRun: false,
         refetchInterval: PROPOSAL_REFRESH_INTERVAL,
+        isConfidential,
     });
 
     const timeUntilRefresh = useCountdownTimer(
@@ -629,7 +656,7 @@ function Step2({ handleBack }: StepProps) {
 type ExchangeFormValues = z.infer<typeof exchangeFormSchema>;
 
 export default function ExchangePage() {
-    const { treasuryId: selectedTreasury } = useTreasury();
+    const { treasuryId: selectedTreasury, isConfidential } = useTreasury();
     const { createProposal } = useNear();
     const { data: policy } = useTreasuryPolicy(selectedTreasury);
     const [step, setStep] = useState(0);
@@ -682,46 +709,71 @@ export default function ExchangePage() {
 
         try {
             const proposalBond = policy?.proposal_bond || "0";
-            const sellingNativeNEAR = isNativeNEAR(
-                data.sellToken.address,
-                data.sellToken.residency,
-            );
 
-            const proposalParams = {
-                proposalData: proposalDataFromForm,
-                sellToken: data.sellToken,
-                receiveToken: data.receiveToken,
-                slippageTolerance: data.slippageTolerance || 0.5,
-                treasuryId: selectedTreasury,
-                proposalBond,
-            };
+            if (isConfidential) {
+                // Confidential path: generate intent + build v1.signer proposal
+                const { correlationId: _, ...quoteMetadata } =
+                    proposalDataFromForm as unknown as Record<string, unknown>;
+                const intentResponse = await generateIntent({
+                    type: "swap_transfer",
+                    standard: "nep413",
+                    signerId: selectedTreasury,
+                    quoteMetadata,
+                });
 
-            let result;
+                const confidentialResult = buildConfidentialProposal({
+                    intentResponse,
+                    treasuryId: selectedTreasury,
+                });
 
-            // Detect NEAR deposit: native NEAR -> FT NEAR (wrap.near)
-            if (isNEARDeposit(data.sellToken, data.receiveToken)) {
-                result = await buildNEARDepositProposal(proposalParams);
-            }
-            // Detect NEAR withdraw: FT NEAR (wrap.near) -> native NEAR
-            else if (isNEARWithdraw(data.sellToken, data.receiveToken)) {
-                result = buildNEARWithdrawProposal(proposalParams);
-            }
-            // Regular exchange: native NEAR to other tokens
-            else if (sellingNativeNEAR) {
-                result = await buildNativeNEARProposal(proposalParams);
-            }
-            // Regular exchange: FT tokens or intents tokens
-            else {
-                result = await buildFungibleTokenProposal(proposalParams);
-            }
+                await createProposal("Exchange request submitted", {
+                    treasuryId: selectedTreasury,
+                    proposal: confidentialResult.proposal,
+                    proposalBond,
+                    proposalType: "swap",
+                });
+            } else {
+                const sellingNativeNEAR = isNativeNEAR(
+                    data.sellToken.address,
+                    data.sellToken.residency,
+                );
 
-            await createProposal("Exchange request submitted", {
-                treasuryId: selectedTreasury,
-                proposal: result.proposal,
-                proposalBond,
-                additionalTransactions: result.additionalTransactions,
-                proposalType: "swap",
-            });
+                const proposalParams = {
+                    proposalData: proposalDataFromForm,
+                    sellToken: data.sellToken,
+                    receiveToken: data.receiveToken,
+                    slippageTolerance: data.slippageTolerance || 0.5,
+                    treasuryId: selectedTreasury,
+                    proposalBond,
+                };
+
+                let result;
+
+                // Detect NEAR deposit: native NEAR -> FT NEAR (wrap.near)
+                if (isNEARDeposit(data.sellToken, data.receiveToken)) {
+                    result = await buildNEARDepositProposal(proposalParams);
+                }
+                // Detect NEAR withdraw: FT NEAR (wrap.near) -> native NEAR
+                else if (isNEARWithdraw(data.sellToken, data.receiveToken)) {
+                    result = buildNEARWithdrawProposal(proposalParams);
+                }
+                // Regular exchange: native NEAR to other tokens
+                else if (sellingNativeNEAR) {
+                    result = await buildNativeNEARProposal(proposalParams);
+                }
+                // Regular exchange: FT tokens or intents tokens
+                else {
+                    result = await buildFungibleTokenProposal(proposalParams);
+                }
+
+                await createProposal("Exchange request submitted", {
+                    treasuryId: selectedTreasury,
+                    proposal: result.proposal,
+                    proposalBond,
+                    additionalTransactions: result.additionalTransactions,
+                    proposalType: "swap",
+                });
+            }
 
             trackEvent("exchange-submitted", {
                 treasury_id: selectedTreasury,

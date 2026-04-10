@@ -76,14 +76,24 @@ export function formatAssetForIntentsAPI(tokenAddress: string): string {
  */
 export function getDepositAndRefundType(
     residency: string,
-): "INTENTS" | "ORIGIN_CHAIN" {
-    return residency === "Intents" ? "INTENTS" : "ORIGIN_CHAIN";
+    isConfidential?: boolean,
+): "INTENTS" | "CONFIDENTIAL_INTENTS" | "ORIGIN_CHAIN" {
+    return residency === "Intents"
+        ? isConfidential
+            ? "CONFIDENTIAL_INTENTS"
+            : "INTENTS"
+        : "ORIGIN_CHAIN";
 }
 
 export function getRecipientType(
     residency: string,
-): "INTENTS" | "DESTINATION_CHAIN" {
-    return residency === "Intents" ? "INTENTS" : "DESTINATION_CHAIN";
+    isConfidential?: boolean,
+): "INTENTS" | "CONFIDENTIAL_INTENTS" | "DESTINATION_CHAIN" {
+    return residency === "Intents"
+        ? isConfidential
+            ? "CONFIDENTIAL_INTENTS"
+            : "INTENTS"
+        : "DESTINATION_CHAIN";
 }
 
 /**

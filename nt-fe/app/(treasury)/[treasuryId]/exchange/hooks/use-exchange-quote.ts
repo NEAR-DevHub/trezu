@@ -26,6 +26,7 @@ interface UseExchangeQuoteParams {
     enabled: boolean;
     isDryRun: boolean;
     refetchInterval: number;
+    isConfidential?: boolean;
 }
 
 /**
@@ -43,6 +44,7 @@ export function useExchangeQuote({
     enabled,
     isDryRun,
     refetchInterval,
+    isConfidential,
 }: UseExchangeQuoteParams) {
     return useQuery({
         queryKey: [
@@ -52,6 +54,7 @@ export function useExchangeQuote({
             receiveToken.address,
             sellAmount,
             slippageTolerance,
+            isConfidential,
         ],
         queryFn: async (): Promise<IntentsQuoteResponse | null> => {
             if (!selectedTreasury) return null;
@@ -132,9 +135,11 @@ export function useExchangeQuote({
                 );
                 const depositAndRefundType = getDepositAndRefundType(
                     sellToken.residency || "",
+                    isConfidential,
                 );
                 const recipientType = getRecipientType(
                     receiveToken.residency || "",
+                    isConfidential,
                 );
 
                 const quote = await getIntentsQuote(

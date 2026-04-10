@@ -225,6 +225,7 @@ function buildTokenParam(network: NetworkAsset): string {
             address: network.contractId,
             network: network.network,
             decimals: network.decimals,
+            residency: network.residency,
             icon: network.icon,
             name: network.name,
         }),
