@@ -40,7 +40,7 @@ export function useAssets(
     return useQuery({
         queryKey: ["treasuryAssets", treasuryId, options?.onlyPositiveBalance],
         queryFn: () => getTreasuryAssets(treasuryId!),
-        enabled: !!treasuryId && !!options?.enabled,
+        enabled: !!treasuryId && (options?.enabled ?? true),
         staleTime: 1000 * 5, // 5 seconds (assets change frequently)
         select: (data) => {
             return {

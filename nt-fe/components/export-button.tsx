@@ -8,7 +8,7 @@ import { trackEvent } from "@/lib/analytics";
 import { useMediaQuery } from "@/hooks/use-media-query";
 
 export function ExportButton() {
-    const { treasuryId } = useTreasury();
+    const { treasuryId, isConfidential } = useTreasury();
     const router = useRouter();
     const isMobile = useMediaQuery("(max-width: 640px)");
 
@@ -23,6 +23,12 @@ export function ExportButton() {
     return (
         <Button
             variant="secondary"
+            disabled={isConfidential}
+            tooltipContent={
+                isConfidential
+                    ? "Export is not available in confidential mode yet. This feature is coming soon!"
+                    : undefined
+            }
             onClick={handleClick}
             className="h-9 px-3"
             size={isMobile ? "icon" : "default"}
