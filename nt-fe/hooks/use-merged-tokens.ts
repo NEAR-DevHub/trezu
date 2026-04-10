@@ -154,6 +154,7 @@ const toBridgeVariants = (
 const mergeOwnedTokenWithBridge = (
     treasuryToken: AggregatedAsset,
     bridgeAsset: BridgeAsset | undefined,
+    isConfidential: boolean,
 ): MergedToken => {
     if (!bridgeAsset) {
         return {
@@ -196,7 +197,9 @@ const mergeOwnedTokenWithBridge = (
     for (const bn of bridgeAsset.networks) {
         const bridgeFtId = bn.id.replace(/^nep141:/, "");
         const includeFtDuplicate =
-            bn.id.startsWith("nep141:") && !treasuryFtIds.has(bridgeFtId);
+            !isConfidential &&
+            bn.id.startsWith("nep141:") &&
+            !treasuryFtIds.has(bridgeFtId);
 
         const contractMatch = byContractId.get(bn.id);
         const chainMatches = contractMatch
@@ -252,6 +255,7 @@ const mergeOwnedTokenWithBridge = (
 const buildBridgeOnlyTokens = (
     bridgeAssets: BridgeAsset[],
     aggregatedTokens: AggregatedAsset[],
+    isConfidential: boolean,
 ): MergedToken[] => {
     const ownedIds = new Set(aggregatedTokens.map((t) => t.id.toLowerCase()));
 
@@ -264,7 +268,9 @@ const buildBridgeOnlyTokens = (
                 symbol: a.id.toUpperCase(),
                 icon: a.icon,
                 networks: a.networks.flatMap((n) =>
-                    toBridgeVariants(n, "Intents"),
+                    toBridgeVariants(n, "Intents", {
+                        includeFtDuplicate: !isConfidential,
+                    }),
                 ),
             }),
         )
@@ -285,7 +291,7 @@ export function useMergedTokens({
     enabled = true,
     showOnlyOwned = false,
 }: UseMergedTokensOptions = {}) {
-    const { treasuryId } = useTreasury();
+    const { treasuryId, isConfidential } = useTreasury();
 
     const { data: { tokens: rawTokens = [] } = {} } = useAssets(treasuryId, {
         onlyPositiveBalance: false,
@@ -308,6 +314,7 @@ export function useMergedTokens({
                 mergeOwnedTokenWithBridge(
                     treasuryToken,
                     bridgeAssetsMap.get(treasuryToken.id.toLowerCase()),
+                    isConfidential,
                 ),
             )
             .sort(
@@ -320,7 +327,11 @@ export function useMergedTokens({
 
         return [
             ...ownedTokens,
-            ...buildBridgeOnlyTokens(bridgeAssets, aggregatedTokens),
+            ...buildBridgeOnlyTokens(
+                bridgeAssets,
+                aggregatedTokens,
+                isConfidential,
+            ),
         ];
     }, [aggregatedTokens, bridgeAssets, showOnlyOwned]);
 
