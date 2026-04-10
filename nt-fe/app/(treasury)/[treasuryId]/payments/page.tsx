@@ -500,7 +500,9 @@ function buildIntentsPaymentQuoteRequest(
             ? ("CONFIDENTIAL_INTENTS" as const)
             : ("INTENTS" as const),
         recipient: data.address,
-        recipientType: "DESTINATION_CHAIN" as const,
+        recipientType: isConfidential
+            ? "CONFIDENTIAL_INTENTS"
+            : ("DESTINATION_CHAIN" as const),
         deadline: new Date(Date.now() + deadlineMs).toISOString(),
         quoteWaitingTimeMs: 0,
     };

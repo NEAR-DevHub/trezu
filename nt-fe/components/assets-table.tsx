@@ -222,7 +222,7 @@ function buildTokenParam(network: NetworkAsset): string {
     return encodeURIComponent(
         JSON.stringify({
             symbol: network.symbol,
-            address: network.id,
+            address: network.contractId,
             network: network.network,
             decimals: network.decimals,
             icon: network.icon,
