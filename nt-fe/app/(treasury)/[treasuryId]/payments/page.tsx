@@ -53,6 +53,7 @@ import { PaymentFormSection } from "./components/payment-form-section";
 import { Address } from "@/components/address";
 import { useQuery } from "@tanstack/react-query";
 import { getIntentsQuote, IntentsQuoteResponse } from "@/lib/api";
+import { parseTokenQueryParam } from "@/lib/token-query-param";
 import { cn, encodeToMarkdown, formatCurrency, nanosToMs } from "@/lib/utils";
 import {
     getNetworkFeeCoverageErrorMessage,
@@ -552,14 +553,8 @@ export default function PaymentsPage() {
 
     // Parse token from query params
     const defaultToken = useMemo(() => {
-        if (tokenParam) {
-            try {
-                return JSON.parse(decodeURIComponent(tokenParam));
-            } catch {
-                return default_near_token(isConfidential);
-            }
-        }
-        return default_near_token(isConfidential);
+        const fallbackToken = default_near_token(isConfidential);
+        return parseTokenQueryParam(tokenParam, fallbackToken);
     }, [tokenParam, isConfidential]);
 
     const compatibleDefaultToken = useMemo(() => {

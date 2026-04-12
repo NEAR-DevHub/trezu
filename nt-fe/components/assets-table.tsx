@@ -54,6 +54,7 @@ import {
     formatCurrency,
     formatSmartAmount,
 } from "@/lib/utils";
+import { buildTokenQueryParam } from "@/lib/token-query-param";
 import { EarningPoolDetailsModal } from "./earning-pool-details-modal";
 import { LockupDetailsModal } from "./lockup-details-modal";
 import { BalanceCell, NetworkDisplay } from "./token-display";
@@ -219,17 +220,7 @@ function networkRowKey(
 }
 
 function buildTokenParam(network: NetworkAsset): string {
-    return encodeURIComponent(
-        JSON.stringify({
-            symbol: network.symbol,
-            address: network.contractId,
-            network: network.network,
-            decimals: network.decimals,
-            residency: network.residency,
-            icon: network.icon,
-            name: network.name,
-        }),
-    );
+    return buildTokenQueryParam(network);
 }
 
 interface MobileEarningPoolRow {

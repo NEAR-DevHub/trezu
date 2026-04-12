@@ -20,6 +20,7 @@ import { Tooltip } from "./tooltip";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { buildTokenQueryParam } from "@/lib/token-query-param";
 import {
     ArrowUpRight,
     ArrowLeftRight,
@@ -126,16 +127,8 @@ export function AssetDetailsModal({ isOpen, onClose, asset }: Props) {
                                     const locked = lockedBalance(
                                         network.balance,
                                     );
-                                    const tokenParam = encodeURIComponent(
-                                        JSON.stringify({
-                                            symbol: network.symbol,
-                                            address: network.id,
-                                            network: network.network,
-                                            decimals: network.decimals,
-                                            icon: network.icon,
-                                            name: network.name,
-                                        }),
-                                    );
+                                    const tokenParam =
+                                        buildTokenQueryParam(network);
                                     return (
                                         <div
                                             key={idx}
