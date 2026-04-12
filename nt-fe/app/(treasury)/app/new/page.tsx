@@ -52,7 +52,6 @@ import { useNear } from "@/stores/near-store";
 import { InfoAlert } from "@/components/info-alert";
 import { TreasuryTypeIcon } from "@/components/icons/shield";
 import {
-    getQuestionnaireSummary,
     OnboardingQuestionsStep,
     ONBOARDING_ABOUT_DEFAULT_VALUES,
     ONBOARDING_ABOUT_SCHEMA,
@@ -843,7 +842,6 @@ export default function NewTreasuryPage() {
         };
 
         trackEvent("treasury-create-submit-clicked", {
-            ...getQuestionnaireSummary(data.about),
             members_count: data.members.length,
             treasury_type: data.isConfidential ? "confidential" : "public",
         });

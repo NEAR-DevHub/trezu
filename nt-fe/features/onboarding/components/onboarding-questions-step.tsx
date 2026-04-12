@@ -338,32 +338,6 @@ function buildCumulativeSurveyResponses(
     return responses;
 }
 
-export function getQuestionnaireSummary(about: OnboardingAboutValues) {
-    return {
-        role_selected: about.role.selected,
-        role_other: about.role.other?.trim() || undefined,
-        team_size_selected: about.teamSize.selected,
-        networks_selected: about.networks.selected,
-        networks_count: about.networks.selected.length,
-        networks_other: about.networks.other?.trim() || undefined,
-        use_cases_selected: about.useCases.selected,
-        use_cases_count: about.useCases.selected.length,
-        use_cases_other: about.useCases.other?.trim() || undefined,
-        multisig_experience_selected: about.multisigExperience.selected,
-        current_tools_selected: about.currentTools.selected,
-        current_tools_count: about.currentTools.selected.length,
-        monthly_volume_selected: about.monthlyVolume.selected,
-        biggest_challenges_selected: about.biggestChallenges.selected,
-        biggest_challenges_count: about.biggestChallenges.selected.length,
-        biggest_challenges_other:
-            about.biggestChallenges.other?.trim() || undefined,
-        discovery_sources_selected: about.discoverySources.selected,
-        discovery_sources_count: about.discoverySources.selected.length,
-        discovery_sources_other:
-            about.discoverySources.other?.trim() || undefined,
-    };
-}
-
 export function OnboardingQuestionsStep({ handleNext }: StepProps) {
     const form = useFormContext<{ about: OnboardingAboutValues }>();
     const { data: chains = [] } = useChains();

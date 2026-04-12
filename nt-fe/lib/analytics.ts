@@ -2,15 +2,7 @@
 
 import posthog from "posthog-js";
 
-type AnalyticsParamValue =
-    | string
-    | number
-    | boolean
-    | string[]
-    | number[]
-    | boolean[]
-    | null
-    | undefined;
+type AnalyticsParamValue = string | number | boolean | null | undefined;
 type AnalyticsParams = Record<string, AnalyticsParamValue>;
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
