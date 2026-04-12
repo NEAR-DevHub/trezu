@@ -1,17 +1,12 @@
 "use client";
 
 import { GradFlow } from "gradflow";
-import {
-    ArrowRight,
-    Compass,
-    Loader2,
-    UserCheck,
-} from "lucide-react";
+import { ArrowRight, Compass, Loader2, UserCheck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AuthProvider } from "@/components/auth-provider";
 import { Button } from "@/components/button";
@@ -290,6 +285,7 @@ export function Content() {
     const [contact, setContact] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
+    const existingUserConnectPendingRef = useRef(false);
     const {
         accountId,
         connect,
@@ -364,6 +360,15 @@ export function Content() {
         onboardingPath,
     ]);
 
+    useEffect(() => {
+        if (!existingUserConnectPendingRef.current || !accountId) return;
+        existingUserConnectPendingRef.current = false;
+        trackEvent("wallet-connected", {
+            source: "welcome-existing-user",
+            account_id: accountId,
+        });
+    }, [accountId]);
+
     const handleWhitelistSubmit = async () => {
         if (!contact.trim()) return;
         setIsSubmitting(true);
@@ -384,11 +389,11 @@ export function Content() {
     const triggerWalletConnect = (path: "new_user" | "existing_user") => {
         if (authError) clearError();
         setOnboardingPath(path);
+        trackEvent("onboarding-path-selected", {
+            path,
+        });
 
         if (path === "new_user") {
-            trackEvent("onboarding-path-selected", {
-                path: "new_user",
-            });
             router.push("/app/new");
             return;
         }
@@ -404,9 +409,7 @@ export function Content() {
             return;
         }
 
-        trackEvent("wallet-connect-clicked", {
-            source: "welcome-existing-user",
-        });
+        existingUserConnectPendingRef.current = true;
         connect();
     };
 

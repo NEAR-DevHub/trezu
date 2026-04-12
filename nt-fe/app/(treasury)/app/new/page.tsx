@@ -41,7 +41,6 @@ import { useTreasuryCreationStatus } from "@/hooks/use-treasury-queries";
 import { trackEvent } from "@/lib/analytics";
 import {
     type CreateTreasuryRequest,
-    type TreasuryOnboardingQuestionnaire,
     checkHandleUnused,
     createTreasuryStream,
 } from "@/lib/api";
@@ -53,7 +52,6 @@ import { useNear } from "@/stores/near-store";
 import { InfoAlert } from "@/components/info-alert";
 import { TreasuryTypeIcon } from "@/components/icons/shield";
 import {
-    buildOnboardingQuestionnaire,
     getQuestionnaireSummary,
     OnboardingQuestionsStep,
     ONBOARDING_ABOUT_DEFAULT_VALUES,
@@ -832,9 +830,6 @@ export default function NewTreasuryPage() {
         const requestors = data.members
             .filter((m) => m.roles.includes("requestor"))
             .map((m) => m.accountId);
-        const onboardingQuestionnaire = buildOnboardingQuestionnaire(
-            data.about,
-        );
 
         const request: CreateTreasuryRequest = {
             name: data.details.treasuryName,
@@ -845,10 +840,8 @@ export default function NewTreasuryPage() {
             isConfidential: data.isConfidential,
             financiers,
             requestors,
-            onboardingQuestionnaire,
         };
 
-        console.log(request);
         trackEvent("treasury-create-submit-clicked", {
             ...getQuestionnaireSummary(data.about),
             members_count: data.members.length,

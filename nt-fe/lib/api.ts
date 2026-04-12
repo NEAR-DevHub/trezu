@@ -843,36 +843,6 @@ export interface CreateTreasuryRequest {
     financiers: string[];
     requestors: string[];
     isConfidential?: boolean;
-    onboardingQuestionnaire?: TreasuryOnboardingQuestionnaire;
-}
-
-export interface TreasuryOnboardingQuestionAnswer {
-    selected: string[];
-    other?: string;
-}
-
-export interface TreasuryOnboardingQuestionnaire {
-    role: TreasuryOnboardingQuestionAnswer;
-    teamSize: TreasuryOnboardingQuestionAnswer;
-    networks: TreasuryOnboardingQuestionAnswer;
-    useCases: TreasuryOnboardingQuestionAnswer;
-    multisigExperience: TreasuryOnboardingQuestionAnswer;
-    currentTools: TreasuryOnboardingQuestionAnswer;
-    monthlyVolume: TreasuryOnboardingQuestionAnswer;
-    biggestChallenges: TreasuryOnboardingQuestionAnswer;
-    discoverySources: TreasuryOnboardingQuestionAnswer;
-}
-
-export interface SaveOnboardingQuestionnaireProgressRequest {
-    onboardingSessionId?: string;
-    questionnaire: TreasuryOnboardingQuestionnaire;
-    completedSteps: number;
-    accountId?: string;
-    treasuryAccountId?: string;
-}
-
-export interface SaveOnboardingQuestionnaireProgressResponse {
-    onboardingSessionId: string;
 }
 
 export interface CreateTreasuryResponse {
@@ -934,17 +904,6 @@ export async function createTreasuryStream(
             }
         }
     }
-}
-
-export async function saveOnboardingQuestionnaireProgress(
-    request: SaveOnboardingQuestionnaireProgressRequest,
-): Promise<SaveOnboardingQuestionnaireProgressResponse> {
-    const response =
-        await axios.post<SaveOnboardingQuestionnaireProgressResponse>(
-            `${BACKEND_API_BASE}/onboarding/questionnaire`,
-            request,
-        );
-    return response.data;
 }
 
 export interface TreasuryCreationStatusResponse {

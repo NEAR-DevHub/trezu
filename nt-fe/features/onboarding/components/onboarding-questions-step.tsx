@@ -6,8 +6,6 @@ import { useFormContext, useWatch } from "react-hook-form";
 import z from "zod";
 import { type StepProps } from "@/components/step-wizard";
 import { useChains } from "@/features/address-book/chains";
-import { trackEvent } from "@/lib/analytics";
-import { type TreasuryOnboardingQuestionnaire } from "@/lib/api";
 import { OnboardingQuestionnaireCard } from "./onboarding-questionnaire-card";
 
 const questionnaireAnswerSchema = z.object({
@@ -285,13 +283,6 @@ const QUESTIONNAIRE_STEPS: QuestionnaireStep[] = [
 
 export const ONBOARDING_QUESTIONNAIRE_STEP_COUNT = QUESTIONNAIRE_STEPS.length;
 
-function getQuestionKey(fieldName: QuestionnaireBaseFieldName): string {
-    const keyWithoutPrefix = fieldName.replace("about.", "");
-    return keyWithoutPrefix
-        .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
-        .toLowerCase();
-}
-
 function getVisibleQuestionnaireSteps(selectedExperience?: string) {
     // Hide the "current tools" step for beginner users with little/no multisig exposure.
     const skipToolsQuestion =
@@ -370,32 +361,6 @@ export function getQuestionnaireSummary(about: OnboardingAboutValues) {
         discovery_sources_count: about.discoverySources.selected.length,
         discovery_sources_other:
             about.discoverySources.other?.trim() || undefined,
-    };
-}
-
-function sanitizeQuestionAnswer(answer: {
-    selected: string[];
-    other?: string;
-}) {
-    return {
-        selected: answer.selected,
-        other: answer.other?.trim() ? answer.other.trim() : undefined,
-    };
-}
-
-export function buildOnboardingQuestionnaire(
-    about: OnboardingAboutValues,
-): TreasuryOnboardingQuestionnaire {
-    return {
-        role: sanitizeQuestionAnswer(about.role),
-        teamSize: sanitizeQuestionAnswer(about.teamSize),
-        networks: sanitizeQuestionAnswer(about.networks),
-        useCases: sanitizeQuestionAnswer(about.useCases),
-        multisigExperience: sanitizeQuestionAnswer(about.multisigExperience),
-        currentTools: sanitizeQuestionAnswer(about.currentTools),
-        monthlyVolume: sanitizeQuestionAnswer(about.monthlyVolume),
-        biggestChallenges: sanitizeQuestionAnswer(about.biggestChallenges),
-        discoverySources: sanitizeQuestionAnswer(about.discoverySources),
     };
 }
 
@@ -480,7 +445,6 @@ export function OnboardingQuestionsStep({ handleNext }: StepProps) {
 
     if (!currentQuestion) return null;
 
-    const questionKey = getQuestionKey(currentQuestion.fieldName);
     const currentValue = form.watch(currentQuestion.fieldName) as
         | { selected: string[]; other?: string }
         | undefined;
@@ -587,11 +551,6 @@ export function OnboardingQuestionsStep({ handleNext }: StepProps) {
 
     const moveNext = () => {
         captureSurveyProgress();
-        trackEvent("onboarding-question-continued", {
-            question_key: questionKey,
-            question_index: currentStepIndex + 1,
-            selected_count: selectedValues.length,
-        });
         advanceQuestion();
     };
 
@@ -607,11 +566,6 @@ export function OnboardingQuestionsStep({ handleNext }: StepProps) {
             { shouldDirty: true },
         );
         captureSurveyProgress();
-        trackEvent("onboarding-question-skipped", {
-            question_key: questionKey,
-            question_index: currentStepIndex + 1,
-            selected_count: selectedValues.length,
-        });
         advanceQuestion();
     };
 
