@@ -35,7 +35,7 @@ import { useToken, useTreasuryPolicy } from "@/hooks/use-treasury-queries";
 import type { IntentsQuoteResponse } from "@/lib/api";
 import { generateIntent } from "@/lib/api";
 import { formatBalance, formatSmartAmount } from "@/lib/utils";
-import { buildConfidentialProposal } from "../confidential/utils/proposal-builder";
+import { buildConfidentialProposal } from "../../../../features/confidential/utils/proposal-builder";
 import { useNear } from "@/stores/near-store";
 import { useThemeStore } from "@/stores/theme-store";
 import { ExchangeSettingsModal } from "./components/exchange-settings-modal";

@@ -4,20 +4,36 @@ import { Database } from "lucide-react";
 import { useAssets } from "@/hooks/use-assets";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Skeleton } from "./ui/skeleton";
+import { TreasuryTypeIcon } from "./icons/shield";
 
-export function TreasuryLogo({ logo }: { logo?: string }) {
-    if (logo) {
-        return (
-            <img
-                src={logo}
-                alt="Treasury Logo"
-                className="rounded-md size-7 shrink-0 object-cover"
-            />
-        );
-    }
-    return (
+export function TreasuryLogo({
+    logo,
+    isConfidential,
+}: {
+    logo?: string;
+    isConfidential?: boolean;
+}) {
+    const item = logo ? (
+        <img
+            src={logo}
+            alt="Treasury Logo"
+            className="rounded-md size-7 shrink-0 object-cover"
+        />
+    ) : (
         <div className="flex items-center justify-center size-7 rounded bg-muted shrink-0">
             <Database className="size-5 text-muted-foreground" />
+        </div>
+    );
+
+    return (
+        <div className="relative">
+            {item}
+            <div className="absolute right-0 bottom-0">
+                <TreasuryTypeIcon
+                    type={isConfidential ? "confidential" : "public"}
+                    size={"sm"}
+                />
+            </div>
         </div>
     );
 }

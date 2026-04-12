@@ -145,7 +145,10 @@ export function TreasurySelector({
                                     : "gap-2 max-w-52 h-9",
                             )}
                         >
-                            <TreasuryLogo logo={config?.metadata?.flagLogo} />
+                            <TreasuryLogo
+                                logo={config?.metadata?.flagLogo}
+                                isConfidential={isConfidential ?? false}
+                            />
                             {!reducedMode && (
                                 <div className="flex flex-col items-start min-w-0">
                                     <span className="text-xs font-medium truncate max-w-full ">
@@ -183,6 +186,9 @@ export function TreasurySelector({
                                                 treasury.config.metadata
                                                     ?.flagLogo
                                             }
+                                            isConfidential={
+                                                treasury.isConfidential ?? false
+                                            }
                                         />
                                         <div className="flex flex-col items-start min-w-0">
                                             <span className="text-sm font-medium truncate max-w-[170px]">
@@ -216,6 +222,10 @@ export function TreasurySelector({
                                                 logo={
                                                     treasury.config.metadata
                                                         ?.flagLogo
+                                                }
+                                                isConfidential={
+                                                    treasury.isConfidential ??
+                                                    false
                                                 }
                                             />
                                             <div className="flex flex-col items-start min-w-0">

@@ -47,7 +47,7 @@ import Big from "@/lib/big";
 import { getBlockchainType } from "@/lib/blockchain-utils";
 import { useNear } from "@/stores/near-store";
 import { buildIntentsTransferProposal } from "../exchange/utils/proposal-builder";
-import { buildConfidentialProposal } from "../confidential/utils/proposal-builder";
+import { buildConfidentialProposal } from "../../../../features/confidential/utils/proposal-builder";
 import { generateIntent } from "@/lib/api";
 import { PaymentFormSection } from "./components/payment-form-section";
 import { Address } from "@/components/address";
