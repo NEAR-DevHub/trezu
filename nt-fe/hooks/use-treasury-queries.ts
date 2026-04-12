@@ -4,7 +4,6 @@ import {
     getTreasuryConfig,
     getBalanceChart,
     BalanceChartRequest,
-    getTokenBalance,
     getTreasuryPolicy,
     getStorageDepositIsRegistered,
     getBatchStorageDepositIsRegistered,
@@ -24,6 +23,8 @@ import {
     getTreasuryCreationStatus,
 } from "@/lib/api";
 import { useTreasury } from "./use-treasury";
+import { useAssets } from "./use-assets";
+import { availableBalance } from "@/lib/balance";
 
 /**
  * Query hook to get user's treasuries with config data
@@ -98,14 +99,16 @@ export function useBalanceChart(params: BalanceChartRequest | null) {
 export function useTokenBalance(
     accountId: string | null | undefined,
     tokenId: string | null | undefined,
-    network: string | null | undefined,
 ) {
-    return useQuery({
-        queryKey: ["tokenBalance", accountId, tokenId],
-        queryFn: () => getTokenBalance(accountId!, tokenId!, network!),
-        enabled: !!accountId && !!tokenId && !!network,
-        staleTime: 1000 * 5, // 5 seconds (balances change frequently)
-    });
+    const { data: assets, ...rest } = useAssets(accountId);
+
+    const balance = assets?.tokens.find(
+        (asset) => asset.contractId === tokenId,
+    )?.balance;
+
+    return {
+        data: balance ? "0" : availableBalance(balance!),
+    };
 }
 
 /**

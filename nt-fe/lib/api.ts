@@ -440,34 +440,6 @@ export async function getRecentActivityRecipients(
 }
 
 /**
- * Get balance for a single token (supports both NEAR and FT tokens)
- * Fetches current balance from blockchain via backend
- */
-export async function getTokenBalance(
-    accountId: string,
-    tokenAddress: string,
-    network: string,
-): Promise<TokenBalance | null> {
-    if (!accountId || !tokenAddress || !network) return null;
-
-    try {
-        const url = `${BACKEND_API_BASE}/user/balance`;
-
-        const response = await axios.get<TokenBalance>(url, {
-            params: { accountId, tokenId: tokenAddress, network },
-        });
-
-        return response.data;
-    } catch (error) {
-        console.error(
-            `Error getting balance for ${accountId} / ${tokenAddress} / ${network}`,
-            error,
-        );
-        return null;
-    }
-}
-
-/**
  * Get treasury config for a specific treasury
  * Fetches from backend which queries the treasury contract for config data
  */

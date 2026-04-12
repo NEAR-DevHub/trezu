@@ -1,6 +1,5 @@
 use crate::{
     handlers::user::{
-        balance::TokenBalanceResponse,
         ft_lockups::fetch_ft_lockup_positions,
         lockup::{LockupBalance, fetch_lockup_balance_of_account},
         staking::{StakingBalance, fetch_staking_balances},
@@ -12,7 +11,8 @@ use axum::{
     extract::{Query, State},
     http::StatusCode,
 };
-use near_api::{AccountId, Contract, types::json::U128};
+use bigdecimal::{BigDecimal, ToPrimitive};
+use near_api::{AccountId, Contract, NearToken, Tokens, types::json::U128};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
@@ -27,6 +27,16 @@ use crate::{
     handlers::intents::confidential::refresh_dao_jwt,
     handlers::token::{TokenMetadata as TokenMetadataResponse, fetch_tokens_with_defuse_extension},
 };
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenBalanceResponse {
+    pub account_id: String,
+    pub token_id: String,
+    pub balance: U128,
+    pub locked_balance: Option<U128>,
+    pub decimals: u8,
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum Balance {
@@ -361,18 +371,57 @@ fn build_intents_tokens(
         .collect()
 }
 
+pub const MIN_NEAR_DISPLAY_BALANCE: NearToken = NearToken::from_millinear(1);
+
+/// Fetch NEAR balance for an account
 pub async fn fetch_near_balance(
     state: &Arc<AppState>,
     account_id: &AccountId,
 ) -> Result<TokenBalanceResponse, (StatusCode, String)> {
-    crate::handlers::user::balance::fetch_near_balance(state, account_id.clone())
-        .await
-        .map_err(|e| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to fetch NEAR balance: {}", e),
-            )
-        })
+    let balance_future = Tokens::account(account_id.clone())
+        .near_balance()
+        .fetch_from(&state.network);
+
+    let paid_near_future = sqlx::query_scalar::<_, BigDecimal>(
+        "SELECT paid_near FROM monitored_accounts WHERE account_id = $1",
+    )
+    .bind(account_id.as_str())
+    .fetch_optional(&state.db_pool);
+
+    let (balance_result, paid_near_result) = tokio::join!(balance_future, paid_near_future);
+
+    let balance = balance_result.map_err(|e| {
+        eprintln!("Error fetching NEAR balance for {}: {}", account_id, e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to fetch NEAR balance: {}", e),
+        )
+    })?;
+
+    let paid_near_u128 = paid_near_result
+        .ok()
+        .flatten()
+        .and_then(|v: BigDecimal| v.to_u128())
+        .unwrap_or(0);
+
+    let storage_locked = balance.storage_locked.as_yoctonear();
+    let deduction = storage_locked.max(paid_near_u128);
+    let total = balance.total.as_yoctonear();
+    let available_raw = total.saturating_sub(deduction);
+    // Display zero if the available balance is below 0.001 NEAR (1 milliNEAR)
+    let available = if available_raw < MIN_NEAR_DISPLAY_BALANCE.as_yoctonear() {
+        0
+    } else {
+        available_raw
+    };
+
+    Ok(TokenBalanceResponse {
+        account_id: account_id.to_string(),
+        token_id: "near".to_string(),
+        balance: available.into(),
+        locked_balance: Some(storage_locked.into()),
+        decimals: 24,
+    })
 }
 
 #[derive(Deserialize, Debug)]

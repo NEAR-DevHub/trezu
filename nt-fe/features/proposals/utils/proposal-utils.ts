@@ -3,6 +3,7 @@ import { Proposal } from "@/lib/proposals-api";
 import { Policy } from "@/types/policy";
 import { ProposalUIKind } from "../types/index";
 import { decodeArgs, decodeProposalDescription } from "@/lib/utils";
+import { extractConfidentialRequestData } from "./proposal-extractors";
 
 // Exchange proposal expiration constants
 export const EXCHANGE_EXPIRY_HOURS = 24;
@@ -393,6 +394,7 @@ export function getProposalRequiredFunds(
     if (typeof proposal.kind === "string") {
         return null;
     }
+
     // Transfer proposal
     if ("Transfer" in proposal.kind) {
         const transfer = proposal.kind.Transfer;
@@ -405,6 +407,27 @@ export function getProposalRequiredFunds(
     if ("FunctionCall" in proposal.kind) {
         const functionCall = proposal.kind.FunctionCall;
         const actions = functionCall.actions;
+
+        if (functionCall.receiver_id === "v1.signer") {
+            const confidential = extractConfidentialRequestData(proposal);
+            const mapped = confidential.mapped;
+
+            switch (mapped?.type) {
+                case "swap":
+                    return {
+                        tokenId:
+                            mapped.data.tokenInAddress ?? mapped.data.tokenIn,
+                        amount: mapped.data.amountIn,
+                    };
+                case "payment":
+                    return {
+                        tokenId: mapped.data.tokenId,
+                        amount: mapped.data.amount,
+                    };
+                default:
+                    return null;
+            }
+        }
 
         // Check for near_withdraw (wrap.near unwrap)
         const nearWithdrawAction = actions.find(
