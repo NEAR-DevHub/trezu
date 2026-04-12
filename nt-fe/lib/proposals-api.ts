@@ -258,6 +258,7 @@ export interface Proposal {
         };
         status?: string;
         correlation_id?: string;
+        notes?: string;
     };
 }
 

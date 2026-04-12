@@ -830,6 +830,7 @@ export default function PaymentsPage() {
                         standard: "nep413",
                         signerId: treasuryId!,
                         quoteMetadata,
+                        notes: data.memo?.trim() || undefined,
                     });
 
                     const confidentialResult = await buildConfidentialProposal({

@@ -780,6 +780,7 @@ export function extractConfidentialRequestData(
                     tokenId: quoteRequest.originAsset,
                     amount: quote.amountIn,
                     receiver: quoteRequest.recipient ?? "",
+                    notes: meta?.notes ?? undefined,
                 } as PaymentRequestData,
             };
             title = "Confidential Payment";

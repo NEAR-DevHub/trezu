@@ -14,6 +14,7 @@ import { InputBlock } from "@/components/input-block";
 import { TokenInput, Token } from "@/components/token-input";
 import AccountInput from "@/components/account-input";
 import { CreateRequestButton } from "@/components/create-request-button";
+import { InfoAlert } from "@/components/info-alert";
 import { getBlockchainType } from "@/lib/blockchain-utils";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useAddressBook, AddressBookEntry } from "@/features/address-book";
@@ -87,10 +88,14 @@ export function PaymentFormSection<
         [recipientName, setValue],
     );
 
+    const { isConfidential } = useTreasury();
+
     const blockchainType = useMemo(() => {
+        // Confidential payments always target NEAR accounts
+        if (isConfidential) return "near";
         if (!token?.network) return "near";
         return getBlockchainType(token.network);
-    }, [token?.network]);
+    }, [token?.network, isConfidential]);
 
     // Validate amount against dynamic fee coverage
     useEffect(() => {
@@ -294,6 +299,10 @@ export function PaymentFormSection<
                     </div>
                 )}
             </InputBlock>
+
+            {isConfidential && (
+                <InfoAlert message="This will send funds to an account on the near.com private network — not to an external wallet." />
+            )}
 
             <SelectModal
                 isOpen={isContactModalOpen}

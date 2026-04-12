@@ -21,6 +21,9 @@ pub struct GenerateIntentRequest {
     /// `quote.depositAddress`. Also stored so the UI can display
     /// amounts, tokens, recipient, etc. for confidential proposals.
     pub quote_metadata: Value,
+    /// Optional user-provided memo/description for the payment.
+    /// Stored in the DB since the on-chain description is opaque for privacy.
+    pub notes: Option<String>,
 }
 
 /// Proxy endpoint for 1Click API generate-intent.
@@ -142,6 +145,7 @@ pub async fn generate_intent(
             payload,
             correlation_id,
             Some(&request.quote_metadata),
+            request.notes.as_deref(),
         )
         .await
         {
