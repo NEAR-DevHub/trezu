@@ -7,8 +7,9 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useFormContext, useWatch } from "react-hook-form";
-import { useDebounce } from "use-debounce";
 import { z } from "zod";
+import { toast } from "sonner";
+
 import { AmountSummary } from "@/components/amount-summary";
 import { Button } from "@/components/button";
 import { PageCard } from "@/components/card";
@@ -48,15 +49,24 @@ import { getBlockchainType } from "@/lib/blockchain-utils";
 import { useNear } from "@/stores/near-store";
 import { buildIntentsTransferProposal } from "../exchange/utils/proposal-builder";
 import { buildConfidentialProposal } from "../../../../features/confidential/utils/proposal-builder";
-import { generateIntent } from "@/lib/api";
+import { generateIntent, getIntentsQuote } from "@/lib/api";
+import type { IntentsQuoteResponse } from "@/lib/api";
 import { PaymentFormSection } from "./components/payment-form-section";
 import { Address } from "@/components/address";
-import { useQuery } from "@tanstack/react-query";
-import { getIntentsQuote, IntentsQuoteResponse } from "@/lib/api";
+import {
+    useIntentsQuote,
+    buildIntentsQuoteRequest,
+} from "@/hooks/use-intents-quote";
 import { parseTokenQueryParam } from "@/lib/token-query-param";
-import { cn, encodeToMarkdown, formatCurrency, nanosToMs } from "@/lib/utils";
+import {
+    cn,
+    encodeToMarkdown,
+    formatCurrency,
+    formatSmartAmount,
+} from "@/lib/utils";
 import {
     getNetworkFeeCoverageErrorMessage,
+    isIntentsToken,
     NETWORK_FEE_TOOLTIP_TEXT,
 } from "@/lib/intents-fee";
 import { FunctionCallKind, TransferKind } from "@/lib/proposals-api";
@@ -90,6 +100,8 @@ interface Step1Props extends StepProps {
     feeErrorMessage?: string | null;
     isFeeLoading?: boolean;
     quoteErrorMessage?: string | null;
+    ensureQuoteBeforeReview?: () => Promise<boolean>;
+    validatedRecipients?: React.MutableRefObject<Set<string>>;
 }
 
 function Step1({
@@ -97,6 +109,8 @@ function Step1({
     feeErrorMessage,
     isFeeLoading,
     quoteErrorMessage,
+    ensureQuoteBeforeReview,
+    validatedRecipients,
 }: Step1Props) {
     const form = useFormContext<PaymentFormValues>();
     const { treasuryId, isConfidential } = useTreasury();
@@ -104,13 +118,17 @@ function Step1({
     const address = form.watch("address");
     const amount = form.watch("amount");
 
-    const handleSave = () => {
+    const handleSave = async () => {
         // Validate and proceed to next step
-        form.trigger().then((isValid) => {
-            if (isValid && handleNext) {
-                handleNext();
-            }
-        });
+        const isValid = await form.trigger();
+        if (!isValid || !handleNext) return;
+
+        if (ensureQuoteBeforeReview) {
+            const hasQuote = await ensureQuoteBeforeReview();
+            if (!hasQuote) return;
+        }
+
+        handleNext();
     };
 
     const isFormFilled = !!amount && Number(amount) > 0 && !!address;
@@ -174,6 +192,7 @@ function Step1({
                 saveButtonText={saveButtonText}
                 onSave={handleSave}
                 isSubmitting={isFeeLoading}
+                validatedRecipients={validatedRecipients}
             />
         </PageCard>
     );
@@ -185,8 +204,6 @@ interface Step2Props extends StepProps {
     liveQuote?: IntentsQuoteResponse | null;
     isLoadingLiveQuote?: boolean;
     isFetchingLiveQuote?: boolean;
-    hasLiveQuoteError?: boolean;
-    liveQuoteErrorMessage?: string | null;
 }
 
 function Step2({
@@ -196,8 +213,6 @@ function Step2({
     liveQuote,
     isLoadingLiveQuote,
     isFetchingLiveQuote,
-    hasLiveQuoteError,
-    liveQuoteErrorMessage,
 }: Step2Props) {
     const form = useFormContext<PaymentFormValues>();
     const token = form.watch("token");
@@ -222,27 +237,29 @@ function Step2({
     }, [storageDepositData, form]);
 
     useEffect(() => {
-        if (liveQuote) {
-            form.setValue("proposalData" as any, liveQuote, {
-                shouldValidate: false,
-            });
-        }
+        form.setValue("proposalData" as any, liveQuote ?? null, {
+            shouldValidate: false,
+        });
     }, [form, liveQuote]);
 
-    const totalAmountWithFees = Big(amount || "0");
-    const recipientAmountRaw =
-        showFeeBreakdown && networkFee
-            ? Big(amount || "0").minus(networkFee)
-            : Big(amount || "0");
-    const recipientAmount = recipientAmountRaw.lt(0)
-        ? Big(0)
-        : recipientAmountRaw;
-    const estimatedUSDValue = !!tokenData?.price
-        ? totalAmountWithFees.mul(tokenData.price)
-        : Big(0);
-    const recipientEstimatedUSDValue = !!tokenData?.price
-        ? recipientAmount.mul(tokenData.price)
-        : Big(0);
+    const {
+        totalAmountWithFees,
+        recipientAmount,
+        estimatedUSDValue,
+        recipientEstimatedUSDValue,
+    } = useMemo(() => {
+        const total = Big(amount || "0");
+        const recipientRaw =
+            showFeeBreakdown && networkFee ? total.minus(networkFee) : total;
+        const recipient = recipientRaw.lt(0) ? Big(0) : recipientRaw;
+        const price = tokenData?.price ?? 0;
+        return {
+            totalAmountWithFees: total,
+            recipientAmount: recipient,
+            estimatedUSDValue: price ? total.mul(price) : Big(0),
+            recipientEstimatedUSDValue: price ? recipient.mul(price) : Big(0),
+        };
+    }, [amount, showFeeBreakdown, networkFee, tokenData?.price]);
 
     return (
         <PageCard>
@@ -251,7 +268,7 @@ function Step2({
                 handleBack={handleBack}
             >
                 <AmountSummary
-                    total={totalAmountWithFees}
+                    total={formatSmartAmount(totalAmountWithFees)}
                     totalUSD={estimatedUSDValue.toNumber()}
                     token={token}
                     showNetworkIcon={true}
@@ -284,7 +301,7 @@ function Step2({
                                 />
                                 <div className="flex flex-col gap-[3px] items-end">
                                     <p className="text-xs font-semibold text-wrap break-all">
-                                        {recipientAmount.toString()}{" "}
+                                        {formatSmartAmount(recipientAmount)}{" "}
                                         {token.symbol}
                                     </p>
                                     <p className="text-xxs text-muted-foreground text-wrap break-all">
@@ -330,12 +347,15 @@ function Step2({
                         />
                     </div>
                 </div>
-                <></>
             </ReviewStep>
 
             <div className="rounded-lg border bg-card p-0 overflow-hidden">
                 <CreateRequestButton
-                    isSubmitting={form.formState.isSubmitting}
+                    isSubmitting={
+                        form.formState.isSubmitting ||
+                        (isSelectedTokenIntents &&
+                            (isLoadingLiveQuote || isFetchingLiveQuote))
+                    }
                     type="submit"
                     className="w-full h-10 rounded-none"
                     permissions={[
@@ -343,21 +363,14 @@ function Step2({
                         { kind: "call", action: "AddProposal" },
                     ]}
                     idleMessage={
-                        isSelectedTokenIntents
-                            ? hasLiveQuoteError
-                                ? liveQuoteErrorMessage ||
-                                  "Failed to prepare 1Click transfer route"
-                                : isLoadingLiveQuote || isFetchingLiveQuote
-                                  ? "Preparing 1Click transfer route..."
-                                  : "Confirm and Submit Request"
+                        isSelectedTokenIntents &&
+                        (isLoadingLiveQuote || isFetchingLiveQuote)
+                            ? "Preparing 1Click transfer route..."
                             : "Confirm and Submit Request"
                     }
                     disabled={
                         isSelectedTokenIntents &&
-                        (isLoadingLiveQuote ||
-                            isFetchingLiveQuote ||
-                            hasLiveQuoteError ||
-                            !liveQuote)
+                        (isLoadingLiveQuote || isFetchingLiveQuote)
                     }
                 />
             </div>
@@ -468,47 +481,6 @@ function buildIntentTransferDescription(
     });
 }
 
-function isIntentsToken(token: Token): boolean {
-    return (
-        token.address.startsWith("nep141:") ||
-        token.address.startsWith("nep245:")
-    );
-}
-
-function buildIntentsPaymentQuoteRequest(
-    treasuryId: string,
-    data: PaymentFormValues,
-    parsedAmount: string,
-    isConfidential: boolean,
-    proposalPeriod?: string,
-) {
-    const deadlineMs = proposalPeriod
-        ? nanosToMs(proposalPeriod)
-        : 24 * 60 * 60 * 1000;
-
-    return {
-        daoId: treasuryId,
-        swapType: "EXACT_INPUT",
-        slippageTolerance: 0,
-        originAsset: data.token.address,
-        depositType: isConfidential
-            ? ("CONFIDENTIAL_INTENTS" as const)
-            : ("INTENTS" as const),
-        destinationAsset: data.token.address,
-        amount: parsedAmount,
-        refundTo: treasuryId,
-        refundType: isConfidential
-            ? ("CONFIDENTIAL_INTENTS" as const)
-            : ("INTENTS" as const),
-        recipient: data.address,
-        recipientType: isConfidential
-            ? "CONFIDENTIAL_INTENTS"
-            : ("DESTINATION_CHAIN" as const),
-        deadline: new Date(Date.now() + deadlineMs).toISOString(),
-        quoteWaitingTimeMs: 0,
-    };
-}
-
 const buildTransferProposal = (
     data: PaymentFormValues,
     parsedAmount: string,
@@ -533,6 +505,7 @@ export default function PaymentsPage() {
     const [step, setStep] = useState(0);
     const searchParams = useSearchParams();
     const autoSelectedTokenKeyRef = useRef<string | null>(null);
+    const validatedRecipientsRef = useRef(new Set<string>());
 
     const tokenParam = searchParams.get("token");
     const preferredNetworks = useMemo(
@@ -596,15 +569,17 @@ export default function PaymentsPage() {
         control: form.control,
         name: ["token", "amount", "address"],
     }) as [PaymentFormValues["token"], string, string];
-    const [debouncedAddress] = useDebounce(watchedAddress, 300);
+
     const {
         data: intentsFeeData,
         isIntentsCrossChainToken,
         isLoading: isIntentsFeeLoading,
+        isError: hasIntentsFeeError,
     } = useIntentsWithdrawalFee({
         token: watchedToken,
-        destinationAddress: debouncedAddress,
+        destinationAddress: watchedAddress,
     });
+    const hasFeeData = !!intentsFeeData && !hasIntentsFeeError;
 
     const feeErrorMessage = useMemo(() => {
         if (
@@ -613,14 +588,14 @@ export default function PaymentsPage() {
             isNaN(Number(watchedAmount)) ||
             Number(watchedAmount) <= 0 ||
             isIntentsFeeLoading ||
-            !intentsFeeData
+            !hasFeeData
         ) {
             return null;
         }
 
         return getNetworkFeeCoverageErrorMessage({
             amount: watchedAmount,
-            networkFee: Big(intentsFeeData.networkFee),
+            networkFee: Big(intentsFeeData!.networkFee),
             decimals: watchedToken.decimals,
             symbol: watchedToken.symbol,
         });
@@ -628,90 +603,57 @@ export default function PaymentsPage() {
         intentsFeeData,
         isIntentsCrossChainToken,
         isIntentsFeeLoading,
+        hasFeeData,
         watchedAmount,
         watchedToken?.decimals,
         watchedToken?.symbol,
     ]);
 
     const isSelectedTokenIntents = isIntentsToken(watchedToken);
-    const parsedAmount = useMemo(() => {
-        if (!watchedAmount || Number(watchedAmount) <= 0) {
-            return null;
-        }
-
-        return Big(watchedAmount)
-            .mul(Big(10).pow(watchedToken.decimals))
-            .toFixed();
-    }, [watchedAmount, watchedToken.decimals]);
 
     const {
-        data: liveQuote,
+        quote: liveQuote,
         isLoading: isLoadingLiveQuote,
         isFetching: isFetchingLiveQuote,
-        isError: hasLiveQuoteError,
-        error: liveQuoteError,
-    } = useQuery({
-        queryKey: [
-            "paymentLiveQuote",
-            treasuryId,
-            watchedToken.address,
-            watchedAmount,
-            debouncedAddress,
-        ],
-        queryFn: async (): Promise<IntentsQuoteResponse | null> => {
-            if (!treasuryId || !parsedAmount) {
-                return null;
-            }
-
-            return getIntentsQuote(
-                buildIntentsPaymentQuoteRequest(
-                    treasuryId,
-                    form.getValues(),
-                    parsedAmount,
-                    isConfidential,
-                    policy?.proposal_period,
-                ),
-                false,
-            );
-        },
-        enabled:
-            isSelectedTokenIntents &&
-            !!treasuryId &&
-            !!debouncedAddress &&
-            !!parsedAmount &&
-            !!policy?.proposal_period,
-        refetchOnWindowFocus: false,
-        retry: false,
+        isEnsuring: isEnsuringQuote,
+        isSyncPending: isQuoteSyncPending,
+        hasError: hasLiveQuoteError,
+        errorMessage: liveQuoteErrorMessage,
+        ensureBeforeReview,
+    } = useIntentsQuote({
+        treasuryId,
+        token: watchedToken,
+        amount: watchedAmount,
+        address: watchedAddress,
+        isConfidential,
+        proposalPeriod: policy?.proposal_period,
+        feeErrorMessage,
     });
 
-    const liveQuoteErrorMessage = useMemo(() => {
-        if (!hasLiveQuoteError || !liveQuoteError) return null;
-        const message =
-            liveQuoteError instanceof Error
-                ? liveQuoteError.message
-                : "Failed to prepare 1Click transfer route";
-
-        // Convert raw amount in "at least <raw>" pattern to human-readable format
-        // e.g. "Amount is too low for bridge, try at least 432" → "...at least 0.000433 USDC"
-        // Bump by 1 because the API returns an exclusive minimum
-        return message.replace(/at least (\d+)/i, (_, rawAmount) => {
-            try {
-                const formatted = Big(rawAmount)
-                    .plus(1)
-                    .div(Big(10).pow(watchedToken.decimals))
-                    .toFixed()
-                    .replace(/\.?0+$/, "");
-                return `at least ${formatted} ${watchedToken.symbol}`;
-            } catch {
-                return `at least ${rawAmount}`;
+    const ensureQuoteBeforeReview = async () => {
+        const formValues = form.getValues();
+        const result = await ensureBeforeReview(formValues);
+        if (result.ok) {
+            if (result.quote) {
+                form.setValue("proposalData" as any, result.quote, {
+                    shouldValidate: false,
+                });
             }
-        });
-    }, [
-        hasLiveQuoteError,
-        liveQuoteError,
-        watchedToken.decimals,
-        watchedToken.symbol,
-    ]);
+            form.clearErrors("amount");
+            return true;
+        }
+        if (result.error) {
+            if (result.error.includes("initializing")) {
+                toast.error(result.error);
+            } else {
+                form.setError("amount", {
+                    type: "manual",
+                    message: result.error,
+                });
+            }
+        }
+        return false;
+    };
 
     // Update token/address when query params change
     useEffect(() => {
@@ -756,10 +698,10 @@ export default function PaymentsPage() {
                 receiverId: string;
                 actions: ConnectorAction[];
             }> = [];
-            const isSelectedTokenIntents = isIntentsToken(data.token);
+            const isSubmittedTokenIntents = isIntentsToken(data.token);
 
             const needsStorageDeposit =
-                !data.isRegistered && !isNEAR && !isSelectedTokenIntents;
+                !data.isRegistered && !isNEAR && !isSubmittedTokenIntents;
 
             if (needsStorageDeposit) {
                 const depositInYocto = Big(0.00125)
@@ -793,16 +735,17 @@ export default function PaymentsPage() {
             });
             let proposalKind: FunctionCallKind | TransferKind;
 
-            if (isSelectedTokenIntents) {
+            if (isSubmittedTokenIntents) {
                 const cachedQuote = form.getValues(
                     "proposalData" as any,
                 ) as IntentsQuoteResponse | null;
                 const quote =
                     cachedQuote ??
                     (await getIntentsQuote(
-                        buildIntentsPaymentQuoteRequest(
+                        buildIntentsQuoteRequest(
                             treasuryId!,
-                            data,
+                            data.token,
+                            data.address,
                             parsedAmount,
                             isConfidential,
                             policy?.proposal_period,
@@ -886,24 +829,29 @@ export default function PaymentsPage() {
                 component: Step1,
                 props: {
                     feeErrorMessage,
-                    isFeeLoading: isIntentsFeeLoading,
-                    quoteErrorMessage: liveQuoteErrorMessage?.includes(
-                        "at least",
-                    )
-                        ? liveQuoteErrorMessage
-                        : null,
+                    isFeeLoading:
+                        isIntentsFeeLoading ||
+                        (isSelectedTokenIntents &&
+                            (isLoadingLiveQuote ||
+                                isFetchingLiveQuote ||
+                                isEnsuringQuote ||
+                                isQuoteSyncPending)),
+                    quoteErrorMessage:
+                        isSelectedTokenIntents && hasLiveQuoteError
+                            ? liveQuoteErrorMessage
+                            : null,
+                    ensureQuoteBeforeReview,
+                    validatedRecipients: validatedRecipientsRef,
                 },
             },
             {
                 component: Step2,
                 props: {
-                    showFeeBreakdown: isIntentsCrossChainToken,
-                    networkFee: intentsFeeData?.networkFee,
+                    showFeeBreakdown: isIntentsCrossChainToken && hasFeeData,
+                    networkFee: hasFeeData ? intentsFeeData?.networkFee : null,
                     liveQuote,
                     isLoadingLiveQuote,
                     isFetchingLiveQuote,
-                    hasLiveQuoteError,
-                    liveQuoteErrorMessage,
                 },
             },
         ],
@@ -911,12 +859,17 @@ export default function PaymentsPage() {
             feeErrorMessage,
             isIntentsFeeLoading,
             isIntentsCrossChainToken,
+            hasFeeData,
             intentsFeeData?.networkFee,
             liveQuote,
             isLoadingLiveQuote,
             isFetchingLiveQuote,
+            isEnsuringQuote,
+            isQuoteSyncPending,
             hasLiveQuoteError,
             liveQuoteErrorMessage,
+            isSelectedTokenIntents,
+            ensureQuoteBeforeReview,
         ],
     );
 

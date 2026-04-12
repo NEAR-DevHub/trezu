@@ -43,6 +43,7 @@ interface PaymentFormSectionProps<
     saveButtonText: string;
     onSave: () => void;
     isSubmitting?: boolean;
+    validatedRecipients?: React.MutableRefObject<Set<string>>;
 }
 
 export function PaymentFormSection<
@@ -58,6 +59,7 @@ export function PaymentFormSection<
     saveButtonText,
     onSave,
     isSubmitting = false,
+    validatedRecipients,
 }: PaymentFormSectionProps<TFieldValues, TTokenPath>) {
     const { setValue, setError, clearErrors } = useFormContext<TFieldValues>();
     const [isRecipientValid, setIsRecipientValid] = useState(false);
@@ -97,7 +99,33 @@ export function PaymentFormSection<
         return getBlockchainType(token.network);
     }, [token?.network, isConfidential]);
 
-    // Validate amount against dynamic fee coverage
+    const recipientCacheKey = useMemo(
+        () => `${blockchainType}:${(recipient || "").trim().toLowerCase()}`,
+        [blockchainType, recipient],
+    );
+    const hasCachedValidRecipient =
+        !!recipient && !!validatedRecipients?.current.has(recipientCacheKey);
+
+    // Restore cached validation on remount (e.g. stepping back from review).
+    useEffect(() => {
+        if (!hasCachedValidRecipient) return;
+        setIsValidatingRecipient(false);
+        setIsRecipientValid(true);
+    }, [hasCachedValidRecipient]);
+
+    // Cache successful validations so they survive remount.
+    useEffect(() => {
+        if (!recipient || !isRecipientValid || isValidatingRecipient) return;
+        validatedRecipients?.current.add(recipientCacheKey);
+    }, [
+        recipient,
+        isRecipientValid,
+        isValidatingRecipient,
+        recipientCacheKey,
+        validatedRecipients,
+    ]);
+
+    // Sync fee coverage error into the amount field.
     useEffect(() => {
         if (!feeErrorMessage) {
             clearErrors(amountName);
@@ -173,7 +201,7 @@ export function PaymentFormSection<
 
     const isSaveDisabled =
         !recipient ||
-        !isRecipientValid ||
+        (!isRecipientValid && !hasCachedValidRecipient) ||
         isValidatingRecipient ||
         !!feeErrorMessage ||
         isSubmitting;
@@ -208,6 +236,7 @@ export function PaymentFormSection<
                     !selectedContact &&
                     !!recipient &&
                     !isRecipientValid &&
+                    !hasCachedValidRecipient &&
                     !isValidatingRecipient
                 }
             >
@@ -269,7 +298,9 @@ export function PaymentFormSection<
                             setIsValid={setIsRecipientValid}
                             setIsValidating={setIsValidatingRecipient}
                             borderless
-                            validateOnMount={!!recipient}
+                            validateOnMount={
+                                !!recipient && !hasCachedValidRecipient
+                            }
                         />
                         {showContactButton && (
                             <Button
