@@ -264,6 +264,7 @@ mod tests {
             standard: "nep413".to_string(),
             signer_id: format!("near:{}", dao_id),
             quote_metadata: quote_response.clone(),
+            notes: None,
         };
 
         let auth_user = crate::auth::AuthUser {
