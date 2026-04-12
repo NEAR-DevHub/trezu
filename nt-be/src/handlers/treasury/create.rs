@@ -47,8 +47,14 @@ pub struct OnboardingQuestionAnswer {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OnboardingQuestionnaire {
+    pub role: OnboardingQuestionAnswer,
+    pub team_size: OnboardingQuestionAnswer,
     pub networks: OnboardingQuestionAnswer,
     pub use_cases: OnboardingQuestionAnswer,
+    pub multisig_experience: OnboardingQuestionAnswer,
+    pub current_tools: OnboardingQuestionAnswer,
+    pub monthly_volume: OnboardingQuestionAnswer,
+    pub biggest_challenges: OnboardingQuestionAnswer,
     pub discovery_sources: OnboardingQuestionAnswer,
 }
 

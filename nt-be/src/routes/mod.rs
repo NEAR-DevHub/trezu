@@ -146,10 +146,6 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
             get(handlers::treasury::creation_status::get_treasury_creation_status)
         )
         .route(
-            "/api/onboarding/questionnaire",
-            post(handlers::treasury::onboarding_questionnaire::save_onboarding_questionnaire),
-        )
-        .route(
             "/api/treasury/whitelist-request",
             post(handlers::treasury::whitelist_request::submit_whitelist_request)
         )

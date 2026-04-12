@@ -1,6 +1,7 @@
 "use client";
 
 import { Toaster as SonnerToaster, toast } from "sonner";
+import { useEffect, useState } from "react";
 import { useThemeStore } from "@/stores/theme-store";
 import { Check } from "lucide-react";
 
@@ -35,10 +36,18 @@ const ErrorIcon = () => (
 
 export function Toaster() {
     const { theme } = useThemeStore();
+    const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(
+        "light",
+    );
+
+    useEffect(() => {
+        const isDarkMode = document.documentElement.classList.contains("dark");
+        setResolvedTheme(isDarkMode ? "dark" : "light");
+    }, [theme]);
 
     return (
         <SonnerToaster
-            theme={theme === "dark" ? "dark" : "light"}
+            theme={resolvedTheme}
             position="bottom-center"
             richColors={false}
             toastOptions={{

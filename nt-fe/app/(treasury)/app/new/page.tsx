@@ -3,7 +3,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-    ArrowLeftIcon,
     Clock10,
     Database,
     Globe,
@@ -21,7 +20,6 @@ import { Alert, AlertDescription } from "@/components/alert";
 import { Button } from "@/components/button";
 import { PageCard } from "@/components/card";
 import { CreationDisabledModal } from "@/components/creation-disabled-modal";
-import { SelectableOptionButton } from "@/components/selectable-option-button";
 import { InputBlock } from "@/components/input-block";
 import { LargeInput } from "@/components/large-input";
 import {
@@ -38,7 +36,6 @@ import {
     StepWizard,
 } from "@/components/step-wizard";
 import { Form, FormField, FormMessage } from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useTreasuryCreationStatus } from "@/hooks/use-treasury-queries";
 import { trackEvent } from "@/lib/analytics";
@@ -47,7 +44,6 @@ import {
     type TreasuryOnboardingQuestionnaire,
     checkHandleUnused,
     createTreasuryStream,
-    saveOnboardingQuestionnaireProgress,
 } from "@/lib/api";
 import {
     CreationProgressModal,
@@ -56,7 +52,14 @@ import {
 import { useNear } from "@/stores/near-store";
 import { InfoAlert } from "@/components/info-alert";
 import { TreasuryTypeIcon } from "@/components/icons/shield";
-import { getNearIntentsNetworkIconSrc } from "@/constants/network-icons";
+import {
+    buildOnboardingQuestionnaire,
+    getQuestionnaireSummary,
+    OnboardingQuestionsStep,
+    ONBOARDING_ABOUT_DEFAULT_VALUES,
+    ONBOARDING_ABOUT_SCHEMA,
+    ONBOARDING_QUESTIONNAIRE_STEP_COUNT,
+} from "@/features/onboarding/components/onboarding-questions-step";
 import {
     Card,
     CardContent,
@@ -68,18 +71,9 @@ import {
 import { Pill } from "@/components/pill";
 import { cn } from "@/lib/utils";
 
-const questionnaireAnswerSchema = z.object({
-    selected: z.array(z.string()),
-    other: z.string().max(280).optional(),
-});
-
 const treasuryFormSchema = z
     .object({
-        about: z.object({
-            networks: questionnaireAnswerSchema,
-            useCases: questionnaireAnswerSchema,
-            discoverySources: questionnaireAnswerSchema,
-        }),
+        about: ONBOARDING_ABOUT_SCHEMA,
         details: z
             .object({
                 treasuryName: z
@@ -121,213 +115,6 @@ const treasuryFormSchema = z
 
 type TreasuryFormValues = z.infer<typeof treasuryFormSchema>;
 
-interface QuestionnaireOption {
-    id: string;
-    label: string;
-    iconClassName?: string;
-    iconSrc?: string;
-}
-
-type QuestionnaireBaseFieldName =
-    | "about.networks"
-    | "about.useCases"
-    | "about.discoverySources";
-
-type QuestionnaireFieldName =
-    | `${QuestionnaireBaseFieldName}.selected`
-    | `${QuestionnaireBaseFieldName}.other`;
-
-const NETWORK_OPTIONS: QuestionnaireOption[] = [
-    {
-        id: "near",
-        label: "NEAR",
-        iconSrc:
-            "https://s2.coinmarketcap.com/static/img/coins/128x128/6535.png",
-    },
-    {
-        id: "bitcoin",
-        label: "Bitcoin",
-        iconSrc: getNearIntentsNetworkIconSrc("btc"),
-    },
-    {
-        id: "ethereum",
-        label: "Ethereum",
-        iconSrc: getNearIntentsNetworkIconSrc("ethereum"),
-    },
-    {
-        id: "solana",
-        label: "Solana",
-        iconSrc: getNearIntentsNetworkIconSrc("solana"),
-    },
-    {
-        id: "arbitrum",
-        label: "Arbitrum",
-        iconSrc: getNearIntentsNetworkIconSrc("arbitrum"),
-    },
-    {
-        id: "base",
-        label: "Base",
-        iconSrc: getNearIntentsNetworkIconSrc("base"),
-    },
-    {
-        id: "optimism",
-        label: "Optimism",
-        iconSrc: getNearIntentsNetworkIconSrc("optimism"),
-    },
-    {
-        id: "polygon",
-        label: "Polygon",
-        iconSrc: getNearIntentsNetworkIconSrc("polygon"),
-    },
-    {
-        id: "gnosis",
-        label: "Gnosis",
-        iconSrc: getNearIntentsNetworkIconSrc("gnosis"),
-    },
-    {
-        id: "avalanche",
-        label: "Avalanche",
-        iconSrc: getNearIntentsNetworkIconSrc("avalanche"),
-    },
-    {
-        id: "bnb-chain",
-        label: "BNB Chain",
-        iconSrc: getNearIntentsNetworkIconSrc("bsc"),
-    },
-    {
-        id: "other",
-        label: "Other",
-        iconClassName: "bg-general-secondary text-muted-foreground",
-    },
-];
-
-const USE_CASE_OPTIONS: QuestionnaireOption[] = [
-    {
-        id: "team-payroll-grants",
-        label: "Team payroll & grants",
-    },
-    {
-        id: "company-assets-management",
-        label: "Company assets management",
-    },
-    {
-        id: "dao-treasury-management",
-        label: "DAO treasury management",
-    },
-    {
-        id: "investment-portfolio",
-        label: "Investment portfolio",
-    },
-    {
-        id: "operational-spending",
-        label: "Operational spending",
-    },
-    {
-        id: "other",
-        label: "Other",
-    },
-];
-
-const DISCOVERY_OPTIONS: QuestionnaireOption[] = [
-    {
-        id: "google-search",
-        label: "Google Search",
-    },
-    {
-        id: "youtube",
-        label: "Youtube",
-    },
-    {
-        id: "twitter",
-        label: "Twitter",
-    },
-    {
-        id: "recommendation",
-        label: "Recommendation",
-    },
-    {
-        id: "near-community",
-        label: "Near Community",
-    },
-    {
-        id: "other",
-        label: "Other",
-    },
-];
-
-const QUESTIONNAIRE_STEPS = [
-    {
-        title: "A few quick questions to begin.",
-        question: "Which networks do you use most often?",
-        progress: "1/3",
-        fieldName: "about.networks" as const,
-        placeholder: "Enter network name",
-        options: NETWORK_OPTIONS,
-    },
-    {
-        title: "",
-        question: "What do you plan to use Trezu for?",
-        progress: "2/3",
-        fieldName: "about.useCases" as const,
-        placeholder: "Describe your use case",
-        options: USE_CASE_OPTIONS,
-    },
-    {
-        title: "",
-        question: "How did you hear about Trezu?",
-        progress: "3/3",
-        fieldName: "about.discoverySources" as const,
-        placeholder: "Type your answer here",
-        options: DISCOVERY_OPTIONS,
-    },
-];
-
-function getQuestionKey(fieldName: QuestionnaireBaseFieldName): string {
-    switch (fieldName) {
-        case "about.networks":
-            return "networks";
-        case "about.useCases":
-            return "use_cases";
-        case "about.discoverySources":
-            return "discovery_sources";
-    }
-}
-
-function getQuestionnaireSummary(about: TreasuryFormValues["about"]) {
-    return {
-        networks_selected: about.networks.selected,
-        networks_count: about.networks.selected.length,
-        networks_other: about.networks.other?.trim() || undefined,
-        use_cases_selected: about.useCases.selected,
-        use_cases_count: about.useCases.selected.length,
-        use_cases_other: about.useCases.other?.trim() || undefined,
-        discovery_sources_selected: about.discoverySources.selected,
-        discovery_sources_count: about.discoverySources.selected.length,
-        discovery_sources_other:
-            about.discoverySources.other?.trim() || undefined,
-    };
-}
-
-function sanitizeQuestionAnswer(answer: {
-    selected: string[];
-    other?: string;
-}) {
-    return {
-        selected: answer.selected,
-        other: answer.other?.trim() ? answer.other.trim() : undefined,
-    };
-}
-
-function buildOnboardingQuestionnaire(
-    about: TreasuryFormValues["about"],
-): TreasuryOnboardingQuestionnaire {
-    return {
-        networks: sanitizeQuestionAnswer(about.networks),
-        useCases: sanitizeQuestionAnswer(about.useCases),
-        discoverySources: sanitizeQuestionAnswer(about.discoverySources),
-    };
-}
-
 /**
  * Helper to clear form errors before updating field value
  * Ensures errors disappear immediately when user starts typing
@@ -344,183 +131,6 @@ function createClearErrorsOnChange<T>(
         }
         onChange(value);
     };
-}
-
-function OnboardingQuestionsStep({
-    handleNext,
-    onboardingSessionId,
-    setOnboardingSessionId,
-    accountId,
-}: StepProps & {
-    onboardingSessionId: string | null;
-    setOnboardingSessionId: (id: string) => void;
-    accountId: string | null;
-}) {
-    const form = useFormContext<TreasuryFormValues>();
-    const [questionIndex, setQuestionIndex] = useState(0);
-    const currentQuestion = QUESTIONNAIRE_STEPS[questionIndex];
-    const questionKey = getQuestionKey(currentQuestion.fieldName);
-    const currentValue = form.watch(currentQuestion.fieldName);
-    const selectedValues = currentValue?.selected ?? [];
-    const hasOtherSelected = selectedValues.includes("other");
-    const hasValidOtherText = !!currentValue?.other?.trim();
-    const canContinue =
-        selectedValues.length > 0 && (!hasOtherSelected || hasValidOtherText);
-
-    const updateSelection = (optionId: string) => {
-        const isSelected = selectedValues.includes(optionId);
-        const nextSelected = isSelected
-            ? selectedValues.filter((id) => id !== optionId)
-            : [...selectedValues, optionId];
-
-        form.setValue(
-            `${currentQuestion.fieldName}.selected` as QuestionnaireFieldName,
-            nextSelected,
-            { shouldDirty: true },
-        );
-
-        if (optionId === "other" && isSelected) {
-            form.setValue(
-                `${currentQuestion.fieldName}.other` as QuestionnaireFieldName,
-                "",
-                { shouldDirty: true },
-            );
-        }
-    };
-
-    const advanceQuestion = () => {
-        if (questionIndex === QUESTIONNAIRE_STEPS.length - 1) {
-            handleNext?.();
-            return;
-        }
-        setQuestionIndex((prev) => prev + 1);
-    };
-
-    const moveNext = () => {
-        trackEvent("onboarding-question-continued", {
-            question_key: questionKey,
-            question_index: questionIndex + 1,
-            selected_count: selectedValues.length,
-        });
-
-        const about = form.getValues("about");
-        const questionnaire = buildOnboardingQuestionnaire(about);
-        void saveOnboardingQuestionnaireProgress({
-            onboardingSessionId: onboardingSessionId ?? undefined,
-            questionnaire,
-            completedSteps: questionIndex + 1,
-            accountId: accountId ?? undefined,
-        })
-            .then((response) => {
-                if (!onboardingSessionId) {
-                    setOnboardingSessionId(response.onboardingSessionId);
-                }
-            })
-            .catch((error) => {
-                console.error(
-                    "Failed to save onboarding questionnaire progress",
-                    error,
-                );
-            });
-
-        advanceQuestion();
-    };
-
-    const handleSkip = () => {
-        trackEvent("onboarding-question-skipped", {
-            question_key: questionKey,
-            question_index: questionIndex + 1,
-            selected_count: selectedValues.length,
-        });
-        form.setValue(
-            `${currentQuestion.fieldName}.selected` as QuestionnaireFieldName,
-            [],
-            { shouldDirty: true },
-        );
-        form.setValue(
-            `${currentQuestion.fieldName}.other` as QuestionnaireFieldName,
-            "",
-            { shouldDirty: true },
-        );
-        advanceQuestion();
-    };
-
-    return (
-        <PageCard>
-            <div className="flex flex-col gap-5">
-                <div className="flex items-center gap-2">
-                    {questionIndex > 0 && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            type="button"
-                            onClick={() => setQuestionIndex((prev) => prev - 1)}
-                            className="shrink-0 mt-[5px]"
-                        >
-                            <ArrowLeftIcon className="size-4" />
-                        </Button>
-                    )}
-                    <div className="flex items-start justify-between gap-4 w-full">
-                        <div className="flex flex-col gap-1">
-                            <p className="text-muted-foreground font-semibold">
-                                {currentQuestion.title}
-                            </p>
-                            <h3 className="font-semibold leading-tight">
-                                {currentQuestion.question}
-                            </h3>
-                        </div>
-                        <p className="text-muted-foreground shrink-0 text-sm">
-                            {currentQuestion.progress}
-                        </p>
-                    </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {currentQuestion.options.map((option) => (
-                        <SelectableOptionButton
-                            key={option.id}
-                            option={option}
-                            selected={selectedValues.includes(option.id)}
-                            onClick={() => updateSelection(option.id)}
-                        />
-                    ))}
-                </div>
-                {hasOtherSelected && (
-                    <Textarea
-                        value={currentValue?.other ?? ""}
-                        onChange={(event) => {
-                            form.setValue(
-                                `${currentQuestion.fieldName}.other` as QuestionnaireFieldName,
-                                event.target.value,
-                                { shouldDirty: true },
-                            );
-                        }}
-                        className="min-h-24 bg-background border-input"
-                        placeholder={currentQuestion.placeholder}
-                    />
-                )}
-                <div className="flex flex-col gap-2">
-                    <div className="rounded-lg border bg-card p-0 overflow-hidden">
-                        <Button
-                            type="button"
-                            className="w-full rounded-none border-0"
-                            onClick={moveNext}
-                            disabled={!canContinue}
-                        >
-                            Continue
-                        </Button>
-                    </div>
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        className="w-full"
-                        onClick={handleSkip}
-                    >
-                        Skip
-                    </Button>
-                </div>
-            </div>
-        </PageCard>
-    );
 }
 
 function Step1({ handleNext, handleBack }: StepProps) {
@@ -1165,15 +775,10 @@ export default function NewTreasuryPage() {
         null,
     );
     const viewedStepsRef = useRef<Set<number>>(new Set());
-    const onboardingSessionIdRef = useRef<string | null>(null);
     const form = useForm<TreasuryFormValues>({
         resolver: zodResolver(treasuryFormSchema),
         defaultValues: {
-            about: {
-                networks: { selected: [], other: "" },
-                useCases: { selected: [], other: "" },
-                discoverySources: { selected: [], other: "" },
-            },
+            about: ONBOARDING_ABOUT_DEFAULT_VALUES,
             details: {
                 paymentThreshold: 1,
                 governanceThreshold: 1,
@@ -1270,26 +875,6 @@ export default function NewTreasuryPage() {
                         })),
                     );
                     setCreatedTreasuryId(treasuryId);
-                    void saveOnboardingQuestionnaireProgress({
-                        onboardingSessionId:
-                            onboardingSessionIdRef.current ?? undefined,
-                        questionnaire: onboardingQuestionnaire,
-                        completedSteps: QUESTIONNAIRE_STEPS.length,
-                        accountId: accountId ?? undefined,
-                        treasuryAccountId: treasuryId,
-                    })
-                        .then((response) => {
-                            if (!onboardingSessionIdRef.current) {
-                                onboardingSessionIdRef.current =
-                                    response.onboardingSessionId;
-                            }
-                        })
-                        .catch((error) => {
-                            console.error(
-                                "Failed to link onboarding questionnaire to treasury",
-                                error,
-                            );
-                        });
                     trackEvent("treasury-created", {
                         treasury_id: treasuryId,
                         source: "/app/new",
@@ -1378,17 +963,6 @@ export default function NewTreasuryPage() {
                                           {
                                               component:
                                                   OnboardingQuestionsStep,
-                                              props: {
-                                                  onboardingSessionId:
-                                                      onboardingSessionIdRef.current,
-                                                  setOnboardingSessionId: (
-                                                      id: string,
-                                                  ) => {
-                                                      onboardingSessionIdRef.current =
-                                                          id;
-                                                  },
-                                                  accountId,
-                                              },
                                           },
                                           { component: Step1 },
                                           { component: Step2 },
@@ -1407,17 +981,6 @@ export default function NewTreasuryPage() {
                                           {
                                               component:
                                                   OnboardingQuestionsStep,
-                                              props: {
-                                                  onboardingSessionId:
-                                                      onboardingSessionIdRef.current,
-                                                  setOnboardingSessionId: (
-                                                      id: string,
-                                                  ) => {
-                                                      onboardingSessionIdRef.current =
-                                                          id;
-                                                  },
-                                                  accountId,
-                                              },
                                           },
                                           { component: Step1 },
                                           { component: Step2 },

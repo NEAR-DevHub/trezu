@@ -1,65 +1,93 @@
 import { Check } from "lucide-react";
 import { Button } from "@/components/button";
 import { cn } from "@/lib/utils";
+import { useThemeStore } from "@/stores/theme-store";
 
 export interface SelectableOption {
     label: string;
     iconSrc?: string;
+    iconDark?: string;
+    iconLight?: string;
     iconClassName?: string;
 }
 
 interface SelectableOptionButtonProps {
     option: SelectableOption;
     selected: boolean;
+    indicatorType?: "checkbox" | "radio";
     onClick: () => void;
 }
 
 export function SelectableOptionButton({
     option,
     selected,
+    indicatorType = "checkbox",
     onClick,
 }: SelectableOptionButtonProps) {
+    const { theme } = useThemeStore();
+    const iconSrc =
+        option.iconSrc ??
+        (theme === "dark"
+            ? (option.iconDark ?? option.iconLight)
+            : (option.iconLight ?? option.iconDark));
+
     return (
         <Button
             type="button"
             variant="unstyled"
             onClick={onClick}
             className={cn(
-                "w-full rounded-lg border px-3.5 py-2 h-auto justify-between hover:bg-general-secondary/30",
+                "w-full rounded-lg border px-3 py-1.5 h-auto justify-between items-start hover:bg-general-secondary/30",
                 selected
                     ? "border-foreground bg-general-secondary"
                     : "border-input",
             )}
         >
-            <div className="flex items-center gap-3 min-w-0">
-                {option.iconSrc ? (
+            <div className="flex items-center gap-2.5 min-w-0">
+                {iconSrc ? (
                     <img
-                        src={option.iconSrc}
+                        src={iconSrc}
                         alt={option.label}
-                        className="size-6 rounded-full object-cover shrink-0"
+                        className="size-5 rounded-full object-cover shrink-0"
                     />
                 ) : option.iconClassName ? (
                     <div
                         className={cn(
-                            "size-6 rounded-full grid place-content-center text-xs font-semibold shrink-0",
+                            "size-5 rounded-full grid place-content-center text-xs font-semibold shrink-0",
                             option.iconClassName,
                         )}
                     />
                 ) : null}
-                <span className="text-base font-normal text-foreground truncate">
+                <span className="text-sm font-normal text-foreground whitespace-normal wrap-break-word text-left leading-snug">
                     {option.label}
                 </span>
             </div>
-            <div
-                className={cn(
-                    "size-6 rounded-md border grid place-content-center shrink-0",
-                    selected
-                        ? "bg-foreground border-foreground text-background"
-                        : "bg-muted/30 border-input text-transparent",
-                )}
-            >
-                <Check className="size-4" />
-            </div>
+            {indicatorType === "radio" ? (
+                <div
+                    className={cn(
+                        "size-5 rounded-full border grid place-content-center shrink-0 border-general-unofficial-border-3",
+                        selected ? "bg-transparent" : "bg-input/30",
+                    )}
+                >
+                    <div
+                        className={cn(
+                            "size-2 rounded-full",
+                            selected ? "bg-foreground" : "bg-transparent",
+                        )}
+                    />
+                </div>
+            ) : (
+                <div
+                    className={cn(
+                        "size-5 rounded-md border grid place-content-center shrink-0",
+                        selected
+                            ? "bg-foreground border-foreground text-background"
+                            : "bg-muted/30 border-input text-transparent",
+                    )}
+                >
+                    <Check className="size-3.5" />
+                </div>
+            )}
         </Button>
     );
 }

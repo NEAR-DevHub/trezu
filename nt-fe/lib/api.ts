@@ -852,8 +852,14 @@ export interface TreasuryOnboardingQuestionAnswer {
 }
 
 export interface TreasuryOnboardingQuestionnaire {
+    role: TreasuryOnboardingQuestionAnswer;
+    teamSize: TreasuryOnboardingQuestionAnswer;
     networks: TreasuryOnboardingQuestionAnswer;
     useCases: TreasuryOnboardingQuestionAnswer;
+    multisigExperience: TreasuryOnboardingQuestionAnswer;
+    currentTools: TreasuryOnboardingQuestionAnswer;
+    monthlyVolume: TreasuryOnboardingQuestionAnswer;
+    biggestChallenges: TreasuryOnboardingQuestionAnswer;
     discoverySources: TreasuryOnboardingQuestionAnswer;
 }
 

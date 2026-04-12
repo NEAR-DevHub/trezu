@@ -1,10 +1,15 @@
 "use client";
 
 import { GradFlow } from "gradflow";
-import { ArrowRight, ArrowUpRight, Loader2 } from "lucide-react";
-import { motion } from "motion/react";
+import {
+    ArrowRight,
+    Compass,
+    Loader2,
+    UserCheck,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -12,20 +17,9 @@ import { AuthProvider } from "@/components/auth-provider";
 import { Button } from "@/components/button";
 import { Input } from "@/components/input";
 import Logo from "@/components/icons/logo";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/modal";
 import { NearInitializer } from "@/components/near-initializer";
 import { QueryProvider } from "@/components/query-provider";
-import {
-    APP_ACTIVE_TREASURY,
-    APP_WALLET_SETUP_URL,
-    LANDING_PAGE,
-} from "@/constants/config";
+import { APP_ACTIVE_TREASURY, LANDING_PAGE } from "@/constants/config";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useTreasuryCreationStatus } from "@/hooks/use-treasury-queries";
 import { trackEvent } from "@/lib/analytics";
@@ -34,130 +28,66 @@ import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 import { useOnboardingStore } from "@/stores/onboarding-store";
 
-interface WalletSuggestionModalProps {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-}
-
-interface WalletSuggestionItemProps {
-    name: string;
-    href?: string;
-    description: string;
-    iconUrl: string;
-    disabled?: boolean;
-}
-
-function WalletSuggestionItem({
-    name,
-    href,
+function OnboardingChoiceCard({
+    icon: Icon,
+    title,
     description,
-    iconUrl,
+    active,
     disabled,
-}: WalletSuggestionItemProps) {
-    const content = () => {
-        return (
-            <>
-                <div
+    onClick,
+}: {
+    icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+    title: string;
+    description: string;
+    active: boolean;
+    disabled?: boolean;
+    onClick: () => void;
+}) {
+    return (
+        <Button
+            type="button"
+            onClick={onClick}
+            disabled={disabled}
+            className={cn(
+                "group h-[246px] w-full max-w-[329px] rounded-xl border px-2 py-5 text-left transition-all duration-200 md:h-[452px] md:w-[310px] md:max-w-none md:p-6",
+                "flex flex-col items-center justify-center gap-3 shadow-none md:gap-8",
+                active
+                    ? "bg-onboarding-primary text-primary-foreground border-border hover:bg-onboarding-primary/95"
+                    : "bg-secondary text-primary border-border hover:bg-secondary/85",
+            )}
+        >
+            <Icon
+                className={cn(
+                    "size-7",
+                    active ? "text-primary-foreground" : "text-primary",
+                )}
+            />
+            <div className="space-y-1 text-center">
+                <p className="text-2xl font-semibold">{title}</p>
+                <p
                     className={cn(
-                        "flex items-center gap-3.5",
-                        disabled && "opacity-50",
+                        "mx-auto text-center text-md whitespace-normal wrap-break-word",
+                        active
+                            ? "text-primary-foreground"
+                            : "text-muted-foreground",
                     )}
                 >
-                    <Image
-                        src={iconUrl}
-                        alt={name}
-                        width={40}
-                        height={40}
-                        className="rounded-full size-12 md:size-8"
-                    />
-                    <div className="flex flex-col justify-start gap-0">
-                        <span className="font-semibold text-foreground text-lg">
-                            {name}
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                            {description}
-                        </span>
-                    </div>
-                    {href && (
-                        <ArrowUpRight className="size-5 group-hover:opacity-100 opacity-0 ml-auto mr-1.5 transition-opacity duration-200" />
-                    )}
-                </div>
-            </>
-        );
-    };
-    if (href) {
-        return (
-            <Link
-                href={href}
-                target="_blank"
-                className="flex flex-col gap-1 bg-secondary p-3 rounded-lg group"
-                aria-disabled={!href}
-            >
-                {content()}
-            </Link>
-        );
-    }
-    return (
-        <div className="flex flex-col gap-1 bg-secondary p-3 rounded-lg group">
-            {content()}
-        </div>
-    );
-}
-
-function WalletSuggestionModal({
-    open,
-    onOpenChange,
-}: WalletSuggestionModalProps) {
-    const walletSuggestionItems: WalletSuggestionItemProps[] = [
-        {
-            name: "Meteor Wallet",
-            href: "https://meteorwallet.app/",
-            description: "Easiest setup for daily operations",
-            iconUrl: "/wallets/meteor.svg",
-        },
-        {
-            name: "Ledger Wallet",
-            href: "https://ledger.com/",
-            description: "Maximum security. Bluetooth supported",
-            iconUrl: "/wallets/ledger.svg",
-        },
-        {
-            name: "MyNearWallet",
-            description: "Coming soon",
-            iconUrl: "/wallets/mynearwallet.svg",
-            disabled: true,
-        },
-    ];
-
-    return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Get a Wallet to Continue</DialogTitle>
-                </DialogHeader>
-                <DialogDescription className="text-foreground">
-                    Trezu uses wallet-based authentication instead of passwords.
-                    Choose an option below to set up your treasury.
-                </DialogDescription>
-                <div className="flex flex-col gap-4 mt-2">
-                    {walletSuggestionItems.map((item) => (
-                        <WalletSuggestionItem key={item.name} {...item} />
-                    ))}
-                </div>
-                {APP_WALLET_SETUP_URL && (
-                    <p className="text-sm text-muted-foreground text-center">
-                        Need help getting started?{" "}
-                        <Link
-                            href={APP_WALLET_SETUP_URL}
-                            target="_blank"
-                            className="text-foreground font-medium hover:text-primary/80"
-                        >
-                            View setup guide
-                        </Link>
-                    </p>
+                    {description}
+                </p>
+            </div>
+            <div
+                className={cn(
+                    "",
+                    active ? "text-primary-foreground" : "text-primary",
                 )}
-            </DialogContent>
-        </Dialog>
+            >
+                {disabled ? (
+                    <Loader2 className="size-4 animate-spin" />
+                ) : (
+                    <ArrowRight className="size-4" />
+                )}
+            </div>
+        </Button>
     );
 }
 
@@ -191,62 +121,169 @@ function GradientTitle() {
     );
 }
 
-function OnboardingChoiceCard({
-    title,
-    description,
-    active,
-    disabled,
-    onClick,
+function WhitelistExperience({
+    contact,
+    setContact,
+    submitted,
+    isSubmitting,
+    onSubmit,
 }: {
-    title: string;
-    description: string;
-    active: boolean;
-    disabled?: boolean;
-    onClick: () => void;
+    contact: string;
+    setContact: (value: string) => void;
+    submitted: boolean;
+    isSubmitting: boolean;
+    onSubmit: () => void;
 }) {
     return (
-        <Button
-            type="button"
-            onClick={onClick}
-            disabled={disabled}
-            className={cn(
-                "w-full max-w-md rounded-xl px-5 py-2 h-auto text-left transition-colors border",
-                "flex items-center justify-between gap-3",
-                active
-                    ? "bg-black text-white border-black hover:bg-black/95"
-                    : "bg-secondary text-foreground border-transparent hover:bg-secondary/80",
-            )}
-        >
-            <div className="flex flex-col gap-1 min-w-0 text-sm">
-                <p className="font-medium text-base">{title}</p>
-                <p
-                    className={cn(
-                        "",
-                        active ? "text-secondary" : "text-muted-foreground",
-                    )}
-                >
-                    {description}
-                </p>
+        <div className="relative h-screen w-full overflow-hidden">
+            <GradFlow
+                config={{
+                    color1: { r: 0, g: 67, b: 224 },
+                    color2: { r: 255, g: 255, b: 255 },
+                    color3: { r: 9, g: 83, b: 255 },
+                    speed: 0.4,
+                    scale: 1,
+                    type: "stripe",
+                    noise: 0.08,
+                }}
+                className="absolute inset-0"
+            />
+            <div className="flex relative w-full h-full items-center justify-between overflow-hidden">
+                <div className="w-full lg:w-2/5 h-full p-2 lg:p-4 flex flex-col justify-center min-w-0">
+                    <div className="w-full min-h-[30%] flex items-center lg:hidden">
+                        <GradientTitle />
+                    </div>
+                    <motion.div
+                        className="perspective-distant w-full gap-12 flex flex-col p-4 items-center h-full justify-center bg-white rounded-2xl lg:max-w-4xl"
+                        initial={{
+                            opacity: 0,
+                            y: 44,
+                            rotateX: 62,
+                            scale: 0.96,
+                        }}
+                        animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
+                        transition={{
+                            duration: 0.7,
+                            ease: [0.22, 1, 0.36, 1],
+                            delay: 0.14,
+                        }}
+                        style={{ transformOrigin: "center bottom" }}
+                    >
+                        <Link href={LANDING_PAGE}>
+                            <Logo size="lg" />
+                        </Link>
+                        <div className="flex w-full flex-col items-center justify-center gap-6">
+                            <div className="flex w-full flex-col gap-2 text-center max-w-md">
+                                <h1 className="text-2xl font-semibold">
+                                    {submitted
+                                        ? "You're on the list 🎉"
+                                        : "Join the Trezu Waitlist"}
+                                </h1>
+                                {submitted ? (
+                                    <p className="text-sm text-muted-foreground font-medium">
+                                        Thanks! We&apos;ll notify you as soon as
+                                        treasury creation becomes available.
+                                    </p>
+                                ) : (
+                                    <p className="text-sm text-muted-foreground font-medium">
+                                        We&apos;ve hit today&apos;s treasury
+                                        limit. No worries - try again later or
+                                        leave your contact to join the waitlist.
+                                        We&apos;ll let you know when a spot
+                                        opens.
+                                    </p>
+                                )}
+                            </div>
+                            <div className="flex flex-col w-full px-4 lg:px-16 gap-3 items-center justify-center">
+                                {submitted ? (
+                                    <Button
+                                        size="default"
+                                        variant="secondary"
+                                        asChild
+                                        className="w-full max-w-md"
+                                    >
+                                        <Link href={APP_ACTIVE_TREASURY}>
+                                            See Demo Trezu
+                                        </Link>
+                                    </Button>
+                                ) : (
+                                    <div className="flex flex-col gap-3 w-full max-w-md">
+                                        <div className="flex flex-col gap-2 items-start">
+                                            <Input
+                                                type="text"
+                                                placeholder="Email address or Telegram (e.g. @username)"
+                                                value={contact}
+                                                onChange={(e) =>
+                                                    setContact(e.target.value)
+                                                }
+                                            />
+                                            <p className="text-xs text-muted-foreground -mt-1">
+                                                We will only use this to notify
+                                                you
+                                            </p>
+                                        </div>
+                                        <Button
+                                            size="default"
+                                            className="mt-2"
+                                            onClick={onSubmit}
+                                            disabled={
+                                                isSubmitting || !contact.trim()
+                                            }
+                                        >
+                                            {isSubmitting && (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                            )}
+                                            Join the Waitlist
+                                        </Button>
+                                        <Button
+                                            size="default"
+                                            variant="ghost"
+                                            asChild
+                                        >
+                                            <Link href={APP_ACTIVE_TREASURY}>
+                                                See Demo Trezu
+                                            </Link>
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
+
+                <div className="hidden h-fit my-auto lg:flex w-3/5 pt-12 pb-7 pl-16 flex-col gap-9">
+                    <div className="w-full pr-[72px]">
+                        <GradientTitle />
+                    </div>
+                    <motion.div
+                        className="relative w-full h-fit rounded-[16px] rounded-r-none overflow-hidden min-h-[360px]"
+                        initial={{ opacity: 0, x: 48, scale: 0.97 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        transition={{
+                            duration: 0.75,
+                            ease: [0.22, 1, 0.36, 1],
+                            delay: 0.5,
+                        }}
+                        style={{ transformOrigin: "center bottom" }}
+                    >
+                        <Image
+                            src="/welcome.svg"
+                            loading="eager"
+                            alt="welcome"
+                            priority
+                            width={1000}
+                            height={500}
+                            className="h-full rounded-l-[16px] w-auto min-w-[calc(100%+200px)]"
+                        />
+                    </motion.div>
+                </div>
             </div>
-            {disabled ? (
-                <Loader2 className="size-4 shrink-0 animate-spin" />
-            ) : (
-                <ArrowRight
-                    className={cn(
-                        "size-5 shrink-0",
-                        active ? "text-white" : "text-foreground",
-                    )}
-                />
-            )}
-        </Button>
+        </div>
     );
 }
 
 export function Content() {
     const router = useRouter();
-    const [isWelcomeImageLoaded, setIsWelcomeImageLoaded] = useState(false);
-    const [isWelcomeImageFailed, setIsWelcomeImageFailed] = useState(false);
-    const [isWalletSuggestionOpen, setIsWalletSuggestionOpen] = useState(false);
     const [onboardingPath, setOnboardingPath] = useState<
         "new_user" | "existing_user" | null
     >(null);
@@ -268,12 +305,29 @@ export function Content() {
     const { data: creationStatus } = useTreasuryCreationStatus();
     const creationAvailable = creationStatus?.creationAvailable;
 
+    useEffect(() => {
+        if (!authError) return;
+        toast.error(authError, {
+            duration: 8000,
+            classNames: {
+                toast: "!p-2 !px-4",
+                title: "!pr-0",
+            },
+        });
+    }, [authError]);
+
     const showWhitelist =
         !!accountId &&
         !isLoading &&
         !isInitializing &&
         treasuries.length === 0 &&
         !creationAvailable;
+    const isDecisionPending =
+        isInitializing ||
+        isLoading ||
+        (!!accountId &&
+            treasuries.length === 0 &&
+            typeof creationAvailable === "undefined");
     const isResolvingExistingUserTreasury =
         onboardingPath === "existing_user" && !!accountId && isLoading;
     const isNewUserOptionLoading = isAuthenticating || isInitializing;
@@ -356,328 +410,69 @@ export function Content() {
         connect();
     };
 
-    return (
-        <div className="relative h-screen w-full overflow-hidden">
-            <GradFlow
-                config={{
-                    color1: { r: 0, g: 67, b: 224 },
-                    color2: { r: 255, g: 255, b: 255 },
-                    color3: { r: 9, g: 83, b: 255 },
-                    speed: 0.4,
-                    scale: 1,
-                    type: "stripe",
-                    noise: 0.08,
-                }}
-                className="absolute inset-0"
-            />
-            <div className="flex relative w-full h-full items-center justify-between overflow-hidden">
-                <div className="w-full lg:w-2/5 h-full p-2 lg:p-4 flex flex-col justify-center min-w-0">
-                    <div className="w-full min-h-[30%] flex items-center lg:hidden">
-                        <GradientTitle />
-                    </div>
-                    <motion.div
-                        className="perspective-distant w-full gap-12 flex flex-col p-4 items-center h-full justify-center bg-white rounded-2xl lg:max-w-4xl"
-                        initial={{
-                            opacity: 0,
-                            y: 44,
-                            rotateX: 62,
-                            scale: 0.96,
-                        }}
-                        animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
-                        transition={{
-                            duration: 0.7,
-                            ease: [0.22, 1, 0.36, 1],
-                            delay: 0.14,
-                        }}
-                        style={{ transformOrigin: "center bottom" }}
-                    >
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{
-                                duration: 0.35,
-                                ease: "easeOut",
-                                delay: 0.42,
-                            }}
-                        >
-                            <Link href={LANDING_PAGE}>
-                                <Logo size="lg" />
-                            </Link>
-                        </motion.div>
-                        <div className="flex w-full flex-col items-center justify-center gap-6">
-                            <div className="flex w-full flex-col gap-2 text-center max-w-md">
-                                <div className="overflow-hidden">
-                                    <motion.h1
-                                        className="text-2xl font-semibold"
-                                        initial={{
-                                            clipPath: "inset(0 100% 0 0)",
-                                            x: -16,
-                                            opacity: 0,
-                                            filter: "blur(10px)",
-                                        }}
-                                        animate={{
-                                            clipPath: "inset(0 0% 0 0)",
-                                            x: 0,
-                                            opacity: 1,
-                                            filter: "blur(0px)",
-                                        }}
-                                        transition={{
-                                            duration: 0.55,
-                                            ease: "easeOut",
-                                            delay: 0.5,
-                                        }}
-                                    >
-                                        {!creationAvailable && accountId
-                                            ? submitted
-                                                ? "You're on the list 🎉"
-                                                : "Join the Trezu Waitlist"
-                                            : "Welcome to Trezu"}
-                                    </motion.h1>
-                                </div>
-                                {creationAvailable || !accountId ? (
-                                    <div className="overflow-hidden">
-                                        <motion.p
-                                            className="text-sm text-muted-foreground font-medium"
-                                            initial={{
-                                                clipPath: "inset(0 100% 0 0)",
-                                                x: -14,
-                                                opacity: 0,
-                                                filter: "blur(8px)",
-                                            }}
-                                            animate={{
-                                                clipPath: "inset(0 0% 0 0)",
-                                                x: 0,
-                                                opacity: 1,
-                                                filter: "blur(0px)",
-                                            }}
-                                            transition={{
-                                                duration: 0.6,
-                                                ease: "easeOut",
-                                                delay: 0.62,
-                                            }}
-                                        >
-                                            {!accountId
-                                                ? "Choose an option below to get started."
-                                                : "Use your wallet to sign in into your treasury."}
-                                        </motion.p>
-                                    </div>
-                                ) : showWhitelist && !submitted ? (
-                                    <motion.p
-                                        className="text-sm text-muted-foreground font-medium"
-                                        initial={{
-                                            clipPath: "inset(0 100% 0 0)",
-                                            x: -14,
-                                            opacity: 0,
-                                            filter: "blur(8px)",
-                                        }}
-                                        animate={{
-                                            clipPath: "inset(0 0% 0 0)",
-                                            x: 0,
-                                            opacity: 1,
-                                            filter: "blur(0px)",
-                                        }}
-                                        transition={{
-                                            duration: 0.6,
-                                            ease: "easeOut",
-                                            delay: 0.62,
-                                        }}
-                                    >
-                                        We&apos;ve hit today&apos;s treasury
-                                        limit. No worries - try again later or
-                                        leave your contact to join the waitlist.
-                                        We&apos;ll let you know when a spot
-                                        opens.
-                                    </motion.p>
-                                ) : (
-                                    <motion.p
-                                        className="text-sm text-muted-foreground font-medium"
-                                        initial={{
-                                            clipPath: "inset(0 100% 0 0)",
-                                            x: -14,
-                                            opacity: 0,
-                                            filter: "blur(8px)",
-                                        }}
-                                        animate={{
-                                            clipPath: "inset(0 0% 0 0)",
-                                            x: 0,
-                                            opacity: 1,
-                                            filter: "blur(0px)",
-                                        }}
-                                        transition={{
-                                            duration: 0.6,
-                                            ease: "easeOut",
-                                            delay: 0.62,
-                                        }}
-                                    >
-                                        Thanks! We&apos;ll notify you as soon as
-                                        treasury creation becomes available.
-                                    </motion.p>
-                                )}
-                            </div>
-                            <motion.div
-                                className="flex flex-col w-full px-4 lg:px-16 px gap-3 items-center justify-center"
-                                initial={{ opacity: 0, y: 16 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{
-                                    duration: 0.4,
-                                    ease: "easeOut",
-                                    delay: 0.74,
-                                }}
-                            >
-                                {showWhitelist ? (
-                                    submitted ? (
-                                        <Button
-                                            size="default"
-                                            variant="secondary"
-                                            asChild
-                                            className="w-full max-w-md"
-                                        >
-                                            <Link href={APP_ACTIVE_TREASURY}>
-                                                See Demo Trezu
-                                            </Link>
-                                        </Button>
-                                    ) : (
-                                        <div className="flex flex-col gap-3 w-full max-w-md">
-                                            <div className="flex flex-col gap-2 items-start">
-                                                <Input
-                                                    type="text"
-                                                    placeholder="Email address or Telegram (e.g. @username)"
-                                                    value={contact}
-                                                    onChange={(e) =>
-                                                        setContact(
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                />
-                                                <p className="text-xs text-muted-foreground -mt-1">
-                                                    We will only use this to
-                                                    notify you
-                                                </p>
-                                            </div>
-                                            <Button
-                                                size="default"
-                                                className="mt-2"
-                                                onClick={handleWhitelistSubmit}
-                                                disabled={
-                                                    isSubmitting ||
-                                                    !contact.trim()
-                                                }
-                                            >
-                                                {isSubmitting && (
-                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                )}
-                                                Join the Waitlist
-                                            </Button>
-                                            <Button
-                                                size="default"
-                                                variant="ghost"
-                                                asChild
-                                            >
-                                                <Link
-                                                    href={APP_ACTIVE_TREASURY}
-                                                >
-                                                    See Demo Trezu
-                                                </Link>
-                                            </Button>
-                                        </div>
-                                    )
-                                ) : (
-                                    <>
-                                        <OnboardingChoiceCard
-                                            title="I'm new to Trezu"
-                                            description="I've heard about Trezu but don't have a treasury yet."
-                                            active={
-                                                onboardingPath !==
-                                                "existing_user"
-                                            }
-                                            onClick={() =>
-                                                triggerWalletConnect("new_user")
-                                            }
-                                            disabled={isNewUserOptionLoading}
-                                        />
-                                        <OnboardingChoiceCard
-                                            title="I already use Trezu"
-                                            description="I have an account and manage a treasury."
-                                            active={
-                                                onboardingPath ===
-                                                "existing_user"
-                                            }
-                                            onClick={() =>
-                                                triggerWalletConnect(
-                                                    "existing_user",
-                                                )
-                                            }
-                                            disabled={
-                                                isExistingUserOptionLoading
-                                            }
-                                        />
-                                    </>
-                                )}
-                            </motion.div>
-                        </div>
-                    </motion.div>
+    if (isDecisionPending) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-muted">
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Loading...</p>
                 </div>
-                <div className="hidden h-fit my-auto lg:flex w-3/5 pt-12 pb-7 pl-16 flex-col gap-9">
-                    <div className="w-full pr-[72px]">
-                        <GradientTitle />
+            </div>
+        );
+    }
+
+    if (showWhitelist) {
+        return (
+            <WhitelistExperience
+                contact={contact}
+                setContact={setContact}
+                submitted={submitted}
+                isSubmitting={isSubmitting}
+                onSubmit={handleWhitelistSubmit}
+            />
+        );
+    }
+
+    return (
+        <div className="h-screen w-full overflow-hidden bg-muted p-4 md:px-8 md:py-6">
+            <div className="mx-auto flex h-full max-w-[1180px] items-center justify-center">
+                <div className="w-full md:p-6">
+                    <div className="flex flex-col items-center text-center">
+                        <Link href={LANDING_PAGE}>
+                            <Logo size="lg" />
+                        </Link>
+                        <h1 className="mt-10 text-2xl font-semibold tracking-tight text-foreground">
+                            Welcome to Trezu
+                        </h1>
+                        <p className="mt-2 text-md text-muted-foreground">
+                            Choose an option below to get started.
+                        </p>
                     </div>
-                    <div className="perspective-distant">
-                        <motion.div
-                            className="relative w-full h-fit rounded-[16px] rounded-r-none overflow-hidden min-h-[360px]"
-                            initial={{ opacity: 0, x: 48, scale: 0.97 }}
-                            animate={{ opacity: 1, x: 0, scale: 1 }}
-                            transition={{
-                                duration: 0.75,
-                                ease: [0.22, 1, 0.36, 1],
-                                delay: 0.5,
-                            }}
-                            style={{ transformOrigin: "center bottom" }}
-                        >
-                            <motion.div
-                                aria-hidden
-                                className="absolute inset-0 rounded-l-[16px] bg-linear-to-br from-blue-200/50 via-blue-100/40 to-white/40"
-                                initial={{ opacity: 1 }}
-                                animate={{
-                                    opacity:
-                                        isWelcomeImageLoaded &&
-                                        !isWelcomeImageFailed
-                                            ? 0
-                                            : [0.45, 0.75, 0.45],
-                                }}
-                                transition={{
-                                    duration: 1.6,
-                                    repeat:
-                                        isWelcomeImageLoaded &&
-                                        !isWelcomeImageFailed
-                                            ? 0
-                                            : Infinity,
-                                    ease: "easeInOut",
-                                }}
+
+                    <div className="mx-auto mt-10 w-full max-w-[361px] rounded-2xl border border-border bg-card p-4 md:max-w-[676px] md:p-5">
+                        <div className="grid w-full grid-cols-1 justify-items-center gap-5 md:grid-cols-2 md:gap-6">
+                            <OnboardingChoiceCard
+                                icon={Compass}
+                                title="I’m new to Trezu"
+                                description="I’ve heard about Trezu but don&apos;t have a treasury yet."
+                                active={onboardingPath !== "existing_user"}
+                                onClick={() => triggerWalletConnect("new_user")}
+                                disabled={isNewUserOptionLoading}
                             />
-                            <Image
-                                src="/welcome.svg"
-                                loading="eager"
-                                alt="welcome"
-                                priority
-                                width={1000}
-                                height={500}
-                                onLoad={() => setIsWelcomeImageLoaded(true)}
-                                onError={() => setIsWelcomeImageFailed(true)}
-                                className={`h-full rounded-l-[16px] w-auto min-w-[calc(100%+200px)] transition-opacity duration-500 ${
-                                    isWelcomeImageLoaded &&
-                                    !isWelcomeImageFailed
-                                        ? "opacity-100"
-                                        : "opacity-0"
-                                }`}
+                            <OnboardingChoiceCard
+                                icon={UserCheck}
+                                title="I already use Trezu"
+                                description="I have an account and manage a treasury."
+                                active={onboardingPath === "existing_user"}
+                                onClick={() =>
+                                    triggerWalletConnect("existing_user")
+                                }
+                                disabled={isExistingUserOptionLoading}
                             />
-                        </motion.div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <WalletSuggestionModal
-                open={isWalletSuggestionOpen}
-                onOpenChange={setIsWalletSuggestionOpen}
-            />
         </div>
     );
 }
