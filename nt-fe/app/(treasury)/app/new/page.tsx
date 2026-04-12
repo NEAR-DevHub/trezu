@@ -13,7 +13,7 @@ import {
     Vote,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { type ArrayPath, useForm, useFormContext } from "react-hook-form";
 import z from "zod";
 import { Alert, AlertDescription } from "@/components/alert";
@@ -771,7 +771,6 @@ export default function NewTreasuryPage() {
     const [createdTreasuryId, setCreatedTreasuryId] = useState<string | null>(
         null,
     );
-    const viewedStepsRef = useRef<Set<number>>(new Set());
     const form = useForm<TreasuryFormValues>({
         resolver: zodResolver(treasuryFormSchema),
         defaultValues: {
@@ -797,22 +796,13 @@ export default function NewTreasuryPage() {
         }
     }, [accountId]);
 
-    useEffect(() => {
-        trackEvent("treasury-create-page-viewed", {
-            source: "/app/new",
-            has_account_id: !!accountId,
-            treasuries_count: treasuries?.length ?? 0,
-        });
-    }, []);
-
-    useEffect(() => {
-        if (viewedStepsRef.current.has(step)) return;
-        viewedStepsRef.current.add(step);
-        trackEvent("treasury-create-step-viewed", {
-            step_index: step + 1,
-            step_title: CREATION_STEP_TITLES[step] ?? `step_${step + 1}`,
-        });
-    }, [step]);
+    const creationStepTitles = useMemo(
+        () =>
+            features.confidential
+                ? ["About You", "Details", "Members", "Treasury Type", "Review"]
+                : ["About You", "Details", "Members", "Review"],
+        [],
+    );
 
     const onSubmit = async (data: TreasuryFormValues) => {
         if (!accountId) {
@@ -840,11 +830,6 @@ export default function NewTreasuryPage() {
             financiers,
             requestors,
         };
-
-        trackEvent("treasury-create-submit-clicked", {
-            members_count: data.members.length,
-            treasury_type: data.isConfidential ? "confidential" : "public",
-        });
 
         const initialSteps = request.isConfidential
             ? CONFIDENTIAL_STEPS
