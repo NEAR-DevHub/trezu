@@ -442,7 +442,8 @@ export function getProposalRequiredFunds(
             }
             if (d.mapped?.type === "swap") {
                 return {
-                    tokenId: d.mapped.data.tokenIn,
+                    tokenId:
+                        d.mapped.data.tokenInAddress ?? d.mapped.data.tokenIn,
                     amount: d.mapped.data.amountIn,
                 };
             }
