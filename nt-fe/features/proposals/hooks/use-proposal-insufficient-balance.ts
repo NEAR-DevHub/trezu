@@ -31,7 +31,7 @@ export function useProposalInsufficientBalance(
 } {
     const requiredFunds = useMemo(() => {
         if (!proposal) return null;
-        return getProposalRequiredFunds(proposal);
+        return getProposalRequiredFunds(proposal, treasuryId ?? undefined);
     }, [proposal]);
 
     const { data: assets, isLoading: isAssetsLoading } = useAssets(treasuryId);
@@ -39,7 +39,11 @@ export function useProposalInsufficientBalance(
     const insufficientBalanceInfo = useMemo((): InsufficientBalanceInfo => {
         if (assets && requiredFunds) {
             const token = assets.tokens.find(
-                (t) => t.contractId === requiredFunds.tokenId,
+                (t) =>
+                    t.contractId === requiredFunds.tokenId ||
+                    (requiredFunds.tokenId === "near" &&
+                        t.contractId == null &&
+                        t.residency === "Near"),
             );
             if (!token) return { hasInsufficientBalance: false };
 

@@ -25,11 +25,18 @@ export function useProposalsInsufficientBalance(
         if (!assets) return ids;
 
         for (const proposal of proposals) {
-            const requiredFunds = getProposalRequiredFunds(proposal);
+            const requiredFunds = getProposalRequiredFunds(
+                proposal,
+                treasuryId ?? undefined,
+            );
             if (!requiredFunds) continue;
 
             const token = assets.tokens.find(
-                (t) => t.contractId === requiredFunds.tokenId,
+                (t) =>
+                    t.contractId === requiredFunds.tokenId ||
+                    (requiredFunds.tokenId === "near" &&
+                        t.contractId == null &&
+                        t.residency === "Near"),
             );
             if (!token) continue;
 

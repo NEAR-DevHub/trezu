@@ -266,7 +266,7 @@ export function extractStakingData(proposal: Proposal): StakingData {
 
     return {
         tokenId: "near",
-        amount: args?.amount || withdrawAmount || "0",
+        amount: args?.amount || stakingAction?.deposit || withdrawAmount || "0",
         receiver: functionCall.receiver_id,
         action:
             (selectedAction?.method_name as StakingData["action"]) || "stake",
