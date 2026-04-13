@@ -863,30 +863,18 @@ export default function NewTreasuryPage() {
                         <StepWizard
                             step={step}
                             onStepChange={setStep}
-                            stepTitles={
-                                features.confidential
-                                    ? [
-                                          "Details",
-                                          "Members",
-                                          "Treasury Type",
-                                          "Review",
-                                      ]
-                                    : ["Details", "Members", "Review"]
-                            }
-                            steps={
-                                features.confidential
-                                    ? [
-                                          { component: Step1 },
-                                          { component: Step2 },
-                                          { component: Step3 },
-                                          { component: Step4 },
-                                      ]
-                                    : [
-                                          { component: Step1 },
-                                          { component: Step2 },
-                                          { component: Step4 },
-                                      ]
-                            }
+                            stepTitles={[
+                                "Details",
+                                "Members",
+                                "Treasury Type",
+                                "Review",
+                            ]}
+                            steps={[
+                                { component: Step1 },
+                                { component: Step2 },
+                                { component: Step3 },
+                                { component: Step4 },
+                            ]}
                         />
                     </form>
                 </Form>
