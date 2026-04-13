@@ -38,10 +38,8 @@ export function useProposalsInsufficientBalance(
                         t.contractId == null &&
                         t.residency === "Near"),
             );
-            if (!token) continue;
-
             const required = Big(requiredFunds.amount || "0");
-            const available = availableBalance(token.balance);
+            const available = token ? availableBalance(token.balance) : Big(0);
             if (required.gt(available)) {
                 ids.add(proposal.id);
             }

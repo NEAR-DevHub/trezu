@@ -11,7 +11,7 @@ import { availableBalance } from "@/lib/balance";
 export interface InsufficientBalanceInfo {
     hasInsufficientBalance: boolean;
     tokenSymbol?: string;
-    type?: "bond" | "balance";
+    type?: "bond" | "balance" | "no-asset";
     tokenNetwork?: string;
     differenceDisplay?: string;
 }
@@ -45,7 +45,12 @@ export function useProposalInsufficientBalance(
                         t.contractId == null &&
                         t.residency === "Near"),
             );
-            if (!token) return { hasInsufficientBalance: false };
+            if (!token) {
+                return {
+                    hasInsufficientBalance: true,
+                    type: "no-asset",
+                };
+            }
 
             const requiredBig = Big(requiredFunds.amount || "0");
             const availableBig = availableBalance(token.balance);
