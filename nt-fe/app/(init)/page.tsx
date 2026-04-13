@@ -391,6 +391,7 @@ export function Content() {
         setOnboardingPath(path);
         trackEvent("onboarding-path-selected", {
             path,
+            user_type: path === "existing_user" ? "existing" : "new",
         });
 
         if (path === "new_user") {

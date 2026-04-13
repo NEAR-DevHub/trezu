@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useTreasuryCreationStatus } from "@/hooks/use-treasury-queries";
+import { trackEvent } from "@/lib/analytics";
 import { useNear } from "@/stores/near-store";
 import { useOnboardingStore } from "@/stores/onboarding-store";
 import { CreateTreasuryPromptModal } from "./create-treasury-prompt-modal";
@@ -68,7 +69,7 @@ export function CreateTreasuryPromptController() {
 
         if (loginNonce > 0 && lastHandledLoginNonceRef.current !== loginNonce) {
             lastHandledLoginNonceRef.current = loginNonce;
-            setOpen(true);
+            openPrompt();
         }
     }, [canOpenPrompt, isOnboardingPath, loginNonce]);
 
@@ -86,15 +87,23 @@ export function CreateTreasuryPromptController() {
         ) {
             lastHandledOpenRequestIdRef.current =
                 createTreasuryPromptOpenRequestId;
-            setOpen(true);
+            openPrompt();
         }
     }, [canOpenPrompt, isOnboardingPath, createTreasuryPromptOpenRequestId]);
+
+    const source = isOnboardingPath ? "onboarding" : "app";
+
+    const openPrompt = () => {
+        setOpen(true);
+        trackEvent("create-treasury-prompt-shown", { source });
+    };
 
     const handleOpenChange = (nextOpen: boolean) => setOpen(nextOpen);
 
     return (
         <CreateTreasuryPromptModal
             open={open}
+            source={source}
             onOpenChange={handleOpenChange}
             onCreateTreasury={() => {
                 handleOpenChange(false);
