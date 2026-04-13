@@ -12,12 +12,13 @@ use tokio::sync::mpsc;
 use crate::{
     AppState,
     constants::TREASURY_FACTORY_CONTRACT_ID,
-    services::{register_new_dao, register_or_refresh_monitored_account},
+    services::{register_new_dao_and_wait, register_or_refresh_monitored_account},
 };
 
 use super::confidential_setup;
 
 pub const TREASURY_CREATE_DEPOSIT: NearToken = NearToken::from_millinear(90);
+pub const REGISTERING_DAO_TIMEOUT_IN_SECS: u64 = 10;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -354,8 +355,16 @@ async fn run_creation(
     // ── Finalize ───────────────────────────────────────────────────────
     send_progress(&tx, "finalizing", "in_progress").await;
 
-    if let Err(e) = register_new_dao(&state.db_pool, treasury.as_str()).await {
-        log::warn!("Failed to register new DAO in cache: {}", e);
+    match register_new_dao_and_wait(
+        &state.db_pool,
+        treasury.as_str(),
+        std::time::Duration::from_secs(REGISTERING_DAO_TIMEOUT_IN_SECS),
+    )
+    .await
+    {
+        Ok(true) => {}
+        Ok(false) => log::warn!("DAO {} registered but sync timed out", treasury),
+        Err(e) => log::warn!("Failed to register new DAO in cache: {}", e),
     }
 
     let balance_after = Tokens::account(state.signer_id.clone())

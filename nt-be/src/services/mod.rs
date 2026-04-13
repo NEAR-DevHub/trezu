@@ -14,7 +14,8 @@ pub mod usd_value_backfill;
 
 pub use coingecko::CoinGeckoClient;
 pub use dao_sync::{
-    mark_dao_dirty, register_new_dao, run_dao_list_sync_service, run_dao_policy_sync_service,
+    mark_dao_dirty, register_new_dao, register_new_dao_and_wait, run_dao_list_sync_service,
+    run_dao_policy_sync_service,
 };
 pub use defillama::DeFiLlamaClient;
 pub use ft_lockup_scheduler::{
