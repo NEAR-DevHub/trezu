@@ -1,6 +1,6 @@
 "use client";
 
-import { Database } from "lucide-react";
+import { Database, Globe, Shield } from "lucide-react";
 import { useAssets } from "@/hooks/use-assets";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Skeleton } from "./ui/skeleton";
@@ -29,10 +29,11 @@ export function TreasuryLogo({
         <div className="relative">
             {item}
             <div className="absolute right-0 bottom-0">
-                <TreasuryTypeIcon
-                    type={isConfidential ? "confidential" : "public"}
-                    size={"sm"}
-                />
+                {isConfidential ? (
+                    <Shield className="size-4 fill-foreground text-background" />
+                ) : (
+                    <Globe className="size-4 fill-foreground text-background" />
+                )}
             </div>
         </div>
     );
