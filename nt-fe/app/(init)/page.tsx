@@ -23,6 +23,70 @@ import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 import { useOnboardingStore } from "@/stores/onboarding-store";
 
+function FadeInUp({
+    children,
+    className,
+    delay,
+    y = 10,
+    duration = 0.35,
+}: {
+    children: React.ReactNode;
+    className?: string;
+    delay: number;
+    y?: number;
+    duration?: number;
+}) {
+    return (
+        <motion.div
+            className={className}
+            initial={{ opacity: 0, y }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration, ease: "easeOut", delay }}
+        >
+            {children}
+        </motion.div>
+    );
+}
+
+function WipeRevealText({
+    children,
+    className,
+    delay,
+    x,
+    blur = 8,
+    duration = 0.6,
+}: {
+    children: React.ReactNode;
+    className: string;
+    delay: number;
+    x: number;
+    blur?: number;
+    duration?: number;
+}) {
+    return (
+        <div className="overflow-hidden">
+            <motion.p
+                className={className}
+                initial={{
+                    clipPath: "inset(0 100% 0 0)",
+                    x,
+                    opacity: 0,
+                    filter: `blur(${blur}px)`,
+                }}
+                animate={{
+                    clipPath: "inset(0 0% 0 0)",
+                    x: 0,
+                    opacity: 1,
+                    filter: "blur(0px)",
+                }}
+                transition={{ duration, ease: "easeOut", delay }}
+            >
+                {children}
+            </motion.p>
+        </div>
+    );
+}
+
 function OnboardingChoiceCard({
     icon: Icon,
     title,
@@ -312,28 +376,29 @@ export function Content() {
         });
     }, [authError]);
 
+    const preferredTreasuryId =
+        (lastTreasuryId &&
+            treasuries.some((treasury) => treasury.daoId === lastTreasuryId) &&
+            lastTreasuryId) ||
+        treasuries[0]?.daoId;
     const showWhitelist =
         !!accountId &&
         !isLoading &&
         !isInitializing &&
         treasuries.length === 0 &&
         !creationAvailable;
+    const shouldRedirectToTreasury = !!accountId && !!preferredTreasuryId;
     const isDecisionPending =
         isInitializing ||
-        isLoading ||
         (!!accountId &&
-            treasuries.length === 0 &&
-            typeof creationAvailable === "undefined");
+            (isLoading ||
+                shouldRedirectToTreasury ||
+                typeof creationAvailable === "undefined"));
     const isResolvingExistingUserTreasury =
         onboardingPath === "existing_user" && !!accountId && isLoading;
     const isNewUserOptionLoading = isAuthenticating || isInitializing;
     const isExistingUserOptionLoading =
         isAuthenticating || isInitializing || isResolvingExistingUserTreasury;
-    const preferredTreasuryId =
-        (lastTreasuryId &&
-            treasuries.some((treasury) => treasury.daoId === lastTreasuryId) &&
-            lastTreasuryId) ||
-        treasuries[0]?.daoId;
 
     useEffect(() => {
         if (!isLoading && preferredTreasuryId) {
@@ -438,44 +503,89 @@ export function Content() {
     }
 
     return (
-        <div className="h-screen w-full overflow-hidden bg-muted p-4 md:px-8 md:py-6">
-            <div className="mx-auto flex h-full max-w-[1180px] items-center justify-center">
-                <div className="w-full md:p-6">
+        <div className="min-h-screen w-full overflow-y-auto bg-muted p-4 md:px-8 md:py-6">
+            <div className="mx-auto flex min-h-[calc(100vh-2rem)] max-w-[1180px] items-start justify-center md:min-h-[calc(100vh-3rem)] md:items-center">
+                <motion.div
+                    className="w-full md:p-6"
+                    initial={{
+                        opacity: 0,
+                        y: 30,
+                        rotateX: 22,
+                        scale: 0.98,
+                    }}
+                    animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
+                    transition={{
+                        duration: 0.55,
+                        ease: [0.22, 1, 0.36, 1],
+                    }}
+                    style={{ transformOrigin: "center bottom" }}
+                >
                     <div className="flex flex-col items-center text-center">
-                        <Link href={LANDING_PAGE}>
-                            <Logo size="lg" />
-                        </Link>
-                        <h1 className="mt-10 text-2xl font-semibold tracking-tight text-foreground">
-                            Welcome to Trezu
-                        </h1>
-                        <p className="mt-2 text-md text-muted-foreground">
-                            Choose an option below to get started.
-                        </p>
-                    </div>
-
-                    <div className="mx-auto mt-10 w-full max-w-[361px] rounded-2xl border border-border bg-card p-4 md:max-w-[676px] md:p-5">
-                        <div className="grid w-full grid-cols-1 justify-items-center gap-5 md:grid-cols-2 md:gap-6">
-                            <OnboardingChoiceCard
-                                icon={Compass}
-                                title="I’m new to Trezu"
-                                description="I’ve heard about Trezu but don&apos;t have a treasury yet."
-                                active={onboardingPath !== "existing_user"}
-                                onClick={() => triggerWalletConnect("new_user")}
-                                disabled={isNewUserOptionLoading}
-                            />
-                            <OnboardingChoiceCard
-                                icon={UserCheck}
-                                title="I already use Trezu"
-                                description="I have an account and manage a treasury."
-                                active={onboardingPath === "existing_user"}
-                                onClick={() =>
-                                    triggerWalletConnect("existing_user")
-                                }
-                                disabled={isExistingUserOptionLoading}
-                            />
+                        <FadeInUp delay={0.08} y={8}>
+                            <Link href={LANDING_PAGE}>
+                                <Logo size="lg" />
+                            </Link>
+                        </FadeInUp>
+                        <div className="mt-10">
+                            <WipeRevealText
+                                className="text-2xl font-semibold tracking-tight text-foreground"
+                                delay={0.16}
+                                x={-18}
+                                blur={10}
+                                duration={0.55}
+                            >
+                                Welcome to Trezu
+                            </WipeRevealText>
+                        </div>
+                        <div className="mt-2">
+                            <WipeRevealText
+                                className="text-md text-muted-foreground"
+                                delay={0.26}
+                                x={-14}
+                            >
+                                Choose an option below to get started.
+                            </WipeRevealText>
                         </div>
                     </div>
-                </div>
+
+                    <motion.div
+                        className="mx-auto mt-10 w-full max-w-[361px] rounded-2xl border border-border bg-card p-4 md:max-w-[676px] md:p-5"
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{
+                            duration: 0.4,
+                            ease: "easeOut",
+                            delay: 0.36,
+                        }}
+                    >
+                        <div className="grid w-full grid-cols-1 justify-items-center gap-5 md:grid-cols-2 md:gap-6">
+                            <FadeInUp className="w-full" delay={0.44}>
+                                <OnboardingChoiceCard
+                                    icon={Compass}
+                                    title="I’m new to Trezu"
+                                    description="I’ve heard about Trezu but don&apos;t have a treasury yet."
+                                    active={onboardingPath !== "existing_user"}
+                                    onClick={() =>
+                                        triggerWalletConnect("new_user")
+                                    }
+                                    disabled={isNewUserOptionLoading}
+                                />
+                            </FadeInUp>
+                            <FadeInUp className="w-full" delay={0.5}>
+                                <OnboardingChoiceCard
+                                    icon={UserCheck}
+                                    title="I already use Trezu"
+                                    description="I have an account and manage a treasury."
+                                    active={onboardingPath === "existing_user"}
+                                    onClick={() =>
+                                        triggerWalletConnect("existing_user")
+                                    }
+                                    disabled={isExistingUserOptionLoading}
+                                />
+                            </FadeInUp>
+                        </div>
+                    </motion.div>
+                </motion.div>
             </div>
         </div>
     );
