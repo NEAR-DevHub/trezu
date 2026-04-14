@@ -20,16 +20,16 @@ const ErrorIcon = () => (
         <path
             d="M8 5.33398V8.00065"
             stroke="#F5F5F5"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
         />
         <path
             d="M8 10.666H8.00667"
             stroke="#F5F5F5"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
         />
     </svg>
 );
