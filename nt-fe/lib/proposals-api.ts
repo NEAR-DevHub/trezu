@@ -573,6 +573,74 @@ export async function getProposalTransaction(
     }
 }
 
+export interface ProposalStakingAmountResponse {
+    amount: string | null;
+    blockHeight: number;
+    poolId: string;
+    method: string;
+    kind: "unstake" | "withdraw";
+}
+
+/**
+ * Resolve the actual NEAR amount moved by a full-amount staking proposal
+ * (unstake_all / withdraw_all / withdraw_all_from_staking_pool).
+ * Only valid for executed proposals.
+ */
+export async function getProposalStakingAmount(
+    daoId: string,
+    proposal: Proposal,
+    policy: Policy,
+): Promise<ProposalStakingAmountResponse | null> {
+    if (!daoId || !proposal || !policy) return null;
+    if (proposal.status === "InProgress" || proposal.status === "Expired") {
+        return null;
+    }
+
+    try {
+        const url = `${BACKEND_API_BASE}/proposal/${daoId}/${proposal.id}/staking-amount`;
+
+        const submissionTimestamp = Big(proposal.submission_time);
+        const expirationTimestamp = submissionTimestamp.add(
+            policy.proposal_period,
+        );
+        const submissionDate = new Date(
+            nanosToMs(submissionTimestamp.toFixed(0)),
+        );
+        const expirationDate = new Date(
+            nanosToMs(expirationTimestamp.toFixed(0)),
+        );
+        const afterDate = new Date(
+            submissionDate.getTime() - 24 * 60 * 60 * 1000,
+        )
+            .toISOString()
+            .split("T")[0];
+        const beforeDate = new Date(
+            expirationDate.getTime() + 7 * 24 * 60 * 60 * 1000,
+        )
+            .toISOString()
+            .split("T")[0];
+
+        const status = getProposalStatus(proposal, policy);
+        const action =
+            status === "Executed" || status === "Failed"
+                ? "VoteApprove"
+                : status === "Rejected"
+                  ? "VoteReject"
+                  : "VoteRemove";
+
+        const response = await axios.get<ProposalStakingAmountResponse>(url, {
+            params: { afterDate, beforeDate, action },
+        });
+        return response.data;
+    } catch (error) {
+        console.error(
+            `Error getting staking amount for proposal ${daoId}/${proposal.id}`,
+            error,
+        );
+        return null;
+    }
+}
+
 /**
  * Swap status types and API
  */

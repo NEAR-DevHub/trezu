@@ -211,30 +211,28 @@ function stakingType(
         functionCall.receiver_id.endsWith("poolv1.near") ||
         functionCall.receiver_id.endsWith("lockup.near");
     if (!isPool) return undefined;
-    if (
-        functionCall.actions.some(
-            (action) =>
-                action.method_name === "stake" ||
-                action.method_name === "deposit_and_stake" ||
-                action.method_name === "deposit",
-        )
-    ) {
-        return "Earn NEAR";
-    }
-    if (
-        functionCall.actions.some(
-            (action) =>
-                action.method_name === "withdraw" ||
-                action.method_name === "withdraw_all" ||
-                action.method_name === "withdraw_all_from_staking_pool",
-        )
-    ) {
-        return "Withdraw Earnings";
-    }
-    if (
-        functionCall.actions.some((action) => action.method_name === "unstake")
-    ) {
-        return "Unstake NEAR";
+
+    const mapping = {
+        "Earn NEAR": ["stake", "deposit_and_stake", "deposit"],
+        "Withdraw Earnings": [
+            "withdraw",
+            "withdraw_all",
+            "withdraw_all_from_staking_pool",
+        ],
+        "Unstake NEAR": ["unstake", "unstake_all"],
+    } as const;
+
+    for (const [label, methods] of Object.entries(mapping) as [
+        "Earn NEAR" | "Withdraw Earnings" | "Unstake NEAR",
+        readonly string[],
+    ][]) {
+        if (
+            functionCall.actions.some((action) =>
+                methods.includes(action.method_name),
+            )
+        ) {
+            return label;
+        }
     }
     return undefined;
 }

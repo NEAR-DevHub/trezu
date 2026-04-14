@@ -69,7 +69,13 @@ function ExpandedViewInternal({
         case "Unstake NEAR":
         case "Withdraw Earnings": {
             const stakingData = data as StakingData;
-            return <StakingExpanded data={stakingData} />;
+            return (
+                <StakingExpanded
+                    data={stakingData}
+                    proposal={proposal}
+                    treasuryId={treasuryId}
+                />
+            );
         }
         case "Update General Settings": {
             const configData = data as ChangeConfigData;

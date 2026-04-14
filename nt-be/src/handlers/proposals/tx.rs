@@ -41,7 +41,7 @@ struct NearBlocksResponse {
     txns: Vec<NearBlocksTransaction>,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ProposalTransactionResponse {
     pub transaction_hash: String,
     pub nearblocks_url: String,
@@ -135,6 +135,23 @@ pub async fn find_proposal_execution_transaction(
     Path((dao_id, proposal_id)): Path<(AccountId, u64)>,
     Query(params): Query<TransactionQueryParams>,
 ) -> Result<(StatusCode, Json<Value>), (StatusCode, String)> {
+    let response =
+        find_proposal_execution_transaction_inner(&state, &dao_id, proposal_id, &params).await?;
+    Ok((
+        StatusCode::OK,
+        Json(serde_json::to_value(response).unwrap_or(Value::Null)),
+    ))
+}
+
+/// Reusable lookup: returns the structured `ProposalTransactionResponse`.
+/// Used by the public `/tx` endpoint and by other handlers that need the
+/// execution block for a proposal.
+pub async fn find_proposal_execution_transaction_inner(
+    state: &Arc<AppState>,
+    dao_id: &AccountId,
+    proposal_id: u64,
+    params: &TransactionQueryParams,
+) -> Result<ProposalTransactionResponse, (StatusCode, String)> {
     log::info!(
         "Searching for proposal {} execution between {} and {}",
         proposal_id,
@@ -150,7 +167,7 @@ pub async fn find_proposal_execution_transaction(
     };
 
     let cache_key = CacheKey::new("proposal-tx")
-        .with(&dao_id)
+        .with(dao_id)
         .with(proposal_id)
         .with(&params.action)
         .build();
@@ -164,7 +181,7 @@ pub async fn find_proposal_execution_transaction(
 
     state
         .cache
-        .cached_json(CacheTier::LongTerm, cache_key, async move {
+        .cached(CacheTier::LongTerm, cache_key, async move {
             if action == "VoteApprove" {
                 // Try on_proposal_callback first
                 let callback_txns = fetch_nearblocks_transactions(

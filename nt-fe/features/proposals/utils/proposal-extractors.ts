@@ -251,12 +251,19 @@ export function extractStakingData(proposal: Proposal): StakingData {
     );
     const withdrawAction = actions.find(
         (action) =>
-            action.method_name === "Withdraw Earnings" ||
-            action.method_name === "unstake",
+            action.method_name === "unstake_all" ||
+            action.method_name === "unstake" ||
+            action.method_name === "withdraw_all" ||
+            action.method_name === "withdraw_all_from_staking_pool" ||
+            action.method_name === "withdraw",
     );
 
     const selectedAction = stakingAction || withdrawAction;
     const args = selectedAction ? decodeArgs(selectedAction.args) : null;
+    const isFullAmount =
+        selectedAction?.method_name === "unstake_all" ||
+        selectedAction?.method_name === "withdraw_all" ||
+        selectedAction?.method_name === "withdraw_all_from_staking_pool";
 
     const notes = decodeProposalDescription("notes", proposal.description);
     const withdrawAmount = decodeProposalDescription(
@@ -266,7 +273,9 @@ export function extractStakingData(proposal: Proposal): StakingData {
 
     return {
         tokenId: "near",
-        amount: args?.amount || stakingAction?.deposit || withdrawAmount || "0",
+        amount: isFullAmount
+            ? "0"
+            : args?.amount || stakingAction?.deposit || withdrawAmount || "0",
         receiver: functionCall.receiver_id,
         action:
             (selectedAction?.method_name as StakingData["action"]) || "stake",
@@ -275,6 +284,7 @@ export function extractStakingData(proposal: Proposal): StakingData {
         isLockup,
         lockupPool: isLockup ? functionCall.receiver_id : "",
         notes: notes || "",
+        isFullAmount,
     };
 }
 

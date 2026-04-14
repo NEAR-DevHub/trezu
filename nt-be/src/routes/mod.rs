@@ -208,6 +208,10 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
             get(handlers::proposals::tx::find_proposal_execution_transaction),
         )
         .route(
+            "/api/proposal/{dao_id}/{proposal_id}/staking-amount",
+            get(handlers::proposals::staking_amount::get_proposal_staking_amount),
+        )
+        .route(
             "/api/receipt/search",
             get(handlers::proposals::tx::search_receipt),
         )
