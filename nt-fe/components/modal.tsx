@@ -1,5 +1,5 @@
 import {
-    Dialog,
+    Dialog as BaseDialog,
     DialogContent as BaseDialogContent,
     DialogHeader as BaseDialogHeader,
     DialogTitle as BaseDialogTitle,
@@ -10,8 +10,91 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { XIcon } from "lucide-react";
-import { useRef } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useUiStore } from "@/stores/ui-store";
+
+// @hot-labs/near-connect mounts its wallet popup on document.body with class
+// `.hot-connector-popup`. Radix Dialog in modal mode blocks pointer events on
+// body siblings, so clicks on the connector UI don't register. Instead of
+// fighting Radix, we temporarily close any open Dialog while the connector
+// popup is visible, then reopen it when the popup closes.
+const connectorListeners = new Set<(v: boolean) => void>();
+let connectorVisible = false;
+let connectorObserverStarted = false;
+
+function startConnectorObserver() {
+    if (connectorObserverStarted || typeof document === "undefined") return;
+    connectorObserverStarted = true;
+    const check = () => {
+        const visible = !!document.querySelector(".hot-connector-popup");
+        if (visible === connectorVisible) return;
+        connectorVisible = visible;
+        connectorListeners.forEach((l) => l(visible));
+    };
+    check();
+    new MutationObserver(check).observe(document.body, {
+        childList: true,
+        subtree: false,
+    });
+}
+
+function useConnectorPopupVisible() {
+    return useSyncExternalStore(
+        (cb) => {
+            startConnectorObserver();
+            connectorListeners.add(cb);
+            return () => connectorListeners.delete(cb);
+        },
+        () => connectorVisible,
+        () => false,
+    );
+}
+
+function Dialog({
+    open,
+    defaultOpen,
+    onOpenChange,
+    ...props
+}: React.ComponentProps<typeof BaseDialog>) {
+    const connectorOpen = useConnectorPopupVisible();
+    const isControlled = open !== undefined;
+    const [uncontrolledOpen, setUncontrolledOpen] = useState(!!defaultOpen);
+    const actualOpen = isControlled ? open : uncontrolledOpen;
+
+    // Remember whether the dialog was open at the moment the connector popup
+    // appeared, so we can restore it after the popup closes.
+    const suspendedOpenRef = useRef<boolean | null>(null);
+    useEffect(() => {
+        if (connectorOpen && suspendedOpenRef.current === null) {
+            suspendedOpenRef.current = actualOpen;
+        } else if (!connectorOpen && suspendedOpenRef.current !== null) {
+            const restore = suspendedOpenRef.current;
+            suspendedOpenRef.current = null;
+            if (restore && !actualOpen) {
+                if (isControlled) onOpenChange?.(true);
+                else setUncontrolledOpen(true);
+            }
+        }
+    }, [connectorOpen, actualOpen, isControlled, onOpenChange]);
+
+    const effectiveOpen = connectorOpen ? false : actualOpen;
+    const handleOpenChange = (next: boolean) => {
+        if (connectorOpen) {
+            // Connector-driven close: don't propagate; we'll restore later.
+            return;
+        }
+        if (!isControlled) setUncontrolledOpen(next);
+        onOpenChange?.(next);
+    };
+
+    return (
+        <BaseDialog
+            {...props}
+            open={effectiveOpen}
+            onOpenChange={handleOpenChange}
+        />
+    );
+}
 
 interface DialogHeaderProps
     extends React.ComponentProps<typeof BaseDialogHeader> {
