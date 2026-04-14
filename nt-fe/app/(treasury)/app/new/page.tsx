@@ -796,14 +796,6 @@ export default function NewTreasuryPage() {
         }
     }, [accountId]);
 
-    const creationStepTitles = useMemo(
-        () =>
-            features.confidential
-                ? ["About You", "Details", "Members", "Treasury Type", "Review"]
-                : ["About You", "Details", "Members", "Review"],
-        [],
-    );
-
     const onSubmit = async (data: TreasuryFormValues) => {
         if (!accountId) {
             await connect();
@@ -933,44 +925,20 @@ export default function NewTreasuryPage() {
                             onStepChange={setStep}
                             stepTitles={CREATION_STEP_TITLES}
                             stepLabelClassName="hidden md:inline"
-                            steps={
-                                features.confidential
-                                    ? [
-                                          {
-                                              component:
-                                                  OnboardingQuestionsStep,
-                                          },
-                                          { component: Step1 },
-                                          { component: Step2 },
-                                          { component: Step3 },
-                                          {
-                                              component: Step4,
-                                              props: {
-                                                  accountId,
-                                                  connectWallet: connect,
-                                                  isConnectingWallet:
-                                                      isAuthenticating,
-                                              },
-                                          },
-                                      ]
-                                    : [
-                                          {
-                                              component:
-                                                  OnboardingQuestionsStep,
-                                          },
-                                          { component: Step1 },
-                                          { component: Step2 },
-                                          {
-                                              component: Step4,
-                                              props: {
-                                                  accountId,
-                                                  connectWallet: connect,
-                                                  isConnectingWallet:
-                                                      isAuthenticating,
-                                              },
-                                          },
-                                      ]
-                            }
+                            steps={[
+                                { component: OnboardingQuestionsStep },
+                                { component: Step1 },
+                                { component: Step2 },
+                                { component: Step3 },
+                                {
+                                    component: Step4,
+                                    props: {
+                                        accountId,
+                                        connectWallet: connect,
+                                        isConnectingWallet: isAuthenticating,
+                                    },
+                                },
+                            ]}
                         />
                     </form>
                 </Form>
