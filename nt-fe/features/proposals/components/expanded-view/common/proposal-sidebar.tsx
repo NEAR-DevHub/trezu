@@ -274,10 +274,12 @@ export function ProposalSidebar({
     const { data: allProposalsData, isLoading: isLoadingProposals } =
         useProposals(
             treasuryId,
-            { statuses: ["InProgress"] },
+            {
+                statuses: ["InProgress", "Expired"],
+                page_size: 100,
+            },
             isVotingDurationChange,
         );
-
     const status = getProposalStatus(proposal, policy);
     const isUserVoter = !!proposal.votes[accountId ?? ""];
     const isPending = status === "Pending";
@@ -395,10 +397,10 @@ export function ProposalSidebar({
         onVote("Approve");
     };
 
-    // Get active proposals excluding the current one
+    // Impact proposals: exclude current proposal and contract-expired items
     const activeProposals =
         allProposalsData?.proposals?.filter(
-            (p: Proposal) => p.id !== proposal.id,
+            (p: Proposal) => p.id !== proposal.id && p.status === "InProgress",
         ) ?? [];
 
     return (

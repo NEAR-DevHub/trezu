@@ -400,7 +400,7 @@ export function formatSmartAmount(value: number | string | Big): string {
         const exp = Math.abs(parseInt(exponent));
 
         // Show enough decimals to display ~6-8 significant figures
-        const decimalPlaces = Math.min(exp + 6, 18);
+        const decimalPlaces = Math.min(exp + 6, 30);
         formatted = absBig.toFixed(decimalPlaces).replace(/\.?0+$/, "");
     }
 

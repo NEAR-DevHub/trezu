@@ -34,7 +34,11 @@ interface ProposalImpact {
     proposal: Proposal;
     oldExpiryDate: Date;
     newExpiryDate: Date;
-    willExpire: boolean;
+    wasExpiredBefore: boolean;
+    willBeExpiredAfter: boolean;
+    willReactivate: boolean;
+    willRemainActive: boolean;
+    isNewlyExpiring: boolean;
 }
 
 export function VotingDurationImpactModal({
@@ -67,30 +71,42 @@ export function VotingDurationImpactModal({
                     submissionTimeMs + newDurationMs,
                 );
 
-                // Check if proposal will expire under new duration
-                const willExpire = newExpiryDate.getTime() <= now;
+                const wasExpiredBefore = oldExpiryDate.getTime() <= now;
+                const willBeExpiredAfter = newExpiryDate.getTime() <= now;
+                const willReactivate = wasExpiredBefore && !willBeExpiredAfter;
+                const willRemainActive =
+                    !wasExpiredBefore && !willBeExpiredAfter;
+                const isNewlyExpiring = !wasExpiredBefore && willBeExpiredAfter;
 
                 return {
                     proposal,
                     oldExpiryDate,
                     newExpiryDate,
-                    willExpire,
+                    wasExpiredBefore,
+                    willBeExpiredAfter,
+                    willReactivate,
+                    willRemainActive,
+                    isNewlyExpiring,
                 };
             })
+            .filter(
+                (p) =>
+                    p.willReactivate || p.willRemainActive || p.isNewlyExpiring,
+            )
             .sort((a, b) => {
-                // Sort by willExpire first, then by proposal ID descending
-                if (a.willExpire !== b.willExpire) {
-                    return a.willExpire ? 1 : -1;
+                // Show active outcomes first, expiring outcomes second
+                if (a.willBeExpiredAfter !== b.willBeExpiredAfter) {
+                    return a.willBeExpiredAfter ? 1 : -1;
                 }
                 return b.proposal.id - a.proposal.id;
             });
     }, [activeProposals, newDurationDays, currentPolicy]);
 
     const activeProposalsCount = impactedProposals.filter(
-        (p) => !p.willExpire,
+        (p) => p.willReactivate || p.willRemainActive,
     ).length;
     const expiringProposalsCount = impactedProposals.filter(
-        (p) => p.willExpire,
+        (p) => p.isNewlyExpiring,
     ).length;
 
     const formatDays = (date: Date) => {
@@ -152,29 +168,24 @@ export function VotingDurationImpactModal({
                                     <ul className="list-disc list-outside pl-4 space-y-1">
                                         {activeProposalsCount > 0 && (
                                             <li>
-                                                {activeProposalsCount} pending
-                                                request
+                                                {activeProposalsCount} request
                                                 {activeProposalsCount !== 1
                                                     ? "s"
                                                     : ""}{" "}
-                                                will now follow the new voting
-                                                duration policy.
+                                                will be active for voting after
+                                                this change, with updated
+                                                expiration dates.
                                             </li>
                                         )}
                                         {expiringProposalsCount > 0 && (
                                             <li>
-                                                {expiringProposalsCount} active
-                                                request
+                                                {expiringProposalsCount} request
                                                 {expiringProposalsCount !== 1
                                                     ? "s"
                                                     : ""}{" "}
-                                                under the old voting duration
                                                 will be marked as
-                                                &quot;Expired&quot; and closed
-                                                for voting. These requests were
-                                                created outside the new voting
-                                                period and are no longer
-                                                considered active.
+                                                &quot;Expired&quot; under the
+                                                new voting duration.
                                             </li>
                                         )}
                                     </ul>
@@ -215,7 +226,11 @@ export function VotingDurationImpactModal({
 
                                             {/* Rows */}
                                             {impactedProposals
-                                                .filter((p) => !p.willExpire)
+                                                .filter(
+                                                    (p) =>
+                                                        p.willReactivate ||
+                                                        p.willRemainActive,
+                                                )
                                                 .map(
                                                     ({
                                                         proposal,
@@ -319,7 +334,7 @@ export function VotingDurationImpactModal({
                                             )}
                                             <span className="text-sm text-left">
                                                 Requests that will marked as
-                                                "Expire"
+                                                &quot;Expire&quot;
                                             </span>
                                         </div>
                                     </button>
@@ -333,7 +348,9 @@ export function VotingDurationImpactModal({
                                                 <div>New Expiry</div>
                                             </div>
                                             {impactedProposals
-                                                .filter((p) => p.willExpire)
+                                                .filter(
+                                                    (p) => p.isNewlyExpiring,
+                                                )
                                                 .map(({ proposal }) => (
                                                     <div
                                                         key={proposal.id}

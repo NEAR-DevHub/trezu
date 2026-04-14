@@ -228,7 +228,7 @@ export function BatchPaymentRequestExpanded({
     const representativeRecipient = activeBatchData.payments[0]?.recipient;
     const {
         data: dynamicFeeData,
-        isLoading: isFeeLoading,
+        isError: hasFeeError,
         isIntentsCrossChainToken,
     } = useIntentsWithdrawalFee({
         token: tokenData
@@ -240,12 +240,13 @@ export function BatchPaymentRequestExpanded({
             : null,
         destinationAddress: representativeRecipient,
     });
-    const totalNetworkFee =
-        isIntentsCrossChainToken && dynamicFeeData?.networkFee
-            ? Big(dynamicFeeData.networkFee).mul(
-                  activeBatchData.payments.length,
-              )
-            : null;
+    const hasFeeData =
+        isIntentsCrossChainToken &&
+        !hasFeeError &&
+        !!dynamicFeeData?.networkFee;
+    const totalNetworkFee = hasFeeData
+        ? Big(dynamicFeeData.networkFee).mul(activeBatchData.payments.length)
+        : null;
 
     const onExpandedChanged = (index: number) => {
         setExpanded((prev) => {
@@ -276,18 +277,12 @@ export function BatchPaymentRequestExpanded({
                 />
             ),
         },
-        ...(isIntentsCrossChainToken && totalNetworkFee
+        ...(hasFeeData && totalNetworkFee
             ? [
                   {
                       label: "Network Fee",
                       info: NETWORK_FEE_TOOLTIP_TEXT,
-                      value: isFeeLoading ? (
-                          <Skeleton className="h-4 w-24" />
-                      ) : totalNetworkFee ? (
-                          `${totalNetworkFee.toString()} ${tokenData?.symbol || ""}`.trim()
-                      ) : (
-                          "-"
-                      ),
+                      value: `${totalNetworkFee.toString()} ${tokenData?.symbol || ""}`.trim(),
                   } satisfies InfoItem,
               ]
             : []),

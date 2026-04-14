@@ -18,6 +18,14 @@ export interface NetworkFeeCoverageResult {
     addMore: Big;
 }
 
+export function isIntentsToken(token: { address?: string | null }): boolean {
+    return (
+        !!token.address &&
+        (token.address.startsWith("nep141:") ||
+            token.address.startsWith("nep245:"))
+    );
+}
+
 export function isIntentsCrossChainToken(token: {
     address?: string | null;
     network?: string | null;
