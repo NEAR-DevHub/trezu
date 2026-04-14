@@ -9,6 +9,7 @@ export interface SelectableOption {
     iconDark?: string;
     iconLight?: string;
     iconClassName?: string;
+    iconImageClassName?: string;
 }
 
 interface SelectableOptionButtonProps {
@@ -45,11 +46,16 @@ export function SelectableOptionButton({
         >
             <div className="flex items-center gap-2.5 min-w-0">
                 {iconSrc ? (
-                    <img
-                        src={iconSrc}
-                        alt={option.label}
-                        className="size-5 rounded-full object-cover shrink-0"
-                    />
+                    <div className="size-5 shrink-0">
+                        <img
+                            src={iconSrc}
+                            alt={option.label}
+                            className={cn(
+                                "w-full h-full object-cover",
+                                option.iconImageClassName,
+                            )}
+                        />
+                    </div>
                 ) : option.iconClassName ? (
                     <div
                         className={cn(

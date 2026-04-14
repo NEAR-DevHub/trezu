@@ -438,9 +438,23 @@ export function Content() {
     }
 
     return (
-        <div className="h-screen w-full overflow-hidden bg-muted p-4 md:px-8 md:py-6">
-            <div className="mx-auto flex h-full max-w-[1180px] items-center justify-center">
-                <div className="w-full md:p-6">
+        <div className="min-h-screen w-full overflow-y-auto bg-muted p-4 md:px-8 md:py-6">
+            <div className="mx-auto flex min-h-[calc(100vh-2rem)] max-w-[1180px] items-start justify-center md:min-h-[calc(100vh-3rem)] md:items-center">
+                <motion.div
+                    className="w-full md:p-6"
+                    initial={{
+                        opacity: 0,
+                        y: 30,
+                        rotateX: 22,
+                        scale: 0.98,
+                    }}
+                    animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
+                    transition={{
+                        duration: 0.55,
+                        ease: [0.22, 1, 0.36, 1],
+                    }}
+                    style={{ transformOrigin: "center bottom" }}
+                >
                     <div className="flex flex-col items-center text-center">
                         <Link href={LANDING_PAGE}>
                             <Logo size="lg" />
@@ -475,7 +489,7 @@ export function Content() {
                             />
                         </div>
                     </div>
-                </div>
+                </motion.div>
             </div>
         </div>
     );
