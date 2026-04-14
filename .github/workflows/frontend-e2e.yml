@@ -13,43 +13,19 @@ on:
       - '.github/workflows/frontend-e2e.yml'
   workflow_dispatch:
 
-env:
-  REGISTRY: ghcr.io
-
 jobs:
   e2e-tests:
     name: Playwright E2E Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Determine sandbox image tag
-        id: sandbox-tag
+      - name: Build sandbox image (force rebuild)
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            PR_TAG="pr-${{ github.event.pull_request.number }}"
-            # Check if PR-specific image exists
-            if docker manifest inspect ghcr.io/near-devhub/treasury26/near-treasury-sandbox:${PR_TAG} > /dev/null 2>&1; then
-              echo "tag=${PR_TAG}" >> $GITHUB_OUTPUT
-              echo "Using PR-specific sandbox image: ${PR_TAG}"
-            else
-              echo "tag=main" >> $GITHUB_OUTPUT
-              echo "PR-specific image not found, using main"
-            fi
-          else
-            echo "tag=main" >> $GITHUB_OUTPUT
-            echo "Using main sandbox image"
-          fi
+          docker build --no-cache -t near-treasury-sandbox:e2e -f sandbox/Dockerfile .
 
       - name: Start sandbox container
         run: |
@@ -60,7 +36,7 @@ jobs:
             --health-timeout 5s \
             --health-retries 30 \
             --health-start-period 120s \
-            ghcr.io/near-devhub/treasury26/near-treasury-sandbox:${{ steps.sandbox-tag.outputs.tag }}
+            near-treasury-sandbox:e2e
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
