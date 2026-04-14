@@ -1,7 +1,6 @@
 export const APP_DOCS_URL = "https://docs.trezu.org/";
 export const APP_DEMO_URL = "https://youtu.be/KIQeS2Y0AWY";
-export const APP_ACTIVE_TREASURY =
-    "https://trezu.app/trezu-demo.sputnik-dao.near";
+export const APP_ACTIVE_TREASURY = "/trezu-demo.sputnik-dao.near";
 export const APP_TWITTER_URL = "https://x.com/TrezuApp";
 export const APP_CONTACT_US_URL = "https://trezu.org/contact-us";
 export const LOCKUP_NO_WHITELIST_ACCOUNT_ID = "lockup-no-whitelist.near";

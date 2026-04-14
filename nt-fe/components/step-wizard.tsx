@@ -18,9 +18,14 @@ export interface StepDefinition<
 interface StepIndicatorProps {
     steps: string[];
     currentStep: number;
+    stepLabelClassName?: string;
 }
 
-export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
+export function StepIndicator({
+    steps,
+    currentStep,
+    stepLabelClassName,
+}: StepIndicatorProps) {
     return (
         <div className="w-full">
             <div className="flex items-center justify-start gap-6">
@@ -40,7 +45,7 @@ export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
                                 : "text-muted-foreground after:bg-muted-foreground/20 after:h-[3px]",
                         )}
                     >
-                        {step}
+                        <span className={cn(stepLabelClassName)}>{step}</span>
                     </button>
                 ))}
             </div>
@@ -53,6 +58,7 @@ interface StepWizardProps {
     stepTitles?: string[];
     step: number;
     onStepChange: (step: number) => void;
+    stepLabelClassName?: string;
 }
 
 export function StepWizard({
@@ -60,6 +66,7 @@ export function StepWizard({
     stepTitles,
     step,
     onStepChange,
+    stepLabelClassName,
 }: StepWizardProps) {
     const [direction, setDirection] = useState<1 | -1>(1);
     const isTransitioningRef = useRef(false);
@@ -99,7 +106,11 @@ export function StepWizard({
     return (
         <div className="relative overflow-hidden flex flex-col gap-6">
             {stepTitles && stepTitles.length > 0 && (
-                <StepIndicator steps={stepTitles} currentStep={step} />
+                <StepIndicator
+                    steps={stepTitles}
+                    currentStep={step}
+                    stepLabelClassName={stepLabelClassName}
+                />
             )}
             <AnimatePresence
                 initial={false}

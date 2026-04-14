@@ -51,13 +51,18 @@ async function setupStartPageMocks(
     });
 }
 
-test("Start page shows Connect Wallet when signed out", async ({ page }) => {
+test("Start page shows onboarding choices when signed out", async ({
+    page,
+}) => {
     await setupStartPageMocks(page, { creationAvailable: true });
 
     await page.goto("/");
 
     await expect(
-        page.getByRole("button", { name: /connect wallet/i }),
+        page.getByRole("button", { name: /i'm new to trezu/i }),
+    ).toBeVisible();
+    await expect(
+        page.getByRole("button", { name: /i already use trezu/i }),
     ).toBeVisible();
 });
 
