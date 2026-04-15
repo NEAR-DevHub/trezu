@@ -271,7 +271,7 @@ impl RequestsApproveContext {
             .config
             .account_id
             .as_deref()
-            .ok_or_else(|| color_eyre::eyre::eyre!("Not logged in. Run `trezu login` first."))?;
+            .ok_or_else(|| color_eyre::eyre::eyre!("Not logged in. Run `trezu auth login` first."))?;
         let signer_id: near_primitives::types::AccountId = account_id
             .parse()
             .map_err(|e| color_eyre::eyre::eyre!("Invalid account ID: {}", e))?;
@@ -345,7 +345,7 @@ impl RequestsRejectContext {
             .config
             .account_id
             .as_deref()
-            .ok_or_else(|| color_eyre::eyre::eyre!("Not logged in. Run `trezu login` first."))?;
+            .ok_or_else(|| color_eyre::eyre::eyre!("Not logged in. Run `trezu auth login` first."))?;
         let signer_id: near_primitives::types::AccountId = account_id
             .parse()
             .map_err(|e| color_eyre::eyre::eyre!("Invalid account ID: {}", e))?;

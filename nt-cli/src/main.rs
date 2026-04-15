@@ -68,17 +68,6 @@ impl From<CmdContext> for TrezuContext {
 #[interactive_clap(disable_back)]
 /// What would you like to do? (use arrow keys to select, Enter to confirm)
 pub enum Command {
-    #[strum_discriminants(strum(message = "login          -   Log in with your NEAR account"))]
-    /// Log in with your NEAR account
-    Login(self::auth::Login),
-    #[strum_discriminants(strum(
-        message = "logout         -   Log out and clear stored credentials"
-    ))]
-    /// Log out and clear stored credentials
-    Logout(self::auth::Logout),
-    #[strum_discriminants(strum(message = "whoami         -   Show current authenticated user"))]
-    /// Show current authenticated user
-    Whoami(self::auth::Whoami),
     #[strum_discriminants(strum(message = "treasury       -   Manage treasuries (list, info)"))]
     /// Manage treasuries
     Treasury(self::treasury::Treasury),
@@ -102,6 +91,9 @@ pub enum Command {
     #[strum_discriminants(strum(message = "activity       -   View recent transaction activity"))]
     /// View recent transaction activity
     Activity(self::assets::Activity),
+    #[strum_discriminants(strum(message = "auth           -   Login, logout, and account info"))]
+    /// Login, logout, and account info
+    Auth(self::auth::Auth),
 }
 
 fn main() -> color_eyre::eyre::Result<()> {

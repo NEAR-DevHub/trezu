@@ -127,7 +127,7 @@ impl PaymentSendContext {
         let account_id = config
             .account_id
             .as_deref()
-            .ok_or_else(|| color_eyre::eyre::eyre!("Not logged in. Run `trezu login` first."))?;
+            .ok_or_else(|| color_eyre::eyre::eyre!("Not logged in. Run `trezu auth login` first."))?;
 
         let signer_id: near_primitives::types::AccountId = account_id
             .parse()

@@ -57,7 +57,7 @@ impl TrezuConfig {
         let token = self
             .auth_token
             .as_deref()
-            .ok_or_else(|| color_eyre::eyre::eyre!("Not logged in. Run `trezu login` first."))?;
+            .ok_or_else(|| color_eyre::eyre::eyre!("Not logged in. Run `trezu auth login` first."))?;
         let account = self
             .account_id
             .as_deref()

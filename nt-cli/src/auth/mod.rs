@@ -7,6 +7,30 @@ use colored::Colorize;
 use near_cli_rs::commands::message::sign_nep413::{
     FinalSignNep413Context, NEP413Payload, SignedMessage,
 };
+use strum::{EnumDiscriminants, EnumIter, EnumMessage};
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = TrezuContext)]
+pub struct Auth {
+    #[interactive_clap(subcommand)]
+    command: AuthCommand,
+}
+
+#[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = TrezuContext)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
+/// Select auth action
+pub enum AuthCommand {
+    #[strum_discriminants(strum(message = "login    -   Log in with your NEAR account"))]
+    /// Log in with your NEAR account
+    Login(Login),
+    #[strum_discriminants(strum(message = "logout   -   Log out and clear stored credentials"))]
+    /// Log out and clear stored credentials
+    Logout(Logout),
+    #[strum_discriminants(strum(message = "whoami   -   Show current authenticated user"))]
+    /// Show current authenticated user
+    Whoami(Whoami),
+}
 
 // --- Login ---
 
@@ -217,7 +241,7 @@ impl WhoamiContext {
                 if let Some(account) = &previous_context.config.account_id {
                     tracing::info!("Stored account: {} {}", account, "(session expired)".red());
                 } else {
-                    tracing::info!("{}", "Not logged in. Run `trezu login` first.".red());
+                    tracing::info!("{}", "Not logged in. Run `trezu auth login` first.".red());
                 }
             }
         }
