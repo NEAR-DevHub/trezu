@@ -73,7 +73,7 @@ pub fn format_balance_human(balance: &Balance, decimals: u8) -> String {
 fn format_balance(balance: &Balance, decimals: u8) -> String {
     let raw = match balance {
         Balance::Standard { total, .. } => total.clone(),
-        Balance::Staked(s) => s.staked.clone(),
+        Balance::Staked(s) => s.staked_balance.clone(),
         Balance::Vested(v) => v.total.clone(),
     };
 

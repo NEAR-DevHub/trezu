@@ -110,9 +110,8 @@ pub enum Balance {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StakingBalance {
-    pub staked: String,
-    pub unstaked: String,
-    pub available_to_withdraw: String,
+    pub staked_balance: String,
+    pub unstaked_balance: String,
     pub can_withdraw: bool,
 }
 
