@@ -11,6 +11,7 @@ import { useNear } from "@/stores/near-store";
 import { useResponsiveSidebar } from "@/stores/sidebar-store";
 import { ConfidentialBanner } from "@/features/confidential/components/confidential-banner";
 import { CreateBanner } from "@/features/onboarding/components/create-banner";
+import { SystemStatusBanner } from "@/components/system-status-banner";
 import { ApprovalInfo } from "./approval-info";
 import { Button } from "./button";
 import { GuestBadge } from "./guest-badge";
@@ -306,7 +307,10 @@ export function Sidebar({ onClose }: SidebarProps) {
                     })}
                 </nav>
 
-                <div className="hidden lg:flex justify-center">
+                <div className="hidden lg:flex flex-col justify-center">
+                    <SystemStatusBanner
+                        className={cn("px-3.5", isReduced && "hidden")}
+                    />
                     <CreateBanner disabled={isReduced} />
                     <ConfidentialBanner
                         type={isReduced ? "mini" : "default"}
