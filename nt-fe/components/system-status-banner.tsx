@@ -27,6 +27,7 @@ export function SystemStatusBanner({
                 <WarningAlert
                     className={cn(isSidebar && "flex-col gap-2")}
                     key={post.id}
+                    title="Under Maintenance"
                     message={
                         "We’re currently performing maintenance. Some features may be temporarily unavailable. Please check back soon."
                     }
