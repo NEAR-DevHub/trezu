@@ -20,9 +20,8 @@ import { test, expect, BrowserContext, Page, Route } from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
 import {
-    MOCK_MANIFEST_ID,
-    MOCK_WALLET_EXECUTOR_JS,
-    MOCK_MANIFEST,
+    registerMockWalletRoutes,
+    seedMockWalletAccount,
 } from "./helpers/mock-wallet";
 
 const TEST_DAPP_HTML = fs.readFileSync(
@@ -62,28 +61,7 @@ const TREASURY_RESPONSE = [
  */
 async function mockBackendRoutes(context: BrowserContext) {
     // Serve mock NearConnect manifest so the wallet popup auto-connects
-    for (const url of [
-        "**/raw.githubusercontent.com/**manifest.json*",
-        "**/cdn.jsdelivr.net/**manifest.json*",
-    ]) {
-        await context.route(url, async (route: Route) => {
-            await route.fulfill({
-                status: 200,
-                contentType: "application/json",
-                body: JSON.stringify(MOCK_MANIFEST),
-            });
-        });
-    }
-    await context.route(
-        "**/_near-connect-test/mock-wallet.js*",
-        async (route: Route) => {
-            await route.fulfill({
-                status: 200,
-                contentType: "application/javascript",
-                body: MOCK_WALLET_EXECUTOR_JS,
-            });
-        },
-    );
+    await registerMockWalletRoutes(context);
 
     // Serve the dummy dApp from e2e/ (not public/) so it's never shipped to prod.
     await context.route("**/test-dapp.html", async (route) => {
@@ -152,15 +130,7 @@ async function mockBackendRoutes(context: BrowserContext) {
  * for any popup opened after this call.
  */
 async function seedWalletAccount(page: Page, accountId: string) {
-    await page.evaluate(
-        ({ walletId, acct }) => {
-            // NearConnector reads this to determine which wallet is selected
-            localStorage.setItem("selected-wallet", walletId);
-            // Executor sandbox storage is prefixed with the manifest id
-            localStorage.setItem(`${walletId}:signedAccountId`, acct);
-        },
-        { walletId: MOCK_MANIFEST_ID, acct: accountId },
-    );
+    await seedMockWalletAccount(page, accountId, "evaluate");
 }
 
 /**

@@ -1,5 +1,4 @@
 import { test, expect, Page, Route } from "@playwright/test";
-import { createTreasury } from "./helpers/create-treasury";
 import ROMAKQA_ASSETS from "./fixtures/romakqa-assets.json";
 import CHART_1W from "./fixtures/romakqa-chart-1w.json";
 import CHART_1M from "./fixtures/romakqa-chart-1m.json";
@@ -21,21 +20,6 @@ const TREASURY_ID = "romakqatesting.sputnik-dao.near";
 const DASHBOARD_URL = `/${TREASURY_ID}`;
 
 test.use({ locale: "en-US" });
-
-test.beforeAll(async () => {
-    try {
-        await createTreasury({
-            name: "Romakqa Testing Treasury",
-            accountId: TREASURY_ID,
-            governors: ["test.near"],
-            financiers: ["test.near"],
-            requestors: ["test.near"],
-        });
-        console.log(`Created DAO ${TREASURY_ID} in sandbox`);
-    } catch (e) {
-        console.log(`DAO creation failed (may already exist): ${e}`);
-    }
-});
 
 const MONITORED_ACCOUNTS_RESPONSE = {
     accountId: TREASURY_ID,

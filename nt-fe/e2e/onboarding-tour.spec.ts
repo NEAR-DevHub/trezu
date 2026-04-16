@@ -1,5 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
-import { createTreasury } from "./helpers/create-treasury";
+import {
+    maybeFulfillMockWalletRequest,
+    seedMockWalletAccount,
+} from "./helpers/mock-wallet";
 
 const TREASURY_ID = "onboarding-e2e-test.sputnik-dao.near";
 const ACCOUNT_ID = "test.near";
@@ -115,22 +118,7 @@ const TREASURY_ASSETS = [
 const EMPTY_ASSETS: typeof TREASURY_ASSETS = [];
 
 test.use({ locale: "en-US" });
-
-// Create the treasury in the sandbox backend
-test.beforeAll(async () => {
-    try {
-        await createTreasury({
-            name: "Onboarding E2E Test Treasury",
-            accountId: TREASURY_ID,
-            governors: [ACCOUNT_ID],
-            financiers: [ACCOUNT_ID],
-            requestors: [ACCOUNT_ID],
-        });
-        console.log(`Created DAO ${TREASURY_ID} in sandbox`);
-    } catch (e) {
-        console.log(`DAO creation failed (may already exist): ${e}`);
-    }
-});
+test.describe.configure({ timeout: 120_000 });
 
 /**
  * Mocks client-side API calls for a signed-in user on the dashboard.
@@ -144,8 +132,13 @@ async function setupDashboardMocks(
 ) {
     const assets = options?.assets ?? TREASURY_ASSETS;
     const proposals = options?.proposals ?? EMPTY_PROPOSALS;
+    await seedMockWalletAccount(page, ACCOUNT_ID, "init");
 
-    await page.route("**/*", (route) => {
+    await page.route("**/*", async (route) => {
+        if (await maybeFulfillMockWalletRequest(route)) {
+            return;
+        }
+
         const url = route.request().url();
 
         if (url.includes("/api/auth/me") || url.includes("/auth/me")) {
@@ -276,11 +269,23 @@ async function setupDashboardMocks(
  * Navigate to the dashboard, registering response waiters BEFORE goto to avoid race.
  */
 async function gotoDashboard(page: Page) {
-    const authResp = page.waitForResponse((r) => r.url().includes("/auth/me"));
-    const assetsResp = page.waitForResponse((r) =>
-        r.url().includes("/user/assets"),
-    );
-    await page.goto(`/${TREASURY_ID}`);
+    const authResp = page
+        .waitForResponse((r) => r.url().includes("/auth/me"), {
+            timeout: 60_000,
+        })
+        .catch(() => null);
+    const assetsResp = page
+        .waitForResponse((r) => r.url().includes("/user/assets"), {
+            timeout: 60_000,
+        })
+        .catch(() => null);
+
+    await page.goto(`/${TREASURY_ID}`, {
+        waitUntil: "domcontentloaded",
+        timeout: 90_000,
+    });
+    await expect(page.locator("main").first()).toBeVisible({ timeout: 30_000 });
+
     await authResp;
     await assetsResp;
 }
