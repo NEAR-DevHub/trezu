@@ -47,6 +47,7 @@ pub async fn run_telegram_dispatch_cycle(
             AND d.destination = 'telegram'
             AND d.destination_ref = ttc.chat_id::text
         WHERE d.id IS NULL
+          AND n.created_at >= ttc.connected_at
         ORDER BY n.id ASC
         LIMIT $1
         "#,
