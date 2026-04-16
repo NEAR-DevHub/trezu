@@ -27,8 +27,9 @@ export function SystemStatusBanner({
                 <WarningAlert
                     className={cn(isSidebar && "flex-col gap-2")}
                     key={post.id}
-                    title="Intents Status"
-                    message={stripHtml(post.message)}
+                    message={
+                        "We’re currently performing maintenance. Some features may be temporarily unavailable. Please check back soon."
+                    }
                 />
             ))}
         </div>
