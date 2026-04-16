@@ -1,9 +1,19 @@
 [package]
-name = "trezu"
+name = "trezu-cli"
 version = "0.1.0"
 edition = "2024"
 resolver = "3"
-description = "Trezu CLI - Treasury management for NEAR Protocol"
+description = "Manage your Confidential Multichain Multisig (Trezu) assets from CLI"
+authors = ["NEAR Dev <hello@near.dev>"]
+license = "MIT OR Apache-2.0"
+homepage = "https://trezu.org"
+repository = "https://github.com/NEAR-DevHub/trezu"
+
+[package.metadata.wix]
+upgrade-guid = "E2C9D2B6-3251-4DB8-8DB3-E0C97C159F8A"
+path-guid = "B52D3045-F923-4ED9-972F-5DA657A7915A"
+license = false
+eula = false
 
 [[bin]]
 name = "trezu"
@@ -47,3 +57,8 @@ tracing-indicatif = "0.3.6"
 [features]
 default = ["ledger"]
 ledger = ["near-cli-rs/ledger"]
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
