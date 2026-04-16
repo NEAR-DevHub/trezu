@@ -310,6 +310,7 @@ export function Sidebar({ onClose }: SidebarProps) {
                 <div className="hidden lg:flex flex-col justify-center">
                     <SystemStatusBanner
                         className={cn("px-3.5", isReduced && "hidden")}
+                        isSidebar
                     />
                     <CreateBanner disabled={isReduced} />
                     <ConfidentialBanner
