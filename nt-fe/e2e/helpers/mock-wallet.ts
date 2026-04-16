@@ -5,6 +5,7 @@
  * custom in-process executor. For delegate actions, it calls the sandbox's
  * signing endpoint to produce valid Ed25519 signatures that the relay accepts.
  */
+import type { BrowserContext, Page, Route } from "@playwright/test";
 
 export const MOCK_MANIFEST_ID = "mock-wallet";
 
@@ -132,3 +133,95 @@ export const MOCK_MANIFEST = {
         },
     ],
 };
+
+function isManifestUrl(url: string): boolean {
+    return (
+        (url.includes("/raw.githubusercontent.com/") &&
+            url.includes("manifest.json")) ||
+        (url.includes("/cdn.jsdelivr.net/") && url.includes("manifest.json"))
+    );
+}
+
+function isExecutorUrl(url: string): boolean {
+    return url.includes("/_near-connect-test/mock-wallet.js");
+}
+
+/**
+ * Route helper for catch-all handlers.
+ * Returns true when the request was fulfilled as a mock-wallet asset.
+ */
+export async function maybeFulfillMockWalletRequest(route: Route) {
+    const url = route.request().url();
+
+    if (isManifestUrl(url)) {
+        await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify(MOCK_MANIFEST),
+        });
+        return true;
+    }
+
+    if (isExecutorUrl(url)) {
+        await route.fulfill({
+            status: 200,
+            contentType: "application/javascript",
+            body: MOCK_WALLET_EXECUTOR_JS,
+        });
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Register NearConnect mock manifest/executor routes.
+ */
+export async function registerMockWalletRoutes(target: BrowserContext | Page) {
+    for (const url of [
+        "**/raw.githubusercontent.com/**manifest.json*",
+        "**/cdn.jsdelivr.net/**manifest.json*",
+    ]) {
+        await target.route(url, async (route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify(MOCK_MANIFEST),
+            });
+        });
+    }
+
+    await target.route(
+        "**/_near-connect-test/mock-wallet.js*",
+        async (route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/javascript",
+                body: MOCK_WALLET_EXECUTOR_JS,
+            });
+        },
+    );
+}
+
+/**
+ * Seed NearConnect selected wallet + signed account.
+ * Use mode "init" before navigation; mode "evaluate" after navigation.
+ */
+export async function seedMockWalletAccount(
+    page: Page,
+    accountId: string,
+    mode: "init" | "evaluate" = "init",
+) {
+    const payload = { walletId: MOCK_MANIFEST_ID, acct: accountId };
+    const script = ({ walletId, acct }: { walletId: string; acct: string }) => {
+        localStorage.setItem("selected-wallet", walletId);
+        localStorage.setItem(`${walletId}:signedAccountId`, acct);
+    };
+
+    if (mode === "init") {
+        await page.addInitScript(script, payload);
+        return;
+    }
+
+    await page.evaluate(script, payload);
+}

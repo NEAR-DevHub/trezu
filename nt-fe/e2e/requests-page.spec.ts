@@ -1,5 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
-import { createTreasury } from "./helpers/create-treasury";
+import {
+    maybeFulfillMockWalletRequest,
+    seedMockWalletAccount,
+} from "./helpers/mock-wallet";
 
 const TREASURY_ID = "requests-e2e-test.sputnik-dao.near";
 const ACCOUNT_ID = "test.near";
@@ -90,29 +93,18 @@ const TREASURY_ASSETS = [
 
 test.use({ locale: "en-US" });
 
-// Create the treasury in the sandbox backend so the server-side layout
-// component (getTreasuryConfig) can resolve it without page.route().
-test.beforeAll(async () => {
-    try {
-        await createTreasury({
-            name: "Requests E2E Test Treasury",
-            accountId: TREASURY_ID,
-            governors: [ACCOUNT_ID],
-            financiers: [ACCOUNT_ID],
-            requestors: [ACCOUNT_ID],
-        });
-        console.log(`Created DAO ${TREASURY_ID} in sandbox`);
-    } catch (e) {
-        console.log(`DAO creation failed (may already exist): ${e}`);
-    }
-});
-
 /**
  * Mocks client-side API calls for a signed-in user who owns a newly created treasury.
  * Server-side calls (getTreasuryConfig in layout.tsx) are handled by the real sandbox backend.
  */
 async function setupRequestsPageMocks(page: Page) {
-    await page.route("**/*", (route) => {
+    await seedMockWalletAccount(page, ACCOUNT_ID, "init");
+
+    await page.route("**/*", async (route) => {
+        if (await maybeFulfillMockWalletRequest(route)) {
+            return;
+        }
+
         const url = route.request().url();
 
         // Auth

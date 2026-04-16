@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { usePriceAvailability } from "@/hooks/use-price-availability";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useBalanceChart } from "@/hooks/use-treasury-queries";
 import type { ChartInterval, TreasuryAsset } from "@/lib/api";
@@ -218,6 +219,8 @@ export default function BalanceWithGraph({
         () => getDashboardBucketVisibility(headerScopedTokens),
         [headerScopedTokens],
     );
+    const { anyPriceUnavailable: priceUnavailable } =
+        usePriceAvailability(tokens);
     const showBreakdown =
         bucketVisibility.showLocked || bucketVisibility.showEarning;
 
@@ -543,9 +546,13 @@ export default function BalanceWithGraph({
                                 )}
                         </h3>
                         <p className="text-3xl font-bold mt-2">
-                            {!isHidden
-                                ? formatCurrency(balanceView.totalUsd)
-                                : "••••••"}
+                            {isHidden ? (
+                                "••••••"
+                            ) : priceUnavailable ? (
+                                <Skeleton className="h-9 w-40 mt-0.5" />
+                            ) : (
+                                formatCurrency(balanceView.totalUsd)
+                            )}
                         </p>
                         {showBreakdown && (
                             <>
@@ -564,7 +571,13 @@ export default function BalanceWithGraph({
                                             <span>
                                                 {item.label}{" "}
                                                 <span className="font-semibold text-foreground">
-                                                    {formatCurrency(item.value)}
+                                                    {priceUnavailable ? (
+                                                        <Skeleton className="h-4 w-16 inline-block align-middle" />
+                                                    ) : (
+                                                        formatCurrency(
+                                                            item.value,
+                                                        )
+                                                    )}
                                                 </span>
                                             </span>
                                         </div>
@@ -580,7 +593,11 @@ export default function BalanceWithGraph({
                                                 {item.label}
                                             </span>
                                             <span className="font-semibold text-foreground">
-                                                {formatCurrency(item.value)}
+                                                {priceUnavailable ? (
+                                                    <Skeleton className="h-4 w-20" />
+                                                ) : (
+                                                    formatCurrency(item.value)
+                                                )}
                                             </span>
                                         </div>
                                     ))}

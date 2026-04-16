@@ -4,13 +4,13 @@ on:
   push:
     branches: [main]
     paths:
-      - 'nt-fe/**'
-      - '.github/workflows/frontend-e2e.yml'
+      - "nt-fe/**"
+      - ".github/workflows/frontend-e2e.yml"
   pull_request:
     branches: [main]
     paths:
-      - 'nt-fe/**'
-      - '.github/workflows/frontend-e2e.yml'
+      - "nt-fe/**"
+      - ".github/workflows/frontend-e2e.yml"
   workflow_dispatch:
 
 env:
@@ -39,7 +39,7 @@ jobs:
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             PR_TAG="pr-${{ github.event.pull_request.number }}"
             # Check if PR-specific image exists
-            if docker manifest inspect ghcr.io/near-devhub/treasury26/near-treasury-sandbox:${PR_TAG} > /dev/null 2>&1; then
+            if docker manifest inspect ghcr.io/near-devhub/trezu/near-treasury-sandbox:${PR_TAG} > /dev/null 2>&1; then
               echo "tag=${PR_TAG}" >> $GITHUB_OUTPUT
               echo "Using PR-specific sandbox image: ${PR_TAG}"
             else
@@ -60,7 +60,7 @@ jobs:
             --health-timeout 5s \
             --health-retries 30 \
             --health-start-period 120s \
-            ghcr.io/near-devhub/treasury26/near-treasury-sandbox:${{ steps.sandbox-tag.outputs.tag }}
+            ghcr.io/near-devhub/trezu/near-treasury-sandbox:${{ steps.sandbox-tag.outputs.tag }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -86,7 +86,7 @@ jobs:
             echo "Attempt $i: Sandbox not ready yet..."
             sleep 5
           done
-        
+
       - name: Run Playwright tests
         working-directory: nt-fe
         run: bun run test:e2e

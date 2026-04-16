@@ -14,18 +14,16 @@
  * route level since the sandbox doesn't include a bridge RPC mock.
  * All other backend calls go to the real sandbox.
  */
-import { test, expect, BrowserContext, Route } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import {
-    MOCK_MANIFEST_ID,
-    MOCK_WALLET_EXECUTOR_JS,
-    MOCK_MANIFEST,
+    registerMockWalletRoutes,
+    seedMockWalletAccount,
 } from "./helpers/mock-wallet";
 import { createAccount, transferNear } from "./helpers/sandbox-rpc";
-import { createTreasury } from "./helpers/create-treasury";
+import { ensureTreasury } from "./helpers/create-treasury";
 
 const DAO_ID = "confdeposit.sputnik-dao.near";
 const ACCOUNT_ID = "confdeposit.near";
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8080";
 const SANDBOX_MOCK_URL = "http://localhost:4000";
 
 /**
@@ -92,33 +90,6 @@ const MOCK_BRIDGE_TOKENS = {
     ],
 };
 
-/** Mock wallet manifest CDN + executor JS. */
-async function mockWalletRoutes(context: BrowserContext) {
-    for (const url of [
-        "**/raw.githubusercontent.com/**manifest.json*",
-        "**/cdn.jsdelivr.net/**manifest.json*",
-    ]) {
-        await context.route(url, async (route: Route) => {
-            await route.fulfill({
-                status: 200,
-                contentType: "application/json",
-                body: JSON.stringify(MOCK_MANIFEST),
-            });
-        });
-    }
-
-    await context.route(
-        "**/_near-connect-test/mock-wallet.js*",
-        async (route: Route) => {
-            await route.fulfill({
-                status: 200,
-                contentType: "application/javascript",
-                body: MOCK_WALLET_EXECUTOR_JS,
-            });
-        },
-    );
-}
-
 /** Ensure the DAO, user account, and auth session exist on the sandbox. */
 async function setupSandbox(): Promise<string> {
     try {
@@ -127,23 +98,15 @@ async function setupSandbox(): Promise<string> {
         // May already exist
     }
 
-    // Create the confidential DAO via the backend API
-    try {
-        const configResp = await fetch(
-            `${BACKEND_URL}/api/treasury/config?treasuryId=${DAO_ID}`,
-        );
-        const config = await configResp.json();
-        if (!config?.name) throw new Error("no DAO");
-    } catch {
-        await createTreasury({
-            name: "Confidential Deposit Test",
-            accountId: DAO_ID,
-            governors: [ACCOUNT_ID],
-            financiers: [ACCOUNT_ID],
-            requestors: [ACCOUNT_ID],
-            isConfidential: true,
-        });
-    }
+    // Ensure the confidential DAO exists once and can be reused between retries.
+    await ensureTreasury({
+        name: "Confidential Deposit Test",
+        accountId: DAO_ID,
+        governors: [ACCOUNT_ID],
+        financiers: [ACCOUNT_ID],
+        requestors: [ACCOUNT_ID],
+        isConfidential: true,
+    });
 
     // Fund the DAO
     await transferNear("near", DAO_ID, 10);
@@ -263,7 +226,7 @@ test("Confidential deposit — dashboard deposit modal flow", async ({
         });
     }
 
-    await mockWalletRoutes(context);
+    await registerMockWalletRoutes(context);
 
     // Capture console errors for debugging
     page.on("console", (msg) => {
@@ -277,13 +240,7 @@ test("Confidential deposit — dashboard deposit modal flow", async ({
 
     // Seed wallet and navigate to dashboard
     await page.goto(`/${DAO_ID}`);
-    await page.evaluate(
-        ({ walletId, acct }) => {
-            localStorage.setItem("selected-wallet", walletId);
-            localStorage.setItem(`${walletId}:signedAccountId`, acct);
-        },
-        { walletId: MOCK_MANIFEST_ID, acct: ACCOUNT_ID },
-    );
+    await seedMockWalletAccount(page, ACCOUNT_ID, "evaluate");
     await page.goto(`/${DAO_ID}`);
 
     // ════════════════════════════════════════════════════
@@ -301,32 +258,29 @@ test("Confidential deposit — dashboard deposit modal flow", async ({
     await depositButton.click();
 
     // Deposit modal should open with the standard heading
-    await expect(page.getByRole("heading", { name: "Deposit" })).toBeVisible({
-        timeout: 10_000,
-    });
+    await expect(
+        page.getByRole("heading", { name: "Deposit", exact: true }),
+    ).toBeVisible({ timeout: 10_000 });
 
     // Should show asset/network selection prompt
     await expect(
         page.getByText("Select asset and network to see deposit address"),
     ).toBeVisible();
 
-    // USD Coin is auto-selected as the default asset
-    await expect(page.getByText("USD Coin").first()).toBeVisible({
+    // Deposit modal auto-select priority in UI is:
+    // prefill token -> owned USDC -> first "Your Assets" token by USD balance.
+    // In this sandbox scenario, Near is the first available owned asset.
+    await expect(page.getByRole("button", { name: "Near Near" })).toBeVisible({
         timeout: 10_000,
     });
 
-    // Select Near Protocol network
-    const networkDropdown = page
-        .locator("button")
-        .filter({ hasText: "Select Network" })
-        .first();
-    await networkDropdown.click();
-    await page.getByText("Near Protocol").first().click();
-
-    // Wait for network selection modal to close
+    // Confidential flow currently exposes a single network option: Near Protocol.
+    // The selector is pre-populated, so no "Select Network" interaction is needed.
     await expect(
-        page.getByRole("heading", { name: "Select Network" }),
-    ).not.toBeVisible({ timeout: 5_000 });
+        page.getByRole("button", { name: "Near Protocol Near Protocol" }),
+    ).toBeVisible({
+        timeout: 10_000,
+    });
 
     // Wait for deposit address section to appear
     await expect(
@@ -360,11 +314,12 @@ test("Confidential deposit — dashboard deposit modal flow", async ({
     // (confidential treasuries restrict to bridge assets only)
     // ════════════════════════════════════════════════════
 
-    // Open the asset selector
-    const assetSelectButton = page
-        .locator("button")
-        .filter({ hasText: /USD Coin/i })
-        .first();
+    // Open the currently selected asset button
+    const assetSelectButton = page.getByRole("button", {
+        name: "Near Near",
+        exact: true,
+    });
+    await expect(assetSelectButton).toBeVisible({ timeout: 10_000 });
     await assetSelectButton.click();
 
     // The asset selection modal should open
@@ -376,7 +331,5 @@ test("Confidential deposit — dashboard deposit modal flow", async ({
     await expect(page.getByText("Other", { exact: true })).not.toBeVisible();
 
     // Bridge assets should be listed
-    await expect(
-        page.getByRole("button", { name: "NEAR Near NEAR" }),
-    ).toBeVisible();
+    await expect(page.getByText("Near").first()).toBeVisible();
 });

@@ -2,6 +2,7 @@ import { ChainIcons, TreasuryAsset } from "@/lib/api";
 import { formatCurrency, formatSmartAmount } from "@/lib/utils";
 import { useThemeStore } from "@/stores/theme-store";
 import Big from "@/lib/big";
+import { Skeleton } from "@/components/ui/skeleton";
 import { TokenDisplay as TokenWithNetworkDisplay } from "./token-display-with-network";
 
 interface NetworkIconDisplayProps {
@@ -148,15 +149,21 @@ export const BalanceCell = ({
     balance,
     symbol,
     balanceUSD,
+    priceUnavailable,
 }: {
     balance: Big;
     symbol: string;
     balanceUSD: number;
+    priceUnavailable?: boolean;
 }) => {
     return (
         <div className="text-right">
             <div className="font-medium text-sm">
-                {formatCurrency(balanceUSD)}
+                {priceUnavailable ? (
+                    <Skeleton className="h-4 w-16 ml-auto" />
+                ) : (
+                    formatCurrency(balanceUSD)
+                )}
             </div>
             <div className="text-xxs text-muted-foreground">
                 {formatSmartAmount(balance)} {symbol}
