@@ -307,16 +307,18 @@ export function Sidebar({ onClose }: SidebarProps) {
                     })}
                 </nav>
 
-                <div className="hidden lg:flex flex-col justify-center">
+                <div className="hidden lg:flex flex-col w-full justify-center items-center gap-2">
                     <SystemStatusBanner
                         className={cn("px-3.5", isReduced && "hidden")}
                         isSidebar
                     />
                     <CreateBanner disabled={isReduced} />
-                    <ConfidentialBanner
-                        type={isReduced ? "mini" : "default"}
-                        className={cn(isReduced && "size-5")}
-                    />
+                    <div className={cn(!isReduced && "px-3.5 w-full flex")}>
+                        <ConfidentialBanner
+                            type={isReduced ? "mini" : "default"}
+                            className={cn(isReduced && "size-5")}
+                        />
+                    </div>
                 </div>
 
                 <div
