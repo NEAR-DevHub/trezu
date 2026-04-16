@@ -43,6 +43,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import type { AggregatedAsset } from "@/hooks/use-assets";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { usePriceAvailability } from "@/hooks/use-price-availability";
 import { useTreasury } from "@/hooks/use-treasury";
 import type { TreasuryAsset } from "@/lib/api";
 import { availableBalance, lockedBalance } from "@/lib/balance";
@@ -249,6 +250,7 @@ interface MobileAssetViewModalProps {
     selectedAsset: AggregatedAsset | null;
     mobileModalData: MobileModalData | null;
     view: ViewMode;
+    priceUnavailable?: boolean;
     renderRows: () => ReactNode;
 }
 
@@ -258,6 +260,7 @@ function MobileAssetViewModal({
     selectedAsset,
     mobileModalData,
     view,
+    priceUnavailable,
     renderRows,
 }: MobileAssetViewModalProps) {
     return (
@@ -283,6 +286,7 @@ function MobileAssetViewModal({
                                 )}
                                 symbol={selectedAsset.id}
                                 balanceUSD={mobileModalData.summaryUsd}
+                                priceUnavailable={priceUnavailable}
                             />
                         </div>
                         <div className="flex items-center gap-3 py-3 border-b border-border/50">
@@ -290,7 +294,11 @@ function MobileAssetViewModal({
                                 Coin Price
                             </span>
                             <span className="text-sm font-medium">
-                                {formatCurrency(selectedAsset.price)}
+                                {priceUnavailable ? (
+                                    <Skeleton className="h-4 w-16 ml-auto" />
+                                ) : (
+                                    formatCurrency(selectedAsset.price)
+                                )}
                             </span>
                         </div>
                         {view === "available" && (
@@ -488,6 +496,7 @@ interface BaseAssetViewProps {
     isMobile: boolean;
     isExpanded: boolean;
     primaryDecimals?: number;
+    priceUnavailable?: boolean;
 }
 
 interface AvailableViewProps extends BaseAssetViewProps {
@@ -505,6 +514,7 @@ function AvailableView({
     isMobile,
     isExpanded,
     primaryDecimals,
+    priceUnavailable,
     availableRaw,
     availableUsd,
     weight,
@@ -524,25 +534,34 @@ function AvailableView({
                         )}
                         symbol={asset.id}
                         balanceUSD={availableUsd ?? 0}
+                        priceUnavailable={priceUnavailable}
                     />
                 </TableCell>
                 <TableCell className="p-4 text-right font-medium hidden sm:table-cell">
-                    {formatCurrency(asset.price)}
+                    {priceUnavailable ? (
+                        <Skeleton className="h-4 w-16 ml-auto" />
+                    ) : (
+                        formatCurrency(asset.price)
+                    )}
                 </TableCell>
                 <TableCell className="p-4 text-right hidden sm:table-cell">
-                    <div className="flex items-center justify-end gap-3">
-                        <span className="font-medium w-14 text-right">
-                            {(weight ?? 0).toFixed(2)}%
-                        </span>
-                        <div className="w-24 bg-muted rounded-full h-2 overflow-hidden">
-                            <div
-                                className="bg-foreground h-full rounded-full"
-                                style={{
-                                    width: `${weight ?? 0}%`,
-                                }}
-                            />
+                    {priceUnavailable ? (
+                        <Skeleton className="h-4 w-20 ml-auto" />
+                    ) : (
+                        <div className="flex items-center justify-end gap-3">
+                            <span className="font-medium w-14 text-right">
+                                {(weight ?? 0).toFixed(2)}%
+                            </span>
+                            <div className="w-24 bg-muted rounded-full h-2 overflow-hidden">
+                                <div
+                                    className="bg-foreground h-full rounded-full"
+                                    style={{
+                                        width: `${weight ?? 0}%`,
+                                    }}
+                                />
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </TableCell>
             </>
         );
@@ -589,6 +608,7 @@ function AvailableView({
                                         )}
                                         symbol={network.symbol}
                                         balanceUSD={amountUsd}
+                                        priceUnavailable={priceUnavailable}
                                     />
                                 </div>
                             </div>
@@ -674,6 +694,7 @@ function AvailableView({
                                         network.decimals,
                                         network.price,
                                     )}
+                                    priceUnavailable={priceUnavailable}
                                 />
                             </TableCell>
                             <TableCell />
@@ -776,6 +797,7 @@ function LockedView({
     isMobile,
     isExpanded,
     primaryDecimals,
+    priceUnavailable,
     lockedRaw,
     lockedUsd,
     unlockedRaw,
@@ -798,6 +820,7 @@ function LockedView({
                         )}
                         symbol={asset.id}
                         balanceUSD={lockedUsd ?? 0}
+                        priceUnavailable={priceUnavailable}
                     />
                 </TableCell>
                 <TableCell className="p-4 text-right">
@@ -808,10 +831,15 @@ function LockedView({
                         )}
                         symbol={asset.id}
                         balanceUSD={unlockedUsd ?? 0}
+                        priceUnavailable={priceUnavailable}
                     />
                 </TableCell>
                 <TableCell className="p-4 text-right font-medium hidden sm:table-cell">
-                    {formatCurrency(asset.price)}
+                    {priceUnavailable ? (
+                        <Skeleton className="h-4 w-16 ml-auto" />
+                    ) : (
+                        formatCurrency(asset.price)
+                    )}
                 </TableCell>
                 <TableCell className="p-4 text-right hidden sm:table-cell">
                     <BalanceCell
@@ -821,6 +849,7 @@ function LockedView({
                         )}
                         symbol={asset.id}
                         balanceUSD={totalAllocatedUsd ?? 0}
+                        priceUnavailable={priceUnavailable}
                     />
                 </TableCell>
             </>
@@ -861,6 +890,7 @@ function LockedView({
                                         )}
                                         symbol={network.symbol}
                                         balanceUSD={amountUsd}
+                                        priceUnavailable={priceUnavailable}
                                     />
                                 </div>
                             </div>
@@ -956,6 +986,7 @@ function LockedView({
                                     network.decimals,
                                     network.price,
                                 )}
+                                priceUnavailable={priceUnavailable}
                             />
                         </TableCell>
                         <TableCell className="p-4 text-right">
@@ -970,6 +1001,7 @@ function LockedView({
                                     network.decimals,
                                     network.price,
                                 )}
+                                priceUnavailable={priceUnavailable}
                             />
                         </TableCell>
                         <TableCell />
@@ -985,6 +1017,7 @@ function LockedView({
                                     network.decimals,
                                     network.price,
                                 )}
+                                priceUnavailable={priceUnavailable}
                             />
                         </TableCell>
                         <TableCell className="p-4 text-right">
@@ -1012,6 +1045,7 @@ function EarningView({
     isMobile,
     isExpanded,
     primaryDecimals,
+    priceUnavailable,
     earningRaw,
     earningUsd,
     earningWithdrawRaw,
@@ -1031,10 +1065,15 @@ function EarningView({
                         )}
                         symbol={asset.id}
                         balanceUSD={earningUsd ?? 0}
+                        priceUnavailable={priceUnavailable}
                     />
                 </TableCell>
                 <TableCell className="p-4 text-right font-medium hidden sm:table-cell">
-                    {formatCurrency(asset.price)}
+                    {priceUnavailable ? (
+                        <Skeleton className="h-4 w-16 ml-auto" />
+                    ) : (
+                        formatCurrency(asset.price)
+                    )}
                 </TableCell>
                 <TableCell className="p-4 text-right hidden sm:table-cell">
                     <BalanceCell
@@ -1044,6 +1083,7 @@ function EarningView({
                         )}
                         symbol={asset.id}
                         balanceUSD={earningWithdrawUsd ?? 0}
+                        priceUnavailable={priceUnavailable}
                     />
                 </TableCell>
             </>
@@ -1074,6 +1114,7 @@ function EarningView({
                                         )}
                                         symbol={network.symbol}
                                         balanceUSD={poolRow.amountUsd}
+                                        priceUnavailable={priceUnavailable}
                                     />
                                 </div>
                             </div>
@@ -1139,6 +1180,7 @@ function EarningView({
                                                 network.decimals,
                                                 network.price,
                                             )}
+                                            priceUnavailable={priceUnavailable}
                                         />
                                     </TableCell>
                                     <TableCell />
@@ -1154,6 +1196,7 @@ function EarningView({
                                                 network.decimals,
                                                 network.price,
                                             )}
+                                            priceUnavailable={priceUnavailable}
                                         />
                                     </TableCell>
                                     <TableCell className="p-4 text-right">
@@ -1204,6 +1247,7 @@ function EarningView({
                                         network.decimals,
                                         network.price,
                                     )}
+                                    priceUnavailable={priceUnavailable}
                                 />
                             </TableCell>
                             <TableCell />
@@ -1219,6 +1263,7 @@ function EarningView({
                                         network.decimals,
                                         network.price,
                                     )}
+                                    priceUnavailable={priceUnavailable}
                                 />
                             </TableCell>
                             <TableCell className="p-4 text-right">
@@ -1250,6 +1295,7 @@ function ExpandedRows({
     view,
     isMobile,
     isExpanded,
+    priceUnavailable,
     asset,
     availableNetworks,
     lockedNetworks,
@@ -1268,6 +1314,7 @@ function ExpandedRows({
                 asset={asset}
                 isMobile={false}
                 isExpanded
+                priceUnavailable={priceUnavailable}
                 availableNetworks={availableNetworks}
                 treasuryId={treasuryId}
                 onNavigate={onNavigate}
@@ -1281,6 +1328,7 @@ function ExpandedRows({
                 asset={asset}
                 isMobile={false}
                 isExpanded
+                priceUnavailable={priceUnavailable}
                 lockedNetworks={lockedNetworks}
                 ftLockupInstanceCount={ftLockupInstanceCount}
                 onSelectLockup={onSelectLockup}
@@ -1294,6 +1342,7 @@ function ExpandedRows({
                 asset={asset}
                 isMobile={false}
                 isExpanded
+                priceUnavailable={priceUnavailable}
                 earningNetworks={earningNetworks}
                 onSelectPool={onSelectPool}
             />
@@ -1307,6 +1356,10 @@ export function AssetsTable({ aggregatedTokens }: Props) {
     const { treasuryId } = useTreasury();
     const router = useRouter();
     const isMobile = useMediaQuery("(max-width: 640px)");
+    const {
+        isTokenPriceUnavailable,
+        anyPriceUnavailable: anyBridgePriceUnavailable,
+    } = usePriceAvailability(aggregatedTokens);
     const [expanded, setExpanded] = useState<Record<string, boolean>>({});
     const [selectedMobileAsset, setSelectedMobileAsset] =
         useState<AggregatedAsset | null>(null);
@@ -1523,6 +1576,10 @@ export function AssetsTable({ aggregatedTokens }: Props) {
 
     const renderMobileRows = () => {
         if (!mobileModalData || !selectedMobileAsset) return null;
+        const mobileAssetPriceUnavailable = isTokenPriceUnavailable(
+            selectedMobileAsset.id,
+            selectedMobileAsset.price,
+        );
 
         if (view === "earning") {
             return (
@@ -1530,6 +1587,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                     asset={selectedMobileAsset}
                     isMobile
                     isExpanded
+                    priceUnavailable={mobileAssetPriceUnavailable}
                     earningPoolRows={mobileModalData.earningPoolRows}
                     onSelectPool={(network, poolId) =>
                         openMobileEarningDetails(network, poolId)
@@ -1544,6 +1602,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                     asset={selectedMobileAsset}
                     isMobile
                     isExpanded
+                    priceUnavailable={mobileAssetPriceUnavailable}
                     lockedNetworks={mobileModalData.listNetworks}
                     selectedAssetId={selectedMobileAsset.id}
                     onSelectLockup={(network) =>
@@ -1558,6 +1617,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                 asset={selectedMobileAsset}
                 isMobile
                 isExpanded
+                priceUnavailable={mobileAssetPriceUnavailable}
                 availableNetworks={mobileModalData.listNetworks}
                 selectedAssetId={selectedMobileAsset.id}
                 treasuryId={treasuryId ?? null}
@@ -1645,7 +1705,10 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                             <SelectContent align="start" className="min-w-56">
                                 {visibleViews.map(([id, label, value]) => (
                                     <SelectItem key={id} value={id}>
-                                        {label} {formatCurrency(value)}
+                                        {label}{" "}
+                                        {anyBridgePriceUnavailable
+                                            ? "—"
+                                            : formatCurrency(value)}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
@@ -1689,7 +1752,11 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                             : "text-muted-foreground",
                                     )}
                                 >
-                                    {formatCurrency(value)}
+                                    {anyBridgePriceUnavailable ? (
+                                        <Skeleton className="h-5 w-24 mt-1" />
+                                    ) : (
+                                        formatCurrency(value)
+                                    )}
                                 </p>
                             </Button>
                         ))}
@@ -1786,6 +1853,8 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                     <TableBody>
                         {viewAssets.map(({ asset, weight }) => {
                             const isExpanded = !!expanded[asset.id];
+                            const assetPriceUnavailable =
+                                isTokenPriceUnavailable(asset.id, asset.price);
                             const primaryDecimals =
                                 asset.networks[0]?.decimals ?? DEFAULT_DECIMALS;
                             const availableNetworks = asset.networks.filter(
@@ -1975,6 +2044,9 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                                 primaryDecimals={
                                                     primaryDecimals
                                                 }
+                                                priceUnavailable={
+                                                    assetPriceUnavailable
+                                                }
                                                 availableRaw={availableRaw}
                                                 availableUsd={availableUsd}
                                                 weight={weight}
@@ -1988,6 +2060,9 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                                 isExpanded={false}
                                                 primaryDecimals={
                                                     primaryDecimals
+                                                }
+                                                priceUnavailable={
+                                                    assetPriceUnavailable
                                                 }
                                                 lockedRaw={lockedRaw}
                                                 lockedUsd={lockedUsd}
@@ -2009,6 +2084,9 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                                 isExpanded={false}
                                                 primaryDecimals={
                                                     primaryDecimals
+                                                }
+                                                priceUnavailable={
+                                                    assetPriceUnavailable
                                                 }
                                                 earningRaw={earningRaw}
                                                 earningUsd={earningUsd}
@@ -2034,6 +2112,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                         view={view}
                                         isMobile={isMobile}
                                         isExpanded={isExpanded}
+                                        priceUnavailable={assetPriceUnavailable}
                                         asset={asset}
                                         availableNetworks={availableNetworks}
                                         lockedNetworks={lockedNetworks}
@@ -2153,6 +2232,14 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                 selectedAsset={selectedMobileAsset}
                 mobileModalData={mobileModalData}
                 view={view}
+                priceUnavailable={
+                    selectedMobileAsset
+                        ? isTokenPriceUnavailable(
+                              selectedMobileAsset.id,
+                              selectedMobileAsset.price,
+                          )
+                        : false
+                }
                 renderRows={renderMobileRows}
             />
         </div>
