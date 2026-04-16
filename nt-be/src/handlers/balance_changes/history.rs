@@ -950,8 +950,7 @@ async fn generate_xlsx(
     }
 
     // Write data rows
-    let mut row = 1u32;
-    for record in records {
+    for (row, record) in (1u32..).zip(records.into_iter()) {
         worksheet.write(row, 0, record.date)?;
         worksheet.write(row, 1, record.time)?;
         worksheet.write(row, 2, record.direction)?;
@@ -976,8 +975,6 @@ async fn generate_xlsx(
 
         worksheet.write(row, 11, record.transaction_hash)?;
         worksheet.write(row, 12, record.receipt_id)?;
-
-        row += 1;
     }
 
     // Auto-fit columns
@@ -1575,10 +1572,10 @@ pub async fn get_recent_activity(
     let count_date_cutoff_str: Option<String> = date_cutoff.map(|dt| dt.to_rfc3339());
 
     // For recent activity, "incoming" should exclude staking rewards (shown in separate tab)
-    let transaction_types_for_query = match params.transaction_type.as_deref() {
-        Some(t) => Some(vec![t.to_string()]),
-        None => None,
-    };
+    let transaction_types_for_query = params
+        .transaction_type
+        .as_deref()
+        .map(|t| vec![t.to_string()]);
 
     let filters = BalanceChangeFilters {
         account_id: params.account_id.clone(),
@@ -1933,10 +1930,10 @@ pub async fn get_recent_activity_senders(
         .map_err(|(status, message)| (status, Json(serde_json::json!({ "error": message }))))?;
 
     // Keep options endpoint unfiltered by date/token/hash/from, but honor transactionType tab.
-    let transaction_types_for_query = match params.transaction_type.as_deref() {
-        Some(t) => Some(vec![t.to_string()]),
-        None => None,
-    };
+    let transaction_types_for_query = params
+        .transaction_type
+        .as_deref()
+        .map(|t| vec![t.to_string()]);
 
     let filters = BalanceChangeFilters {
         account_id: params.account_id.clone(),
@@ -1999,10 +1996,10 @@ pub async fn get_recent_activity_recipients(
         .map_err(|(status, message)| (status, Json(serde_json::json!({ "error": message }))))?;
 
     // Keep options endpoint unfiltered by date/token/hash/to, but honor transactionType tab.
-    let transaction_types_for_query = match params.transaction_type.as_deref() {
-        Some(t) => Some(vec![t.to_string()]),
-        None => None,
-    };
+    let transaction_types_for_query = params
+        .transaction_type
+        .as_deref()
+        .map(|t| vec![t.to_string()]);
 
     let filters = BalanceChangeFilters {
         account_id: params.account_id.clone(),
