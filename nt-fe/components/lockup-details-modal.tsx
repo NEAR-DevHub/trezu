@@ -91,35 +91,35 @@ function formatReleaseInterval(seconds?: number): string {
 
 function calculateNextFtUnlockDate(
     startTimestamp?: number,
-    sessionInterval?: number,
-    sessionNum?: number,
+    roundInterval?: number,
+    roundsTotal?: number,
 ): string {
     if (
         !startTimestamp ||
         Number.isNaN(startTimestamp) ||
-        !sessionInterval ||
-        Number.isNaN(sessionInterval) ||
-        sessionInterval <= 0
+        !roundInterval ||
+        Number.isNaN(roundInterval) ||
+        roundInterval <= 0
     ) {
         return "N/A";
     }
 
-    const totalSessions = sessionNum ?? 0;
+    const totalRounds = roundsTotal ?? 0;
     const nowSeconds = Math.floor(Date.now() / 1000);
-    let nextUnlock = startTimestamp + sessionInterval;
+    let nextUnlock = startTimestamp + roundInterval;
     let releaseIndex = 1;
 
     while (
         nextUnlock <= nowSeconds &&
-        (totalSessions <= 0 || releaseIndex < totalSessions)
+        (totalRounds <= 0 || releaseIndex < totalRounds)
     ) {
-        nextUnlock += sessionInterval;
+        nextUnlock += roundInterval;
         releaseIndex += 1;
     }
 
     if (
-        totalSessions > 0 &&
-        releaseIndex >= totalSessions &&
+        totalRounds > 0 &&
+        releaseIndex >= totalRounds &&
         nextUnlock <= nowSeconds
     ) {
         return "Completed";
@@ -159,18 +159,24 @@ export function LockupDetailsModal({
     let summaryTotal = Big(0);
 
     if (isFtLockup && asset.balance.type === "Standard") {
-        total = Big(
-            formatBalance(asset.balance.total, asset.decimals, asset.decimals),
-        );
-        summaryTotal = total;
-        locked = Big(
-            formatBalance(asset.balance.locked, asset.decimals, asset.decimals),
-        );
-        unlocked = total.sub(locked);
-        progressPct = total.gt(0) ? unlocked.div(total).mul(100).toNumber() : 0;
+        const totalRaw =
+            asset.ftLockupSchedule?.totalAmount ??
+            asset.balance.total.toFixed(0);
+        const unlockedRaw = asset.ftLockupSchedule?.unlockedAmount ?? "0";
+        const lockedRaw =
+            asset.ftLockupSchedule?.lockedAmount ??
+            asset.balance.locked.toFixed(0);
+        const roundsDone = asset.ftLockupSchedule?.roundsCompleted ?? 0;
+        const roundsTotal = asset.ftLockupSchedule?.roundsTotal ?? 0;
 
-        const roundsDone = asset.ftLockupSchedule?.lastClaimSession ?? 0;
-        const roundsTotal = asset.ftLockupSchedule?.sessionNum ?? 0;
+        total = Big(formatBalance(totalRaw, asset.decimals, asset.decimals));
+        unlocked = Big(
+            formatBalance(unlockedRaw, asset.decimals, asset.decimals),
+        );
+        locked = Big(formatBalance(lockedRaw, asset.decimals, asset.decimals));
+        summaryTotal = total;
+
+        progressPct = total.gt(0) ? unlocked.div(total).mul(100).toNumber() : 0;
         progressLabel =
             roundsTotal > 0
                 ? `${roundsDone}/${roundsTotal} Rounds`
@@ -223,12 +229,12 @@ export function LockupDetailsModal({
 
     const totalUsd = summaryTotal.mul(asset.price).toNumber();
 
-    const roundsTotal = asset.ftLockupSchedule?.sessionNum ?? 0;
+    const roundsTotal = asset.ftLockupSchedule?.roundsTotal ?? 0;
 
     const nextUnlockDate = calculateNextFtUnlockDate(
         asset.ftLockupSchedule?.startTimestamp,
-        asset.ftLockupSchedule?.sessionInterval,
-        asset.ftLockupSchedule?.sessionNum,
+        asset.ftLockupSchedule?.roundInterval,
+        asset.ftLockupSchedule?.roundsTotal,
     );
 
     const nearStartDate = formatDateFromNanoseconds(
@@ -411,7 +417,7 @@ export function LockupDetailsModal({
                                     <span>
                                         {formatReleaseInterval(
                                             asset.ftLockupSchedule
-                                                ?.sessionInterval,
+                                                ?.roundInterval,
                                         )}
                                     </span>
                                 </div>

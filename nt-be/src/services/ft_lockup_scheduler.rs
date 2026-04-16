@@ -625,6 +625,7 @@ mod tests {
             session_interval: Some(100),
             session_num: Some(10),
             last_claim_session: Some(2),
+            release_per_session: None,
         };
         let next_claim_at = compute_next_claim_at(now, &data).expect("next claim should exist");
         let now_ts = now.timestamp();
@@ -645,6 +646,7 @@ mod tests {
             session_interval: Some(100),
             session_num: Some(10),
             last_claim_session: Some(0),
+            release_per_session: None,
         };
 
         let now = Utc::now();
