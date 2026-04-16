@@ -7,7 +7,7 @@ import {
 } from "@/components/modal";
 import { Button } from "@/components/button";
 import { ChevronDown, ChevronRight, ArrowUpRight } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useTreasury } from "@/hooks/use-treasury";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,7 +16,10 @@ import { Policy } from "@/types/policy";
 import { Alert, AlertDescription } from "@/components/alert";
 import { ProposalTypeIcon } from "@/features/proposals/components/proposal-type-icon";
 import { TransactionCell } from "@/features/proposals/components/transaction-cell";
-import { getProposalUIKind } from "@/features/proposals/utils/proposal-utils";
+import {
+    EXCHANGE_EXPIRY_MS,
+    getProposalUIKind,
+} from "@/features/proposals/utils/proposal-utils";
 import { FormattedDate } from "@/components/formatted-date";
 import { nanosToMs } from "@/lib/utils";
 
@@ -24,6 +27,7 @@ interface VotingDurationImpactModalProps {
     isOpen: boolean;
     onClose: () => void;
     onConfirm: () => void;
+    onNoImpactedProposals?: () => void;
     newDurationDays: number;
     currentPolicy: Policy;
     activeProposals: Proposal[];
@@ -45,6 +49,7 @@ export function VotingDurationImpactModal({
     isOpen,
     onClose,
     onConfirm,
+    onNoImpactedProposals,
     newDurationDays,
     currentPolicy,
     activeProposals,
@@ -63,12 +68,20 @@ export function VotingDurationImpactModal({
         return activeProposals
             .map((proposal): ProposalImpact => {
                 const submissionTimeMs = nanosToMs(proposal.submission_time);
+                const proposalType = getProposalUIKind(proposal);
+                const isExchangeProposal = proposalType === "Exchange";
 
+                // Exchange requests always expire in 24h and are unaffected by
+                // voting-duration policy changes.
                 const oldExpiryDate = new Date(
-                    submissionTimeMs + currentDurationMs,
+                    isExchangeProposal
+                        ? submissionTimeMs + EXCHANGE_EXPIRY_MS
+                        : submissionTimeMs + currentDurationMs,
                 );
                 const newExpiryDate = new Date(
-                    submissionTimeMs + newDurationMs,
+                    isExchangeProposal
+                        ? submissionTimeMs + EXCHANGE_EXPIRY_MS
+                        : submissionTimeMs + newDurationMs,
                 );
 
                 const wasExpiredBefore = oldExpiryDate.getTime() <= now;
@@ -91,7 +104,10 @@ export function VotingDurationImpactModal({
             })
             .filter(
                 (p) =>
-                    p.willReactivate || p.willRemainActive || p.isNewlyExpiring,
+                    p.oldExpiryDate.getTime() !== p.newExpiryDate.getTime() &&
+                    (p.willReactivate ||
+                        p.willRemainActive ||
+                        p.isNewlyExpiring),
             )
             .sort((a, b) => {
                 // Show active outcomes first, expiring outcomes second
@@ -108,6 +124,19 @@ export function VotingDurationImpactModal({
     const expiringProposalsCount = impactedProposals.filter(
         (p) => p.isNewlyExpiring,
     ).length;
+
+    useEffect(() => {
+        if (!isOpen || isLoadingProposals) return;
+        if (impactedProposals.length > 0) return;
+        onClose();
+        onNoImpactedProposals?.();
+    }, [
+        isOpen,
+        isLoadingProposals,
+        impactedProposals.length,
+        onClose,
+        onNoImpactedProposals,
+    ]);
 
     const formatDays = (date: Date) => {
         const now = new Date();

@@ -923,6 +923,7 @@ export default function NewTreasuryPage() {
             <PageComponentLayout
                 title="Create Treasury"
                 hideCollapseButton
+                hideLogin
                 description="Set up a new multisig treasury for your team"
                 backButton={treasuries?.length > 0 ? "/" : undefined}
             >
