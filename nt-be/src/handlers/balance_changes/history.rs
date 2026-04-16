@@ -950,7 +950,7 @@ async fn generate_xlsx(
     }
 
     // Write data rows
-    for (row, record) in (1u32..).zip(records.into_iter()) {
+    for (row, record) in (1u32..).zip(records) {
         worksheet.write(row, 0, record.date)?;
         worksheet.write(row, 1, record.time)?;
         worksheet.write(row, 2, record.direction)?;
