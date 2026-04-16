@@ -60,7 +60,7 @@ export function ConfidentialBanner({
             open={isOpen}
             onOpenChange={handleOpenChange}
             className={cn(
-                "w-full bg-secondary rounded-lg p-3 mx-3.5",
+                "w-full min-w-0 bg-secondary rounded-lg p-3",
                 className,
             )}
         >

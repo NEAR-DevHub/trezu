@@ -12,8 +12,8 @@ import {
     UsersRound,
     Vote,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { type ArrayPath, useForm, useFormContext } from "react-hook-form";
 import z from "zod";
 import { Alert, AlertDescription } from "@/components/alert";
@@ -763,7 +763,9 @@ export default function NewTreasuryPage() {
     const { data: creationStatus } = useTreasuryCreationStatus();
     const creationAvailable = creationStatus?.creationAvailable ?? true;
     const router = useRouter();
+    const searchParams = useSearchParams();
     const queryClient = useQueryClient();
+    const shouldSkipSurvey = searchParams.get("skipSurvey") === "1";
     const [step, setStep] = useState(0);
     const [resumeOnboardingFromBack, setResumeOnboardingFromBack] =
         useState(false);
@@ -801,7 +803,8 @@ export default function NewTreasuryPage() {
 
     const handleStepChange = (nextStep: number) => {
         const previousStep = previousStepRef.current;
-        const isBackFromCreateTreasury = previousStep === 1 && nextStep === 0;
+        const isBackFromCreateTreasury =
+            !shouldSkipSurvey && previousStep === 1 && nextStep === 0;
         setResumeOnboardingFromBack(isBackFromCreateTreasury);
         previousStepRef.current = nextStep;
         setStep(nextStep);
@@ -917,12 +920,13 @@ export default function NewTreasuryPage() {
                 }}
             />
             <CreationDisabledModal
-                open={!creationAvailable}
+                open={!creationAvailable && false}
                 onClose={() => router.push("/")}
             />
             <PageComponentLayout
                 title="Create Treasury"
                 hideCollapseButton
+                hideLogin
                 description="Set up a new multisig treasury for your team"
                 backButton={treasuries?.length > 0 ? "/" : undefined}
             >
@@ -934,16 +938,25 @@ export default function NewTreasuryPage() {
                         <StepWizard
                             step={step}
                             onStepChange={handleStepChange}
-                            stepTitles={CREATION_STEP_TITLES}
+                            stepTitles={
+                                shouldSkipSurvey
+                                    ? CREATION_STEP_TITLES.slice(1)
+                                    : CREATION_STEP_TITLES
+                            }
                             stepLabelClassName="hidden md:inline"
                             steps={[
-                                {
-                                    component: OnboardingQuestionsStep,
-                                    props: {
-                                        startFromLastQuestion:
-                                            resumeOnboardingFromBack,
-                                    },
-                                },
+                                ...(shouldSkipSurvey
+                                    ? []
+                                    : [
+                                          {
+                                              component:
+                                                  OnboardingQuestionsStep,
+                                              props: {
+                                                  startFromLastQuestion:
+                                                      resumeOnboardingFromBack,
+                                              },
+                                          },
+                                      ]),
                                 { component: Step1 },
                                 { component: Step2 },
                                 { component: Step3 },

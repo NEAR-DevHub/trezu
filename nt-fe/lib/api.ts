@@ -78,9 +78,12 @@ export type TokenResidency = "Near" | "Ft" | "Intents" | "Lockup" | "Staked";
 
 export interface FtLockupSchedule {
     startTimestamp?: number;
-    sessionInterval?: number;
-    sessionNum?: number;
-    lastClaimSession?: number;
+    roundInterval?: number;
+    roundsTotal?: number;
+    roundsCompleted?: number;
+    totalAmount?: string;
+    unlockedAmount?: string;
+    lockedAmount?: string;
 }
 
 export interface TreasuryAsset {

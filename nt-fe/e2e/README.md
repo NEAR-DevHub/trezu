@@ -45,7 +45,7 @@ Or manually:
 # 1. Start the sandbox
 docker run -d --name sandbox \
   -p 3030:3030 -p 8080:8080 -p 5001:5001 \
-  ghcr.io/near-devhub/treasury26/near-treasury-sandbox:main
+  ghcr.io/near-devhub/trezu/near-treasury-sandbox:main
 
 # 2. Wait for it to be ready
 curl http://localhost:8080/api/health

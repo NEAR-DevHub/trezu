@@ -118,19 +118,6 @@ pub async fn refresh_dao_jwt(
             status,
             error_text
         );
-        // Clear stale tokens
-        let _ = sqlx::query!(
-            r#"
-            UPDATE monitored_accounts
-            SET confidential_access_token = NULL,
-                confidential_refresh_token = NULL,
-                confidential_token_expires_at = NULL
-            WHERE account_id = $1
-            "#,
-            dao_id,
-        )
-        .execute(&state.db_pool)
-        .await;
 
         return Err((
             StatusCode::UNAUTHORIZED,

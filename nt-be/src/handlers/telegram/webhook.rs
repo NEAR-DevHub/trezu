@@ -42,14 +42,13 @@ pub async fn handle_telegram_webhook(
             }
             ChatMemberKind::Restricted(_) => {}
         },
-        UpdateKind::Message(msg) => {
+        UpdateKind::Message(msg)
             if msg
                 .text()
                 .and_then(|t| parse_command(t, "").map(|(cmd, _)| cmd))
-                .is_some_and(|cmd| matches!(cmd, "start" | "connect"))
-            {
-                handle_bot_added(&state, msg.chat.id.0, msg.chat.title()).await;
-            }
+                .is_some_and(|cmd| matches!(cmd, "start" | "connect")) =>
+        {
+            handle_bot_added(&state, msg.chat.id.0, msg.chat.title()).await;
         }
         _ => {}
     }

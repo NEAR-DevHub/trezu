@@ -6,7 +6,9 @@
 //! 4. Send to /v0/auth/authenticate
 //! 5. Print JWT tokens (copy to .env)
 //!
-//! Run with: cargo run --example auth_dao_confidential
+//! Run with: cargo run --example auth_dao_confidential -- <account_id> <dao_id> [secret_key_env_var]
+//!
+//! Example: cargo run --example auth_dao_confidential -- alice.near my-dao.sputnik-dao.near MY_SECRET_KEY
 
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use near_api::{
@@ -15,8 +17,6 @@ use near_api::{
 };
 use serde_json::{Value, json};
 
-const ACCOUNT_ID: &str = "test-account-yurtur.near";
-const DAO_ID: &str = "test-please-work.sputnik-dao.near";
 const V1_SIGNER_CONTRACT_ID: &str = "v1.signer";
 
 async fn fetch_mpc_public_key(dao_id: &str) -> Result<String, Box<dyn std::error::Error>> {
@@ -50,7 +50,7 @@ struct NEP413Payload {
 
 async fn fetch_salt(client: &reqwest::Client) -> [u8; 4] {
     let resp = client
-        .post("https://rpc.mainnet.fastnear.com")
+        .post("https://near.lava.build")
         .json(&json!({"jsonrpc":"2.0","id":1,"method":"query","params":{
             "request_type":"call_function","finality":"optimistic",
             "account_id":"intents.near","method_name":"current_salt",
@@ -90,11 +90,13 @@ fn build_nonce(salt: &[u8; 4], deadline: &chrono::DateTime<chrono::Utc>) -> [u8;
 }
 
 async fn create_and_approve_proposal(
+    account_id: &str,
+    dao_id: &str,
     near_secret: &near_api::SecretKey,
     proposal: Value,
     client: &reqwest::Client,
 ) -> String {
-    Transaction::construct(ACCOUNT_ID.parse().unwrap(), DAO_ID.parse().unwrap())
+    Transaction::construct(account_id.parse().unwrap(), dao_id.parse().unwrap())
         .add_action(Action::FunctionCall(Box::new(FunctionCallAction {
             method_name: "add_proposal".to_string(),
             args: serde_json::to_vec(&proposal).unwrap().into(),
@@ -112,10 +114,10 @@ async fn create_and_approve_proposal(
         .unwrap();
 
     let resp = client
-        .post("https://rpc.mainnet.fastnear.com")
+        .post("https://near.lava.build")
         .json(&json!({"jsonrpc":"2.0","id":1,"method":"query","params":{
             "request_type":"call_function","finality":"final",
-            "account_id": DAO_ID, "method_name":"get_last_proposal_id",
+            "account_id": dao_id, "method_name":"get_last_proposal_id",
             "args_base64": BASE64.encode("{}"),
         }}))
         .send()
@@ -135,10 +137,10 @@ async fn create_and_approve_proposal(
     println!("  Proposal ID: {}", proposal_id);
 
     let resp = client
-        .post("https://rpc.mainnet.fastnear.com")
+        .post("https://near.lava.build")
         .json(&json!({"jsonrpc":"2.0","id":1,"method":"query","params":{
             "request_type":"call_function","finality":"final",
-            "account_id": DAO_ID, "method_name":"get_proposal",
+            "account_id": dao_id, "method_name":"get_proposal",
             "args_base64": BASE64.encode(json!({"id": proposal_id}).to_string()),
         }}))
         .send()
@@ -156,7 +158,7 @@ async fn create_and_approve_proposal(
     let proposal_data: Value = serde_json::from_slice(&bytes).unwrap();
     let kind = &proposal_data["kind"];
 
-    let result = Transaction::construct(ACCOUNT_ID.parse().unwrap(), DAO_ID.parse().unwrap())
+    let result = Transaction::construct(account_id.parse().unwrap(), dao_id.parse().unwrap())
         .add_action(Action::FunctionCall(Box::new(FunctionCallAction {
             method_name: "act_proposal".to_string(),
             args: serde_json::to_vec(&json!({
@@ -209,10 +211,24 @@ fn extract_mpc_signature(result_debug: &str) -> Option<Vec<u8>> {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() < 3 {
+        eprintln!(
+            "Usage: {} <account_id> <dao_id> [secret_key_env_var]",
+            args[0]
+        );
+        eprintln!("  secret_key_env_var defaults to NEAR_SECRET_KEY");
+        std::process::exit(1);
+    }
+    let account_id = &args[1];
+    let dao_id = &args[2];
+    let secret_key_env = args.get(3).map(|s| s.as_str()).unwrap_or("NEAR_SECRET_KEY");
+
     dotenvy::from_filename("../.env").ok();
     dotenvy::from_filename(".env").ok();
 
-    let secret_key_str = std::env::var("PETERSALOMONSEN_DEV")?;
+    let secret_key_str = std::env::var(secret_key_env)
+        .map_err(|_| format!("env var '{}' not set", secret_key_env))?;
     let near_secret: near_api::SecretKey = secret_key_str.parse()?;
     let api_key = std::env::var("ONECLICK_API_KEY")?;
     let client = reqwest::Client::new();
@@ -224,15 +240,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let auth_deadline = chrono::Utc::now() + chrono::Duration::days(7); // Long-lived for auth
     let auth_nonce = build_nonce(&salt, &auth_deadline);
     let auth_nonce_b64 = BASE64.encode(auth_nonce);
+    let deadline = auth_deadline.format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string();
 
+    let expires_in: u32 = 36500 * 24 * 3600;
     let auth_message = json!({
-        "deadline": auth_deadline.format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string(),
+        "deadline": deadline,
         "intents": [],
-        "signer_id": DAO_ID,  // Auth AS the DAO
+        "signer_id": dao_id,
+        "external_app_data": {
+            "configs": [{
+                "type": "auth",
+                "expires_in": expires_in,
+            }]
+        }
     })
     .to_string();
-
-    println!("Auth message: {}", auth_message);
 
     // Step 2: Hash the NEP-413 payload (same as what v1.signer will sign)
     println!("\n=== Step 2: Create signing proposal via v1.signer ===\n");
@@ -254,7 +276,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Build v1.signer sign proposal
     let sign_args = json!({
         "request": {
-            "path": DAO_ID,
+            "path": dao_id,
             "payload_v2": {
                 "Eddsa": hash_hex,
             },
@@ -280,7 +302,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     println!("Creating and approving signing proposal...");
-    let result = create_and_approve_proposal(&near_secret, proposal, &client).await;
+    let result =
+        create_and_approve_proposal(account_id, dao_id, &near_secret, proposal, &client).await;
 
     // Write full result to file for debugging
     std::fs::write("examples/fixtures/mpc_auth_result.txt", &result).ok();
@@ -305,7 +328,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Step 3: Authenticate the DAO with the MPC signature
     println!("\n=== Step 3: Authenticate DAO ===\n");
 
-    let mpc_public_key = fetch_mpc_public_key(DAO_ID).await?;
+    let mpc_public_key = fetch_mpc_public_key(dao_id).await?;
     println!("Fetched MPC public key: {}", mpc_public_key);
 
     let auth_body = json!({
