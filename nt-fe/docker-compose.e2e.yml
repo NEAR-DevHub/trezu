@@ -3,7 +3,7 @@
 
 services:
   sandbox:
-    image: ghcr.io/near-devhub/treasury26/near-treasury-sandbox:main
+    image: ghcr.io/near-devhub/trezu/near-treasury-sandbox:main
     ports:
       - "3030:3030"  # NEAR RPC
       - "8080:8080"  # Treasury Backend API

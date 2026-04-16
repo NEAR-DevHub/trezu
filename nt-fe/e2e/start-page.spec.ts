@@ -1,4 +1,13 @@
 import { test, expect, type Page } from "@playwright/test";
+import {
+    maybeFulfillMockWalletRequest,
+    seedMockWalletAccount,
+} from "./helpers/mock-wallet";
+
+test.use({
+    actionTimeout: 60_000,
+    navigationTimeout: 60_000,
+});
 
 async function setupStartPageMocks(
     page: Page,
@@ -12,8 +21,15 @@ async function setupStartPageMocks(
         treasuries?: unknown[];
     },
 ) {
-    await page.route("**/*", (route) => {
+    if (accountId) {
+        await seedMockWalletAccount(page, accountId, "init");
+    }
+
+    await page.route("**/*", async (route) => {
         const url = route.request().url();
+        if (await maybeFulfillMockWalletRequest(route)) {
+            return;
+        }
 
         if (url.includes("/api/auth/me") || url.includes("/auth/me")) {
             return route.fulfill({
@@ -59,14 +75,16 @@ test("Start page shows onboarding choices when signed out", async ({
     await page.goto("/");
 
     await expect(
-        page.getByRole("button", { name: /i'm new to trezu/i }),
+        page.getByRole("button", { name: /I.?m new to Trezu/i }),
     ).toBeVisible();
     await expect(
-        page.getByRole("button", { name: /i already use trezu/i }),
+        page.getByRole("button", { name: /I already use Trezu/i }),
     ).toBeVisible();
 });
 
-test("Signed in + no treasuries => redirects to /app/new", async ({ page }) => {
+test("Signed in + no treasuries + new user selection => redirects to /app/new", async ({
+    page,
+}) => {
     await setupStartPageMocks(page, {
         accountId: "test.near",
         creationAvailable: true,
@@ -80,6 +98,13 @@ test("Signed in + no treasuries => redirects to /app/new", async ({ page }) => {
     await page.waitForResponse((response) =>
         response.url().includes("/user/treasuries"),
     );
+
+    // New flow: /app/new redirect happens after explicitly choosing new user.
+    await page
+        .getByRole("button", {
+            name: /I.?m new to Trezu/i,
+        })
+        .click();
 
     await expect(page).toHaveURL(/\/app\/new$/, { timeout: 15000 });
 });

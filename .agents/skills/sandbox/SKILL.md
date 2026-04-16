@@ -35,7 +35,7 @@ kill $(lsof -t -i :8080) 2>/dev/null || true
 
 ```bash
 # Pull latest sandbox image (public, no auth needed)
-docker pull ghcr.io/near-devhub/treasury26/near-treasury-sandbox:main
+docker pull ghcr.io/near-devhub/trezu/near-treasury-sandbox:main
 
 # Remove any previous sandbox container
 docker rm -f sandbox 2>/dev/null || true
@@ -48,7 +48,7 @@ docker run -d --name sandbox \
   --health-timeout 5s \
   --health-retries 30 \
   --health-start-period 120s \
-  ghcr.io/near-devhub/treasury26/near-treasury-sandbox:main
+  ghcr.io/near-devhub/trezu/near-treasury-sandbox:main
 ```
 
 ### 3. Wait for the sandbox to be healthy
@@ -97,7 +97,7 @@ docker stop sandbox && docker rm sandbox
 ## Image
 
 The sandbox image is built automatically by CI and pushed to:
-`ghcr.io/near-devhub/treasury26/near-treasury-sandbox:main`
+`ghcr.io/near-devhub/trezu/near-treasury-sandbox:main`
 
 PR-specific images are tagged as `pr-<number>` when available.
 

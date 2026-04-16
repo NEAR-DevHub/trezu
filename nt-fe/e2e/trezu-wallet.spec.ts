@@ -1,8 +1,7 @@
 import { test, expect, Page, Route } from "@playwright/test";
 import {
-    MOCK_MANIFEST_ID,
-    MOCK_WALLET_EXECUTOR_JS,
-    MOCK_MANIFEST,
+    registerMockWalletRoutes,
+    seedMockWalletAccount,
 } from "./helpers/mock-wallet";
 
 /**
@@ -473,42 +472,8 @@ test.describe("cancel button", () => {
  */
 
 async function setupMockWallet(page: Page, accountId: string) {
-    // Serve the custom manifest
-    for (const url of [
-        "**/raw.githubusercontent.com/**manifest.json*",
-        "**/cdn.jsdelivr.net/**manifest.json*",
-    ]) {
-        await page.route(url, async (route: Route) => {
-            await route.fulfill({
-                status: 200,
-                contentType: "application/json",
-                body: JSON.stringify(MOCK_MANIFEST),
-            });
-        });
-    }
-
-    // Serve the mock executor JS
-    await page.route(
-        "**/_near-connect-test/mock-wallet.js*",
-        async (route: Route) => {
-            await route.fulfill({
-                status: 200,
-                contentType: "application/javascript",
-                body: MOCK_WALLET_EXECUTOR_JS,
-            });
-        },
-    );
-
-    // Seed localStorage keys before the page loads
-    await page.addInitScript(
-        ({ walletId, acct }) => {
-            // NearConnector stores the selected wallet id directly
-            localStorage.setItem("selected-wallet", walletId);
-            // Executor sandbox storage is prefixed with manifest.id
-            localStorage.setItem(`${walletId}:signedAccountId`, acct);
-        },
-        { walletId: MOCK_MANIFEST_ID, acct: accountId },
-    );
+    await registerMockWalletRoutes(page);
+    await seedMockWalletAccount(page, accountId, "init");
 }
 
 test.describe("sign_in with pre-connected wallet", () => {
