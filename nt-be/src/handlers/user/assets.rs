@@ -97,9 +97,12 @@ pub enum TokenResidency {
 #[serde(rename_all = "camelCase")]
 pub struct FtLockupSchedule {
     pub start_timestamp: Option<u64>,
-    pub session_interval: Option<u64>,
-    pub session_num: Option<u32>,
-    pub last_claim_session: Option<u32>,
+    pub round_interval: Option<u64>,
+    pub rounds_total: Option<u32>,
+    pub rounds_completed: Option<u32>,
+    pub total_amount: Option<String>,
+    pub unlocked_amount: Option<String>,
+    pub locked_amount: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -700,6 +703,29 @@ pub async fn compute_user_assets(
             .saturating_sub(position.claimed_amount)
             .saturating_sub(position.unclaimed_amount);
 
+        let rounds_total = position.session_num.unwrap_or(0);
+        let rounds_completed = position.last_claim_session.unwrap_or(0).min(rounds_total);
+
+        // Display metrics for FT lockup details:
+        // show cumulative unlocked for the active schedule, including already-claimed rounds.
+        let (display_total_raw, display_unlocked_raw, display_locked_raw) =
+            if let Some(release_per_session) = position.release_per_session {
+                if rounds_total > 0 {
+                    let round_total_raw = release_per_session.saturating_mul(rounds_total as u128);
+                    let claimed_by_rounds_raw =
+                        release_per_session.saturating_mul(rounds_completed as u128);
+                    let unlocked_cumulative_raw =
+                        claimed_by_rounds_raw.saturating_add(position.unclaimed_amount);
+                    let unlocked_clamped_raw = unlocked_cumulative_raw.min(round_total_raw);
+                    let locked_round_raw = round_total_raw.saturating_sub(unlocked_clamped_raw);
+                    (round_total_raw, unlocked_clamped_raw, locked_round_raw)
+                } else {
+                    (total_raw, position.unclaimed_amount, locked_raw)
+                }
+            } else {
+                (total_raw, position.unclaimed_amount, locked_raw)
+            };
+
         all_simplified_tokens.push((
             SimplifiedToken {
                 id: unified_id,
@@ -707,9 +733,12 @@ pub async fn compute_user_assets(
                 lockup_instance_id: Some(position.instance_id),
                 ft_lockup_schedule: Some(FtLockupSchedule {
                     start_timestamp: position.start_timestamp,
-                    session_interval: position.session_interval,
-                    session_num: position.session_num,
-                    last_claim_session: position.last_claim_session,
+                    round_interval: position.session_interval,
+                    rounds_total: Some(rounds_total),
+                    rounds_completed: Some(rounds_completed),
+                    total_amount: Some(display_total_raw.to_string()),
+                    unlocked_amount: Some(display_unlocked_raw.to_string()),
+                    locked_amount: Some(display_locked_raw.to_string()),
                 }),
                 decimals: token_meta.decimals,
                 balance: Balance::Standard {
