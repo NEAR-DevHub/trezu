@@ -562,7 +562,7 @@ pub async fn compute_user_assets(
 
             let tokens_with_balances: Vec<(String, String)> = owned_token_ids
                 .into_iter()
-                .zip(balances.into_iter())
+                .zip(balances)
                 .filter(|(_, balance)| balance.parse::<u128>().unwrap_or(0) > 0)
                 .collect();
 
