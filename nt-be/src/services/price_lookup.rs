@@ -157,6 +157,68 @@ impl<P: PriceProvider> PriceLookupService<P> {
         Ok(cached)
     }
 
+    /// Get the latest cached price for multiple tokens (batch operation)
+    ///
+    /// Translates each token_id to its provider asset ID, then fetches the most
+    /// recent price per asset in a single DB query. Returns a map of original
+    /// token_id -> price.
+    pub async fn get_cached_tokens_latest_price(
+        &self,
+        token_ids: &[String],
+    ) -> Result<HashMap<String, f64>, Box<dyn std::error::Error + Send + Sync>> {
+        let provider = match &self.provider {
+            Some(p) => p,
+            None => return Ok(HashMap::new()),
+        };
+
+        // Map provider_asset_id -> list of original token_ids (multiple tokens can share an asset)
+        let mut asset_to_tokens: HashMap<String, Vec<String>> = HashMap::new();
+        for token_id in token_ids {
+            let unified_id = match token_id_to_unified_asset_id(token_id) {
+                Some(id) => id,
+                None => continue,
+            };
+            let provider_asset_id = match provider.translate_asset_id(&unified_id) {
+                Some(id) => id,
+                None => continue,
+            };
+            asset_to_tokens
+                .entry(provider_asset_id)
+                .or_default()
+                .push(token_id.clone());
+        }
+
+        if asset_to_tokens.is_empty() {
+            return Ok(HashMap::new());
+        }
+
+        let asset_ids: Vec<String> = asset_to_tokens.keys().cloned().collect();
+        let rows = sqlx::query!(
+            r#"
+            SELECT DISTINCT ON (asset_id) asset_id, price_usd
+            FROM historical_prices
+            WHERE asset_id = ANY($1)
+            ORDER BY asset_id, price_date DESC, fetched_at DESC
+            "#,
+            &asset_ids,
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        let mut result = HashMap::new();
+        for row in rows {
+            if let Some(price) = bigdecimal_to_f64(&row.price_usd)
+                && let Some(token_ids) = asset_to_tokens.get(&row.asset_id)
+            {
+                for token_id in token_ids {
+                    result.insert(token_id.clone(), price);
+                }
+            }
+        }
+
+        Ok(result)
+    }
+
     /// Get cached price from database
     async fn get_cached_price(
         &self,

@@ -820,6 +820,14 @@ pub async fn fetch_tokens_with_defuse_extension(
     }
     let defuse_ids: Vec<String> = defuse_to_originals.keys().cloned().collect();
 
+    // Pre-fetch latest DB prices for all tokens (single query) as fallback
+    let all_token_ids: Vec<String> = result.keys().cloned().collect();
+    let db_prices = state
+        .price_service
+        .get_cached_tokens_latest_price(&all_token_ids)
+        .await
+        .unwrap_or_default();
+
     match fetch_tokens_metadata(state, &defuse_ids).await {
         Ok(price_metadata) => {
             for meta in price_metadata {
@@ -838,10 +846,15 @@ pub async fn fetch_tokens_with_defuse_extension(
                                 entry.chain_icons = meta.chain_icons.clone();
                             }
 
-                            // Price fields are still optional and only updated when present.
-                            if meta.price.is_some() {
+                            if let Some(price) = meta.price
+                                && price > 0f64
+                            {
                                 entry.price = meta.price;
                                 entry.price_updated_at = meta.price_updated_at.clone();
+                            } else if let Some(&db_price) = db_prices.get(original_id)
+                                && db_price > 0.0
+                            {
+                                entry.price = Some(db_price);
                             }
                         }
                     }
@@ -850,6 +863,15 @@ pub async fn fetch_tokens_with_defuse_extension(
         }
         Err(e) => {
             log::warn!("fetch_tokens_with_prices: price enrichment failed: {:?}", e);
+            // Defuse failed entirely — fall back to DB prices for all tokens
+            for (token_id, &price) in &db_prices {
+                if price > 0.0
+                    && let Some(entry) = result.get_mut(token_id)
+                    && entry.price.is_none()
+                {
+                    entry.price = Some(price);
+                }
+            }
         }
     }
 
