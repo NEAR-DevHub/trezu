@@ -2,7 +2,6 @@
 
 import { Database, Globe, Shield } from "lucide-react";
 import { useAssets } from "@/hooks/use-assets";
-import { usePriceAvailability } from "@/hooks/use-price-availability";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Skeleton } from "./ui/skeleton";
 import { TreasuryTypeIcon } from "./icons/shield";
@@ -50,15 +49,12 @@ export function TreasuryBalance({
     skeletonClassName?: string;
 }) {
     const { data, isLoading } = useAssets(daoId, { enabled: !isConfidential });
-    const { anyPriceUnavailable: anyBridgePriceUnavailable } =
-        usePriceAvailability(data?.tokens ?? []);
     if (isLoading)
         return <Skeleton className={skeletonClassName ?? "h-4 w-16"} />;
     if (!data?.tokens) return null;
     const balanceExcludingLockup = data.tokens
         .filter((t) => t.residency !== "Lockup")
         .reduce((sum, t) => sum + t.balanceUSD, 0);
-    if (anyBridgePriceUnavailable) return <Skeleton className="h-3 w-16" />;
     return (
         <span className={cn("text-sm text-muted-foreground", className)}>
             {isConfidential ? "••••••" : formatCurrency(balanceExcludingLockup)}
