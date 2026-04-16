@@ -74,14 +74,13 @@ pub async fn get_system_status(
                 ));
             }
 
-            let instatus_response: InstatusResponse =
-                response.json().await.map_err(|e| {
-                    log::error!("Error parsing system status response: {}", e);
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("Failed to parse system status response: {}", e),
-                    )
-                })?;
+            let instatus_response: InstatusResponse = response.json().await.map_err(|e| {
+                log::error!("Error parsing system status response: {}", e);
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Failed to parse system status response: {}", e),
+                )
+            })?;
 
             let now = chrono::Utc::now().timestamp_millis();
             let posts: Vec<SystemStatusPost> = instatus_response
