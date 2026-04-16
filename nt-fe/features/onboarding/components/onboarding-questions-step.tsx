@@ -45,6 +45,7 @@ interface QuestionnaireOption {
     iconSrc?: string;
     iconDark?: string;
     iconLight?: string;
+    iconImageClassName?: string;
 }
 
 type QuestionnaireBaseFieldName =
@@ -338,11 +339,15 @@ function buildCumulativeSurveyResponses(
     return responses;
 }
 
-export function OnboardingQuestionsStep({ handleNext }: StepProps) {
+export function OnboardingQuestionsStep({
+    handleNext,
+    startFromLastQuestion = false,
+}: StepProps & { startFromLastQuestion?: boolean }) {
     const form = useFormContext<{ about: OnboardingAboutValues }>();
     const { data: chains = [] } = useChains();
     const [activeQuestionField, setActiveQuestionField] =
         useState<QuestionnaireBaseFieldName>(QUESTIONNAIRE_STEPS[0].fieldName);
+    const hasInitializedQuestionRef = useRef(false);
     const surveySubmissionIdRef = useRef(crypto.randomUUID());
     const surveyShownFiredRef = useRef(false);
     const selectedExperience = useWatch({
@@ -378,6 +383,18 @@ export function OnboardingQuestionsStep({ handleNext }: StepProps) {
             : visibleQuestions[questionIndex];
     const currentStepIndex = questionIndex === -1 ? 0 : questionIndex;
     const progressLabel = `${currentStepIndex + 1}/${visibleQuestions.length}`;
+
+    useEffect(() => {
+        if (hasInitializedQuestionRef.current) return;
+        if (!visibleQuestions.length) return;
+
+        setActiveQuestionField(
+            startFromLastQuestion
+                ? visibleQuestions[visibleQuestions.length - 1].fieldName
+                : visibleQuestions[0].fieldName,
+        );
+        hasInitializedQuestionRef.current = true;
+    }, [startFromLastQuestion, visibleQuestions]);
 
     useEffect(() => {
         if (!visibleQuestions.length) return;
@@ -553,6 +570,7 @@ export function OnboardingQuestionsStep({ handleNext }: StepProps) {
             ...option,
             iconDark: chain.iconDark,
             iconLight: chain.iconLight,
+            iconImageClassName: option.id === "near" ? "p-0.5" : "rounded-full",
         };
     });
 

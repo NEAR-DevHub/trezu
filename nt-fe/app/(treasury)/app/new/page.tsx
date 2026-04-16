@@ -13,7 +13,7 @@ import {
     Vote,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { type ArrayPath, useForm, useFormContext } from "react-hook-form";
 import z from "zod";
 import { Alert, AlertDescription } from "@/components/alert";
@@ -765,12 +765,15 @@ export default function NewTreasuryPage() {
     const router = useRouter();
     const queryClient = useQueryClient();
     const [step, setStep] = useState(0);
+    const [resumeOnboardingFromBack, setResumeOnboardingFromBack] =
+        useState(false);
     const [progressOpen, setProgressOpen] = useState(false);
     const [progressSteps, setProgressSteps] = useState<CreationStep[]>([]);
     const [progressError, setProgressError] = useState<string | null>(null);
     const [createdTreasuryId, setCreatedTreasuryId] = useState<string | null>(
         null,
     );
+    const previousStepRef = useRef(step);
     const form = useForm<TreasuryFormValues>({
         resolver: zodResolver(treasuryFormSchema),
         defaultValues: {
@@ -795,6 +798,14 @@ export default function NewTreasuryPage() {
             form.setValue("members.0.accountId", accountId);
         }
     }, [accountId]);
+
+    const handleStepChange = (nextStep: number) => {
+        const previousStep = previousStepRef.current;
+        const isBackFromCreateTreasury = previousStep === 1 && nextStep === 0;
+        setResumeOnboardingFromBack(isBackFromCreateTreasury);
+        previousStepRef.current = nextStep;
+        setStep(nextStep);
+    };
 
     const onSubmit = async (data: TreasuryFormValues) => {
         if (!accountId) {
@@ -922,11 +933,17 @@ export default function NewTreasuryPage() {
                     >
                         <StepWizard
                             step={step}
-                            onStepChange={setStep}
+                            onStepChange={handleStepChange}
                             stepTitles={CREATION_STEP_TITLES}
                             stepLabelClassName="hidden md:inline"
                             steps={[
-                                { component: OnboardingQuestionsStep },
+                                {
+                                    component: OnboardingQuestionsStep,
+                                    props: {
+                                        startFromLastQuestion:
+                                            resumeOnboardingFromBack,
+                                    },
+                                },
                                 { component: Step1 },
                                 { component: Step2 },
                                 { component: Step3 },

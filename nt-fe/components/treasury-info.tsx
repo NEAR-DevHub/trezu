@@ -28,13 +28,11 @@ export function TreasuryLogo({
     return (
         <div className="relative">
             {item}
-            <div className="absolute right-0 bottom-0">
-                {isConfidential ? (
+            {isConfidential && (
+                <div className="absolute right-0 bottom-0">
                     <Shield className="size-4 fill-foreground text-background" />
-                ) : (
-                    <Globe className="size-4 fill-foreground text-background" />
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 }
