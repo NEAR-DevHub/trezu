@@ -8,6 +8,7 @@ import { SignIn } from "@/components/sign-in";
 import { ReactNode, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ConfidentialBanner } from "@/features/confidential/components/confidential-banner";
+import { SystemStatusBanner } from "@/components/system-status-banner";
 
 interface PageComponentLayoutProps {
     title: string;
@@ -109,6 +110,7 @@ export function PageComponentLayout({
             </header>
 
             <main className="flex-1 overflow-y-auto bg-page-bg p-4">
+                <SystemStatusBanner className="lg:hidden" />
                 {children}
             </main>
         </div>
