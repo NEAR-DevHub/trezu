@@ -281,6 +281,10 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
             get(handlers::intents::swap_status::get_swap_status),
         )
         .route(
+            "/api/intents/status",
+            get(handlers::intents::system_status::get_system_status),
+        )
+        .route(
             "/api/confidential-intents/generate-intent",
             post(handlers::intents::confidential::generate_intent::generate_intent),
         )

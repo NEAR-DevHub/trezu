@@ -22,7 +22,7 @@ export function SystemStatusBanner({ className }: SystemStatusBannerProps) {
             {posts.map((post) => (
                 <WarningAlert
                     key={post.id}
-                    title={post.title}
+                    title="Intents Status"
                     message={stripHtml(post.message)}
                 />
             ))}
