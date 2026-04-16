@@ -1,5 +1,4 @@
 import { test, expect, Page, Route } from "@playwright/test";
-import { createTreasury } from "./helpers/create-treasury";
 import FINAL_ASSETS from "./fixtures/assets.json";
 
 const TREASURY_ID = "webassemblymusic-treasury.sputnik-dao.near";
@@ -9,21 +8,6 @@ const DASHBOARD_URL = `/${TREASURY_ID}`;
 test.use({
     locale: "en-US",
     viewport: { width: 375, height: 667 },
-});
-
-test.beforeAll(async () => {
-    try {
-        await createTreasury({
-            name: "WebAssembly Music Treasury",
-            accountId: TREASURY_ID,
-            governors: ["test.near"],
-            financiers: ["test.near"],
-            requestors: ["test.near"],
-        });
-        console.log(`Created DAO ${TREASURY_ID} in sandbox`);
-    } catch (e) {
-        console.log(`DAO creation failed (may already exist): ${e}`);
-    }
 });
 
 const MONITORED_ACCOUNTS_RESPONSE = {

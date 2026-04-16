@@ -411,6 +411,16 @@ test("Ledger login flow", async ({ page, context }) => {
     // No "Connect Ledger" button click is needed.
 
     // Handle the "Select Derivation Path" dialog - click Continue with default selection
+    const usbWiredLedgerConnectionBtn = iframe.getByRole("button", {
+        name: "🔌 USB Wired Ledger connection",
+    });
+    await expect(usbWiredLedgerConnectionBtn).toBeVisible({ timeout: 10000 });
+    console.log("USB Wired Ledger connection button is visible");
+    await page.waitForTimeout(1500); // Pause to show the USB Wired Ledger connection button
+    await usbWiredLedgerConnectionBtn.click();
+    console.log("Clicked USB Wired Ledger connection button");
+    await page.waitForTimeout(2000); // Pause for GET_PUBLIC_KEY mock response
+
     const continueBtn = iframe.getByRole("button", { name: /continue/i });
     await expect(continueBtn).toBeVisible({ timeout: 10000 });
     console.log(
