@@ -1,7 +1,9 @@
 use color_eyre::eyre::{Result, WrapErr};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::io::Write;
 use std::path::PathBuf;
+use tempfile::NamedTempFile;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TrezuConfig {
@@ -49,15 +51,22 @@ impl TrezuConfig {
     pub fn save(&self) -> Result<()> {
         let path = Self::config_path()?;
         let data = serde_json::to_string_pretty(self)?;
-        std::fs::write(&path, data).wrap_err("Failed to write config")?;
+
+        // On multi-user systems using std::fs::write can leave the credentials too open if the default permissions are 0o664,
+        // so tempfile crate is a bit of a workaround, but it handles the permissions properly.
+        let dir = path.parent().unwrap_or_else(|| std::path::Path::new("."));
+        let mut tmp = NamedTempFile::new_in(dir)?;
+        tmp.write_all(data.as_ref())?;
+        tmp.as_file().sync_all()?;
+        tmp.persist(path).map_err(|e| e.error)?;
+
         Ok(())
     }
 
     pub fn require_auth(&self) -> Result<(&str, &str)> {
-        let token = self
-            .auth_token
-            .as_deref()
-            .ok_or_else(|| color_eyre::eyre::eyre!("Not logged in. Run `trezu auth login` first."))?;
+        let token = self.auth_token.as_deref().ok_or_else(|| {
+            color_eyre::eyre::eyre!("Not logged in. Run `trezu auth login` first.")
+        })?;
         let account = self
             .account_id
             .as_deref()

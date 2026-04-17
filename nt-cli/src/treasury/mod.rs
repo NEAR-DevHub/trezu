@@ -134,9 +134,15 @@ impl TreasuryInfoContext {
                     tracing::info!("Proposal bond:  {} yoctoNEAR", bond);
                 }
                 if let Some(period) = &policy.proposal_period {
-                    let nanos: u64 = period.parse().unwrap_or(0);
-                    let days = nanos / (1_000_000_000 * 60 * 60 * 24);
-                    tracing::info!("Proposal period: {} days", days);
+                    match period.parse::<u64>() {
+                        Ok(nanos) => {
+                            let days = nanos / (1_000_000_000 * 60 * 60 * 24);
+                            tracing::info!("Proposal period: {} days", days);
+                        }
+                        Err(_) => {
+                            tracing::info!("Proposal period: unknown (invalid value: {})", period);
+                        }
+                    }
                 }
             }
             Err(e) => {

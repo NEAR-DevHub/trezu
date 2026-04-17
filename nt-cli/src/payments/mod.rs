@@ -124,10 +124,9 @@ impl PaymentSendContext {
         let treasury_id = &previous_context.treasury_id;
         let config = &previous_context.config;
 
-        let account_id = config
-            .account_id
-            .as_deref()
-            .ok_or_else(|| color_eyre::eyre::eyre!("Not logged in. Run `trezu auth login` first."))?;
+        let account_id = config.account_id.as_deref().ok_or_else(|| {
+            color_eyre::eyre::eyre!("Not logged in. Run `trezu auth login` first.")
+        })?;
 
         let signer_id: near_primitives::types::AccountId = account_id
             .parse()
@@ -389,7 +388,7 @@ fn build_confidential_proposal(
         }
     });
 
-    tracing::info!("  Intent generated, payload hash: {}", &payload_hash[..16]);
+    tracing::info!("  Intent generated, payload hash: {}", payload_hash);
 
     Ok((description, kind))
 }

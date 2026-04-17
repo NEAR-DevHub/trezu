@@ -21,7 +21,9 @@ impl ApiClient {
     }
 
     fn url(&self, path: &str) -> String {
-        format!("{}/api{}", self.base_url, path)
+        let base_url = self.base_url.trim_end_matches('/');
+        let path = path.trim_start_matches('/');
+        format!("{}/api/{}", base_url, path)
     }
 
     fn get(&self, path: &str) -> reqwest::blocking::RequestBuilder {
