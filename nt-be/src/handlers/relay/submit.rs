@@ -12,7 +12,13 @@ use near_api::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::{collections::HashSet, ops::Deref, sync::Arc};
+use std::{
+    collections::HashSet,
+    ops::Deref,
+    sync::{Arc, LazyLock},
+    time::{Duration, Instant},
+};
+use tokio::sync::RwLock;
 
 use crate::{
     AppState,
@@ -64,6 +70,28 @@ const MAX_SPONSORING: NearToken = NearToken::from_millinear(1200);
 // This is worse case scenario where all bulk payments recipients are not registered in the token contract
 const TOKEN_STORAGE_BUFFER: NearToken = NearToken::from_micronear(1250).saturating_mul(25);
 const SPUTNIK_DAO_SUFFIX: &str = ".sputnik-dao.near";
+const ALLOWED_CONTRACTS_REFRESH_INTERVAL: Duration = Duration::from_secs(60 * 60);
+
+#[derive(Default)]
+struct AllowedContractsCacheState {
+    contracts: HashSet<String>,
+    last_refresh_attempt: Option<Instant>,
+}
+
+static ALLOWED_CONTRACTS_CACHE: LazyLock<RwLock<AllowedContractsCacheState>> =
+    LazyLock::new(|| RwLock::new(AllowedContractsCacheState::default()));
+
+struct AllowedContractsFetchOutcome {
+    contracts: HashSet<String>,
+    intents_fetch_succeeded: bool,
+    ref_fetch_succeeded: bool,
+}
+
+impl AllowedContractsFetchOutcome {
+    fn has_any_success(&self) -> bool {
+        self.intents_fetch_succeeded || self.ref_fetch_succeeded
+    }
+}
 
 fn extract_intents_contract(asset_id: &str) -> Option<&str> {
     asset_id.strip_prefix("nep141:").or_else(|| {
@@ -101,32 +129,96 @@ fn extract_intents_whitelist_contracts(supported_tokens: &Value) -> HashSet<Stri
     contracts
 }
 
+async fn fetch_external_allowed_contracts(state: &Arc<AppState>) -> AllowedContractsFetchOutcome {
+    let (intents_result, ref_result) = tokio::join!(
+        fetch_supported_tokens_data(state),
+        fetch_whitelisted_tokens(state)
+    );
+
+    let mut contracts = HashSet::new();
+    let intents_fetch_succeeded = match intents_result {
+        Ok(supported_tokens) => {
+            contracts.extend(extract_intents_whitelist_contracts(&supported_tokens));
+            true
+        }
+        Err((_, msg)) => {
+            log::warn!(
+                "Failed to fetch intents whitelist for relay receiver validation: {}",
+                msg
+            );
+            false
+        }
+    };
+
+    let ref_fetch_succeeded = match ref_result {
+        Ok(ref_whitelist) => {
+            contracts.extend(ref_whitelist);
+            true
+        }
+        Err((_, msg)) => {
+            log::warn!(
+                "Failed to fetch Ref whitelist for relay receiver validation: {}",
+                msg
+            );
+            false
+        }
+    };
+
+    AllowedContractsFetchOutcome {
+        contracts,
+        intents_fetch_succeeded,
+        ref_fetch_succeeded,
+    }
+}
+
 async fn fetch_allowed_receiver_contracts(
     state: &Arc<AppState>,
     treasury_id: &AccountId,
-) -> Result<HashSet<String>, (StatusCode, Json<RelayResponse>)> {
+) -> HashSet<String> {
     let mut allowed_contracts = HashSet::new();
+    // Always allow DAO self-calls. We intentionally avoid an "empty allowlist" fallback:
+    // when external whitelist sources are down, add_proposal/act_proposal should still work.
     allowed_contracts.insert(treasury_id.to_string());
 
-    let supported_tokens = fetch_supported_tokens_data(state)
-        .await
-        .map_err(|(_, msg)| {
-            error_response(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to fetch intents whitelist: {}", msg),
-            )
-        })?;
-    allowed_contracts.extend(extract_intents_whitelist_contracts(&supported_tokens));
+    let now = Instant::now();
+    let (cached_contracts, should_refresh) = {
+        let cache_state = ALLOWED_CONTRACTS_CACHE.read().await;
+        let should_refresh = cache_state
+            .last_refresh_attempt
+            .map(|last| now.duration_since(last) >= ALLOWED_CONTRACTS_REFRESH_INTERVAL)
+            .unwrap_or(true);
+        (cache_state.contracts.clone(), should_refresh)
+    };
 
-    let ref_whitelist = fetch_whitelisted_tokens(state).await.map_err(|(_, msg)| {
-        error_response(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Failed to fetch ref whitelist: {}", msg),
-        )
-    })?;
-    allowed_contracts.extend(ref_whitelist);
+    if should_refresh {
+        let fetch_outcome = fetch_external_allowed_contracts(state).await;
 
-    Ok(allowed_contracts)
+        {
+            let mut cache_state = ALLOWED_CONTRACTS_CACHE.write().await;
+            cache_state.last_refresh_attempt = Some(now);
+            // Persist any successful fetch result (full or partial) so we can still enforce
+            // contract validation from cached data during upstream outages.
+            if fetch_outcome.has_any_success() {
+                cache_state.contracts = fetch_outcome.contracts.clone();
+            }
+        }
+
+        if fetch_outcome.has_any_success() {
+            allowed_contracts.extend(fetch_outcome.contracts);
+        } else if !cached_contracts.is_empty() {
+            log::warn!("Using stale allowed receiver contracts cache for relay validation");
+            allowed_contracts.extend(cached_contracts);
+        } else {
+            log::warn!(
+                "Allowed receiver contracts sources are unavailable and no cache exists; only treasury contract is allowed"
+            );
+        }
+
+        return allowed_contracts;
+    }
+
+    allowed_contracts.extend(cached_contracts);
+    allowed_contracts
 }
 
 async fn fetch_treasury_deposit_bond(
@@ -256,7 +348,7 @@ pub async fn relay_delegate_action(
         &signed_delegate_action.delegate_action.actions,
     );
 
-    let allowed_contracts = fetch_allowed_receiver_contracts(&state, &request.treasury_id).await?;
+    let allowed_contracts = fetch_allowed_receiver_contracts(&state, &request.treasury_id).await;
     if !allowed_contracts.contains(action_receiver_id.as_str()) {
         return Err(error_response(
             StatusCode::FORBIDDEN,

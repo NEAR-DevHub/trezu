@@ -110,10 +110,8 @@ export function PageComponentLayout({
             </header>
 
             <main className="flex-1 overflow-y-auto bg-page-bg p-4">
-                <div className="flex flex-col gap-3">
-                    <SystemStatusBanner className="lg:hidden" />
-                    {children}
-                </div>
+                <SystemStatusBanner className="lg:hidden mb-3" />
+                {children}
             </main>
         </div>
     );
