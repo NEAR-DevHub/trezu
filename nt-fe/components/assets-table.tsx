@@ -1639,7 +1639,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                 }
                             }}
                         >
-                            <SelectTrigger className="h-auto w-auto border-0 bg-transparent p-0 text-sm font-medium text-foreground shadow-none hover:bg-transparent focus-visible:ring-0 [&_svg]:text-foreground! [&_svg]:opacity-100">
+                            <SelectTrigger className="h-auto w-auto border-0 bg-transparent px-2 py-1 text-sm font-medium text-foreground shadow-none hover:bg-transparent focus-visible:ring-0 [&_svg]:text-foreground! [&_svg]:opacity-100">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent align="start" className="min-w-56">

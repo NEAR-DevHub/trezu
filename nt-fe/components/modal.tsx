@@ -113,7 +113,7 @@ function DialogHeader({
         <BaseDialogHeader
             {...props}
             className={cn(
-                "border-b border-border px-3 pb-3.5 -mx-3 flex flex-row items-center justify-between text-center gap-4",
+                "border-b border-border px-3 pb-3.5 -mx-3 flex flex-row items-center justify-between text-center gap-4 sticky top-0 z-10 bg-card sm:static",
                 className,
             )}
         >
