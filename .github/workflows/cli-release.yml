@@ -13,7 +13,7 @@
 # Note that the GitHub Release will be created with a generated
 # title/body based on your changelogs.
 
-name: Release
+name: Release Trezu CLI prebuilt binaries
 permissions:
   "contents": "write"
 
@@ -39,7 +39,13 @@ permissions:
 # If there's a prerelease-style suffix to the version, then the release(s)
 # will be marked as a prerelease.
 on:
-  pull_request:
+  workflow_call:
+    inputs:
+      tag:
+        description: Release Tag
+        required: true
+        default: dry-run
+        type: string
   workflow_dispatch:
     inputs:
       tag:
