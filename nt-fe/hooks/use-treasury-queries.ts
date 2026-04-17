@@ -101,13 +101,16 @@ export function useTokenBalance(
     tokenId: string | null | undefined,
 ) {
     const { data: assets, ...rest } = useAssets(accountId);
-
     const balance = assets?.tokens.find(
-        (asset) => asset.contractId === tokenId,
+        (asset) =>
+            asset.contractId === tokenId ||
+            (tokenId === "near" &&
+                asset.contractId == null &&
+                asset.residency === "Near"),
     )?.balance;
 
     return {
-        data: balance ? "0" : availableBalance(balance!),
+        data: balance ? availableBalance(balance!) : "0",
     };
 }
 
