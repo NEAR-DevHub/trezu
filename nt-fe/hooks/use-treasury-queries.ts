@@ -104,7 +104,7 @@ export function useTokenBalance(
     const balance = assets?.tokens.find(
         (asset) =>
             asset.contractId === tokenId ||
-            (tokenId === "near" &&
+            (tokenId?.toLowerCase() === "near" &&
                 asset.contractId == null &&
                 asset.residency === "Near"),
     )?.balance;

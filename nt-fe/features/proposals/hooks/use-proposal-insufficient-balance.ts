@@ -41,7 +41,7 @@ export function useProposalInsufficientBalance(
             const token = assets.tokens.find(
                 (t) =>
                     t.contractId === requiredFunds.tokenId ||
-                    (requiredFunds.tokenId === "near" &&
+                    (requiredFunds.tokenId.toLowerCase() === "near" &&
                         t.contractId == null &&
                         t.residency === "Near"),
             );
