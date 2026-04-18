@@ -267,7 +267,11 @@ export function TreasurySelector({
                             if (!creationAvailable) {
                                 setShowLowBalanceModal(true);
                             } else {
-                                router.push("/app/new");
+                                router.push(
+                                    treasuries?.length > 0
+                                        ? "/app/new?skipSurvey=1"
+                                        : "/app/new",
+                                );
                             }
                         }}
                     >

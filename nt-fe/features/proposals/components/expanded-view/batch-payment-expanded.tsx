@@ -188,6 +188,28 @@ export function BatchPaymentRequestExpanded({
     // Use live data if auto-refetching, otherwise use initial data
     const activeBatchData = shouldAutoRefetch ? liveBatchData : batchData;
 
+    let tokenId = data.tokenId;
+    if (activeBatchData?.tokenId?.toLowerCase() === "native") {
+        tokenId = "near";
+    }
+    const { data: tokenData } = useToken(tokenId);
+
+    const representativeRecipient = activeBatchData?.payments[0]?.recipient;
+    const {
+        data: dynamicFeeData,
+        isError: hasFeeError,
+        isIntentsCrossChainToken,
+    } = useIntentsWithdrawalFee({
+        token: tokenData
+            ? {
+                  address: tokenId,
+                  network: tokenData.network || "near",
+                  decimals: tokenData.decimals,
+              }
+            : null,
+        destinationAddress: representativeRecipient,
+    });
+
     // Loading state
     if (isLoading) {
         return (
@@ -220,26 +242,6 @@ export function BatchPaymentRequestExpanded({
         );
     }
 
-    let tokenId = data.tokenId;
-    if (activeBatchData?.tokenId?.toLowerCase() === "native") {
-        tokenId = "near";
-    }
-    const { data: tokenData } = useToken(tokenId);
-    const representativeRecipient = activeBatchData.payments[0]?.recipient;
-    const {
-        data: dynamicFeeData,
-        isError: hasFeeError,
-        isIntentsCrossChainToken,
-    } = useIntentsWithdrawalFee({
-        token: tokenData
-            ? {
-                  address: tokenId,
-                  network: tokenData.network || "near",
-                  decimals: tokenData.decimals,
-              }
-            : null,
-        destinationAddress: representativeRecipient,
-    });
     const hasFeeData =
         isIntentsCrossChainToken &&
         !hasFeeError &&

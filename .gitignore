@@ -1,9 +1,9 @@
 node_modules
+target
 .claude
 .env
 .DS_Store
 nt-fe/screenshots/
-sandbox/sandbox-init/target
 .env.local
 nt-be/examples/playwright/test-results/
 nt-be/examples/playwright/fixtures/*.png

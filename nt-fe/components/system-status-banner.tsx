@@ -6,13 +6,17 @@ import { cn } from "@/lib/utils";
 
 interface SystemStatusBannerProps {
     className?: string;
+    isSidebar?: boolean;
 }
 
 function stripHtml(html: string): string {
     return html.replace(/<[^>]*>/g, "").trim();
 }
 
-export function SystemStatusBanner({ className }: SystemStatusBannerProps) {
+export function SystemStatusBanner({
+    className,
+    isSidebar,
+}: SystemStatusBannerProps) {
     const { data: posts } = useSystemStatus();
 
     if (!posts?.length) return null;
@@ -21,9 +25,12 @@ export function SystemStatusBanner({ className }: SystemStatusBannerProps) {
         <div className={cn("flex flex-col gap-2", className)}>
             {posts.map((post) => (
                 <WarningAlert
+                    className={cn(isSidebar && "flex-col gap-2")}
                     key={post.id}
-                    title="Intents Status"
-                    message={stripHtml(post.message)}
+                    title="Under Maintenance"
+                    message={
+                        "We’re currently performing maintenance. Some features may be temporarily unavailable. Please check back soon."
+                    }
                 />
             ))}
         </div>
