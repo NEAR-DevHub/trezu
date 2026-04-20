@@ -1,0 +1,38 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO balance_changes\n        (account_id, token_id, block_height, block_timestamp, block_time,\n         amount, balance_before, balance_after,\n         transaction_hashes, receipt_id, signer_id, receiver_id,\n         counterparty, actions, raw_data, action_kind, method_name)\n        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)\n        ON CONFLICT (account_id, block_height, token_id) DO UPDATE SET\n          amount = EXCLUDED.amount,\n          balance_before = EXCLUDED.balance_before,\n          balance_after = EXCLUDED.balance_after,\n          transaction_hashes = EXCLUDED.transaction_hashes,\n          signer_id = EXCLUDED.signer_id,\n          receiver_id = EXCLUDED.receiver_id,\n          counterparty = EXCLUDED.counterparty,\n          action_kind = EXCLUDED.action_kind,\n          method_name = EXCLUDED.method_name,\n          raw_data = EXCLUDED.raw_data,\n          updated_at = NOW()\n        RETURNING id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Varchar",
+        "Int8",
+        "Int8",
+        "Timestamptz",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "TextArray",
+        "TextArray",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Jsonb",
+        "Jsonb",
+        "Varchar",
+        "Varchar"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "2e77ba6acbe034ecbae517b0f71de50d3d9efd769d73619a18dfb8c2d99b7e38"
+}
