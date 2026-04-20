@@ -124,20 +124,9 @@ async fn test_intents_token_should_not_include_unrelated_tx_hashes(
         fixed_up_to_block
     );
 
-    let network = &state.archival_network;
-    run_maintenance_cycle(
-        &pool,
-        network,
-        fixed_up_to_block,
-        None,
-        None,
-        None,
-        "",
-        None,
-        false,
-    )
-    .await
-    .expect("Maintenance cycle should succeed");
+    run_maintenance_cycle(&state, fixed_up_to_block)
+        .await
+        .expect("Maintenance cycle should succeed");
 
     println!("Maintenance cycle completed");
 
@@ -237,7 +226,7 @@ async fn test_intents_token_should_not_include_unrelated_tx_hashes(
     println!("Cleared transaction_hashes (simulating migration)");
 
     // Now call resolve_missing_tx_hashes — the same function the maintenance worker calls
-    let resolved = resolve_missing_tx_hashes(&pool, network, account_id, 10)
+    let resolved = resolve_missing_tx_hashes(&pool, &state.archival_network, account_id, 10)
         .await
         .expect("resolve_missing_tx_hashes should succeed");
     println!("resolve_missing_tx_hashes resolved {} records", resolved);
