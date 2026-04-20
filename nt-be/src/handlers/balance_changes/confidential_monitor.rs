@@ -227,10 +227,14 @@ async fn insert_detected_swap(
             block_height
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         ON CONFLICT (account_id, solver_transaction_hash) DO UPDATE SET
-            deposit_balance_change_id = COALESCE(detected_swaps.deposit_balance_change_id, EXCLUDED.deposit_balance_change_id),
-            deposit_receipt_id        = COALESCE(detected_swaps.deposit_receipt_id, EXCLUDED.deposit_receipt_id),
-            sent_token_id             = COALESCE(detected_swaps.sent_token_id, EXCLUDED.sent_token_id),
-            sent_amount               = COALESCE(detected_swaps.sent_amount, EXCLUDED.sent_amount)
+            deposit_balance_change_id     = COALESCE(detected_swaps.deposit_balance_change_id, EXCLUDED.deposit_balance_change_id),
+            deposit_receipt_id            = COALESCE(detected_swaps.deposit_receipt_id, EXCLUDED.deposit_receipt_id),
+            sent_token_id                 = COALESCE(detected_swaps.sent_token_id, EXCLUDED.sent_token_id),
+            sent_amount                   = COALESCE(detected_swaps.sent_amount, EXCLUDED.sent_amount),
+            fulfillment_balance_change_id = EXCLUDED.fulfillment_balance_change_id,
+            fulfillment_receipt_id        = EXCLUDED.fulfillment_receipt_id,
+            received_amount               = EXCLUDED.received_amount,
+            block_height                  = EXCLUDED.block_height
         "#,
         account_id,
         solver_transaction_hash,

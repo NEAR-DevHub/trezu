@@ -381,6 +381,11 @@ export function RecentActivity() {
                                             <span className="font-semibold text-general-success-foreground truncate">
                                                 {receivedSymbol}
                                             </span>
+                                            {swap.receivedAmount == null ? (
+                                                <span className="text-xs font-medium text-muted-foreground shrink-0">
+                                                    pending
+                                                </span>
+                                            ) : null}
                                         </>
                                     ) : (
                                         <>
@@ -392,9 +397,11 @@ export function RecentActivity() {
                                             <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                                             <span className="font-semibold text-general-success-foreground hidden sm:inline truncate">
                                                 +
-                                                {formatSmartAmount(
-                                                    swap.receivedAmount,
-                                                )}{" "}
+                                                {swap.receivedAmount
+                                                    ? formatSmartAmount(
+                                                          swap.receivedAmount,
+                                                      )
+                                                    : ""}{" "}
                                                 {receivedSymbol}
                                             </span>
                                             <span className="font-semibold text-general-success-foreground sm:hidden truncate">

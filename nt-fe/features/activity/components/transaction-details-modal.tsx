@@ -166,9 +166,13 @@ export function TransactionDetailsModal({
                                         activity.swap.receivedTokenMetadata
                                             .chainIcons,
                                 }}
-                                amount={formatSmartAmount(
-                                    activity.swap.receivedAmount,
-                                )}
+                                amount={
+                                    activity.swap.receivedAmount
+                                        ? formatSmartAmount(
+                                              activity.swap.receivedAmount,
+                                          )
+                                        : "Pending"
+                                }
                             />
                         </div>
                     ) : (

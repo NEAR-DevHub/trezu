@@ -98,7 +98,7 @@ pub struct SwapInfo {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sent_token_metadata: Option<TokenMetadata>,
     pub received_token_id: String,
-    pub received_amount: BigDecimal,
+    pub received_amount: Option<BigDecimal>,
     pub received_token_metadata: TokenMetadata,
     pub solver_transaction_hash: String,
 }

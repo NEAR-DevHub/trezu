@@ -1445,7 +1445,7 @@ pub struct SwapInfo {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sent_token_metadata: Option<TokenMetadata>,
     pub received_token_id: String,
-    pub received_amount: BigDecimal,
+    pub received_amount: Option<BigDecimal>,
     pub received_token_metadata: TokenMetadata,
     pub solver_transaction_hash: String,
     /// "deposit" for the outgoing leg, "fulfillment" for the incoming leg
@@ -1720,12 +1720,12 @@ pub async fn get_recent_activity(
 
     #[derive(Debug)]
     struct SwapRecord {
-        fulfillment_balance_change_id: i64,
+        fulfillment_balance_change_id: Option<i64>,
         deposit_balance_change_id: Option<i64>,
         sent_token_id: Option<String>,
         sent_amount: Option<BigDecimal>,
         received_token_id: String,
-        received_amount: BigDecimal,
+        received_amount: Option<BigDecimal>,
         solver_transaction_hash: String,
     }
 
@@ -1760,7 +1760,9 @@ pub async fn get_recent_activity(
     let mut swap_map: std::collections::HashMap<i64, (&str, usize)> =
         std::collections::HashMap::new();
     for (i, record) in swap_records.iter().enumerate() {
-        swap_map.insert(record.fulfillment_balance_change_id, ("fulfillment", i));
+        if let Some(fid) = record.fulfillment_balance_change_id {
+            swap_map.insert(fid, ("fulfillment", i));
+        }
         if let Some(deposit_id) = record.deposit_balance_change_id {
             swap_map.insert(deposit_id, ("deposit", i));
         }

@@ -108,9 +108,17 @@ pub async fn handle_confidential_outgoing(
         .get("quoteRequest")
         .and_then(|q| q.get("originAsset"))
         .and_then(|v| v.as_str());
+    let destination_raw = quote_metadata
+        .get("quoteRequest")
+        .and_then(|q| q.get("destinationAsset"))
+        .and_then(|v| v.as_str());
     let amount_in_raw = quote_metadata
         .get("quote")
         .and_then(|q| q.get("amountIn"))
+        .and_then(|v| v.as_str());
+    let amount_out_raw = quote_metadata
+        .get("quote")
+        .and_then(|q| q.get("amountOut"))
         .and_then(|v| v.as_str());
     let recipient = quote_metadata
         .get("quoteRequest")
@@ -168,7 +176,7 @@ pub async fn handle_confidential_outgoing(
         "source": "goldsky+1click",
     });
 
-    sqlx::query!(
+    let deposit_row = sqlx::query!(
         r#"
         INSERT INTO balance_changes
         (account_id, token_id, block_height, block_timestamp, block_time,
@@ -186,6 +194,7 @@ pub async fn handle_confidential_outgoing(
           action_kind = EXCLUDED.action_kind,
           method_name = EXCLUDED.method_name,
           updated_at = NOW()
+        RETURNING id
         "#,
         dao_id,
         storage_token_id,
@@ -205,7 +214,7 @@ pub async fn handle_confidential_outgoing(
         "TRANSFER",
         Some("act_proposal"),
     )
-    .execute(app_pool)
+    .fetch_one(app_pool)
     .await?;
 
     log::info!(
@@ -215,6 +224,76 @@ pub async fn handle_confidential_outgoing(
         amount_in,
         payload_hash,
     );
+
+    // Pre-seed detected_swaps when the 1Click quote involves a token hop
+    // (destinationAsset differs from originAsset). This lets the UI render the
+    // outgoing leg as a swap immediately; the poller fills in fulfillment_* on
+    // match via the ON CONFLICT upsert.
+    if let Some(destination_raw) = destination_raw
+        && destination_raw != origin_raw
+    {
+        let received_storage_id = format!("intents.near:{}", destination_raw);
+        let expected_out = match amount_out_raw {
+            Some(raw) => match ensure_ft_metadata(app_pool, network, &received_storage_id).await {
+                Ok(decimals) => convert_raw_to_decimal(raw, decimals).ok(),
+                Err(e) => {
+                    log::warn!(
+                        "[goldsky-enrichment] ensure_ft_metadata({}) failed: {} — seeding detected_swaps without received_amount",
+                        received_storage_id,
+                        e
+                    );
+                    None
+                }
+            },
+            None => None,
+        };
+
+        let synthetic_solver_tx = row
+            .correlation_id
+            .clone()
+            .unwrap_or_else(|| format!("1click:{}", payload_hash));
+
+        if let Err(e) = sqlx::query!(
+            r#"
+            INSERT INTO detected_swaps (
+                account_id,
+                solver_transaction_hash,
+                deposit_balance_change_id,
+                deposit_receipt_id,
+                sent_token_id,
+                sent_amount,
+                received_token_id,
+                received_amount,
+                block_height
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            ON CONFLICT (account_id, solver_transaction_hash) DO UPDATE SET
+                deposit_balance_change_id = COALESCE(detected_swaps.deposit_balance_change_id, EXCLUDED.deposit_balance_change_id),
+                sent_token_id             = COALESCE(detected_swaps.sent_token_id, EXCLUDED.sent_token_id),
+                sent_amount               = COALESCE(detected_swaps.sent_amount, EXCLUDED.sent_amount),
+                received_token_id         = COALESCE(detected_swaps.received_token_id, EXCLUDED.received_token_id),
+                received_amount           = COALESCE(detected_swaps.received_amount, EXCLUDED.received_amount)
+            "#,
+            dao_id,
+            synthetic_solver_tx,
+            Some(deposit_row.id),
+            None::<String>,
+            Some(&storage_token_id),
+            Some(&amount_in),
+            received_storage_id,
+            expected_out,
+            block_height,
+        )
+        .execute(app_pool)
+        .await
+        {
+            log::warn!(
+                "[goldsky-enrichment] pre-seed detected_swaps failed for dao={} payload_hash={}: {}",
+                dao_id,
+                payload_hash,
+                e
+            );
+        }
+    }
 
     Ok(true)
 }
