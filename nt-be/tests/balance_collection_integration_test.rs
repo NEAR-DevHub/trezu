@@ -473,14 +473,17 @@ async fn test_near_snapshot_with_existing_intents_tokens(pool: PgPool) -> sqlx::
     let network = common::create_archival_network();
     let up_to_block = 182_490_734i64; // Current block as of Jan 24, 2026
 
-    run_maintenance_cycle(&common::build_test_state(pool.clone()), up_to_block)
-        .await
-        .map_err(|e| {
-            sqlx::Error::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                e.to_string(),
-            ))
-        })?;
+    run_maintenance_cycle(
+        &common::build_test_state_archival(pool.clone()),
+        up_to_block,
+    )
+    .await
+    .map_err(|e| {
+        sqlx::Error::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            e.to_string(),
+        ))
+    })?;
 
     // Verify intents tokens were discovered
     let intents_tokens: Vec<String> = sqlx::query_scalar(
@@ -592,14 +595,17 @@ async fn test_continuous_monitoring(pool: PgPool) -> sqlx::Result<()> {
     println!("Running monitoring cycle...");
     let network = common::create_archival_network();
     let up_to_block = 177_000_000i64;
-    run_maintenance_cycle(&common::build_test_state(pool.clone()), up_to_block)
-        .await
-        .map_err(|e| {
-            sqlx::Error::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                e.to_string(),
-            ))
-        })?;
+    run_maintenance_cycle(
+        &common::build_test_state_archival(pool.clone()),
+        up_to_block,
+    )
+    .await
+    .map_err(|e| {
+        sqlx::Error::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            e.to_string(),
+        ))
+    })?;
 
     // Verify last_synced_at was updated
     let after_sync = sqlx::query!(
@@ -653,14 +659,17 @@ async fn test_continuous_monitoring(pool: PgPool) -> sqlx::Result<()> {
     let sync_time = after_sync.last_synced_at;
 
     // Run another cycle
-    run_maintenance_cycle(&common::build_test_state(pool.clone()), up_to_block)
-        .await
-        .map_err(|e| {
-            sqlx::Error::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                e.to_string(),
-            ))
-        })?;
+    run_maintenance_cycle(
+        &common::build_test_state_archival(pool.clone()),
+        up_to_block,
+    )
+    .await
+    .map_err(|e| {
+        sqlx::Error::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            e.to_string(),
+        ))
+    })?;
 
     // Verify last_synced_at didn't change (account was disabled)
     let after_disabled = sqlx::query!(
@@ -891,14 +900,17 @@ async fn test_ft_token_discovery_through_monitoring(pool: PgPool) -> sqlx::Resul
     println!("\n=== First Monitoring Cycle ===");
     println!("Up to block: {}", up_to_block);
 
-    run_maintenance_cycle(&common::build_test_state(pool.clone()), up_to_block)
-        .await
-        .map_err(|e| {
-            sqlx::Error::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                e.to_string(),
-            ))
-        })?;
+    run_maintenance_cycle(
+        &common::build_test_state_archival(pool.clone()),
+        up_to_block,
+    )
+    .await
+    .map_err(|e| {
+        sqlx::Error::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            e.to_string(),
+        ))
+    })?;
 
     // Check how many NEAR records were collected
     let near_count: (i64,) = sqlx::query_as(
@@ -931,14 +943,17 @@ async fn test_ft_token_discovery_through_monitoring(pool: PgPool) -> sqlx::Resul
     .await?;
 
     // Run second monitoring cycle - should pick up discovered FT tokens
-    run_maintenance_cycle(&common::build_test_state(pool.clone()), up_to_block)
-        .await
-        .map_err(|e| {
-            sqlx::Error::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                e.to_string(),
-            ))
-        })?;
+    run_maintenance_cycle(
+        &common::build_test_state_archival(pool.clone()),
+        up_to_block,
+    )
+    .await
+    .map_err(|e| {
+        sqlx::Error::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            e.to_string(),
+        ))
+    })?;
 
     println!("\n=== Verifying Automatic FT Token Discovery ===");
 
@@ -1359,9 +1374,12 @@ async fn test_discover_intents_tokens_webassemblymusic_treasury(pool: PgPool) ->
     .await?;
 
     // Run monitor cycle - should discover intents tokens and find balance changes
-    run_maintenance_cycle(&common::build_test_state(pool.clone()), monitor_block)
-        .await
-        .expect("Monitor cycle should complete");
+    run_maintenance_cycle(
+        &common::build_test_state_archival(pool.clone()),
+        monitor_block,
+    )
+    .await
+    .expect("Monitor cycle should complete");
 
     // Hard assertion: Must discover BTC intents token
     let btc_token = "intents.near:nep141:btc.omft.near";
@@ -1387,9 +1405,12 @@ async fn test_discover_intents_tokens_webassemblymusic_treasury(pool: PgPool) ->
     )
     .execute(&pool)
     .await?;
-    run_maintenance_cycle(&common::build_test_state(pool.clone()), monitor_block)
-        .await
-        .expect("Second monitor cycle should complete");
+    run_maintenance_cycle(
+        &common::build_test_state_archival(pool.clone()),
+        monitor_block,
+    )
+    .await
+    .expect("Second monitor cycle should complete");
 
     // Hard assertion: Must find the BTC balance change at block 165324279
     let btc_change = sqlx::query!(
@@ -1499,14 +1520,17 @@ async fn test_fastnear_ft_token_discovery(pool: PgPool) -> sqlx::Result<()> {
     println!("\n=== First Monitoring Cycle (with FastNear discovery) ===");
     println!("Up to block: {}", up_to_block);
 
-    run_maintenance_cycle(&common::build_test_state(pool.clone()), up_to_block)
-        .await
-        .map_err(|e| {
-            sqlx::Error::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                e.to_string(),
-            ))
-        })?;
+    run_maintenance_cycle(
+        &common::build_test_state_archival(pool.clone()),
+        up_to_block,
+    )
+    .await
+    .map_err(|e| {
+        sqlx::Error::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            e.to_string(),
+        ))
+    })?;
 
     // Check that USDC token was discovered via FastNear
     let usdc_count: (i64,) = sqlx::query_as(
@@ -1560,14 +1584,17 @@ async fn test_fastnear_ft_token_discovery(pool: PgPool) -> sqlx::Result<()> {
     )
     .execute(&pool)
     .await?;
-    run_maintenance_cycle(&common::build_test_state(pool.clone()), up_to_block)
-        .await
-        .map_err(|e| {
-            sqlx::Error::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                e.to_string(),
-            ))
-        })?;
+    run_maintenance_cycle(
+        &common::build_test_state_archival(pool.clone()),
+        up_to_block,
+    )
+    .await
+    .map_err(|e| {
+        sqlx::Error::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            e.to_string(),
+        ))
+    })?;
 
     // Check that USDC gap-filled records now exist (not just SNAPSHOT)
     let usdc_non_snapshot: Vec<(String,)> = sqlx::query_as(

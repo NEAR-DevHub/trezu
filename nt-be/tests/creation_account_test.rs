@@ -100,7 +100,7 @@ async fn test_monitor_cycle_creation_account(pool: PgPool) -> sqlx::Result<()> {
     println!("Account: {}", ACCOUNT_ID);
 
     // Register the account via the API (same as frontend's openTreasury)
-    let app_state = nt_be::AppState::builder()
+    let mut app_state = nt_be::AppState::builder()
         .db_pool(pool.clone())
         .build()
         .await
@@ -110,6 +110,8 @@ async fn test_monitor_cycle_creation_account(pool: PgPool) -> sqlx::Result<()> {
                 e.to_string(),
             ))
         })?;
+    // UP_TO_BLOCK is historical — route all RPC through the archival endpoint.
+    app_state.network = app_state.archival_network.clone();
     let app_state_arc = Arc::new(app_state);
     let app = nt_be::routes::create_routes(app_state_arc.clone());
 

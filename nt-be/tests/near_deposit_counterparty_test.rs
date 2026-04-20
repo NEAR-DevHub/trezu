@@ -27,7 +27,7 @@ use tower::ServiceExt;
 /// Run one maintenance cycle with minimal configuration (no gap filling, no staking).
 /// This is the production code path — the server calls this every 5 minutes.
 async fn run_maintenance_cycle(pool: &PgPool, _network: &NetworkConfig) {
-    let state = common::build_test_state(pool.clone());
+    let state = common::build_test_state_archival(pool.clone());
     nt_be::handlers::balance_changes::account_monitor::run_maintenance_cycle(&state, 0)
         .await
         .expect("run_maintenance_cycle failed");

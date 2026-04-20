@@ -59,7 +59,7 @@ async fn test_intents_token_should_not_include_unrelated_tx_hashes(
     // The tx hash from an unrelated NEAR/SWEAT/USDT swap for hideon.near
     let unrelated_tx = "GMNc4frysxebrScso3pqp4mrsEQ746avXsDLh5rYS1Dj";
 
-    let state = Arc::new(common::build_test_state(pool.clone()));
+    let state = Arc::new(common::build_test_state_archival(pool.clone()));
 
     println!("\n=== Regression Test: Spurious Transaction Hashes on Intents Tokens ===\n");
     println!("Account:  {}", account_id);

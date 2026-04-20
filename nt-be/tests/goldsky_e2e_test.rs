@@ -626,7 +626,7 @@ async fn test_goldsky_maintenance_webassemblymusic(pool: PgPool) {
             .unwrap();
 
         let _neardata = NeardataClient::from_env();
-        let state = common::build_test_state(pool.clone());
+        let state = common::build_test_state_archival(pool.clone());
         nt_be::handlers::balance_changes::account_monitor::run_maintenance_cycle(
             &state,
             up_to_block,

@@ -77,6 +77,18 @@ pub fn get_fastnear_api_key() -> String {
     std::env::var("FASTNEAR_API_KEY").expect("FASTNEAR_API_KEY must be set in .env")
 }
 
+/// Build a test AppState whose primary `network` is the archival endpoint.
+///
+/// Most integration tests replay historical blocks that the current-head RPC
+/// has pruned, so `run_maintenance_cycle` (which uses `state.network`) needs
+/// to hit the archival RPC. Prefer this over [`build_test_state`] for any
+/// test that calls the maintenance cycle against old blocks.
+pub fn build_test_state_archival(db_pool: sqlx::PgPool) -> AppState {
+    let mut state = build_test_state(db_pool);
+    state.network = state.archival_network.clone();
+    state
+}
+
 /// Build a full AppState for integration tests that need dirty monitor, etc.
 ///
 /// Mirrors `src/utils/test_utils.rs::build_test_state()` but accessible from
