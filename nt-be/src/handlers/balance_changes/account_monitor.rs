@@ -4,6 +4,7 @@ use sqlx::types::chrono::{DateTime, Utc};
 use std::collections::HashSet;
 
 use super::balance::ft::get_balance_at_block as get_ft_balance;
+use super::confidential_monitor::poll_confidential_balances;
 use super::gap_filler::{
     fill_gaps_with_hints, insert_snapshot_record, resolve_missing_action_kind,
     resolve_missing_tx_hashes,
@@ -15,6 +16,7 @@ use super::swap_detector::{
 use super::token_discovery::{fetch_fastnear_ft_tokens, snapshot_intents_tokens};
 use super::transfer_hints::TransferHintService;
 use super::transfer_hints::neardata::NeardataClient;
+use crate::AppState;
 
 /// Compute the effective block floor for gap-filling lookback.
 ///
@@ -66,31 +68,29 @@ async fn get_effective_block_floor(
 /// * `intents_api_url` - Intents Explorer API base URL
 #[allow(clippy::too_many_arguments)]
 pub async fn run_maintenance_cycle(
-    pool: &PgPool,
-    network: &NetworkConfig,
+    app_state: &AppState,
     up_to_block: i64,
-    hint_service: Option<&TransferHintService>,
-    fastnear: Option<(&reqwest::Client, &str)>,
-    intents_api_key: Option<&str>,
-    intents_api_url: &str,
-    neardata: Option<&NeardataClient>,
-    disable_staking_rewards: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Process all enabled accounts; dirty accounts first
-    let accounts: Vec<(String, Option<DateTime<Utc>>)> = sqlx::query_as(
+    let accounts: Vec<(String, Option<DateTime<Utc>>, bool)> = sqlx::query_as(
         r#"
-        SELECT account_id, dirty_at
+        SELECT account_id, dirty_at, is_confidential_account
         FROM monitored_accounts
         WHERE enabled = true
         ORDER BY dirty_at DESC NULLS LAST
         "#,
     )
-    .fetch_all(pool)
+    .fetch_all(&app_state.db_pool)
     .await?;
 
     // Correct NEAR transfer counterparties unconditionally — runs even if no
     // monitored accounts are registered, so pre-existing wrong records are fixed.
-    match super::counterparty_correction::correct_near_counterparties(pool, network).await {
+    match super::counterparty_correction::correct_near_counterparties(
+        &app_state.db_pool,
+        &app_state.network,
+    )
+    .await
+    {
         Ok(count) if count > 0 => {
             log::info!(
                 "[maintenance] Corrected {} NEAR transfer counterparties",
@@ -112,16 +112,38 @@ pub async fn run_maintenance_cycle(
         accounts.len()
     );
 
-    for (account_id, original_dirty_at) in &accounts {
+    for (account_id, original_dirty_at, is_confidential) in &accounts {
         log::info!("[maintenance] Processing {}", account_id);
 
-        // 1. Discover new FT tokens via FastNear
-        if let Some((http_client, api_key)) = fastnear {
+        if *is_confidential {
+            // Confidential treasuries: poll 1Click API and diff against stored balances.
+            // No on-chain discovery, gap filling, or staking — balances live off-chain.
+            match poll_confidential_balances(&app_state, account_id, up_to_block).await {
+                Ok(count) if count > 0 => {
+                    log::info!(
+                        "[maintenance] {}: Recorded {} confidential balance changes",
+                        account_id,
+                        count
+                    );
+                }
+                Err(e) => {
+                    log::warn!(
+                        "[maintenance] {}: Error polling confidential balances: {}",
+                        account_id,
+                        e
+                    );
+                }
+                _ => {}
+            }
+        } else {
+            // Regular treasury: full on-chain pipeline
+
+            // 1. Discover new FT tokens via FastNear
             match discover_ft_tokens_from_fastnear(
-                pool,
-                network,
-                http_client,
-                api_key,
+                &app_state.db_pool,
+                &app_state.network,
+                &app_state.http_client,
+                &app_state.env_vars.fastnear_api_key,
                 account_id,
                 up_to_block,
             )
@@ -143,233 +165,276 @@ pub async fn run_maintenance_cycle(
                 }
                 _ => {}
             }
-        }
 
-        // 2. Discover FT tokens from receipts
-        match discover_ft_tokens_from_receipts(pool, network, account_id, up_to_block).await {
-            Ok(count) if count > 0 => {
-                log::info!(
-                    "[maintenance] {}: Discovered {} new FT tokens from receipts",
-                    account_id,
-                    count
-                );
-            }
-            Err(e) => {
-                log::warn!(
-                    "[maintenance] {}: Error discovering FT tokens from receipts: {}",
-                    account_id,
-                    e
-                );
-            }
-            _ => {}
-        }
-
-        // 3. Discover intents tokens
-        match discover_intents_tokens(pool, network, account_id, up_to_block).await {
-            Ok(count) if count > 0 => {
-                log::info!(
-                    "[maintenance] {}: Discovered {} new intents tokens",
-                    account_id,
-                    count
-                );
-            }
-            Err(e) => {
-                log::warn!(
-                    "[maintenance] {}: Error discovering intents tokens: {}",
-                    account_id,
-                    e
-                );
-            }
-            _ => {}
-        }
-
-        // 4. Determine effective block floor (creation block ∨ maintenance_block_floor)
-        let effective_floor = get_effective_block_floor(pool, account_id).await?;
-        if let Some(block) = effective_floor {
-            log::debug!(
-                "[maintenance] {}: Effective block floor: {}",
+            // 2. Discover FT tokens from receipts
+            match discover_ft_tokens_from_receipts(
+                &app_state.db_pool,
+                &app_state.network,
                 account_id,
-                block,
-            );
-        }
-
-        // 5. Fill gaps for all tokens
-        let mut tokens: Vec<String> = sqlx::query_scalar(
-            r#"
-            SELECT DISTINCT token_id
-            FROM balance_changes
-            WHERE account_id = $1 AND token_id IS NOT NULL
-            ORDER BY token_id
-            "#,
-        )
-        .bind(account_id)
-        .fetch_all(pool)
-        .await?;
-
-        if !tokens.contains(&"near".to_string()) {
-            tokens.push("near".to_string());
-        }
-
-        let mut total_filled = 0;
-        for token_id in &tokens {
-            if is_staking_token(token_id) {
-                continue;
-            }
-
-            match fill_gaps_with_hints(
-                pool,
-                network,
-                account_id,
-                token_id,
                 up_to_block,
-                hint_service,
-                effective_floor,
-                neardata,
             )
             .await
             {
-                Ok(filled) => {
-                    if !filled.is_empty() {
-                        log::info!(
-                            "[maintenance] {}/{}: Filled {} gaps",
-                            account_id,
-                            token_id,
-                            filled.len()
-                        );
-                        total_filled += filled.len();
-                    }
-                }
-                Err(e) => {
-                    log::error!(
-                        "[maintenance] {}/{}: Error filling gaps: {}",
-                        account_id,
-                        token_id,
-                        e
-                    );
-                }
-            }
-        }
-
-        if total_filled > 0 {
-            log::info!(
-                "[maintenance] {}: Filled {} total gaps across all tokens",
-                account_id,
-                total_filled
-            );
-        }
-
-        // 5. Resolve missing transaction hashes
-        match resolve_missing_tx_hashes(pool, network, account_id, 10).await {
-            Ok(count) if count > 0 => {
-                log::info!(
-                    "[maintenance] {}: Resolved {} missing tx hashes",
-                    account_id,
-                    count
-                );
-            }
-            Err(e) => {
-                log::warn!(
-                    "[maintenance] {}: Error resolving missing tx hashes: {}",
-                    account_id,
-                    e
-                );
-            }
-            _ => {}
-        }
-
-        // 6. Resolve missing action_kind
-        match resolve_missing_action_kind(pool, network, account_id, 10).await {
-            Ok(count) if count > 0 => {
-                log::info!(
-                    "[maintenance] {}: Resolved {} missing action_kind",
-                    account_id,
-                    count
-                );
-            }
-            Err(e) => {
-                log::warn!(
-                    "[maintenance] {}: Error resolving missing action_kind: {}",
-                    account_id,
-                    e
-                );
-            }
-            _ => {}
-        }
-
-        // 7. Detect and store swaps
-        match detect_swaps_from_api(pool, account_id, intents_api_key, intents_api_url).await {
-            Ok(swaps) => {
-                if !swaps.is_empty() {
-                    match store_detected_swaps(pool, &swaps).await {
-                        Ok(inserted) if inserted > 0 => {
-                            log::info!(
-                                "[maintenance] {}: Detected and stored {} new swaps",
-                                account_id,
-                                inserted
-                            );
-                        }
-                        Err(e) => {
-                            log::error!(
-                                "[maintenance] {}: Error storing detected swaps: {}",
-                                account_id,
-                                e
-                            );
-                        }
-                        _ => {}
-                    }
-                }
-            }
-            Err(e) => {
-                log::error!("[maintenance] {}: Error detecting swaps: {}", account_id, e);
-            }
-        }
-
-        // 8. Classify DAO proposal-based swap deposits
-        match classify_proposal_swap_deposits(pool, network, account_id).await {
-            Ok(count) if count > 0 => {
-                log::info!(
-                    "[maintenance] {}: Classified {} proposal swap deposits",
-                    account_id,
-                    count
-                );
-            }
-            Err(e) => {
-                log::warn!(
-                    "[maintenance] {}: Error classifying proposal swap deposits: {}",
-                    account_id,
-                    e
-                );
-            }
-            _ => {}
-        }
-
-        // 9. Track staking rewards
-        if !disable_staking_rewards {
-            match track_and_fill_staking_rewards(pool, network, account_id, up_to_block).await {
-                Ok(records_created) if records_created > 0 => {
+                Ok(count) if count > 0 => {
                     log::info!(
-                        "[maintenance] {}: Created {} staking reward records",
+                        "[maintenance] {}: Discovered {} new FT tokens from receipts",
                         account_id,
-                        records_created
+                        count
                     );
                 }
                 Err(e) => {
                     log::warn!(
-                        "[maintenance] {}: Error tracking staking rewards: {}",
+                        "[maintenance] {}: Error discovering FT tokens from receipts: {}",
                         account_id,
                         e
                     );
                 }
                 _ => {}
             }
-        }
 
-        // 10. Update last_synced_at
+            // 3. Discover intents tokens
+            match discover_intents_tokens(
+                &app_state.db_pool,
+                &app_state.network,
+                account_id,
+                up_to_block,
+            )
+            .await
+            {
+                Ok(count) if count > 0 => {
+                    log::info!(
+                        "[maintenance] {}: Discovered {} new intents tokens",
+                        account_id,
+                        count
+                    );
+                }
+                Err(e) => {
+                    log::warn!(
+                        "[maintenance] {}: Error discovering intents tokens: {}",
+                        account_id,
+                        e
+                    );
+                }
+                _ => {}
+            }
+
+            // 4. Determine effective block floor (creation block ∨ maintenance_block_floor)
+            let effective_floor = get_effective_block_floor(&app_state.db_pool, account_id).await?;
+            if let Some(block) = effective_floor {
+                log::debug!(
+                    "[maintenance] {}: Effective block floor: {}",
+                    account_id,
+                    block,
+                );
+            }
+
+            // 5. Fill gaps for all tokens
+            let mut tokens: Vec<String> = sqlx::query_scalar(
+                r#"
+            SELECT DISTINCT token_id
+            FROM balance_changes
+            WHERE account_id = $1 AND token_id IS NOT NULL
+            ORDER BY token_id
+            "#,
+            )
+            .bind(account_id)
+            .fetch_all(&app_state.db_pool)
+            .await?;
+
+            if !tokens.contains(&"near".to_string()) {
+                tokens.push("near".to_string());
+            }
+
+            let mut total_filled = 0;
+            for token_id in &tokens {
+                if is_staking_token(token_id) {
+                    continue;
+                }
+
+                match fill_gaps_with_hints(
+                    &app_state.db_pool,
+                    &app_state.network,
+                    account_id,
+                    token_id,
+                    up_to_block,
+                    app_state.transfer_hint_service.as_deref(),
+                    effective_floor,
+                    app_state.neardata_client.as_ref(),
+                )
+                .await
+                {
+                    Ok(filled) => {
+                        if !filled.is_empty() {
+                            log::info!(
+                                "[maintenance] {}/{}: Filled {} gaps",
+                                account_id,
+                                token_id,
+                                filled.len()
+                            );
+                            total_filled += filled.len();
+                        }
+                    }
+                    Err(e) => {
+                        log::error!(
+                            "[maintenance] {}/{}: Error filling gaps: {}",
+                            account_id,
+                            token_id,
+                            e
+                        );
+                    }
+                }
+            }
+
+            if total_filled > 0 {
+                log::info!(
+                    "[maintenance] {}: Filled {} total gaps across all tokens",
+                    account_id,
+                    total_filled
+                );
+            }
+
+            // 6. Resolve missing transaction hashes
+            match resolve_missing_tx_hashes(&app_state.db_pool, &app_state.network, account_id, 10)
+                .await
+            {
+                Ok(count) if count > 0 => {
+                    log::info!(
+                        "[maintenance] {}: Resolved {} missing tx hashes",
+                        account_id,
+                        count
+                    );
+                }
+                Err(e) => {
+                    log::warn!(
+                        "[maintenance] {}: Error resolving missing tx hashes: {}",
+                        account_id,
+                        e
+                    );
+                }
+                _ => {}
+            }
+
+            // 7. Resolve missing action_kind
+            match resolve_missing_action_kind(
+                &app_state.db_pool,
+                &app_state.network,
+                account_id,
+                10,
+            )
+            .await
+            {
+                Ok(count) if count > 0 => {
+                    log::info!(
+                        "[maintenance] {}: Resolved {} missing action_kind",
+                        account_id,
+                        count
+                    );
+                }
+                Err(e) => {
+                    log::warn!(
+                        "[maintenance] {}: Error resolving missing action_kind: {}",
+                        account_id,
+                        e
+                    );
+                }
+                _ => {}
+            }
+
+            // 8. Detect and store swaps
+            match detect_swaps_from_api(
+                &app_state.db_pool,
+                account_id,
+                app_state.env_vars.intents_explorer_api_key.as_deref(),
+                &app_state.env_vars.intents_explorer_api_url,
+            )
+            .await
+            {
+                Ok(swaps) => {
+                    if !swaps.is_empty() {
+                        match store_detected_swaps(&app_state.db_pool, &swaps).await {
+                            Ok(inserted) if inserted > 0 => {
+                                log::info!(
+                                    "[maintenance] {}: Detected and stored {} new swaps",
+                                    account_id,
+                                    inserted
+                                );
+                            }
+                            Err(e) => {
+                                log::error!(
+                                    "[maintenance] {}: Error storing detected swaps: {}",
+                                    account_id,
+                                    e
+                                );
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                Err(e) => {
+                    log::error!("[maintenance] {}: Error detecting swaps: {}", account_id, e);
+                }
+            }
+
+            // 9. Classify DAO proposal-based swap deposits
+            match classify_proposal_swap_deposits(
+                &app_state.db_pool,
+                &app_state.network,
+                account_id,
+            )
+            .await
+            {
+                Ok(count) if count > 0 => {
+                    log::info!(
+                        "[maintenance] {}: Classified {} proposal swap deposits",
+                        account_id,
+                        count
+                    );
+                }
+                Err(e) => {
+                    log::warn!(
+                        "[maintenance] {}: Error classifying proposal swap deposits: {}",
+                        account_id,
+                        e
+                    );
+                }
+                _ => {}
+            }
+
+            // 10. Track staking rewards
+            if !app_state.env_vars.disable_staking_rewards {
+                match track_and_fill_staking_rewards(
+                    &app_state.db_pool,
+                    &app_state.network,
+                    account_id,
+                    up_to_block,
+                )
+                .await
+                {
+                    Ok(records_created) if records_created > 0 => {
+                        log::info!(
+                            "[maintenance] {}: Created {} staking reward records",
+                            account_id,
+                            records_created
+                        );
+                    }
+                    Err(e) => {
+                        log::warn!(
+                            "[maintenance] {}: Error tracking staking rewards: {}",
+                            account_id,
+                            e
+                        );
+                    }
+                    _ => {}
+                }
+            }
+        } // end regular treasury
+
+        // 11. Update last_synced_at
         if let Err(e) = sqlx::query!(
             "UPDATE monitored_accounts SET last_synced_at = NOW() WHERE account_id = $1",
             account_id
         )
-        .execute(pool)
+        .execute(&app_state.db_pool)
         .await
         {
             log::error!(
@@ -386,7 +451,7 @@ pub async fn run_maintenance_cycle(
                 account_id,
                 dirty_at,
             )
-            .execute(pool)
+            .execute(&app_state.db_pool)
             .await;
 
             match result {
@@ -798,21 +863,9 @@ mod tests {
     #[tokio::test]
     async fn test_maintenance_cycle_with_no_dirty_accounts() {
         let state = crate::utils::test_utils::init_test_state().await;
-        let network = NetworkConfig::mainnet();
 
         // Should not error with no dirty accounts
-        let result = run_maintenance_cycle(
-            &state.db_pool,
-            &network,
-            177_000_000,
-            state.transfer_hint_service.as_deref(),
-            None,
-            None,
-            "",
-            None,
-            false,
-        )
-        .await;
+        let result = run_maintenance_cycle(&state, 177_000_000).await;
         assert!(result.is_ok());
     }
 }

@@ -45,7 +45,7 @@ async fn async_main() {
             let interval_secs = std::env::var("MAINTENANCE_INTERVAL_SECONDS")
                 .ok()
                 .and_then(|s| s.parse().ok())
-                .unwrap_or(300u64); // default 5 minutes
+                .unwrap_or(60); // default 60 seconds
             let initial_delay_secs = std::env::var("MAINTENANCE_INITIAL_DELAY_SECONDS")
                 .ok()
                 .and_then(|s| s.parse().ok())
@@ -75,22 +75,7 @@ async fn async_main() {
                     }
                 };
 
-                match run_maintenance_cycle(
-                    &state_clone.db_pool,
-                    &state_clone.archival_network,
-                    up_to_block,
-                    state_clone.transfer_hint_service.as_deref(),
-                    Some((
-                        &state_clone.http_client,
-                        &state_clone.env_vars.fastnear_api_key,
-                    )),
-                    state_clone.env_vars.intents_explorer_api_key.as_deref(),
-                    &state_clone.env_vars.intents_explorer_api_url,
-                    state_clone.neardata_client.as_ref(),
-                    state_clone.env_vars.disable_staking_rewards,
-                )
-                .await
-                {
+                match run_maintenance_cycle(&state_clone, up_to_block).await {
                     Ok(()) => {}
                     Err(e) => {
                         log::error!("[maintenance] Cycle failed: {}", e);
