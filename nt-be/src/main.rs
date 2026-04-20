@@ -85,6 +85,40 @@ async fn async_main() {
         });
     }
 
+    // Spawn confidential treasury balance-polling worker (every 5 minutes by default).
+    // Owns the "incoming" side (deposits + solver swap fulfillments) for confidential
+    // DAOs. Outgoing legs are produced by the Goldsky enrichment worker.
+    if !state.env_vars.disable_balance_monitoring {
+        let state_clone = state.clone();
+        tokio::spawn(async move {
+            use nt_be::handlers::balance_changes::confidential_monitor::run_confidential_poll_cycle;
+
+            let interval_secs = std::env::var("CONFIDENTIAL_POLL_INTERVAL_SECONDS")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(300u64); // 5 minutes
+            let initial_delay = std::env::var("CONFIDENTIAL_POLL_INITIAL_DELAY_SECONDS")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(45u64);
+
+            log::info!(
+                "Starting confidential poll worker ({}s interval, {}s initial delay)",
+                interval_secs,
+                initial_delay
+            );
+
+            tokio::time::sleep(Duration::from_secs(initial_delay)).await;
+            let mut timer = tokio::time::interval(Duration::from_secs(interval_secs));
+            loop {
+                timer.tick().await;
+                if let Err(e) = run_confidential_poll_cycle(&state_clone).await {
+                    log::error!("[confidential-poll] cycle failed: {}", e);
+                }
+            }
+        });
+    }
+
     // Spawn background price sync service
     {
         let pool = state.db_pool.clone();

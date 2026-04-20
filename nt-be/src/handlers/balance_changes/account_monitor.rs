@@ -4,7 +4,6 @@ use sqlx::types::chrono::{DateTime, Utc};
 use std::collections::HashSet;
 
 use super::balance::ft::get_balance_at_block as get_ft_balance;
-use super::confidential_monitor::poll_confidential_balances;
 use super::gap_filler::{
     fill_gaps_with_hints, insert_snapshot_record, resolve_missing_action_kind,
     resolve_missing_tx_hashes,
@@ -71,12 +70,15 @@ pub async fn run_maintenance_cycle(
     app_state: &AppState,
     up_to_block: i64,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    // Process all enabled accounts; dirty accounts first
-    let accounts: Vec<(String, Option<DateTime<Utc>>, bool)> = sqlx::query_as(
+    // Process all enabled, non-confidential accounts; dirty accounts first.
+    // Confidential DAOs are handled by a dedicated 5-minute poll worker
+    // (`run_confidential_poll_cycle`) and have no on-chain pipeline to run.
+    let accounts: Vec<(String, Option<DateTime<Utc>>)> = sqlx::query_as(
         r#"
-        SELECT account_id, dirty_at, is_confidential_account
+        SELECT account_id, dirty_at
         FROM monitored_accounts
         WHERE enabled = true
+          AND is_confidential_account = false
         ORDER BY dirty_at DESC NULLS LAST
         "#,
     )
@@ -112,30 +114,10 @@ pub async fn run_maintenance_cycle(
         accounts.len()
     );
 
-    for (account_id, original_dirty_at, is_confidential) in &accounts {
+    for (account_id, original_dirty_at) in &accounts {
         log::info!("[maintenance] Processing {}", account_id);
 
-        if *is_confidential {
-            // Confidential treasuries: poll 1Click API and diff against stored balances.
-            // No on-chain discovery, gap filling, or staking — balances live off-chain.
-            match poll_confidential_balances(&app_state, account_id, up_to_block).await {
-                Ok(count) if count > 0 => {
-                    log::info!(
-                        "[maintenance] {}: Recorded {} confidential balance changes",
-                        account_id,
-                        count
-                    );
-                }
-                Err(e) => {
-                    log::warn!(
-                        "[maintenance] {}: Error polling confidential balances: {}",
-                        account_id,
-                        e
-                    );
-                }
-                _ => {}
-            }
-        } else {
+        {
             // Regular treasury: full on-chain pipeline
 
             // 1. Discover new FT tokens via FastNear
