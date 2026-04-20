@@ -14,7 +14,7 @@ export function CreateBanner({ disabled = false }: { disabled?: boolean }) {
     const router = useRouter();
     const { accountId } = useNear();
     const [isDismissed, setIsDismissed] = useState(true);
-    const { isGuestTreasury, isLoading } = useTreasury();
+    const { isGuestTreasury, isLoading, treasuries } = useTreasury();
 
     useEffect(() => {
         setIsDismissed(
@@ -59,7 +59,13 @@ export function CreateBanner({ disabled = false }: { disabled?: boolean }) {
             <Button
                 variant="secondary"
                 className="w-full bg-card text-card-foreground hover:bg-card/80"
-                onClick={() => router.push("/app/new")}
+                onClick={() =>
+                    router.push(
+                        treasuries?.length > 0
+                            ? "/app/new?skipSurvey=1"
+                            : "/app/new",
+                    )
+                }
             >
                 Create Treasury
             </Button>

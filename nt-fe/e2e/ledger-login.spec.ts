@@ -386,8 +386,8 @@ test("Ledger login flow", async ({ page, context }) => {
     await page.goto("/");
     await page.waitForTimeout(1500); // Pause to show the initial page
 
-    // Click Connect Wallet button
-    await page.getByRole("button", { name: /connect wallet/i }).click();
+    // Click existing-user onboarding option (this triggers wallet connect modal)
+    await page.getByRole("button", { name: /i already use trezu/i }).click();
     await page.waitForTimeout(1000); // Pause to show the button
 
     // Verify wallet selector appears

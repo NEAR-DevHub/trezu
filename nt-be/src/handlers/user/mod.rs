@@ -1,5 +1,4 @@
 pub mod assets;
-pub mod balance;
 pub mod check_account_exists;
 pub mod create;
 pub mod ft_lockups;

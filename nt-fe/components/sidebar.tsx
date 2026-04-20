@@ -9,7 +9,9 @@ import { useSaveTreasuryMutation } from "@/hooks/use-treasury-mutations";
 import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 import { useResponsiveSidebar } from "@/stores/sidebar-store";
+import { ConfidentialBanner } from "@/features/confidential/components/confidential-banner";
 import { CreateBanner } from "@/features/onboarding/components/create-banner";
+import { SystemStatusBanner } from "@/components/system-status-banner";
 import { ApprovalInfo } from "./approval-info";
 import { Button } from "./button";
 import { GuestBadge } from "./guest-badge";
@@ -70,13 +72,13 @@ function NavLink({
                 onClick={onClick}
                 className={cn(
                     "flex relative items-center group justify-between gap-3 text-sm font-medium transition-colors",
-                    showLabels ? "px-3 py-[5.5px]" : "justify-center",
+                    showLabels ? "px-3 py-[5.5px]" : "px-3 justify-center",
                     isActive
                         ? "bg-accent text-accent-foreground"
                         : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                 )}
             >
-                <div className="flex gap-2 w-full justify-between ">
+                <div className="flex gap-2 justify-between">
                     <div className="flex min-w-0 items-center gap-3">
                         <Icon className="size-5 shrink-0" />
                         {showLabels && <span>{label}</span>}
@@ -305,8 +307,18 @@ export function Sidebar({ onClose }: SidebarProps) {
                     })}
                 </nav>
 
-                <div className="hidden lg:block">
+                <div className="hidden lg:flex flex-col w-full justify-center items-center gap-2">
+                    <SystemStatusBanner
+                        className={cn("px-3.5", isReduced && "hidden")}
+                        isSidebar
+                    />
                     <CreateBanner disabled={isReduced} />
+                    <div className={cn(!isReduced && "px-3.5 w-full flex")}>
+                        <ConfidentialBanner
+                            type={isReduced ? "mini" : "default"}
+                            className={cn(isReduced && "size-5")}
+                        />
+                    </div>
                 </div>
 
                 <div

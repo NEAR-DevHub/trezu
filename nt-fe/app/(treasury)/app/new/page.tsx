@@ -12,8 +12,8 @@ import {
     UsersRound,
     Vote,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { type ArrayPath, useForm, useFormContext } from "react-hook-form";
 import z from "zod";
 import { Alert, AlertDescription } from "@/components/alert";
@@ -52,6 +52,12 @@ import { useNear } from "@/stores/near-store";
 import { InfoAlert } from "@/components/info-alert";
 import { TreasuryTypeIcon } from "@/components/icons/shield";
 import {
+    OnboardingQuestionsStep,
+    ONBOARDING_ABOUT_DEFAULT_VALUES,
+    ONBOARDING_ABOUT_SCHEMA,
+    ONBOARDING_QUESTIONNAIRE_STEP_COUNT,
+} from "@/features/onboarding/components/onboarding-questions-step";
+import {
     Card,
     CardContent,
     CardDescription,
@@ -61,10 +67,10 @@ import {
 } from "@/components/ui/card";
 import { Pill } from "@/components/pill";
 import { cn } from "@/lib/utils";
-import { features } from "@/constants/features";
 
 const treasuryFormSchema = z
     .object({
+        about: ONBOARDING_ABOUT_SCHEMA,
         details: z
             .object({
                 treasuryName: z
@@ -124,7 +130,7 @@ function createClearErrorsOnChange<T>(
     };
 }
 
-function Step1({ handleNext }: StepProps) {
+function Step1({ handleNext, handleBack }: StepProps) {
     const form = useFormContext<TreasuryFormValues>();
     const [accountNameEdited, setAccountNameEdited] = useState(false);
 
@@ -141,7 +147,7 @@ function Step1({ handleNext }: StepProps) {
 
     return (
         <PageCard>
-            <StepperHeader title="Create a Treasury" />
+            <StepperHeader title="Create a Treasury" handleBack={handleBack} />
 
             <FormField
                 control={form.control}
@@ -254,12 +260,12 @@ function Threshold({
     const canIncrement = value < max;
 
     return (
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
             <div className="flex flex-col flex-1 min-w-0">
                 <h3 className="font-medium text-sm">{title}</h3>
                 <p className="text-sm text-muted-foreground">{description}</p>
             </div>
-            <div className="flex items-center gap-4 shrink-0">
+            <div className="flex items-center gap-4 shrink-0 w-full sm:w-auto justify-start sm:justify-end">
                 <Button
                     type="button"
                     variant="secondary"
@@ -292,9 +298,27 @@ function Threshold({
 
 function Step2({ handleBack, handleNext }: StepProps) {
     const form = useFormContext<TreasuryFormValues>();
+    const { accountId } = useNear();
 
     const handleContinue = async () => {
-        const isValid = await form.trigger(["members"]);
+        const members = form.getValues("members");
+        const memberFieldsToValidate = members.flatMap((_, index) => {
+            if (index === 0 && !accountId) return [];
+            return [
+                `members.${index}.accountId`,
+                `members.${index}.roles`,
+            ] as const;
+        });
+
+        const isValid =
+            memberFieldsToValidate.length > 0
+                ? await form.trigger(memberFieldsToValidate as any)
+                : true;
+
+        if (!accountId) {
+            form.clearErrors("members.0.accountId");
+        }
+
         if (isValid && handleNext) {
             trackEvent("treasury-creation-step-2-completed", {
                 members_count: form.getValues("members").length,
@@ -331,13 +355,15 @@ function Step2({ handleBack, handleNext }: StepProps) {
         }
     }, [governanceMembers]);
 
+    useEffect(() => {
+        if (!accountId) {
+            form.clearErrors("members.0.accountId");
+        }
+    }, [accountId, form]);
+
     return (
         <PageCard>
-            <StepperHeader
-                title="Add Members"
-                description="You can add or update members now and edit this later at any time."
-                handleBack={handleBack}
-            />
+            <StepperHeader title="Add Members" handleBack={handleBack} />
 
             <InfoAlert message="You can add or update members now and edit this later at any time." />
 
@@ -580,7 +606,16 @@ const VISUAL = [
     },
 ] as const;
 
-function Step4({ handleBack }: StepProps) {
+function Step4({
+    handleBack,
+    accountId,
+    connectWallet,
+    isConnectingWallet,
+}: StepProps & {
+    accountId: string | null;
+    connectWallet: () => Promise<void>;
+    isConnectingWallet: boolean;
+}) {
     const form = useFormContext<TreasuryFormValues>();
     const { details } = form.watch();
     const { members } = form.watch();
@@ -607,15 +642,15 @@ function Step4({ handleBack }: StepProps) {
             <div className="flex flex-col gap-2">
                 <InputBlock invalid={false}>
                     <div className="flex gap-3 justify-between items-center w-full">
-                        <div className="flex gap-3.5 px-3.5 py-3 items-center">
+                        <div className="flex gap-3.5 px-3.5 py-3 items-center max-md:min-w-0">
                             <div className="size-10 rounded-[7px] bg-foreground/10 flex items-center justify-center">
                                 <Database className="size-5 text-foreground" />
                             </div>
-                            <div className="flex flex-col gap-0.5">
-                                <p className="font-bold text-2xl">
+                            <div className="flex flex-col gap-0.5 max-md:min-w-0">
+                                <p className="font-bold text-2xl max-md:text-xl max-md:truncate">
                                     {details.treasuryName}
                                 </p>
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-xs text-muted-foreground max-md:truncate">
                                     {details.accountName}.sputnik-dao.near
                                 </p>
                             </div>
@@ -632,12 +667,16 @@ function Step4({ handleBack }: StepProps) {
                         governanceThresholdVisual,
                     ].map((item, index) => (
                         <InputBlock invalid={false} key={index}>
-                            <div className="flex flex-col px-3.5 py-3 gap-1 items-center justify-center">
+                            <div className="flex flex-col px-3.5 py-3 gap-1 items-center justify-center max-md:flex-row max-md:gap-2 max-md:justify-start">
                                 {VISUAL[index].icon}
-                                <p className="font-semibold text-xl">{item}</p>
-                                <p className="text-xs text-muted-foreground">
-                                    {VISUAL[index].title}
-                                </p>
+                                <div className="flex flex-col items-center gap-0.5 max-md:flex-row max-md:items-baseline max-md:gap-1.5">
+                                    <p className="font-semibold text-xl">
+                                        {item}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {VISUAL[index].title}
+                                    </p>
+                                </div>
                             </div>
                         </InputBlock>
                     ))}
@@ -657,8 +696,21 @@ function Step4({ handleBack }: StepProps) {
             </Alert>
 
             <InlineNextButton
-                text="Create Treasury"
-                loading={form.formState.isSubmitting}
+                text={
+                    accountId
+                        ? "Create Treasury"
+                        : "Connect Wallet To Create Treasury"
+                }
+                loading={
+                    accountId ? form.formState.isSubmitting : isConnectingWallet
+                }
+                onClick={
+                    accountId
+                        ? undefined
+                        : () => {
+                              connectWallet();
+                          }
+                }
             />
         </PageCard>
     );
@@ -697,23 +749,37 @@ const CONFIDENTIAL_STEPS: CreationStep[] = [
     { id: "finalizing", label: "Finalizing setup", status: "pending" },
 ];
 
+const CREATION_STEP_TITLES = [
+    "About You",
+    "Details",
+    "Members",
+    "Treasury Type",
+    "Review",
+];
+
 export default function NewTreasuryPage() {
-    const { accountId, isInitializing } = useNear();
+    const { accountId, connect, isAuthenticating } = useNear();
     const { treasuries } = useTreasury();
     const { data: creationStatus } = useTreasuryCreationStatus();
     const creationAvailable = creationStatus?.creationAvailable ?? true;
     const router = useRouter();
+    const searchParams = useSearchParams();
     const queryClient = useQueryClient();
+    const shouldSkipSurvey = searchParams.get("skipSurvey") === "1";
     const [step, setStep] = useState(0);
+    const [resumeOnboardingFromBack, setResumeOnboardingFromBack] =
+        useState(false);
     const [progressOpen, setProgressOpen] = useState(false);
     const [progressSteps, setProgressSteps] = useState<CreationStep[]>([]);
     const [progressError, setProgressError] = useState<string | null>(null);
     const [createdTreasuryId, setCreatedTreasuryId] = useState<string | null>(
         null,
     );
+    const previousStepRef = useRef(step);
     const form = useForm<TreasuryFormValues>({
         resolver: zodResolver(treasuryFormSchema),
         defaultValues: {
+            about: ONBOARDING_ABOUT_DEFAULT_VALUES,
             details: {
                 paymentThreshold: 1,
                 governanceThreshold: 1,
@@ -735,13 +801,21 @@ export default function NewTreasuryPage() {
         }
     }, [accountId]);
 
-    useEffect(() => {
-        if (!isInitializing && !accountId) {
-            router.push("/");
-        }
-    }, [accountId, isInitializing]);
+    const handleStepChange = (nextStep: number) => {
+        const previousStep = previousStepRef.current;
+        const isBackFromCreateTreasury =
+            !shouldSkipSurvey && previousStep === 1 && nextStep === 0;
+        setResumeOnboardingFromBack(isBackFromCreateTreasury);
+        previousStepRef.current = nextStep;
+        setStep(nextStep);
+    };
 
     const onSubmit = async (data: TreasuryFormValues) => {
+        if (!accountId) {
+            await connect();
+            return;
+        }
+
         const governors = data.members
             .filter((m) => m.roles.includes("governance"))
             .map((m) => m.accountId);
@@ -846,12 +920,13 @@ export default function NewTreasuryPage() {
                 }}
             />
             <CreationDisabledModal
-                open={!creationAvailable}
+                open={!creationAvailable && false}
                 onClose={() => router.push("/")}
             />
             <PageComponentLayout
                 title="Create Treasury"
                 hideCollapseButton
+                hideLogin
                 description="Set up a new multisig treasury for your team"
                 backButton={treasuries?.length > 0 ? "/" : undefined}
             >
@@ -862,31 +937,38 @@ export default function NewTreasuryPage() {
                     >
                         <StepWizard
                             step={step}
-                            onStepChange={setStep}
+                            onStepChange={handleStepChange}
                             stepTitles={
-                                features.confidential
-                                    ? [
-                                          "Details",
-                                          "Members",
-                                          "Treasury Type",
-                                          "Review",
-                                      ]
-                                    : ["Details", "Members", "Review"]
+                                shouldSkipSurvey
+                                    ? CREATION_STEP_TITLES.slice(1)
+                                    : CREATION_STEP_TITLES
                             }
-                            steps={
-                                features.confidential
-                                    ? [
-                                          { component: Step1 },
-                                          { component: Step2 },
-                                          { component: Step3 },
-                                          { component: Step4 },
-                                      ]
+                            stepLabelClassName="hidden md:inline"
+                            steps={[
+                                ...(shouldSkipSurvey
+                                    ? []
                                     : [
-                                          { component: Step1 },
-                                          { component: Step2 },
-                                          { component: Step4 },
-                                      ]
-                            }
+                                          {
+                                              component:
+                                                  OnboardingQuestionsStep,
+                                              props: {
+                                                  startFromLastQuestion:
+                                                      resumeOnboardingFromBack,
+                                              },
+                                          },
+                                      ]),
+                                { component: Step1 },
+                                { component: Step2 },
+                                { component: Step3 },
+                                {
+                                    component: Step4,
+                                    props: {
+                                        accountId,
+                                        connectWallet: connect,
+                                        isConnectingWallet: isAuthenticating,
+                                    },
+                                },
+                            ]}
                         />
                     </form>
                 </Form>

@@ -65,10 +65,9 @@ export function ReviewPaymentsStep({
     const { treasuryId } = useTreasury();
     const { data: addressBook = [] } = useAddressBook();
     const { data: selectedTokenData } = useToken(selectedToken?.address || "");
-    const { data: selectedTokenBalanceData } = useTokenBalance(
+    const { data: balance } = useTokenBalance(
         treasuryId,
         selectedToken?.address || "",
-        selectedToken?.network || "",
     );
 
     // Validate accounts on mount
@@ -135,9 +134,9 @@ export function ReviewPaymentsStep({
     let totalUSDValue = Big(0);
     let hasInsufficientBalance = false;
 
-    if (selectedTokenBalanceData) {
+    if (balance) {
         try {
-            const balanceBig = Big(selectedTokenBalanceData.balance);
+            const balanceBig = Big(balance);
             const balanceFormattedString = formatBalance(
                 balanceBig.toString(),
                 selectedToken.decimals,
@@ -222,14 +221,9 @@ export function ReviewPaymentsStep({
                                 // To get price per token: balanceUSD / (balance / 10^decimals)
                                 // To get USD value of payment: amount * pricePerToken
                                 let estimatedUSDValue = 0;
-                                if (
-                                    selectedTokenData?.price &&
-                                    selectedTokenBalanceData?.balance
-                                ) {
+                                if (selectedTokenData?.price && balance) {
                                     try {
-                                        const balanceBig = Big(
-                                            selectedTokenBalanceData.balance,
-                                        );
+                                        const balanceBig = Big(balance);
                                         const balanceFormatted = Number(
                                             formatBalance(
                                                 balanceBig.toString(),

@@ -117,7 +117,7 @@ export function MemberInput<
                         <div className="flex justify-between items-center">
                             <p className="text-xs text-muted-foreground">
                                 {showCreatorLabel && index === 0
-                                    ? "Creator"
+                                    ? "Creator (you)"
                                     : "Member Address"}
                             </p>
 
@@ -190,14 +190,16 @@ export function MemberInput<
                                                     }
                                                 />
                                             ) : (
-                                                ROLES.map((role) => (
-                                                    <RoleBadge
-                                                        key={role.id}
-                                                        role={role.id}
-                                                        variant="pill"
-                                                        style="secondary"
-                                                    />
-                                                ))
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    {ROLES.map((role) => (
+                                                        <RoleBadge
+                                                            key={role.id}
+                                                            role={role.id}
+                                                            variant="pill"
+                                                            style="secondary"
+                                                        />
+                                                    ))}
+                                                </div>
                                             )}
                                         </>
                                     );

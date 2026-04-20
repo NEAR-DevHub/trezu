@@ -34,8 +34,9 @@ import { useTreasury } from "@/hooks/use-treasury";
 import { useToken, useTreasuryPolicy } from "@/hooks/use-treasury-queries";
 import type { IntentsQuoteResponse } from "@/lib/api";
 import { generateIntent } from "@/lib/api";
+import { parseTokenQueryParam } from "@/lib/token-query-param";
 import { formatBalance, formatSmartAmount } from "@/lib/utils";
-import { buildConfidentialProposal } from "../confidential/utils/proposal-builder";
+import { buildConfidentialProposal } from "../../../../features/confidential/utils/proposal-builder";
 import { useNear } from "@/stores/near-store";
 import { useThemeStore } from "@/stores/theme-store";
 import { ExchangeSettingsModal } from "./components/exchange-settings-modal";
@@ -665,14 +666,7 @@ export default function ExchangePage() {
     // Parse sellToken from query params
     const defaultSellToken = useMemo(() => {
         const sellTokenParam = searchParams.get("sellToken");
-        if (sellTokenParam) {
-            try {
-                return JSON.parse(decodeURIComponent(sellTokenParam));
-            } catch {
-                return BTC_TOKEN;
-            }
-        }
-        return BTC_TOKEN;
+        return parseTokenQueryParam(sellTokenParam, BTC_TOKEN);
     }, [searchParams]);
 
     // Onboarding tour

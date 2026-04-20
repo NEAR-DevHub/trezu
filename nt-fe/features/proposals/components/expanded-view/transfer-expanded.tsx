@@ -7,7 +7,6 @@ import { ArrowUpRight } from "lucide-react";
 import { useToken } from "@/hooks/use-treasury-queries";
 import { useIntentsWithdrawalFee } from "@/hooks/use-intents-withdrawal-fee";
 import { NETWORK_FEE_TOOLTIP_TEXT } from "@/lib/intents-fee";
-import { Skeleton } from "@/components/ui/skeleton";
 
 interface TransferExpandedProps {
     data: PaymentRequestData;
@@ -19,7 +18,7 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
     const chainName = tokenData?.network || "near";
     const {
         data: dynamicFeeData,
-        isLoading: isFeeLoading,
+        isError: hasFeeError,
         isIntentsCrossChainToken,
     } = useIntentsWithdrawalFee({
         token: tokenData
@@ -31,6 +30,10 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
             : null,
         destinationAddress: data.receiver,
     });
+    const hasFeeData =
+        isIntentsCrossChainToken &&
+        !hasFeeError &&
+        !!dynamicFeeData?.networkFee;
 
     const infoItems: InfoItem[] = [
         {
@@ -56,17 +59,11 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
         },
     ];
 
-    if (isIntentsCrossChainToken) {
+    if (hasFeeData) {
         infoItems.push({
             label: "Network Fee",
             info: NETWORK_FEE_TOOLTIP_TEXT,
-            value: isFeeLoading ? (
-                <Skeleton className="h-4 w-24" />
-            ) : dynamicFeeData ? (
-                `${dynamicFeeData.networkFee} ${tokenData?.symbol || ""}`.trim()
-            ) : (
-                "-"
-            ),
+            value: `${dynamicFeeData.networkFee} ${tokenData?.symbol || ""}`.trim(),
         });
     }
 

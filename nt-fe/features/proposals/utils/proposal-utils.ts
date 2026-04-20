@@ -1,8 +1,17 @@
 import { getKindFromProposal } from "@/lib/config-utils";
 import { Proposal } from "@/lib/proposals-api";
 import { Policy } from "@/types/policy";
-import { ProposalUIKind } from "../types/index";
+import {
+    BatchPaymentRequestData,
+    ConfidentialRequestData,
+    PaymentRequestData,
+    ProposalUIKind,
+    StakingData,
+    SwapRequestData,
+    VestingData,
+} from "../types/index";
 import { decodeArgs, decodeProposalDescription } from "@/lib/utils";
+import { extractProposalData } from "./proposal-extractors";
 
 // Exchange proposal expiration constants
 export const EXCHANGE_EXPIRY_HOURS = 24;
@@ -202,30 +211,28 @@ function stakingType(
         functionCall.receiver_id.endsWith("poolv1.near") ||
         functionCall.receiver_id.endsWith("lockup.near");
     if (!isPool) return undefined;
-    if (
-        functionCall.actions.some(
-            (action) =>
-                action.method_name === "stake" ||
-                action.method_name === "deposit_and_stake" ||
-                action.method_name === "deposit",
-        )
-    ) {
-        return "Earn NEAR";
-    }
-    if (
-        functionCall.actions.some(
-            (action) =>
-                action.method_name === "withdraw" ||
-                action.method_name === "withdraw_all" ||
-                action.method_name === "withdraw_all_from_staking_pool",
-        )
-    ) {
-        return "Withdraw Earnings";
-    }
-    if (
-        functionCall.actions.some((action) => action.method_name === "unstake")
-    ) {
-        return "Unstake NEAR";
+
+    const mapping = {
+        "Earn NEAR": ["stake", "deposit_and_stake", "deposit"],
+        "Withdraw Earnings": [
+            "withdraw",
+            "withdraw_all",
+            "withdraw_all_from_staking_pool",
+        ],
+        "Unstake NEAR": ["unstake", "unstake_all"],
+    } as const;
+
+    for (const [label, methods] of Object.entries(mapping) as [
+        "Earn NEAR" | "Withdraw Earnings" | "Unstake NEAR",
+        readonly string[],
+    ][]) {
+        if (
+            functionCall.actions.some((action) =>
+                methods.includes(action.method_name),
+            )
+        ) {
+            return label;
+        }
     }
     return undefined;
 }
@@ -389,151 +396,58 @@ export function getProposalStatusDateInfo(
  */
 export function getProposalRequiredFunds(
     proposal: Proposal,
+    treasuryId?: string,
 ): { tokenId: string; amount: string } | null {
     if (typeof proposal.kind === "string") {
         return null;
     }
-    // Transfer proposal
-    if ("Transfer" in proposal.kind) {
-        const transfer = proposal.kind.Transfer;
-        const tokenId =
-            transfer.token_id.length > 0 ? transfer.token_id : "near";
-        return { tokenId, amount: transfer.amount };
-    }
 
-    // FunctionCall proposal
-    if ("FunctionCall" in proposal.kind) {
-        const functionCall = proposal.kind.FunctionCall;
-        const actions = functionCall.actions;
+    const { type: uiKind, data } = extractProposalData(proposal, treasuryId);
 
-        // Check for near_withdraw (wrap.near unwrap)
-        const nearWithdrawAction = actions.find(
-            (a) => a.method_name === "near_withdraw",
-        );
-        if (nearWithdrawAction && functionCall.receiver_id === "wrap.near") {
-            const args = decodeArgs(nearWithdrawAction.args);
-            if (args?.amount) {
-                return { tokenId: "wrap.near", amount: args.amount };
-            }
+    switch (uiKind) {
+        case "Payment Request": {
+            const d = data as PaymentRequestData;
+            return { tokenId: d.tokenId, amount: d.amount };
         }
-
-        // Check for near_deposit (wrap.near wrap) - uses deposit amount
-        const nearDepositAction = actions.find(
-            (a) => a.method_name === "near_deposit",
-        );
-        if (nearDepositAction && functionCall.receiver_id === "wrap.near") {
-            if (
-                nearDepositAction.deposit &&
-                nearDepositAction.deposit !== "0"
-            ) {
-                return { tokenId: "near", amount: nearDepositAction.deposit };
-            }
+        case "Batch Payment Request": {
+            const d = data as BatchPaymentRequestData;
+            return { tokenId: d.tokenId, amount: d.totalAmount };
         }
-
-        // Check for ft_transfer or ft_transfer_call (Payment Request)
-        const ftTransferAction = actions.find(
-            (a) =>
-                a.method_name === "ft_transfer" ||
-                a.method_name === "ft_transfer_call" ||
-                a.method_name === "mt_transfer" ||
-                a.method_name === "mt_transfer_call",
-        );
-        if (ftTransferAction) {
-            const args = decodeArgs(ftTransferAction.args);
-            if (args?.amount) {
+        case "Exchange": {
+            const d = data as SwapRequestData;
+            return {
+                tokenId: d.tokenInAddress ?? d.tokenIn,
+                amount: d.amountIn,
+            };
+        }
+        case "Earn NEAR":
+        case "Unstake NEAR":
+        case "Withdraw Earnings": {
+            const d = data as StakingData;
+            return { tokenId: d.tokenId, amount: d.amount };
+        }
+        case "Vesting": {
+            const d = data as VestingData;
+            return { tokenId: d.tokenId, amount: d.amount };
+        }
+        case "Confidential Request": {
+            const d = data as ConfidentialRequestData;
+            if (d.mapped?.type === "payment") {
                 return {
-                    tokenId:
-                        ftTransferAction.method_name === "mt_transfer" ||
-                        ftTransferAction.method_name === "mt_transfer_call"
-                            ? args.token_id
-                            : functionCall.receiver_id,
-                    amount: args.amount,
+                    tokenId: d.mapped.data.tokenId,
+                    amount: d.mapped.data.amount,
                 };
             }
-        }
-
-        // Check for ft_withdraw (Intents withdrawal)
-        const ftWithdrawAction = actions.find(
-            (a) => a.method_name === "ft_withdraw",
-        );
-        if (ftWithdrawAction) {
-            const args = decodeArgs(ftWithdrawAction.args);
-            if (args?.amount && args?.token) {
-                const tokenId =
-                    args.token.startsWith("nep141:") ||
-                    args.token.startsWith("nep245:")
-                        ? args.token
-                        : `nep141:${args.token}`;
-                return { tokenId, amount: args.amount };
+            if (d.mapped?.type === "swap") {
+                return {
+                    tokenId:
+                        d.mapped.data.tokenInAddress ?? d.mapped.data.tokenIn,
+                    amount: d.mapped.data.amountIn,
+                };
             }
+            return null;
         }
-
-        // Check for mt_withdraw (NEP-245 Intents withdrawal)
-        const mtWithdrawAction = actions.find(
-            (a) => a.method_name === "mt_withdraw",
-        );
-        if (mtWithdrawAction) {
-            const args = decodeArgs(mtWithdrawAction.args);
-            if (args?.amounts?.[0] && args?.token_ids?.[0]) {
-                const tokenId = args.token_ids[0]
-                    ? args.token_ids[0].startsWith("nep245:")
-                        ? args.token_ids[0]
-                        : `nep245:${args.token}:${args.token_ids[0]}`
-                    : `nep245:${functionCall.receiver_id}:${args.token_ids[0]}`;
-                return { tokenId, amount: args.amounts[0] };
-            }
-        }
-
-        // Check for mt_transfer or mt_transfer_call (Exchange - intents)
-        const mtTransferAction = actions.find(
-            (a) =>
-                a.method_name === "mt_transfer" ||
-                a.method_name === "mt_transfer_call",
-        );
-        if (mtTransferAction) {
-            const args = decodeArgs(mtTransferAction.args);
-            if (args?.amount && args?.token_id) {
-                return { tokenId: args.token_id, amount: args.amount };
-            }
-        }
-
-        // Check for approve_list (Batch Payment with NEAR)
-        const approveListAction = actions.find(
-            (a) => a.method_name === "approve_list",
-        );
-        if (
-            approveListAction &&
-            functionCall.receiver_id === BULK_PAYMENT_CONTRACT_ID
-        ) {
-            if (
-                approveListAction.deposit &&
-                approveListAction.deposit !== "0"
-            ) {
-                return { tokenId: "near", amount: approveListAction.deposit };
-            }
-        }
-
-        // Staking proposals (deposit_and_stake, stake, deposit)
-        const stakingAction = actions.find(
-            (a) =>
-                a.method_name === "deposit_and_stake" ||
-                a.method_name === "deposit",
-        );
-        if (stakingAction) {
-            const args = decodeArgs(stakingAction.args);
-            if (args?.amount) {
-                return { tokenId: "near", amount: args.amount };
-            }
-        }
-
-        // Vesting proposal (create with NEAR deposit)
-        const createAction = actions.find((a) => a.method_name === "create");
-        if (createAction && functionCall.receiver_id.includes("lockup.near")) {
-            if (createAction.deposit && createAction.deposit !== "0") {
-                return { tokenId: "near", amount: createAction.deposit };
-            }
-        }
+        default:
+            return null;
     }
-
-    return null;
 }

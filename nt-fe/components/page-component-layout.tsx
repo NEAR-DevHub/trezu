@@ -7,6 +7,8 @@ import { Button } from "@/components/button";
 import { SignIn } from "@/components/sign-in";
 import { ReactNode, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { ConfidentialBanner } from "@/features/confidential/components/confidential-banner";
+import { SystemStatusBanner } from "@/components/system-status-banner";
 
 interface PageComponentLayoutProps {
     title: string;
@@ -69,6 +71,9 @@ export function PageComponentLayout({
                                 <ArrowLeft className="size-5 stroke-2" />
                             </Button>
                         )}
+
+                        <ConfidentialBanner type="mini" className="lg:hidden" />
+
                         {logo ?? (
                             <div className="flex items-baseline gap-2">
                                 <h1 className="text-base md:text-lg font-bold">
@@ -105,6 +110,7 @@ export function PageComponentLayout({
             </header>
 
             <main className="flex-1 overflow-y-auto bg-page-bg p-4">
+                <SystemStatusBanner className="lg:hidden mb-3" />
                 {children}
             </main>
         </div>

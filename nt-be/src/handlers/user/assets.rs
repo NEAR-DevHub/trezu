@@ -1,6 +1,5 @@
 use crate::{
     handlers::user::{
-        balance::TokenBalanceResponse,
         ft_lockups::fetch_ft_lockup_positions,
         lockup::{LockupBalance, fetch_lockup_balance_of_account},
         staking::{StakingBalance, fetch_staking_balances},
@@ -12,7 +11,8 @@ use axum::{
     extract::{Query, State},
     http::StatusCode,
 };
-use near_api::{AccountId, Contract, types::json::U128};
+use bigdecimal::{BigDecimal, ToPrimitive};
+use near_api::{AccountId, Contract, NearToken, Tokens, types::json::U128};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
@@ -27,6 +27,16 @@ use crate::{
     handlers::intents::confidential::refresh_dao_jwt,
     handlers::token::{TokenMetadata as TokenMetadataResponse, fetch_tokens_with_defuse_extension},
 };
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenBalanceResponse {
+    pub account_id: String,
+    pub token_id: String,
+    pub balance: U128,
+    pub locked_balance: Option<U128>,
+    pub decimals: u8,
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum Balance {
@@ -87,9 +97,12 @@ pub enum TokenResidency {
 #[serde(rename_all = "camelCase")]
 pub struct FtLockupSchedule {
     pub start_timestamp: Option<u64>,
-    pub session_interval: Option<u64>,
-    pub session_num: Option<u32>,
-    pub last_claim_session: Option<u32>,
+    pub round_interval: Option<u64>,
+    pub rounds_total: Option<u32>,
+    pub rounds_completed: Option<u32>,
+    pub total_amount: Option<String>,
+    pub unlocked_amount: Option<String>,
+    pub locked_amount: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -361,18 +374,57 @@ fn build_intents_tokens(
         .collect()
 }
 
+pub const MIN_NEAR_DISPLAY_BALANCE: NearToken = NearToken::from_millinear(1);
+
+/// Fetch NEAR balance for an account
 pub async fn fetch_near_balance(
     state: &Arc<AppState>,
     account_id: &AccountId,
 ) -> Result<TokenBalanceResponse, (StatusCode, String)> {
-    crate::handlers::user::balance::fetch_near_balance(state, account_id.clone())
-        .await
-        .map_err(|e| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to fetch NEAR balance: {}", e),
-            )
-        })
+    let balance_future = Tokens::account(account_id.clone())
+        .near_balance()
+        .fetch_from(&state.network);
+
+    let paid_near_future = sqlx::query_scalar::<_, BigDecimal>(
+        "SELECT paid_near FROM monitored_accounts WHERE account_id = $1",
+    )
+    .bind(account_id.as_str())
+    .fetch_optional(&state.db_pool);
+
+    let (balance_result, paid_near_result) = tokio::join!(balance_future, paid_near_future);
+
+    let balance = balance_result.map_err(|e| {
+        eprintln!("Error fetching NEAR balance for {}: {}", account_id, e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to fetch NEAR balance: {}", e),
+        )
+    })?;
+
+    let paid_near_u128 = paid_near_result
+        .ok()
+        .flatten()
+        .and_then(|v: BigDecimal| v.to_u128())
+        .unwrap_or(0);
+
+    let storage_locked = balance.storage_locked.as_yoctonear();
+    let deduction = storage_locked.max(paid_near_u128);
+    let total = balance.total.as_yoctonear();
+    let available_raw = total.saturating_sub(deduction);
+    // Display zero if the available balance is below 0.001 NEAR (1 milliNEAR)
+    let available = if available_raw < MIN_NEAR_DISPLAY_BALANCE.as_yoctonear() {
+        0
+    } else {
+        available_raw
+    };
+
+    Ok(TokenBalanceResponse {
+        account_id: account_id.to_string(),
+        token_id: "near".to_string(),
+        balance: available.into(),
+        locked_balance: Some(storage_locked.into()),
+        decimals: 24,
+    })
 }
 
 #[derive(Deserialize, Debug)]
@@ -513,7 +565,7 @@ pub async fn compute_user_assets(
 
             let tokens_with_balances: Vec<(String, String)> = owned_token_ids
                 .into_iter()
-                .zip(balances.into_iter())
+                .zip(balances)
                 .filter(|(_, balance)| balance.parse::<u128>().unwrap_or(0) > 0)
                 .collect();
 
@@ -651,6 +703,29 @@ pub async fn compute_user_assets(
             .saturating_sub(position.claimed_amount)
             .saturating_sub(position.unclaimed_amount);
 
+        let rounds_total = position.session_num.unwrap_or(0);
+        let rounds_completed = position.last_claim_session.unwrap_or(0).min(rounds_total);
+
+        // Display metrics for FT lockup details:
+        // show cumulative unlocked for the active schedule, including already-claimed rounds.
+        let (display_total_raw, display_unlocked_raw, display_locked_raw) =
+            if let Some(release_per_session) = position.release_per_session {
+                if rounds_total > 0 {
+                    let round_total_raw = release_per_session.saturating_mul(rounds_total as u128);
+                    let claimed_by_rounds_raw =
+                        release_per_session.saturating_mul(rounds_completed as u128);
+                    let unlocked_cumulative_raw =
+                        claimed_by_rounds_raw.saturating_add(position.unclaimed_amount);
+                    let unlocked_clamped_raw = unlocked_cumulative_raw.min(round_total_raw);
+                    let locked_round_raw = round_total_raw.saturating_sub(unlocked_clamped_raw);
+                    (round_total_raw, unlocked_clamped_raw, locked_round_raw)
+                } else {
+                    (total_raw, position.unclaimed_amount, locked_raw)
+                }
+            } else {
+                (total_raw, position.unclaimed_amount, locked_raw)
+            };
+
         all_simplified_tokens.push((
             SimplifiedToken {
                 id: unified_id,
@@ -658,9 +733,12 @@ pub async fn compute_user_assets(
                 lockup_instance_id: Some(position.instance_id),
                 ft_lockup_schedule: Some(FtLockupSchedule {
                     start_timestamp: position.start_timestamp,
-                    session_interval: position.session_interval,
-                    session_num: position.session_num,
-                    last_claim_session: position.last_claim_session,
+                    round_interval: position.session_interval,
+                    rounds_total: Some(rounds_total),
+                    rounds_completed: Some(rounds_completed),
+                    total_amount: Some(display_total_raw.to_string()),
+                    unlocked_amount: Some(display_unlocked_raw.to_string()),
+                    locked_amount: Some(display_locked_raw.to_string()),
                 }),
                 decimals: token_meta.decimals,
                 balance: Balance::Standard {

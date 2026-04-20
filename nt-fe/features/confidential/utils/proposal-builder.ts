@@ -23,7 +23,6 @@ export function buildConfidentialProposal(params: ConfidentialProposalParams) {
     const description = encodeToMarkdown({
         proposal_action: "confidential",
         notes: "Confidential proposal via private intents. Details are hidden for privacy.",
-        correlationId: intentResponse.correlationId,
     });
 
     return {

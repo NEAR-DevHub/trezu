@@ -3,14 +3,15 @@
 import { useMemo } from "react";
 import Big from "@/lib/big";
 import { Proposal } from "@/lib/proposals-api";
-import { useToken, useTokenBalance } from "@/hooks/use-treasury-queries";
+import { useAssets } from "@/hooks/use-assets";
 import { getProposalRequiredFunds } from "../utils/proposal-utils";
 import { formatBalance } from "@/lib/utils";
+import { availableBalance } from "@/lib/balance";
 
 export interface InsufficientBalanceInfo {
     hasInsufficientBalance: boolean;
     tokenSymbol?: string;
-    type?: "bond" | "balance";
+    type?: "bond" | "balance" | "no-asset";
     tokenNetwork?: string;
     differenceDisplay?: string;
 }
@@ -30,39 +31,49 @@ export function useProposalInsufficientBalance(
 } {
     const requiredFunds = useMemo(() => {
         if (!proposal) return null;
-        return getProposalRequiredFunds(proposal);
+        return getProposalRequiredFunds(proposal, treasuryId ?? undefined);
     }, [proposal]);
 
-    const { data: tokenData, isLoading: isTokenLoading } = useToken(
-        requiredFunds?.tokenId,
-    );
-    const { data: tokenBalanceData, isLoading: isTokenBalanceLoading } =
-        useTokenBalance(treasuryId, requiredFunds?.tokenId, tokenData?.network);
+    const { data: assets, isLoading: isAssetsLoading } = useAssets(treasuryId);
 
     const insufficientBalanceInfo = useMemo((): InsufficientBalanceInfo => {
-        if (tokenBalanceData && requiredFunds) {
-            const requiredBig = Big(requiredFunds?.amount || "0");
-            const availableBig = Big(tokenBalanceData?.balance || "0");
-
-            if (requiredBig.gt(availableBig) && tokenData) {
+        if (assets && requiredFunds) {
+            const token = assets.tokens.find(
+                (t) =>
+                    t.contractId === requiredFunds.tokenId ||
+                    (requiredFunds.tokenId.toLowerCase() === "near" &&
+                        t.contractId == null &&
+                        t.residency === "Near"),
+            );
+            if (!token) {
                 return {
                     hasInsufficientBalance: true,
-                    tokenSymbol: tokenData?.symbol,
+                    type: "no-asset",
+                };
+            }
+
+            const requiredBig = Big(requiredFunds.amount || "0");
+            const availableBig = availableBalance(token.balance);
+
+            if (requiredBig.gt(availableBig)) {
+                return {
+                    hasInsufficientBalance: true,
+                    tokenSymbol: token.symbol,
                     type: "balance",
-                    tokenNetwork: tokenData?.network,
+                    tokenNetwork: token.network,
                     differenceDisplay: formatBalance(
                         requiredBig.sub(availableBig).toString(),
-                        tokenData?.decimals || 24,
+                        token.decimals || 24,
                     ),
                 };
             }
         }
 
         return { hasInsufficientBalance: false };
-    }, [requiredFunds, tokenBalanceData, tokenData]);
+    }, [requiredFunds, assets]);
 
     return {
         data: insufficientBalanceInfo,
-        isLoading: isTokenLoading || isTokenBalanceLoading,
+        isLoading: isAssetsLoading,
     };
 }

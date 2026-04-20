@@ -15,9 +15,7 @@ const staging =
 export const features = staging
     ? {
           integrations: true,
-          confidential: true,
       }
     : {
           integrations: false,
-          confidential: false,
       };

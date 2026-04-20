@@ -14,6 +14,7 @@ import { InputBlock } from "@/components/input-block";
 import { TokenInput, Token } from "@/components/token-input";
 import AccountInput from "@/components/account-input";
 import { CreateRequestButton } from "@/components/create-request-button";
+import { InfoAlert } from "@/components/info-alert";
 import { getBlockchainType } from "@/lib/blockchain-utils";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useAddressBook, AddressBookEntry } from "@/features/address-book";
@@ -42,6 +43,7 @@ interface PaymentFormSectionProps<
     saveButtonText: string;
     onSave: () => void;
     isSubmitting?: boolean;
+    validatedRecipients?: React.MutableRefObject<Set<string>>;
 }
 
 export function PaymentFormSection<
@@ -57,6 +59,7 @@ export function PaymentFormSection<
     saveButtonText,
     onSave,
     isSubmitting = false,
+    validatedRecipients,
 }: PaymentFormSectionProps<TFieldValues, TTokenPath>) {
     const { setValue, setError, clearErrors } = useFormContext<TFieldValues>();
     const [isRecipientValid, setIsRecipientValid] = useState(false);
@@ -87,12 +90,42 @@ export function PaymentFormSection<
         [recipientName, setValue],
     );
 
+    const { isConfidential } = useTreasury();
+
     const blockchainType = useMemo(() => {
+        // Confidential payments always target NEAR accounts
+        if (isConfidential) return "near";
         if (!token?.network) return "near";
         return getBlockchainType(token.network);
-    }, [token?.network]);
+    }, [token?.network, isConfidential]);
 
-    // Validate amount against dynamic fee coverage
+    const recipientCacheKey = useMemo(
+        () => `${blockchainType}:${(recipient || "").trim().toLowerCase()}`,
+        [blockchainType, recipient],
+    );
+    const hasCachedValidRecipient =
+        !!recipient && !!validatedRecipients?.current.has(recipientCacheKey);
+
+    // Restore cached validation on remount (e.g. stepping back from review).
+    useEffect(() => {
+        if (!hasCachedValidRecipient) return;
+        setIsValidatingRecipient(false);
+        setIsRecipientValid(true);
+    }, [hasCachedValidRecipient]);
+
+    // Cache successful validations so they survive remount.
+    useEffect(() => {
+        if (!recipient || !isRecipientValid || isValidatingRecipient) return;
+        validatedRecipients?.current.add(recipientCacheKey);
+    }, [
+        recipient,
+        isRecipientValid,
+        isValidatingRecipient,
+        recipientCacheKey,
+        validatedRecipients,
+    ]);
+
+    // Sync fee coverage error into the amount field.
     useEffect(() => {
         if (!feeErrorMessage) {
             clearErrors(amountName);
@@ -168,7 +201,7 @@ export function PaymentFormSection<
 
     const isSaveDisabled =
         !recipient ||
-        !isRecipientValid ||
+        (!isRecipientValid && !hasCachedValidRecipient) ||
         isValidatingRecipient ||
         !!feeErrorMessage ||
         isSubmitting;
@@ -203,6 +236,7 @@ export function PaymentFormSection<
                     !selectedContact &&
                     !!recipient &&
                     !isRecipientValid &&
+                    !hasCachedValidRecipient &&
                     !isValidatingRecipient
                 }
             >
@@ -264,7 +298,9 @@ export function PaymentFormSection<
                             setIsValid={setIsRecipientValid}
                             setIsValidating={setIsValidatingRecipient}
                             borderless
-                            validateOnMount={!!recipient}
+                            validateOnMount={
+                                !!recipient && !hasCachedValidRecipient
+                            }
                         />
                         {showContactButton && (
                             <Button
@@ -294,6 +330,10 @@ export function PaymentFormSection<
                     </div>
                 )}
             </InputBlock>
+
+            {isConfidential && (
+                <InfoAlert message="This will send funds to an account on the near.com private network — not to an external wallet." />
+            )}
 
             <SelectModal
                 isOpen={isContactModalOpen}

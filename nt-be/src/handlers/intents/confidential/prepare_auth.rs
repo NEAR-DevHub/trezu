@@ -79,13 +79,22 @@ pub(crate) async fn build_auth_proposal(
     state: &Arc<AppState>,
     dao_id: &str,
 ) -> Result<(serde_json::Value, serde_json::Value), (StatusCode, String)> {
-    let deadline = chrono::Utc::now() + chrono::Duration::days(7);
+    let expires_days = state.env_vars.confidential_auth_expires_days;
+    let deadline = chrono::Utc::now() + chrono::Duration::days(expires_days);
     let deadline_str = deadline.format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string();
+
+    let expires_in = expires_days * 24 * 3600;
 
     let auth_message = json!({
         "deadline": deadline_str,
         "intents": [],
         "signer_id": dao_id,
+        "external_app_data": {
+            "configs": [{
+                "type": "auth",
+                "expires_in": expires_in,
+            }]
+        }
     })
     .to_string();
 

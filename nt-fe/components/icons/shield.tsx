@@ -1,12 +1,32 @@
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "@/lib/utils";
 import { Globe, Shield } from "lucide-react";
 
 export type TreasuryType = "confidential" | "public";
 
-function ConfidentialIconWithPattern() {
+const treasuryTypeIconVariants = cva(
+    "flex items-center justify-center bg-general-tertiary rounded-full",
+    {
+        variants: {
+            size: {
+                default: "size-7",
+                sm: "size-4",
+            },
+        },
+        defaultVariants: {
+            size: "default",
+        },
+    },
+);
+
+type IconSize = VariantProps<typeof treasuryTypeIconVariants>["size"];
+
+function ConfidentialIconWithPattern({ size }: { size?: IconSize }) {
+    const dim = size === "sm" ? 16 : 28;
     return (
         <svg
-            width="28"
-            height="28"
+            width={dim}
+            height={dim}
             viewBox="0 0 28 28"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -344,15 +364,20 @@ function ConfidentialIconWithPattern() {
 
 export function TreasuryTypeIcon({
     type,
+    size,
+    className,
 }: {
     type: "confidential" | "public";
+    size?: IconSize;
+    className?: string;
 }) {
     if (type === "confidential") {
-        return <ConfidentialIconWithPattern />;
+        return <ConfidentialIconWithPattern size={size} />;
     }
+    const globeSize = size === "sm" ? "size-2" : "size-3";
     return (
-        <div className="p-2 bg-general-tertiary rounded-full">
-            <Globe className="text-foreground size-3" />
+        <div className={cn(treasuryTypeIconVariants({ size }), className)}>
+            <Globe className={cn("text-foreground", globeSize)} />
         </div>
     );
 }

@@ -112,7 +112,7 @@ export const NetworkDisplay = ({
             type = "Fungible Token";
             break;
         case "Intents":
-            type = "Intents Token";
+            type = "near.com";
             break;
         case "Near":
             type = "Native Token";

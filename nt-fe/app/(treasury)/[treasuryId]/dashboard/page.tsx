@@ -38,7 +38,7 @@ export default function AppPage() {
         >
             <div className="flex flex-col lg:flex-row gap-5">
                 <div className="flex flex-col gap-5 lg:w-3/5 w-full">
-                    <div className="lg:hidden">
+                    <div className="lg:hidden empty:hidden">
                         <CreateBanner />
                     </div>
                     <OnboardingProgress

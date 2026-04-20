@@ -151,10 +151,6 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
         )
         // User endpoints
         .route(
-            "/api/user/balance",
-            get(handlers::user::balance::get_token_balance),
-        )
-        .route(
             "/api/user/treasuries",
             get(handlers::user::treasuries::get_user_treasuries),
         )
@@ -210,6 +206,10 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
         .route(
             "/api/proposal/{dao_id}/{proposal_id}/tx",
             get(handlers::proposals::tx::find_proposal_execution_transaction),
+        )
+        .route(
+            "/api/proposal/{dao_id}/{proposal_id}/staking-amount",
+            get(handlers::proposals::staking_amount::get_proposal_staking_amount),
         )
         .route(
             "/api/receipt/search",
@@ -279,6 +279,10 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
         .route(
             "/api/intents/swap-status",
             get(handlers::intents::swap_status::get_swap_status),
+        )
+        .route(
+            "/api/intents/status",
+            get(handlers::intents::system_status::get_system_status),
         )
         .route(
             "/api/confidential-intents/generate-intent",

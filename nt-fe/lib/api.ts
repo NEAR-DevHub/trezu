@@ -78,9 +78,12 @@ export type TokenResidency = "Near" | "Ft" | "Intents" | "Lockup" | "Staked";
 
 export interface FtLockupSchedule {
     startTimestamp?: number;
-    sessionInterval?: number;
-    sessionNum?: number;
-    lastClaimSession?: number;
+    roundInterval?: number;
+    roundsTotal?: number;
+    roundsCompleted?: number;
+    totalAmount?: string;
+    unlockedAmount?: string;
+    lockedAmount?: string;
 }
 
 export interface TreasuryAsset {
@@ -436,34 +439,6 @@ export async function getRecentActivityRecipients(
     } catch (error) {
         console.error("Error getting recent activity recipients", error);
         return [];
-    }
-}
-
-/**
- * Get balance for a single token (supports both NEAR and FT tokens)
- * Fetches current balance from blockchain via backend
- */
-export async function getTokenBalance(
-    accountId: string,
-    tokenAddress: string,
-    network: string,
-): Promise<TokenBalance | null> {
-    if (!accountId || !tokenAddress || !network) return null;
-
-    try {
-        const url = `${BACKEND_API_BASE}/user/balance`;
-
-        const response = await axios.get<TokenBalance>(url, {
-            params: { accountId, tokenId: tokenAddress, network },
-        });
-
-        return response.data;
-    } catch (error) {
-        console.error(
-            `Error getting balance for ${accountId} / ${tokenAddress} / ${network}`,
-            error,
-        );
-        return null;
     }
 }
 
@@ -1352,6 +1327,7 @@ export async function generateIntent(request: {
     standard: string;
     signerId: string;
     quoteMetadata: Record<string, unknown>;
+    notes?: string;
 }): Promise<GenerateIntentResponse> {
     const url = `${BACKEND_API_BASE}/confidential-intents/generate-intent`;
     const response = await axios.post<GenerateIntentResponse>(url, request, {

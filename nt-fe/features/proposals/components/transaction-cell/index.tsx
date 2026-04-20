@@ -103,6 +103,8 @@ export function TransactionCell({
             return (
                 <StakingCell
                     data={stakingData}
+                    proposal={proposal}
+                    treasuryId={treasuryId ?? undefined}
                     timestamp={timestamp}
                     textOnly={textOnly}
                 />

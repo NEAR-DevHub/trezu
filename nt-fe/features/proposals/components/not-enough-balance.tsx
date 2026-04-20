@@ -7,6 +7,21 @@ export function NotEnoughBalance({
     insufficientBalanceInfo: InsufficientBalanceInfo;
 }) {
     if (!insufficientBalanceInfo.hasInsufficientBalance) return null;
+
+    if (insufficientBalanceInfo.type === "no-asset") {
+        return (
+            <InfoAlert
+                className="inline-flex"
+                message={
+                    <span>
+                        This request can&apos;t be approved because the required
+                        token is not available in the treasury.
+                    </span>
+                }
+            />
+        );
+    }
+
     return (
         <InfoAlert
             className="inline-flex"

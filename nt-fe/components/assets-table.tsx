@@ -54,6 +54,7 @@ import {
     formatCurrency,
     formatSmartAmount,
 } from "@/lib/utils";
+import { buildTokenQueryParam } from "@/lib/token-query-param";
 import { EarningPoolDetailsModal } from "./earning-pool-details-modal";
 import { LockupDetailsModal } from "./lockup-details-modal";
 import { BalanceCell, NetworkDisplay } from "./token-display";
@@ -219,17 +220,7 @@ function networkRowKey(
 }
 
 function buildTokenParam(network: NetworkAsset): string {
-    return encodeURIComponent(
-        JSON.stringify({
-            symbol: network.symbol,
-            address: network.contractId,
-            network: network.network,
-            decimals: network.decimals,
-            residency: network.residency,
-            icon: network.icon,
-            name: network.name,
-        }),
-    );
+    return buildTokenQueryParam(network);
 }
 
 interface MobileEarningPoolRow {
@@ -1648,7 +1639,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                 }
                             }}
                         >
-                            <SelectTrigger className="h-auto w-auto border-0 bg-transparent p-0 text-sm font-medium text-foreground shadow-none hover:bg-transparent focus-visible:ring-0 [&_svg]:text-foreground! [&_svg]:opacity-100">
+                            <SelectTrigger className="h-auto w-auto border-0 bg-transparent px-2 py-1 text-sm font-medium text-foreground shadow-none hover:bg-transparent focus-visible:ring-0 [&_svg]:text-foreground! [&_svg]:opacity-100">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent align="start" className="min-w-56">

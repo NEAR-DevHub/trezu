@@ -4,6 +4,7 @@
 //! to trigger immediate re-sync of DAO membership data.
 
 use sqlx::PgPool;
+use std::time::Duration;
 
 /// Mark a DAO as dirty (needs re-sync)
 ///
@@ -51,4 +52,48 @@ pub async fn register_new_dao(pool: &PgPool, dao_id: &str) -> Result<(), sqlx::E
 
     log::info!("Registered/marked DAO {} as dirty", dao_id);
     Ok(())
+}
+
+/// Register a newly created DAO and wait until sync completes.
+///
+/// Polls every 500ms, gives up after `timeout`. Returns `Ok(true)` if sync
+/// finished in time, `Ok(false)` if timed out.
+pub async fn register_new_dao_and_wait(
+    pool: &PgPool,
+    dao_id: &str,
+    timeout: Duration,
+) -> Result<bool, sqlx::Error> {
+    register_new_dao(pool, dao_id).await?;
+    wait_for_sync(pool, dao_id, timeout).await
+}
+
+/// Poll until `is_dirty` becomes false for given DAO.
+async fn wait_for_sync(
+    pool: &PgPool,
+    dao_id: &str,
+    timeout: Duration,
+) -> Result<bool, sqlx::Error> {
+    let start = tokio::time::Instant::now();
+    loop {
+        tokio::time::sleep(Duration::from_millis(500)).await;
+
+        let still_dirty: bool =
+            sqlx::query_scalar::<_, bool>(r#"SELECT is_dirty FROM daos WHERE dao_id = $1"#)
+                .bind(dao_id)
+                .fetch_optional(pool)
+                .await?
+                .unwrap_or(true);
+
+        if !still_dirty {
+            return Ok(true);
+        }
+        if start.elapsed() >= timeout {
+            log::warn!(
+                "Timed out waiting for DAO {} sync after {:?}",
+                dao_id,
+                timeout
+            );
+            return Ok(false);
+        }
+    }
 }

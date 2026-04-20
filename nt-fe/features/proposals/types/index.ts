@@ -140,13 +140,17 @@ export interface StakingData {
         | "stake"
         | "deposit"
         | "deposit_and_stake"
-        | "Withdraw Earnings"
-        | "unstake";
+        | "withdraw"
+        | "withdraw_all"
+        | "withdraw_all_from_staking_pool"
+        | "unstake"
+        | "unstake_all";
     sourceWallet: "Lockup" | "Wallet";
     validatorUrl: string;
     isLockup: boolean;
     lockupPool: string;
     notes: string;
+    isFullAmount: boolean;
 }
 
 /**

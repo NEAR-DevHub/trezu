@@ -264,7 +264,8 @@ export function ProposalSidebar({
 
     const [showVotingDurationModal, setShowVotingDurationModal] =
         useState(false);
-    const [awaitingProposalsFetch, setAwaitingProposalsFetch] = useState(false);
+    const [isCheckingVotingDurationImpact, setIsCheckingVotingDurationImpact] =
+        useState(false);
 
     // Check if this is a voting duration change proposal
     const isVotingDurationChange =
@@ -274,10 +275,12 @@ export function ProposalSidebar({
     const { data: allProposalsData, isLoading: isLoadingProposals } =
         useProposals(
             treasuryId,
-            { statuses: ["InProgress"] },
+            {
+                statuses: ["InProgress", "Expired"],
+                page_size: 100,
+            },
             isVotingDurationChange,
         );
-
     const status = getProposalStatus(proposal, policy);
     const isUserVoter = !!proposal.votes[accountId ?? ""];
     const isPending = status === "Pending";
@@ -367,11 +370,11 @@ export function ProposalSidebar({
 
     // When proposals finish loading after user clicked Approve, open the modal
     useEffect(() => {
-        if (awaitingProposalsFetch && !isLoadingProposals) {
-            setAwaitingProposalsFetch(false);
+        if (isCheckingVotingDurationImpact && !isLoadingProposals) {
+            setIsCheckingVotingDurationImpact(false);
             setShowVotingDurationModal(true);
         }
-    }, [awaitingProposalsFetch, isLoadingProposals]);
+    }, [isCheckingVotingDurationImpact, isLoadingProposals]);
 
     // Handle approve with voting duration check
     const handleApprove = () => {
@@ -380,9 +383,11 @@ export function ProposalSidebar({
             newVotingDurationDays > 0 &&
             isLastApprovingVote()
         ) {
+            setIsCheckingVotingDurationImpact(true);
             if (isLoadingProposals) {
-                setAwaitingProposalsFetch(true);
+                return;
             } else {
+                setIsCheckingVotingDurationImpact(false);
                 setShowVotingDurationModal(true);
             }
         } else {
@@ -392,13 +397,25 @@ export function ProposalSidebar({
 
     const handleVotingDurationConfirm = () => {
         setShowVotingDurationModal(false);
+        setIsCheckingVotingDurationImpact(false);
         onVote("Approve");
     };
 
-    // Get active proposals excluding the current one
+    const handleNoImpactedProposals = () => {
+        setShowVotingDurationModal(false);
+        setIsCheckingVotingDurationImpact(false);
+        onVote("Approve");
+    };
+
+    const handleVotingDurationClose = () => {
+        setShowVotingDurationModal(false);
+        setIsCheckingVotingDurationImpact(false);
+    };
+
+    // Impact proposals: exclude current proposal and contract-expired items
     const activeProposals =
         allProposalsData?.proposals?.filter(
-            (p: Proposal) => p.id !== proposal.id,
+            (p: Proposal) => p.id !== proposal.id && p.status === "InProgress",
         ) ?? [];
 
     return (
@@ -550,10 +567,12 @@ export function ProposalSidebar({
                             variant="default"
                             className="flex gap-1 w-full"
                             onClick={handleApprove}
-                            disabled={isUserVoter || awaitingProposalsFetch}
+                            disabled={
+                                isUserVoter || isCheckingVotingDurationImpact
+                            }
                             tooltip={isUserVoter ? NO_VOTE_MESSAGE : undefined}
                         >
-                            {awaitingProposalsFetch ? (
+                            {isCheckingVotingDurationImpact ? (
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                             ) : (
                                 <Check className="h-4 w-4 mr-2" />
@@ -568,8 +587,9 @@ export function ProposalSidebar({
             {isVotingDurationChange && (
                 <VotingDurationImpactModal
                     isOpen={showVotingDurationModal}
-                    onClose={() => setShowVotingDurationModal(false)}
+                    onClose={handleVotingDurationClose}
                     onConfirm={handleVotingDurationConfirm}
+                    onNoImpactedProposals={handleNoImpactedProposals}
                     newDurationDays={newVotingDurationDays}
                     currentPolicy={policy}
                     activeProposals={activeProposals}

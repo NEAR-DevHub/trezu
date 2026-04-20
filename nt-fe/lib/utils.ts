@@ -400,7 +400,7 @@ export function formatSmartAmount(value: number | string | Big): string {
         const exp = Math.abs(parseInt(exponent));
 
         // Show enough decimals to display ~6-8 significant figures
-        const decimalPlaces = Math.min(exp + 6, 18);
+        const decimalPlaces = Math.min(exp + 6, 30);
         formatted = absBig.toFixed(decimalPlaces).replace(/\.?0+$/, "");
     }
 
@@ -537,10 +537,10 @@ export function getNearTokenTypeLabel(
     if (resolvedNetwork !== "near") return null;
 
     const id = tokenId.toLowerCase();
-    if (id === "" || id === "near") return "NEAR Native Token";
+    if (id === "" || id === "near") return "NEAR (Native Token)";
     if (id.startsWith("nep141:") || id.startsWith("nep245:"))
-        return "NEAR Intents Token";
-    return "NEAR Fungible Token";
+        return "NEAR (near.com)";
+    return "NEAR (Fungible Token)";
 }
 
 /**

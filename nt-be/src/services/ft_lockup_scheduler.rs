@@ -322,14 +322,14 @@ async fn register_ft_once(
             "registration_only": true
         }))?;
 
-        Transaction::construct(state.bulk_payment_contract_id.clone(), token_account)
+        Transaction::construct(state.signer_id.clone(), token_account)
             .add_action(Action::FunctionCall(Box::new(FunctionCallAction {
                 method_name: "storage_deposit".to_string(),
                 args,
                 gas: FT_LOCKUP_GAS,
                 deposit: STORAGE_DEPOSIT_AMOUNT,
             })))
-            .with_signer(state.bulk_payment_signer.clone())
+            .with_signer(state.signer.clone())
             .send_to(&state.network)
             .await?
             .into_result()?;
@@ -454,14 +454,14 @@ pub async fn run_due_ft_lockup_claims(
                 }
             };
 
-            let tx_res = Transaction::construct(state.bulk_payment_contract_id.clone(), instance_account)
+            let tx_res = Transaction::construct(state.signer_id.clone(), instance_account)
                 .add_action(Action::FunctionCall(Box::new(FunctionCallAction {
                     method_name: "claim".to_string(),
                     args: claim_args,
                     gas: FT_LOCKUP_GAS,
                     deposit: CLAIM_DEPOSIT_AMOUNT,
                 })))
-                .with_signer(state.bulk_payment_signer.clone())
+                .with_signer(state.signer.clone())
                 .send_to(&state.network)
                 .await;
 
@@ -625,6 +625,7 @@ mod tests {
             session_interval: Some(100),
             session_num: Some(10),
             last_claim_session: Some(2),
+            release_per_session: None,
         };
         let next_claim_at = compute_next_claim_at(now, &data).expect("next claim should exist");
         let now_ts = now.timestamp();
@@ -645,6 +646,7 @@ mod tests {
             session_interval: Some(100),
             session_num: Some(10),
             last_claim_session: Some(0),
+            release_per_session: None,
         };
 
         let now = Utc::now();

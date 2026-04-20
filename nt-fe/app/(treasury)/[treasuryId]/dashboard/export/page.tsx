@@ -459,9 +459,9 @@ export default function ExportActivityPage() {
             const specificAssets = selectedAssets.filter((a) => a !== "all");
             if (specificAssets.length > 0) {
                 const tokenIds: string[] = [];
-                specificAssets.forEach((assetSymbol) => {
+                specificAssets.forEach((assetId) => {
                     const token = aggregatedTokens.find(
-                        (t: any) => t.symbol === assetSymbol,
+                        (t: any) => t.id === assetId,
                     );
                     if (token) {
                         token.networks.forEach((n: any) => tokenIds.push(n.id));
@@ -576,9 +576,16 @@ export default function ExportActivityPage() {
     const getSelectedAssetsLabel = () => {
         if (selectedAssets.includes("all") || selectedAssets.length === 0)
             return "All Assets";
-        if (selectedAssets.length === 1) return selectedAssets[0];
-        // Show comma-separated list: "USDC, USDT, NEAR"
-        return selectedAssets.join(", ");
+        const selectedLabels = selectedAssets
+            .filter((assetId) => assetId !== "all")
+            .map((assetId) => {
+                const token = aggregatedTokens.find(
+                    (t: any) => t.id === assetId,
+                );
+                return token?.name || token?.id || assetId;
+            });
+        if (selectedLabels.length === 1) return selectedLabels[0];
+        return selectedLabels.join(", ");
     };
 
     const getSelectedTypesLabel = () => {
@@ -865,7 +872,7 @@ export default function ExportActivityPage() {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent
-                                                        className="min-w-(--radix-dropdown-menu-trigger-width)"
+                                                        className="min-w-(--radix-dropdown-menu-trigger-width) text-foreground"
                                                         align="start"
                                                     >
                                                         <DropdownMenuCheckboxItem
@@ -890,14 +897,14 @@ export default function ExportActivityPage() {
                                                             (token: any) => (
                                                                 <DropdownMenuCheckboxItem
                                                                     key={
-                                                                        token.symbol
+                                                                        token.id
                                                                     }
                                                                     checked={selectedAssets.includes(
-                                                                        token.symbol,
+                                                                        token.id,
                                                                     )}
                                                                     onCheckedChange={() =>
                                                                         toggleAsset(
-                                                                            token.symbol,
+                                                                            token.id,
                                                                         )
                                                                     }
                                                                     onSelect={(
@@ -913,14 +920,14 @@ export default function ExportActivityPage() {
                                                                                     token.icon
                                                                                 }
                                                                                 alt={
-                                                                                    token.symbol
+                                                                                    token.name ||
+                                                                                    token.id
                                                                                 }
                                                                                 className="w-4 h-4 rounded-full mr-2"
                                                                             />
                                                                         )}
-                                                                        {
-                                                                            token.symbol
-                                                                        }
+                                                                        {token.name ||
+                                                                            token.id}
                                                                     </div>
                                                                 </DropdownMenuCheckboxItem>
                                                             ),
@@ -949,7 +956,7 @@ export default function ExportActivityPage() {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent
-                                                        className="min-w-(--radix-dropdown-menu-trigger-width)"
+                                                        className="min-w-(--radix-dropdown-menu-trigger-width) text-foreground"
                                                         align="start"
                                                     >
                                                         {TRANSACTION_TYPES.map(

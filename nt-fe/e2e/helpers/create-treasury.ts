@@ -9,6 +9,10 @@ const BACKEND_URL =
     process.env.NEXT_PUBLIC_BACKEND_API_BASE ||
     "http://localhost:8080";
 
+interface TreasuryConfigResponse {
+    name?: string;
+}
+
 export interface CreateTreasuryOptions {
     name: string;
     accountId: string;
@@ -18,6 +22,43 @@ export interface CreateTreasuryOptions {
     financiers: string[];
     requestors: string[];
     isConfidential?: boolean;
+}
+
+async function treasuryExists(accountId: string): Promise<boolean> {
+    const resp = await fetch(
+        `${BACKEND_URL}/api/treasury/config?treasuryId=${accountId}`,
+    );
+
+    if (resp.status === 404) {
+        return false;
+    }
+
+    if (!resp.ok) {
+        const message = await resp.text();
+        // Sandbox returns 500 UnknownAccount for missing DAOs.
+        if (message.includes("UnknownAccount")) {
+            return false;
+        }
+        throw new Error(
+            `Failed to check DAO config: ${resp.status} ${message}`,
+        );
+    }
+
+    const config = (await resp.json()) as TreasuryConfigResponse;
+    return Boolean(config?.name);
+}
+
+function isAccountAlreadyExistsError(error: unknown): boolean {
+    return String(error).includes("AccountAlreadyExists");
+}
+
+function isTransientRpcError(error: unknown): boolean {
+    const message = String(error);
+    return (
+        message.includes("TransportError") ||
+        message.includes("Communication Error") ||
+        message.includes("localhost:3031")
+    );
 }
 
 /**
@@ -38,7 +79,7 @@ export async function createTreasury(
             governors: opts.governors,
             financiers: opts.financiers,
             requestors: opts.requestors,
-            ...(opts.isConfidential ? { isConfidential: true } : {}),
+            isConfidential: opts.isConfidential ?? false,
         }),
     });
 
@@ -67,4 +108,34 @@ export async function createTreasury(
             }
         }
     }
+}
+
+/**
+ * Ensures a treasury exists once and can be safely reused across tests.
+ * If it already exists, no-op; if creation races with another worker, treat
+ * AccountAlreadyExists as success.
+ */
+export async function ensureTreasury(
+    opts: CreateTreasuryOptions,
+): Promise<void> {
+    for (let attempt = 0; attempt < 10; attempt++) {
+        try {
+            if (await treasuryExists(opts.accountId)) {
+                return;
+            }
+
+            await createTreasury(opts);
+            return;
+        } catch (error) {
+            if (isAccountAlreadyExistsError(error)) {
+                return;
+            }
+            if (!isTransientRpcError(error) || attempt === 9) {
+                throw error;
+            }
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+    }
+
+    throw new Error(`Failed to ensure DAO ${opts.accountId}`);
 }

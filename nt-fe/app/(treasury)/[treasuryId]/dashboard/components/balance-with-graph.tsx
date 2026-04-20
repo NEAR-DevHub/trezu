@@ -34,36 +34,6 @@ import {
 import { formatBalance, formatCurrency } from "@/lib/utils";
 import BalanceChart from "./chart";
 
-interface ChartCaveatEntry {
-    title: string;
-    tokens: string;
-    reason: string;
-}
-
-function ChartCaveatsTooltip({ entries }: { entries: ChartCaveatEntry[] }) {
-    if (entries.length === 0) return null;
-    return (
-        <Tooltip
-            side="right"
-            content={
-                <div className="space-y-2">
-                    {entries.map((entry) => (
-                        <div key={entry.title}>
-                            <p className="font-medium mb-1">{entry.title}:</p>
-                            <p>{entry.tokens}</p>
-                            <p className="text-muted-foreground mt-1 text-[10px]">
-                                {entry.reason}
-                            </p>
-                        </div>
-                    ))}
-                </div>
-            }
-        >
-            <Info className="size-3 cursor-help" />
-        </Tooltip>
-    );
-}
-
 interface Props {
     tokens: TreasuryAsset[];
     isHidden: boolean;
@@ -480,7 +450,7 @@ export default function BalanceWithGraph({
         groupedTokens,
     ]);
 
-    // Symbols excluded from the "all tokens" chart USD calculation (those without historical prices)
+    // Symbols excluded from the "all tokens" chart USD calculation (no historical prices)
     const chartExcludedSymbols = useMemo(() => {
         if (!balanceChartData) return [];
         const tokenIdsWithPrices = new Set(
@@ -492,6 +462,7 @@ export default function BalanceWithGraph({
                 )
                 .map(([tokenId]) => tokenId),
         );
+
         return groupedTokens
             .filter(
                 (group) =>
@@ -499,19 +470,6 @@ export default function BalanceWithGraph({
             )
             .map((group) => group.symbol);
     }, [balanceChartData, groupedTokens]);
-
-    const hasLockupTokens = tokens.some((t) => t.residency === "Lockup");
-
-    const partiallyExcludedSymbols = useMemo(() => {
-        if (!hasLockupTokens) return [];
-        return groupedTokens
-            .filter(
-                (group) =>
-                    group.tokens.some((t) => t.residency === "Lockup") &&
-                    group.tokens.some((t) => t.residency !== "Lockup"),
-            )
-            .map((group) => group.symbol);
-    }, [hasLockupTokens, groupedTokens]);
 
     // Freeze chart data while hovering so tooltip isn't lost when parent
     // re-renders due to other queries (e.g. token balance) refetching.
@@ -557,73 +515,32 @@ export default function BalanceWithGraph({
                     <div className="flex-1">
                         <h3 className="text-xs font-medium text-muted-foreground flex items-center gap-1">
                             Total Balance
-                            {!isConfidential && (
-                                <div
-                                    className={cn(
-                                        isConfidential ? "hidden" : "",
-                                    )}
-                                >
-                                    {selectedToken === "all" ? (
-                                        <ChartCaveatsTooltip
-                                            entries={[
-                                                ...(chartExcludedSymbols.length >
-                                                0
-                                                    ? [
-                                                          {
-                                                              title: "Excluded tokens",
-                                                              tokens: chartExcludedSymbols.join(
-                                                                  ", ",
-                                                              ),
-                                                              reason: "No price history. Select a token to see its balance changes.",
-                                                          },
-                                                      ]
-                                                    : []),
-                                                ...(partiallyExcludedSymbols.length >
-                                                0
-                                                    ? [
-                                                          {
-                                                              title: "Partially excluded",
-                                                              tokens: partiallyExcludedSymbols.join(
-                                                                  ", ",
-                                                              ),
-                                                              reason: "Vesting balance not counted.",
-                                                          },
-                                                      ]
-                                                    : []),
-                                                ...(hasLockupTokens &&
-                                                partiallyExcludedSymbols.length ===
-                                                    0
-                                                    ? [
-                                                          {
-                                                              title: "Excluded tokens",
-                                                              tokens: "Vesting tokens",
-                                                              reason: "Vesting is not supported in the chart.",
-                                                          },
-                                                      ]
-                                                    : []),
-                                            ]}
-                                        />
-                                    ) : (
-                                        <ChartCaveatsTooltip
-                                            entries={
-                                                selectedTokenGroup?.tokens.some(
-                                                    (t) =>
-                                                        t.residency ===
-                                                        "Lockup",
-                                                )
-                                                    ? [
-                                                          {
-                                                              title: "Partially excluded",
-                                                              tokens: selectedToken,
-                                                              reason: "Vesting balance not counted.",
-                                                          },
-                                                      ]
-                                                    : []
-                                            }
-                                        />
-                                    )}
-                                </div>
-                            )}
+                            {!isConfidential &&
+                                selectedToken === "all" &&
+                                chartExcludedSymbols.length > 0 && (
+                                    <Tooltip
+                                        side="right"
+                                        content={
+                                            <div>
+                                                <p className="font-medium mb-1">
+                                                    Excluded tokens:
+                                                </p>
+                                                <p>
+                                                    {chartExcludedSymbols.join(
+                                                        ", ",
+                                                    )}
+                                                </p>
+                                                <p className="text-muted-foreground mt-1 text-[10px]">
+                                                    No price history. Select a
+                                                    token to see its balance
+                                                    changes.
+                                                </p>
+                                            </div>
+                                        }
+                                    >
+                                        <Info className="size-3 cursor-help" />
+                                    </Tooltip>
+                                )}
                         </h3>
                         <p className="text-3xl font-bold mt-2">
                             {!isHidden

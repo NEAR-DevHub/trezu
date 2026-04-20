@@ -9,7 +9,10 @@ use crate::{
     AppState,
     utils::{
         cache::{CacheKey, CacheTier},
-        serde::{opt_u32_from_string_or_number, opt_u64_from_string_or_number},
+        serde::{
+            opt_u32_from_string_or_number, opt_u64_from_string_or_number,
+            opt_u128_string_from_string_or_number,
+        },
     },
 };
 
@@ -31,6 +34,8 @@ pub(crate) struct FtLockupAccountData {
     pub session_num: Option<u32>,
     #[serde(default, deserialize_with = "opt_u32_from_string_or_number")]
     pub last_claim_session: Option<u32>,
+    #[serde(default, deserialize_with = "opt_u128_string_from_string_or_number")]
+    pub release_per_session: Option<String>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -44,6 +49,7 @@ pub(crate) struct FtLockupPosition {
     pub session_interval: Option<u64>,
     pub session_num: Option<u32>,
     pub last_claim_session: Option<u32>,
+    pub release_per_session: Option<u128>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -472,6 +478,10 @@ pub(crate) async fn fetch_ft_lockup_positions(
             session_interval: account_data.session_interval,
             session_num: account_data.session_num,
             last_claim_session: account_data.last_claim_session,
+            release_per_session: account_data
+                .release_per_session
+                .as_deref()
+                .map(parse_u128_amount),
         });
     }
 

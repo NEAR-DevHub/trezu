@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useNearStore } from "@/stores/near-store";
 import { AcceptTermsModal } from "./accept-terms-modal";
 import { Loader2 } from "lucide-react";
+import { CreateTreasuryPromptController } from "@/features/onboarding/components/create-treasury-prompt-controller";
 
 interface AuthProviderProps {
     children: React.ReactNode;
@@ -43,6 +44,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         <>
             {children}
             <AcceptTermsModal open={showTermsModal} />
+            <CreateTreasuryPromptController />
         </>
     );
 }
