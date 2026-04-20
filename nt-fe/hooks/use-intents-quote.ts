@@ -193,14 +193,6 @@ export function useIntentsQuote({
 
             if (feeErrorMessage) return { ok: false };
 
-            if (
-                !formValues.amount ||
-                Number(formValues.amount) <= 0 ||
-                !isAddressValidForToken(formValues.address, formValues.token)
-            ) {
-                return { ok: false };
-            }
-
             if (quote && !isLoading && !isFetching && !isSyncPending) {
                 return { ok: true, quote };
             }
