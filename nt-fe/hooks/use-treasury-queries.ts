@@ -187,8 +187,9 @@ function buildChainIdByTokenMap(
 
     for (const asset of bridgeTokens) {
         for (const network of asset.networks) {
-            const normalizedNetworkId =
-                normalizeIntentsTokenIdForMatch(network.id);
+            const normalizedNetworkId = normalizeIntentsTokenIdForMatch(
+                network.id,
+            );
             if (!chainIdByTokenId.has(normalizedNetworkId)) {
                 chainIdByTokenId.set(normalizedNetworkId, network.chainId);
             }

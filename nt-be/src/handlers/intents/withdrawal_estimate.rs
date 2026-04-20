@@ -40,11 +40,8 @@ pub async fn get_withdrawal_fee(
         ));
     }
 
-    let rpc_request = JsonRpcRequest::new(
-        "withdrawalEstimate",
-        "withdrawal_estimate",
-        vec![request],
-    );
+    let rpc_request =
+        JsonRpcRequest::new("withdrawalEstimate", "withdrawal_estimate", vec![request]);
 
     let response = state
         .http_client

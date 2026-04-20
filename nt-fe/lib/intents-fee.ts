@@ -106,4 +106,3 @@ export function getNetworkFeeCoverageErrorMessage(args: {
     const rowPrefix = args.prefix ?? "";
     return `${rowPrefix}Amount too low for network fee (${formatFeeAmountForMessage(feeCoverage.networkFee, args.decimals)} ${args.symbol}). Add at least ${formatFeeAmountForMessage(feeCoverage.addMore, args.decimals)} ${args.symbol}.`;
 }
-
