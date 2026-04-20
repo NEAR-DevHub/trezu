@@ -177,20 +177,25 @@ async fn handle_confidential_outgoing_external_payment(pool: PgPool) {
     .expect("handle_confidential_outgoing");
     assert!(wrote, "first call should insert a row");
 
-    let row: (BigDecimal, String, String, Option<String>, serde_json::Value) =
-        sqlx::query_as(
-            r#"
+    let row: (
+        BigDecimal,
+        String,
+        String,
+        Option<String>,
+        serde_json::Value,
+    ) = sqlx::query_as(
+        r#"
             SELECT amount, counterparty, token_id, method_name, raw_data
             FROM balance_changes
             WHERE account_id = $1 AND block_height = $2 AND token_id = $3
             "#,
-        )
-        .bind(DAO)
-        .bind(block_height)
-        .bind("intents.near:nep141:wrap.near")
-        .fetch_one(&pool)
-        .await
-        .expect("balance_changes row exists");
+    )
+    .bind(DAO)
+    .bind(block_height)
+    .bind("intents.near:nep141:wrap.near")
+    .fetch_one(&pool)
+    .await
+    .expect("balance_changes row exists");
 
     let (amount, counterparty, token_id, method_name, raw_data) = row;
     assert_eq!(token_id, "intents.near:nep141:wrap.near");
@@ -204,7 +209,10 @@ async fn handle_confidential_outgoing_external_payment(pool: PgPool) {
         "payment counterparty should be the quote recipient"
     );
     assert_eq!(method_name.as_deref(), Some("act_proposal"));
-    assert_eq!(raw_data.get("payload_hash").and_then(|v| v.as_str()), Some(PAYLOAD_HASH));
+    assert_eq!(
+        raw_data.get("payload_hash").and_then(|v| v.as_str()),
+        Some(PAYLOAD_HASH)
+    );
     assert_eq!(
         raw_data.get("correlation_id").and_then(|v| v.as_str()),
         Some(CORRELATION_ID)
