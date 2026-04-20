@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO detected_swaps (\n                account_id,\n                solver_transaction_hash,\n                deposit_balance_change_id,\n                deposit_receipt_id,\n                sent_token_id,\n                sent_amount,\n                received_token_id,\n                received_amount,\n                block_height\n            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)\n            ON CONFLICT (account_id, solver_transaction_hash) DO UPDATE SET\n                deposit_balance_change_id = COALESCE(detected_swaps.deposit_balance_change_id, EXCLUDED.deposit_balance_change_id),\n                sent_token_id             = COALESCE(detected_swaps.sent_token_id, EXCLUDED.sent_token_id),\n                sent_amount               = COALESCE(detected_swaps.sent_amount, EXCLUDED.sent_amount),\n                received_token_id         = COALESCE(detected_swaps.received_token_id, EXCLUDED.received_token_id),\n                received_amount           = COALESCE(detected_swaps.received_amount, EXCLUDED.received_amount)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Text",
+        "Int8",
+        "Text",
+        "Varchar",
+        "Numeric",
+        "Varchar",
+        "Numeric",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ecc271d06921e91b98fe8af6c66e39df8653a1b63def26e51e2417cc5269fa2f"
+}
