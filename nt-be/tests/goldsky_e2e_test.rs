@@ -627,9 +627,12 @@ async fn test_goldsky_maintenance_webassemblymusic(pool: PgPool) {
 
         let _neardata = NeardataClient::from_env();
         let state = common::build_test_state(pool.clone());
-        nt_be::handlers::balance_changes::account_monitor::run_maintenance_cycle(&state, up_to_block)
-            .await
-            .unwrap();
+        nt_be::handlers::balance_changes::account_monitor::run_maintenance_cycle(
+            &state,
+            up_to_block,
+        )
+        .await
+        .unwrap();
 
         let after: (i64,) =
             sqlx::query_as("SELECT COUNT(*) FROM balance_changes WHERE account_id = $1")
