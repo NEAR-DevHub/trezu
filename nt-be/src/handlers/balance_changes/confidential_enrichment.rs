@@ -112,17 +112,10 @@ pub async fn handle_confidential_outgoing(
         .get("quote")
         .and_then(|q| q.get("amountIn"))
         .and_then(|v| v.as_str());
-    let deposit_address = quote_metadata
-        .get("quote")
-        .and_then(|q| q.get("depositAddress"))
-        .and_then(|v| v.as_str());
     let recipient = quote_metadata
         .get("quoteRequest")
         .and_then(|q| q.get("recipient"))
         .and_then(|v| v.as_str());
-    // Tokens flow to the solver-settlement deposit address; fall back to the
-    // quote recipient and finally the DAO id to satisfy NOT NULL.
-    let counterparty = deposit_address.or(recipient).unwrap_or(dao_id);
     let (Some(origin_raw), Some(amount_in_raw)) = (origin_raw, amount_in_raw) else {
         log::warn!(
             "[goldsky-enrichment] quote_metadata for dao={} payload_hash={} missing originAsset or amountIn",
@@ -130,6 +123,17 @@ pub async fn handle_confidential_outgoing(
             payload_hash
         );
         return Ok(false);
+    };
+
+    // Counterparty convention:
+    //   - `recipient != dao_id` → payment (tokens leave the DAO for an external
+    //     account; may include a swap hop on the way). Counterparty = recipient.
+    //   - `recipient == dao_id` → self-swap. Counterparty = "intents.near", which
+    //     mirrors the public intents pipeline so the UI renders public and
+    //     confidential swaps identically.
+    let counterparty: &str = match recipient {
+        Some(r) if r != dao_id => r,
+        _ => "intents.near",
     };
 
     let storage_token_id = format!("intents.near:{}", origin_raw);

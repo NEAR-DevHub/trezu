@@ -54,9 +54,6 @@ struct PendingIntent {
     correlation_id: Option<String>,
     destination_raw_token_id: String,
     expected_amount_out: BigDecimal,
-    /// `quote.depositAddress` — the intents-side address the solver fulfills from.
-    /// Used as the counterparty on the incoming `balance_change` row.
-    deposit_address: Option<String>,
 }
 
 /// Load pending shield intents for a DAO and decimal-adjust their expected
@@ -98,11 +95,6 @@ async fn load_pending_intents(
             .get("quote")
             .and_then(|q| q.get("amountOut"))
             .and_then(|v| v.as_str());
-        let deposit_address = quote_metadata
-            .get("quote")
-            .and_then(|q| q.get("depositAddress"))
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string());
 
         let (Some(destination_raw), Some(recipient), Some(amount_out_raw)) =
             (destination_raw, recipient, amount_out_raw)
@@ -144,7 +136,6 @@ async fn load_pending_intents(
             correlation_id: row.correlation_id,
             destination_raw_token_id: destination_raw.to_string(),
             expected_amount_out: expected,
-            deposit_address,
         });
     }
     Ok(out)
@@ -354,9 +345,14 @@ pub async fn poll_confidential_balances(
 
         let matched = find_matching_intent(&pending_intents, raw_token_id, &delta);
 
+        // Counterparty convention:
+        //   - matched swap fulfillment → "intents.near" (mirrors the public
+        //     intents pipeline in swap_detector.rs so the UI treats public
+        //     and confidential swaps the same way)
+        //   - unmatched direct deposit → NULL (unknown external source)
         let (counterparty, raw_data): (Option<&str>, Value) = match &matched {
             Some(intent) => (
-                intent.deposit_address.as_deref(),
+                Some("intents.near"),
                 serde_json::json!({
                     "payload_hash": intent.payload_hash,
                     "correlation_id": intent.correlation_id,
