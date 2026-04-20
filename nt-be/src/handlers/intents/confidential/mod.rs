@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::AppState;
 
+pub mod balances;
 pub mod generate_intent;
 pub mod prepare_auth;
 

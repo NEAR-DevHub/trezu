@@ -24,7 +24,7 @@ use crate::{
         intents_chains::ChainIcons,
         intents_tokens::{find_token_by_symbol, find_unified_asset_id},
     },
-    handlers::intents::confidential::refresh_dao_jwt,
+    handlers::intents::confidential::balances::fetch_confidential_balances,
     handlers::token::{TokenMetadata as TokenMetadataResponse, fetch_tokens_with_defuse_extension},
 };
 
@@ -427,75 +427,6 @@ pub async fn fetch_near_balance(
     })
 }
 
-#[derive(Deserialize, Debug)]
-struct ConfidentialBalanceEntry {
-    available: String,
-    #[serde(rename = "tokenId")]
-    token_id: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct ConfidentialBalancesResponse {
-    balances: Vec<ConfidentialBalanceEntry>,
-}
-
-/// Fetch confidential balances from the 1Click API and return them as
-/// `(token_id, balance)` pairs in the same format that intents tokens use,
-/// so `build_intents_tokens` can map them to `SimplifiedToken`.
-async fn fetch_confidential_balances(
-    state: &Arc<AppState>,
-    account: &AccountId,
-) -> Result<Vec<(String, String)>, (StatusCode, String)> {
-    let dao_id = account.as_ref();
-
-    let access_token = refresh_dao_jwt(state, dao_id).await?;
-
-    let url = format!(
-        "{}/v0/account/balances",
-        state.env_vars.confidential_api_url
-    );
-
-    let mut req = state
-        .http_client
-        .get(&url)
-        .header("Authorization", format!("Bearer {}", access_token));
-    if let Some(api_key) = &state.env_vars.oneclick_api_key {
-        req = req.header("x-api-key", api_key);
-    }
-
-    let response = req.send().await.map_err(|e| {
-        log::error!("Error fetching confidential balances for {}: {}", dao_id, e);
-        (
-            StatusCode::BAD_GATEWAY,
-            format!("Failed to fetch confidential balances: {}", e),
-        )
-    })?;
-
-    let status = response.status();
-    if !status.is_success() {
-        let body = response.text().await.unwrap_or_default();
-        log::error!("1Click API returned {} for {}: {}", status, dao_id, body);
-        return Err((
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY),
-            format!("1Click API error: {}", body),
-        ));
-    }
-
-    let parsed: ConfidentialBalancesResponse = response.json().await.map_err(|e| {
-        (
-            StatusCode::BAD_GATEWAY,
-            format!("Failed to parse confidential balances: {}", e),
-        )
-    })?;
-
-    Ok(parsed
-        .balances
-        .into_iter()
-        .filter(|b| b.available.parse::<u128>().unwrap_or(0) > 0)
-        .map(|b| (b.token_id, b.available))
-        .collect())
-}
-
 pub async fn compute_user_assets(
     state: &Arc<AppState>,
     account: &AccountId,
@@ -514,7 +445,7 @@ pub async fn compute_user_assets(
     let ft_lockup_positions;
 
     if is_confidential {
-        intents_balances = fetch_confidential_balances(state, account).await?;
+        intents_balances = fetch_confidential_balances(state, account.as_ref()).await?;
         ref_tokens_with_balances = Vec::new();
         near_balance = None;
         lockup_balance = None;

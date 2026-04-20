@@ -626,16 +626,11 @@ async fn test_goldsky_maintenance_webassemblymusic(pool: PgPool) {
             .unwrap();
 
         let neardata = NeardataClient::from_env();
+        let mut state = common::build_test_state_archival(pool.clone());
+        state.neardata_client = Some(neardata);
         nt_be::handlers::balance_changes::account_monitor::run_maintenance_cycle(
-            &pool,
-            &network,
+            &state,
             up_to_block,
-            None,            // no hint_service — use raw RPC gap filling
-            None,            // no fastnear FT discovery
-            None,            // no intents API key
-            "",              // intents API URL (unused)
-            Some(&neardata), // use neardata for counterparty resolution
-            false,
         )
         .await
         .unwrap();

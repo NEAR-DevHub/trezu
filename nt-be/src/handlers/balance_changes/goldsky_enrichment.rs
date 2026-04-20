@@ -463,8 +463,9 @@ async fn upsert_balance_change(
     action_kind: Option<&str>,
     method_name: Option<&str>,
     actions: &serde_json::Value,
-) -> Result<(), Box<dyn std::error::Error>> {
-    sqlx::query!(
+    raw_data: &serde_json::Value,
+) -> Result<i64, Box<dyn std::error::Error>> {
+    let row = sqlx::query!(
         r#"
         INSERT INTO balance_changes
         (account_id, token_id, block_height, block_timestamp, block_time,
@@ -482,7 +483,9 @@ async fn upsert_balance_change(
           counterparty = EXCLUDED.counterparty,
           action_kind = EXCLUDED.action_kind,
           method_name = EXCLUDED.method_name,
+          raw_data = EXCLUDED.raw_data,
           updated_at = NOW()
+        RETURNING id
         "#,
         account_id,
         token_id,
@@ -498,29 +501,30 @@ async fn upsert_balance_change(
         receiver_id,
         counterparty,
         actions,
-        serde_json::json!({}),
+        raw_data,
         action_kind,
         method_name,
     )
-    .execute(app_pool)
+    .fetch_one(app_pool)
     .await?;
 
-    Ok(())
+    Ok(row.id)
 }
 
 // ---------------------------------------------------------------------------
 // Main enrichment cycle
 // ---------------------------------------------------------------------------
 
-/// Fetch the set of monitored account IDs from the app DB.
+/// Fetch monitored accounts from the app DB keyed by account_id → `is_confidential_account`.
 async fn get_monitored_accounts(
     app_pool: &PgPool,
-) -> Result<std::collections::HashSet<String>, Box<dyn std::error::Error>> {
-    let rows: Vec<(String,)> =
-        sqlx::query_as("SELECT account_id FROM monitored_accounts WHERE enabled = true")
-            .fetch_all(app_pool)
-            .await?;
-    Ok(rows.into_iter().map(|(id,)| id).collect())
+) -> Result<std::collections::HashMap<String, bool>, Box<dyn std::error::Error>> {
+    let rows: Vec<(String, bool)> = sqlx::query_as(
+        "SELECT account_id, is_confidential_account FROM monitored_accounts WHERE enabled = true",
+    )
+    .fetch_all(app_pool)
+    .await?;
+    Ok(rows.into_iter().collect())
 }
 
 /// Run one enrichment cycle: fetch unprocessed outcomes from Goldsky sink, enrich with RPC,
@@ -587,6 +591,54 @@ pub async fn run_enrichment_cycle(
     > = std::collections::HashMap::new();
 
     for outcome in &outcomes {
+        // Timestamp conversion: Goldsky ms → balance_changes nanos.
+        // We compute this up-front because the v1.signer confidential
+        // short-circuit (below) runs before the normal event loop and
+        // needs these values too.
+        let block_timestamp_nanos = outcome.trigger_block_timestamp * 1_000_000;
+        let block_time = block_timestamp_to_datetime(block_timestamp_nanos);
+        let block_height = outcome.trigger_block_height as u64;
+
+        // Confidential DAO short-circuit (runs before the normal event loop):
+        // v1.signer emits exactly one `sign: predecessor=AccountId("…"),
+        // request=…payload_v2: Some(Eddsa(Bytes("…")))` log per executed
+        // confidential intent. We detect that, look up the stored quote, and
+        // synthesize the outgoing balance_change row — no RPC balance queries.
+        if outcome.executor_id == "v1.signer"
+            && let Some(logs) = outcome.logs.as_deref()
+            && let Some(call) = super::confidential_enrichment::extract_sign_call_from_logs(logs)
+            && matches!(monitored.get(&call.dao_id), Some(true))
+        {
+            match super::confidential_enrichment::handle_confidential_outgoing(
+                app_pool,
+                network,
+                &call.dao_id,
+                &call.payload_hash,
+                block_height as i64,
+                block_timestamp_nanos,
+                block_time,
+                outcome.transaction_hash.clone(),
+                outcome.signer_id.as_deref(),
+            )
+            .await
+            {
+                Ok(true) => {
+                    affected_accounts.insert(call.dao_id.clone());
+                }
+                Ok(false) => {}
+                Err(e) => {
+                    log::error!(
+                        "[goldsky-enrichment] confidential outgoing failed for {}: {}",
+                        call.dao_id,
+                        e
+                    );
+                }
+            }
+            last_processed_id = outcome.id.clone();
+            last_processed_block = outcome.trigger_block_height;
+            continue;
+        }
+
         let events = parse_outcome_events(outcome);
 
         if events.is_empty() {
@@ -595,11 +647,6 @@ pub async fn run_enrichment_cycle(
             last_processed_block = outcome.trigger_block_height;
             continue;
         }
-
-        // Timestamp conversion: Goldsky ms → balance_changes nanos
-        let block_timestamp_nanos = outcome.trigger_block_timestamp * 1_000_000;
-        let block_time = block_timestamp_to_datetime(block_timestamp_nanos);
-        let block_height = outcome.trigger_block_height as u64;
 
         // Resolve the exact block height and transaction action data using tx_status.
         // The Goldsky outcome ID is the receipt ID — look it up directly in the
@@ -653,7 +700,7 @@ pub async fn run_enrichment_cycle(
         };
 
         for event in &events {
-            if !monitored.contains(&event.account_id) {
+            if !monitored.contains_key(&event.account_id) {
                 log::warn!(
                     "[goldsky-enrichment] Unmonitored account {}",
                     event.account_id
@@ -764,6 +811,7 @@ pub async fn run_enrichment_cycle(
                 effective_action_kind,
                 effective_method_name,
                 &effective_actions,
+                &serde_json::json!({}),
             )
             .await
             {
@@ -804,20 +852,12 @@ pub async fn run_enrichment_cycle(
     )
     .await?;
 
-    // Run swap detection only for monitored accounts with intents token events
-    // to avoid unnecessary API calls and rate limiting on non-monitored DAOs
-    // (e.g. fee-recipient DAOs that appear in settlement logs)
-    let monitored: std::collections::HashSet<String> = sqlx::query_scalar::<_, String>(
-        "SELECT account_id FROM monitored_accounts WHERE enabled = true",
-    )
-    .fetch_all(app_pool)
-    .await
-    .unwrap_or_default()
-    .into_iter()
-    .collect();
-    let swap_candidates: Vec<_> = swap_candidate_accounts
+    // Run swap detection only for non-confidential monitored accounts with intents
+    // token events — confidential DAOs have no public intents activity, and we
+    // skip non-monitored accounts to avoid unnecessary API calls.
+    let swap_candidates: Vec<&String> = swap_candidate_accounts
         .iter()
-        .filter(|a| monitored.contains(a.as_str()))
+        .filter(|a| matches!(monitored.get(a.as_str()), Some(false)))
         .collect();
     for account_id in &swap_candidates {
         match detect_swaps_from_api(app_pool, account_id, intents_api_key, intents_api_url).await {

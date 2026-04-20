@@ -96,13 +96,11 @@ async fn test_monitor_cycle_creation_account(pool: PgPool) -> sqlx::Result<()> {
     common::load_test_env();
     use nt_be::handlers::balance_changes::account_monitor::run_maintenance_cycle;
 
-    let network = common::create_archival_network();
-
     println!("\n=== Testing full monitoring cycle for creation-only account ===");
     println!("Account: {}", ACCOUNT_ID);
 
     // Register the account via the API (same as frontend's openTreasury)
-    let app_state = nt_be::AppState::builder()
+    let mut app_state = nt_be::AppState::builder()
         .db_pool(pool.clone())
         .build()
         .await
@@ -112,7 +110,10 @@ async fn test_monitor_cycle_creation_account(pool: PgPool) -> sqlx::Result<()> {
                 e.to_string(),
             ))
         })?;
-    let app = nt_be::routes::create_routes(Arc::new(app_state));
+    // UP_TO_BLOCK is historical — route all RPC through the archival endpoint.
+    app_state.network = app_state.archival_network.clone();
+    let app_state_arc = Arc::new(app_state);
+    let app = nt_be::routes::create_routes(app_state_arc.clone());
 
     let response = app
         .oneshot(
@@ -137,24 +138,14 @@ async fn test_monitor_cycle_creation_account(pool: PgPool) -> sqlx::Result<()> {
     println!("Registered account via POST /api/monitored-accounts");
 
     // Run the monitoring cycle
-    run_maintenance_cycle(
-        &pool,
-        &network,
-        UP_TO_BLOCK,
-        None,
-        None,
-        None,
-        "",
-        None,
-        false,
-    )
-    .await
-    .map_err(|e| {
-        sqlx::Error::Io(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            e.to_string(),
-        ))
-    })?;
+    run_maintenance_cycle(&app_state_arc, UP_TO_BLOCK)
+        .await
+        .map_err(|e| {
+            sqlx::Error::Io(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                e.to_string(),
+            ))
+        })?;
 
     println!("Monitoring cycle completed");
 

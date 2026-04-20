@@ -1,0 +1,35 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, receipt_id, transaction_hashes\n        FROM balance_changes\n        WHERE account_id = $1\n          AND raw_data->>'payload_hash' = $2\n          AND amount < 0\n        ORDER BY block_height DESC, id DESC\n        LIMIT 1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "receipt_id",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 2,
+        "name": "transaction_hashes",
+        "type_info": "TextArray"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "ab6a7a5c231551cdee6cfbedb2caf5a8c096fb42de6c9c8212403c25d009b0a1"
+}

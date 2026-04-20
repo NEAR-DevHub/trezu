@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT balance_after\n        FROM balance_changes\n        WHERE account_id = $1 AND token_id = $2\n        ORDER BY block_height DESC, id DESC\n        LIMIT 1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "balance_after",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "8a847d1880518694c46fcb47ea2cc6bed6aff0cd694982fffc3be88142de0c6e"
+}

@@ -63,23 +63,12 @@ async fn test_intents_tokens_metadata_discovery() {
     // Use current block where account has intents tokens
     let up_to_block = 179111593; // Current block with intents tokens
 
-    // Get network config with fastnear API key
-    let network = common::create_archival_network();
+    let state = common::build_test_state_archival(pool.clone());
 
     println!("Running monitoring cycle to discover intents tokens and fetch metadata...");
-    run_maintenance_cycle(
-        &pool,
-        &network,
-        up_to_block,
-        None,
-        None,
-        None,
-        "",
-        None,
-        false,
-    )
-    .await
-    .expect("Failed to run monitoring cycle");
+    run_maintenance_cycle(&state, up_to_block)
+        .await
+        .expect("Failed to run monitoring cycle");
 
     // Query all discovered intents token metadata
     let intents_metadata = sqlx::query!(
