@@ -289,11 +289,10 @@ export function ActivityTable({
                                                     />
                                                     {/* Received amount with + sign */}
                                                     <span className="font-normal text-general-success-foreground whitespace-nowrap">
-                                                        +
-                                                        {formatSmartAmount(
-                                                            activity.swap
-                                                                .receivedAmount,
-                                                        )}{" "}
+                                                        {activity.swap
+                                                            .receivedAmount
+                                                            ? `+${formatSmartAmount(activity.swap.receivedAmount)} `
+                                                            : ""}
                                                         {
                                                             activity.swap
                                                                 .receivedTokenMetadata

@@ -202,7 +202,7 @@ struct DetectedSwapRow {
     sent_token_id: Option<String>,
     sent_amount: Option<bigdecimal::BigDecimal>,
     received_token_id: String,
-    received_amount: bigdecimal::BigDecimal,
+    received_amount: Option<bigdecimal::BigDecimal>,
 }
 
 async fn detect_swap_events(
@@ -210,12 +210,17 @@ async fn detect_swap_events(
 ) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
     let last_id = get_cursor(pool, CONSUMER_SWAPS, "detected_swaps").await?;
 
-    // Only scan swaps for DAOs that have at least one notification destination registered.
+    // Only emit notifications once the fulfillment leg is known. Confidential
+    // swaps pre-insert a detected_swaps row at the outgoing (deposit) step
+    // with a NULL fulfillment_balance_change_id; we must not notify for those
+    // yet — nor advance the cursor past them, otherwise we would never
+    // revisit them once the poller fills fulfillment_* in place.
     let rows: Vec<DetectedSwapRow> = sqlx::query_as(
         r#"
         SELECT id, account_id, sent_token_id, sent_amount, received_token_id, received_amount
         FROM detected_swaps
         WHERE id > $1
+          AND fulfillment_balance_change_id IS NOT NULL
           AND account_id IN (SELECT dao_id FROM telegram_treasury_connections)
         ORDER BY id ASC
         LIMIT $2
@@ -231,16 +236,25 @@ async fn detect_swap_events(
     }
 
     let mut inserted = 0usize;
-    let mut max_id = last_id;
+    let batch_max_id = rows.iter().map(|r| r.id).max().unwrap_or(last_id);
 
     for row in &rows {
-        max_id = max_id.max(row.id);
+        let received = match &row.received_amount {
+            Some(v) => v.to_string(),
+            None => {
+                log::warn!(
+                    "[notifications] detected_swap id={} has fulfillment but NULL received_amount; skipping",
+                    row.id
+                );
+                continue;
+            }
+        };
 
         let payload = serde_json::json!({
             "sent_token_id": row.sent_token_id,
             "sent_amount": row.sent_amount.as_ref().map(|a| a.to_string()),
             "received_token_id": row.received_token_id,
-            "received_amount": row.received_amount.to_string(),
+            "received_amount": received,
         });
 
         let rows_inserted = sqlx::query!(
@@ -260,7 +274,29 @@ async fn detect_swap_events(
         inserted += rows_inserted as usize;
     }
 
-    update_cursor(pool, CONSUMER_SWAPS, max_id).await?;
+    // Advance the cursor only up to (min-unfulfilled-id - 1) within the scanned
+    // window, so pre-seeded rows that are still waiting for their fulfillment
+    // remain reachable in subsequent cycles.
+    let min_unfulfilled: Option<i64> = sqlx::query_scalar(
+        r#"
+        SELECT MIN(id) FROM detected_swaps
+        WHERE id > $1
+          AND id <= $2
+          AND fulfillment_balance_change_id IS NULL
+        "#,
+    )
+    .bind(last_id)
+    .bind(batch_max_id)
+    .fetch_one(pool)
+    .await?;
+
+    let new_cursor = match min_unfulfilled {
+        Some(min_id) => min_id - 1,
+        None => batch_max_id,
+    };
+    if new_cursor > last_id {
+        update_cursor(pool, CONSUMER_SWAPS, new_cursor).await?;
+    }
 
     Ok(inserted)
 }

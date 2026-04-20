@@ -283,7 +283,7 @@ export interface SwapInfo {
     sentAmount: string | null;
     sentTokenMetadata?: TokenMetadataInfo;
     receivedTokenId: string;
-    receivedAmount: string;
+    receivedAmount: string | null;
     receivedTokenMetadata: TokenMetadataInfo;
     solverTransactionHash: string;
     swapRole: "deposit" | "fulfillment";
