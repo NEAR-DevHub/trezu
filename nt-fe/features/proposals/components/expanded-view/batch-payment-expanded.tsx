@@ -59,7 +59,7 @@ function PaymentDisplay({
     const transactionHash = txData?.transactionHash;
 
     // Get token metadata to determine blockchain network for recipient address
-    const { data: tokenData } = useToken(tokenId);
+    const { data: tokenData } = useToken(tokenId, { includeChainId: true });
     const chainName = tokenData?.network || "near";
 
     // Transaction links are always NEAR (nearblocks)
@@ -192,7 +192,7 @@ export function BatchPaymentRequestExpanded({
     if (activeBatchData?.tokenId?.toLowerCase() === "native") {
         tokenId = "near";
     }
-    const { data: tokenData } = useToken(tokenId);
+    const { data: tokenData } = useToken(tokenId, { includeChainId: true });
 
     const representativeRecipient = activeBatchData?.payments[0]?.recipient;
     const {
@@ -204,7 +204,7 @@ export function BatchPaymentRequestExpanded({
             ? {
                   address: tokenId,
                   network: tokenData.network || "near",
-                  decimals: tokenData.decimals,
+                  chainId: tokenData?.chainId,
               }
             : null,
         destinationAddress: representativeRecipient,

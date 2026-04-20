@@ -14,7 +14,7 @@ interface TransferExpandedProps {
 
 export function TransferExpanded({ data }: TransferExpandedProps) {
     // Get token metadata to determine blockchain network
-    const { data: tokenData } = useToken(data.tokenId);
+    const { data: tokenData } = useToken(data.tokenId, { includeChainId: true });
     const chainName = tokenData?.network || "near";
     const {
         data: dynamicFeeData,
@@ -25,11 +25,12 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
             ? {
                   address: data.tokenId,
                   network: chainName,
-                  decimals: tokenData.decimals,
+                  chainId: tokenData?.chainId,
               }
             : null,
         destinationAddress: data.receiver,
     });
+
     const hasFeeData =
         isIntentsCrossChainToken &&
         !hasFeeError &&

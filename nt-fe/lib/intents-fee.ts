@@ -1,11 +1,6 @@
-import { IntentsSDK } from "@defuse-protocol/intents-sdk";
 import Big from "@/lib/big";
-import { validateAddress } from "@/lib/address-validation";
-import type { BlockchainType } from "@/lib/blockchain-utils";
-
-const intentsSdk = new IntentsSDK({
-    referral: "",
-});
+import { getIntentsWithdrawalFee } from "@/lib/api";
+import { stripIntentsTokenPrefix } from "@/lib/token-id";
 
 export const NETWORK_FEE_TOOLTIP_TEXT =
     "This fee is used to process the transaction on the selected chain. It is deducted from the amount you enter, so the recipient receives less.";
@@ -38,49 +33,22 @@ export function isIntentsCrossChainToken(token: {
     );
 }
 
-function fromAmountRaw(rawAmount: bigint | string, decimals: number): Big {
-    return Big(rawAmount.toString()).div(Big(10).pow(decimals));
-}
-
 export async function estimateIntentsNetworkFee(args: {
-    token: {
-        address: string;
-        decimals: number;
-        minWithdrawalAmount?: string;
-    };
+    tokenId: string;
+    chainId: string;
     destinationAddress: string;
-    destinationBlockchain?: BlockchainType;
-}): Promise<{ networkFeeRaw: bigint; networkFee: Big }> {
-    if (args.destinationBlockchain) {
-        const result = validateAddress(
-            args.destinationAddress,
-            args.destinationBlockchain,
-        );
-        if (!result.isValid) {
-            return {
-                networkFeeRaw: 0n,
-                networkFee: Big(0),
-            };
-        }
-    }
-
-    const feeEstimation = await intentsSdk.estimateWithdrawalFee({
-        withdrawalParams: {
-            assetId: args.token.address,
-            amount:
-                args.token.minWithdrawalAmount &&
-                BigInt(args.token.minWithdrawalAmount) > 0n
-                    ? BigInt(args.token.minWithdrawalAmount)
-                    : 100000000n,
-            destinationAddress: args.destinationAddress,
-            feeInclusive: false,
-        },
+}): Promise<{ networkFee: Big }> {
+    const normalizedToken = stripIntentsTokenPrefix(args.tokenId);
+    const response = await getIntentsWithdrawalFee({
+        token: normalizedToken,
+        address: args.destinationAddress,
+        chain: args.chainId,
     });
-    const networkFeeRaw = sumNetworkFees(feeEstimation.underlyingFees);
 
+    const rawFee = response?.withdrawalFee ?? "0";
+    const feeDecimals = response?.withdrawalFeeDecimals ?? 0;
     return {
-        networkFeeRaw,
-        networkFee: fromAmountRaw(networkFeeRaw, args.token.decimals),
+        networkFee: Big(rawFee).div(Big(10).pow(feeDecimals)),
     };
 }
 
@@ -139,30 +107,3 @@ export function getNetworkFeeCoverageErrorMessage(args: {
     return `${rowPrefix}Amount too low for network fee (${formatFeeAmountForMessage(feeCoverage.networkFee, args.decimals)} ${args.symbol}). Add at least ${formatFeeAmountForMessage(feeCoverage.addMore, args.decimals)} ${args.symbol}.`;
 }
 
-export function sumNetworkFees(underlyingFees: unknown): bigint {
-    if (!underlyingFees || typeof underlyingFees !== "object") {
-        return 0n;
-    }
-
-    let networkFeeRaw = 0n;
-
-    const walk = (value: unknown) => {
-        if (!value || typeof value !== "object") return;
-
-        for (const [key, nestedValue] of Object.entries(
-            value as Record<string, unknown>,
-        )) {
-            if (typeof nestedValue === "bigint") {
-                if (key.endsWith("Fee")) {
-                    networkFeeRaw += nestedValue;
-                }
-                continue;
-            }
-
-            walk(nestedValue);
-        }
-    };
-
-    walk(underlyingFees);
-    return networkFeeRaw;
-}

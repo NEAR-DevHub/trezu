@@ -5,13 +5,11 @@ import {
     estimateIntentsNetworkFee,
     isIntentsCrossChainToken,
 } from "@/lib/intents-fee";
-import { getBlockchainType } from "@/lib/blockchain-utils";
 
 interface IntentsFeeToken {
     address: string;
     network: string;
-    decimals: number;
-    minWithdrawalAmount?: string;
+    chainId?: string;
 }
 
 interface UseIntentsWithdrawalFeeParams {
@@ -20,7 +18,6 @@ interface UseIntentsWithdrawalFeeParams {
 }
 
 export interface IntentsWithdrawalFeeData {
-    networkFeeRaw: string;
     networkFee: string;
 }
 
@@ -32,15 +29,16 @@ export function useIntentsWithdrawalFee({
     const normalizedDestinationAddress = destinationAddress?.trim() ?? "";
 
     const shouldEstimate =
-        isCrossChainIntents && normalizedDestinationAddress.length > 0;
+        isCrossChainIntents &&
+        normalizedDestinationAddress.length > 0 &&
+        !!token?.chainId;
 
     const query = useQuery({
         queryKey: [
             "intentsWithdrawalFee",
             token?.address,
             token?.network,
-            token?.decimals,
-            token?.minWithdrawalAmount,
+            token?.chainId,
             normalizedDestinationAddress,
         ],
         queryFn: async (): Promise<IntentsWithdrawalFeeData> => {
@@ -48,19 +46,13 @@ export function useIntentsWithdrawalFee({
                 throw new Error("Token is required");
             }
 
-            const { networkFeeRaw, networkFee } =
-                await estimateIntentsNetworkFee({
-                    token: {
-                        address: token.address,
-                        decimals: token.decimals,
-                        minWithdrawalAmount: token.minWithdrawalAmount,
-                    },
-                    destinationAddress: normalizedDestinationAddress,
-                    destinationBlockchain: getBlockchainType(token.network),
-                });
+            const { networkFee } = await estimateIntentsNetworkFee({
+                tokenId: token.address,
+                chainId: token.chainId!,
+                destinationAddress: normalizedDestinationAddress,
+            });
 
             return {
-                networkFeeRaw: networkFeeRaw.toString(),
                 networkFee: networkFee.toString(),
             };
         },

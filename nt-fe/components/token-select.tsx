@@ -27,6 +27,7 @@ import { ScrollArea } from "./ui/scroll-area";
 // Selected token (asset + specific network)
 export interface SelectedTokenData {
     address: string;
+    chainId?: string;
     symbol: string;
     decimals: number;
     name: string;
@@ -102,7 +103,6 @@ export default function TokenSelect({
         enabled: !showOnlyOwnedAssets && open,
         showOnlyOwned: showOnlyOwnedAssets,
     });
-
     // Auto-select first available token on initial load.
     useEffect(() => {
         if (tokens.length > 0 && !selectedToken && !locked) {
@@ -111,6 +111,7 @@ export default function TokenSelect({
             if (!firstNetwork) return;
             setSelectedToken({
                 address: firstNetwork.id,
+                chainId: firstNetwork.chainId,
                 symbol: firstNetwork.symbol,
                 decimals: firstNetwork.decimals,
                 name: firstToken.name || firstNetwork.symbol,
@@ -200,6 +201,7 @@ export default function TokenSelect({
 
             setSelectedToken({
                 address: network.id,
+                chainId: network.chainId,
                 symbol: network.symbol,
                 decimals: network.decimals,
                 name: selectedAsset.name,

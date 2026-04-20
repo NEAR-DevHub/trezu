@@ -22,6 +22,7 @@ import { useTreasury } from "@/hooks/use-treasury";
 import Big from "@/lib/big";
 import { fetchDepositAddress } from "@/lib/bridge-api";
 import { formatBalance, formatSmartAmount } from "@/lib/utils";
+import { stripIntentsTokenPrefix } from "@/lib/token-id";
 import { useThemeStore } from "@/stores/theme-store";
 import { SelectModal } from "./select-modal";
 
@@ -287,7 +288,7 @@ export function DepositModal({
             if (!ownedAsset) return balances;
 
             const normalizeContractId = (value?: string) =>
-                (value || "").replace(/^nep141:/, "");
+                stripIntentsTokenPrefix(value || "");
 
             // Match each bridge network to treasury-held balances in priority order:
             // 1) exact contract-id match (after normalizing `nep141:` prefix),

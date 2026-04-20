@@ -1,4 +1,5 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useMemo } from "react";
 import {
     getUserTreasuries,
     getTreasuryConfig,
@@ -25,6 +26,8 @@ import {
 import { useTreasury } from "./use-treasury";
 import { useAssets } from "./use-assets";
 import { availableBalance } from "@/lib/balance";
+import { useBridgeTokens } from "./use-bridge-tokens";
+import { normalizeIntentsTokenIdForMatch } from "@/lib/token-id";
 
 /**
  * Query hook to get user's treasuries with config data
@@ -169,13 +172,64 @@ export function useBatchStorageDepositIsRegistered(
  * Fetches from backend which enriches data from bridge and external price APIs
  * Supports both NEAR and cross-chain tokens
  */
-export function useToken(tokenId: string | null | undefined) {
-    return useQuery({
+interface UseTokenOptions {
+    includeChainId?: boolean;
+}
+
+function buildChainIdByTokenMap(
+    bridgeTokens: ReturnType<typeof useBridgeTokens>["data"],
+): Map<string, string> {
+    const chainIdByTokenId = new Map<string, string>();
+
+    if (!bridgeTokens?.length) {
+        return chainIdByTokenId;
+    }
+
+    for (const asset of bridgeTokens) {
+        for (const network of asset.networks) {
+            const normalizedNetworkId =
+                normalizeIntentsTokenIdForMatch(network.id);
+            if (!chainIdByTokenId.has(normalizedNetworkId)) {
+                chainIdByTokenId.set(normalizedNetworkId, network.chainId);
+            }
+        }
+    }
+
+    return chainIdByTokenId;
+}
+
+export function useToken(
+    tokenId: string | null | undefined,
+    options?: UseTokenOptions,
+) {
+    const includeChainId = options?.includeChainId ?? false;
+    const bridgeTokensQuery = useBridgeTokens(includeChainId && !!tokenId);
+    const chainIdByTokenId = useMemo(
+        () => buildChainIdByTokenMap(bridgeTokensQuery.data),
+        [bridgeTokensQuery.data],
+    );
+    const tokenQuery = useQuery({
         queryKey: ["tokenMetadata", tokenId],
         queryFn: () => getTokenMetadata(tokenId!),
         enabled: !!tokenId,
         staleTime: 1000 * 60 * 5, // 5 minutes (token metadata and price)
     });
+
+    if (!includeChainId || !tokenQuery.data || !tokenId) {
+        return tokenQuery;
+    }
+
+    const resolvedChainId = chainIdByTokenId.get(
+        normalizeIntentsTokenIdForMatch(tokenId),
+    );
+
+    return {
+        ...tokenQuery,
+        data: {
+            ...tokenQuery.data,
+            chainId: tokenQuery.data.chainId ?? resolvedChainId,
+        },
+    };
 }
 
 /**

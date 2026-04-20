@@ -668,10 +668,10 @@ export async function validateIntentsFeeCoverage(
     payments: BulkPaymentData[],
     selectedToken: {
         address: string;
+        chainId?: string;
         network?: string;
         decimals: number;
         symbol: string;
-        minWithdrawalAmount?: string;
     },
 ): Promise<{ payments: BulkPaymentData[]; networkFee: string | null }> {
     if (!isIntentsCrossChainToken(selectedToken)) {
@@ -684,17 +684,14 @@ export async function validateIntentsFeeCoverage(
     }
 
     const representativeAddress = representativePayment.recipient;
+    if (!selectedToken.chainId) {
+        return { payments, networkFee: null };
+    }
     try {
         const { networkFee } = await estimateIntentsNetworkFee({
-            token: {
-                address: selectedToken.address,
-                decimals: selectedToken.decimals,
-                minWithdrawalAmount: selectedToken.minWithdrawalAmount,
-            },
+            tokenId: selectedToken.address,
+            chainId: selectedToken.chainId,
             destinationAddress: representativeAddress,
-            destinationBlockchain: getBlockchainType(
-                selectedToken.network || "unknown",
-            ),
         });
 
         return {

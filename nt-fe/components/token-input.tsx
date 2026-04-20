@@ -23,6 +23,7 @@ import Big from "@/lib/big";
 
 export const tokenSchema = z.object({
     address: z.string(),
+    chainId: z.string().optional(),
     symbol: z.string(),
     decimals: z.number(),
     name: z.string(),

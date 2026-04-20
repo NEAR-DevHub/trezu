@@ -576,6 +576,7 @@ export interface TokenMetadata {
     network?: string;
     chainName?: string;
     chainIcons?: ChainIcons;
+    chainId?: string;
 }
 
 /**
@@ -1271,6 +1272,17 @@ export interface IntentsQuoteResponse {
     correlationId: string;
 }
 
+export interface IntentsWithdrawalFeeRequest {
+    token: string;
+    address: string;
+    chain: string;
+}
+
+export interface IntentsWithdrawalFeeResponse {
+    withdrawalFee: string;
+    withdrawalFeeDecimals: number;
+}
+
 /**
  * Get quote from 1click intents API
  * @param request - Quote request parameters
@@ -1299,6 +1311,23 @@ export async function getIntentsQuote(
         const message =
             error.response?.data || error?.message || "Failed to get quote";
         throw new Error(message);
+    }
+}
+
+export async function getIntentsWithdrawalFee(
+    request: IntentsWithdrawalFeeRequest,
+): Promise<IntentsWithdrawalFeeResponse | null> {
+    try {
+        const url = `${BACKEND_API_BASE}/intents/withdrawal-fee`;
+        const response = await axios.post<IntentsWithdrawalFeeResponse>(
+            url,
+            request,
+            { withCredentials: true },
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Error getting intents withdrawal fee:", error);
+        return null;
     }
 }
 

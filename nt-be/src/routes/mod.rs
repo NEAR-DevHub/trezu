@@ -277,6 +277,10 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
             post(handlers::intents::quote::get_quote),
         )
         .route(
+            "/api/intents/withdrawal-fee",
+            post(handlers::intents::withdrawal_estimate::get_withdrawal_fee),
+        )
+        .route(
             "/api/intents/swap-status",
             get(handlers::intents::swap_status::get_swap_status),
         )
