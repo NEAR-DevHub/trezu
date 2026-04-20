@@ -591,6 +591,54 @@ pub async fn run_enrichment_cycle(
     > = std::collections::HashMap::new();
 
     for outcome in &outcomes {
+        // Timestamp conversion: Goldsky ms → balance_changes nanos.
+        // We compute this up-front because the v1.signer confidential
+        // short-circuit (below) runs before the normal event loop and
+        // needs these values too.
+        let block_timestamp_nanos = outcome.trigger_block_timestamp * 1_000_000;
+        let block_time = block_timestamp_to_datetime(block_timestamp_nanos);
+        let block_height = outcome.trigger_block_height as u64;
+
+        // Confidential DAO short-circuit (runs before the normal event loop):
+        // v1.signer emits exactly one `sign: predecessor=AccountId("…"),
+        // request=…payload_v2: Some(Eddsa(Bytes("…")))` log per executed
+        // confidential intent. We detect that, look up the stored quote, and
+        // synthesize the outgoing balance_change row — no RPC balance queries.
+        if outcome.executor_id == "v1.signer"
+            && let Some(logs) = outcome.logs.as_deref()
+            && let Some(call) = super::confidential_enrichment::extract_sign_call_from_logs(logs)
+            && matches!(monitored.get(&call.dao_id), Some(true))
+        {
+            match super::confidential_enrichment::handle_confidential_outgoing(
+                app_pool,
+                network,
+                &call.dao_id,
+                &call.payload_hash,
+                block_height as i64,
+                block_timestamp_nanos,
+                block_time,
+                outcome.transaction_hash.clone(),
+                outcome.signer_id.as_deref(),
+            )
+            .await
+            {
+                Ok(true) => {
+                    affected_accounts.insert(call.dao_id.clone());
+                }
+                Ok(false) => {}
+                Err(e) => {
+                    log::error!(
+                        "[goldsky-enrichment] confidential outgoing failed for {}: {}",
+                        call.dao_id,
+                        e
+                    );
+                }
+            }
+            last_processed_id = outcome.id.clone();
+            last_processed_block = outcome.trigger_block_height;
+            continue;
+        }
+
         let events = parse_outcome_events(outcome);
 
         if events.is_empty() {
@@ -599,11 +647,6 @@ pub async fn run_enrichment_cycle(
             last_processed_block = outcome.trigger_block_height;
             continue;
         }
-
-        // Timestamp conversion: Goldsky ms → balance_changes nanos
-        let block_timestamp_nanos = outcome.trigger_block_timestamp * 1_000_000;
-        let block_time = block_timestamp_to_datetime(block_timestamp_nanos);
-        let block_height = outcome.trigger_block_height as u64;
 
         // Resolve the exact block height and transaction action data using tx_status.
         // The Goldsky outcome ID is the receipt ID — look it up directly in the
@@ -655,59 +698,6 @@ pub async fn run_enrichment_cycle(
         } else {
             (None, None)
         };
-
-        // Confidential DAO short-circuit:
-        // If any parsed event targets a confidential DAO and this outcome is an
-        // act_proposal on a v1.signer sign proposal, synthesize the outgoing leg
-        // from the stored quote_metadata and skip the regular on-chain pipeline
-        // (confidential balances are off-chain — RPC queries can't observe them).
-        if let Some(info) = tx_action_info.as_ref() {
-            let confidential_dao = events
-                .iter()
-                .map(|e| e.account_id.clone())
-                .find(|a| matches!(monitored.get(a), Some(true)));
-            if let Some(dao_id) = confidential_dao {
-                let resolved_block = receipt_block.unwrap_or(block_height);
-                if let Some(payload_hash) =
-                    super::confidential_enrichment::resolve_confidential_payload_hash(
-                        network,
-                        &dao_id,
-                        resolved_block,
-                        &info.actions,
-                    )
-                    .await
-                {
-                    match super::confidential_enrichment::handle_confidential_outgoing(
-                        app_pool,
-                        network,
-                        &dao_id,
-                        &payload_hash,
-                        resolved_block as i64,
-                        block_timestamp_nanos,
-                        block_time,
-                        outcome.transaction_hash.clone(),
-                        outcome.signer_id.as_deref(),
-                    )
-                    .await
-                    {
-                        Ok(true) => {
-                            affected_accounts.insert(dao_id.clone());
-                        }
-                        Ok(false) => {}
-                        Err(e) => {
-                            log::error!(
-                                "[goldsky-enrichment] confidential outgoing failed for {}: {}",
-                                dao_id,
-                                e
-                            );
-                        }
-                    }
-                    last_processed_id = outcome.id.clone();
-                    last_processed_block = outcome.trigger_block_height;
-                    continue;
-                }
-            }
-        }
 
         for event in &events {
             if !monitored.contains_key(&event.account_id) {

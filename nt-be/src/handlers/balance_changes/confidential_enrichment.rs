@@ -1,82 +1,67 @@
 //! Goldsky enrichment helpers for confidential DAO outgoing legs.
 //!
-//! When a Goldsky outcome represents an `act_proposal` call that approved a
-//! confidential (v1.signer) signing proposal, we can't observe the balance
-//! change on-chain — confidential balances live in the 1Click system. Instead
-//! we resolve the proposal's payload_hash, look up the matching quote stored
-//! in `confidential_intents.quote_metadata`, and synthesize an outgoing
-//! balance_change row from `quote.amountIn`.
+//! When a confidential DAO approves a swap proposal, the DAO's `act_proposal`
+//! spawns a cross-contract call to `v1.signer`. That `v1.signer` execution
+//! outcome emits a single `sign: predecessor=AccountId("…"), request=…
+//! payload_v2: Some(Eddsa(Bytes("…")))` log, and Goldsky captures it because
+//! the log mentions a sputnik-dao account.
+//!
+//! The log itself tells us both *that* the proposal executed (v1.signer only
+//! emits it for the real `sign` call, not for vote-only `act_proposal`s) and
+//! *which* confidential intent it corresponds to (via the payload hash). We
+//! use it to synthesize an outgoing `balance_change` from the stored
+//! `confidential_intents.quote_metadata`.
 
-use base64::Engine;
 use bigdecimal::{BigDecimal, Zero};
-use near_api::{AccountId, NetworkConfig};
-use serde_json::{Value, json};
+use near_api::NetworkConfig;
+use once_cell::sync::Lazy;
+use regex::Regex;
+use serde_json::json;
 use sqlx::PgPool;
 
 use super::counterparty::{convert_raw_to_decimal, ensure_ft_metadata};
-use crate::handlers::proposals::scraper::{
-    extract_payload_hash_from_kind, fetch_proposal_at_block,
-};
 
-/// Walk a serialized `Vec<ActionView>` and return the `proposal_id` argument
-/// of the first `act_proposal` `FunctionCall`, whether top-level or nested in
-/// a `Delegate` (meta-transaction).
-pub fn extract_act_proposal_id_from_tx_actions(actions: &Value) -> Option<u64> {
-    let arr = actions.as_array()?;
+/// Matches v1.signer's `sign: …` log line and captures the DAO predecessor
+/// and payload hash in one pass.
+static V1_SIGNER_SIGN_LOG: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(
+        r#"sign: predecessor=AccountId\("(?P<dao>[^"]+)"\).*payload_v2:\s*Some\(Eddsa\(Bytes\("(?P<hash>[0-9a-fA-F]+)"\)"#,
+    )
+    .expect("v1.signer sign-log regex is valid")
+});
 
-    let find_act_proposal_args = |func_call: &Value| -> Option<String> {
-        if func_call.get("method_name")?.as_str()? != "act_proposal" {
-            return None;
-        }
-        Some(func_call.get("args")?.as_str()?.to_string())
-    };
-
-    let args_b64 = arr
-        .iter()
-        .find_map(|a| a.get("FunctionCall").and_then(find_act_proposal_args))
-        .or_else(|| {
-            arr.iter().find_map(|a| {
-                a.get("Delegate")?
-                    .get("delegate_action")?
-                    .get("actions")?
-                    .as_array()?
-                    .iter()
-                    .find_map(|inner| inner.get("FunctionCall").and_then(find_act_proposal_args))
-            })
-        })?;
-
-    let args_bytes = base64::engine::general_purpose::STANDARD
-        .decode(&args_b64)
-        .ok()?;
-    let args: Value = serde_json::from_slice(&args_bytes).ok()?;
-    args.get("id")?.as_u64()
+/// Extracted signal that a confidential sign call ran.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConfidentialSignCall {
+    pub dao_id: String,
+    pub payload_hash: String,
 }
 
-/// Resolve the confidential payload_hash for an `act_proposal` outcome by:
-/// 1. Extracting the `proposal_id` from the tx_status actions.
-/// 2. Fetching the proposal from the DAO contract at the given block.
-/// 3. Walking the proposal `kind` (v1.signer sign call) to the `payload_v2.Eddsa` hash.
-///
-/// Returns `None` if the outcome doesn't correspond to a confidential sign proposal.
-pub async fn resolve_confidential_payload_hash(
-    network: &NetworkConfig,
-    dao_id: &str,
-    block_height: u64,
-    actions: &Value,
-) -> Option<String> {
-    let proposal_id = extract_act_proposal_id_from_tx_actions(actions)?;
-    let dao: AccountId = dao_id.parse().ok()?;
-    let proposal = fetch_proposal_at_block(network, &dao, proposal_id, block_height)
-        .await
-        .ok()?;
-    extract_payload_hash_from_kind(&proposal.kind)
+/// Scan a `v1.signer` outcome's logs for a `sign: predecessor=…` line and
+/// extract the DAO + payload hash if present.
+pub fn extract_sign_call_from_logs(logs: &str) -> Option<ConfidentialSignCall> {
+    for raw_line in logs.split('\n').flat_map(|l| l.split("\\n")) {
+        let line = raw_line.trim();
+        if !line.starts_with("sign:") {
+            continue;
+        }
+        if let Some(cap) = V1_SIGNER_SIGN_LOG.captures(line) {
+            let dao = cap.name("dao")?.as_str().to_string();
+            let hash = cap.name("hash")?.as_str().to_ascii_lowercase();
+            return Some(ConfidentialSignCall {
+                dao_id: dao,
+                payload_hash: hash,
+            });
+        }
+    }
+    None
 }
 
 /// Synthesize an outgoing `balance_change` row for a confidential DAO's swap
 /// based on the stored `confidential_intents.quote_metadata`.
 ///
 /// Returns `Ok(true)` if a row was written, `Ok(false)` if no matching intent
-/// record was found (caller should fall through to the normal pipeline).
+/// record was found.
 #[allow(clippy::too_many_arguments)]
 pub async fn handle_confidential_outgoing(
     app_pool: &PgPool,
@@ -127,6 +112,17 @@ pub async fn handle_confidential_outgoing(
         .get("quote")
         .and_then(|q| q.get("amountIn"))
         .and_then(|v| v.as_str());
+    let deposit_address = quote_metadata
+        .get("quote")
+        .and_then(|q| q.get("depositAddress"))
+        .and_then(|v| v.as_str());
+    let recipient = quote_metadata
+        .get("quoteRequest")
+        .and_then(|q| q.get("recipient"))
+        .and_then(|v| v.as_str());
+    // Tokens flow to the solver-settlement deposit address; fall back to the
+    // quote recipient and finally the DAO id to satisfy NOT NULL.
+    let counterparty = deposit_address.or(recipient).unwrap_or(dao_id);
     let (Some(origin_raw), Some(amount_in_raw)) = (origin_raw, amount_in_raw) else {
         log::warn!(
             "[goldsky-enrichment] quote_metadata for dao={} payload_hash={} missing originAsset or amountIn",
@@ -199,7 +195,7 @@ pub async fn handle_confidential_outgoing(
         &Vec::<String>::new() as &[String],
         signer_id,
         Some("v1.signer"),
-        "intents-solver",
+        counterparty,
         json!({}),
         raw_data,
         "TRANSFER",
@@ -217,4 +213,26 @@ pub async fn handle_confidential_outgoing(
     );
 
     Ok(true)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_v1_signer_sign_log() {
+        let log = r#"sign: predecessor=AccountId("confidential-yuriik.sputnik-dao.near"), request=SignRequestArgs { path: "confidential-yuriik.sputnik-dao.near", payload_v2: Some(Eddsa(Bytes("2591e2441a7d9c0b3b9fed73da21609cd708db1e5316f8b244630191d574adb4"))), deprecated_payload: None, domain_id: Some(DomainId(1)), deprecated_key_version: None }"#;
+        let got = extract_sign_call_from_logs(log).expect("should parse");
+        assert_eq!(got.dao_id, "confidential-yuriik.sputnik-dao.near");
+        assert_eq!(
+            got.payload_hash,
+            "2591e2441a7d9c0b3b9fed73da21609cd708db1e5316f8b244630191d574adb4"
+        );
+    }
+
+    #[test]
+    fn ignores_non_sign_logs() {
+        assert!(extract_sign_call_from_logs("EVENT_JSON:{\"standard\":\"nep141\"}").is_none());
+        assert!(extract_sign_call_from_logs("Transfer 100 from a to b").is_none());
+    }
 }

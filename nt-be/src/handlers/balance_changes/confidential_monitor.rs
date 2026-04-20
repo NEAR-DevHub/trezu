@@ -54,6 +54,9 @@ struct PendingIntent {
     correlation_id: Option<String>,
     destination_raw_token_id: String,
     expected_amount_out: BigDecimal,
+    /// `quote.depositAddress` — the intents-side address the solver fulfills from.
+    /// Used as the counterparty on the incoming `balance_change` row.
+    deposit_address: Option<String>,
 }
 
 /// Load pending shield intents for a DAO and decimal-adjust their expected
@@ -95,6 +98,11 @@ async fn load_pending_intents(
             .get("quote")
             .and_then(|q| q.get("amountOut"))
             .and_then(|v| v.as_str());
+        let deposit_address = quote_metadata
+            .get("quote")
+            .and_then(|q| q.get("depositAddress"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
 
         let (Some(destination_raw), Some(recipient), Some(amount_out_raw)) =
             (destination_raw, recipient, amount_out_raw)
@@ -136,6 +144,7 @@ async fn load_pending_intents(
             correlation_id: row.correlation_id,
             destination_raw_token_id: destination_raw.to_string(),
             expected_amount_out: expected,
+            deposit_address,
         });
     }
     Ok(out)
@@ -306,7 +315,9 @@ pub async fn poll_confidential_balances(
     .await?;
     let known_map: HashMap<String, BigDecimal> = known_tokens.into_iter().collect();
 
-    let pending_intents = match load_pending_intents(&state.db_pool, &state.network, account_id).await {
+    let pending_intents = match load_pending_intents(&state.db_pool, &state.network, account_id)
+        .await
+    {
         Ok(v) => v,
         Err(e) => {
             log::warn!(
@@ -345,7 +356,7 @@ pub async fn poll_confidential_balances(
 
         let (counterparty, raw_data): (Option<&str>, Value) = match &matched {
             Some(intent) => (
-                Some("intents-solver"),
+                intent.deposit_address.as_deref(),
                 serde_json::json!({
                     "payload_hash": intent.payload_hash,
                     "correlation_id": intent.correlation_id,
@@ -378,7 +389,11 @@ pub async fn poll_confidential_balances(
             last_balance,
             current_balance,
             delta,
-            if matched.is_some() { "SWAP_IN" } else { "DEPOSIT" },
+            if matched.is_some() {
+                "SWAP_IN"
+            } else {
+                "DEPOSIT"
+            },
         );
 
         if let Some(intent) = matched {
@@ -389,7 +404,7 @@ pub async fn poll_confidential_balances(
                 None => (None, None, None),
             };
 
-            let sent_token_storage = deposit_tx.as_ref().and_then(|_| {
+            let sent_token_storage = deposit_tx.as_ref().and({
                 // Look up the Goldsky row's token_id for accuracy
                 None::<String>
             });
@@ -404,27 +419,21 @@ pub async fn poll_confidential_balances(
 
             // Resolve the sent-token storage id from the Goldsky row, if available.
             let sent_token_resolved = if let Some(id) = deposit_id {
-                sqlx::query_scalar!(
-                    "SELECT token_id FROM balance_changes WHERE id = $1",
-                    id
-                )
-                .fetch_optional(&state.db_pool)
-                .await
-                .ok()
-                .flatten()
-                .flatten()
+                sqlx::query_scalar!("SELECT token_id FROM balance_changes WHERE id = $1", id)
+                    .fetch_optional(&state.db_pool)
+                    .await
+                    .ok()
+                    .flatten()
+                    .flatten()
             } else {
                 None
             };
             let sent_amount_resolved = if let Some(id) = deposit_id {
-                sqlx::query_scalar!(
-                    "SELECT amount FROM balance_changes WHERE id = $1",
-                    id
-                )
-                .fetch_optional(&state.db_pool)
-                .await
-                .ok()
-                .flatten()
+                sqlx::query_scalar!("SELECT amount FROM balance_changes WHERE id = $1", id)
+                    .fetch_optional(&state.db_pool)
+                    .await
+                    .ok()
+                    .flatten()
             } else {
                 None
             };
@@ -437,7 +446,9 @@ pub async fn poll_confidential_balances(
                 deposit_receipt.as_deref(),
                 new_id,
                 &fulfillment_receipt,
-                sent_token_resolved.as_deref().or(sent_token_storage.as_deref()),
+                sent_token_resolved
+                    .as_deref()
+                    .or(sent_token_storage.as_deref()),
                 sent_amount_resolved.as_ref(),
                 storage_token_id,
                 &delta,
@@ -557,11 +568,7 @@ pub async fn run_confidential_poll_cycle(
                 );
             }
             Err(e) => {
-                log::warn!(
-                    "[confidential-poll] {}: poll failed: {}",
-                    account_id,
-                    e
-                );
+                log::warn!("[confidential-poll] {}: poll failed: {}", account_id, e);
             }
             _ => {}
         }
@@ -569,4 +576,3 @@ pub async fn run_confidential_poll_cycle(
 
     Ok(())
 }
-
