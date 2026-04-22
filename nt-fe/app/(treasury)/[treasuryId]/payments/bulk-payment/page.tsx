@@ -315,7 +315,7 @@ export default function BulkPaymentPage() {
 
             if (!submitResult.success) {
                 throw new Error(
-                    submitResult.error || "Failed to submit payment list",
+                    submitResult.error || tBulk("submitListFailed"),
                 );
             }
 
@@ -400,7 +400,7 @@ export default function BulkPaymentPage() {
             toast.error(
                 error instanceof Error
                     ? error.message
-                    : "Failed to submit bulk payment",
+                    : tBulk("submitFailed"),
             );
         }
     };

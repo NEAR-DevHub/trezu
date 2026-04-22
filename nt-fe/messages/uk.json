@@ -843,6 +843,8 @@
         "submittingList": "Надсилання списку масових платежів",
         "submittingProposal": "Надсилання пропозиції",
         "proposalSubmitted": "Пропозицію масового платежу надіслано",
+        "submitListFailed": "Не вдалось надіслати список платежів",
+        "submitFailed": "Не вдалось надіслати масовий платіж",
         "upload": {
             "pleaseUploadCsv": "Завантажте CSV-файл",
             "fileSizeLimit": "Розмір файлу має бути меншим за 1.5 МБ",

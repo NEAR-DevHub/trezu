@@ -843,6 +843,8 @@
         "submittingList": "Submitting bulk payment list",
         "submittingProposal": "Submitting proposal",
         "proposalSubmitted": "Bulk payment proposal submitted",
+        "submitListFailed": "Failed to submit payment list",
+        "submitFailed": "Failed to submit bulk payment",
         "upload": {
             "pleaseUploadCsv": "Please upload a CSV file",
             "fileSizeLimit": "File size must be less than 1.5 MB",

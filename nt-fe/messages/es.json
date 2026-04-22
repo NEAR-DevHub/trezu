@@ -843,6 +843,8 @@
         "submittingList": "Enviando la lista de pagos masivos",
         "submittingProposal": "Enviando la propuesta",
         "proposalSubmitted": "Propuesta de pago masivo enviada",
+        "submitListFailed": "No se pudo enviar la lista de pagos",
+        "submitFailed": "No se pudo enviar el pago masivo",
         "upload": {
             "pleaseUploadCsv": "Sube un archivo CSV",
             "fileSizeLimit": "El tamaño del archivo debe ser inferior a 1,5 MB",
