@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import {
     Dialog,
     DialogContent,
@@ -21,25 +22,24 @@ export function InsufficientBalanceModal({
     requiredAmount,
     actionType,
 }: InsufficientBalanceModalProps) {
-    const actionText =
-        actionType === "vote" ? "cast this vote" : "create this request";
-    const actionName = actionType === "vote" ? "Voting" : "Creating a request";
+    const t = useTranslations("proposals.insufficientBalance");
+    const bodyKey = actionType === "vote" ? "modalBodyVote" : "modalBodyProposal";
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Insufficient NEAR Balance</DialogTitle>
+                    <DialogTitle>{t("modalTitle")}</DialogTitle>
                 </DialogHeader>
                 <DialogDescription>
-                    You don't have enough NEAR tokens in your wallet to{" "}
-                    {actionText}. {actionName} requires a minimum balance of{" "}
-                    <strong>{requiredAmount} NEAR</strong>. Please add NEAR to
-                    your wallet and try again.
+                    {t.rich(bodyKey, {
+                        required: requiredAmount,
+                        amount: (chunks) => <strong>{chunks}</strong>,
+                    })}
                 </DialogDescription>
                 <DialogFooter>
                     <Button className="w-full" onClick={onClose}>
-                        Got It
+                        {t("gotIt")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

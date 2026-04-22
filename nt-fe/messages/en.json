@@ -316,12 +316,30 @@
             "executed": "Executed",
             "expired": "Expired",
             "failed": "Failed",
+            "removed": "Removed",
             "inProgress": "In Progress"
+        },
+        "statusTooltip": {
+            "pending": "This request is still pending and has not yet reached the required number of votes for execution.",
+            "executed": "Executed after {approved} of {required} members approved the request.",
+            "rejected": "Rejected after {rejected} of {required} members voted to reject the request.",
+            "expired": "Expired as it did not receive enough votes to execute.",
+            "failed": "The request failed to complete. Check the transaction details <link>here</link>.",
+            "failedPlain": "The request failed to complete. Check the transaction details here."
         },
         "votes": {
             "approved": "Approved",
             "rejected": "Rejected",
             "pending": "Pending"
+        },
+        "insufficientBalance": {
+            "noAsset": "This request can't be approved because the required token is not available in the treasury.",
+            "bond": "This request can't be approved because the treasury has insufficient <token>{symbol}</token> balance. Add <token>{amount} {symbol}</token> to cover proposal bond costs.",
+            "continue": "This request can't be approved because the treasury has insufficient <token>{symbol}</token> balance. Add <token>{amount} {symbol}</token> to continue.",
+            "modalTitle": "Insufficient NEAR Balance",
+            "modalBodyVote": "You don't have enough NEAR tokens in your wallet to cast this vote. Voting requires a minimum balance of <amount>{required} NEAR</amount>. Please add NEAR to your wallet and try again.",
+            "modalBodyProposal": "You don't have enough NEAR tokens in your wallet to create this request. Creating a request requires a minimum balance of <amount>{required} NEAR</amount>. Please add NEAR to your wallet and try again.",
+            "gotIt": "Got It"
         }
     },
     "members": {
