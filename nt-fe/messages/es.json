@@ -535,7 +535,7 @@
         "hiddenHeading": "Tesorerías ocultas",
         "hiddenDescription": "Tesorerías ocultas de tu lista de cuentas.",
         "removeGuestTitle": "Eliminar tesorería de invitado",
-        "removeDialog": "Estás a punto de eliminar {name}. Una vez confirmado, esta acción no se puede deshacer.",
+        "removeDialog": "Estás a punto de eliminar <bold>{name}</bold>. Una vez confirmado, esta acción no se puede deshacer.",
         "tooltips": {
             "removeFromList": "Eliminar de tu lista",
             "viewTreasury": "Ver tesorería",

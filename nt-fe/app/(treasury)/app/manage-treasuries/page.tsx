@@ -64,8 +64,9 @@ function TreasuryRow({
     isRemovePending?: boolean;
     disableAvailabilityActions?: boolean;
 }) {
+    const tM = useTranslations("manageTreasuries");
     const isGuest = treasury.isSaved && !treasury.isMember;
-    const availabilityHint = "At least one treasury should remain available";
+    const availabilityHint = tM("warningOne");
 
     return (
         <div className="flex gap-2 items-center bg-general-tertiary rounded-md px-2 py-1.5">
@@ -85,7 +86,7 @@ function TreasuryRow({
                     tooltipContent={
                         disableAvailabilityActions
                             ? availabilityHint
-                            : "Remove from your list"
+                            : tM("tooltips.removeFromList")
                     }
                     onClick={onRemove}
                     disabled={isRemovePending || disableAvailabilityActions}
@@ -97,7 +98,7 @@ function TreasuryRow({
                 variant="ghost"
                 size="icon-sm"
                 className="p-px!"
-                tooltipContent="View treasury"
+                tooltipContent={tM("tooltips.viewTreasury")}
                 asChild
             >
                 <Link href={`/${treasury.daoId}`}>
@@ -112,7 +113,7 @@ function TreasuryRow({
                     tooltipContent={
                         disableAvailabilityActions
                             ? availabilityHint
-                            : "Hide from your list"
+                            : tM("tooltips.hideFromList")
                     }
                     onClick={onHide}
                     disabled={isHidePending || disableAvailabilityActions}
@@ -124,7 +125,7 @@ function TreasuryRow({
                 <Button
                     variant="ghost"
                     className="p-px!"
-                    tooltipContent="Show in your list"
+                    tooltipContent={tM("tooltips.showInList")}
                     size="icon-sm"
                     onClick={onUnhide}
                     disabled={isUnhidePending}
@@ -138,6 +139,8 @@ function TreasuryRow({
 
 export default function ManageTreasuriesPage() {
     const t = useTranslations("pages.manageTreasuries");
+    const tM = useTranslations("manageTreasuries");
+    const tCommon = useTranslations("common");
     const router = useRouter();
     const { accountId, isInitializing } = useNear();
     const { lastTreasuryId } = useTreasury();
@@ -184,13 +187,13 @@ export default function ManageTreasuriesPage() {
                 <PageCard>
                     {/* Active Treasuries */}
                     <div className="flex flex-col gap-1">
-                        <StepperHeader title="Active Treasuries" />
+                        <StepperHeader title={tM("activeHeading")} />
                         <p className="text-sm text-muted-foreground">
-                            Treasuries currently visible in your accounts list.
+                            {tM("activeDescription")}
                         </p>
                         {mustKeepOneActive && activeTreasuries.length > 0 && (
                             <p className="text-sm text-warning">
-                                At least one treasury should remain available.
+                                {tM("warningOnePeriod")}
                             </p>
                         )}
                     </div>
@@ -203,7 +206,7 @@ export default function ManageTreasuriesPage() {
                             </>
                         ) : activeTreasuries.length === 0 ? (
                             <p className="text-sm text-muted-foreground">
-                                No active treasuries.
+                                {tM("activeEmpty")}
                             </p>
                         ) : (
                             activeTreasuries.map((treasury) => (
@@ -240,9 +243,9 @@ export default function ManageTreasuriesPage() {
                     {hiddenTreasuries.length > 0 && (
                         <>
                             <div className="flex flex-col gap-1">
-                                <StepperHeader title="Hidden Treasuries" />
+                                <StepperHeader title={tM("hiddenHeading")} />
                                 <p className="text-sm text-muted-foreground">
-                                    Treasuries hidden from your accounts list.
+                                    {tM("hiddenDescription")}
                                 </p>
                             </div>
                             <div className="flex flex-col gap-3">
@@ -286,16 +289,19 @@ export default function ManageTreasuriesPage() {
                 <DialogContent className="max-w-md gap-4">
                     <DialogHeader>
                         <DialogTitle className="text-left">
-                            Remove Guest Treasury
+                            {tM("removeGuestTitle")}
                         </DialogTitle>
                     </DialogHeader>
                     <DialogDescription>
-                        You are about to remove{" "}
-                        <span className="font-semibold">
-                            {treasuryToRemove?.config?.name ??
-                                treasuryToRemove?.daoId}
-                        </span>
-                        . Once confirmed, this action cannot be undone.
+                        {tM.rich("removeDialog", {
+                            name:
+                                treasuryToRemove?.config?.name ??
+                                treasuryToRemove?.daoId ??
+                                "",
+                            bold: (chunks) => (
+                                <span className="font-semibold">{chunks}</span>
+                            ),
+                        })}
                     </DialogDescription>
                     <DialogFooter>
                         <Button
@@ -325,15 +331,14 @@ export default function ManageTreasuriesPage() {
                             }}
                         >
                             {removeSavedMutation.isPending
-                                ? "Removing..."
-                                : "Remove"}
+                                ? tCommon("removing")
+                                : tCommon("remove")}
                         </Button>
                         {mustKeepOneActive &&
                             !!treasuryToRemove &&
                             !treasuryToRemove.isHidden && (
                                 <p className="text-sm text-warning">
-                                    At least one treasury should remain
-                                    available.
+                                    {tM("warningOnePeriod")}
                                 </p>
                             )}
                     </DialogFooter>

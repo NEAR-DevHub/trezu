@@ -535,7 +535,7 @@
         "hiddenHeading": "Hidden Treasuries",
         "hiddenDescription": "Treasuries hidden from your accounts list.",
         "removeGuestTitle": "Remove Guest Treasury",
-        "removeDialog": "You are about to remove {name}. Once confirmed, this action cannot be undone.",
+        "removeDialog": "You are about to remove <bold>{name}</bold>. Once confirmed, this action cannot be undone.",
         "tooltips": {
             "removeFromList": "Remove from your list",
             "viewTreasury": "View treasury",
