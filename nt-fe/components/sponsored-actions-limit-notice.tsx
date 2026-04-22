@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Info, X } from "lucide-react";
@@ -41,6 +42,7 @@ export function SponsoredActionsLimitNotice({
     enableFloatingPopup = true,
     onContactClick,
 }: SponsoredActionsLimitNoticeProps) {
+    const t = useTranslations("sponsoredActions");
     const [dismissed, setDismissed] = useState(false);
     const [portalReady, setPortalReady] = useState(false);
 
@@ -100,9 +102,10 @@ export function SponsoredActionsLimitNotice({
     };
 
     const title = usage.isExhausted
-        ? "Sponsored Actions Used"
-        : "Your team is almost out of sponsored actions";
+        ? t("titleExhausted")
+        : t("titleAlmost");
     const resetDate = formatResetDate(subscription?.creditsResetAt);
+    const resetDateOrFallback = resetDate || t("nextMonthlyReset");
 
     const floatingPopup =
         enableFloatingPopup && !dismissed ? (
@@ -120,23 +123,28 @@ export function SponsoredActionsLimitNotice({
                         className="rounded-sm opacity-70 transition-opacity hover:opacity-100"
                     >
                         <X className="size-4" />
-                        <span className="sr-only">Close notice</span>
+                        <span className="sr-only">{t("closeNotice")}</span>
                     </button>
                 </div>
 
                 <div className="space-y-3 mt-5">
                     <p className="text-xs">
-                        Team usage: {usage.total.toLocaleString()} actions per
-                        month
+                        {t("teamUsage", {
+                            total: usage.total.toLocaleString(),
+                        })}
                     </p>
 
                     <div className="flex flex-col gap-0.5">
                         <div className="flex items-center justify-between">
                             <span className="text-xs font-medium">
-                                {usage.available.toLocaleString()} Available
+                                {t("available", {
+                                    count: usage.available.toLocaleString(),
+                                })}
                             </span>
                             <span className="text-xs text-muted-foreground">
-                                {usage.used.toLocaleString()} Used
+                                {t("used", {
+                                    count: usage.used.toLocaleString(),
+                                })}
                             </span>
                         </div>
 
@@ -152,8 +160,10 @@ export function SponsoredActionsLimitNotice({
 
                     <p className="text-xs text-muted-foreground">
                         {usage.isExhausted
-                            ? `Your team has reached the monthly sponsored actions. You can continue after ${resetDate || "your next monthly reset"} or contact us`
-                            : "TREZU currently sponsors storage costs for all team actions, such as creating requests and voting on them. Your team is close to reaching the monthly sponsored limit."}
+                            ? t("exhaustedBody", {
+                                  date: resetDateOrFallback,
+                              })
+                            : t("almostBody")}
                     </p>
 
                     {usage.isExhausted && (
@@ -163,7 +173,7 @@ export function SponsoredActionsLimitNotice({
                                 className="w-fit bg-card text-card-foreground hover:bg-card/90 hover:text-foreground/90"
                                 onClick={onContactClick}
                             >
-                                Contact Us
+                                {t("contactUs")}
                             </Button>
                         </div>
                     )}
@@ -184,16 +194,14 @@ export function SponsoredActionsLimitNotice({
                     </p>
 
                     <p className="mt-1 text-xs">
-                        Your team has reached the monthly sponsored actions. You
-                        can continue after{" "}
-                        {resetDate || "your next monthly reset"} or ⬇️
+                        {t("sidebarBody", { date: resetDateOrFallback })}
                     </p>
 
                     <Button
                         className="w-full mt-3 bg-card text-card-foreground hover:bg-card/90 hover:text-card-foreground/90"
                         onClick={onContactClick}
                     >
-                        Contact Us
+                        {t("contactUs")}
                     </Button>
                 </div>
             )}

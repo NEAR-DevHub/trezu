@@ -933,6 +933,28 @@
         "connecting": "Connecting…",
         "connect": "Connect"
     },
+    "systemStatus": {
+        "underMaintenance": "Under Maintenance",
+        "maintenanceMessage": "We're currently performing maintenance. Some features may be temporarily unavailable. Please check back soon."
+    },
+    "creditsQuota": {
+        "available": "{count} Available",
+        "used": "{count} Used",
+        "resetOn": "Limit will reset on {date}"
+    },
+    "sponsoredActions": {
+        "titleExhausted": "Sponsored Actions Used",
+        "titleAlmost": "Your team is almost out of sponsored actions",
+        "closeNotice": "Close notice",
+        "teamUsage": "Team usage: {total} actions per month",
+        "available": "{count} Available",
+        "used": "{count} Used",
+        "exhaustedBody": "Your team has reached the monthly sponsored actions. You can continue after {date} or contact us",
+        "almostBody": "TREZU currently sponsors storage costs for all team actions, such as creating requests and voting on them. Your team is close to reaching the monthly sponsored limit.",
+        "contactUs": "Contact Us",
+        "nextMonthlyReset": "your next monthly reset",
+        "sidebarBody": "Your team has reached the monthly sponsored actions. You can continue after {date} or ⬇️"
+    },
     "acceptTerms": {
         "title": "Accept Terms to Continue",
         "privacyTitle": "Your Privacy at Trezu",

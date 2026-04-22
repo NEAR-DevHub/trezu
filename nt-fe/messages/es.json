@@ -933,6 +933,28 @@
         "connecting": "Conectando…",
         "connect": "Conectar"
     },
+    "systemStatus": {
+        "underMaintenance": "En mantenimiento",
+        "maintenanceMessage": "Estamos realizando mantenimiento. Algunas funciones pueden estar temporalmente no disponibles. Vuelve pronto."
+    },
+    "creditsQuota": {
+        "available": "{count} disponibles",
+        "used": "{count} usados",
+        "resetOn": "El límite se restablecerá el {date}"
+    },
+    "sponsoredActions": {
+        "titleExhausted": "Acciones patrocinadas agotadas",
+        "titleAlmost": "Tu equipo está a punto de quedarse sin acciones patrocinadas",
+        "closeNotice": "Cerrar aviso",
+        "teamUsage": "Uso del equipo: {total} acciones por mes",
+        "available": "{count} disponibles",
+        "used": "{count} usadas",
+        "exhaustedBody": "Tu equipo ha alcanzado las acciones patrocinadas mensuales. Podrás continuar después del {date} o contáctanos",
+        "almostBody": "TREZU patrocina actualmente los costes de almacenamiento para todas las acciones del equipo, como crear solicitudes y votarlas. Tu equipo está cerca de alcanzar el límite mensual patrocinado.",
+        "contactUs": "Contáctanos",
+        "nextMonthlyReset": "tu próximo reinicio mensual",
+        "sidebarBody": "Tu equipo ha alcanzado las acciones patrocinadas mensuales. Podrás continuar después del {date} o ⬇️"
+    },
     "acceptTerms": {
         "title": "Acepta los términos para continuar",
         "privacyTitle": "Tu privacidad en Trezu",
