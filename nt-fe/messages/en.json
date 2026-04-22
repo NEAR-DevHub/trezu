@@ -1151,6 +1151,10 @@
             "description": "Create an account to unlock permissions to all features and benefits of Trezu.",
             "cta": "Create Treasury"
         },
+        "questionnaire": {
+            "continue": "Continue",
+            "skip": "Skip"
+        },
         "createPrompt": {
             "title": "You're almost set",
             "description": "Your wallet is connected, but you haven't created a treasury yet. Create an account to start using Trezu, or {suffix}",

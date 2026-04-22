@@ -1151,6 +1151,10 @@
             "description": "Crea una cuenta para desbloquear permisos a todas las funciones y ventajas de Trezu.",
             "cta": "Crear tesorería"
         },
+        "questionnaire": {
+            "continue": "Continuar",
+            "skip": "Omitir"
+        },
         "createPrompt": {
             "title": "Casi lo tienes",
             "description": "Tu cartera está conectada, pero aún no has creado una tesorería. Crea una cuenta para empezar a usar Trezu, o {suffix}",
