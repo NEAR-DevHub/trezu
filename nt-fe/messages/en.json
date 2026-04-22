@@ -1112,6 +1112,13 @@
             "newTreasury": "Want to set up a new Treasury? You can do it here in just a few clicks.",
             "helpSupport": "Get help and support whenever you need it."
         },
+        "tourCard": {
+            "close": "Close",
+            "stepProgress": "{current} of {total}",
+            "gotIt": "Got It",
+            "done": "Done",
+            "next": "Next"
+        },
         "welcome": {
             "heading": "🎉 Welcome!",
             "subheading": "Take a quick tour of Treasury",

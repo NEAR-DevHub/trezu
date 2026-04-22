@@ -1112,6 +1112,13 @@
             "newTreasury": "¿Quieres configurar una nueva tesorería? Puedes hacerlo aquí en unos pocos clics.",
             "helpSupport": "Obtén ayuda y soporte cuando lo necesites."
         },
+        "tourCard": {
+            "close": "Cerrar",
+            "stepProgress": "{current} de {total}",
+            "gotIt": "Entendido",
+            "done": "Listo",
+            "next": "Siguiente"
+        },
         "welcome": {
             "heading": "🎉 ¡Bienvenido!",
             "subheading": "Haz un recorrido rápido por la tesorería",
