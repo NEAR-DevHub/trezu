@@ -5,6 +5,7 @@ import type { ConnectorAction } from "@hot-labs/near-connect";
 import { ArrowDownToLine, Info } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useFormContext, useWatch } from "react-hook-form";
 import { z } from "zod";
@@ -499,6 +500,7 @@ const buildTransferProposal = (
 };
 
 export default function PaymentsPage() {
+    const t = useTranslations("pages.payments");
     const { treasuryId, isConfidential } = useTreasury();
     const { createProposal } = useNear();
     const { data: policy } = useTreasuryPolicy(treasuryId);
@@ -874,10 +876,7 @@ export default function PaymentsPage() {
     );
 
     return (
-        <PageComponentLayout
-            title="Payments"
-            description="Send and receive funds securely"
-        >
+        <PageComponentLayout title={t("title")} description={t("description")}>
             <Form {...form}>
                 <form
                     onSubmit={form.handleSubmit(onSubmit)}

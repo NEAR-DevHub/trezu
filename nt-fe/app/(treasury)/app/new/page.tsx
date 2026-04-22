@@ -13,6 +13,7 @@ import {
     Vote,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { type ArrayPath, useForm, useFormContext } from "react-hook-form";
 import z from "zod";
@@ -758,6 +759,7 @@ const CREATION_STEP_TITLES = [
 ];
 
 export default function NewTreasuryPage() {
+    const t = useTranslations("pages.createTreasury");
     const { accountId, connect, isAuthenticating } = useNear();
     const { treasuries } = useTreasury();
     const { data: creationStatus } = useTreasuryCreationStatus();
@@ -924,10 +926,10 @@ export default function NewTreasuryPage() {
                 onClose={() => router.push("/")}
             />
             <PageComponentLayout
-                title="Create Treasury"
+                title={t("title")}
                 hideCollapseButton
                 hideLogin
-                description="Set up a new multisig treasury for your team"
+                description={t("description")}
                 backButton={treasuries?.length > 0 ? "/" : undefined}
             >
                 <Form {...form}>

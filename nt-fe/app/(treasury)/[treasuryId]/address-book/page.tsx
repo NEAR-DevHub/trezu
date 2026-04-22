@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { PageCard } from "@/components/card";
 import { PageComponentLayout } from "@/components/page-component-layout";
@@ -517,6 +518,7 @@ function RecipientsView({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AddressBookPage() {
+    const t = useTranslations("pages.addressBook");
     const pathname = usePathname();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -594,10 +596,7 @@ export default function AddressBookPage() {
     }, [clearPrefillParams]);
 
     return (
-        <PageComponentLayout
-            title="Address Book"
-            description="Manage your saved recipients"
-        >
+        <PageComponentLayout title={t("title")} description={t("description")}>
             {flowMode ? (
                 <RecipientFlow
                     mode={flowMode}

@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
@@ -325,6 +326,7 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
 }
 
 export default function ExportActivityPage() {
+    const t = useTranslations("pages.dashboard");
     const router = useRouter();
     const queryClient = useQueryClient();
     const { treasuryId, isGuestTreasury } = useTreasury();
@@ -632,8 +634,8 @@ export default function ExportActivityPage() {
     if (planLoading) {
         return (
             <PageComponentLayout
-                title="Dashboard"
-                description="Manage your treasury assets and track activity"
+                title={t("title")}
+                description={t("descriptionLong")}
             >
                 <div className="flex flex-wrap justify-center gap-6 w-full">
                     <div className="flex-1 min-w-0 max-w-3xl">
@@ -654,8 +656,8 @@ export default function ExportActivityPage() {
     return (
         <Form {...form}>
             <PageComponentLayout
-                title="Dashboard"
-                description="Manage your treasury assets and track activity"
+                title={t("title")}
+                description={t("descriptionLong")}
             >
                 <div className="flex flex-wrap justify-center gap-6 w-full">
                     {/* Main Content */}

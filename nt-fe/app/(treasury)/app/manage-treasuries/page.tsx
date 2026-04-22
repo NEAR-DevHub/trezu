@@ -3,6 +3,7 @@
 import { ArrowUpRight, Eye, EyeOff, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/button";
 import { PageCard } from "@/components/card";
@@ -136,6 +137,7 @@ function TreasuryRow({
 }
 
 export default function ManageTreasuriesPage() {
+    const t = useTranslations("pages.manageTreasuries");
     const router = useRouter();
     const { accountId, isInitializing } = useNear();
     const { lastTreasuryId } = useTreasury();
@@ -173,8 +175,8 @@ export default function ManageTreasuriesPage() {
 
     return (
         <PageComponentLayout
-            title="Manage Treasuries"
-            description="Control which treasuries appear in your account"
+            title={t("title")}
+            description={t("description")}
             backButton={lastTreasuryId ? `/${lastTreasuryId}` : "/"}
             hideCollapseButton
         >

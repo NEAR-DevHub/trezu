@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { PageCard } from "@/components/card";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { TabsContent } from "@/components/underline-tabs";
@@ -197,6 +198,7 @@ function NoRequestsFound() {
 }
 
 export default function RequestsPage() {
+    const t = useTranslations("pages.requests");
     const searchParams = useSearchParams();
     const router = useRouter();
     const pathname = usePathname();
@@ -309,8 +311,8 @@ export default function RequestsPage() {
     ) {
         return (
             <PageComponentLayout
-                title="Requests"
-                description="View and manage all pending multisig requests"
+                title={t("title")}
+                description={t("description")}
             >
                 <NoRequestsFound />
             </PageComponentLayout>
@@ -374,10 +376,7 @@ export default function RequestsPage() {
     );
 
     return (
-        <PageComponentLayout
-            title="Requests"
-            description="View and manage all pending multisig requests"
-        >
+        <PageComponentLayout title={t("title")} description={t("description")}>
             <PageCard className="p-0">
                 <ResponsiveTabs
                     tabs={tabs}

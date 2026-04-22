@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { PageCard } from "@/components/card";
 import { TabsContent } from "@/components/responsive-tabs";
@@ -188,6 +189,7 @@ function ActivityList({
 }
 
 export default function ActivityPage() {
+    const t = useTranslations("pages.activity");
     const { treasuryId } = useTreasury();
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -395,7 +397,7 @@ export default function ActivityPage() {
 
     return (
         <PageComponentLayout
-            title="Recent Transactions"
+            title={t("title")}
             description={getHistoryDescription(
                 subscriptionData?.planConfig?.limits?.historyLookupMonths,
             )}

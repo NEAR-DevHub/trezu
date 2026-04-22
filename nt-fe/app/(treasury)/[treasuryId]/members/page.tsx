@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
 import { useTreasury } from "@/hooks/use-treasury";
@@ -107,6 +108,7 @@ function PermissionsHeader({ policyRoles }: { policyRoles: RolePermission[] }) {
 }
 
 export default function MembersPage() {
+    const t = useTranslations("pages.members");
     const { treasuryId } = useTreasury();
     const { data: policy, isLoading } = useTreasuryPolicy(treasuryId || "");
     const { accountId } = useNear();
@@ -1091,10 +1093,7 @@ export default function MembersPage() {
     };
 
     return (
-        <PageComponentLayout
-            title="Members"
-            description="Manage team members and permissions"
-        >
+        <PageComponentLayout title={t("title")} description={t("description")}>
             <PageCard className="gap-0 p-0">
                 {/* Hide header when members are selected */}
                 {!(selectedMembers.length > 0) && (

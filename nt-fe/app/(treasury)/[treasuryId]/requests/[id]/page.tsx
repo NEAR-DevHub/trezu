@@ -3,6 +3,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { redirect, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { trackEvent } from "@/lib/analytics";
 import { use, useEffect, useMemo, useState } from "react";
 import { DepositModal } from "@/app/(treasury)/[treasuryId]/dashboard/components/deposit-modal";
@@ -41,6 +42,7 @@ function RequestPageSkeleton() {
 }
 
 export default function RequestPage({ params }: RequestPageProps) {
+    const t = useTranslations("pages.requests");
     const { id } = use(params);
     const { treasuryId } = useTreasury();
     const router = useRouter();
@@ -102,8 +104,8 @@ export default function RequestPage({ params }: RequestPageProps) {
     if (isLoadingProposal || (canLoadPolicy && isLoadingPolicy)) {
         return (
             <PageComponentLayout
-                title={`Request #${id}`}
-                description="Details for Request"
+                title={`${t("detailTitlePrefix")}${id}`}
+                description={t("detailDescription")}
                 backButton={`/${treasuryId}/requests`}
             >
                 <RequestPageSkeleton />
@@ -121,8 +123,8 @@ export default function RequestPage({ params }: RequestPageProps) {
 
     return (
         <PageComponentLayout
-            title={`Request #${proposal?.id}`}
-            description="Details for Request"
+            title={`${t("detailTitlePrefix")}${proposal?.id}`}
+            description={t("detailDescription")}
             backButton={`/${treasuryId}/requests`}
         >
             <ExpandedView

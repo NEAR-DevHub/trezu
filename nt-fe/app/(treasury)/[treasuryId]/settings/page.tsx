@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { TabGroup } from "@/components/tab-group";
@@ -10,22 +11,21 @@ import { PreferencesTab } from "./components/preferences-tab";
 import { VotingTab } from "./components/voting-tab";
 
 export default function SettingsPage() {
+    const t = useTranslations("pages.settings");
+    const tTabs = useTranslations("settings.tabs");
     const [activeTab, setActiveTab] = useState("general");
 
     const tabs = [
-        { value: "general", label: "General" },
-        { value: "voting", label: "Voting" },
-        { value: "preferences", label: "Preferences" },
+        { value: "general", label: tTabs("general") },
+        { value: "voting", label: tTabs("voting") },
+        { value: "preferences", label: tTabs("preferences") },
         ...(features.integrations
-            ? [{ value: "integrations", label: "Integrations" }]
+            ? [{ value: "integrations", label: tTabs("integrations") }]
             : []),
     ];
 
     return (
-        <PageComponentLayout
-            title="Settings"
-            description="Adjust your application settings"
-        >
+        <PageComponentLayout title={t("title")} description={t("description")}>
             <div className="w-full max-w-4xl mx-auto">
                 <div className="flex mb-6">
                     <TabGroup

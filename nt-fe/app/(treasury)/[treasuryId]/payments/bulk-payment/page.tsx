@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -36,6 +37,7 @@ import {
 import { needsStorageDepositCheck } from "./utils";
 
 export default function BulkPaymentPage() {
+    const t = useTranslations("pages.payments");
     const router = useRouter();
     const queryClient = useQueryClient();
     const { treasuryId: selectedTreasury, isConfidential } = useTreasury();
@@ -398,8 +400,8 @@ export default function BulkPaymentPage() {
         const payment = paymentData[editingIndex];
         return (
             <PageComponentLayout
-                title="Payments"
-                description="Send and receive funds securely"
+                title={t("title")}
+                description={t("description")}
             >
                 <div className="w-full max-w-[600px] mx-auto">
                     <EditPaymentStep
@@ -417,10 +419,7 @@ export default function BulkPaymentPage() {
     }
 
     return (
-        <PageComponentLayout
-            title="Payments"
-            description="Send and receive funds securely"
-        >
+        <PageComponentLayout title={t("title")} description={t("description")}>
             <FormProvider {...form}>
                 <div
                     className={`w-full mx-auto ${step === 1 ? "max-w-3xl" : "max-w-7xl"}`}

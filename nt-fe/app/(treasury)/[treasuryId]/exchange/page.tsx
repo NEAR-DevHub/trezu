@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowDown, ChevronRight, Loader2 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { trackEvent } from "@/lib/analytics";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm, useFormContext } from "react-hook-form";
@@ -657,6 +658,7 @@ function Step2({ handleBack }: StepProps) {
 type ExchangeFormValues = z.infer<typeof exchangeFormSchema>;
 
 export default function ExchangePage() {
+    const t = useTranslations("pages.exchange");
     const { treasuryId: selectedTreasury, isConfidential } = useTreasury();
     const { createProposal } = useNear();
     const { data: policy } = useTreasuryPolicy(selectedTreasury);
@@ -783,10 +785,7 @@ export default function ExchangePage() {
     };
 
     return (
-        <PageComponentLayout
-            title="Exchange"
-            description="Exchange your tokens securely and efficiently"
-        >
+        <PageComponentLayout title={t("title")} description={t("description")}>
             <Form {...form}>
                 <form
                     onSubmit={(e) => {

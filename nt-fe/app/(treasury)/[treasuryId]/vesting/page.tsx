@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { PageCard } from "@/components/card";
 import { CheckboxInput } from "@/components/checkbox-input";
 import { DateInput } from "@/components/date-input";
@@ -291,6 +292,7 @@ function Step3({ handleBack }: StepProps) {
 }
 
 export default function VestingPage() {
+    const t = useTranslations("pages.vesting");
     const { treasuryId, isConfidential } = useTreasury();
     const { createProposal } = useNear();
     const { data: policy } = useTreasuryPolicy(treasuryId);
@@ -396,10 +398,7 @@ export default function VestingPage() {
     };
 
     return (
-        <PageComponentLayout
-            title="Vesting"
-            description="Create vesting schedules quickly and effortlessly"
-        >
+        <PageComponentLayout title={t("title")} description={t("description")}>
             <Form {...form}>
                 <form
                     onSubmit={form.handleSubmit(onSubmit)}
