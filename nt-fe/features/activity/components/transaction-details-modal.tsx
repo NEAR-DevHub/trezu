@@ -7,6 +7,7 @@ import {
     DialogTitle,
 } from "@/components/modal";
 import { ChevronRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { RecentActivity } from "@/lib/api";
 import { FormattedDate } from "@/components/formatted-date";
 import { CopyButton } from "@/components/copy-button";
@@ -38,6 +39,7 @@ function AccountValue({
     showCopy?: boolean;
     useAddressBook?: boolean;
 }) {
+    const t = useTranslations("activity.details");
     const canRenderUser =
         useAddressBook &&
         value !== "via NEAR Intents" &&
@@ -58,8 +60,8 @@ function AccountValue({
                     text={value}
                     variant="ghost"
                     size="icon-sm"
-                    tooltipContent="Copy Address"
-                    toastMessage="Address copied to clipboard"
+                    tooltipContent={t("copyAddress")}
+                    toastMessage={t("addressCopied")}
                 />
             ) : null}
         </div>
@@ -72,6 +74,7 @@ export function TransactionDetailsModal({
     isOpen,
     onClose,
 }: TransactionDetailsModalProps) {
+    const t = useTranslations("activity.details");
     if (!activity) return null;
 
     const isReceived = parseFloat(activity.amount) > 0;
@@ -96,7 +99,7 @@ export function TransactionDetailsModal({
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader className="border-b border-border">
-                    <DialogTitle>Transaction Details</DialogTitle>
+                    <DialogTitle>{t("title")}</DialogTitle>
                 </DialogHeader>
 
                 <div className="space-y-6">
@@ -107,7 +110,7 @@ export function TransactionDetailsModal({
                             {activity.swap.sentAmount &&
                             activity.swap.sentTokenMetadata ? (
                                 <ExchangeSummaryCard
-                                    title="Sell"
+                                    title={t("sell")}
                                     token={{
                                         address:
                                             activity.swap.sentTokenMetadata
@@ -144,7 +147,7 @@ export function TransactionDetailsModal({
 
                             {/* To: Received Token */}
                             <ExchangeSummaryCard
-                                title="Receive"
+                                title={t("receive")}
                                 token={{
                                     address:
                                         activity.swap.receivedTokenMetadata
@@ -171,7 +174,7 @@ export function TransactionDetailsModal({
                                         ? formatSmartAmount(
                                               activity.swap.receivedAmount,
                                           )
-                                        : "Pending"
+                                        : t("pending")
                                 }
                             />
                         </div>
@@ -198,11 +201,11 @@ export function TransactionDetailsModal({
                         hideSeparator
                         items={[
                             {
-                                label: "Type",
+                                label: t("type"),
                                 value: transactionType,
                             },
                             {
-                                label: "Date",
+                                label: t("date"),
                                 value: (
                                     <FormattedDate
                                         date={new Date(activity.blockTime)}
@@ -213,7 +216,7 @@ export function TransactionDetailsModal({
                             ...(isSwap && activity.swap
                                 ? [
                                       {
-                                          label: "From",
+                                          label: t("from"),
                                           value: (
                                               <AccountValue
                                                   value={fromAccount}
@@ -223,7 +226,7 @@ export function TransactionDetailsModal({
                                           ),
                                       } as InfoItem,
                                       {
-                                          label: "To",
+                                          label: t("to"),
                                           value: (
                                               <AccountValue
                                                   value={toAccount}
@@ -235,11 +238,11 @@ export function TransactionDetailsModal({
                                 : isFunctionCall && activity.methodName
                                   ? [
                                         {
-                                            label: "Method",
+                                            label: t("method"),
                                             value: activity.methodName,
                                         } as InfoItem,
                                         {
-                                            label: "Contract",
+                                            label: t("contract"),
                                             value: (
                                                 <AccountValue
                                                     value={
@@ -254,7 +257,7 @@ export function TransactionDetailsModal({
                                     ]
                                   : [
                                         {
-                                            label: "From",
+                                            label: t("from"),
                                             value: (
                                                 <AccountValue
                                                     value={fromAccount}
@@ -263,7 +266,7 @@ export function TransactionDetailsModal({
                                             ),
                                         } as InfoItem,
                                         {
-                                            label: "To",
+                                            label: t("to"),
                                             value: (
                                                 <AccountValue
                                                     value={toAccount}
@@ -276,7 +279,7 @@ export function TransactionDetailsModal({
                             activity.receiptIds?.length
                                 ? [
                                       {
-                                          label: "Transaction",
+                                          label: t("transaction"),
                                           value: (
                                               <TransactionHashCell
                                                   transactionHashes={

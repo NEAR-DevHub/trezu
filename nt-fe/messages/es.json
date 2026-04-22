@@ -219,7 +219,22 @@
             "title": "Todavía no hay nada",
             "description": "Tus transacciones y acciones aparecerán aquí cuando ocurran"
         },
-        "recentTitle": "Transacciones recientes"
+        "recentTitle": "Transacciones recientes",
+        "details": {
+            "title": "Detalles de la transacción",
+            "copyAddress": "Copiar dirección",
+            "addressCopied": "Dirección copiada al portapapeles",
+            "sell": "Vender",
+            "receive": "Recibir",
+            "pending": "Pendiente",
+            "type": "Tipo",
+            "date": "Fecha",
+            "from": "De",
+            "to": "A",
+            "method": "Método",
+            "contract": "Contrato",
+            "transaction": "Transacción"
+        }
     },
     "export": {
         "types": {

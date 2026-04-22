@@ -219,7 +219,22 @@
             "title": "Nothing to show yet",
             "description": "Your transactions and actions will appear here once they happen"
         },
-        "recentTitle": "Recent Transactions"
+        "recentTitle": "Recent Transactions",
+        "details": {
+            "title": "Transaction Details",
+            "copyAddress": "Copy Address",
+            "addressCopied": "Address copied to clipboard",
+            "sell": "Sell",
+            "receive": "Receive",
+            "pending": "Pending",
+            "type": "Type",
+            "date": "Date",
+            "from": "From",
+            "to": "To",
+            "method": "Method",
+            "contract": "Contract",
+            "transaction": "Transaction"
+        }
     },
     "export": {
         "types": {
