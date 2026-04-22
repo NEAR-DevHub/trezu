@@ -801,6 +801,24 @@
         "connecting": "Connecting…",
         "connect": "Connect"
     },
+    "acceptTerms": {
+        "title": "Accept Terms to Continue",
+        "privacyTitle": "Your Privacy at Trezu",
+        "privacyBody": "Trezu is a non-custodial interface. We prioritize your privacy while ensuring the platform stays secure and functional.",
+        "minimalTitle": "Minimal Data",
+        "minimalBody": "We collect limited information, such as public wallet addresses, IP addresses, and usage analytics, to operate and improve the Interface.",
+        "noCustodyTitle": "No Custody",
+        "noCustodyBody": "We never have access to your private keys, recovery phrases, or digital assets.",
+        "publicTitle": "Public Records",
+        "publicBody": "Remember that all blockchain transactions are inherently public and are not controlled by us.",
+        "responsibilityTitle": "Your Responsibility",
+        "responsibilityBody": "You are solely responsible for monitoring your wallet activity and securing your credentials.",
+        "futureTitle": "Future Updates",
+        "futureBody": "If you opt-in to future notifications (like email or Telegram), we will only use that data to keep you informed.",
+        "agreement": "I have read and agree to the <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>",
+        "accepting": "Accepting...",
+        "continue": "Continue"
+    },
     "supportCenter": {
         "title": "Support Center",
         "resources": "Resources",
