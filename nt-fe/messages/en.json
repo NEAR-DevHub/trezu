@@ -398,6 +398,36 @@
             "primaryColorDescription": "Set the primary color for your treasury's interface elements. This color will be used in both light and dark modes, so keep contrast in mind when choosing neutral shades.",
             "selectColorLabel": "Select color {color}"
         },
+        "voting": {
+            "validation": {
+                "required": "Vote duration is required",
+                "validNumber": "Vote duration must be a valid number",
+                "min": "Vote duration must be at least 1 day",
+                "max": "Vote duration must be less than 1000 days",
+                "whole": "Vote duration must be a whole day"
+            },
+            "missingData": "Missing required data",
+            "thresholdProposalTitle": "Update policy - Voting Thresholds",
+            "thresholdProposalSummary": "{account} requested to change voting threshold from {oldValue} to {newValue}.",
+            "thresholdSubmitted": "Request to update voting threshold submitted",
+            "createProposalFailed": "Failed to create proposal",
+            "durationProposalTitle": "Update policy - Voting Duration",
+            "durationProposalSummary": "{account} requested to change voting duration from {oldValue} to {newValue}.",
+            "durationSubmitted": "Request created successfully",
+            "pendingTitle": "Active Voting Threshold Request",
+            "pendingBody": "To avoid conflicts, you need to complete or resolve the existing pending requests before proceeding. These requests are currently active and must be approved or rejected first.",
+            "viewRequest": "View Request",
+            "thresholdHeading": "Voting Threshold",
+            "thresholdDescriptionApprovers": "Define how many votes are required to approve payment and team-related requests. Configure thresholds separately for Approvers and Governance.",
+            "thresholdDescriptionGeneric": "Define how many votes are required to approve requests. Configure thresholds for each role based on their responsibilities.",
+            "membersWhoCanVote": "Members who can vote",
+            "votesRequired": "Votes are required to approve requests",
+            "durationHeading": "Vote Duration",
+            "durationDescription": "The length of time (in days) a proposal will remain open for voting. If voting is not completed within this period, the decision expires.",
+            "durationApprovers": " This duration applies equally to both Governance and Approver roles.",
+            "durationGeneric": " This duration is consistent across all treasury roles.",
+            "days": "Days"
+        },
         "preferences": {
             "timeZone": "Time Zone",
             "timeZoneDescription": "Set your local time zone for accurate date and time display.",

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/input";
 import { Label } from "@/components/ui/label";
 import { useEffect, useMemo, useState } from "react";
@@ -38,26 +39,10 @@ import { RoleName } from "@/components/role-name";
 import { WarningAlert } from "@/components/warning-alert";
 import { NumberBadge } from "@/components/number-badge";
 
-const votingFormSchema = z.object({
-    voteDuration: z
-        .string()
-        .min(1, "Vote duration is required")
-        .refine((val) => !isNaN(Number(val)), {
-            message: "Vote duration must be a valid number",
-        })
-        .refine((val) => Number(val) >= 1, {
-            message: "Vote duration must be at least 1 day",
-        })
-        .refine((val) => Number(val) < 1000, {
-            message: "Vote duration must be less than 1000 days",
-        })
-        .refine((val) => Number.isInteger(Number(val)), {
-            message: "Vote duration must be a whole day",
-        }),
-    thresholds: z.record(z.string(), z.number()),
-});
-
-type VotingFormValues = z.infer<typeof votingFormSchema>;
+type VotingFormValues = {
+    voteDuration: string;
+    thresholds: Record<string, number>;
+};
 
 const proposalKinds = [
     "config",
@@ -101,6 +86,29 @@ function VotingRequestAction({
 }
 
 export function VotingTab() {
+    const t = useTranslations("settings.voting");
+    const votingFormSchema = useMemo(
+        () =>
+            z.object({
+                voteDuration: z
+                    .string()
+                    .min(1, t("validation.required"))
+                    .refine((val) => !isNaN(Number(val)), {
+                        message: t("validation.validNumber"),
+                    })
+                    .refine((val) => Number(val) >= 1, {
+                        message: t("validation.min"),
+                    })
+                    .refine((val) => Number(val) < 1000, {
+                        message: t("validation.max"),
+                    })
+                    .refine((val) => Number.isInteger(Number(val)), {
+                        message: t("validation.whole"),
+                    }),
+                thresholds: z.record(z.string(), z.number()),
+            }),
+        [t],
+    );
     const { treasuryId } = useTreasury();
     const { data: policy } = useTreasuryPolicy(treasuryId);
     const { accountId, createProposal } = useNear();
@@ -245,12 +253,12 @@ export function VotingTab() {
     }, [groupRoles]);
 
     const thresholdDescription = hasApproversAndGovernance
-        ? "Define how many votes are required to approve payment and team-related requests. Configure thresholds separately for Approvers and Governance."
-        : "Define how many votes are required to approve requests. Configure thresholds for each role based on their responsibilities.";
+        ? t("thresholdDescriptionApprovers")
+        : t("thresholdDescriptionGeneric");
 
     const handleThresholdChange = async () => {
         if (!treasuryId || !policy || !activeTab) {
-            toast.error("Missing required data");
+            toast.error(t("missingData"));
             return;
         }
 
@@ -260,15 +268,17 @@ export function VotingTab() {
             const newThreshold = thresholds[activeTab];
 
             const description = {
-                title: "Update policy - Voting Thresholds",
-                summary: `${accountId} requested to change voting threshold from ${originalThresholds[activeTab]} to ${newThreshold}.`,
+                title: t("thresholdProposalTitle"),
+                summary: t("thresholdProposalSummary", {
+                    account: accountId ?? "",
+                    oldValue: originalThresholds[activeTab],
+                    newValue: newThreshold,
+                }),
             };
 
             const proposalBond = policy?.proposal_bond || "0";
 
-            await createProposal(
-                "Request to update voting threshold submitted",
-                {
+            await createProposal(t("thresholdSubmitted"), {
                     treasuryId: treasuryId,
                     proposal: {
                         description: encodeToMarkdown(description),
@@ -331,7 +341,7 @@ export function VotingTab() {
             }));
         } catch (error) {
             console.error("Error creating proposal:", error);
-            toast.error("Failed to create proposal");
+            toast.error(t("createProposalFailed"));
         } finally {
             setIsSubmittingThreshold(false);
         }
@@ -339,7 +349,7 @@ export function VotingTab() {
 
     const handleDurationChange = async () => {
         if (!treasuryId || !policy) {
-            toast.error("Missing required data");
+            toast.error(t("missingData"));
             return;
         }
 
@@ -356,13 +366,17 @@ export function VotingTab() {
                 Number(voteDuration) * 24 * 60 * 60 * 1_000_000_000;
 
             const description = {
-                title: "Update policy - Voting Duration",
-                summary: `${accountId} requested to change voting duration from ${originalDuration} to ${voteDuration}.`,
+                title: t("durationProposalTitle"),
+                summary: t("durationProposalSummary", {
+                    account: accountId ?? "",
+                    oldValue: originalDuration,
+                    newValue: voteDuration,
+                }),
             };
 
             const proposalBond = policy?.proposal_bond || "0";
 
-            await createProposal("Request created successfully", {
+            await createProposal(t("durationSubmitted"), {
                 treasuryId: treasuryId,
                 proposal: {
                     description: encodeToMarkdown(description),
@@ -402,14 +416,10 @@ export function VotingTab() {
                             message={
                                 <>
                                     <h4 className="font-semibold mb-1">
-                                        Active Voting Threshold Request
+                                        {t("pendingTitle")}
                                     </h4>
                                     <p className="text-sm">
-                                        To avoid conflicts, you need to complete
-                                        or resolve the existing pending requests
-                                        before proceeding. These requests are
-                                        currently active and must be approved or
-                                        rejected first.
+                                        {t("pendingBody")}
                                     </p>
                                 </>
                             }
@@ -424,7 +434,7 @@ export function VotingTab() {
                             variant="default"
                             className="w-full"
                         >
-                            View Request
+                            {t("viewRequest")}
                             <ArrowUpRight className="h-4 w-4" />
                         </Button>
                     </PageCard>
@@ -433,7 +443,7 @@ export function VotingTab() {
                 <PageCard>
                     <div>
                         <h3 className="text-lg font-semibold">
-                            Voting Threshold
+                            {t("thresholdHeading")}
                         </h3>
                         <p className="text-sm text-muted-foreground">
                             {thresholdDescription}
@@ -456,7 +466,7 @@ export function VotingTab() {
                                         {/* Members who can vote */}
                                         <div className="flex items-center gap-2">
                                             <span className="text-sm font-medium">
-                                                Members who can vote
+                                                {t("membersWhoCanVote")}
                                             </span>
                                             <NumberBadge
                                                 number={role.memberCount}
@@ -483,8 +493,7 @@ export function VotingTab() {
                                         return (
                                             <div className="flex flex-col gap-1">
                                                 <p className="text-sm font-medium text-foreground">
-                                                    Votes are required to
-                                                    approve requests
+                                                    {t("votesRequired")}
                                                 </p>
                                                 <ThresholdSlider
                                                     currentThreshold={
@@ -539,14 +548,14 @@ export function VotingTab() {
 
                 <PageCard>
                     <div>
-                        <h3 className="text-lg font-semibold">Vote Duration</h3>
+                        <h3 className="text-lg font-semibold">
+                            {t("durationHeading")}
+                        </h3>
                         <p className="text-sm text-muted-foreground">
-                            The length of time (in days) a proposal will remain
-                            open for voting. If voting is not completed within
-                            this period, the decision expires.
+                            {t("durationDescription")}
                             {hasApproversAndGovernance
-                                ? " This duration applies equally to both Governance and Approver roles."
-                                : " This duration is consistent across all treasury roles."}
+                                ? t("durationApprovers")
+                                : t("durationGeneric")}
                         </p>
                     </div>
 
@@ -555,7 +564,9 @@ export function VotingTab() {
                         name="voteDuration"
                         render={({ field }) => (
                             <FormItem>
-                                <Label htmlFor="vote-duration">Days</Label>
+                                <Label htmlFor="vote-duration">
+                                    {t("days")}
+                                </Label>
                                 <FormControl>
                                     <Input
                                         id="vote-duration"

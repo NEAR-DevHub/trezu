@@ -398,6 +398,36 @@
             "primaryColorDescription": "Define el color principal para los elementos de la interfaz de tu tesorería. Se usará tanto en modo claro como oscuro, así que ten en cuenta el contraste al elegir tonos neutros.",
             "selectColorLabel": "Seleccionar color {color}"
         },
+        "voting": {
+            "validation": {
+                "required": "La duración de la votación es obligatoria",
+                "validNumber": "La duración de la votación debe ser un número válido",
+                "min": "La duración de la votación debe ser al menos 1 día",
+                "max": "La duración de la votación debe ser menor que 1000 días",
+                "whole": "La duración de la votación debe ser un día entero"
+            },
+            "missingData": "Faltan datos obligatorios",
+            "thresholdProposalTitle": "Actualizar política - Umbrales de votación",
+            "thresholdProposalSummary": "{account} solicitó cambiar el umbral de votación de {oldValue} a {newValue}.",
+            "thresholdSubmitted": "Solicitud para actualizar el umbral de votación enviada",
+            "createProposalFailed": "No se pudo crear la propuesta",
+            "durationProposalTitle": "Actualizar política - Duración de votación",
+            "durationProposalSummary": "{account} solicitó cambiar la duración de votación de {oldValue} a {newValue}.",
+            "durationSubmitted": "Solicitud creada correctamente",
+            "pendingTitle": "Solicitud activa de umbral de votación",
+            "pendingBody": "Para evitar conflictos, debes completar o resolver las solicitudes pendientes antes de continuar. Estas solicitudes están activas y deben aprobarse o rechazarse primero.",
+            "viewRequest": "Ver solicitud",
+            "thresholdHeading": "Umbral de votación",
+            "thresholdDescriptionApprovers": "Define cuántos votos se requieren para aprobar solicitudes de pago y del equipo. Configura umbrales por separado para Aprobadores y Gobernanza.",
+            "thresholdDescriptionGeneric": "Define cuántos votos se requieren para aprobar solicitudes. Configura umbrales por rol según sus responsabilidades.",
+            "membersWhoCanVote": "Miembros que pueden votar",
+            "votesRequired": "Votos requeridos para aprobar solicitudes",
+            "durationHeading": "Duración de la votación",
+            "durationDescription": "El tiempo (en días) que una propuesta permanece abierta para votación. Si la votación no se completa en ese plazo, la decisión caduca.",
+            "durationApprovers": " Esta duración se aplica por igual a los roles de Gobernanza y Aprobadores.",
+            "durationGeneric": " Esta duración es la misma para todos los roles de la tesorería.",
+            "days": "Días"
+        },
         "preferences": {
             "timeZone": "Zona horaria",
             "timeZoneDescription": "Configura tu zona horaria local para que la fecha y la hora se muestren correctamente.",
