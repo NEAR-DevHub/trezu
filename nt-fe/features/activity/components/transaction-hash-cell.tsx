@@ -26,8 +26,7 @@ export function TransactionHashCell({
     className = "flex items-center justify-end gap-2",
 }: TransactionHashCellProps) {
     const t = useTranslations("transactionHashCell");
-    const needsReceiptSearch = true;
-    !transactionHashes?.length;
+    const needsReceiptSearch = !transactionHashes?.length;
     const { data: transactionFromReceipt, isLoading } = useReceiptSearch(
         needsReceiptSearch ? receiptIds?.[0] : undefined,
     );

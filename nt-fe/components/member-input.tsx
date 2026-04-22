@@ -51,7 +51,7 @@ export function buildMemberSchema(messages: {
                     ctx.addIssue({
                         code: "custom",
                         message: messages.duplicateAddress,
-                        path: [`${index + 1}.accountId`],
+                        path: [index + 1, "accountId"],
                     });
                 }
             }

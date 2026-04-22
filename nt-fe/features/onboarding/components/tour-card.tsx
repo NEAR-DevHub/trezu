@@ -27,6 +27,7 @@ const TOUR_ACTIONS = {
     [NEW_FEATURE_ANNOUNCEMENT.tourName]: {
         getHref: (treasuryId?: string | null) =>
             NEW_FEATURE_ANNOUNCEMENT.href(treasuryId),
+        ctaKey: NEW_FEATURE_ANNOUNCEMENT.ctaLabelKey,
     },
 } as const;
 
@@ -41,6 +42,7 @@ export function TourCard({
     arrow,
 }: CardComponentProps) {
     const t = useTranslations("onboarding.tourCard");
+    const tTours = useTranslations("pageTours");
     const { setCurrentStep, currentTour } = useNextStep();
     const router = useRouter();
     const { treasuryId } = useTreasury();
@@ -103,14 +105,19 @@ export function TourCard({
         handleNext();
     };
 
+    const tourCtaLabel =
+        isLastStep && tourAction && "ctaKey" in tourAction
+            ? tTours(tourAction.ctaKey)
+            : null;
     const buttonText =
-        isLastStep && step.title
+        tourCtaLabel ??
+        (isLastStep && step.title
             ? step.title
             : totalSteps === 1
               ? t("gotIt")
               : isLastStep
                 ? t("done")
-                : t("next");
+                : t("next"));
 
     return (
         <div className="bg-popover-foreground text-popover rounded-md px-2 py-3 shadow-md min-w-[200px] animate-in fade-in-0 zoom-in-95">

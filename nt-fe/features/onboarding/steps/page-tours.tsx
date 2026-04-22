@@ -80,11 +80,6 @@ export const NEW_FEATURE_ANNOUNCEMENT = {
     content: <PageTourContentRich k="newFeature" />,
 } as const;
 
-function NewFeatureTitle() {
-    const t = useTranslations("pageTours");
-    return <>{t(NEW_FEATURE_ANNOUNCEMENT.ctaLabelKey)}</>;
-}
-
 const defaultStepProps = {
     icon: null,
     title: "",
@@ -167,8 +162,6 @@ export const NEW_FEATURE_TOUR: Tour = {
         {
             ...defaultStepProps,
             content: NEW_FEATURE_ANNOUNCEMENT.content,
-            // nextstepjs `title` is typed as string; render translated CTA via ReactNode cast.
-            title: (<NewFeatureTitle />) as unknown as string,
             selector: NEW_FEATURE_ANNOUNCEMENT.selector,
             side: "right",
         },

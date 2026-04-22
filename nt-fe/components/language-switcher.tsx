@@ -39,8 +39,12 @@ export function LanguageSwitcher({
     const handleSelect = (next: Locale) => {
         if (next === locale) return;
         const maxAge = 60 * 60 * 24 * 365;
+        const isSecure =
+            typeof window !== "undefined" &&
+            window.location.protocol === "https:";
+        const secureAttr = isSecure ? "; Secure" : "";
         // biome-ignore lint/suspicious/noDocumentCookie: locale cookie is read synchronously by the Next.js request config on the next navigation, so a client-side cookie write is the simplest path
-        document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=${maxAge}; samesite=lax`;
+        document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=${maxAge}; samesite=lax${secureAttr}`;
         startTransition(() => {
             router.refresh();
         });

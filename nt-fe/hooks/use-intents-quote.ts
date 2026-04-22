@@ -1,7 +1,5 @@
 "use client";
 
-"use client";
-
 import { useCallback, useMemo, useState } from "react";
 import { useDebounce } from "use-debounce";
 import { useTranslations } from "next-intl";
