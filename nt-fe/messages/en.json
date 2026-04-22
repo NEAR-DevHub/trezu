@@ -1182,6 +1182,42 @@
         "lessThan": "Less Than",
         "contains": "Contains"
     },
+    "copyButton": {
+        "copied": "Copied to clipboard",
+        "failed": "Failed to copy"
+    },
+    "addressBookMutations": {
+        "addedToast": "{count, plural, one {Recipient added} other {# recipients added}}",
+        "addedSingleToast": "Recipient added",
+        "addFailedToast": "Failed to add recipients",
+        "addSingleFailedToast": "Failed to add recipient",
+        "removedToast": "{count, plural, one {Recipient removed} other {# recipients removed}}",
+        "removeFailedToast": "Failed to remove recipients",
+        "exportFailedToast": "Failed to export recipients"
+    },
+    "treasuryMutations": {
+        "savedToast": "Treasury saved to your list",
+        "saveFailedToast": "Failed to save treasury",
+        "hiddenToast": "Treasury hidden from list",
+        "hideFailedToast": "Failed to hide treasury",
+        "unhiddenToast": "Treasury is visible again",
+        "unhideFailedToast": "Failed to unhide treasury",
+        "removedToast": "Treasury removed from saved list",
+        "removeFailedToast": "Failed to remove treasury from saved list"
+    },
+    "telegramSettings": {
+        "title": "Telegram",
+        "connectedTo": "Connected to {chat}",
+        "chatNumber": "Chat #{id}",
+        "fallbackChat": "a Telegram chat",
+        "disconnect": "Disconnect",
+        "connect": "Connect",
+        "connectDescription": "Link your treasury to a Telegram chat to receive notifications.",
+        "noTreasuryDescription": "Link your treasuries to a Telegram chat.",
+        "openSettingsHint": "Open settings from a treasury to manage integrations.",
+        "disconnectedToast": "Telegram disconnected for this treasury",
+        "disconnectFailedToast": "Could not disconnect Telegram. Try again."
+    },
     "assetsTable": {
         "assetDetails": "Asset Details",
         "coinPrice": "Coin Price",

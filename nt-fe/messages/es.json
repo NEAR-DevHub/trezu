@@ -1182,6 +1182,42 @@
         "lessThan": "Menor que",
         "contains": "Contiene"
     },
+    "copyButton": {
+        "copied": "Copiado al portapapeles",
+        "failed": "No se pudo copiar"
+    },
+    "addressBookMutations": {
+        "addedToast": "{count, plural, one {Destinatario añadido} other {# destinatarios añadidos}}",
+        "addedSingleToast": "Destinatario añadido",
+        "addFailedToast": "No se pudieron añadir los destinatarios",
+        "addSingleFailedToast": "No se pudo añadir el destinatario",
+        "removedToast": "{count, plural, one {Destinatario eliminado} other {# destinatarios eliminados}}",
+        "removeFailedToast": "No se pudieron eliminar los destinatarios",
+        "exportFailedToast": "No se pudieron exportar los destinatarios"
+    },
+    "treasuryMutations": {
+        "savedToast": "Tesorería guardada en tu lista",
+        "saveFailedToast": "No se pudo guardar la tesorería",
+        "hiddenToast": "Tesorería ocultada de la lista",
+        "hideFailedToast": "No se pudo ocultar la tesorería",
+        "unhiddenToast": "La tesorería vuelve a estar visible",
+        "unhideFailedToast": "No se pudo mostrar la tesorería",
+        "removedToast": "Tesorería eliminada de la lista guardada",
+        "removeFailedToast": "No se pudo eliminar la tesorería de la lista guardada"
+    },
+    "telegramSettings": {
+        "title": "Telegram",
+        "connectedTo": "Conectado a {chat}",
+        "chatNumber": "Chat n.º {id}",
+        "fallbackChat": "un chat de Telegram",
+        "disconnect": "Desconectar",
+        "connect": "Conectar",
+        "connectDescription": "Vincula tu tesorería a un chat de Telegram para recibir notificaciones.",
+        "noTreasuryDescription": "Vincula tus tesorerías a un chat de Telegram.",
+        "openSettingsHint": "Abre la configuración desde una tesorería para gestionar integraciones.",
+        "disconnectedToast": "Telegram desconectado de esta tesorería",
+        "disconnectFailedToast": "No se pudo desconectar Telegram. Inténtalo de nuevo."
+    },
     "assetsTable": {
         "assetDetails": "Detalles del activo",
         "coinPrice": "Precio de la moneda",

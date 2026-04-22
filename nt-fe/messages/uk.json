@@ -1182,6 +1182,42 @@
         "lessThan": "Менше ніж",
         "contains": "Містить"
     },
+    "copyButton": {
+        "copied": "Скопійовано в буфер обміну",
+        "failed": "Не вдалось скопіювати"
+    },
+    "addressBookMutations": {
+        "addedToast": "{count, plural, one {Одержувача додано} few {# одержувачів додано} many {# одержувачів додано} other {# одержувачів додано}}",
+        "addedSingleToast": "Одержувача додано",
+        "addFailedToast": "Не вдалось додати одержувачів",
+        "addSingleFailedToast": "Не вдалось додати одержувача",
+        "removedToast": "{count, plural, one {Одержувача вилучено} few {# одержувачів вилучено} many {# одержувачів вилучено} other {# одержувачів вилучено}}",
+        "removeFailedToast": "Не вдалось вилучити одержувачів",
+        "exportFailedToast": "Не вдалось експортувати одержувачів"
+    },
+    "treasuryMutations": {
+        "savedToast": "Скарбницю збережено у ваш список",
+        "saveFailedToast": "Не вдалось зберегти скарбницю",
+        "hiddenToast": "Скарбницю приховано зі списку",
+        "hideFailedToast": "Не вдалось приховати скарбницю",
+        "unhiddenToast": "Скарбниця знову видима",
+        "unhideFailedToast": "Не вдалось показати скарбницю",
+        "removedToast": "Скарбницю вилучено зі збережених",
+        "removeFailedToast": "Не вдалось вилучити скарбницю зі збережених"
+    },
+    "telegramSettings": {
+        "title": "Telegram",
+        "connectedTo": "Підключено до {chat}",
+        "chatNumber": "Чат №{id}",
+        "fallbackChat": "чат у Telegram",
+        "disconnect": "Відключити",
+        "connect": "Підключити",
+        "connectDescription": "Прив'яжіть скарбницю до чату в Telegram, щоб отримувати сповіщення.",
+        "noTreasuryDescription": "Прив'яжіть свої скарбниці до чату в Telegram.",
+        "openSettingsHint": "Відкрийте налаштування зі скарбниці, щоб керувати інтеграціями.",
+        "disconnectedToast": "Telegram відключено від цієї скарбниці",
+        "disconnectFailedToast": "Не вдалось відключити Telegram. Спробуйте ще раз."
+    },
     "assetsTable": {
         "assetDetails": "Деталі активу",
         "coinPrice": "Ціна монети",

@@ -1,4 +1,7 @@
+"use client";
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
     createAddressBookEntries,
@@ -32,16 +35,13 @@ async function invalidateProfilesForAddresses(
 
 export function useCreateAddressBookEntries(daoId: string | null | undefined) {
     const queryClient = useQueryClient();
+    const t = useTranslations("addressBookMutations");
 
     return useMutation({
         mutationFn: (input: CreateAddressBookEntriesInput) =>
             createAddressBookEntries(input),
         onSuccess: async (created) => {
-            toast.success(
-                created.length === 1
-                    ? "Recipient added"
-                    : `${created.length} recipients added`,
-            );
+            toast.success(t("addedToast", { count: created.length }));
             await Promise.all([
                 queryClient.invalidateQueries({
                     queryKey: ["address-book", daoId],
@@ -54,13 +54,14 @@ export function useCreateAddressBookEntries(daoId: string | null | undefined) {
             ]);
         },
         onError: () => {
-            toast.error("Failed to add recipients");
+            toast.error(t("addFailedToast"));
         },
     });
 }
 
 export function useCreateAddressBookEntry(daoId: string | null | undefined) {
     const queryClient = useQueryClient();
+    const t = useTranslations("addressBookMutations");
 
     return useMutation({
         mutationFn: ({
@@ -71,7 +72,7 @@ export function useCreateAddressBookEntry(daoId: string | null | undefined) {
             entry: AddressBookEntryInput;
         }) => createAddressBookEntry(inputDaoId, entry),
         onSuccess: async (created) => {
-            toast.success("Recipient added");
+            toast.success(t("addedSingleToast"));
             await Promise.all([
                 queryClient.invalidateQueries({
                     queryKey: ["address-book", daoId],
@@ -82,13 +83,14 @@ export function useCreateAddressBookEntry(daoId: string | null | undefined) {
             ]);
         },
         onError: () => {
-            toast.error("Failed to add recipient");
+            toast.error(t("addSingleFailedToast"));
         },
     });
 }
 
 export function useDeleteAddressBookEntries(daoId: string | null | undefined) {
     const queryClient = useQueryClient();
+    const t = useTranslations("addressBookMutations");
 
     return useMutation({
         onMutate: (ids) => {
@@ -111,11 +113,7 @@ export function useDeleteAddressBookEntries(daoId: string | null | undefined) {
         },
         mutationFn: (ids: string[]) => deleteAddressBookEntries(ids),
         onSuccess: async (_, ids, context) => {
-            toast.success(
-                ids.length === 1
-                    ? "Recipient removed"
-                    : `${ids.length} recipients removed`,
-            );
+            toast.success(t("removedToast", { count: ids.length }));
             await Promise.all([
                 queryClient.invalidateQueries({
                     queryKey: ["address-book", daoId],
@@ -128,12 +126,13 @@ export function useDeleteAddressBookEntries(daoId: string | null | undefined) {
             ]);
         },
         onError: () => {
-            toast.error("Failed to remove recipients");
+            toast.error(t("removeFailedToast"));
         },
     });
 }
 
 export function useExportAddressBook(daoId: string | null | undefined) {
+    const t = useTranslations("addressBookMutations");
     return useMutation({
         mutationFn: (ids?: string[]) => {
             if (!daoId)
@@ -141,7 +140,7 @@ export function useExportAddressBook(daoId: string | null | undefined) {
             return exportAddressBook(daoId, ids);
         },
         onError: () => {
-            toast.error("Failed to export recipients");
+            toast.error(t("exportFailedToast"));
         },
     });
 }

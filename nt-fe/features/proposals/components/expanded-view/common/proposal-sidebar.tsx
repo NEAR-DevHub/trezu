@@ -25,7 +25,7 @@ import Big from "@/lib/big";
 import { User } from "@/components/user";
 import {
     AuthButtonWithProposal,
-    NO_VOTE_MESSAGE,
+    useNoVoteMessage,
 } from "@/components/auth-button";
 import { useFormatDate } from "@/components/formatted-date";
 import { InfoAlert } from "@/components/info-alert";
@@ -274,6 +274,7 @@ export function ProposalSidebar({
     onDeposit,
 }: ProposalSidebarProps) {
     const t = useTranslations("proposals.expanded");
+    const noVoteMessage = useNoVoteMessage();
     const { accountId } = useNear();
     const { treasuryId } = useTreasury();
     const { data: insufficientBalanceInfo } = useProposalInsufficientBalance(
@@ -554,7 +555,7 @@ export function ProposalSidebar({
                         className="flex gap-1 w-full"
                         onClick={() => onVote("Reject")}
                         disabled={isUserVoter}
-                        tooltip={isUserVoter ? NO_VOTE_MESSAGE : undefined}
+                        tooltip={isUserVoter ? noVoteMessage : undefined}
                     >
                         <X className="h-4 w-4 mr-2" />
                         {t("reject")}
@@ -584,7 +585,7 @@ export function ProposalSidebar({
                             disabled={
                                 isUserVoter || isCheckingVotingDurationImpact
                             }
-                            tooltip={isUserVoter ? NO_VOTE_MESSAGE : undefined}
+                            tooltip={isUserVoter ? noVoteMessage : undefined}
                         >
                             {isCheckingVotingDurationImpact ? (
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />

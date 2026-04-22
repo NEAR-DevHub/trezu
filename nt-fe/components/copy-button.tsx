@@ -1,4 +1,7 @@
+"use client";
+
 import { Copy } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "./button";
 import { cn } from "@/lib/utils";
@@ -11,17 +14,18 @@ interface CopyButtonProps extends React.ComponentProps<typeof Button> {
 
 export function CopyButton({
     text,
-    toastMessage = "Copied to clipboard",
+    toastMessage,
     children,
     iconClassName,
     ...props
 }: CopyButtonProps) {
+    const t = useTranslations("copyButton");
     const handleCopy = async () => {
         try {
             await navigator.clipboard.writeText(text);
-            toast.success(toastMessage);
+            toast.success(toastMessage ?? t("copied"));
         } catch (error) {
-            toast.error("Failed to copy");
+            toast.error(t("failed"));
         }
     };
 

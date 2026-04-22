@@ -27,12 +27,10 @@ interface AuthButtonProps extends React.ComponentProps<typeof Button> {
     >; // Additional tooltip props (disabled, contentProps, etc.)
 }
 
-export const NO_WALLET_MESSAGE = "Connect your wallet";
-export const NO_PERMISSION_MESSAGE =
-    "You don't have permission to perform this action";
-export const NO_VOTE_MESSAGE = "You have already voted on this proposal";
-export const NO_SPONSORED_TRANSACTIONS_MESSAGE =
-    "No sponsored transactions remaining";
+export function useNoVoteMessage() {
+    const t = useTranslations("auth");
+    return t("noVote");
+}
 
 interface ErrorMessageProps extends React.ComponentProps<typeof Button> {
     message: string;

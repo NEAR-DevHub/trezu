@@ -2,7 +2,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/button";
 import {
     AuthButtonWithProposal,
-    NO_VOTE_MESSAGE,
+    useNoVoteMessage,
 } from "@/components/auth-button";
 import { PageCard } from "@/components/card";
 import { NumberBadge } from "@/components/number-badge";
@@ -74,6 +74,7 @@ export function PendingRequestItem({
     onDeposit,
 }: PendingRequestItemProps) {
     const tActions = useTranslations("requests.actions");
+    const noVoteMessage = useNoVoteMessage();
     const type = getProposalUIKind(proposal);
     const { data: insufficientBalanceInfo } = useProposalInsufficientBalance(
         proposal,
@@ -120,7 +121,7 @@ export function PendingRequestItem({
                                     }}
                                     tooltip={
                                         isUserVoter
-                                            ? NO_VOTE_MESSAGE
+                                            ? noVoteMessage
                                             : undefined
                                     }
                                     disabled={isUserVoter}
@@ -157,7 +158,7 @@ export function PendingRequestItem({
                                         disabled={isUserVoter}
                                         tooltip={
                                             isUserVoter
-                                                ? NO_VOTE_MESSAGE
+                                                ? noVoteMessage
                                                 : undefined
                                         }
                                     >
