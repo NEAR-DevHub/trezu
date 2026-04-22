@@ -1318,7 +1318,9 @@
     },
     "treasurySelector": {
         "select": "Select treasury",
-        "connectWalletTooltip": "Connect wallet to view treasuries"
+        "connectWalletTooltip": "Connect wallet to view treasuries",
+        "manageTreasuries": "Manage Treasuries",
+        "createTreasury": "Create Treasury"
     },
     "selectModal": {
         "searchByName": "Search by name"

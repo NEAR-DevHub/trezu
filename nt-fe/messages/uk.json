@@ -1318,7 +1318,9 @@
     },
     "treasurySelector": {
         "select": "Обрати скарбницю",
-        "connectWalletTooltip": "Підключіть гаманець, щоб побачити скарбниці"
+        "connectWalletTooltip": "Підключіть гаманець, щоб побачити скарбниці",
+        "manageTreasuries": "Керувати скарбницями",
+        "createTreasury": "Створити скарбницю"
     },
     "selectModal": {
         "searchByName": "Пошук за назвою"

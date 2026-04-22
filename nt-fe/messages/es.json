@@ -1318,7 +1318,9 @@
     },
     "treasurySelector": {
         "select": "Seleccionar tesorería",
-        "connectWalletTooltip": "Conecta la billetera para ver tesorerías"
+        "connectWalletTooltip": "Conecta la billetera para ver tesorerías",
+        "manageTreasuries": "Gestionar tesorerías",
+        "createTreasury": "Crear tesorería"
     },
     "selectModal": {
         "searchByName": "Buscar por nombre"

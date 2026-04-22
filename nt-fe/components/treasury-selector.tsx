@@ -256,7 +256,7 @@ export function TreasurySelector({
                         onClick={() => router.push("/app/manage-treasuries")}
                     >
                         <Settings className="size-4" />
-                        <span>Manage Treasuries</span>
+                        <span>{t("manageTreasuries")}</span>
                     </Button>
                     <Button
                         id="dashboard-step5-create-treasury"
@@ -276,7 +276,7 @@ export function TreasurySelector({
                         }}
                     >
                         <span className="text-lg">+</span>
-                        <span>Create Treasury</span>
+                        <span>{t("createTreasury")}</span>
                     </Button>
                 </SelectContent>
             </Select>
