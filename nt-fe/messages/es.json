@@ -1488,6 +1488,16 @@
         "initializing": "El servicio de cotización aún se está iniciando. Inténtalo de nuevo.",
         "noRoute": "No se pudo preparar una ruta de pago ahora mismo. Reintenta."
     },
+    "nearStore": {
+        "connectAndAcceptTerms": "Conecta la billetera y acepta los términos para continuar.",
+        "transactionNotApproved": "La transacción no fue aprobada en tu billetera.",
+        "failedSubmitVote": "No se pudo enviar el voto",
+        "failedSubmitVotes": "No se pudieron enviar los votos",
+        "viewRequest": "Ver solicitud",
+        "proposalRemoved": "Tu propuesta ha sido eliminada",
+        "voteSubmitted": "Tu voto ha sido enviado",
+        "votesSubmitted": "Tus votos han sido enviados"
+    },
     "tokenInput": {
         "max": "MAX",
         "insufficientTokens": "Tokens insuficientes. Puedes enviar la solicitud y recargar antes de la aprobación."
