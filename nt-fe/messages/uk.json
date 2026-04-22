@@ -469,7 +469,16 @@
             "quoteSignature": "Підпис котирування",
             "quoteSignatureTooltip": "Криптографічний підпис 1Click API, що підтверджує це котирування.",
             "quoteDeadline": "Термін котирування 1Click",
-            "quoteDeadlineTooltip": "Час, коли адреса депозиту стає неактивною, а кошти можна втратити."
+            "quoteDeadlineTooltip": "Час, коли адреса депозиту стає неактивною, а кошти можна втратити.",
+            "status": "Статус",
+            "transactionLink": "Посилання на транзакцію",
+            "viewTransaction": "Переглянути транзакцію",
+            "recipientNumber": "Отримувач {number}",
+            "oopsTitle": "Ой! Щось пішло не так",
+            "oopsDescription": "Не вдалось знайти дані для показу.",
+            "totalAmount": "Загальна сума",
+            "recipients": "Отримувачі",
+            "recipientsCount": "{count, plural, one {# отримувач} few {# отримувачі} many {# отримувачів} other {# отримувачів}}"
         },
         "insufficientBalance": {
             "noAsset": "Цей запит не можна схвалити, бо потрібного токена немає у скарбниці.",

@@ -469,7 +469,16 @@
             "quoteSignature": "Firma de cotización",
             "quoteSignatureTooltip": "La firma criptográfica de la API 1Click que valida esta cotización.",
             "quoteDeadline": "Plazo de cotización 1Click",
-            "quoteDeadlineTooltip": "Momento en que la dirección de depósito deja de estar activa y los fondos pueden perderse."
+            "quoteDeadlineTooltip": "Momento en que la dirección de depósito deja de estar activa y los fondos pueden perderse.",
+            "status": "Estado",
+            "transactionLink": "Enlace de transacción",
+            "viewTransaction": "Ver transacción",
+            "recipientNumber": "Destinatario {number}",
+            "oopsTitle": "¡Ups! Algo salió mal",
+            "oopsDescription": "No pudimos encontrar datos para mostrar aquí.",
+            "totalAmount": "Importe total",
+            "recipients": "Destinatarios",
+            "recipientsCount": "{count, plural, one {# destinatario} other {# destinatarios}}"
         },
         "insufficientBalance": {
             "noAsset": "Esta solicitud no se puede aprobar porque el token requerido no está disponible en la tesorería.",

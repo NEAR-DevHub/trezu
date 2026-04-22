@@ -469,7 +469,16 @@
             "quoteSignature": "Quote Signature",
             "quoteSignatureTooltip": "The cryptographic signature from 1Click API that validates this quote.",
             "quoteDeadline": "1-Click Quote Deadline",
-            "quoteDeadlineTooltip": "Time when the deposit address becomes inactive and funds may be lost."
+            "quoteDeadlineTooltip": "Time when the deposit address becomes inactive and funds may be lost.",
+            "status": "Status",
+            "transactionLink": "Transaction Link",
+            "viewTransaction": "View Transaction",
+            "recipientNumber": "Recipient {number}",
+            "oopsTitle": "Oops! Something went wrong",
+            "oopsDescription": "We couldn't find any data to show here.",
+            "totalAmount": "Total Amount",
+            "recipients": "Recipients",
+            "recipientsCount": "{count, plural, one {# recipient} other {# recipients}}"
         },
         "insufficientBalance": {
             "noAsset": "This request can't be approved because the required token is not available in the treasury.",

@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { useBatchPayment, useToken } from "@/hooks/use-treasury-queries";
 import { useBulkPaymentTransactionHash } from "@/hooks/use-bulk-payment-transactions";
 import { useIntentsWithdrawalFee } from "@/hooks/use-intents-withdrawal-fee";
@@ -50,6 +51,7 @@ function PaymentDisplay({
     tokenId,
     batchId,
 }: PaymentDisplayProps) {
+    const t = useTranslations("proposals.expanded");
     const status = paymentStatusToText(payment.status);
     const isPaid = status === "Paid";
     const { data: txData } = useBulkPaymentTransactionHash(
@@ -69,7 +71,7 @@ function PaymentDisplay({
 
     let items: InfoItem[] = [
         {
-            label: "Recipient",
+            label: t("recipient"),
             value: (
                 <User
                     useAddressBook
@@ -80,7 +82,7 @@ function PaymentDisplay({
             ),
         },
         {
-            label: "Amount",
+            label: t("amount"),
             value: (
                 <Amount
                     amount={payment.amount.toString()}
@@ -93,14 +95,14 @@ function PaymentDisplay({
 
     if (status !== "Pending") {
         items.push({
-            label: "Status",
+            label: t("status"),
             value: <StatusPill status={status} />,
         });
     }
 
     if (isPaid && nearBlocksUrl && nearBlocksUrl.length > 0) {
         items.push({
-            label: "Transaction Link",
+            label: t("transactionLink"),
             value: (
                 <Link
                     className="flex items-center gap-2"
@@ -108,7 +110,8 @@ function PaymentDisplay({
                     target="_blank"
                     rel="noopener noreferrer"
                 >
-                    View Transaction <ArrowUpRight className="size-4" />
+                    {t("viewTransaction")}{" "}
+                    <ArrowUpRight className="size-4" />
                 </Link>
             ),
         });
@@ -126,7 +129,7 @@ function PaymentDisplay({
                     <ChevronDown
                         className={cn("w-4 h-4", expanded && "rotate-180")}
                     />
-                    Recipient {number}
+                    {t("recipientNumber", { number })}
                 </div>
                 <div className="hidden md:flex gap-3 items-baseline text-sm text-muted-foreground">
                     <Address address={payment.recipient} />
@@ -159,6 +162,7 @@ export function BatchPaymentRequestExpanded({
     data,
     proposal,
 }: BatchPaymentRequestExpandedProps) {
+    const t = useTranslations("proposals.expanded");
     const [expanded, setExpanded] = useState<number[]>([]);
 
     // Check if we should auto-refetch
@@ -236,8 +240,8 @@ export function BatchPaymentRequestExpanded({
         return (
             <EmptyState
                 icon={SearchX}
-                title="Oops! Something went wrong"
-                description="We couldn't find any data to show here."
+                title={t("oopsTitle")}
+                description={t("oopsDescription")}
             />
         );
     }
@@ -270,7 +274,7 @@ export function BatchPaymentRequestExpanded({
 
     const items: InfoItem[] = [
         {
-            label: "Total Amount",
+            label: t("totalAmount"),
             value: (
                 <Amount
                     showNetwork
@@ -282,26 +286,27 @@ export function BatchPaymentRequestExpanded({
         ...(hasFeeData && totalNetworkFee
             ? [
                   {
-                      label: "Network Fee",
+                      label: t("networkFee"),
                       info: NETWORK_FEE_TOOLTIP_TEXT,
                       value: `${totalNetworkFee.toString()} ${tokenData?.symbol || ""}`.trim(),
                   } satisfies InfoItem,
               ]
             : []),
         {
-            label: "Recipients",
+            label: t("recipients"),
             value: (
                 <div className="flex gap-3 items-baseline">
                     <p className="text-sm font-medium">
-                        {activeBatchData.payments.length} recipient
-                        {activeBatchData.payments.length > 1 ? "s" : ""}
+                        {t("recipientsCount", {
+                            count: activeBatchData.payments.length,
+                        })}
                     </p>
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={toggleAllExpanded}
                     >
-                        {isAllExpanded ? "Collapse all" : "Expand all"}
+                        {isAllExpanded ? t("collapseAll") : t("expandAll")}
                     </Button>
                 </div>
             ),
@@ -328,7 +333,9 @@ export function BatchPaymentRequestExpanded({
             <InfoDisplay items={items} />
             {data.notes && data.notes !== "" && (
                 <div className="flex justify-between gap-2 p-3 pt-0 mt-[-10px]">
-                    <p className="text-sm text-muted-foreground">Notes</p>
+                    <p className="text-sm text-muted-foreground">
+                        {t("notes")}
+                    </p>
                     <p className="text-sm font-medium">{data.notes}</p>
                 </div>
             )}
