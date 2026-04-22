@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
 import { useTreasury } from "@/hooks/use-treasury";
 import { getApproversAndThreshold } from "@/lib/config-utils";
@@ -13,15 +14,13 @@ interface ApprovalInfoProps {
     approverAccounts?: string[];
 }
 
-const infoText =
-    "Votes required to approve payment-related requests. Editable in Voting settings.";
-
 export function ApprovalInfo({
     variant,
     requiredVotes: requiredVotesProp,
     approverAccounts: approverAccountsProp,
     side,
 }: ApprovalInfoProps) {
+    const t = useTranslations("approvalInfo");
     const { treasuryId } = useTreasury();
     const { accountId } = useNear();
     const { data: policy } = useTreasuryPolicy(
@@ -42,8 +41,11 @@ export function ApprovalInfo({
         return (
             <Pill
                 variant="secondary"
-                title={`Threshold ${requiredVotes} out of ${approverAccounts?.length ?? 0}`}
-                info={infoText}
+                title={t("thresholdPill", {
+                    required: requiredVotes,
+                    total: approverAccounts?.length ?? 0,
+                })}
+                info={t("infoText")}
                 side={side}
             />
         );
@@ -53,9 +55,12 @@ export function ApprovalInfo({
         <Alert>
             <Info />
             <AlertDescription className="inline-block">
-                This payment will require approval from{" "}
-                <span className="font-semibold">{requiredVotes}</span> treasury
-                members before execution.
+                {t.rich("alertBody", {
+                    required: requiredVotes,
+                    bold: (chunks) => (
+                        <span className="font-semibold">{chunks}</span>
+                    ),
+                })}
             </AlertDescription>
         </Alert>
     );

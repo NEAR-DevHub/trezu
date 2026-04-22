@@ -942,6 +942,18 @@
         "used": "{count} Used",
         "resetOn": "Limit will reset on {date}"
     },
+    "approvalInfo": {
+        "infoText": "Votes required to approve payment-related requests. Editable in Voting settings.",
+        "thresholdPill": "Threshold {required} out of {total}",
+        "alertBody": "This payment will require approval from <bold>{required}</bold> treasury members before execution."
+    },
+    "guestBadge": {
+        "title": "Guest",
+        "tooltip": "You are a guest of this treasury. You can only view the data."
+    },
+    "exportButton": {
+        "confidentialTooltip": "Export is not available in confidential mode yet. This feature is coming soon!"
+    },
     "sponsoredActions": {
         "titleExhausted": "Sponsored Actions Used",
         "titleAlmost": "Your team is almost out of sponsored actions",
@@ -1031,6 +1043,15 @@
             "title": "Explore Trezu",
             "description": "Create an account to unlock permissions to all features and benefits of Trezu.",
             "cta": "Create Treasury"
+        },
+        "createPrompt": {
+            "title": "You're almost set",
+            "description": "Your wallet is connected, but you haven't created a treasury yet. Create an account to start using Trezu, or {suffix}",
+            "suffixDemo": "check out the demo.",
+            "suffixExploring": "keep exploring.",
+            "createCta": "Create a Treasury",
+            "viewDemo": "View Demo",
+            "keepExploring": "Keep Exploring"
         },
         "infoBox": {
             "title": "Get more from Trezu",

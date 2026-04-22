@@ -942,6 +942,18 @@
         "used": "{count} usados",
         "resetOn": "El límite se restablecerá el {date}"
     },
+    "approvalInfo": {
+        "infoText": "Votos necesarios para aprobar solicitudes relacionadas con pagos. Editable en los ajustes de Votación.",
+        "thresholdPill": "Umbral {required} de {total}",
+        "alertBody": "Este pago requerirá la aprobación de <bold>{required}</bold> miembros de la tesorería antes de ejecutarse."
+    },
+    "guestBadge": {
+        "title": "Invitado",
+        "tooltip": "Eres un invitado de esta tesorería. Solo puedes ver los datos."
+    },
+    "exportButton": {
+        "confidentialTooltip": "La exportación aún no está disponible en modo confidencial. ¡Esta función llegará pronto!"
+    },
     "sponsoredActions": {
         "titleExhausted": "Acciones patrocinadas agotadas",
         "titleAlmost": "Tu equipo está a punto de quedarse sin acciones patrocinadas",
@@ -1031,6 +1043,15 @@
             "title": "Explora Trezu",
             "description": "Crea una cuenta para desbloquear permisos a todas las funciones y ventajas de Trezu.",
             "cta": "Crear tesorería"
+        },
+        "createPrompt": {
+            "title": "Casi lo tienes",
+            "description": "Tu cartera está conectada, pero aún no has creado una tesorería. Crea una cuenta para empezar a usar Trezu, o {suffix}",
+            "suffixDemo": "mira la demo.",
+            "suffixExploring": "sigue explorando.",
+            "createCta": "Crear una tesorería",
+            "viewDemo": "Ver demo",
+            "keepExploring": "Seguir explorando"
         },
         "infoBox": {
             "title": "Saca más partido a Trezu",
