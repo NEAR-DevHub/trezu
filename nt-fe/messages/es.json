@@ -520,7 +520,22 @@
             "expireInDays": "{count, plural, one {Caduca en # día} other {Caduca en # días}}",
             "today": "Hoy",
             "uponApproval": "Al aprobar",
-            "yesContinue": "Sí, continuar"
+            "yesContinue": "Sí, continuar",
+            "transactionCreated": "Transacción creada",
+            "voting": "Votación",
+            "approvalsReceived": "{received}/{required} aprobaciones recibidas",
+            "expiresAt": "Caduca el",
+            "expiredAt": "Caducó el",
+            "viewTransaction": "Ver transacción",
+            "exchangingTokens": "Intercambiando tokens",
+            "exchangingTokensBody": "Esta solicitud ha sido aprobada por el equipo. El intercambio de tokens está en progreso y puede tardar un tiempo.",
+            "requestFailed": "Solicitud fallida",
+            "requestFailedBody": "El equipo aprobó esta solicitud, pero falló debido a fluctuaciones de la tasa. Crea una nueva solicitud e inténtalo de nuevo.",
+            "votingPeriod24h": "Periodo de votación: 24 horas",
+            "votingPeriod24hBody": "Esta solicitud de intercambio tiene una duración de votación de 24 horas. Aprueba esta solicitud en ese plazo o caducará.",
+            "reject": "Rechazar",
+            "deposit": "Depositar",
+            "approve": "Aprobar"
         },
         "insufficientBalance": {
             "noAsset": "Esta solicitud no se puede aprobar porque el token requerido no está disponible en la tesorería.",

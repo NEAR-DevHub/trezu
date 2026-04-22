@@ -520,7 +520,22 @@
             "expireInDays": "{count, plural, one {Expire in # day} other {Expire in # days}}",
             "today": "Today",
             "uponApproval": "Upon approval",
-            "yesContinue": "Yes, Continue"
+            "yesContinue": "Yes, Continue",
+            "transactionCreated": "Transaction Created",
+            "voting": "Voting",
+            "approvalsReceived": "{received}/{required} approvals received",
+            "expiresAt": "Expires At",
+            "expiredAt": "Expired At",
+            "viewTransaction": "View Transaction",
+            "exchangingTokens": "Exchanging Tokens",
+            "exchangingTokensBody": "This request has been approved by the team. Token exchange is now in progress and may take some time.",
+            "requestFailed": "Request Failed",
+            "requestFailedBody": "The team approved this request, but it failed due to rate fluctuations. Please create a new request and try again.",
+            "votingPeriod24h": "Voting period: 24 hours",
+            "votingPeriod24hBody": "This exchange request has a 24-hour voting duration. Approve this request within this time, or the request will expire.",
+            "reject": "Reject",
+            "deposit": "Deposit",
+            "approve": "Approve"
         },
         "insufficientBalance": {
             "noAsset": "This request can't be approved because the required token is not available in the treasury.",

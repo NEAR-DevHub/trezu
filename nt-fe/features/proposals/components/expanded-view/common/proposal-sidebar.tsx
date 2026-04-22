@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { Proposal } from "@/lib/proposals-api";
 import { Button } from "@/components/button";
 import { ArrowUpRight, Check, X, Download, Loader2 } from "lucide-react";
@@ -116,6 +117,7 @@ function TransactionCreated({
     proposer: string;
     date: Date;
 }) {
+    const t = useTranslations("proposals.expanded");
     const formatDate = useFormatDate();
 
     return (
@@ -123,7 +125,9 @@ function TransactionCreated({
             <div className="flex items-center gap-2">
                 <StepIcon status="Success" />
                 <div className="flex flex-col gap-0">
-                    <p className="text-sm font-semibold">Transaction Created</p>
+                    <p className="text-sm font-semibold">
+                        {t("transactionCreated")}
+                    </p>
                     {date && (
                         <p className="text-xs text-muted-foreground">
                             {formatDate(date)}
@@ -152,6 +156,7 @@ function VotingSection({
     policy: Policy;
     accountId: string;
 }) {
+    const t = useTranslations("proposals.expanded");
     const votes = proposal.votes;
 
     const totalApprovesReceived = Object.values(votes).filter(
@@ -176,10 +181,12 @@ function VotingSection({
             <div className="flex items-center gap-2">
                 <StepIcon status={statusIconStatus} />
                 <div>
-                    <p className="text-sm font-semibold">Voting</p>
+                    <p className="text-sm font-semibold">{t("voting")}</p>
                     <p className="text-xs text-muted-foreground">
-                        {totalApprovesReceived}/{requiredVotes} approvals
-                        received
+                        {t("approvalsReceived", {
+                            received: totalApprovesReceived,
+                            required: requiredVotes,
+                        })}
                     </p>
                 </div>
             </div>
@@ -211,27 +218,38 @@ function ExecutedSection({
     date?: Date;
     expiresAt: Date;
 }) {
+    const t = useTranslations("proposals.expanded");
+    const tStatus = useTranslations("proposals.status");
     const formatDate = useFormatDate();
 
     let statusIcon = <StepIcon status="Pending" />;
-    let statusText = status as string;
-
+    let statusText: string;
     switch (status) {
         case "Pending":
-            statusText = "Expires At";
+            statusText = t("expiresAt");
             break;
         case "Rejected":
+            statusText = tStatus("rejected");
+            statusIcon = <StepIcon status="Failed" />;
+            break;
         case "Failed":
+            statusText = tStatus("failed");
+            statusIcon = <StepIcon status="Failed" />;
+            break;
         case "Removed":
+            statusText = tStatus("removed");
             statusIcon = <StepIcon status="Failed" />;
             break;
         case "Expired":
-            statusText = "Expired At";
+            statusText = t("expiredAt");
             statusIcon = <StepIcon status="Expired" />;
             break;
         case "Executed":
+            statusText = tStatus("executed");
             statusIcon = <StepIcon status="Success" />;
             break;
+        default:
+            statusText = status as string;
     }
 
     return (
@@ -255,6 +273,7 @@ export function ProposalSidebar({
     onVote,
     onDeposit,
 }: ProposalSidebarProps) {
+    const t = useTranslations("proposals.expanded");
     const { accountId } = useNear();
     const { treasuryId } = useTreasury();
     const { data: insufficientBalanceInfo } = useProposalInsufficientBalance(
@@ -449,7 +468,8 @@ export function ProposalSidebar({
                             rel="noopener noreferrer"
                             className="flex font-medium text-sm items-center gap-1.5"
                         >
-                            View Transaction <ArrowUpRight className="size-4" />
+                            {t("viewTransaction")}{" "}
+                            <ArrowUpRight className="size-4" />
                         </Link>
                     ) : (
                         /* For other proposals, show regular transaction link */
@@ -460,7 +480,7 @@ export function ProposalSidebar({
                                 rel="noopener noreferrer"
                                 className="flex font-medium text-sm items-center gap-1.5"
                             >
-                                View Transaction{" "}
+                                {t("viewTransaction")}{" "}
                                 <ArrowUpRight className="size-4" />
                             </Link>
                         )
@@ -479,11 +499,9 @@ export function ProposalSidebar({
                             className="inline-flex"
                             message={
                                 <span>
-                                    <strong>Exchanging Tokens</strong>
+                                    <strong>{t("exchangingTokens")}</strong>
                                     <br />
-                                    This request has been approved by the team.
-                                    Token exchange is now in progress and may
-                                    take some time.
+                                    {t("exchangingTokensBody")}
                                 </span>
                             }
                         />
@@ -496,11 +514,9 @@ export function ProposalSidebar({
                             className="inline-flex"
                             message={
                                 <span>
-                                    <strong>Request Failed</strong>
+                                    <strong>{t("requestFailed")}</strong>
                                     <br />
-                                    The team approved this request, but it
-                                    failed due to rate fluctuations. Please
-                                    create a new request and try again.
+                                    {t("requestFailedBody")}
                                 </span>
                             }
                         />
@@ -514,11 +530,9 @@ export function ProposalSidebar({
                     className="inline-flex"
                     message={
                         <span>
-                            <strong>Voting period: 24 hours</strong>
+                            <strong>{t("votingPeriod24h")}</strong>
                             <br />
-                            This exchange request has a 24-hour voting duration.
-                            Approve this request within this time, or the
-                            request will expire.
+                            {t("votingPeriod24hBody")}
                         </span>
                     }
                 />
@@ -543,7 +557,7 @@ export function ProposalSidebar({
                         tooltip={isUserVoter ? NO_VOTE_MESSAGE : undefined}
                     >
                         <X className="h-4 w-4 mr-2" />
-                        Reject
+                        {t("reject")}
                     </AuthButtonWithProposal>
                     {insufficientBalanceInfo.hasInsufficientBalance ? (
                         <span className="w-full">
@@ -558,7 +572,7 @@ export function ProposalSidebar({
                                 }
                             >
                                 <Download className="h-4 w-4 mr-2" />
-                                Deposit
+                                {t("deposit")}
                             </Button>
                         </span>
                     ) : (
@@ -577,7 +591,7 @@ export function ProposalSidebar({
                             ) : (
                                 <Check className="h-4 w-4 mr-2" />
                             )}
-                            Approve
+                            {t("approve")}
                         </AuthButtonWithProposal>
                     )}
                 </div>
