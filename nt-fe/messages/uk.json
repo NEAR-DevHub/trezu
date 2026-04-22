@@ -381,7 +381,31 @@
         "sectionHeading": "Отримувачі",
         "privacyNote": "Збережені адреси приватні та видимі лише вашій команді.",
         "searchPlaceholder": "Шукати отримувача за іменем",
-        "searchPlaceholderShort": "Пошук"
+        "searchPlaceholderShort": "Пошук",
+        "form": {
+            "editRecipient": "Редагувати отримувача",
+            "addRecipient": "Додати отримувача",
+            "import": "Імпортувати",
+            "recipientName": "Ім'я отримувача",
+            "namePlaceholder": "Аліса",
+            "recipientAddress": "Адреса отримувача",
+            "network": "Мережа",
+            "networkInfo": "Мережі, сумісні з цією адресою",
+            "enterAddressFirst": "Спершу введіть адресу отримувача",
+            "selectNetwork": "Оберіть мережу",
+            "selectNetworksTitle": "Оберіть мережі",
+            "searchNetworksPlaceholder": "Шукати мережі…",
+            "done": "Готово",
+            "edit": "Редагувати",
+            "remove": "Видалити",
+            "incomplete": "Неповне",
+            "addAnother": "Додати ще одного отримувача",
+            "fillAllTooltip": "Щоб додати отримувача, заповніть усі поля.",
+            "reviewDetails": "Переглянути деталі",
+            "reviewTooltip": "Перед переглядом усі отримувачі мають бути заповнені.",
+            "invalidAddress": "Недійсна адреса",
+            "noCompatibleNetworks": "Немає сумісних мереж для цієї адреси"
+        }
     },
     "payments": {
         "validation": {

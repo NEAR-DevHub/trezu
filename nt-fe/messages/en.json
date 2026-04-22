@@ -381,7 +381,31 @@
         "sectionHeading": "Recipients",
         "privacyNote": "Saved addresses are private and visible only to your team.",
         "searchPlaceholder": "Search recipient by name",
-        "searchPlaceholderShort": "Search"
+        "searchPlaceholderShort": "Search",
+        "form": {
+            "editRecipient": "Edit Recipient",
+            "addRecipient": "Add Recipient",
+            "import": "Import",
+            "recipientName": "Recipient Name",
+            "namePlaceholder": "Alice",
+            "recipientAddress": "Recipient Address",
+            "network": "Network",
+            "networkInfo": "Networks compatible with this address",
+            "enterAddressFirst": "Enter recipient address first",
+            "selectNetwork": "Select network",
+            "selectNetworksTitle": "Select Networks",
+            "searchNetworksPlaceholder": "Search networks…",
+            "done": "Done",
+            "edit": "Edit",
+            "remove": "Remove",
+            "incomplete": "Incomplete",
+            "addAnother": "Add Another Recipient",
+            "fillAllTooltip": "You must fill out all fields to add a recipient.",
+            "reviewDetails": "Review Details",
+            "reviewTooltip": "All recipients must be complete before reviewing.",
+            "invalidAddress": "Invalid address",
+            "noCompatibleNetworks": "No compatible networks for this address"
+        }
     },
     "payments": {
         "validation": {

@@ -381,7 +381,31 @@
         "sectionHeading": "Destinatarios",
         "privacyNote": "Las direcciones guardadas son privadas y visibles solo para tu equipo.",
         "searchPlaceholder": "Buscar destinatario por nombre",
-        "searchPlaceholderShort": "Buscar"
+        "searchPlaceholderShort": "Buscar",
+        "form": {
+            "editRecipient": "Editar destinatario",
+            "addRecipient": "Añadir destinatario",
+            "import": "Importar",
+            "recipientName": "Nombre del destinatario",
+            "namePlaceholder": "Alicia",
+            "recipientAddress": "Dirección del destinatario",
+            "network": "Red",
+            "networkInfo": "Redes compatibles con esta dirección",
+            "enterAddressFirst": "Introduce primero la dirección del destinatario",
+            "selectNetwork": "Seleccionar red",
+            "selectNetworksTitle": "Seleccionar redes",
+            "searchNetworksPlaceholder": "Buscar redes…",
+            "done": "Listo",
+            "edit": "Editar",
+            "remove": "Eliminar",
+            "incomplete": "Incompleto",
+            "addAnother": "Añadir otro destinatario",
+            "fillAllTooltip": "Debes rellenar todos los campos para añadir un destinatario.",
+            "reviewDetails": "Revisar detalles",
+            "reviewTooltip": "Todos los destinatarios deben estar completos antes de revisar.",
+            "invalidAddress": "Dirección no válida",
+            "noCompatibleNetworks": "No hay redes compatibles con esta dirección"
+        }
     },
     "payments": {
         "validation": {

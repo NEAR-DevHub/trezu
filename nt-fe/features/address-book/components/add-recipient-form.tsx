@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState, useEffect, useCallback, type ReactNode, useId } from "react";
 import {
     useWatch,
@@ -49,6 +50,7 @@ function NetworkSelect({
     onChange: (networks: string[]) => void;
     disabled?: boolean;
 }) {
+    const tForm = useTranslations("addressBook.form");
     const { data: chains = [], isLoading } = useChains();
     const [open, setOpen] = useState(false);
 
@@ -105,8 +107,8 @@ function NetworkSelect({
                 {selectedChains.length === 0 ? (
                     <span className="text-muted-foreground text-lg">
                         {disabled
-                            ? "Enter recipient address first"
-                            : "Select network"}
+                            ? tForm("enterAddressFirst")
+                            : tForm("selectNetwork")}
                     </span>
                 ) : (
                     <NetworkList
@@ -122,9 +124,9 @@ function NetworkSelect({
                 fixNear
                 onClose={() => setOpen(false)}
                 onSelect={handleSelect}
-                title="Select Networks"
+                title={tForm("selectNetworksTitle")}
                 options={options}
-                searchPlaceholder="Search networks…"
+                searchPlaceholder={tForm("searchNetworksPlaceholder")}
                 isLoading={isLoading}
                 selectedIds={selected}
                 roundIcons={false}
@@ -150,6 +152,7 @@ export function RecipientRow({
     nameBadge?: ReactNode;
     invalid?: boolean;
 }) {
+    const tForm = useTranslations("addressBook.form");
     const { data: chains = [] } = useChains();
     const name = useWatch({ control, name: `recipients.${index}.name` });
     const address = useWatch({ control, name: `recipients.${index}.address` });
@@ -181,7 +184,7 @@ export function RecipientRow({
                                 {nameBadge}
                                 {invalid && (
                                     <Pill
-                                        title="Incomplete"
+                                        title={tForm("incomplete")}
                                         className="bg-destructive/10 text-destructive"
                                     />
                                 )}
@@ -208,7 +211,7 @@ export function RecipientRow({
                             onClick={onEdit}
                         >
                             <Pencil className="size-4" />
-                            Edit
+                            {tForm("edit")}
                         </Button>
                     )}
                     {onRemove && (
@@ -219,7 +222,7 @@ export function RecipientRow({
                             onClick={onRemove}
                         >
                             <Trash2 className="size-4" />
-                            Remove
+                            {tForm("remove")}
                         </Button>
                     )}
                 </div>
@@ -252,6 +255,7 @@ export function AddRecipientInput({
     onImport,
     editOnly = false,
 }: AddRecipientInputProps) {
+    const tForm = useTranslations("addressBook.form");
     const { data: chains = [] } = useChains();
     const [isAddressValid, setIsAddressValid] = useState(false);
     const [isAddressValidating, setIsAddressValidating] = useState(false);
@@ -304,7 +308,7 @@ export function AddRecipientInput({
                 setIsAddressValid(false);
                 if (activeAddress) {
                     setError(`recipients.${activeIndex}.address`, {
-                        message: "Invalid address",
+                        message: tForm("invalidAddress"),
                     });
                 }
                 return;
@@ -326,7 +330,7 @@ export function AddRecipientInput({
             } else {
                 setIsAddressValid(false);
                 setError(`recipients.${activeIndex}.address`, {
-                    message: "No compatible networks for this address",
+                    message: tForm("noCompatibleNetworks"),
                 });
             }
         },
@@ -364,12 +368,16 @@ export function AddRecipientInput({
         <div className="flex flex-col gap-4">
             <div className="flex gap-3 justify-between items-center">
                 <StepperHeader
-                    title={editOnly ? "Edit Recipient" : "Add Recipient"}
+                    title={
+                        editOnly
+                            ? tForm("editRecipient")
+                            : tForm("addRecipient")
+                    }
                     handleBack={handleBack}
                 />
                 {!editOnly && onImport && (
                     <Button variant={"outline"} onClick={onImport}>
-                        <FileUp className="size-4" /> Import
+                        <FileUp className="size-4" /> {tForm("import")}
                     </Button>
                 )}
             </div>
@@ -381,13 +389,13 @@ export function AddRecipientInput({
                     render={({ field, fieldState }) => (
                         <FormItem>
                             <InputBlock
-                                title="Recipient Name"
+                                title={tForm("recipientName")}
                                 invalid={!!fieldState.error}
                                 interactive
                             >
                                 <LargeInput
                                     borderless
-                                    placeholder="Alice"
+                                    placeholder={tForm("namePlaceholder")}
                                     maxLength={RECIPIENT_NAME_MAX_LENGTH}
                                     {...field}
                                 />
@@ -403,7 +411,7 @@ export function AddRecipientInput({
                     render={({ field, fieldState }) => (
                         <FormItem>
                             <InputBlock
-                                title="Recipient Address"
+                                title={tForm("recipientAddress")}
                                 invalid={!!fieldState.error}
                                 interactive
                             >
@@ -428,8 +436,8 @@ export function AddRecipientInput({
                     render={({ field, fieldState }) => (
                         <FormItem>
                             <InputBlock
-                                title="Network"
-                                info="Networks compatible with this address"
+                                title={tForm("network")}
+                                info={tForm("networkInfo")}
                                 invalid={!!fieldState.error}
                                 interactive
                                 disabled={!isAddressValid}
@@ -453,7 +461,7 @@ export function AddRecipientInput({
                     disabled={!isActiveValid}
                     onClick={onReview}
                 >
-                    Done
+                    {tForm("done")}
                 </Button>
             ) : (
                 <>
@@ -464,14 +472,14 @@ export function AddRecipientInput({
                         disabled={!isActiveValid}
                         tooltipContent={
                             !isActiveValid
-                                ? "You must fill out all fields to add a recipient."
+                                ? tForm("fillAllTooltip")
                                 : undefined
                         }
                         onClick={handleCommit}
                     >
                         <Plus className="size-4 text-foreground" />
                         <span className="text-foreground">
-                            Add Another Recipient
+                            {tForm("addAnother")}
                         </span>
                     </Button>
 
@@ -497,13 +505,11 @@ export function AddRecipientInput({
                             className="w-full"
                             disabled={!canProceed}
                             tooltipContent={
-                                !canProceed
-                                    ? "All recipients must be complete before reviewing."
-                                    : undefined
+                                !canProceed ? tForm("reviewTooltip") : undefined
                             }
                             onClick={onReview}
                         >
-                            Review Details
+                            {tForm("reviewDetails")}
                         </Button>
                     </div>
                 </>
