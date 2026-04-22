@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { Proposal } from "@/lib/proposals-api";
 import { FunctionCallCell } from "./function-call-cell";
 import { ChangePolicyCell } from "./change-policy-cell";
@@ -34,6 +35,7 @@ export function TransactionCell({
     withDate,
     textOnly = false,
 }: TransactionCellProps) {
+    const t = useTranslations("proposals.expanded");
     const { treasuryId } = useTreasury();
     const { type, data } = extractProposalData(proposal, treasuryId);
     const timestamp = withDate ? proposal.submission_time : undefined;
@@ -135,7 +137,7 @@ export function TransactionCell({
             return (
                 <div className="flex flex-col gap-1">
                     <span className="font-medium">
-                        Unsupported proposal type{" "}
+                        {t("unsupportedProposal")}{" "}
                     </span>
                     <span className="text-xs text-muted-foreground">
                         {unknownData.proposalType}
@@ -147,7 +149,7 @@ export function TransactionCell({
             return (
                 <div className="flex flex-col gap-1">
                     <span className="font-medium">
-                        Unsupported proposal type{" "}
+                        {t("unsupportedProposal")}{" "}
                     </span>
                     <span className="text-xs text-muted-foreground">
                         {type}

@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import {
     PaymentRequestData,
     VestingData,
@@ -18,11 +19,13 @@ interface TokenCellProps {
 
 export function TokenCell({
     data,
-    prefix = "To:",
+    prefix,
     isUser = true,
     timestamp,
     textOnly = false,
 }: TokenCellProps) {
+    const t = useTranslations("proposals.expanded");
+    const effectivePrefix = prefix ?? t("toPrefix");
     const title = (
         <Amount
             amount={data.amount}
@@ -37,7 +40,7 @@ export function TokenCell({
 
     const subtitle = data.receiver ? (
         <>
-            {prefix}
+            {effectivePrefix}
             {isUser ? (
                 <TooltipUser accountId={data.receiver} useAddressBook>
                     <span> {address}</span>
