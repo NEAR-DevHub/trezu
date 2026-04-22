@@ -36,15 +36,25 @@ import { ResponsiveTabs, TabItem } from "@/components/responsive-tabs";
 const SEARCH_DEBOUNCE_MS = 300;
 const FILTER_PANEL_MAX_HEIGHT = "500px";
 
-const PROPOSAL_FILTER_OPTIONS: FilterOption[] = [
-    { id: "proposal_types", label: "Requests Type" },
-    { id: "created_date", label: "Created Date", maxDate: new Date() },
-    { id: "recipients", label: "Recipient" },
-    { id: "token", label: "Token" },
-    { id: "proposers", label: "Requester" },
-    { id: "approvers", label: "Approver" },
-    { id: "my_vote", label: "My Vote Status" },
-];
+function useProposalFilterOptions(): FilterOption[] {
+    const tFilters = useTranslations("requests.filters");
+    return useMemo(
+        () => [
+            { id: "proposal_types", label: tFilters("requestsType") },
+            {
+                id: "created_date",
+                label: tFilters("createdDate"),
+                maxDate: new Date(),
+            },
+            { id: "recipients", label: tFilters("recipient") },
+            { id: "token", label: tFilters("token") },
+            { id: "proposers", label: tFilters("requester") },
+            { id: "approvers", label: tFilters("approver") },
+            { id: "my_vote", label: tFilters("myVoteStatus") },
+        ],
+        [tFilters],
+    );
+}
 
 function ProposalsList({
     status,
@@ -53,6 +63,7 @@ function ProposalsList({
     status?: ProposalStatus;
     onSelectionChange?: (count: number) => void;
 }) {
+    const tErrors = useTranslations("requests");
     const { treasuryId, config } = useTreasury();
     const { data: policy } = useTreasuryPolicy(treasuryId);
     const searchParams = useSearchParams();
@@ -138,9 +149,7 @@ function ProposalsList({
     if (error) {
         return (
             <div className="flex items-center justify-center py-8">
-                <p className="text-destructive">
-                    Error loading proposals. Please try again.
-                </p>
+                <p className="text-destructive">{tErrors("errorLoading")}</p>
             </div>
         );
     }
@@ -165,14 +174,15 @@ function ProposalsList({
 }
 
 function NoRequestsFound() {
+    const tEmpty = useTranslations("requests.empty");
     const { treasuryId: treasuryId } = useTreasury();
     const router = useRouter();
     return (
         <PageCard className="py-[100px] flex flex-col items-center justify-center w-full h-fit gap-4">
             <EmptyState
                 icon={Send}
-                title="Create your first request"
-                description={`Requests for payments, exchanges, and other actions will\nappear here once created.`}
+                title={tEmpty("title")}
+                description={tEmpty("description")}
                 className="py-0"
             />
             <div className="flex gap-4 w-[300px]">
@@ -182,7 +192,7 @@ function NoRequestsFound() {
                     permissionAction="AddProposal"
                     className="gap-1 w-full shrink"
                 >
-                    <ArrowUpRight className="size-3.5" /> Send
+                    <ArrowUpRight className="size-3.5" /> {tEmpty("send")}
                 </AuthButton>
                 <AuthButton
                     permissionKind="call"
@@ -190,7 +200,7 @@ function NoRequestsFound() {
                     permissionAction="AddProposal"
                     className="gap-1 w-full shrink"
                 >
-                    <ArrowRightLeft className="size-3.5" /> Exchange
+                    <ArrowRightLeft className="size-3.5" /> {tEmpty("exchange")}
                 </AuthButton>
             </div>
         </PageCard>
@@ -199,6 +209,9 @@ function NoRequestsFound() {
 
 export default function RequestsPage() {
     const t = useTranslations("pages.requests");
+    const tReq = useTranslations("requests");
+    const tCommon = useTranslations("common");
+    const filterOptions = useProposalFilterOptions();
     const searchParams = useSearchParams();
     const router = useRouter();
     const pathname = usePathname();
@@ -288,19 +301,19 @@ export default function RequestsPage() {
     const pendingCount = proposals?.proposals?.length;
 
     const tabs: TabItem[] = [
-        { value: "All", label: "All" },
+        { value: "All", label: tReq("tabs.all") },
         {
             value: "InProgress",
-            label: "Pending",
+            label: tReq("tabs.pending"),
             trigger:
                 !!pendingCount && pendingCount > 0 ? (
                     <NumberBadge number={pendingCount} variant="secondary" />
                 ) : undefined,
         },
-        { value: "Approved", label: "Executed" },
-        { value: "Rejected", label: "Rejected" },
-        { value: "Expired", label: "Expired" },
-        { value: "Failed", label: "Failed" },
+        { value: "Approved", label: tReq("tabs.executed") },
+        { value: "Rejected", label: tReq("tabs.rejected") },
+        { value: "Expired", label: tReq("tabs.expired") },
+        { value: "Failed", label: tReq("tabs.failed") },
     ];
 
     // Only show "No Requests Found" if there are no proposals AND no filters are active
@@ -332,8 +345,8 @@ export default function RequestsPage() {
         <div className="flex items-center justify-end w-full gap-2">
             <ResponsiveInput
                 type="text"
-                placeholder="Search request by name or ID"
-                mobilePlaceholder="Search by name or ID"
+                placeholder={tReq("searchPlaceholder")}
+                mobilePlaceholder={tReq("searchPlaceholderShort")}
                 className="max-w-72 w-full"
                 search
                 value={searchValue}
@@ -345,10 +358,14 @@ export default function RequestsPage() {
                 size="icon"
                 className="relative md:w-auto md:px-3 md:gap-1.5"
                 onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-                aria-label={hasActiveFilters ? "Filter (active)" : "Filter"}
+                aria-label={
+                    hasActiveFilters
+                        ? tCommon("filterActive")
+                        : tCommon("filter")
+                }
             >
                 <ListFilter className="size-4" />
-                <span className="hidden md:inline">Filter</span>
+                <span className="hidden md:inline">{tCommon("filter")}</span>
                 {hasActiveFilters && (
                     <span
                         className="absolute top-1 right-1.5 size-2 rounded-full bg-general-info-foreground"
@@ -368,9 +385,7 @@ export default function RequestsPage() {
             }}
         >
             <div className="py-3 px-4">
-                <ProposalFiltersComponent
-                    filterOptions={PROPOSAL_FILTER_OPTIONS}
-                />
+                <ProposalFiltersComponent filterOptions={filterOptions} />
             </div>
         </div>
     );
