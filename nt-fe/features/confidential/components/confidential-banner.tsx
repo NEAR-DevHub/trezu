@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronDown, ChevronUp, Shield } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState, useEffect } from "react";
 import {
     Collapsible,
@@ -12,8 +13,6 @@ import { Tooltip } from "@/components/tooltip";
 import { cn } from "@/lib/utils";
 
 const CONFIDENTIAL_BANNER_COLLAPSED_KEY = "confidential-banner-collapsed";
-export const DESCRIPTION =
-    "Balances, activity, and transfers are visible only to your team — not the public blockchain.";
 
 export function ConfidentialBanner({
     type,
@@ -22,6 +21,7 @@ export function ConfidentialBanner({
     type?: "default" | "mini";
     className?: string;
 }) {
+    const t = useTranslations("confidentialBanner");
     const { isConfidential, isLoading, isGuestTreasury } = useTreasury();
     const [isOpen, setIsOpen] = useState(false);
 
@@ -39,7 +39,7 @@ export function ConfidentialBanner({
     if (type === "mini") {
         return (
             <Tooltip
-                content={DESCRIPTION}
+                content={t("description")}
                 triggerProps={{
                     asChild: false,
                     className: cn("size-4", className),
@@ -68,7 +68,7 @@ export function ConfidentialBanner({
                 <div className="flex items-center gap-2">
                     <Shield className="fill-foreground size-6" />
                     <span className="text-sm font-medium text-foreground">
-                        Confidential
+                        {t("label")}
                     </span>
                 </div>
                 <CollapsibleTrigger className="text-muted-foreground hover:text-foreground transition-colors">
@@ -81,7 +81,7 @@ export function ConfidentialBanner({
             </div>
             <CollapsibleContent>
                 <p className="text-xs text-muted-foreground pt-3">
-                    {DESCRIPTION}
+                    {t("description")}
                 </p>
             </CollapsibleContent>
         </Collapsible>

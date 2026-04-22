@@ -819,6 +819,10 @@
         "accepting": "Aceptando...",
         "continue": "Continuar"
     },
+    "confidentialBanner": {
+        "label": "Confidencial",
+        "description": "Los saldos, la actividad y las transferencias son visibles solo para tu equipo — no para la blockchain pública."
+    },
     "supportCenter": {
         "title": "Centro de soporte",
         "resources": "Recursos",

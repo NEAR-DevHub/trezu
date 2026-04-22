@@ -819,6 +819,10 @@
         "accepting": "Accepting...",
         "continue": "Continue"
     },
+    "confidentialBanner": {
+        "label": "Confidential",
+        "description": "Balances, activity, and transfers are visible only to your team — not the public blockchain."
+    },
     "supportCenter": {
         "title": "Support Center",
         "resources": "Resources",
