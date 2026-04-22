@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { RecentActivity } from "@/lib/api";
 import {
     Table,
@@ -50,6 +51,7 @@ export function ActivityTable({
     total,
     onPageChange,
 }: ActivityTableProps) {
+    const t = useTranslations("activity");
     const { treasuryId } = useTreasury();
 
     const totalPages = Math.ceil(total / pageSize);
@@ -69,8 +71,8 @@ export function ActivityTable({
         return (
             <EmptyState
                 icon={Clock}
-                title="No transactions found"
-                description="Your transactions will appear here once they happen"
+                title={t("empty.title")}
+                description={t("empty.description")}
             />
         );
     }
@@ -83,21 +85,23 @@ export function ActivityTable({
                         <TableHeader>
                             <TableRow className="hover:bg-transparent">
                                 <TableHead className="w-[120px] pl-6 text-xs font-medium uppercase text-muted-foreground">
-                                    TYPE
+                                    {t("table.type")}
                                 </TableHead>
                                 <TableHead className="min-w-[180px] text-xs font-medium uppercase text-muted-foreground">
-                                    TRANSACTION
+                                    {t("table.transaction")}
                                 </TableHead>
                                 <TableHead className="min-w-[150px] text-xs font-medium uppercase text-muted-foreground">
-                                    FROM
+                                    {t("table.from")}
                                 </TableHead>
                                 <TableHead className="min-w-[150px] text-xs font-medium uppercase text-muted-foreground">
-                                    TO
+                                    {t("table.to")}
                                 </TableHead>
                                 <TableHead className="text-right pr-6 min-w-[120px] text-xs font-medium uppercase text-muted-foreground">
                                     <div className="flex items-center justify-end gap-1">
-                                        TRANSACTION HASH
-                                        <Tooltip content="Unique identifier (hash) of this transaction">
+                                        {t("table.transactionHash")}
+                                        <Tooltip
+                                            content={t("table.hashTooltip")}
+                                        >
                                             <Info className="h-3.5 w-3.5 text-muted-foreground" />
                                         </Tooltip>
                                     </div>

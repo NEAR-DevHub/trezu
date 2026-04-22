@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
     Card,
     CardContent,
@@ -161,6 +162,8 @@ export function RecentActivitySkeleton() {
     );
 }
 export function RecentActivity() {
+    const t = useTranslations("activity");
+    const tCommon = useTranslations("common");
     const { treasuryId, isConfidential, isGuestTreasury } = useTreasury();
     const [hideSmallTransactions, setHideSmallTransactions] = useState(false);
     const [selectedActivity, setSelectedActivity] =
@@ -465,7 +468,7 @@ export function RecentActivity() {
             <Card className="gap-3 border-none shadow-none">
                 <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3 px-4">
                     <div className="space-y-1">
-                        <StepperHeader title="Recent Transactions" />
+                        <StepperHeader title={t("recentTitle")} />
                     </div>
                     <div className="flex items-center gap-2">
                         {/* TODO: Uncomment after price integration */}
@@ -497,7 +500,7 @@ export function RecentActivity() {
                                         className="h-9 px-3"
                                     >
                                         <span className="hidden sm:inline">
-                                            View All
+                                            {tCommon("viewAll")}
                                         </span>
                                         <ChevronRight className="h-4 w-4" />
                                     </Button>
@@ -516,10 +519,8 @@ export function RecentActivity() {
                     ) : activities.length === 0 ? (
                         <EmptyState
                             icon={Clock}
-                            title={"Nothing to show yet"}
-                            description={
-                                "Your transactions and actions will appear here once they happen"
-                            }
+                            title={t("emptyDashboard.title")}
+                            description={t("emptyDashboard.description")}
                         />
                     ) : (
                         <>

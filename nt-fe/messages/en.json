@@ -197,7 +197,12 @@
         "empty": {
             "title": "No transactions found",
             "description": "Your transactions will appear here once they happen"
-        }
+        },
+        "emptyDashboard": {
+            "title": "Nothing to show yet",
+            "description": "Your transactions and actions will appear here once they happen"
+        },
+        "recentTitle": "Recent Transactions"
     },
     "export": {
         "types": {

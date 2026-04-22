@@ -190,6 +190,8 @@ function ActivityList({
 
 export default function ActivityPage() {
     const t = useTranslations("pages.activity");
+    const tActivity = useTranslations("activity");
+    const tCommon = useTranslations("common");
     const { treasuryId } = useTreasury();
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -253,18 +255,18 @@ export default function ActivityPage() {
         return [
             {
                 id: "created_date",
-                label: "Created Date",
+                label: tActivity("filters.createdDate"),
                 minDate,
                 maxDate: new Date(),
             },
             {
                 id: "token",
-                label: "Token",
+                label: tActivity("filters.token"),
                 hideAmount: true,
             },
             {
                 id: "from",
-                label: "From",
+                label: tActivity("filters.from"),
                 options: senderOptions.map((option) => ({
                     value: option,
                     label: option,
@@ -272,7 +274,7 @@ export default function ActivityPage() {
             },
             {
                 id: "to",
-                label: "To",
+                label: tActivity("filters.to"),
                 options: recipientOptions.map((option) => ({
                     value: option,
                     label: option,
@@ -326,11 +328,11 @@ export default function ActivityPage() {
     );
 
     const tabs: TabItem[] = [
-        { value: "all", label: "All" },
-        { value: "outgoing", label: "Sent" },
-        { value: "incoming", label: "Received" },
-        { value: "staking_rewards", label: "Staking Rewards" },
-        { value: "exchange", label: "Exchange" },
+        { value: "all", label: tActivity("tabs.all") },
+        { value: "outgoing", label: tActivity("tabs.sent") },
+        { value: "incoming", label: tActivity("tabs.received") },
+        { value: "staking_rewards", label: tActivity("tabs.stakingRewards") },
+        { value: "exchange", label: tActivity("tabs.exchange") },
     ];
 
     const actions = (
@@ -340,8 +342,8 @@ export default function ActivityPage() {
                 onChange={(e) => setTxHashInput(e.target.value)}
                 onDebouncedChange={handleTxHashSearch}
                 debounceMs={350}
-                placeholder="Search by transaction hash"
-                mobilePlaceholder="Transaction hash"
+                placeholder={tActivity("searchPlaceholder")}
+                mobilePlaceholder={tActivity("searchPlaceholderShort")}
                 className="md:w-56"
                 search
             />
@@ -350,10 +352,14 @@ export default function ActivityPage() {
                 size="icon"
                 className="relative md:w-auto md:px-3 md:gap-1.5"
                 onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-                aria-label={hasActiveFilters ? "Filter (active)" : "Filter"}
+                aria-label={
+                    hasActiveFilters
+                        ? tCommon("filterActive")
+                        : tCommon("filter")
+                }
             >
                 <ListFilter className="size-4" />
-                <span className="hidden md:inline">Filter</span>
+                <span className="hidden md:inline">{tCommon("filter")}</span>
                 {hasActiveFilters && (
                     <span
                         className="absolute top-1 right-1.5 size-2 rounded-full bg-general-info-foreground"

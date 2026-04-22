@@ -197,7 +197,12 @@
         "empty": {
             "title": "No se encontraron transacciones",
             "description": "Tus transacciones aparecerán aquí cuando ocurran"
-        }
+        },
+        "emptyDashboard": {
+            "title": "Todavía no hay nada",
+            "description": "Tus transacciones y acciones aparecerán aquí cuando ocurran"
+        },
+        "recentTitle": "Transacciones recientes"
     },
     "export": {
         "types": {
