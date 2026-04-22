@@ -1,17 +1,18 @@
-import { Button } from "./button";
-import { Tooltip } from "./tooltip";
-import {
-    hasPermission,
-    isAnyMember,
-    getApproversAndThreshold,
-} from "@/lib/config-utils";
-import { ProposalKind } from "@/lib/proposals-api";
-import { useNear } from "@/stores/near-store";
+import { useTranslations } from "next-intl";
+import { useMemo } from "react";
+import { useSubscription } from "@/hooks/use-subscription";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
-import { useSubscription } from "@/hooks/use-subscription";
-import { useMemo } from "react";
+import {
+    getApproversAndThreshold,
+    hasPermission,
+    isAnyMember,
+} from "@/lib/config-utils";
+import type { ProposalKind } from "@/lib/proposals-api";
 import { cn } from "@/lib/utils";
+import { useNear } from "@/stores/near-store";
+import { Button } from "./button";
+import { Tooltip } from "./tooltip";
 
 interface AuthButtonProps extends React.ComponentProps<typeof Button> {
     permissionKind: string;
@@ -77,6 +78,7 @@ export function AuthButton({
     tooltipProps,
     ...props
 }: AuthButtonProps) {
+    const t = useTranslations("auth");
     const { accountId } = useNear();
     const { treasuryId } = useTreasury();
     const { data: policy } = useTreasuryPolicy(treasuryId);
@@ -103,7 +105,7 @@ export function AuthButton({
 
     if (!accountId) {
         return (
-            <ErrorMessage message={NO_WALLET_MESSAGE} {...props}>
+            <ErrorMessage message={t("noWallet")} {...props}>
                 {children}
             </ErrorMessage>
         );
@@ -111,7 +113,7 @@ export function AuthButton({
 
     if (!hasAccess) {
         return (
-            <ErrorMessage message={NO_PERMISSION_MESSAGE} {...props}>
+            <ErrorMessage message={t("noPermission")} {...props}>
                 {children}
             </ErrorMessage>
         );
@@ -119,10 +121,7 @@ export function AuthButton({
 
     if (!hasSponsoredTransactions) {
         return (
-            <ErrorMessage
-                message={NO_SPONSORED_TRANSACTIONS_MESSAGE}
-                {...props}
-            >
+            <ErrorMessage message={t("noSponsoredTransactions")} {...props}>
                 {children}
             </ErrorMessage>
         );
@@ -169,6 +168,7 @@ export function AuthButtonWithProposal({
     tooltipProps,
     ...props
 }: AuthButtonWithProposalProps) {
+    const t = useTranslations("auth");
     const { accountId } = useNear();
     const { treasuryId } = useTreasury();
     const { data: policy } = useTreasuryPolicy(treasuryId);
@@ -196,7 +196,7 @@ export function AuthButtonWithProposal({
 
     if (!accountId) {
         return (
-            <ErrorMessage message={NO_WALLET_MESSAGE} {...props}>
+            <ErrorMessage message={t("noWallet")} {...props}>
                 {children}
             </ErrorMessage>
         );
@@ -204,7 +204,7 @@ export function AuthButtonWithProposal({
 
     if (!hasAccess) {
         return (
-            <ErrorMessage message={NO_PERMISSION_MESSAGE} {...props}>
+            <ErrorMessage message={t("noPermission")} {...props}>
                 {children}
             </ErrorMessage>
         );
@@ -212,10 +212,7 @@ export function AuthButtonWithProposal({
 
     if (!hasSponsoredTransactions) {
         return (
-            <ErrorMessage
-                message={NO_SPONSORED_TRANSACTIONS_MESSAGE}
-                {...props}
-            >
+            <ErrorMessage message={t("noSponsoredTransactions")} {...props}>
                 {children}
             </ErrorMessage>
         );

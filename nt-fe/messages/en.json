@@ -1,0 +1,71 @@
+{
+    "common": {
+        "loading": "Loading...",
+        "connecting": "Connecting...",
+        "save": "Save",
+        "cancel": "Cancel",
+        "submit": "Submit",
+        "close": "Close",
+        "back": "Back",
+        "seeDemo": "See Demo Trezu"
+    },
+    "languageSwitcher": {
+        "label": "Language",
+        "select": "Select language",
+        "english": "English",
+        "spanish": "Español",
+        "ukrainian": "Українська"
+    },
+    "header": {
+        "toggleSidebar": "Toggle sidebar",
+        "toggleTheme": "Toggle theme"
+    },
+    "nav": {
+        "dashboard": "Dashboard",
+        "requests": "Requests",
+        "payments": "Payments",
+        "exchange": "Exchange",
+        "addressBook": "Address Book",
+        "members": "Members",
+        "settings": "Settings",
+        "helpSupport": "Help & Support",
+        "saveGuestTreasury": "Save this guest treasury to your treasuries list."
+    },
+    "signIn": {
+        "connect": "Connect",
+        "connectWallet": "Connect Wallet",
+        "wallet": "Wallet",
+        "termsOfService": "Terms of Service",
+        "privacyPolicy": "Privacy Policy",
+        "disconnect": "Disconnect"
+    },
+    "auth": {
+        "noWallet": "Connect your wallet",
+        "noPermission": "You don't have permission to perform this action",
+        "noVote": "You have already voted on this proposal",
+        "noSponsoredTransactions": "No sponsored transactions remaining"
+    },
+    "landing": {
+        "welcome": "Welcome to Trezu",
+        "chooseOption": "Choose an option below to get started.",
+        "newUserTitle": "I’m new to Trezu",
+        "newUserDescription": "I’ve heard about Trezu but don't have a treasury yet.",
+        "existingUserTitle": "I already use Trezu",
+        "existingUserDescription": "I have an account and manage a treasury.",
+        "gradientTagline": "Cross-chain multisig security for managing digital assets",
+        "waitlistTitle": "Join the Trezu Waitlist",
+        "waitlistSubmittedTitle": "You're on the list 🎉",
+        "waitlistSubmittedDescription": "Thanks! We'll notify you as soon as treasury creation becomes available.",
+        "waitlistDescription": "We've hit today's treasury limit. No worries - try again later or leave your contact to join the waitlist. We'll let you know when a spot opens.",
+        "waitlistInputPlaceholder": "Email address or Telegram (e.g. @username)",
+        "waitlistPrivacyNote": "We will only use this to notify you",
+        "waitlistSubmit": "Join the Waitlist",
+        "waitlistSubmitFailed": "Failed to submit. Please try again."
+    },
+    "metadata": {
+        "treasuryTitle": "Dashboard | Trezu",
+        "landingTitle": "Trezu | Cross-chain Treasury Management",
+        "description": "Manage your team's capital in minutes from a single dashboard without ever giving up your keys.",
+        "ogTitle": "Trezu | One multisig. Any crypto. Total control."
+    }
+}

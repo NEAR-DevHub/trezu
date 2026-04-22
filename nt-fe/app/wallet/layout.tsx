@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import "../globals.css";
 import { QueryProvider } from "@/components/query-provider";
 
@@ -18,14 +20,17 @@ export const metadata: Metadata = {
     description: "Sign treasury proposals via Trezu",
 };
 
-export default function WalletLayout({
+export default async function WalletLayout({
     children,
 }: Readonly<{
     children: React.ReactNode;
 }>) {
+    const locale = await getLocale();
+    const messages = await getMessages();
+
     return (
         <html
-            lang="en"
+            lang={locale}
             suppressHydrationWarning
             className={`${geistSans.variable} ${geistMono.variable}`}
         >
@@ -46,7 +51,9 @@ export default function WalletLayout({
             <body
                 className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
             >
-                <QueryProvider>{children}</QueryProvider>
+                <NextIntlClientProvider locale={locale} messages={messages}>
+                    <QueryProvider>{children}</QueryProvider>
+                </NextIntlClientProvider>
             </body>
         </html>
     );

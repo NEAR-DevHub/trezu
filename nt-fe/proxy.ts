@@ -4,6 +4,11 @@ import {
     SANCTIONED_COUNTRY_CODES,
     SANCTIONED_REGIONS,
 } from "@/constants/sanctioned-countries";
+import {
+    LOCALE_COOKIE,
+    isLocale,
+    pickLocaleFromAcceptLanguage,
+} from "@/i18n/config";
 
 /**
  * Extract the client's real IP address from request headers.
@@ -80,7 +85,19 @@ export function proxy(request: NextRequest) {
         return NextResponse.rewrite(blockedUrl);
     }
 
-    return NextResponse.next();
+    const response = NextResponse.next();
+    const existingLocale = request.cookies.get(LOCALE_COOKIE)?.value;
+    if (!isLocale(existingLocale)) {
+        const detected = pickLocaleFromAcceptLanguage(
+            request.headers.get("accept-language"),
+        );
+        response.cookies.set(LOCALE_COOKIE, detected, {
+            path: "/",
+            maxAge: 60 * 60 * 24 * 365,
+            sameSite: "lax",
+        });
+    }
+    return response;
 }
 
 /**

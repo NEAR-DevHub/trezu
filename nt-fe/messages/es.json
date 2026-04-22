@@ -1,0 +1,71 @@
+{
+    "common": {
+        "loading": "Cargando...",
+        "connecting": "Conectando...",
+        "save": "Guardar",
+        "cancel": "Cancelar",
+        "submit": "Enviar",
+        "close": "Cerrar",
+        "back": "Atrás",
+        "seeDemo": "Ver demo de Trezu"
+    },
+    "languageSwitcher": {
+        "label": "Idioma",
+        "select": "Seleccionar idioma",
+        "english": "English",
+        "spanish": "Español",
+        "ukrainian": "Українська"
+    },
+    "header": {
+        "toggleSidebar": "Alternar barra lateral",
+        "toggleTheme": "Alternar tema"
+    },
+    "nav": {
+        "dashboard": "Panel",
+        "requests": "Solicitudes",
+        "payments": "Pagos",
+        "exchange": "Intercambio",
+        "addressBook": "Libreta de direcciones",
+        "members": "Miembros",
+        "settings": "Configuración",
+        "helpSupport": "Ayuda y soporte",
+        "saveGuestTreasury": "Guarda esta tesorería de invitado en tu lista de tesorerías."
+    },
+    "signIn": {
+        "connect": "Conectar",
+        "connectWallet": "Conectar cartera",
+        "wallet": "Cartera",
+        "termsOfService": "Términos del servicio",
+        "privacyPolicy": "Política de privacidad",
+        "disconnect": "Desconectar"
+    },
+    "auth": {
+        "noWallet": "Conecta tu cartera",
+        "noPermission": "No tienes permiso para realizar esta acción",
+        "noVote": "Ya has votado en esta propuesta",
+        "noSponsoredTransactions": "No quedan transacciones patrocinadas"
+    },
+    "landing": {
+        "welcome": "Bienvenido a Trezu",
+        "chooseOption": "Elige una opción a continuación para comenzar.",
+        "newUserTitle": "Soy nuevo en Trezu",
+        "newUserDescription": "He oído hablar de Trezu pero aún no tengo una tesorería.",
+        "existingUserTitle": "Ya uso Trezu",
+        "existingUserDescription": "Tengo una cuenta y gestiono una tesorería.",
+        "gradientTagline": "Seguridad multifirma multicadena para gestionar activos digitales",
+        "waitlistTitle": "Únete a la lista de espera de Trezu",
+        "waitlistSubmittedTitle": "Estás en la lista 🎉",
+        "waitlistSubmittedDescription": "¡Gracias! Te avisaremos en cuanto la creación de tesorerías esté disponible.",
+        "waitlistDescription": "Hemos alcanzado el límite de tesorerías de hoy. No te preocupes: inténtalo más tarde o deja tu contacto para unirte a la lista de espera. Te avisaremos cuando haya un hueco libre.",
+        "waitlistInputPlaceholder": "Correo electrónico o Telegram (p. ej. @usuario)",
+        "waitlistPrivacyNote": "Solo lo usaremos para avisarte",
+        "waitlistSubmit": "Unirme a la lista de espera",
+        "waitlistSubmitFailed": "Error al enviar. Inténtalo de nuevo."
+    },
+    "metadata": {
+        "treasuryTitle": "Panel | Trezu",
+        "landingTitle": "Trezu | Gestión de tesorería multicadena",
+        "description": "Gestiona el capital de tu equipo en minutos desde un único panel sin entregar nunca tus claves.",
+        "ogTitle": "Trezu | Una multifirma. Cualquier cripto. Control total."
+    }
+}

@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import "../globals.css";
-import { GoogleAnalytics } from "@/components/google-analytics";
 import { GleapWidget } from "@/components/gleap-widget";
+import { GoogleAnalytics } from "@/components/google-analytics";
 import { Toaster } from "@/components/toaster";
 
 const geistSans = Geist({
@@ -15,40 +17,43 @@ const geistMono = Geist_Mono({
     subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-    title: {
-        default: "Trezu | Cross-chain Treasury Management",
-        template: "%s | Trezu",
-    },
-    description:
-        "Manage your team's capital in minutes from a single dashboard without ever giving up your keys.",
-    openGraph: {
-        title: "Trezu | One multisig. Any crypto. Total control.",
-        description:
-            "Manage your team's capital in minutes from a single dashboard without ever giving up your keys.",
-        images: [
-            "https://framerusercontent.com/assets/3H8WN4PxElLu7XMiyq7jbNMH8es.png",
-        ],
-    },
-    twitter: {
-        card: "summary_large_image",
-        title: "Trezu | One multisig. Any crypto. Total control.",
-        description:
-            "Manage your team's capital in minutes from a single dashboard without ever giving up your keys.",
-        images: [
-            "https://framerusercontent.com/assets/3H8WN4PxElLu7XMiyq7jbNMH8es.png",
-        ],
-    },
-};
+export async function generateMetadata(): Promise<Metadata> {
+    const t = await getTranslations("metadata");
+    return {
+        title: {
+            default: t("landingTitle"),
+            template: "%s | Trezu",
+        },
+        description: t("description"),
+        openGraph: {
+            title: t("ogTitle"),
+            description: t("description"),
+            images: [
+                "https://framerusercontent.com/assets/3H8WN4PxElLu7XMiyq7jbNMH8es.png",
+            ],
+        },
+        twitter: {
+            card: "summary_large_image",
+            title: t("ogTitle"),
+            description: t("description"),
+            images: [
+                "https://framerusercontent.com/assets/3H8WN4PxElLu7XMiyq7jbNMH8es.png",
+            ],
+        },
+    };
+}
 
-export default function RootLayout({
+export default async function RootLayout({
     children,
 }: Readonly<{
     children: React.ReactNode;
 }>) {
+    const locale = await getLocale();
+    const messages = await getMessages();
+
     return (
         <html
-            lang="en"
+            lang={locale}
             suppressHydrationWarning
             className={`${geistSans.variable} ${geistMono.variable}`}
         >
@@ -69,10 +74,12 @@ export default function RootLayout({
             <body
                 className={`${geistSans.variable} ${geistMono.variable} antialiased`}
             >
-                {children}
-                <Toaster />
-                <GoogleAnalytics />
-                <GleapWidget />
+                <NextIntlClientProvider locale={locale} messages={messages}>
+                    {children}
+                    <Toaster />
+                    <GoogleAnalytics />
+                    <GleapWidget />
+                </NextIntlClientProvider>
             </body>
         </html>
     );

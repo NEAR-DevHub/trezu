@@ -1,20 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { LogIn, LogOut, ChevronDown, Loader2, FileText } from "lucide-react";
-import { Button } from "@/components/button";
-import { useNear } from "@/stores/near-store";
-import { User } from "./user";
+import { ChevronDown, FileText, Loader2, LogIn, LogOut } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { useState } from "react";
+import { Button } from "@/components/button";
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { Address } from "./address";
 import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from "@/constants/config";
+import { useNear } from "@/stores/near-store";
+import { Address } from "./address";
+import { User } from "./user";
 
 export function SignIn() {
+    const t = useTranslations("signIn");
+    const tCommon = useTranslations("common");
     const {
         accountId: signedAccountId,
         isInitializing,
@@ -38,7 +41,7 @@ export function SignIn() {
         return (
             <Button disabled className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Loading...
+                {tCommon("loading")}
             </Button>
         );
     }
@@ -54,12 +57,13 @@ export function SignIn() {
                 {isConnecting ? (
                     <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Connecting...
+                        {tCommon("connecting")}
                     </>
                 ) : (
                     <>
                         <LogIn className="h-4 w-4" />
-                        Connect <span className="hidden md:inline">Wallet</span>
+                        {t("connect")}{" "}
+                        <span className="hidden md:inline">{t("wallet")}</span>
                     </>
                 )}
             </Button>
@@ -100,7 +104,7 @@ export function SignIn() {
                     onClick={() => setIsOpen(false)}
                 >
                     <FileText className="h-4 w-4" />
-                    Terms of Service
+                    {t("termsOfService")}
                 </Link>
                 <Link
                     href={PRIVACY_POLICY_URL}
@@ -110,7 +114,7 @@ export function SignIn() {
                     onClick={() => setIsOpen(false)}
                 >
                     <FileText className="h-4 w-4" />
-                    Privacy Policy
+                    {t("privacyPolicy")}
                 </Link>
                 <div className="border-t border-border dark:border-general-border">
                     <button
@@ -121,7 +125,7 @@ export function SignIn() {
                         }}
                     >
                         <LogOut className="h-4 w-4" />
-                        Disconnect
+                        {t("disconnect")}
                     </button>
                 </div>
             </PopoverContent>

@@ -1,0 +1,71 @@
+{
+    "common": {
+        "loading": "Завантаження...",
+        "connecting": "З'єднання...",
+        "save": "Зберегти",
+        "cancel": "Скасувати",
+        "submit": "Надіслати",
+        "close": "Закрити",
+        "back": "Назад",
+        "seeDemo": "Переглянути демо Trezu"
+    },
+    "languageSwitcher": {
+        "label": "Мова",
+        "select": "Обрати мову",
+        "english": "English",
+        "spanish": "Español",
+        "ukrainian": "Українська"
+    },
+    "header": {
+        "toggleSidebar": "Перемкнути бічну панель",
+        "toggleTheme": "Перемкнути тему"
+    },
+    "nav": {
+        "dashboard": "Панель",
+        "requests": "Запити",
+        "payments": "Платежі",
+        "exchange": "Обмін",
+        "addressBook": "Адресна книга",
+        "members": "Учасники",
+        "settings": "Налаштування",
+        "helpSupport": "Довідка та підтримка",
+        "saveGuestTreasury": "Зберегти цю гостьову скарбницю до списку ваших скарбниць."
+    },
+    "signIn": {
+        "connect": "Підключити",
+        "connectWallet": "Підключити гаманець",
+        "wallet": "Гаманець",
+        "termsOfService": "Умови використання",
+        "privacyPolicy": "Політика конфіденційності",
+        "disconnect": "Відключити"
+    },
+    "auth": {
+        "noWallet": "Підключіть свій гаманець",
+        "noPermission": "У вас немає дозволу виконувати цю дію",
+        "noVote": "Ви вже проголосували за цю пропозицію",
+        "noSponsoredTransactions": "Не залишилось спонсорованих транзакцій"
+    },
+    "landing": {
+        "welcome": "Ласкаво просимо до Trezu",
+        "chooseOption": "Оберіть опцію нижче, щоб почати.",
+        "newUserTitle": "Я новачок у Trezu",
+        "newUserDescription": "Я чув про Trezu, але ще не маю скарбниці.",
+        "existingUserTitle": "Я вже користуюсь Trezu",
+        "existingUserDescription": "У мене є обліковий запис і я керую скарбницею.",
+        "gradientTagline": "Мультипідписна безпека між блокчейнами для керування цифровими активами",
+        "waitlistTitle": "Приєднатись до списку очікування Trezu",
+        "waitlistSubmittedTitle": "Ви у списку 🎉",
+        "waitlistSubmittedDescription": "Дякуємо! Ми повідомимо вас, щойно створення скарбниць стане доступним.",
+        "waitlistDescription": "Ми досягли ліміту скарбниць на сьогодні. Не переймайтесь — спробуйте пізніше або залиште контакт, щоб приєднатись до списку очікування. Ми повідомимо, коли з'явиться місце.",
+        "waitlistInputPlaceholder": "Електронна пошта або Telegram (напр. @username)",
+        "waitlistPrivacyNote": "Ми використаємо це лише для сповіщення",
+        "waitlistSubmit": "Приєднатись до списку очікування",
+        "waitlistSubmitFailed": "Не вдалось надіслати. Спробуйте ще раз."
+    },
+    "metadata": {
+        "treasuryTitle": "Панель | Trezu",
+        "landingTitle": "Trezu | Керування скарбницею між блокчейнами",
+        "description": "Керуйте капіталом команди за хвилини з єдиної панелі, не передаючи свої ключі.",
+        "ogTitle": "Trezu | Один мультипідпис. Будь-яка крипта. Повний контроль."
+    }
+}
