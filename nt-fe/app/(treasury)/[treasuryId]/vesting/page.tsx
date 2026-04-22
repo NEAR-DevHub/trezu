@@ -39,59 +39,81 @@ import { LOCKUP_NO_WHITELIST_ACCOUNT_ID } from "@/constants/config";
 import { AmountSummary } from "@/components/amount-summary";
 import { CreateRequestButton } from "@/components/create-request-button";
 
-const vestingFormSchema = z
-    .object({
-        vesting: z.object({
-            address: z
-                .string()
-                .min(2, "Recipient should be at least 2 characters")
-                .max(64, "Recipient must be less than 64 characters"),
-            amount: z
-                .string()
-                .refine((val) => !isNaN(Number(val)) && Big(val).gte(3.5), {
-                    message: "Amount must be greater than or equal to 3.5",
-                }),
-            memo: z.string().optional(),
-            isRegistered: z.boolean().optional(),
-            token: tokenSchema,
-            startDate: z.date({ message: "Start date is required" }),
-            endDate: z.date({ message: "End date is required" }),
-            cliffDate: z.date({ message: "Cliff date is required" }).optional(),
-            allowEarn: z.boolean().optional(),
-            allowCancel: z.boolean().optional(),
-        }),
-    })
-    .superRefine((data, ctx) => {
-        if (data.vesting.address === data.vesting.token.address) {
-            ctx.addIssue({
-                code: "custom",
-                path: [`vesting.address`],
-                message: "Recipient and token address cannot be the same",
-            });
-        }
-        if (data.vesting.startDate >= data.vesting.endDate) {
-            ctx.addIssue({
-                code: "custom",
-                path: [`vesting.endDate`],
-                message: "Start date must be before end date",
-            });
-        }
-
-        if (data.vesting.cliffDate) {
-            if (
-                data.vesting.cliffDate < data.vesting.startDate ||
-                data.vesting.cliffDate >= data.vesting.endDate
-            ) {
+function buildVestingFormSchema(messages: {
+    recipientMin: string;
+    recipientMax64: string;
+    amountMinLockup: string;
+    startDateRequired: string;
+    endDateRequired: string;
+    cliffDateRequired: string;
+    recipientSameAsToken: string;
+    startBeforeEnd: string;
+    cliffBetween: (start: string, end: string) => string;
+}) {
+    return z
+        .object({
+            vesting: z.object({
+                address: z
+                    .string()
+                    .min(2, messages.recipientMin)
+                    .max(64, messages.recipientMax64),
+                amount: z
+                    .string()
+                    .refine(
+                        (val) => !isNaN(Number(val)) && Big(val).gte(3.5),
+                        { message: messages.amountMinLockup },
+                    ),
+                memo: z.string().optional(),
+                isRegistered: z.boolean().optional(),
+                token: tokenSchema,
+                startDate: z.date({ message: messages.startDateRequired }),
+                endDate: z.date({ message: messages.endDateRequired }),
+                cliffDate: z
+                    .date({ message: messages.cliffDateRequired })
+                    .optional(),
+                allowEarn: z.boolean().optional(),
+                allowCancel: z.boolean().optional(),
+            }),
+        })
+        .superRefine((data, ctx) => {
+            if (data.vesting.address === data.vesting.token.address) {
                 ctx.addIssue({
                     code: "custom",
-                    path: [`vesting.cliffDate`],
-                    message: `Cliff date must be between ${formatUserDate(data.vesting.startDate, { includeTime: false })} and ${formatUserDate(data.vesting.endDate, { includeTime: false })}`,
+                    path: [`vesting.address`],
+                    message: messages.recipientSameAsToken,
                 });
             }
-        }
-    });
+            if (data.vesting.startDate >= data.vesting.endDate) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: [`vesting.endDate`],
+                    message: messages.startBeforeEnd,
+                });
+            }
 
-type VestingFormValues = z.infer<typeof vestingFormSchema>;
+            if (data.vesting.cliffDate) {
+                if (
+                    data.vesting.cliffDate < data.vesting.startDate ||
+                    data.vesting.cliffDate >= data.vesting.endDate
+                ) {
+                    ctx.addIssue({
+                        code: "custom",
+                        path: [`vesting.cliffDate`],
+                        message: messages.cliffBetween(
+                            formatUserDate(data.vesting.startDate, {
+                                includeTime: false,
+                            }),
+                            formatUserDate(data.vesting.endDate, {
+                                includeTime: false,
+                            }),
+                        ),
+                    });
+                }
+            }
+        });
+}
+
+type VestingFormValues = z.infer<ReturnType<typeof buildVestingFormSchema>>;
 
 function Step1({ handleNext }: StepProps) {
     const tV = useTranslations("vesting");
@@ -301,6 +323,23 @@ function Step3({ handleBack }: StepProps) {
 
 export default function VestingPage() {
     const t = useTranslations("pages.vesting");
+    const tValidation = useTranslations("paymentForm.validation");
+    const vestingFormSchema = useMemo(
+        () =>
+            buildVestingFormSchema({
+                recipientMin: tValidation("recipientMin"),
+                recipientMax64: tValidation("recipientMax64"),
+                amountMinLockup: tValidation("amountMinLockup"),
+                startDateRequired: tValidation("startDateRequired"),
+                endDateRequired: tValidation("endDateRequired"),
+                cliffDateRequired: tValidation("cliffDateRequired"),
+                recipientSameAsToken: tValidation("recipientSameAsToken"),
+                startBeforeEnd: tValidation("startBeforeEnd"),
+                cliffBetween: (start, end) =>
+                    tValidation("cliffBetween", { start, end }),
+            }),
+        [tValidation],
+    );
     const { treasuryId, isConfidential } = useTreasury();
     const { createProposal } = useNear();
     const { data: policy } = useTreasuryPolicy(treasuryId);

@@ -66,17 +66,19 @@ import {
     buildNEARWithdrawProposal,
 } from "./utils/proposal-builder";
 
-const exchangeFormSchema = z.object({
-    sellAmount: z
-        .string()
-        .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
-            message: "Amount must be greater than 0",
-        }),
-    sellToken: tokenSchema,
-    receiveAmount: z.string().optional(),
-    receiveToken: tokenSchema,
-    slippageTolerance: z.number().optional(),
-});
+function buildExchangeFormSchema(messages: { amountGreaterThanZero: string }) {
+    return z.object({
+        sellAmount: z
+            .string()
+            .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+                message: messages.amountGreaterThanZero,
+            }),
+        sellToken: tokenSchema,
+        receiveAmount: z.string().optional(),
+        receiveToken: tokenSchema,
+        slippageTolerance: z.number().optional(),
+    });
+}
 
 function Step1({ handleNext }: StepProps) {
     const tEx = useTranslations("exchange");
@@ -670,10 +672,18 @@ function Step2({ handleBack }: StepProps) {
     );
 }
 
-type ExchangeFormValues = z.infer<typeof exchangeFormSchema>;
+type ExchangeFormValues = z.infer<ReturnType<typeof buildExchangeFormSchema>>;
 
 export default function ExchangePage() {
     const t = useTranslations("pages.exchange");
+    const tValidation = useTranslations("paymentForm.validation");
+    const exchangeFormSchema = useMemo(
+        () =>
+            buildExchangeFormSchema({
+                amountGreaterThanZero: tValidation("amountGreaterThanZero"),
+            }),
+        [tValidation],
+    );
     const { treasuryId: selectedTreasury, isConfidential } = useTreasury();
     const { createProposal } = useNear();
     const { data: policy } = useTreasuryPolicy(selectedTreasury);
