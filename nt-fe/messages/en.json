@@ -1261,6 +1261,10 @@
         "title": "Confidential",
         "description": "Only treasury members have access."
     },
+    "exchangeRate": {
+        "rate": "Rate",
+        "clickToReverse": "Click to reverse rate"
+    },
     "exchangeSettings": {
         "title": "Exchange Settings",
         "slippageTolerance": "Slippage Tolerance",

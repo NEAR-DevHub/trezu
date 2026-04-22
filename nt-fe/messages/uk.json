@@ -1261,6 +1261,10 @@
         "title": "Конфіденційно",
         "description": "Доступ мають лише учасники скарбниці."
     },
+    "exchangeRate": {
+        "rate": "Курс",
+        "clickToReverse": "Натисніть, щоб перевернути курс"
+    },
     "exchangeSettings": {
         "title": "Налаштування обміну",
         "slippageTolerance": "Допустимий slippage",

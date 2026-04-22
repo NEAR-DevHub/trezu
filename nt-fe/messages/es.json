@@ -1261,6 +1261,10 @@
         "title": "Confidencial",
         "description": "Solo los miembros de la tesorería tienen acceso."
     },
+    "exchangeRate": {
+        "rate": "Tasa",
+        "clickToReverse": "Haz clic para invertir la tasa"
+    },
     "exchangeSettings": {
         "title": "Configuración del intercambio",
         "slippageTolerance": "Tolerancia al slippage",
