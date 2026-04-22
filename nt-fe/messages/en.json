@@ -728,6 +728,14 @@
             "bulk": "This will remove <bold>{count, plural, one {# recipient} other {# recipients}}</bold> from your address book. You can add them again anytime.",
             "single": "This will remove <bold>{name}</bold> from your address book. You can add this recipient again anytime."
         },
+        "import": {
+            "title": "Import Recipients",
+            "description": "Upload a list of recipient addresses to your address book.",
+            "foundSummary": "Found {count, plural, one {# recipient} other {# recipients}} on {networkCount, plural, one {# network} other {# networks}}",
+            "uploadPrompt": "Upload or paste recipient data",
+            "fixErrors": "Fix errors to continue",
+            "continueReview": "Continue to Review"
+        },
         "form": {
             "editRecipient": "Edit Recipient",
             "addRecipient": "Add Recipient",
