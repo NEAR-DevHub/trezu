@@ -1,6 +1,8 @@
+import { getTranslations } from "next-intl/server";
 import Image from "next/image";
 
-export default function BlockedPage() {
+export default async function BlockedPage() {
+    const t = await getTranslations("blocked");
     return (
         <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black">
             {/* Blue glow */}
@@ -25,11 +27,10 @@ export default function BlockedPage() {
             {/* Text content */}
             <div className="relative z-10 flex flex-col items-center gap-3 px-6 text-center">
                 <h1 className="text-lg md:text-5xl font-medium tracking-[-0.32px] text-white">
-                    Service not available in your country
+                    {t("title")}
                 </h1>
                 <p className="text-sm md:text-base text-white/80">
-                    Due to restrictions, this service is currently unavailable
-                    in your region.
+                    {t("description")}
                 </p>
             </div>
         </div>
