@@ -157,6 +157,19 @@
         "stats": {
             "title": "Estadísticas"
         },
+        "publicDashboard": {
+            "updatesDaily": "Actualización diaria",
+            "noDataTitle": "Aún no hay datos",
+            "noDataDescription": "Las estadísticas aparecerán tras calcular la primera instantánea diaria.",
+            "assetsSecured": "Activos asegurados con el contrato de Sputnik DAO",
+            "acrossDaos": "En <bold>{count, plural, one {# DAO} other {# DAOs}}</bold>",
+            "updatedOn": "Actualizado {date}",
+            "topAssets": "Top 20 activos",
+            "noAssetsTitle": "Aún no hay activos",
+            "noAssetsDescription": "Los datos de tokens aparecerán cuando se calcule la instantánea diaria.",
+            "tableToken": "Token",
+            "tableTotalValue": "Valor total"
+        },
         "telegram": {
             "title": "Conectar tesorería",
             "description": "Vincula tus tesorerías a un chat de Telegram"

@@ -157,6 +157,19 @@
         "stats": {
             "title": "Stats"
         },
+        "publicDashboard": {
+            "updatesDaily": "Updates daily",
+            "noDataTitle": "No data yet",
+            "noDataDescription": "Stats will appear after the first daily snapshot is computed.",
+            "assetsSecured": "Assets Secured With Sputnik DAO Contract",
+            "acrossDaos": "Across <bold>{count, plural, one {# DAO} other {# DAOs}}</bold>",
+            "updatedOn": "Updated {date}",
+            "topAssets": "Top 20 Assets",
+            "noAssetsTitle": "No assets yet",
+            "noAssetsDescription": "Token data will appear once the daily snapshot is computed.",
+            "tableToken": "Token",
+            "tableTotalValue": "Total Value"
+        },
         "telegram": {
             "title": "Connect Treasury",
             "description": "Link your treasuries to a Telegram chat"

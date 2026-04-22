@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { formatCurrency } from "@/lib/utils";
 import { PageCard } from "@/components/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,7 +14,7 @@ interface AumStatCardProps {
 
 function formatSnapshotDate(dateStr: string): string {
     const [year, month, day] = dateStr.split("-").map(Number);
-    return new Date(year, month - 1, day).toLocaleDateString("en-US", {
+    return new Date(year, month - 1, day).toLocaleDateString(undefined, {
         year: "numeric",
         month: "long",
         day: "numeric",
@@ -25,38 +26,45 @@ export function AumStatCard({
     daoCount,
     snapshotDate,
 }: AumStatCardProps) {
+    const t = useTranslations("publicDashboard");
     const aum = new Big(totalAumUsd || "0");
 
     return (
         <PageCard>
             <div className="flex flex-col gap-1">
                 <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Assets Secured With Sputnik DAO Contract
+                    {t("assetsSecured")}
                 </h3>
                 <p className="text-3xl font-bold mt-2">{formatCurrency(aum)}</p>
             </div>
 
             <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5 text-xs text-muted-foreground">
                 <span>
-                    Across{" "}
-                    <span className="font-semibold text-foreground">
-                        {daoCount}
-                    </span>{" "}
-                    {daoCount === 1 ? "DAO" : "DAOs"}
+                    {t.rich("acrossDaos", {
+                        count: daoCount,
+                        bold: (chunks) => (
+                            <span className="font-semibold text-foreground">
+                                {chunks}
+                            </span>
+                        ),
+                    })}
                 </span>
-                <span>Updated {formatSnapshotDate(snapshotDate)}</span>
+                <span>
+                    {t("updatedOn", { date: formatSnapshotDate(snapshotDate) })}
+                </span>
             </div>
         </PageCard>
     );
 }
 
 export function AumStatCardSkeleton() {
+    const t = useTranslations("publicDashboard");
     return (
         <PageCard>
             <div className="flex justify-around gap-4">
                 <div className="flex-1">
                     <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                        Assets Secured With Sputnik DAO Contract
+                        {t("assetsSecured")}
                     </h3>
                     <Skeleton className="h-9 w-48 mt-2" />
                 </div>

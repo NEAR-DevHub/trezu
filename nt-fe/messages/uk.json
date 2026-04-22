@@ -157,6 +157,19 @@
         "stats": {
             "title": "Статистика"
         },
+        "publicDashboard": {
+            "updatesDaily": "Оновлюється щодня",
+            "noDataTitle": "Ще немає даних",
+            "noDataDescription": "Статистика з'явиться після створення першого щоденного знімка.",
+            "assetsSecured": "Активи під охороною контракту Sputnik DAO",
+            "acrossDaos": "У <bold>{count, plural, one {# DAO} few {# DAO} many {# DAO} other {# DAO}}</bold>",
+            "updatedOn": "Оновлено {date}",
+            "topAssets": "Топ-20 активів",
+            "noAssetsTitle": "Ще немає активів",
+            "noAssetsDescription": "Дані про токени з'являться після створення щоденного знімка.",
+            "tableToken": "Токен",
+            "tableTotalValue": "Загальна вартість"
+        },
         "telegram": {
             "title": "Підключити скарбницю",
             "description": "Прив'яжіть скарбниці до чату Telegram"
