@@ -1254,6 +1254,34 @@
         "select": "Обрати скарбницю",
         "connectWalletTooltip": "Підключіть гаманець, щоб побачити скарбниці"
     },
+    "selectModal": {
+        "searchByName": "Пошук за назвою"
+    },
+    "confidentialState": {
+        "title": "Конфіденційно",
+        "description": "Доступ мають лише учасники скарбниці."
+    },
+    "exchangeSettings": {
+        "title": "Налаштування обміну",
+        "slippageTolerance": "Допустимий slippage",
+        "custom": "Свій",
+        "customPlaceholder": "напр.: 2%",
+        "slippageRange": "Slippage має бути між 0.01% і 100%",
+        "enterSlippage": "Вкажіть допустимий slippage",
+        "slippageHelp": "Якщо ціна зміниться більше, ніж на цей відсоток, транзакція буде скасована для захисту коштів.",
+        "save": "Зберегти"
+    },
+    "assetsPage": {
+        "title": "Активи",
+        "noAssetsTitle": "Ще немає активів",
+        "noAssetsDescription": "Щоб розпочати, додайте активи до скарбниці, зробивши депозит."
+    },
+    "balanceChart": {
+        "usdValue": "Значення у USD",
+        "tokenBalance": "Баланс токенів",
+        "emptyTitle": "Поки що нічого показувати",
+        "emptyDescription": "Додайте активи, щоб почати відстежувати портфель."
+    },
     "user": {
         "saveToAddressBook": "Зберегти в адресну книгу",
         "walletCopiedToast": "Адресу гаманця скопійовано в буфер обміну",

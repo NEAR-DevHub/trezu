@@ -1254,6 +1254,34 @@
         "select": "Select treasury",
         "connectWalletTooltip": "Connect wallet to view treasuries"
     },
+    "selectModal": {
+        "searchByName": "Search by name"
+    },
+    "confidentialState": {
+        "title": "Confidential",
+        "description": "Only treasury members have access."
+    },
+    "exchangeSettings": {
+        "title": "Exchange Settings",
+        "slippageTolerance": "Slippage Tolerance",
+        "custom": "Custom",
+        "customPlaceholder": "ex: 2%",
+        "slippageRange": "Slippage must be between 0.01% and 100%",
+        "enterSlippage": "Please enter a slippage tolerance",
+        "slippageHelp": "If the price changes by more than this percentage, the transaction will be cancelled to protect your funds.",
+        "save": "Save"
+    },
+    "assetsPage": {
+        "title": "Assets",
+        "noAssetsTitle": "No assets yet",
+        "noAssetsDescription": "To get started, add assets to your Treasury by making a deposit."
+    },
+    "balanceChart": {
+        "usdValue": "USD Value",
+        "tokenBalance": "Token Balance",
+        "emptyTitle": "Nothing to show yet",
+        "emptyDescription": "Add assets to start tracking your portfolio."
+    },
     "user": {
         "saveToAddressBook": "Save to Address book",
         "walletCopiedToast": "Wallet address copied to clipboard",

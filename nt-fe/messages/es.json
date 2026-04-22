@@ -1254,6 +1254,34 @@
         "select": "Seleccionar tesorería",
         "connectWalletTooltip": "Conecta la billetera para ver tesorerías"
     },
+    "selectModal": {
+        "searchByName": "Buscar por nombre"
+    },
+    "confidentialState": {
+        "title": "Confidencial",
+        "description": "Solo los miembros de la tesorería tienen acceso."
+    },
+    "exchangeSettings": {
+        "title": "Configuración del intercambio",
+        "slippageTolerance": "Tolerancia al slippage",
+        "custom": "Personalizado",
+        "customPlaceholder": "ej.: 2%",
+        "slippageRange": "El slippage debe estar entre 0.01% y 100%",
+        "enterSlippage": "Introduce una tolerancia al slippage",
+        "slippageHelp": "Si el precio cambia más que este porcentaje, la transacción se cancelará para proteger tus fondos.",
+        "save": "Guardar"
+    },
+    "assetsPage": {
+        "title": "Activos",
+        "noAssetsTitle": "Aún no hay activos",
+        "noAssetsDescription": "Para empezar, añade activos a tu tesorería haciendo un depósito."
+    },
+    "balanceChart": {
+        "usdValue": "Valor en USD",
+        "tokenBalance": "Saldo de tokens",
+        "emptyTitle": "Nada que mostrar aún",
+        "emptyDescription": "Añade activos para empezar a seguir tu cartera."
+    },
     "user": {
         "saveToAddressBook": "Guardar en agenda",
         "walletCopiedToast": "Dirección de billetera copiada al portapapeles",

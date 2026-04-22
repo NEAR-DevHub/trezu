@@ -1,5 +1,8 @@
+"use client";
+
 import { useState, useMemo, useCallback, ReactNode } from "react";
 import { Check } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/input";
 import {
     Dialog,
@@ -58,7 +61,7 @@ export function SelectModal({
     onSelect,
     title,
     options,
-    searchPlaceholder = "Search by name",
+    searchPlaceholder,
     isLoading = false,
     selectedId,
     selectedIds,
@@ -70,7 +73,9 @@ export function SelectModal({
     renderRight,
     sections,
 }: SelectModalProps) {
+    const t = useTranslations("selectModal");
     const [searchQuery, setSearchQuery] = useState("");
+    const effectiveSearchPlaceholder = searchPlaceholder ?? t("searchByName");
 
     const filteredOptions = useMemo(() => {
         if (!searchQuery) return options;
@@ -193,7 +198,7 @@ export function SelectModal({
                     <Input
                         type="text"
                         search
-                        placeholder={searchPlaceholder}
+                        placeholder={effectiveSearchPlaceholder}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
