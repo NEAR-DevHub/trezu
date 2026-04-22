@@ -111,7 +111,7 @@
             "title": "Solicitudes",
             "description": "Ver y gestionar todas las solicitudes multifirma pendientes",
             "detailDescription": "Detalles de la solicitud",
-            "detailTitlePrefix": "Solicitud n.º "
+            "detailTitle": "Solicitud n.º {id}"
         },
         "members": {
             "title": "Miembros",
@@ -331,8 +331,7 @@
         "member": "Miembro",
         "activeMembers": "Miembros activos",
         "addNewMember": "Añadir nuevo miembro",
-        "memberSingular": "miembro",
-        "memberPlural": "miembros",
+        "membersSelected": "{count, plural, =0 {ningún miembro} one {# miembro} other {# miembros}} seleccionado(s)",
         "remove": "Eliminar",
         "edit": "Editar",
         "requestorOnlyTooltip": "Solo puedes añadir el rol de Solicitante para este miembro, ya que es responsable de crear solicitudes de pago desde NEARN."
@@ -350,9 +349,8 @@
         "emptyDescription": "Guarda direcciones usadas con frecuencia para pagos más rápidos y sin errores. Tus contactos permanecen privados y visibles solo para tu equipo.",
         "import": "Importar",
         "addRecipient": "Añadir destinatario",
-        "recipient": "Destinatario",
-        "recipients": "Destinatarios",
-        "selected": "seleccionados",
+        "recipientsHeading": "Destinatarios",
+        "recipientsSelected": "{count, plural, =0 {ningún destinatario} one {# destinatario} other {# destinatarios}} seleccionado(s)",
         "sectionHeading": "Destinatarios",
         "privacyNote": "Las direcciones guardadas son privadas y visibles solo para tu equipo.",
         "searchPlaceholder": "Buscar destinatario por nombre",
@@ -369,7 +367,7 @@
         "reviewButtonDisabled": "Introduce un importe y una dirección",
         "comingSoon": "Próximamente",
         "bulkPayments": "Pagos masivos",
-        "summarySuffix": "a 1 destinatario",
+        "summaryRecipients": "a {count, plural, one {# destinatario} other {# destinatarios}}",
         "networkFee": "Comisión de red",
         "networkFeeInfo": "Información de la comisión de red",
         "commentPlaceholder": "Añade un comentario (opcional)...",
@@ -411,8 +409,7 @@
         },
         "approveWithin24h": "Aprueba esta solicitud en 24 horas, de lo contrario caducará. Te recomendamos confirmar cuanto antes.",
         "confirmSubmit": "Confirmar y enviar solicitud",
-        "refreshingIn": "La tasa de cambio se actualizará en",
-        "secondsSuffix": "s"
+        "refreshingIn": "La tasa de cambio se actualizará en {seconds}s"
     },
     "vesting": {
         "validation": {
@@ -501,8 +498,7 @@
         "hiddenHeading": "Tesorerías ocultas",
         "hiddenDescription": "Tesorerías ocultas de tu lista de cuentas.",
         "removeGuestTitle": "Eliminar tesorería de invitado",
-        "removeDialogPrefix": "Estás a punto de eliminar",
-        "removeDialogSuffix": ". Una vez confirmado, esta acción no se puede deshacer.",
+        "removeDialog": "Estás a punto de eliminar {name}. Una vez confirmado, esta acción no se puede deshacer.",
         "tooltips": {
             "removeFromList": "Eliminar de tu lista",
             "viewTreasury": "Ver tesorería",

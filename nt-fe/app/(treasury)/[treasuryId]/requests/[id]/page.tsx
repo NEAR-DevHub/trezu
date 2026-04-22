@@ -104,7 +104,7 @@ export default function RequestPage({ params }: RequestPageProps) {
     if (isLoadingProposal || (canLoadPolicy && isLoadingPolicy)) {
         return (
             <PageComponentLayout
-                title={`${t("detailTitlePrefix")}${id}`}
+                title={t("detailTitle", { id })}
                 description={t("detailDescription")}
                 backButton={`/${treasuryId}/requests`}
             >
@@ -123,7 +123,7 @@ export default function RequestPage({ params }: RequestPageProps) {
 
     return (
         <PageComponentLayout
-            title={`${t("detailTitlePrefix")}${proposal?.id}`}
+            title={t("detailTitle", { id: proposal?.id ?? "" })}
             description={t("detailDescription")}
             backButton={`/${treasuryId}/requests`}
         >

@@ -111,7 +111,7 @@
             "title": "Requests",
             "description": "View and manage all pending multisig requests",
             "detailDescription": "Details for Request",
-            "detailTitlePrefix": "Request #"
+            "detailTitle": "Request #{id}"
         },
         "members": {
             "title": "Members",
@@ -331,8 +331,7 @@
         "member": "Member",
         "activeMembers": "Active Members",
         "addNewMember": "Add New Member",
-        "memberSingular": "member",
-        "memberPlural": "members",
+        "membersSelected": "{count, plural, =0 {no members} one {# member} other {# members}} selected",
         "remove": "Remove",
         "edit": "Edit",
         "requestorOnlyTooltip": "You can only add the Requestor role for this member, as they are responsible for creating payment requests from NEARN."
@@ -350,9 +349,8 @@
         "emptyDescription": "Save frequently used addresses for faster, error-free payouts. Your contacts stay private and visible only to your team.",
         "import": "Import",
         "addRecipient": "Add Recipient",
-        "recipient": "Recipient",
-        "recipients": "Recipients",
-        "selected": "selected",
+        "recipientsHeading": "Recipients",
+        "recipientsSelected": "{count, plural, =0 {no recipients} one {# recipient} other {# recipients}} selected",
         "sectionHeading": "Recipients",
         "privacyNote": "Saved addresses are private and visible only to your team.",
         "searchPlaceholder": "Search recipient by name",
@@ -369,7 +367,7 @@
         "reviewButtonDisabled": "Enter amount and address",
         "comingSoon": "Coming soon",
         "bulkPayments": "Bulk Payments",
-        "summarySuffix": "to 1 recipient",
+        "summaryRecipients": "to {count, plural, one {# recipient} other {# recipients}}",
         "networkFee": "Network Fee",
         "networkFeeInfo": "Network fee info",
         "commentPlaceholder": "Add a comment (optional)...",
@@ -411,8 +409,7 @@
         },
         "approveWithin24h": "Please approve this request within 24 hours, otherwise it will expire. We recommend confirming as soon as possible.",
         "confirmSubmit": "Confirm and Submit Request",
-        "refreshingIn": "Exchange rate will refresh in",
-        "secondsSuffix": "s"
+        "refreshingIn": "Exchange rate will refresh in {seconds}s"
     },
     "vesting": {
         "validation": {
@@ -501,8 +498,7 @@
         "hiddenHeading": "Hidden Treasuries",
         "hiddenDescription": "Treasuries hidden from your accounts list.",
         "removeGuestTitle": "Remove Guest Treasury",
-        "removeDialogPrefix": "You are about to remove",
-        "removeDialogSuffix": ". Once confirmed, this action cannot be undone.",
+        "removeDialog": "You are about to remove {name}. Once confirmed, this action cannot be undone.",
         "tooltips": {
             "removeFromList": "Remove from your list",
             "viewTreasury": "View treasury",
