@@ -558,6 +558,25 @@
         "remove": "Remove",
         "edit": "Edit",
         "requestorOnlyTooltip": "You can only add the Requestor role for this member, as they are responsible for creating payment requests from NEARN.",
+        "memberModal": {
+            "editRoles": "Edit Roles",
+            "addNewMember": "Add New Member",
+            "validatingAddresses": "Validating addresses...",
+            "creatingProposal": "Creating proposal...",
+            "reviewRequest": "Review Request",
+            "noChanges": "No changes have been made to member roles"
+        },
+        "previewModal": {
+            "title": "Review Your Request",
+            "youAreEditing": "You are editing",
+            "youAreAdding": "You are adding",
+            "membersCount": "{count, plural, one {# member} other {# members}}",
+            "newMembersCount": "{count, plural, one {# new member} other {# new members}}",
+            "updatedMembers": "Updated Members",
+            "newMembers": "New Members",
+            "creatingProposal": "Creating Proposal...",
+            "confirmSubmit": "Confirm and Submit Request"
+        },
         "removeDialog": {
             "title": "Remove Request",
             "nearnBody": "Once approved, {account} will be permanently removed from the treasury and all associated permissions will be revoked. After removal, this account will no longer be able to create requests from NEARN.",

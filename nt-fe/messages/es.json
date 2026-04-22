@@ -558,6 +558,25 @@
         "remove": "Eliminar",
         "edit": "Editar",
         "requestorOnlyTooltip": "Solo puedes añadir el rol de Solicitante para este miembro, ya que es responsable de crear solicitudes de pago desde NEARN.",
+        "memberModal": {
+            "editRoles": "Editar roles",
+            "addNewMember": "Añadir nuevo miembro",
+            "validatingAddresses": "Validando direcciones...",
+            "creatingProposal": "Creando propuesta...",
+            "reviewRequest": "Revisar solicitud",
+            "noChanges": "No se han realizado cambios en los roles de los miembros"
+        },
+        "previewModal": {
+            "title": "Revisa tu solicitud",
+            "youAreEditing": "Estás editando",
+            "youAreAdding": "Estás añadiendo",
+            "membersCount": "{count, plural, one {# miembro} other {# miembros}}",
+            "newMembersCount": "{count, plural, one {# nuevo miembro} other {# nuevos miembros}}",
+            "updatedMembers": "Miembros actualizados",
+            "newMembers": "Nuevos miembros",
+            "creatingProposal": "Creando propuesta...",
+            "confirmSubmit": "Confirmar y enviar solicitud"
+        },
         "removeDialog": {
             "title": "Eliminar solicitud",
             "nearnBody": "Una vez aprobado, {account} se eliminará permanentemente de la tesorería y se revocarán todos los permisos asociados. Tras la eliminación, esta cuenta ya no podrá crear solicitudes desde NEARN.",

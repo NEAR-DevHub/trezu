@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { ChevronLeft } from "lucide-react";
@@ -43,6 +44,7 @@ export function PreviewModal({
     mode = "add",
     existingMembers = [],
 }: PreviewModalProps) {
+    const t = useTranslations("members.previewModal");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const members = form.watch("members");
@@ -85,7 +87,7 @@ export function PreviewModal({
                         <div onClick={onBack}>
                             <ChevronLeft className="w-5 h-5" />
                         </div>
-                        <DialogTitle>Review Your Request</DialogTitle>
+                        <DialogTitle>{t("title")}</DialogTitle>
                     </div>
                 </DialogHeader>
 
@@ -95,21 +97,23 @@ export function PreviewModal({
                         {isEditMode ? (
                             <>
                                 <p className="text-sm text-muted-foreground mb-2">
-                                    You are editing
+                                    {t("youAreEditing")}
                                 </p>
                                 <h3 className="text-3xl font-bold">
-                                    {membersToShow.length} member
-                                    {membersToShow.length !== 1 ? "s" : ""}
+                                    {t("membersCount", {
+                                        count: membersToShow.length,
+                                    })}
                                 </h3>
                             </>
                         ) : (
                             <>
                                 <p className="text-sm text-muted-foreground mb-2">
-                                    You are adding
+                                    {t("youAreAdding")}
                                 </p>
                                 <h3 className="text-3xl font-bold">
-                                    {membersToShow.length} new member
-                                    {membersToShow.length !== 1 ? "s" : ""}
+                                    {t("newMembersCount", {
+                                        count: membersToShow.length,
+                                    })}
                                 </h3>
                             </>
                         )}
@@ -118,7 +122,9 @@ export function PreviewModal({
                     {/* Members List */}
                     <div>
                         <h4 className="font-semibold pb-3">
-                            {isEditMode ? "Updated Members" : "New Members"}
+                            {isEditMode
+                                ? t("updatedMembers")
+                                : t("newMembers")}
                         </h4>
                         <div className="space-y-0 rounded-lg overflow-hidden">
                             {membersToShow.map((member, index) => (
@@ -161,8 +167,8 @@ export function PreviewModal({
                             tooltipMessage={validationError}
                         >
                             {isSubmitting
-                                ? "Creating Proposal..."
-                                : "Confirm and Submit Request"}
+                                ? t("creatingProposal")
+                                : t("confirmSubmit")}
                         </ButtonWithTooltip>
                     </div>
                 </DialogFooter>
