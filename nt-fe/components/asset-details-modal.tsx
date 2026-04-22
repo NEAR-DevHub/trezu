@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
     Dialog,
     DialogContent,
@@ -40,6 +41,7 @@ const calculateBalanceUSD = (balance: Big, price: number, decimals: number) => {
 };
 
 export function AssetDetailsModal({ isOpen, onClose, asset }: Props) {
+    const t = useTranslations("assetDetails");
     const { treasuryId } = useTreasury();
     const router = useRouter();
     const [selectedVestingNetwork, setSelectedVestingNetwork] =
@@ -89,7 +91,7 @@ export function AssetDetailsModal({ isOpen, onClose, asset }: Props) {
                         {/* Coin Price */}
                         <div className="flex items-center pb-3 gap-3 border-b border-border/50">
                             <span className="flex-1 text-sm text-muted-foreground">
-                                Coin Price
+                                {t("coinPrice")}
                             </span>
                             <span className="text-sm font-medium">
                                 {formatCurrency(asset.price)}
@@ -99,7 +101,7 @@ export function AssetDetailsModal({ isOpen, onClose, asset }: Props) {
                         {/* Weight */}
                         <div className="flex items-center gap-3 py-3 border-b border-border/50">
                             <span className="flex-1 text-sm text-muted-foreground">
-                                Weight
+                                {t("weight")}
                             </span>
                             <div className="w-24 bg-muted rounded-full h-1.5 overflow-hidden shrink-0">
                                 <div
@@ -117,7 +119,7 @@ export function AssetDetailsModal({ isOpen, onClose, asset }: Props) {
                             <>
                                 <div className="pt-3 pb-1.5">
                                     <span className="text-xxs font-medium uppercase text-muted-foreground">
-                                        Source
+                                        {t("source")}
                                     </span>
                                 </div>
                                 {sourceNetworks.map((network, idx) => {
@@ -162,7 +164,7 @@ export function AssetDetailsModal({ isOpen, onClose, asset }: Props) {
                                                     permissionAction="AddProposal"
                                                     variant="ghost"
                                                     size="icon"
-                                                    tooltipContent="Send"
+                                                    tooltipContent={t("send")}
                                                     onClick={() => {
                                                         onClose();
                                                         router.push(
@@ -177,7 +179,9 @@ export function AssetDetailsModal({ isOpen, onClose, asset }: Props) {
                                                     permissionAction="AddProposal"
                                                     variant="ghost"
                                                     size="icon"
-                                                    tooltipContent="Exchange"
+                                                    tooltipContent={t(
+                                                        "exchange",
+                                                    )}
                                                     onClick={() => {
                                                         onClose();
                                                         router.push(
@@ -265,7 +269,7 @@ export function AssetDetailsModal({ isOpen, onClose, asset }: Props) {
                                 <div className="flex items-center justify-between pt-3 pb-1.5">
                                     <div className="flex items-center gap-1.5">
                                         <span className="text-xxs font-medium uppercase text-muted-foreground">
-                                            Vesting
+                                            {t("vesting")}
                                         </span>
                                         <Lock className="size-3 text-muted-foreground shrink-0" />
                                     </div>
@@ -281,8 +285,11 @@ export function AssetDetailsModal({ isOpen, onClose, asset }: Props) {
                                                 />
                                             </div>
                                             <span className="text-xxs text-muted-foreground whitespace-nowrap">
-                                                {vestedPercent.toFixed(0)}%
-                                                Vested
+                                                {t("vestedPercent", {
+                                                    percent: vestedPercent.toFixed(
+                                                        0,
+                                                    ),
+                                                })}
                                             </span>
                                         </div>
                                     )}
@@ -334,7 +341,9 @@ export function AssetDetailsModal({ isOpen, onClose, asset }: Props) {
                                                         variant="ghost"
                                                         size="icon"
                                                         disabled
-                                                        tooltipContent="Coming soon"
+                                                        tooltipContent={t(
+                                                            "comingSoon",
+                                                        )}
                                                         onClick={(e) =>
                                                             e.stopPropagation()
                                                         }
@@ -363,8 +372,12 @@ export function AssetDetailsModal({ isOpen, onClose, asset }: Props) {
                                             {locked.gt(0) && (
                                                 <div className="flex items-center gap-3 py-3 border-b border-border/50">
                                                     <div className="flex-1 flex items-center gap-1 text-sm text-muted-foreground">
-                                                        Frozen
-                                                        <Tooltip content="Frozen tokens are locked and cannot be used. They might be locked due to being used for storage, staked, or not yet vested.">
+                                                        {t("frozen")}
+                                                        <Tooltip
+                                                            content={t(
+                                                                "frozenTooltip",
+                                                            )}
+                                                        >
                                                             <Info className="size-3 shrink-0" />
                                                         </Tooltip>
                                                     </div>
@@ -395,7 +408,7 @@ export function AssetDetailsModal({ isOpen, onClose, asset }: Props) {
                                                 "Vested" && (
                                                 <div className="flex items-center gap-3 py-3">
                                                     <span className="flex-1 text-sm text-muted-foreground">
-                                                        Vested
+                                                        {t("vested")}
                                                     </span>
                                                     <span className="text-sm font-medium">
                                                         {formatBalance(

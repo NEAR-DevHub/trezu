@@ -175,6 +175,19 @@
             "description": "Link your treasuries to a Telegram chat"
         }
     },
+    "assetDetails": {
+        "coinPrice": "Coin Price",
+        "weight": "Weight",
+        "source": "Source",
+        "send": "Send",
+        "exchange": "Exchange",
+        "comingSoon": "Coming soon",
+        "vesting": "Vesting",
+        "vestedPercent": "{percent}% Vested",
+        "frozen": "Frozen",
+        "frozenTooltip": "Frozen tokens are locked and cannot be used. They might be locked due to being used for storage, staked, or not yet vested.",
+        "vested": "Vested"
+    },
     "dashboard": {
         "overview": "Overview of your treasury assets and activity",
         "assets": "Assets",

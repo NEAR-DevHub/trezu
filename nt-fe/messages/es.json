@@ -175,6 +175,19 @@
             "description": "Vincula tus tesorerías a un chat de Telegram"
         }
     },
+    "assetDetails": {
+        "coinPrice": "Precio de la moneda",
+        "weight": "Peso",
+        "source": "Origen",
+        "send": "Enviar",
+        "exchange": "Intercambiar",
+        "comingSoon": "Próximamente",
+        "vesting": "Vesting",
+        "vestedPercent": "{percent}% adquirido",
+        "frozen": "Congelado",
+        "frozenTooltip": "Los tokens congelados están bloqueados y no se pueden usar. Pueden estar bloqueados por almacenamiento, staking o no haber vestido aún.",
+        "vested": "Adquirido"
+    },
     "dashboard": {
         "overview": "Resumen de los activos y la actividad de tu tesorería",
         "assets": "Activos",
