@@ -370,6 +370,34 @@
             "preferences": "Preferencias",
             "integrations": "Integraciones"
         },
+        "general": {
+            "validation": {
+                "displayNameRequired": "El nombre visible es obligatorio",
+                "displayNameMax": "El nombre visible debe tener menos de 100 caracteres"
+            },
+            "proposalDescriptionTitle": "Actualizar configuración - Tema y logotipo",
+            "proposalSubmitted": "Solicitud de actualización de configuración enviada",
+            "treasuryNotFound": "Tesorería no encontrada",
+            "treasuryName": "Nombre de la tesorería",
+            "treasuryNameDescription": "El nombre de tu tesorería. Se mostrará en toda la aplicación.",
+            "displayName": "Nombre visible",
+            "displayNamePlaceholder": "Introduce el nombre visible",
+            "accountName": "Nombre de cuenta",
+            "logo": "Logotipo",
+            "logoDescription": "Sube un logotipo para tu tesorería. Se recomienda SVG, PNG o JPG (256x256 px).",
+            "treasuryLogoAlt": "Logotipo de la tesorería",
+            "uploading": "Subiendo...",
+            "uploadLogo": "Subir logotipo",
+            "removeLogo": "Eliminar logotipo",
+            "logoUploaded": "Logotipo subido correctamente",
+            "uploadError": "Error al subir la imagen, inténtalo de nuevo.",
+            "invalidLogo": "Logotipo no válido. Sube un archivo PNG, JPG o SVG de exactamente 256x256 px",
+            "invalidImage": "Archivo de imagen no válido. Sube una imagen válida.",
+            "fileReadError": "Error al leer el archivo. Inténtalo de nuevo.",
+            "primaryColor": "Color principal",
+            "primaryColorDescription": "Define el color principal para los elementos de la interfaz de tu tesorería. Se usará tanto en modo claro como oscuro, así que ten en cuenta el contraste al elegir tonos neutros.",
+            "selectColorLabel": "Seleccionar color {color}"
+        },
         "preferences": {
             "timeZone": "Zona horaria",
             "timeZoneDescription": "Configura tu zona horaria local para que la fecha y la hora se muestren correctamente.",

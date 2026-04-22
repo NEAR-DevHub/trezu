@@ -370,6 +370,34 @@
             "preferences": "Preferences",
             "integrations": "Integrations"
         },
+        "general": {
+            "validation": {
+                "displayNameRequired": "Display name is required",
+                "displayNameMax": "Display name must be less than 100 characters"
+            },
+            "proposalDescriptionTitle": "Update Config - Theme & logo",
+            "proposalSubmitted": "Request to update configuration submitted",
+            "treasuryNotFound": "Treasury not found",
+            "treasuryName": "Treasury Name",
+            "treasuryNameDescription": "The name of your treasury. This will be displayed across the app.",
+            "displayName": "Display Name",
+            "displayNamePlaceholder": "Enter display name",
+            "accountName": "Account Name",
+            "logo": "Logo",
+            "logoDescription": "Upload a logo for your treasury. Recommended SVG, PNG, or JPG (256x256 px).",
+            "treasuryLogoAlt": "Treasury logo",
+            "uploading": "Uploading...",
+            "uploadLogo": "Upload Logo",
+            "removeLogo": "Remove Logo",
+            "logoUploaded": "Logo uploaded successfully",
+            "uploadError": "Error occurred while uploading image, please try again.",
+            "invalidLogo": "Invalid logo. Please upload a PNG, JPG, or SVG file that is exactly 256x256 px",
+            "invalidImage": "Invalid image file. Please upload a valid image.",
+            "fileReadError": "Error reading file. Please try again.",
+            "primaryColor": "Primary Color",
+            "primaryColorDescription": "Set the primary color for your treasury's interface elements. This color will be used in both light and dark modes, so keep contrast in mind when choosing neutral shades.",
+            "selectColorLabel": "Select color {color}"
+        },
         "preferences": {
             "timeZone": "Time Zone",
             "timeZoneDescription": "Set your local time zone for accurate date and time display.",
