@@ -478,7 +478,13 @@
             "oopsDescription": "Не вдалось знайти дані для показу.",
             "totalAmount": "Загальна сума",
             "recipients": "Отримувачі",
-            "recipientsCount": "{count, plural, one {# отримувач} few {# отримувачі} many {# отримувачів} other {# отримувачів}}"
+            "recipientsCount": "{count, plural, one {# отримувач} few {# отримувачі} many {# отримувачів} other {# отримувачів}}",
+            "unsupportedProposal": "Непідтримуваний тип пропозиції",
+            "requestDetails": "Деталі запиту",
+            "linkCopied": "Посилання скопійовано в буфер обміну",
+            "copyLink": "Копіювати посилання",
+            "openRequestPage": "Відкрити сторінку запиту",
+            "deleteRequest": "Видалити запит"
         },
         "insufficientBalance": {
             "noAsset": "Цей запит не можна схвалити, бо потрібного токена немає у скарбниці.",

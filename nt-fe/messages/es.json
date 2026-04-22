@@ -478,7 +478,13 @@
             "oopsDescription": "No pudimos encontrar datos para mostrar aquí.",
             "totalAmount": "Importe total",
             "recipients": "Destinatarios",
-            "recipientsCount": "{count, plural, one {# destinatario} other {# destinatarios}}"
+            "recipientsCount": "{count, plural, one {# destinatario} other {# destinatarios}}",
+            "unsupportedProposal": "Tipo de propuesta no admitido",
+            "requestDetails": "Detalles de la solicitud",
+            "linkCopied": "Enlace copiado al portapapeles",
+            "copyLink": "Copiar enlace",
+            "openRequestPage": "Abrir página de la solicitud",
+            "deleteRequest": "Eliminar solicitud"
         },
         "insufficientBalance": {
             "noAsset": "Esta solicitud no se puede aprobar porque el token requerido no está disponible en la tesorería.",

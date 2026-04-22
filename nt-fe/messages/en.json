@@ -478,7 +478,13 @@
             "oopsDescription": "We couldn't find any data to show here.",
             "totalAmount": "Total Amount",
             "recipients": "Recipients",
-            "recipientsCount": "{count, plural, one {# recipient} other {# recipients}}"
+            "recipientsCount": "{count, plural, one {# recipient} other {# recipients}}",
+            "unsupportedProposal": "Unsupported proposal type",
+            "requestDetails": "Request Details",
+            "linkCopied": "Link copied to clipboard",
+            "copyLink": "Copy Link",
+            "openRequestPage": "Open Request Page",
+            "deleteRequest": "Delete Request"
         },
         "insufficientBalance": {
             "noAsset": "This request can't be approved because the required token is not available in the treasury.",
