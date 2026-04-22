@@ -1171,6 +1171,49 @@
         "searchPlaceholder": "Buscar tokens...",
         "noTokensFound": "No se encontraron tokens"
     },
+    "earningDetails": {
+        "title": "Detalles de ingresos",
+        "totalStaked": "Total apostado",
+        "earningOverview": "Resumen de ingresos",
+        "poolBreakdown": "Desglose por pool ({count, plural, one {# pool} other {# pools}})",
+        "almostReady": "¡Earn está casi listo!",
+        "finalizingFeature": "Estamos finalizando esta función<br></br>para que pronto puedas empezar a ganar tokens.",
+        "comingSoon": "Próximamente",
+        "goToEarn": "Ir a Earn",
+        "readyToWithdraw": "Listo para retirar",
+        "unstaking": "Retirando apuesta",
+        "overview": {
+            "staked": "Apostado",
+            "stakedInfo": "Tokens delegados actualmente a validadores que generan recompensas.",
+            "pendingRelease": "Pendiente de liberación",
+            "pendingReleaseInfo": "Tokens que se han retirado pero siguen en el período de desvinculación (normalmente 2-3 días).",
+            "availableForWithdraw": "Disponible para retirar",
+            "availableForWithdrawInfo": "Tokens retirados que ya completaron el período de desvinculación y pueden retirarse."
+        }
+    },
+    "vestingDetails": {
+        "title": "Detalles de vesting",
+        "availableToUse": "Disponible para usar",
+        "vestingPeriod": "Período de vesting",
+        "vestingPeriodDescription": "Los tokens se desbloquean diariamente durante este período.",
+        "startDate": "Fecha de inicio",
+        "endDate": "Fecha de fin",
+        "tokenBreakdown": "Desglose de tokens",
+        "originalVestedAmount": "Cantidad original en vesting",
+        "reservedForStorage": "Reservado para almacenamiento",
+        "reservedForStorageInfo": "Una pequeña cantidad de tokens necesaria para mantener el vesting activo y cubrir los costos de almacenamiento.",
+        "percentVested": "{percent}% liberado",
+        "vestedOf": "{vested} de {total} {symbol}",
+        "send": "Enviar"
+    },
+    "earningPoolDetails": {
+        "balance": "Saldo",
+        "apy": "APY",
+        "fee": "Comisión",
+        "notAvailable": "N/D",
+        "lockupStakingPool": "Pool de staking del lockup",
+        "lockupAssetsNote": "Todos los activos en esta posición proceden de tu lockup. Tras dejar de ganar, algunos tokens pueden seguir bloqueados y no disponibles; consulta tu calendario de lockup para ver cuándo se desbloquean."
+    },
     "onboarding": {
         "tour": {
             "addAssets": "Añade activos a tu tesorería haciendo un depósito.",

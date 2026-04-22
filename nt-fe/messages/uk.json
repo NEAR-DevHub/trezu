@@ -1171,6 +1171,49 @@
         "searchPlaceholder": "Пошук токенів...",
         "noTokensFound": "Токени не знайдено"
     },
+    "earningDetails": {
+        "title": "Деталі заробітку",
+        "totalStaked": "Всього застейковано",
+        "earningOverview": "Огляд заробітку",
+        "poolBreakdown": "Розбивка за пулами ({count, plural, one {# пул} few {# пули} many {# пулів} other {# пулів}})",
+        "almostReady": "Earn майже готовий!",
+        "finalizingFeature": "Ми завершуємо цю функцію,<br></br>щоб ви незабаром могли почати заробляти токени.",
+        "comingSoon": "Незабаром",
+        "goToEarn": "Перейти до Earn",
+        "readyToWithdraw": "Готово до виведення",
+        "unstaking": "Розстейкування",
+        "overview": {
+            "staked": "Застейковано",
+            "stakedInfo": "Токени, які зараз делеговано валідаторам і які приносять винагороди.",
+            "pendingRelease": "Очікує звільнення",
+            "pendingReleaseInfo": "Токени, які було розстейковано, але вони все ще в періоді анбондингу (зазвичай 2-3 дні).",
+            "availableForWithdraw": "Доступно до виведення",
+            "availableForWithdrawInfo": "Розстейковані токени, що пройшли період анбондингу і їх можна вивести."
+        }
+    },
+    "vestingDetails": {
+        "title": "Деталі вестингу",
+        "availableToUse": "Доступно для використання",
+        "vestingPeriod": "Період вестингу",
+        "vestingPeriodDescription": "Токени розблоковуються щодня упродовж цього періоду.",
+        "startDate": "Дата початку",
+        "endDate": "Дата завершення",
+        "tokenBreakdown": "Розбивка токенів",
+        "originalVestedAmount": "Початкова сума вестингу",
+        "reservedForStorage": "Резерв для сховища",
+        "reservedForStorageInfo": "Невелика кількість токенів, необхідна для підтримки вестингу активним і покриття витрат на сховище.",
+        "percentVested": "{percent}% розблоковано",
+        "vestedOf": "{vested} з {total} {symbol}",
+        "send": "Надіслати"
+    },
+    "earningPoolDetails": {
+        "balance": "Баланс",
+        "apy": "APY",
+        "fee": "Комісія",
+        "notAvailable": "Н/Д",
+        "lockupStakingPool": "Пул стейкінгу лок-апу",
+        "lockupAssetsNote": "Усі активи в цій позиції — з вашого лок-апу. Після припинення заробляння деякі токени можуть лишатись заблокованими і недоступними; перевірте графік лок-апу, щоб дізнатись, коли вони розблокуються."
+    },
     "onboarding": {
         "tour": {
             "addAssets": "Додайте активи до скарбниці, зробивши депозит.",

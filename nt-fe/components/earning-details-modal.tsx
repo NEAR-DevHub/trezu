@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
     Dialog,
     DialogContent,
@@ -35,6 +36,7 @@ export function EarningDetailsModal({
     onClose,
     asset,
 }: EarningDetailsModalProps) {
+    const t = useTranslations("earningDetails");
     if (!asset || asset.balance.type !== "Staked") return null;
 
     const staking = asset.balance.staking;
@@ -56,6 +58,14 @@ export function EarningDetailsModal({
         canWithdraw: staking.canWithdraw,
         symbol: asset.symbol,
         formatTokenBalance,
+        labels: {
+            staked: t("overview.staked"),
+            stakedInfo: t("overview.stakedInfo"),
+            pendingRelease: t("overview.pendingRelease"),
+            pendingReleaseInfo: t("overview.pendingReleaseInfo"),
+            availableForWithdraw: t("overview.availableForWithdraw"),
+            availableForWithdrawInfo: t("overview.availableForWithdrawInfo"),
+        },
     });
 
     // Per-pool breakdown items - show staked and unstaking separately
@@ -68,7 +78,9 @@ export function EarningDetailsModal({
         ];
         if (pool.unstakedBalance.gt(0)) {
             items.push({
-                label: pool.canWithdraw ? "Ready to withdraw" : "Unstaking",
+                label: pool.canWithdraw
+                    ? t("readyToWithdraw")
+                    : t("unstaking"),
                 subItem: true,
                 value: `${formatTokenBalance(pool.unstakedBalance)} ${asset.symbol}`,
             });
@@ -80,12 +92,12 @@ export function EarningDetailsModal({
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Earning Details</DialogTitle>
+                    <DialogTitle>{t("title")}</DialogTitle>
                 </DialogHeader>
 
                 <div className="flex flex-col gap-5">
                     <AmountSummary
-                        title="Total Staked"
+                        title={t("totalStaked")}
                         total={formatTokenBalance(totalStaked)}
                         totalUSD={asset.balanceUSD}
                         token={{
@@ -102,7 +114,7 @@ export function EarningDetailsModal({
                     <Collapsible defaultOpen>
                         <CollapsibleTrigger className="w-full flex items-center justify-between py-2 group">
                             <h3 className="text-sm font-semibold">
-                                Earning Overview
+                                {t("earningOverview")}
                             </h3>
                             <ChevronDown className="size-4 text-muted-foreground transition-transform group-data-[state=open]:hidden" />
                             <ChevronUp className="size-4 text-muted-foreground transition-transform group-data-[state=closed]:hidden" />
@@ -121,8 +133,9 @@ export function EarningDetailsModal({
                         <Collapsible defaultOpen={false}>
                             <CollapsibleTrigger className="w-full flex items-center justify-between py-2 group">
                                 <h3 className="text-sm font-semibold">
-                                    Pool Breakdown ({staking.pools.length}{" "}
-                                    pools)
+                                    {t("poolBreakdown", {
+                                        count: staking.pools.length,
+                                    })}
                                 </h3>
                                 <ChevronDown className="size-4 text-muted-foreground transition-transform group-data-[state=open]:hidden" />
                                 <ChevronUp className="size-4 text-muted-foreground transition-transform group-data-[state=closed]:hidden" />
@@ -145,12 +158,12 @@ export function EarningDetailsModal({
                             </div>
                             <div>
                                 <p className="text-sm font-medium">
-                                    Earn is almost ready!
+                                    {t("almostReady")}
                                 </p>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                    We're finalizing this feature
-                                    <br />
-                                    so you can start earning tokens shortly.
+                                    {t.rich("finalizingFeature", {
+                                        br: () => <br />,
+                                    })}
                                 </p>
                             </div>
                         </div>
@@ -161,9 +174,9 @@ export function EarningDetailsModal({
                     <Button
                         className="w-full"
                         disabled
-                        tooltipContent="Coming soon"
+                        tooltipContent={t("comingSoon")}
                     >
-                        Go To Earn
+                        {t("goToEarn")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

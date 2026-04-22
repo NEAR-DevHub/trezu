@@ -1171,6 +1171,49 @@
         "searchPlaceholder": "Search tokens...",
         "noTokensFound": "No tokens found"
     },
+    "earningDetails": {
+        "title": "Earning Details",
+        "totalStaked": "Total Staked",
+        "earningOverview": "Earning Overview",
+        "poolBreakdown": "Pool Breakdown ({count, plural, one {# pool} other {# pools}})",
+        "almostReady": "Earn is almost ready!",
+        "finalizingFeature": "We're finalizing this feature<br></br>so you can start earning tokens shortly.",
+        "comingSoon": "Coming soon",
+        "goToEarn": "Go To Earn",
+        "readyToWithdraw": "Ready to withdraw",
+        "unstaking": "Unstaking",
+        "overview": {
+            "staked": "Staked",
+            "stakedInfo": "Tokens currently delegated to validators earning rewards.",
+            "pendingRelease": "Pending Release",
+            "pendingReleaseInfo": "Tokens that have been unstaked but are still in the unbonding period (typically 2-3 days).",
+            "availableForWithdraw": "Available for Withdraw",
+            "availableForWithdrawInfo": "Unstaked tokens that have completed the unbonding period and can be withdrawn."
+        }
+    },
+    "vestingDetails": {
+        "title": "Vesting Details",
+        "availableToUse": "Available To Use",
+        "vestingPeriod": "Vesting Period",
+        "vestingPeriodDescription": "Tokens unlock daily during this period.",
+        "startDate": "Start Date",
+        "endDate": "End Date",
+        "tokenBreakdown": "Token Breakdown",
+        "originalVestedAmount": "Original Vested Amount",
+        "reservedForStorage": "Reserved For Storage",
+        "reservedForStorageInfo": "A small amount of tokens required to keep the vesting active and cover storage costs.",
+        "percentVested": "{percent}% Vested",
+        "vestedOf": "{vested} of {total} {symbol}",
+        "send": "Send"
+    },
+    "earningPoolDetails": {
+        "balance": "Balance",
+        "apy": "APY",
+        "fee": "Fee",
+        "notAvailable": "N/A",
+        "lockupStakingPool": "Lockup staking pool",
+        "lockupAssetsNote": "All assets in this position are from your lockup. After you stop earning, some tokens may still be locked and unavailable - check your lockup schedule to see when they unlock."
+    },
     "onboarding": {
         "tour": {
             "addAssets": "Add assets to your Treasury by making a deposit.",
