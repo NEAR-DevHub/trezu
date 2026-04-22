@@ -801,6 +801,25 @@
         "connecting": "Conectando…",
         "connect": "Conectar"
     },
+    "supportCenter": {
+        "title": "Centro de soporte",
+        "resources": "Recursos",
+        "support": "Soporte",
+        "websiteTitle": "Sitio web de Trezu",
+        "websiteDescription": "Aprende más sobre Trezu y lee nuestro blog.",
+        "demoTitle": "Explora la demo de Trezu",
+        "demoDescription": "Ve una cuenta de demostración en acción.",
+        "videoTitle": "Mira la demo",
+        "videoDescription": "Mira un vídeo corto que muestra cómo funciona Trezu.",
+        "xTitle": "Síguenos en X",
+        "xDescription": "Mantente al día con nuestros últimos lanzamientos y novedades.",
+        "statsTitle": "Estadísticas",
+        "statsDescription": "Consulta los activos totales bajo gestión en todas las DAOs de sputnik.",
+        "docsTitle": "Documentación",
+        "docsDescription": "Aprende sobre todas las funciones en la documentación.",
+        "productSupportTitle": "Soporte del producto",
+        "productSupportDescription": "Contacta con nuestro equipo de soporte para obtener ayuda."
+    },
     "progressModal": {
         "titleCreating": "Creando tesorería...",
         "titleDone": "Tesorería creada",

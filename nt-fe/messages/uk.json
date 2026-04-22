@@ -801,6 +801,25 @@
         "connecting": "Підключення…",
         "connect": "Підключити"
     },
+    "supportCenter": {
+        "title": "Центр підтримки",
+        "resources": "Ресурси",
+        "support": "Підтримка",
+        "websiteTitle": "Сайт Trezu",
+        "websiteDescription": "Дізнайтесь більше про Trezu та прочитайте наш блог.",
+        "demoTitle": "Спробувати демо Trezu",
+        "demoDescription": "Подивіться, як працює демонстраційний обліковий запис.",
+        "videoTitle": "Переглянути демо",
+        "videoDescription": "Перегляньте короткий відеоогляд роботи Trezu.",
+        "xTitle": "Слідкуйте в X",
+        "xDescription": "Будьте в курсі наших релізів і новин.",
+        "statsTitle": "Статистика",
+        "statsDescription": "Перегляньте загальний обсяг активів під управлінням у всіх sputnik DAO.",
+        "docsTitle": "Документація",
+        "docsDescription": "Дізнайтесь про всі функції у документації.",
+        "productSupportTitle": "Підтримка продукту",
+        "productSupportDescription": "Зв'яжіться з нашою командою підтримки."
+    },
     "progressModal": {
         "titleCreating": "Створення скарбниці...",
         "titleDone": "Скарбницю створено",
