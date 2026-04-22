@@ -1137,6 +1137,40 @@
         "titleFailed": "Treasury Creation Failed",
         "viewTreasury": "View Treasury"
     },
+    "memberInput": {
+        "creatorYou": "Creator (you)",
+        "memberAddress": "Member Address",
+        "addNewMember": "Add New Member",
+        "validation": {
+            "rolesRequired": "At least one role is required",
+            "duplicateAddress": "Address is already a member"
+        }
+    },
+    "recipientInput": {
+        "title": "To",
+        "placeholder": "Recipient address"
+    },
+    "accountInput": {
+        "failedValidation": "Failed to validate address",
+        "invalidNearFormat": "Invalid NEAR account format",
+        "invalidChainAddress": "Please enter a valid {chain} address.",
+        "validating": "Validating address...",
+        "validAddress": "Valid address"
+    },
+    "csvUpload": {
+        "uploadFile": "Upload File",
+        "provideData": "Provide Data",
+        "chooseFile": "Choose File",
+        "orDragDrop": "or drag and drop",
+        "maxFileSize": "max 1 file up to {maxSize} MB, CSV file only",
+        "noFilePrompt": "Don't have a file to upload?",
+        "downloadTemplate": "Download a template"
+    },
+    "tokenSelect": {
+        "selectToken": "Select token",
+        "searchPlaceholder": "Search tokens...",
+        "noTokensFound": "No tokens found"
+    },
     "onboarding": {
         "tour": {
             "addAssets": "Add assets to your Treasury by making a deposit.",

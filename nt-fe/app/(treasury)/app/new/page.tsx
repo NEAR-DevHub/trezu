@@ -26,7 +26,7 @@ import { LargeInput } from "@/components/large-input";
 import {
     type Member,
     MemberInput,
-    memberSchema,
+    buildMemberSchema,
 } from "@/components/member-input";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { ROLES } from "@/components/role-selector";
@@ -76,6 +76,8 @@ function buildTreasuryFormSchema(messages: {
     accountMax: string;
     accountChars: string;
     accountTaken: string;
+    rolesRequired: string;
+    duplicateAddress: string;
 }) {
     return z
         .object({
@@ -107,7 +109,10 @@ function buildTreasuryFormSchema(messages: {
                     },
                 ),
             isConfidential: z.boolean(),
-            members: memberSchema,
+            members: buildMemberSchema({
+                rolesRequired: messages.rolesRequired,
+                duplicateAddress: messages.duplicateAddress,
+            }),
         })
         .refine((data) => {
             const financialMembers = data.members.filter((m) =>
@@ -789,6 +794,7 @@ export default function NewTreasuryPage() {
     const tValidation = useTranslations("createTreasury.validation");
     const tSteps = useTranslations("createTreasury.steps");
     const tStepTitles = useTranslations("createTreasury.stepTitles");
+    const tMember = useTranslations("memberInput.validation");
     const NON_CONFIDENTIAL_STEPS: CreationStep[] = useMemo(
         () => [
             {
@@ -853,8 +859,10 @@ export default function NewTreasuryPage() {
                 accountMax: tValidation("accountMax"),
                 accountChars: tValidation("accountChars"),
                 accountTaken: tValidation("accountTaken"),
+                rolesRequired: tMember("rolesRequired"),
+                duplicateAddress: tMember("duplicateAddress"),
             }),
-        [tValidation],
+        [tValidation, tMember],
     );
     const { accountId, connect, isAuthenticating } = useNear();
     const { treasuries } = useTreasury();

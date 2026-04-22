@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { LargeInput } from "./large-input";
 import {
     getAddressPattern,
@@ -46,6 +47,7 @@ const AccountInput = ({
     borderless = false,
     validateOnMount = false,
 }: AccountInputProps) => {
+    const t = useTranslations("accountInput");
     const [isValidating, setIsValidating] = useState(false);
     const [validationError, setValidationError] = useState<
         string | undefined
@@ -98,14 +100,14 @@ const AccountInput = ({
                 setHasValidated(!error); // Only mark as validated if successful
             } catch (err) {
                 console.error("NEAR validation error:", err);
-                setValidationError("Failed to validate address");
+                setValidationError(t("failedValidation"));
                 setIsValid(false);
                 setHasValidated(false);
             } finally {
                 updateValidationState(false);
             }
         },
-        [setIsValid, updateValidationState, resetValidation],
+        [setIsValid, updateValidationState, resetValidation, t],
     );
 
     useEffect(() => {
@@ -124,7 +126,7 @@ const AccountInput = ({
         // NEAR validation (async)
         if (isNear) {
             if (!isValidNearAddressFormat(value)) {
-                setValidationError("Invalid NEAR account format");
+                setValidationError(t("invalidNearFormat"));
                 setIsValid(false);
                 setHasValidated(false);
                 updateValidationState(false);
@@ -152,7 +154,9 @@ const AccountInput = ({
             setValidationError(
                 isValid
                     ? undefined
-                    : `Please enter a valid ${getBlockchainDisplayName(blockchain)} address.`,
+                    : t("invalidChainAddress", {
+                          chain: getBlockchainDisplayName(blockchain),
+                      }),
             );
         } else {
             // No regex pattern (unknown blockchain) - accept any non-empty address
@@ -170,6 +174,7 @@ const AccountInput = ({
         validateNearFull,
         resetValidation,
         updateValidationState,
+        t,
     ]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -191,7 +196,7 @@ const AccountInput = ({
             if (!val) {
                 resetValidation();
             } else if (!isValidNearAddressFormat(val)) {
-                setValidationError("Invalid NEAR account format");
+                setValidationError(t("invalidNearFormat"));
                 setIsValid(false);
                 updateValidationState(false);
             } else {
@@ -214,7 +219,9 @@ const AccountInput = ({
             setValidationError(
                 isValid || !val
                     ? undefined
-                    : `Please enter a valid ${getBlockchainDisplayName(blockchain)} address.`,
+                    : t("invalidChainAddress", {
+                          chain: getBlockchainDisplayName(blockchain),
+                      }),
             );
         } else {
             // No regex pattern (e.g., unknown blockchain) - accept any non-empty address
@@ -270,14 +277,16 @@ const AccountInput = ({
             )}
             {/* Show validation status */}
             {value && isValidating && (
-                <p className="text-xs text-yellow-600">Validating address...</p>
+                <p className="text-xs text-yellow-600">{t("validating")}</p>
             )}
             {value &&
                 !isValidating &&
                 !validationError &&
                 hasValidated &&
                 blockchain !== "unknown" && (
-                    <p className="text-xs text-green-600">Valid address</p>
+                    <p className="text-xs text-green-600">
+                        {t("validAddress")}
+                    </p>
                 )}
         </div>
     );

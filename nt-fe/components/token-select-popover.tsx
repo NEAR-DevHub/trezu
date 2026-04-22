@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { ChevronDown, Search } from "lucide-react";
 import { Button } from "@/components/button";
 import {
@@ -32,6 +33,7 @@ export function TokenSelectPopover({
     onTokenChange,
     className,
 }: TokenSelectPopoverProps) {
+    const t = useTranslations("tokenSelect");
     const { theme } = useThemeStore();
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState("");
@@ -127,7 +129,7 @@ export function TokenSelectPopover({
                         </>
                     ) : (
                         <span className="text-muted-foreground">
-                            Select token
+                            {t("selectToken")}
                         </span>
                     )}
                     <ChevronDown className="h-3 w-3 text-muted-foreground ml-auto" />
@@ -137,7 +139,7 @@ export function TokenSelectPopover({
                 <div className="space-y-2">
                     <Input
                         type="text"
-                        placeholder="Search tokens..."
+                        placeholder={t("searchPlaceholder")}
                         search
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
@@ -197,7 +199,7 @@ export function TokenSelectPopover({
                                 ))}
                                 {filteredTokens.length === 0 && !isLoading && (
                                     <div className="text-center py-4 text-sm text-muted-foreground">
-                                        No tokens found
+                                        {t("noTokensFound")}
                                     </div>
                                 )}
                             </>

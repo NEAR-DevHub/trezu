@@ -1137,6 +1137,40 @@
         "titleFailed": "Error al crear tesorería",
         "viewTreasury": "Ver tesorería"
     },
+    "memberInput": {
+        "creatorYou": "Creador (tú)",
+        "memberAddress": "Dirección del miembro",
+        "addNewMember": "Añadir nuevo miembro",
+        "validation": {
+            "rolesRequired": "Se requiere al menos un rol",
+            "duplicateAddress": "La dirección ya es miembro"
+        }
+    },
+    "recipientInput": {
+        "title": "Para",
+        "placeholder": "Dirección del destinatario"
+    },
+    "accountInput": {
+        "failedValidation": "No se pudo validar la dirección",
+        "invalidNearFormat": "Formato de cuenta NEAR no válido",
+        "invalidChainAddress": "Introduce una dirección de {chain} válida.",
+        "validating": "Validando dirección...",
+        "validAddress": "Dirección válida"
+    },
+    "csvUpload": {
+        "uploadFile": "Subir archivo",
+        "provideData": "Introducir datos",
+        "chooseFile": "Seleccionar archivo",
+        "orDragDrop": "o arrastrar y soltar",
+        "maxFileSize": "máximo 1 archivo de hasta {maxSize} MB, solo CSV",
+        "noFilePrompt": "¿No tienes un archivo que subir?",
+        "downloadTemplate": "Descargar plantilla"
+    },
+    "tokenSelect": {
+        "selectToken": "Seleccionar token",
+        "searchPlaceholder": "Buscar tokens...",
+        "noTokensFound": "No se encontraron tokens"
+    },
     "onboarding": {
         "tour": {
             "addAssets": "Añade activos a tu tesorería haciendo un depósito.",

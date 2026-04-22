@@ -1137,6 +1137,40 @@
         "titleFailed": "Не вдалось створити скарбницю",
         "viewTreasury": "Переглянути скарбницю"
     },
+    "memberInput": {
+        "creatorYou": "Творець (ви)",
+        "memberAddress": "Адреса учасника",
+        "addNewMember": "Додати нового учасника",
+        "validation": {
+            "rolesRequired": "Потрібна щонайменше одна роль",
+            "duplicateAddress": "Ця адреса вже є учасником"
+        }
+    },
+    "recipientInput": {
+        "title": "Кому",
+        "placeholder": "Адреса одержувача"
+    },
+    "accountInput": {
+        "failedValidation": "Не вдалось перевірити адресу",
+        "invalidNearFormat": "Неправильний формат акаунта NEAR",
+        "invalidChainAddress": "Введіть коректну адресу {chain}.",
+        "validating": "Перевірка адреси...",
+        "validAddress": "Адреса коректна"
+    },
+    "csvUpload": {
+        "uploadFile": "Завантажити файл",
+        "provideData": "Вставити дані",
+        "chooseFile": "Обрати файл",
+        "orDragDrop": "або перетягніть сюди",
+        "maxFileSize": "не більше 1 файлу до {maxSize} МБ, лише CSV",
+        "noFilePrompt": "Немає файлу для завантаження?",
+        "downloadTemplate": "Завантажити шаблон"
+    },
+    "tokenSelect": {
+        "selectToken": "Обрати токен",
+        "searchPlaceholder": "Пошук токенів...",
+        "noTokensFound": "Токени не знайдено"
+    },
     "onboarding": {
         "tour": {
             "addAssets": "Додайте активи до скарбниці, зробивши депозит.",
