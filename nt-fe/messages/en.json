@@ -175,6 +175,40 @@
             "description": "Link your treasuries to a Telegram chat"
         }
     },
+    "depositModal": {
+        "validation": {
+            "selectAsset": "Please select an asset",
+            "selectNetwork": "Please select a network"
+        },
+        "sections": {
+            "supportedNetworks": "Supported Networks",
+            "networksWithAssets": "Networks with Assets",
+            "yourAssets": "Your Assets",
+            "otherAssets": "Other Assets"
+        },
+        "errors": {
+            "addressUnavailable": "Could not retrieve deposit address for the selected asset and network.",
+            "fetchFailed": "Failed to fetch deposit address. Please try again."
+        },
+        "title": "Deposit",
+        "subtitle": "Select asset and network to see deposit address",
+        "assetLabel": "Asset",
+        "networkLabel": "Network",
+        "selectAsset": "Select Asset",
+        "selectNetwork": "Select Network",
+        "otherAssetName": "Other",
+        "otherNetworkInfo": "You can deposit any token not listed in the assets, but only via the NEAR network.",
+        "depositAddressHeading": "Deposit Address",
+        "depositAddressSubtitle": "Always double-check your deposit address.",
+        "addressLabel": "Address",
+        "addressCopied": "Address copied to clipboard",
+        "memoLabel": "Memo",
+        "memoCopied": "Memo copied to clipboard",
+        "memoWarning": "You <bold>must</bold> include the memo when sending funds to this address. Sending without the memo may result in permanent loss of funds.",
+        "onlyDeposit": "Only deposit <symbolTag>{symbol}</symbolTag> from the <networkTag>{network}</networkTag> network. We recommend starting with a small test transaction to ensure everything works correctly before sending the full amount.",
+        "minimumDeposit": "Minimum deposit is <amountTag>{amount} {symbol}</amountTag>",
+        "searchByName": "Search by name"
+    },
     "assetDetails": {
         "coinPrice": "Coin Price",
         "weight": "Weight",

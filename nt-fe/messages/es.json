@@ -175,6 +175,40 @@
             "description": "Vincula tus tesorerías a un chat de Telegram"
         }
     },
+    "depositModal": {
+        "validation": {
+            "selectAsset": "Selecciona un activo",
+            "selectNetwork": "Selecciona una red"
+        },
+        "sections": {
+            "supportedNetworks": "Redes compatibles",
+            "networksWithAssets": "Redes con activos",
+            "yourAssets": "Tus activos",
+            "otherAssets": "Otros activos"
+        },
+        "errors": {
+            "addressUnavailable": "No se pudo obtener la dirección de depósito para el activo y la red seleccionados.",
+            "fetchFailed": "Error al obtener la dirección de depósito. Inténtalo de nuevo."
+        },
+        "title": "Depositar",
+        "subtitle": "Selecciona activo y red para ver la dirección de depósito",
+        "assetLabel": "Activo",
+        "networkLabel": "Red",
+        "selectAsset": "Seleccionar activo",
+        "selectNetwork": "Seleccionar red",
+        "otherAssetName": "Otro",
+        "otherNetworkInfo": "Puedes depositar cualquier token que no aparezca en la lista, pero solo a través de la red NEAR.",
+        "depositAddressHeading": "Dirección de depósito",
+        "depositAddressSubtitle": "Comprueba siempre dos veces tu dirección de depósito.",
+        "addressLabel": "Dirección",
+        "addressCopied": "Dirección copiada al portapapeles",
+        "memoLabel": "Memo",
+        "memoCopied": "Memo copiado al portapapeles",
+        "memoWarning": "<bold>Debes</bold> incluir el memo al enviar fondos a esta dirección. Enviar sin el memo puede provocar la pérdida permanente de los fondos.",
+        "onlyDeposit": "Deposita solo <symbolTag>{symbol}</symbolTag> desde la red <networkTag>{network}</networkTag>. Te recomendamos empezar con una pequeña transacción de prueba para asegurarte de que todo funciona correctamente antes de enviar el importe completo.",
+        "minimumDeposit": "Depósito mínimo: <amountTag>{amount} {symbol}</amountTag>",
+        "searchByName": "Buscar por nombre"
+    },
     "assetDetails": {
         "coinPrice": "Precio de la moneda",
         "weight": "Peso",

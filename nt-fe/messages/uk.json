@@ -175,6 +175,40 @@
             "description": "Прив'яжіть скарбниці до чату Telegram"
         }
     },
+    "depositModal": {
+        "validation": {
+            "selectAsset": "Оберіть актив",
+            "selectNetwork": "Оберіть мережу"
+        },
+        "sections": {
+            "supportedNetworks": "Підтримувані мережі",
+            "networksWithAssets": "Мережі з активами",
+            "yourAssets": "Ваші активи",
+            "otherAssets": "Інші активи"
+        },
+        "errors": {
+            "addressUnavailable": "Не вдалось отримати адресу депозиту для обраного активу та мережі.",
+            "fetchFailed": "Не вдалось отримати адресу депозиту. Спробуйте ще раз."
+        },
+        "title": "Поповнити",
+        "subtitle": "Оберіть актив і мережу, щоб побачити адресу депозиту",
+        "assetLabel": "Актив",
+        "networkLabel": "Мережа",
+        "selectAsset": "Оберіть актив",
+        "selectNetwork": "Оберіть мережу",
+        "otherAssetName": "Інший",
+        "otherNetworkInfo": "Ви можете поповнити будь-яким токеном, якого немає в списку, але лише через мережу NEAR.",
+        "depositAddressHeading": "Адреса депозиту",
+        "depositAddressSubtitle": "Завжди двічі перевіряйте адресу депозиту.",
+        "addressLabel": "Адреса",
+        "addressCopied": "Адресу скопійовано в буфер обміну",
+        "memoLabel": "Мемо",
+        "memoCopied": "Мемо скопійовано в буфер обміну",
+        "memoWarning": "Ви <bold>мусите</bold> вказати мемо, надсилаючи кошти на цю адресу. Надсилання без мемо може призвести до безповоротної втрати коштів.",
+        "onlyDeposit": "Поповнюйте лише <symbolTag>{symbol}</symbolTag> з мережі <networkTag>{network}</networkTag>. Рекомендуємо спершу зробити невеликий тестовий переказ, щоб переконатись, що все працює правильно, а потім вже надсилати повну суму.",
+        "minimumDeposit": "Мінімальний депозит: <amountTag>{amount} {symbol}</amountTag>",
+        "searchByName": "Шукати за назвою"
+    },
     "assetDetails": {
         "coinPrice": "Ціна монети",
         "weight": "Вага",
