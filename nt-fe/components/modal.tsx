@@ -110,7 +110,7 @@ function DialogHeader({
     closeButton = true,
     ...props
 }: DialogHeaderProps) {
-    const t = useTranslations("modal");
+    const t = useTranslations("common");
     return (
         <BaseDialogHeader
             {...props}

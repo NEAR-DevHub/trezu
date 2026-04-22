@@ -1393,9 +1393,6 @@
     "selectList": {
         "noResults": "Результатів не знайдено"
     },
-    "modal": {
-        "close": "Закрити"
-    },
     "datePicker": {
         "pickDate": "Оберіть дату",
         "timezone": "Часовий пояс"

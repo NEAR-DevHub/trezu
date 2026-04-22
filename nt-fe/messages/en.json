@@ -1393,9 +1393,6 @@
     "selectList": {
         "noResults": "No results found"
     },
-    "modal": {
-        "close": "Close"
-    },
     "datePicker": {
         "pickDate": "Pick a date",
         "timezone": "Timezone"
