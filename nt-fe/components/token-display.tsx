@@ -104,23 +104,24 @@ export const NetworkDisplay = ({
     subLabel?: string;
 }) => {
     const { theme } = useThemeStore();
+    const tRes = useTranslations("residency");
 
     let type;
     switch (asset.residency) {
         case "Lockup":
-            type = "Vested Token";
+            type = tRes("vestedToken");
             break;
         case "Staked":
-            type = "Staked";
+            type = tRes("staked");
             break;
         case "Ft":
-            type = "Fungible Token";
+            type = tRes("fungibleToken");
             break;
         case "Intents":
             type = "near.com";
             break;
         case "Near":
-            type = "Native Token";
+            type = tRes("nativeToken");
             break;
     }
 

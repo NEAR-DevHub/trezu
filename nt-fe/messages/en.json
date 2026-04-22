@@ -1440,6 +1440,9 @@
         "noAssetsTitle": "No assets yet",
         "noAssetsDescription": "To get started, add assets to your Treasury by making a deposit."
     },
+    "newBadge": {
+        "label": "New"
+    },
     "balanceWithGraph": {
         "allTokens": "All Tokens",
         "deposit": "Deposit",

@@ -1440,6 +1440,9 @@
         "noAssetsTitle": "Ще немає активів",
         "noAssetsDescription": "Щоб розпочати, додайте активи до скарбниці, зробивши депозит."
     },
+    "newBadge": {
+        "label": "Нове"
+    },
     "balanceWithGraph": {
         "allTokens": "Усі токени",
         "deposit": "Поповнити",

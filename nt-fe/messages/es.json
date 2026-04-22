@@ -1440,6 +1440,9 @@
         "noAssetsTitle": "Aún no hay activos",
         "noAssetsDescription": "Para empezar, añade activos a tu tesorería haciendo un depósito."
     },
+    "newBadge": {
+        "label": "Nuevo"
+    },
     "balanceWithGraph": {
         "allTokens": "Todos los tokens",
         "deposit": "Depositar",
