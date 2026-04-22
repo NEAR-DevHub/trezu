@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { Amount } from "../amount";
 import { InfoDisplay, InfoItem } from "@/components/info-display";
 import { SwapRequestData } from "../../types/index";
@@ -14,6 +15,7 @@ interface SwapExpandedProps {
 }
 
 function IntentsSwapExpanded({ data }: SwapExpandedProps) {
+    const t = useTranslations("proposals.expanded");
     // For new proposals: use token addresses from description
     // For old proposals: use search hook with symbols as fallback
     const hasAddresses = !!(data.tokenInAddress && data.tokenOutAddress);
@@ -47,7 +49,7 @@ function IntentsSwapExpanded({ data }: SwapExpandedProps) {
 
     const infoItems: InfoItem[] = [
         {
-            label: "Send",
+            label: t("send"),
             value: (
                 <Amount
                     amount={data.amountIn}
@@ -57,7 +59,7 @@ function IntentsSwapExpanded({ data }: SwapExpandedProps) {
             ),
         },
         {
-            label: "Receive",
+            label: t("receive"),
             value: (
                 <Amount
                     amountWithDecimals={data.amountOut}
@@ -67,7 +69,7 @@ function IntentsSwapExpanded({ data }: SwapExpandedProps) {
             ),
         },
         {
-            label: "Rate",
+            label: t("rate"),
             value: (
                 <Rate
                     tokenIn={finalTokenInId}
@@ -83,22 +85,22 @@ function IntentsSwapExpanded({ data }: SwapExpandedProps) {
 
     if (data.slippage) {
         expandableItems.push({
-            label: "Price Slippage Limit",
+            label: t("priceSlippageLimit"),
             value: <span>{data.slippage}%</span>,
-            info: "This is the slippage limit defined for this request. If the market rate changes beyond this threshold during execution, the request will automatically fail.",
+            info: t("slippageTooltip"),
         });
     }
 
     if (data.timeEstimate) {
         expandableItems.push({
-            label: "Estimated Time",
+            label: t("estimatedTime"),
             value: <span>{data.timeEstimate}</span>,
-            info: "Estimated time for the swap to be executed after the deposit transaction is confirmed.",
+            info: t("estimatedTimeTooltip"),
         });
     }
 
     expandableItems.push({
-        label: "Min. Receive",
+        label: t("minReceive"),
         value: (
             <Amount
                 amountWithDecimals={minimumReceived.toString()}
@@ -106,20 +108,20 @@ function IntentsSwapExpanded({ data }: SwapExpandedProps) {
                 tokenId={finalTokenOutId}
             />
         ),
-        info: "This is the minimum amount you'll receive from this exchange, based on the slippage limit set for the request.",
+        info: t("minReceiveTooltip"),
     });
 
     if (data.depositAddress) {
         expandableItems.push({
-            label: "Deposit Address",
+            label: t("depositAddress"),
             value: <Address address={data.depositAddress} copyable={true} />,
-            info: "The 1Click deposit address where tokens will be sent for the cross-chain swap execution.",
+            info: t("depositAddressTooltip"),
         });
     }
 
     if (data.quoteSignature) {
         expandableItems.push({
-            label: "Quote Signature",
+            label: t("quoteSignature"),
             value: (
                 <Address
                     address={data.quoteSignature}
@@ -127,15 +129,15 @@ function IntentsSwapExpanded({ data }: SwapExpandedProps) {
                     prefixLength={16}
                 />
             ),
-            info: "The cryptographic signature from 1Click API that validates this quote.",
+            info: t("quoteSignatureTooltip"),
         });
     }
 
     if (data.quoteDeadline) {
         expandableItems.push({
-            label: "1-Click Quote Deadline",
+            label: t("quoteDeadline"),
             value: <FormattedDate date={data.quoteDeadline} />,
-            info: "Time when the deposit address becomes inactive and funds may be lost.",
+            info: t("quoteDeadlineTooltip"),
         });
     }
 
@@ -143,9 +145,10 @@ function IntentsSwapExpanded({ data }: SwapExpandedProps) {
 }
 
 function NearWrapSwapExpanded({ data }: SwapExpandedProps) {
+    const t = useTranslations("proposals.expanded");
     const infoItems: InfoItem[] = [
         {
-            label: "Send",
+            label: t("send"),
             value: (
                 <Amount
                     amount={data.amountIn}
@@ -155,7 +158,7 @@ function NearWrapSwapExpanded({ data }: SwapExpandedProps) {
             ),
         },
         {
-            label: "Receive",
+            label: t("receive"),
             value: (
                 <Amount
                     amount={data.amountOut}
@@ -165,7 +168,7 @@ function NearWrapSwapExpanded({ data }: SwapExpandedProps) {
             ),
         },
         {
-            label: "Rate",
+            label: t("rate"),
             value: (
                 <Rate
                     tokenIn={data.tokenIn}
@@ -181,22 +184,22 @@ function NearWrapSwapExpanded({ data }: SwapExpandedProps) {
 
     if (data.slippage) {
         expandableItems.push({
-            label: "Price Slippage Limit",
+            label: t("priceSlippageLimit"),
             value: <span>{data.slippage}%</span>,
-            info: "This is the slippage limit defined for this request. If the market rate changes beyond this threshold during execution, the request will automatically fail.",
+            info: t("slippageTooltip"),
         });
     }
 
     if (data.timeEstimate) {
         expandableItems.push({
-            label: "Estimated Time",
+            label: t("estimatedTime"),
             value: <span>{data.timeEstimate}</span>,
-            info: "Estimated time for the swap to be executed after the deposit transaction is confirmed.",
+            info: t("estimatedTimeTooltip"),
         });
     }
 
     expandableItems.push({
-        label: "Minimum Received",
+        label: t("minimumReceived"),
         value: (
             <Amount
                 amount={data.amountOut}
@@ -204,20 +207,20 @@ function NearWrapSwapExpanded({ data }: SwapExpandedProps) {
                 tokenId={data.tokenOut}
             />
         ),
-        info: "This is the minimum amount you'll receive from this exchange, based on the slippage limit set for the request.",
+        info: t("minReceiveTooltip"),
     });
 
     if (data.depositAddress) {
         expandableItems.push({
-            label: "Deposit Address",
+            label: t("depositAddress"),
             value: <Address address={data.depositAddress} copyable={true} />,
-            info: "The 1Click deposit address where tokens will be sent for the cross-chain swap execution.",
+            info: t("depositAddressTooltip"),
         });
     }
 
     if (data.quoteSignature) {
         expandableItems.push({
-            label: "Quote Signature",
+            label: t("quoteSignature"),
             value: (
                 <Address
                     address={data.quoteSignature}
@@ -225,15 +228,15 @@ function NearWrapSwapExpanded({ data }: SwapExpandedProps) {
                     prefixLength={16}
                 />
             ),
-            info: "The cryptographic signature from 1Click API that validates this quote.",
+            info: t("quoteSignatureTooltip"),
         });
     }
 
     if (data.quoteDeadline) {
         expandableItems.push({
-            label: "1-Click Quote Deadline",
+            label: t("quoteDeadline"),
             value: <FormattedDate date={data.quoteDeadline} />,
-            info: "Time when the deposit address becomes inactive and funds may be lost.",
+            info: t("quoteDeadlineTooltip"),
         });
     }
     return <InfoDisplay items={infoItems} expandableItems={expandableItems} />;

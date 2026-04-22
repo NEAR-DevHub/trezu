@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { InfoDisplay, InfoItem } from "@/components/info-display";
 import { FormattedDate } from "@/components/formatted-date";
 import { Amount } from "../amount";
@@ -9,13 +10,14 @@ interface VestingExpandedProps {
 }
 
 export function VestingExpanded({ data }: VestingExpandedProps) {
+    const t = useTranslations("proposals.expanded");
     const infoItems: InfoItem[] = [
         {
-            label: "Recipient",
+            label: t("recipient"),
             value: <User accountId={data.receiver} useAddressBook />,
         },
         {
-            label: "Amount",
+            label: t("amount"),
             value: (
                 <Amount
                     amount={data.amount}
@@ -29,7 +31,7 @@ export function VestingExpanded({ data }: VestingExpandedProps) {
     if (data.vestingSchedule) {
         infoItems.push(
             {
-                label: "Start Date",
+                label: t("startDate"),
                 value: (
                     <FormattedDate
                         date={
@@ -41,7 +43,7 @@ export function VestingExpanded({ data }: VestingExpandedProps) {
                 ),
             },
             {
-                label: "End Date",
+                label: t("endDate"),
                 value: (
                     <FormattedDate
                         date={
@@ -53,7 +55,7 @@ export function VestingExpanded({ data }: VestingExpandedProps) {
                 ),
             },
             {
-                label: "Cliff Date",
+                label: t("cliffDate"),
                 value: (
                     <FormattedDate
                         date={
@@ -69,17 +71,26 @@ export function VestingExpanded({ data }: VestingExpandedProps) {
 
     infoItems.push(
         {
-            label: "Allow Cancellation",
-            value: <span>{data.allowCancellation ? "Yes" : "No"}</span>,
+            label: t("allowCancellation"),
+            value: (
+                <span>
+                    {data.allowCancellation ? t("yes") : t("no")}
+                </span>
+            ),
         },
         {
-            label: "Allow Staking",
-            value: <span>{data.allowStaking ? "Yes" : "No"}</span>,
+            label: t("allowStaking"),
+            value: (
+                <span>{data.allowStaking ? t("yes") : t("no")}</span>
+            ),
         },
     );
 
     if (data.notes && data.notes !== "") {
-        infoItems.push({ label: "Notes", value: <span>{data.notes}</span> });
+        infoItems.push({
+            label: t("notes"),
+            value: <span>{data.notes}</span>,
+        });
     }
 
     return <InfoDisplay items={infoItems} />;
