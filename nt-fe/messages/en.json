@@ -1119,6 +1119,17 @@
             "done": "Done",
             "next": "Next"
         },
+        "progress": {
+            "title": "Follow Quick Steps to Explore the Treasury",
+            "createTreasuryTitle": "Create Treasury account",
+            "createTreasuryDescription": "You've successfully set up your account. Great start!",
+            "addAssetsTitle": "Add Your Assets",
+            "addAssetsDescription": "Begin by adding assets to see them in action.",
+            "deposit": "Deposit",
+            "createPaymentTitle": "Create a Payment Request",
+            "createPaymentDescription": "Create a payment request to complete your setup.",
+            "send": "Send"
+        },
         "welcome": {
             "heading": "🎉 Welcome!",
             "subheading": "Take a quick tour of Treasury",

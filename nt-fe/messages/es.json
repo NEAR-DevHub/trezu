@@ -1119,6 +1119,17 @@
             "done": "Listo",
             "next": "Siguiente"
         },
+        "progress": {
+            "title": "Sigue los pasos rápidos para explorar la tesorería",
+            "createTreasuryTitle": "Crear cuenta de tesorería",
+            "createTreasuryDescription": "Has configurado tu cuenta con éxito. ¡Buen comienzo!",
+            "addAssetsTitle": "Añade tus activos",
+            "addAssetsDescription": "Empieza añadiendo activos para verlos en acción.",
+            "deposit": "Depositar",
+            "createPaymentTitle": "Crear una solicitud de pago",
+            "createPaymentDescription": "Crea una solicitud de pago para completar la configuración.",
+            "send": "Enviar"
+        },
         "welcome": {
             "heading": "🎉 ¡Bienvenido!",
             "subheading": "Haz un recorrido rápido por la tesorería",
