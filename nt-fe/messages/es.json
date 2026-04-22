@@ -1372,11 +1372,15 @@
     "selectModal": {
         "searchByName": "Buscar por nombre"
     },
+    "selectList": {
+        "noResults": "No se encontraron resultados"
+    },
     "modal": {
         "close": "Cerrar"
     },
     "datePicker": {
-        "pickDate": "Elegir una fecha"
+        "pickDate": "Elegir una fecha",
+        "timezone": "Zona horaria"
     },
     "datePresets": {
         "today": "Hoy",
@@ -1511,6 +1515,27 @@
         "newFeatureRich": "¡Nuevo! 🎉 Guarda direcciones usadas con frecuencia para pagos más rápidos y sin errores.<br></br> Tus contactos quedan privados y visibles solo para tu equipo.",
         "newFeatureCta": "Pruébalo"
     },
+    "activityLabels": {
+        "exchangePending": "Intercambio pendiente",
+        "exchangeRequest": "Solicitud de intercambio",
+        "exchangeFulfillment": "Cumplimiento de intercambio",
+        "stakingRewards": "Recompensas de staking",
+        "proposalAction": "Acción de propuesta",
+        "deposit": "Depósito {symbol}",
+        "paymentSent": "Pago enviado",
+        "transaction": "Transacción",
+        "fallbackToken": "Token",
+        "viaIntents": "vía NEAR Intents",
+        "from": "de {account}",
+        "to": "a {account}",
+        "viewAll": "Ver todo tu historial de transacciones",
+        "sentReceived": "Transacciones enviadas y recibidas ({duration})",
+        "unlimitedHistory": "historial ilimitado",
+        "oneYear": "1 año",
+        "yearsCount": "{count} años",
+        "monthsCount": "{count} meses",
+        "lastDuration": "últimos {duration}"
+    },
     "nearStore": {
         "connectAndAcceptTerms": "Conecta la billetera y acepta los términos para continuar.",
         "transactionNotApproved": "La transacción no fue aprobada en tu billetera.",
@@ -1644,7 +1669,20 @@
         "ftStep3": "Una vez en tu saldo, puedes usarlos de inmediato para pagos, transferencias u otras transacciones.",
         "nearStep1": "Recibes una concesión por un período definido con fechas de inicio y fin.",
         "nearStep2": "A medida que los tokens se desbloquean, se vuelven disponibles automáticamente en tu saldo de tesorería.",
-        "nearStep3": "Puedes usar los tokens desbloqueados de inmediato para pagos, transferencias u otras transacciones."
+        "nearStep3": "Puedes usar los tokens desbloqueados de inmediato para pagos, transferencias u otras transacciones.",
+        "notAvailable": "N/D",
+        "everyMonth": "Cada mes",
+        "everyQuarter": "Cada trimestre",
+        "everyUnit": "Cada {unit}",
+        "everyMultiple": "Cada {text}",
+        "completed": "Completado",
+        "unit": {
+            "year": "{count, plural, one {# año} other {# años}}",
+            "day": "{count, plural, one {# día} other {# días}}",
+            "hour": "{count, plural, one {# hora} other {# horas}}",
+            "minute": "{count, plural, one {# minuto} other {# minutos}}",
+            "second": "{count, plural, one {# segundo} other {# segundos}}"
+        }
     },
     "vestingDetails": {
         "title": "Detalles de vesting",

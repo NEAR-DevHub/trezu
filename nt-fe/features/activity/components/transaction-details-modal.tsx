@@ -15,8 +15,8 @@ import { InfoDisplay, InfoItem } from "@/components/info-display";
 import { AmountSummary } from "@/components/amount-summary";
 import { User } from "@/components/user";
 import {
-    getActivityLabel,
-    getFromAccount,
+    useGetActivityLabel,
+    useGetFromAccount,
     getToAccount,
 } from "../utils/history-utils";
 import { ExchangeSummaryCard } from "@/app/(treasury)/[treasuryId]/exchange/components/exchange-summary-card";
@@ -75,6 +75,8 @@ export function TransactionDetailsModal({
     onClose,
 }: TransactionDetailsModalProps) {
     const t = useTranslations("activity.details");
+    const getActivityLabel = useGetActivityLabel();
+    const getFromAccount = useGetFromAccount();
     if (!activity) return null;
 
     const isReceived = parseFloat(activity.amount) > 0;

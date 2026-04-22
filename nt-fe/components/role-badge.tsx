@@ -1,6 +1,8 @@
+"use client";
+
 import { Tooltip } from "@/components/tooltip";
 import { getRoleDescription } from "@/lib/role-utils";
-import { formatRoleName } from "@/components/role-name";
+import { useFormatRoleName } from "@/components/role-name";
 import { cva } from "class-variance-authority";
 
 interface RoleBadgeProps {
@@ -33,6 +35,7 @@ export function RoleBadge({
     style = "default",
     showTooltip = true,
 }: RoleBadgeProps) {
+    const formatRoleName = useFormatRoleName();
     const description = getRoleDescription(role);
     const displayName = formatRoleName(role);
 

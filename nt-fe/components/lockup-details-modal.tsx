@@ -36,64 +36,82 @@ interface LockupDetailsModalProps {
     treasuryId: string | null;
 }
 
-function formatDateFromSeconds(seconds?: number): string {
-    if (!seconds || Number.isNaN(seconds) || seconds <= 0) return "N/A";
+interface LockupFormatLabels {
+    notAvailable: string;
+    everyMonth: string;
+    everyQuarter: string;
+    everyUnit: (unit: string) => string;
+    everyMultiple: (text: string) => string;
+    completed: string;
+    unit: (key: string, count: number) => string;
+}
+
+function formatDateFromSeconds(
+    seconds: number | undefined,
+    notAvailable: string,
+): string {
+    if (!seconds || Number.isNaN(seconds) || seconds <= 0) return notAvailable;
     return formatUserDate(seconds * 1000, {
         includeTime: false,
         customFormat: "MMM dd, yyyy",
     });
 }
 
-function formatDateFromNanoseconds(nanos?: number | null): string {
-    if (!nanos || Number.isNaN(nanos) || nanos <= 0) return "N/A";
+function formatDateFromNanoseconds(
+    nanos: number | null | undefined,
+    notAvailable: string,
+): string {
+    if (!nanos || Number.isNaN(nanos) || nanos <= 0) return notAvailable;
     return formatUserDate(nanos / 1_000_000, {
         includeTime: false,
         customFormat: "MMM dd, yyyy",
     });
 }
 
-function formatReleaseInterval(seconds?: number): string {
-    if (!seconds || seconds <= 0) return "N/A";
+function formatReleaseInterval(
+    seconds: number | undefined,
+    labels: LockupFormatLabels,
+): string {
+    if (!seconds || seconds <= 0) return labels.notAvailable;
 
-    if (seconds === 2592000) return "Every month";
-    if (seconds === 7776000) return "Every quarter";
+    if (seconds === 2592000) return labels.everyMonth;
+    if (seconds === 7776000) return labels.everyQuarter;
 
     const units = [
-        { seconds: 31536000, label: "year" },
-        { seconds: 86400, label: "day" },
-        { seconds: 3600, label: "hour" },
-        { seconds: 60, label: "minute" },
-        { seconds: 1, label: "second" },
+        { seconds: 31536000, key: "year" },
+        { seconds: 86400, key: "day" },
+        { seconds: 3600, key: "hour" },
+        { seconds: 60, key: "minute" },
+        { seconds: 1, key: "second" },
     ];
 
     let remaining = seconds;
-    const parts: Array<{ count: number; label: string }> = [];
+    const parts: Array<{ count: number; key: string }> = [];
 
     for (const unit of units) {
         if (remaining < unit.seconds) continue;
         const count = Math.floor(remaining / unit.seconds);
         if (count <= 0) continue;
-        parts.push({ count, label: unit.label });
+        parts.push({ count, key: unit.key });
         remaining %= unit.seconds;
     }
 
     if (parts.length === 1 && parts[0].count === 1) {
-        return `Every ${parts[0].label}`;
+        return labels.everyUnit(labels.unit(parts[0].key, 1));
     }
 
     const text = parts
-        .map(
-            (part) => `${part.count} ${part.label}${part.count > 1 ? "s" : ""}`,
-        )
+        .map((part) => labels.unit(part.key, part.count))
         .join(" ");
 
-    return text ? `Every ${text}` : "N/A";
+    return text ? labels.everyMultiple(text) : labels.notAvailable;
 }
 
 function calculateNextFtUnlockDate(
-    startTimestamp?: number,
-    roundInterval?: number,
-    roundsTotal?: number,
+    startTimestamp: number | undefined,
+    roundInterval: number | undefined,
+    roundsTotal: number | undefined,
+    labels: LockupFormatLabels,
 ): string {
     if (
         !startTimestamp ||
@@ -102,7 +120,7 @@ function calculateNextFtUnlockDate(
         Number.isNaN(roundInterval) ||
         roundInterval <= 0
     ) {
-        return "N/A";
+        return labels.notAvailable;
     }
 
     const totalRounds = roundsTotal ?? 0;
@@ -123,10 +141,10 @@ function calculateNextFtUnlockDate(
         releaseIndex >= totalRounds &&
         nextUnlock <= nowSeconds
     ) {
-        return "Completed";
+        return labels.completed;
     }
 
-    return formatDateFromSeconds(nextUnlock);
+    return formatDateFromSeconds(nextUnlock, labels.notAvailable);
 }
 
 export function LockupDetailsModal({
@@ -233,17 +251,31 @@ export function LockupDetailsModal({
 
     const roundsTotal = asset.ftLockupSchedule?.roundsTotal ?? 0;
 
+    const lockupFormatLabels: LockupFormatLabels = {
+        notAvailable: t("notAvailable"),
+        everyMonth: t("everyMonth"),
+        everyQuarter: t("everyQuarter"),
+        everyUnit: (unit: string) => t("everyUnit", { unit }),
+        everyMultiple: (text: string) => t("everyMultiple", { text }),
+        completed: t("completed"),
+        unit: (key: string, count: number) =>
+            t(`unit.${key}`, { count }),
+    };
+
     const nextUnlockDate = calculateNextFtUnlockDate(
         asset.ftLockupSchedule?.startTimestamp,
         asset.ftLockupSchedule?.roundInterval,
         asset.ftLockupSchedule?.roundsTotal,
+        lockupFormatLabels,
     );
 
     const nearStartDate = formatDateFromNanoseconds(
         lockupContract?.vestingSchedule?.startTimestamp,
+        lockupFormatLabels.notAvailable,
     );
     const nearEndDate = formatDateFromNanoseconds(
         lockupContract?.vestingSchedule?.endTimestamp,
+        lockupFormatLabels.notAvailable,
     );
     const amountSummaryToken = {
         address: asset.contractId || "",
@@ -417,6 +449,7 @@ export function LockupDetailsModal({
                                             {formatDateFromSeconds(
                                                 asset.ftLockupSchedule
                                                     ?.startTimestamp,
+                                                lockupFormatLabels.notAvailable,
                                             )}
                                         </span>
                                     </div>
@@ -424,7 +457,10 @@ export function LockupDetailsModal({
                                         <span className="text-muted-foreground">
                                             {t("rounds")}
                                         </span>
-                                        <span>{roundsTotal || "N/A"}</span>
+                                        <span>
+                                            {roundsTotal ||
+                                                lockupFormatLabels.notAvailable}
+                                        </span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">
@@ -434,6 +470,7 @@ export function LockupDetailsModal({
                                             {formatReleaseInterval(
                                                 asset.ftLockupSchedule
                                                     ?.roundInterval,
+                                                lockupFormatLabels,
                                             )}
                                         </span>
                                     </div>

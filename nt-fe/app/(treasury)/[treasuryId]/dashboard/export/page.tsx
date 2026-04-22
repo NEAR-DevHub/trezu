@@ -58,7 +58,7 @@ import {
 } from "@/components/underline-tabs";
 import { EmptyState } from "@/components/empty-state";
 import { toast } from "sonner";
-import { formatHistoryDuration } from "@/features/activity";
+import { useFormatHistoryDuration } from "@/features/activity";
 import { format } from "date-fns";
 import { ExportHistoryItem } from "@/lib/api";
 import { Download, Loader2 } from "lucide-react";
@@ -332,6 +332,7 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
 export default function ExportActivityPage() {
     const t = useTranslations("pages.dashboard");
     const tEx = useTranslations("exportToasts");
+    const formatHistoryDuration = useFormatHistoryDuration();
     const router = useRouter();
     const queryClient = useQueryClient();
     const { treasuryId, isGuestTreasury } = useTreasury();

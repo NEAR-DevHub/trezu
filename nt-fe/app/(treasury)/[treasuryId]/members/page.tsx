@@ -45,7 +45,7 @@ import { useTreasuryMembers } from "@/hooks/use-treasury-members";
 import { AuthButton } from "@/components/auth-button";
 import { RolePermission } from "@/types/policy";
 import { sortRolesByOrder, getRoleDescription } from "@/lib/role-utils";
-import { formatRoleName } from "@/components/role-name";
+import { useFormatRoleName } from "@/components/role-name";
 import { StepperHeader } from "@/components/step-wizard";
 import { NumberBadge } from "@/components/number-badge";
 import { NEARN_IO_ACCOUNT } from "./constants";
@@ -67,6 +67,7 @@ interface AddMemberFormData {
 
 function PermissionsHeader({ policyRoles }: { policyRoles: RolePermission[] }) {
     const tMembers = useTranslations("members");
+    const formatRoleName = useFormatRoleName();
     // Get role descriptions and sort them
     const roleNames = policyRoles.map((r) => r.name);
     const sortedRoleNames = sortRolesByOrder(roleNames);

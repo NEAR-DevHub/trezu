@@ -1372,11 +1372,15 @@
     "selectModal": {
         "searchByName": "Search by name"
     },
+    "selectList": {
+        "noResults": "No results found"
+    },
     "modal": {
         "close": "Close"
     },
     "datePicker": {
-        "pickDate": "Pick a date"
+        "pickDate": "Pick a date",
+        "timezone": "Timezone"
     },
     "datePresets": {
         "today": "Today",
@@ -1511,6 +1515,27 @@
         "newFeatureRich": "New! 🎉 Save frequently used addresses for faster, error-free payouts.<br></br> Your contacts stay private and visible only to your team.",
         "newFeatureCta": "Try It"
     },
+    "activityLabels": {
+        "exchangePending": "Exchange Pending",
+        "exchangeRequest": "Exchange Request",
+        "exchangeFulfillment": "Exchange Fulfillment",
+        "stakingRewards": "Staking Rewards",
+        "proposalAction": "Proposal Action",
+        "deposit": "Deposit {symbol}",
+        "paymentSent": "Payment Sent",
+        "transaction": "Transaction",
+        "fallbackToken": "Token",
+        "viaIntents": "via NEAR Intents",
+        "from": "from {account}",
+        "to": "to {account}",
+        "viewAll": "View all your transaction history",
+        "sentReceived": "Sent and received transactions ({duration})",
+        "unlimitedHistory": "unlimited history",
+        "oneYear": "1 year",
+        "yearsCount": "{count} years",
+        "monthsCount": "{count} months",
+        "lastDuration": "last {duration}"
+    },
     "nearStore": {
         "connectAndAcceptTerms": "Please connect wallet and accept terms to continue.",
         "transactionNotApproved": "Transaction wasn't approved in your wallet.",
@@ -1644,7 +1669,20 @@
         "ftStep3": "Once they appear in your balance, you can immediately use them for payments, transfers, or other transactions.",
         "nearStep1": "You receive a grant for a set period of time with a defined start and end date.",
         "nearStep2": "As tokens unlock, they automatically become available in your treasury balance.",
-        "nearStep3": "You can use the unlocked tokens immediately for payments, transfers, or other transactions."
+        "nearStep3": "You can use the unlocked tokens immediately for payments, transfers, or other transactions.",
+        "notAvailable": "N/A",
+        "everyMonth": "Every month",
+        "everyQuarter": "Every quarter",
+        "everyUnit": "Every {unit}",
+        "everyMultiple": "Every {text}",
+        "completed": "Completed",
+        "unit": {
+            "year": "{count, plural, one {# year} other {# years}}",
+            "day": "{count, plural, one {# day} other {# days}}",
+            "hour": "{count, plural, one {# hour} other {# hours}}",
+            "minute": "{count, plural, one {# minute} other {# minutes}}",
+            "second": "{count, plural, one {# second} other {# seconds}}"
+        }
     },
     "vestingDetails": {
         "title": "Vesting Details",

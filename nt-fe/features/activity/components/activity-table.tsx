@@ -27,8 +27,8 @@ import { cn, formatActivityAmount, formatSmartAmount } from "@/lib/utils";
 import { TokenAmountDisplay } from "@/components/token-display";
 import { TransactionHashCell } from "./transaction-hash-cell";
 import {
-    getActivityLabel,
-    getFromAccount,
+    useGetActivityLabel,
+    useGetFromAccount,
     getToAccount,
 } from "../utils/history-utils";
 import { TokenDisplay } from "@/components/token-display-with-network";
@@ -52,6 +52,8 @@ export function ActivityTable({
     onPageChange,
 }: ActivityTableProps) {
     const t = useTranslations("activity");
+    const getActivityLabel = useGetActivityLabel();
+    const getFromAccount = useGetFromAccount();
     const { treasuryId } = useTreasury();
 
     const totalPages = Math.ceil(total / pageSize);

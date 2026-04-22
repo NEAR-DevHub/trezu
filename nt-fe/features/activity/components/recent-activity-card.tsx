@@ -24,9 +24,9 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { useTreasury } from "@/hooks/use-treasury";
 import { cn, formatActivityAmount, formatSmartAmount } from "@/lib/utils";
 import {
-    formatHistoryDuration,
-    getActivityLabel,
-    getActivitySubLabel,
+    useFormatHistoryDuration,
+    useGetActivityLabel,
+    useGetActivitySubLabel,
 } from "../utils/history-utils";
 import { useState, useMemo } from "react";
 import type { RecentActivity as RecentActivityType } from "@/lib/api";
@@ -164,6 +164,9 @@ export function RecentActivitySkeleton() {
 export function RecentActivity() {
     const t = useTranslations("activity");
     const tCommon = useTranslations("common");
+    const getActivityLabel = useGetActivityLabel();
+    const getActivitySubLabel = useGetActivitySubLabel();
+    const formatHistoryDuration = useFormatHistoryDuration();
     const { treasuryId, isConfidential, isGuestTreasury } = useTreasury();
     const [hideSmallTransactions, setHideSmallTransactions] = useState(false);
     const [selectedActivity, setSelectedActivity] =

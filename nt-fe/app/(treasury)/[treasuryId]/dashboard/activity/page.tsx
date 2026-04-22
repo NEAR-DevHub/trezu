@@ -21,7 +21,7 @@ import {
 import { Button } from "@/components/button";
 import { ListFilter } from "lucide-react";
 import { ExportButton } from "@/components/export-button";
-import { getHistoryDescription } from "@/features/activity";
+import { useGetHistoryDescription } from "@/features/activity";
 import { subMonths } from "date-fns";
 import { ResponsiveTabs, TabItem } from "@/components/responsive-tabs";
 import { ResponsiveInput } from "@/components/input";
@@ -192,6 +192,7 @@ export default function ActivityPage() {
     const t = useTranslations("pages.activity");
     const tActivity = useTranslations("activity");
     const tCommon = useTranslations("common");
+    const getHistoryDescription = useGetHistoryDescription();
     const { treasuryId } = useTreasury();
     const searchParams = useSearchParams();
     const router = useRouter();

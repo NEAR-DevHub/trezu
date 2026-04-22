@@ -547,7 +547,7 @@ export function DateTimePicker({
                 </div>
                 {timezone && (
                     <div className="mt-2 text-sm">
-                        <span>Timezone:</span>
+                        <span>{tDate("timezone")}:</span>
                         <span className="ms-1 font-semibold">{timezone}</span>
                     </div>
                 )}

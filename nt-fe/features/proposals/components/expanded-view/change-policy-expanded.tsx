@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 import { Pill } from "@/components/pill";
 import { Button } from "@/components/button";
 import { renderDiff, isNullValue } from "../../utils/diff-utils";
-import { formatRoleName } from "@/components/role-name";
+import { formatRoleName, useFormatRoleName } from "@/components/role-name";
 import { Proposal } from "@/lib/proposals-api";
 import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
 import { useTreasury } from "@/hooks/use-treasury";

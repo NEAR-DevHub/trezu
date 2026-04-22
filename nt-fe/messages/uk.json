@@ -1372,11 +1372,15 @@
     "selectModal": {
         "searchByName": "Пошук за назвою"
     },
+    "selectList": {
+        "noResults": "Результатів не знайдено"
+    },
     "modal": {
         "close": "Закрити"
     },
     "datePicker": {
-        "pickDate": "Оберіть дату"
+        "pickDate": "Оберіть дату",
+        "timezone": "Часовий пояс"
     },
     "datePresets": {
         "today": "Сьогодні",
@@ -1511,6 +1515,27 @@
         "newFeatureRich": "Нове! 🎉 Зберігайте часто використовувані адреси для швидших і безпомилкових виплат.<br></br> Ваші контакти лишаються приватними та видимими лише вашій команді.",
         "newFeatureCta": "Спробувати"
     },
+    "activityLabels": {
+        "exchangePending": "Очікує обмін",
+        "exchangeRequest": "Запит на обмін",
+        "exchangeFulfillment": "Виконання обміну",
+        "stakingRewards": "Винагороди стейкінгу",
+        "proposalAction": "Дія пропозиції",
+        "deposit": "Поповнення {symbol}",
+        "paymentSent": "Платіж надіслано",
+        "transaction": "Транзакція",
+        "fallbackToken": "Токен",
+        "viaIntents": "через NEAR Intents",
+        "from": "від {account}",
+        "to": "до {account}",
+        "viewAll": "Переглянути всю історію транзакцій",
+        "sentReceived": "Надіслані та отримані транзакції ({duration})",
+        "unlimitedHistory": "необмежена історія",
+        "oneYear": "1 рік",
+        "yearsCount": "{count} років",
+        "monthsCount": "{count} місяців",
+        "lastDuration": "останні {duration}"
+    },
     "nearStore": {
         "connectAndAcceptTerms": "Підключіть гаманець і прийміть умови, щоб продовжити.",
         "transactionNotApproved": "Транзакцію не було підтверджено в гаманці.",
@@ -1644,7 +1669,20 @@
         "ftStep3": "Щойно вони з'являться у балансі, ви одразу зможете використовувати їх для платежів, переказів чи інших транзакцій.",
         "nearStep1": "Ви отримуєте ґрант на визначений період з фіксованими датами початку й завершення.",
         "nearStep2": "Коли токени розблоковуються, вони автоматично з'являються у балансі скарбниці.",
-        "nearStep3": "Розблоковані токени можна одразу використовувати для платежів, переказів чи інших транзакцій."
+        "nearStep3": "Розблоковані токени можна одразу використовувати для платежів, переказів чи інших транзакцій.",
+        "notAvailable": "Н/Д",
+        "everyMonth": "Щомісяця",
+        "everyQuarter": "Щокварталу",
+        "everyUnit": "Кожен {unit}",
+        "everyMultiple": "Кожні {text}",
+        "completed": "Завершено",
+        "unit": {
+            "year": "{count, plural, one {# рік} few {# роки} many {# років} other {# років}}",
+            "day": "{count, plural, one {# день} few {# дні} many {# днів} other {# днів}}",
+            "hour": "{count, plural, one {# година} few {# години} many {# годин} other {# годин}}",
+            "minute": "{count, plural, one {# хвилина} few {# хвилини} many {# хвилин} other {# хвилин}}",
+            "second": "{count, plural, one {# секунда} few {# секунди} many {# секунд} other {# секунд}}"
+        }
     },
     "vestingDetails": {
         "title": "Деталі вестингу",

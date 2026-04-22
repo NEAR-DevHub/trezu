@@ -9,7 +9,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/modal";
-import { formatRoleName } from "@/components/role-name";
+import { useFormatRoleName } from "@/components/role-name";
 import { getRoleDescription, sortRolesByOrder } from "@/lib/role-utils";
 import type { RolePermission } from "@/types/policy";
 
@@ -52,6 +52,7 @@ export function MemberModal({
     getDisabledRoles,
 }: MemberModalProps) {
     const t = useTranslations("members.memberModal");
+    const formatRoleName = useFormatRoleName();
     const isEditMode = mode === "edit";
     const title = isEditMode ? t("editRoles") : t("addNewMember");
     const buttonText = isValidatingAddresses
