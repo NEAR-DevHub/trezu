@@ -557,7 +557,13 @@
         "membersSelected": "{count, plural, =0 {no members} one {# member} other {# members}} selected",
         "remove": "Remove",
         "edit": "Edit",
-        "requestorOnlyTooltip": "You can only add the Requestor role for this member, as they are responsible for creating payment requests from NEARN."
+        "requestorOnlyTooltip": "You can only add the Requestor role for this member, as they are responsible for creating payment requests from NEARN.",
+        "removeDialog": {
+            "title": "Remove Request",
+            "nearnBody": "Once approved, {account} will be permanently removed from the treasury and all associated permissions will be revoked. After removal, this account will no longer be able to create requests from NEARN.",
+            "genericBody": "Once approved, this action will permanently remove <bold>{accounts}</bold> from the treasury and revoke all assigned permissions.",
+            "creatingProposal": "Creating Proposal..."
+        }
     },
     "settings": {
         "tabs": {

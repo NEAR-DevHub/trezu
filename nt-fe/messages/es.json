@@ -557,7 +557,13 @@
         "membersSelected": "{count, plural, =0 {ningún miembro} one {# miembro} other {# miembros}} seleccionado(s)",
         "remove": "Eliminar",
         "edit": "Editar",
-        "requestorOnlyTooltip": "Solo puedes añadir el rol de Solicitante para este miembro, ya que es responsable de crear solicitudes de pago desde NEARN."
+        "requestorOnlyTooltip": "Solo puedes añadir el rol de Solicitante para este miembro, ya que es responsable de crear solicitudes de pago desde NEARN.",
+        "removeDialog": {
+            "title": "Eliminar solicitud",
+            "nearnBody": "Una vez aprobado, {account} se eliminará permanentemente de la tesorería y se revocarán todos los permisos asociados. Tras la eliminación, esta cuenta ya no podrá crear solicitudes desde NEARN.",
+            "genericBody": "Una vez aprobado, esta acción eliminará permanentemente a <bold>{accounts}</bold> de la tesorería y revocará todos los permisos asignados.",
+            "creatingProposal": "Creando propuesta..."
+        }
     },
     "settings": {
         "tabs": {
