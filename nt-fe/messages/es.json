@@ -1336,6 +1336,9 @@
     "modal": {
         "close": "Cerrar"
     },
+    "input": {
+        "openSearch": "Abrir búsqueda"
+    },
     "pagination": {
         "previous": "Anterior",
         "next": "Siguiente"

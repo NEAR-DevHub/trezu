@@ -1336,6 +1336,9 @@
     "modal": {
         "close": "Закрити"
     },
+    "input": {
+        "openSearch": "Відкрити пошук"
+    },
     "pagination": {
         "previous": "Попередня",
         "next": "Наступна"

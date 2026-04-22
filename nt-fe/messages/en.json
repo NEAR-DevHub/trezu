@@ -1336,6 +1336,9 @@
     "modal": {
         "close": "Close"
     },
+    "input": {
+        "openSearch": "Open search"
+    },
     "pagination": {
         "previous": "Previous",
         "next": "Next"
