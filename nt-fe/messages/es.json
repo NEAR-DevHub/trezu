@@ -1444,7 +1444,8 @@
         "allTokens": "Todos los tokens",
         "deposit": "Depositar",
         "send": "Enviar",
-        "exchange": "Intercambiar"
+        "exchange": "Intercambiar",
+        "chartNow": "Ahora"
     },
     "changePolicyExpanded": {
         "proposalBond": "Garantía de propuesta",

@@ -1444,7 +1444,8 @@
         "allTokens": "All Tokens",
         "deposit": "Deposit",
         "send": "Send",
-        "exchange": "Exchange"
+        "exchange": "Exchange",
+        "chartNow": "Now"
     },
     "changePolicyExpanded": {
         "proposalBond": "Proposal Bond",

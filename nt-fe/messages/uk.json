@@ -1444,7 +1444,8 @@
         "allTokens": "Усі токени",
         "deposit": "Поповнити",
         "send": "Надіслати",
-        "exchange": "Обміняти"
+        "exchange": "Обміняти",
+        "chartNow": "Зараз"
     },
     "changePolicyExpanded": {
         "proposalBond": "Застава пропозиції",

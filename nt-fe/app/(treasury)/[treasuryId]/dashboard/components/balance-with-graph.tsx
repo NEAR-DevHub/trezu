@@ -340,7 +340,7 @@ export default function BalanceWithGraph({
                     )
                     .reduce((sum, t) => sum + t.balanceUSD, 0);
                 data.push({
-                    name: "Now",
+                    name: t("chartNow"),
                     fullDate: undefined,
                     usdValue: nowBalanceUSD,
                 });
@@ -437,7 +437,7 @@ export default function BalanceWithGraph({
                     0,
                 );
                 data.push({
-                    name: "Now",
+                    name: t("chartNow"),
                     fullDate: undefined,
                     usdValue: nowUSD,
                     balanceValue: nowBalance,
