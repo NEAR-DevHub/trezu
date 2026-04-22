@@ -1488,6 +1488,16 @@
         "initializing": "Quote service is still initializing. Please try again.",
         "noRoute": "Could not prepare a payment route right now. Please retry."
     },
+    "pageTours": {
+        "paymentsBulk": "Bulk creation is here! Create several requests in just a few steps.",
+        "paymentsPending": "View requests that are pending approval here.",
+        "exchangeSettings": "Here you can set how much price change you're willing to accept.",
+        "membersPending": "Click to see active requests waiting for approval.",
+        "guestSaveIntro": "You are a guest of this treasury. You can only view the data.",
+        "guestSaveAction": "You can save this guest treasury to your treasuries list.",
+        "newFeatureRich": "New! 🎉 Save frequently used addresses for faster, error-free payouts.<br></br> Your contacts stay private and visible only to your team.",
+        "newFeatureCta": "Try It"
+    },
     "nearStore": {
         "connectAndAcceptTerms": "Please connect wallet and accept terms to continue.",
         "transactionNotApproved": "Transaction wasn't approved in your wallet.",

@@ -1488,6 +1488,16 @@
         "initializing": "El servicio de cotización aún se está iniciando. Inténtalo de nuevo.",
         "noRoute": "No se pudo preparar una ruta de pago ahora mismo. Reintenta."
     },
+    "pageTours": {
+        "paymentsBulk": "¡Llegó la creación masiva! Crea varias solicitudes en pocos pasos.",
+        "paymentsPending": "Mira aquí las solicitudes pendientes de aprobación.",
+        "exchangeSettings": "Aquí puedes definir cuánto cambio de precio estás dispuesto a aceptar.",
+        "membersPending": "Haz clic para ver las solicitudes activas que esperan aprobación.",
+        "guestSaveIntro": "Eres invitado de esta tesorería. Solo puedes ver los datos.",
+        "guestSaveAction": "Puedes guardar esta tesorería de invitado en tu lista de tesorerías.",
+        "newFeatureRich": "¡Nuevo! 🎉 Guarda direcciones usadas con frecuencia para pagos más rápidos y sin errores.<br></br> Tus contactos quedan privados y visibles solo para tu equipo.",
+        "newFeatureCta": "Pruébalo"
+    },
     "nearStore": {
         "connectAndAcceptTerms": "Conecta la billetera y acepta los términos para continuar.",
         "transactionNotApproved": "La transacción no fue aprobada en tu billetera.",
