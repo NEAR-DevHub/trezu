@@ -801,6 +801,12 @@
         "connecting": "Connecting…",
         "connect": "Connect"
     },
+    "progressModal": {
+        "titleCreating": "Creating Treasury...",
+        "titleDone": "Treasury Created",
+        "titleFailed": "Treasury Creation Failed",
+        "viewTreasury": "View Treasury"
+    },
     "onboarding": {
         "tour": {
             "addAssets": "Add assets to your Treasury by making a deposit.",

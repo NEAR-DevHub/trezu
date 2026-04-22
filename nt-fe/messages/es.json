@@ -801,6 +801,12 @@
         "connecting": "Conectando…",
         "connect": "Conectar"
     },
+    "progressModal": {
+        "titleCreating": "Creando tesorería...",
+        "titleDone": "Tesorería creada",
+        "titleFailed": "Error al crear tesorería",
+        "viewTreasury": "Ver tesorería"
+    },
     "onboarding": {
         "tour": {
             "addAssets": "Añade activos a tu tesorería haciendo un depósito.",

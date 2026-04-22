@@ -801,6 +801,12 @@
         "connecting": "Підключення…",
         "connect": "Підключити"
     },
+    "progressModal": {
+        "titleCreating": "Створення скарбниці...",
+        "titleDone": "Скарбницю створено",
+        "titleFailed": "Не вдалось створити скарбницю",
+        "viewTreasury": "Переглянути скарбницю"
+    },
     "onboarding": {
         "tour": {
             "addAssets": "Додайте активи до скарбниці, зробивши депозит.",

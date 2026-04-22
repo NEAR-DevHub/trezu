@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "@/components/button";
 import {
@@ -23,6 +24,9 @@ export function CreationDisabledModal({
     open,
     onClose,
 }: CreationDisabledModalProps) {
+    const tL = useTranslations("landing");
+    const tP = useTranslations("progressModal");
+    const tI = useTranslations("proposals.insufficientBalance");
     const { accountId } = useNear();
     const [contact, setContact] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,7 +42,7 @@ export function CreationDisabledModal({
             });
             setSubmitted(true);
         } catch {
-            toast.error("Failed to submit. Please try again.");
+            toast.error(tL("waitlistSubmitFailed"));
         } finally {
             setIsSubmitting(false);
         }
@@ -58,37 +62,33 @@ export function CreationDisabledModal({
                 <DialogHeader>
                     <DialogTitle>
                         {submitted
-                            ? "You're on the list 🎉"
-                            : "Join the Trezu Waitlist"}
+                            ? tL("waitlistSubmittedTitle")
+                            : tL("waitlistTitle")}
                     </DialogTitle>
                 </DialogHeader>
                 {submitted ? (
                     <>
                         <p className="text-sm text-muted-foreground">
-                            Thanks! We&apos;ll notify you as soon as treasury
-                            creation becomes available.
+                            {tL("waitlistSubmittedDescription")}
                         </p>
                         <Button className="w-full mt-3" onClick={onClose}>
-                            Got It
+                            {tI("gotIt")}
                         </Button>
                     </>
                 ) : (
                     <div className="flex flex-col gap-3">
                         <p className="text-sm text-muted-foreground">
-                            We&apos;ve hit today&apos;s treasury limit. No
-                            worries - try again later or leave your contact to
-                            join the waitlist. We&apos;ll let you know when a
-                            spot opens.
+                            {tL("waitlistDescription")}
                         </p>
                         <div className="flex flex-col gap-1">
                             <Input
                                 type="text"
-                                placeholder="Email address or Telegram (e.g. @username)"
+                                placeholder={tL("waitlistInputPlaceholder")}
                                 value={contact}
                                 onChange={(e) => setContact(e.target.value)}
                             />
                             <p className="text-xs text-muted-foreground">
-                                We will only use this to notify you
+                                {tL("waitlistPrivacyNote")}
                             </p>
                         </div>
                         <Button
@@ -99,7 +99,7 @@ export function CreationDisabledModal({
                             {isSubmitting && (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                             )}
-                            Join the Waitlist
+                            {tL("waitlistSubmit")}
                         </Button>
                     </div>
                 )}
