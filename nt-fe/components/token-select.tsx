@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronDown, ChevronLeft } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
     useMergedTokens,
@@ -91,6 +92,7 @@ export default function TokenSelect({
     iconSize = "md",
     filterTokens,
 }: TokenSelectProps) {
+    const t = useTranslations("tokenSelectDialog");
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
     const [selectedAsset, setSelectedAsset] = useState<MergedToken | null>(
@@ -317,7 +319,7 @@ export default function TokenSelect({
                         </>
                     ) : (
                         <span className="text-muted-foreground">
-                            Select token
+                            {t("selectToken")}
                         </span>
                     )}
                     <ChevronDown className="size-4 text-muted-foreground ml-auto" />
@@ -338,15 +340,17 @@ export default function TokenSelect({
                         )}
                         <DialogTitle className="w-full text-center">
                             {step === "token"
-                                ? "Select Asset"
-                                : `Select network for ${selectedAsset?.name}`}
+                                ? t("selectAsset")
+                                : t("selectNetworkFor", {
+                                      asset: selectedAsset?.name ?? "",
+                                  })}
                         </DialogTitle>
                     </div>
                 </DialogHeader>
                 {step === "token" && (
                     <div className="space-y-4">
                         <Input
-                            placeholder="Search by name"
+                            placeholder={t("searchByName")}
                             search
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}

@@ -94,10 +94,12 @@ const AccountInput = ({
             updateValidationState(true);
             setHasValidated(false); // Reset validation state
             try {
-                const error = await validateNearAddress(address);
-                setValidationError(error || undefined);
-                setIsValid(!error);
-                setHasValidated(!error); // Only mark as validated if successful
+                const errorCode = await validateNearAddress(address);
+                setValidationError(
+                    errorCode ? t(`near.${errorCode}`) : undefined,
+                );
+                setIsValid(!errorCode);
+                setHasValidated(!errorCode); // Only mark as validated if successful
             } catch (err) {
                 console.error("NEAR validation error:", err);
                 setValidationError(t("failedValidation"));

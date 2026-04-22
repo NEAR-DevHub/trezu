@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useFormContext } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import { PageCard } from "@/components/card";
 import { Button } from "@/components/button";
 import { Textarea } from "@/components/textarea";
@@ -48,6 +49,8 @@ export function ReviewPaymentsStep({
     onPaymentDataChange,
     onSubmit,
 }: ReviewPaymentsStepProps) {
+    const tPay = useTranslations("payments");
+    const tBulk = useTranslations("bulkPayment");
     const form = useFormContext<BulkPaymentFormValues>();
     const selectedToken = form.watch("selectedToken");
     const comment = form.watch("comment");
@@ -157,7 +160,7 @@ export function ReviewPaymentsStep({
     return (
         <PageCard className="max-w-[600px] mx-auto">
             <ReviewStep
-                reviewingTitle="Review Your Payment"
+                reviewingTitle={tPay("reviewYourPayment")}
                 handleBack={handleBack}
             >
                 {/* Total Summary */}

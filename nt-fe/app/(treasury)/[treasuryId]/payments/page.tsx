@@ -274,7 +274,7 @@ function Step2({
     return (
         <PageCard>
             <ReviewStep
-                reviewingTitle="Review Your Payment"
+                reviewingTitle={tPay("reviewYourPayment")}
                 handleBack={handleBack}
             >
                 <AmountSummary

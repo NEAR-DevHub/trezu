@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useFormContext } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import { PageCard } from "@/components/card";
 import { Button } from "@/components/button";
 import { Textarea } from "@/components/textarea";
@@ -41,6 +42,7 @@ export function UploadDataStep({
     treasuryId,
     onContinue,
 }: UploadDataStepProps) {
+    const t = useTranslations("bulkPayment.upload");
     const form = useFormContext<BulkPaymentFormValues>();
     const { data: subscription, isLoading: isLoadingSubscription } =
         useSubscription(treasuryId);
@@ -76,14 +78,12 @@ export function UploadDataStep({
 
     const handleFileUpload = (file: File) => {
         if (file.type !== "text/csv" && !file.name.endsWith(".csv")) {
-            setDataErrors([{ row: 0, message: "Please upload a CSV file" }]);
+            setDataErrors([{ row: 0, message: t("pleaseUploadCsv") }]);
             return;
         }
 
         if (file.size > 1.5 * 1024 * 1024) {
-            setDataErrors([
-                { row: 0, message: "File size must be less than 1.5 MB" },
-            ]);
+            setDataErrors([{ row: 0, message: t("fileSizeLimit") }]);
             return;
         }
 

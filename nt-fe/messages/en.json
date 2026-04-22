@@ -816,6 +816,7 @@
             "recipientTokenSame": "Recipient and token address cannot be the same"
         },
         "newPayment": "New Payment",
+        "reviewYourPayment": "Review Your Payment",
         "reviewButton": "Review Payment",
         "reviewButtonDisabled": "Enter amount and address",
         "comingSoon": "Coming soon",
@@ -831,7 +832,11 @@
         "comingSoonToast": "Bulk payments are coming soon!",
         "submittingList": "Submitting bulk payment list",
         "submittingProposal": "Submitting proposal",
-        "proposalSubmitted": "Bulk payment proposal submitted"
+        "proposalSubmitted": "Bulk payment proposal submitted",
+        "upload": {
+            "pleaseUploadCsv": "Please upload a CSV file",
+            "fileSizeLimit": "File size must be less than 1.5 MB"
+        }
     },
     "exchange": {
         "validation": {
@@ -1155,7 +1160,15 @@
         "invalidNearFormat": "Invalid NEAR account format",
         "invalidChainAddress": "Please enter a valid {chain} address.",
         "validating": "Validating address...",
-        "validAddress": "Valid address"
+        "validAddress": "Valid address",
+        "near": {
+            "required": "Address is required",
+            "length": "Address must be between 2 and 64 characters",
+            "missingTld": "Named accounts must end with .near, .aurora, or .tg",
+            "invalidChars": "Address can only contain lowercase letters, digits, and separators (., -, _)",
+            "accountMissing": "Account does not exist on NEAR blockchain",
+            "verifyFailed": "Failed to verify account existence"
+        }
     },
     "csvUpload": {
         "uploadFile": "Upload File",
@@ -1201,6 +1214,16 @@
             "startBeforeEnd": "Start date must be before end date",
             "cliffBetween": "Cliff date must be between {start} and {end}"
         }
+    },
+    "tokenSelectDialog": {
+        "selectToken": "Select token",
+        "selectAsset": "Select Asset",
+        "selectNetworkFor": "Select network for {asset}",
+        "searchByName": "Search by name"
+    },
+    "createRequestButton": {
+        "idle": "Create Request",
+        "noPermission": "You don't have permission to create a request"
     },
     "accountIdInput": {
         "minLength": "Account ID should be at least 2 characters",

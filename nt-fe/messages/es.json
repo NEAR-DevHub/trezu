@@ -816,6 +816,7 @@
             "recipientTokenSame": "La dirección del destinatario y del token no pueden ser iguales"
         },
         "newPayment": "Nuevo pago",
+        "reviewYourPayment": "Revisa tu pago",
         "reviewButton": "Revisar pago",
         "reviewButtonDisabled": "Introduce un importe y una dirección",
         "comingSoon": "Próximamente",
@@ -831,7 +832,11 @@
         "comingSoonToast": "¡Los pagos masivos estarán disponibles pronto!",
         "submittingList": "Enviando la lista de pagos masivos",
         "submittingProposal": "Enviando la propuesta",
-        "proposalSubmitted": "Propuesta de pago masivo enviada"
+        "proposalSubmitted": "Propuesta de pago masivo enviada",
+        "upload": {
+            "pleaseUploadCsv": "Sube un archivo CSV",
+            "fileSizeLimit": "El tamaño del archivo debe ser inferior a 1,5 MB"
+        }
     },
     "exchange": {
         "validation": {
@@ -1155,7 +1160,15 @@
         "invalidNearFormat": "Formato de cuenta NEAR no válido",
         "invalidChainAddress": "Introduce una dirección de {chain} válida.",
         "validating": "Validando dirección...",
-        "validAddress": "Dirección válida"
+        "validAddress": "Dirección válida",
+        "near": {
+            "required": "La dirección es obligatoria",
+            "length": "La dirección debe tener entre 2 y 64 caracteres",
+            "missingTld": "Las cuentas con nombre deben terminar en .near, .aurora o .tg",
+            "invalidChars": "La dirección solo puede contener letras minúsculas, dígitos y separadores (., -, _)",
+            "accountMissing": "La cuenta no existe en la blockchain NEAR",
+            "verifyFailed": "No se pudo verificar la existencia de la cuenta"
+        }
     },
     "csvUpload": {
         "uploadFile": "Subir archivo",
@@ -1201,6 +1214,16 @@
             "startBeforeEnd": "La fecha de inicio debe ser anterior a la de fin",
             "cliffBetween": "La fecha de cliff debe estar entre {start} y {end}"
         }
+    },
+    "tokenSelectDialog": {
+        "selectToken": "Seleccionar token",
+        "selectAsset": "Seleccionar activo",
+        "selectNetworkFor": "Seleccionar red para {asset}",
+        "searchByName": "Buscar por nombre"
+    },
+    "createRequestButton": {
+        "idle": "Crear solicitud",
+        "noPermission": "No tienes permiso para crear una solicitud"
     },
     "accountIdInput": {
         "minLength": "El ID de cuenta debe tener al menos 2 caracteres",

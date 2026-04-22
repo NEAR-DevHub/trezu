@@ -816,6 +816,7 @@
             "recipientTokenSame": "Адреса отримувача й токена не можуть збігатись"
         },
         "newPayment": "Новий платіж",
+        "reviewYourPayment": "Перегляньте ваш платіж",
         "reviewButton": "Переглянути платіж",
         "reviewButtonDisabled": "Введіть суму та адресу",
         "comingSoon": "Скоро",
@@ -831,7 +832,11 @@
         "comingSoonToast": "Масові платежі незабаром!",
         "submittingList": "Надсилання списку масових платежів",
         "submittingProposal": "Надсилання пропозиції",
-        "proposalSubmitted": "Пропозицію масового платежу надіслано"
+        "proposalSubmitted": "Пропозицію масового платежу надіслано",
+        "upload": {
+            "pleaseUploadCsv": "Завантажте CSV-файл",
+            "fileSizeLimit": "Розмір файлу має бути меншим за 1.5 МБ"
+        }
     },
     "exchange": {
         "validation": {
@@ -1155,7 +1160,15 @@
         "invalidNearFormat": "Неправильний формат акаунта NEAR",
         "invalidChainAddress": "Введіть коректну адресу {chain}.",
         "validating": "Перевірка адреси...",
-        "validAddress": "Адреса коректна"
+        "validAddress": "Адреса коректна",
+        "near": {
+            "required": "Потрібна адреса",
+            "length": "Адреса має містити від 2 до 64 символів",
+            "missingTld": "Іменовані акаунти мають закінчуватись на .near, .aurora або .tg",
+            "invalidChars": "Адреса може містити лише малі літери, цифри та роздільники (., -, _)",
+            "accountMissing": "Акаунт не існує в мережі NEAR",
+            "verifyFailed": "Не вдалось перевірити існування акаунта"
+        }
     },
     "csvUpload": {
         "uploadFile": "Завантажити файл",
@@ -1201,6 +1214,16 @@
             "startBeforeEnd": "Дата початку має передувати даті завершення",
             "cliffBetween": "Дата клифу має бути між {start} і {end}"
         }
+    },
+    "tokenSelectDialog": {
+        "selectToken": "Обрати токен",
+        "selectAsset": "Обрати актив",
+        "selectNetworkFor": "Обрати мережу для {asset}",
+        "searchByName": "Пошук за назвою"
+    },
+    "createRequestButton": {
+        "idle": "Створити запит",
+        "noPermission": "У вас немає прав створювати запит"
     },
     "accountIdInput": {
         "minLength": "ID акаунта має містити щонайменше 2 символи",
