@@ -66,6 +66,7 @@ interface AddMemberFormData {
 }
 
 function PermissionsHeader({ policyRoles }: { policyRoles: RolePermission[] }) {
+    const tMembers = useTranslations("members");
     // Get role descriptions and sort them
     const roleNames = policyRoles.map((r) => r.name);
     const sortedRoleNames = sortRolesByOrder(roleNames);
@@ -80,7 +81,7 @@ function PermissionsHeader({ policyRoles }: { policyRoles: RolePermission[] }) {
     return (
         <div className="flex items-center gap-1.5">
             <span className="text-xs font-medium uppercase text-muted-foreground">
-                Permissions
+                {tMembers("permissions")}
             </span>
             {sortedDescriptions.length > 0 && (
                 <Tooltip
@@ -109,6 +110,7 @@ function PermissionsHeader({ policyRoles }: { policyRoles: RolePermission[] }) {
 
 export default function MembersPage() {
     const t = useTranslations("pages.members");
+    const tMembers = useTranslations("members");
     const { treasuryId } = useTreasury();
     const { data: policy, isLoading } = useTreasuryPolicy(treasuryId || "");
     const { accountId } = useNear();
@@ -352,7 +354,7 @@ export default function MembersPage() {
                     if (!isAllowed) {
                         disabledRoles.push({
                             roleId: role.name,
-                            reason: "You can only add the Requestor role for this member, as they are responsible for creating payment requests from NEARN.",
+                            reason: tMembers("requestorOnlyTooltip"),
                         });
                     }
                 });
@@ -895,7 +897,7 @@ export default function MembersPage() {
                             <TableHead className="w-12"></TableHead>
                             <TableHead className="w-1/2">
                                 <span className="text-xs font-medium uppercase text-muted-foreground">
-                                    Member
+                                    {tMembers("member")}
                                 </span>
                             </TableHead>
                             <TableHead>
@@ -970,7 +972,7 @@ export default function MembersPage() {
                         </TableHead>
                         <TableHead className="w-1/2">
                             <span className="text-xs font-medium uppercase text-muted-foreground">
-                                Member
+                                {tMembers("member")}
                             </span>
                         </TableHead>
                         <TableHead>
@@ -1099,7 +1101,7 @@ export default function MembersPage() {
                 {!(selectedMembers.length > 0) && (
                     <div className="flex flex-row items-center justify-between gap-3 sm:gap-4 py-3.5 px-8 border-b">
                         <div className="flex items-center gap-2 w-fit">
-                            <StepperHeader title="Active Members" />
+                            <StepperHeader title={tMembers("activeMembers")} />
                             <NumberBadge
                                 number={existingMembers.length}
                                 variant="secondary"
@@ -1127,7 +1129,7 @@ export default function MembersPage() {
                                 >
                                     <Plus className="size-4" />
                                     <span className="hidden sm:inline">
-                                        Add New Member
+                                        {tMembers("addNewMember")}
                                     </span>
                                 </AuthButton>
                             )}
@@ -1139,8 +1141,9 @@ export default function MembersPage() {
                 {selectedMembers.length > 0 && (
                     <div className="flex items-center justify-between gap-4 py-3.5 px-8 border-b">
                         <span className="font-semibold text-base sm:text-lg">
-                            {selectedMembers.length} member
-                            {selectedMembers.length !== 1 ? "s" : ""} selected
+                            {tMembers("membersSelected", {
+                                count: selectedMembers.length,
+                            })}
                         </span>
                         <div className="flex items-center gap-2 w-fit">
                             <Tooltip
@@ -1170,7 +1173,7 @@ export default function MembersPage() {
                                     >
                                         <Trash2 className="w-4 h-4 mr-1" />
                                         <span className="hidden sm:inline">
-                                            Remove
+                                            {tMembers("remove")}
                                         </span>
                                     </AuthButton>
                                 </span>
@@ -1188,7 +1191,7 @@ export default function MembersPage() {
                                 >
                                     <Pencil className="w-4 h-4 mr-1" />
                                     <span className="hidden sm:inline">
-                                        Edit
+                                        {tMembers("edit")}
                                     </span>
                                 </AuthButton>
                             </span>

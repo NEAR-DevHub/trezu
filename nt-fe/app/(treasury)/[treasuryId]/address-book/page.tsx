@@ -53,12 +53,13 @@ function AddressBookEmptyState({
     onAdd: () => void;
     onImport: () => void;
 }) {
+    const tAb = useTranslations("addressBook");
     return (
         <PageCard className="py-[100px] flex flex-col items-center justify-center w-full h-fit gap-4">
             <EmptyState
                 icon={FileUp}
-                title="Add your first recipient"
-                description={`Save frequently used addresses for faster, error-free payouts.\nYour contacts stay private and visible only to your team.`}
+                title={tAb("emptyTitle")}
+                description={tAb("emptyDescription")}
                 className="py-0"
             />
             <div className="flex gap-3 w-full max-w-[300px]">
@@ -69,7 +70,7 @@ function AddressBookEmptyState({
                     className="gap-1 shrink w-full"
                     onClick={onImport}
                 >
-                    <FileUp className="size-3.5" /> Import
+                    <FileUp className="size-3.5" /> {tAb("import")}
                 </AuthButton>
                 <AuthButton
                     permissionKind="any"
@@ -77,7 +78,7 @@ function AddressBookEmptyState({
                     className="gap-1 shrink w-full"
                     onClick={onAdd}
                 >
-                    <Plus className="size-3.5" /> Add Recipient
+                    <Plus className="size-3.5" /> {tAb("addRecipient")}
                 </AuthButton>
             </div>
         </PageCard>
@@ -220,6 +221,8 @@ function RecipientsView({
     onAdd: () => void;
     onImport: () => void;
 }) {
+    const tAb = useTranslations("addressBook");
+    const tCommon = useTranslations("common");
     const { treasuryId } = useTreasury();
     const router = useRouter();
     const pathname = usePathname();
@@ -362,11 +365,9 @@ function RecipientsView({
                 {hasSelection ? (
                     <>
                         <span className="font-semibold text-base">
-                            {selectedIds.size}{" "}
-                            {selectedIds.size === 1
-                                ? "Recipient"
-                                : "Recipients"}{" "}
-                            selected
+                            {tAb("recipientsSelected", {
+                                count: selectedIds.size,
+                            })}
                         </span>
                         <div className="flex items-center gap-2">
                             <AuthButton
@@ -384,8 +385,8 @@ function RecipientsView({
                                 )}
                                 <span className="hidden sm:inline">
                                     {exportEntries.isPending
-                                        ? "Exporting"
-                                        : "Export"}
+                                        ? tCommon("exporting")
+                                        : tCommon("export")}
                                 </span>
                             </AuthButton>
                             <AuthButton
@@ -397,7 +398,9 @@ function RecipientsView({
                                 onClick={() => handleRemoveSelected()}
                             >
                                 <Trash2 className="size-4" />
-                                <span className="hidden sm:flex">Remove</span>
+                                <span className="hidden sm:flex">
+                                    {tCommon("remove")}
+                                </span>
                             </AuthButton>
                         </div>
                     </>
@@ -405,7 +408,9 @@ function RecipientsView({
                     <div className="flex items-center justify-between w-full gap-3">
                         <div className="flex flex-col gap-0 w-full max-w-md">
                             <div className="flex items-center gap-3 w-fit lg:pt-1">
-                                <StepperHeader title="Recipients" />
+                                <StepperHeader
+                                    title={tAb("recipientsHeading")}
+                                />
                                 {entries.length > 0 && (
                                     <NumberBadge
                                         number={entries.length}
@@ -414,15 +419,14 @@ function RecipientsView({
                                 )}
                             </div>
                             <p className="text-xs text-muted-foreground hidden min-w-0 lg:block">
-                                Saved addresses are private and visible only to
-                                your team.
+                                {tAb("privacyNote")}
                             </p>
                         </div>
                         <div className="flex items-center gap-2 justify-end min-w-0 w-fit shrink-0">
                             <ResponsiveInput
                                 type="text"
-                                placeholder="Search recipient by name"
-                                mobilePlaceholder="Search"
+                                placeholder={tAb("searchPlaceholder")}
+                                mobilePlaceholder={tAb("searchPlaceholderShort")}
                                 className="w-52 min-w-0"
                                 search
                                 value={search}
@@ -450,8 +454,8 @@ function RecipientsView({
                                 )}
                                 <span className="hidden sm:inline">
                                     {exportEntries.isPending
-                                        ? "Exporting"
-                                        : "Export"}
+                                        ? tCommon("exporting")
+                                        : tCommon("export")}
                                 </span>
                             </AuthButton>
                             <AuthButton
@@ -466,7 +470,9 @@ function RecipientsView({
                                 onClick={onImport}
                             >
                                 <FileUp className="size-4" />
-                                <span className="hidden sm:inline">Import</span>
+                                <span className="hidden sm:inline">
+                                    {tAb("import")}
+                                </span>
                             </AuthButton>
                             <AuthButton
                                 permissionKind="any"
@@ -480,7 +486,7 @@ function RecipientsView({
                             >
                                 <Plus className="size-4" />
                                 <span className="hidden sm:inline">
-                                    Add Recipient
+                                    {tAb("addRecipient")}
                                 </span>
                             </AuthButton>
                         </div>
