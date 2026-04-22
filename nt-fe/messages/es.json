@@ -657,6 +657,16 @@
             "nearnBody": "Una vez aprobado, {account} se eliminará permanentemente de la tesorería y se revocarán todos los permisos asociados. Tras la eliminación, esta cuenta ya no podrá crear solicitudes desde NEARN.",
             "genericBody": "Una vez aprobado, esta acción eliminará permanentemente a <bold>{accounts}</bold> de la tesorería y revocará todos los permisos asignados.",
             "creatingProposal": "Creando propuesta..."
+        },
+        "validation": {
+            "accountIdRequired": "Se requiere el ID de cuenta",
+            "invalidNearAddress": "Dirección NEAR no válida.",
+            "atLeastOneRole": "Debes seleccionar al menos un rol",
+            "atLeastOneMember": "Se requiere al menos un miembro",
+            "alreadyAdded": "Este miembro ya ha sido añadido arriba",
+            "alreadyInTreasury": "Este miembro ya existe en la tesorería",
+            "cannotRemoveRoleAfter": "No puedes quitar el rol {role} a este miembro. Tras todos tus cambios, sería la única persona asignada a este rol.",
+            "cannotRemoveRoleAfterGov": "No puedes quitar el rol {role} a este miembro. Tras todos tus cambios, sería el único miembro con rol {role}, y sin este rol no podrás gestionar miembros ni configurar la votación."
         }
     },
     "settings": {

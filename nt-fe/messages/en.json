@@ -657,6 +657,16 @@
             "nearnBody": "Once approved, {account} will be permanently removed from the treasury and all associated permissions will be revoked. After removal, this account will no longer be able to create requests from NEARN.",
             "genericBody": "Once approved, this action will permanently remove <bold>{accounts}</bold> from the treasury and revoke all assigned permissions.",
             "creatingProposal": "Creating Proposal..."
+        },
+        "validation": {
+            "accountIdRequired": "Account ID is required",
+            "invalidNearAddress": "Invalid NEAR address.",
+            "atLeastOneRole": "At least one role must be selected",
+            "atLeastOneMember": "At least one member is required",
+            "alreadyAdded": "This member has already been added above",
+            "alreadyInTreasury": "This member already exists in the treasury",
+            "cannotRemoveRoleAfter": "You can't remove the {role} role from this member. After all your changes, they would be the only person assigned to this role.",
+            "cannotRemoveRoleAfterGov": "You can't remove the {role} role from this member. After all your changes, they would be the only {role} member, and without this role you won't be able to manage team members or configure voting."
         }
     },
     "settings": {

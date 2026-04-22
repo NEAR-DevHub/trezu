@@ -218,7 +218,7 @@ export function PaymentFormSection<
         <>
             <TokenInput
                 control={control}
-                title="Send"
+                title={t("send")}
                 amountName={amountName}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 tokenName={tokenName as any}
@@ -232,7 +232,7 @@ export function PaymentFormSection<
 
             <InputBlock
                 interactive={!selectedContact}
-                title="To"
+                title={t("to")}
                 className="relative"
                 invalid={
                     !selectedContact &&

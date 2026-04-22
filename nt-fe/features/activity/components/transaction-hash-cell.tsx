@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/button";
 import { ExternalLink } from "lucide-react";
@@ -24,6 +25,7 @@ export function TransactionHashCell({
     receiptIds,
     className = "flex items-center justify-end gap-2",
 }: TransactionHashCellProps) {
+    const t = useTranslations("transactionHashCell");
     const needsReceiptSearch = true;
     !transactionHashes?.length;
     const { data: transactionFromReceipt, isLoading } = useReceiptSearch(
@@ -48,17 +50,17 @@ export function TransactionHashCell({
             <Button
                 variant="ghost"
                 size="icon-sm"
-                tooltipContent="Open in Explorer"
+                tooltipContent={t("openInExplorer")}
                 onClick={() => window.open(explorerUrl, "_blank")}
             >
                 <ExternalLink className="h-3 w-3" />
             </Button>
             <CopyButton
                 text={transactionHash}
-                toastMessage="Transaction hash copied"
+                toastMessage={t("hashCopied")}
                 variant="ghost"
                 size="icon-sm"
-                tooltipContent="Copy Transaction Hash"
+                tooltipContent={t("copyHash")}
             />
         </div>
     );

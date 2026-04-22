@@ -178,16 +178,21 @@ export default function MembersPage() {
                     z.object({
                         accountId: z
                             .string()
-                            .min(1, "Account ID is required")
+                            .min(1, tMembers("validation.accountIdRequired"))
                             .refine(isValidNearAddressFormat, {
-                                message: "Invalid NEAR address.",
+                                message: tMembers(
+                                    "validation.invalidNearAddress",
+                                ),
                             }),
                         roles: z
                             .array(z.string())
-                            .min(1, "At least one role must be selected"),
+                            .min(
+                                1,
+                                tMembers("validation.atLeastOneRole"),
+                            ),
                     }),
                 )
-                .min(1, "At least one member is required")
+                .min(1, tMembers("validation.atLeastOneMember"))
                 .superRefine((members, ctx) => {
                     const seenAccountIds = new Map<string, number>();
 
@@ -202,8 +207,9 @@ export default function MembersPage() {
                         if (firstOccurrence !== undefined) {
                             ctx.addIssue({
                                 code: z.ZodIssueCode.custom,
-                                message:
-                                    "This member has already been added above",
+                                message: tMembers(
+                                    "validation.alreadyAdded",
+                                ),
                                 path: [index, "accountId"],
                             });
                         } else {
@@ -217,8 +223,9 @@ export default function MembersPage() {
                             ) {
                                 ctx.addIssue({
                                     code: z.ZodIssueCode.custom,
-                                    message:
-                                        "This member already exists in the treasury",
+                                    message: tMembers(
+                                        "validation.alreadyInTreasury",
+                                    ),
                                     path: [index, "accountId"],
                                 });
                             }
@@ -226,7 +233,7 @@ export default function MembersPage() {
                     });
                 }),
         });
-    }, [existingMembers, currentModalMode, membersBeingEdited]);
+    }, [existingMembers, currentModalMode, membersBeingEdited, tMembers]);
 
     const form = useForm<AddMemberFormData>({
         resolver: zodResolver(addMemberSchemaWithContext),
@@ -431,8 +438,12 @@ export default function MembersPage() {
                         role.toLowerCase().includes("governance") ||
                         role.toLowerCase().includes("admin");
                     const reason = hasGovernance
-                        ? `You can't remove the ${role} role from this member. After all your changes, they would be the only ${role} member, and without this role you won't be able to manage team members or configure voting.`
-                        : `You can't remove the ${role} role from this member. After all your changes, they would be the only person assigned to this role.`;
+                        ? tMembers("validation.cannotRemoveRoleAfterGov", {
+                              role,
+                          })
+                        : tMembers("validation.cannotRemoveRoleAfter", {
+                              role,
+                          });
 
                     disabledRoles.push({
                         roleId: role,
