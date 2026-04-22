@@ -341,6 +341,18 @@
             "rejected": "Rejected",
             "pending": "Pending"
         },
+        "voteModal": {
+            "confirmTitle": "Confirm Your Vote",
+            "removeTitle": "Remove Request",
+            "bulkBody": "You are about to {action} multiple requests. Once submitted, this decision cannot be changed.",
+            "singleBody": "You are about to {action} this request. Once confirmed, this action cannot be undone.",
+            "actionApprove": "approve",
+            "actionReject": "reject",
+            "actionRemove": "remove",
+            "insufficientBalance": "Requests <highlight>{ids}</highlight> cannot be approved due to insufficient balance. Your approval will only apply to the remaining requests.",
+            "remove": "Remove",
+            "confirm": "Confirm"
+        },
         "insufficientBalance": {
             "noAsset": "This request can't be approved because the required token is not available in the treasury.",
             "bond": "This request can't be approved because the treasury has insufficient <token>{symbol}</token> balance. Add <token>{amount} {symbol}</token> to cover proposal bond costs.",

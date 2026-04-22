@@ -1,4 +1,5 @@
 import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/button";
 import { InfoAlert } from "@/components/info-alert";
@@ -31,6 +32,7 @@ export function VoteModal({
     vote,
     insufficientBalanceProposalIds,
 }: VoteModalProps) {
+    const t = useTranslations("proposals.voteModal");
     const { treasuryId } = useTreasury();
     const { voteProposals } = useNear();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,7 +61,14 @@ export function VoteModal({
         }
     };
 
-    const title = vote === "Remove" ? "Remove Request" : "Confirm Your Vote";
+    const title =
+        vote === "Remove" ? t("removeTitle") : t("confirmTitle");
+    const action =
+        vote === "Approve"
+            ? t("actionApprove")
+            : vote === "Reject"
+              ? t("actionReject")
+              : t("actionRemove");
     const isBulk = proposals.length > 1;
     const hasInsufficientBalance =
         vote === "Approve" &&
@@ -74,22 +83,23 @@ export function VoteModal({
                 </DialogHeader>
                 <DialogDescription>
                     {isBulk
-                        ? `You are about to ${vote.toLowerCase()} multiple requests. Once submitted, this decision cannot be changed.`
-                        : `You are about to ${vote.toLowerCase()} this request. Once confirmed, this action cannot be undone.`}
+                        ? t("bulkBody", { action })
+                        : t("singleBody", { action })}
                 </DialogDescription>
                 {hasInsufficientBalance && (
                     <InfoAlert
                         message={
                             <span>
-                                Requests{" "}
-                                <span className="font-medium">
-                                    {insufficientBalanceProposalIds!
+                                {t.rich("insufficientBalance", {
+                                    ids: insufficientBalanceProposalIds!
                                         .map((id) => `#${id}`)
-                                        .join(", ")}
-                                </span>{" "}
-                                cannot be approved due to insufficient balance.
-                                Your approval will only apply to the remaining
-                                requests.
+                                        .join(", "),
+                                    highlight: (chunks) => (
+                                        <span className="font-medium">
+                                            {chunks}
+                                        </span>
+                                    ),
+                                })}
                             </span>
                         }
                     />
@@ -101,7 +111,7 @@ export function VoteModal({
                         onClick={handleVote}
                         disabled={isSubmitting}
                     >
-                        {vote === "Remove" ? "Remove" : "Confirm"}
+                        {vote === "Remove" ? t("remove") : t("confirm")}
                         {isSubmitting && (
                             <Loader2 className="w-4 h-4 animate-spin" />
                         )}

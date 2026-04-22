@@ -341,6 +341,18 @@
             "rejected": "Rechazado",
             "pending": "Pendiente"
         },
+        "voteModal": {
+            "confirmTitle": "Confirma tu voto",
+            "removeTitle": "Eliminar solicitud",
+            "bulkBody": "Estás a punto de {action} varias solicitudes. Una vez enviado, esta decisión no se puede cambiar.",
+            "singleBody": "Estás a punto de {action} esta solicitud. Una vez confirmado, esta acción no se puede deshacer.",
+            "actionApprove": "aprobar",
+            "actionReject": "rechazar",
+            "actionRemove": "eliminar",
+            "insufficientBalance": "Las solicitudes <highlight>{ids}</highlight> no se pueden aprobar por saldo insuficiente. Tu aprobación solo se aplicará al resto de solicitudes.",
+            "remove": "Eliminar",
+            "confirm": "Confirmar"
+        },
         "insufficientBalance": {
             "noAsset": "Esta solicitud no se puede aprobar porque el token requerido no está disponible en la tesorería.",
             "bond": "Esta solicitud no se puede aprobar porque la tesorería no tiene saldo suficiente de <token>{symbol}</token>. Añade <token>{amount} {symbol}</token> para cubrir los costes de fianza de la propuesta.",
