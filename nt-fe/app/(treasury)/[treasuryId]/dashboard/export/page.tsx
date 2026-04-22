@@ -1148,7 +1148,7 @@ export default function ExportActivityPage() {
                                 {!isUnlimitedExport && (
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm text-secondary-foreground">
-                                            Looking for more flexibility?
+                                            {tEx("moreFlexibility")}
                                         </span>
                                         <Button
                                             variant={
@@ -1165,7 +1165,7 @@ export default function ExportActivityPage() {
                                                 );
                                             }}
                                         >
-                                            Contact Us
+                                            {tEx("contactUs")}
                                         </Button>
                                     </div>
                                 )}

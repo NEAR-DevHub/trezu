@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
     BadgeDollarSign,
     Info,
@@ -135,6 +136,7 @@ export function LockupDetailsModal({
     asset,
     treasuryId,
 }: LockupDetailsModalProps) {
+    const t = useTranslations("lockupDetails");
     const [guideOpen, setGuideOpen] = useState(false);
     const isNearLockup = asset?.balance.type === "Vested";
     const isFtLockup = !isNearLockup && !!asset?.lockupInstanceId;
@@ -254,7 +256,7 @@ export function LockupDetailsModal({
     };
     const allocatedAmountSummary = (
         <AmountSummary
-            title={isNearLockup ? "Balance" : "Allocated Amount"}
+            title={isNearLockup ? t("balance") : t("allocatedAmount")}
             total={summaryTotal.toFixed(2)}
             totalUSD={totalUsd}
             token={amountSummaryToken}
@@ -290,7 +292,7 @@ export function LockupDetailsModal({
                             </Button>
                         ) : null}
                         <DialogTitle className="text-left">
-                            Lockup Details
+                            {t("title")}
                         </DialogTitle>
                     </div>
                 </DialogHeader>
@@ -326,20 +328,27 @@ export function LockupDetailsModal({
                                 <Info className="size-4 mt-0.5 shrink-0" />
                                 <p className="text-foreground">
                                     {isFullLockupStaked
-                                        ? `All ${lockupStakedDisplay} ${asset.symbol} from your lockup is earning right now.`
-                                        : `Part of your lockup (${lockupStakedDisplay} ${asset.symbol}) is earning right now.`}{" "}
-                                    To use unlocked tokens, stop earning first
-                                    and withdraw them.
+                                        ? t("allEarning", {
+                                              amount: lockupStakedDisplay,
+                                              symbol: asset.symbol,
+                                          })
+                                        : t("partEarning", {
+                                              amount: lockupStakedDisplay,
+                                              symbol: asset.symbol,
+                                          })}{" "}
+                                    {t("stopEarningFirst")}
                                 </p>
                             </div>
                         ) : null}
                         {showTokenBreakdown ? (
                             <div className="space-y-2 text-sm">
-                                <p className="font-semibold">Token Breakdown</p>
+                                <p className="font-semibold">
+                                    {t("tokenBreakdown")}
+                                </p>
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between">
                                         <p className="text-muted-foreground">
-                                            Allocated Amount
+                                            {t("allocatedAmount")}
                                         </p>
                                         <p className="font-medium">
                                             {allocatedFromContract.toFixed(2)}{" "}
@@ -348,7 +357,7 @@ export function LockupDetailsModal({
                                     </div>
                                     <div className="flex items-center justify-between">
                                         <p className="text-muted-foreground">
-                                            Earned
+                                            {t("earned")}
                                         </p>
                                         <p className="text-general-success-foreground font-medium">
                                             +{earnedFromStaking.toFixed(2)}{" "}
@@ -361,7 +370,7 @@ export function LockupDetailsModal({
 
                         <div className="space-y-2 text-sm">
                             <div className="flex items-center justify-between ">
-                                <p className="font-semibold">Progress</p>
+                                <p className="font-semibold">{t("progress")}</p>
                                 <p>{progressLabel}</p>
                             </div>
                             <div className="h-1.5 rounded-full bg-muted overflow-hidden">
@@ -375,7 +384,7 @@ export function LockupDetailsModal({
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-muted-foreground">
-                                        Unlocked
+                                        {t("unlocked")}
                                     </p>
                                     <p className="text-general-success-foreground font-medium">
                                         {unlocked.toFixed(2)} {asset.symbol}
@@ -383,7 +392,7 @@ export function LockupDetailsModal({
                                 </div>
                                 <div className="text-right">
                                     <p className="text-muted-foreground">
-                                        Locked
+                                        {t("locked")}
                                     </p>
                                     <p className="font-medium">
                                         {locked.toFixed(2)} {asset.symbol}
@@ -393,12 +402,12 @@ export function LockupDetailsModal({
                         </div>
 
                         <div className="space-y-2 text-sm">
-                            <p className="font-semibold">Schedule</p>
+                            <p className="font-semibold">{t("schedule")}</p>
                             {isFtLockup ? (
                                 <div className="space-y-2">
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">
-                                            Start Date
+                                            {t("startDate")}
                                         </span>
                                         <span>
                                             {formatDateFromSeconds(
@@ -409,13 +418,13 @@ export function LockupDetailsModal({
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">
-                                            Rounds
+                                            {t("rounds")}
                                         </span>
                                         <span>{roundsTotal || "N/A"}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">
-                                            Release Interval
+                                            {t("releaseInterval")}
                                         </span>
                                         <span>
                                             {formatReleaseInterval(
@@ -426,7 +435,7 @@ export function LockupDetailsModal({
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">
-                                            Next Unlock Date
+                                            {t("nextUnlockDate")}
                                         </span>
                                         <span>{nextUnlockDate}</span>
                                     </div>
@@ -435,13 +444,13 @@ export function LockupDetailsModal({
                                 <div className="space-y-2">
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">
-                                            Start Date
+                                            {t("startDate")}
                                         </span>
                                         <span>{nearStartDate}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">
-                                            End Date
+                                            {t("endDate")}
                                         </span>
                                         <span>{nearEndDate}</span>
                                     </div>
@@ -461,7 +470,7 @@ export function LockupDetailsModal({
                                 >
                                     <span className="flex items-center gap-2">
                                         <BadgeDollarSign className="size-4 text-muted-foreground" />
-                                        How your grant works
+                                        {t("howGrantWorks")}
                                     </span>
                                     {guideOpen ? (
                                         <ChevronUp className="size-4 text-muted-foreground" />
@@ -473,42 +482,15 @@ export function LockupDetailsModal({
                             <CollapsibleContent className="px-3 pb-3 text-xs text-muted-foreground">
                                 {isFtLockup ? (
                                     <ol className="list-decimal pl-4 space-y-1">
-                                        <li>
-                                            You receive a grant for a specific
-                                            period of time. Instead of getting
-                                            the full amount at once, the assets
-                                            become available in parts over time.
-                                        </li>
-                                        <li>
-                                            When the date for the next release
-                                            arrives, that portion of tokens is
-                                            automatically unlocked and moved to
-                                            your treasury balance.
-                                        </li>
-                                        <li>
-                                            Once they appear in your balance,
-                                            you can immediately use them for
-                                            payments, transfers, or other
-                                            transactions.
-                                        </li>
+                                        <li>{t("ftStep1")}</li>
+                                        <li>{t("ftStep2")}</li>
+                                        <li>{t("ftStep3")}</li>
                                     </ol>
                                 ) : (
                                     <ol className="list-decimal pl-4 space-y-1">
-                                        <li>
-                                            You receive a grant for a set period
-                                            of time with a defined start and end
-                                            date.
-                                        </li>
-                                        <li>
-                                            As tokens unlock, they automatically
-                                            become available in your treasury
-                                            balance.
-                                        </li>
-                                        <li>
-                                            You can use the unlocked tokens
-                                            immediately for payments, transfers,
-                                            or other transactions.
-                                        </li>
+                                        <li>{t("nearStep1")}</li>
+                                        <li>{t("nearStep2")}</li>
+                                        <li>{t("nearStep3")}</li>
                                     </ol>
                                 )}
                             </CollapsibleContent>

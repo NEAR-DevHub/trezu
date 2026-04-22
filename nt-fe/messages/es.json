@@ -836,7 +836,8 @@
         "networkFeeInfo": "Información de la comisión de red",
         "commentPlaceholder": "Añade un comentario (opcional)...",
         "preparingRoute": "Preparando la ruta de transferencia 1Click...",
-        "confirmSubmit": "Confirmar y enviar solicitud"
+        "confirmSubmit": "Confirmar y enviar solicitud",
+        "failed1ClickQuote": "No se pudo crear la cotización de transferencia 1Click"
     },
     "bulkPayment": {
         "comingSoonToast": "¡Los pagos masivos estarán disponibles pronto!",
@@ -866,7 +867,10 @@
             "downloadTemplate": "Descargar plantilla",
             "requirements": "Requisitos del pago masivo",
             "maxTransactions": "Máximo {max} transacciones por importación",
-            "singleTokenNetwork": "Un único token y red"
+            "singleTokenNetwork": "Un único token y red",
+            "limitsUsed": "Has usado todos tus límites",
+            "selectAndProvide": "Selecciona activo y proporciona datos de pago",
+            "continueToReview": "Continuar a revisión"
         },
         "editStep": {
             "title": "Editar pago",
@@ -1309,7 +1313,9 @@
         "creditsPerMonth": "{total} / mes",
         "requirementsTitle": "Requisitos de exportación",
         "exportFromPeriod": "Puedes exportar datos del {period}.",
-        "availableFor48Hours": "Los archivos exportados estarán disponibles para descarga durante 48 horas."
+        "availableFor48Hours": "Los archivos exportados estarán disponibles para descarga durante 48 horas.",
+        "moreFlexibility": "¿Buscas más flexibilidad?",
+        "contactUs": "Contáctanos"
     },
     "paymentFormSection": {
         "selectRecipient": "Seleccionar destinatario",
@@ -1320,10 +1326,19 @@
         "select": "Seleccionar tesorería",
         "connectWalletTooltip": "Conecta la billetera para ver tesorerías",
         "manageTreasuries": "Gestionar tesorerías",
-        "createTreasury": "Crear tesorería"
+        "createTreasury": "Crear tesorería",
+        "memberOf": "Miembro de",
+        "guestTreasuries": "Tesorerías como invitado"
     },
     "selectModal": {
         "searchByName": "Buscar por nombre"
+    },
+    "modal": {
+        "close": "Cerrar"
+    },
+    "pagination": {
+        "previous": "Anterior",
+        "next": "Siguiente"
     },
     "confidentialState": {
         "title": "Confidencial",
@@ -1388,6 +1403,10 @@
         "selectAsset": "Seleccionar activo",
         "selectNetworkFor": "Seleccionar red para {asset}",
         "searchByName": "Buscar por nombre"
+    },
+    "tokenInput": {
+        "max": "MAX",
+        "insufficientTokens": "Tokens insuficientes. Puedes enviar la solicitud y recargar antes de la aprobación."
     },
     "createRequestButton": {
         "idle": "Crear solicitud",
@@ -1481,6 +1500,32 @@
             "availableForWithdraw": "Disponible para retirar",
             "availableForWithdrawInfo": "Tokens retirados que ya completaron el período de desvinculación y pueden retirarse."
         }
+    },
+    "lockupDetails": {
+        "title": "Detalles del lockup",
+        "balance": "Saldo",
+        "tokenBreakdown": "Desglose de tokens",
+        "allocatedAmount": "Cantidad asignada",
+        "earned": "Ganado",
+        "progress": "Progreso",
+        "unlocked": "Desbloqueado",
+        "locked": "Bloqueado",
+        "schedule": "Calendario",
+        "startDate": "Fecha de inicio",
+        "endDate": "Fecha de fin",
+        "rounds": "Rondas",
+        "releaseInterval": "Intervalo de liberación",
+        "nextUnlockDate": "Próxima fecha de desbloqueo",
+        "allEarning": "Los {amount} {symbol} de tu lockup están generando ingresos ahora mismo.",
+        "partEarning": "Parte de tu lockup ({amount} {symbol}) está generando ingresos ahora mismo.",
+        "stopEarningFirst": "Para usar los tokens desbloqueados, detén primero las ganancias y retíralos.",
+        "howGrantWorks": "Cómo funciona tu concesión",
+        "ftStep1": "Recibes una concesión por un período de tiempo específico. En lugar de obtener el importe completo a la vez, los activos se liberan por partes con el tiempo.",
+        "ftStep2": "Cuando llega la fecha de la próxima liberación, esa porción de tokens se desbloquea automáticamente y se mueve a tu saldo de tesorería.",
+        "ftStep3": "Una vez en tu saldo, puedes usarlos de inmediato para pagos, transferencias u otras transacciones.",
+        "nearStep1": "Recibes una concesión por un período definido con fechas de inicio y fin.",
+        "nearStep2": "A medida que los tokens se desbloquean, se vuelven disponibles automáticamente en tu saldo de tesorería.",
+        "nearStep3": "Puedes usar los tokens desbloqueados de inmediato para pagos, transferencias u otras transacciones."
     },
     "vestingDetails": {
         "title": "Detalles de vesting",

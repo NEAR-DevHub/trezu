@@ -686,13 +686,13 @@ export function UploadDataStep({
                         ]}
                         idleMessage={
                             availableCredits === 0
-                                ? "You’ve used all your limits"
+                                ? t("limitsUsed")
                                 : !selectedToken ||
                                     (activeTab === "upload" && !csvData) ||
                                     (activeTab === "paste" &&
                                         !pasteDataInput.trim())
-                                  ? "Select asset and provide payment data"
-                                  : "Continue to Review"
+                                  ? t("selectAndProvide")
+                                  : t("continueToReview")
                         }
                     />
                 </PageCard>

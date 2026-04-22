@@ -1,5 +1,8 @@
+"use client";
+
 import { Button } from "@/components/button";
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
 interface PaginationProps {
@@ -15,6 +18,7 @@ export function Pagination({
     onPageChange,
     className,
 }: PaginationProps) {
+    const t = useTranslations("pagination");
     const getPages = () => {
         const pages: (number | string)[] = [];
 
@@ -61,7 +65,7 @@ export function Pagination({
                 className="text-muted-foreground hover:text-foreground text-xs gap-1"
             >
                 <ChevronLeft className="h-4 w-4" />
-                <span className="hidden sm:inline">Previous</span>
+                <span className="hidden sm:inline">{t("previous")}</span>
             </Button>
 
             <span className="sm:hidden text-sm text-muted-foreground px-1">
@@ -102,7 +106,7 @@ export function Pagination({
                 disabled={pageIndex >= totalPages - 1}
                 className="text-muted-foreground hover:text-foreground text-xs gap-1"
             >
-                <span className="hidden sm:inline">Next</span>
+                <span className="hidden sm:inline">{t("next")}</span>
                 <ChevronRight className="h-4 w-4" />
             </Button>
         </div>

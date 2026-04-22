@@ -173,7 +173,7 @@ export function TreasurySelector({
                 <SelectContent className="max-w-[250px]">
                     {memberTreasuries.length > 0 && (
                         <SelectGroup>
-                            <SelectLabel>Member Of</SelectLabel>
+                            <SelectLabel>{t("memberOf")}</SelectLabel>
                             {memberTreasuries.map((treasury) => (
                                 <SelectItem
                                     key={treasury.daoId}
@@ -210,7 +210,9 @@ export function TreasurySelector({
                         <>
                             {memberTreasuries.length > 0 && <SelectSeparator />}
                             <SelectGroup>
-                                <SelectLabel>Guest Treasuries</SelectLabel>
+                                <SelectLabel>
+                                    {t("guestTreasuries")}
+                                </SelectLabel>
                                 {savedGuestTreasuries.map((treasury) => (
                                     <SelectItem
                                         key={treasury.daoId}

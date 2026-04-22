@@ -836,7 +836,8 @@
         "networkFeeInfo": "Network fee info",
         "commentPlaceholder": "Add a comment (optional)...",
         "preparingRoute": "Preparing 1Click transfer route...",
-        "confirmSubmit": "Confirm and Submit Request"
+        "confirmSubmit": "Confirm and Submit Request",
+        "failed1ClickQuote": "Failed to create 1Click transfer quote"
     },
     "bulkPayment": {
         "comingSoonToast": "Bulk payments are coming soon!",
@@ -866,7 +867,10 @@
             "downloadTemplate": "Download a template",
             "requirements": "Bulk Payment Requirements",
             "maxTransactions": "Max {max} transactions per import",
-            "singleTokenNetwork": "Single token and network"
+            "singleTokenNetwork": "Single token and network",
+            "limitsUsed": "You've used all your limits",
+            "selectAndProvide": "Select asset and provide payment data",
+            "continueToReview": "Continue to Review"
         },
         "editStep": {
             "title": "Edit Payment",
@@ -1309,7 +1313,9 @@
         "creditsPerMonth": "{total} / month",
         "requirementsTitle": "Export Requirements",
         "exportFromPeriod": "You can export data from the {period}.",
-        "availableFor48Hours": "Exported files are available for download for 48 hours."
+        "availableFor48Hours": "Exported files are available for download for 48 hours.",
+        "moreFlexibility": "Looking for more flexibility?",
+        "contactUs": "Contact Us"
     },
     "paymentFormSection": {
         "selectRecipient": "Select Recipient",
@@ -1320,10 +1326,19 @@
         "select": "Select treasury",
         "connectWalletTooltip": "Connect wallet to view treasuries",
         "manageTreasuries": "Manage Treasuries",
-        "createTreasury": "Create Treasury"
+        "createTreasury": "Create Treasury",
+        "memberOf": "Member Of",
+        "guestTreasuries": "Guest Treasuries"
     },
     "selectModal": {
         "searchByName": "Search by name"
+    },
+    "modal": {
+        "close": "Close"
+    },
+    "pagination": {
+        "previous": "Previous",
+        "next": "Next"
     },
     "confidentialState": {
         "title": "Confidential",
@@ -1388,6 +1403,10 @@
         "selectAsset": "Select Asset",
         "selectNetworkFor": "Select network for {asset}",
         "searchByName": "Search by name"
+    },
+    "tokenInput": {
+        "max": "MAX",
+        "insufficientTokens": "Insufficient tokens. You can submit the request and top up before approval."
     },
     "createRequestButton": {
         "idle": "Create Request",
@@ -1481,6 +1500,32 @@
             "availableForWithdraw": "Available for Withdraw",
             "availableForWithdrawInfo": "Unstaked tokens that have completed the unbonding period and can be withdrawn."
         }
+    },
+    "lockupDetails": {
+        "title": "Lockup Details",
+        "balance": "Balance",
+        "tokenBreakdown": "Token Breakdown",
+        "allocatedAmount": "Allocated Amount",
+        "earned": "Earned",
+        "progress": "Progress",
+        "unlocked": "Unlocked",
+        "locked": "Locked",
+        "schedule": "Schedule",
+        "startDate": "Start Date",
+        "endDate": "End Date",
+        "rounds": "Rounds",
+        "releaseInterval": "Release Interval",
+        "nextUnlockDate": "Next Unlock Date",
+        "allEarning": "All {amount} {symbol} from your lockup is earning right now.",
+        "partEarning": "Part of your lockup ({amount} {symbol}) is earning right now.",
+        "stopEarningFirst": "To use unlocked tokens, stop earning first and withdraw them.",
+        "howGrantWorks": "How your grant works",
+        "ftStep1": "You receive a grant for a specific period of time. Instead of getting the full amount at once, the assets become available in parts over time.",
+        "ftStep2": "When the date for the next release arrives, that portion of tokens is automatically unlocked and moved to your treasury balance.",
+        "ftStep3": "Once they appear in your balance, you can immediately use them for payments, transfers, or other transactions.",
+        "nearStep1": "You receive a grant for a set period of time with a defined start and end date.",
+        "nearStep2": "As tokens unlock, they automatically become available in your treasury balance.",
+        "nearStep3": "You can use the unlocked tokens immediately for payments, transfers, or other transactions."
     },
     "vestingDetails": {
         "title": "Vesting Details",

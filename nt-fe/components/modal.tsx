@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { XIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useUiStore } from "@/stores/ui-store";
 
@@ -109,6 +110,7 @@ function DialogHeader({
     closeButton = true,
     ...props
 }: DialogHeaderProps) {
+    const t = useTranslations("modal");
     return (
         <BaseDialogHeader
             {...props}
@@ -121,7 +123,7 @@ function DialogHeader({
             {closeButton && (
                 <BaseDialogClose className="rounded-xs opacity-70 transition-opacity hover:opacity-100 ">
                     <XIcon className="size-4" />
-                    <span className="sr-only">Close</span>
+                    <span className="sr-only">{t("close")}</span>
                 </BaseDialogClose>
             )}
         </BaseDialogHeader>

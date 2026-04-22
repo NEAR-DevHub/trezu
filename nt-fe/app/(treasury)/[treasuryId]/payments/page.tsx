@@ -510,6 +510,7 @@ const buildTransferProposal = (
 
 export default function PaymentsPage() {
     const t = useTranslations("pages.payments");
+    const tPay = useTranslations("payments");
     const tValidation = useTranslations("paymentForm.validation");
     const paymentFormSchema = useMemo(
         () =>
@@ -776,7 +777,7 @@ export default function PaymentsPage() {
                     ));
 
                 if (!quote) {
-                    throw new Error("Failed to create 1Click transfer quote");
+                    throw new Error(tPay("failed1ClickQuote"));
                 }
 
                 if (isConfidential) {

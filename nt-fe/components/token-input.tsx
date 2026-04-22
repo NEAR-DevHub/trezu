@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "./button";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useAssets } from "@/hooks/use-assets";
@@ -102,6 +103,7 @@ export function TokenInput<
     showInsufficientBalance = false,
     dynamicFontSize = false,
 }: TokenInputProps<TFieldValues, TTokenPath>) {
+    const t = useTranslations("tokenInput");
     const { treasuryId } = useTreasury();
     const { setValue } = useFormContext<TFieldValues>();
     const amount = useWatch({ control, name: amountName });
@@ -198,7 +200,7 @@ export function TokenInput<
                                                 }
                                             }}
                                         >
-                                            MAX
+                                            {t("max")}
                                         </Button>
                                     )}
                                 </>
@@ -275,8 +277,7 @@ export function TokenInput<
                         </p>
                         {hasInsufficientBalance && (
                             <p className="text-general-info-foreground text-sm mt-2">
-                                Insufficient tokens. You can submit the request
-                                and top up before approval.
+                                {t("insufficientTokens")}
                             </p>
                         )}
                         {fieldState.error ? (
