@@ -386,6 +386,7 @@
             "amountPositive": "Amount must be greater than 0",
             "recipientTokenSame": "Recipient and token address cannot be the same"
         },
+        "newPayment": "New Payment",
         "reviewButton": "Review Payment",
         "reviewButtonDisabled": "Enter amount and address",
         "comingSoon": "Coming soon",
@@ -421,6 +422,7 @@
             "priceDifference": "Price Difference",
             "priceDifferenceTooltip": "Difference between the quote rate and the current market rate. Positive values indicate a better rate than market.",
             "estimatedTime": "Estimated Time",
+            "estimatedTimeValue": "{seconds} seconds",
             "estimatedTimeTooltip": "Approximate time to complete the exchange.",
             "minimumReceived": "Minimum Received",
             "minimumReceivedTooltip": "This is the minimum amount you'll receive from this exchange, based on the slippage limit set for the request.",
@@ -441,8 +443,10 @@
             "cliffBetween": "Cliff date must be between"
         },
         "heading": "New Vesting Schedule",
+        "amount": "Amount",
         "startDate": "Start Date",
         "endDate": "End Date",
+        "noteOptional": "Note (optional)",
         "continue": "Continue",
         "advancedSettings": "Advanced Settings",
         "allowCancellation": "Allow Cancellation",
@@ -452,7 +456,17 @@
         "allowEarnDescription": "Allows the owner of the lockup to stake the full amount of tokens in the lockup (even before the cliff date).",
         "commentPlaceholder": "Add a comment for this vesting schedule (optional)...",
         "reviewRequest": "Review Request",
-        "reviewHeading": "Review Your Vesting Schedule"
+        "reviewHeading": "Review Your Vesting Schedule",
+        "confirmSubmit": "Confirm and Submit Request",
+        "review": {
+            "recipient": "Recipient",
+            "startDate": "Start Date",
+            "endDate": "End Date",
+            "cliffDate": "Cliff Date",
+            "cancelable": "Cancelable",
+            "allowEarn": "Allow Earn",
+            "na": "N/A"
+        }
     },
     "earn": {
         "placeholder": "Explore earning opportunities and staking rewards."

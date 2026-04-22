@@ -386,6 +386,7 @@
             "amountPositive": "El importe debe ser mayor que 0",
             "recipientTokenSame": "La dirección del destinatario y del token no pueden ser iguales"
         },
+        "newPayment": "Nuevo pago",
         "reviewButton": "Revisar pago",
         "reviewButtonDisabled": "Introduce un importe y una dirección",
         "comingSoon": "Próximamente",
@@ -421,6 +422,7 @@
             "priceDifference": "Diferencia de precio",
             "priceDifferenceTooltip": "Diferencia entre la tasa de cotización y la tasa de mercado actual. Los valores positivos indican una tasa mejor que la del mercado.",
             "estimatedTime": "Tiempo estimado",
+            "estimatedTimeValue": "{seconds} segundos",
             "estimatedTimeTooltip": "Tiempo aproximado para completar el intercambio.",
             "minimumReceived": "Mínimo recibido",
             "minimumReceivedTooltip": "Este es el importe mínimo que recibirás de este intercambio, según el límite de deslizamiento establecido para la solicitud.",
@@ -441,8 +443,10 @@
             "cliffBetween": "La fecha de cliff debe estar entre"
         },
         "heading": "Nuevo plan de vesting",
+        "amount": "Importe",
         "startDate": "Fecha de inicio",
         "endDate": "Fecha de fin",
+        "noteOptional": "Nota (opcional)",
         "continue": "Continuar",
         "advancedSettings": "Ajustes avanzados",
         "allowCancellation": "Permitir cancelación",
@@ -452,7 +456,17 @@
         "allowEarnDescription": "Permite al propietario del bloqueo hacer staking del importe total de tokens bloqueados (incluso antes de la fecha de cliff).",
         "commentPlaceholder": "Añade un comentario para este plan de vesting (opcional)...",
         "reviewRequest": "Revisar solicitud",
-        "reviewHeading": "Revisa tu plan de vesting"
+        "reviewHeading": "Revisa tu plan de vesting",
+        "confirmSubmit": "Confirmar y enviar solicitud",
+        "review": {
+            "recipient": "Destinatario",
+            "startDate": "Fecha de inicio",
+            "endDate": "Fecha de fin",
+            "cliffDate": "Fecha de cliff",
+            "cancelable": "Cancelable",
+            "allowEarn": "Permite ganar",
+            "na": "N/D"
+        }
     },
     "earn": {
         "placeholder": "Explora oportunidades de ingresos y recompensas por staking."

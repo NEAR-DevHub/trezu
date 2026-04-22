@@ -113,6 +113,7 @@ function Step1({
     ensureQuoteBeforeReview,
     validatedRecipients,
 }: Step1Props) {
+    const tPay = useTranslations("payments");
     const form = useFormContext<PaymentFormValues>();
     const { treasuryId, isConfidential } = useTreasury();
     const isMobile = useMediaQuery("(max-width: 768px)");
@@ -134,13 +135,13 @@ function Step1({
 
     const isFormFilled = !!amount && Number(amount) > 0 && !!address;
     const saveButtonText = isFormFilled
-        ? "Review Payment"
-        : "Enter amount and address";
+        ? tPay("reviewButton")
+        : tPay("reviewButtonDisabled");
 
     return (
         <PageCard>
             <div className="flex justify-between items-center">
-                <StepperHeader title="New Payment" />
+                <StepperHeader title={tPay("newPayment")} />
                 <div className="flex items-center gap-2">
                     {isConfidential ? (
                         <Button
@@ -149,11 +150,11 @@ function Step1({
                             className="flex items-center gap-2"
                             id="payments-bulk-btn"
                             disabled
-                            tooltipContent="Coming soon"
+                            tooltipContent={tPay("comingSoon")}
                         >
                             <ArrowDownToLine className="w-4 h-4" />
                             <span className="hidden md:block">
-                                Bulk Payments
+                                {tPay("bulkPayments")}
                             </span>
                         </Button>
                     ) : (
@@ -172,7 +173,7 @@ function Step1({
                             >
                                 <ArrowDownToLine className="w-4 h-4" />
                                 <span className="hidden md:block">
-                                    Bulk Payments
+                                    {tPay("bulkPayments")}
                                 </span>
                             </Button>
                         </Link>
@@ -215,6 +216,7 @@ function Step2({
     isLoadingLiveQuote,
     isFetchingLiveQuote,
 }: Step2Props) {
+    const tPay = useTranslations("payments");
     const form = useFormContext<PaymentFormValues>();
     const token = form.watch("token");
     const address = form.watch("address");
@@ -274,7 +276,7 @@ function Step2({
                     token={token}
                     showNetworkIcon={true}
                 >
-                    <p>to 1 recipient</p>
+                    <p>{tPay("summaryRecipients", { count: 1 })}</p>
                 </AmountSummary>
                 <div className="flex flex-col gap-2">
                     <div className="flex flex-col gap-1 w-full">
@@ -317,14 +319,14 @@ function Step2({
                         {showFeeBreakdown && networkFee && (
                             <div className="flex items-center justify-between gap-2 text-sm my-3">
                                 <div className="flex items-center gap-1 text-muted-foreground">
-                                    <p>Network Fee</p>
+                                    <p>{tPay("networkFee")}</p>
                                     <Tooltip
                                         content={NETWORK_FEE_TOOLTIP_TEXT}
                                         side="top"
                                     >
                                         <Info
                                             className="size-3 shrink-0"
-                                            aria-label="Network fee info"
+                                            aria-label={tPay("networkFeeInfo")}
                                         />
                                     </Tooltip>
                                 </div>
@@ -342,7 +344,7 @@ function Step2({
                                     onChange={field.onChange}
                                     borderless
                                     rows={2}
-                                    placeholder="Add a comment (optional)..."
+                                    placeholder={tPay("commentPlaceholder")}
                                 />
                             )}
                         />
@@ -366,8 +368,8 @@ function Step2({
                     idleMessage={
                         isSelectedTokenIntents &&
                         (isLoadingLiveQuote || isFetchingLiveQuote)
-                            ? "Preparing 1Click transfer route..."
-                            : "Confirm and Submit Request"
+                            ? tPay("preparingRoute")
+                            : tPay("confirmSubmit")
                     }
                     disabled={
                         isSelectedTokenIntents &&

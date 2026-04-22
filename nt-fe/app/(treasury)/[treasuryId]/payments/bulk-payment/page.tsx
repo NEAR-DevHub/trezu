@@ -38,6 +38,8 @@ import { needsStorageDepositCheck } from "./utils";
 
 export default function BulkPaymentPage() {
     const t = useTranslations("pages.payments");
+    const tBulk = useTranslations("bulkPayment");
+    const tReq = useTranslations("requests.actions");
     const router = useRouter();
     const queryClient = useQueryClient();
     const { treasuryId: selectedTreasury, isConfidential } = useTreasury();
@@ -46,7 +48,7 @@ export default function BulkPaymentPage() {
 
     useEffect(() => {
         if (isConfidential) {
-            toast.warning("Bulk payments are coming soon!");
+            toast.warning(tBulk("comingSoonToast"));
             router.replace(`/${selectedTreasury}/payments`);
         }
     }, [isConfidential, selectedTreasury, router]);
@@ -149,11 +151,11 @@ export default function BulkPaymentPage() {
                 <BulkPaymentToast
                     steps={[
                         {
-                            label: "Submitting bulk payment list",
+                            label: tBulk("submittingList"),
                             status: "loading",
                         },
                         {
-                            label: "Submitting proposal",
+                            label: tBulk("submittingProposal"),
                             status: "pending",
                         },
                     ]}
@@ -314,11 +316,11 @@ export default function BulkPaymentPage() {
                 <BulkPaymentToast
                     steps={[
                         {
-                            label: "Submitting bulk payment list",
+                            label: tBulk("submittingList"),
                             status: "completed",
                         },
                         {
-                            label: "Submitting proposal",
+                            label: tBulk("submittingProposal"),
                             status: "loading",
                         },
                     ]}
@@ -334,7 +336,7 @@ export default function BulkPaymentPage() {
 
             // Create proposal (throws on failure)
             await createProposal(
-                "Bulk payment proposal submitted",
+                tBulk("proposalSubmitted"),
                 {
                     treasuryId: selectedTreasury,
                     proposal: {
@@ -356,10 +358,10 @@ export default function BulkPaymentPage() {
 
             toast.dismiss(loadingToastId);
 
-            toast.success("Bulk Payment Request submitted", {
+            toast.success(tBulk("proposalSubmitted"), {
                 duration: 10000,
                 action: {
-                    label: "View Request",
+                    label: tReq("viewRequest"),
                     onClick: () =>
                         router.push(
                             `/${selectedTreasury}/requests?tab=InProgress`,

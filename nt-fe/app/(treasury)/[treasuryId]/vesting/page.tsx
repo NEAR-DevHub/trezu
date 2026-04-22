@@ -94,6 +94,7 @@ const vestingFormSchema = z
 type VestingFormValues = z.infer<typeof vestingFormSchema>;
 
 function Step1({ handleNext }: StepProps) {
+    const tV = useTranslations("vesting");
     const form = useFormContext<VestingFormValues>();
     const startDate = form.watch("vesting.startDate");
     const endDate = form.watch("vesting.endDate");
@@ -113,9 +114,9 @@ function Step1({ handleNext }: StepProps) {
 
     return (
         <PageCard>
-            <StepperHeader title="New Vesting Schedule" />
+            <StepperHeader title={tV("heading")} />
             <TokenInput
-                title="Amount"
+                title={tV("amount")}
                 tokenSelect={{
                     locked: true,
                 }}
@@ -129,13 +130,13 @@ function Step1({ handleNext }: StepProps) {
                 <DateInput
                     control={form.control}
                     name="vesting.startDate"
-                    title="Start Date"
+                    title={tV("startDate")}
                     maxDate={endDate}
                 />
                 <DateInput
                     control={form.control}
                     name="vesting.endDate"
-                    title="End Date"
+                    title={tV("endDate")}
                     minDate={startDate}
                 />
             </div>
@@ -143,13 +144,14 @@ function Step1({ handleNext }: StepProps) {
             <CreateRequestButton
                 onClick={handleContinue}
                 permissions={{ kind: "call", action: "AddProposal" }}
-                idleMessage="Continue"
+                idleMessage={tV("continue")}
             />
         </PageCard>
     );
 }
 
 function Step2({ handleBack, handleNext }: StepProps) {
+    const tV = useTranslations("vesting");
     const form = useFormContext<VestingFormValues>();
     const allowCancel = form.watch("vesting.allowCancel");
     const startDate = form.watch("vesting.startDate");
@@ -165,18 +167,21 @@ function Step2({ handleBack, handleNext }: StepProps) {
 
     return (
         <PageCard>
-            <StepperHeader title="Advanced Settings" handleBack={handleBack} />
+            <StepperHeader
+                title={tV("advancedSettings")}
+                handleBack={handleBack}
+            />
             <CheckboxInput
                 control={form.control}
                 name="vesting.allowCancel"
-                title="Allow Cancellation"
-                description="Allows the NEAR Foundation to cancel the lockup at any time. Non-cancellable lockups are not compatible with cliff dates."
+                title={tV("allowCancellation")}
+                description={tV("allowCancellationDescription")}
             />
             {allowCancel && (
                 <DateInput
                     control={form.control}
                     name="vesting.cliffDate"
-                    title="Cliff Date"
+                    title={tV("cliffDate")}
                     minDate={startDate}
                     maxDate={endDate}
                 />
@@ -184,21 +189,21 @@ function Step2({ handleBack, handleNext }: StepProps) {
             <CheckboxInput
                 control={form.control}
                 name="vesting.allowEarn"
-                title="Allow Earn"
-                description="Allows the owner of the lockup to stake the full amount of tokens in the lockup (even before the cliff date)."
+                title={tV("allowEarn")}
+                description={tV("allowEarnDescription")}
             />
             <FormField
                 control={form.control}
                 name={`vesting.memo`}
                 render={({ field }) => (
-                    <InputBlock title="Note (optional)" invalid={false}>
+                    <InputBlock title={tV("noteOptional")} invalid={false}>
                         <Textarea
                             borderless
                             value={field.value}
                             onChange={field.onChange}
                             rows={2}
                             className="p-0 pt-1"
-                            placeholder="Add a comment for this vesting schedule (optional)..."
+                            placeholder={tV("commentPlaceholder")}
                         />
                     </InputBlock>
                 )}
@@ -209,7 +214,7 @@ function Step2({ handleBack, handleNext }: StepProps) {
                     onClick={handleReview}
                     className="w-full h-10 rounded-none"
                     permissions={{ kind: "call", action: "AddProposal" }}
-                    idleMessage="Review Request"
+                    idleMessage={tV("reviewRequest")}
                 />
             </div>
         </PageCard>
@@ -217,6 +222,9 @@ function Step2({ handleBack, handleNext }: StepProps) {
 }
 
 function Step3({ handleBack }: StepProps) {
+    const tV = useTranslations("vesting");
+    const tRev = useTranslations("vesting.review");
+    const tCommon = useTranslations("common");
     const form = useFormContext<VestingFormValues>();
     const { vesting } = form.watch();
     const { data: token } = useToken(vesting.token.address);
@@ -230,42 +238,42 @@ function Step3({ handleBack }: StepProps) {
     }, [token?.price, vesting.amount]);
 
     const infoItems = useMemo(() => {
-        let items = [
+        const items = [
             {
-                label: "Recipient",
+                label: tRev("recipient"),
                 value: vesting.address,
             },
             {
-                label: "Start Date",
+                label: tRev("startDate"),
                 value: formatDate(vesting.startDate, { includeTime: false }),
             },
             {
-                label: "End Date",
+                label: tRev("endDate"),
                 value: formatDate(vesting.endDate, { includeTime: false }),
             },
             {
-                label: "Cliff Date",
+                label: tRev("cliffDate"),
                 value: vesting.cliffDate
                     ? formatDate(vesting.cliffDate, { includeTime: false })
-                    : "N/A",
+                    : tRev("na"),
             },
             {
-                label: "Cancelable",
-                value: vesting.allowCancel ? "Yes" : "No",
+                label: tRev("cancelable"),
+                value: vesting.allowCancel ? tCommon("yes") : tCommon("no"),
             },
             {
-                label: "Allow Earn",
-                value: vesting.allowEarn ? "Yes" : "No",
+                label: tRev("allowEarn"),
+                value: vesting.allowEarn ? tCommon("yes") : tCommon("no"),
             },
         ];
 
         return items;
-    }, [vesting, formatDate]);
+    }, [vesting, formatDate, tRev, tCommon]);
 
     return (
         <PageCard>
             <ReviewStep
-                reviewingTitle="Review Your Vesting Schedule"
+                reviewingTitle={tV("reviewHeading")}
                 handleBack={handleBack}
             >
                 <div className="flex flex-col gap-6">
@@ -285,7 +293,7 @@ function Step3({ handleBack }: StepProps) {
                 type="submit"
                 className="w-full h-10 rounded-none"
                 permissions={{ kind: "call", action: "AddProposal" }}
-                idleMessage="Confirm and Submit Request"
+                idleMessage={tV("confirmSubmit")}
             />
         </PageCard>
     );
