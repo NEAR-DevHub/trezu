@@ -57,9 +57,16 @@ interface ProposalData {
     kind: any;
 }
 
+interface WalletProposalLabels {
+    transferDescription: (receiverId: string) => string;
+    functionCallDescription: (methods: string, receiverId: string) => string;
+    unsupportedAction: (type: string) => string;
+}
+
 function translateToProposals(
     daoId: string,
     tx: TransactionRequest,
+    labels: WalletProposalLabels,
 ): ProposalData[] {
     const proposals: ProposalData[] = [];
     const functionCallActions: TransactionRequest["actions"] = [];
@@ -69,7 +76,7 @@ function translateToProposals(
             case "Transfer":
                 proposals.push({
                     receiverId: daoId,
-                    description: `Proposal from external dApp: Transfer NEAR to ${tx.receiverId}`,
+                    description: labels.transferDescription(tx.receiverId),
                     kind: {
                         Transfer: {
                             msg: null,
@@ -86,9 +93,7 @@ function translateToProposals(
                 break;
 
             default:
-                throw new Error(
-                    `Unsupported action type "${action.type}". Only Transfer and FunctionCall actions can be converted to Trezu proposals.`,
-                );
+                throw new Error(labels.unsupportedAction(action.type));
         }
     }
 
@@ -103,7 +108,12 @@ function translateToProposals(
 
         proposals.push({
             receiverId: daoId,
-            description: `Proposal from external dApp: ${functionCallActions.map((a) => a.params.methodName).join(", ")} on ${tx.receiverId}`,
+            description: labels.functionCallDescription(
+                functionCallActions
+                    .map((a) => a.params.methodName)
+                    .join(", "),
+                tx.receiverId,
+            ),
             kind: {
                 FunctionCall: {
                     receiver_id: tx.receiverId,
@@ -169,6 +179,18 @@ export default function WalletPage() {
 function WalletPageContent() {
     const tW = useTranslations("wallet");
     const tWErr = useTranslations("wallet.errors");
+    const tWProposal = useTranslations("wallet.proposal");
+    const walletProposalLabels = useMemo<WalletProposalLabels>(
+        () => ({
+            transferDescription: (receiverId: string) =>
+                tWProposal("transfer", { receiverId }),
+            functionCallDescription: (methods: string, receiverId: string) =>
+                tWProposal("functionCall", { methods, receiverId }),
+            unsupportedAction: (type: string) =>
+                tWProposal("unsupportedAction", { type }),
+        }),
+        [tWProposal],
+    );
     const searchParams = useSearchParams();
     const router = useRouter();
 
@@ -202,7 +224,7 @@ function WalletPageContent() {
         try {
             const all: ProposalData[] = [];
             for (const tx of transactions) {
-                all.push(...translateToProposals(selectedDao, tx));
+                all.push(...translateToProposals(selectedDao, tx, walletProposalLabels));
             }
             return all;
         } catch {
@@ -408,7 +430,7 @@ function WalletPageContent() {
             const submittedProposalIds: number[] = [];
             const allProposals: ProposalData[] = [];
             for (const tx of transactions) {
-                allProposals.push(...translateToProposals(selectedDao, tx));
+                allProposals.push(...translateToProposals(selectedDao, tx, walletProposalLabels));
             }
 
             for (const proposal of allProposals) {

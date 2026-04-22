@@ -676,6 +676,7 @@ type ExchangeFormValues = z.infer<ReturnType<typeof buildExchangeFormSchema>>;
 
 export default function ExchangePage() {
     const t = useTranslations("pages.exchange");
+    const tEx = useTranslations("exchange");
     const tValidation = useTranslations("paymentForm.validation");
     const exchangeFormSchema = useMemo(
         () =>
@@ -747,7 +748,7 @@ export default function ExchangePage() {
                     treasuryId: selectedTreasury,
                 });
 
-                await createProposal("Exchange request submitted", {
+                await createProposal(tEx("requestSubmitted"), {
                     treasuryId: selectedTreasury,
                     proposal: confidentialResult.proposal,
                     proposalBond,
@@ -787,7 +788,7 @@ export default function ExchangePage() {
                     result = await buildFungibleTokenProposal(proposalParams);
                 }
 
-                await createProposal("Exchange request submitted", {
+                await createProposal(tEx("requestSubmitted"), {
                     treasuryId: selectedTreasury,
                     proposal: result.proposal,
                     proposalBond,

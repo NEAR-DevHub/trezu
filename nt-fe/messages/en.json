@@ -675,7 +675,10 @@
             "editMember": "Update Policy - Edit Member Permissions",
             "editMembers": "Update Policy - Edit Multiple Members",
             "editMemberSuccess": "Member roles update request created successfully",
-            "editMembersSuccess": "Bulk member roles update request created successfully"
+            "editMembersSuccess": "Bulk member roles update request created successfully",
+            "removeMember": "Update Policy - Remove Member",
+            "removeMembers": "Update Policy - Remove Members",
+            "removeMemberSuccess": "Member removal request created successfully"
         }
     },
     "settings": {
@@ -908,6 +911,7 @@
         "validation": {
             "amountPositive": "Amount must be greater than 0"
         },
+        "requestSubmitted": "Exchange request submitted",
         "heading": "Exchange",
         "sell": "Sell",
         "receive": "Receive",
@@ -947,6 +951,8 @@
             "settings": "Settings",
             "review": "Review"
         },
+        "proposalTitle": "Create vesting schedule for {address}",
+        "scheduleSubmitted": "Request to create vesting schedule submitted",
         "heading": "New Vesting Schedule",
         "amount": "Amount",
         "startDate": "Start Date",
@@ -1063,6 +1069,11 @@
         }
     },
     "wallet": {
+        "proposal": {
+            "transfer": "Proposal from external dApp: Transfer NEAR to {receiverId}",
+            "functionCall": "Proposal from external dApp: {methods} on {receiverId}",
+            "unsupportedAction": "Unsupported action type \"{type}\". Only Transfer and FunctionCall actions can be converted to Trezu proposals."
+        },
         "loading": "Loading...",
         "connectPrompt": "Connect your NEAR wallet to continue. You will then select a treasury to act on behalf of.",
         "connectWallet": "Connect Wallet",

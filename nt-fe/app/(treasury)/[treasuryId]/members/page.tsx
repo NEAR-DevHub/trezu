@@ -799,9 +799,10 @@ export default function MembersPage() {
             await createPolicyChangeProposal(
                 updatedPolicy,
                 summary,
-                "Update Policy - Remove Member" +
-                    (membersToRemove.length > 1 ? "s" : ""),
-                `Member removal request created successfully`,
+                membersToRemove.length > 1
+                    ? tMembers("policy.removeMembers")
+                    : tMembers("policy.removeMember"),
+                tMembers("policy.removeMemberSuccess"),
             );
 
             trackEvent("member-delete-submitted", {

@@ -323,6 +323,7 @@ function Step3({ handleBack }: StepProps) {
 
 export default function VestingPage() {
     const t = useTranslations("pages.vesting");
+    const tV = useTranslations("vesting");
     const tSteps = useTranslations("vesting.stepTitles");
     const tValidation = useTranslations("paymentForm.validation");
     const vestingFormSchema = useMemo(
@@ -365,7 +366,7 @@ export default function VestingPage() {
 
     const onSubmit = async (data: VestingFormValues) => {
         const description = {
-            title: `Create vesting schedule for ${data.vesting.address}`,
+            title: tV("proposalTitle", { address: data.vesting.address }),
             notes: data.vesting.memo || "",
         };
         const proposalBond = policy?.proposal_bond || "0";
@@ -409,7 +410,7 @@ export default function VestingPage() {
               }
             : {};
 
-        await createProposal("Request to create vesting schedule submitted", {
+        await createProposal(tV("scheduleSubmitted"), {
             treasuryId: treasuryId!,
             proposal: {
                 description: encodeToMarkdown(description),

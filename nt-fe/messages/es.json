@@ -675,7 +675,10 @@
             "editMember": "Actualizar política - Editar permisos del miembro",
             "editMembers": "Actualizar política - Editar varios miembros",
             "editMemberSuccess": "Solicitud de actualización de roles creada correctamente",
-            "editMembersSuccess": "Solicitud masiva de actualización de roles creada correctamente"
+            "editMembersSuccess": "Solicitud masiva de actualización de roles creada correctamente",
+            "removeMember": "Actualizar política - Eliminar miembro",
+            "removeMembers": "Actualizar política - Eliminar miembros",
+            "removeMemberSuccess": "Solicitud de eliminación de miembro creada correctamente"
         }
     },
     "settings": {
@@ -908,6 +911,7 @@
         "validation": {
             "amountPositive": "El importe debe ser mayor que 0"
         },
+        "requestSubmitted": "Solicitud de intercambio enviada",
         "heading": "Intercambio",
         "sell": "Vender",
         "receive": "Recibir",
@@ -947,6 +951,8 @@
             "settings": "Configuración",
             "review": "Revisar"
         },
+        "proposalTitle": "Crear plan de vesting para {address}",
+        "scheduleSubmitted": "Solicitud para crear plan de vesting enviada",
         "heading": "Nuevo plan de vesting",
         "amount": "Importe",
         "startDate": "Fecha de inicio",
@@ -1063,6 +1069,11 @@
         }
     },
     "wallet": {
+        "proposal": {
+            "transfer": "Propuesta desde dApp externa: Transferir NEAR a {receiverId}",
+            "functionCall": "Propuesta desde dApp externa: {methods} en {receiverId}",
+            "unsupportedAction": "Tipo de acción no admitido \"{type}\". Solo las acciones Transfer y FunctionCall se pueden convertir en propuestas de Trezu."
+        },
         "loading": "Cargando...",
         "connectPrompt": "Conecta tu cartera NEAR para continuar. A continuación seleccionarás una tesorería en cuyo nombre actuar.",
         "connectWallet": "Conectar cartera",
