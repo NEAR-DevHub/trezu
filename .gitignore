@@ -3,6 +3,7 @@ target
 .claude
 .env
 .DS_Store
+.next/
 nt-fe/screenshots/
 .env.local
 nt-be/examples/playwright/test-results/
@@ -10,3 +11,4 @@ nt-be/examples/playwright/fixtures/*.png
 nt-be/examples/fixtures/auth_response.json
 nt-be/examples/fixtures/mpc_auth_result.txt
 test-results/
+e2e-tests/cli/
