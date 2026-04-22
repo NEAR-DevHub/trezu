@@ -1083,28 +1083,21 @@ export default function ExportActivityPage() {
                             }}
                             className="gap-3 w-full"
                         >
-                            <p className="font-semibold">Export Requirements</p>
+                            <p className="font-semibold">
+                                {tEx("requirementsTitle")}
+                            </p>
                             <div className="space-y-3 text-sm">
                                 <div className="flex gap-2.5">
                                     <Calendar className="w-5 h-5 shrink-0 mt-0.5" />
                                     <span>
-                                        You can export data from the{" "}
-                                        {historyText}.
+                                        {tEx("exportFromPeriod", {
+                                            period: historyText,
+                                        })}
                                     </span>
                                 </div>
-                                {/* TODO: Email notification feature to be implemented later */}
-                                {/* <div className="flex gap-2.5">
-                                    <Mail className="w-5 h-5 shrink-0 mt-0.5" />
-                                    <span>
-                                        We'll notify you by email when the export is ready.
-                                    </span>
-                                </div> */}
                                 <div className="flex gap-2.5">
                                     <Clock className="w-5 h-5 shrink-0 mt-0.5" />
-                                    <span>
-                                        Exported files are available for
-                                        download for 48 hours.
-                                    </span>
+                                    <span>{tEx("availableFor48Hours")}</span>
                                 </div>
                             </div>
                         </PageCard>

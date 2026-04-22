@@ -227,12 +227,11 @@ export function UploadDataStep({
                                         </Button>
                                     )}
                                     <h4 className="text-lg font-bold mb-1">
-                                        Bulk Payment Requests
+                                        {t("headerTitle")}
                                     </h4>
                                 </div>
                                 <p className="text-sm text-muted-foreground">
-                                    Pay multiple recipients with a single
-                                    proposal.
+                                    {t("headerSubtitle")}
                                 </p>
                             </div>
 
@@ -320,11 +319,10 @@ export function UploadDataStep({
                                 )}
                                 <div className="flex flex-col">
                                     <p className="font-semibold mb-1">
-                                        Bulk Payment Requests
+                                        {t("headerTitle")}
                                     </p>
                                     <p className="text-sm text-muted-foreground">
-                                        Pay multiple recipients with a single
-                                        proposal.
+                                        {t("headerSubtitle")}
                                     </p>
                                 </div>
                             </div>
@@ -334,15 +332,14 @@ export function UploadDataStep({
                             <Alert variant="info" className="mb-3">
                                 <Info className="h-4 w-4 mt-[2px]" />
                                 <AlertTitle className="font-semibold">
-                                    You've used all your{" "}
                                     {isTrialPlan(subscription.planConfig)
-                                        ? "credits"
-                                        : "bulk payments"}
+                                        ? t("creditsUsed")
+                                        : t("bulkPaymentsUsed")}
                                 </AlertTitle>
                                 <AlertDescription className="text-general-info-foreground">
                                     {isTrialPlan(subscription.planConfig)
-                                        ? "Upgrade your plan to get more and keep going"
-                                        : "Upgrade your plan for more access, or wait until your limits reset next month."}
+                                        ? t("upgradeTrial")
+                                        : t("upgradePaid")}
                                 </AlertDescription>
                             </Alert>
                         )}
@@ -352,7 +349,7 @@ export function UploadDataStep({
                                 <NumberBadge number={1} variant="secondary" />
                                 <div className="flex-1 flex flex-col gap-2">
                                     <h3 className="text-sm font-semibold">
-                                        Select Asset
+                                        {t("selectAsset")}
                                     </h3>
 
                                     <TokenSelect
@@ -368,7 +365,9 @@ export function UploadDataStep({
                                         disableTokens={(token) =>
                                             token.address.startsWith("nep245:")
                                         }
-                                        disableTokenMessage="This token is not yet support for bulk payments. We are working on it."
+                                        disableTokenMessage={t(
+                                            "disableTokenMessage",
+                                        )}
                                         disabled={availableCredits === 0}
                                         iconSize="lg"
                                         classNames={{
@@ -385,7 +384,7 @@ export function UploadDataStep({
                                 <NumberBadge number={2} variant="secondary" />
                                 <div className="flex-1 flex flex-col gap-2">
                                     <h3 className="text-sm font-semibold">
-                                        Provide Payment Data
+                                        {t("providePaymentData")}
                                     </h3>
 
                                     <Tabs
@@ -400,10 +399,10 @@ export function UploadDataStep({
                                     >
                                         <TabsList>
                                             <TabsTrigger value="upload">
-                                                Upload File
+                                                {t("uploadFile")}
                                             </TabsTrigger>
                                             <TabsTrigger value="paste">
-                                                Provide Data
+                                                {t("provideData")}
                                             </TabsTrigger>
                                         </TabsList>
 
@@ -446,23 +445,20 @@ export function UploadDataStep({
                                                                                 0
                                                                             }
                                                                         >
-                                                                            Choose
-                                                                            File
+                                                                            {t(
+                                                                                "chooseFile",
+                                                                            )}
                                                                         </Button>{" "}
                                                                         <span className="text-muted-foreground font-medium">
-                                                                            or
-                                                                            drag
-                                                                            and
-                                                                            drop
+                                                                            {t(
+                                                                                "orDragDrop",
+                                                                            )}
                                                                         </span>
                                                                     </p>
                                                                     <p className="text-sm text-muted-foreground">
-                                                                        max 1
-                                                                        file up
-                                                                        to 1.5
-                                                                        MB, CSV
-                                                                        file
-                                                                        only
+                                                                        {t(
+                                                                            "maxFileSize",
+                                                                        )}
                                                                     </p>
                                                                 </div>
                                                                 <input
@@ -494,8 +490,9 @@ export function UploadDataStep({
 
                                                         <div className="flex items-center gap-2 text-sm">
                                                             <span className="text-muted-foreground">
-                                                                Don't have a
-                                                                file to upload?
+                                                                {t(
+                                                                    "noFilePrompt",
+                                                                )}
                                                             </span>
                                                             <Button
                                                                 type="button"
@@ -505,8 +502,9 @@ export function UploadDataStep({
                                                                 }
                                                                 className="h-auto p-0! font-medium hover:underline text-general-unofficial-ghost-foreground"
                                                             >
-                                                                Download a
-                                                                template
+                                                                {t(
+                                                                    "downloadTemplate",
+                                                                )}
                                                             </Button>
                                                         </div>
                                                     </>
@@ -709,14 +707,15 @@ export function UploadDataStep({
                     }}
                     className="gap-3 w-full"
                 >
-                    <p className="font-semibold">Bulk Payment Requirements</p>
+                    <p className="font-semibold">{t("requirements")}</p>
                     <div className="space-y-3">
                         <div className="flex items-start gap-3">
                             <FileText className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
                             <div>
                                 <p className="text-sm">
-                                    Max {MAX_RECIPIENTS_PER_BULK_PAYMENT}{" "}
-                                    transactions per import
+                                    {t("maxTransactions", {
+                                        max: MAX_RECIPIENTS_PER_BULK_PAYMENT,
+                                    })}
                                 </p>
                             </div>
                         </div>
@@ -724,7 +723,7 @@ export function UploadDataStep({
                             <DollarSign className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
                             <div>
                                 <p className="text-sm">
-                                    Single token and network
+                                    {t("singleTokenNetwork")}
                                 </p>
                             </div>
                         </div>

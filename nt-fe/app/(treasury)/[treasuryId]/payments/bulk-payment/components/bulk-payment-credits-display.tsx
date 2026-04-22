@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import type { SubscriptionStatus } from "@/lib/subscription-api";
 import {
     getBatchPaymentCreditLimit,
@@ -24,6 +27,7 @@ export function BulkPaymentCreditsDisplay({
     credits,
     subscription,
 }: BulkPaymentCreditsDisplayProps) {
+    const t = useTranslations("bulkPaymentCredits");
     const { creditsAvailable, creditsUsed, totalCredits } = credits;
     const batchPaymentCreditLimit = getBatchPaymentCreditLimit(
         subscription.planConfig,
@@ -34,17 +38,21 @@ export function BulkPaymentCreditsDisplay({
     const isUnlimited = batchPaymentCreditLimit === null;
 
     // Format period display
-    const periodDisplay = isTrial ? "one-time trial" : "month";
+    const periodDisplay = isTrial ? t("oneTimeTrial") : t("month");
 
     return (
         <div className="space-y-3">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <p className="font-semibold">Bulk Payments</p>
+                <p className="font-semibold">{t("title")}</p>
                 <span className="text-sm font-medium border py-1 px-2 rounded-lg border-general-border bg-general-unofficial-outline">
                     {isUnlimited
-                        ? "Unlimited"
-                        : `${batchPaymentCreditLimit || totalCredits} / ${periodDisplay}`}
+                        ? t("unlimited")
+                        : t("creditsPerPeriod", {
+                              amount:
+                                  batchPaymentCreditLimit || totalCredits,
+                              period: periodDisplay,
+                          })}
                 </span>
             </div>
 
@@ -64,7 +72,7 @@ export function BulkPaymentCreditsDisplay({
             {!isUnlimited && (
                 <div className="flex items-center justify-between">
                     <span className="text-sm text-secondary-foreground">
-                        Looking for more flexibility?
+                        {t("moreFlexibility")}
                     </span>
                     <Button
                         variant={
@@ -76,7 +84,7 @@ export function BulkPaymentCreditsDisplay({
                             window.open(APP_CONTACT_US_URL, "_blank");
                         }}
                     >
-                        Contact Us
+                        {t("contactUs")}
                     </Button>
                 </div>
             )}

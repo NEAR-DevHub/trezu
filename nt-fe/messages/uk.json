@@ -845,12 +845,46 @@
         "proposalSubmitted": "Пропозицію масового платежу надіслано",
         "upload": {
             "pleaseUploadCsv": "Завантажте CSV-файл",
-            "fileSizeLimit": "Розмір файлу має бути меншим за 1.5 МБ"
+            "fileSizeLimit": "Розмір файлу має бути меншим за 1.5 МБ",
+            "headerTitle": "Запити на масовий платіж",
+            "headerSubtitle": "Сплатіть кільком одержувачам однією пропозицією.",
+            "creditsUsed": "Ви використали всі кредити",
+            "bulkPaymentsUsed": "Ви використали всі масові платежі",
+            "upgradeTrial": "Оновіть план, щоб отримати більше",
+            "upgradePaid": "Оновіть план для більшого доступу або зачекайте оновлення лімітів наступного місяця.",
+            "selectAsset": "Обрати актив",
+            "disableTokenMessage": "Цей токен поки не підтримується для масових платежів. Ми над цим працюємо.",
+            "providePaymentData": "Надайте дані платежу",
+            "uploadFile": "Завантажити файл",
+            "provideData": "Вставити дані",
+            "chooseFile": "Обрати файл",
+            "orDragDrop": "або перетягніть сюди",
+            "maxFileSize": "не більше 1 файлу до 1.5 МБ, лише CSV",
+            "noFilePrompt": "Немає файлу для завантаження?",
+            "downloadTemplate": "Завантажити шаблон",
+            "requirements": "Вимоги до масового платежу",
+            "maxTransactions": "Максимум {max} транзакцій на імпорт",
+            "singleTokenNetwork": "Один токен і одна мережа"
         },
         "editStep": {
             "title": "Редагувати платіж",
             "saveChanges": "Зберегти зміни"
-        }
+        },
+        "recipients": "Одержувачі",
+        "insufficientTokens": "Недостатньо токенів. Можете надіслати запит і поповнити перед затвердженням.",
+        "removeRecipient": "Видалити одержувача",
+        "removeRecipientConfirm": "Справді видалити платіж для <strong>{recipient}</strong>? Цю дію не можна скасувати.",
+        "remove": "Видалити",
+        "edit": "Редагувати"
+    },
+    "bulkPaymentCredits": {
+        "title": "Масові платежі",
+        "unlimited": "Необмежено",
+        "creditsPerPeriod": "{amount} / {period}",
+        "oneTimeTrial": "разова пробна версія",
+        "month": "місяць",
+        "moreFlexibility": "Потрібно більше гнучкості?",
+        "contactUs": "Зв'язатись з нами"
     },
     "exchange": {
         "validation": {
@@ -1270,7 +1304,10 @@
         "noExportsDescription": "Ваші експортовані файли за останній місяць з'являться тут, щойно згенеруються.",
         "quotaTitle": "Квота експорту",
         "unlimited": "Необмежено",
-        "creditsPerMonth": "{total} / місяць"
+        "creditsPerMonth": "{total} / місяць",
+        "requirementsTitle": "Вимоги до експорту",
+        "exportFromPeriod": "Ви можете експортувати дані за {period}.",
+        "availableFor48Hours": "Експортовані файли доступні для завантаження протягом 48 годин."
     },
     "paymentFormSection": {
         "selectRecipient": "Обрати одержувача",
@@ -1306,6 +1343,9 @@
         "title": "Активи",
         "noAssetsTitle": "Ще немає активів",
         "noAssetsDescription": "Щоб розпочати, додайте активи до скарбниці, зробивши депозит."
+    },
+    "balanceWithGraph": {
+        "allTokens": "Усі токени"
     },
     "balanceChart": {
         "usdValue": "Значення у USD",

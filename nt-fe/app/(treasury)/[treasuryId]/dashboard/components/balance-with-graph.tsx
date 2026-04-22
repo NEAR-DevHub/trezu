@@ -1,3 +1,5 @@
+"use client";
+
 import {
     ArrowLeftRight,
     ArrowUpRightIcon,
@@ -5,6 +7,7 @@ import {
     Download,
     Info,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { AuthButton } from "@/components/auth-button";
@@ -119,6 +122,7 @@ export default function BalanceWithGraph({
     onDepositClick,
     isLoading: isLoadingTokens,
 }: Props) {
+    const t = useTranslations("balanceWithGraph");
     const { treasuryId, isConfidential } = useTreasury();
     const [selectedToken, setSelectedToken] = useState<string>("all");
     const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>("1W");
@@ -608,7 +612,7 @@ export default function BalanceWithGraph({
                                         {selectedToken === "all" ? (
                                             <div className="flex items-center gap-2">
                                                 <Coins className="size-4" />
-                                                <span>All Tokens</span>
+                                                <span>{t("allTokens")}</span>
                                             </div>
                                         ) : (
                                             <div className="flex items-center gap-2">
@@ -634,7 +638,7 @@ export default function BalanceWithGraph({
                                     <SelectItem value="all">
                                         <div className="flex items-center gap-2">
                                             <Coins className="size-4" />
-                                            <span>All Tokens</span>
+                                            <span>{t("allTokens")}</span>
                                         </div>
                                     </SelectItem>
                                     {groupedTokens.map((group) => (
@@ -741,7 +745,7 @@ export default function BalanceWithGraph({
                             {selectedToken === "all" ? (
                                 <div className="flex items-center gap-2">
                                     <Coins className="size-4" />
-                                    <span>All Tokens</span>
+                                    <span>{t("allTokens")}</span>
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-2">
@@ -763,7 +767,7 @@ export default function BalanceWithGraph({
                         <SelectItem value="all">
                             <div className="flex items-center gap-2">
                                 <Coins className="size-4" />
-                                <span>All Tokens</span>
+                                <span>{t("allTokens")}</span>
                             </div>
                         </SelectItem>
                         {groupedTokens.map((group) => (

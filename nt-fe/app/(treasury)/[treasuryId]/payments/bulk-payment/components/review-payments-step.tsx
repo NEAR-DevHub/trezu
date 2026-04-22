@@ -171,13 +171,13 @@ export function ReviewPaymentsStep({
                     showNetworkIcon={true}
                 >
                     <p className="font-normal">
-                        to {paymentData.length}{" "}
-                        {paymentData.length === 1 ? "recipient" : "recipients"}
+                        {tPay("summaryRecipients", {
+                            count: paymentData.length,
+                        })}
                     </p>
                     {hasInsufficientBalance && (
                         <p className="text-general-info-foreground text-sm mt-2 font-normal">
-                            Insufficient tokens. You can submit the request and
-                            top up before approval.
+                            {tBulk("insufficientTokens")}
                         </p>
                     )}
                 </AmountSummary>
@@ -185,7 +185,7 @@ export function ReviewPaymentsStep({
                 {/* Recipients List */}
                 <div className="space-y-4 mb-2">
                     <h3 className="text-sm text-muted-foreground mb-6">
-                        Recipients
+                        {tBulk("recipients")}
                     </h3>
 
                     {isValidatingAccounts ? (
@@ -354,7 +354,9 @@ export function ReviewPaymentsStep({
                                                                     }
                                                                 >
                                                                     <Edit2 className="w-4 h-4" />{" "}
-                                                                    Edit
+                                                                    {tBulk(
+                                                                        "edit",
+                                                                    )}
                                                                 </Button>
                                                                 <Button
                                                                     variant="unstyled"
@@ -368,7 +370,9 @@ export function ReviewPaymentsStep({
                                                                     }
                                                                 >
                                                                     <Trash2 className="w-4 h-4" />{" "}
-                                                                    Remove
+                                                                    {tBulk(
+                                                                        "remove",
+                                                                    )}
                                                                 </Button>
                                                             </div>
                                                         </div>
@@ -386,14 +390,14 @@ export function ReviewPaymentsStep({
                 {!isValidatingAccounts && totalNetworkFee && (
                     <div className="flex items-center justify-between gap-2 text-sm py-3 border-t border-border">
                         <div className="flex items-center gap-1 text-muted-foreground">
-                            <p>Network Fee</p>
+                            <p>{tPay("networkFee")}</p>
                             <Tooltip
                                 content={NETWORK_FEE_TOOLTIP_TEXT}
                                 side="top"
                             >
                                 <Info
                                     className="size-3 shrink-0"
-                                    aria-label="Network fee info"
+                                    aria-label={tPay("networkFeeInfo")}
                                 />
                             </Tooltip>
                         </div>
@@ -411,7 +415,7 @@ export function ReviewPaymentsStep({
                             onChange={(e) =>
                                 form.setValue("comment", e.target.value)
                             }
-                            placeholder="Add a comment (optional)..."
+                            placeholder={tPay("commentPlaceholder")}
                             rows={3}
                             borderless
                             className="resize-none"
@@ -436,18 +440,21 @@ export function ReviewPaymentsStep({
                 <DialogContent className="max-w-md gap-4">
                     <DialogHeader>
                         <DialogTitle className="text-left">
-                            Remove Recipient
+                            {tBulk("removeRecipient")}
                         </DialogTitle>
                     </DialogHeader>
 
                     <DialogDescription>
                         {recipientToRemove && (
                             <p className="text-base">
-                                Are you sure you want to remove the payment to{" "}
-                                <span className="font-semibold">
-                                    {recipientToRemove.recipient}
-                                </span>
-                                ? This action cannot be undone.
+                                {tBulk.rich("removeRecipientConfirm", {
+                                    recipient: recipientToRemove.recipient,
+                                    strong: (chunks) => (
+                                        <span className="font-semibold">
+                                            {chunks}
+                                        </span>
+                                    ),
+                                })}
                             </p>
                         )}
                     </DialogDescription>
@@ -461,7 +468,7 @@ export function ReviewPaymentsStep({
                                 handleRemovePayment(recipientToRemove.index)
                             }
                         >
-                            Remove
+                            {tBulk("remove")}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

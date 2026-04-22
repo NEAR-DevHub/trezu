@@ -845,12 +845,46 @@
         "proposalSubmitted": "Bulk payment proposal submitted",
         "upload": {
             "pleaseUploadCsv": "Please upload a CSV file",
-            "fileSizeLimit": "File size must be less than 1.5 MB"
+            "fileSizeLimit": "File size must be less than 1.5 MB",
+            "headerTitle": "Bulk Payment Requests",
+            "headerSubtitle": "Pay multiple recipients with a single proposal.",
+            "creditsUsed": "You've used all your credits",
+            "bulkPaymentsUsed": "You've used all your bulk payments",
+            "upgradeTrial": "Upgrade your plan to get more and keep going",
+            "upgradePaid": "Upgrade your plan for more access, or wait until your limits reset next month.",
+            "selectAsset": "Select Asset",
+            "disableTokenMessage": "This token is not yet support for bulk payments. We are working on it.",
+            "providePaymentData": "Provide Payment Data",
+            "uploadFile": "Upload File",
+            "provideData": "Provide Data",
+            "chooseFile": "Choose File",
+            "orDragDrop": "or drag and drop",
+            "maxFileSize": "max 1 file up to 1.5 MB, CSV file only",
+            "noFilePrompt": "Don't have a file to upload?",
+            "downloadTemplate": "Download a template",
+            "requirements": "Bulk Payment Requirements",
+            "maxTransactions": "Max {max} transactions per import",
+            "singleTokenNetwork": "Single token and network"
         },
         "editStep": {
             "title": "Edit Payment",
             "saveChanges": "Save Changes"
-        }
+        },
+        "recipients": "Recipients",
+        "insufficientTokens": "Insufficient tokens. You can submit the request and top up before approval.",
+        "removeRecipient": "Remove Recipient",
+        "removeRecipientConfirm": "Are you sure you want to remove the payment to <strong>{recipient}</strong>? This action cannot be undone.",
+        "remove": "Remove",
+        "edit": "Edit"
+    },
+    "bulkPaymentCredits": {
+        "title": "Bulk Payments",
+        "unlimited": "Unlimited",
+        "creditsPerPeriod": "{amount} / {period}",
+        "oneTimeTrial": "one-time trial",
+        "month": "month",
+        "moreFlexibility": "Looking for more flexibility?",
+        "contactUs": "Contact Us"
     },
     "exchange": {
         "validation": {
@@ -1270,7 +1304,10 @@
         "noExportsDescription": "Your exported files from the last month will appear here once they're generated.",
         "quotaTitle": "Export Quota",
         "unlimited": "Unlimited",
-        "creditsPerMonth": "{total} / month"
+        "creditsPerMonth": "{total} / month",
+        "requirementsTitle": "Export Requirements",
+        "exportFromPeriod": "You can export data from the {period}.",
+        "availableFor48Hours": "Exported files are available for download for 48 hours."
     },
     "paymentFormSection": {
         "selectRecipient": "Select Recipient",
@@ -1306,6 +1343,9 @@
         "title": "Assets",
         "noAssetsTitle": "No assets yet",
         "noAssetsDescription": "To get started, add assets to your Treasury by making a deposit."
+    },
+    "balanceWithGraph": {
+        "allTokens": "All Tokens"
     },
     "balanceChart": {
         "usdValue": "USD Value",
