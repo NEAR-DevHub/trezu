@@ -507,7 +507,20 @@
             "onReceiver": "on {receiver}",
             "toPrefix": "To:",
             "validatorPrefix": "Validator:",
-            "validatorSubtitle": "Validator: {address}"
+            "validatorSubtitle": "Validator: {address}",
+            "impactTitle": "Impact of Changing Voting Duration",
+            "impactBody": "You are about to update the voting duration. This will affect the following existing requests.",
+            "activeRequestsBullet": "{count, plural, one {# request will be active for voting after this change, with updated expiration dates.} other {# requests will be active for voting after this change, with updated expiration dates.}}",
+            "expiringRequestsBullet": "{count, plural, one {# request will be marked as \"Expired\" under the new voting duration.} other {# requests will be marked as \"Expired\" under the new voting duration.}}",
+            "remainActiveHeading": "Requests that remain active for voting with a new expiration date",
+            "willExpireHeading": "Requests that will marked as \"Expire\"",
+            "tableRequest": "Request",
+            "tableTransaction": "Transaction",
+            "tableNewExpiry": "New Expiry",
+            "expireInDays": "{count, plural, one {Expire in # day} other {Expire in # days}}",
+            "today": "Today",
+            "uponApproval": "Upon approval",
+            "yesContinue": "Yes, Continue"
         },
         "insufficientBalance": {
             "noAsset": "This request can't be approved because the required token is not available in the treasury.",

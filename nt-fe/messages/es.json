@@ -507,7 +507,20 @@
             "onReceiver": "en {receiver}",
             "toPrefix": "A:",
             "validatorPrefix": "Validador:",
-            "validatorSubtitle": "Validador: {address}"
+            "validatorSubtitle": "Validador: {address}",
+            "impactTitle": "Impacto de cambiar la duración de la votación",
+            "impactBody": "Estás a punto de actualizar la duración de la votación. Esto afectará a las siguientes solicitudes existentes.",
+            "activeRequestsBullet": "{count, plural, one {# solicitud estará activa para votación tras este cambio, con fechas de caducidad actualizadas.} other {# solicitudes estarán activas para votación tras este cambio, con fechas de caducidad actualizadas.}}",
+            "expiringRequestsBullet": "{count, plural, one {# solicitud se marcará como \"Caducada\" con la nueva duración de votación.} other {# solicitudes se marcarán como \"Caducadas\" con la nueva duración de votación.}}",
+            "remainActiveHeading": "Solicitudes que siguen activas para votación con una nueva fecha de caducidad",
+            "willExpireHeading": "Solicitudes que se marcarán como \"Caducadas\"",
+            "tableRequest": "Solicitud",
+            "tableTransaction": "Transacción",
+            "tableNewExpiry": "Nueva caducidad",
+            "expireInDays": "{count, plural, one {Caduca en # día} other {Caduca en # días}}",
+            "today": "Hoy",
+            "uponApproval": "Al aprobar",
+            "yesContinue": "Sí, continuar"
         },
         "insufficientBalance": {
             "noAsset": "Esta solicitud no se puede aprobar porque el token requerido no está disponible en la tesorería.",
