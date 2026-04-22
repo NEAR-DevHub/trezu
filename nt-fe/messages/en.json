@@ -630,11 +630,16 @@
             "heading": "🎉 Welcome!",
             "subheading": "Take a quick tour of Treasury",
             "body": "Hey there! Your Trezu is ready - start building your portfolio by adding assets from supported networks.",
-            "progress": "of 2",
+            "progress": "{current} of {total}",
             "next": "Next",
             "body2": "See how to make a deposit, create a request, and set up a new account.",
             "noThanks": "No, thanks",
             "letsGo": "Let's go"
+        },
+        "congrats": {
+            "heading": "🎉 Congrats!",
+            "body": "You've completed your Treasury setup. Enjoy easy management of your assets.",
+            "letsGo": "Let's go!"
         }
     }
 }

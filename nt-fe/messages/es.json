@@ -630,10 +630,15 @@
             "heading": "🎉 ¡Bienvenido!",
             "subheading": "Haz un recorrido rápido por la tesorería",
             "body": "¡Hola! Tu Trezu está lista: empieza a construir tu cartera añadiendo activos desde las redes compatibles.",
-            "progress": "de 2",
+            "progress": "{current} de {total}",
             "next": "Siguiente",
             "body2": "Descubre cómo hacer un depósito, crear una solicitud y configurar una nueva cuenta.",
             "noThanks": "No, gracias",
+            "letsGo": "¡Vamos!"
+        },
+        "congrats": {
+            "heading": "🎉 ¡Felicidades!",
+            "body": "Has completado la configuración de tu tesorería. Disfruta de una gestión sencilla de tus activos.",
             "letsGo": "¡Vamos!"
         }
     }
