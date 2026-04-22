@@ -13,9 +13,10 @@ import { EmptyState } from "@/components/empty-state";
 import { FileDown, FileUp, Loader2, Plus, Trash2 } from "lucide-react";
 import {
     AddRecipientInput,
-    formSchema,
+    buildFormSchema,
     type FormValues,
 } from "@/features/address-book/components/add-recipient-form";
+import { RECIPIENT_NAME_MAX_LENGTH } from "@/features/address-book/types";
 import { Form } from "@/components/ui/form";
 import { ReviewRecipients } from "@/features/address-book/components/review-recipients";
 import { AddressBookTable } from "@/features/address-book/components/address-book-table";
@@ -103,6 +104,7 @@ function RecipientFlow({
     onImport: () => void;
 }) {
     const { treasuryId } = useTreasury();
+    const tValidation = useTranslations("recipientForm.validation");
     const [step, setStep] = useState(0);
     const [activeIndex, setActiveIndex] = useState(0);
     const [importNotes, setImportNotes] = useState<Record<number, string>>({});
@@ -114,6 +116,19 @@ function RecipientFlow({
             ],
         }),
         [initialRecipient],
+    );
+
+    const formSchema = useMemo(
+        () =>
+            buildFormSchema({
+                nameRequired: tValidation("nameRequired"),
+                nameMax: tValidation("nameMax", {
+                    max: RECIPIENT_NAME_MAX_LENGTH,
+                }),
+                addressRequired: tValidation("addressRequired"),
+                networksRequired: tValidation("networksRequired"),
+            }),
+        [tValidation],
     );
 
     const form = useForm<FormValues>({

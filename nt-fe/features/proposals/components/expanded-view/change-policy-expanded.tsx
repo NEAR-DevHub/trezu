@@ -35,12 +35,15 @@ interface ChangePolicyExpandedProps {
     proposal: Proposal;
 }
 
-function formatFieldLabel(field: PolicyChange["field"]): string {
+function formatFieldLabel(
+    field: PolicyChange["field"],
+    t: (key: string) => string,
+): string {
     const labels: Record<PolicyChange["field"], string> = {
-        proposal_bond: "Proposal Bond",
-        proposal_period: "Proposal Period",
-        bounty_bond: "Bounty Bond",
-        bounty_forgiveness_period: "Bounty Forgiveness Period",
+        proposal_bond: t("proposalBond"),
+        proposal_period: t("proposalPeriod"),
+        bounty_bond: t("bountyBond"),
+        bounty_forgiveness_period: t("bountyForgivenessPeriod"),
     };
     return labels[field];
 }
@@ -83,18 +86,21 @@ function formatVotePolicyFieldLabel(
     return labels[field];
 }
 
-function formatThreshold(threshold: any): React.ReactNode {
+function formatThreshold(
+    threshold: any,
+    t: (key: string, values?: Record<string, any>) => string,
+): React.ReactNode {
     if (isNullValue(threshold))
         return <span className="text-muted-foreground/50">null</span>;
     if (typeof threshold === "string") {
         const parsed = parseInt(threshold);
         if (!isNaN(parsed)) {
-            return <span>{parsed} Votes</span>;
+            return <span>{t("votesCount", { count: parsed })}</span>;
         }
         return <span>{threshold}</span>;
     }
     if (Array.isArray(threshold) && threshold.length === 2) {
-        return <span>{threshold[0]} Votes</span>;
+        return <span>{t("votesCount", { count: threshold[0] })}</span>;
     }
     return <span>{JSON.stringify(threshold)}</span>;
 }
@@ -102,9 +108,10 @@ function formatThreshold(threshold: any): React.ReactNode {
 function formatVotePolicyValue(
     field: VotePolicyChange["field"],
     value: any,
+    t: (key: string, values?: Record<string, any>) => string,
 ): React.ReactNode {
     if (field === "threshold") {
-        return formatThreshold(value);
+        return formatThreshold(value, t);
     }
     return isNullValue(value) ? (
         <span className="text-muted-foreground/50">null</span>
@@ -304,7 +311,7 @@ export function ChangePolicyExpanded({
     policyChanges.forEach((change) => {
         const isOldNull = isNullValue(change.oldValue);
         allItems.push({
-            label: formatFieldLabel(change.field),
+            label: formatFieldLabel(change.field, t),
             value: renderDiff(
                 formatFieldValue(change.field, change.oldValue ?? "null"),
                 formatFieldValue(change.field, change.newValue ?? "null"),
@@ -319,8 +326,8 @@ export function ChangePolicyExpanded({
         allItems.push({
             label: formatVotePolicyFieldLabel(change.field, t),
             value: renderDiff(
-                formatVotePolicyValue(change.field, change.oldValue),
-                formatVotePolicyValue(change.field, change.newValue),
+                formatVotePolicyValue(change.field, change.oldValue, t),
+                formatVotePolicyValue(change.field, change.newValue, t),
                 isOldNull,
             ),
         });
@@ -456,10 +463,12 @@ export function ChangePolicyExpanded({
                     formatVotePolicyValue(
                         "threshold",
                         firstChange.oldThreshold,
+                        t,
                     ),
                     formatVotePolicyValue(
                         "threshold",
                         firstChange.newThreshold,
+                        t,
                     ),
                     isOldNull,
                 ),
@@ -471,8 +480,8 @@ export function ChangePolicyExpanded({
             allItems.push({
                 label: t("quorum"),
                 value: renderDiff(
-                    formatVotePolicyValue("quorum", firstChange.oldQuorum),
-                    formatVotePolicyValue("quorum", firstChange.newQuorum),
+                    formatVotePolicyValue("quorum", firstChange.oldQuorum, t),
+                    formatVotePolicyValue("quorum", firstChange.newQuorum, t),
                     isOldNull,
                 ),
             });
@@ -486,10 +495,12 @@ export function ChangePolicyExpanded({
                     formatVotePolicyValue(
                         "weight_kind",
                         firstChange.oldWeightKind,
+                        t,
                     ),
                     formatVotePolicyValue(
                         "weight_kind",
                         firstChange.newWeightKind,
+                        t,
                     ),
                     isOldNull,
                 ),

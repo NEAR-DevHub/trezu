@@ -26,16 +26,30 @@ import { FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { NumberBadge } from "@/components/number-badge";
 import { Address } from "@/components/address";
 import { Pill } from "@/components/pill";
-import { recipientSchema, RECIPIENT_NAME_MAX_LENGTH } from "../types";
+import { buildRecipientSchema, RECIPIENT_NAME_MAX_LENGTH } from "../types";
 import { useMediaQuery } from "@/hooks/use-media-query";
 
 // ─── Form schema ───────────────────────────────────────────────────────────────
 
-export const formSchema = z.object({
-    recipients: z.array(recipientSchema),
+export function buildFormSchema(messages: {
+    nameRequired: string;
+    nameMax: string;
+    addressRequired: string;
+    networksRequired: string;
+}) {
+    return z.object({
+        recipients: z.array(buildRecipientSchema(messages)),
+    });
+}
+
+const _formSchemaForType = buildFormSchema({
+    nameRequired: "",
+    nameMax: "",
+    addressRequired: "",
+    networksRequired: "",
 });
 
-export type FormValues = z.infer<typeof formSchema>;
+export type FormValues = z.infer<typeof _formSchemaForType>;
 
 // ─── NetworkSelect ─────────────────────────────────────────────────────────────
 

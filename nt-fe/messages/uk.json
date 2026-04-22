@@ -1294,6 +1294,14 @@
         "copied": "Скопійовано в буфер обміну",
         "failed": "Не вдалось скопіювати"
     },
+    "recipientForm": {
+        "validation": {
+            "nameRequired": "Потрібне ім'я",
+            "nameMax": "Одержувач має містити менше {max} символів",
+            "addressRequired": "Потрібна адреса",
+            "networksRequired": "Оберіть щонайменше одну мережу"
+        }
+    },
     "paymentForm": {
         "validation": {
             "recipientMin": "Одержувач має містити щонайменше 2 символи",
@@ -1417,6 +1425,11 @@
         "exchange": "Обміняти"
     },
     "changePolicyExpanded": {
+        "proposalBond": "Застава пропозиції",
+        "proposalPeriod": "Період пропозиції",
+        "bountyBond": "Застава винагороди",
+        "bountyForgivenessPeriod": "Період прощення винагороди",
+        "votesCount": "{count} голосів",
         "weightKind": "Тип ваги",
         "quorum": "Кворум",
         "threshold": "Поріг",
@@ -1608,6 +1621,8 @@
     "lockupDetails": {
         "title": "Деталі лок-апу",
         "balance": "Баланс",
+        "reservedForStorage": "Резерв для сховища",
+        "reservedForStorageInfo": "NEAR, зарезервований акаунтом лок-апу для оплати витрат на сховище.",
         "tokenBreakdown": "Розбивка токенів",
         "allocatedAmount": "Виділена сума",
         "earned": "Зароблено",

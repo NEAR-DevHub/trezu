@@ -1294,6 +1294,14 @@
         "copied": "Copied to clipboard",
         "failed": "Failed to copy"
     },
+    "recipientForm": {
+        "validation": {
+            "nameRequired": "Name is required",
+            "nameMax": "Recipient must be less than {max} characters",
+            "addressRequired": "Address is required",
+            "networksRequired": "Select at least one network"
+        }
+    },
     "paymentForm": {
         "validation": {
             "recipientMin": "Recipient should be at least 2 characters",
@@ -1417,6 +1425,11 @@
         "exchange": "Exchange"
     },
     "changePolicyExpanded": {
+        "proposalBond": "Proposal Bond",
+        "proposalPeriod": "Proposal Period",
+        "bountyBond": "Bounty Bond",
+        "bountyForgivenessPeriod": "Bounty Forgiveness Period",
+        "votesCount": "{count} Votes",
         "weightKind": "Weight Kind",
         "quorum": "Quorum",
         "threshold": "Threshold",
@@ -1608,6 +1621,8 @@
     "lockupDetails": {
         "title": "Lockup Details",
         "balance": "Balance",
+        "reservedForStorage": "Reserved For Storage",
+        "reservedForStorageInfo": "NEAR reserved by the lockup account to pay storage costs.",
         "tokenBreakdown": "Token Breakdown",
         "allocatedAmount": "Allocated Amount",
         "earned": "Earned",

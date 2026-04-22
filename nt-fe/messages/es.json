@@ -1294,6 +1294,14 @@
         "copied": "Copiado al portapapeles",
         "failed": "No se pudo copiar"
     },
+    "recipientForm": {
+        "validation": {
+            "nameRequired": "Se requiere el nombre",
+            "nameMax": "El destinatario debe tener menos de {max} caracteres",
+            "addressRequired": "Se requiere la dirección",
+            "networksRequired": "Selecciona al menos una red"
+        }
+    },
     "paymentForm": {
         "validation": {
             "recipientMin": "El destinatario debe tener al menos 2 caracteres",
@@ -1417,6 +1425,11 @@
         "exchange": "Intercambiar"
     },
     "changePolicyExpanded": {
+        "proposalBond": "Garantía de propuesta",
+        "proposalPeriod": "Período de propuesta",
+        "bountyBond": "Garantía de recompensa",
+        "bountyForgivenessPeriod": "Período de indulto de recompensa",
+        "votesCount": "{count} votos",
         "weightKind": "Tipo de peso",
         "quorum": "Quórum",
         "threshold": "Umbral",
@@ -1608,6 +1621,8 @@
     "lockupDetails": {
         "title": "Detalles del lockup",
         "balance": "Saldo",
+        "reservedForStorage": "Reservado para almacenamiento",
+        "reservedForStorageInfo": "NEAR reservado por la cuenta de lockup para pagar costos de almacenamiento.",
         "tokenBreakdown": "Desglose de tokens",
         "allocatedAmount": "Cantidad asignada",
         "earned": "Ganado",

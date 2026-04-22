@@ -308,8 +308,12 @@ export function LockupDetailsModal({
                                 {reservedStorage.gt(0) ? (
                                     <div className="flex items-center justify-between px-2 py-2 text-sm">
                                         <div className="flex items-center gap-1.5 text-muted-foreground">
-                                            Reserved For Storage{" "}
-                                            <Tooltip content="NEAR reserved by the lockup account to pay storage costs.">
+                                            {t("reservedForStorage")}{" "}
+                                            <Tooltip
+                                                content={t(
+                                                    "reservedForStorageInfo",
+                                                )}
+                                            >
                                                 <Info className="size-3.5" />
                                             </Tooltip>
                                         </div>
