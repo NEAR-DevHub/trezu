@@ -1246,6 +1246,13 @@
         "searchByNameOrAddress": "Search by name or address",
         "privateNetworkAlert": "This will send funds to an account on the near.com private network — not to an external wallet."
     },
+    "exchangeErrors": {
+        "noRoute": "No exchange found. Try a smaller amount or different token.",
+        "amountTooLow": "Amount too low for swap. Cross-chain swaps require a higher minimum to cover network fees.",
+        "insufficientBalance": "Insufficient balance for this swap.",
+        "networkError": "Network error. Please check your connection and try again.",
+        "fetchFailed": "Failed to fetch quote"
+    },
     "tokenSelectDialog": {
         "selectToken": "Select token",
         "selectAsset": "Select Asset",

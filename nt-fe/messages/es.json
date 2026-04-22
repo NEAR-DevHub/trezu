@@ -1246,6 +1246,13 @@
         "searchByNameOrAddress": "Buscar por nombre o dirección",
         "privateNetworkAlert": "Esto enviará fondos a una cuenta en la red privada de near.com, no a una billetera externa."
     },
+    "exchangeErrors": {
+        "noRoute": "No se encontró intercambio. Prueba con un importe menor u otro token.",
+        "amountTooLow": "Importe demasiado bajo para el swap. Los swaps entre cadenas requieren un mínimo mayor para cubrir tarifas de red.",
+        "insufficientBalance": "Saldo insuficiente para este swap.",
+        "networkError": "Error de red. Comprueba tu conexión e inténtalo de nuevo.",
+        "fetchFailed": "No se pudo obtener la cotización"
+    },
     "tokenSelectDialog": {
         "selectToken": "Seleccionar token",
         "selectAsset": "Seleccionar activo",
