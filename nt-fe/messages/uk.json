@@ -1443,6 +1443,9 @@
     "newBadge": {
         "label": "Нове"
     },
+    "numberBadge": {
+        "pendingRequests": "{count, plural, one {# запит в очікуванні} few {# запити в очікуванні} many {# запитів в очікуванні} other {# запитів в очікуванні}}"
+    },
     "balanceWithGraph": {
         "allTokens": "Усі токени",
         "deposit": "Поповнити",

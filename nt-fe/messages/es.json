@@ -1443,6 +1443,9 @@
     "newBadge": {
         "label": "Nuevo"
     },
+    "numberBadge": {
+        "pendingRequests": "{count, plural, one {# solicitud pendiente} other {# solicitudes pendientes}}"
+    },
     "balanceWithGraph": {
         "allTokens": "Todos los tokens",
         "deposit": "Depositar",
