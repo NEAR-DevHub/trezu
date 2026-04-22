@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { ChevronDown } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
     Popover,
@@ -38,6 +39,15 @@ export const ROLES: readonly Role[] = [
     },
 ] as const;
 
+function useTranslatedRoles(availableRoles: readonly Role[]): Role[] {
+    const t = useTranslations("roleSelector.roles");
+    return availableRoles.map((role) => ({
+        ...role,
+        title: t(`${role.id}.title`),
+        description: t(`${role.id}.description`),
+    }));
+}
+
 interface RoleSelectorProps {
     selectedRoles?: string[];
     onRolesChange?: (roles: string[]) => void;
@@ -52,6 +62,8 @@ export function RoleSelector({
     availableRoles = ROLES,
     disabledRoles = [],
 }: RoleSelectorProps) {
+    const t = useTranslations("roleSelector");
+    const translatedRoles = useTranslatedRoles(availableRoles);
     const [open, setOpen] = React.useState(false);
 
     const handleRoleToggle = (roleId: string) => {
@@ -66,13 +78,13 @@ export function RoleSelector({
 
     const getButtonText = () => {
         if (selectedRoles.length === 0) {
-            return "Set Role";
-        } else if (selectedRoles.length === availableRoles.length) {
-            return "All Roles";
+            return t("setRole");
+        } else if (selectedRoles.length === translatedRoles.length) {
+            return t("allRoles");
         }
         const selectedRoleTitles = selectedRoles
             .sort((a, b) => a.localeCompare(b))
-            .map((id) => availableRoles.find((r) => r.id === id)?.title)
+            .map((id) => translatedRoles.find((r) => r.id === id)?.title)
             .filter(Boolean);
         return selectedRoleTitles.join(", ");
     };
@@ -92,7 +104,7 @@ export function RoleSelector({
                 className="w-80 p-1 gap-1 flex flex-col"
                 align="start"
             >
-                {availableRoles.map((role) => {
+                {translatedRoles.map((role) => {
                     const disabledInfo = disabledRoles.find(
                         (d) => d.roleId === role.id,
                     );

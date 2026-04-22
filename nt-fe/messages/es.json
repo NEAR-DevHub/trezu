@@ -667,6 +667,14 @@
             "alreadyInTreasury": "Este miembro ya existe en la tesorería",
             "cannotRemoveRoleAfter": "No puedes quitar el rol {role} a este miembro. Tras todos tus cambios, sería la única persona asignada a este rol.",
             "cannotRemoveRoleAfterGov": "No puedes quitar el rol {role} a este miembro. Tras todos tus cambios, sería el único miembro con rol {role}, y sin este rol no podrás gestionar miembros ni configurar la votación."
+        },
+        "policy": {
+            "addMembers": "Actualizar política - Añadir nuevos miembros",
+            "addMembersSuccess": "Solicitud de nuevo miembro creada correctamente",
+            "editMember": "Actualizar política - Editar permisos del miembro",
+            "editMembers": "Actualizar política - Editar varios miembros",
+            "editMemberSuccess": "Solicitud de actualización de roles creada correctamente",
+            "editMembersSuccess": "Solicitud masiva de actualización de roles creada correctamente"
         }
     },
     "settings": {
@@ -837,7 +845,8 @@
         "commentPlaceholder": "Añade un comentario (opcional)...",
         "preparingRoute": "Preparando la ruta de transferencia 1Click...",
         "confirmSubmit": "Confirmar y enviar solicitud",
-        "failed1ClickQuote": "No se pudo crear la cotización de transferencia 1Click"
+        "failed1ClickQuote": "No se pudo crear la cotización de transferencia 1Click",
+        "paymentSubmitted": "Solicitud de envío de pago enviada"
     },
     "bulkPayment": {
         "comingSoonToast": "¡Los pagos masivos estarán disponibles pronto!",
@@ -870,7 +879,9 @@
             "singleTokenNetwork": "Un único token y red",
             "limitsUsed": "Has usado todos tus límites",
             "selectAndProvide": "Selecciona activo y proporciona datos de pago",
-            "continueToReview": "Continuar a revisión"
+            "continueToReview": "Continuar a revisión",
+            "selectTokenError": "Selecciona un token",
+            "providePaymentDataError": "Proporciona los datos de pago"
         },
         "editStep": {
             "title": "Editar pago",
@@ -1208,6 +1219,24 @@
         "cannotRemoveRole": "No puedes quitar el rol {role} a este miembro. Es la única persona asignada a este rol.",
         "cannotRemoveRoleGov": "No puedes quitar el rol {role} a este miembro. Es el único miembro con rol {role}, y sin este rol no podrás gestionar miembros ni configurar la votación."
     },
+    "roleSelector": {
+        "setRole": "Asignar rol",
+        "allRoles": "Todos los roles",
+        "roles": {
+            "governance": {
+                "title": "Gobernanza",
+                "description": "Gobernanza puede crear y votar configuraciones de tesorería relacionadas con el equipo, incluyendo miembros, permisos y apariencia."
+            },
+            "requestor": {
+                "title": "Solicitante",
+                "description": "Solicitante puede crear solicitudes de transacciones de pago, sin derechos de voto o aprobación."
+            },
+            "financial": {
+                "title": "Financiero",
+                "description": "Financiero puede votar solicitudes de transacciones de pago pero no puede crearlas."
+            }
+        }
+    },
     "memberInput": {
         "creatorYou": "Creador (tú)",
         "memberAddress": "Dirección del miembro",
@@ -1451,7 +1480,13 @@
         "selectToken": "Seleccionar token",
         "selectAsset": "Seleccionar activo",
         "selectNetworkFor": "Seleccionar red para {asset}",
-        "searchByName": "Buscar por nombre"
+        "searchByName": "Buscar por nombre",
+        "noTokensWithBalance": "No se encontraron tokens con saldo",
+        "noTokensFound": "No se encontraron tokens"
+    },
+    "intentsQuote": {
+        "initializing": "El servicio de cotización aún se está iniciando. Inténtalo de nuevo.",
+        "noRoute": "No se pudo preparar una ruta de pago ahora mismo. Reintenta."
     },
     "tokenInput": {
         "max": "MAX",

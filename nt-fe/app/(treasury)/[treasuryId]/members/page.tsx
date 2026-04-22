@@ -485,7 +485,9 @@ export default function MembersPage() {
             if (failedValidation) {
                 form.setError(`members.${failedValidation.index}.accountId`, {
                     type: "manual",
-                    message: failedValidation.error || "Invalid address",
+                    message:
+                        failedValidation.error ||
+                        tMembers("validation.invalidNearAddress"),
                 });
                 setIsValidatingAddresses(false);
                 return;
@@ -529,8 +531,8 @@ export default function MembersPage() {
             await createPolicyChangeProposal(
                 updatedPolicy,
                 summary,
-                "Update Policy - Add New Members",
-                "New member request created successfully",
+                tMembers("policy.addMembers"),
+                tMembers("policy.addMembersSuccess"),
             );
 
             trackEvent("member-add-submitted", {
@@ -721,12 +723,12 @@ export default function MembersPage() {
 
             const title =
                 membersData.length === 1
-                    ? "Update Policy - Edit Member Permissions"
-                    : "Update Policy - Edit Multiple Members";
+                    ? tMembers("policy.editMember")
+                    : tMembers("policy.editMembers");
             const successMessage =
                 membersData.length === 1
-                    ? "Member roles update request created successfully"
-                    : "Bulk member roles update request created successfully";
+                    ? tMembers("policy.editMemberSuccess")
+                    : tMembers("policy.editMembersSuccess");
 
             await createPolicyChangeProposal(
                 updatedPolicy,

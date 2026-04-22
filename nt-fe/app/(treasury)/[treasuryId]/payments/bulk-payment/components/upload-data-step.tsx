@@ -137,17 +137,17 @@ export function UploadDataStep({
     const handleContinue = async () => {
         // Validate that we have required data
         if (!selectedToken) {
-            setDataErrors([{ row: 0, message: "Please select a token" }]);
+            setDataErrors([{ row: 0, message: t("selectTokenError") }]);
             return;
         }
 
         if (activeTab === "upload" && !csvData) {
-            setDataErrors([{ row: 0, message: "Please upload a CSV file" }]);
+            setDataErrors([{ row: 0, message: t("pleaseUploadCsv") }]);
             return;
         }
 
         if (activeTab === "paste" && !pasteDataInput.trim()) {
-            setDataErrors([{ row: 0, message: "Please provide payment data" }]);
+            setDataErrors([{ row: 0, message: t("providePaymentDataError") }]);
             return;
         }
 

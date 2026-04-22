@@ -393,8 +393,8 @@ export default function TokenSelect({
                                 {filteredTokens.length === 0 && (
                                     <div className="text-center py-8 text-muted-foreground">
                                         {showOnlyOwnedAssets
-                                            ? "No tokens with balance found"
-                                            : "No tokens found"}
+                                            ? t("noTokensWithBalance")
+                                            : t("noTokensFound")}
                                     </div>
                                 )}
                             </ScrollArea>

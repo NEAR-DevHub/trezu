@@ -667,6 +667,14 @@
             "alreadyInTreasury": "This member already exists in the treasury",
             "cannotRemoveRoleAfter": "You can't remove the {role} role from this member. After all your changes, they would be the only person assigned to this role.",
             "cannotRemoveRoleAfterGov": "You can't remove the {role} role from this member. After all your changes, they would be the only {role} member, and without this role you won't be able to manage team members or configure voting."
+        },
+        "policy": {
+            "addMembers": "Update Policy - Add New Members",
+            "addMembersSuccess": "New member request created successfully",
+            "editMember": "Update Policy - Edit Member Permissions",
+            "editMembers": "Update Policy - Edit Multiple Members",
+            "editMemberSuccess": "Member roles update request created successfully",
+            "editMembersSuccess": "Bulk member roles update request created successfully"
         }
     },
     "settings": {
@@ -837,7 +845,8 @@
         "commentPlaceholder": "Add a comment (optional)...",
         "preparingRoute": "Preparing 1Click transfer route...",
         "confirmSubmit": "Confirm and Submit Request",
-        "failed1ClickQuote": "Failed to create 1Click transfer quote"
+        "failed1ClickQuote": "Failed to create 1Click transfer quote",
+        "paymentSubmitted": "Request to send payment submitted"
     },
     "bulkPayment": {
         "comingSoonToast": "Bulk payments are coming soon!",
@@ -870,7 +879,9 @@
             "singleTokenNetwork": "Single token and network",
             "limitsUsed": "You've used all your limits",
             "selectAndProvide": "Select asset and provide payment data",
-            "continueToReview": "Continue to Review"
+            "continueToReview": "Continue to Review",
+            "selectTokenError": "Please select a token",
+            "providePaymentDataError": "Please provide payment data"
         },
         "editStep": {
             "title": "Edit Payment",
@@ -1208,6 +1219,24 @@
         "cannotRemoveRole": "You can't remove the {role} role from this member. They are the only person assigned to this role.",
         "cannotRemoveRoleGov": "You can't remove the {role} role from this member. They are the only {role} member, and without this role you won't be able to manage team members or configure voting."
     },
+    "roleSelector": {
+        "setRole": "Set Role",
+        "allRoles": "All Roles",
+        "roles": {
+            "governance": {
+                "title": "Governance",
+                "description": "Governance can create and vote on team-related treasury settings, including members, permissions, and treasury appearance."
+            },
+            "requestor": {
+                "title": "Requestor",
+                "description": "Requestor can create payment-related transaction requests, without voting or approval rights."
+            },
+            "financial": {
+                "title": "Financial",
+                "description": "Financial can vote on payment-related transaction requests but cannot create them."
+            }
+        }
+    },
     "memberInput": {
         "creatorYou": "Creator (you)",
         "memberAddress": "Member Address",
@@ -1451,7 +1480,13 @@
         "selectToken": "Select token",
         "selectAsset": "Select Asset",
         "selectNetworkFor": "Select network for {asset}",
-        "searchByName": "Search by name"
+        "searchByName": "Search by name",
+        "noTokensWithBalance": "No tokens with balance found",
+        "noTokensFound": "No tokens found"
+    },
+    "intentsQuote": {
+        "initializing": "Quote service is still initializing. Please try again.",
+        "noRoute": "Could not prepare a payment route right now. Please retry."
     },
     "tokenInput": {
         "max": "MAX",

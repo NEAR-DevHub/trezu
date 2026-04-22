@@ -818,7 +818,7 @@ export default function PaymentsPage() {
                 );
             }
 
-            await createProposal("Request to send payment submitted", {
+            await createProposal(tPay("paymentSubmitted"), {
                 treasuryId: treasuryId!,
                 proposal: {
                     description,
