@@ -457,6 +457,28 @@
         "privacyNote": "Saved addresses are private and visible only to your team.",
         "searchPlaceholder": "Search recipient by name",
         "searchPlaceholderShort": "Search",
+        "review": {
+            "header": "Review Details",
+            "youAreAdding": "You're adding",
+            "newRecipients": "{count, plural, one {# new recipient} other {# new recipients}}",
+            "onNetworks": "on {count, plural, one {# network} other {# networks}}",
+            "recipients": "Recipients",
+            "allDuplicates": "All imported recipients already exist in your address book. Go back to upload a different list or remove duplicates from this review.",
+            "someDuplicates": "{duplicates} duplicated recipients out of {total} total recipients. Continue to upload only the new recipients.",
+            "duplicated": "Duplicated",
+            "notePlaceholder": "Add a note to help identify this recipient (e.g. contractor payment, vesting distribution).",
+            "skipDuplicates": "Skip duplicates and import only new ones.",
+            "allDuplicatesTooltip": "All imported recipients are already in your address book, so there is nothing new to import.",
+            "duplicateActionTooltip": "Enable duplicate skipping or remove duplicate recipients to continue.",
+            "adding": "Adding…",
+            "nothingNew": "Nothing New to Import",
+            "addRecipientsButton": "{count, plural, one {Add Recipient} other {Add Recipients}}"
+        },
+        "removeDialog": {
+            "title": "Remove Recipient",
+            "bulk": "This will remove <bold>{count, plural, one {# recipient} other {# recipients}}</bold> from your address book. You can add them again anytime.",
+            "single": "This will remove <bold>{name}</bold> from your address book. You can add this recipient again anytime."
+        },
         "form": {
             "editRecipient": "Edit Recipient",
             "addRecipient": "Add Recipient",
