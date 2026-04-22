@@ -1315,7 +1315,9 @@
         "exportFromPeriod": "You can export data from the {period}.",
         "availableFor48Hours": "Exported files are available for download for 48 hours.",
         "moreFlexibility": "Looking for more flexibility?",
-        "contactUs": "Contact Us"
+        "contactUs": "Contact Us",
+        "last1Year": "Last 1 year",
+        "last2Years": "Last 2 years"
     },
     "paymentFormSection": {
         "selectRecipient": "Select Recipient",
@@ -1335,6 +1337,19 @@
     },
     "modal": {
         "close": "Close"
+    },
+    "datePicker": {
+        "pickDate": "Pick a date"
+    },
+    "datePresets": {
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "last3Days": "Last 3 days",
+        "last7Days": "Last 7 days",
+        "last14Days": "Last 14 days",
+        "lastMonth": "Last month",
+        "last3Months": "Last 3 months",
+        "last6Months": "Last 6 months"
     },
     "input": {
         "openSearch": "Open search"
@@ -1367,7 +1382,38 @@
         "noAssetsDescription": "To get started, add assets to your Treasury by making a deposit."
     },
     "balanceWithGraph": {
-        "allTokens": "All Tokens"
+        "allTokens": "All Tokens",
+        "deposit": "Deposit",
+        "send": "Send",
+        "exchange": "Exchange"
+    },
+    "changePolicyExpanded": {
+        "weightKind": "Weight Kind",
+        "quorum": "Quorum",
+        "threshold": "Threshold",
+        "defaultThreshold": "Default Threshold",
+        "roleThreshold": "{role} Threshold",
+        "member": "Member",
+        "members": "Members",
+        "permissions": "Permissions",
+        "oldPermissions": "Old Permissions",
+        "newPermissions": "New Permissions",
+        "category": "Category",
+        "transactionDetails": "Transaction Details",
+        "addNewMember": "Add New Member",
+        "addNewMembers": "Add New Members",
+        "removeMember": "Remove Member",
+        "removeMembers": "Remove Members",
+        "updateMemberPermissions": "Update Member Permissions",
+        "updateMembersPermissions": "Update Members Permissions",
+        "memberIndex": "Member {index}",
+        "membersCount": "{count} members",
+        "collapseAll": "Collapse all",
+        "expandAll": "Expand all",
+        "loadingHistorical": "Loading historical policy...",
+        "unableToDiff": "Unable to compute differences for this proposal.",
+        "noChangesCurrent": "No changes detected - the proposed policy is identical to the current policy.",
+        "noChangesHistorical": "No changes detected - the proposed policy is identical to the historical policy."
     },
     "balanceChart": {
         "usdValue": "USD Value",

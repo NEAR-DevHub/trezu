@@ -1,7 +1,7 @@
 export {
     DateTimePicker,
     DatePickerPopover,
-    DEFAULT_DATE_PRESETS,
+    useDefaultDatePresets,
 } from "./ui/datepicker";
 export type {
     DateTimePickerProps,

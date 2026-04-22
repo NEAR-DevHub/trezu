@@ -27,7 +27,7 @@ import { useExportHistory } from "@/hooks/use-treasury-queries";
 import { APP_CONTACT_US_URL } from "@/constants/config";
 import {
     DatePickerPopover,
-    DEFAULT_DATE_PRESETS,
+    useDefaultDatePresets,
 } from "@/components/datepicker";
 import { Input } from "@/components/input";
 import {
@@ -365,20 +365,20 @@ export default function ExportActivityPage() {
         return minDate || subMonths(new Date(), 6);
     }, [minDate]);
 
+    const defaultDatePresets = useDefaultDatePresets();
     // Create custom date presets based on plan's history limit
     const datePresets = useMemo(() => {
         const historyMonths =
             planDetails?.planConfig?.limits?.historyLookupMonths;
-        const presets = [...DEFAULT_DATE_PRESETS];
+        const presets = [...defaultDatePresets];
 
         if (historyMonths) {
             // Add year-based presets based on plan
             const years = Math.floor(historyMonths / 12);
 
             if (years >= 1) {
-                // Add "Last 1 year" preset
                 presets.push({
-                    label: "Last 1 year",
+                    label: tEx("last1Year"),
                     value: {
                         from: subMonths(startOfDay(new Date()), 12),
                         to: endOfDay(new Date()),
@@ -387,9 +387,8 @@ export default function ExportActivityPage() {
             }
 
             if (years >= 2) {
-                // Add "Last 2 years" preset
                 presets.push({
-                    label: "Last 2 years",
+                    label: tEx("last2Years"),
                     value: {
                         from: subMonths(startOfDay(new Date()), 24),
                         to: endOfDay(new Date()),
@@ -399,7 +398,11 @@ export default function ExportActivityPage() {
         }
 
         return presets;
-    }, [planDetails?.planConfig?.limits?.historyLookupMonths]);
+    }, [
+        planDetails?.planConfig?.limits?.historyLookupMonths,
+        defaultDatePresets,
+        tEx,
+    ]);
 
     const form = useForm<z.infer<typeof exportFormSchema>>({
         resolver: zodResolver(exportFormSchema),

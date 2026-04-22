@@ -1315,7 +1315,9 @@
         "exportFromPeriod": "Puedes exportar datos del {period}.",
         "availableFor48Hours": "Los archivos exportados estarán disponibles para descarga durante 48 horas.",
         "moreFlexibility": "¿Buscas más flexibilidad?",
-        "contactUs": "Contáctanos"
+        "contactUs": "Contáctanos",
+        "last1Year": "Último año",
+        "last2Years": "Últimos 2 años"
     },
     "paymentFormSection": {
         "selectRecipient": "Seleccionar destinatario",
@@ -1335,6 +1337,19 @@
     },
     "modal": {
         "close": "Cerrar"
+    },
+    "datePicker": {
+        "pickDate": "Elegir una fecha"
+    },
+    "datePresets": {
+        "today": "Hoy",
+        "yesterday": "Ayer",
+        "last3Days": "Últimos 3 días",
+        "last7Days": "Últimos 7 días",
+        "last14Days": "Últimos 14 días",
+        "lastMonth": "Último mes",
+        "last3Months": "Últimos 3 meses",
+        "last6Months": "Últimos 6 meses"
     },
     "input": {
         "openSearch": "Abrir búsqueda"
@@ -1367,7 +1382,38 @@
         "noAssetsDescription": "Para empezar, añade activos a tu tesorería haciendo un depósito."
     },
     "balanceWithGraph": {
-        "allTokens": "Todos los tokens"
+        "allTokens": "Todos los tokens",
+        "deposit": "Depositar",
+        "send": "Enviar",
+        "exchange": "Intercambiar"
+    },
+    "changePolicyExpanded": {
+        "weightKind": "Tipo de peso",
+        "quorum": "Quórum",
+        "threshold": "Umbral",
+        "defaultThreshold": "Umbral predeterminado",
+        "roleThreshold": "Umbral de {role}",
+        "member": "Miembro",
+        "members": "Miembros",
+        "permissions": "Permisos",
+        "oldPermissions": "Permisos anteriores",
+        "newPermissions": "Permisos nuevos",
+        "category": "Categoría",
+        "transactionDetails": "Detalles de transacción",
+        "addNewMember": "Añadir nuevo miembro",
+        "addNewMembers": "Añadir nuevos miembros",
+        "removeMember": "Eliminar miembro",
+        "removeMembers": "Eliminar miembros",
+        "updateMemberPermissions": "Actualizar permisos del miembro",
+        "updateMembersPermissions": "Actualizar permisos de miembros",
+        "memberIndex": "Miembro {index}",
+        "membersCount": "{count} miembros",
+        "collapseAll": "Contraer todo",
+        "expandAll": "Expandir todo",
+        "loadingHistorical": "Cargando política histórica...",
+        "unableToDiff": "No se pueden calcular las diferencias de esta propuesta.",
+        "noChangesCurrent": "No se detectaron cambios — la política propuesta es idéntica a la actual.",
+        "noChangesHistorical": "No se detectaron cambios — la política propuesta es idéntica a la histórica."
     },
     "balanceChart": {
         "usdValue": "Valor en USD",

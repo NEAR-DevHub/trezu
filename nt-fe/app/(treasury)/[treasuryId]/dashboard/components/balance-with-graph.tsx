@@ -700,7 +700,7 @@ export default function BalanceWithGraph({
                     id="dashboard-step1"
                     className="text-xs md:text-base"
                 >
-                    <Download className="md:size-4 size-3" /> Deposit
+                    <Download className="md:size-4 size-3" /> {t("deposit")}
                 </Button>
                 <AuthButton
                     permissionKind="transfer"
@@ -710,7 +710,7 @@ export default function BalanceWithGraph({
                     onClick={() => router.push(`/${treasuryId}/payments`)}
                 >
                     <ArrowUpRightIcon className="md:size-4 size-3" />
-                    Send
+                    {t("send")}
                 </AuthButton>
                 <AuthButton
                     permissionKind="call"
@@ -719,7 +719,8 @@ export default function BalanceWithGraph({
                     id="dashboard-step3"
                     onClick={() => router.push(`/${treasuryId}/exchange`)}
                 >
-                    <ArrowLeftRight className="md:size-4 size-3" /> Exchange
+                    <ArrowLeftRight className="md:size-4 size-3" />{" "}
+                    {t("exchange")}
                 </AuthButton>
                 {/*<AuthButton permissionKind="call" permissionAction="AddProposal" className="w-full">
                     <Database className="size-4" /> Earn

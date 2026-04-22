@@ -1315,7 +1315,9 @@
         "exportFromPeriod": "Ви можете експортувати дані за {period}.",
         "availableFor48Hours": "Експортовані файли доступні для завантаження протягом 48 годин.",
         "moreFlexibility": "Потрібно більше гнучкості?",
-        "contactUs": "Зв'язатись з нами"
+        "contactUs": "Зв'язатись з нами",
+        "last1Year": "Останній рік",
+        "last2Years": "Останні 2 роки"
     },
     "paymentFormSection": {
         "selectRecipient": "Обрати одержувача",
@@ -1335,6 +1337,19 @@
     },
     "modal": {
         "close": "Закрити"
+    },
+    "datePicker": {
+        "pickDate": "Оберіть дату"
+    },
+    "datePresets": {
+        "today": "Сьогодні",
+        "yesterday": "Вчора",
+        "last3Days": "Останні 3 дні",
+        "last7Days": "Останні 7 днів",
+        "last14Days": "Останні 14 днів",
+        "lastMonth": "Минулий місяць",
+        "last3Months": "Останні 3 місяці",
+        "last6Months": "Останні 6 місяців"
     },
     "input": {
         "openSearch": "Відкрити пошук"
@@ -1367,7 +1382,38 @@
         "noAssetsDescription": "Щоб розпочати, додайте активи до скарбниці, зробивши депозит."
     },
     "balanceWithGraph": {
-        "allTokens": "Усі токени"
+        "allTokens": "Усі токени",
+        "deposit": "Поповнити",
+        "send": "Надіслати",
+        "exchange": "Обміняти"
+    },
+    "changePolicyExpanded": {
+        "weightKind": "Тип ваги",
+        "quorum": "Кворум",
+        "threshold": "Поріг",
+        "defaultThreshold": "Типовий поріг",
+        "roleThreshold": "Поріг {role}",
+        "member": "Учасник",
+        "members": "Учасники",
+        "permissions": "Дозволи",
+        "oldPermissions": "Старі дозволи",
+        "newPermissions": "Нові дозволи",
+        "category": "Категорія",
+        "transactionDetails": "Деталі транзакції",
+        "addNewMember": "Додати нового учасника",
+        "addNewMembers": "Додати нових учасників",
+        "removeMember": "Видалити учасника",
+        "removeMembers": "Видалити учасників",
+        "updateMemberPermissions": "Оновити дозволи учасника",
+        "updateMembersPermissions": "Оновити дозволи учасників",
+        "memberIndex": "Учасник {index}",
+        "membersCount": "{count} учасників",
+        "collapseAll": "Згорнути все",
+        "expandAll": "Розгорнути все",
+        "loadingHistorical": "Завантаження історичної політики...",
+        "unableToDiff": "Не вдалось обчислити відмінності для цієї пропозиції.",
+        "noChangesCurrent": "Змін не виявлено — запропонована політика ідентична поточній.",
+        "noChangesHistorical": "Змін не виявлено — запропонована політика ідентична історичній."
     },
     "balanceChart": {
         "usdValue": "Значення у USD",
