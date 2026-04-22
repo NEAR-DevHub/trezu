@@ -10,6 +10,7 @@ import {
     Info,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
     Fragment,
     type ReactNode,
@@ -260,6 +261,7 @@ function MobileAssetViewModal({
     view,
     renderRows,
 }: MobileAssetViewModalProps) {
+    const t = useTranslations("assetsTable");
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="gap-0">
@@ -267,7 +269,7 @@ function MobileAssetViewModal({
                     <DialogTitle>
                         {selectedAsset?.networks[0]?.symbol ??
                             selectedAsset?.name ??
-                            "Asset Details"}
+                            t("assetDetails")}
                     </DialogTitle>
                 </DialogHeader>
                 {open && selectedAsset && mobileModalData && (
@@ -287,7 +289,7 @@ function MobileAssetViewModal({
                         </div>
                         <div className="flex items-center gap-3 py-3 border-b border-border/50">
                             <span className="flex-1 text-sm text-muted-foreground">
-                                Coin Price
+                                {t("coinPrice")}
                             </span>
                             <span className="text-sm font-medium">
                                 {formatCurrency(selectedAsset.price)}
@@ -296,7 +298,7 @@ function MobileAssetViewModal({
                         {view === "available" && (
                             <div className="flex items-center gap-3 py-3 border-b border-border/50">
                                 <span className="flex-1 text-sm text-muted-foreground">
-                                    Weight
+                                    {t("weight")}
                                 </span>
                                 <div className="w-24 bg-muted rounded-full h-1.5 overflow-hidden shrink-0">
                                     <div
@@ -324,9 +326,20 @@ function MobileAssetViewModal({
     );
 }
 
+interface MobileModalLabels {
+    balance: string;
+    lockedBalance: string;
+    totalBalance: string;
+    source: string;
+    balanceByInvestors: (count: number) => string;
+    poolBreakdown: string;
+    lockupStakingPool: string;
+}
+
 function buildMobileModalData(
     selectedAsset: AggregatedAsset,
     view: ViewMode,
+    labels: MobileModalLabels,
     weight?: number,
 ): MobileModalData {
     const availableNetworks = selectedAsset.networks.filter(
@@ -389,7 +402,8 @@ function buildMobileModalData(
             network.balance.lockup.staked.gt(0)
         ) {
             const poolId =
-                network.balance.lockup.stakingPoolId ?? "Lockup staking pool";
+                network.balance.lockup.stakingPoolId ??
+                labels.lockupStakingPool;
             const poolTotal = network.balance.lockup.staked.add(
                 network.balance.lockup.unstakedBalance,
             );
@@ -454,16 +468,16 @@ function buildMobileModalData(
                 );
     const summaryLabel =
         view === "available"
-            ? "Balance"
+            ? labels.balance
             : view === "locked"
-              ? "Locked Balance"
-              : "Total Balance";
+              ? labels.lockedBalance
+              : labels.totalBalance;
     const listLabel =
         view === "available"
-            ? "Source"
+            ? labels.source
             : view === "locked"
-              ? `Balance by ${lockedNetworks.length === 1 ? "Investor" : "Investors"}`
-              : "Pool Breakdown";
+              ? labels.balanceByInvestors(lockedNetworks.length)
+              : labels.poolBreakdown;
 
     return {
         primaryDecimals,
@@ -513,6 +527,7 @@ function AvailableView({
     treasuryId,
     onNavigate,
 }: AvailableViewProps): ReactNode {
+    const t = useTranslations("assetsTable");
     if (!isExpanded) {
         return (
             <>
@@ -576,7 +591,7 @@ function AvailableView({
                                         asset={network}
                                         subLabel={
                                             isLockupUnlocked
-                                                ? "Unlocked Token"
+                                                ? t("unlockedToken")
                                                 : undefined
                                         }
                                     />
@@ -604,7 +619,8 @@ function AvailableView({
                                             )
                                         }
                                     >
-                                        <ArrowUpRight className="size-4" /> Send
+                                        <ArrowUpRight className="size-4" />{" "}
+                                        {t("send")}
                                     </Button>
                                     <Button
                                         type="button"
@@ -617,7 +633,7 @@ function AvailableView({
                                         }
                                     >
                                         <ArrowLeftRight className="size-4" />{" "}
-                                        Exchange
+                                        {t("exchange")}
                                     </Button>
                                 </div>
                             )}
@@ -634,9 +650,11 @@ function AvailableView({
     return (
         <>
             <TableRow className="bg-muted/30 uppercase text-muted-foreground font-medium hover:bg-muted/30">
-                <TableCell className="p-2 pl-16 text-xxs">Source</TableCell>
+                <TableCell className="p-2 pl-16 text-xxs">
+                    {t("source")}
+                </TableCell>
                 <TableCell className="p-2 text-xxs text-right">
-                    Balance
+                    {t("balance")}
                 </TableCell>
                 <TableCell colSpan={3} />
             </TableRow>
@@ -657,7 +675,7 @@ function AvailableView({
                                     asset={network}
                                     subLabel={
                                         isLockupUnlocked
-                                            ? "Unlocked Token"
+                                            ? t("unlockedToken")
                                             : undefined
                                     }
                                 />
@@ -686,7 +704,7 @@ function AvailableView({
                                             variant="ghost"
                                             size="icon"
                                             className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-                                            tooltipContent="Exchange"
+                                            tooltipContent={t("exchange")}
                                             onClick={() =>
                                                 onNavigate?.(
                                                     `/${treasuryId}/exchange?sellToken=${tokenParam}`,
@@ -701,7 +719,7 @@ function AvailableView({
                                             variant="ghost"
                                             size="icon"
                                             className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-                                            tooltipContent="Send"
+                                            tooltipContent={t("send")}
                                             onClick={() =>
                                                 onNavigate?.(
                                                     `/${treasuryId}/payments?token=${tokenParam}`,
@@ -787,6 +805,7 @@ function LockedView({
     selectedAssetId,
     onSelectLockup,
 }: LockedViewProps): ReactNode {
+    const t = useTranslations("assetsTable");
     if (!isExpanded) {
         return (
             <>
@@ -874,7 +893,7 @@ function LockedView({
                                             onSelectLockup?.(network)
                                         }
                                     >
-                                        Details{" "}
+                                        {t("details")}{" "}
                                         <ChevronRight className="size-4" />
                                     </Button>
                                 </div>
@@ -890,9 +909,9 @@ function LockedView({
         <>
             <TableRow className="bg-muted/30 uppercase text-muted-foreground font-medium hover:bg-muted/30">
                 <TableCell className="p-2 pl-16 text-xxs">
-                    {(lockedNetworks ?? []).length === 1
-                        ? "Investor"
-                        : "Investors"}
+                    {t("investors", {
+                        count: (lockedNetworks ?? []).length,
+                    })}
                 </TableCell>
                 <TableCell colSpan={5} />
             </TableRow>
@@ -1020,6 +1039,7 @@ function EarningView({
     earningPoolRows,
     onSelectPool,
 }: EarningViewProps): ReactNode {
+    const t = useTranslations("assetsTable");
     if (!isExpanded) {
         return (
             <>
@@ -1086,7 +1106,8 @@ function EarningView({
                                         onSelectPool?.(network, poolRow.poolId)
                                     }
                                 >
-                                    Details <ChevronRight className="size-4" />
+                                    {t("details")}{" "}
+                                    <ChevronRight className="size-4" />
                                 </Button>
                             </div>
                         </div>
@@ -1100,7 +1121,7 @@ function EarningView({
         <>
             <TableRow className="bg-muted/30 uppercase text-muted-foreground font-medium hover:bg-muted/30">
                 <TableCell className="p-2 pl-16 text-xxs">
-                    Pool Breakdown
+                    {t("poolBreakdown")}
                 </TableCell>
                 <TableCell colSpan={4} />
             </TableRow>
@@ -1172,7 +1193,7 @@ function EarningView({
                     // Lockup staking exposes a single logical pool via stakingPoolId.
                     const lockupPoolId =
                         network.balance.lockup.stakingPoolId ??
-                        "Lockup staking pool";
+                        t("lockupStakingPool");
                     const poolTotal = network.balance.lockup.staked.add(
                         network.balance.lockup.unstakedBalance,
                     );
@@ -1304,6 +1325,7 @@ function ExpandedRows({
 }
 
 export function AssetsTable({ aggregatedTokens }: Props) {
+    const t = useTranslations("assetsTable");
     const { treasuryId } = useTreasury();
     const router = useRouter();
     const isMobile = useMediaQuery("(max-width: 640px)");
@@ -1382,13 +1404,13 @@ export function AssetsTable({ aggregatedTokens }: Props) {
     const showEarning = bucketVisibility.showEarning;
     const hasLockedOrEarning = showLocked || showEarning;
     const visibleViews: Array<[ViewMode, string, number]> = [
-        ["available", "Available", totals.availableUsd],
+        ["available", t("viewAvailable"), totals.availableUsd],
     ];
     if (showLocked) {
-        visibleViews.push(["locked", "Locked", totals.lockedUsd]);
+        visibleViews.push(["locked", t("viewLocked"), totals.lockedUsd]);
     }
     if (showEarning) {
-        visibleViews.push(["earning", "Earning", totals.earningUsd]);
+        visibleViews.push(["earning", t("viewEarning"), totals.earningUsd]);
     }
     const [activeView, setActiveView] = useState<ViewMode>("available");
 
@@ -1517,9 +1539,19 @@ export function AssetsTable({ aggregatedTokens }: Props) {
         return buildMobileModalData(
             selectedMobileAsset,
             view,
+            {
+                balance: t("balance"),
+                lockedBalance: t("lockedBalance"),
+                totalBalance: t("totalBalance"),
+                source: t("source"),
+                balanceByInvestors: (count: number) =>
+                    t("balanceByInvestors", { count }),
+                poolBreakdown: t("poolBreakdown"),
+                lockupStakingPool: t("lockupStakingPool"),
+            },
             selectedViewAsset?.weight,
         );
-    }, [isMobileViewModalOpen, selectedMobileAsset, viewAssets, view]);
+    }, [isMobileViewModalOpen, selectedMobileAsset, viewAssets, view, t]);
 
     const renderMobileRows = () => {
         if (!mobileModalData || !selectedMobileAsset) return null;
@@ -1701,51 +1733,71 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                 <Table>
                     <TableHeader className="bg-transparent border-t-0">
                         <TableRow className="hover:bg-transparent">
-                            {renderSortableHead("token", "Token", {
+                            {renderSortableHead("token", t("columnToken"), {
                                 headClassName: "pl-0 sm:pl-4",
                                 buttonClassName: cn("justify-start"),
                             })}
                             {view === "available" && (
                                 <>
-                                    {renderSortableHead("balance", "Balance", {
-                                        headClassName: "text-right",
-                                        buttonClassName: "ml-auto",
-                                    })}
-                                    {renderSortableHead("price", "Coin Price", {
-                                        headClassName:
-                                            "text-right hidden sm:table-cell",
-                                        buttonClassName: "ml-auto",
-                                    })}
-                                    {renderSortableHead("weight", "Weight", {
-                                        headClassName:
-                                            "text-right hidden sm:table-cell",
-                                        buttonClassName: "ml-auto",
-                                    })}
-                                </>
-                            )}
-                            {view === "locked" && (
-                                <>
-                                    {renderSortableHead("locked", "Locked", {
-                                        headClassName: "text-right",
-                                        buttonClassName: "ml-auto",
-                                    })}
                                     {renderSortableHead(
-                                        "unlocked",
-                                        "Unlocked",
+                                        "balance",
+                                        t("balance"),
+                                        {
+                                            headClassName: "text-right",
+                                            buttonClassName: "ml-auto",
+                                        },
+                                    )}
+                                    {renderSortableHead(
+                                        "price",
+                                        t("coinPrice"),
                                         {
                                             headClassName:
                                                 "text-right hidden sm:table-cell",
                                             buttonClassName: "ml-auto",
                                         },
                                     )}
-                                    {renderSortableHead("price", "Coin Price", {
-                                        headClassName:
-                                            "text-right hidden sm:table-cell",
-                                        buttonClassName: "ml-auto",
-                                    })}
+                                    {renderSortableHead(
+                                        "weight",
+                                        t("weight"),
+                                        {
+                                            headClassName:
+                                                "text-right hidden sm:table-cell",
+                                            buttonClassName: "ml-auto",
+                                        },
+                                    )}
+                                </>
+                            )}
+                            {view === "locked" && (
+                                <>
+                                    {renderSortableHead(
+                                        "locked",
+                                        t("columnLocked"),
+                                        {
+                                            headClassName: "text-right",
+                                            buttonClassName: "ml-auto",
+                                        },
+                                    )}
+                                    {renderSortableHead(
+                                        "unlocked",
+                                        t("columnUnlocked"),
+                                        {
+                                            headClassName:
+                                                "text-right hidden sm:table-cell",
+                                            buttonClassName: "ml-auto",
+                                        },
+                                    )}
+                                    {renderSortableHead(
+                                        "price",
+                                        t("coinPrice"),
+                                        {
+                                            headClassName:
+                                                "text-right hidden sm:table-cell",
+                                            buttonClassName: "ml-auto",
+                                        },
+                                    )}
                                     {renderSortableHead(
                                         "totalAllocated",
-                                        "Total Allocated",
+                                        t("columnTotalAllocated"),
                                         {
                                             headClassName:
                                                 "text-right hidden sm:table-cell",
@@ -1758,20 +1810,23 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                 <>
                                     {renderSortableHead(
                                         "earningTotal",
-                                        "Total Balance",
+                                        t("totalBalance"),
                                         {
                                             headClassName: "text-right",
                                             buttonClassName: "ml-auto",
                                         },
                                     )}
-                                    {renderSortableHead("price", "Coin Price", {
-                                        headClassName:
-                                            "text-right hidden sm:table-cell",
+                                    {renderSortableHead(
+                                        "price",
+                                        t("coinPrice"),
+                                        {
+                                            headClassName:
+                                                "text-right hidden sm:table-cell",
                                         buttonClassName: "ml-auto",
                                     })}
                                     {renderSortableHead(
                                         "withdrawable",
-                                        "Available To Withdraw",
+                                        t("columnAvailableToWithdraw"),
                                         {
                                             headClassName:
                                                 "text-right hidden sm:table-cell",
@@ -2064,19 +2119,25 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                                     <Info className="size-4 shrink-0" />
                                                     <p className="text-foreground leading-relaxed wrap-break-word">
                                                         {isFullLockedInEarning
-                                                            ? "Your full allocated balance"
-                                                            : "Part of your allocated balance"}{" "}
-                                                        (
-                                                        {formatSmartAmount(
-                                                            displayAmount(
-                                                                earningFromLockedRaw,
-                                                                primaryDecimals,
+                                                            ? t(
+                                                                  "fullAllocatedBalance",
+                                                              )
+                                                            : t(
+                                                                  "partAllocatedBalance",
+                                                              )}{" "}
+                                                        {t("currentlyEarning", {
+                                                            amount: formatSmartAmount(
+                                                                displayAmount(
+                                                                    earningFromLockedRaw,
+                                                                    primaryDecimals,
+                                                                ),
                                                             ),
-                                                        )}{" "}
-                                                        {asset.id}) is currently
-                                                        earning.
+                                                            symbol: asset.id,
+                                                        })}
                                                         {isFullLockedInEarning &&
-                                                            " It will appear here once you stop earning."}{" "}
+                                                            t(
+                                                                "willAppearHere",
+                                                            )}{" "}
                                                         <button
                                                             type="button"
                                                             className="underline underline-offset-2"
@@ -2090,8 +2151,12 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                                             }}
                                                         >
                                                             {isFullLockedInEarning
-                                                                ? "See in Earning tab"
-                                                                : "See in Earning"}
+                                                                ? t(
+                                                                      "seeInEarningTab",
+                                                                  )
+                                                                : t(
+                                                                      "seeInEarning",
+                                                                  )}
                                                         </button>
                                                     </p>
                                                 </div>

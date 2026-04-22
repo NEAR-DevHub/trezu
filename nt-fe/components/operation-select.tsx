@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/button";
 import {
@@ -19,13 +20,30 @@ interface OperationSelectProps {
     className?: string;
 }
 
+const OPERATION_TRANSLATION_KEYS: Record<string, string> = {
+    Is: "is",
+    "Is Not": "isNot",
+    Before: "before",
+    After: "after",
+    Between: "between",
+    Equal: "equal",
+    "More Than": "moreThan",
+    "Less Than": "lessThan",
+    Contains: "contains",
+};
+
 export function OperationSelect({
     operations,
     selectedOperation,
     onOperationChange,
     className,
 }: OperationSelectProps) {
+    const t = useTranslations("filterOperations");
     const [isOpen, setIsOpen] = useState(false);
+    const labelFor = (operation: Operation) => {
+        const key = OPERATION_TRANSLATION_KEYS[operation];
+        return key ? t(key) : operation;
+    };
     if (operations.length <= 1) {
         return null;
     }
@@ -41,7 +59,9 @@ export function OperationSelect({
                         className,
                     )}
                 >
-                    <span className="font-medium">{selectedOperation}</span>
+                    <span className="font-medium">
+                        {labelFor(selectedOperation)}
+                    </span>
                     <ChevronDown className="h-3 w-3 text-muted-foreground" />
                 </Button>
             </PopoverTrigger>
@@ -61,7 +81,7 @@ export function OperationSelect({
                                 setIsOpen(false);
                             }}
                         >
-                            {operation}
+                            {labelFor(operation)}
                         </Button>
                     ))}
                 </div>
