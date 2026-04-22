@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { Proposal } from "@/lib/proposals-api";
 import {
@@ -88,6 +89,8 @@ export function ProposalsTable({
     onPageChange,
     onSelectionChange,
 }: ProposalsTableProps) {
+    const tT = useTranslations("requests.table");
+    const tCommon = useTranslations("common");
     const [rowSelection, setRowSelection] = useState({});
     const [expanded, setExpanded] = useState<ExpandedState>({});
     const { accountId } = useNear();
@@ -118,7 +121,7 @@ export function ProposalsTable({
                             onCheckedChange={(value) =>
                                 table.toggleAllPageRowsSelected(!!value)
                             }
-                            aria-label="Select all"
+                            aria-label={tT("selectAll")}
                         />
                     );
                 },
@@ -144,11 +147,11 @@ export function ProposalsTable({
 
                     if (isVoted || !canVote || !isPending) {
                         const content = !isPending
-                            ? "Proposal is not pending."
+                            ? tT("notPending")
                             : !canVote
-                              ? "You don't have permission to vote on this request."
+                              ? tT("noPermissionVote")
                               : isVoted
-                                ? "You already voted on this request."
+                                ? tT("alreadyVoted")
                                 : "";
 
                         return (
@@ -170,7 +173,7 @@ export function ProposalsTable({
                             onCheckedChange={(value) =>
                                 row.toggleSelected(!!value)
                             }
-                            aria-label="Select row"
+                            aria-label={tT("selectRow")}
                         />
                     );
                 },
@@ -180,7 +183,7 @@ export function ProposalsTable({
             columnHelper.accessor("id", {
                 header: () => (
                     <span className="text-xs font-medium uppercase text-muted-foreground">
-                        Request
+                        {tT("request")}
                     </span>
                 ),
                 cell: (info) => {
@@ -222,7 +225,7 @@ export function ProposalsTable({
                 id: "transaction",
                 header: () => (
                     <span className="text-xs font-medium uppercase text-muted-foreground">
-                        Transaction
+                        {tT("transaction")}
                     </span>
                 ),
                 cell: ({ row }) => (
@@ -234,7 +237,7 @@ export function ProposalsTable({
             columnHelper.accessor("proposer", {
                 header: () => (
                     <span className="text-xs font-medium uppercase text-muted-foreground">
-                        Requester
+                        {tT("requester")}
                     </span>
                 ),
                 cell: (info) => {
@@ -254,9 +257,9 @@ export function ProposalsTable({
                 header: () => (
                     <div className="flex items-center gap-2">
                         <span className="text-xs font-medium uppercase text-muted-foreground">
-                            Voting
+                            {tT("voting")}
                         </span>
-                        <Tooltip content="First number shows approvals received. Second number shows approvals required to execute.">
+                        <Tooltip content={tT("votingTooltip")}>
                             <Info className="size-4 text-muted-foreground" />
                         </Tooltip>
                     </div>
@@ -268,7 +271,7 @@ export function ProposalsTable({
             columnHelper.accessor("status", {
                 header: () => (
                     <span className="text-xs font-medium uppercase text-muted-foreground">
-                        Status
+                        {tT("status")}
                     </span>
                 ),
                 cell: (info) => (
@@ -378,15 +381,15 @@ export function ProposalsTable({
                 <EmptyState
                     icon={SearchX}
                     title=""
-                    description="No requests found matching your filters."
+                    description={tT("noResults")}
                 />
             </div>
         ) : (
             <div className="flex flex-col items-center justify-center py-8 gap-4">
                 <EmptyState
                     icon={Send}
-                    title="All caught up!"
-                    description="There are no pending requests."
+                    title={tT("allCaughtUp")}
+                    description={tT("noPending")}
                     className="pb-0"
                 />
                 <div className="flex gap-4 w-full max-w-[300px] min-w-0 pb-12">
@@ -396,7 +399,7 @@ export function ProposalsTable({
                         permissionAction="AddProposal"
                         className="gap-1 w-full shrink"
                     >
-                        <ArrowUpRight className="size-3.5" /> Send
+                        <ArrowUpRight className="size-3.5" /> {tT("send")}
                     </AuthButton>
                     <AuthButton
                         permissionKind="call"
@@ -404,7 +407,7 @@ export function ProposalsTable({
                         permissionAction="AddProposal"
                         className="gap-1 w-full shrink"
                     >
-                        <ArrowRightLeft className="size-3.5" /> Exchange
+                        <ArrowRightLeft className="size-3.5" /> {tT("exchange")}
                     </AuthButton>
                 </div>
             </div>
@@ -442,9 +445,7 @@ export function ProposalsTable({
                 {selectedCount > 0 && (
                     <div className="flex md:text-base text-sm items-center justify-between py-3.5 px-5 border-b">
                         <span className="font-semibold">
-                            {selectedCount}{" "}
-                            {selectedCount === 1 ? "Request" : "Requests"}{" "}
-                            Selected
+                            {tT("requestsSelected", { count: selectedCount })}
                         </span>
                         <div className="flex items-center gap-2">
                             <Button
@@ -452,21 +453,21 @@ export function ProposalsTable({
                                 onClick={() => handleBulkVote("Reject")}
                             >
                                 <X className="h-4 w-4" />
-                                Reject
+                                {tCommon("reject")}
                             </Button>
 
                             <Button
                                 variant="default"
                                 tooltipContent={
                                     allSelectedHaveInsufficientBalance
-                                        ? "This request can't be approved because the treasury has insufficient balance."
+                                        ? tT("bulkApproveDisabled")
                                         : undefined
                                 }
                                 onClick={() => handleBulkVote("Approve")}
                                 disabled={allSelectedHaveInsufficientBalance}
                             >
                                 <Check className="h-4 w-4" />
-                                Approve
+                                {tCommon("approve")}
                             </Button>
                         </div>
                     </div>

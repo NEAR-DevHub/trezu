@@ -327,6 +327,26 @@
             "deposit": "Deposit",
             "viewRequest": "View Request"
         },
+        "table": {
+            "selectAll": "Select all",
+            "selectRow": "Select row",
+            "request": "Request",
+            "transaction": "Transaction",
+            "requester": "Requester",
+            "voting": "Voting",
+            "votingTooltip": "First number shows approvals received. Second number shows approvals required to execute.",
+            "status": "Status",
+            "notPending": "Proposal is not pending.",
+            "noPermissionVote": "You don't have permission to vote on this request.",
+            "alreadyVoted": "You already voted on this request.",
+            "noResults": "No requests found matching your filters.",
+            "allCaughtUp": "All caught up!",
+            "noPending": "There are no pending requests.",
+            "send": "Send",
+            "exchange": "Exchange",
+            "requestsSelected": "{count, plural, one {# Request Selected} other {# Requests Selected}}",
+            "bulkApproveDisabled": "This request can't be approved because the treasury has insufficient balance."
+        },
         "pending": {
             "title": "Pending Requests",
             "viewAll": "View All",

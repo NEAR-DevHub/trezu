@@ -327,6 +327,26 @@
             "deposit": "Depositar",
             "viewRequest": "Ver solicitud"
         },
+        "table": {
+            "selectAll": "Seleccionar todo",
+            "selectRow": "Seleccionar fila",
+            "request": "Solicitud",
+            "transaction": "Transacción",
+            "requester": "Solicitante",
+            "voting": "Votación",
+            "votingTooltip": "El primer número muestra las aprobaciones recibidas. El segundo muestra las aprobaciones requeridas para ejecutar.",
+            "status": "Estado",
+            "notPending": "La propuesta no está pendiente.",
+            "noPermissionVote": "No tienes permiso para votar en esta solicitud.",
+            "alreadyVoted": "Ya has votado en esta solicitud.",
+            "noResults": "No se encontraron solicitudes que coincidan con los filtros.",
+            "allCaughtUp": "¡Todo al día!",
+            "noPending": "No hay solicitudes pendientes.",
+            "send": "Enviar",
+            "exchange": "Intercambiar",
+            "requestsSelected": "{count, plural, one {# solicitud seleccionada} other {# solicitudes seleccionadas}}",
+            "bulkApproveDisabled": "Esta solicitud no se puede aprobar porque la tesorería no tiene saldo suficiente."
+        },
         "pending": {
             "title": "Solicitudes pendientes",
             "viewAll": "Ver todas",
