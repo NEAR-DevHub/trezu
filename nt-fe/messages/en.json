@@ -1142,6 +1142,18 @@
         "titleFailed": "Treasury Creation Failed",
         "viewTreasury": "View Treasury"
     },
+    "memberValidation": {
+        "noManagePermission": "You don't have permission to manage members",
+        "pendingRequest": "You can't manage members while there is an active request",
+        "rolesAnd": "{first} and {second}",
+        "rolesMany": "{list}, and {last}",
+        "cannotRemoveMember": "Cannot remove this member. They are the only person assigned to the {roles} {count, plural, one {role} other {roles}}.",
+        "cannotRemoveMemberGov": "Cannot remove this member. They are the only person assigned to the {roles} {count, plural, one {role, which is} other {roles, which are}} required to manage team members and configure voting.",
+        "cannotBulkRemove": "Cannot remove these members. This would leave the {roles} {count, plural, one {role} other {roles}} empty.",
+        "cannotBulkRemoveGov": "Cannot remove these members. This would leave the {roles} {count, plural, one {role, which is} other {roles, which are}} empty, required to manage team members and configure voting.",
+        "cannotRemoveRole": "You can't remove the {role} role from this member. They are the only person assigned to this role.",
+        "cannotRemoveRoleGov": "You can't remove the {role} role from this member. They are the only {role} member, and without this role you won't be able to manage team members or configure voting."
+    },
     "memberInput": {
         "creatorYou": "Creator (you)",
         "memberAddress": "Member Address",
@@ -1214,6 +1226,25 @@
             "startBeforeEnd": "Start date must be before end date",
             "cliffBetween": "Cliff date must be between {start} and {end}"
         }
+    },
+    "exportToasts": {
+        "downloadFailed": "Failed to download export",
+        "invalidDateRange": "Invalid date range",
+        "invalidDateRangeDescription": "Please select a valid date range for export.",
+        "exportSuccess": "Export successful!",
+        "exportSuccessDescription": "Your {type} file has been downloaded. Check your export history for details.",
+        "exportFailed": "Export failed",
+        "exportFailedFallback": "Failed to export data. Please try again.",
+        "noDownloadPermission": "You don't have permission to download the file.",
+        "noExportPermission": "You don't have permission to export",
+        "quotaUsed": "You've used all your quota",
+        "exporting": "Exporting...",
+        "export": "Export"
+    },
+    "paymentFormSection": {
+        "selectRecipient": "Select Recipient",
+        "searchByNameOrAddress": "Search by name or address",
+        "privateNetworkAlert": "This will send funds to an account on the near.com private network — not to an external wallet."
     },
     "tokenSelectDialog": {
         "selectToken": "Select token",

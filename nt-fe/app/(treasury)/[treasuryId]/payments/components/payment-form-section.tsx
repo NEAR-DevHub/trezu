@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import {
     Control,
     FieldValues,
@@ -61,6 +62,7 @@ export function PaymentFormSection<
     isSubmitting = false,
     validatedRecipients,
 }: PaymentFormSectionProps<TFieldValues, TTokenPath>) {
+    const t = useTranslations("paymentFormSection");
     const { setValue, setError, clearErrors } = useFormContext<TFieldValues>();
     const [isRecipientValid, setIsRecipientValid] = useState(false);
     const [isValidatingRecipient, setIsValidatingRecipient] = useState(false);
@@ -332,15 +334,15 @@ export function PaymentFormSection<
             </InputBlock>
 
             {isConfidential && (
-                <InfoAlert message="This will send funds to an account on the near.com private network — not to an external wallet." />
+                <InfoAlert message={t("privateNetworkAlert")} />
             )}
 
             <SelectModal
                 isOpen={isContactModalOpen}
                 onClose={() => setIsContactModalOpen(false)}
-                title="Select Recipient"
+                title={t("selectRecipient")}
                 options={contactOptions}
-                searchPlaceholder="Search by name or address"
+                searchPlaceholder={t("searchByNameOrAddress")}
                 onSelect={(option) => {
                     const entry = filteredAddressBook.find(
                         (e) => e.id === option.id,

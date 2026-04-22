@@ -150,22 +150,26 @@ function parseDateRangeFromUrl(
 }
 
 function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
+    const tEx = useTranslations("exportToasts");
     const { isGuestTreasury } = useTreasury();
     const { accountId } = useNear();
     const isMember = !isGuestTreasury;
 
-    const handleDownload = useCallback((item: ExportHistoryItem) => {
-        try {
-            const url = new URL(item.fileUrl, BACKEND_API_BASE);
-            const fullUrl = `${BACKEND_API_BASE}${url.pathname}${url.search}`;
+    const handleDownload = useCallback(
+        (item: ExportHistoryItem) => {
+            try {
+                const url = new URL(item.fileUrl, BACKEND_API_BASE);
+                const fullUrl = `${BACKEND_API_BASE}${url.pathname}${url.search}`;
 
-            // Open in new tab
-            window.open(fullUrl, "_blank", "noopener,noreferrer");
-        } catch (error) {
-            console.error("Download error:", error);
-            toast.error("Failed to download export");
-        }
-    }, []);
+                // Open in new tab
+                window.open(fullUrl, "_blank", "noopener,noreferrer");
+            } catch (error) {
+                console.error("Download error:", error);
+                toast.error(tEx("downloadFailed"));
+            }
+        },
+        [tEx],
+    );
 
     const columns = useMemo<ColumnDef<ExportHistoryItem, any>[]>(
         () => [
@@ -238,7 +242,7 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
                                     disabled={!isMember || !accountId}
                                     tooltipContent={
                                         !isMember || !accountId
-                                            ? "You don't have permission to download the file."
+                                            ? tEx("noDownloadPermission")
                                             : undefined
                                     }
                                 >
@@ -327,6 +331,7 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
 
 export default function ExportActivityPage() {
     const t = useTranslations("pages.dashboard");
+    const tEx = useTranslations("exportToasts");
     const router = useRouter();
     const queryClient = useQueryClient();
     const { treasuryId, isGuestTreasury } = useTreasury();
@@ -426,8 +431,8 @@ export default function ExportActivityPage() {
 
     const handleExport = async () => {
         if (!treasuryId || !dateRange.from || !dateRange.to) {
-            toast.error("Invalid date range", {
-                description: "Please select a valid date range for export.",
+            toast.error(tEx("invalidDateRange"), {
+                description: tEx("invalidDateRangeDescription"),
             });
             return;
         }
@@ -517,8 +522,10 @@ export default function ExportActivityPage() {
             document.body.removeChild(link);
             window.URL.revokeObjectURL(downloadUrl);
 
-            toast.success("Export successful!", {
-                description: `Your ${documentType.toUpperCase()} file has been downloaded. Check your export history for details.`,
+            toast.success(tEx("exportSuccess"), {
+                description: tEx("exportSuccessDescription", {
+                    type: documentType.toUpperCase(),
+                }),
             });
 
             // Refetch subscription data and history
@@ -536,9 +543,9 @@ export default function ExportActivityPage() {
             const errorMessage =
                 error instanceof Error
                     ? error.message
-                    : "Failed to export data. Please try again.";
+                    : tEx("exportFailedFallback");
 
-            toast.error("Export failed", {
+            toast.error(tEx("exportFailed"), {
                 description: errorMessage,
             });
         } finally {
@@ -1028,12 +1035,12 @@ export default function ExportActivityPage() {
                                                 className="w-full mt-3"
                                             >
                                                 {!isMember || !accountId
-                                                    ? "You don't have permission to export"
+                                                    ? tEx("noExportPermission")
                                                     : !canGenerateExport
-                                                      ? "You’ve used all your quota"
+                                                      ? tEx("quotaUsed")
                                                       : isExporting
-                                                        ? "Exporting..."
-                                                        : "Export"}
+                                                        ? tEx("exporting")
+                                                        : tEx("export")}
                                             </Button>
                                         </div>
                                     </TabsContent>

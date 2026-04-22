@@ -1142,6 +1142,18 @@
         "titleFailed": "Error al crear tesorería",
         "viewTreasury": "Ver tesorería"
     },
+    "memberValidation": {
+        "noManagePermission": "No tienes permiso para gestionar miembros",
+        "pendingRequest": "No puedes gestionar miembros mientras haya una solicitud activa",
+        "rolesAnd": "{first} y {second}",
+        "rolesMany": "{list} y {last}",
+        "cannotRemoveMember": "No se puede eliminar a este miembro. Es la única persona asignada al {count, plural, one {rol} other {los roles}} {roles}.",
+        "cannotRemoveMemberGov": "No se puede eliminar a este miembro. Es la única persona asignada al {count, plural, one {rol} other {los roles}} {roles}, necesario para gestionar miembros y configurar la votación.",
+        "cannotBulkRemove": "No se pueden eliminar estos miembros. Esto dejaría vacío el {count, plural, one {rol} other {los roles}} {roles}.",
+        "cannotBulkRemoveGov": "No se pueden eliminar estos miembros. Esto dejaría vacío el {count, plural, one {rol} other {los roles}} {roles}, necesario para gestionar miembros y configurar la votación.",
+        "cannotRemoveRole": "No puedes quitar el rol {role} a este miembro. Es la única persona asignada a este rol.",
+        "cannotRemoveRoleGov": "No puedes quitar el rol {role} a este miembro. Es el único miembro con rol {role}, y sin este rol no podrás gestionar miembros ni configurar la votación."
+    },
     "memberInput": {
         "creatorYou": "Creador (tú)",
         "memberAddress": "Dirección del miembro",
@@ -1214,6 +1226,25 @@
             "startBeforeEnd": "La fecha de inicio debe ser anterior a la de fin",
             "cliffBetween": "La fecha de cliff debe estar entre {start} y {end}"
         }
+    },
+    "exportToasts": {
+        "downloadFailed": "No se pudo descargar la exportación",
+        "invalidDateRange": "Rango de fechas no válido",
+        "invalidDateRangeDescription": "Selecciona un rango de fechas válido para exportar.",
+        "exportSuccess": "¡Exportación correcta!",
+        "exportSuccessDescription": "Tu archivo {type} se ha descargado. Revisa tu historial de exportaciones para más detalles.",
+        "exportFailed": "Error al exportar",
+        "exportFailedFallback": "No se pudieron exportar los datos. Inténtalo de nuevo.",
+        "noDownloadPermission": "No tienes permiso para descargar el archivo.",
+        "noExportPermission": "No tienes permiso para exportar",
+        "quotaUsed": "Has usado toda tu cuota",
+        "exporting": "Exportando...",
+        "export": "Exportar"
+    },
+    "paymentFormSection": {
+        "selectRecipient": "Seleccionar destinatario",
+        "searchByNameOrAddress": "Buscar por nombre o dirección",
+        "privateNetworkAlert": "Esto enviará fondos a una cuenta en la red privada de near.com, no a una billetera externa."
     },
     "tokenSelectDialog": {
         "selectToken": "Seleccionar token",

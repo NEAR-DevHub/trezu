@@ -1142,6 +1142,18 @@
         "titleFailed": "Не вдалось створити скарбницю",
         "viewTreasury": "Переглянути скарбницю"
     },
+    "memberValidation": {
+        "noManagePermission": "У вас немає прав керувати учасниками",
+        "pendingRequest": "Неможливо керувати учасниками, поки є активний запит",
+        "rolesAnd": "{first} і {second}",
+        "rolesMany": "{list} і {last}",
+        "cannotRemoveMember": "Неможливо видалити цього учасника. Він єдиний, кому призначено {count, plural, one {роль} few {ролі} many {ролей} other {ролей}} {roles}.",
+        "cannotRemoveMemberGov": "Неможливо видалити цього учасника. Він єдиний, кому призначено {count, plural, one {роль} few {ролі} many {ролей} other {ролей}} {roles}, необхідну для керування учасниками та налаштування голосування.",
+        "cannotBulkRemove": "Неможливо видалити цих учасників. Це залишить {count, plural, one {роль} few {ролі} many {ролей} other {ролей}} {roles} без учасників.",
+        "cannotBulkRemoveGov": "Неможливо видалити цих учасників. Це залишить {count, plural, one {роль} few {ролі} many {ролей} other {ролей}} {roles} без учасників, необхідних для керування учасниками та налаштування голосування.",
+        "cannotRemoveRole": "Не можна зняти роль {role} з цього учасника. Він єдиний, кому призначено цю роль.",
+        "cannotRemoveRoleGov": "Не можна зняти роль {role} з цього учасника. Він єдиний учасник з роллю {role}, і без неї ви не зможете керувати учасниками або налаштувати голосування."
+    },
     "memberInput": {
         "creatorYou": "Творець (ви)",
         "memberAddress": "Адреса учасника",
@@ -1214,6 +1226,25 @@
             "startBeforeEnd": "Дата початку має передувати даті завершення",
             "cliffBetween": "Дата клифу має бути між {start} і {end}"
         }
+    },
+    "exportToasts": {
+        "downloadFailed": "Не вдалось завантажити експорт",
+        "invalidDateRange": "Невірний діапазон дат",
+        "invalidDateRangeDescription": "Оберіть коректний діапазон дат для експорту.",
+        "exportSuccess": "Експорт завершено!",
+        "exportSuccessDescription": "Ваш файл {type} завантажено. Перевірте історію експортів для деталей.",
+        "exportFailed": "Експорт не вдався",
+        "exportFailedFallback": "Не вдалось експортувати дані. Спробуйте ще раз.",
+        "noDownloadPermission": "У вас немає прав завантажити файл.",
+        "noExportPermission": "У вас немає прав експортувати",
+        "quotaUsed": "Ви використали всю квоту",
+        "exporting": "Експорт...",
+        "export": "Експорт"
+    },
+    "paymentFormSection": {
+        "selectRecipient": "Обрати одержувача",
+        "searchByNameOrAddress": "Пошук за назвою або адресою",
+        "privateNetworkAlert": "Кошти буде надіслано на акаунт у приватній мережі near.com, а не на зовнішній гаманець."
     },
     "tokenSelectDialog": {
         "selectToken": "Обрати токен",
