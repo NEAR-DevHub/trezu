@@ -102,20 +102,22 @@ const TRANSACTION_TYPES: { value: TransactionType; labelKey: string }[] = [
     { value: "staking_rewards", labelKey: "typeStakingRewards" },
 ];
 
-const exportFormSchema = z.object({
-    email: z
-        .string()
-        .email("Please enter a valid email address")
-        .optional()
-        .or(z.literal("")),
-    documentType: z.enum(["csv", "json", "xlsx"]),
-    dateRange: z.object({
-        from: z.date(),
-        to: z.date().optional(),
-    }),
-    selectedAssets: z.array(z.string()).min(1),
-    selectedTransactionTypes: z.array(z.string()).min(1),
-});
+function buildExportFormSchema(messages: { invalidEmail: string }) {
+    return z.object({
+        email: z
+            .string()
+            .email(messages.invalidEmail)
+            .optional()
+            .or(z.literal("")),
+        documentType: z.enum(["csv", "json", "xlsx"]),
+        dateRange: z.object({
+            from: z.date(),
+            to: z.date().optional(),
+        }),
+        selectedAssets: z.array(z.string()).min(1),
+        selectedTransactionTypes: z.array(z.string()).min(1),
+    });
+}
 
 // Helper to parse date range from file URL
 function parseDateRangeFromUrl(
@@ -405,7 +407,15 @@ export default function ExportActivityPage() {
         tEx,
     ]);
 
-    const form = useForm<z.infer<typeof exportFormSchema>>({
+    const exportFormSchema = useMemo(
+        () =>
+            buildExportFormSchema({
+                invalidEmail: tEx("invalidEmail"),
+            }),
+        [tEx],
+    );
+
+    const form = useForm<z.infer<ReturnType<typeof buildExportFormSchema>>>({
         resolver: zodResolver(exportFormSchema),
         defaultValues: {
             email: "",
@@ -500,14 +510,17 @@ export default function ExportActivityPage() {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                let errorMessage = "Export failed";
+                let errorMessage = tEx("exportFailed");
 
                 try {
                     const errorJson = JSON.parse(errorText);
                     errorMessage =
-                        errorJson.message || errorJson.error || errorText;
+                        errorJson.message ||
+                        errorJson.error ||
+                        errorText ||
+                        tEx("exportFailed");
                 } catch {
-                    errorMessage = errorText || "Export failed";
+                    errorMessage = errorText || tEx("exportFailed");
                 }
 
                 throw new Error(errorMessage);

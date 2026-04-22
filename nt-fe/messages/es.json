@@ -1,6 +1,7 @@
 {
     "common": {
         "loading": "Cargando...",
+        "notAvailable": "N/D",
         "connecting": "Conectando...",
         "save": "Guardar",
         "cancel": "Cancelar",
@@ -941,6 +942,11 @@
             "startBeforeEnd": "La fecha de inicio debe ser anterior a la de fin",
             "cliffBetween": "La fecha de cliff debe estar entre"
         },
+        "stepTitles": {
+            "details": "Detalles",
+            "settings": "Configuración",
+            "review": "Revisar"
+        },
         "heading": "Nuevo plan de vesting",
         "amount": "Importe",
         "startDate": "Fecha de inicio",
@@ -1354,7 +1360,8 @@
         "moreFlexibility": "¿Buscas más flexibilidad?",
         "contactUs": "Contáctanos",
         "last1Year": "Último año",
-        "last2Years": "Últimos 2 años"
+        "last2Years": "Últimos 2 años",
+        "invalidEmail": "Introduce una dirección de correo electrónico válida"
     },
     "paymentFormSection": {
         "selectRecipient": "Seleccionar destinatario",
@@ -1514,6 +1521,15 @@
         "guestSaveAction": "Puedes guardar esta tesorería de invitado en tu lista de tesorerías.",
         "newFeatureRich": "¡Nuevo! 🎉 Guarda direcciones usadas con frecuencia para pagos más rápidos y sin errores.<br></br> Tus contactos quedan privados y visibles solo para tu equipo.",
         "newFeatureCta": "Pruébalo"
+    },
+    "statusDate": {
+        "expires": "Expira",
+        "created": "Creado",
+        "expired": "Expirado",
+        "removed": "Eliminado"
+    },
+    "amount": {
+        "network": "Red: {network}"
     },
     "activityLabels": {
         "exchangePending": "Intercambio pendiente",

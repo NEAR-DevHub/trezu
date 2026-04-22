@@ -33,13 +33,14 @@ function calculateExchangeRate(
     receiveTokenDecimals: number,
     sellTokenSymbol: string,
     receiveTokenSymbol: string,
-    isReversed: boolean = false,
+    isReversed: boolean,
+    notAvailable: string,
 ): string {
     const sellAmount = Big(amountIn).div(Big(10).pow(sellTokenDecimals));
     const receiveAmount = Big(amountOut).div(Big(10).pow(receiveTokenDecimals));
 
     if (sellAmount.lte(0) || receiveAmount.lte(0)) {
-        return "N/A";
+        return notAvailable;
     }
 
     if (isReversed) {
@@ -69,13 +70,14 @@ function calculateDetailedExchangeRate(
     receiveTokenDecimals: number,
     sellTokenSymbol: string,
     receiveTokenSymbol: string,
-    isReversed: boolean = false,
+    isReversed: boolean,
+    notAvailable: string,
 ): string {
     const sellAmount = Big(amountIn).div(Big(10).pow(sellTokenDecimals));
     const receiveAmount = Big(amountOut).div(Big(10).pow(receiveTokenDecimals));
 
     if (sellAmount.lte(0) || receiveAmount.lte(0)) {
-        return "N/A";
+        return notAvailable;
     }
 
     if (isReversed) {
@@ -121,6 +123,7 @@ export function Rate({
         ? calculateDetailedExchangeRate
         : calculateExchangeRate;
 
+    const tCommon = useTranslations("common");
     const rate = calculateRate(
         quote.amountIn,
         quote.amountOut,
@@ -131,6 +134,7 @@ export function Rate({
         sellToken.symbol,
         receiveToken.symbol,
         isReversed,
+        tCommon("notAvailable"),
     );
 
     return (

@@ -1,6 +1,7 @@
 {
     "common": {
         "loading": "Loading...",
+        "notAvailable": "N/A",
         "connecting": "Connecting...",
         "save": "Save",
         "cancel": "Cancel",
@@ -941,6 +942,11 @@
             "startBeforeEnd": "Start date must be before end date",
             "cliffBetween": "Cliff date must be between"
         },
+        "stepTitles": {
+            "details": "Details",
+            "settings": "Settings",
+            "review": "Review"
+        },
         "heading": "New Vesting Schedule",
         "amount": "Amount",
         "startDate": "Start Date",
@@ -1354,7 +1360,8 @@
         "moreFlexibility": "Looking for more flexibility?",
         "contactUs": "Contact Us",
         "last1Year": "Last 1 year",
-        "last2Years": "Last 2 years"
+        "last2Years": "Last 2 years",
+        "invalidEmail": "Please enter a valid email address"
     },
     "paymentFormSection": {
         "selectRecipient": "Select Recipient",
@@ -1514,6 +1521,15 @@
         "guestSaveAction": "You can save this guest treasury to your treasuries list.",
         "newFeatureRich": "New! 🎉 Save frequently used addresses for faster, error-free payouts.<br></br> Your contacts stay private and visible only to your team.",
         "newFeatureCta": "Try It"
+    },
+    "statusDate": {
+        "expires": "Expires",
+        "created": "Created",
+        "expired": "Expired",
+        "removed": "Removed"
+    },
+    "amount": {
+        "network": "Network: {network}"
     },
     "activityLabels": {
         "exchangePending": "Exchange Pending",

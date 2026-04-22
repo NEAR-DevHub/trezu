@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TokenDisplay } from "@/components/token-display-with-network";
 import { useToken } from "@/hooks/use-treasury-queries";
@@ -30,6 +33,8 @@ export function Amount({
     network,
     iconSize = "lg",
 }: AmountProps) {
+    const tCommon = useTranslations("common");
+    const tAmount = useTranslations("amount");
     const { data: tokenData, isLoading } = useToken(tokenId);
     const amountValue = amount
         ? formatBalance(amount, tokenData?.decimals || 24)
@@ -37,12 +42,12 @@ export function Amount({
     const estimatedUSDValue = useMemo(() => {
         const isPriceAvailable = tokenData?.price;
         if (!isPriceAvailable || !amountValue || isNaN(Number(amountValue))) {
-            return "N/A";
+            return tCommon("notAvailable");
         }
 
         const price = tokenData?.price;
         return `≈ ${formatCurrency(Number(amountValue) * price!)}`;
-    }, [tokenData, amountValue]);
+    }, [tokenData, amountValue, tCommon]);
 
     if (isLoading) {
         if (textOnly) {
@@ -105,7 +110,7 @@ export function Amount({
                         nearTypeLabel ?? resolvedNetwork?.toUpperCase();
                     return label ? (
                         <span className="text-muted-foreground text-xs">
-                            Network: {label}
+                            {tAmount("network", { network: label })}
                         </span>
                     ) : null;
                 })()}

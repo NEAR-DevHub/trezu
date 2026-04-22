@@ -323,6 +323,7 @@ function Step3({ handleBack }: StepProps) {
 
 export default function VestingPage() {
     const t = useTranslations("pages.vesting");
+    const tSteps = useTranslations("vesting.stepTitles");
     const tValidation = useTranslations("paymentForm.validation");
     const vestingFormSchema = useMemo(
         () =>
@@ -454,7 +455,11 @@ export default function VestingPage() {
                     <StepWizard
                         step={step}
                         onStepChange={setStep}
-                        stepTitles={["Details", "Settings", "Review"]}
+                        stepTitles={[
+                            tSteps("details"),
+                            tSteps("settings"),
+                            tSteps("review"),
+                        ]}
                         steps={[
                             {
                                 component: Step1,
