@@ -1,6 +1,7 @@
 "use client";
 
 import { Settings } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
 import {
@@ -36,6 +37,7 @@ export function TreasurySelector({
     isOpen,
     onOpenChange,
 }: TreasurySelectorProps) {
+    const t = useTranslations("treasurySelector");
     const router = useRouter();
     const pathname = usePathname();
     const { accountId } = useNear();
@@ -110,9 +112,7 @@ export function TreasurySelector({
         router.push(`/${newTreasuryId}/${pathAfterTreasury}`);
     };
 
-    const displayName = config
-        ? (config.name ?? treasuryId)
-        : "Select treasury";
+    const displayName = config ? (config.name ?? treasuryId) : t("select");
 
     return (
         <>
@@ -134,7 +134,7 @@ export function TreasurySelector({
                     disabled={!accountId}
                 >
                     <Tooltip
-                        content="Connect wallet to view treasuries"
+                        content={t("connectWalletTooltip")}
                         disabled={!!accountId}
                     >
                         <div

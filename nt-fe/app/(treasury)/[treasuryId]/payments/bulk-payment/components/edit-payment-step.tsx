@@ -101,9 +101,10 @@ export function EditPaymentStep({
         }
     };
 
+    const tBulk = useTranslations("bulkPayment.editStep");
     return (
         <PageCard>
-            <StepperHeader title="Edit Payment" handleBack={onCancel} />
+            <StepperHeader title={tBulk("title")} handleBack={onCancel} />
 
             <Form {...form}>
                 <PaymentFormSection
@@ -113,7 +114,7 @@ export function EditPaymentStep({
                     recipientName="recipient"
                     tokenLocked={true}
                     feeErrorMessage={feeErrorMessage}
-                    saveButtonText="Save Changes"
+                    saveButtonText={tBulk("saveChanges")}
                     onSave={handleSave}
                     isSubmitting={isSaving}
                 />

@@ -1,4 +1,5 @@
 import { ContactRound } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useProfile } from "@/hooks/use-treasury-queries";
 import { useTreasury } from "@/hooks/use-treasury";
 import { cn } from "@/lib/utils";
@@ -150,6 +151,7 @@ export function TooltipUser({
     children,
     triggerProps,
 }: TooltipUserProps) {
+    const t = useTranslations("user");
     const { treasuryId, isGuestTreasury } = useTreasury();
     const { data: profile, isLoading: isProfileLoading } =
         useProfile(accountId);
@@ -184,17 +186,17 @@ export function TooltipUser({
                                 <Button asChild type="button" variant="ghost">
                                     <Link href={addToAddressBookUrl}>
                                         <ContactRound className="size-4" />
-                                        Save to Address book
+                                        {t("saveToAddressBook")}
                                     </Link>
                                 </Button>
                             )}
                         <CopyButton
                             text={accountId}
-                            toastMessage="Wallet address copied to clipboard"
+                            toastMessage={t("walletCopiedToast")}
                             variant="ghost"
                         >
                             <span className="break-all">
-                                Copy Wallet Address
+                                {t("copyWalletAddress")}
                             </span>
                         </CopyButton>
                     </div>

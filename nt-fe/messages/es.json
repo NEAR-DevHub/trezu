@@ -836,6 +836,10 @@
         "upload": {
             "pleaseUploadCsv": "Sube un archivo CSV",
             "fileSizeLimit": "El tamaño del archivo debe ser inferior a 1,5 MB"
+        },
+        "editStep": {
+            "title": "Editar pago",
+            "saveChanges": "Guardar cambios"
         }
     },
     "exchange": {
@@ -1245,6 +1249,29 @@
         "selectRecipient": "Seleccionar destinatario",
         "searchByNameOrAddress": "Buscar por nombre o dirección",
         "privateNetworkAlert": "Esto enviará fondos a una cuenta en la red privada de near.com, no a una billetera externa."
+    },
+    "treasurySelector": {
+        "select": "Seleccionar tesorería",
+        "connectWalletTooltip": "Conecta la billetera para ver tesorerías"
+    },
+    "user": {
+        "saveToAddressBook": "Guardar en agenda",
+        "walletCopiedToast": "Dirección de billetera copiada al portapapeles",
+        "copyWalletAddress": "Copiar dirección"
+    },
+    "infoDisplay": {
+        "viewLess": "Ver menos",
+        "viewAllDetails": "Ver todos los detalles"
+    },
+    "amountSummary": {
+        "defaultTitle": "Enviarás un total de"
+    },
+    "residency": {
+        "vestedToken": "Token en vesting",
+        "staked": "En staking",
+        "fungibleToken": "Token fungible",
+        "intentsToken": "Token de intents",
+        "nativeToken": "Token nativo"
     },
     "exchangeErrors": {
         "noRoute": "No se encontró intercambio. Prueba con un importe menor u otro token.",

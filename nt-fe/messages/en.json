@@ -836,6 +836,10 @@
         "upload": {
             "pleaseUploadCsv": "Please upload a CSV file",
             "fileSizeLimit": "File size must be less than 1.5 MB"
+        },
+        "editStep": {
+            "title": "Edit Payment",
+            "saveChanges": "Save Changes"
         }
     },
     "exchange": {
@@ -1245,6 +1249,29 @@
         "selectRecipient": "Select Recipient",
         "searchByNameOrAddress": "Search by name or address",
         "privateNetworkAlert": "This will send funds to an account on the near.com private network — not to an external wallet."
+    },
+    "treasurySelector": {
+        "select": "Select treasury",
+        "connectWalletTooltip": "Connect wallet to view treasuries"
+    },
+    "user": {
+        "saveToAddressBook": "Save to Address book",
+        "walletCopiedToast": "Wallet address copied to clipboard",
+        "copyWalletAddress": "Copy Wallet Address"
+    },
+    "infoDisplay": {
+        "viewLess": "View Less",
+        "viewAllDetails": "View All Details"
+    },
+    "amountSummary": {
+        "defaultTitle": "You are sending a total of"
+    },
+    "residency": {
+        "vestedToken": "Vested Token",
+        "staked": "Staked",
+        "fungibleToken": "Fungible Token",
+        "intentsToken": "Intents Token",
+        "nativeToken": "Native Token"
     },
     "exchangeErrors": {
         "noRoute": "No exchange found. Try a smaller amount or different token.",

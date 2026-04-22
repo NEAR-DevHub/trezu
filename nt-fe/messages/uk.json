@@ -836,6 +836,10 @@
         "upload": {
             "pleaseUploadCsv": "Завантажте CSV-файл",
             "fileSizeLimit": "Розмір файлу має бути меншим за 1.5 МБ"
+        },
+        "editStep": {
+            "title": "Редагувати платіж",
+            "saveChanges": "Зберегти зміни"
         }
     },
     "exchange": {
@@ -1245,6 +1249,29 @@
         "selectRecipient": "Обрати одержувача",
         "searchByNameOrAddress": "Пошук за назвою або адресою",
         "privateNetworkAlert": "Кошти буде надіслано на акаунт у приватній мережі near.com, а не на зовнішній гаманець."
+    },
+    "treasurySelector": {
+        "select": "Обрати скарбницю",
+        "connectWalletTooltip": "Підключіть гаманець, щоб побачити скарбниці"
+    },
+    "user": {
+        "saveToAddressBook": "Зберегти в адресну книгу",
+        "walletCopiedToast": "Адресу гаманця скопійовано в буфер обміну",
+        "copyWalletAddress": "Скопіювати адресу"
+    },
+    "infoDisplay": {
+        "viewLess": "Згорнути",
+        "viewAllDetails": "Показати всі деталі"
+    },
+    "amountSummary": {
+        "defaultTitle": "Ви надсилаєте загалом"
+    },
+    "residency": {
+        "vestedToken": "Токен вестингу",
+        "staked": "Застейковано",
+        "fungibleToken": "Фандж. токен",
+        "intentsToken": "Токен Intents",
+        "nativeToken": "Нативний токен"
     },
     "exchangeErrors": {
         "noRoute": "Обмін не знайдено. Спробуйте меншу суму або інший токен.",

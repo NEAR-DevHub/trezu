@@ -426,7 +426,7 @@ export function ReviewPaymentsStep({
                         onClick={handleProceedClick}
                         disabled={hasValidationErrors}
                         permissions={[{ kind: "call", action: "AddProposal" }]}
-                        idleMessage="Confirm and Submit Request"
+                        idleMessage={tPay("confirmSubmit")}
                     />
                 )}
             </ReviewStep>
