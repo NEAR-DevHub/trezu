@@ -14,7 +14,7 @@ import {
 } from "react-hook-form";
 import z from "zod";
 import { useTranslations } from "next-intl";
-import { AccountIdInput, accountIdSchema } from "./account-id-input";
+import { AccountIdInput, buildAccountIdSchema } from "./account-id-input";
 import { ROLES, RoleSelector } from "./role-selector";
 import { Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -23,11 +23,17 @@ import { RoleBadge } from "./role-badge";
 export function buildMemberSchema(messages: {
     rolesRequired: string;
     duplicateAddress: string;
+    accountId: {
+        minLength: string;
+        maxLength: string;
+        charset: string;
+        doesNotExist: string;
+    };
 }) {
     return z
         .array(
             z.object({
-                accountId: accountIdSchema,
+                accountId: buildAccountIdSchema(messages.accountId),
                 roles: z
                     .array(z.enum(ROLES.map((r) => r.id)))
                     .min(1, messages.rolesRequired),
@@ -55,6 +61,12 @@ export function buildMemberSchema(messages: {
 const _memberSchemaForTypes = buildMemberSchema({
     rolesRequired: "",
     duplicateAddress: "",
+    accountId: {
+        minLength: "",
+        maxLength: "",
+        charset: "",
+        doesNotExist: "",
+    },
 });
 
 export type MembersArray = z.infer<typeof _memberSchemaForTypes>;

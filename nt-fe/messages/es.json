@@ -1186,6 +1186,28 @@
         "copied": "Copiado al portapapeles",
         "failed": "No se pudo copiar"
     },
+    "paymentForm": {
+        "validation": {
+            "recipientMin": "El destinatario debe tener al menos 2 caracteres",
+            "recipientMax": "El destinatario debe tener menos de 128 caracteres",
+            "amountGreaterThanZero": "El importe debe ser mayor que 0",
+            "recipientSameAsToken": "El destinatario y la dirección del token no pueden ser iguales",
+            "selectToken": "Selecciona un token",
+            "recipientMax64": "El destinatario debe tener menos de 64 caracteres",
+            "amountMinLockup": "El importe debe ser mayor o igual a 3.5",
+            "startDateRequired": "Se requiere la fecha de inicio",
+            "endDateRequired": "Se requiere la fecha de fin",
+            "cliffDateRequired": "Se requiere la fecha de cliff",
+            "startBeforeEnd": "La fecha de inicio debe ser anterior a la de fin",
+            "cliffBetween": "La fecha de cliff debe estar entre {start} y {end}"
+        }
+    },
+    "accountIdInput": {
+        "minLength": "El ID de cuenta debe tener al menos 2 caracteres",
+        "maxLength": "El ID de cuenta debe tener menos de 64 caracteres",
+        "charset": "El ID de cuenta solo puede contener letras minúsculas, números, guiones y guiones bajos",
+        "doesNotExist": "El ID de cuenta no existe"
+    },
     "addressBookMutations": {
         "addedToast": "{count, plural, one {Destinatario añadido} other {# destinatarios añadidos}}",
         "addedSingleToast": "Destinatario añadido",

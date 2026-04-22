@@ -1186,6 +1186,28 @@
         "copied": "Скопійовано в буфер обміну",
         "failed": "Не вдалось скопіювати"
     },
+    "paymentForm": {
+        "validation": {
+            "recipientMin": "Одержувач має містити щонайменше 2 символи",
+            "recipientMax": "Одержувач має містити менше 128 символів",
+            "amountGreaterThanZero": "Сума має бути більшою за 0",
+            "recipientSameAsToken": "Одержувач і адреса токена не можуть збігатись",
+            "selectToken": "Оберіть токен",
+            "recipientMax64": "Одержувач має містити менше 64 символів",
+            "amountMinLockup": "Сума має бути не менша за 3.5",
+            "startDateRequired": "Потрібна дата початку",
+            "endDateRequired": "Потрібна дата завершення",
+            "cliffDateRequired": "Потрібна дата клифу",
+            "startBeforeEnd": "Дата початку має передувати даті завершення",
+            "cliffBetween": "Дата клифу має бути між {start} і {end}"
+        }
+    },
+    "accountIdInput": {
+        "minLength": "ID акаунта має містити щонайменше 2 символи",
+        "maxLength": "ID акаунта має містити менше 64 символів",
+        "charset": "ID акаунта може містити лише малі літери, цифри, дефіси та підкреслення",
+        "doesNotExist": "Такого ID акаунта не існує"
+    },
     "addressBookMutations": {
         "addedToast": "{count, plural, one {Одержувача додано} few {# одержувачів додано} many {# одержувачів додано} other {# одержувачів додано}}",
         "addedSingleToast": "Одержувача додано",

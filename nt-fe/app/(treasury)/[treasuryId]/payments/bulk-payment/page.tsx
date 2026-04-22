@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { PageComponentLayout } from "@/components/page-component-layout";
@@ -31,7 +31,7 @@ import {
 import {
     type BulkPaymentData,
     type BulkPaymentFormValues,
-    bulkPaymentFormSchema,
+    buildBulkPaymentFormSchema,
     type EditPaymentFormValues,
 } from "./schemas";
 import { needsStorageDepositCheck } from "./utils";
@@ -40,6 +40,14 @@ export default function BulkPaymentPage() {
     const t = useTranslations("pages.payments");
     const tBulk = useTranslations("bulkPayment");
     const tReq = useTranslations("requests.actions");
+    const tPaymentValidation = useTranslations("paymentForm.validation");
+    const bulkPaymentFormSchema = useMemo(
+        () =>
+            buildBulkPaymentFormSchema({
+                selectToken: tPaymentValidation("selectToken"),
+            }),
+        [tPaymentValidation],
+    );
     const router = useRouter();
     const queryClient = useQueryClient();
     const { treasuryId: selectedTreasury, isConfidential } = useTreasury();

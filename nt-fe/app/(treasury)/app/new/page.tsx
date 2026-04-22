@@ -78,6 +78,12 @@ function buildTreasuryFormSchema(messages: {
     accountTaken: string;
     rolesRequired: string;
     duplicateAddress: string;
+    accountId: {
+        minLength: string;
+        maxLength: string;
+        charset: string;
+        doesNotExist: string;
+    };
 }) {
     return z
         .object({
@@ -112,6 +118,7 @@ function buildTreasuryFormSchema(messages: {
             members: buildMemberSchema({
                 rolesRequired: messages.rolesRequired,
                 duplicateAddress: messages.duplicateAddress,
+                accountId: messages.accountId,
             }),
         })
         .refine((data) => {
@@ -795,6 +802,7 @@ export default function NewTreasuryPage() {
     const tSteps = useTranslations("createTreasury.steps");
     const tStepTitles = useTranslations("createTreasury.stepTitles");
     const tMember = useTranslations("memberInput.validation");
+    const tAccountId = useTranslations("accountIdInput");
     const NON_CONFIDENTIAL_STEPS: CreationStep[] = useMemo(
         () => [
             {
@@ -861,8 +869,14 @@ export default function NewTreasuryPage() {
                 accountTaken: tValidation("accountTaken"),
                 rolesRequired: tMember("rolesRequired"),
                 duplicateAddress: tMember("duplicateAddress"),
+                accountId: {
+                    minLength: tAccountId("minLength"),
+                    maxLength: tAccountId("maxLength"),
+                    charset: tAccountId("charset"),
+                    doesNotExist: tAccountId("doesNotExist"),
+                },
             }),
-        [tValidation, tMember],
+        [tValidation, tMember, tAccountId],
     );
     const { accountId, connect, isAuthenticating } = useNear();
     const { treasuries } = useTreasury();

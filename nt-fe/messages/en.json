@@ -1186,6 +1186,28 @@
         "copied": "Copied to clipboard",
         "failed": "Failed to copy"
     },
+    "paymentForm": {
+        "validation": {
+            "recipientMin": "Recipient should be at least 2 characters",
+            "recipientMax": "Recipient must be less than 128 characters",
+            "amountGreaterThanZero": "Amount must be greater than 0",
+            "recipientSameAsToken": "Recipient and token address cannot be the same",
+            "selectToken": "Please select a token",
+            "recipientMax64": "Recipient must be less than 64 characters",
+            "amountMinLockup": "Amount must be greater than or equal to 3.5",
+            "startDateRequired": "Start date is required",
+            "endDateRequired": "End date is required",
+            "cliffDateRequired": "Cliff date is required",
+            "startBeforeEnd": "Start date must be before end date",
+            "cliffBetween": "Cliff date must be between {start} and {end}"
+        }
+    },
+    "accountIdInput": {
+        "minLength": "Account ID should be at least 2 characters",
+        "maxLength": "Account ID must be less than 64 characters",
+        "charset": "Account ID can only contain lowercase letters, numbers, hyphens, and underscores",
+        "doesNotExist": "Account ID doesn't exist"
+    },
     "addressBookMutations": {
         "addedToast": "{count, plural, one {Recipient added} other {# recipients added}}",
         "addedSingleToast": "Recipient added",

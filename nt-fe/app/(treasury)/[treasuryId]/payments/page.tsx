@@ -72,30 +72,37 @@ import {
 } from "@/lib/intents-fee";
 import { FunctionCallKind, TransferKind } from "@/lib/proposals-api";
 
-const paymentFormSchema = z
-    .object({
-        address: z
-            .string()
-            .min(2, "Recipient should be at least 2 characters")
-            .max(128, "Recipient must be less than 128 characters"),
-        amount: z
-            .string()
-            .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
-                message: "Amount must be greater than 0",
-            }),
-        memo: z.string().optional(),
-        isRegistered: z.boolean().optional(),
-        token: tokenSchema,
-    })
-    .superRefine((data, ctx) => {
-        if (data.address === data.token.address) {
-            ctx.addIssue({
-                code: "custom",
-                path: ["address"],
-                message: "Recipient and token address cannot be the same",
-            });
-        }
-    });
+function buildPaymentFormSchema(messages: {
+    recipientMin: string;
+    recipientMax: string;
+    amountGreaterThanZero: string;
+    recipientSameAsToken: string;
+}) {
+    return z
+        .object({
+            address: z
+                .string()
+                .min(2, messages.recipientMin)
+                .max(128, messages.recipientMax),
+            amount: z
+                .string()
+                .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+                    message: messages.amountGreaterThanZero,
+                }),
+            memo: z.string().optional(),
+            isRegistered: z.boolean().optional(),
+            token: tokenSchema,
+        })
+        .superRefine((data, ctx) => {
+            if (data.address === data.token.address) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["address"],
+                    message: messages.recipientSameAsToken,
+                });
+            }
+        });
+}
 
 interface Step1Props extends StepProps {
     feeErrorMessage?: string | null;
@@ -381,7 +388,7 @@ function Step2({
     );
 }
 
-type PaymentFormValues = z.infer<typeof paymentFormSchema>;
+type PaymentFormValues = z.infer<ReturnType<typeof buildPaymentFormSchema>>;
 
 const STABLE_TOKEN_PRIORITY: Record<string, number> = {
     USDC: 2,
@@ -503,6 +510,17 @@ const buildTransferProposal = (
 
 export default function PaymentsPage() {
     const t = useTranslations("pages.payments");
+    const tValidation = useTranslations("paymentForm.validation");
+    const paymentFormSchema = useMemo(
+        () =>
+            buildPaymentFormSchema({
+                recipientMin: tValidation("recipientMin"),
+                recipientMax: tValidation("recipientMax"),
+                amountGreaterThanZero: tValidation("amountGreaterThanZero"),
+                recipientSameAsToken: tValidation("recipientSameAsToken"),
+            }),
+        [tValidation],
+    );
     const { treasuryId, isConfidential } = useTreasury();
     const { createProposal } = useNear();
     const { data: policy } = useTreasuryPolicy(treasuryId);

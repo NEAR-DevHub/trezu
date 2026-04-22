@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslations } from "next-intl";
 import { Form } from "@/components/ui/form";
 import { PageCard } from "@/components/card";
 import { StepProps, StepperHeader } from "@/components/step-wizard";
 import { PaymentFormSection } from "../../components/payment-form-section";
 import type { EditPaymentFormValues, BulkPaymentData } from "../schemas";
-import { editPaymentSchema } from "../schemas";
+import { buildEditPaymentSchema } from "../schemas";
 import type { SelectedTokenData } from "@/components/token-select";
 import { needsStorageDepositCheck } from "../utils";
 import { getBatchStorageDepositIsRegistered } from "@/lib/api";
@@ -36,6 +37,17 @@ export function EditPaymentStep({
     onSave,
     onCancel,
 }: EditPaymentStepProps) {
+    const tValidation = useTranslations("paymentForm.validation");
+    const editPaymentSchema = useMemo(
+        () =>
+            buildEditPaymentSchema({
+                recipientMin: tValidation("recipientMin"),
+                recipientMax: tValidation("recipientMax"),
+                amountGreaterThanZero: tValidation("amountGreaterThanZero"),
+                selectToken: tValidation("selectToken"),
+            }),
+        [tValidation],
+    );
     const [isSaving, setIsSaving] = useState(false);
 
     const form = useForm<EditPaymentFormValues>({
