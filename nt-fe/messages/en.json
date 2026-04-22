@@ -640,6 +640,23 @@
             "heading": "🎉 Congrats!",
             "body": "You've completed your Treasury setup. Enjoy easy management of your assets.",
             "letsGo": "Let's go!"
+        },
+        "createBanner": {
+            "close": "Close",
+            "title": "Explore Trezu",
+            "description": "Create an account to unlock permissions to all features and benefits of Trezu.",
+            "cta": "Create Treasury"
+        },
+        "infoBox": {
+            "title": "Get more from Trezu",
+            "close": "Close",
+            "description": "Discover how others use Treasury, try the demo, and check the docs to learn the features.",
+            "demoTitle": "Explore the Trezu Demo",
+            "demoDescription": "See a live demo account in action.",
+            "docsTitle": "Documentation",
+            "docsDescription": "Learn about all features in the docs.",
+            "videoTitle": "Watch the Demo",
+            "videoDescription": "Watch a short video showing how Trezu works."
         }
     }
 }

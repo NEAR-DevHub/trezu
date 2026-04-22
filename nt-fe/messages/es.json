@@ -640,6 +640,23 @@
             "heading": "🎉 ¡Felicidades!",
             "body": "Has completado la configuración de tu tesorería. Disfruta de una gestión sencilla de tus activos.",
             "letsGo": "¡Vamos!"
+        },
+        "createBanner": {
+            "close": "Cerrar",
+            "title": "Explora Trezu",
+            "description": "Crea una cuenta para desbloquear permisos a todas las funciones y ventajas de Trezu.",
+            "cta": "Crear tesorería"
+        },
+        "infoBox": {
+            "title": "Saca más partido a Trezu",
+            "close": "Cerrar",
+            "description": "Descubre cómo otros usan Treasury, prueba la demo y consulta los documentos para conocer las funciones.",
+            "demoTitle": "Explora la demo de Trezu",
+            "demoDescription": "Ve una cuenta de demostración en acción.",
+            "docsTitle": "Documentación",
+            "docsDescription": "Aprende sobre todas las funciones en la documentación.",
+            "videoTitle": "Mira la demo",
+            "videoDescription": "Mira un vídeo corto que muestra cómo funciona Trezu."
         }
     }
 }
