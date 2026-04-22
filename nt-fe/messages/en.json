@@ -369,6 +369,23 @@
             "voting": "Voting",
             "preferences": "Preferences",
             "integrations": "Integrations"
+        },
+        "preferences": {
+            "timeZone": "Time Zone",
+            "timeZoneDescription": "Set your local time zone for accurate date and time display.",
+            "timeFormat": "Time Format",
+            "hour12": "12-hour (1:00 PM)",
+            "hour24": "24-hour (13:00)",
+            "autoTimezone": "Set timezone automatically using your location",
+            "timezone": "Timezone",
+            "loadingTimezones": "Loading timezones...",
+            "selectTimezone": "Select Timezone",
+            "searchTimezones": "Search timezones...",
+            "noTimezones": "No timezones found",
+            "save": "Save",
+            "savedToast": "Preferences saved successfully",
+            "saveFailed": "Failed to save preferences",
+            "loadFailed": "Failed to load timezones"
         }
     },
     "addressBook": {

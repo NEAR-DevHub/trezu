@@ -369,6 +369,23 @@
             "voting": "Votación",
             "preferences": "Preferencias",
             "integrations": "Integraciones"
+        },
+        "preferences": {
+            "timeZone": "Zona horaria",
+            "timeZoneDescription": "Configura tu zona horaria local para que la fecha y la hora se muestren correctamente.",
+            "timeFormat": "Formato de hora",
+            "hour12": "12 horas (1:00 PM)",
+            "hour24": "24 horas (13:00)",
+            "autoTimezone": "Configurar la zona horaria automáticamente usando tu ubicación",
+            "timezone": "Zona horaria",
+            "loadingTimezones": "Cargando zonas horarias...",
+            "selectTimezone": "Seleccionar zona horaria",
+            "searchTimezones": "Buscar zonas horarias...",
+            "noTimezones": "No se encontraron zonas horarias",
+            "save": "Guardar",
+            "savedToast": "Preferencias guardadas correctamente",
+            "saveFailed": "Error al guardar las preferencias",
+            "loadFailed": "Error al cargar las zonas horarias"
         }
     },
     "addressBook": {
