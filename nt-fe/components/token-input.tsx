@@ -164,12 +164,13 @@ export function TokenInput<
                             {tokenBalance && tokenDecimals && (
                                 <>
                                     <p className="text-xs text-muted-foreground">
-                                        Balance:{" "}
-                                        {formatBalance(
-                                            tokenBalance,
-                                            tokenDecimals,
-                                        )}{" "}
-                                        {token.symbol.toUpperCase()}
+                                        {t("balance", {
+                                            amount: formatBalance(
+                                                tokenBalance,
+                                                tokenDecimals,
+                                            ),
+                                            symbol: token.symbol.toUpperCase(),
+                                        })}
                                     </p>
                                     {!readOnly && (
                                         <Button

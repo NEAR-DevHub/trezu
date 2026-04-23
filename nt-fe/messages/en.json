@@ -1683,7 +1683,8 @@
     },
     "tokenInput": {
         "max": "MAX",
-        "insufficientTokens": "Insufficient tokens. You can submit the request and top up before approval."
+        "insufficientTokens": "Insufficient tokens. You can submit the request and top up before approval.",
+        "balance": "Balance: {amount} {symbol}"
     },
     "createRequestButton": {
         "idle": "Create Request",
