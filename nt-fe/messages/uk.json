@@ -89,7 +89,8 @@
         "waitlistInputPlaceholder": "Електронна пошта або Telegram (напр. @username)",
         "waitlistPrivacyNote": "Ми використаємо це лише для сповіщення",
         "waitlistSubmit": "Приєднатись до списку очікування",
-        "waitlistSubmitFailed": "Не вдалось надіслати. Спробуйте ще раз."
+        "waitlistSubmitFailed": "Не вдалось надіслати. Спробуйте ще раз.",
+        "welcomeAlt": "вітаємо"
     },
     "blocked": {
         "title": "Сервіс недоступний у вашій країні",
@@ -102,6 +103,13 @@
     },
     "treasuryInfo": {
         "logoAlt": "Логотип скарбниці"
+    },
+    "dateInput": {
+        "placeholder": "дд.мм.рррр"
+    },
+    "thresholdSlider": {
+        "warningSingleMember": "Поріг 1 з {memberCount} означає, що будь-який учасник може виконувати транзакції. Це знижує безпеку.",
+        "infoBalanced": "Поріг {currentThreshold} з {memberCount} забезпечує хороший баланс між безпекою та операційною гнучкістю."
     },
     "intentsFee": {
         "amountTooLowForFee": "{prefix}Сума замала для комісії мережі ({fee} {symbol}). Додайте щонайменше {addMore} {symbol}."

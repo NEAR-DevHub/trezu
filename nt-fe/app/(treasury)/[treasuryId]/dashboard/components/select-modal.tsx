@@ -224,14 +224,14 @@ export function SelectModal({
                                     ))
                                 ) : (
                                     <div className="text-center py-8 text-muted-foreground">
-                                        No results found
+                                        {t("noResults")}
                                     </div>
                                 )
                             ) : filteredOptions.length > 0 ? (
                                 filteredOptions.map(renderOptionRow)
                             ) : (
                                 <div className="text-center py-8 text-muted-foreground">
-                                    No results found
+                                    {t("noResults")}
                                 </div>
                             )}
                         </ScrollArea>

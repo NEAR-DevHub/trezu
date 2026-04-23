@@ -332,7 +332,7 @@ function WhitelistExperience({
                         <Image
                             src="/welcome.svg"
                             loading="eager"
-                            alt="welcome"
+                            alt={t("welcomeAlt")}
                             priority
                             width={1000}
                             height={500}

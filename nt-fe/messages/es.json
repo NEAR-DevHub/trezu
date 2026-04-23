@@ -89,7 +89,8 @@
         "waitlistInputPlaceholder": "Correo electrónico o Telegram (p. ej. @usuario)",
         "waitlistPrivacyNote": "Solo lo usaremos para avisarte",
         "waitlistSubmit": "Unirme a la lista de espera",
-        "waitlistSubmitFailed": "Error al enviar. Inténtalo de nuevo."
+        "waitlistSubmitFailed": "Error al enviar. Inténtalo de nuevo.",
+        "welcomeAlt": "bienvenida"
     },
     "blocked": {
         "title": "Servicio no disponible en tu país",
@@ -102,6 +103,13 @@
     },
     "treasuryInfo": {
         "logoAlt": "Logotipo de tesorería"
+    },
+    "dateInput": {
+        "placeholder": "dd/mm/aaaa"
+    },
+    "thresholdSlider": {
+        "warningSingleMember": "Un umbral de 1 de {memberCount} significa que cualquier miembro puede ejecutar transacciones. Esto reduce la seguridad.",
+        "infoBalanced": "Un umbral de {currentThreshold} de {memberCount} ofrece un buen equilibrio entre seguridad y flexibilidad operativa."
     },
     "intentsFee": {
         "amountTooLowForFee": "{prefix}La cantidad es demasiado baja para la tarifa de red ({fee} {symbol}). Añade al menos {addMore} {symbol}."

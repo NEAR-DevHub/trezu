@@ -89,7 +89,8 @@
         "waitlistInputPlaceholder": "Email address or Telegram (e.g. @username)",
         "waitlistPrivacyNote": "We will only use this to notify you",
         "waitlistSubmit": "Join the Waitlist",
-        "waitlistSubmitFailed": "Failed to submit. Please try again."
+        "waitlistSubmitFailed": "Failed to submit. Please try again.",
+        "welcomeAlt": "welcome"
     },
     "blocked": {
         "title": "Service not available in your country",
@@ -102,6 +103,13 @@
     },
     "treasuryInfo": {
         "logoAlt": "Treasury Logo"
+    },
+    "dateInput": {
+        "placeholder": "mm/dd/yyyy"
+    },
+    "thresholdSlider": {
+        "warningSingleMember": "A 1-of-{memberCount} threshold means any single member can execute transactions. This reduces security.",
+        "infoBalanced": "A {currentThreshold}-of-{memberCount} threshold provides a good balance between security and operational flexibility."
     },
     "intentsFee": {
         "amountTooLowForFee": "{prefix}Amount too low for network fee ({fee} {symbol}). Add at least {addMore} {symbol}."
