@@ -635,6 +635,7 @@
         "permissions": "Permisos",
         "member": "Miembro",
         "activeMembers": "Miembros activos",
+        "noActiveMembers": "No se encontraron miembros activos.",
         "addNewMember": "Añadir nuevo miembro",
         "membersSelected": "{count, plural, =0 {ningún miembro} one {# miembro} other {# miembros}} seleccionado(s)",
         "remove": "Eliminar",

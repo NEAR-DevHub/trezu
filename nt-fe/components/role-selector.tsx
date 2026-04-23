@@ -59,22 +59,17 @@ function normalizeRoleId(roleId: string): string {
 
 function useTranslatedRoles(availableRoles: readonly Role[]): Role[] {
     const t = useTranslations("roleSelector.roles");
-    return availableRoles.map((role) => ({
-        ...role,
-        ...(function () {
-            const canonicalRoleId = normalizeRoleId(role.id);
-            if (!CANONICAL_ROLE_IDS.has(canonicalRoleId)) {
-                return {
-                    title: role.title,
-                    description: role.description,
-                };
-            }
-            return {
-                title: t(`${canonicalRoleId}.title`),
-                description: t(`${canonicalRoleId}.description`),
-            };
-        })(),
-    }));
+    return availableRoles.map((role) => {
+        const canonical = normalizeRoleId(role.id);
+        if (!CANONICAL_ROLE_IDS.has(canonical)) {
+            return { ...role };
+        }
+        return {
+            ...role,
+            title: t(`${canonical}.title`),
+            description: t(`${canonical}.description`),
+        };
+    });
 }
 
 interface RoleSelectorProps {

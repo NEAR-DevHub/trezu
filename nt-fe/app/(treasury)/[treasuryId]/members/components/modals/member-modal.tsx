@@ -10,7 +10,8 @@ import {
     DialogTitle,
 } from "@/components/modal";
 import { useFormatRoleName } from "@/components/role-name";
-import { getRoleDescription, sortRolesByOrder } from "@/lib/role-utils";
+import { sortRolesByOrder } from "@/lib/role-utils";
+import { useRoleDescription } from "@/lib/use-role-description";
 import type { RolePermission } from "@/types/policy";
 
 interface MemberFormData {
@@ -53,6 +54,7 @@ export function MemberModal({
 }: MemberModalProps) {
     const t = useTranslations("members.memberModal");
     const formatRoleName = useFormatRoleName();
+    const getRoleDescription = useRoleDescription();
     const isEditMode = mode === "edit";
     const title = isEditMode ? t("editRoles") : t("addNewMember");
     const buttonText = isValidatingAddresses

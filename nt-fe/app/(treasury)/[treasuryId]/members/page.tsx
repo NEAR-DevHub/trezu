@@ -45,7 +45,8 @@ import { useMemberValidation } from "./hooks/use-member-validation";
 import { useTreasuryMembers } from "@/hooks/use-treasury-members";
 import { AuthButton } from "@/components/auth-button";
 import { RolePermission } from "@/types/policy";
-import { sortRolesByOrder, getRoleDescription } from "@/lib/role-utils";
+import { sortRolesByOrder } from "@/lib/role-utils";
+import { useRoleDescription } from "@/lib/use-role-description";
 import { useFormatRoleName } from "@/components/role-name";
 import { StepperHeader } from "@/components/step-wizard";
 import { NumberBadge } from "@/components/number-badge";
@@ -69,6 +70,7 @@ interface AddMemberFormData {
 function PermissionsHeader({ policyRoles }: { policyRoles: RolePermission[] }) {
     const tMembers = useTranslations("members");
     const formatRoleName = useFormatRoleName();
+    const getRoleDescription = useRoleDescription();
     // Get role descriptions and sort them
     const roleNames = policyRoles.map((r) => r.name);
     const sortedRoleNames = sortRolesByOrder(roleNames);
@@ -996,7 +998,7 @@ export default function MembersPage() {
             return (
                 <div className="flex items-center justify-center py-8">
                     <p className="text-muted-foreground">
-                        No active members found.
+                        {tMembers("noActiveMembers")}
                     </p>
                 </div>
             );
