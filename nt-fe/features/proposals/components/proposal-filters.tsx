@@ -36,6 +36,18 @@ const PROPOSAL_TYPE_OPTIONS = [
     "Settings",
 ];
 
+// When a treasury is confidential and the viewer is not a member, the subtype
+// of confidential proposals (payment vs exchange) cannot be revealed. Collapse
+// Payments + Exchange into a single "Confidential" option.
+const CONFIDENTIAL_GUEST_PROPOSAL_TYPE_OPTIONS = [
+    "Confidential",
+    "Earn",
+    "Vesting",
+    "Function Call",
+    "Change Policy",
+    "Settings",
+];
+
 const MY_VOTE_OPTIONS = ["Approved", "Rejected", "No Voted"];
 const MY_VOTE_OPERATIONS = ["Is"];
 
@@ -701,6 +713,11 @@ function ProposalTypeFilterContent({
     setIsOpen: (isOpen: boolean) => void;
     onRemove: () => void;
 }) {
+    const { isConfidential, isGuestTreasury } = useTreasury();
+    const options =
+        isConfidential && isGuestTreasury
+            ? CONFIDENTIAL_GUEST_PROPOSAL_TYPE_OPTIONS
+            : PROPOSAL_TYPE_OPTIONS;
     return (
         <CheckboxFilterContent
             value={value}
@@ -709,7 +726,7 @@ function ProposalTypeFilterContent({
             onRemove={onRemove}
             filterLabel="Request Type"
             operations={PROPOSAL_TYPE_OPERATIONS}
-            options={PROPOSAL_TYPE_OPTIONS.map((type) => ({
+            options={options.map((type) => ({
                 value: type,
                 label: type,
             }))}

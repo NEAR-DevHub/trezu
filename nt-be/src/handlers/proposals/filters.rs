@@ -4,8 +4,8 @@ use serde::Deserialize;
 
 use crate::constants::intents_tokens::find_token_by_symbol;
 use crate::handlers::proposals::scraper::{
-    AssetExchangeInfo, BatchPaymentResponse, BulkPayment, LockupInfo, PaymentInfo,
-    PaymentProposalType, Policy, Proposal, ProposalType, StakeDelegationInfo, Vote,
+    AssetExchangeInfo, BatchPaymentResponse, BulkPayment, ConfidentialRequestInfo, LockupInfo,
+    PaymentInfo, PaymentProposalType, Policy, Proposal, ProposalType, StakeDelegationInfo, Vote,
     fetch_batch_payment_list, fetch_ft_metadata, get_status_display,
 };
 use crate::utils::cache::{Cache, CacheKey, CacheTier};
@@ -138,6 +138,17 @@ fn parse_voter_votes(opt: &Option<String>) -> Option<Vec<VoterVote>> {
     })
 }
 
+/// Strip `nep141:` / `nep245:` prefix from a defuse asset id (e.g. `nep141:wrap.near` -> `wrap.near`).
+fn strip_nep_prefix(asset: &str) -> &str {
+    if let Some(rest) = asset.strip_prefix("nep141:") {
+        rest
+    } else if let Some(rest) = asset.strip_prefix("nep245:") {
+        rest
+    } else {
+        asset
+    }
+}
+
 fn get_token_addresses(symbol: &str) -> Option<Vec<String>> {
     find_token_by_symbol(&symbol.to_lowercase()).map(|token| {
         token
@@ -194,7 +205,44 @@ fn matches_tokens_filter(
     token: Option<&String>,
     token_not: Option<&String>,
     bulk_payment_contract_id: &near_api::AccountId,
+    treasury_id: &str,
 ) -> bool {
+    // Confidential proposals: derive token from quote_metadata.
+    if let Some(info) = ConfidentialRequestInfo::from_proposal(proposal, treasury_id) {
+        let token_to_check = match &info {
+            ConfidentialRequestInfo::Payment { token_id, .. } => strip_nep_prefix(token_id),
+            ConfidentialRequestInfo::Swap {
+                token_in_address, ..
+            } => strip_nep_prefix(token_in_address),
+        };
+        if token_matches_filter(token_to_check, token, token_not) {
+            return true;
+        }
+        // For swap also consider output token.
+        if let ConfidentialRequestInfo::Swap {
+            token_out_address, ..
+        } = &info
+        {
+            let out = strip_nep_prefix(token_out_address);
+            if let Some(tok) = token {
+                let addrs = get_token_addresses(tok);
+                if let Some(addrs) = addrs
+                    && addrs.iter().any(|t| t == out)
+                {
+                    return true;
+                }
+            }
+            if let Some(tok_not) = token_not {
+                let addrs = get_token_addresses(tok_not);
+                if let Some(addrs) = addrs
+                    && addrs.iter().any(|t| t == out)
+                {
+                    return false;
+                }
+            }
+        }
+        return token.is_none() && token_not.is_none();
+    }
     // Check payments
     if let Some(payment_info) = PaymentInfo::from_proposal(proposal, Some(bulk_payment_contract_id))
     {
@@ -258,7 +306,29 @@ async fn matches_recipients_filter(
     cache: &Cache,
     network: &NetworkConfig,
     bulk_payment_contract_id: &near_api::AccountId,
+    treasury_id: &str,
 ) -> bool {
+    // Confidential proposals: derive recipient from mapped payment/swap.
+    if let Some(info) = ConfidentialRequestInfo::from_proposal(proposal, treasury_id) {
+        let recipient = match &info {
+            ConfidentialRequestInfo::Payment { receiver, .. } => receiver.as_str(),
+            ConfidentialRequestInfo::Swap {
+                deposit_address, ..
+            } => deposit_address.as_str(),
+        };
+        if let Some(recipients) = recipients_set
+            && !recipients.contains(recipient)
+        {
+            return false;
+        }
+        if let Some(recipients_not) = recipients_not_set
+            && recipients_not.contains(recipient)
+        {
+            return false;
+        }
+        return true;
+    }
+
     // Check payments
     if let Some(payment_info) = PaymentInfo::from_proposal(proposal, Some(bulk_payment_contract_id))
     {
@@ -460,6 +530,7 @@ async fn matches_amount_filters(
     cache: &Cache,
     network: &NetworkConfig,
     bulk_payment_contract_id: &near_api::AccountId,
+    treasury_id: &str,
 ) -> bool {
     if filters.amount_equal.is_none()
         && filters.amount_min.is_none()
@@ -468,6 +539,35 @@ async fn matches_amount_filters(
         return true; // No amount filters specified
     }
     let token = filters.token.as_deref().unwrap_or("");
+
+    // Confidential proposals: derive payment-like info from quote_metadata.
+    if let Some(info) = ConfidentialRequestInfo::from_proposal(proposal, treasury_id) {
+        let (token_id, amount) = match &info {
+            ConfidentialRequestInfo::Payment {
+                token_id, amount, ..
+            } => (strip_nep_prefix(token_id).to_string(), amount.clone()),
+            ConfidentialRequestInfo::Swap {
+                token_in_address,
+                amount_in,
+                ..
+            } => (
+                strip_nep_prefix(token_in_address).to_string(),
+                amount_in.clone(),
+            ),
+        };
+        return matches_payment_amount_filters(
+            &PaymentInfo {
+                receiver: "".to_string(),
+                token: token_id,
+                amount,
+                is_lockup: false,
+            },
+            filters,
+            cache,
+            network,
+        )
+        .await;
+    }
 
     // Check payments
     if let Some(payment_info) = PaymentInfo::from_proposal(proposal, Some(bulk_payment_contract_id))
@@ -717,8 +817,20 @@ fn matches_types_filter(
     types_set: &Option<HashSet<&str>>,
     types_not_set: &Option<HashSet<&str>>,
     bulk_payment_contract_id: &near_api::AccountId,
+    treasury_id: &str,
 ) -> bool {
-    let name = if AssetExchangeInfo::from_proposal(proposal).is_some() {
+    let confidential = ConfidentialRequestInfo::from_proposal(proposal, treasury_id);
+    let is_confidential_marker = ConfidentialRequestInfo::is_confidential(proposal);
+
+    let name = if let Some(info) = &confidential {
+        match info {
+            ConfidentialRequestInfo::Swap { .. } => "Exchange",
+            ConfidentialRequestInfo::Payment { .. } => "Payments",
+        }
+    } else if is_confidential_marker {
+        // Confidential but not yet enriched — treat as generic confidential.
+        "Confidential"
+    } else if AssetExchangeInfo::from_proposal(proposal).is_some() {
         "Exchange"
     } else if PaymentInfo::from_proposal(proposal, Some(bulk_payment_contract_id)).is_some()
         || BulkPayment::from_proposal_with_contract_id(proposal, bulk_payment_contract_id).is_some()
@@ -738,16 +850,32 @@ fn matches_types_filter(
         "Unknown"
     };
 
-    if let Some(types) = types_set
-        && !types.contains(name)
-    {
-        return false;
+    // Confidential is also matchable as its own category regardless of subtype.
+    let confidential_match_name = if is_confidential_marker {
+        Some("Confidential")
+    } else {
+        None
+    };
+
+    if let Some(types) = types_set {
+        let matches_primary = types.contains(name);
+        let matches_confidential = confidential_match_name
+            .map(|n| types.contains(n))
+            .unwrap_or(false);
+        if !matches_primary && !matches_confidential {
+            return false;
+        }
     }
 
-    if let Some(types_not) = types_not_set
-        && types_not.contains(name)
-    {
-        return false;
+    if let Some(types_not) = types_not_set {
+        if types_not.contains(name) {
+            return false;
+        }
+        if let Some(n) = confidential_match_name
+            && types_not.contains(n)
+        {
+            return false;
+        }
     }
 
     true
@@ -761,6 +889,7 @@ impl ProposalFilters {
         cache: &Cache,
         network: &NetworkConfig,
         bulk_payment_contract_id: &near_api::AccountId,
+        treasury_id: &str,
     ) -> Result<Vec<Proposal>, Box<dyn std::error::Error>> {
         let types_set = to_str_hashset(&self.types);
         let types_not_set = to_str_hashset(&self.types_not);
@@ -824,6 +953,7 @@ impl ProposalFilters {
                 &types_set,
                 &types_not_set,
                 bulk_payment_contract_id,
+                treasury_id,
             ) {
                 continue;
             }
@@ -991,7 +1121,13 @@ impl ProposalFilters {
             // Smart filters - apply each filter independently across relevant proposal types
 
             // Apply tokens filter
-            if !matches_tokens_filter(&proposal, token, token_not, bulk_payment_contract_id) {
+            if !matches_tokens_filter(
+                &proposal,
+                token,
+                token_not,
+                bulk_payment_contract_id,
+                treasury_id,
+            ) {
                 continue;
             }
 
@@ -1003,6 +1139,7 @@ impl ProposalFilters {
                 cache,
                 network,
                 bulk_payment_contract_id,
+                treasury_id,
             )
             .await
             {
@@ -1028,8 +1165,15 @@ impl ProposalFilters {
             }
 
             // Apply amount filters
-            if !matches_amount_filters(&proposal, self, cache, network, bulk_payment_contract_id)
-                .await
+            if !matches_amount_filters(
+                &proposal,
+                self,
+                cache,
+                network,
+                bulk_payment_contract_id,
+                treasury_id,
+            )
+            .await
             {
                 continue;
             }
