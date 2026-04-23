@@ -172,9 +172,21 @@ export interface VestingData {
  * Data structure for Confidential Transfer proposals (v1.signer signing proposals).
  * Quote metadata is populated from the backend's confidential_intents table.
  */
+export interface ConfidentialBulkRecipient {
+    receiver: string;
+    tokenId: string;
+    amount: string;
+}
+
+export interface ConfidentialBulkPaymentData {
+    recipients: ConfidentialBulkRecipient[];
+    notes?: string;
+}
+
 export type MappedConfidentialRequest =
     | { type: "swap"; data: SwapRequestData }
     | { type: "payment"; data: PaymentRequestData }
+    | { type: "bulk_payment"; data: ConfidentialBulkPaymentData }
     | null;
 
 export interface ConfidentialRequestData {

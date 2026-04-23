@@ -895,6 +895,9 @@
         "proposalSubmitted": "Propuesta de pago masivo enviada",
         "submitListFailed": "No se pudo enviar la lista de pagos",
         "submitFailed": "No se pudo enviar el pago masivo",
+        "quotingRecipient": "Cotizando destinatario {index}/{total}",
+        "quotesComplete": "Se cotizaron {total} destinatarios",
+        "quoteFailedForRecipient": "Falló la cotización para {recipient}",
         "upload": {
             "pleaseUploadCsv": "Sube un archivo CSV",
             "fileSizeLimit": "El tamaño del archivo debe ser inferior a 1,5 MB",
@@ -906,6 +909,7 @@
             "upgradePaid": "Mejora tu plan para tener más acceso, o espera a que tus límites se reinicien el próximo mes.",
             "selectAsset": "Seleccionar activo",
             "disableTokenMessage": "Este token aún no es compatible con pagos masivos. Estamos trabajando en ello.",
+            "disableTokenMessageConfidential": "Solo los tokens Intents pueden usarse para pagos masivos confidenciales.",
             "providePaymentData": "Proporciona los datos del pago",
             "uploadFile": "Subir archivo",
             "provideData": "Introducir datos",

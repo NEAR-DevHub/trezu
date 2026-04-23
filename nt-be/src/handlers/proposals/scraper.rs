@@ -380,7 +380,22 @@ pub fn get_status_display(
                 pending_label.to_string()
             }
         }
-        _ => format!("{:?}", status),
+        _ => {
+            // Confidential override: a DAO-approved v1.signer proposal can still fail
+            // at the 1Click submit-intent step. Surface that as "Failed" so the UI
+            // and the status filter treat it like any other failed execution.
+            if matches!(status, ProposalStatus::Approved)
+                && let Some(p) = proposal
+                && let Some(meta) = p.confidential_metadata.as_ref()
+                && meta
+                    .get("status")
+                    .and_then(|v| v.as_str())
+                    == Some("failed")
+            {
+                return "Failed".to_string();
+            }
+            format!("{:?}", status)
+        }
     }
 }
 
@@ -510,6 +525,15 @@ impl ConfidentialRequestInfo {
         if quote_meta.is_null() {
             return None;
         }
+        // Bulk payments: quote_metadata is a JSONB array. We treat the first
+        // entry as representative for classification (payment vs swap) and
+        // per-recipient/amount filtering; full per-recipient matching is a
+        // follow-up.
+        let quote_meta = if let Some(arr) = quote_meta.as_array() {
+            arr.first()?
+        } else {
+            quote_meta
+        };
         let quote = quote_meta.get("quote")?;
         let quote_request = quote_meta.get("quoteRequest")?;
 

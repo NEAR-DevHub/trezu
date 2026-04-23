@@ -1,6 +1,7 @@
 import { ConfidentialRequestData } from "../../types/index";
 import { TokenCell } from "./token-cell";
 import { SwapCell } from "./swap-cell";
+import { IntentsBatchPaymentCell } from "./batch-payment-cell";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ConfidentialTransferCellProps {
@@ -23,6 +24,16 @@ export function ConfidentialRequestCell({
     if (mapped.type === "swap") {
         return (
             <SwapCell
+                data={mapped.data}
+                timestamp={timestamp}
+                textOnly={textOnly}
+            />
+        );
+    }
+
+    if (mapped.type === "bulk_payment") {
+        return (
+            <IntentsBatchPaymentCell
                 data={mapped.data}
                 timestamp={timestamp}
                 textOnly={textOnly}

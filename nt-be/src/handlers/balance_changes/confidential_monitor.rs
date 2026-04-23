@@ -56,8 +56,11 @@ struct PendingIntent {
     expected_amount_out: BigDecimal,
 }
 
-/// Load pending shield intents for a DAO and decimal-adjust their expected
-/// `amountOut` so they can be compared against observed balance increases.
+/// Load pending confidential-payment intents for a DAO and decimal-adjust their
+/// expected `amountOut` so they can be compared against observed balance
+/// increases. Covers both single (`payment`) and bulk (`bulk_payment`) types;
+/// bulk rows have quote_metadata as a JSONB array — currently we only read the
+/// first element since per-recipient reconciliation is a follow-up.
 async fn load_pending_intents(
     pool: &PgPool,
     network: &NetworkConfig,
@@ -69,7 +72,7 @@ async fn load_pending_intents(
         FROM confidential_intents
         WHERE dao_id = $1
           AND status = 'submitted'
-          AND intent_type = 'shield'
+          AND intent_type IN ('payment', 'bulk_payment')
           AND updated_at >= NOW() - INTERVAL '24 hours'
         "#,
         dao_id,
@@ -83,15 +86,23 @@ async fn load_pending_intents(
             Some(v) => v,
             None => continue,
         };
-        let destination_raw = quote_metadata
+        // Bulk payments store quote_metadata as a JSONB array; single-payment as an object.
+        // Flatten to a slice of quote objects for uniform handling.
+        let quote_entries: Vec<&serde_json::Value> = match &quote_metadata {
+            serde_json::Value::Array(arr) => arr.iter().collect(),
+            other => vec![other],
+        };
+
+        for quote_entry in quote_entries {
+        let destination_raw = quote_entry
             .get("quoteRequest")
             .and_then(|q| q.get("destinationAsset"))
             .and_then(|v| v.as_str());
-        let recipient = quote_metadata
+        let recipient = quote_entry
             .get("quoteRequest")
             .and_then(|q| q.get("recipient"))
             .and_then(|v| v.as_str());
-        let amount_out_raw = quote_metadata
+        let amount_out_raw = quote_entry
             .get("quote")
             .and_then(|q| q.get("amountOut"))
             .and_then(|v| v.as_str());
@@ -132,11 +143,12 @@ async fn load_pending_intents(
         };
 
         out.push(PendingIntent {
-            payload_hash: row.payload_hash,
-            correlation_id: row.correlation_id,
+            payload_hash: row.payload_hash.clone(),
+            correlation_id: row.correlation_id.clone(),
             destination_raw_token_id: destination_raw.to_string(),
             expected_amount_out: expected,
         });
+        }
     }
     Ok(out)
 }

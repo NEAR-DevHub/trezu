@@ -2,12 +2,15 @@ import { useTranslations } from "next-intl";
 import { useBatchPayment, useToken } from "@/hooks/use-treasury-queries";
 import { useBulkPaymentTransactionHash } from "@/hooks/use-bulk-payment-transactions";
 import { useIntentsWithdrawalFee } from "@/hooks/use-intents-withdrawal-fee";
-import { BatchPaymentRequestData } from "../../types/index";
+import {
+    BatchPaymentRequestData,
+    ConfidentialBulkPaymentData,
+} from "../../types/index";
 import { InfoDisplay, InfoItem } from "@/components/info-display";
 import { Amount } from "../amount";
 import { BatchPayment, PaymentStatus } from "@/lib/api";
 import { Button } from "@/components/button";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
     Collapsible,
     CollapsibleContent,
@@ -26,80 +29,71 @@ import { getProposalStatus } from "../../utils/proposal-utils";
 import { Policy } from "@/types/policy";
 import Big from "@/lib/big";
 
-interface PaymentDisplayProps {
-    number: number;
-    payment: BatchPayment;
-    expanded: boolean;
-    onExpandedClick: () => void;
-    tokenId: string;
-    batchId: string;
-}
+type BatchPaymentStatusLabel = "Pending" | "Paid";
 
-const paymentStatusToText = (status: PaymentStatus): "Pending" | "Paid" => {
+const paymentStatusToText = (
+    status: PaymentStatus,
+): BatchPaymentStatusLabel => {
     if (typeof status === "string") {
         return status;
     }
-    return Object.keys(status)[0] as "Pending" | "Paid";
+    return Object.keys(status)[0] as BatchPaymentStatusLabel;
 };
+
+interface PaymentDisplayProps {
+    number: number;
+    recipient: string;
+    amount: string;
+    tokenId: string;
+    expanded: boolean;
+    onExpandedClick: () => void;
+    status?: BatchPaymentStatusLabel;
+    transactionHash?: string | null;
+}
 
 function PaymentDisplay({
     number,
-    payment,
+    recipient,
+    amount,
+    tokenId,
     expanded,
     onExpandedClick,
-    tokenId,
-    batchId,
+    status,
+    transactionHash,
 }: PaymentDisplayProps) {
     const t = useTranslations("proposals.expanded");
-    const status = paymentStatusToText(payment.status);
-    const isPaid = status === "Paid";
-    const { data: txData } = useBulkPaymentTransactionHash(
-        isPaid ? batchId : null,
-        isPaid ? payment.recipient : null,
-    );
-    const transactionHash = txData?.transactionHash;
-
-    // Get token metadata to determine blockchain network for recipient address
     const { data: tokenData } = useToken(tokenId);
     const chainName = tokenData?.network || "near";
-
-    // Transaction links are always NEAR (nearblocks)
     const nearBlocksUrl = transactionHash
         ? `https://nearblocks.io/txns/${transactionHash}`
         : null;
 
-    let items: InfoItem[] = [
+    const items: InfoItem[] = [
         {
             label: t("recipient"),
             value: (
                 <User
                     useAddressBook
                     withName={chainName === "near"}
-                    accountId={payment.recipient}
+                    accountId={recipient}
                     chainName={chainName}
                 />
             ),
         },
         {
             label: t("amount"),
-            value: (
-                <Amount
-                    amount={payment.amount.toString()}
-                    showNetwork
-                    tokenId={tokenId}
-                />
-            ),
+            value: <Amount amount={amount} showNetwork tokenId={tokenId} />,
         },
     ];
 
-    if (status !== "Pending") {
+    if (status && status !== "Pending") {
         items.push({
             label: t("status"),
             value: <StatusPill status={status} />,
         });
     }
 
-    if (isPaid && nearBlocksUrl && nearBlocksUrl.length > 0) {
+    if (nearBlocksUrl) {
         items.push({
             label: t("transactionLink"),
             value: (
@@ -130,9 +124,9 @@ function PaymentDisplay({
                     {t("recipientNumber", { number })}
                 </div>
                 <div className="hidden md:flex gap-3 items-baseline text-sm text-muted-foreground">
-                    <Address address={payment.recipient} />
+                    <Address address={recipient} />
                     <Amount
-                        amount={payment.amount.toString()}
+                        amount={amount}
                         textOnly
                         showNetwork
                         tokenId={tokenId}
@@ -151,44 +145,165 @@ function PaymentDisplay({
     );
 }
 
-interface BatchPaymentRequestExpandedProps {
+/**
+ * Wraps an on-chain `BatchPayment` row with the per-payment tx-hash hook,
+ * isolating the hook call per iteration.
+ */
+function OnChainPaymentDisplay({
+    number,
+    payment,
+    tokenId,
+    batchId,
+    expanded,
+    onExpandedClick,
+}: {
+    number: number;
+    payment: BatchPayment;
+    tokenId: string;
+    batchId: string;
+    expanded: boolean;
+    onExpandedClick: () => void;
+}) {
+    const status = paymentStatusToText(payment.status);
+    const isPaid = status === "Paid";
+    const { data: txData } = useBulkPaymentTransactionHash(
+        isPaid ? batchId : null,
+        isPaid ? payment.recipient : null,
+    );
+    return (
+        <PaymentDisplay
+            number={number}
+            recipient={payment.recipient}
+            amount={payment.amount.toString()}
+            tokenId={tokenId}
+            expanded={expanded}
+            onExpandedClick={onExpandedClick}
+            status={status}
+            transactionHash={txData?.transactionHash ?? null}
+        />
+    );
+}
+
+interface BatchPaymentViewProps {
+    totalAmount: string;
+    tokenId: string;
+    recipientsCount: number;
+    notes?: string;
+    extraInfoItems?: InfoItem[];
+    /** Caller supplies one fully-rendered row per recipient so it can bind
+     * its own per-row hooks (e.g. on-chain tx-hash lookup). */
+    renderRows: (ctx: {
+        expanded: number[];
+        toggle: (index: number) => void;
+    }) => React.ReactNode;
+}
+
+/**
+ * Generalized presentational shell for a bulk-payment proposal. Takes a
+ * totalAmount + recipient count + a `renderRows` callback. Used by both the
+ * on-chain bulk (`ContractBatchPaymentExpanded`) and confidential-intents
+ * bulk (`IntentsBatchPaymentExpanded`).
+ */
+function BatchPaymentView({
+    totalAmount,
+    tokenId,
+    recipientsCount,
+    notes,
+    extraInfoItems = [],
+    renderRows,
+}: BatchPaymentViewProps) {
+    const t = useTranslations("proposals.expanded");
+    const [expanded, setExpanded] = useState<number[]>([]);
+
+    const toggle = (index: number) =>
+        setExpanded((prev) =>
+            prev.includes(index)
+                ? prev.filter((i) => i !== index)
+                : [...prev, index],
+        );
+    const isAllExpanded = expanded.length === recipientsCount;
+    const toggleAll = () =>
+        setExpanded(
+            isAllExpanded
+                ? []
+                : Array.from({ length: recipientsCount }, (_, i) => i),
+        );
+
+    const items: InfoItem[] = [
+        {
+            label: t("totalAmount"),
+            value: (
+                <Amount showNetwork amount={totalAmount} tokenId={tokenId} />
+            ),
+        },
+        ...extraInfoItems,
+        {
+            label: t("recipients"),
+            value: (
+                <div className="flex gap-3 items-baseline">
+                    <p className="text-sm font-medium">
+                        {t("recipientsCount", { count: recipientsCount })}
+                    </p>
+                    <Button variant="ghost" size="sm" onClick={toggleAll}>
+                        {isAllExpanded ? t("collapseAll") : t("expandAll")}
+                    </Button>
+                </div>
+            ),
+            afterValue: (
+                <div className="flex flex-col gap-1">
+                    {renderRows({ expanded, toggle })}
+                </div>
+            ),
+        },
+    ];
+
+    return (
+        <>
+            <InfoDisplay items={items} />
+            {notes && notes !== "" && (
+                <div className="flex justify-between gap-2 p-3 pt-0 mt-[-10px]">
+                    <p className="text-sm text-muted-foreground">
+                        {t("notes")}
+                    </p>
+                    <p className="text-sm font-medium">{notes}</p>
+                </div>
+            )}
+        </>
+    );
+}
+
+interface ContractBatchPaymentExpandedProps {
     data: BatchPaymentRequestData;
     proposal: Proposal;
 }
 
-export function BatchPaymentRequestExpanded({
+/**
+ * On-chain bulk payment (`bulkpayment.near`). Hydrates per-payment status +
+ * settlement tx from the contract and renders via `BatchPaymentView`.
+ */
+export function ContractBatchPaymentExpanded({
     data,
     proposal,
-}: BatchPaymentRequestExpandedProps) {
+}: ContractBatchPaymentExpandedProps) {
     const t = useTranslations("proposals.expanded");
     const tIntents = useTranslations("intentsQuote");
-    const [expanded, setExpanded] = useState<number[]>([]);
 
-    // Check if we should auto-refetch
-    // Only refetch if proposal is Executed
     const proposalStatus = getProposalStatus(proposal, {} as Policy);
     const isExecuted = proposalStatus === "Executed";
 
-    // First fetch to check if there are pending payments
     const {
         data: batchData,
         isLoading,
         isError,
     } = useBatchPayment(data.batchId);
-
-    // Determine if we should auto-refetch based on pending payments
     const hasPendingPayments = batchData?.payments?.some(
-        (payment) => paymentStatusToText(payment.status) === "Pending",
+        (p) => paymentStatusToText(p.status) === "Pending",
     );
-
-    // Second fetch with refetch interval if needed
     const shouldAutoRefetch = isExecuted && hasPendingPayments;
     const { data: liveBatchData } = useBatchPayment(
         data.batchId,
-        shouldAutoRefetch ? 5000 : false, // 5 seconds when conditions are met
+        shouldAutoRefetch ? 5000 : false,
     );
-
-    // Use live data if auto-refetching, otherwise use initial data
     const activeBatchData = shouldAutoRefetch ? liveBatchData : batchData;
 
     let tokenId = data.tokenId;
@@ -213,7 +328,6 @@ export function BatchPaymentRequestExpanded({
         destinationAddress: representativeRecipient,
     });
 
-    // Loading state
     if (isLoading) {
         return (
             <div className="space-y-6 py-4">
@@ -234,7 +348,6 @@ export function BatchPaymentRequestExpanded({
         );
     }
 
-    // Error state
     if (isError || !activeBatchData) {
         return (
             <EmptyState
@@ -252,92 +365,83 @@ export function BatchPaymentRequestExpanded({
     const totalNetworkFee = hasFeeData
         ? Big(dynamicFeeData.networkFee).mul(activeBatchData.payments.length)
         : null;
-
-    const onExpandedChanged = (index: number) => {
-        setExpanded((prev) => {
-            if (prev.includes(index)) {
-                return prev.filter((id) => id !== index);
-            }
-            return [...prev, index];
-        });
-    };
-
-    const isAllExpanded = expanded.length === activeBatchData.payments.length;
-    const toggleAllExpanded = () => {
-        if (isAllExpanded) {
-            setExpanded([]);
-        } else {
-            setExpanded(activeBatchData.payments.map((_, index) => index));
-        }
-    };
-
-    const items: InfoItem[] = [
-        {
-            label: t("totalAmount"),
-            value: (
-                <Amount
-                    showNetwork
-                    amount={data.totalAmount}
-                    tokenId={tokenId}
-                />
-            ),
-        },
-        ...(hasFeeData && totalNetworkFee
+    const extraInfoItems: InfoItem[] =
+        hasFeeData && totalNetworkFee
             ? [
                   {
                       label: t("networkFee"),
                       info: tIntents("networkFeeTooltip"),
                       value: `${totalNetworkFee.toString()} ${tokenData?.symbol || ""}`.trim(),
-                  } satisfies InfoItem,
+                  },
               ]
-            : []),
-        {
-            label: t("recipients"),
-            value: (
-                <div className="flex gap-3 items-baseline">
-                    <p className="text-sm font-medium">
-                        {t("recipientsCount", {
-                            count: activeBatchData.payments.length,
-                        })}
-                    </p>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={toggleAllExpanded}
-                    >
-                        {isAllExpanded ? t("collapseAll") : t("expandAll")}
-                    </Button>
-                </div>
-            ),
-            afterValue: (
-                <div className="flex flex-col gap-1">
-                    {activeBatchData.payments.map((payment, index) => (
-                        <PaymentDisplay
-                            tokenId={tokenId}
-                            number={index + 1}
-                            key={index}
-                            payment={payment}
-                            expanded={expanded.includes(index)}
-                            onExpandedClick={() => onExpandedChanged(index)}
-                            batchId={data.batchId}
-                        />
-                    ))}
-                </div>
-            ),
-        },
-    ];
+            : [];
 
     return (
-        <>
-            <InfoDisplay items={items} />
-            {data.notes && data.notes !== "" && (
-                <div className="flex justify-between gap-2 p-3 pt-0 mt-[-10px]">
-                    <p className="text-sm text-muted-foreground">
-                        {t("notes")}
-                    </p>
-                    <p className="text-sm font-medium">{data.notes}</p>
-                </div>
-            )}
-        </>
+        <BatchPaymentView
+            totalAmount={data.totalAmount}
+            tokenId={tokenId}
+            recipientsCount={activeBatchData.payments.length}
+            notes={data.notes}
+            extraInfoItems={extraInfoItems}
+            renderRows={({ expanded, toggle }) =>
+                activeBatchData.payments.map((payment, i) => (
+                    <OnChainPaymentDisplay
+                        key={`${payment.recipient}-${i}`}
+                        number={i + 1}
+                        payment={payment}
+                        tokenId={tokenId}
+                        batchId={data.batchId}
+                        expanded={expanded.includes(i)}
+                        onExpandedClick={() => toggle(i)}
+                    />
+                ))
+            }
+        />
+    );
+}
+
+// Backwards-compat alias — the expanded-view switch imports this name.
+export const BatchPaymentRequestExpanded = ContractBatchPaymentExpanded;
+
+interface IntentsBatchPaymentExpandedProps {
+    data: ConfidentialBulkPaymentData;
+}
+
+/**
+ * Confidential (1Click intents) bulk payment. The single signed NEP-413
+ * message carries all transfers atomically — no per-row chain lookup.
+ */
+export function IntentsBatchPaymentExpanded({
+    data,
+}: IntentsBatchPaymentExpandedProps) {
+    const tokenId = data.recipients[0]?.tokenId ?? "";
+    const totalAmount = useMemo(
+        () =>
+            data.recipients
+                .reduce((sum, r) => sum.add(Big(r.amount || "0")), Big(0))
+                .toString(),
+        [data.recipients],
+    );
+
+    return (
+        <BatchPaymentView
+            totalAmount={totalAmount}
+            tokenId={tokenId}
+            recipientsCount={data.recipients.length}
+            notes={data.notes}
+            renderRows={({ expanded, toggle }) =>
+                data.recipients.map((r, i) => (
+                    <PaymentDisplay
+                        key={`${r.receiver}-${i}`}
+                        number={i + 1}
+                        recipient={r.receiver}
+                        amount={r.amount}
+                        tokenId={r.tokenId || tokenId}
+                        expanded={expanded.includes(i)}
+                        onExpandedClick={() => toggle(i)}
+                    />
+                ))
+            }
+        />
     );
 }

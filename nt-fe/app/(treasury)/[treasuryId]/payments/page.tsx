@@ -152,41 +152,25 @@ function Step1({
             <div className="flex justify-between items-center">
                 <StepperHeader title={tPay("newPayment")} />
                 <div className="flex items-center gap-2">
-                    {isConfidential ? (
+                    <Link href={`/${treasuryId}/payments/bulk-payment`}>
                         <Button
-                            variant="outline"
+                            variant="ghost"
                             size={isMobile ? "icon" : "default"}
-                            className="flex items-center gap-2"
+                            className="flex items-center gap-2 border-2"
                             id="payments-bulk-btn"
-                            disabled
-                            tooltipContent={tPay("comingSoon")}
+                            onClick={() => {
+                                trackEvent("bulk-payments-click", {
+                                    source: "payments_page",
+                                    treasury_id: treasuryId ?? "",
+                                });
+                            }}
                         >
                             <ArrowDownToLine className="w-4 h-4" />
                             <span className="hidden md:block">
                                 {tPay("bulkPayments")}
                             </span>
                         </Button>
-                    ) : (
-                        <Link href={`/${treasuryId}/payments/bulk-payment`}>
-                            <Button
-                                variant="ghost"
-                                size={isMobile ? "icon" : "default"}
-                                className="flex items-center gap-2 border-2"
-                                id="payments-bulk-btn"
-                                onClick={() => {
-                                    trackEvent("bulk-payments-click", {
-                                        source: "payments_page",
-                                        treasury_id: treasuryId ?? "",
-                                    });
-                                }}
-                            >
-                                <ArrowDownToLine className="w-4 h-4" />
-                                <span className="hidden md:block">
-                                    {tPay("bulkPayments")}
-                                </span>
-                            </Button>
-                        </Link>
-                    )}
+                    </Link>
                     <PendingButton
                         id="payments-pending-btn"
                         types={["Payments"]}
@@ -798,16 +782,23 @@ export default function PaymentsPage() {
                 }
 
                 if (isConfidential) {
-                    // Confidential path: generate intent + build v1.signer proposal
-                    // Pass the full quote (minus correlationId, already stored separately)
-                    // so the backend can persist it for displaying proposal details.
+                    // Confidential path: generate intent + build v1.signer proposal.
+                    // The backend endpoint accepts an array of quotes; single
+                    // payments send a one-element array.
                     const { correlationId: _, ...quoteMetadata } =
                         quote as unknown as Record<string, unknown>;
                     const intentResponse = await generateIntent({
                         type: "swap_transfer",
                         standard: "nep413",
                         signerId: treasuryId!,
-                        quoteMetadata,
+                        quotes: [
+                            {
+                                quoteMetadata,
+                                recipient: data.address,
+                                amount: parsedAmount,
+                                tokenId: data.token.address,
+                            },
+                        ],
                         notes: data.memo?.trim() || undefined,
                     });
 

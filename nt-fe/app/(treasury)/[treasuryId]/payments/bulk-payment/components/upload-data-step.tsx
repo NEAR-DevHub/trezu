@@ -8,6 +8,8 @@ import { Button } from "@/components/button";
 import { Textarea } from "@/components/textarea";
 import { Upload, FileText, ArrowLeft, DollarSign, Info, X } from "lucide-react";
 import TokenSelect, { SelectedTokenData } from "@/components/token-select";
+import { useTreasury } from "@/hooks/use-treasury";
+import { isIntentsToken } from "@/lib/intents-fee";
 import { NumberBadge } from "@/components/number-badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CreateRequestButton } from "@/components/create-request-button";
@@ -45,6 +47,7 @@ export function UploadDataStep({
 }: UploadDataStepProps) {
     const t = useTranslations("bulkPayment.upload");
     const parsingLabels = useBulkParsingLabels();
+    const { isConfidential } = useTreasury();
     const form = useFormContext<BulkPaymentFormValues>();
     const { data: subscription, isLoading: isLoadingSubscription } =
         useSubscription(treasuryId);
@@ -371,11 +374,19 @@ export function UploadDataStep({
                                             )
                                         }
                                         disableTokens={(token) =>
-                                            token.address.startsWith("nep245:")
+                                            isConfidential
+                                                ? !isIntentsToken(token)
+                                                : token.address.startsWith(
+                                                      "nep245:",
+                                                  )
                                         }
-                                        disableTokenMessage={t(
-                                            "disableTokenMessage",
-                                        )}
+                                        disableTokenMessage={
+                                            isConfidential
+                                                ? t(
+                                                      "disableTokenMessageConfidential",
+                                                  )
+                                                : t("disableTokenMessage")
+                                        }
                                         disabled={availableCredits === 0}
                                         iconSize="lg"
                                         classNames={{

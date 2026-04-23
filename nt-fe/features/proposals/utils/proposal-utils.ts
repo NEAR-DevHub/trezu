@@ -306,6 +306,12 @@ export function getProposalStatus(
 
     switch (proposal.status) {
         case "Approved":
+            // Confidential (v1.signer) proposals can still fail at the 1Click
+            // submit-intent step after the DAO approves them. Surface that as
+            // "Failed" instead of "Executed".
+            if (proposal.confidential_metadata?.status === "failed") {
+                return "Failed";
+            }
             return "Executed";
         case "Rejected":
             return "Rejected";
