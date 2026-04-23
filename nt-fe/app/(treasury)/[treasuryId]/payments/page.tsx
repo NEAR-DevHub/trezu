@@ -106,6 +106,7 @@ interface Step1Props extends StepProps {
     feeErrorMessage?: string | null;
     isFeeLoading?: boolean;
     quoteErrorMessage?: string | null;
+    hasRestrictedRecipientError?: boolean;
     ensureQuoteBeforeReview?: () => Promise<boolean>;
     validatedRecipients?: React.MutableRefObject<Set<string>>;
     onAmountInput?: () => void;
@@ -117,6 +118,7 @@ function Step1({
     feeErrorMessage,
     isFeeLoading,
     quoteErrorMessage,
+    hasRestrictedRecipientError,
     ensureQuoteBeforeReview,
     validatedRecipients,
     onAmountInput,
@@ -143,9 +145,11 @@ function Step1({
     };
 
     const isFormFilled = !!amount && Number(amount) > 0 && !!address;
-    const saveButtonText = isFormFilled
-        ? tPay("reviewButton")
-        : tPay("reviewButtonDisabled");
+    const saveButtonText = hasRestrictedRecipientError
+        ? tPay("useDifferentAddress")
+        : isFormFilled
+          ? tPay("reviewButton")
+          : tPay("reviewButtonDisabled");
 
     return (
         <PageCard>
@@ -200,6 +204,7 @@ function Step1({
                 tokenName="token"
                 recipientName="address"
                 feeErrorMessage={feeErrorMessage || quoteErrorMessage}
+                showRestrictedRecipientAlert={!!hasRestrictedRecipientError}
                 saveButtonText={saveButtonText}
                 onSave={handleSave}
                 isSubmitting={isFeeLoading}
@@ -645,6 +650,7 @@ export default function PaymentsPage() {
         isSyncPending: isQuoteSyncPending,
         hasError: hasLiveQuoteError,
         errorMessage: liveQuoteErrorMessage,
+        hasInvalidRecipientAddressError,
         ensureBeforeReview,
     } = useIntentsQuote({
         treasuryId,
@@ -873,6 +879,10 @@ export default function PaymentsPage() {
                         isSelectedTokenIntents && hasLiveQuoteError
                             ? liveQuoteErrorMessage
                             : null,
+                    hasRestrictedRecipientError:
+                        isSelectedTokenIntents &&
+                        hasLiveQuoteError &&
+                        hasInvalidRecipientAddressError,
                     ensureQuoteBeforeReview,
                     validatedRecipients: validatedRecipientsRef,
                     onAmountInput: () => {
@@ -906,6 +916,7 @@ export default function PaymentsPage() {
             isEnsuringQuote,
             isQuoteSyncPending,
             hasLiveQuoteError,
+            hasInvalidRecipientAddressError,
             liveQuoteErrorMessage,
             isSelectedTokenIntents,
             isQuoteBusy,

@@ -885,6 +885,7 @@
         "commentPlaceholder": "Add a comment (optional)...",
         "preparingRoute": "Preparing 1Click transfer route...",
         "confirmSubmit": "Confirm and Submit Request",
+        "useDifferentAddress": "Use a different address",
         "failed1ClickQuote": "Failed to create 1Click transfer quote",
         "paymentSubmitted": "Request to send payment submitted"
     },
@@ -1446,6 +1447,8 @@
         "selectRecipient": "Select Recipient",
         "searchByNameOrAddress": "Search by name or address",
         "privateNetworkAlert": "This will send funds to an account on the near.com private network — not to an external wallet.",
+        "restrictedRecipientTitle": "Transaction not allowed",
+        "restrictedRecipientMessage": "This address is currently restricted due to security checks. If you believe this address should be allowed, you can <link>request to whitelist it</link>.",
         "send": "Send",
         "to": "To"
     },

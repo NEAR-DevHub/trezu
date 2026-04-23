@@ -885,6 +885,7 @@
         "commentPlaceholder": "Додайте коментар (необов'язково)...",
         "preparingRoute": "Підготовка маршруту 1Click...",
         "confirmSubmit": "Підтвердити та надіслати запит",
+        "useDifferentAddress": "Використайте іншу адресу",
         "failed1ClickQuote": "Не вдалось створити котирування 1Click",
         "paymentSubmitted": "Запит на надсилання платежу подано"
     },
@@ -1446,6 +1447,8 @@
         "selectRecipient": "Обрати одержувача",
         "searchByNameOrAddress": "Пошук за назвою або адресою",
         "privateNetworkAlert": "Кошти буде надіслано на акаунт у приватній мережі near.com, а не на зовнішній гаманець.",
+        "restrictedRecipientTitle": "Транзакцію не дозволено",
+        "restrictedRecipientMessage": "Ця адреса зараз обмежена через перевірки безпеки. Якщо ви вважаєте, що цю адресу слід дозволити, ви можете <link>подати запит на whitelist</link>.",
         "send": "Надіслати",
         "to": "Кому"
     },
