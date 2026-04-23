@@ -7,6 +7,10 @@ interface EmptyStateProps {
     title: string;
     description: string;
     className?: string;
+    iconWrapperClassName?: string;
+    contentClassName?: string;
+    titleClassName?: string;
+    descriptionClassName?: string;
 }
 
 export function EmptyState({
@@ -14,6 +18,10 @@ export function EmptyState({
     title,
     description,
     className,
+    iconWrapperClassName,
+    contentClassName,
+    titleClassName,
+    descriptionClassName,
 }: EmptyStateProps) {
     const renderIcon = () => {
         if (isValidElement(icon)) return icon;
@@ -28,14 +36,34 @@ export function EmptyState({
                 className,
             )}
         >
-            <div className="size-9 rounded-full bg-secondary flex items-center justify-center">
+            <div
+                className={cn(
+                    "size-9 rounded-full bg-secondary flex items-center justify-center",
+                    iconWrapperClassName,
+                )}
+            >
                 {renderIcon()}
             </div>
-            <div className="flex flex-col gap-0.5 items-center text-center">
-                <p className="text-base font-semibold text-foreground">
+            <div
+                className={cn(
+                    "flex flex-col gap-0.5 items-center text-center",
+                    contentClassName,
+                )}
+            >
+                <p
+                    className={cn(
+                        "text-base font-semibold text-foreground",
+                        titleClassName,
+                    )}
+                >
                     {title}
                 </p>
-                <p className="text-xs text-muted-foreground whitespace-pre-wrap">
+                <p
+                    className={cn(
+                        "text-xs text-muted-foreground whitespace-pre-wrap",
+                        descriptionClassName,
+                    )}
+                >
                     {description}
                 </p>
             </div>

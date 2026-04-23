@@ -15,7 +15,15 @@ import {
     APP_ACTIVE_CONFIDENTIAL_TREASURY,
 } from "@/constants/config";
 import Link from "next/link";
-import { BarChart3, CirclePlay, Eye, File, Globe, Headphones, Shield } from "lucide-react";
+import {
+    BarChart3,
+    CirclePlay,
+    Eye,
+    File,
+    Globe,
+    Headphones,
+    Shield,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 
@@ -141,7 +149,9 @@ export function SupportCenterModal({
                 description: t("confidentialDemoDescription"),
                 href: APP_ACTIVE_CONFIDENTIAL_TREASURY,
             },
-        ], [t]);
+        ],
+        [t],
+    );
 
     const supportItems = useMemo<SupportItemProps[]>(
         () => [
@@ -197,7 +207,6 @@ export function SupportCenterModal({
                     <div className="flex flex-col gap-2">
                         <span className="text-sm font-semibold text-muted-foreground">
                             {t("support")}
-
                         </span>
                         <div className="flex flex-col gap-3">
                             {supportItems.map((item) => (
