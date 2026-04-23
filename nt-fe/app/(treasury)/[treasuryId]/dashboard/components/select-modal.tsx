@@ -143,9 +143,12 @@ export function SelectModal({
                 key={item.id}
                 onClick={() => handleSelect(item)}
                 variant="ghost"
+                disabled={item.disabled}
                 className={cn(
                     "w-full flex items-center gap-1 py-3 rounded-lg h-auto justify-start pl-1!",
                     selectedId === item.id && "bg-muted",
+                    item.disabled &&
+                        "opacity-60 cursor-not-allowed pointer-events-none",
                 )}
             >
                 {renderIcon ? (

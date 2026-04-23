@@ -212,6 +212,7 @@ mod tests {
         // Step 1: Get a live quote for shielding wNEAR
         println!("=== Step 1: Getting live shield quote ===");
         let quote_request = QuoteRequest {
+            is_payment: None,
             dao_id: None,
             dry: Some(false), // Live quote — returns depositAddress
             swap_type: Some("EXACT_INPUT".to_string()),

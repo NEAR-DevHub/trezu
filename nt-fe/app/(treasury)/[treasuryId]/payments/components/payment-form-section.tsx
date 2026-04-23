@@ -48,7 +48,6 @@ interface PaymentFormSectionProps<
     saveButtonText: string;
     onSave: () => void;
     isSubmitting?: boolean;
-    validatedRecipients?: React.MutableRefObject<Set<string>>;
     onAmountInput?: () => void;
     onMaxSet?: (maxAmount: string) => void;
     /**
@@ -57,21 +56,12 @@ interface PaymentFormSectionProps<
      */
     destinationNetworkName?: Path<TFieldValues>;
     /**
-     * Form field path for the raw network name (used to derive blockchain type
-     * on remount so entered recipient stays valid when stepping back).
+     * Form field path for the raw network name. Persisted so callers can
+     * derive blockchain type downstream (review step, fees, contact filter).
      */
     destinationNetworkNameFieldName?: Path<TFieldValues>;
     /** Hide recipient network selector (e.g. bulk payments). Default false. */
     hideRecipientNetwork?: boolean;
-    /**
-     * Recipient carried in from an address-book entry before the destination
-     * network is picked. Shown as a preview so the user sees who they're
-     * paying while the network selector is still empty.
-     */
-    pendingRecipient?: {
-        address: string;
-        name?: string;
-    } | null;
 }
 
 export function PaymentFormSection<
@@ -88,13 +78,11 @@ export function PaymentFormSection<
     saveButtonText,
     onSave,
     isSubmitting = false,
-    validatedRecipients,
     onAmountInput,
     onMaxSet,
     destinationNetworkName,
     destinationNetworkNameFieldName,
     hideRecipientNetwork = false,
-    pendingRecipient = null,
 }: PaymentFormSectionProps<TFieldValues, TTokenPath>) {
     const t = useTranslations("paymentFormSection");
     const { setValue, setError, clearErrors } = useFormContext<TFieldValues>();
@@ -139,40 +127,17 @@ export function PaymentFormSection<
 
     const { isConfidential } = useTreasury();
 
+    // For bulk (hideRecipientNetwork=true) we still validate against token's
+    // chain. When the network selector is shown, the recipient input runs in
+    // "unknown" mode (no validation) and compatibility is surfaced through
+    // the network selector sections instead.
     const blockchainType = useMemo(() => {
-        // Blockchain is driven by the selected recipient network. Until the
-        // user picks one, default to NEAR so validation regexes are defined.
+        if (!hideRecipientNetwork) return "unknown";
         if (!selectedNetworkName) return "near";
         return getBlockchainType(selectedNetworkName);
-    }, [selectedNetworkName]);
+    }, [hideRecipientNetwork, selectedNetworkName]);
 
     const hasSelectedNetwork = !!selectedNetworkName;
-
-    const recipientCacheKey = useMemo(
-        () => `${blockchainType}:${(recipient || "").trim().toLowerCase()}`,
-        [blockchainType, recipient],
-    );
-    const hasCachedValidRecipient =
-        !!recipient && !!validatedRecipients?.current.has(recipientCacheKey);
-
-    // Restore cached validation on remount (e.g. stepping back from review).
-    useEffect(() => {
-        if (!hasCachedValidRecipient) return;
-        setIsValidatingRecipient(false);
-        setIsRecipientValid(true);
-    }, [hasCachedValidRecipient]);
-
-    // Cache successful validations so they survive remount.
-    useEffect(() => {
-        if (!recipient || !isRecipientValid || isValidatingRecipient) return;
-        validatedRecipients?.current.add(recipientCacheKey);
-    }, [
-        recipient,
-        isRecipientValid,
-        isValidatingRecipient,
-        recipientCacheKey,
-        validatedRecipients,
-    ]);
 
     // Sync fee coverage error into the amount field.
     useEffect(() => {
@@ -202,8 +167,11 @@ export function PaymentFormSection<
         }
     }, [selectedContact, setRecipientValue]);
 
-    // Clear selected contact if it's incompatible with the current blockchain
+    // For bulk (no network selector), drop a selected contact whose networks
+    // don't match the locked token's chain. With the selector visible, the
+    // user picks the network themselves so cross-chain contacts stay.
     useEffect(() => {
+        if (!hideRecipientNetwork) return;
         if (!selectedContact) return;
         const isCompatible =
             selectedContact.networks.length === 0 ||
@@ -217,18 +185,26 @@ export function PaymentFormSection<
             );
             setIsRecipientValid(false);
         }
-    }, [blockchainType, selectedContact, setRecipientValue]);
+    }, [
+        hideRecipientNetwork,
+        blockchainType,
+        selectedContact,
+        setRecipientValue,
+    ]);
 
     const filteredAddressBook = useMemo(
         () =>
-            addressBook.filter(
-                (entry) =>
-                    entry.networks.length === 0 ||
-                    entry.networks.some(
-                        (key) => getBlockchainType(key) === blockchainType,
-                    ),
-            ),
-        [addressBook, blockchainType],
+            hideRecipientNetwork
+                ? addressBook.filter(
+                      (entry) =>
+                          entry.networks.length === 0 ||
+                          entry.networks.some(
+                              (key) =>
+                                  getBlockchainType(key) === blockchainType,
+                          ),
+                  )
+                : addressBook,
+        [addressBook, blockchainType, hideRecipientNetwork],
     );
 
     // When recipient is pre-filled (e.g. stepping back from review), check if it matches an address book entry
@@ -256,7 +232,8 @@ export function PaymentFormSection<
 
     const isSaveDisabled =
         !recipient ||
-        (!isRecipientValid && !hasCachedValidRecipient) ||
+        (hideRecipientNetwork && !isRecipientValid) ||
+        (!hideRecipientNetwork && !hasSelectedNetwork) ||
         showRestrictedRecipientAlert ||
         isValidatingRecipient ||
         (!!feeErrorMessage && !showRestrictedRecipientAlert) ||
@@ -293,55 +270,15 @@ export function PaymentFormSection<
                 }
             />
 
-            {!hideRecipientNetwork && destinationNetworkName && (
-                <FormField
-                    control={control}
-                    name={destinationNetworkName}
-                    render={({ field }) => (
-                        <RecipientNetworkSelect
-                            value={(field.value as string | undefined) ?? ""}
-                            onChange={(id) => {
-                                field.onChange(id);
-                                // Picking a new network invalidates any
-                                // previously-entered recipient.
-                                setSelectedContact(null);
-                                setRecipientValue(
-                                    "" as PathValue<
-                                        TFieldValues,
-                                        Path<TFieldValues>
-                                    >,
-                                );
-                                setIsRecipientValid(false);
-                            }}
-                            onNetworkChange={(opt) => {
-                                if (destinationNetworkNameFieldName) {
-                                    setValue(
-                                        destinationNetworkNameFieldName,
-                                        opt.networkName as PathValue<
-                                            TFieldValues,
-                                            Path<TFieldValues>
-                                        >,
-                                        { shouldDirty: true },
-                                    );
-                                }
-                            }}
-                            isConfidential={isConfidential}
-                            token={token}
-                        />
-                    )}
-                />
-            )}
-
             <InputBlock
-                interactive={!selectedContact && hasSelectedNetwork}
-                disabled={!hideRecipientNetwork && !hasSelectedNetwork}
+                interactive={!selectedContact}
                 title={t("to")}
                 className="relative"
                 invalid={
+                    hideRecipientNetwork &&
                     !selectedContact &&
                     !!recipient &&
                     !isRecipientValid &&
-                    !hasCachedValidRecipient &&
                     !isValidatingRecipient
                 }
             >
@@ -386,28 +323,6 @@ export function PaymentFormSection<
                             </Button>
                         </div>
                     </div>
-                ) : !hideRecipientNetwork && !hasSelectedNetwork ? (
-                    pendingRecipient?.address ? (
-                        <div className="flex flex-col gap-1 py-1 min-w-0">
-                            <UserWithData
-                                name={
-                                    pendingRecipient.name ||
-                                    pendingRecipient.address
-                                }
-                                address={pendingRecipient.address}
-                                useAddressBook
-                                size="md"
-                                withLink={false}
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                {t("chooseNetworkFirst")}
-                            </p>
-                        </div>
-                    ) : (
-                        <p className="text-xl text-muted-foreground h-12 flex items-center">
-                            {t("chooseNetworkFirst")}
-                        </p>
-                    )
                 ) : (
                     <>
                         <AccountInput
@@ -426,7 +341,7 @@ export function PaymentFormSection<
                             setIsValidating={setIsValidatingRecipient}
                             borderless
                             validateOnMount={
-                                !!recipient && !hasCachedValidRecipient
+                                hideRecipientNetwork && !!recipient
                             }
                         />
                         {showContactButton && (
@@ -457,6 +372,36 @@ export function PaymentFormSection<
                     </div>
                 )}
             </InputBlock>
+
+            {!hideRecipientNetwork && destinationNetworkName && (
+                <FormField
+                    control={control}
+                    name={destinationNetworkName}
+                    render={({ field }) => (
+                        <RecipientNetworkSelect
+                            value={(field.value as string | undefined) ?? ""}
+                            recipient={recipient}
+                            onChange={(id) => {
+                                field.onChange(id);
+                            }}
+                            onNetworkChange={(opt) => {
+                                if (destinationNetworkNameFieldName) {
+                                    setValue(
+                                        destinationNetworkNameFieldName,
+                                        opt.networkName as PathValue<
+                                            TFieldValues,
+                                            Path<TFieldValues>
+                                        >,
+                                        { shouldDirty: true },
+                                    );
+                                }
+                            }}
+                            isConfidential={isConfidential}
+                            token={token}
+                        />
+                    )}
+                />
+            )}
 
             {showRestrictedRecipientAlert && (
                 <InfoAlert

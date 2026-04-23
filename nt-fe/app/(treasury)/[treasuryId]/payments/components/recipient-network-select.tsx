@@ -2,7 +2,7 @@
 
 import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SelectModal } from "@/app/(treasury)/[treasuryId]/dashboard/components/select-modal";
 import { Button } from "@/components/button";
 import { InputBlock } from "@/components/input-block";
@@ -10,6 +10,9 @@ import { getNetworkDisplayName } from "@/components/token-display";
 import type { Token } from "@/components/token-input";
 import { NEAR_COM_ICON } from "@/constants/token";
 import { useBridgeTokens } from "@/hooks/use-bridge-tokens";
+import { isValidAddress } from "@/lib/address-validation";
+import { getBlockchainType } from "@/lib/blockchain-utils";
+import { isValidNearAddressFormat } from "@/lib/near-validation";
 import { cn } from "@/lib/utils";
 import { useThemeStore } from "@/stores/theme-store";
 
@@ -30,6 +33,12 @@ interface RecipientNetworkSelectProps {
     isConfidential: boolean;
     token: Token | null;
     /**
+     * Recipient address entered by the user. Drives compatibility split in
+     * the picker — networks whose address format doesn't match are surfaced
+     * in a separate "Incompatible" section and disabled.
+     */
+    recipient: string;
+    /**
      * Fires when the user picks a network. Carries the raw network name so
      * callers can derive blockchain type (for downstream address validation).
      */
@@ -42,6 +51,19 @@ interface RecipientNetworkSelectProps {
     comingSoonFilter?: (
         available: RecipientNetworkOption[],
     ) => RecipientNetworkOption[];
+}
+
+function isAddressCompatibleWithNetwork(
+    address: string,
+    networkName: string,
+): boolean {
+    if (!address) return true;
+    const blockchain = getBlockchainType(networkName);
+    if (blockchain === "near") {
+        // NEAR full check is async; sync format check is enough for sectioning.
+        return isValidNearAddressFormat(address);
+    }
+    return isValidAddress(address, blockchain);
 }
 
 function NetworkRow({
@@ -61,7 +83,10 @@ function NetworkRow({
             <img
                 src={option.icon}
                 alt={`${option.name} network`}
-                className="size-8"
+                className={cn(
+                    "size-8",
+                    option.name.toLowerCase() === "near" && "p-1",
+                )}
             />
             <div className="flex flex-col items-start text-left">
                 <span
@@ -86,6 +111,7 @@ export function RecipientNetworkSelect({
     value,
     onChange,
     token,
+    recipient,
     onNetworkChange,
     comingSoonFilter,
 }: RecipientNetworkSelectProps) {
@@ -93,7 +119,9 @@ export function RecipientNetworkSelect({
     const { theme } = useThemeStore();
     const [open, setOpen] = useState(false);
 
-    const { data: bridgeAssets = [] } = useBridgeTokens(open);
+    // Need bridge networks before the modal opens so we can split available
+    // vs. incompatible based on the entered recipient address.
+    const { data: bridgeAssets = [] } = useBridgeTokens(true);
 
     const nearComOption: RecipientNetworkOption = useMemo(
         () => ({
@@ -145,6 +173,22 @@ export function RecipientNetworkSelect({
         return availableOptions.find((o) => o.id === value) ?? null;
     }, [availableOptions, nearComOption, value]);
 
+    const { compatibleOptions, incompatibleOptions } = useMemo(() => {
+        const compatible: RecipientNetworkOption[] = [];
+        const incompatible: RecipientNetworkOption[] = [];
+        for (const o of availableOptions) {
+            if (isAddressCompatibleWithNetwork(recipient, o.networkName)) {
+                compatible.push(o);
+            } else {
+                incompatible.push(o);
+            }
+        }
+        return {
+            compatibleOptions: compatible,
+            incompatibleOptions: incompatible,
+        };
+    }, [availableOptions, recipient]);
+
     const sections = useMemo(() => {
         const out: {
             title: string;
@@ -152,20 +196,39 @@ export function RecipientNetworkSelect({
                 id: string;
                 name: string;
                 icon: string;
+                disabled?: boolean;
                 _option: RecipientNetworkOption;
                 _disabled?: boolean;
             }[];
-        }[] = [
-            {
+        }[] = [];
+
+        const compatible = compatibleOptions;
+        const incompatible = incompatibleOptions;
+
+        if (compatible.length > 0) {
+            out.push({
                 title: t("available"),
-                options: availableOptions.map((o) => ({
+                options: compatible.map((o) => ({
                     id: o.id,
                     name: o.name,
                     icon: "",
                     _option: o,
                 })),
-            },
-        ];
+            });
+        }
+        if (incompatible.length > 0) {
+            out.push({
+                title: t("incompatible"),
+                options: incompatible.map((o) => ({
+                    id: o.id,
+                    name: o.name,
+                    icon: "",
+                    disabled: true,
+                    _option: o,
+                    _disabled: true,
+                })),
+            });
+        }
         if (comingSoonOptions.length > 0) {
             out.push({
                 title: t("comingSoon"),
@@ -173,28 +236,64 @@ export function RecipientNetworkSelect({
                     id: o.id,
                     name: o.name,
                     icon: "",
+                    disabled: true,
                     _option: o,
                     _disabled: true,
                 })),
             });
         }
         return out;
-    }, [availableOptions, comingSoonOptions, t]);
+    }, [compatibleOptions, incompatibleOptions, comingSoonOptions, t]);
+
+    const hasCompatibleNetwork = compatibleOptions.length > 0;
+    const isDisabled = !recipient || !hasCompatibleNetwork;
+
+    // Clear the selection when the address no longer matches it (e.g. user
+    // edited the address into a different chain's format).
+    useEffect(() => {
+        if (!value) return;
+        if (availableOptions.length === 0) return;
+        if (compatibleOptions.some((o) => o.id === value)) return;
+        onChange("");
+    }, [value, availableOptions, compatibleOptions, onChange]);
+
+    // Auto-pick when there's exactly one compatible network and nothing's
+    // selected (or the selection no longer matches). Skips when the user
+    // already chose a still-compatible network.
+    useEffect(() => {
+        if (compatibleOptions.length !== 1) return;
+        const only = compatibleOptions[0];
+        if (value === only.id) return;
+        if (value && compatibleOptions.some((o) => o.id === value)) return;
+        onChange(only.id);
+        onNetworkChange?.(only);
+    }, [compatibleOptions, value, onChange, onNetworkChange]);
+    const placeholderText = !recipient
+        ? t("enterAddressFirst")
+        : !hasCompatibleNetwork
+          ? t("noCompatibleNetwork")
+          : t("placeholder");
 
     return (
         <>
-            <InputBlock title={t("label")} interactive invalid={false}>
+            <InputBlock
+                title={t("label")}
+                interactive={!isDisabled}
+                disabled={isDisabled}
+                invalid={false}
+            >
                 <Button
                     type="button"
                     variant="ghost"
                     onClick={() => setOpen(true)}
-                    className="w-full h-12 justify-between px-0! hover:bg-transparent"
+                    disabled={isDisabled}
+                    className="w-full h-12 justify-between px-0! hover:bg-transparent disabled:opacity-100"
                 >
-                    {selectedOption ? (
+                    {selectedOption && !isDisabled ? (
                         <NetworkRow option={selectedOption} />
                     ) : (
                         <span className="text-xl! font-normal text-muted-foreground">
-                            {t("placeholder")}
+                            {placeholderText}
                         </span>
                     )}
                     <ChevronDown className="size-5 text-muted-foreground ml-auto" />

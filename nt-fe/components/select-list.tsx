@@ -12,6 +12,7 @@ export interface SelectListItem {
     symbol?: string;
     icon: string;
     gradient?: string;
+    disabled?: boolean;
 }
 
 interface SelectListProps<T extends SelectListItem> {
@@ -59,7 +60,10 @@ export function SelectListIcon({
     roundIcons?: boolean;
     fixNear?: boolean;
 }) {
-    const isImageUrl = icon?.startsWith("http") || icon?.startsWith("data:");
+    const isImageUrl =
+        icon?.startsWith("http") ||
+        icon?.startsWith("data:") ||
+        icon?.startsWith("/");
 
     if (isImageUrl) {
         return (

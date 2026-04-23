@@ -1476,15 +1476,17 @@
         "restrictedRecipientTitle": "Transaction not allowed",
         "restrictedRecipientMessage": "This address is currently restricted due to security checks. If you believe this address should be allowed, you can <link>request to whitelist it</link>.",
         "send": "Send",
-        "to": "To",
-        "chooseNetworkFirst": "Choose network first"
+        "to": "To"
     },
     "recipientNetworkSelect": {
         "label": "Recipient Network",
         "placeholder": "Select recipient network",
+        "enterAddressFirst": "Enter recipient address first",
+        "noCompatibleNetwork": "No network matches this address",
         "selectPlaceholder": "Select network",
         "title": "Select Network",
         "available": "Available",
+        "incompatible": "Incompatible",
         "comingSoon": "Coming Soon",
         "nearComName": "near.com",
         "nearComDescription": "Internal Network for near.com and trezu"
