@@ -21,9 +21,13 @@ export function pickLocaleFromAcceptLanguage(header: string | null): Locale {
         .split(",")
         .map((part) => {
             const [tag, q] = part.trim().split(";q=");
+            const parsedQ = q ? Number.parseFloat(q) : 1;
+            const weight = Number.isFinite(parsedQ)
+                ? Math.min(1, Math.max(0, parsedQ))
+                : 0;
             return {
                 tag: tag.toLowerCase(),
-                q: q ? Number.parseFloat(q) : 1,
+                q: weight,
             };
         })
         .sort((a, b) => b.q - a.q);
