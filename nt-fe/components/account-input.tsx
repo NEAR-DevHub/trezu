@@ -12,6 +12,7 @@ import {
     validateNearAddress,
     isValidNearAddressFormat,
 } from "@/lib/near-validation";
+import { translateNearValidationError } from "@/lib/near-validation-i18n";
 import type { BlockchainType } from "@/lib/blockchain-utils";
 
 /**
@@ -101,7 +102,9 @@ const AccountInput = ({
             try {
                 const errorCode = await validateNearAddress(address);
                 setValidationError(
-                    errorCode ? t(`near.${errorCode}`) : undefined,
+                    errorCode
+                        ? translateNearValidationError(t, errorCode)
+                        : undefined,
                 );
                 setIsValid(!errorCode);
                 setHasValidated(!errorCode); // Only mark as validated if successful

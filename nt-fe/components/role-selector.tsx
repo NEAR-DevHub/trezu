@@ -39,12 +39,41 @@ export const ROLES: readonly Role[] = [
     },
 ] as const;
 
+const CANONICAL_ROLE_IDS = new Set(["governance", "requestor", "financial"]);
+
+function normalizeRoleId(roleId: string): string {
+    const normalized = roleId.trim().toLowerCase();
+
+    if (normalized === "admin" || normalized === "manage members") {
+        return "governance";
+    }
+    if (normalized === "approver" || normalized === "vote") {
+        return "financial";
+    }
+    if (normalized === "create requests") {
+        return "requestor";
+    }
+
+    return normalized;
+}
+
 function useTranslatedRoles(availableRoles: readonly Role[]): Role[] {
     const t = useTranslations("roleSelector.roles");
     return availableRoles.map((role) => ({
         ...role,
-        title: t(`${role.id}.title`),
-        description: t(`${role.id}.description`),
+        ...(function () {
+            const canonicalRoleId = normalizeRoleId(role.id);
+            if (!CANONICAL_ROLE_IDS.has(canonicalRoleId)) {
+                return {
+                    title: role.title,
+                    description: role.description,
+                };
+            }
+            return {
+                title: t(`${canonicalRoleId}.title`),
+                description: t(`${canonicalRoleId}.description`),
+            };
+        })(),
     }));
 }
 

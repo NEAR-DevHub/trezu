@@ -13,6 +13,7 @@ import {
     isValidNearAddressFormat,
     validateNearAddress,
 } from "@/lib/near-validation";
+import { translateNearValidationError } from "@/lib/near-validation-i18n";
 import { hasPermission } from "@/lib/config-utils";
 import { useProposals } from "@/hooks/use-proposals";
 import { useQueryClient } from "@tanstack/react-query";
@@ -112,6 +113,7 @@ function PermissionsHeader({ policyRoles }: { policyRoles: RolePermission[] }) {
 export default function MembersPage() {
     const t = useTranslations("pages.members");
     const tMembers = useTranslations("members");
+    const tAccountInput = useTranslations("accountInput");
     const { treasuryId } = useTreasury();
     const { data: policy, isLoading } = useTreasuryPolicy(treasuryId || "");
     const { accountId } = useNear();
@@ -168,6 +170,16 @@ export default function MembersPage() {
         Array<{ accountId: string; roles: string[] }>
     >([]);
 
+    const getAccountValidationMessage = useCallback(
+        (errorCode: Parameters<typeof translateNearValidationError>[1]) =>
+            translateNearValidationError(
+                tAccountInput,
+                errorCode,
+                tMembers("validation.invalidNearAddress"),
+            ),
+        [tAccountInput, tMembers],
+    );
+
     // Create dynamic schema with access to existing members and mode
     const addMemberSchemaWithContext = useMemo(() => {
         const existingMembersSet = new Set(
@@ -180,10 +192,28 @@ export default function MembersPage() {
                         accountId: z
                             .string()
                             .min(1, tMembers("validation.accountIdRequired"))
-                            .refine(isValidNearAddressFormat, {
-                                message: tMembers(
-                                    "validation.invalidNearAddress",
-                                ),
+                            .superRefine(async (accountId, ctx) => {
+                                if (!isValidNearAddressFormat(accountId)) {
+                                    ctx.addIssue({
+                                        code: "custom",
+                                        message: tMembers(
+                                            "validation.invalidNearAddress",
+                                        ),
+                                    });
+                                    return;
+                                }
+
+                                const nearValidationError =
+                                    await validateNearAddress(accountId);
+                                if (!nearValidationError) return;
+
+                                ctx.addIssue({
+                                    code: "custom",
+                                    message:
+                                        getAccountValidationMessage(
+                                            nearValidationError,
+                                        ),
+                                });
                             }),
                         roles: z
                             .array(z.string())
@@ -204,7 +234,7 @@ export default function MembersPage() {
                             seenAccountIds.get(normalizedId);
                         if (firstOccurrence !== undefined) {
                             ctx.addIssue({
-                                code: z.ZodIssueCode.custom,
+                                code: "custom",
                                 message: tMembers("validation.alreadyAdded"),
                                 path: [index, "accountId"],
                             });
@@ -218,7 +248,7 @@ export default function MembersPage() {
                                 existingMembersSet.has(normalizedId)
                             ) {
                                 ctx.addIssue({
-                                    code: z.ZodIssueCode.custom,
+                                    code: "custom",
                                     message: tMembers(
                                         "validation.alreadyInTreasury",
                                     ),
@@ -229,7 +259,13 @@ export default function MembersPage() {
                     });
                 }),
         });
-    }, [existingMembers, currentModalMode, membersBeingEdited, tMembers]);
+    }, [
+        existingMembers,
+        currentModalMode,
+        membersBeingEdited,
+        tMembers,
+        getAccountValidationMessage,
+    ]);
 
     const form = useForm<AddMemberFormData>({
         resolver: zodResolver(addMemberSchemaWithContext),
@@ -482,7 +518,11 @@ export default function MembersPage() {
                 form.setError(`members.${failedValidation.index}.accountId`, {
                     type: "manual",
                     message:
-                        failedValidation.error ||
+                        (failedValidation.error
+                            ? getAccountValidationMessage(
+                                  failedValidation.error,
+                              )
+                            : undefined) ||
                         tMembers("validation.invalidNearAddress"),
                 });
                 setIsValidatingAddresses(false);

@@ -35,20 +35,17 @@ export function EarningPoolDetailsModal({
 }: EarningPoolDetailsModalProps) {
     const t = useTranslations("earningPoolDetails");
     const tEarning = useTranslations("earningDetails");
-    if (!asset) return null;
 
     const stakingBalance =
-        asset.balance.type === "Staked" ? asset.balance.staking : null;
+        asset?.balance.type === "Staked" ? asset.balance.staking : null;
     const lockupBalance =
-        asset.balance.type === "Vested" ? asset.balance.lockup : null;
+        asset?.balance.type === "Vested" ? asset.balance.lockup : null;
     const isDaoStaking = !!stakingBalance;
     const isLockupStaking = !!lockupBalance && lockupBalance.staked.gt(0);
-    if (!isDaoStaking && !isLockupStaking) return null;
 
     const selectedPool = isDaoStaking
         ? stakingBalance?.pools.find((pool) => pool.poolId === poolId)
         : null;
-    if (isDaoStaking && !selectedPool) return null;
 
     const lockupPoolId = isLockupStaking
         ? (lockupBalance?.stakingPoolId ?? t("lockupStakingPool"))
@@ -66,6 +63,10 @@ export function EarningPoolDetailsModal({
     } = useStakingValidator(isOpen ? validatorPoolId : null);
     const isValidatorMetaLoading =
         !!validatorPoolId && (isLoading || isFetching);
+
+    if (!asset) return null;
+    if (!isDaoStaking && !isLockupStaking) return null;
+    if (isDaoStaking && !selectedPool) return null;
 
     const stakedBalance = isDaoStaking
         ? (selectedPool?.stakedBalance ?? Big(0))

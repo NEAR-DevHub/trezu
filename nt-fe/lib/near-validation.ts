@@ -68,7 +68,7 @@ export async function validateNearAddress(
 
     try {
         const result = await checkAccountExists(trimmed);
-        if (!result || !result.exists) {
+        if (!result?.exists) {
             return "accountMissing";
         }
     } catch (error) {
