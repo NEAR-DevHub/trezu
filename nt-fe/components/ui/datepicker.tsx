@@ -401,7 +401,9 @@ export function DateTimePicker({
                                     )
                                 }
                             >
-                                {format(month, "MMMM")}
+                                {format(month, "MMMM", {
+                                    locale: dateFnsLocale,
+                                })}
                             </span>
                             <span
                                 className="ms-1"
@@ -584,6 +586,8 @@ function MonthYearPicker({
     onChange: (value: Date, mode: "month" | "year") => void;
     className?: string;
 }) {
+    const locale = useLocale();
+    const dateFnsLocale = DATE_FNS_LOCALES[locale] ?? enUS;
     const years = useMemo(() => {
         const years: SelectOption[] = [];
         for (let i = 1912; i < 2100; i++) {
@@ -606,12 +610,14 @@ function MonthYearPicker({
             if (maxDate && startM > maxDate) disabled = true;
             months.push({
                 value: i,
-                label: format(new Date(0, i), "MMM"),
+                label: format(new Date(0, i), "MMM", {
+                    locale: dateFnsLocale,
+                }),
                 disabled,
             });
         }
         return months;
-    }, [value]);
+    }, [value, dateFnsLocale]);
 
     const onYearChange = useCallback(
         (v: SelectOption) => {
@@ -736,6 +742,8 @@ export function DatePickerPopover({
     ...dateTimePickerProps
 }: DatePickerPopoverProps) {
     const tDate = useTranslations("datePicker");
+    const locale = useLocale();
+    const dateFnsLocale = DATE_FNS_LOCALES[locale] ?? enUS;
     const placeholder = placeholderProp ?? tDate("pickDate");
     const [open, setOpen] = useState(false);
 
@@ -753,17 +761,18 @@ export function DatePickerPopover({
     const getDisplayValue = () => {
         if (!value) return placeholder;
 
+        const opts = { locale: dateFnsLocale };
         if (isRange(value)) {
             if (value.from && value.to) {
-                return `${format(value.from, "MMM dd, yyyy")} - ${format(value.to, "MMM dd, yyyy")}`;
+                return `${format(value.from, "MMM dd, yyyy", opts)} - ${format(value.to, "MMM dd, yyyy", opts)}`;
             }
             if (value.from) {
-                return `${format(value.from, "MMM dd, yyyy")} - ...`;
+                return `${format(value.from, "MMM dd, yyyy", opts)} - ...`;
             }
             return placeholder;
         }
 
-        return format(value as Date, "MMM dd, yyyy");
+        return format(value as Date, "MMM dd, yyyy", opts);
     };
 
     // Handle clear action
