@@ -123,7 +123,11 @@ export default function BalanceWithGraph({
     isLoading: isLoadingTokens,
 }: Props) {
     const t = useTranslations("balanceWithGraph");
-    const { treasuryId, isConfidential } = useTreasury();
+    const {
+        treasuryId,
+        isConfidential: isConfidentialTreasury,
+        isGuestTreasury,
+    } = useTreasury();
     const [selectedToken, setSelectedToken] = useState<string>("all");
     const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>("1W");
     const [isChartHovered, setIsChartHovered] = useState(false);
@@ -136,6 +140,7 @@ export default function BalanceWithGraph({
         () => setIsChartHovered(false),
         [],
     );
+    const isConfidential = isConfidentialTreasury && isGuestTreasury;
     // Group tokens by symbol (to handle same token on different networks)
     const groupedTokens = useMemo(() => {
         const grouped = new Map<string, GroupedToken>();
