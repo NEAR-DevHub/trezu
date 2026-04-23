@@ -42,7 +42,6 @@ import {
     useToken,
     useTreasuryPolicy,
 } from "@/hooks/use-treasury-queries";
-import { useIntentsWithdrawalFee } from "@/hooks/use-intents-withdrawal-fee";
 import { trackEvent } from "@/lib/analytics";
 import Big from "@/lib/big";
 import { getBlockchainType } from "@/lib/blockchain-utils";
@@ -56,16 +55,18 @@ import { Address } from "@/components/address";
 import {
     useIntentsQuote,
     buildIntentsQuoteRequest,
+    type IntentsAmountMode,
 } from "@/hooks/use-intents-quote";
 import { parseTokenQueryParam } from "@/lib/token-query-param";
 import {
     cn,
     encodeToMarkdown,
+    formatBalance,
     formatCurrency,
     formatSmartAmount,
 } from "@/lib/utils";
 import {
-    getNetworkFeeCoverageErrorMessage,
+    isIntentsCrossChainToken,
     isIntentsToken,
     NETWORK_FEE_TOOLTIP_TEXT,
 } from "@/lib/intents-fee";
@@ -102,6 +103,8 @@ interface Step1Props extends StepProps {
     quoteErrorMessage?: string | null;
     ensureQuoteBeforeReview?: () => Promise<boolean>;
     validatedRecipients?: React.MutableRefObject<Set<string>>;
+    onAmountInput?: () => void;
+    onMaxSet?: (maxAmount: string) => void;
 }
 
 function Step1({
@@ -111,6 +114,8 @@ function Step1({
     quoteErrorMessage,
     ensureQuoteBeforeReview,
     validatedRecipients,
+    onAmountInput,
+    onMaxSet,
 }: Step1Props) {
     const form = useFormContext<PaymentFormValues>();
     const { treasuryId, isConfidential } = useTreasury();
@@ -193,13 +198,14 @@ function Step1({
                 onSave={handleSave}
                 isSubmitting={isFeeLoading}
                 validatedRecipients={validatedRecipients}
+                onAmountInput={onAmountInput}
+                onMaxSet={onMaxSet}
             />
         </PageCard>
     );
 }
 
 interface Step2Props extends StepProps {
-    networkFee?: string | null;
     showFeeBreakdown: boolean;
     liveQuote?: IntentsQuoteResponse | null;
     isLoadingLiveQuote?: boolean;
@@ -208,7 +214,6 @@ interface Step2Props extends StepProps {
 
 function Step2({
     handleBack,
-    networkFee,
     showFeeBreakdown,
     liveQuote,
     isLoadingLiveQuote,
@@ -245,21 +250,53 @@ function Step2({
     const {
         totalAmountWithFees,
         recipientAmount,
+        displayNetworkFee,
         estimatedUSDValue,
         recipientEstimatedUSDValue,
     } = useMemo(() => {
-        const total = Big(amount || "0");
-        const recipientRaw =
-            showFeeBreakdown && networkFee ? total.minus(networkFee) : total;
-        const recipient = recipientRaw.lt(0) ? Big(0) : recipientRaw;
+        const enteredAmount = Big(amount || "0");
         const price = tokenData?.price ?? 0;
+
+        if (liveQuote?.quote) {
+            const quotedTotal = Big(
+                formatBalance(
+                    liveQuote.quote.minAmountIn || "0",
+                    token.decimals,
+                    token.decimals,
+                ),
+            );
+            const quotedRecipient = Big(
+                formatBalance(
+                    liveQuote.quote.minAmountOut || "0",
+                    token.decimals,
+                    token.decimals,
+                ),
+            );
+            const quotedFee = quotedTotal.minus(quotedRecipient);
+            const feeValue = quotedFee.gt(0) ? quotedFee : Big(0);
+
+            return {
+                totalAmountWithFees: quotedTotal,
+                recipientAmount: quotedRecipient,
+                displayNetworkFee: feeValue,
+                estimatedUSDValue: price ? quotedTotal.mul(price) : Big(0),
+                recipientEstimatedUSDValue: price
+                    ? quotedRecipient.mul(price)
+                    : Big(0),
+            };
+        }
+
+        const recipient = enteredAmount;
+        const total = enteredAmount;
+
         return {
             totalAmountWithFees: total,
             recipientAmount: recipient,
+            displayNetworkFee: Big(0),
             estimatedUSDValue: price ? total.mul(price) : Big(0),
             recipientEstimatedUSDValue: price ? recipient.mul(price) : Big(0),
         };
-    }, [amount, showFeeBreakdown, networkFee, tokenData?.price]);
+    }, [amount, liveQuote, token.decimals, tokenData?.price]);
 
     return (
         <PageCard>
@@ -313,7 +350,7 @@ function Step2({
                                 </div>
                             </div>
                         </div>
-                        {showFeeBreakdown && networkFee && (
+                        {showFeeBreakdown && displayNetworkFee.gt(0) && (
                             <div className="flex items-center justify-between gap-2 text-sm my-3">
                                 <div className="flex items-center gap-1 text-muted-foreground">
                                     <p>Network Fee</p>
@@ -328,7 +365,8 @@ function Step2({
                                     </Tooltip>
                                 </div>
                                 <p>
-                                    {networkFee} {token.symbol}
+                                    {formatSmartAmount(displayNetworkFee)}{" "}
+                                    {token.symbol}
                                 </p>
                             </div>
                         )}
@@ -506,6 +544,9 @@ export default function PaymentsPage() {
     const searchParams = useSearchParams();
     const autoSelectedTokenKeyRef = useRef<string | null>(null);
     const validatedRecipientsRef = useRef(new Set<string>());
+    // "recipient" for typed amount (exact output), "total" for MAX (exact input).
+    const [intentsAmountMode, setIntentsAmountMode] =
+        useState<IntentsAmountMode>("recipient");
 
     const tokenParam = searchParams.get("token");
     const preferredNetworks = useMemo(
@@ -570,44 +611,7 @@ export default function PaymentsPage() {
         name: ["token", "amount", "address"],
     }) as [PaymentFormValues["token"], string, string];
 
-    const {
-        data: intentsFeeData,
-        isIntentsCrossChainToken,
-        isLoading: isIntentsFeeLoading,
-        isError: hasIntentsFeeError,
-    } = useIntentsWithdrawalFee({
-        token: watchedToken,
-        destinationAddress: watchedAddress,
-    });
-    const hasFeeData = !!intentsFeeData && !hasIntentsFeeError;
-
-    const feeErrorMessage = useMemo(() => {
-        if (
-            !isIntentsCrossChainToken ||
-            !watchedAmount ||
-            isNaN(Number(watchedAmount)) ||
-            Number(watchedAmount) <= 0 ||
-            isIntentsFeeLoading ||
-            !hasFeeData
-        ) {
-            return null;
-        }
-
-        return getNetworkFeeCoverageErrorMessage({
-            amount: watchedAmount,
-            networkFee: Big(intentsFeeData!.networkFee),
-            decimals: watchedToken.decimals,
-            symbol: watchedToken.symbol,
-        });
-    }, [
-        intentsFeeData,
-        isIntentsCrossChainToken,
-        isIntentsFeeLoading,
-        hasFeeData,
-        watchedAmount,
-        watchedToken?.decimals,
-        watchedToken?.symbol,
-    ]);
+    const isCrossChainIntentsToken = isIntentsCrossChainToken(watchedToken);
 
     const isSelectedTokenIntents = isIntentsToken(watchedToken);
 
@@ -627,8 +631,14 @@ export default function PaymentsPage() {
         address: watchedAddress,
         isConfidential,
         proposalPeriod: policy?.proposal_period,
-        feeErrorMessage,
+        amountMode: intentsAmountMode,
     });
+    const isQuoteBusy =
+        isSelectedTokenIntents &&
+        (isLoadingLiveQuote ||
+            isFetchingLiveQuote ||
+            isEnsuringQuote ||
+            isQuoteSyncPending);
 
     const ensureQuoteBeforeReview = async () => {
         const formValues = form.getValues();
@@ -665,6 +675,13 @@ export default function PaymentsPage() {
             form.setValue("address", defaultAddress);
         }
     }, [defaultAddress, form]);
+
+    useEffect(() => {
+        // Default mode: entered amount is what recipient gets.
+        if (!isCrossChainIntentsToken) {
+            setIntentsAmountMode("recipient");
+        }
+    }, [isCrossChainIntentsToken]);
 
     useEffect(() => {
         if (!compatibleDefaultToken || tokenParam) {
@@ -749,6 +766,7 @@ export default function PaymentsPage() {
                             parsedAmount,
                             isConfidential,
                             policy?.proposal_period,
+                            intentsAmountMode,
                         ),
                         false,
                     ));
@@ -828,27 +846,31 @@ export default function PaymentsPage() {
             {
                 component: Step1,
                 props: {
-                    feeErrorMessage,
-                    isFeeLoading:
-                        isIntentsFeeLoading ||
-                        (isSelectedTokenIntents &&
-                            (isLoadingLiveQuote ||
-                                isFetchingLiveQuote ||
-                                isEnsuringQuote ||
-                                isQuoteSyncPending)),
+                    isFeeLoading: isQuoteBusy,
                     quoteErrorMessage:
                         isSelectedTokenIntents && hasLiveQuoteError
                             ? liveQuoteErrorMessage
                             : null,
                     ensureQuoteBeforeReview,
                     validatedRecipients: validatedRecipientsRef,
+                    onAmountInput: () => {
+                        if (isCrossChainIntentsToken) {
+                            // "recipient" => EXACT_OUTPUT quote mode.
+                            setIntentsAmountMode("recipient");
+                        }
+                    },
+                    onMaxSet: () => {
+                        if (isCrossChainIntentsToken) {
+                            // "total" => EXACT_INPUT quote mode.
+                            setIntentsAmountMode("total");
+                        }
+                    },
                 },
             },
             {
                 component: Step2,
                 props: {
-                    showFeeBreakdown: isIntentsCrossChainToken && hasFeeData,
-                    networkFee: hasFeeData ? intentsFeeData?.networkFee : null,
+                    showFeeBreakdown: isCrossChainIntentsToken,
                     liveQuote,
                     isLoadingLiveQuote,
                     isFetchingLiveQuote,
@@ -856,11 +878,6 @@ export default function PaymentsPage() {
             },
         ],
         [
-            feeErrorMessage,
-            isIntentsFeeLoading,
-            isIntentsCrossChainToken,
-            hasFeeData,
-            intentsFeeData?.networkFee,
             liveQuote,
             isLoadingLiveQuote,
             isFetchingLiveQuote,
@@ -869,7 +886,9 @@ export default function PaymentsPage() {
             hasLiveQuoteError,
             liveQuoteErrorMessage,
             isSelectedTokenIntents,
+            isQuoteBusy,
             ensureQuoteBeforeReview,
+            isCrossChainIntentsToken,
         ],
     );
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Database, Shield } from "lucide-react";
 import { useAssets } from "@/hooks/use-assets";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -12,11 +13,20 @@ export function TreasuryLogo({
     logo?: string;
     isConfidential?: boolean;
 }) {
-    const item = logo ? (
+    const [hasImageError, setHasImageError] = useState(false);
+
+    useEffect(() => {
+        setHasImageError(false);
+    }, [logo]);
+
+    const shouldShowImage = !!logo && !hasImageError;
+
+    const item = shouldShowImage ? (
         <img
             src={logo}
             alt="Treasury Logo"
             className="rounded-md size-7 shrink-0 object-cover"
+            onError={() => setHasImageError(true)}
         />
     ) : (
         <div className="flex items-center justify-center size-7 rounded bg-muted shrink-0">

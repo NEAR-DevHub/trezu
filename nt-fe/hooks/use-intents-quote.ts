@@ -12,6 +12,8 @@ import { nanosToMs } from "@/lib/utils";
 import type { Token } from "@/components/token-input";
 import { isIntentsToken } from "@/lib/intents-fee";
 
+export type IntentsAmountMode = "recipient" | "total";
+
 function isAddressValidForToken(address: string, token: Token): boolean {
     if (!address) return false;
     const blockchain = getBlockchainType(token.network);
@@ -28,6 +30,7 @@ export function buildIntentsQuoteRequest(
     parsedAmount: string,
     isConfidential: boolean,
     proposalPeriod?: string,
+    amountMode: IntentsAmountMode = "recipient",
 ) {
     const deadlineMs = proposalPeriod
         ? nanosToMs(proposalPeriod)
@@ -39,7 +42,7 @@ export function buildIntentsQuoteRequest(
 
     return {
         daoId: treasuryId,
-        swapType: "EXACT_INPUT",
+        swapType: amountMode === "recipient" ? "EXACT_OUTPUT" : "EXACT_INPUT",
         slippageTolerance: 0,
         originAsset: token.address,
         depositType,
@@ -68,18 +71,24 @@ function formatErrorMessage(
         lower.includes("at least ") ||
         lower.includes("increase the amount")
     ) {
-        return message.replace(/at least (\d+)/i, (_, rawAmount) => {
+        const match = message.match(/at least\s+([0-9]+(?:\.[0-9]+)?)/i);
+        if (match?.[1]) {
             try {
-                const formatted = Big(rawAmount)
-                    .plus(1)
-                    .div(Big(10).pow(tokenDecimals))
-                    .toFixed()
+                const threshold = Big(match[1]);
+                const parsedAmount = match[1].includes(".")
+                    ? threshold
+                    : threshold.div(Big(10).pow(tokenDecimals));
+                const formatted = parsedAmount
+                    .toFixed(tokenDecimals)
                     .replace(/\.?0+$/, "");
-                return `at least ${formatted} ${tokenSymbol}`;
+
+                return `Amount is too low to cover network fees. Enter at least ${formatted} ${tokenSymbol}.`;
             } catch {
-                return `at least ${rawAmount}`;
+                // Fall through to default low-amount message.
             }
-        });
+        }
+
+        return "Amount is too low to cover network fees. Enter a higher amount and try again.";
     }
 
     if (lower.includes("no route") || lower.includes("no quote")) {
@@ -97,6 +106,7 @@ interface UseIntentsQuoteParams {
     isConfidential: boolean;
     proposalPeriod?: string;
     feeErrorMessage?: string | null;
+    amountMode?: IntentsAmountMode;
 }
 
 export function useIntentsQuote({
@@ -107,6 +117,7 @@ export function useIntentsQuote({
     isConfidential,
     proposalPeriod,
     feeErrorMessage,
+    amountMode = "recipient",
 }: UseIntentsQuoteParams) {
     const isIntents = isIntentsToken(token);
     const [debouncedAddress] = useDebounce(address, 300);
@@ -134,6 +145,7 @@ export function useIntentsQuote({
             token.address,
             debouncedAmount,
             debouncedAddress,
+            amountMode,
         ],
         queryFn: async (): Promise<IntentsQuoteResponse | null> => {
             if (!treasuryId || !parsedAmount) return null;
@@ -145,6 +157,7 @@ export function useIntentsQuote({
                     parsedAmount,
                     isConfidential,
                     proposalPeriod,
+                    amountMode,
                 ),
                 false,
             );
@@ -211,6 +224,7 @@ export function useIntentsQuote({
                         immediateParsed,
                         isConfidential,
                         proposalPeriod,
+                        amountMode,
                     ),
                     false,
                 );
@@ -247,6 +261,7 @@ export function useIntentsQuote({
             isFetching,
             isSyncPending,
             isConfidential,
+            amountMode,
         ],
     );
 

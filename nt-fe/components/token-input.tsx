@@ -84,6 +84,8 @@ interface TokenInputProps<
      * Default: false
      */
     dynamicFontSize?: boolean;
+    onAmountInput?: () => void;
+    onMaxSet?: (maxAmount: string) => void;
 }
 
 export function TokenInput<
@@ -101,6 +103,8 @@ export function TokenInput<
     infoMessage,
     showInsufficientBalance = false,
     dynamicFontSize = false,
+    onAmountInput,
+    onMaxSet,
 }: TokenInputProps<TFieldValues, TTokenPath>) {
     const { treasuryId } = useTreasury();
     const { setValue } = useFormContext<TFieldValues>();
@@ -180,21 +184,23 @@ export function TokenInput<
                                                     tokenBalance &&
                                                     tokenDecimals
                                                 ) {
+                                                    const maxAmount = Big(
+                                                        tokenBalance,
+                                                    )
+                                                        .div(
+                                                            Big(10).pow(
+                                                                tokenDecimals,
+                                                            ),
+                                                        )
+                                                        .toFixed(tokenDecimals);
                                                     setValue(
                                                         amountName,
-                                                        Big(tokenBalance)
-                                                            .div(
-                                                                Big(10).pow(
-                                                                    tokenDecimals,
-                                                                ),
-                                                            )
-                                                            .toFixed(
-                                                                tokenDecimals,
-                                                            ) as PathValue<
+                                                        maxAmount as PathValue<
                                                             TFieldValues,
                                                             Path<TFieldValues>
                                                         >,
                                                     );
+                                                    onMaxSet?.(maxAmount);
                                                 }
                                             }}
                                         >
@@ -216,13 +222,15 @@ export function TokenInput<
                                     onChange={
                                         readOnly
                                             ? undefined
-                                            : (e) =>
+                                            : (e) => {
+                                                  onAmountInput?.();
                                                   field.onChange(
                                                       e.target.value.replace(
                                                           /^0+(?=\d)/,
                                                           "",
                                                       ),
-                                                  )
+                                                  );
+                                              }
                                     }
                                     onBlur={readOnly ? undefined : field.onBlur}
                                     value={

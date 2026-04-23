@@ -8,7 +8,7 @@ const intentsSdk = new IntentsSDK({
 });
 
 export const NETWORK_FEE_TOOLTIP_TEXT =
-    "This fee is used to process the transaction on the selected chain. It is deducted from the amount you enter, so the recipient receives less.";
+    "This fee is used to process the transaction on the selected chain.";
 
 export interface NetworkFeeCoverageResult {
     isCovered: boolean;
