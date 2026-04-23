@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { useLockupPool } from "@/hooks/use-treasury-queries";
 import { Amount } from "../amount";
 import { InfoDisplay, InfoItem } from "@/components/info-display";
@@ -18,6 +19,7 @@ export function StakingExpanded({
     proposal,
     treasuryId,
 }: StakingExpandedProps) {
+    const t = useTranslations("proposals.expanded");
     const { data: lockupPool } = useLockupPool(
         data.isLockup ? data.receiver : null,
     );
@@ -40,7 +42,7 @@ export function StakingExpanded({
                     />
                 );
             }
-            return <span>All NEAR</span>;
+            return <span>{t("allNear")}</span>;
         }
         return (
             <Amount amount={data.amount} showNetwork tokenId={data.tokenId} />
@@ -49,15 +51,15 @@ export function StakingExpanded({
 
     const infoItems: InfoItem[] = [
         {
-            label: "Source Wallet",
+            label: t("sourceWallet"),
             value: <span>{data.sourceWallet}</span>,
         },
         {
-            label: "Amount",
+            label: t("amount"),
             value: amountValue,
         },
         {
-            label: "Validator",
+            label: t("validator"),
             value: (
                 <Link href={data.validatorUrl} target="_blank">
                     {validator}
@@ -67,7 +69,10 @@ export function StakingExpanded({
     ];
 
     if (data.notes && data.notes !== "") {
-        infoItems.push({ label: "Notes", value: <span>{data.notes}</span> });
+        infoItems.push({
+            label: t("notes"),
+            value: <span>{data.notes}</span>,
+        });
     }
 
     return <InfoDisplay items={infoItems} />;

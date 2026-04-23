@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { TokenCell } from "./token-cell";
 import { StakingData } from "../../types/index";
 import { useLockupPool, useProfile } from "@/hooks/use-treasury-queries";
@@ -20,6 +21,7 @@ export function StakingCell({
     timestamp,
     textOnly = false,
 }: StakingCellProps) {
+    const t = useTranslations("proposals.expanded");
     const { data: lockupPool } = useLockupPool(
         data.isLockup ? data.receiver : null,
     );
@@ -38,8 +40,12 @@ export function StakingCell({
     if (showAllLabel) {
         return (
             <TitleSubtitleCell
-                title={<span>All NEAR</span>}
-                subtitle={validator ? <>Validator: {address}</> : undefined}
+                title={<span>{t("allNear")}</span>}
+                subtitle={
+                    validator
+                        ? t("validatorSubtitle", { address: address ?? "" })
+                        : undefined
+                }
                 timestamp={timestamp}
             />
         );
@@ -56,7 +62,7 @@ export function StakingCell({
                 receiver: validator || "",
             }}
             textOnly={textOnly}
-            prefix="Validator:"
+            prefix={t("validatorPrefix")}
             timestamp={timestamp}
         />
     );

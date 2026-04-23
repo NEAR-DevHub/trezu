@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
 /**
@@ -43,6 +44,7 @@ export function CreditsQuotaDisplay({
     isUnlimited = false,
     className,
 }: CreditsQuotaDisplayProps) {
+    const t = useTranslations("creditsQuota");
     // Calculate progress percentage
     const progressPercentage = isUnlimited
         ? 0
@@ -68,10 +70,10 @@ export function CreditsQuotaDisplay({
         >
             <div className="flex items-center justify-between text-sm">
                 <span className="font-semibold">
-                    {creditsAvailable} Available
+                    {t("available", { count: creditsAvailable })}
                 </span>
                 <span className="text-muted-foreground text-xs">
-                    {creditsUsed} Used
+                    {t("used", { count: creditsUsed })}
                 </span>
             </div>
 
@@ -85,7 +87,7 @@ export function CreditsQuotaDisplay({
 
             {!isFree && resetDate && isDepleted && (
                 <p className="text-xs text-muted-foreground">
-                    Limit will reset on {resetDate}
+                    {t("resetOn", { date: resetDate })}
                 </p>
             )}
         </div>

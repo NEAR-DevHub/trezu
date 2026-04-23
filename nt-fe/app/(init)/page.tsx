@@ -2,16 +2,18 @@
 
 import { GradFlow } from "gradflow";
 import { ArrowRight, Compass, Loader2, UserCheck } from "lucide-react";
+import { motion } from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AuthProvider } from "@/components/auth-provider";
 import { Button } from "@/components/button";
-import { Input } from "@/components/input";
 import Logo from "@/components/icons/logo";
+import { Input } from "@/components/input";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { NearInitializer } from "@/components/near-initializer";
 import { QueryProvider } from "@/components/query-provider";
 import { APP_ACTIVE_TREASURY, LANDING_PAGE } from "@/constants/config";
@@ -151,6 +153,7 @@ function OnboardingChoiceCard({
 }
 
 function GradientTitle() {
+    const t = useTranslations("landing");
     return (
         <div className="overflow-hidden w-full py-1">
             <motion.p
@@ -174,7 +177,7 @@ function GradientTitle() {
                     mixBlendMode: "overlay",
                 }}
             >
-                Cross-chain multisig security for managing digital assets
+                {t("gradientTagline")}
             </motion.p>
         </div>
     );
@@ -193,8 +196,13 @@ function WhitelistExperience({
     isSubmitting: boolean;
     onSubmit: () => void;
 }) {
+    const t = useTranslations("landing");
+    const tCommon = useTranslations("common");
     return (
         <div className="relative h-screen w-full overflow-hidden">
+            <div className="fixed top-3 right-3 z-50 md:top-6 md:right-6">
+                <LanguageSwitcher variant="outline" />
+            </div>
             <GradFlow
                 config={{
                     color1: { r: 0, g: 67, b: 224 },
@@ -235,21 +243,16 @@ function WhitelistExperience({
                             <div className="flex w-full flex-col gap-2 text-center max-w-md">
                                 <h1 className="text-2xl font-semibold">
                                     {submitted
-                                        ? "You're on the list 🎉"
-                                        : "Join the Trezu Waitlist"}
+                                        ? t("waitlistSubmittedTitle")
+                                        : t("waitlistTitle")}
                                 </h1>
                                 {submitted ? (
                                     <p className="text-sm text-muted-foreground font-medium">
-                                        Thanks! We&apos;ll notify you as soon as
-                                        treasury creation becomes available.
+                                        {t("waitlistSubmittedDescription")}
                                     </p>
                                 ) : (
                                     <p className="text-sm text-muted-foreground font-medium">
-                                        We&apos;ve hit today&apos;s treasury
-                                        limit. No worries - try again later or
-                                        leave your contact to join the waitlist.
-                                        We&apos;ll let you know when a spot
-                                        opens.
+                                        {t("waitlistDescription")}
                                     </p>
                                 )}
                             </div>
@@ -262,7 +265,7 @@ function WhitelistExperience({
                                         className="w-full max-w-md"
                                     >
                                         <Link href={APP_ACTIVE_TREASURY}>
-                                            See Demo Trezu
+                                            {tCommon("seeDemo")}
                                         </Link>
                                     </Button>
                                 ) : (
@@ -270,15 +273,16 @@ function WhitelistExperience({
                                         <div className="flex flex-col gap-2 items-start">
                                             <Input
                                                 type="text"
-                                                placeholder="Email address or Telegram (e.g. @username)"
+                                                placeholder={t(
+                                                    "waitlistInputPlaceholder",
+                                                )}
                                                 value={contact}
                                                 onChange={(e) =>
                                                     setContact(e.target.value)
                                                 }
                                             />
                                             <p className="text-xs text-muted-foreground -mt-1">
-                                                We will only use this to notify
-                                                you
+                                                {t("waitlistPrivacyNote")}
                                             </p>
                                         </div>
                                         <Button
@@ -292,7 +296,7 @@ function WhitelistExperience({
                                             {isSubmitting && (
                                                 <Loader2 className="h-4 w-4 animate-spin" />
                                             )}
-                                            Join the Waitlist
+                                            {t("waitlistSubmit")}
                                         </Button>
                                         <Button
                                             size="default"
@@ -300,7 +304,7 @@ function WhitelistExperience({
                                             asChild
                                         >
                                             <Link href={APP_ACTIVE_TREASURY}>
-                                                See Demo Trezu
+                                                {tCommon("seeDemo")}
                                             </Link>
                                         </Button>
                                     </div>
@@ -328,7 +332,7 @@ function WhitelistExperience({
                         <Image
                             src="/welcome.svg"
                             loading="eager"
-                            alt="welcome"
+                            alt={t("welcomeAlt")}
                             priority
                             width={1000}
                             height={500}
@@ -342,6 +346,8 @@ function WhitelistExperience({
 }
 
 export function Content() {
+    const t = useTranslations("landing");
+    const tCommon = useTranslations("common");
     const router = useRouter();
     const [onboardingPath, setOnboardingPath] = useState<
         "new_user" | "existing_user" | null
@@ -419,7 +425,6 @@ export function Content() {
         router,
         accountId,
         isInitializing,
-        lastTreasuryId,
         preferredTreasuryId,
         creationAvailable,
         onboardingPath,
@@ -445,7 +450,7 @@ export function Content() {
             setSubmitted(true);
             trackEvent("waitlist-submitted", { account_id: accountId });
         } catch {
-            toast.error("Failed to submit. Please try again.");
+            toast.error(t("waitlistSubmitFailed"));
         } finally {
             setIsSubmitting(false);
         }
@@ -484,7 +489,9 @@ export function Content() {
             <div className="flex min-h-screen items-center justify-center bg-muted">
                 <div className="flex flex-col items-center gap-4">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">Loading...</p>
+                    <p className="text-sm text-muted-foreground">
+                        {tCommon("loading")}
+                    </p>
                 </div>
             </div>
         );
@@ -504,6 +511,9 @@ export function Content() {
 
     return (
         <div className="min-h-screen w-full overflow-y-auto bg-muted p-4 md:px-8 md:py-6">
+            <div className="fixed top-3 right-3 z-50 md:top-6 md:right-6">
+                <LanguageSwitcher variant="outline" />
+            </div>
             <div className="mx-auto flex min-h-[calc(100vh-2rem)] max-w-[1180px] items-start justify-center md:min-h-[calc(100vh-3rem)] md:items-center">
                 <motion.div
                     className="w-full md:p-6"
@@ -534,7 +544,7 @@ export function Content() {
                                 blur={10}
                                 duration={0.55}
                             >
-                                Welcome to Trezu
+                                {t("welcome")}
                             </WipeRevealText>
                         </div>
                         <div className="mt-2">
@@ -543,7 +553,7 @@ export function Content() {
                                 delay={0.26}
                                 x={-14}
                             >
-                                Choose an option below to get started.
+                                {t("chooseOption")}
                             </WipeRevealText>
                         </div>
                     </div>
@@ -562,8 +572,8 @@ export function Content() {
                             <FadeInUp className="w-full" delay={0.44}>
                                 <OnboardingChoiceCard
                                     icon={Compass}
-                                    title="I’m new to Trezu"
-                                    description="I’ve heard about Trezu but don&apos;t have a treasury yet."
+                                    title={t("newUserTitle")}
+                                    description={t("newUserDescription")}
                                     active={onboardingPath !== "existing_user"}
                                     onClick={() =>
                                         triggerWalletConnect("new_user")
@@ -574,8 +584,8 @@ export function Content() {
                             <FadeInUp className="w-full" delay={0.5}>
                                 <OnboardingChoiceCard
                                     icon={UserCheck}
-                                    title="I already use Trezu"
-                                    description="I have an account and manage a treasury."
+                                    title={t("existingUserTitle")}
+                                    description={t("existingUserDescription")}
                                     active={onboardingPath === "existing_user"}
                                     onClick={() =>
                                         triggerWalletConnect("existing_user")

@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { Amount } from "../amount";
 import { InfoDisplay, InfoItem } from "@/components/info-display";
 import { User } from "@/components/user";
@@ -13,6 +14,7 @@ interface TransferExpandedProps {
 }
 
 export function TransferExpanded({ data }: TransferExpandedProps) {
+    const t = useTranslations("proposals.expanded");
     // Get token metadata to determine blockchain network
     const { data: tokenData } = useToken(data.tokenId);
     const chainName = tokenData?.network || "near";
@@ -37,7 +39,7 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
 
     const infoItems: InfoItem[] = [
         {
-            label: "Recipient",
+            label: t("recipient"),
             value: (
                 <User
                     accountId={data.receiver}
@@ -48,7 +50,7 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
             ),
         },
         {
-            label: "Amount",
+            label: t("amount"),
             value: (
                 <Amount
                     amount={data.amount}
@@ -61,7 +63,7 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
 
     if (hasFeeData) {
         infoItems.push({
-            label: "Network Fee",
+            label: t("networkFee"),
             info: NETWORK_FEE_TOOLTIP_TEXT,
             value: `${dynamicFeeData.networkFee} ${tokenData?.symbol || ""}`.trim(),
         });
@@ -81,7 +83,7 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
             ) : (
                 notes
             );
-        infoItems.push({ label: "Notes", value: content });
+        infoItems.push({ label: t("notes"), value: content });
     }
 
     return <InfoDisplay items={infoItems} />;

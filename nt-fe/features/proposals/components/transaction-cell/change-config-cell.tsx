@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { TitleSubtitleCell } from "./title-subtitle-cell";
 import { Proposal } from "@/lib/proposals-api";
 import { useTreasuryConfig } from "@/hooks/use-treasury-queries";
@@ -16,6 +17,7 @@ export function ChangeConfigCell({
     proposal,
     timestamp,
 }: ChangeConfigCellProps) {
+    const t = useTranslations("proposals.expanded");
     const { treasuryId } = useTreasury();
 
     const isPending = proposal.status === "InProgress";
@@ -48,8 +50,8 @@ export function ChangeConfigCell({
     if (isLoadingTimestamped) {
         return (
             <TitleSubtitleCell
-                title="Loading config..."
-                subtitle="Historical data..."
+                title={t("loadingConfig")}
+                subtitle={t("historicalData")}
                 timestamp={timestamp}
             />
         );
@@ -58,20 +60,19 @@ export function ChangeConfigCell({
     if (!summary) {
         return (
             <TitleSubtitleCell
-                title="General Update"
-                subtitle="Details unavailable"
+                title={t("generalUpdate")}
+                subtitle={t("detailsUnavailable")}
                 timestamp={timestamp}
             />
         );
     }
 
     const { changesCount } = summary;
-    const subtitle = `${changesCount} ${changesCount === 1 ? "Change" : "Changes"}`;
 
     return (
         <TitleSubtitleCell
-            title="General Update"
-            subtitle={subtitle}
+            title={t("generalUpdate")}
+            subtitle={t("changesCount", { count: changesCount })}
             timestamp={timestamp}
         />
     );

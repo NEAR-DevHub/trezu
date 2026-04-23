@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { Database, Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { trackEvent } from "@/lib/analytics";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -43,19 +44,28 @@ const COLOR_OPTIONS = [
     "#F43F5E", // rose
 ];
 
-const generalSchema = z.object({
-    displayName: z
-        .string()
-        .min(1, "Display name is required")
-        .max(100, "Display name must be less than 100 characters"),
-    accountName: z.string(),
-    primaryColor: z.string(),
-    logo: z.string().nullable(),
-});
-
-type GeneralFormValues = z.infer<typeof generalSchema>;
+type GeneralFormValues = {
+    displayName: string;
+    accountName: string;
+    primaryColor: string;
+    logo: string | null;
+};
 
 export function GeneralTab() {
+    const t = useTranslations("settings.general");
+    const generalSchema = useMemo(
+        () =>
+            z.object({
+                displayName: z
+                    .string()
+                    .min(1, t("validation.displayNameRequired"))
+                    .max(100, t("validation.displayNameMax")),
+                accountName: z.string(),
+                primaryColor: z.string(),
+                logo: z.string().nullable(),
+            }),
+        [t],
+    );
     const { treasuryId, config } = useTreasury();
     const { createProposal } = useNear();
     const { data: policy } = useTreasuryPolicy(treasuryId);
@@ -89,7 +99,7 @@ export function GeneralTab() {
 
     const onSubmit = async (data: GeneralFormValues) => {
         if (!treasuryId || !config) {
-            toast.error("Treasury not found");
+            toast.error(t("treasuryNotFound"));
             return;
         }
 
@@ -103,10 +113,10 @@ export function GeneralTab() {
             };
 
             const description = {
-                title: "Update Config - Theme & logo",
+                title: t("proposalDescriptionTitle"),
             };
 
-            await createProposal("Request to update configuration submitted", {
+            await createProposal(t("proposalSubmitted"), {
                 treasuryId: treasuryId,
                 proposal: {
                     description: encodeToMarkdown(description),
@@ -159,17 +169,13 @@ export function GeneralTab() {
             if (result.cid) {
                 const imageUrl = `https://ipfs.near.social/ipfs/${result.cid}`;
                 form.setValue("logo", imageUrl, { shouldDirty: true });
-                toast.success("Logo uploaded successfully");
+                toast.success(t("logoUploaded"));
             } else {
-                toast.error(
-                    "Error occurred while uploading image, please try again.",
-                );
+                toast.error(t("uploadError"));
             }
         } catch (error) {
             console.error("Upload error:", error);
-            toast.error(
-                "Error occurred while uploading image, please try again.",
-            );
+            toast.error(t("uploadError"));
         } finally {
             setUploadingImage(false);
         }
@@ -190,20 +196,18 @@ export function GeneralTab() {
                 if (img.width === 256 && img.height === 256) {
                     uploadImageToServer(file);
                 } else {
-                    toast.error(
-                        "Invalid logo. Please upload a PNG, JPG, or SVG file that is exactly 256x256 px",
-                    );
+                    toast.error(t("invalidLogo"));
                 }
             };
 
             img.onerror = () => {
-                toast.error("Invalid image file. Please upload a valid image.");
+                toast.error(t("invalidImage"));
             };
         };
 
         reader.onerror = () => {
             console.error("Error reading file");
-            toast.error("Error reading file. Please try again.");
+            toast.error(t("fileReadError"));
         };
 
         reader.readAsDataURL(file);
@@ -223,10 +227,11 @@ export function GeneralTab() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <PageCard>
                     <div>
-                        <h3 className="text-lg font-semibold">Treasury Name</h3>
+                        <h3 className="text-lg font-semibold">
+                            {t("treasuryName")}
+                        </h3>
                         <p className="text-sm text-muted-foreground">
-                            The name of your treasury. This will be displayed
-                            across the app.
+                            {t("treasuryNameDescription")}
                         </p>
                     </div>
 
@@ -238,14 +243,16 @@ export function GeneralTab() {
                                 <FormItem>
                                     <div className="space-y-2">
                                         <Label htmlFor="display-name">
-                                            Display Name
+                                            {t("displayName")}
                                         </Label>
                                         <FormControl>
                                             <Input
                                                 id="display-name"
                                                 clearable={false}
                                                 {...field}
-                                                placeholder="Enter display name"
+                                                placeholder={t(
+                                                    "displayNamePlaceholder",
+                                                )}
                                             />
                                         </FormControl>
                                         {form.formState.errors.displayName && (
@@ -268,7 +275,7 @@ export function GeneralTab() {
                                 <FormItem>
                                     <div className="space-y-2">
                                         <Label htmlFor="account-name">
-                                            Account Name
+                                            {t("accountName")}
                                         </Label>
                                         <FormControl>
                                             <Input
@@ -287,10 +294,9 @@ export function GeneralTab() {
 
                 <PageCard>
                     <div>
-                        <h3 className="text-lg font-semibold">Logo</h3>
+                        <h3 className="text-lg font-semibold">{t("logo")}</h3>
                         <p className="text-sm text-muted-foreground">
-                            Upload a logo for your treasury. Recommended SVG,
-                            PNG, or JPG (256x256 px).
+                            {t("logoDescription")}
                         </p>
                     </div>
                     <FormField
@@ -303,7 +309,7 @@ export function GeneralTab() {
                                         {field.value ? (
                                             <img
                                                 src={field.value}
-                                                alt="Treasury logo"
+                                                alt={t("treasuryLogoAlt")}
                                                 className="h-full w-full rounded-lg object-cover"
                                             />
                                         ) : (
@@ -329,10 +335,10 @@ export function GeneralTab() {
                                             {uploadingImage ? (
                                                 <>
                                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                    Uploading...
+                                                    {t("uploading")}
                                                 </>
                                             ) : (
-                                                "Upload Logo"
+                                                t("uploadLogo")
                                             )}
                                         </Button>
                                         {field.value && (
@@ -347,7 +353,7 @@ export function GeneralTab() {
                                                 }}
                                                 disabled={uploadingImage}
                                             >
-                                                Remove Logo
+                                                {t("removeLogo")}
                                             </Button>
                                         )}
                                     </div>
@@ -359,12 +365,11 @@ export function GeneralTab() {
 
                 <PageCard>
                     <div>
-                        <h3 className="text-lg font-semibold">Primary Color</h3>
+                        <h3 className="text-lg font-semibold">
+                            {t("primaryColor")}
+                        </h3>
                         <p className="text-sm text-muted-foreground">
-                            Set the primary color for your treasury's interface
-                            elements. This color will be used in both light and
-                            dark modes, so keep contrast in mind when choosing
-                            neutral shades.
+                            {t("primaryColorDescription")}
                         </p>
                     </div>
 
@@ -391,7 +396,9 @@ export function GeneralTab() {
                                                     ? {}
                                                     : { backgroundColor: color }
                                             }
-                                            aria-label={`Select color ${color}`}
+                                            aria-label={t("selectColorLabel", {
+                                                color,
+                                            })}
                                         />
                                     ))}
                                 </div>

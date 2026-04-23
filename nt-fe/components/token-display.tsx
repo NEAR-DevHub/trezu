@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { ChainIcons, TreasuryAsset } from "@/lib/api";
 import { formatCurrency, formatSmartAmount } from "@/lib/utils";
 import { useThemeStore } from "@/stores/theme-store";
@@ -32,21 +33,24 @@ export const getNetworkDisplayName = (name: string): string => {
     return NETWORK_DISPLAY_NAMES[name.toLowerCase()] ?? name;
 };
 
-const getResidencyLabel = (residency?: string): string => {
-    switch (residency) {
-        case "Lockup":
-            return "Vested Token";
-        case "Staked":
-            return "Staked";
-        case "Ft":
-            return "Fungible Token";
-        case "Intents":
-            return "Intents Token";
-        case "Near":
-            return "Native Token";
-        default:
-            return "Intents Token";
-    }
+const useResidencyLabel = () => {
+    const t = useTranslations("residency");
+    return (residency?: string): string => {
+        switch (residency) {
+            case "Lockup":
+                return t("vestedToken");
+            case "Staked":
+                return t("staked");
+            case "Ft":
+                return t("fungibleToken");
+            case "Intents":
+                return t("intentsToken");
+            case "Near":
+                return t("nativeToken");
+            default:
+                return t("intentsToken");
+        }
+    };
 };
 
 export const NetworkIconDisplay = ({
@@ -55,6 +59,7 @@ export const NetworkIconDisplay = ({
     residency,
 }: NetworkIconDisplayProps) => {
     const { theme } = useThemeStore();
+    const getResidencyLabel = useResidencyLabel();
 
     const iconUrl = chainIcons
         ? theme === "dark"
@@ -99,23 +104,24 @@ export const NetworkDisplay = ({
     subLabel?: string;
 }) => {
     const { theme } = useThemeStore();
+    const tRes = useTranslations("residency");
 
     let type;
     switch (asset.residency) {
         case "Lockup":
-            type = "Vested Token";
+            type = tRes("vestedToken");
             break;
         case "Staked":
-            type = "Staked";
+            type = tRes("staked");
             break;
         case "Ft":
-            type = "Fungible Token";
+            type = tRes("fungibleToken");
             break;
         case "Intents":
             type = "near.com";
             break;
         case "Near":
-            type = "Native Token";
+            type = tRes("nativeToken");
             break;
     }
 

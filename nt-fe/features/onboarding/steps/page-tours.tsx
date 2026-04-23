@@ -2,11 +2,37 @@
 
 import { useNextStep } from "nextstepjs";
 import type { Tour } from "nextstepjs";
+import { useTranslations } from "next-intl";
 import { useEffect, useCallback, useRef } from "react";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useNear } from "@/stores/near-store";
 import { useResponsiveSidebar } from "@/stores/sidebar-store";
 import { useAddressBook } from "@/features/address-book";
+
+type PageTourKey =
+    | "paymentsBulk"
+    | "paymentsPending"
+    | "exchangeSettings"
+    | "membersPending"
+    | "guestSaveIntro"
+    | "guestSaveAction"
+    | "newFeature";
+
+function PageTourContent({ k }: { k: PageTourKey }) {
+    const t = useTranslations("pageTours");
+    return <>{t(k)}</>;
+}
+
+function PageTourContentRich({ k }: { k: "newFeature" }) {
+    const t = useTranslations("pageTours");
+    return (
+        <>
+            {t.rich(`${k}Rich`, {
+                br: () => <br />,
+            })}
+        </>
+    );
+}
 
 export const FEATURE_VERSION = 1 as const;
 export const NEW_FEATURE_TOUR_NAME = `NEW_FEATURE_${FEATURE_VERSION}` as const;
@@ -48,16 +74,10 @@ export const NEW_FEATURE_ANNOUNCEMENT = {
     tourName: NEW_FEATURE_TOUR_NAME,
     storageKey: NEW_FEATURE_STORAGE_KEY,
     selector: PAGE_TOUR_SELECTORS.ADDRESS_BOOK_NEW,
-    ctaLabel: "Try It",
+    ctaLabelKey: "newFeatureCta" as const,
     href: (treasuryId?: string | null) =>
         treasuryId ? `/${treasuryId}/address-book` : "/address-book",
-    content: (
-        <>
-            New! 🎉 Save frequently used addresses for faster, error-free
-            payouts.
-            <br /> Your contacts stay private and visible only to your team.
-        </>
-    ),
+    content: <PageTourContentRich k="newFeature" />,
 } as const;
 
 const defaultStepProps = {
@@ -75,12 +95,7 @@ export const PAYMENTS_BULK_TOUR: Tour = {
     steps: [
         {
             ...defaultStepProps,
-            content: (
-                <>
-                    Bulk creation is here! Create several requests in just a few
-                    steps.
-                </>
-            ),
+            content: <PageTourContent k="paymentsBulk" />,
             selector: PAGE_TOUR_SELECTORS.PAYMENTS_BULK_BTN,
             side: "bottom",
         },
@@ -92,7 +107,7 @@ export const PAYMENTS_PENDING_TOUR: Tour = {
     steps: [
         {
             ...defaultStepProps,
-            content: <>View requests that are pending approval here.</>,
+            content: <PageTourContent k="paymentsPending" />,
             selector: PAGE_TOUR_SELECTORS.PAYMENTS_PENDING_BTN,
             side: "bottom-right",
         },
@@ -104,12 +119,7 @@ export const EXCHANGE_SETTINGS_TOUR: Tour = {
     steps: [
         {
             ...defaultStepProps,
-            content: (
-                <>
-                    Here you can set how much price change you're willing to
-                    accept.
-                </>
-            ),
+            content: <PageTourContent k="exchangeSettings" />,
             selector: PAGE_TOUR_SELECTORS.EXCHANGE_SETTINGS_BTN,
             side: "bottom-right",
         },
@@ -121,7 +131,7 @@ export const MEMBERS_PENDING_TOUR: Tour = {
     steps: [
         {
             ...defaultStepProps,
-            content: <>Click to see active requests waiting for approval.</>,
+            content: <PageTourContent k="membersPending" />,
             selector: PAGE_TOUR_SELECTORS.MEMBERS_PENDING_BTN,
             side: "bottom-left",
         },
@@ -133,20 +143,13 @@ export const GUEST_SAVE_TOUR: Tour = {
     steps: [
         {
             ...defaultStepProps,
-            content: (
-                <>
-                    You are a guest of this treasury. You can only view the
-                    data.
-                </>
-            ),
+            content: <PageTourContent k="guestSaveIntro" />,
             selector: PAGE_TOUR_SELECTORS.GUEST_BADGE,
             side: "right",
         },
         {
             ...defaultStepProps,
-            content: (
-                <>You can save this guest treasury to your treasuries list.</>
-            ),
+            content: <PageTourContent k="guestSaveAction" />,
             selector: PAGE_TOUR_SELECTORS.GUEST_SAVE_BTN,
             side: "right",
         },
@@ -159,7 +162,6 @@ export const NEW_FEATURE_TOUR: Tour = {
         {
             ...defaultStepProps,
             content: NEW_FEATURE_ANNOUNCEMENT.content,
-            title: NEW_FEATURE_ANNOUNCEMENT.ctaLabel,
             selector: NEW_FEATURE_ANNOUNCEMENT.selector,
             side: "right",
         },

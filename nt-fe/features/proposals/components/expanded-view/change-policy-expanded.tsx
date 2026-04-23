@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import {
     ChangePolicyData,
     PolicyChange,
@@ -20,7 +23,7 @@ import { cn } from "@/lib/utils";
 import { Pill } from "@/components/pill";
 import { Button } from "@/components/button";
 import { renderDiff, isNullValue } from "../../utils/diff-utils";
-import { formatRoleName } from "@/components/role-name";
+import { formatRoleName, useFormatRoleName } from "@/components/role-name";
 import { Proposal } from "@/lib/proposals-api";
 import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
 import { useTreasury } from "@/hooks/use-treasury";
@@ -32,12 +35,15 @@ interface ChangePolicyExpandedProps {
     proposal: Proposal;
 }
 
-function formatFieldLabel(field: PolicyChange["field"]): string {
+function formatFieldLabel(
+    field: PolicyChange["field"],
+    t: (key: string) => string,
+): string {
     const labels: Record<PolicyChange["field"], string> = {
-        proposal_bond: "Proposal Bond",
-        proposal_period: "Proposal Period",
-        bounty_bond: "Bounty Bond",
-        bounty_forgiveness_period: "Bounty Forgiveness Period",
+        proposal_bond: t("proposalBond"),
+        proposal_period: t("proposalPeriod"),
+        bounty_bond: t("bountyBond"),
+        bounty_forgiveness_period: t("bountyForgivenessPeriod"),
     };
     return labels[field];
 }
@@ -63,34 +69,38 @@ function formatFieldValue(
 
 function formatVotePolicyFieldLabel(
     field: VotePolicyChange["field"],
+    t: (key: string, values?: Record<string, any>) => string,
     roleName?: string,
 ): string {
     if (field === "threshold") {
         if (roleName) {
-            return `${formatRoleName(roleName)} Threshold`;
+            return t("roleThreshold", { role: formatRoleName(roleName) });
         }
-        return "Default Threshold";
+        return t("defaultThreshold");
     }
     const labels: Record<VotePolicyChange["field"], string> = {
-        weight_kind: "Weight Kind",
-        quorum: "Quorum",
-        threshold: "Threshold",
+        weight_kind: t("weightKind"),
+        quorum: t("quorum"),
+        threshold: t("threshold"),
     };
     return labels[field];
 }
 
-function formatThreshold(threshold: any): React.ReactNode {
+function formatThreshold(
+    threshold: any,
+    t: (key: string, values?: Record<string, any>) => string,
+): React.ReactNode {
     if (isNullValue(threshold))
         return <span className="text-muted-foreground/50">null</span>;
     if (typeof threshold === "string") {
         const parsed = parseInt(threshold);
         if (!isNaN(parsed)) {
-            return <span>{parsed} Votes</span>;
+            return <span>{t("votesCount", { count: parsed })}</span>;
         }
         return <span>{threshold}</span>;
     }
     if (Array.isArray(threshold) && threshold.length === 2) {
-        return <span>{threshold[0]} Votes</span>;
+        return <span>{t("votesCount", { count: threshold[0] })}</span>;
     }
     return <span>{JSON.stringify(threshold)}</span>;
 }
@@ -98,9 +108,10 @@ function formatThreshold(threshold: any): React.ReactNode {
 function formatVotePolicyValue(
     field: VotePolicyChange["field"],
     value: any,
+    t: (key: string, values?: Record<string, any>) => string,
 ): React.ReactNode {
     if (field === "threshold") {
-        return formatThreshold(value);
+        return formatThreshold(value, t);
     }
     return isNullValue(value) ? (
         <span className="text-muted-foreground/50">null</span>
@@ -112,17 +123,18 @@ function formatVotePolicyValue(
 function getMemberItems(
     change: MemberRoleChange,
     type: "added" | "removed" | "updated",
+    t: (key: string) => string,
 ): InfoItem[] {
     const items: InfoItem[] = [
         {
-            label: "Member",
+            label: t("member"),
             value: <User accountId={change.member} />,
         },
     ];
 
     if (type === "added" && change.newRoles) {
         items.push({
-            label: "Permissions",
+            label: t("permissions"),
             value: (
                 <div className="flex flex-wrap gap-1">
                     {change.newRoles.map((role) => (
@@ -139,7 +151,7 @@ function getMemberItems(
 
     if (type === "removed" && change.oldRoles) {
         items.push({
-            label: "Permissions",
+            label: t("permissions"),
             value: (
                 <div className="flex flex-wrap gap-1">
                     {change.oldRoles.map((role) => (
@@ -157,7 +169,7 @@ function getMemberItems(
     if (type === "updated") {
         if (change.oldRoles) {
             items.push({
-                label: "Old Permissions",
+                label: t("oldPermissions"),
                 value: (
                     <div className="flex flex-wrap gap-1">
                         {change.oldRoles.map((role) => (
@@ -173,7 +185,7 @@ function getMemberItems(
         }
         if (change.newRoles) {
             items.push({
-                label: "New Permissions",
+                label: t("newPermissions"),
                 value: (
                     <div className="flex flex-wrap gap-1">
                         {change.newRoles.map((role) => (
@@ -194,17 +206,23 @@ function getMemberItems(
 
 function getCategoryLabel(
     type: "added" | "removed" | "updated",
-    plural: boolean = false,
+    plural: boolean,
+    t: (key: string) => string,
 ) {
-    if (type === "added") return plural ? "Add New Members" : "Add New Member";
-    if (type === "removed") return plural ? "Remove Members" : "Remove Member";
-    return plural ? "Update Members Permissions" : "Update Member Permissions";
+    if (type === "added")
+        return plural ? t("addNewMembers") : t("addNewMember");
+    if (type === "removed")
+        return plural ? t("removeMembers") : t("removeMember");
+    return plural
+        ? t("updateMembersPermissions")
+        : t("updateMemberPermissions");
 }
 
 export function ChangePolicyExpanded({
     data,
     proposal,
 }: ChangePolicyExpandedProps) {
+    const t = useTranslations("changePolicyExpanded");
     const [expandedAdded, setExpandedAdded] = useState<number[]>([]);
     const [expandedRemoved, setExpandedRemoved] = useState<number[]>([]);
     const [expandedUpdated, setExpandedUpdated] = useState<number[]>([]);
@@ -233,7 +251,7 @@ export function ChangePolicyExpanded({
             <div className="flex items-center justify-center p-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 <span className="ml-2 text-muted-foreground text-sm">
-                    Loading historical policy...
+                    {t("loadingHistorical")}
                 </span>
             </div>
         );
@@ -242,7 +260,7 @@ export function ChangePolicyExpanded({
     if (!diff) {
         return (
             <div className="p-4 text-center text-muted-foreground">
-                Unable to compute differences for this proposal.
+                {t("unableToDiff")}
             </div>
         );
     }
@@ -261,13 +279,14 @@ export function ChangePolicyExpanded({
         return (
             <div className="flex flex-col gap-4">
                 <div className="p-4 text-center text-muted-foreground">
-                    No changes detected - the proposed policy is identical to
-                    the {isPending ? "current" : "historical"} policy.
+                    {isPending
+                        ? t("noChangesCurrent")
+                        : t("noChangesHistorical")}
                 </div>
                 <InfoDisplay
                     items={[
                         {
-                            label: "Transaction Details",
+                            label: t("transactionDetails"),
                             value: null,
                             afterValue: (
                                 <pre className="overflow-x-auto rounded-md bg-muted/50 p-3 text-xs">
@@ -293,7 +312,7 @@ export function ChangePolicyExpanded({
     policyChanges.forEach((change) => {
         const isOldNull = isNullValue(change.oldValue);
         allItems.push({
-            label: formatFieldLabel(change.field),
+            label: formatFieldLabel(change.field, t),
             value: renderDiff(
                 formatFieldValue(change.field, change.oldValue ?? "null"),
                 formatFieldValue(change.field, change.newValue ?? "null"),
@@ -306,10 +325,10 @@ export function ChangePolicyExpanded({
     defaultVotePolicyChanges.forEach((change) => {
         const isOldNull = isNullValue(change.oldValue);
         allItems.push({
-            label: formatVotePolicyFieldLabel(change.field),
+            label: formatVotePolicyFieldLabel(change.field, t),
             value: renderDiff(
-                formatVotePolicyValue(change.field, change.oldValue),
-                formatVotePolicyValue(change.field, change.newValue),
+                formatVotePolicyValue(change.field, change.oldValue, t),
+                formatVotePolicyValue(change.field, change.newValue, t),
                 isOldNull,
             ),
         });
@@ -326,10 +345,10 @@ export function ChangePolicyExpanded({
 
         if (changes.length === 1) {
             allItems.push({
-                label: "Category",
-                value: <span>{getCategoryLabel(type)}</span>,
+                label: t("category"),
+                value: <span>{getCategoryLabel(type, false, t)}</span>,
             });
-            allItems.push(...getMemberItems(changes[0], type));
+            allItems.push(...getMemberItems(changes[0], type, t));
         } else {
             const isAllExpanded = expanded.length === changes.length;
             const toggleAll = () => {
@@ -338,19 +357,19 @@ export function ChangePolicyExpanded({
             };
 
             allItems.push({
-                label: "Category",
-                value: <span>{getCategoryLabel(type, true)}</span>,
+                label: t("category"),
+                value: <span>{getCategoryLabel(type, true, t)}</span>,
             });
 
             allItems.push({
-                label: "Members",
+                label: t("members"),
                 value: (
                     <div className="flex gap-3 items-baseline">
                         <p className="text-sm font-medium">
-                            {changes.length} members
+                            {t("membersCount", { count: changes.length })}
                         </p>
                         <Button variant="ghost" size="sm" onClick={toggleAll}>
-                            {isAllExpanded ? "Collapse all" : "Expand all"}
+                            {isAllExpanded ? t("collapseAll") : t("expandAll")}
                         </Button>
                     </div>
                 ),
@@ -383,14 +402,16 @@ export function ChangePolicyExpanded({
                                                     "rotate-180",
                                             )}
                                         />
-                                        Member {index + 1}
+                                        {t("memberIndex", {
+                                            index: index + 1,
+                                        })}
                                     </div>
                                 </CollapsibleTrigger>
                                 <CollapsibleContent>
                                     <InfoDisplay
                                         style="secondary"
                                         className="p-3 rounded-b-lg"
-                                        items={getMemberItems(change, type)}
+                                        items={getMemberItems(change, type, t)}
                                     />
                                 </CollapsibleContent>
                             </Collapsible>
@@ -438,15 +459,17 @@ export function ChangePolicyExpanded({
         ) {
             const isOldNull = isNullValue(firstChange.oldThreshold);
             allItems.push({
-                label: formatVotePolicyFieldLabel("threshold", roleName),
+                label: formatVotePolicyFieldLabel("threshold", t, roleName),
                 value: renderDiff(
                     formatVotePolicyValue(
                         "threshold",
                         firstChange.oldThreshold,
+                        t,
                     ),
                     formatVotePolicyValue(
                         "threshold",
                         firstChange.newThreshold,
+                        t,
                     ),
                     isOldNull,
                 ),
@@ -456,10 +479,10 @@ export function ChangePolicyExpanded({
         if (firstChange.oldQuorum !== firstChange.newQuorum) {
             const isOldNull = isNullValue(firstChange.oldQuorum);
             allItems.push({
-                label: "Quorum",
+                label: t("quorum"),
                 value: renderDiff(
-                    formatVotePolicyValue("quorum", firstChange.oldQuorum),
-                    formatVotePolicyValue("quorum", firstChange.newQuorum),
+                    formatVotePolicyValue("quorum", firstChange.oldQuorum, t),
+                    formatVotePolicyValue("quorum", firstChange.newQuorum, t),
                     isOldNull,
                 ),
             });
@@ -468,15 +491,17 @@ export function ChangePolicyExpanded({
         if (firstChange.oldWeightKind !== firstChange.newWeightKind) {
             const isOldNull = isNullValue(firstChange.oldWeightKind);
             allItems.push({
-                label: "Weight Kind",
+                label: t("weightKind"),
                 value: renderDiff(
                     formatVotePolicyValue(
                         "weight_kind",
                         firstChange.oldWeightKind,
+                        t,
                     ),
                     formatVotePolicyValue(
                         "weight_kind",
                         firstChange.newWeightKind,
+                        t,
                     ),
                     isOldNull,
                 ),
@@ -491,7 +516,7 @@ export function ChangePolicyExpanded({
         ) {
             const isOldNull = isNullValue(firstChange.oldPermissions);
             allItems.push({
-                label: "Permissions",
+                label: t("permissions"),
                 value: renderDiff(
                     <div className="flex flex-wrap gap-1">
                         {firstChange.oldPermissions?.map((permission) => (
@@ -523,7 +548,7 @@ export function ChangePolicyExpanded({
 
     // 5. Transaction Details
     allItems.push({
-        label: "Transaction Details",
+        label: t("transactionDetails"),
         value: null,
         afterValue: (
             <ScrollArea className="flex h-96 w-full">

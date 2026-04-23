@@ -1,6 +1,9 @@
+"use client";
+
 import { cn } from "@/lib/utils";
 import { Input as ShadcnInput } from "./ui/input";
 import { Search, XIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "./button";
 import { useState, useRef, useEffect, useCallback } from "react";
 
@@ -92,6 +95,7 @@ export function ResponsiveInput({
     onSearchActiveChange,
     ...props
 }: ResponsiveInputProps) {
+    const t = useTranslations("input");
     const [isOpen, setIsOpen] = useState(false);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -148,7 +152,7 @@ export function ResponsiveInput({
                 <Button
                     variant="secondary"
                     size="icon"
-                    aria-label="Open"
+                    aria-label={t("openSearch")}
                     className="flex md:hidden"
                     onClick={() => {
                         setIsOpen(true);

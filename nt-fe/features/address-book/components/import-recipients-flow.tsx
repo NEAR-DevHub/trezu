@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState, useMemo } from "react";
 import { Button } from "@/components/button";
 import { StepperHeader } from "@/components/step-wizard";
@@ -10,6 +11,7 @@ import {
     parseAndValidateAddressBookPaste,
     type ParsedRecipient,
 } from "../utils/parsing";
+import { useAddressBookParsingLabels } from "../utils/use-parsing-labels";
 
 export type { ParsedRecipient };
 
@@ -28,6 +30,8 @@ export function ImportUploadStep({
     handleBack,
     onReview,
 }: ImportUploadStepProps) {
+    const t = useTranslations("addressBook.importFlow");
+    const parsingLabels = useAddressBookParsingLabels();
     const { data: chains = [] } = useChains();
 
     const [csvData, setCsvData] = useState<string | null>(null);
@@ -49,8 +53,12 @@ export function ImportUploadStep({
 
         const result =
             activeTab === "upload"
-                ? parseAndValidateAddressBookCsv(input, chains)
-                : parseAndValidateAddressBookPaste(input, chains);
+                ? parseAndValidateAddressBookCsv(input, chains, parsingLabels)
+                : parseAndValidateAddressBookPaste(
+                      input,
+                      chains,
+                      parsingLabels,
+                  );
 
         if (result.errors.length > 0) {
             return { recipients: [], errors: result.errors };
@@ -65,7 +73,7 @@ export function ImportUploadStep({
             recipientCount: result.recipients.length,
             networkCount: uniqueNetworks.size,
         };
-    }, [csvData, pasteData, activeTab, chains]);
+    }, [csvData, pasteData, activeTab, chains, parsingLabels]);
 
     const hasData =
         (activeTab === "upload" && !!csvData) ||
@@ -82,8 +90,8 @@ export function ImportUploadStep({
     return (
         <div className="flex flex-col gap-4">
             <StepperHeader
-                title="Import Recipients"
-                description="Upload a list of recipient addresses to your address book."
+                title={t("title")}
+                description={t("description")}
                 handleBack={handleBack}
             />
 
@@ -104,16 +112,18 @@ export function ImportUploadStep({
                     onErrorsClear={() => setDataErrors(null)}
                 />
 
-                {isValid && preview && "recipientCount" in preview && (
-                    <p className="text-sm text-muted-foreground">
-                        Found {preview.recipientCount}{" "}
-                        {preview.recipientCount === 1
-                            ? "recipient"
-                            : "recipients"}{" "}
-                        on {preview.networkCount}{" "}
-                        {preview.networkCount === 1 ? "network" : "networks"}
-                    </p>
-                )}
+                {isValid &&
+                    preview &&
+                    "recipientCount" in preview &&
+                    preview.recipientCount !== undefined &&
+                    preview.networkCount !== undefined && (
+                        <p className="text-sm text-muted-foreground">
+                            {t("foundSummary", {
+                                count: preview.recipientCount,
+                                networkCount: preview.networkCount,
+                            })}
+                        </p>
+                    )}
             </div>
             <Button
                 className="w-full"
@@ -121,10 +131,10 @@ export function ImportUploadStep({
                 onClick={handleContinue}
             >
                 {!hasData
-                    ? "Upload or paste recipient data"
+                    ? t("uploadPrompt")
                     : hasErrors
-                      ? "Fix errors to continue"
-                      : "Continue to Review"}
+                      ? t("fixErrors")
+                      : t("continueReview")}
             </Button>
         </div>
     );

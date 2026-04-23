@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { InfoDisplay, InfoItem } from "@/components/info-display";
 import { User } from "@/components/user";
 import { cn, formatGas, formatNearAmount } from "@/lib/utils";
@@ -37,26 +38,27 @@ function ActionDisplay({
     expanded,
     onExpandedClick,
 }: ActionDisplayProps) {
+    const t = useTranslations("proposals.expanded");
     const items: InfoItem[] = [
         {
-            label: "Method",
+            label: t("method"),
             value: <span>{action.methodName}</span>,
         },
         {
-            label: "Gas",
+            label: t("gas"),
             value: <span>{formatGas(action.gas)} TGas</span>,
         },
     ];
 
     if (action.deposit && action.deposit !== "0") {
         items.push({
-            label: "Deposit",
+            label: t("deposit"),
             value: <span>{formatNearAmount(action.deposit)}</span>,
         });
     }
 
     items.push({
-        label: "Arguments",
+        label: t("arguments"),
         value: null,
         afterValue: <ActionArgs args={action.args} />,
     });
@@ -73,7 +75,7 @@ function ActionDisplay({
                     <ChevronDown
                         className={cn("w-4 h-4", expanded && "rotate-180")}
                     />
-                    Action {number}
+                    {t("actionNumber", { number })}
                 </div>
                 <div className="hidden md:flex gap-3 items-baseline text-sm text-muted-foreground">
                     <span>{action.methodName}</span>
@@ -91,6 +93,7 @@ function ActionDisplay({
 }
 
 export function FunctionCallExpanded({ data }: FunctionCallExpandedProps) {
+    const t = useTranslations("proposals.expanded");
     const [expanded, setExpanded] = useState<number[]>([]);
 
     const onExpandedChanged = (index: number) => {
@@ -106,7 +109,7 @@ export function FunctionCallExpanded({ data }: FunctionCallExpandedProps) {
 
     const headerItems: InfoItem[] = [
         {
-            label: "Contract",
+            label: t("contract"),
             value: <User accountId={data.receiver} useAddressBook />,
         },
     ];
@@ -120,11 +123,11 @@ export function FunctionCallExpanded({ data }: FunctionCallExpandedProps) {
                         const action = data.actions[0];
                         const items: InfoItem[] = [
                             {
-                                label: "Method",
+                                label: t("method"),
                                 value: <span>{action.methodName}</span>,
                             },
                             {
-                                label: "Gas",
+                                label: t("gas"),
                                 value: (
                                     <span>{formatGas(action.gas)} TGas</span>
                                 ),
@@ -132,7 +135,7 @@ export function FunctionCallExpanded({ data }: FunctionCallExpandedProps) {
                         ];
                         if (action.deposit && action.deposit !== "0") {
                             items.push({
-                                label: "Deposit",
+                                label: t("deposit"),
                                 value: (
                                     <span>
                                         {formatNearAmount(action.deposit)}
@@ -141,7 +144,7 @@ export function FunctionCallExpanded({ data }: FunctionCallExpandedProps) {
                             });
                         }
                         items.push({
-                            label: "Arguments",
+                            label: t("arguments"),
                             value: null,
                             afterValue: <ActionArgs args={action.args} />,
                         });
@@ -170,31 +173,31 @@ export function FunctionCallExpanded({ data }: FunctionCallExpandedProps) {
 
     const summaryItems: InfoItem[] = [
         {
-            label: "Total Gas",
+            label: t("totalGas"),
             value: <span>{formatGas(totalGas)} TGas</span>,
         },
     ];
 
     if (totalDeposit !== "0") {
         summaryItems.push({
-            label: "Total Deposit",
+            label: t("totalDeposit"),
             value: <span>{formatNearAmount(totalDeposit)}</span>,
         });
     }
 
     const actionsItem: InfoItem = {
-        label: "Actions",
+        label: t("actions"),
         value: (
             <div className="flex gap-3 items-baseline">
                 <p className="text-sm font-medium">
-                    {data.actions.length} action
-                    {data.actions.length > 1 ? "s" : ""}
+                    {t("actionsCount", { count: data.actions.length })}
                 </p>
                 <button
+                    type="button"
                     className="text-sm text-muted-foreground hover:text-foreground"
                     onClick={toggleAllExpanded}
                 >
-                    {isAllExpanded ? "Collapse all" : "Expand all"}
+                    {isAllExpanded ? t("collapseAll") : t("expandAll")}
                 </button>
             </div>
         ),

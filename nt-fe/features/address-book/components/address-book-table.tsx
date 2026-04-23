@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
     Table,
     TableBody,
@@ -43,6 +44,7 @@ export function AddressBookTable({
     total = entries.length,
     onPageChange,
 }: AddressBookTableProps) {
+    const t = useTranslations("addressBookTable");
     const { data: chains = [] } = useChains();
     const totalPages = Math.ceil(total / pageSize);
     const selectedEntryCount = entries.filter((entry) =>
@@ -83,8 +85,8 @@ export function AddressBookTable({
         return (
             <EmptyState
                 icon={SearchX}
-                title="No recipients found"
-                description="Try adjusting your search."
+                title={t("emptyTitle")}
+                description={t("emptyDescription")}
                 className="py-16"
             />
         );
@@ -104,14 +106,18 @@ export function AddressBookTable({
                                             : allSelected
                                     }
                                     onCheckedChange={toggleAll}
-                                    aria-label="Select all"
+                                    aria-label={t("selectAll")}
                                 />
                             </TableHead>
-                            <TableHead>Recipient</TableHead>
-                            <TableHead className="w-90">Network</TableHead>
-                            <TableHead className="w-30">Added By</TableHead>
-                            <TableHead className="w-52">Note</TableHead>
-                            <TableHead className="w-20">Added</TableHead>
+                            <TableHead>{t("recipient")}</TableHead>
+                            <TableHead className="w-90">
+                                {t("network")}
+                            </TableHead>
+                            <TableHead className="w-30">
+                                {t("addedBy")}
+                            </TableHead>
+                            <TableHead className="w-52">{t("note")}</TableHead>
+                            <TableHead className="w-20">{t("added")}</TableHead>
                             <TableHead className="w-20" />
                         </TableRow>
                     </TableHeader>
@@ -137,7 +143,9 @@ export function AddressBookTable({
                                             onCheckedChange={() =>
                                                 toggleOne(entry.id)
                                             }
-                                            aria-label={`Select ${entry.name}`}
+                                            aria-label={t("selectEntry", {
+                                                name: entry.name,
+                                            })}
                                         />
                                     </TableCell>
 
@@ -205,7 +213,7 @@ export function AddressBookTable({
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-8 w-8"
-                                                    tooltipContent="Remove"
+                                                    tooltipContent={t("remove")}
                                                     onClick={() =>
                                                         onDelete(entry)
                                                     }
@@ -218,7 +226,7 @@ export function AddressBookTable({
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-8 w-8"
-                                                    tooltipContent="Send"
+                                                    tooltipContent={t("send")}
                                                     onClick={() =>
                                                         onSend(entry)
                                                     }

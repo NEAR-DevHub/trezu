@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { PolicyChange, RoleChange, VotePolicyChange } from "../../types/index";
 import { TitleSubtitleCell } from "./title-subtitle-cell";
 import { Proposal } from "@/lib/proposals-api";
@@ -13,103 +14,104 @@ interface ChangePolicyCellProps {
     textOnly?: boolean;
 }
 
-function getSummary(diff: {
-    policyChanges: PolicyChange[];
-    roleChanges: RoleChange;
-    defaultVotePolicyChanges: VotePolicyChange[];
-}): { title: string; subtitle: string } {
-    const { policyChanges, roleChanges, defaultVotePolicyChanges } = diff;
+function useSummary() {
+    const t = useTranslations("proposals.expanded");
+    return (diff: {
+        policyChanges: PolicyChange[];
+        roleChanges: RoleChange;
+        defaultVotePolicyChanges: VotePolicyChange[];
+    }): { title: string; subtitle: string } => {
+        const { policyChanges, roleChanges, defaultVotePolicyChanges } = diff;
 
-    const totalRoleChanges =
-        roleChanges.addedMembers.length +
-        roleChanges.removedMembers.length +
-        roleChanges.updatedMembers.length;
+        const totalRoleChanges =
+            roleChanges.addedMembers.length +
+            roleChanges.removedMembers.length +
+            roleChanges.updatedMembers.length;
 
-    // Count unique roles in roleDefinitionChanges
-    const uniqueRoles = new Set(
-        roleChanges.roleDefinitionChanges.map((c) => c.roleName),
-    );
-    const uniqueRoleCount = uniqueRoles.size;
-
-    const totalChanges =
-        policyChanges.length +
-        totalRoleChanges +
-        uniqueRoleCount +
-        defaultVotePolicyChanges.length;
-
-    if (totalChanges === 0) {
-        return {
-            title: "Policy Update",
-            subtitle: "No changes detected",
-        };
-    }
-
-    // Determine primary change type
-    const hasRoleChanges = totalRoleChanges > 0;
-    const hasRoleDefinitionChanges = uniqueRoleCount > 0;
-    const hasPolicyChanges = policyChanges.length > 0;
-    const hasVotePolicyChanges = defaultVotePolicyChanges.length > 0;
-
-    // Build summary parts
-    const parts: string[] = [];
-
-    if (hasRoleChanges) {
-        const added = roleChanges.addedMembers.length;
-        const removed = roleChanges.removedMembers.length;
-        const modified = roleChanges.updatedMembers.length;
-
-        if (added > 0)
-            parts.push(`${added} member${added !== 1 ? "s" : ""} added`);
-        if (removed > 0)
-            parts.push(`${removed} member${removed !== 1 ? "s" : ""} removed`);
-        if (modified > 0)
-            parts.push(
-                `${modified} member${modified !== 1 ? "s" : ""} updated`,
-            );
-    }
-
-    if (hasRoleDefinitionChanges) {
-        parts.push(
-            `${uniqueRoleCount} role${uniqueRoleCount !== 1 ? "s" : ""} modified`,
+        const uniqueRoles = new Set(
+            roleChanges.roleDefinitionChanges.map((c) => c.roleName),
         );
-    }
+        const uniqueRoleCount = uniqueRoles.size;
 
-    if (hasPolicyChanges) {
-        parts.push(
-            `${policyChanges.length} parameter${policyChanges.length !== 1 ? "s" : ""} changed`,
-        );
-    }
+        const totalChanges =
+            policyChanges.length +
+            totalRoleChanges +
+            uniqueRoleCount +
+            defaultVotePolicyChanges.length;
 
-    if (hasVotePolicyChanges) {
-        parts.push("default vote policy");
-    }
+        if (totalChanges === 0) {
+            return {
+                title: t("policyUpdate"),
+                subtitle: t("noChangesDetected"),
+            };
+        }
 
-    const subtitle = parts.join(", ");
+        const hasRoleChanges = totalRoleChanges > 0;
+        const hasRoleDefinitionChanges = uniqueRoleCount > 0;
+        const hasPolicyChanges = policyChanges.length > 0;
+        const hasVotePolicyChanges = defaultVotePolicyChanges.length > 0;
 
-    // Determine title based on primary change
-    let title = "Policy Update";
-    if (hasRoleChanges && !hasPolicyChanges && !hasVotePolicyChanges) {
-        title = "Role Changes";
-    } else if (hasPolicyChanges && !hasRoleChanges && !hasVotePolicyChanges) {
-        title = "Policy Parameters";
-    } else if (hasVotePolicyChanges && !hasRoleChanges && !hasPolicyChanges) {
-        title = "Default Vote Policy";
-    } else if (hasRoleChanges && hasPolicyChanges) {
-        title = "Policy & Role Changes";
-    }
+        const parts: string[] = [];
 
-    return { title, subtitle };
+        if (hasRoleChanges) {
+            const added = roleChanges.addedMembers.length;
+            const removed = roleChanges.removedMembers.length;
+            const modified = roleChanges.updatedMembers.length;
+
+            if (added > 0) parts.push(t("membersAdded", { count: added }));
+            if (removed > 0)
+                parts.push(t("membersRemoved", { count: removed }));
+            if (modified > 0)
+                parts.push(t("membersUpdated", { count: modified }));
+        }
+
+        if (hasRoleDefinitionChanges) {
+            parts.push(t("rolesModified", { count: uniqueRoleCount }));
+        }
+
+        if (hasPolicyChanges) {
+            parts.push(t("parametersChanged", { count: policyChanges.length }));
+        }
+
+        if (hasVotePolicyChanges) {
+            parts.push(t("defaultVotePolicyPart"));
+        }
+
+        const subtitle = parts.join(", ");
+
+        let title = t("policyUpdate");
+        if (hasRoleChanges && !hasPolicyChanges && !hasVotePolicyChanges) {
+            title = t("roleChanges");
+        } else if (
+            hasPolicyChanges &&
+            !hasRoleChanges &&
+            !hasVotePolicyChanges
+        ) {
+            title = t("policyParameters");
+        } else if (
+            hasVotePolicyChanges &&
+            !hasRoleChanges &&
+            !hasPolicyChanges
+        ) {
+            title = t("defaultVotePolicy");
+        } else if (hasRoleChanges && hasPolicyChanges) {
+            title = t("policyRoleChanges");
+        }
+
+        return { title, subtitle };
+    };
 }
 
 export function ChangePolicyCell({
     proposal,
     timestamp,
 }: ChangePolicyCellProps) {
+    const t = useTranslations("proposals.expanded");
+    const getSummary = useSummary();
     const { treasuryId } = useTreasury();
 
     const isPending = proposal.status === "InProgress";
 
-    // If not pending, fetch the policy at the time of submission
     const { data: oldPolicy, isLoading: isLoadingTimestamped } =
         useTreasuryPolicy(
             treasuryId,
@@ -128,13 +130,13 @@ export function ChangePolicyCell({
         );
 
         return getSummary(diff);
-    }, [oldPolicy, proposal]);
+    }, [oldPolicy, proposal, getSummary]);
 
     if (!isPending && isLoadingTimestamped) {
         return (
             <TitleSubtitleCell
-                title="Loading policy..."
-                subtitle="Historical data..."
+                title={t("loadingPolicy")}
+                subtitle={t("historicalData")}
                 timestamp={timestamp}
             />
         );
@@ -143,8 +145,8 @@ export function ChangePolicyCell({
     if (!summary) {
         return (
             <TitleSubtitleCell
-                title="Policy Update"
-                subtitle="Details unavailable"
+                title={t("policyUpdate")}
+                subtitle={t("detailsUnavailable")}
                 timestamp={timestamp}
             />
         );

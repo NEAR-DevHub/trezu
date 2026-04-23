@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronUp, Info } from "lucide-react";
 import { Tooltip } from "./tooltip";
@@ -68,6 +69,7 @@ export function InfoDisplay({
     size = "default",
     hideSeparator = false,
 }: InfoDisplayProps) {
+    const t = useTranslations("infoDisplay");
     const [isExpanded, setIsExpanded] = useState(false);
     const hasExpandableItems = expandableItems && expandableItems.length > 0;
 
@@ -117,7 +119,7 @@ export function InfoDisplay({
                     onClick={() => setIsExpanded(!isExpanded)}
                     className="flex gap-2 w-full justify-center mt-2"
                 >
-                    {isExpanded ? "View Less" : "View All Details"}
+                    {isExpanded ? t("viewLess") : t("viewAllDetails")}
                     {isExpanded ? (
                         <ChevronUp className="w-4 h-4" />
                     ) : (

@@ -7,4 +7,9 @@ export {
     getHistoryDescription,
     getFromAccount,
     getToAccount,
+    useFormatHistoryDuration,
+    useGetHistoryDescription,
+    useGetActivityLabel,
+    useGetActivitySubLabel,
+    useGetFromAccount,
 } from "./utils/history-utils";

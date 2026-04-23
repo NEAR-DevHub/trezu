@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowDown, ChevronRight, Loader2 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { trackEvent } from "@/lib/analytics";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm, useFormContext } from "react-hook-form";
@@ -65,19 +66,22 @@ import {
     buildNEARWithdrawProposal,
 } from "./utils/proposal-builder";
 
-const exchangeFormSchema = z.object({
-    sellAmount: z
-        .string()
-        .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
-            message: "Amount must be greater than 0",
-        }),
-    sellToken: tokenSchema,
-    receiveAmount: z.string().optional(),
-    receiveToken: tokenSchema,
-    slippageTolerance: z.number().optional(),
-});
+function buildExchangeFormSchema(messages: { amountGreaterThanZero: string }) {
+    return z.object({
+        sellAmount: z
+            .string()
+            .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+                message: messages.amountGreaterThanZero,
+            }),
+        sellToken: tokenSchema,
+        receiveAmount: z.string().optional(),
+        receiveToken: tokenSchema,
+        slippageTolerance: z.number().optional(),
+    });
+}
 
 function Step1({ handleNext }: StepProps) {
+    const tEx = useTranslations("exchange");
     const form = useFormContext<
         ExchangeFormValues & { slippageTolerance?: number }
     >();
@@ -245,7 +249,7 @@ function Step1({ handleNext }: StepProps) {
     return (
         <PageCard className="relative">
             <div className="flex items-center justify-between gap-2">
-                <StepperHeader title="Exchange" />
+                <StepperHeader title={tEx("heading")} />
                 <div className="flex items-center gap-2">
                     <PendingButton
                         id="exchange-pending-btn"
@@ -264,7 +268,7 @@ function Step1({ handleNext }: StepProps) {
             {/* Sell Token Input */}
             <div className="relative">
                 <TokenInput
-                    title="Sell"
+                    title={tEx("sell")}
                     control={form.control}
                     amountName="sellAmount"
                     tokenName="sellToken"
@@ -293,7 +297,7 @@ function Step1({ handleNext }: StepProps) {
 
             {/* Receive Token Input (Read-only) */}
             <TokenInput
-                title="Receive"
+                title={tEx("receive")}
                 control={form.control}
                 amountName="receiveAmount"
                 tokenName="receiveToken"
@@ -316,7 +320,7 @@ function Step1({ handleNext }: StepProps) {
                     />
                     <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">
-                            Slippage Tolerance
+                            {tEx("slippageTolerance")}
                         </span>
                         <span className="font-medium">
                             {slippageTolerance}%
@@ -333,16 +337,16 @@ function Step1({ handleNext }: StepProps) {
                     disabled={areSameTokens || !hasValidAmount || !quoteData}
                     idleMessage={
                         areSameTokens
-                            ? "Tokens must be different"
+                            ? tEx("disabled.differentTokens")
                             : !hasValidAmount
-                              ? "Enter an amount to exchange"
-                              : "Review Exchange"
+                              ? tEx("disabled.enterAmount")
+                              : tEx("review")
                     }
                 />
             </div>
 
             <div className="flex justify-center items-center gap-2 text-sm text-muted-foreground">
-                <span>Powered by</span>
+                <span>{tEx("poweredBy")}</span>
                 <span className="font-semibold flex items-center gap-1">
                     <img
                         src={
@@ -360,6 +364,7 @@ function Step1({ handleNext }: StepProps) {
 }
 
 function Step2({ handleBack }: StepProps) {
+    const tEx = useTranslations("exchange");
     const form = useFormContext<ExchangeFormValues>();
     const { treasuryId: selectedTreasury, isConfidential } = useTreasury();
     const sellToken = form.watch("sellToken");
@@ -442,10 +447,7 @@ function Step2({ handleBack }: StepProps) {
 
     return (
         <PageCard>
-            <ReviewStep
-                reviewingTitle="Review Exchange"
-                handleBack={handleBack}
-            >
+            <ReviewStep reviewingTitle={tEx("review")} handleBack={handleBack}>
                 {isLoadingLiveQuote ? (
                     // Loading skeleton for entire review section
                     <>
@@ -485,7 +487,7 @@ function Step2({ handleBack }: StepProps) {
                         {/* Exchange Summary Cards */}
                         <div className="relative flex justify-center items-center gap-4 mb-6">
                             <ExchangeSummaryCard
-                                title="Sell"
+                                title={tEx("sell")}
                                 token={sellToken}
                                 amount={
                                     localLiveQuoteData.quote.amountInFormatted
@@ -501,7 +503,7 @@ function Step2({ handleBack }: StepProps) {
                             </div>
 
                             <ExchangeSummaryCard
-                                title="Receive"
+                                title={tEx("receive")}
                                 token={receiveToken}
                                 amount={formattedReceiveAmount}
                                 usdValue={estimatedReceiveUSDValue}
@@ -526,7 +528,9 @@ function Step2({ handleBack }: StepProps) {
                                     marketPriceDifference.hasMarketData
                                         ? [
                                               {
-                                                  label: "Price Difference",
+                                                  label: tEx(
+                                                      "info.priceDifference",
+                                                  ),
                                                   value: (
                                                       <span className="font-medium">
                                                           {marketPriceDifference.isFavorable
@@ -538,26 +542,34 @@ function Step2({ handleBack }: StepProps) {
                                                           %
                                                       </span>
                                                   ),
-                                                  info: "Difference between the quote rate and the current market rate. Positive values indicate a better rate than market.",
+                                                  info: tEx(
+                                                      "info.priceDifferenceTooltip",
+                                                  ),
                                               },
                                           ]
                                         : []),
                                     {
-                                        label: "Estimated Time",
-                                        value: `${localLiveQuoteData.quote.timeEstimate} seconds`,
-                                        info: "Approximate time to complete the exchange.",
+                                        label: tEx("info.estimatedTime"),
+                                        value: tEx("info.estimatedTimeValue", {
+                                            seconds:
+                                                localLiveQuoteData.quote
+                                                    .timeEstimate,
+                                        }),
+                                        info: tEx("info.estimatedTimeTooltip"),
                                     },
                                     {
-                                        label: "Minimum Received",
+                                        label: tEx("info.minimumReceived"),
                                         value: `${formatBalance(
                                             localLiveQuoteData.quote
                                                 .minAmountOut,
                                             receiveToken.decimals,
                                         )} ${receiveToken.symbol}`,
-                                        info: "This is the minimum amount you'll receive from this exchange, based on the slippage limit set for the request.",
+                                        info: tEx(
+                                            "info.minimumReceivedTooltip",
+                                        ),
                                     },
                                     {
-                                        label: "Deposit Address",
+                                        label: tEx("info.depositAddress"),
                                         value: (
                                             <div className="flex items-center gap-2">
                                                 {`${localLiveQuoteData.quote.depositAddress.slice(
@@ -571,7 +583,9 @@ function Step2({ handleBack }: StepProps) {
                                                         localLiveQuoteData.quote
                                                             .depositAddress
                                                     }
-                                                    toastMessage="Deposit address copied"
+                                                    toastMessage={tEx(
+                                                        "info.depositAddressCopied",
+                                                    )}
                                                     variant="unstyled"
                                                     size="icon"
                                                     className="h-6 w-6 p-0!"
@@ -581,7 +595,7 @@ function Step2({ handleBack }: StepProps) {
                                         ),
                                     },
                                     {
-                                        label: "Quote Expires",
+                                        label: tEx("info.quoteExpires"),
                                         value: (
                                             <span className="text-destructive">
                                                 {formatDate(
@@ -599,7 +613,9 @@ function Step2({ handleBack }: StepProps) {
                                     ...(!isWrapConversion
                                         ? [
                                               {
-                                                  label: "Exchange Fee",
+                                                  label: tEx(
+                                                      "info.exchangeFee",
+                                                  ),
                                                   value: (() => {
                                                       // Calculate fee: amountIn * 0.35% = amountIn * 0.0035
                                                       const feePercentage = 0.7;
@@ -615,7 +631,9 @@ function Step2({ handleBack }: StepProps) {
 
                                                       return `${feePercentage}% / ${formatSmartAmount(feeAmount)} ${sellToken.symbol}`;
                                                   })(),
-                                                  info: "The 0.70% fee incurred here covers the NEAR Intents protocol costs to facilitate your trade and the Trezu widget fee. This amount is automatically calculated into your quoted rate.",
+                                                  info: tEx(
+                                                      "info.exchangeFeeTooltip",
+                                                  ),
                                               },
                                           ]
                                         : []),
@@ -626,7 +644,7 @@ function Step2({ handleBack }: StepProps) {
                 ) : null}
 
                 {/* Warning Alert */}
-                <WarningAlert message="Please approve this request within 24 hours, otherwise it will expire. We recommend confirming as soon as possible." />
+                <WarningAlert message={tEx("approveWithin24h")} />
 
                 <></>
             </ReviewStep>
@@ -637,26 +655,33 @@ function Step2({ handleBack }: StepProps) {
                     type="submit"
                     className="w-full h-10 rounded-none"
                     permissions={[{ kind: "call", action: "AddProposal" }]}
-                    idleMessage="Confirm and Submit Request"
+                    idleMessage={tEx("confirmSubmit")}
                     disabled={isLoadingLiveQuote}
                 />
             </div>
 
             {localLiveQuoteData && !isLoadingLiveQuote && (
                 <p className="text-center text-sm text-muted-foreground">
-                    Exchange rate will refresh in{" "}
-                    <span className="font-medium text-foreground">
-                        {timeUntilRefresh}s
-                    </span>
+                    {tEx("refreshingIn", { seconds: timeUntilRefresh })}
                 </p>
             )}
         </PageCard>
     );
 }
 
-type ExchangeFormValues = z.infer<typeof exchangeFormSchema>;
+type ExchangeFormValues = z.infer<ReturnType<typeof buildExchangeFormSchema>>;
 
 export default function ExchangePage() {
+    const t = useTranslations("pages.exchange");
+    const tEx = useTranslations("exchange");
+    const tValidation = useTranslations("paymentForm.validation");
+    const exchangeFormSchema = useMemo(
+        () =>
+            buildExchangeFormSchema({
+                amountGreaterThanZero: tValidation("amountGreaterThanZero"),
+            }),
+        [tValidation],
+    );
     const { treasuryId: selectedTreasury, isConfidential } = useTreasury();
     const { createProposal } = useNear();
     const { data: policy } = useTreasuryPolicy(selectedTreasury);
@@ -720,7 +745,7 @@ export default function ExchangePage() {
                     treasuryId: selectedTreasury,
                 });
 
-                await createProposal("Exchange request submitted", {
+                await createProposal(tEx("requestSubmitted"), {
                     treasuryId: selectedTreasury,
                     proposal: confidentialResult.proposal,
                     proposalBond,
@@ -760,7 +785,7 @@ export default function ExchangePage() {
                     result = await buildFungibleTokenProposal(proposalParams);
                 }
 
-                await createProposal("Exchange request submitted", {
+                await createProposal(tEx("requestSubmitted"), {
                     treasuryId: selectedTreasury,
                     proposal: result.proposal,
                     proposalBond,
@@ -783,10 +808,7 @@ export default function ExchangePage() {
     };
 
     return (
-        <PageComponentLayout
-            title="Exchange"
-            description="Exchange your tokens securely and efficiently"
-        >
+        <PageComponentLayout title={t("title")} description={t("description")}>
             <Form {...form}>
                 <form
                     onSubmit={(e) => {

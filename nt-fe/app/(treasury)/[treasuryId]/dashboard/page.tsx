@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { useAssets } from "@/hooks/use-assets";
@@ -19,6 +20,7 @@ import { useTreasury } from "@/hooks/use-treasury";
 import { CreateBanner } from "@/features/onboarding/components/create-banner";
 
 export default function AppPage() {
+    const t = useTranslations("pages.dashboard");
     const { treasuryId, isConfidential, isGuestTreasury } = useTreasury();
     const isHidden = isConfidential && isGuestTreasury;
     const { data, isLoading, isPending } = useAssets(treasuryId, {
@@ -32,10 +34,7 @@ export default function AppPage() {
     const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
 
     return (
-        <PageComponentLayout
-            title="Dashboard"
-            description="Overview of your treasury assets and activity"
-        >
+        <PageComponentLayout title={t("title")} description={t("description")}>
             <div className="flex flex-col lg:flex-row gap-5">
                 <div className="flex flex-col gap-5 lg:w-3/5 w-full">
                     <div className="lg:hidden empty:hidden">

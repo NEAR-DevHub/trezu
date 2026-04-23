@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
     Dialog,
     DialogContent,
@@ -41,6 +42,8 @@ export function VestingDetailsModal({
     asset,
     treasuryId,
 }: VestingDetailsModalProps) {
+    const t = useTranslations("vestingDetails");
+    const tEarning = useTranslations("earningDetails");
     const { data: lockupContract, isLoading } = useTreasuryLockup(
         isOpen && treasuryId ? treasuryId : null,
     );
@@ -71,7 +74,7 @@ export function VestingDetailsModal({
     const vestingPeriodItems: InfoItem[] = [];
     if (lockupContract?.vestingSchedule) {
         vestingPeriodItems.push({
-            label: "Start Date",
+            label: t("startDate"),
             value: (
                 <FormattedDate
                     date={
@@ -85,7 +88,7 @@ export function VestingDetailsModal({
             ),
         });
         vestingPeriodItems.push({
-            label: "End Date",
+            label: t("endDate"),
             value: (
                 <FormattedDate
                     date={
@@ -103,17 +106,23 @@ export function VestingDetailsModal({
     // Token Breakdown items
     const tokenBreakdownItems: InfoItem[] = [
         {
-            label: "Original Vested Amount",
+            label: t("originalVestedAmount"),
             value: `${formatTokenBalance(lockup.totalAllocated)} ${asset.symbol}`,
         },
         {
-            label: "Reserved For Storage",
-            info: "A small amount of tokens required to keep the vesting active and cover storage costs.",
+            label: t("reservedForStorage"),
+            info: t("reservedForStorageInfo"),
             value: `${formatTokenBalance(lockup.storageLocked)} ${asset.symbol}`,
         },
         {
-            label: `${vestedPercent.toFixed(0)}% Vested`,
-            value: `${formatTokenBalance(vestedAmount)} of ${formatTokenBalance(lockup.totalAllocated)} ${asset.symbol}`,
+            label: t("percentVested", {
+                percent: vestedPercent.toFixed(0),
+            }),
+            value: t("vestedOf", {
+                vested: formatTokenBalance(vestedAmount),
+                total: formatTokenBalance(lockup.totalAllocated),
+                symbol: asset.symbol,
+            }),
             afterValue: (
                 <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                     <div
@@ -133,6 +142,18 @@ export function VestingDetailsModal({
               canWithdraw: lockup.canWithdraw,
               symbol: asset.symbol,
               formatTokenBalance,
+              labels: {
+                  staked: tEarning("overview.staked"),
+                  stakedInfo: tEarning("overview.stakedInfo"),
+                  pendingRelease: tEarning("overview.pendingRelease"),
+                  pendingReleaseInfo: tEarning("overview.pendingReleaseInfo"),
+                  availableForWithdraw: tEarning(
+                      "overview.availableForWithdraw",
+                  ),
+                  availableForWithdrawInfo: tEarning(
+                      "overview.availableForWithdrawInfo",
+                  ),
+              },
           })
         : [];
 
@@ -140,13 +161,13 @@ export function VestingDetailsModal({
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Vesting Details</DialogTitle>
+                    <DialogTitle>{t("title")}</DialogTitle>
                 </DialogHeader>
 
                 <div className="flex flex-col gap-5">
                     {/* Available Balance Display */}
                     <AmountSummary
-                        title="Available To Use"
+                        title={t("availableToUse")}
                         total={formatTokenBalance(available)}
                         totalUSD={available
                             .mul(asset.price)
@@ -167,10 +188,10 @@ export function VestingDetailsModal({
                         <div className="flex flex-col gap-2">
                             <div className="flex flex-col gap-0.5">
                                 <h3 className="text-sm font-semibold">
-                                    Vesting Period
+                                    {t("vestingPeriod")}
                                 </h3>
                                 <p className="text-xs text-muted-foreground">
-                                    Tokens unlock daily during this period.
+                                    {t("vestingPeriodDescription")}
                                 </p>
                             </div>
                             <Skeleton className="h-16 w-full" />
@@ -179,10 +200,10 @@ export function VestingDetailsModal({
                         <div className="flex flex-col gap-2">
                             <div className="flex flex-col gap-0.5">
                                 <h3 className="text-sm font-semibold">
-                                    Vesting Period
+                                    {t("vestingPeriod")}
                                 </h3>
                                 <p className="text-xs text-muted-foreground">
-                                    Tokens unlock daily during this period.
+                                    {t("vestingPeriodDescription")}
                                 </p>
                             </div>
                             <InfoDisplay
@@ -197,7 +218,7 @@ export function VestingDetailsModal({
                     <Collapsible defaultOpen className="">
                         <CollapsibleTrigger className="w-full flex items-center justify-between py-2 group">
                             <h3 className="text-sm font-semibold">
-                                Token Breakdown
+                                {t("tokenBreakdown")}
                             </h3>
                             <ChevronDown className="size-4 text-muted-foreground transition-transform group-data-[state=open]:hidden" />
                             <ChevronUp className="size-4 text-muted-foreground transition-transform group-data-[state=closed]:hidden" />
@@ -215,7 +236,7 @@ export function VestingDetailsModal({
                     <Collapsible defaultOpen={hasStake}>
                         <CollapsibleTrigger className="w-full flex items-center justify-between py-2 group">
                             <h3 className="text-sm font-semibold">
-                                Earning Overview
+                                {tEarning("earningOverview")}
                             </h3>
                             <ChevronDown className="size-4 text-muted-foreground transition-transform group-data-[state=open]:hidden" />
                             <ChevronUp className="size-4 text-muted-foreground transition-transform group-data-[state=closed]:hidden" />
@@ -234,13 +255,13 @@ export function VestingDetailsModal({
                                     </div>
                                     <div>
                                         <p className="text-sm font-medium">
-                                            Earn is almost ready!
+                                            {tEarning("almostReady")}
                                         </p>
                                         <p className="text-xs text-muted-foreground mt-1">
-                                            We're finalizing this feature
-                                            <br />
-                                            so you can start earning tokens
-                                            shortly.
+                                            {tEarning.rich(
+                                                "finalizingFeature",
+                                                { br: () => <br /> },
+                                            )}
                                         </p>
                                     </div>
                                 </div>
@@ -253,9 +274,9 @@ export function VestingDetailsModal({
                     <Button
                         className="w-full"
                         disabled
-                        tooltipContent="Coming soon"
+                        tooltipContent={tEarning("comingSoon")}
                     >
-                        Send
+                        {t("send")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

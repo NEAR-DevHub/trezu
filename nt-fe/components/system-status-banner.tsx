@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useSystemStatus } from "@/hooks/use-system-status";
 import { WarningAlert } from "@/components/warning-alert";
 import { cn } from "@/lib/utils";
@@ -9,14 +10,11 @@ interface SystemStatusBannerProps {
     isSidebar?: boolean;
 }
 
-function stripHtml(html: string): string {
-    return html.replace(/<[^>]*>/g, "").trim();
-}
-
 export function SystemStatusBanner({
     className,
     isSidebar,
 }: SystemStatusBannerProps) {
+    const t = useTranslations("systemStatus");
     const { data: posts } = useSystemStatus();
 
     if (!posts?.length) return null;
@@ -27,10 +25,8 @@ export function SystemStatusBanner({
                 <WarningAlert
                     className={cn(isSidebar && "flex-col gap-2")}
                     key={post.id}
-                    title="Under Maintenance"
-                    message={
-                        "We’re currently performing maintenance. Some features may be temporarily unavailable. Please check back soon."
-                    }
+                    title={t("underMaintenance")}
+                    message={t("maintenanceMessage")}
                 />
             ))}
         </div>

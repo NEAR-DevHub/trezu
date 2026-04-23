@@ -24,7 +24,10 @@ function hasCriticalParseErrors(errors: Papa.ParseError[]): boolean {
 /**
  * Parse CSV or paste data using Papa Parse
  */
-export function parseCsv(raw: string): string[][] {
+export function parseCsv(
+    raw: string,
+    failedToParseMessage?: string,
+): string[][] {
     if (!raw.trim()) return [];
 
     const result = Papa.parse<string[]>(raw, PAPA_PARSE_CONFIG);
@@ -35,7 +38,8 @@ export function parseCsv(raw: string): string[][] {
         if (hasCriticalParseErrors(result.errors)) {
             console.error("Critical CSV parsing errors:", result.errors);
             throw new Error(
-                "Failed to parse CSV data. Please check formatting.",
+                failedToParseMessage ??
+                    "Failed to parse CSV data. Please check formatting.",
             );
         }
     }

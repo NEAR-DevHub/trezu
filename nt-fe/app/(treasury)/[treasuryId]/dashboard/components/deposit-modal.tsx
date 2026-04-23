@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronDown, CircleCheck, TriangleAlert } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { trackEvent } from "@/lib/analytics";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -61,14 +62,19 @@ const networkSchema = z.object({
     chainId: z.string().optional(),
 });
 
-const depositFormSchema = z.object({
-    asset: assetSchema.nullable().refine((val) => val !== null, {
-        message: "Please select an asset",
-    }),
-    network: networkSchema.nullable().refine((val) => val !== null, {
-        message: "Please select a network",
-    }),
-});
+function buildDepositFormSchema(messages: {
+    selectAsset: string;
+    selectNetwork: string;
+}) {
+    return z.object({
+        asset: assetSchema.nullable().refine((val) => val !== null, {
+            message: messages.selectAsset,
+        }),
+        network: networkSchema.nullable().refine((val) => val !== null, {
+            message: messages.selectNetwork,
+        }),
+    });
+}
 
 type Asset = z.infer<typeof assetSchema>;
 type Network = z.infer<typeof networkSchema>;
@@ -85,12 +91,23 @@ interface NetworkBalanceDisplay {
 
 const STABLE_EMPTY_ARRAY: never[] = [];
 
+const NEAR_DIRECT_NETWORK_ID = "near.com:direct";
+
 export function DepositModal({
     isOpen,
     onClose,
     prefillTokenSymbol,
     prefillNetworkId,
 }: DepositModalProps) {
+    const t = useTranslations("depositModal");
+    const depositFormSchema = useMemo(
+        () =>
+            buildDepositFormSchema({
+                selectAsset: t("validation.selectAsset"),
+                selectNetwork: t("validation.selectNetwork"),
+            }),
+        [t],
+    );
     const { treasuryId, isConfidential } = useTreasury();
     const { theme } = useThemeStore();
     const {
@@ -192,12 +209,16 @@ export function DepositModal({
                 const balance = selectedNetworkBalances.get(network.id);
                 return !balance || !Big(balance.amount).gt(0);
             })
-            .sort((a, b) => a.name.localeCompare(b.name));
+            .sort((a, b) => {
+                if (a.id === NEAR_DIRECT_NETWORK_ID) return -1;
+                if (b.id === NEAR_DIRECT_NETWORK_ID) return 1;
+                return a.name.localeCompare(b.name);
+            });
 
         if (withAssets.length === 0) {
             return [
                 {
-                    title: "Supported Networks",
+                    title: t("sections.supportedNetworks"),
                     options: supportedNetworks,
                 },
             ];
@@ -205,15 +226,15 @@ export function DepositModal({
 
         return [
             {
-                title: "Networks with Assets",
+                title: t("sections.networksWithAssets"),
                 options: withAssets,
             },
             {
-                title: "Supported Networks",
+                title: t("sections.supportedNetworks"),
                 options: supportedNetworks,
             },
         ];
-    }, [filteredNetworks, selectedNetworkBalances]);
+    }, [filteredNetworks, selectedNetworkBalances, t]);
 
     useEffect(() => {
         if (!isOpen || !bridgeAssets.length) return;
@@ -224,7 +245,7 @@ export function DepositModal({
         // Add "Other" asset that deposits directly to treasury
         const otherAsset: SelectOption = {
             id: "other",
-            name: "Other",
+            name: t("otherAssetName"),
             icon: "O",
             gradient: "bg-gradient-cyan-blue",
             networks: [
@@ -353,8 +374,17 @@ export function DepositModal({
             return balances;
         };
 
+        const nearDirectNetworkOption = (): SelectOption => ({
+            id: NEAR_DIRECT_NETWORK_ID,
+            name: "near.com",
+            icon: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y+mAAAAPFBMVEVHcEwA7JcA7JcA7JcA7JcA65YA7JcA75kAyIAA3IwANiIAAAAAvXkAGhAA9p0AdUsAwnwAlF8AaUMAtXS/E4peAAAAB3RSTlMAZsz/ZQfmMR3ddQAAAMdJREFUeAF9k1EShCAIQDUsNBSr7n/Xxc3WZtHeF/iGEQc0gp1AMTlTmBfosswiB06sMQ6GWFPvQ3hQk8nU1Iem0df4krgSRbxdohWbRE9CreUsscc/mQBLvJGWmWhlEIh2Jb0cHQx8UNiUjHJMO58JOGqJXFoOgNiTCFfLXQkYxA4rQywt9yRDOvnbspZbqC+h3SspNSCUlrOSUoslhESkZWYoYKjyObL0m1ikNrLnfGvtnXTWBNuaWBjiXlfzfakF1/sOVsQHNdERKfT2DooAAAAASUVORK5CYII=",
+        });
+
         for (const asset of bridgeAssets) {
             const networks = asset.networks.map(toNetworkOption);
+            if (isConfidential) {
+                networks.unshift(nearDirectNetworkOption());
+            }
             newAssetNetworksMap.set(asset.id, networks);
             networkBalancesByAssetId.set(
                 asset.id,
@@ -411,11 +441,11 @@ export function DepositModal({
         setAssetBalanceMap(assetBalancesById);
         setAssetSections([
             {
-                title: "Your Assets",
+                title: t("sections.yourAssets"),
                 options: yourAssets,
             },
             {
-                title: "Other Assets",
+                title: t("sections.otherAssets"),
                 options: isConfidential
                     ? otherAssets
                     : [...otherAssets, otherAsset],
@@ -473,6 +503,13 @@ export function DepositModal({
                 if (prefillNetwork) networkToSelect = prefillNetwork;
             }
 
+            if (!networkToSelect && isConfidential) {
+                networkToSelect =
+                    availableNetworks.find(
+                        (n) => n.id === NEAR_DIRECT_NETWORK_ID,
+                    ) || null;
+            }
+
             if (!networkToSelect && availableNetworks.length === 1) {
                 networkToSelect = availableNetworks[0];
             }
@@ -513,9 +550,15 @@ export function DepositModal({
                 networkBalancesByAsset.get(asset.id) || new Map(),
             );
 
-            // Auto-select network if only one is available
+            const nearDirectNetwork = availableNetworks.find(
+                (n) => n.id === NEAR_DIRECT_NETWORK_ID,
+            );
+
+            // Auto-select network if only one is available, or near.com for confidential
             if (availableNetworks.length === 1) {
                 form.setValue("network", availableNetworks[0]);
+            } else if (isConfidential && nearDirectNetwork) {
+                form.setValue("network", nearDirectNetwork);
             } else if (
                 selectedNetwork &&
                 !availableNetworks.some((n) => n.id === selectedNetwork.id)
@@ -523,7 +566,13 @@ export function DepositModal({
                 form.setValue("network", null);
             }
         },
-        [form, assetNetworksMap, selectedNetwork, networkBalancesByAsset],
+        [
+            form,
+            assetNetworksMap,
+            selectedNetwork,
+            networkBalancesByAsset,
+            isConfidential,
+        ],
     );
 
     // Handle network selection
@@ -546,6 +595,16 @@ export function DepositModal({
                 return;
             }
             const requestId = ++latestAddressRequestRef.current;
+
+            if (selectedNetwork.id === NEAR_DIRECT_NETWORK_ID) {
+                if (requestId !== latestAddressRequestRef.current) return;
+                setDepositInfo({
+                    address: treasuryId,
+                    memo: null,
+                    minDepositAmount: null,
+                });
+                return;
+            }
 
             // All NEAR networks deposit directly to treasury account ID
             // (except confidential treasuries which always go through intents)
@@ -590,17 +649,14 @@ export function DepositModal({
                     setDepositInfo(null);
                     form.setError("network", {
                         type: "manual",
-                        message:
-                            "Could not retrieve deposit address for the selected asset and network.",
+                        message: t("errors.addressUnavailable"),
                     });
                 }
             } catch (err: any) {
                 if (requestId !== latestAddressRequestRef.current) return;
                 form.setError("network", {
                     type: "manual",
-                    message:
-                        err.message ||
-                        "Failed to fetch deposit address. Please try again.",
+                    message: err.message || t("errors.fetchFailed"),
                 });
                 setDepositInfo(null);
             } finally {
@@ -620,6 +676,7 @@ export function DepositModal({
         treasuryId,
         isConfidential,
         selectedBridgeNetwork,
+        t,
     ]);
 
     // Reset all state when modal closes
@@ -690,14 +747,12 @@ export function DepositModal({
         <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
             <DialogContent className="sm:max-w-xl">
                 <DialogHeader>
-                    <DialogTitle>Deposit</DialogTitle>
+                    <DialogTitle>{t("title")}</DialogTitle>
                 </DialogHeader>
 
                 <Form {...form}>
                     <div>
-                        <p className="font-semibold pb-2">
-                            Select asset and network to see deposit address
-                        </p>
+                        <p className="font-semibold pb-2">{t("subtitle")}</p>
 
                         {/* Asset Select */}
                         <FormField
@@ -706,7 +761,7 @@ export function DepositModal({
                             render={({ fieldState }) => (
                                 <FormItem>
                                     <InputBlock
-                                        title="Asset"
+                                        title={t("assetLabel")}
                                         invalid={!!fieldState.error}
                                         className="rounded-b-none border-b border-general-border border-l-0! border-r-0! border-t-0!"
                                     >
@@ -751,7 +806,7 @@ export function DepositModal({
                                                     </div>
                                                 ) : (
                                                     <span className="text-muted-foreground text-lg font-normal">
-                                                        Select Asset
+                                                        {t("selectAsset")}
                                                     </span>
                                                 )}
                                                 <ChevronDown className="w-5 h-5" />
@@ -770,7 +825,7 @@ export function DepositModal({
                             render={({ fieldState }) => (
                                 <FormItem>
                                     <InputBlock
-                                        title="Network"
+                                        title={t("networkLabel")}
                                         invalid={!!fieldState.error}
                                         className="rounded-t-none border-l-0! border-r-0! border-t-0! border-b-0!"
                                     >
@@ -818,7 +873,7 @@ export function DepositModal({
                                                                         </span>
                                                                     </div>
                                                                 )}
-                                                                <span className="text-foreground font-medium capitalize">
+                                                                <span className="text-foreground font-medium uppercase">
                                                                     {getNetworkDisplayName(
                                                                         selectedNetwork.name,
                                                                     )}
@@ -830,19 +885,16 @@ export function DepositModal({
                                                         {selectedAsset?.id ===
                                                             "other" && (
                                                             <div className="break-all overflow-wrap-anywhere text-wrap mt-2 text-xs text-general-info-foreground">
-                                                                You can deposit
-                                                                any token not
-                                                                listed in the
-                                                                assets, but only
-                                                                via the NEAR
-                                                                network.
+                                                                {t(
+                                                                    "otherNetworkInfo",
+                                                                )}
                                                             </div>
                                                         )}
                                                     </>
                                                 ) : (
                                                     <div className="flex items-center justify-between">
                                                         <span className="text-muted-foreground text-lg font-normal">
-                                                            Select Network
+                                                            {t("selectNetwork")}
                                                         </span>
                                                         <ChevronDown className="w-5 h-5" />
                                                     </div>
@@ -893,11 +945,10 @@ export function DepositModal({
                             <div className="mt-6 space-y-3">
                                 <div>
                                     <h3 className="font-semibold mb-1">
-                                        Deposit Address
+                                        {t("depositAddressHeading")}
                                     </h3>
                                     <p className="text-sm text-muted-foreground">
-                                        Always double-check your deposit
-                                        address.
+                                        {t("depositAddressSubtitle")}
                                     </p>
                                 </div>
 
@@ -921,7 +972,7 @@ export function DepositModal({
                                         {/* Address */}
                                         <div className="flex-1 space-y-2 pt-1">
                                             <label className="text-sm text-muted-foreground">
-                                                Address
+                                                {t("addressLabel")}
                                             </label>
                                             <div className="rounded-lg flex justify-between gap-2">
                                                 <code className="font-mono break-all text-xs sm:text-sm">
@@ -931,7 +982,9 @@ export function DepositModal({
                                                 </code>
                                                 <CopyButton
                                                     text={depositInfo.address}
-                                                    toastMessage="Address copied to clipboard"
+                                                    toastMessage={t(
+                                                        "addressCopied",
+                                                    )}
                                                     variant="unstyled"
                                                     size="icon-sm"
                                                     className="shrink-0"
@@ -943,7 +996,7 @@ export function DepositModal({
                                             {depositInfo.memo && (
                                                 <>
                                                     <label className="text-sm text-muted-foreground">
-                                                        Memo
+                                                        {t("memoLabel")}
                                                     </label>
                                                     <div className="rounded-lg flex justify-between gap-2">
                                                         <code className="font-mono break-all text-xs sm:text-sm">
@@ -953,7 +1006,9 @@ export function DepositModal({
                                                             text={
                                                                 depositInfo.memo
                                                             }
-                                                            toastMessage="Memo copied to clipboard"
+                                                            toastMessage={t(
+                                                                "memoCopied",
+                                                            )}
                                                             variant="unstyled"
                                                             size="icon-sm"
                                                             className="shrink-0"
@@ -971,14 +1026,13 @@ export function DepositModal({
                                     <div className="flex gap-2 items-start text-sm bg-destructive/10 text-destructive rounded-lg p-3">
                                         <TriangleAlert className="h-4 w-4 shrink-0 mt-0.5" />
                                         <span>
-                                            You{" "}
-                                            <span className="font-semibold">
-                                                must
-                                            </span>{" "}
-                                            include the memo when sending funds
-                                            to this address. Sending without the
-                                            memo may result in permanent loss of
-                                            funds.
+                                            {t.rich("memoWarning", {
+                                                bold: (chunks) => (
+                                                    <span className="font-semibold">
+                                                        {chunks}
+                                                    </span>
+                                                ),
+                                            })}
                                         </span>
                                     </div>
                                 )}
@@ -988,21 +1042,26 @@ export function DepositModal({
                                     <div className="flex gap-2 items-start text-sm text-muted-foreground">
                                         <CircleCheck className="h-4 w-4 shrink-0 mt-0.5" />
                                         <span>
-                                            Only deposit{" "}
-                                            <span className="text-foreground">
-                                                {selectedNetwork?.symbol}
-                                            </span>{" "}
-                                            from the{" "}
-                                            <span className="text-foreground capitalize">
-                                                {selectedNetwork &&
-                                                    getNetworkDisplayName(
-                                                        selectedNetwork.name,
-                                                    )}
-                                            </span>{" "}
-                                            network. We recommend starting with
-                                            a small test transaction to ensure
-                                            everything works correctly before
-                                            sending the full amount.
+                                            {t.rich("onlyDeposit", {
+                                                symbol:
+                                                    selectedNetwork?.symbol ??
+                                                    "",
+                                                network: selectedNetwork
+                                                    ? getNetworkDisplayName(
+                                                          selectedNetwork.name,
+                                                      )
+                                                    : "",
+                                                symbolTag: (chunks) => (
+                                                    <span className="text-foreground">
+                                                        {chunks}
+                                                    </span>
+                                                ),
+                                                networkTag: (chunks) => (
+                                                    <span className="text-foreground capitalize">
+                                                        {chunks}
+                                                    </span>
+                                                ),
+                                            })}
                                         </span>
                                     </div>
 
@@ -1011,17 +1070,23 @@ export function DepositModal({
                                         <div className="flex gap-2 items-start text-sm text-muted-foreground">
                                             <CircleCheck className="h-4 w-4 shrink-0 mt-0.5" />
                                             <span>
-                                                Minimum deposit is{" "}
-                                                <span className="text-foreground font-semibold">
-                                                    {formatBalance(
+                                                {t.rich("minimumDeposit", {
+                                                    amount: formatBalance(
                                                         depositInfo?.minDepositAmount ??
                                                             selectedBridgeNetwork!
                                                                 .minDepositAmount!,
                                                         selectedBridgeNetwork?.decimals ??
                                                             0,
-                                                    )}{" "}
-                                                    {selectedNetwork?.symbol}
-                                                </span>
+                                                    ),
+                                                    symbol:
+                                                        selectedNetwork?.symbol ??
+                                                        "",
+                                                    amountTag: (chunks) => (
+                                                        <span className="text-foreground font-semibold">
+                                                            {chunks}
+                                                        </span>
+                                                    ),
+                                                })}
                                             </span>
                                         </div>
                                     )}
@@ -1036,10 +1101,10 @@ export function DepositModal({
                                 handleAssetSelect(option);
                                 setModalType(null);
                             }}
-                            title="Select Asset"
+                            title={t("selectAsset")}
                             options={allAssets}
                             sections={assetSections}
-                            searchPlaceholder="Search by name"
+                            searchPlaceholder={t("searchByName")}
                             isLoading={isLoadingAssets}
                             selectedId={selectedAsset?.id}
                             renderRight={(item) => {
@@ -1061,10 +1126,10 @@ export function DepositModal({
                                 handleNetworkSelect(option);
                                 setModalType(null);
                             }}
-                            title="Select Network"
+                            title={t("selectNetwork")}
                             options={filteredNetworks}
                             sections={networkSections}
-                            searchPlaceholder="Search by name"
+                            searchPlaceholder={t("searchByName")}
                             isLoading={isLoadingAssets}
                             fixNear
                             roundIcons={false}

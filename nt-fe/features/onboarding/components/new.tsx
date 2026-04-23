@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 import { Pill } from "@/components/pill";
@@ -19,10 +20,11 @@ interface NEWProps {
 export function NEW({
     id = NEW_FEATURE_ANNOUNCEMENT.selector.slice(1),
     enabled = true,
-    pillLabel = "New",
+    pillLabel,
     side,
     className,
 }: NEWProps) {
+    const t = useTranslations("newBadge");
     const isMobile = useMediaQuery("(max-width: 1023px)");
 
     useNewFeatureTour(enabled && !isMobile);
@@ -34,7 +36,7 @@ export function NEW({
     return (
         <Pill
             id={id}
-            title={pillLabel}
+            title={pillLabel ?? t("label")}
             variant="info"
             side={side}
             className={cn("px-2.5 py-1 text-sm", className)}

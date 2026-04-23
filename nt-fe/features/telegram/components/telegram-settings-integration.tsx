@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/button";
@@ -15,6 +16,7 @@ import { useTreasury } from "@/hooks/use-treasury";
 import { TelegramConnectInstructionsModal } from "./telegram-connect-instructions-modal";
 
 export function TelegramSettingsIntegration() {
+    const t = useTranslations("telegramSettings");
     const { treasuryId } = useTreasury();
     const [connectModalOpen, setConnectModalOpen] = useState(false);
     const disconnectMutation = useDisconnectTelegramTreasury();
@@ -29,18 +31,18 @@ export function TelegramSettingsIntegration() {
     const chatLabel =
         telegramStatus?.chatTitle?.trim() ||
         (telegramStatus?.chatId != null
-            ? `Chat #${telegramStatus.chatId}`
+            ? t("chatNumber", { id: telegramStatus.chatId })
             : null);
-    const connectedChatDisplay = chatLabel ?? "a Telegram chat";
+    const connectedChatDisplay = chatLabel ?? t("fallbackChat");
 
     const handleDisconnect = () => {
         if (!treasuryId) return;
         disconnectMutation.mutate(treasuryId, {
             onSuccess: () => {
-                toast.success("Telegram disconnected for this treasury");
+                toast.success(t("disconnectedToast"));
             },
             onError: () => {
-                toast.error("Could not disconnect Telegram. Try again.");
+                toast.error(t("disconnectFailedToast"));
             },
         });
     };
@@ -52,8 +54,10 @@ export function TelegramSettingsIntegration() {
                     <div className="flex justify-between items-center gap-4 w-full">
                         <div className="min-w-0">
                             <StepperHeader
-                                title="Telegram"
-                                description={`Connected to ${connectedChatDisplay}`}
+                                title={t("title")}
+                                description={t("connectedTo", {
+                                    chat: connectedChatDisplay,
+                                })}
                             />
                         </div>
                         <Button
@@ -66,7 +70,7 @@ export function TelegramSettingsIntegration() {
                             {disconnectMutation.isPending && (
                                 <Loader2 className="size-4 animate-spin" />
                             )}
-                            Disconnect
+                            {t("disconnect")}
                         </Button>
                     </div>
                 ) : (
@@ -74,12 +78,11 @@ export function TelegramSettingsIntegration() {
                         {!treasuryId ? (
                             <>
                                 <StepperHeader
-                                    title="Telegram"
-                                    description="Link your treasuries to a Telegram chat."
+                                    title={t("title")}
+                                    description={t("noTreasuryDescription")}
                                 />
                                 <p className="text-sm text-muted-foreground">
-                                    Open settings from a treasury to manage
-                                    integrations.
+                                    {t("openSettingsHint")}
                                 </p>
                             </>
                         ) : isLoadingStatus ? (
@@ -91,8 +94,8 @@ export function TelegramSettingsIntegration() {
                             <div className="flex justify-between items-center gap-4 w-full">
                                 <div className="min-w-0">
                                     <StepperHeader
-                                        title="Telegram"
-                                        description="Link your treasury to a Telegram chat to receive notifications."
+                                        title={t("title")}
+                                        description={t("connectDescription")}
                                     />
                                 </div>
                                 <Button
@@ -100,7 +103,7 @@ export function TelegramSettingsIntegration() {
                                     className="shrink-0 self-center"
                                     onClick={() => setConnectModalOpen(true)}
                                 >
-                                    Connect
+                                    {t("connect")}
                                 </Button>
                             </div>
                         )}

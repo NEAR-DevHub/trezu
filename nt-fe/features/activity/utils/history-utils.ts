@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 /**
  * Format history duration based on months
  * Converts to years if it's a whole year (12, 24, 36, etc.)
@@ -13,22 +17,29 @@
  * formatHistoryDuration(null) => "unlimited history"
  * formatHistoryDuration(12, false) => "1 year"
  */
+export interface HistoryDurationLabels {
+    unlimited: string;
+    oneYear: string;
+    years: (count: number) => string;
+    months: (count: number) => string;
+    lastPrefix: (duration: string) => string;
+}
+
 export function formatHistoryDuration(
     historyMonths: number | null | undefined,
+    labels: HistoryDurationLabels,
     includePrefix: boolean = true,
 ): string {
-    if (!historyMonths) return "unlimited history";
+    if (!historyMonths) return labels.unlimited;
 
-    // Convert to years if it's a whole year (12, 24, 36, etc.)
     if (historyMonths % 12 === 0) {
         const years = historyMonths / 12;
-        const duration = years === 1 ? "1 year" : `${years} years`;
-        return includePrefix ? `last ${duration}` : duration;
+        const duration = years === 1 ? labels.oneYear : labels.years(years);
+        return includePrefix ? labels.lastPrefix(duration) : duration;
     }
 
-    // Otherwise show months
-    const duration = `${historyMonths} months`;
-    return includePrefix ? `last ${duration}` : duration;
+    const duration = labels.months(historyMonths);
+    return includePrefix ? labels.lastPrefix(duration) : duration;
 }
 
 /**
@@ -42,13 +53,19 @@ export function formatHistoryDuration(
  * getHistoryDescription(12) => "Sent and received transactions (last 1 year)"
  * getHistoryDescription(null) => "View all your transaction history"
  */
+export interface HistoryDescriptionLabels extends HistoryDurationLabels {
+    viewAll: string;
+    sentReceived: (duration: string) => string;
+}
+
 export function getHistoryDescription(
     historyMonths: number | null | undefined,
+    labels: HistoryDescriptionLabels,
 ): string {
-    if (!historyMonths) return "View all your transaction history";
+    if (!historyMonths) return labels.viewAll;
 
-    const duration = formatHistoryDuration(historyMonths, true);
-    return `Sent and received transactions (${duration})`;
+    const duration = formatHistoryDuration(historyMonths, labels, true);
+    return labels.sentReceived(duration);
 }
 
 const PROPOSAL_METHODS = ["add_proposal", "act_proposal"];
@@ -78,37 +95,51 @@ export interface ActivityAccount {
  * 5. Outgoing → "Payment Sent"
  * 6. No action data → "Transaction"
  */
-export function getActivityLabel(activity: ActivityAccount): string {
+export interface ActivityLabels {
+    exchangePending: string;
+    exchangeRequest: string;
+    exchangeFulfillment: string;
+    stakingRewards: string;
+    proposalAction: string;
+    deposit: (symbol: string) => string;
+    paymentSent: string;
+    transaction: string;
+    fallbackToken: string;
+}
+
+export function getActivityLabel(
+    activity: ActivityAccount,
+    labels: ActivityLabels,
+): string {
     if (activity.swap) {
         if (activity.swap.swapRole === "deposit") {
             return activity.swap.receivedAmount == null
-                ? "Exchange Pending"
-                : "Exchange Request";
+                ? labels.exchangePending
+                : labels.exchangeRequest;
         }
-        return "Exchange Fulfillment";
+        return labels.exchangeFulfillment;
     }
-    if (activity.actionKind === "StakingReward") return "Staking Rewards";
+    if (activity.actionKind === "StakingReward") return labels.stakingRewards;
 
     if (
         activity.actionKind === "FunctionCall" &&
         activity.methodName &&
         PROPOSAL_METHODS.includes(activity.methodName)
     ) {
-        return "Proposal Action";
+        return labels.proposalAction;
     }
 
     const isReceived = parseFloat(activity.amount ?? "0") > 0;
 
     if (activity.actionKind) {
         if (isReceived) {
-            const symbol = activity.tokenSymbol || "Token";
-            return `Deposit ${symbol}`;
+            const symbol = activity.tokenSymbol || labels.fallbackToken;
+            return labels.deposit(symbol);
         }
-        return "Payment Sent";
+        return labels.paymentSent;
     }
 
-    // Fallback for records without action data (not backfilled yet)
-    return "Transaction";
+    return labels.transaction;
 }
 
 /**
@@ -121,11 +152,18 @@ export function getActivityLabel(activity: ActivityAccount): string {
  * - Outgoing → "to {counterparty}" (only if known)
  * - No action data → empty
  */
+export interface ActivitySubLabels {
+    viaIntents: string;
+    from: (account: string) => string;
+    to: (account: string) => string;
+}
+
 export function getActivitySubLabel(
     activity: ActivityAccount,
     _treasuryId: string | null | undefined,
+    labels: ActivitySubLabels,
 ): string {
-    if (activity.swap) return "via NEAR Intents";
+    if (activity.swap) return labels.viaIntents;
 
     if (activity.actionKind === "StakingReward") return "";
 
@@ -141,11 +179,11 @@ export function getActivitySubLabel(
 
     if (isReceived) {
         const from = activity.counterparty || activity.signerId;
-        return from && from !== "UNKNOWN" ? `from ${from}` : "";
+        return from && from !== "UNKNOWN" ? labels.from(from) : "";
     }
 
     const to = activity.counterparty || activity.receiverId;
-    return to && to !== "UNKNOWN" ? `to ${to}` : "";
+    return to && to !== "UNKNOWN" ? labels.to(to) : "";
 }
 
 /**
@@ -158,8 +196,9 @@ export function getFromAccount(
     activity: ActivityAccount,
     isReceived: boolean,
     treasuryId: string | null | undefined,
+    viaIntentsLabel: string,
 ): string {
-    if (activity.swap) return "via NEAR Intents";
+    if (activity.swap) return viaIntentsLabel;
     const knownCounterparty =
         activity.counterparty && activity.counterparty !== "UNKNOWN"
             ? activity.counterparty
@@ -187,4 +226,82 @@ export function getToAccount(
             ? activity.counterparty
             : null;
     return knownCounterparty || activity.receiverId || "—";
+}
+
+function buildHistoryDescriptionLabels(
+    t: (key: string, values?: Record<string, any>) => string,
+): HistoryDescriptionLabels {
+    return {
+        unlimited: t("unlimitedHistory"),
+        oneYear: t("oneYear"),
+        years: (count: number) => t("yearsCount", { count }),
+        months: (count: number) => t("monthsCount", { count }),
+        lastPrefix: (duration: string) => t("lastDuration", { duration }),
+        viewAll: t("viewAll"),
+        sentReceived: (duration: string) => t("sentReceived", { duration }),
+    };
+}
+
+function buildActivityLabels(
+    t: (key: string, values?: Record<string, any>) => string,
+): ActivityLabels {
+    return {
+        exchangePending: t("exchangePending"),
+        exchangeRequest: t("exchangeRequest"),
+        exchangeFulfillment: t("exchangeFulfillment"),
+        stakingRewards: t("stakingRewards"),
+        proposalAction: t("proposalAction"),
+        deposit: (symbol: string) => t("deposit", { symbol }),
+        paymentSent: t("paymentSent"),
+        transaction: t("transaction"),
+        fallbackToken: t("fallbackToken"),
+    };
+}
+
+function buildActivitySubLabels(
+    t: (key: string, values?: Record<string, any>) => string,
+): ActivitySubLabels {
+    return {
+        viaIntents: t("viaIntents"),
+        from: (account: string) => t("from", { account }),
+        to: (account: string) => t("to", { account }),
+    };
+}
+
+export function useFormatHistoryDuration() {
+    const t = useTranslations("activityLabels");
+    const labels = buildHistoryDescriptionLabels(t);
+    return (
+        historyMonths: number | null | undefined,
+        includePrefix: boolean = true,
+    ) => formatHistoryDuration(historyMonths, labels, includePrefix);
+}
+
+export function useGetHistoryDescription() {
+    const t = useTranslations("activityLabels");
+    const labels = buildHistoryDescriptionLabels(t);
+    return (historyMonths: number | null | undefined) =>
+        getHistoryDescription(historyMonths, labels);
+}
+
+export function useGetActivityLabel() {
+    const t = useTranslations("activityLabels");
+    const labels = buildActivityLabels(t);
+    return (activity: ActivityAccount) => getActivityLabel(activity, labels);
+}
+
+export function useGetActivitySubLabel() {
+    const t = useTranslations("activityLabels");
+    const labels = buildActivitySubLabels(t);
+    return (activity: ActivityAccount, treasuryId: string | null | undefined) =>
+        getActivitySubLabel(activity, treasuryId, labels);
+}
+
+export function useGetFromAccount() {
+    const t = useTranslations("activityLabels");
+    return (
+        activity: ActivityAccount,
+        isReceived: boolean,
+        treasuryId: string | null | undefined,
+    ) => getFromAccount(activity, isReceived, treasuryId, t("viaIntents"));
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
     removeUserTreasury,
@@ -35,6 +36,7 @@ export function useSaveTreasuryMutation(
     treasuryId: string | undefined,
 ) {
     const queryClient = useQueryClient();
+    const t = useTranslations("treasuryMutations");
 
     return useMutation({
         mutationFn: async () => {
@@ -44,13 +46,13 @@ export function useSaveTreasuryMutation(
             await saveUserTreasury(accountId, treasuryId);
         },
         onSuccess: async () => {
-            toast.success("Treasury saved to your list");
+            toast.success(t("savedToast"));
             await queryClient.invalidateQueries({
                 queryKey: ["userTreasuries", accountId],
             });
         },
         onError: () => {
-            toast.error("Failed to save treasury");
+            toast.error(t("saveFailedToast"));
         },
     });
 }
@@ -61,6 +63,7 @@ export function useHideTreasuryMutation(
     behavior: MutationBehavior = { navigateOnSuccess: true },
 ) {
     const queryClient = useQueryClient();
+    const t = useTranslations("treasuryMutations");
 
     return useMutation({
         mutationFn: async (daoId: string) => {
@@ -68,7 +71,7 @@ export function useHideTreasuryMutation(
             await setUserTreasuryHidden(accountId, daoId, true);
         },
         onSuccess: async (_, hiddenDaoId) => {
-            toast.success("Treasury hidden from list");
+            toast.success(t("hiddenToast"));
             await queryClient.invalidateQueries({
                 queryKey: ["userTreasuries", accountId],
             });
@@ -89,7 +92,7 @@ export function useHideTreasuryMutation(
             }
         },
         onError: () => {
-            toast.error("Failed to hide treasury");
+            toast.error(t("hideFailedToast"));
         },
     });
 }
@@ -98,6 +101,7 @@ export function useUnhideTreasuryMutation(
     accountId: string | null | undefined,
 ) {
     const queryClient = useQueryClient();
+    const t = useTranslations("treasuryMutations");
 
     return useMutation({
         mutationFn: async (daoId: string) => {
@@ -105,13 +109,13 @@ export function useUnhideTreasuryMutation(
             await setUserTreasuryHidden(accountId, daoId, false);
         },
         onSuccess: async () => {
-            toast.success("Treasury is visible again");
+            toast.success(t("unhiddenToast"));
             await queryClient.invalidateQueries({
                 queryKey: ["userTreasuries", accountId],
             });
         },
         onError: () => {
-            toast.error("Failed to unhide treasury");
+            toast.error(t("unhideFailedToast"));
         },
     });
 }
@@ -122,6 +126,7 @@ export function useRemoveSavedTreasuryMutation(
     behavior: MutationBehavior = { navigateOnSuccess: true },
 ) {
     const queryClient = useQueryClient();
+    const t = useTranslations("treasuryMutations");
 
     return useMutation({
         mutationFn: async (daoId: string) => {
@@ -129,7 +134,7 @@ export function useRemoveSavedTreasuryMutation(
             await removeUserTreasury(accountId, daoId);
         },
         onSuccess: async (_, removedDaoId) => {
-            toast.success("Treasury removed from saved list");
+            toast.success(t("removedToast"));
             await queryClient.invalidateQueries({
                 queryKey: ["userTreasuries", accountId],
             });
@@ -148,7 +153,7 @@ export function useRemoveSavedTreasuryMutation(
             }
         },
         onError: () => {
-            toast.error("Failed to remove treasury from saved list");
+            toast.error(t("removeFailedToast"));
         },
     });
 }

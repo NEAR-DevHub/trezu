@@ -1,15 +1,12 @@
+import { getTranslations } from "next-intl/server";
 import { PageComponentLayout } from "@/components/page-component-layout";
 
-export default function EarnPage() {
+export default async function EarnPage() {
+    const t = await getTranslations("pages.earn");
     return (
-        <PageComponentLayout
-            title="Earn"
-            description="Earn rewards on your assets"
-        >
+        <PageComponentLayout title={t("title")} description={t("description")}>
             <div className="rounded-lg border bg-card p-6">
-                <p className="text-muted-foreground">
-                    Explore earning opportunities and staking rewards.
-                </p>
+                <p className="text-muted-foreground">{t("placeholder")}</p>
             </div>
         </PageComponentLayout>
     );

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
     formatUserDate,
     formatRelativeTime,
@@ -57,6 +58,7 @@ type FormattedDateProps = StandardDateProps | ProposalStatusDateProps;
  */
 export function FormattedDate(props: FormattedDateProps) {
     const preferences = useUserPreferences();
+    const tDate = useTranslations("statusDate");
 
     const timezone =
         props.timezone !== undefined
@@ -70,10 +72,11 @@ export function FormattedDate(props: FormattedDateProps) {
     let urgentExpiry = false;
 
     if (props.proposal && props.policy) {
-        const { date, isFuture, label } = getProposalStatusDateInfo(
+        const { date, isFuture, labelKey } = getProposalStatusDateInfo(
             props.proposal,
             props.policy,
         );
+        const label = labelKey ? tDate(labelKey) : "";
         tooltipText = formatUserDate(date, { timezone, timeFormat });
         if (isFuture && date.getTime() - Date.now() < 6 * 60 * 60 * 1000) {
             urgentExpiry = true;

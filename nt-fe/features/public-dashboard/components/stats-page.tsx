@@ -1,6 +1,7 @@
 "use client";
 
 import { ChartSpline } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { QueryProvider } from "@/components/query-provider";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { PageCard } from "@/components/card";
@@ -12,6 +13,7 @@ import { EmptyState } from "@/components/empty-state";
 import Link from "next/link";
 
 function DashboardContent() {
+    const t = useTranslations("publicDashboard");
     const { data, isLoading, isError } = usePublicDashboard();
 
     if (isLoading) {
@@ -29,8 +31,8 @@ function DashboardContent() {
                 <div className="flex flex-col items-center justify-center gap-2 py-12">
                     <EmptyState
                         icon={ChartSpline}
-                        title="No data yet"
-                        description="Stats will appear after the first daily snapshot is computed."
+                        title={t("noDataTitle")}
+                        description={t("noDataDescription")}
                     />
                 </div>
             </PageCard>
@@ -50,10 +52,12 @@ function DashboardContent() {
 }
 
 export function PublicDashboardStatsPage() {
+    const tPage = useTranslations("pages.stats");
+    const tDash = useTranslations("publicDashboard");
     return (
         <QueryProvider>
             <PageComponentLayout
-                title="Stats"
+                title={tPage("title")}
                 hideCollapseButton
                 hideLogin
                 logo={
@@ -62,7 +66,7 @@ export function PublicDashboardStatsPage() {
                             <Logo size="sm" />
                         </Link>
                         <span className="hidden sm:inline text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
-                            Updates daily
+                            {tDash("updatesDaily")}
                         </span>
                     </div>
                 }

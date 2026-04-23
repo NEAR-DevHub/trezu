@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { UIProposalStatus, getProposalStatus } from "../utils/proposal-utils";
 import { Tooltip } from "@/components/tooltip";
@@ -8,16 +10,15 @@ import { Policy } from "@/types/policy";
 import { getApproversAndThreshold } from "@/lib/config-utils";
 import { useProposalTransaction } from "@/hooks/use-proposals";
 import { useTreasury } from "@/hooks/use-treasury";
-import Link from "next/link";
+
+type PillStatus = UIProposalStatus | "Paid" | "Approved";
 
 interface StatusPillProps {
-    status: UIProposalStatus | "Paid" | "Approved";
+    status: PillStatus;
     className?: string;
 }
 
-export function getStatusColor(
-    status: UIProposalStatus | "Paid" | "Approved",
-): string {
+export function getStatusColor(status: PillStatus): string {
     switch (status) {
         case "Approved":
         case "Executed":
@@ -37,22 +38,29 @@ export function getStatusColor(
     }
 }
 
-export function getStatusLabel(
-    status: UIProposalStatus | "Paid" | "Approved",
-): string {
+function statusKey(status: PillStatus): string {
     switch (status) {
         case "Approved":
         case "Paid":
         case "Executed":
-            return "Executed";
+            return "executed";
         case "Pending":
-            return "Pending";
+            return "pending";
+        case "Rejected":
+            return "rejected";
+        case "Expired":
+            return "expired";
+        case "Failed":
+            return "failed";
+        case "Removed":
+            return "removed";
         default:
-            return status;
+            return "pending";
     }
 }
 
 export function StatusPill({ status, className }: StatusPillProps) {
+    const t = useTranslations("proposals.status");
     return (
         <span
             className={cn(
@@ -61,49 +69,9 @@ export function StatusPill({ status, className }: StatusPillProps) {
                 className,
             )}
         >
-            {getStatusLabel(status)}
+            {t(statusKey(status))}
         </span>
     );
-}
-
-function getStatusTooltip(
-    status: UIProposalStatus,
-    approveCount: number,
-    rejectCount: number,
-    requiredVotes: number,
-    nearblocksUrl?: string,
-): React.ReactNode | undefined {
-    switch (status) {
-        case "Pending":
-            return "This request is still pending and has not yet reached the required number of votes for execution.";
-        case "Executed":
-            return `Executed after ${approveCount} of ${requiredVotes} members approved the request.`;
-        case "Rejected":
-            return `Rejected after ${rejectCount} of ${requiredVotes} members voted to reject the request.`;
-        case "Expired":
-            return "Expired as it did not receive enough votes to execute.";
-        case "Failed": {
-            if (nearblocksUrl) {
-                return (
-                    <span>
-                        The request failed to complete. Check the transaction
-                        details{" "}
-                        <Link
-                            href={nearblocksUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="underline"
-                        >
-                            here.
-                        </Link>
-                    </span>
-                );
-            }
-            return "The request failed to complete. Check the transaction details here.";
-        }
-        default:
-            return undefined;
-    }
 }
 
 interface ProposalStatusPillProps {
@@ -121,6 +89,7 @@ export function ProposalStatusPill({
     policy,
     className,
 }: ProposalStatusPillProps) {
+    const tTooltip = useTranslations("proposals.statusTooltip");
     const { treasuryId } = useTreasury();
     const status = getProposalStatus(proposal, policy);
 
@@ -147,13 +116,45 @@ export function ProposalStatusPill({
         (v) => v === "Reject",
     ).length;
 
-    const info = getStatusTooltip(
-        status,
-        approveCount,
-        rejectCount,
-        requiredVotes,
-        transaction?.nearblocks_url,
-    );
+    let info: React.ReactNode | undefined;
+    switch (status) {
+        case "Pending":
+            info = tTooltip("pending");
+            break;
+        case "Executed":
+            info = tTooltip("executed", {
+                approved: approveCount,
+                required: requiredVotes,
+            });
+            break;
+        case "Rejected":
+            info = tTooltip("rejected", {
+                rejected: rejectCount,
+                required: requiredVotes,
+            });
+            break;
+        case "Expired":
+            info = tTooltip("expired");
+            break;
+        case "Failed":
+            info = transaction?.nearblocks_url
+                ? tTooltip.rich("failed", {
+                      link: (chunks) => (
+                          <Link
+                              href={transaction.nearblocks_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="underline"
+                          >
+                              {chunks}
+                          </Link>
+                      ),
+                  })
+                : tTooltip("failedPlain");
+            break;
+        default:
+            info = undefined;
+    }
 
     return (
         <Tooltip content={info} triggerProps={{ asChild: false }}>

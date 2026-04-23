@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { formatCurrency } from "@/lib/utils";
 import { PageCard } from "@/components/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -54,18 +55,19 @@ function formatTokenUsd(usd: string): string {
 }
 
 export function TopTokensTable({ tokens }: TopTokensTableProps) {
+    const t = useTranslations("publicDashboard");
     return (
         <PageCard className="p-0 gap-0 overflow-hidden">
             <div className="px-4 pt-4 pb-2">
-                <StepperHeader title="Top 20 Assets" />
+                <StepperHeader title={t("topAssets")} />
             </div>
 
             {tokens.length === 0 ? (
                 <div className="px-4 pb-4">
                     <EmptyState
                         icon={Coins}
-                        title="No assets yet"
-                        description="Token data will appear once the daily snapshot is computed."
+                        title={t("noAssetsTitle")}
+                        description={t("noAssetsDescription")}
                     />
                 </div>
             ) : (
@@ -75,9 +77,9 @@ export function TopTokensTable({ tokens }: TopTokensTableProps) {
                             <TableHead className="w-10 pl-4 text-center">
                                 #
                             </TableHead>
-                            <TableHead>Token</TableHead>
+                            <TableHead>{t("tableToken")}</TableHead>
                             <TableHead className="pr-4 text-right">
-                                Total Value
+                                {t("tableTotalValue")}
                             </TableHead>
                         </TableRow>
                     </TableHeader>

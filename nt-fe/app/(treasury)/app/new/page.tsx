@@ -13,7 +13,8 @@ import {
     Vote,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { type ArrayPath, useForm, useFormContext } from "react-hook-form";
 import z from "zod";
 import { Alert, AlertDescription } from "@/components/alert";
@@ -25,7 +26,7 @@ import { LargeInput } from "@/components/large-input";
 import {
     type Member,
     MemberInput,
-    memberSchema,
+    buildMemberSchema,
 } from "@/components/member-input";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { ROLES } from "@/components/role-selector";
@@ -68,49 +69,67 @@ import {
 import { Pill } from "@/components/pill";
 import { cn } from "@/lib/utils";
 
-const treasuryFormSchema = z
-    .object({
-        about: ONBOARDING_ABOUT_SCHEMA,
-        details: z
-            .object({
-                treasuryName: z
-                    .string()
-                    .min(2, "Treasury name should be at least 2 characters")
-                    .max(64, "Treasury name must be less than 64 characters"),
-                accountName: z
-                    .string()
-                    .min(2, "Account name should be at least 2 characters")
-                    .max(64, "Account name must be less than 64 characters")
-                    .regex(
-                        /^[a-z0-9-]+$/,
-                        "Account name can contain only Latin letters, numbers, and hyphens",
-                    ),
-                paymentThreshold: z.number().min(1).max(100),
-                governanceThreshold: z.number().min(1).max(100),
-            })
-            .refine(
-                async (data) => {
-                    if (!data.accountName) return true;
-                    const fullAccountId = `${data.accountName}.sputnik-dao.near`;
-                    const result = await checkHandleUnused(fullAccountId);
-                    return result?.unused === true;
-                },
-                {
-                    message: "This account name is already taken",
-                    path: ["accountName"],
-                },
-            ),
-        isConfidential: z.boolean(),
-        members: memberSchema,
-    })
-    .refine((data) => {
-        const financialMembers = data.members.filter((m) =>
-            m.roles.includes("financial"),
-        ).length;
-        return data.details.paymentThreshold <= financialMembers;
-    });
+function buildTreasuryFormSchema(messages: {
+    nameMin: string;
+    nameMax: string;
+    accountMin: string;
+    accountMax: string;
+    accountChars: string;
+    accountTaken: string;
+    rolesRequired: string;
+    duplicateAddress: string;
+    accountId: {
+        minLength: string;
+        maxLength: string;
+        charset: string;
+        doesNotExist: string;
+    };
+}) {
+    return z
+        .object({
+            about: ONBOARDING_ABOUT_SCHEMA,
+            details: z
+                .object({
+                    treasuryName: z
+                        .string()
+                        .min(2, messages.nameMin)
+                        .max(64, messages.nameMax),
+                    accountName: z
+                        .string()
+                        .min(2, messages.accountMin)
+                        .max(64, messages.accountMax)
+                        .regex(/^[a-z0-9-]+$/, messages.accountChars),
+                    paymentThreshold: z.number().min(1).max(100),
+                    governanceThreshold: z.number().min(1).max(100),
+                })
+                .refine(
+                    async (data) => {
+                        if (!data.accountName) return true;
+                        const fullAccountId = `${data.accountName}.sputnik-dao.near`;
+                        const result = await checkHandleUnused(fullAccountId);
+                        return result?.unused === true;
+                    },
+                    {
+                        message: messages.accountTaken,
+                        path: ["accountName"],
+                    },
+                ),
+            isConfidential: z.boolean(),
+            members: buildMemberSchema({
+                rolesRequired: messages.rolesRequired,
+                duplicateAddress: messages.duplicateAddress,
+                accountId: messages.accountId,
+            }),
+        })
+        .refine((data) => {
+            const financialMembers = data.members.filter((m) =>
+                m.roles.includes("financial"),
+            ).length;
+            return data.details.paymentThreshold <= financialMembers;
+        });
+}
 
-type TreasuryFormValues = z.infer<typeof treasuryFormSchema>;
+type TreasuryFormValues = z.infer<ReturnType<typeof buildTreasuryFormSchema>>;
 
 /**
  * Helper to clear form errors before updating field value
@@ -131,6 +150,8 @@ function createClearErrorsOnChange<T>(
 }
 
 function Step1({ handleNext, handleBack }: StepProps) {
+    const tCreate = useTranslations("createTreasury");
+    const tCommon = useTranslations("common");
     const form = useFormContext<TreasuryFormValues>();
     const [accountNameEdited, setAccountNameEdited] = useState(false);
 
@@ -147,20 +168,20 @@ function Step1({ handleNext, handleBack }: StepProps) {
 
     return (
         <PageCard>
-            <StepperHeader title="Create a Treasury" handleBack={handleBack} />
+            <StepperHeader title={tCreate("heading")} handleBack={handleBack} />
 
             <FormField
                 control={form.control}
                 name="details.treasuryName"
                 render={({ field, fieldState }) => (
                     <InputBlock
-                        title="Treasury Name"
+                        title={tCreate("treasuryName")}
                         invalid={!!fieldState.error}
                         interactive
                     >
                         <LargeInput
                             borderless
-                            placeholder="My Treasury"
+                            placeholder={tCreate("treasuryNamePlaceholder")}
                             value={field.value}
                             onChange={(e) => {
                                 // Clear errors and update field
@@ -203,14 +224,14 @@ function Step1({ handleNext, handleBack }: StepProps) {
                 name="details.accountName"
                 render={({ field, fieldState }) => (
                     <InputBlock
-                        title="Account Name"
+                        title={tCreate("accountName")}
                         interactive
-                        info="This is your account's unique name. It will be used in your Treasury URL and shown in transactions to identify who sent the payment. Choose a short, recognizable name for your account."
+                        info={tCreate("accountNameInfo")}
                         invalid={!!fieldState.error}
                     >
                         <LargeInput
                             borderless
-                            placeholder="my-treasury"
+                            placeholder={tCreate("accountPlaceholder")}
                             suffix=".sputnik-dao.near"
                             value={field.value}
                             onChange={(e) => {
@@ -234,14 +255,13 @@ function Step1({ handleNext, handleBack }: StepProps) {
                 )}
             />
 
-            <InlineNextButton text="Continue" onClick={handleContinue} />
+            <InlineNextButton
+                text={tCreate("continue")}
+                onClick={handleContinue}
+            />
         </PageCard>
     );
 }
-
-const MORE_MEMBERS_NEEDED =
-    "You need more members to modify voting settings. Add another member to configure voting.";
-const MINIMUM_NEEDED = "Minimum one approval vote required.";
 
 function Threshold({
     title,
@@ -256,6 +276,7 @@ function Threshold({
     onChange: (v: number) => void;
     max: number;
 }) {
+    const tCreate = useTranslations("createTreasury");
     const canDecrement = value > 1;
     const canIncrement = value < max;
 
@@ -272,7 +293,9 @@ function Threshold({
                     size="icon-sm"
                     onClick={() => onChange(value - 1)}
                     disabled={!canDecrement}
-                    tooltipContent={canDecrement ? undefined : MINIMUM_NEEDED}
+                    tooltipContent={
+                        canDecrement ? undefined : tCreate("minimumVoteNote")
+                    }
                 >
                     <Minus className="size-4 text-secondary-foreground" />
                 </Button>
@@ -286,7 +309,7 @@ function Threshold({
                     onClick={() => onChange(value + 1)}
                     disabled={!canIncrement}
                     tooltipContent={
-                        canIncrement ? undefined : MORE_MEMBERS_NEEDED
+                        canIncrement ? undefined : tCreate("votingNote")
                     }
                 >
                     <Plus className="size-4 text-secondary-foreground" />
@@ -297,6 +320,7 @@ function Threshold({
 }
 
 function Step2({ handleBack, handleNext }: StepProps) {
+    const tCreate = useTranslations("createTreasury");
     const form = useFormContext<TreasuryFormValues>();
     const { accountId } = useNear();
 
@@ -363,9 +387,12 @@ function Step2({ handleBack, handleNext }: StepProps) {
 
     return (
         <PageCard>
-            <StepperHeader title="Add Members" handleBack={handleBack} />
+            <StepperHeader
+                title={tCreate("addMembers")}
+                handleBack={handleBack}
+            />
 
-            <InfoAlert message="You can add or update members now and edit this later at any time." />
+            <InfoAlert message={tCreate("addMembersInfo")} />
 
             <div className="flex flex-col gap-8">
                 <MemberInput
@@ -375,9 +402,11 @@ function Step2({ handleBack, handleNext }: StepProps) {
                 />
                 <div className="flex flex-col gap-3">
                     <div className="flex flex-col gap-1">
-                        <h3 className="font-semibold">Voting Threshold</h3>
+                        <h3 className="font-semibold">
+                            {tCreate("votingThreshold")}
+                        </h3>
                         <p className="text-sm text-muted-foreground">
-                            Set how many votes are required to approve requests:
+                            {tCreate("thresholdDescription")}
                         </p>
                     </div>
 
@@ -387,8 +416,10 @@ function Step2({ handleBack, handleNext }: StepProps) {
                             name="details.paymentThreshold"
                             render={({ field }) => (
                                 <Threshold
-                                    title="Financial"
-                                    description="Approving payment & exchange requests."
+                                    title={tCreate("financial")}
+                                    description={tCreate(
+                                        "financialDescription",
+                                    )}
                                     value={field.value}
                                     onChange={field.onChange}
                                     max={financialMembers}
@@ -400,8 +431,10 @@ function Step2({ handleBack, handleNext }: StepProps) {
                             name="details.governanceThreshold"
                             render={({ field }) => (
                                 <Threshold
-                                    title="Governance"
-                                    description="Approving settings, members, and voting configuration."
+                                    title={tCreate("governance")}
+                                    description={tCreate(
+                                        "governanceDescription",
+                                    )}
                                     value={field.value}
                                     onChange={field.onChange}
                                     max={governanceMembers}
@@ -410,7 +443,10 @@ function Step2({ handleBack, handleNext }: StepProps) {
                         />
                     </div>
                 </div>
-                <InlineNextButton text="Continue" onClick={handleContinue} />
+                <InlineNextButton
+                    text={tCreate("continue")}
+                    onClick={handleContinue}
+                />
             </div>
         </PageCard>
     );
@@ -421,8 +457,10 @@ export function TreasuryTypePill({
 }: {
     type: "confidential" | "public";
 }) {
+    const tCreate = useTranslations("createTreasury");
     const pillStyle = type === "confidential" ? "primary" : "card";
-    const pillTitle = type === "confidential" ? "Confidential" : "Public";
+    const pillTitle =
+        type === "confidential" ? tCreate("confidential") : tCreate("public");
     const pillIcon =
         type === "confidential" ? (
             <Shield className="size-3 text-primary-foreground" />
@@ -447,6 +485,7 @@ export function Feature({
     title: string;
     icon: "anyone" | "team" | "soon";
 }) {
+    const tCreate = useTranslations("createTreasury");
     const pillStyle =
         icon === "anyone"
             ? "secondary"
@@ -454,7 +493,11 @@ export function Feature({
               ? "primary"
               : "secondary";
     const pillTitle =
-        icon === "anyone" ? "Anyone" : icon === "team" ? "Team Only" : "Soon";
+        icon === "anyone"
+            ? tCreate("anyone")
+            : icon === "team"
+              ? tCreate("teamOnly")
+              : tCreate("soon");
     const pillIcon =
         icon === "anyone" ? (
             <Globe className="size-3 text-foreground" />
@@ -484,41 +527,66 @@ export function Feature({
     );
 }
 
-const TREASURY_TYPES = [
-    {
-        isConfidential: false,
-        label: "Public",
-        description:
-            "All balances, activities, and transactions are visible to anyone on the blockchain. This option is best for transparent organizations and public DAOs.",
-        visibleOnChain: [
-            <Feature title="Balance, Transactions" icon="anyone" />,
-            <Feature title="Members, Voting" icon="anyone" />,
-        ],
-        featuresAvailable: {
-            generalText: "All features available",
-            features: [],
-        },
-    },
-    {
-        isConfidential: true,
-        label: "Confidential",
-        description:
-            "All balances, activities, and transfers private on the blockchain. Only your team can view this information. Best for private companies, family offices, or teams that want financial privacy.",
-        visibleOnChain: [
-            <Feature title="Balance, Transactions" icon="team" />,
-            <Feature title="Members, Voting" icon="anyone" />,
-        ],
-        featuresAvailable: {
-            generalText: "Most features supported",
-            features: [
-                <Feature title="Recent Transactions Export" icon="soon" />,
-                <Feature title="Bulk Payment" icon="soon" />,
-            ],
-        },
-    },
-] as const;
-
 function Step3({ handleBack, handleNext }: StepProps) {
+    const tCreate = useTranslations("createTreasury");
+    const TREASURY_TYPES = useMemo(
+        () => [
+            {
+                isConfidential: false,
+                label: tCreate("public"),
+                description: tCreate("publicDescription"),
+                visibleOnChain: [
+                    <Feature
+                        key="bal-pub"
+                        title={tCreate("balanceTransactions")}
+                        icon="anyone"
+                    />,
+                    <Feature
+                        key="mem-pub"
+                        title={tCreate("membersVoting")}
+                        icon="anyone"
+                    />,
+                ],
+                featuresAvailable: {
+                    generalText: tCreate("allFeatures"),
+                    features: [] as React.ReactNode[],
+                },
+            },
+            {
+                isConfidential: true,
+                label: tCreate("confidential"),
+                description: tCreate("confidentialDescription"),
+                visibleOnChain: [
+                    <Feature
+                        key="bal-conf"
+                        title={tCreate("balanceTransactions")}
+                        icon="team"
+                    />,
+                    <Feature
+                        key="mem-conf"
+                        title={tCreate("membersVoting")}
+                        icon="anyone"
+                    />,
+                ],
+                featuresAvailable: {
+                    generalText: tCreate("mostFeaturesSupported"),
+                    features: [
+                        <Feature
+                            key="export"
+                            title={tCreate("recentTransactionsExport")}
+                            icon="soon"
+                        />,
+                        <Feature
+                            key="bulk"
+                            title={tCreate("bulkPayment")}
+                            icon="soon"
+                        />,
+                    ] as React.ReactNode[],
+                },
+            },
+        ],
+        [tCreate],
+    );
     const form = useFormContext<TreasuryFormValues>();
     const handleSelect = (type: "confidential" | "public") => {
         form.setValue("isConfidential", type === "confidential");
@@ -531,8 +599,11 @@ function Step3({ handleBack, handleNext }: StepProps) {
     };
     return (
         <PageCard>
-            <StepperHeader title="Treasury Type" handleBack={handleBack} />
-            <InfoAlert message="You can select only one time per tresury and you cannot change it later." />
+            <StepperHeader
+                title={tCreate("treasuryType")}
+                handleBack={handleBack}
+            />
+            <InfoAlert message={tCreate("treasuryTypeWarning")} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {TREASURY_TYPES.map((type) => (
                     <Card key={type.isConfidential ? "confidential" : "public"}>
@@ -554,13 +625,13 @@ function Step3({ handleBack, handleNext }: StepProps) {
                         <CardContent className="px-4 flex flex-col gap-6">
                             <div className="flex flex-col gap-2">
                                 <p className="text-xs text-muted-foreground uppercase">
-                                    Visible on chain
+                                    {tCreate("visibleOnChain")}
                                 </p>
                                 {type.visibleOnChain}
                             </div>
                             <div className="flex flex-col gap-2">
                                 <p className="text-xs text-muted-foreground uppercase">
-                                    Features available
+                                    {tCreate("featuresAvailable")}
                                 </p>
                                 <p className="text-sm text-foreground">
                                     {type.featuresAvailable.generalText}
@@ -581,7 +652,7 @@ function Step3({ handleBack, handleNext }: StepProps) {
                                     )
                                 }
                             >
-                                Select
+                                {tCreate("select")}
                             </Button>
                         </CardFooter>
                     </Card>
@@ -590,21 +661,6 @@ function Step3({ handleBack, handleNext }: StepProps) {
         </PageCard>
     );
 }
-
-const VISUAL = [
-    {
-        icon: <UsersRound className="size-5 text-foreground" />,
-        title: "Members",
-    },
-    {
-        icon: <Vote className="size-5 text-foreground" />,
-        title: "Financial Threshold",
-    },
-    {
-        icon: <Vote className="size-5 text-foreground" />,
-        title: "Governance Threshold",
-    },
-] as const;
 
 function Step4({
     handleBack,
@@ -616,6 +672,24 @@ function Step4({
     connectWallet: () => Promise<void>;
     isConnectingWallet: boolean;
 }) {
+    const tCreate = useTranslations("createTreasury");
+    const VISUAL = useMemo(
+        () => [
+            {
+                icon: <UsersRound className="size-5 text-foreground" />,
+                title: tCreate("membersLabel"),
+            },
+            {
+                icon: <Vote className="size-5 text-foreground" />,
+                title: tCreate("financialThreshold"),
+            },
+            {
+                icon: <Vote className="size-5 text-foreground" />,
+                title: tCreate("governanceThreshold"),
+            },
+        ],
+        [tCreate],
+    );
     const form = useFormContext<TreasuryFormValues>();
     const { details } = form.watch();
     const { members } = form.watch();
@@ -637,7 +711,10 @@ function Step4({
 
     return (
         <PageCard>
-            <StepperHeader title="Review Treasury" handleBack={handleBack} />
+            <StepperHeader
+                title={tCreate("reviewTreasury")}
+                handleBack={handleBack}
+            />
 
             <div className="flex flex-col gap-2">
                 <InputBlock invalid={false}>
@@ -687,10 +764,9 @@ function Step4({
                 <AlertDescription>
                     <p className="inline-block text-xs">
                         <div className="font-semibold">
-                            🎉 No deployment fee
+                            {tCreate("noDeploymentFee")}
                         </div>
-                        To support new projects, TREZU covers all one-time
-                        deployment and network storage fees.
+                        {tCreate("noDeploymentFeeDescription")}
                     </p>
                 </AlertDescription>
             </Alert>
@@ -698,8 +774,8 @@ function Step4({
             <InlineNextButton
                 text={
                     accountId
-                        ? "Create Treasury"
-                        : "Connect Wallet To Create Treasury"
+                        ? tCreate("createButton")
+                        : tCreate("connectWalletCreate")
                 }
                 loading={
                     accountId ? form.formState.isSubmitting : isConnectingWallet
@@ -716,48 +792,89 @@ function Step4({
     );
 }
 
-const NON_CONFIDENTIAL_STEPS: CreationStep[] = [
-    {
-        id: "creating_dao",
-        label: "Creating your treasury on NEAR",
-        status: "pending",
-    },
-    { id: "finalizing", label: "Finalizing setup", status: "pending" },
-];
-
-const CONFIDENTIAL_STEPS: CreationStep[] = [
-    {
-        id: "creating_dao",
-        label: "Creating your treasury on NEAR",
-        status: "pending",
-    },
-    {
-        id: "adding_public_key",
-        label: "Registering public key",
-        status: "pending",
-    },
-    {
-        id: "authenticating",
-        label: "Setting up confidential transactions",
-        status: "pending",
-    },
-    {
-        id: "setting_policy",
-        label: "Configuring treasury members",
-        status: "pending",
-    },
-    { id: "finalizing", label: "Finalizing setup", status: "pending" },
-];
-
-const CREATION_STEP_TITLES = [
-    "About You",
-    "Details",
-    "Members",
-    "Treasury Type",
-    "Review",
-];
-
 export default function NewTreasuryPage() {
+    const t = useTranslations("pages.createTreasury");
+    const tCreate = useTranslations("createTreasury");
+    const tValidation = useTranslations("createTreasury.validation");
+    const tSteps = useTranslations("createTreasury.steps");
+    const tStepTitles = useTranslations("createTreasury.stepTitles");
+    const tMember = useTranslations("memberInput.validation");
+    const tAccountId = useTranslations("accountIdInput");
+    const NON_CONFIDENTIAL_STEPS: CreationStep[] = useMemo(
+        () => [
+            {
+                id: "creating_dao",
+                label: tSteps("creatingNear"),
+                status: "pending",
+            },
+            {
+                id: "finalizing",
+                label: tSteps("finalizingSetup"),
+                status: "pending",
+            },
+        ],
+        [tSteps],
+    );
+    const CONFIDENTIAL_STEPS: CreationStep[] = useMemo(
+        () => [
+            {
+                id: "creating_dao",
+                label: tSteps("creatingNear"),
+                status: "pending",
+            },
+            {
+                id: "adding_public_key",
+                label: tSteps("registeringKey"),
+                status: "pending",
+            },
+            {
+                id: "authenticating",
+                label: tSteps("settingUpConfidential"),
+                status: "pending",
+            },
+            {
+                id: "setting_policy",
+                label: tSteps("configuringMembers"),
+                status: "pending",
+            },
+            {
+                id: "finalizing",
+                label: tSteps("finalizingSetup"),
+                status: "pending",
+            },
+        ],
+        [tSteps],
+    );
+    const CREATION_STEP_TITLES = useMemo(
+        () => [
+            tStepTitles("aboutYou"),
+            tStepTitles("details"),
+            tStepTitles("members"),
+            tStepTitles("treasuryType"),
+            tStepTitles("review"),
+        ],
+        [tStepTitles],
+    );
+    const treasuryFormSchema = useMemo(
+        () =>
+            buildTreasuryFormSchema({
+                nameMin: tValidation("nameMin"),
+                nameMax: tValidation("nameMax"),
+                accountMin: tValidation("accountMin"),
+                accountMax: tValidation("accountMax"),
+                accountChars: tValidation("accountChars"),
+                accountTaken: tValidation("accountTaken"),
+                rolesRequired: tMember("rolesRequired"),
+                duplicateAddress: tMember("duplicateAddress"),
+                accountId: {
+                    minLength: tAccountId("minLength"),
+                    maxLength: tAccountId("maxLength"),
+                    charset: tAccountId("charset"),
+                    doesNotExist: tAccountId("doesNotExist"),
+                },
+            }),
+        [tValidation, tMember, tAccountId],
+    );
     const { accountId, connect, isAuthenticating } = useNear();
     const { treasuries } = useTreasury();
     const { data: creationStatus } = useTreasuryCreationStatus();
@@ -877,7 +994,7 @@ export default function NewTreasuryPage() {
                         ),
                     );
                     setProgressError(
-                        event.message ?? "An unexpected error occurred",
+                        event.message ?? tCreate("unexpectedError"),
                     );
                 } else {
                     setProgressSteps((prev) =>
@@ -902,7 +1019,7 @@ export default function NewTreasuryPage() {
                         : s,
                 ),
             );
-            setProgressError("Failed to create treasury. Please try again.");
+            setProgressError(tCreate("creationFailed"));
         }
     };
 
@@ -924,10 +1041,10 @@ export default function NewTreasuryPage() {
                 onClose={() => router.push("/")}
             />
             <PageComponentLayout
-                title="Create Treasury"
+                title={t("title")}
                 hideCollapseButton
                 hideLogin
-                description="Set up a new multisig treasury for your team"
+                description={t("description")}
                 backButton={treasuries?.length > 0 ? "/" : undefined}
             >
                 <Form {...form}>

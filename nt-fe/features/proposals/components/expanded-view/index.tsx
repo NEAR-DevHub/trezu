@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { Proposal } from "@/lib/proposals-api";
 import { TransferExpanded } from "./transfer-expanded";
 import { FunctionCallExpanded } from "./function-call-expanded";
@@ -40,6 +41,7 @@ function ExpandedViewInternal({
     proposal,
     treasuryId,
 }: InternalExpandedViewProps) {
+    const t = useTranslations("proposals.expanded");
     const { type, data } = extractProposalData(proposal, treasuryId);
 
     switch (type) {
@@ -99,7 +101,7 @@ function ExpandedViewInternal({
         default:
             return (
                 <p className="text-sm text-muted-foreground">
-                    Unsupported proposal type
+                    {t("unsupportedProposal")}
                 </p>
             );
     }
@@ -120,6 +122,7 @@ export function ExpandedView({
     onVote,
     onDeposit,
 }: ExpandedViewProps) {
+    const t = useTranslations("proposals.expanded");
     const { treasuryId } = useTreasury();
     const { accountId } = useNear();
 
@@ -134,15 +137,17 @@ export function ExpandedView({
         <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 w-full min-w-0">
             <PageCard className="w-full min-w-0 h-fit">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold">Request Details</h3>
+                    <h3 className="text-lg font-semibold">
+                        {t("requestDetails")}
+                    </h3>
                     <div className="flex items-center gap-2">
                         <CopyButton
                             text={requestUrl}
-                            toastMessage="Link copied to clipboard"
+                            toastMessage={t("linkCopied")}
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            tooltipContent="Copy Link"
+                            tooltipContent={t("copyLink")}
                             iconClassName="h-4 w-4"
                         />
                         {!hideOpenInNewTab && (
@@ -154,7 +159,7 @@ export function ExpandedView({
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    tooltipContent="Open Request Page"
+                                    tooltipContent={t("openRequestPage")}
                                     className="h-8 w-8"
                                 >
                                     <ExternalLink className="h-4 w-4" />
@@ -165,7 +170,7 @@ export function ExpandedView({
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                tooltipContent="Delete Request"
+                                tooltipContent={t("deleteRequest")}
                                 className="h-8 w-8"
                                 onClick={() => onVote("Remove")}
                             >

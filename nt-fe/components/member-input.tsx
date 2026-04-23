@@ -13,41 +13,64 @@ import {
     useFormContext,
 } from "react-hook-form";
 import z from "zod";
-import { AccountIdInput, accountIdSchema } from "./account-id-input";
+import { useTranslations } from "next-intl";
+import { AccountIdInput, buildAccountIdSchema } from "./account-id-input";
 import { ROLES, RoleSelector } from "./role-selector";
 import { Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RoleBadge } from "./role-badge";
 
-export const memberSchema = z
-    .array(
-        z.object({
-            accountId: accountIdSchema,
-            roles: z
-                .array(z.enum(ROLES.map((r) => r.id)))
-                .min(1, "At least one role is required"),
-        }),
-    )
-    .superRefine((data, ctx) => {
-        const sortedData = data.sort((a, b) =>
-            a.accountId.localeCompare(b.accountId),
-        );
-        for (const [index, member] of sortedData.entries()) {
-            if (
-                index < sortedData.length - 1 &&
-                member.accountId === sortedData[index + 1]?.accountId
-            ) {
-                ctx.addIssue({
-                    code: "custom",
-                    message: "Address is already a member",
-                    path: [`${index + 1}.accountId`],
-                });
+export function buildMemberSchema(messages: {
+    rolesRequired: string;
+    duplicateAddress: string;
+    accountId: {
+        minLength: string;
+        maxLength: string;
+        charset: string;
+        doesNotExist: string;
+    };
+}) {
+    return z
+        .array(
+            z.object({
+                accountId: buildAccountIdSchema(messages.accountId),
+                roles: z
+                    .array(z.enum(ROLES.map((r) => r.id)))
+                    .min(1, messages.rolesRequired),
+            }),
+        )
+        .superRefine((data, ctx) => {
+            const sortedData = data.sort((a, b) =>
+                a.accountId.localeCompare(b.accountId),
+            );
+            for (const [index, member] of sortedData.entries()) {
+                if (
+                    index < sortedData.length - 1 &&
+                    member.accountId === sortedData[index + 1]?.accountId
+                ) {
+                    ctx.addIssue({
+                        code: "custom",
+                        message: messages.duplicateAddress,
+                        path: [index + 1, "accountId"],
+                    });
+                }
             }
-        }
-    });
+        });
+}
 
-export type MembersArray = z.infer<typeof memberSchema>;
-export type Member = z.infer<typeof memberSchema>[number];
+const _memberSchemaForTypes = buildMemberSchema({
+    rolesRequired: "",
+    duplicateAddress: "",
+    accountId: {
+        minLength: "",
+        maxLength: "",
+        charset: "",
+        doesNotExist: "",
+    },
+});
+
+export type MembersArray = z.infer<typeof _memberSchemaForTypes>;
+export type Member = MembersArray[number];
 
 type Role = {
     id: string;
@@ -85,6 +108,7 @@ export function MemberInput<
     name,
     getDisabledRoles,
 }: MemberInputProps<TFieldValues, TMemberPath>) {
+    const t = useTranslations("memberInput");
     const { fields, append, remove } = useFieldArray({
         control,
         name: name,
@@ -117,8 +141,8 @@ export function MemberInput<
                         <div className="flex justify-between items-center">
                             <p className="text-xs text-muted-foreground">
                                 {showCreatorLabel && index === 0
-                                    ? "Creator (you)"
-                                    : "Member Address"}
+                                    ? t("creatorYou")
+                                    : t("memberAddress")}
                             </p>
 
                             {index > 0 && !disableAllInputs && (
@@ -263,7 +287,9 @@ export function MemberInput<
                         }
                     >
                         <Plus className="size-4 text-foreground" />
-                        <span className="text-foreground">Add New Member</span>
+                        <span className="text-foreground">
+                            {t("addNewMember")}
+                        </span>
                     </Button>
                 )}
             </div>

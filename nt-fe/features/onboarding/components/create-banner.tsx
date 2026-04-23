@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/button";
 import Logo from "@/components/icons/logo";
@@ -11,6 +12,7 @@ import { useTreasury } from "@/hooks/use-treasury";
 const CREATE_BANNER_DISMISSED_KEY = "create-banner-dismissed";
 
 export function CreateBanner({ disabled = false }: { disabled?: boolean }) {
+    const t = useTranslations("onboarding.createBanner");
     const router = useRouter();
     const { accountId } = useNear();
     const [isDismissed, setIsDismissed] = useState(true);
@@ -42,19 +44,17 @@ export function CreateBanner({ disabled = false }: { disabled?: boolean }) {
             <div className="flex items-center justify-between pb-1">
                 <Logo size="sm" variant="icon" />
                 <button
+                    type="button"
                     onClick={handleDismiss}
                     className="text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label="Close"
+                    aria-label={t("close")}
                 >
                     <X className="size-3.5" />
                 </button>
             </div>
             <div className="flex flex-col gap-1 text-foreground">
-                <p className="text-sm font-medium">Explore Trezu</p>
-                <p className="text-xs">
-                    Create an account to unlock permissions to all features and
-                    benefits of Trezu.
-                </p>
+                <p className="text-sm font-medium">{t("title")}</p>
+                <p className="text-xs">{t("description")}</p>
             </div>
             <Button
                 variant="secondary"
@@ -67,7 +67,7 @@ export function CreateBanner({ disabled = false }: { disabled?: boolean }) {
                     )
                 }
             >
-                Create Treasury
+                {t("cta")}
             </Button>
         </div>
     );
