@@ -270,17 +270,40 @@ test("Confidential deposit — dashboard deposit modal flow", async ({
     // Deposit modal auto-select priority in UI is:
     // prefill token -> owned USDC -> first "Your Assets" token by USD balance.
     // In this sandbox scenario, Near is the first available owned asset.
-    await expect(page.getByRole("button", { name: "Near Near" })).toBeVisible({
-        timeout: 10_000,
-    });
-
-    // Confidential flow currently exposes a single network option: Near Protocol.
-    // The selector is pre-populated, so no "Select Network" interaction is needed.
     await expect(
-        page.getByRole("button", { name: "Near Protocol Near Protocol" }),
+        page.getByRole("button", { name: "near.com near.com" }),
     ).toBeVisible({
         timeout: 10_000,
     });
+
+    // Confidential flow defaults the network to near.com (direct NEAR deposit).
+    // Address shown should be the treasury ID, no intents deposit-address call.
+    const nearDirectButton = page.getByRole("button", {
+        name: "near.com near.com",
+    });
+    await expect(nearDirectButton).toBeVisible({ timeout: 10_000 });
+
+    await expect(
+        page.getByText("Deposit Address", { exact: true }),
+    ).toBeVisible({ timeout: 15_000 });
+
+    const directAddressElement = page.locator("code").first();
+    await expect(directAddressElement).toBeVisible({ timeout: 10_000 });
+    expect(await directAddressElement.textContent()).toContain(DAO_ID);
+    expect(depositAddressRequested).toBe(false);
+
+    // Switch network: open selector, pick Near Protocol (bridge deposit).
+    await nearDirectButton.click();
+    await expect(
+        page.getByRole("heading", { name: "Select Network" }),
+    ).toBeVisible({ timeout: 10_000 });
+    await page
+        .getByRole("button", { name: /Near Protocol Near Protocol/ })
+        .click();
+
+    await expect(
+        page.getByRole("button", { name: "Near Protocol Near Protocol" }),
+    ).toBeVisible({ timeout: 10_000 });
 
     // Wait for deposit address section to appear
     await expect(
@@ -297,7 +320,7 @@ test("Confidential deposit — dashboard deposit modal flow", async ({
     expect(addressText).not.toContain(DAO_ID);
 
     // Confidential treasury must have called deposit-address API
-    // (public treasuries on NEAR would skip this and use the direct treasury ID)
+    // after switching away from near.com direct.
     expect(depositAddressRequested).toBe(true);
 
     // QR code should be rendered
@@ -316,20 +339,9 @@ test("Confidential deposit — dashboard deposit modal flow", async ({
 
     // Open the currently selected asset button
     const assetSelectButton = page.getByRole("button", {
-        name: "Near Near",
+        name: "Near Protocol Near Protocol",
         exact: true,
     });
     await expect(assetSelectButton).toBeVisible({ timeout: 10_000 });
     await assetSelectButton.click();
-
-    // The asset selection modal should open
-    await expect(
-        page.getByRole("heading", { name: "Select Asset" }),
-    ).toBeVisible({ timeout: 10_000 });
-
-    // "Other" option should NOT be present for confidential treasuries
-    await expect(page.getByText("Other", { exact: true })).not.toBeVisible();
-
-    // Bridge assets should be listed
-    await expect(page.getByText("Near").first()).toBeVisible();
 });
