@@ -490,7 +490,7 @@ export function Feature({
         icon === "anyone"
             ? "secondary"
             : icon === "team"
-              ? "primary"
+              ? "secondary"
               : "secondary";
     const pillTitle =
         icon === "anyone"
@@ -502,7 +502,7 @@ export function Feature({
         icon === "anyone" ? (
             <Globe className="size-3 text-foreground" />
         ) : icon === "team" ? (
-            <Shield className="size-3 text-primary-foreground" />
+            <Shield className="size-3 text-foreground" />
         ) : (
             <Clock10 className="size-3 text-foreground" />
         );
