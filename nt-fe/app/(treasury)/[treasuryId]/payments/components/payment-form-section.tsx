@@ -333,9 +333,7 @@ export function PaymentFormSection<
                 )}
             </InputBlock>
 
-            {isConfidential && (
-                <InfoAlert message={t("privateNetworkAlert")} />
-            )}
+            {isConfidential && <InfoAlert message={t("privateNetworkAlert")} />}
 
             <SelectModal
                 isOpen={isContactModalOpen}

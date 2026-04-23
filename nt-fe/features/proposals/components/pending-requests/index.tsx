@@ -120,9 +120,7 @@ export function PendingRequestItem({
                                         onVote("Reject");
                                     }}
                                     tooltip={
-                                        isUserVoter
-                                            ? noVoteMessage
-                                            : undefined
+                                        isUserVoter ? noVoteMessage : undefined
                                     }
                                     disabled={isUserVoter}
                                 >

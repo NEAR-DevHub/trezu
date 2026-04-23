@@ -485,9 +485,7 @@ export function AddRecipientInput({
                         className="w-full justify-start rounded-b-xl"
                         disabled={!isActiveValid}
                         tooltipContent={
-                            !isActiveValid
-                                ? tForm("fillAllTooltip")
-                                : undefined
+                            !isActiveValid ? tForm("fillAllTooltip") : undefined
                         }
                         onClick={handleCommit}
                     >

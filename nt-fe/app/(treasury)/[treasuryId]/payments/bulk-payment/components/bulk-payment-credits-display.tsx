@@ -49,8 +49,7 @@ export function BulkPaymentCreditsDisplay({
                     {isUnlimited
                         ? t("unlimited")
                         : t("creditsPerPeriod", {
-                              amount:
-                                  batchPaymentCreditLimit || totalCredits,
+                              amount: batchPaymentCreditLimit || totalCredits,
                               period: periodDisplay,
                           })}
                 </span>

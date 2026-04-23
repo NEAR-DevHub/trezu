@@ -258,8 +258,7 @@ export function LockupDetailsModal({
         everyUnit: (unit: string) => t("everyUnit", { unit }),
         everyMultiple: (text: string) => t("everyMultiple", { text }),
         completed: t("completed"),
-        unit: (key: string, count: number) =>
-            t(`unit.${key}`, { count }),
+        unit: (key: string, count: number) => t(`unit.${key}`, { count }),
     };
 
     const nextUnlockDate = calculateNextFtUnlockDate(

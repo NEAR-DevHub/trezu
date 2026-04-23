@@ -196,10 +196,7 @@ export function classifyExchangeError(errorMessage: string): {
     if (lowerError.includes("amount") && lowerError.includes("low")) {
         return { code: "amountTooLow", raw: errorMessage };
     }
-    if (
-        lowerError.includes("insufficient") ||
-        lowerError.includes("balance")
-    ) {
+    if (lowerError.includes("insufficient") || lowerError.includes("balance")) {
         return { code: "insufficientBalance", raw: errorMessage };
     }
     if (lowerError.includes("timeout") || lowerError.includes("network")) {

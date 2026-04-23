@@ -293,10 +293,8 @@ export function useGetActivityLabel() {
 export function useGetActivitySubLabel() {
     const t = useTranslations("activityLabels");
     const labels = buildActivitySubLabels(t);
-    return (
-        activity: ActivityAccount,
-        treasuryId: string | null | undefined,
-    ) => getActivitySubLabel(activity, treasuryId, labels);
+    return (activity: ActivityAccount, treasuryId: string | null | undefined) =>
+        getActivitySubLabel(activity, treasuryId, labels);
 }
 
 export function useGetFromAccount() {

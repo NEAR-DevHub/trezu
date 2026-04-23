@@ -279,55 +279,51 @@ export function VotingTab() {
             const proposalBond = policy?.proposal_bond || "0";
 
             await createProposal(t("thresholdSubmitted"), {
-                    treasuryId: treasuryId,
-                    proposal: {
-                        description: encodeToMarkdown(description),
-                        kind: {
-                            ChangePolicy: {
-                                policy: {
-                                    ...policy,
-                                    roles: policy.roles?.map((role) => {
-                                        if (role.name === activeTab) {
-                                            const vote_policy =
-                                                proposalKinds.reduce(
+                treasuryId: treasuryId,
+                proposal: {
+                    description: encodeToMarkdown(description),
+                    kind: {
+                        ChangePolicy: {
+                            policy: {
+                                ...policy,
+                                roles: policy.roles?.map((role) => {
+                                    if (role.name === activeTab) {
+                                        const vote_policy =
+                                            proposalKinds.reduce(
+                                                (
+                                                    policy: Record<string, any>,
+                                                    kind: string,
+                                                ) => {
                                                     (
-                                                        policy: Record<
+                                                        policy as Record<
                                                             string,
                                                             any
-                                                        >,
-                                                        kind: string,
-                                                    ) => {
-                                                        (
-                                                            policy as Record<
-                                                                string,
-                                                                any
-                                                            >
-                                                        )[kind] = {
-                                                            weight_kind:
-                                                                "RoleWeight",
-                                                            quorum: "0",
-                                                            threshold:
-                                                                newThreshold.toString(),
-                                                        };
-                                                        return policy;
-                                                    },
-                                                    {},
-                                                );
-                                            return {
-                                                ...role,
-                                                vote_policy,
-                                            };
-                                        }
-                                        return role;
-                                    }),
-                                },
+                                                        >
+                                                    )[kind] = {
+                                                        weight_kind:
+                                                            "RoleWeight",
+                                                        quorum: "0",
+                                                        threshold:
+                                                            newThreshold.toString(),
+                                                    };
+                                                    return policy;
+                                                },
+                                                {},
+                                            );
+                                        return {
+                                            ...role,
+                                            vote_policy,
+                                        };
+                                    }
+                                    return role;
+                                }),
                             },
                         },
                     },
-                    proposalBond: proposalBond,
-                    proposalType: "other",
                 },
-            );
+                proposalBond: proposalBond,
+                proposalType: "other",
+            });
 
             // Refetch proposals to show the newly created proposal
             queryClient.invalidateQueries({

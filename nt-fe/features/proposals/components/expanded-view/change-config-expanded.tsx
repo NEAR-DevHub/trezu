@@ -142,9 +142,7 @@ export function ChangeConfigExpanded({
     if (infoItems.length === 0) {
         return (
             <div className="p-4 text-center text-muted-foreground">
-                {isPending
-                    ? t("noChangesCurrent")
-                    : t("noChangesHistorical")}
+                {isPending ? t("noChangesCurrent") : t("noChangesHistorical")}
             </div>
         );
     }

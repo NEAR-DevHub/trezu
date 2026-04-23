@@ -286,9 +286,10 @@ export function AssetDetailsModal({ isOpen, onClose, asset }: Props) {
                                             </div>
                                             <span className="text-xxs text-muted-foreground whitespace-nowrap">
                                                 {t("vestedPercent", {
-                                                    percent: vestedPercent.toFixed(
-                                                        0,
-                                                    ),
+                                                    percent:
+                                                        vestedPercent.toFixed(
+                                                            0,
+                                                        ),
                                                 })}
                                             </span>
                                         </div>

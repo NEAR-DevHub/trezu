@@ -70,9 +70,7 @@ function useSummary() {
         }
 
         if (hasPolicyChanges) {
-            parts.push(
-                t("parametersChanged", { count: policyChanges.length }),
-            );
+            parts.push(t("parametersChanged", { count: policyChanges.length }));
         }
 
         if (hasVotePolicyChanges) {

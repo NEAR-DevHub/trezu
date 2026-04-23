@@ -122,9 +122,7 @@ export function PreviewModal({
                     {/* Members List */}
                     <div>
                         <h4 className="font-semibold pb-3">
-                            {isEditMode
-                                ? t("updatedMembers")
-                                : t("newMembers")}
+                            {isEditMode ? t("updatedMembers") : t("newMembers")}
                         </h4>
                         <div className="space-y-0 rounded-lg overflow-hidden">
                             {membersToShow.map((member, index) => (

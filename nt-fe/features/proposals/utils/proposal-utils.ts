@@ -341,11 +341,7 @@ export function getProposalStatus(
  *
  * Returns { date, isFuture, label } where label is the status verb prefix for non-pending.
  */
-export type StatusDateLabelKey =
-    | "expires"
-    | "created"
-    | "expired"
-    | "removed";
+export type StatusDateLabelKey = "expires" | "created" | "expired" | "removed";
 
 export function getProposalStatusDateInfo(
     proposal: Proposal,

@@ -109,9 +109,7 @@ function translateToProposals(
         proposals.push({
             receiverId: daoId,
             description: labels.functionCallDescription(
-                functionCallActions
-                    .map((a) => a.params.methodName)
-                    .join(", "),
+                functionCallActions.map((a) => a.params.methodName).join(", "),
                 tx.receiverId,
             ),
             kind: {
@@ -224,7 +222,13 @@ function WalletPageContent() {
         try {
             const all: ProposalData[] = [];
             for (const tx of transactions) {
-                all.push(...translateToProposals(selectedDao, tx, walletProposalLabels));
+                all.push(
+                    ...translateToProposals(
+                        selectedDao,
+                        tx,
+                        walletProposalLabels,
+                    ),
+                );
             }
             return all;
         } catch {
@@ -430,7 +434,13 @@ function WalletPageContent() {
             const submittedProposalIds: number[] = [];
             const allProposals: ProposalData[] = [];
             for (const tx of transactions) {
-                allProposals.push(...translateToProposals(selectedDao, tx, walletProposalLabels));
+                allProposals.push(
+                    ...translateToProposals(
+                        selectedDao,
+                        tx,
+                        walletProposalLabels,
+                    ),
+                );
             }
 
             for (const proposal of allProposals) {

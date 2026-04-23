@@ -209,7 +209,8 @@ function getCategoryLabel(
     plural: boolean,
     t: (key: string) => string,
 ) {
-    if (type === "added") return plural ? t("addNewMembers") : t("addNewMember");
+    if (type === "added")
+        return plural ? t("addNewMembers") : t("addNewMember");
     if (type === "removed")
         return plural ? t("removeMembers") : t("removeMember");
     return plural

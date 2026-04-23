@@ -192,8 +192,7 @@ export function useExchangeQuote({
                     );
                     form.setError("receiveAmount", {
                         type: "manual",
-                        message:
-                            code === "unknown" ? raw : tEx(code),
+                        message: code === "unknown" ? raw : tEx(code),
                     });
                 }
                 return null;

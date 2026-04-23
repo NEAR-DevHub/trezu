@@ -447,10 +447,7 @@ function Step2({ handleBack }: StepProps) {
 
     return (
         <PageCard>
-            <ReviewStep
-                reviewingTitle={tEx("review")}
-                handleBack={handleBack}
-            >
+            <ReviewStep reviewingTitle={tEx("review")} handleBack={handleBack}>
                 {isLoadingLiveQuote ? (
                     // Loading skeleton for entire review section
                     <>

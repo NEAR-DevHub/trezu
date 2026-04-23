@@ -168,10 +168,7 @@ function Step1({ handleNext, handleBack }: StepProps) {
 
     return (
         <PageCard>
-            <StepperHeader
-                title={tCreate("heading")}
-                handleBack={handleBack}
-            />
+            <StepperHeader title={tCreate("heading")} handleBack={handleBack} />
 
             <FormField
                 control={form.control}

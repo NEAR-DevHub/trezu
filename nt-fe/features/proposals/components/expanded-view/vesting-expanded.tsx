@@ -72,17 +72,11 @@ export function VestingExpanded({ data }: VestingExpandedProps) {
     infoItems.push(
         {
             label: t("allowCancellation"),
-            value: (
-                <span>
-                    {data.allowCancellation ? t("yes") : t("no")}
-                </span>
-            ),
+            value: <span>{data.allowCancellation ? t("yes") : t("no")}</span>,
         },
         {
             label: t("allowStaking"),
-            value: (
-                <span>{data.allowStaking ? t("yes") : t("no")}</span>
-            ),
+            value: <span>{data.allowStaking ? t("yes") : t("no")}</span>,
         },
     );
 

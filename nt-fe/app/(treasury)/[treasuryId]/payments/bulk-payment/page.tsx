@@ -398,9 +398,7 @@ export default function BulkPaymentPage() {
             }
             // createProposal already handles wallet rejection UI; submit list errors need a toast.
             toast.error(
-                error instanceof Error
-                    ? error.message
-                    : tBulk("submitFailed"),
+                error instanceof Error ? error.message : tBulk("submitFailed"),
             );
         }
     };

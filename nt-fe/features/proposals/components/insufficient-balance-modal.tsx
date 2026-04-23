@@ -23,7 +23,8 @@ export function InsufficientBalanceModal({
     actionType,
 }: InsufficientBalanceModalProps) {
     const t = useTranslations("proposals.insufficientBalance");
-    const bodyKey = actionType === "vote" ? "modalBodyVote" : "modalBodyProposal";
+    const bodyKey =
+        actionType === "vote" ? "modalBodyVote" : "modalBodyProposal";
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>

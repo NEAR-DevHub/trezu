@@ -36,9 +36,7 @@ function buildSettingsFormSchema(messages: { slippageRange: string }) {
     });
 }
 
-type SettingsFormValues = z.infer<
-    ReturnType<typeof buildSettingsFormSchema>
->;
+type SettingsFormValues = z.infer<ReturnType<typeof buildSettingsFormSchema>>;
 
 export function ExchangeSettingsModal({
     slippageTolerance,

@@ -59,10 +59,9 @@ function buildVestingFormSchema(messages: {
                     .max(64, messages.recipientMax64),
                 amount: z
                     .string()
-                    .refine(
-                        (val) => !isNaN(Number(val)) && Big(val).gte(3.5),
-                        { message: messages.amountMinLockup },
-                    ),
+                    .refine((val) => !isNaN(Number(val)) && Big(val).gte(3.5), {
+                        message: messages.amountMinLockup,
+                    }),
                 memo: z.string().optional(),
                 isRegistered: z.boolean().optional(),
                 token: tokenSchema,

@@ -61,8 +61,7 @@ export function VoteModal({
         }
     };
 
-    const title =
-        vote === "Remove" ? t("removeTitle") : t("confirmTitle");
+    const title = vote === "Remove" ? t("removeTitle") : t("confirmTitle");
     const action =
         vote === "Approve"
             ? t("actionApprove")

@@ -187,10 +187,7 @@ export default function MembersPage() {
                             }),
                         roles: z
                             .array(z.string())
-                            .min(
-                                1,
-                                tMembers("validation.atLeastOneRole"),
-                            ),
+                            .min(1, tMembers("validation.atLeastOneRole")),
                     }),
                 )
                 .min(1, tMembers("validation.atLeastOneMember"))
@@ -208,9 +205,7 @@ export default function MembersPage() {
                         if (firstOccurrence !== undefined) {
                             ctx.addIssue({
                                 code: z.ZodIssueCode.custom,
-                                message: tMembers(
-                                    "validation.alreadyAdded",
-                                ),
+                                message: tMembers("validation.alreadyAdded"),
                                 path: [index, "accountId"],
                             });
                         } else {

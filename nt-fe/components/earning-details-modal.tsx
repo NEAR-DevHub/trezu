@@ -78,9 +78,7 @@ export function EarningDetailsModal({
         ];
         if (pool.unstakedBalance.gt(0)) {
             items.push({
-                label: pool.canWithdraw
-                    ? t("readyToWithdraw")
-                    : t("unstaking"),
+                label: pool.canWithdraw ? t("readyToWithdraw") : t("unstaking"),
                 subItem: true,
                 value: `${formatTokenBalance(pool.unstakedBalance)} ${asset.symbol}`,
             });

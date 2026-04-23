@@ -101,9 +101,7 @@ export function SponsoredActionsLimitNotice({
         }
     };
 
-    const title = usage.isExhausted
-        ? t("titleExhausted")
-        : t("titleAlmost");
+    const title = usage.isExhausted ? t("titleExhausted") : t("titleAlmost");
     const resetDate = formatResetDate(subscription?.creditsResetAt);
     const resetDateOrFallback = resetDate || t("nextMonthlyReset");
 

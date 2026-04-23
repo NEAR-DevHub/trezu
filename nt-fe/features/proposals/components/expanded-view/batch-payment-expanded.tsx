@@ -110,8 +110,7 @@ function PaymentDisplay({
                     target="_blank"
                     rel="noopener noreferrer"
                 >
-                    {t("viewTransaction")}{" "}
-                    <ArrowUpRight className="size-4" />
+                    {t("viewTransaction")} <ArrowUpRight className="size-4" />
                 </Link>
             ),
         });

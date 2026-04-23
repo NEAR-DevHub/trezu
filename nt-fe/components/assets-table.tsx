@@ -1756,15 +1756,11 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                             buttonClassName: "ml-auto",
                                         },
                                     )}
-                                    {renderSortableHead(
-                                        "weight",
-                                        t("weight"),
-                                        {
-                                            headClassName:
-                                                "text-right hidden sm:table-cell",
-                                            buttonClassName: "ml-auto",
-                                        },
-                                    )}
+                                    {renderSortableHead("weight", t("weight"), {
+                                        headClassName:
+                                            "text-right hidden sm:table-cell",
+                                        buttonClassName: "ml-auto",
+                                    })}
                                 </>
                             )}
                             {view === "locked" && (
@@ -1822,8 +1818,9 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                         {
                                             headClassName:
                                                 "text-right hidden sm:table-cell",
-                                        buttonClassName: "ml-auto",
-                                    })}
+                                            buttonClassName: "ml-auto",
+                                        },
+                                    )}
                                     {renderSortableHead(
                                         "withdrawable",
                                         t("columnAvailableToWithdraw"),

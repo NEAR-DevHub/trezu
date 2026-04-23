@@ -441,7 +441,9 @@ function RecipientsView({
                             <ResponsiveInput
                                 type="text"
                                 placeholder={tAb("searchPlaceholder")}
-                                mobilePlaceholder={tAb("searchPlaceholderShort")}
+                                mobilePlaceholder={tAb(
+                                    "searchPlaceholderShort",
+                                )}
                                 className="w-52 min-w-0"
                                 search
                                 value={search}

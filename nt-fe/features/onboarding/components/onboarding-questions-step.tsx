@@ -380,10 +380,7 @@ export function OnboardingQuestionsStep({
                 title: "",
                 question: t("questions.currentTools"),
                 fieldName: "about.currentTools",
-                options: buildOptions(
-                    "currentTools",
-                    CURRENT_TOOLS_OPTION_IDS,
-                ),
+                options: buildOptions("currentTools", CURRENT_TOOLS_OPTION_IDS),
                 selectionMode: "multiple",
             },
             {
@@ -413,7 +410,10 @@ export function OnboardingQuestionsStep({
 
     const visibleQuestions = useMemo(
         () =>
-            getVisibleQuestionnaireSteps(questionnaireSteps, selectedExperience),
+            getVisibleQuestionnaireSteps(
+                questionnaireSteps,
+                selectedExperience,
+            ),
         [questionnaireSteps, selectedExperience],
     );
     const isSurveyConfigReady = useMemo(() => {
@@ -583,11 +583,7 @@ export function OnboardingQuestionsStep({
             $survey_id: POSTHOG_SURVEY_ID,
             $survey_submission_id: surveySubmissionIdRef.current,
             $survey_completed: isCompleted,
-            ...buildCumulativeSurveyResponses(
-                about,
-                latestVisible,
-                t("other"),
-            ),
+            ...buildCumulativeSurveyResponses(about, latestVisible, t("other")),
             ...(isCompleted && {
                 $set: {
                     onboarding_role: about.role.selected[0],
