@@ -177,19 +177,6 @@
         "stats": {
             "title": "Stats"
         },
-        "publicDashboard": {
-            "updatesDaily": "Updates daily",
-            "noDataTitle": "No data yet",
-            "noDataDescription": "Stats will appear after the first daily snapshot is computed.",
-            "assetsSecured": "Assets Secured With Sputnik DAO Contract",
-            "acrossDaos": "Across <bold>{count, plural, one {# DAO} other {# DAOs}}</bold>",
-            "updatedOn": "Updated {date}",
-            "topAssets": "Top 20 Assets",
-            "noAssetsTitle": "No assets yet",
-            "noAssetsDescription": "Token data will appear once the daily snapshot is computed.",
-            "tableToken": "Token",
-            "tableTotalValue": "Total Value"
-        },
         "telegram": {
             "title": "Connect Treasury",
             "description": "Link your treasuries to a Telegram chat"
@@ -1436,7 +1423,49 @@
     "paymentFormSection": {
         "selectRecipient": "Select Recipient",
         "searchByNameOrAddress": "Search by name or address",
-        "privateNetworkAlert": "This will send funds to an account on the near.com private network — not to an external wallet."
+        "privateNetworkAlert": "This will send funds to an account on the near.com private network — not to an external wallet.",
+        "send": "Send",
+        "to": "To"
+    },
+    "addressBookTable": {
+        "emptyTitle": "No recipients yet",
+        "emptyDescription": "Add recipients to this address book for faster payouts.",
+        "selectAll": "Select all recipients",
+        "selectEntry": "Select {name}",
+        "recipient": "Recipient",
+        "network": "Network",
+        "addedBy": "Added By",
+        "note": "Note",
+        "added": "Added",
+        "remove": "Remove",
+        "send": "Send"
+    },
+    "publicDashboard": {
+        "updatesDaily": "Updates daily",
+        "noDataTitle": "No data yet",
+        "noDataDescription": "Stats will appear after the first daily snapshot is computed.",
+        "assetsSecured": "Assets Secured With Sputnik DAO Contract",
+        "acrossDaos": "Across <bold>{count, plural, one {# DAO} other {# DAOs}}</bold>",
+        "updatedOn": "Updated {date}",
+        "topAssets": "Top 20 Assets",
+        "noAssetsTitle": "No assets yet",
+        "noAssetsDescription": "Token data will appear once the daily snapshot is computed.",
+        "tableToken": "Token",
+        "tableTotalValue": "Total Value"
+    },
+    "telegramConnectInstructions": {
+        "title": "Connect Telegram",
+        "subtitle": "Get notifications about proposals and activity in your Telegram.",
+        "step3": "Press Start and follow instructions.",
+        "success": "You're all set!",
+        "copyBotTooltip": "Copy bot handle",
+        "botCopiedToast": "Bot handle copied",
+        "openInTelegram": "Open {bot} in Telegram"
+    },
+    "transactionHashCell": {
+        "copyHash": "Copy hash",
+        "hashCopied": "Hash copied",
+        "openInExplorer": "Open in explorer"
     },
     "treasurySelector": {
         "select": "Select treasury",
@@ -1447,7 +1476,8 @@
         "guestTreasuries": "Guest Treasuries"
     },
     "selectModal": {
-        "searchByName": "Search by name"
+        "searchByName": "Search by name",
+        "noResults": "No results found"
     },
     "selectList": {
         "noResults": "No results found"
@@ -1508,7 +1538,13 @@
         "send": "Send",
         "exchange": "Exchange",
         "chartNow": "Now",
-        "totalBalance": "Total Balance"
+        "totalBalance": "Total Balance",
+        "period": {
+            "1W": "1W",
+            "1M": "1M",
+            "3M": "3M",
+            "1Y": "1Y"
+        }
     },
     "changePolicyExpanded": {
         "proposalBond": "Proposal Bond",

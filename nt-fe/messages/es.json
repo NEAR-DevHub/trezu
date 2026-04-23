@@ -177,19 +177,6 @@
         "stats": {
             "title": "Estadísticas"
         },
-        "publicDashboard": {
-            "updatesDaily": "Actualización diaria",
-            "noDataTitle": "Aún no hay datos",
-            "noDataDescription": "Las estadísticas aparecerán tras calcular la primera instantánea diaria.",
-            "assetsSecured": "Activos asegurados con el contrato de Sputnik DAO",
-            "acrossDaos": "En <bold>{count, plural, one {# DAO} other {# DAOs}}</bold>",
-            "updatedOn": "Actualizado {date}",
-            "topAssets": "Top 20 activos",
-            "noAssetsTitle": "Aún no hay activos",
-            "noAssetsDescription": "Los datos de tokens aparecerán cuando se calcule la instantánea diaria.",
-            "tableToken": "Token",
-            "tableTotalValue": "Valor total"
-        },
         "telegram": {
             "title": "Conectar tesorería",
             "description": "Vincula tus tesorerías a un chat de Telegram"
@@ -1436,7 +1423,49 @@
     "paymentFormSection": {
         "selectRecipient": "Seleccionar destinatario",
         "searchByNameOrAddress": "Buscar por nombre o dirección",
-        "privateNetworkAlert": "Esto enviará fondos a una cuenta en la red privada de near.com, no a una billetera externa."
+        "privateNetworkAlert": "Esto enviará fondos a una cuenta en la red privada de near.com, no a una billetera externa.",
+        "send": "Enviar",
+        "to": "Para"
+    },
+    "addressBookTable": {
+        "emptyTitle": "Aún no hay destinatarios",
+        "emptyDescription": "Añade destinatarios a esta libreta para pagos más rápidos.",
+        "selectAll": "Seleccionar todos los destinatarios",
+        "selectEntry": "Seleccionar {name}",
+        "recipient": "Destinatario",
+        "network": "Red",
+        "addedBy": "Añadido por",
+        "note": "Nota",
+        "added": "Añadido",
+        "remove": "Eliminar",
+        "send": "Enviar"
+    },
+    "publicDashboard": {
+        "updatesDaily": "Actualización diaria",
+        "noDataTitle": "Aún no hay datos",
+        "noDataDescription": "Las estadísticas aparecerán tras calcular la primera instantánea diaria.",
+        "assetsSecured": "Activos asegurados con el contrato de Sputnik DAO",
+        "acrossDaos": "En <bold>{count, plural, one {# DAO} other {# DAOs}}</bold>",
+        "updatedOn": "Actualizado {date}",
+        "topAssets": "Top 20 activos",
+        "noAssetsTitle": "Aún no hay activos",
+        "noAssetsDescription": "Los datos de tokens aparecerán cuando se calcule la instantánea diaria.",
+        "tableToken": "Token",
+        "tableTotalValue": "Valor total"
+    },
+    "telegramConnectInstructions": {
+        "title": "Conectar Telegram",
+        "subtitle": "Recibe notificaciones sobre propuestas y actividad en tu Telegram.",
+        "step3": "Pulsa Empezar y sigue las instrucciones.",
+        "success": "¡Todo listo!",
+        "copyBotTooltip": "Copiar nombre del bot",
+        "botCopiedToast": "Nombre del bot copiado",
+        "openInTelegram": "Abrir {bot} en Telegram"
+    },
+    "transactionHashCell": {
+        "copyHash": "Copiar hash",
+        "hashCopied": "Hash copiado",
+        "openInExplorer": "Abrir en el explorador"
     },
     "treasurySelector": {
         "select": "Seleccionar tesorería",
@@ -1447,7 +1476,8 @@
         "guestTreasuries": "Tesorerías como invitado"
     },
     "selectModal": {
-        "searchByName": "Buscar por nombre"
+        "searchByName": "Buscar por nombre",
+        "noResults": "No se encontraron resultados"
     },
     "selectList": {
         "noResults": "No se encontraron resultados"
@@ -1508,7 +1538,13 @@
         "send": "Enviar",
         "exchange": "Intercambiar",
         "chartNow": "Ahora",
-        "totalBalance": "Saldo total"
+        "totalBalance": "Saldo total",
+        "period": {
+            "1W": "1s",
+            "1M": "1m",
+            "3M": "3m",
+            "1Y": "1a"
+        }
     },
     "changePolicyExpanded": {
         "proposalBond": "Garantía de propuesta",

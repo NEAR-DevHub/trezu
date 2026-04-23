@@ -177,19 +177,6 @@
         "stats": {
             "title": "Статистика"
         },
-        "publicDashboard": {
-            "updatesDaily": "Оновлюється щодня",
-            "noDataTitle": "Ще немає даних",
-            "noDataDescription": "Статистика з'явиться після створення першого щоденного знімка.",
-            "assetsSecured": "Активи під охороною контракту Sputnik DAO",
-            "acrossDaos": "У <bold>{count, plural, one {# DAO} few {# DAO} many {# DAO} other {# DAO}}</bold>",
-            "updatedOn": "Оновлено {date}",
-            "topAssets": "Топ-20 активів",
-            "noAssetsTitle": "Ще немає активів",
-            "noAssetsDescription": "Дані про токени з'являться після створення щоденного знімка.",
-            "tableToken": "Токен",
-            "tableTotalValue": "Загальна вартість"
-        },
         "telegram": {
             "title": "Підключити скарбницю",
             "description": "Прив'яжіть скарбниці до чату Telegram"
@@ -1436,7 +1423,49 @@
     "paymentFormSection": {
         "selectRecipient": "Обрати одержувача",
         "searchByNameOrAddress": "Пошук за назвою або адресою",
-        "privateNetworkAlert": "Кошти буде надіслано на акаунт у приватній мережі near.com, а не на зовнішній гаманець."
+        "privateNetworkAlert": "Кошти буде надіслано на акаунт у приватній мережі near.com, а не на зовнішній гаманець.",
+        "send": "Надіслати",
+        "to": "Кому"
+    },
+    "addressBookTable": {
+        "emptyTitle": "Ще немає одержувачів",
+        "emptyDescription": "Додайте одержувачів до цієї книги для швидших виплат.",
+        "selectAll": "Обрати всіх одержувачів",
+        "selectEntry": "Обрати {name}",
+        "recipient": "Одержувач",
+        "network": "Мережа",
+        "addedBy": "Додав",
+        "note": "Примітка",
+        "added": "Додано",
+        "remove": "Видалити",
+        "send": "Надіслати"
+    },
+    "publicDashboard": {
+        "updatesDaily": "Оновлюється щодня",
+        "noDataTitle": "Ще немає даних",
+        "noDataDescription": "Статистика з'явиться після створення першого щоденного знімка.",
+        "assetsSecured": "Активи під охороною контракту Sputnik DAO",
+        "acrossDaos": "У <bold>{count, plural, one {# DAO} few {# DAO} many {# DAO} other {# DAO}}</bold>",
+        "updatedOn": "Оновлено {date}",
+        "topAssets": "Топ-20 активів",
+        "noAssetsTitle": "Ще немає активів",
+        "noAssetsDescription": "Дані про токени з'являться після створення щоденного знімка.",
+        "tableToken": "Токен",
+        "tableTotalValue": "Загальна вартість"
+    },
+    "telegramConnectInstructions": {
+        "title": "Підключити Telegram",
+        "subtitle": "Отримуйте сповіщення про пропозиції та активність у Telegram.",
+        "step3": "Натисніть Start і виконайте інструкції.",
+        "success": "Готово!",
+        "copyBotTooltip": "Скопіювати назву бота",
+        "botCopiedToast": "Назву бота скопійовано",
+        "openInTelegram": "Відкрити {bot} у Telegram"
+    },
+    "transactionHashCell": {
+        "copyHash": "Скопіювати хеш",
+        "hashCopied": "Хеш скопійовано",
+        "openInExplorer": "Відкрити в експлорері"
     },
     "treasurySelector": {
         "select": "Обрати скарбницю",
@@ -1447,7 +1476,8 @@
         "guestTreasuries": "Гостьові скарбниці"
     },
     "selectModal": {
-        "searchByName": "Пошук за назвою"
+        "searchByName": "Пошук за назвою",
+        "noResults": "Результатів не знайдено"
     },
     "selectList": {
         "noResults": "Результатів не знайдено"
@@ -1508,7 +1538,13 @@
         "send": "Надіслати",
         "exchange": "Обміняти",
         "chartNow": "Зараз",
-        "totalBalance": "Загальний баланс"
+        "totalBalance": "Загальний баланс",
+        "period": {
+            "1W": "1т",
+            "1M": "1м",
+            "3M": "3м",
+            "1Y": "1р"
+        }
     },
     "changePolicyExpanded": {
         "proposalBond": "Застава пропозиції",

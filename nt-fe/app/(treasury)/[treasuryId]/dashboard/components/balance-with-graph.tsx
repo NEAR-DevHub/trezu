@@ -684,7 +684,7 @@ export default function BalanceWithGraph({
                                             value={e}
                                             className="hover:text-foreground"
                                         >
-                                            {e}
+                                            {t(`period.${e}`)}
                                         </ToggleGroupItem>
                                     ))}
                                 </ToggleGroup>
@@ -802,7 +802,7 @@ export default function BalanceWithGraph({
                         <SelectContent>
                             {TIME_PERIODS.map((period) => (
                                 <SelectItem key={period} value={period}>
-                                    {period}
+                                    {t(`period.${period}`)}
                                 </SelectItem>
                             ))}
                         </SelectContent>
