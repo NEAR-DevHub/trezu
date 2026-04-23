@@ -1682,10 +1682,13 @@
         "idle": "Create Request",
         "noPermission": "You don't have permission to create a request"
     },
+    "address": {
+        "copied": "Address copied to clipboard"
+    },
     "accountIdInput": {
         "minLength": "Account ID should be at least 2 characters",
         "maxLength": "Account ID must be less than 64 characters",
-        "charset": "Account ID can only contain lowercase letters, numbers, hyphens, and underscores",
+        "charset": "Account ID must contain only lowercase letters, digits, dots, hyphens, and underscores, with no leading or trailing separators",
         "doesNotExist": "Account ID doesn't exist"
     },
     "addressBookMutations": {

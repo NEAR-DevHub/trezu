@@ -26,16 +26,16 @@ const fallback: NearStoreMessages = {
     votesSubmitted: "Your votes have been submitted",
 };
 
-let current: NearStoreMessages = fallback;
+let current: Readonly<NearStoreMessages> = Object.freeze(fallback);
 
-export function getNearStoreMessages(): NearStoreMessages {
+export function getNearStoreMessages(): Readonly<NearStoreMessages> {
     return current;
 }
 
 export function useSyncNearStoreMessages() {
     const t = useTranslations("nearStore");
     useEffect(() => {
-        current = {
+        current = Object.freeze({
             connectAndAcceptTerms: t("connectAndAcceptTerms"),
             transactionNotApproved: t("transactionNotApproved"),
             failedSubmitVote: t("failedSubmitVote"),
@@ -44,6 +44,6 @@ export function useSyncNearStoreMessages() {
             proposalRemoved: t("proposalRemoved"),
             voteSubmitted: t("voteSubmitted"),
             votesSubmitted: t("votesSubmitted"),
-        };
+        });
     }, [t]);
 }

@@ -1682,10 +1682,13 @@
         "idle": "Crear solicitud",
         "noPermission": "No tienes permiso para crear una solicitud"
     },
+    "address": {
+        "copied": "Dirección copiada al portapapeles"
+    },
     "accountIdInput": {
         "minLength": "El ID de cuenta debe tener al menos 2 caracteres",
         "maxLength": "El ID de cuenta debe tener menos de 64 caracteres",
-        "charset": "El ID de cuenta solo puede contener letras minúsculas, números, guiones y guiones bajos",
+        "charset": "El ID de cuenta debe contener solo letras minúsculas, dígitos, puntos, guiones y guiones bajos, sin separadores al inicio o final",
         "doesNotExist": "El ID de cuenta no existe"
     },
     "addressBookMutations": {

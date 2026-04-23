@@ -13,22 +13,28 @@ export function buildAccountIdSchema(messages: {
     charset: string;
     doesNotExist: string;
 }) {
-    return z
-        .string()
-        .min(2, messages.minLength)
-        .max(64, messages.maxLength)
-        .regex(/^[a-z0-9.-]+$/, messages.charset)
-        .refine(
-            async (accountId) => {
-                if (!accountId || accountId.length < 2) return true;
-                const result = await checkAccountExists(accountId);
-                return result?.exists === true;
-            },
-            {
-                message: messages.doesNotExist,
-                path: [""],
-            },
-        );
+    return (
+        z
+            .string()
+            .min(2, messages.minLength)
+            .max(64, messages.maxLength)
+            // NEAR account ID format: https://nomicon.io/DataStructures/Account.html
+            .regex(
+                /^(([a-z\d]+[\-_])*[a-z\d]+\.)*([a-z\d]+[\-_])*[a-z\d]+$/,
+                messages.charset,
+            )
+            .refine(
+                async (accountId) => {
+                    if (!accountId || accountId.length < 2) return true;
+                    const result = await checkAccountExists(accountId);
+                    return result?.exists === true;
+                },
+                {
+                    message: messages.doesNotExist,
+                    path: [""],
+                },
+            )
+    );
 }
 
 const _accountIdSchemaForType = buildAccountIdSchema({

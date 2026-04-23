@@ -19,7 +19,7 @@ export function Address({
     prefixLength = 8,
     suffixLength = 8,
 }: AddressProps) {
-    const t = useTranslations("depositModal");
+    const t = useTranslations("address");
     const prefix = address.slice(0, prefixLength);
     const suffix = address.slice(address.length - suffixLength);
     const displayedAddress =
@@ -32,7 +32,7 @@ export function Address({
             {copyable && (
                 <CopyButton
                     text={address}
-                    toastMessage={t("addressCopied")}
+                    toastMessage={t("copied")}
                     variant="ghost"
                     size="icon-sm"
                 />
