@@ -12,11 +12,13 @@ import {
     APP_ACTIVE_TREASURY,
     APP_TWITTER_URL,
     LANDING_PAGE,
+    APP_ACTIVE_CONFIDENTIAL_TREASURY,
 } from "@/constants/config";
 import Link from "next/link";
-import { BarChart3, CirclePlay, Eye, File, Headphones } from "lucide-react";
+import { BarChart3, CirclePlay, Eye, File, Globe, Headphones, Shield } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo } from "react";
+
 import Gleap from "gleap";
 import { LogoInlined } from "./icons/logo";
 
@@ -79,7 +81,6 @@ function SupportItem({
         </Link>
     );
 }
-
 interface SupportCenterModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -125,6 +126,23 @@ export function SupportCenterModal({
         ],
         [t],
     );
+
+    const demoSectionItems = useMemo<SupportItemProps[]>(
+        () => [
+            {
+                icon: <Globe className="size-5" />,
+                title: t("demoTitle"),
+                description: t("demoDescription"),
+                href: APP_ACTIVE_TREASURY,
+            },
+            {
+                icon: <Shield className="size-5 fill-foreground" />,
+                title: t("confidentialDemoTitle"),
+                description: t("confidentialDemoDescription"),
+                href: APP_ACTIVE_CONFIDENTIAL_TREASURY,
+            },
+        ], [t]);
+
     const supportItems = useMemo<SupportItemProps[]>(
         () => [
             {
@@ -167,7 +185,19 @@ export function SupportCenterModal({
 
                     <div className="flex flex-col gap-2">
                         <span className="text-sm font-semibold text-muted-foreground">
+                            {t("demo")}
+                        </span>
+                        <div className="flex flex-col gap-3">
+                            {demoSectionItems.map((item) => (
+                                <SupportItem key={item.title} {...item} />
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                        <span className="text-sm font-semibold text-muted-foreground">
                             {t("support")}
+
                         </span>
                         <div className="flex flex-col gap-3">
                             {supportItems.map((item) => (
