@@ -37,7 +37,7 @@ const ADDRESS_PATTERNS: Record<BlockchainType, RegExp | null> = {
     stellar: /^G[A-Z2-7]{55}$/,
     sui: /^0x[a-fA-F0-9]{64}$/,
     aptos: /^0x[a-fA-F0-9]{1,64}$/,
-    cardano: /^(addr1|stake1)[a-z0-9]{54,103}$/i,
+    cardano: /^(addr1|stake1)[a-z0-9]{53,103}$/i,
     unknown: null,
 };
 
