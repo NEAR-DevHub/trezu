@@ -6,6 +6,9 @@ export const NEAR_CHAIN_ICONS: ChainIcons = {
     light: "https://near-intents.org/static/icons/network/near_dark.svg",
 };
 
+export const NEAR_COM_ICON =
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y+mAAAAPFBMVEVHcEwA7JcA7JcA7JcA7JcA65YA7JcA75kAyIAA3IwANiIAAAAAvXkAGhAA9p0AdUsAwnwAlF8AaUMAtXS/E4peAAAAB3RSTlMAZsz/ZQfmMR3ddQAAAMdJREFUeAF9k1EShCAIQDUsNBSr7n/Xxc3WZtHeF/iGEQc0gp1AMTlTmBfosswiB06sMQ6GWFPvQ3hQk8nU1Iem0df4krgSRbxdohWbRE9CreUsscc/mQBLvJGWmWhlEIh2Jb0cHQx8UNiUjHJMO58JOGqJXFoOgNiTCFfLXQkYxA4rQywt9yRDOvnbspZbqC+h3SspNSCUlrOSUoslhESkZWYoYKjyObL0m1ikNrLnfGvtnXTWBNuaWBjiXlfzfakF1/sOVsQHNdERKfT2DooAAAAASUVORK5CYII=";
+
 export const default_near_token = (isConfidential: boolean) => {
     return {
         symbol: "NEAR",

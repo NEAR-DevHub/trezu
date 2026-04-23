@@ -18,6 +18,7 @@ import {
 import { getNetworkDisplayName } from "@/components/token-display";
 import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { useAggregatedTokens, useAssets } from "@/hooks/use-assets";
+import { NEAR_COM_ICON } from "@/constants/token";
 import { type BridgeNetwork, useBridgeTokens } from "@/hooks/use-bridge-tokens";
 import { useTreasury } from "@/hooks/use-treasury";
 import Big from "@/lib/big";
@@ -377,7 +378,7 @@ export function DepositModal({
         const nearDirectNetworkOption = (): SelectOption => ({
             id: NEAR_DIRECT_NETWORK_ID,
             name: "near.com",
-            icon: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y+mAAAAPFBMVEVHcEwA7JcA7JcA7JcA7JcA65YA7JcA75kAyIAA3IwANiIAAAAAvXkAGhAA9p0AdUsAwnwAlF8AaUMAtXS/E4peAAAAB3RSTlMAZsz/ZQfmMR3ddQAAAMdJREFUeAF9k1EShCAIQDUsNBSr7n/Xxc3WZtHeF/iGEQc0gp1AMTlTmBfosswiB06sMQ6GWFPvQ3hQk8nU1Iem0df4krgSRbxdohWbRE9CreUsscc/mQBLvJGWmWhlEIh2Jb0cHQx8UNiUjHJMO58JOGqJXFoOgNiTCFfLXQkYxA4rQywt9yRDOvnbspZbqC+h3SspNSCUlrOSUoslhESkZWYoYKjyObL0m1ikNrLnfGvtnXTWBNuaWBjiXlfzfakF1/sOVsQHNdERKfT2DooAAAAASUVORK5CYII=",
+            icon: NEAR_COM_ICON,
         });
 
         for (const asset of bridgeAssets) {

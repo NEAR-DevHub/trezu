@@ -121,6 +121,7 @@ export function EditPaymentStep({
                     feeErrorMessage={feeErrorMessage}
                     saveButtonText={tBulk("saveChanges")}
                     onSave={handleSave}
+                    hideRecipientNetwork
                     isSubmitting={isSaving}
                 />
             </Form>

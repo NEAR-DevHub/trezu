@@ -41,6 +41,10 @@ pub struct QuoteRequest {
     pub deadline: String,
     /// Time to wait for quote in milliseconds
     pub quote_waiting_time_ms: Option<u32>,
+    /// When true, suppresses app fees. Used by payment flow where origin and
+    /// destination are the same token on different networks (no swap).
+    #[serde(default)]
+    pub is_payment: Option<bool>,
 }
 
 /// Send a JSON body to a 1click-style API endpoint and return the parsed response.
@@ -115,11 +119,14 @@ fn build_quote_body(state: &AppState, request: &QuoteRequest) -> Value {
         "quoteWaitingTimeMs": request.quote_waiting_time_ms,
     });
 
-    // Inject app fees when origin != destination
+    // Inject app fees when origin != destination. Skip for payments (same
+    // token across networks, no swap).
+    let is_payment = request.is_payment.unwrap_or(false);
     if let (Some(fee_bps), Some(recipient)) = (
         state.env_vars.oneclick_app_fee_bps,
         state.env_vars.oneclick_app_fee_recipient.as_ref(),
     ) && request.origin_asset != request.destination_asset
+        && !is_payment
     {
         body["appFees"] = serde_json::json!([{ "recipient": recipient, "fee": fee_bps }]);
     }
@@ -223,6 +230,7 @@ mod tests {
             recipient_type: Some("DESTINATION_CHAIN".to_string()),
             deadline: "2026-01-18T16:30:00.000Z".to_string(), // Required ISO 8601 timestamp
             quote_waiting_time_ms: Some(3000),
+            is_payment: None,
         }
     }
 
@@ -331,6 +339,7 @@ mod tests {
             recipient_type: None,
             deadline: "2026-01-18T16:30:00.000Z".to_string(),
             quote_waiting_time_ms: None,
+            is_payment: None,
         };
 
         let result = get_quote(State(state), OptionalAuthUser(None), Json(request)).await;
@@ -381,6 +390,7 @@ mod tests {
             recipient_type: None,
             deadline: "2026-01-18T16:30:00.000Z".to_string(),
             quote_waiting_time_ms: None,
+            is_payment: None,
         };
 
         let result = get_quote(State(state), OptionalAuthUser(None), Json(request)).await;
@@ -436,6 +446,7 @@ mod tests {
             recipient_type: Some("DESTINATION_CHAIN".to_string()),
             deadline: deadline.format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string(),
             quote_waiting_time_ms: Some(5000),
+            is_payment: None,
         };
 
         let result = get_quote(State(state), OptionalAuthUser(None), Json(request)).await;

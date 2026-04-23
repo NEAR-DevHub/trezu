@@ -1446,11 +1446,21 @@
     "paymentFormSection": {
         "selectRecipient": "Select Recipient",
         "searchByNameOrAddress": "Search by name or address",
-        "privateNetworkAlert": "This will send funds to an account on the near.com private network — not to an external wallet.",
         "restrictedRecipientTitle": "Transaction not allowed",
         "restrictedRecipientMessage": "This address is currently restricted due to security checks. If you believe this address should be allowed, you can <link>request to whitelist it</link>.",
         "send": "Send",
-        "to": "To"
+        "to": "To",
+        "chooseNetworkFirst": "Choose network first"
+    },
+    "recipientNetworkSelect": {
+        "label": "Recipient Network",
+        "placeholder": "Select recipient network",
+        "selectPlaceholder": "Select network",
+        "title": "Select Network",
+        "available": "Available",
+        "comingSoon": "Coming Soon",
+        "nearComName": "near.com",
+        "nearComDescription": "Internal Network for near.com and trezu"
     },
     "addressBookTable": {
         "emptyTitle": "No recipients yet",

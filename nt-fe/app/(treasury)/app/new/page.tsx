@@ -151,7 +151,6 @@ function createClearErrorsOnChange<T>(
 
 function Step1({ handleNext, handleBack }: StepProps) {
     const tCreate = useTranslations("createTreasury");
-    const tCommon = useTranslations("common");
     const form = useFormContext<TreasuryFormValues>();
     const [accountNameEdited, setAccountNameEdited] = useState(false);
 

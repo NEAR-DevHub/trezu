@@ -364,6 +364,7 @@ function RecipientsView({
     function handleSend(entry: AddressBookEntry) {
         const params = new URLSearchParams({
             address: entry.address,
+            name: entry.name,
         });
 
         if (entry.networks.length > 0) {

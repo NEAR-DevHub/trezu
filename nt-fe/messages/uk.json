@@ -1446,11 +1446,21 @@
     "paymentFormSection": {
         "selectRecipient": "Обрати одержувача",
         "searchByNameOrAddress": "Пошук за назвою або адресою",
-        "privateNetworkAlert": "Кошти буде надіслано на акаунт у приватній мережі near.com, а не на зовнішній гаманець.",
         "restrictedRecipientTitle": "Транзакцію не дозволено",
         "restrictedRecipientMessage": "Ця адреса зараз обмежена через перевірки безпеки. Якщо ви вважаєте, що цю адресу слід дозволити, ви можете <link>подати запит на whitelist</link>.",
         "send": "Надіслати",
-        "to": "Кому"
+        "to": "Кому",
+        "chooseNetworkFirst": "Спочатку оберіть мережу"
+    },
+    "recipientNetworkSelect": {
+        "label": "Мережа одержувача",
+        "placeholder": "Оберіть мережу одержувача",
+        "selectPlaceholder": "Обрати мережу",
+        "title": "Обрати мережу",
+        "available": "Доступні",
+        "comingSoon": "Скоро",
+        "nearComName": "near.com",
+        "nearComDescription": "Внутрішня мережа для near.com і trezu"
     },
     "addressBookTable": {
         "emptyTitle": "Ще немає одержувачів",

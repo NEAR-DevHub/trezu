@@ -1246,6 +1246,7 @@ export interface IntentsQuoteRequest {
     recipientType?: string;
     deadline: string;
     quoteWaitingTimeMs?: number;
+    isPayment?: boolean;
 }
 
 export interface IntentsQuote {

@@ -16,6 +16,8 @@ import { isIntentsToken } from "@/lib/intents-fee";
 export type IntentsAmountMode = "recipient" | "total";
 const MAX_FEE_TO_RECIPIENT_RATIO = Big(1);
 
+export const NEAR_COM_NETWORK_ID = "near.com";
+
 function isAddressValidForToken(address: string, token: Token): boolean {
     if (!address) return false;
     const blockchain = getBlockchainType(token.network);
@@ -33,6 +35,8 @@ export function buildIntentsQuoteRequest(
     isConfidential: boolean,
     proposalPeriod?: string,
     amountMode: IntentsAmountMode = "recipient",
+    destinationNetwork?: string,
+    isPayment: boolean = false,
 ) {
     const deadlineMs = proposalPeriod
         ? nanosToMs(proposalPeriod)
@@ -42,22 +46,38 @@ export function buildIntentsQuoteRequest(
         ? ("CONFIDENTIAL_INTENTS" as const)
         : ("INTENTS" as const);
 
+    // Empty destinationNetwork = no explicit selection. Only near.com is
+    // user-selectable today, so default to it.
+    const isNearComNetwork =
+        !destinationNetwork || destinationNetwork === NEAR_COM_NETWORK_ID;
+    const recipientType = isNearComNetwork
+        ? isConfidential
+            ? ("CONFIDENTIAL_INTENTS" as const)
+            : ("INTENTS" as const)
+        : ("DESTINATION_CHAIN" as const);
+
+    // near.com → keep origin token address (stays on Intents).
+    // Other networks → destinationNetwork IS the bridge network id (e.g.
+    // `nep141:usdc-eth.omft.near`) and serves as the destinationAsset.
+    const destinationAsset = isNearComNetwork
+        ? token.address
+        : destinationNetwork!;
+
     return {
         daoId: treasuryId,
         swapType: amountMode === "recipient" ? "EXACT_OUTPUT" : "EXACT_INPUT",
         slippageTolerance: 0,
         originAsset: token.address,
         depositType,
-        destinationAsset: token.address,
+        destinationAsset,
         amount: parsedAmount,
         refundTo: treasuryId,
         refundType: depositType,
         recipient: address,
-        recipientType: isConfidential
-            ? "CONFIDENTIAL_INTENTS"
-            : ("DESTINATION_CHAIN" as const),
+        recipientType,
         deadline: new Date(Date.now() + deadlineMs).toISOString(),
         quoteWaitingTimeMs: 0,
+        isPayment,
     };
 }
 
@@ -121,6 +141,8 @@ interface UseIntentsQuoteParams {
     proposalPeriod?: string;
     feeErrorMessage?: string | null;
     amountMode?: IntentsAmountMode;
+    destinationNetwork?: string;
+    isPayment?: boolean;
 }
 
 export function useIntentsQuote({
@@ -132,6 +154,8 @@ export function useIntentsQuote({
     proposalPeriod,
     feeErrorMessage,
     amountMode = "recipient",
+    destinationNetwork,
+    isPayment = false,
 }: UseIntentsQuoteParams) {
     const t = useTranslations("intentsQuote");
     const isIntents = isIntentsToken(token);
@@ -161,6 +185,8 @@ export function useIntentsQuote({
             debouncedAmount,
             debouncedAddress,
             amountMode,
+            destinationNetwork,
+            isPayment,
         ],
         queryFn: async (): Promise<IntentsQuoteResponse | null> => {
             if (!treasuryId || !parsedAmount) return null;
@@ -173,6 +199,8 @@ export function useIntentsQuote({
                     isConfidential,
                     proposalPeriod,
                     amountMode,
+                    destinationNetwork,
+                    isPayment,
                 ),
                 false,
             );
@@ -321,6 +349,8 @@ export function useIntentsQuote({
                         isConfidential,
                         proposalPeriod,
                         amountMode,
+                        destinationNetwork,
+                        isPayment,
                     ),
                     false,
                 );
@@ -359,6 +389,7 @@ export function useIntentsQuote({
             isSyncPending,
             isConfidential,
             amountMode,
+            destinationNetwork,
             hasLowAmountQuote,
             lowAmountQuoteDetails,
             t,

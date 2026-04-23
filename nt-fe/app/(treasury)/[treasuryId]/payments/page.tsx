@@ -82,6 +82,8 @@ function buildPaymentFormSchema(messages: {
                 .string()
                 .min(2, messages.recipientMin)
                 .max(128, messages.recipientMax),
+            destinationNetwork: z.string(),
+            destinationNetworkName: z.string(),
             amount: z
                 .string()
                 .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
@@ -203,6 +205,8 @@ function Step1({
                 amountName="amount"
                 tokenName="token"
                 recipientName="address"
+                destinationNetworkName="destinationNetwork"
+                destinationNetworkNameFieldName="destinationNetworkName"
                 feeErrorMessage={feeErrorMessage || quoteErrorMessage}
                 showRestrictedRecipientAlert={!!hasRestrictedRecipientError}
                 saveButtonText={saveButtonText}
@@ -631,12 +635,19 @@ export default function PaymentsPage() {
             amount: "",
             memo: "",
             token: defaultToken,
+            destinationNetwork: "",
+            destinationNetworkName: "",
         },
     });
-    const [watchedToken, watchedAmount, watchedAddress] = useWatch({
+    const [
+        watchedToken,
+        watchedAmount,
+        watchedAddress,
+        watchedDestinationNetwork,
+    ] = useWatch({
         control: form.control,
-        name: ["token", "amount", "address"],
-    }) as [PaymentFormValues["token"], string, string];
+        name: ["token", "amount", "address", "destinationNetwork"],
+    }) as [PaymentFormValues["token"], string, string, string];
 
     const isCrossChainIntentsToken = isIntentsCrossChainToken(watchedToken);
 
@@ -660,6 +671,8 @@ export default function PaymentsPage() {
         isConfidential,
         proposalPeriod: policy?.proposal_period,
         amountMode: intentsAmountMode,
+        destinationNetwork: watchedDestinationNetwork,
+        isPayment: true,
     });
     const isQuoteBusy =
         isSelectedTokenIntents &&
@@ -795,6 +808,7 @@ export default function PaymentsPage() {
                             isConfidential,
                             policy?.proposal_period,
                             intentsAmountMode,
+                            data.destinationNetwork,
                         ),
                         false,
                     ));

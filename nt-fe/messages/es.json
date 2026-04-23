@@ -1446,11 +1446,21 @@
     "paymentFormSection": {
         "selectRecipient": "Seleccionar destinatario",
         "searchByNameOrAddress": "Buscar por nombre o dirección",
-        "privateNetworkAlert": "Esto enviará fondos a una cuenta en la red privada de near.com, no a una billetera externa.",
         "restrictedRecipientTitle": "Transacción no permitida",
         "restrictedRecipientMessage": "Esta dirección está restringida actualmente por controles de seguridad. Si crees que esta dirección debería permitirse, puedes <link>solicitar que se incluya en la lista blanca</link>.",
         "send": "Enviar",
-        "to": "Para"
+        "to": "Para",
+        "chooseNetworkFirst": "Elija primero la red"
+    },
+    "recipientNetworkSelect": {
+        "label": "Red del destinatario",
+        "placeholder": "Seleccione la red del destinatario",
+        "selectPlaceholder": "Seleccionar red",
+        "title": "Seleccionar red",
+        "available": "Disponible",
+        "comingSoon": "Próximamente",
+        "nearComName": "near.com",
+        "nearComDescription": "Red interna para near.com y trezu"
     },
     "addressBookTable": {
         "emptyTitle": "Aún no hay destinatarios",
