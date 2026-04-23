@@ -61,7 +61,10 @@ function NetworkRow({
             <img
                 src={option.icon}
                 alt={`${option.name} network`}
-                className="size-8"
+                className={cn(
+                    "size-8",
+                    option.name.toLowerCase() === "near" && "p-1",
+                )}
             />
             <div className="flex flex-col items-start text-left">
                 <span

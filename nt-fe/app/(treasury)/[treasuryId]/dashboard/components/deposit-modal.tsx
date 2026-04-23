@@ -782,6 +782,9 @@ export function DepositModal({
                                                         ) ||
                                                         selectedAsset.icon?.startsWith(
                                                             "data:",
+                                                        ) ||
+                                                        selectedAsset.icon?.startsWith(
+                                                            "/",
                                                         ) ? (
                                                             <img
                                                                 src={
@@ -848,6 +851,9 @@ export function DepositModal({
                                                                 ) ||
                                                                 selectedNetwork.icon?.startsWith(
                                                                     "data:",
+                                                                ) ||
+                                                                selectedNetwork.icon?.startsWith(
+                                                                    "/",
                                                                 ) ? (
                                                                     <div className="w-6 h-6 rounded-full object-cover">
                                                                         <img
