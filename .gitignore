@@ -11,4 +11,3 @@ nt-be/examples/playwright/fixtures/*.png
 nt-be/examples/fixtures/auth_response.json
 nt-be/examples/fixtures/mpc_auth_result.txt
 test-results/
-e2e-tests/cli/
