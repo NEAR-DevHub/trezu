@@ -224,7 +224,7 @@
         "searchByName": "Шукати за назвою"
     },
     "assetDetails": {
-        "coinPrice": "Ціна монети",
+        "coinPrice": "Ціна токена",
         "weight": "Вага",
         "source": "Джерело",
         "send": "Надіслати",
@@ -1810,7 +1810,7 @@
     "assetsTable": {
         "noAssetsFound": "Активи не знайдено.",
         "assetDetails": "Деталі активу",
-        "coinPrice": "Ціна монети",
+        "coinPrice": "Ціна токена",
         "weight": "Вага",
         "balance": "Баланс",
         "lockedBalance": "Заблокований баланс",
