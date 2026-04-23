@@ -2226,44 +2226,37 @@ export function AssetsTableSkeleton() {
         <Table>
             <TableHeader className="bg-transparent border-t-0">
                 <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-muted-foreground pl-0 sm:pl-4">
-                        <Skeleton className="h-4 w-12" />
+                    <TableHead className="text-muted-foreground py-4 pr-4 pl-0 sm:p-4 sm:pl-4">
+                        <Skeleton className="h-4 w-full" />
                     </TableHead>
-                    <TableHead className="text-right text-muted-foreground">
-                        <Skeleton className="h-4 w-16 ml-auto" />
+                    <TableHead className="text-right text-muted-foreground p-4">
+                        <Skeleton className="h-4 w-full" />
                     </TableHead>
-                    <TableHead className="text-right text-muted-foreground">
-                        <Skeleton className="h-4 w-16 ml-auto" />
+                    <TableHead className="text-right text-muted-foreground p-4">
+                        <Skeleton className="h-4 w-full" />
                     </TableHead>
-                    <TableHead className="text-right text-muted-foreground">
-                        <Skeleton className="h-4 w-16 ml-auto" />
+                    <TableHead className="text-right text-muted-foreground p-4">
+                        <Skeleton className="h-4 w-full" />
                     </TableHead>
-                    <TableHead />
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {[0, 1, 2].map((idx) => (
-                    <TableRow key={`skeleton-row-${idx}`}>
+                {Array.from({ length: 3 }).map((_, idx) => (
+                    <TableRow
+                        key={`skeleton-row-${idx}`}
+                        className="hover:bg-transparent"
+                    >
                         <TableCell className="py-4 pr-4 pl-0 sm:p-4 sm:pl-4">
-                            <div className="flex items-center gap-3">
-                                <Skeleton className="h-10 w-10 rounded-full" />
-                                <div>
-                                    <Skeleton className="h-4 w-16 mb-1" />
-                                    <Skeleton className="h-3 w-24" />
-                                </div>
-                            </div>
+                            <Skeleton className="h-8 w-full" />
                         </TableCell>
                         <TableCell className="p-4">
-                            <Skeleton className="h-4 w-20 ml-auto" />
+                            <Skeleton className="h-8 w-full" />
                         </TableCell>
                         <TableCell className="p-4">
-                            <Skeleton className="h-4 w-20 ml-auto" />
+                            <Skeleton className="h-8 w-full" />
                         </TableCell>
                         <TableCell className="p-4">
-                            <Skeleton className="h-4 w-20 ml-auto" />
-                        </TableCell>
-                        <TableCell className="p-4">
-                            <Skeleton className="h-4 w-4 ml-auto" />
+                            <Skeleton className="h-8 w-full" />
                         </TableCell>
                     </TableRow>
                 ))}

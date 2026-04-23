@@ -9,9 +9,12 @@ import Big from "@/lib/big";
 import { getBlockchainType } from "@/lib/blockchain-utils";
 import { isValidNearAddressFormat } from "@/lib/near-validation";
 import { getIntentsQuote, type IntentsQuoteResponse } from "@/lib/api";
-import { nanosToMs } from "@/lib/utils";
+import { formatBalance, nanosToMs } from "@/lib/utils";
 import type { Token } from "@/components/token-input";
 import { isIntentsToken } from "@/lib/intents-fee";
+
+export type IntentsAmountMode = "recipient" | "total";
+const MAX_FEE_TO_RECIPIENT_RATIO = Big(1);
 
 function isAddressValidForToken(address: string, token: Token): boolean {
     if (!address) return false;
@@ -29,6 +32,7 @@ export function buildIntentsQuoteRequest(
     parsedAmount: string,
     isConfidential: boolean,
     proposalPeriod?: string,
+    amountMode: IntentsAmountMode = "recipient",
 ) {
     const deadlineMs = proposalPeriod
         ? nanosToMs(proposalPeriod)
@@ -40,7 +44,7 @@ export function buildIntentsQuoteRequest(
 
     return {
         daoId: treasuryId,
-        swapType: "EXACT_INPUT",
+        swapType: amountMode === "recipient" ? "EXACT_OUTPUT" : "EXACT_INPUT",
         slippageTolerance: 0,
         originAsset: token.address,
         depositType,
@@ -61,6 +65,7 @@ function formatErrorMessage(
     message: string,
     tokenDecimals: number,
     tokenSymbol: string,
+    t: ReturnType<typeof useTranslations>,
 ) {
     const lower = message.toLowerCase();
 
@@ -69,25 +74,34 @@ function formatErrorMessage(
         lower.includes("at least ") ||
         lower.includes("increase the amount")
     ) {
-        return message.replace(/at least (\d+)/i, (_, rawAmount) => {
+        const match = message.match(/at least\s+([0-9]+(?:\.[0-9]+)?)/i);
+        if (match?.[1]) {
             try {
-                const formatted = Big(rawAmount)
-                    .plus(1)
-                    .div(Big(10).pow(tokenDecimals))
-                    .toFixed()
+                const threshold = Big(match[1]);
+                const parsedAmount = match[1].includes(".")
+                    ? threshold
+                    : threshold.div(Big(10).pow(tokenDecimals));
+                const formatted = parsedAmount
+                    .toFixed(tokenDecimals)
                     .replace(/\.?0+$/, "");
-                return `at least ${formatted} ${tokenSymbol}`;
+
+                return t("amountTooLowWithMin", {
+                    min: formatted,
+                    token: tokenSymbol,
+                });
             } catch {
-                return `at least ${rawAmount}`;
+                // Fall through to default low-amount message.
             }
-        });
+        }
+
+        return t("amountTooLow");
     }
 
     if (lower.includes("no route") || lower.includes("no quote")) {
-        return "No payment route found for this amount. Increase the amount or change token/network.";
+        return t("noRoute");
     }
 
-    return "Could not prepare a payment route right now. Please retry.";
+    return t("fetchFailed");
 }
 
 function isInvalidRecipientAddressError(message: string): boolean {
@@ -106,6 +120,7 @@ interface UseIntentsQuoteParams {
     isConfidential: boolean;
     proposalPeriod?: string;
     feeErrorMessage?: string | null;
+    amountMode?: IntentsAmountMode;
 }
 
 export function useIntentsQuote({
@@ -116,6 +131,7 @@ export function useIntentsQuote({
     isConfidential,
     proposalPeriod,
     feeErrorMessage,
+    amountMode = "recipient",
 }: UseIntentsQuoteParams) {
     const t = useTranslations("intentsQuote");
     const isIntents = isIntentsToken(token);
@@ -135,7 +151,7 @@ export function useIntentsQuote({
         data: quote,
         isLoading,
         isFetching,
-        isError: hasError,
+        isError: hasQueryError,
         error,
     } = useQuery({
         queryKey: [
@@ -144,6 +160,7 @@ export function useIntentsQuote({
             token.address,
             debouncedAmount,
             debouncedAddress,
+            amountMode,
         ],
         queryFn: async (): Promise<IntentsQuoteResponse | null> => {
             if (!treasuryId || !parsedAmount) return null;
@@ -155,6 +172,7 @@ export function useIntentsQuote({
                     parsedAmount,
                     isConfidential,
                     proposalPeriod,
+                    amountMode,
                 ),
                 false,
             );
@@ -170,14 +188,74 @@ export function useIntentsQuote({
         retry: false,
     });
 
+    // In recipient mode (EXACT_OUTPUT), some routes return a quote but with
+    // disproportionately high fees; treat those as "amount too low" in UI.
+    const lowAmountQuoteDetails = useMemo(() => {
+        if (amountMode !== "recipient" || !quote?.quote) return false;
+
+        const amountInRaw = quote.quote.minAmountIn ?? quote.quote.amountIn;
+        const amountOutRaw = quote.quote.minAmountOut ?? quote.quote.amountOut;
+
+        if (!amountInRaw || !amountOutRaw) return null;
+
+        try {
+            const amountIn = Big(amountInRaw);
+            const amountOut = Big(amountOutRaw);
+
+            if (amountOut.lte(0)) return null;
+
+            const fee = amountIn.minus(amountOut);
+            const feeToRecipientRatio = fee.div(amountOut);
+
+            // Treat routes where fee exceeds recipient amount as too low.
+            if (!feeToRecipientRatio.gt(MAX_FEE_TO_RECIPIENT_RATIO)) {
+                return null;
+            }
+
+            const feeAmount = formatBalance(
+                amountIn.minus(amountOut).toFixed(0),
+                token.decimals,
+                token.decimals,
+            );
+
+            return {
+                feeAmount,
+            };
+        } catch {
+            return null;
+        }
+    }, [amountMode, quote, token.decimals]);
+
+    const hasLowAmountQuote = !!lowAmountQuoteDetails;
+
+    const hasError = hasQueryError || hasLowAmountQuote;
+
     const errorMessage = useMemo(() => {
-        if (!hasError || !error) return null;
+        if (hasLowAmountQuote) {
+            if (lowAmountQuoteDetails) {
+                return t("amountTooLowWithMin", {
+                    min: lowAmountQuoteDetails.feeAmount,
+                    token: token.symbol,
+                });
+            }
+            return t("amountTooLow");
+        }
+
+        if (!hasQueryError || !error) return null;
         const msg =
             error instanceof Error
                 ? error.message
                 : "Failed to prepare 1Click transfer route";
-        return formatErrorMessage(msg, token.decimals, token.symbol);
-    }, [hasError, error, token.decimals, token.symbol]);
+        return formatErrorMessage(msg, token.decimals, token.symbol, t);
+    }, [
+        hasLowAmountQuote,
+        lowAmountQuoteDetails,
+        hasQueryError,
+        error,
+        token.decimals,
+        token.symbol,
+        t,
+    ]);
 
     const hasInvalidRecipientAddressError = useMemo(() => {
         if (!hasError || !error) return false;
@@ -213,6 +291,18 @@ export function useIntentsQuote({
             if (feeErrorMessage) return { ok: false };
 
             if (quote && !isLoading && !isFetching && !isSyncPending) {
+                if (hasLowAmountQuote) {
+                    if (lowAmountQuoteDetails) {
+                        return {
+                            ok: false,
+                            error: t("amountTooLowWithMin", {
+                                min: lowAmountQuoteDetails.feeAmount,
+                                token: formValues.token.symbol,
+                            }),
+                        };
+                    }
+                    return { ok: false, error: t("amountTooLow") };
+                }
                 return { ok: true, quote };
             }
 
@@ -230,6 +320,7 @@ export function useIntentsQuote({
                         immediateParsed,
                         isConfidential,
                         proposalPeriod,
+                        amountMode,
                     ),
                     false,
                 );
@@ -249,8 +340,9 @@ export function useIntentsQuote({
                               err.message,
                               formValues.token.decimals,
                               formValues.token.symbol,
+                              t,
                           )
-                        : "Could not prepare a payment route right now. Please retry.";
+                        : t("fetchFailed");
                 return { ok: false, error: msg };
             } finally {
                 setIsEnsuring(false);
@@ -266,6 +358,10 @@ export function useIntentsQuote({
             isFetching,
             isSyncPending,
             isConfidential,
+            amountMode,
+            hasLowAmountQuote,
+            lowAmountQuoteDetails,
+            t,
         ],
     );
 

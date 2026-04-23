@@ -322,6 +322,24 @@ export function formatGas(gas: string): string {
     return `${formatBalance(gas, 12, 2)}`;
 }
 
+/**
+ * Convert a decimal token amount to raw/base units using token decimals.
+ * Returns 0 for empty/invalid/non-positive inputs.
+ */
+export function toBaseUnits(
+    amount: string | number | Big | null | undefined,
+    decimals: number,
+): Big {
+    if (amount === null || amount === undefined) return Big(0);
+
+    const normalized = amount.toString().trim();
+    if (!normalized || isNaN(Number(normalized)) || Number(normalized) <= 0) {
+        return Big(0);
+    }
+
+    return Big(normalized).mul(Big(10).pow(decimals));
+}
+
 export function formatBalance(
     balance: string | Big,
     decimals: number,

@@ -30,7 +30,6 @@ import { useAddressBook } from "@/features/address-book";
 import { AmountSummary } from "@/components/amount-summary";
 import { CreateRequestButton } from "@/components/create-request-button";
 import { trackEvent } from "@/lib/analytics";
-import { NETWORK_FEE_TOOLTIP_TEXT } from "@/lib/intents-fee";
 import { Tooltip } from "@/components/tooltip";
 import { Address } from "@/components/address";
 
@@ -52,6 +51,7 @@ export function ReviewPaymentsStep({
 }: ReviewPaymentsStepProps) {
     const tPay = useTranslations("payments");
     const tBulk = useTranslations("bulkPayment");
+    const tIntents = useTranslations("intentsQuote");
     const parsingLabels = useBulkParsingLabels();
     const form = useFormContext<BulkPaymentFormValues>();
     const selectedToken = form.watch("selectedToken");
@@ -395,7 +395,7 @@ export function ReviewPaymentsStep({
                         <div className="flex items-center gap-1 text-muted-foreground">
                             <p>{tPay("networkFee")}</p>
                             <Tooltip
-                                content={NETWORK_FEE_TOOLTIP_TEXT}
+                                content={tIntents("networkFeeTooltip")}
                                 side="top"
                             >
                                 <Info

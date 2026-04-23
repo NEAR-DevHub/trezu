@@ -47,6 +47,8 @@ interface PaymentFormSectionProps<
     onSave: () => void;
     isSubmitting?: boolean;
     validatedRecipients?: React.MutableRefObject<Set<string>>;
+    onAmountInput?: () => void;
+    onMaxSet?: (maxAmount: string) => void;
 }
 
 export function PaymentFormSection<
@@ -64,6 +66,8 @@ export function PaymentFormSection<
     onSave,
     isSubmitting = false,
     validatedRecipients,
+    onAmountInput,
+    onMaxSet,
 }: PaymentFormSectionProps<TFieldValues, TTokenPath>) {
     const t = useTranslations("paymentFormSection");
     const { setValue, setError, clearErrors } = useFormContext<TFieldValues>();
@@ -236,6 +240,9 @@ export function PaymentFormSection<
                 amountName={amountName}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 tokenName={tokenName as any}
+                dynamicFontSize={true}
+                onAmountInput={onAmountInput}
+                onMaxSet={onMaxSet}
                 tokenSelect={{
                     locked: tokenLocked,
                     disabled: tokenLocked,

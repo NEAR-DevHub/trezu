@@ -7,7 +7,6 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { useToken } from "@/hooks/use-treasury-queries";
 import { useIntentsWithdrawalFee } from "@/hooks/use-intents-withdrawal-fee";
-import { NETWORK_FEE_TOOLTIP_TEXT } from "@/lib/intents-fee";
 
 interface TransferExpandedProps {
     data: PaymentRequestData;
@@ -15,6 +14,7 @@ interface TransferExpandedProps {
 
 export function TransferExpanded({ data }: TransferExpandedProps) {
     const t = useTranslations("proposals.expanded");
+    const tIntents = useTranslations("intentsQuote");
     // Get token metadata to determine blockchain network
     const { data: tokenData } = useToken(data.tokenId);
     const chainName = tokenData?.network || "near";
@@ -64,7 +64,7 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
     if (hasFeeData) {
         infoItems.push({
             label: t("networkFee"),
-            info: NETWORK_FEE_TOOLTIP_TEXT,
+            info: tIntents("networkFeeTooltip"),
             value: `${dynamicFeeData.networkFee} ${tokenData?.symbol || ""}`.trim(),
         });
     }
