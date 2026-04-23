@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslations } from "next-intl";
+import Gleap from "gleap";
 import {
     Control,
     FieldValues,
@@ -40,6 +41,7 @@ interface PaymentFormSectionProps<
 
     tokenLocked?: boolean;
     feeErrorMessage?: string | null;
+    showRestrictedRecipientAlert?: boolean;
 
     saveButtonText: string;
     onSave: () => void;
@@ -57,6 +59,7 @@ export function PaymentFormSection<
     recipientName,
     tokenLocked = false,
     feeErrorMessage = null,
+    showRestrictedRecipientAlert = false,
     saveButtonText,
     onSave,
     isSubmitting = false,
@@ -129,13 +132,19 @@ export function PaymentFormSection<
 
     // Sync fee coverage error into the amount field.
     useEffect(() => {
-        if (!feeErrorMessage) {
+        if (!feeErrorMessage || showRestrictedRecipientAlert) {
             clearErrors(amountName);
             return;
         }
 
         setError(amountName, { type: "manual", message: feeErrorMessage });
-    }, [amountName, clearErrors, feeErrorMessage, setError]);
+    }, [
+        amountName,
+        clearErrors,
+        feeErrorMessage,
+        setError,
+        showRestrictedRecipientAlert,
+    ]);
 
     // When a contact is selected, sync the address into the form field
     useEffect(() => {
@@ -204,8 +213,9 @@ export function PaymentFormSection<
     const isSaveDisabled =
         !recipient ||
         (!isRecipientValid && !hasCachedValidRecipient) ||
+        showRestrictedRecipientAlert ||
         isValidatingRecipient ||
-        !!feeErrorMessage ||
+        (!!feeErrorMessage && !showRestrictedRecipientAlert) ||
         isSubmitting;
 
     const handleClearContact = () => {
@@ -213,6 +223,10 @@ export function PaymentFormSection<
         setRecipientValue("" as PathValue<TFieldValues, Path<TFieldValues>>);
         setIsRecipientValid(false);
     };
+
+    const handleOpenProductSupport = useCallback(() => {
+        Gleap.open();
+    }, []);
 
     return (
         <>
@@ -227,7 +241,9 @@ export function PaymentFormSection<
                     disabled: tokenLocked,
                     showOnlyOwnedAssets: false,
                 }}
-                showInsufficientBalance={!feeErrorMessage}
+                showInsufficientBalance={
+                    !feeErrorMessage || showRestrictedRecipientAlert
+                }
             />
 
             <InputBlock
@@ -334,6 +350,32 @@ export function PaymentFormSection<
             </InputBlock>
 
             {isConfidential && <InfoAlert message={t("privateNetworkAlert")} />}
+
+            {showRestrictedRecipientAlert && (
+                <InfoAlert
+                    message={
+                        <div className="text-sm">
+                            <div className="font-semibold">
+                                {t("restrictedRecipientTitle")}
+                            </div>
+                            <div>
+                                {t.rich("restrictedRecipientMessage", {
+                                    link: (chunks) => (
+                                        <Button
+                                            type="button"
+                                            variant="link"
+                                            className="h-auto p-0 underline underline-offset-2 text-inherit hover:text-inherit font-normal!"
+                                            onClick={handleOpenProductSupport}
+                                        >
+                                            {chunks}
+                                        </Button>
+                                    ),
+                                })}
+                            </div>
+                        </div>
+                    }
+                />
+            )}
 
             <SelectModal
                 isOpen={isContactModalOpen}

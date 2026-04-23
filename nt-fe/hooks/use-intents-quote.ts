@@ -90,6 +90,14 @@ function formatErrorMessage(
     return "Could not prepare a payment route right now. Please retry.";
 }
 
+function isInvalidRecipientAddressError(message: string): boolean {
+    const lower = message.toLowerCase();
+    return (
+        lower.includes("recipient is not valid") ||
+        lower.includes("invalid recipient")
+    );
+}
+
 interface UseIntentsQuoteParams {
     treasuryId: string | undefined;
     token: Token;
@@ -170,6 +178,15 @@ export function useIntentsQuote({
                 : "Failed to prepare 1Click transfer route";
         return formatErrorMessage(msg, token.decimals, token.symbol);
     }, [hasError, error, token.decimals, token.symbol]);
+
+    const hasInvalidRecipientAddressError = useMemo(() => {
+        if (!hasError || !error) return false;
+        const rawMessage =
+            error instanceof Error
+                ? error.message
+                : "Failed to prepare 1Click transfer route";
+        return isInvalidRecipientAddressError(rawMessage);
+    }, [hasError, error]);
 
     const isSyncPending =
         amount !== debouncedAmount || address !== debouncedAddress;
@@ -260,6 +277,7 @@ export function useIntentsQuote({
         isSyncPending,
         hasError,
         errorMessage,
+        hasInvalidRecipientAddressError,
         isIntents,
         ensureBeforeReview,
     };

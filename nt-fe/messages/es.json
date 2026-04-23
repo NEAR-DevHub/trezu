@@ -885,6 +885,7 @@
         "commentPlaceholder": "Añade un comentario (opcional)...",
         "preparingRoute": "Preparando la ruta de transferencia 1Click...",
         "confirmSubmit": "Confirmar y enviar solicitud",
+        "useDifferentAddress": "Usa una dirección diferente",
         "failed1ClickQuote": "No se pudo crear la cotización de transferencia 1Click",
         "paymentSubmitted": "Solicitud de envío de pago enviada"
     },
@@ -1446,6 +1447,8 @@
         "selectRecipient": "Seleccionar destinatario",
         "searchByNameOrAddress": "Buscar por nombre o dirección",
         "privateNetworkAlert": "Esto enviará fondos a una cuenta en la red privada de near.com, no a una billetera externa.",
+        "restrictedRecipientTitle": "Transacción no permitida",
+        "restrictedRecipientMessage": "Esta dirección está restringida actualmente por controles de seguridad. Si crees que esta dirección debería permitirse, puedes <link>solicitar que se incluya en la lista blanca</link>.",
         "send": "Enviar",
         "to": "Para"
     },
