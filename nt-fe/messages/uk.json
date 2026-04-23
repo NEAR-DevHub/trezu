@@ -224,7 +224,7 @@
         "searchByName": "Шукати за назвою"
     },
     "assetDetails": {
-        "coinPrice": "Ціна монети",
+        "coinPrice": "Ціна токена",
         "weight": "Вага",
         "source": "Джерело",
         "send": "Надіслати",
@@ -379,6 +379,11 @@
                 "Settings": "Налаштування",
                 "Confidential": "Конфіденційний"
             },
+            "voteStatus": {
+                "Approved": "Схвалено",
+                "Rejected": "Відхилено",
+                "No Voted": "Не голосував"
+            },
             "requestsType": "Тип запиту",
             "createdDate": "Дата створення",
             "recipient": "Отримувач",
@@ -402,6 +407,7 @@
             "noMembersFound": "Учасників не знайдено. Натисніть Enter, щоб додати \"{query}\"",
             "noMembersAvailable": "Немає доступних учасників",
             "reset": "Скинути",
+            "clear": "Очистити",
             "addFilter": "Додати фільтр"
         },
         "tabs": {
@@ -546,6 +552,7 @@
             "purpose": "Призначення",
             "logo": "Логотип",
             "logoAlt": "Логотип",
+            "primaryColor": "Основний колір",
             "noChangesCurrent": "Змін у конфігурації порівняно з поточним станом не виявлено.",
             "noChangesHistorical": "Змін у конфігурації порівняно з історичним станом не виявлено.",
             "method": "Метод",
@@ -1443,6 +1450,26 @@
         "last2Years": "Останні 2 роки",
         "invalidEmail": "Введіть коректну адресу електронної пошти"
     },
+    "proposalKinds": {
+        "Batch Payment Request": "Запит на масовий платіж",
+        "Payment Request": "Запит на платіж",
+        "Confidential Request": "Конфіденційний запит",
+        "Exchange": "Обмін",
+        "Function Call": "Виклик функції",
+        "Change Policy": "Зміна політики",
+        "Update General Settings": "Оновлення загальних налаштувань",
+        "Earn NEAR": "Стейкінг NEAR",
+        "Unstake NEAR": "Вивід NEAR зі стейкінгу",
+        "Vesting": "Вестинг",
+        "Withdraw Earnings": "Вивід заробітку",
+        "Members": "Учасники",
+        "Upgrade": "Оновлення",
+        "Set Staking Contract": "Налаштувати контракт стейкінгу",
+        "Bounty": "Винагорода",
+        "Vote": "Голосування",
+        "Factory Info Update": "Оновлення інформації фабрики",
+        "Unsupported": "Непідтримуваний"
+    },
     "paymentFormSection": {
         "selectRecipient": "Обрати одержувача",
         "searchByNameOrAddress": "Пошук за назвою або адресою",
@@ -1690,6 +1717,10 @@
         "expired": "Прострочено",
         "removed": "Видалено"
     },
+    "relativeTime": {
+        "justNow": "Щойно",
+        "moments": "мить"
+    },
     "amount": {
         "network": "Мережа: {network}"
     },
@@ -1725,7 +1756,7 @@
         "votesSubmitted": "Ваші голоси надіслано"
     },
     "tokenInput": {
-        "max": "MAX",
+        "max": "МАКС",
         "insufficientTokens": "Недостатньо токенів. Можете надіслати запит і поповнити перед затвердженням.",
         "balance": "Баланс: {amount} {symbol}"
     },
@@ -1781,7 +1812,7 @@
     "assetsTable": {
         "noAssetsFound": "Активи не знайдено.",
         "assetDetails": "Деталі активу",
-        "coinPrice": "Ціна монети",
+        "coinPrice": "Ціна токена",
         "weight": "Вага",
         "balance": "Баланс",
         "lockedBalance": "Заблокований баланс",

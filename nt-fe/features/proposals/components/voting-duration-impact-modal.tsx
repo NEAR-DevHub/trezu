@@ -21,6 +21,7 @@ import {
     EXCHANGE_EXPIRY_MS,
     getProposalUIKind,
 } from "@/features/proposals/utils/proposal-utils";
+import { useProposalKindLabel } from "@/features/proposals/hooks/use-proposal-kind-label";
 import { FormattedDate } from "@/components/formatted-date";
 import { nanosToMs } from "@/lib/utils";
 
@@ -57,6 +58,7 @@ export function VotingDurationImpactModal({
     isLoadingProposals = false,
 }: VotingDurationImpactModalProps) {
     const t = useTranslations("proposals.expanded");
+    const getProposalKindLabel = useProposalKindLabel();
     const { treasuryId } = useTreasury();
     const [activeExpanded, setActiveExpanded] = useState(false);
     const [expiringExpanded, setExpiringExpanded] = useState(false);
@@ -282,8 +284,10 @@ export function VotingDurationImpactModal({
                                                                     />
                                                                     <div className="flex flex-col min-w-0">
                                                                         <span className="text-sm font-medium truncate">
-                                                                            {getProposalUIKind(
-                                                                                proposal,
+                                                                            {getProposalKindLabel(
+                                                                                getProposalUIKind(
+                                                                                    proposal,
+                                                                                ),
                                                                             )}
                                                                         </span>
                                                                         <FormattedDate
@@ -396,8 +400,10 @@ export function VotingDurationImpactModal({
                                                             />
                                                             <div className="flex flex-col min-w-0">
                                                                 <span className="text-sm font-medium truncate">
-                                                                    {getProposalUIKind(
-                                                                        proposal,
+                                                                    {getProposalKindLabel(
+                                                                        getProposalUIKind(
+                                                                            proposal,
+                                                                        ),
                                                                     )}
                                                                 </span>
                                                                 <FormattedDate

@@ -34,6 +34,7 @@ import { FormattedDate } from "@/components/formatted-date";
 import { TooltipUser } from "@/components/user";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getProposalStatus, getProposalUIKind } from "../utils/proposal-utils";
+import { useProposalKindLabel } from "../hooks/use-proposal-kind-label";
 import { extractConfidentialRequestData } from "../utils/proposal-extractors";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Pagination } from "@/components/pagination";
@@ -91,6 +92,7 @@ export function ProposalsTable({
 }: ProposalsTableProps) {
     const tT = useTranslations("requests.table");
     const tCommon = useTranslations("common");
+    const getProposalKindLabel = useProposalKindLabel();
     const [rowSelection, setRowSelection] = useState({});
     const [expanded, setExpanded] = useState<ExpandedState>({});
     const { accountId } = useNear();
@@ -188,13 +190,14 @@ export function ProposalsTable({
                 ),
                 cell: (info) => {
                     const proposal = info.row.original;
-                    let title: string = getProposalUIKind(proposal);
-                    if (title === "Confidential Request") {
-                        title = extractConfidentialRequestData(
-                            proposal,
-                            treasuryId,
-                        ).title;
-                    }
+                    const kind = getProposalUIKind(proposal);
+                    const title: string =
+                        kind === "Confidential Request"
+                            ? extractConfidentialRequestData(
+                                  proposal,
+                                  treasuryId,
+                              ).title
+                            : getProposalKindLabel(kind);
                     return (
                         <div className="flex items-center gap-5 max-w-[400px] truncate">
                             <span className="text-sm text-muted-foreground w-6 shrink-0 font-semibold">

@@ -379,6 +379,11 @@
                 "Settings": "Settings",
                 "Confidential": "Confidential"
             },
+            "voteStatus": {
+                "Approved": "Approved",
+                "Rejected": "Rejected",
+                "No Voted": "No Voted"
+            },
             "requestsType": "Requests Type",
             "createdDate": "Created Date",
             "recipient": "Recipient",
@@ -402,6 +407,7 @@
             "noMembersFound": "No members found. Press Enter to add \"{query}\"",
             "noMembersAvailable": "No members available",
             "reset": "Reset",
+            "clear": "Clear",
             "addFilter": "Add Filter"
         },
         "tabs": {
@@ -546,6 +552,7 @@
             "purpose": "Purpose",
             "logo": "Logo",
             "logoAlt": "Logo",
+            "primaryColor": "Primary Color",
             "noChangesCurrent": "No changes detected in configuration compared to the current state.",
             "noChangesHistorical": "No changes detected in configuration compared to the historical state.",
             "method": "Method",
@@ -1443,6 +1450,26 @@
         "last2Years": "Last 2 years",
         "invalidEmail": "Please enter a valid email address"
     },
+    "proposalKinds": {
+        "Batch Payment Request": "Batch Payment Request",
+        "Payment Request": "Payment Request",
+        "Confidential Request": "Confidential Request",
+        "Exchange": "Exchange",
+        "Function Call": "Function Call",
+        "Change Policy": "Change Policy",
+        "Update General Settings": "Update General Settings",
+        "Earn NEAR": "Earn NEAR",
+        "Unstake NEAR": "Unstake NEAR",
+        "Vesting": "Vesting",
+        "Withdraw Earnings": "Withdraw Earnings",
+        "Members": "Members",
+        "Upgrade": "Upgrade",
+        "Set Staking Contract": "Set Staking Contract",
+        "Bounty": "Bounty",
+        "Vote": "Vote",
+        "Factory Info Update": "Factory Info Update",
+        "Unsupported": "Unsupported"
+    },
     "paymentFormSection": {
         "selectRecipient": "Select Recipient",
         "searchByNameOrAddress": "Search by name or address",
@@ -1689,6 +1716,10 @@
         "created": "Created",
         "expired": "Expired",
         "removed": "Removed"
+    },
+    "relativeTime": {
+        "justNow": "Just now",
+        "moments": "moments"
     },
     "amount": {
         "network": "Network: {network}"

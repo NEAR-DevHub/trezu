@@ -108,9 +108,38 @@ export function formatTokenAmount(
  * @param isFuture - Whether the date is in the future (for pending expiry)
  * @returns Formatted string
  */
+export interface RelativeTimeLabels {
+    /** Fallback "moments" when diff < 1 minute; Intl handles the rest. */
+    moments: string;
+    /** Fallback "Just now" for past < 1 minute (formatRelativeTime only). */
+    justNow: string;
+    /** Locale BCP47 tag for Intl.RelativeTimeFormat + date-fns format fallback. */
+    locale: string;
+}
+
+function formatAbsoluteDate(date: Date, locale: string): string {
+    return date.toLocaleDateString(locale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+    });
+}
+
+function intlRelative(
+    value: number,
+    unit: Intl.RelativeTimeFormatUnit,
+    locale: string,
+): string {
+    return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(
+        value,
+        unit,
+    );
+}
+
 export function formatProposalStatusDate(
     date: Date,
     isFuture: boolean,
+    labels: RelativeTimeLabels,
 ): string {
     const now = new Date();
     const SIX_MONTHS_MS = 6 * 30 * 24 * 60 * 60 * 1000;
@@ -121,7 +150,7 @@ export function formatProposalStatusDate(
 
     // If beyond 6 months, show absolute date
     if (diffMs > SIX_MONTHS_MS) {
-        return format(date, "MMM d, yyyy");
+        return formatAbsoluteDate(date, labels.locale);
     }
 
     const diffInSeconds = Math.floor(diffMs / 1000);
@@ -130,22 +159,21 @@ export function formatProposalStatusDate(
     const diffInDays = Math.floor(diffInHours / 24);
     const diffInMonths = Math.floor(diffInDays / 30);
 
-    let relative: string;
+    const sign = isFuture ? 1 : -1;
 
     if (diffInMonths >= 1) {
-        relative = diffInMonths === 1 ? "1 month" : `${diffInMonths} months`;
-    } else if (diffInDays >= 1) {
-        relative = diffInDays === 1 ? "1 day" : `${diffInDays} days`;
-    } else if (diffInHours >= 1) {
-        relative = diffInHours === 1 ? "1 hour" : `${diffInHours} hours`;
-    } else if (diffInMinutes >= 1) {
-        relative =
-            diffInMinutes === 1 ? "1 minute" : `${diffInMinutes} minutes`;
-    } else {
-        relative = "moments";
+        return intlRelative(sign * diffInMonths, "month", labels.locale);
     }
-
-    return isFuture ? `in ${relative}` : `${relative} ago`;
+    if (diffInDays >= 1) {
+        return intlRelative(sign * diffInDays, "day", labels.locale);
+    }
+    if (diffInHours >= 1) {
+        return intlRelative(sign * diffInHours, "hour", labels.locale);
+    }
+    if (diffInMinutes >= 1) {
+        return intlRelative(sign * diffInMinutes, "minute", labels.locale);
+    }
+    return labels.moments;
 }
 
 function normalizeDate(
@@ -169,6 +197,7 @@ function normalizeDate(
  */
 export function formatRelativeTime(
     date: Date | string | number | null | undefined,
+    labels: RelativeTimeLabels,
 ): string {
     const dateObj = normalizeDate(date);
     if (!dateObj) {
@@ -182,42 +211,34 @@ export function formatRelativeTime(
     const diffInMinutes = Math.floor(diffInSeconds / 60);
     const diffInHours = Math.floor(diffInMinutes / 60);
     const diffInDays = Math.floor(diffInHours / 24);
-    const diffInWeeks = Math.floor(diffInDays / 7);
 
     // Just now (less than 1 minute)
     if (diffInSeconds < 60) {
-        return "Just now";
+        return labels.justNow;
     }
 
     // Minutes ago (1-59 minutes)
     if (diffInMinutes < 60) {
-        return diffInMinutes === 1
-            ? "1 minute ago"
-            : `${diffInMinutes} minutes ago`;
+        return intlRelative(-diffInMinutes, "minute", labels.locale);
     }
 
     // Hours ago (1-23 hours)
     if (diffInHours < 24) {
-        return diffInHours === 1 ? "1 hour ago" : `${diffInHours} hours ago`;
+        return intlRelative(-diffInHours, "hour", labels.locale);
     }
 
-    // Yesterday
-    if (diffInDays === 1) {
-        return "Yesterday";
-    }
-
-    // Days ago (2-6 days)
+    // Days ago (1-6 days, "yesterday" handled by Intl numeric:"auto")
     if (diffInDays < 7) {
-        return `${diffInDays} days ago`;
+        return intlRelative(-diffInDays, "day", labels.locale);
     }
 
     // Week ago (exactly 7 days)
-    if (diffInWeeks === 1) {
-        return "1 week ago";
+    if (diffInDays < 14) {
+        return intlRelative(-1, "week", labels.locale);
     }
 
-    // After 1 week: static date format (e.g., "Feb 18, 2026")
-    return format(dateObj, "MMM d, yyyy");
+    // After 1 week: static date format
+    return formatAbsoluteDate(dateObj, labels.locale);
 }
 
 export function formatTimestamp(date: Date) {
