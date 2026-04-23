@@ -113,6 +113,10 @@ interface Step1Props extends StepProps {
     validatedRecipients?: React.MutableRefObject<Set<string>>;
     onAmountInput?: () => void;
     onMaxSet?: (maxAmount: string) => void;
+    pendingRecipient?: {
+        address: string;
+        name?: string;
+    } | null;
 }
 
 function Step1({
@@ -125,6 +129,7 @@ function Step1({
     validatedRecipients,
     onAmountInput,
     onMaxSet,
+    pendingRecipient,
 }: Step1Props) {
     const tPay = useTranslations("payments");
     const form = useFormContext<PaymentFormValues>();
@@ -215,6 +220,7 @@ function Step1({
                 validatedRecipients={validatedRecipients}
                 onAmountInput={onAmountInput}
                 onMaxSet={onMaxSet}
+                pendingRecipient={pendingRecipient}
             />
         </PageCard>
     );
@@ -593,7 +599,7 @@ export default function PaymentsPage() {
         [preferredNetworks],
     );
     const { data: bridgeAssets = [] } = useBridgeTokens(
-        !tokenParam && preferredNetworks.length > 0,
+        preferredNetworks.length > 0,
     );
 
     // Parse token from query params
@@ -610,9 +616,23 @@ export default function PaymentsPage() {
         return pickCompatibleFallbackToken(preferredNetworks, bridgeAssets);
     }, [bridgeAssets, preferredNetworks, tokenParam]);
 
+    const preferredBlockchainTypes = useMemo(() => {
+        const set = new Set<string>();
+        for (const network of preferredNetworks) {
+            const type = getBlockchainType(network);
+            if (type !== "unknown") set.add(type);
+        }
+        return set;
+    }, [preferredNetworks]);
+
     const defaultAddress = useMemo(() => {
         const addressParam = searchParams.get("address");
         return addressParam ? decodeURIComponent(addressParam) : "";
+    }, [searchParams]);
+
+    const defaultRecipientName = useMemo(() => {
+        const nameParam = searchParams.get("name");
+        return nameParam ? decodeURIComponent(nameParam) : "";
     }, [searchParams]);
 
     // Onboarding tours
@@ -631,7 +651,7 @@ export default function PaymentsPage() {
     const form = useForm<PaymentFormValues>({
         resolver: zodResolver(paymentFormSchema),
         defaultValues: {
-            address: defaultAddress,
+            address: "",
             amount: "",
             memo: "",
             token: defaultToken,
@@ -648,6 +668,34 @@ export default function PaymentsPage() {
         control: form.control,
         name: ["token", "amount", "address", "destinationNetwork"],
     }) as [PaymentFormValues["token"], string, string, string];
+
+    // Resolve destination network from address-book entry networks when
+    // exactly one bridge network matches the preferred blockchain types.
+    const compatibleDestination = useMemo(() => {
+        if (
+            preferredBlockchainTypes.size === 0 ||
+            !watchedToken ||
+            bridgeAssets.length === 0
+        ) {
+            return null;
+        }
+
+        const bridgeAsset = bridgeAssets.find(
+            (asset) =>
+                asset.id.toLowerCase() === watchedToken.symbol.toLowerCase(),
+        );
+        if (!bridgeAsset) return null;
+
+        const matches = bridgeAsset.networks.filter((network) =>
+            preferredBlockchainTypes.has(getBlockchainType(network.name)),
+        );
+        if (matches.length !== 1) return null;
+
+        return {
+            id: matches[0].id,
+            networkName: matches[0].name,
+        };
+    }, [bridgeAssets, preferredBlockchainTypes, watchedToken]);
 
     const isCrossChainIntentsToken = isIntentsCrossChainToken(watchedToken);
 
@@ -711,11 +759,34 @@ export default function PaymentsPage() {
         form.setValue("token", defaultToken);
     }, [defaultToken, form]);
 
+    // Auto-pick destination network when the address-book entry maps
+    // unambiguously to a single bridge network compatible with the token.
     useEffect(() => {
-        if (defaultAddress) {
-            form.setValue("address", defaultAddress);
-        }
-    }, [defaultAddress, form]);
+        if (!compatibleDestination) return;
+        if (watchedDestinationNetwork) return;
+        form.setValue("destinationNetwork", compatibleDestination.id, {
+            shouldDirty: true,
+        });
+        form.setValue(
+            "destinationNetworkName",
+            compatibleDestination.networkName,
+            { shouldDirty: true },
+        );
+    }, [compatibleDestination, form, watchedDestinationNetwork]);
+
+    // Commit the prefilled recipient address only once a destination network
+    // is selected — otherwise the address sits in a field that the UI has
+    // disabled behind "choose network first", producing a broken state.
+    useEffect(() => {
+        if (!defaultAddress) return;
+        if (!watchedDestinationNetwork) return;
+        if (form.getValues("address") === defaultAddress) return;
+        form.setValue("address", defaultAddress, {
+            shouldDirty: true,
+            shouldTouch: true,
+            shouldValidate: true,
+        });
+    }, [defaultAddress, watchedDestinationNetwork, form]);
 
     useEffect(() => {
         // Default mode: entered amount is what recipient gets.
@@ -883,6 +954,15 @@ export default function PaymentsPage() {
         }
     };
 
+    const pendingRecipient = useMemo(() => {
+        if (!defaultAddress) return null;
+        if (watchedAddress === defaultAddress) return null;
+        return {
+            address: defaultAddress,
+            name: defaultRecipientName || undefined,
+        };
+    }, [defaultAddress, defaultRecipientName, watchedAddress]);
+
     const steps = useMemo(
         () => [
             {
@@ -911,6 +991,7 @@ export default function PaymentsPage() {
                             setIntentsAmountMode("total");
                         }
                     },
+                    pendingRecipient,
                 },
             },
             {
@@ -936,6 +1017,7 @@ export default function PaymentsPage() {
             isQuoteBusy,
             ensureQuoteBeforeReview,
             isCrossChainIntentsToken,
+            pendingRecipient,
         ],
     );
 
