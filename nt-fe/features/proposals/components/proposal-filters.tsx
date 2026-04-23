@@ -409,7 +409,16 @@ function FilterPill({
             if (selected.length === 0) return tF("all");
             return (
                 <span className="font-medium text-sm">
-                    {selected.join(", ")}
+                    {selected
+                        .map((v) =>
+                            tF(
+                                `voteStatus.${v}` as
+                                    | "voteStatus.Approved"
+                                    | "voteStatus.Rejected"
+                                    | "voteStatus.No Voted",
+                            ),
+                        )
+                        .join(", ")}
                 </span>
             );
         }
@@ -439,7 +448,21 @@ function FilterPill({
             if (selected.length === 0) return tF("all");
             return (
                 <span className="font-medium text-sm">
-                    {selected.join(", ")}
+                    {selected
+                        .map((v) =>
+                            tF(
+                                `proposalTypes.${v}` as
+                                    | "proposalTypes.Payments"
+                                    | "proposalTypes.Exchange"
+                                    | "proposalTypes.Earn"
+                                    | "proposalTypes.Vesting"
+                                    | "proposalTypes.Function Call"
+                                    | "proposalTypes.Change Policy"
+                                    | "proposalTypes.Settings"
+                                    | "proposalTypes.Confidential",
+                            ),
+                        )
+                        .join(", ")}
                 </span>
             );
         }

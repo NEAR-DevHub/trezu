@@ -1450,6 +1450,26 @@
         "last2Years": "Últimos 2 años",
         "invalidEmail": "Introduce una dirección de correo electrónico válida"
     },
+    "proposalKinds": {
+        "Batch Payment Request": "Solicitud de pago por lotes",
+        "Payment Request": "Solicitud de pago",
+        "Confidential Request": "Solicitud confidencial",
+        "Exchange": "Intercambio",
+        "Function Call": "Llamada a función",
+        "Change Policy": "Cambiar política",
+        "Update General Settings": "Actualizar ajustes generales",
+        "Earn NEAR": "Ganar NEAR",
+        "Unstake NEAR": "Retirar stake NEAR",
+        "Vesting": "Vesting",
+        "Withdraw Earnings": "Retirar ganancias",
+        "Members": "Miembros",
+        "Upgrade": "Actualizar",
+        "Set Staking Contract": "Configurar contrato de staking",
+        "Bounty": "Recompensa",
+        "Vote": "Voto",
+        "Factory Info Update": "Actualización de información de fábrica",
+        "Unsupported": "No compatible"
+    },
     "paymentFormSection": {
         "selectRecipient": "Seleccionar destinatario",
         "searchByNameOrAddress": "Buscar por nombre o dirección",

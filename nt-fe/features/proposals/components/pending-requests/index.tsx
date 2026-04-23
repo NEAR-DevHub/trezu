@@ -16,6 +16,7 @@ import Link from "next/link";
 import { ProposalTypeIcon } from "../proposal-type-icon";
 import { TransactionCell } from "../transaction-cell";
 import { getProposalUIKind } from "../../utils/proposal-utils";
+import { useProposalKindLabel } from "../../hooks/use-proposal-kind-label";
 import { useProposalInsufficientBalance } from "../../hooks/use-proposal-insufficient-balance";
 import { VoteModal } from "../vote-modal";
 import { useMemo, useState } from "react";
@@ -75,6 +76,7 @@ export function PendingRequestItem({
 }: PendingRequestItemProps) {
     const tActions = useTranslations("requests.actions");
     const noVoteMessage = useNoVoteMessage();
+    const getProposalKindLabel = useProposalKindLabel();
     const type = getProposalUIKind(proposal);
     const { data: insufficientBalanceInfo } = useProposalInsufficientBalance(
         proposal,
@@ -83,12 +85,11 @@ export function PendingRequestItem({
     const { accountId } = useNear();
     const isUserVoter = !!proposal.votes[accountId ?? ""];
     let title = useMemo(() => {
-        let title = type as string;
         if (type === "Confidential Request") {
-            title = extractConfidentialRequestData(proposal, treasuryId).title;
+            return extractConfidentialRequestData(proposal, treasuryId).title;
         }
-        return title;
-    }, [type, proposal]);
+        return getProposalKindLabel(type);
+    }, [type, proposal, treasuryId, getProposalKindLabel]);
 
     return (
         <Link href={`/${treasuryId}/requests/${proposal.id}`}>

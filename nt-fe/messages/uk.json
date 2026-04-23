@@ -1450,6 +1450,26 @@
         "last2Years": "Останні 2 роки",
         "invalidEmail": "Введіть коректну адресу електронної пошти"
     },
+    "proposalKinds": {
+        "Batch Payment Request": "Запит на масовий платіж",
+        "Payment Request": "Запит на платіж",
+        "Confidential Request": "Конфіденційний запит",
+        "Exchange": "Обмін",
+        "Function Call": "Виклик функції",
+        "Change Policy": "Зміна політики",
+        "Update General Settings": "Оновлення загальних налаштувань",
+        "Earn NEAR": "Стейкінг NEAR",
+        "Unstake NEAR": "Вивід NEAR зі стейкінгу",
+        "Vesting": "Вестинг",
+        "Withdraw Earnings": "Вивід заробітку",
+        "Members": "Учасники",
+        "Upgrade": "Оновлення",
+        "Set Staking Contract": "Налаштувати контракт стейкінгу",
+        "Bounty": "Винагорода",
+        "Vote": "Голосування",
+        "Factory Info Update": "Оновлення інформації фабрики",
+        "Unsupported": "Непідтримуваний"
+    },
     "paymentFormSection": {
         "selectRecipient": "Обрати одержувача",
         "searchByNameOrAddress": "Пошук за назвою або адресою",

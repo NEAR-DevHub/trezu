@@ -1450,6 +1450,26 @@
         "last2Years": "Last 2 years",
         "invalidEmail": "Please enter a valid email address"
     },
+    "proposalKinds": {
+        "Batch Payment Request": "Batch Payment Request",
+        "Payment Request": "Payment Request",
+        "Confidential Request": "Confidential Request",
+        "Exchange": "Exchange",
+        "Function Call": "Function Call",
+        "Change Policy": "Change Policy",
+        "Update General Settings": "Update General Settings",
+        "Earn NEAR": "Earn NEAR",
+        "Unstake NEAR": "Unstake NEAR",
+        "Vesting": "Vesting",
+        "Withdraw Earnings": "Withdraw Earnings",
+        "Members": "Members",
+        "Upgrade": "Upgrade",
+        "Set Staking Contract": "Set Staking Contract",
+        "Bounty": "Bounty",
+        "Vote": "Vote",
+        "Factory Info Update": "Factory Info Update",
+        "Unsupported": "Unsupported"
+    },
     "paymentFormSection": {
         "selectRecipient": "Select Recipient",
         "searchByNameOrAddress": "Search by name or address",
