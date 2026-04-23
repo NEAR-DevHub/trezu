@@ -127,6 +127,17 @@ pub async fn get_proposals(
         page_size: query.page_size,
     };
 
+    // Enrich confidential proposals BEFORE filtering so filters can see subtype.
+    // Only enrich if the caller is an authenticated DAO member.
+    let should_enrich = auth_user
+        .verify_member_if_confidential(&state.db_pool, dao_id.as_ref())
+        .await
+        .unwrap_or(false);
+    let mut proposals = proposals;
+    if should_enrich {
+        enrich_confidential_proposals(&mut proposals, &state.db_pool, dao_id.as_ref()).await;
+    }
+
     // Apply filters
     let filtered_proposals = filters
         .filter_proposals_async(
@@ -135,6 +146,7 @@ pub async fn get_proposals(
             &state.cache,
             &state.network,
             &state.bulk_payment_contract_id,
+            dao_id.as_ref(),
         )
         .await
         .map_err(|e| {
@@ -161,17 +173,6 @@ pub async fn get_proposals(
         }
         _ => filtered_proposals,
     };
-
-    // Enrich confidential proposals with quote metadata — only for authenticated DAO members.
-    // If auth fails or user is not a member, still return proposals without enrichment.
-    let mut proposals = proposals;
-    let should_enrich = auth_user
-        .verify_member_if_confidential(&state.db_pool, dao_id.as_ref())
-        .await
-        .unwrap_or(false);
-    if should_enrich {
-        enrich_confidential_proposals(&mut proposals, &state.db_pool, dao_id.as_ref()).await;
-    }
 
     let response = PaginatedProposals {
         proposals,
