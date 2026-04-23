@@ -18,12 +18,50 @@ import {
     estimateIntentsNetworkFee,
     getNetworkFeeCoverageErrorMessage,
     isIntentsCrossChainToken,
+    IntentsFeeLabels,
 } from "@/lib/intents-fee";
 import type { BulkPaymentData } from "../schemas";
 import type { TreasuryAsset } from "@/lib/api";
 import Big from "@/lib/big";
 
 export { parseCsv };
+
+export interface BulkParsingLabels {
+    rowPrefix: (row: number, message: string) => string;
+    rowPrefixOnly: (row: number) => string;
+    missingRecipientFirstColumn: string;
+    invalidNearAddress: (address: string) => string;
+    invalidChainAddress: (address: string, chain: string) => string;
+    rowNeedsAmountRecipient: string;
+    missingRecipientBeforeComma: string;
+    missingAmountAfterComma: (recipient: string) => string;
+    invalidAmountNumber: (amountStr: string) => string;
+    amountGreaterThanZero: (amountStr: string) => string;
+    amountTooLarge: (amountStr: string) => string;
+    invalidAmountFallback: string;
+    pleaseRemoveChars: (chars: string) => string;
+    amountCannotBeEmpty: string;
+    tokenMismatch: (
+        provided: string,
+        expected: string,
+        suggested: string,
+    ) => string;
+    multipleTokenSymbols: (symbols: string) => string;
+    noPaymentDataFound: string;
+    exceedsRecipientLimit: (
+        count: number,
+        limit: number,
+        excess: number,
+    ) => string;
+    noPaymentDataProvided: string;
+    headerColumnsNotFound: string;
+    failedToParseCsv: string;
+    failedToParsePaste: string;
+    failedToValidateAccount: string;
+    feeEstimationFailed: string;
+    feeEstimationFailedRow: (row: number, recipient: string) => string;
+    intentsFee: IntentsFeeLabels;
+}
 
 /**
  * Detect if the first row/line is a header and return parsing configuration
@@ -144,7 +182,13 @@ export function extractTokenSymbol(amountStr: string): string | null {
  * ONLY allows: digits, comma, dot, spaces, and letters (for token symbols)
  * REJECTS: currency symbols ($, €, etc.), special characters
  */
-export function parseAmount(amountStr: string): {
+export function parseAmount(
+    amountStr: string,
+    labels: Pick<
+        BulkParsingLabels,
+        "pleaseRemoveChars" | "amountCannotBeEmpty"
+    >,
+): {
     amount: string;
     tokenSymbol: string | null;
     error?: string;
@@ -159,7 +203,7 @@ export function parseAmount(amountStr: string): {
         return {
             amount: "",
             tokenSymbol: null,
-            error: `Please remove these characters: ${uniqueChars}. Only numbers, commas, and dots are allowed.`,
+            error: labels.pleaseRemoveChars(uniqueChars),
         };
     }
 
@@ -181,7 +225,7 @@ export function parseAmount(amountStr: string): {
 
     // Handle empty or invalid input
     if (!normalized)
-        return { amount: "", tokenSymbol, error: "Amount cannot be empty." };
+        return { amount: "", tokenSymbol, error: labels.amountCannotBeEmpty };
 
     // Handle different decimal separators
     const hasComma = normalized.includes(",");
@@ -222,22 +266,31 @@ export function parseAmount(amountStr: string): {
 function validateRecipientAddress(
     address: string,
     blockchainType: string = "near",
+    labels: Pick<
+        BulkParsingLabels,
+        | "missingRecipientFirstColumn"
+        | "invalidNearAddress"
+        | "invalidChainAddress"
+    >,
 ): string | null {
     if (!address || address.trim() === "") {
-        return "Missing recipient address. Please add an address in the first column.";
+        return labels.missingRecipientFirstColumn;
     }
 
     // For NEAR blockchain, use NEAR-specific validation
     if (blockchainType === "near") {
         if (!isValidNearAddressFormat(address)) {
-            return `The address "${address}" is not a valid NEAR account.`;
+            return labels.invalidNearAddress(address);
         }
         return null;
     }
 
     const result = validateAddress(address, blockchainType as any);
     if (result.error) {
-        return `The address "${address}" is not valid ${getBlockchainDisplayName(blockchainType as BlockchainType)} account.`;
+        return labels.invalidChainAddress(
+            address,
+            getBlockchainDisplayName(blockchainType as BlockchainType),
+        );
     }
     return null;
 }
@@ -250,6 +303,7 @@ export function parsePaymentData(
     recipientIdx: number,
     amountIdx: number,
     startRow: number,
+    labels: BulkParsingLabels,
     blockchain: string = "near",
     expectedTokenSymbol?: string,
 ): {
@@ -274,7 +328,10 @@ export function parsePaymentData(
         if (row.length < 2) {
             errors.push({
                 row: actualRowNumber,
-                message: `Row ${actualRowNumber}: Each row needs amount and recipient separated by a comma. Example: 100, alice.near`,
+                message: labels.rowPrefix(
+                    actualRowNumber,
+                    labels.rowNeedsAmountRecipient,
+                ),
             });
             continue;
         }
@@ -293,7 +350,10 @@ export function parsePaymentData(
         if (!recipient) {
             errors.push({
                 row: actualRowNumber,
-                message: `Row ${actualRowNumber}: Missing recipient address. Please add an address before the comma.`,
+                message: labels.rowPrefix(
+                    actualRowNumber,
+                    labels.missingRecipientBeforeComma,
+                ),
             });
             continue;
         }
@@ -301,18 +361,21 @@ export function parsePaymentData(
         if (!amountStr) {
             errors.push({
                 row: actualRowNumber,
-                message: `Row ${actualRowNumber}: Missing amount. Please add a number after the comma. Example: ${recipient}, 100`,
+                message: labels.rowPrefix(
+                    actualRowNumber,
+                    labels.missingAmountAfterComma(recipient),
+                ),
             });
             continue;
         }
 
-        const parsedResult = parseAmount(amountStr);
+        const parsedResult = parseAmount(amountStr, labels);
 
         // Check if parseAmount returned an error (invalid characters)
         if (parsedResult.error) {
             errors.push({
                 row: actualRowNumber,
-                message: `Row ${actualRowNumber}: ${parsedResult.error}`,
+                message: labels.rowPrefix(actualRowNumber, parsedResult.error),
             });
             continue;
         }
@@ -333,7 +396,14 @@ export function parsePaymentData(
         ) {
             errors.push({
                 row: actualRowNumber,
-                message: `Row ${actualRowNumber}: You entered "${tokenSymbol}" but ${expectedTokenSymbol.toUpperCase()} is selected above. Either remove the token symbol or select ${tokenSymbol} from the dropdown.`,
+                message: labels.rowPrefix(
+                    actualRowNumber,
+                    labels.tokenMismatch(
+                        tokenSymbol,
+                        expectedTokenSymbol.toUpperCase(),
+                        tokenSymbol,
+                    ),
+                ),
             });
             continue;
         }
@@ -342,32 +412,26 @@ export function parsePaymentData(
         let parsedAmount: Big;
         try {
             if (!parsedAmountStr) {
-                throw new Error(
-                    `The amount "${amountStr}" is not a valid number. Please use only numbers and decimals (e.g., 100 or 100.50).`,
-                );
+                throw new Error(labels.invalidAmountNumber(amountStr));
             }
             parsedAmount = Big(parsedAmountStr);
 
             // Validate amount is positive
             if (parsedAmount.lte(0)) {
-                throw new Error(
-                    `The amount must be greater than 0. You entered "${amountStr}".`,
-                );
+                throw new Error(labels.amountGreaterThanZero(amountStr));
             }
 
             // Validate amount doesn't exceed safe limit
             const MAX_SAFE = Big(Number.MAX_SAFE_INTEGER);
             if (parsedAmount.gt(MAX_SAFE)) {
-                throw new Error(
-                    `The amount "${amountStr}" is too large. Please use a smaller number.`,
-                );
+                throw new Error(labels.amountTooLarge(amountStr));
             }
         } catch (error) {
             // Clean up error message - remove any technical jargon
             let errorMessage =
                 error instanceof Error
                     ? error.message
-                    : "Invalid amount. Please use only numbers and decimals (e.g., 100 or 100.50).";
+                    : labels.invalidAmountFallback;
             // Strip technical prefixes like "[big.js]" or "Error:"
             errorMessage = errorMessage
                 .replace(/^\[.*?\]\s*/, "")
@@ -375,16 +439,20 @@ export function parsePaymentData(
 
             errors.push({
                 row: actualRowNumber,
-                message: `Row ${actualRowNumber}: ${errorMessage}`,
+                message: labels.rowPrefix(actualRowNumber, errorMessage),
             });
             continue;
         }
 
-        const validationError = validateRecipientAddress(recipient, blockchain);
+        const validationError = validateRecipientAddress(
+            recipient,
+            blockchain,
+            labels,
+        );
         if (validationError) {
             errors.push({
                 row: actualRowNumber,
-                message: `Row ${actualRowNumber}: ${validationError}`,
+                message: labels.rowPrefix(actualRowNumber, validationError),
             });
             continue;
         }
@@ -402,7 +470,7 @@ export function parsePaymentData(
         const symbols = Array.from(tokenSymbolsFound).join(", ");
         errors.push({
             row: 0,
-            message: `You're using multiple token symbols (${symbols}). Please use only one token type throughout your file, or remove the token symbols and let the selection above determine the token.`,
+            message: labels.multipleTokenSymbols(symbols),
         });
     }
 
@@ -417,8 +485,7 @@ export function parsePaymentData(
             errors: [
                 {
                     row: 0,
-                    message:
-                        "No payment data found. Please add your payments in this format: recipient, amount",
+                    message: labels.noPaymentDataFound,
                 },
             ],
         };
@@ -432,7 +499,11 @@ export function parsePaymentData(
             errors: [
                 {
                     row: 0,
-                    message: `You have ${payments.length} recipients, but the limit is ${MAX_RECIPIENTS_PER_BULK_PAYMENT} per batch. Please remove ${excess} recipient${excess > 1 ? "s" : ""} or split into multiple batches.`,
+                    message: labels.exceedsRecipientLimit(
+                        payments.length,
+                        MAX_RECIPIENTS_PER_BULK_PAYMENT,
+                        excess,
+                    ),
                 },
             ],
         };
@@ -446,7 +517,8 @@ export function parsePaymentData(
  */
 function parseAndValidateData(
     input: string,
-    errorPrefix: string,
+    fallbackParseErrorMessage: string,
+    labels: BulkParsingLabels,
     blockchain: string = "near",
     expectedTokenSymbol?: string,
 ): {
@@ -454,7 +526,7 @@ function parseAndValidateData(
     errors: Array<{ row: number; message: string }>;
 } {
     try {
-        const rows = parseCsv(input);
+        const rows = parseCsv(input, labels.failedToParseCsv);
 
         if (rows.length === 0) {
             return {
@@ -462,8 +534,7 @@ function parseAndValidateData(
                 errors: [
                     {
                         row: 0,
-                        message:
-                            "No payment data provided. Please enter your payments in this format: recipient, amount",
+                        message: labels.noPaymentDataProvided,
                     },
                 ],
             };
@@ -480,8 +551,7 @@ function parseAndValidateData(
                 errors: [
                     {
                         row: 1,
-                        message:
-                            "We detected a header row, but couldn't find the 'Recipient' and 'Amount' columns. Please use these column names, or remove the header row.",
+                        message: labels.headerColumnsNotFound,
                     },
                 ],
             };
@@ -496,14 +566,13 @@ function parseAndValidateData(
             recipientIdx,
             amountIdx,
             startRow,
+            labels,
             blockchain,
             expectedTokenSymbol,
         );
     } catch (error) {
         const errorMsg =
-            error instanceof Error
-                ? error.message
-                : `Failed to parse ${errorPrefix}`;
+            error instanceof Error ? error.message : fallbackParseErrorMessage;
         return {
             payments: [],
             errors: [
@@ -521,6 +590,7 @@ function parseAndValidateData(
  */
 export function parseAndValidateCsv(
     csvData: string,
+    labels: BulkParsingLabels,
     selectedToken?: { symbol?: string; network?: string; residency?: string },
 ): {
     payments: BulkPaymentData[];
@@ -530,7 +600,13 @@ export function parseAndValidateCsv(
         ? getBlockchainType(selectedToken.network)
         : "near";
     const tokenSymbol = selectedToken?.symbol;
-    return parseAndValidateData(csvData, "CSV data", blockchain, tokenSymbol);
+    return parseAndValidateData(
+        csvData,
+        labels.failedToParseCsv,
+        labels,
+        blockchain,
+        tokenSymbol,
+    );
 }
 
 /**
@@ -538,6 +614,7 @@ export function parseAndValidateCsv(
  */
 export function parseAndValidatePasteData(
     pasteData: string,
+    labels: BulkParsingLabels,
     selectedToken?: { symbol?: string; network?: string; residency?: string },
 ): {
     payments: BulkPaymentData[];
@@ -551,7 +628,8 @@ export function parseAndValidatePasteData(
     const tokenSymbol = selectedToken?.symbol;
     return parseAndValidateData(
         normalizedInput,
-        "paste data",
+        labels.failedToParsePaste,
+        labels,
         blockchain,
         tokenSymbol,
     );
@@ -574,6 +652,7 @@ export function needsStorageDepositCheck(token: {
 export async function validateAccountsAndStorage(
     payments: BulkPaymentData[],
     selectedToken: { address: string; residency?: string; network?: string },
+    labels: Pick<BulkParsingLabels, "failedToValidateAccount">,
 ): Promise<BulkPaymentData[]> {
     const isNear = isNearToken(selectedToken.network, selectedToken.residency);
 
@@ -602,7 +681,7 @@ export async function validateAccountsAndStorage(
                     );
                     return {
                         ...payment,
-                        validationError: "Failed to validate account",
+                        validationError: labels.failedToValidateAccount,
                     };
                 }
             }),
@@ -673,6 +752,13 @@ export async function validateIntentsFeeCoverage(
         symbol: string;
         minWithdrawalAmount?: string;
     },
+    labels: Pick<
+        BulkParsingLabels,
+        | "feeEstimationFailed"
+        | "feeEstimationFailedRow"
+        | "intentsFee"
+        | "rowPrefixOnly"
+    >,
 ): Promise<{ payments: BulkPaymentData[]; networkFee: string | null }> {
     if (!isIntentsCrossChainToken(selectedToken)) {
         return { payments, networkFee: null };
@@ -705,15 +791,18 @@ export async function validateIntentsFeeCoverage(
 
                 const rowPrefix =
                     payment.row && payment.row > 0
-                        ? `Row ${payment.row}: `
+                        ? labels.rowPrefixOnly(payment.row)
                         : "";
-                const feeErrorMessage = getNetworkFeeCoverageErrorMessage({
-                    amount: payment.amount,
-                    networkFee,
-                    decimals: selectedToken.decimals,
-                    symbol: selectedToken.symbol,
-                    prefix: rowPrefix,
-                });
+                const feeErrorMessage = getNetworkFeeCoverageErrorMessage(
+                    {
+                        amount: payment.amount,
+                        networkFee,
+                        decimals: selectedToken.decimals,
+                        symbol: selectedToken.symbol,
+                        prefix: rowPrefix,
+                    },
+                    labels.intentsFee,
+                );
 
                 if (!feeErrorMessage) {
                     return payment;
@@ -733,13 +822,15 @@ export async function validateIntentsFeeCoverage(
                     return payment;
                 }
 
-                const rowPrefix =
-                    payment.row && payment.row > 0
-                        ? `Row ${payment.row} (${payment.recipient}): `
-                        : "";
                 return {
                     ...payment,
-                    validationError: `${rowPrefix}Couldn't estimate network fee for this amount. Please verify and try again.`,
+                    validationError:
+                        payment.row && payment.row > 0
+                            ? labels.feeEstimationFailedRow(
+                                  payment.row,
+                                  payment.recipient,
+                              )
+                            : labels.feeEstimationFailed,
                 };
             }),
             networkFee: null,

@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/button";
+import { useTranslations } from "next-intl";
 import { useProposals } from "@/hooks/use-proposals";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useRouter } from "next/navigation";
@@ -12,6 +13,7 @@ interface PendingButtonProps {
 }
 
 export function PendingButton({ types, id }: PendingButtonProps) {
+    const t = useTranslations("proposals.status");
     const { treasuryId } = useTreasury();
     const router = useRouter();
 
@@ -32,7 +34,7 @@ export function PendingButton({ types, id }: PendingButtonProps) {
             variant="ghost"
             className="flex items-center gap-2 border-2"
         >
-            Pending
+            {t("pending")}
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs">
                 {pendingProposals?.proposals?.length || 0}
             </span>

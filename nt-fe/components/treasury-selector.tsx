@@ -1,6 +1,7 @@
 "use client";
 
 import { Settings } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
 import {
@@ -36,6 +37,7 @@ export function TreasurySelector({
     isOpen,
     onOpenChange,
 }: TreasurySelectorProps) {
+    const t = useTranslations("treasurySelector");
     const router = useRouter();
     const pathname = usePathname();
     const { accountId } = useNear();
@@ -110,9 +112,7 @@ export function TreasurySelector({
         router.push(`/${newTreasuryId}/${pathAfterTreasury}`);
     };
 
-    const displayName = config
-        ? (config.name ?? treasuryId)
-        : "Select treasury";
+    const displayName = config ? (config.name ?? treasuryId) : t("select");
 
     return (
         <>
@@ -134,7 +134,7 @@ export function TreasurySelector({
                     disabled={!accountId}
                 >
                     <Tooltip
-                        content="Connect wallet to view treasuries"
+                        content={t("connectWalletTooltip")}
                         disabled={!!accountId}
                     >
                         <div
@@ -173,7 +173,7 @@ export function TreasurySelector({
                 <SelectContent className="max-w-[250px]">
                     {memberTreasuries.length > 0 && (
                         <SelectGroup>
-                            <SelectLabel>Member Of</SelectLabel>
+                            <SelectLabel>{t("memberOf")}</SelectLabel>
                             {memberTreasuries.map((treasury) => (
                                 <SelectItem
                                     key={treasury.daoId}
@@ -210,7 +210,9 @@ export function TreasurySelector({
                         <>
                             {memberTreasuries.length > 0 && <SelectSeparator />}
                             <SelectGroup>
-                                <SelectLabel>Guest Treasuries</SelectLabel>
+                                <SelectLabel>
+                                    {t("guestTreasuries")}
+                                </SelectLabel>
                                 {savedGuestTreasuries.map((treasury) => (
                                     <SelectItem
                                         key={treasury.daoId}
@@ -256,7 +258,7 @@ export function TreasurySelector({
                         onClick={() => router.push("/app/manage-treasuries")}
                     >
                         <Settings className="size-4" />
-                        <span>Manage Treasuries</span>
+                        <span>{t("manageTreasuries")}</span>
                     </Button>
                     <Button
                         id="dashboard-step5-create-treasury"
@@ -276,7 +278,7 @@ export function TreasurySelector({
                         }}
                     >
                         <span className="text-lg">+</span>
-                        <span>Create Treasury</span>
+                        <span>{t("createTreasury")}</span>
                     </Button>
                 </SelectContent>
             </Select>

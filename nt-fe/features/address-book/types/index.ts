@@ -2,19 +2,30 @@ import { z } from "zod";
 
 export const RECIPIENT_NAME_MAX_LENGTH = 64;
 
-export const recipientSchema = z.object({
-    name: z
-        .string()
-        .min(1, "Name is required")
-        .max(
-            RECIPIENT_NAME_MAX_LENGTH,
-            `Recipient must be less than ${RECIPIENT_NAME_MAX_LENGTH} characters`,
-        ),
-    address: z.string().min(1, "Address is required"),
-    networks: z.array(z.string()).min(1, "Select at least one network"),
+export function buildRecipientSchema(messages: {
+    nameRequired: string;
+    nameMax: string;
+    addressRequired: string;
+    networksRequired: string;
+}) {
+    return z.object({
+        name: z
+            .string()
+            .min(1, messages.nameRequired)
+            .max(RECIPIENT_NAME_MAX_LENGTH, messages.nameMax),
+        address: z.string().min(1, messages.addressRequired),
+        networks: z.array(z.string()).min(1, messages.networksRequired),
+    });
+}
+
+const _recipientSchemaForType = buildRecipientSchema({
+    nameRequired: "",
+    nameMax: "",
+    addressRequired: "",
+    networksRequired: "",
 });
 
-export type RecipientDraft = z.infer<typeof recipientSchema>;
+export type RecipientDraft = z.infer<typeof _recipientSchemaForType>;
 
 export interface AddressBookEntry {
     id: string;

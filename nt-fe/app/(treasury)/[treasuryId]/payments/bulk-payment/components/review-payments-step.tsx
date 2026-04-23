@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useFormContext } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import { PageCard } from "@/components/card";
 import { Button } from "@/components/button";
 import { Textarea } from "@/components/textarea";
@@ -22,6 +23,7 @@ import { NumberBadge } from "@/components/number-badge";
 import type { BulkPaymentFormValues, BulkPaymentData } from "../schemas";
 import { cn, formatBalance, formatSmartAmount } from "@/lib/utils";
 import { validateAccountsAndStorage } from "../utils";
+import { useBulkParsingLabels } from "../utils/use-parsing-labels";
 import { useToken, useTokenBalance } from "@/hooks/use-treasury-queries";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useAddressBook } from "@/features/address-book";
@@ -48,6 +50,9 @@ export function ReviewPaymentsStep({
     onPaymentDataChange,
     onSubmit,
 }: ReviewPaymentsStepProps) {
+    const tPay = useTranslations("payments");
+    const tBulk = useTranslations("bulkPayment");
+    const parsingLabels = useBulkParsingLabels();
     const form = useFormContext<BulkPaymentFormValues>();
     const selectedToken = form.watch("selectedToken");
     const comment = form.watch("comment");
@@ -81,6 +86,7 @@ export function ReviewPaymentsStep({
                 const validatedPayments = await validateAccountsAndStorage(
                     paymentData,
                     selectedToken,
+                    parsingLabels,
                 );
                 setPaymentData(validatedPayments);
                 onPaymentDataChange(validatedPayments);
@@ -157,7 +163,7 @@ export function ReviewPaymentsStep({
     return (
         <PageCard className="max-w-[600px] mx-auto">
             <ReviewStep
-                reviewingTitle="Review Your Payment"
+                reviewingTitle={tPay("reviewYourPayment")}
                 handleBack={handleBack}
             >
                 {/* Total Summary */}
@@ -168,13 +174,13 @@ export function ReviewPaymentsStep({
                     showNetworkIcon={true}
                 >
                     <p className="font-normal">
-                        to {paymentData.length}{" "}
-                        {paymentData.length === 1 ? "recipient" : "recipients"}
+                        {tPay("summaryRecipients", {
+                            count: paymentData.length,
+                        })}
                     </p>
                     {hasInsufficientBalance && (
                         <p className="text-general-info-foreground text-sm mt-2 font-normal">
-                            Insufficient tokens. You can submit the request and
-                            top up before approval.
+                            {tBulk("insufficientTokens")}
                         </p>
                     )}
                 </AmountSummary>
@@ -182,7 +188,7 @@ export function ReviewPaymentsStep({
                 {/* Recipients List */}
                 <div className="space-y-4 mb-2">
                     <h3 className="text-sm text-muted-foreground mb-6">
-                        Recipients
+                        {tBulk("recipients")}
                     </h3>
 
                     {isValidatingAccounts ? (
@@ -351,7 +357,9 @@ export function ReviewPaymentsStep({
                                                                     }
                                                                 >
                                                                     <Edit2 className="w-4 h-4" />{" "}
-                                                                    Edit
+                                                                    {tBulk(
+                                                                        "edit",
+                                                                    )}
                                                                 </Button>
                                                                 <Button
                                                                     variant="unstyled"
@@ -365,7 +373,9 @@ export function ReviewPaymentsStep({
                                                                     }
                                                                 >
                                                                     <Trash2 className="w-4 h-4" />{" "}
-                                                                    Remove
+                                                                    {tBulk(
+                                                                        "remove",
+                                                                    )}
                                                                 </Button>
                                                             </div>
                                                         </div>
@@ -383,14 +393,14 @@ export function ReviewPaymentsStep({
                 {!isValidatingAccounts && totalNetworkFee && (
                     <div className="flex items-center justify-between gap-2 text-sm py-3 border-t border-border">
                         <div className="flex items-center gap-1 text-muted-foreground">
-                            <p>Network Fee</p>
+                            <p>{tPay("networkFee")}</p>
                             <Tooltip
                                 content={NETWORK_FEE_TOOLTIP_TEXT}
                                 side="top"
                             >
                                 <Info
                                     className="size-3 shrink-0"
-                                    aria-label="Network fee info"
+                                    aria-label={tPay("networkFeeInfo")}
                                 />
                             </Tooltip>
                         </div>
@@ -408,7 +418,7 @@ export function ReviewPaymentsStep({
                             onChange={(e) =>
                                 form.setValue("comment", e.target.value)
                             }
-                            placeholder="Add a comment (optional)..."
+                            placeholder={tPay("commentPlaceholder")}
                             rows={3}
                             borderless
                             className="resize-none"
@@ -423,7 +433,7 @@ export function ReviewPaymentsStep({
                         onClick={handleProceedClick}
                         disabled={hasValidationErrors}
                         permissions={[{ kind: "call", action: "AddProposal" }]}
-                        idleMessage="Confirm and Submit Request"
+                        idleMessage={tPay("confirmSubmit")}
                     />
                 )}
             </ReviewStep>
@@ -433,18 +443,21 @@ export function ReviewPaymentsStep({
                 <DialogContent className="max-w-md gap-4">
                     <DialogHeader>
                         <DialogTitle className="text-left">
-                            Remove Recipient
+                            {tBulk("removeRecipient")}
                         </DialogTitle>
                     </DialogHeader>
 
                     <DialogDescription>
                         {recipientToRemove && (
                             <p className="text-base">
-                                Are you sure you want to remove the payment to{" "}
-                                <span className="font-semibold">
-                                    {recipientToRemove.recipient}
-                                </span>
-                                ? This action cannot be undone.
+                                {tBulk.rich("removeRecipientConfirm", {
+                                    recipient: recipientToRemove.recipient,
+                                    strong: (chunks) => (
+                                        <span className="font-semibold">
+                                            {chunks}
+                                        </span>
+                                    ),
+                                })}
                             </p>
                         )}
                     </DialogDescription>
@@ -458,7 +471,7 @@ export function ReviewPaymentsStep({
                                 handleRemovePayment(recipientToRemove.index)
                             }
                         >
-                            Remove
+                            {tBulk("remove")}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

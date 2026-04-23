@@ -5,6 +5,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useSidebarStore } from "@/stores/sidebar-store";
 import { XIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useNextStep } from "nextstepjs";
 import type { Tour } from "nextstepjs";
 import { useState, useEffect } from "react";
@@ -38,13 +39,26 @@ export const SELECTOR_IDS = {
     HELP_SUPPORT_LINK: "#help-support-link",
 } as const;
 
+type TourContentKey =
+    | "addAssets"
+    | "makeRequests"
+    | "exchangeAssets"
+    | "addMembers"
+    | "newTreasury"
+    | "helpSupport";
+
+function TourContent({ k }: { k: TourContentKey }) {
+    const t = useTranslations("onboarding.tour");
+    return <>{t(k)}</>;
+}
+
 export const DASHBOARD_TOUR: Tour = {
     tour: TOUR_NAMES.DASHBOARD,
     steps: [
         {
             icon: null,
             title: "",
-            content: <>Add assets to your Treasury by making a deposit.</>,
+            content: <TourContent k="addAssets" />,
             selector: SELECTOR_IDS.DASHBOARD_STEP_1,
             side: "bottom-left",
             disableInteraction: true,
@@ -57,9 +71,7 @@ export const DASHBOARD_TOUR: Tour = {
         {
             icon: null,
             title: "",
-            content: (
-                <>Make payment requests whenever you need to send assets.</>
-            ),
+            content: <TourContent k="makeRequests" />,
             selector: SELECTOR_IDS.DASHBOARD_STEP_2,
             side: "bottom",
             disableInteraction: true,
@@ -72,7 +84,7 @@ export const DASHBOARD_TOUR: Tour = {
         {
             icon: null,
             title: "",
-            content: <>Here you can exchange your assets.</>,
+            content: <TourContent k="exchangeAssets" />,
             selector: SELECTOR_IDS.DASHBOARD_STEP_3,
             side: "bottom-right",
             showControls: false,
@@ -85,7 +97,7 @@ export const DASHBOARD_TOUR: Tour = {
         {
             icon: null,
             title: "",
-            content: <>Add members to your Treasury and assign them roles.</>,
+            content: <TourContent k="addMembers" />,
             selector: SELECTOR_IDS.DASHBOARD_STEP_4,
             side: "right",
             showControls: false,
@@ -98,12 +110,7 @@ export const DASHBOARD_TOUR: Tour = {
         {
             icon: null,
             title: "",
-            content: (
-                <>
-                    Want to set up a new Treasury? You can do it here in just a
-                    few clicks.
-                </>
-            ),
+            content: <TourContent k="newTreasury" />,
             selector: SELECTOR_IDS.DASHBOARD_STEP_5_CREATE_TREASURY,
             side: "right",
             showControls: false,
@@ -122,7 +129,7 @@ export const INFO_BOX_TOUR: Tour = {
         {
             icon: null,
             title: "",
-            content: <>Get help and support whenever you need it.</>,
+            content: <TourContent k="helpSupport" />,
             selector: SELECTOR_IDS.HELP_SUPPORT_LINK,
             side: "top-left",
             disableInteraction: true,
@@ -135,6 +142,7 @@ export const INFO_BOX_TOUR: Tour = {
 };
 
 export function WelcomeTooltip() {
+    const tW = useTranslations("onboarding.welcome");
     const [isWelcomeDismissed, setIsWelcomeDismissed] = useState(true);
     const [currentStep, setCurrentStep] = useState(1);
     const { startNextStep } = useNextStep();
@@ -202,9 +210,7 @@ export function WelcomeTooltip() {
         <div className="fixed max-w-72 flex flex-col gap-0 bottom-8 right-8 z-50 p-3 bg-popover-foreground text-popover rounded-[8px]">
             <div className="flex items-center justify-between pt-0.5 pb-2.5">
                 <h1 className="text-sm font-semibold">
-                    {currentStep === 1
-                        ? "🎉 Welcome!"
-                        : "Take a quick tour of Treasury"}
+                    {currentStep === 1 ? tW("heading") : tW("subheading")}
                 </h1>
                 <XIcon
                     className="size-4 cursor-pointer"
@@ -213,13 +219,13 @@ export function WelcomeTooltip() {
             </div>
             {currentStep === 1 ? (
                 <>
-                    <p className="py-2 text-xs">
-                        Hey there! Your Trezu is ready - start building your
-                        portfolio by adding assets from supported networks.{" "}
-                    </p>
+                    <p className="py-2 text-xs">{tW("body")}</p>
                     <div className="pt-2 flex justify-between items-center">
                         <span className="text-xs text-popover/70">
-                            {currentStep} of 2
+                            {tW("progress", {
+                                current: currentStep,
+                                total: 2,
+                            })}
                         </span>
                         <Button
                             variant="default"
@@ -227,19 +233,19 @@ export function WelcomeTooltip() {
                             className="bg-popover text-popover-foreground hover:bg-popover/90 hover:text-popover-foreground/90"
                             onClick={handleNext}
                         >
-                            Next
+                            {tW("next")}
                         </Button>
                     </div>
                 </>
             ) : (
                 <>
-                    <p className="py-2 text-xs">
-                        See how to make a deposit, create a request, and set up
-                        a new account.
-                    </p>
+                    <p className="py-2 text-xs">{tW("body2")}</p>
                     <div className="pt-2 flex justify-between items-center">
                         <span className="text-xs text-popover/70">
-                            {currentStep} of 2
+                            {tW("progress", {
+                                current: currentStep,
+                                total: 2,
+                            })}
                         </span>
                         <div className="flex gap-1.5">
                             <Button
@@ -248,7 +254,7 @@ export function WelcomeTooltip() {
                                 className="text-popover hover:text-popover/90 hover:bg-transparent!"
                                 onClick={handleDismiss}
                             >
-                                No, thanks
+                                {tW("noThanks")}
                             </Button>
                             <Button
                                 variant="default"
@@ -256,7 +262,7 @@ export function WelcomeTooltip() {
                                 className="bg-popover text-popover-foreground hover:bg-popover/90 hover:text-popover-foreground/90"
                                 onClick={handleStartTour}
                             >
-                                Let's go
+                                {tW("letsGo")}
                             </Button>
                         </div>
                     </div>
@@ -267,6 +273,7 @@ export function WelcomeTooltip() {
 }
 
 export function CongratsTooltip() {
+    const tC = useTranslations("onboarding.congrats");
     const [isVisible, setIsVisible] = useState(false);
     const {
         isGuestTreasury,
@@ -354,16 +361,13 @@ export function CongratsTooltip() {
     return (
         <div className="fixed max-w-72 flex flex-col gap-0 bottom-8 right-8 z-50 p-3 bg-popover-foreground text-popover rounded-[8px]">
             <div className="flex items-center justify-between pt-0.5 pb-2.5">
-                <h1 className="text-sm font-semibold">🎉 Congrats!</h1>
+                <h1 className="text-sm font-semibold">{tC("heading")}</h1>
                 <XIcon
                     className="size-4 cursor-pointer"
                     onClick={handleDismiss}
                 />
             </div>
-            <p className="py-2 text-xs">
-                You've completed your Treasury setup. Enjoy easy management of
-                your assets.
-            </p>
+            <p className="py-2 text-xs">{tC("body")}</p>
             <div className="pt-2 flex justify-end">
                 <Button
                     variant="default"
@@ -371,7 +375,7 @@ export function CongratsTooltip() {
                     className="bg-popover text-popover-foreground hover:bg-popover/90 hover:text-popover-foreground/90"
                     onClick={handleDismiss}
                 >
-                    Let's go!
+                    {tC("letsGo")}
                 </Button>
             </div>
         </div>

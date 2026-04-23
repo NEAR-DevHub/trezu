@@ -57,6 +57,7 @@
         "lucide-react": "^0.562.0",
         "motion": "^12.38.0",
         "next": "16.0.7",
+        "next-intl": "^4.9.1",
         "nextstepjs": "^2.2.0",
         "papaparse": "^5.5.3",
         "posthog-js": "^1.364.1",

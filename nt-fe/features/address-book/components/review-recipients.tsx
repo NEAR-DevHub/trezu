@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { type Control, useFieldArray, useWatch } from "react-hook-form";
 import { Button } from "@/components/button";
@@ -39,6 +40,7 @@ export function ReviewRecipients({
     isSubmitting = false,
     initialNotes,
 }: ReviewRecipientsProps) {
+    const t = useTranslations("addressBook.review");
     const [notes, setNotes] = useState<Record<number, string>>(
         initialNotes ?? {},
     );
@@ -99,9 +101,9 @@ export function ReviewRecipients({
     ).size;
     const submitTooltip =
         hasOnlyDuplicates && skipDuplicates
-            ? "All imported recipients are already in your address book, so there is nothing new to import."
+            ? t("allDuplicatesTooltip")
             : duplicateCount > 0 && !skipDuplicates
-              ? "Enable duplicate skipping or remove duplicate recipients to continue."
+              ? t("duplicateActionTooltip")
               : undefined;
 
     if (editingIndex !== null) {
@@ -119,32 +121,35 @@ export function ReviewRecipients({
 
     return (
         <div className="flex flex-col gap-4">
-            <StepperHeader title="Review Details" handleBack={handleBack} />
+            <StepperHeader title={t("header")} handleBack={handleBack} />
 
             <div className="flex flex-col gap-3">
                 <SummaryBlock
-                    title="You're adding"
+                    title={t("youAreAdding")}
                     secondRow={
-                        <p className="text-2xl font-semibold text-foreground">{`${newRecipientCount} new recipient${newRecipientCount !== 1 ? "s" : ""}`}</p>
+                        <p className="text-2xl font-semibold text-foreground">
+                            {t("newRecipients", { count: newRecipientCount })}
+                        </p>
                     }
-                    // On x different networks
                     subRow={
                         count > 1 &&
                         newRecipientCount > 0 && (
                             <p className="text-sm text-muted-foreground">
-                                on {networkCount} network
-                                {networkCount !== 1 ? "s" : ""}
+                                {t("onNetworks", { count: networkCount })}
                             </p>
                         )
                     }
                 />
                 <div className="flex flex-col gap-1">
-                    <p className="text-sm font-semibold">Recipients</p>
+                    <p className="text-sm font-semibold">{t("recipients")}</p>
                     {duplicateCount > 0 && (
                         <p className="text-xs text-general-info-foreground font-medium">
                             {hasOnlyDuplicates
-                                ? "All imported recipients already exist in your address book. Go back to upload a different list or remove duplicates from this review."
-                                : `${duplicateCount} duplicated recipients out of ${count} total recipients. Continue to upload only the new recipients.`}
+                                ? t("allDuplicates")
+                                : t("someDuplicates", {
+                                      duplicates: duplicateCount,
+                                      total: count,
+                                  })}
                         </p>
                     )}
                 </div>
@@ -157,7 +162,7 @@ export function ReviewRecipients({
                             nameBadge={
                                 duplicateIndexSet.has(i) ? (
                                     <span className="rounded-full bg-general-warning-background-faded px-2 py-0.5 text-xs font-medium text-general-warning-foreground">
-                                        Duplicated
+                                        {t("duplicated")}
                                     </span>
                                 ) : undefined
                             }
@@ -188,7 +193,7 @@ export function ReviewRecipients({
                         />
                         <Textarea
                             borderless
-                            placeholder="Add a note to help identify this recipient (e.g. contractor payment, vesting distribution)."
+                            placeholder={t("notePlaceholder")}
                             value={notes[i] ?? ""}
                             onChange={(e) =>
                                 setNotes((prev) => ({
@@ -215,7 +220,7 @@ export function ReviewRecipients({
                         htmlFor="skip-duplicates"
                         className="text-sm font-normal leading-relaxed cursor-pointer"
                     >
-                        Skip duplicates and import only new ones.
+                        {t("skipDuplicates")}
                     </Label>
                 </div>
             )}
@@ -227,10 +232,12 @@ export function ReviewRecipients({
                 onClick={() => onSubmit(notes, includedRecipientIndexes)}
             >
                 {isSubmitting
-                    ? "Adding…"
+                    ? t("adding")
                     : hasOnlyDuplicates
-                      ? "Nothing New to Import"
-                      : `Add Recipient${newRecipientCount !== 1 ? "s" : ""}`}
+                      ? t("nothingNew")
+                      : t("addRecipientsButton", {
+                            count: newRecipientCount,
+                        })}
             </Button>
         </div>
     );

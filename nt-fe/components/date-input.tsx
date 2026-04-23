@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { InputBlock } from "./input-block";
 import { FormField, FormMessage } from "./ui/form";
 import { Control, FieldValues, Path } from "react-hook-form";
@@ -18,6 +19,7 @@ export function DateInput<TFieldValues extends FieldValues = FieldValues>({
     minDate,
     maxDate,
 }: DateInputProps<TFieldValues>) {
+    const t = useTranslations("dateInput");
     return (
         <FormField
             control={control}
@@ -30,7 +32,7 @@ export function DateInput<TFieldValues extends FieldValues = FieldValues>({
                         min={minDate}
                         max={maxDate}
                         showCalendarIcon={false}
-                        placeholder="mm/dd/yyyy"
+                        placeholder={t("placeholder")}
                         classNames={{
                             trigger: "border-none p-0",
                         }}

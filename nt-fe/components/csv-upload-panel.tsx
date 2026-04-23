@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useId } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/button";
 import { Textarea } from "@/components/textarea";
 import { Upload, FileText, X } from "lucide-react";
@@ -46,6 +47,7 @@ export function CsvUploadPanel({
     disabled = false,
     maxFileSizeMB = 1.5,
 }: CsvUploadPanelProps) {
+    const t = useTranslations("csvUpload");
     const inputId = useId();
     const [isDragging, setIsDragging] = useState(false);
     const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -126,8 +128,8 @@ export function CsvUploadPanel({
             }}
         >
             <TabsList>
-                <TabsTrigger value="upload">Upload File</TabsTrigger>
-                <TabsTrigger value="paste">Provide Data</TabsTrigger>
+                <TabsTrigger value="upload">{t("uploadFile")}</TabsTrigger>
+                <TabsTrigger value="paste">{t("provideData")}</TabsTrigger>
             </TabsList>
 
             {/* Upload Tab */}
@@ -160,15 +162,16 @@ export function CsvUploadPanel({
                                                 }
                                                 disabled={disabled}
                                             >
-                                                Choose File
+                                                {t("chooseFile")}
                                             </Button>{" "}
                                             <span className="text-muted-foreground font-medium">
-                                                or drag and drop
+                                                {t("orDragDrop")}
                                             </span>
                                         </p>
                                         <p className="text-sm text-muted-foreground">
-                                            max 1 file up to {maxFileSizeMB} MB,
-                                            CSV file only
+                                            {t("maxFileSize", {
+                                                maxSize: maxFileSizeMB,
+                                            })}
                                         </p>
                                     </div>
                                     <input
@@ -187,7 +190,7 @@ export function CsvUploadPanel({
 
                             <div className="flex items-center gap-2 text-sm">
                                 <span className="text-muted-foreground">
-                                    Don't have a file to upload?
+                                    {t("noFilePrompt")}
                                 </span>
                                 <Button
                                     type="button"
@@ -195,7 +198,7 @@ export function CsvUploadPanel({
                                     onClick={downloadTemplate}
                                     className="h-auto p-0! font-medium hover:underline text-general-unofficial-ghost-foreground"
                                 >
-                                    Download a template
+                                    {t("downloadTemplate")}
                                 </Button>
                             </div>
                         </>

@@ -1,5 +1,8 @@
+"use client";
+
 import { Button } from "@/components/button";
 import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useNear } from "@/stores/near-store";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
@@ -30,9 +33,11 @@ export function CreateRequestButton({
     onClick,
     type = "button",
     className = "w-full h-10",
-    idleMessage = "Create Request",
+    idleMessage,
     loadingMessage,
 }: CreateRequestButtonProps) {
+    const tAuth = useTranslations("auth");
+    const tCreate = useTranslations("createRequestButton");
     const { accountId } = useNear();
     const { treasuryId } = useTreasury();
     const { data: policy } = useTreasuryPolicy(treasuryId);
@@ -75,16 +80,16 @@ export function CreateRequestButton({
                 {isSubmitting ? (
                     <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {loadingMessage ?? idleMessage}
+                        {loadingMessage ?? idleMessage ?? tCreate("idle")}
                     </>
                 ) : !accountId ? (
-                    "Connect your wallet"
+                    tAuth("noWallet")
                 ) : !hasSponsoredTransactions ? (
-                    "No sponsored transactions remaining"
+                    tAuth("noSponsoredTransactions")
                 ) : !isAuthorized ? (
-                    "You don't have permission to create a request"
+                    tCreate("noPermission")
                 ) : (
-                    idleMessage
+                    (idleMessage ?? tCreate("idle"))
                 )}
             </Button>
         </>

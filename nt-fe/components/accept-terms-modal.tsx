@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useNear } from "@/stores/near-store";
 import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { ScrollArea } from "./ui/scroll-area";
 import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from "@/constants/config";
@@ -23,6 +24,7 @@ interface AcceptTermsModalProps {
 }
 
 export function AcceptTermsModal({ open }: AcceptTermsModalProps) {
+    const t = useTranslations("acceptTerms");
     const [accepted, setAccepted] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { acceptTerms } = useNear();
@@ -50,7 +52,7 @@ export function AcceptTermsModal({ open }: AcceptTermsModalProps) {
                 showCloseButton={false}
             >
                 <DialogHeader closeButton={false}>
-                    <DialogTitle>Accept Terms to Continue</DialogTitle>
+                    <DialogTitle>{t("title")}</DialogTitle>
                 </DialogHeader>
 
                 <ScrollArea className="max-h-[60vh]">
@@ -59,51 +61,39 @@ export function AcceptTermsModal({ open }: AcceptTermsModalProps) {
                             <ul className="space-y-4">
                                 <li>
                                     <p className="text-foreground mb-1">
-                                        Your Privacy at Trezu
+                                        {t("privacyTitle")}
                                     </p>
-                                    Trezu is a non-custodial interface. We
-                                    prioritize your privacy while ensuring the
-                                    platform stays secure and functional.
+                                    {t("privacyBody")}
                                 </li>
                                 <li>
                                     <p className="text-foreground mb-1">
-                                        Minimal Data
+                                        {t("minimalTitle")}
                                     </p>
-                                    We collect limited information, such as
-                                    public wallet addresses, IP addresses, and
-                                    usage analytics, to operate and improve the
-                                    Interface.
+                                    {t("minimalBody")}
                                 </li>
                                 <li>
                                     <p className="text-foreground mb-1">
-                                        No Custody
+                                        {t("noCustodyTitle")}
                                     </p>
-                                    We never have access to your private keys,
-                                    recovery phrases, or digital assets.
+                                    {t("noCustodyBody")}
                                 </li>
                                 <li>
                                     <p className="text-foreground mb-1">
-                                        Public Records
+                                        {t("publicTitle")}
                                     </p>
-                                    Remember that all blockchain transactions
-                                    are inherently public and are not controlled
-                                    by us.
+                                    {t("publicBody")}
                                 </li>
                                 <li>
                                     <p className="text-foreground mb-1">
-                                        Your Responsibility
+                                        {t("responsibilityTitle")}
                                     </p>
-                                    You are solely responsible for monitoring
-                                    your wallet activity and securing your
-                                    credentials.
+                                    {t("responsibilityBody")}
                                 </li>
                                 <li>
                                     <p className="text-foreground mb-1">
-                                        Future Updates
+                                        {t("futureTitle")}
                                     </p>
-                                    If you opt-in to future notifications (like
-                                    email or Telegram), we will only use that
-                                    data to keep you informed.
+                                    {t("futureBody")}
                                 </li>
                             </ul>
                         </div>
@@ -123,24 +113,28 @@ export function AcceptTermsModal({ open }: AcceptTermsModalProps) {
                             htmlFor="terms"
                             className="text-sm text-foreground font-normal inline-block leading-relaxed cursor-pointer"
                         >
-                            I have read and agree to the{" "}
-                            <Link
-                                href={TERMS_OF_SERVICE_URL}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-primary underline underline-offset-4 hover:text-primary/80"
-                            >
-                                Terms of Service
-                            </Link>{" "}
-                            and{" "}
-                            <Link
-                                href={PRIVACY_POLICY_URL}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-primary underline underline-offset-4 hover:text-primary/80"
-                            >
-                                Privacy Policy
-                            </Link>
+                            {t.rich("agreement", {
+                                terms: (chunks) => (
+                                    <Link
+                                        href={TERMS_OF_SERVICE_URL}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-primary underline underline-offset-4 hover:text-primary/80"
+                                    >
+                                        {chunks}
+                                    </Link>
+                                ),
+                                privacy: (chunks) => (
+                                    <Link
+                                        href={PRIVACY_POLICY_URL}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-primary underline underline-offset-4 hover:text-primary/80"
+                                    >
+                                        {chunks}
+                                    </Link>
+                                ),
+                            })}
                         </Label>
                     </div>
 
@@ -153,10 +147,10 @@ export function AcceptTermsModal({ open }: AcceptTermsModalProps) {
                             {isSubmitting ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Accepting...
+                                    {t("accepting")}
                                 </>
                             ) : (
-                                "Continue"
+                                t("continue")
                             )}
                         </Button>
                     </DialogFooter>

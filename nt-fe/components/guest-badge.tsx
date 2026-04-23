@@ -1,7 +1,7 @@
-import { Pill } from "./pill";
+"use client";
 
-const GUEST_TOOLTIP =
-    "You are a guest of this treasury. You can only view the data.";
+import { useTranslations } from "next-intl";
+import { Pill } from "./pill";
 
 interface GuestBadgeProps {
     showTooltip?: boolean;
@@ -16,12 +16,13 @@ export function GuestBadge({
     compact,
     id,
 }: GuestBadgeProps) {
+    const t = useTranslations("guestBadge");
     return (
         <Pill
             id={id}
-            title="Guest"
+            title={t("title")}
             variant="info"
-            info={showTooltip ? GUEST_TOOLTIP : undefined}
+            info={showTooltip ? t("tooltip") : undefined}
             side={side}
             className={compact ? "px-1 py-0.5 text-xxs" : undefined}
         />

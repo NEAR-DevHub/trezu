@@ -7,6 +7,14 @@ interface EarningOverviewParams {
     canWithdraw: boolean;
     symbol: string;
     formatTokenBalance: (balance: Big) => string;
+    labels: {
+        staked: string;
+        stakedInfo: string;
+        pendingRelease: string;
+        pendingReleaseInfo: string;
+        availableForWithdraw: string;
+        availableForWithdrawInfo: string;
+    };
 }
 
 /**
@@ -19,24 +27,25 @@ export function buildEarningOverviewItems({
     canWithdraw,
     symbol,
     formatTokenBalance,
+    labels,
 }: EarningOverviewParams): InfoItem[] {
     const pendingRelease = canWithdraw ? Big(0) : unstakedBalance;
     const availableForWithdraw = canWithdraw ? unstakedBalance : Big(0);
 
     return [
         {
-            label: "Staked",
-            info: "Tokens currently delegated to validators earning rewards.",
+            label: labels.staked,
+            info: labels.stakedInfo,
             value: `${formatTokenBalance(staked)} ${symbol}`,
         },
         {
-            label: "Pending Release",
-            info: "Tokens that have been unstaked but are still in the unbonding period (typically 2-3 days).",
+            label: labels.pendingRelease,
+            info: labels.pendingReleaseInfo,
             value: `${formatTokenBalance(pendingRelease)} ${symbol}`,
         },
         {
-            label: "Available for Withdraw",
-            info: "Unstaked tokens that have completed the unbonding period and can be withdrawn.",
+            label: labels.availableForWithdraw,
+            info: labels.availableForWithdrawInfo,
             value: `${formatTokenBalance(availableForWithdraw)} ${symbol}`,
         },
     ];

@@ -1,6 +1,7 @@
 "use client";
 
 import { LineChart, Line, XAxis, YAxis, Area, AreaChart } from "recharts";
+import { useTranslations } from "next-intl";
 import {
     ChartContainer,
     ChartTooltip,
@@ -28,17 +29,6 @@ interface BalanceChartProps {
     onMouseLeave?: () => void;
 }
 
-const chartConfig = {
-    usdValue: {
-        label: "USD Value",
-        color: "var(--color-foreground)",
-    },
-    balanceValue: {
-        label: "Token Balance",
-        color: "var(--muted-foreground)",
-    },
-} satisfies ChartConfig;
-
 export default function BalanceChart({
     data = [],
     symbol,
@@ -46,13 +36,24 @@ export default function BalanceChart({
     onMouseEnter,
     onMouseLeave,
 }: BalanceChartProps) {
+    const t = useTranslations("balanceChart");
+    const chartConfig = {
+        usdValue: {
+            label: t("usdValue"),
+            color: "var(--color-foreground)",
+        },
+        balanceValue: {
+            label: t("tokenBalance"),
+            color: "var(--muted-foreground)",
+        },
+    } satisfies ChartConfig;
     if (data.length === 0) {
         return (
             <div className="h-[180px]">
                 <EmptyState
                     icon={ChartSpline}
-                    title="Nothing to show yet"
-                    description="Add assets to start tracking your portfolio."
+                    title={t("emptyTitle")}
+                    description={t("emptyDescription")}
                 />
             </div>
         );

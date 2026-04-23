@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/button";
 import { InfoDisplay, type InfoItem } from "@/components/info-display";
 import { ChevronLeft, Info } from "lucide-react";
@@ -32,23 +33,22 @@ export function EarningPoolDetailsModal({
     asset,
     poolId,
 }: EarningPoolDetailsModalProps) {
-    if (!asset) return null;
+    const t = useTranslations("earningPoolDetails");
+    const tEarning = useTranslations("earningDetails");
 
     const stakingBalance =
-        asset.balance.type === "Staked" ? asset.balance.staking : null;
+        asset?.balance.type === "Staked" ? asset.balance.staking : null;
     const lockupBalance =
-        asset.balance.type === "Vested" ? asset.balance.lockup : null;
+        asset?.balance.type === "Vested" ? asset.balance.lockup : null;
     const isDaoStaking = !!stakingBalance;
     const isLockupStaking = !!lockupBalance && lockupBalance.staked.gt(0);
-    if (!isDaoStaking && !isLockupStaking) return null;
 
     const selectedPool = isDaoStaking
         ? stakingBalance?.pools.find((pool) => pool.poolId === poolId)
         : null;
-    if (isDaoStaking && !selectedPool) return null;
 
     const lockupPoolId = isLockupStaking
-        ? (lockupBalance?.stakingPoolId ?? "Lockup staking pool")
+        ? (lockupBalance?.stakingPoolId ?? t("lockupStakingPool"))
         : null;
     const resolvedPoolId = isDaoStaking
         ? (selectedPool?.poolId ?? null)
@@ -63,6 +63,10 @@ export function EarningPoolDetailsModal({
     } = useStakingValidator(isOpen ? validatorPoolId : null);
     const isValidatorMetaLoading =
         !!validatorPoolId && (isLoading || isFetching);
+
+    if (!asset) return null;
+    if (!isDaoStaking && !isLockupStaking) return null;
+    if (isDaoStaking && !selectedPool) return null;
 
     const stakedBalance = isDaoStaking
         ? (selectedPool?.stakedBalance ?? Big(0))
@@ -88,18 +92,18 @@ export function EarningPoolDetailsModal({
 
     const overviewItems: InfoItem[] = [
         {
-            label: "Pending Release",
+            label: tEarning("overview.pendingRelease"),
             value: `${formatTokenBalance(pendingRelease)} ${asset.symbol}`,
         },
         {
-            label: "Available For Withdrawal",
+            label: tEarning("overview.availableForWithdraw"),
             value: `${formatTokenBalance(availableForWithdraw)} ${asset.symbol}`,
         },
     ];
 
     const poolMetaItems: InfoItem[] = [
         {
-            label: "APY",
+            label: t("apy"),
             value: isValidatorMetaLoading ? (
                 <Skeleton className="h-4 w-16" />
             ) : validatorDetails?.apy !== undefined ? (
@@ -107,17 +111,17 @@ export function EarningPoolDetailsModal({
                     {validatorDetails.apy.toFixed(2)}%
                 </span>
             ) : (
-                "N/A"
+                t("notAvailable")
             ),
         },
         {
-            label: "Fee",
+            label: t("fee"),
             value: isValidatorMetaLoading ? (
                 <Skeleton className="h-4 w-16" />
             ) : validatorDetails?.feePercent !== undefined ? (
                 `${validatorDetails.feePercent.toFixed(2)}%`
             ) : (
-                "N/A"
+                t("notAvailable")
             ),
         },
     ];
@@ -139,14 +143,14 @@ export function EarningPoolDetailsModal({
                             </Button>
                         ) : null}
                         <DialogTitle className="text-left">
-                            Earning Details
+                            {tEarning("title")}
                         </DialogTitle>
                     </div>
                 </DialogHeader>
 
                 <div className="flex flex-col gap-6">
                     <AmountSummary
-                        title="Balance"
+                        title={t("balance")}
                         total={formatTokenBalance(poolTotal)}
                         totalUSD={summaryUsd}
                         token={{
@@ -163,10 +167,7 @@ export function EarningPoolDetailsModal({
                         <div className="rounded-xl bg-muted/60 px-4 py-3 text-sm flex items-start gap-2">
                             <Info className="size-4 text-muted-foreground mt-0.5 shrink-0" />
                             <p className="text-foreground">
-                                All assets in this position are from your
-                                lockup. After you stop earning, some tokens may
-                                still be locked and unavailable - check your
-                                lockup schedule to see when they unlock.
+                                {t("lockupAssetsNote")}
                             </p>
                         </div>
                     ) : null}
@@ -192,9 +193,9 @@ export function EarningPoolDetailsModal({
                     <Button
                         className="w-full"
                         disabled
-                        tooltipContent="Coming soon"
+                        tooltipContent={tEarning("comingSoon")}
                     >
-                        Go To Earn
+                        {tEarning("goToEarn")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

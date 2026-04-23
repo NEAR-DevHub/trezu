@@ -341,10 +341,12 @@ export function getProposalStatus(
  *
  * Returns { date, isFuture, label } where label is the status verb prefix for non-pending.
  */
+export type StatusDateLabelKey = "expires" | "created" | "expired" | "removed";
+
 export function getProposalStatusDateInfo(
     proposal: Proposal,
     policy: Policy,
-): { date: Date; isFuture: boolean; label: string } {
+): { date: Date; isFuture: boolean; labelKey: StatusDateLabelKey | null } {
     const submissionTime = parseInt(proposal.submission_time);
     const uiStatus = getProposalStatus(proposal, policy);
 
@@ -358,7 +360,7 @@ export function getProposalStatusDateInfo(
                 ? submissionTime + EXCHANGE_EXPIRY_NS
                 : submissionTime + proposalPeriod;
         const expiryDate = new Date(expiryNs / 1_000_000);
-        return { date: expiryDate, isFuture: true, label: "Expires" };
+        return { date: expiryDate, isFuture: true, labelKey: "expires" };
     }
 
     // For all resolved statuses, use submission_time as a fallback since
@@ -367,11 +369,23 @@ export function getProposalStatusDateInfo(
 
     switch (uiStatus) {
         case "Executed":
-            return { date: submissionDate, isFuture: false, label: "Created" };
+            return {
+                date: submissionDate,
+                isFuture: false,
+                labelKey: "created",
+            };
         case "Rejected":
-            return { date: submissionDate, isFuture: false, label: "Created" };
+            return {
+                date: submissionDate,
+                isFuture: false,
+                labelKey: "created",
+            };
         case "Failed":
-            return { date: submissionDate, isFuture: false, label: "Created" };
+            return {
+                date: submissionDate,
+                isFuture: false,
+                labelKey: "created",
+            };
         case "Expired": {
             // Exchange proposals expire after 24h, others after proposal_period
             const proposalType = getProposalUIKind(proposal);
@@ -382,12 +396,20 @@ export function getProposalStatusDateInfo(
                           (submissionTime + parseInt(policy.proposal_period)) /
                               1_000_000,
                       );
-            return { date: expiredDate, isFuture: false, label: "Expired" };
+            return {
+                date: expiredDate,
+                isFuture: false,
+                labelKey: "expired",
+            };
         }
         case "Removed":
-            return { date: submissionDate, isFuture: false, label: "Removed" };
+            return {
+                date: submissionDate,
+                isFuture: false,
+                labelKey: "removed",
+            };
         default:
-            return { date: submissionDate, isFuture: false, label: "" };
+            return { date: submissionDate, isFuture: false, labelKey: null };
     }
 }
 

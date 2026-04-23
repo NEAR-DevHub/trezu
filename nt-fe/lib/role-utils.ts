@@ -36,16 +36,3 @@ function getRoleIdForSorting(roleName: string): string {
 
     return normalized;
 }
-
-/**
- * Get role description from ROLES constant, handling name mapping
- * Always uses the new role names (Governance, Financial) in descriptions
- */
-export function getRoleDescription(roleName: string): string | undefined {
-    const roleId = getRoleIdForSorting(roleName);
-    const roleInfo = ROLES.find((r) => r.id === roleId);
-
-    if (!roleInfo?.description) return undefined;
-
-    return roleInfo.description;
-}

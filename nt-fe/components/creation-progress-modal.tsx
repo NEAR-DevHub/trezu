@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, Loader2, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/button";
 import {
@@ -58,6 +59,7 @@ export function CreationProgressModal({
     treasuryId,
     onNavigate,
 }: CreationProgressModalProps) {
+    const t = useTranslations("progressModal");
     const isDone = !!treasuryId;
     const hasError = !!error;
 
@@ -67,10 +69,10 @@ export function CreationProgressModal({
                 <DialogHeader closeButton={hasError || isDone}>
                     <DialogTitle>
                         {hasError
-                            ? "Treasury Creation Failed"
+                            ? t("titleFailed")
                             : isDone
-                              ? "Treasury Created"
-                              : "Creating Treasury..."}
+                              ? t("titleDone")
+                              : t("titleCreating")}
                     </DialogTitle>
                 </DialogHeader>
 
@@ -105,7 +107,7 @@ export function CreationProgressModal({
 
                 {isDone && (
                     <Button className="w-full mt-2" onClick={onNavigate}>
-                        View Treasury
+                        {t("viewTreasury")}
                     </Button>
                 )}
             </DialogContent>

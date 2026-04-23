@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
     Dialog,
     DialogContent,
@@ -24,23 +25,34 @@ interface ExchangeSettingsModalProps {
 
 const SLIPPAGE_PRESETS = [0.1, 0.5, 1.0];
 
-const settingsFormSchema = z.object({
-    slippageTolerance: z
-        .number()
-        .refine((val) => val === 0 || (val >= 0.01 && val <= 100), {
-            message: "Slippage must be between 0.01% and 100%",
-        }),
-    isCustom: z.boolean(),
-});
+function buildSettingsFormSchema(messages: { slippageRange: string }) {
+    return z.object({
+        slippageTolerance: z
+            .number()
+            .refine((val) => val === 0 || (val >= 0.01 && val <= 100), {
+                message: messages.slippageRange,
+            }),
+        isCustom: z.boolean(),
+    });
+}
 
-type SettingsFormValues = z.infer<typeof settingsFormSchema>;
+type SettingsFormValues = z.infer<ReturnType<typeof buildSettingsFormSchema>>;
 
 export function ExchangeSettingsModal({
     slippageTolerance,
     onSlippageChange,
     id,
 }: ExchangeSettingsModalProps) {
+    const t = useTranslations("exchangeSettings");
     const [isOpen, setIsOpen] = useState(false);
+
+    const settingsFormSchema = useMemo(
+        () =>
+            buildSettingsFormSchema({
+                slippageRange: t("slippageRange"),
+            }),
+        [t],
+    );
 
     const form = useForm<SettingsFormValues>({
         resolver: zodResolver(settingsFormSchema),
@@ -66,7 +78,7 @@ export function ExchangeSettingsModal({
     const onSubmit = (data: SettingsFormValues) => {
         if (data.slippageTolerance === 0) {
             form.setError("slippageTolerance", {
-                message: "Please enter a slippage tolerance",
+                message: t("enterSlippage"),
             });
             return;
         }
@@ -89,7 +101,7 @@ export function ExchangeSettingsModal({
             </DialogTrigger>
             <DialogContent className="max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Exchange Settings</DialogTitle>
+                    <DialogTitle>{t("title")}</DialogTitle>
                 </DialogHeader>
 
                 <Form {...form}>
@@ -99,7 +111,7 @@ export function ExchangeSettingsModal({
                     >
                         <div className="flex flex-col gap-3">
                             <h3 className="text-sm font-semibold">
-                                Slippage Tolerance
+                                {t("slippageTolerance")}
                             </h3>
 
                             <div className="flex gap-2">
@@ -131,7 +143,7 @@ export function ExchangeSettingsModal({
                                             : "border border-general-unofficial-border-3 bg-general-unofficial-outline text-foreground",
                                     )}
                                 >
-                                    Custom
+                                    {t("custom")}
                                 </button>
                             </div>
 
@@ -158,7 +170,9 @@ export function ExchangeSettingsModal({
                                                         );
                                                     }
                                                 }}
-                                                placeholder="ex: 2%"
+                                                placeholder={t(
+                                                    "customPlaceholder",
+                                                )}
                                                 step="0.01"
                                                 min="0.01"
                                                 max="100"
@@ -175,14 +189,12 @@ export function ExchangeSettingsModal({
                             )}
 
                             <p className="text-sm text-muted-foreground mt-2">
-                                If the price changes by more than this
-                                percentage, the transaction will be cancelled to
-                                protect your funds.
+                                {t("slippageHelp")}
                             </p>
                         </div>
 
                         <Button type="submit" className="w-full h-10 mt-5">
-                            Save
+                            {t("save")}
                         </Button>
                     </form>
                 </Form>

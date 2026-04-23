@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { UseFormReturn } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import Big from "@/lib/big";
 import {
     getIntentsQuote,
@@ -10,7 +11,7 @@ import { Token } from "@/components/token-input";
 import {
     formatAssetForIntentsAPI,
     getRecipientType,
-    getUserFriendlyErrorMessage,
+    classifyExchangeError,
     getDepositAndRefundType,
     isNEARDeposit,
     isNEARWithdraw,
@@ -46,6 +47,7 @@ export function useExchangeQuote({
     refetchInterval,
     isConfidential,
 }: UseExchangeQuoteParams) {
+    const tEx = useTranslations("exchangeErrors");
     return useQuery({
         queryKey: [
             isDryRun ? "dryExchangeQuote" : "liveExchangeQuote",
@@ -185,12 +187,12 @@ export function useExchangeQuote({
 
                 if (isDryRun) {
                     // Only show errors for dry run (user is still on Step 1)
-                    const userMessage = getUserFriendlyErrorMessage(
-                        error?.message || "Failed to fetch quote",
+                    const { code, raw } = classifyExchangeError(
+                        error?.message || tEx("fetchFailed"),
                     );
                     form.setError("receiveAmount", {
                         type: "manual",
-                        message: userMessage,
+                        message: code === "unknown" ? raw : tEx(code),
                     });
                 }
                 return null;

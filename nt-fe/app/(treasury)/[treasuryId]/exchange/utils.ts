@@ -167,10 +167,21 @@ export function calculateMarketPriceDifference(
     }
 }
 
+export type ExchangeErrorCode =
+    | "noRoute"
+    | "amountTooLow"
+    | "insufficientBalance"
+    | "networkError"
+    | "unknown";
+
 /**
- * Provides user-friendly error messages for common API errors
+ * Classifies API errors into a translation-friendly code.
+ * Caller is responsible for translating the code into a user message.
  */
-export function getUserFriendlyErrorMessage(errorMessage: string): string {
+export function classifyExchangeError(errorMessage: string): {
+    code: ExchangeErrorCode;
+    raw: string;
+} {
     const lowerError = errorMessage.toLowerCase();
 
     if (
@@ -180,20 +191,16 @@ export function getUserFriendlyErrorMessage(errorMessage: string): string {
         lowerError.includes("tokenin is not valid") ||
         lowerError.includes("tokenout is not valid")
     ) {
-        return "No exchange found. Try a smaller amount or different token.";
-    } else if (lowerError.includes("amount") && lowerError.includes("low")) {
-        return "Amount too low for swap. Cross-chain swaps require a higher minimum to cover network fees.";
-    } else if (
-        lowerError.includes("insufficient") ||
-        lowerError.includes("balance")
-    ) {
-        return "Insufficient balance for this swap.";
-    } else if (
-        lowerError.includes("timeout") ||
-        lowerError.includes("network")
-    ) {
-        return "Network error. Please check your connection and try again.";
+        return { code: "noRoute", raw: errorMessage };
     }
-
-    return errorMessage;
+    if (lowerError.includes("amount") && lowerError.includes("low")) {
+        return { code: "amountTooLow", raw: errorMessage };
+    }
+    if (lowerError.includes("insufficient") || lowerError.includes("balance")) {
+        return { code: "insufficientBalance", raw: errorMessage };
+    }
+    if (lowerError.includes("timeout") || lowerError.includes("network")) {
+        return { code: "networkError", raw: errorMessage };
+    }
+    return { code: "unknown", raw: errorMessage };
 }

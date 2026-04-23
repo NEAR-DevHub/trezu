@@ -1,9 +1,11 @@
 import { Button } from "@/components/button";
 import { cn } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 
 export default function NotFound() {
+    const t = useTranslations("notFound");
     return (
         <div className="dark relative flex min-h-screen flex-col items-center justify-center bg-black overflow-x-hidden">
             {/* Spotlight beam — trapezoid path matches Figma SVG exactly */}
@@ -85,16 +87,15 @@ export default function NotFound() {
             >
                 <div className="flex flex-col items-center gap-1.5 text-center w-full">
                     <h1 className="text-2xl font-medium text-foreground tracking-[-0.48px] leading-snug">
-                        Wooops, this page is gone...
+                        {t("title")}
                     </h1>
                     <p className="text-base text-muted-foreground leading-6">
-                        It looks like you followed a link that no longer works.
-                        Try going back or return to the Dashboard.
+                        {t("description")}
                     </p>
                 </div>
                 <Link href="/">
                     <Button>
-                        Back to Dashboard
+                        {t("backToDashboard")}
                         <ArrowRight className="size-3" />
                     </Button>
                 </Link>

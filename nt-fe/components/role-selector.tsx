@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { ChevronDown } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
     Popover,
@@ -38,6 +39,39 @@ export const ROLES: readonly Role[] = [
     },
 ] as const;
 
+const CANONICAL_ROLE_IDS = new Set(["governance", "requestor", "financial"]);
+
+function normalizeRoleId(roleId: string): string {
+    const normalized = roleId.trim().toLowerCase();
+
+    if (normalized === "admin" || normalized === "manage members") {
+        return "governance";
+    }
+    if (normalized === "approver" || normalized === "vote") {
+        return "financial";
+    }
+    if (normalized === "create requests") {
+        return "requestor";
+    }
+
+    return normalized;
+}
+
+function useTranslatedRoles(availableRoles: readonly Role[]): Role[] {
+    const t = useTranslations("roleSelector.roles");
+    return availableRoles.map((role) => {
+        const canonical = normalizeRoleId(role.id);
+        if (!CANONICAL_ROLE_IDS.has(canonical)) {
+            return { ...role };
+        }
+        return {
+            ...role,
+            title: t(`${canonical}.title`),
+            description: t(`${canonical}.description`),
+        };
+    });
+}
+
 interface RoleSelectorProps {
     selectedRoles?: string[];
     onRolesChange?: (roles: string[]) => void;
@@ -52,6 +86,8 @@ export function RoleSelector({
     availableRoles = ROLES,
     disabledRoles = [],
 }: RoleSelectorProps) {
+    const t = useTranslations("roleSelector");
+    const translatedRoles = useTranslatedRoles(availableRoles);
     const [open, setOpen] = React.useState(false);
 
     const handleRoleToggle = (roleId: string) => {
@@ -66,13 +102,13 @@ export function RoleSelector({
 
     const getButtonText = () => {
         if (selectedRoles.length === 0) {
-            return "Set Role";
-        } else if (selectedRoles.length === availableRoles.length) {
-            return "All Roles";
+            return t("setRole");
+        } else if (selectedRoles.length === translatedRoles.length) {
+            return t("allRoles");
         }
         const selectedRoleTitles = selectedRoles
             .sort((a, b) => a.localeCompare(b))
-            .map((id) => availableRoles.find((r) => r.id === id)?.title)
+            .map((id) => translatedRoles.find((r) => r.id === id)?.title)
             .filter(Boolean);
         return selectedRoleTitles.join(", ");
     };
@@ -92,7 +128,7 @@ export function RoleSelector({
                 className="w-80 p-1 gap-1 flex flex-col"
                 align="start"
             >
-                {availableRoles.map((role) => {
+                {translatedRoles.map((role) => {
                     const disabledInfo = disabledRoles.find(
                         (d) => d.roleId === role.id,
                     );

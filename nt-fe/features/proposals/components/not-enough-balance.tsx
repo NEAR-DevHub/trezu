@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { InfoAlert } from "@/components/info-alert";
 import { InsufficientBalanceInfo } from "../hooks/use-proposal-insufficient-balance";
 
@@ -6,40 +7,33 @@ export function NotEnoughBalance({
 }: {
     insufficientBalanceInfo: InsufficientBalanceInfo;
 }) {
+    const t = useTranslations("proposals.insufficientBalance");
     if (!insufficientBalanceInfo.hasInsufficientBalance) return null;
 
     if (insufficientBalanceInfo.type === "no-asset") {
         return (
             <InfoAlert
                 className="inline-flex"
-                message={
-                    <span>
-                        This request can&apos;t be approved because the required
-                        token is not available in the treasury.
-                    </span>
-                }
+                message={<span>{t("noAsset")}</span>}
             />
         );
     }
+
+    const messageKey =
+        insufficientBalanceInfo.type === "bond" ? "bond" : "continue";
+    const symbol = insufficientBalanceInfo.tokenSymbol ?? "";
+    const amount = insufficientBalanceInfo.differenceDisplay ?? "";
 
     return (
         <InfoAlert
             className="inline-flex"
             message={
                 <span>
-                    This request can&apos;t be approved because the treasury has
-                    insufficient{" "}
-                    <strong>{insufficientBalanceInfo.tokenSymbol}</strong>{" "}
-                    balance. Add{" "}
-                    <strong>
-                        {insufficientBalanceInfo.differenceDisplay}{" "}
-                        {insufficientBalanceInfo.tokenSymbol}
-                    </strong>{" "}
-                    to{" "}
-                    {insufficientBalanceInfo.type === "bond"
-                        ? "cover proposal bond costs"
-                        : "continue"}
-                    .
+                    {t.rich(messageKey, {
+                        symbol,
+                        amount,
+                        token: (chunks) => <strong>{chunks}</strong>,
+                    })}
                 </span>
             }
         />

@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { FormProvider, type UseFormReturn } from "react-hook-form";
 import { ButtonWithTooltip } from "@/components/button-with-tooltip";
 import { MemberInput } from "@/components/member-input";
@@ -8,8 +9,9 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/modal";
-import { formatRoleName } from "@/components/role-name";
-import { getRoleDescription, sortRolesByOrder } from "@/lib/role-utils";
+import { useFormatRoleName } from "@/components/role-name";
+import { sortRolesByOrder } from "@/lib/role-utils";
+import { useRoleDescription } from "@/lib/use-role-description";
 import type { RolePermission } from "@/types/policy";
 
 interface MemberFormData {
@@ -50,13 +52,16 @@ export function MemberModal({
     originalMembers,
     getDisabledRoles,
 }: MemberModalProps) {
+    const t = useTranslations("members.memberModal");
+    const formatRoleName = useFormatRoleName();
+    const getRoleDescription = useRoleDescription();
     const isEditMode = mode === "edit";
-    const title = isEditMode ? "Edit Roles" : "Add New Member";
+    const title = isEditMode ? t("editRoles") : t("addNewMember");
     const buttonText = isValidatingAddresses
         ? isEditMode
-            ? "Creating proposal..."
-            : "Validating addresses..."
-        : "Review Request";
+            ? t("creatingProposal")
+            : t("validatingAddresses")
+        : t("reviewRequest");
 
     // Check if any changes have been made in edit mode
     const hasChanges = (() => {
@@ -142,7 +147,7 @@ export function MemberModal({
                             tooltipMessage={
                                 validationError ||
                                 (isEditMode && !hasChanges
-                                    ? "No changes have been made to member roles"
+                                    ? t("noChanges")
                                     : undefined)
                             }
                         >

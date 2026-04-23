@@ -1,7 +1,16 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
+import { SystemStatusBanner } from "@/components/system-status-banner";
+import { ConfidentialBanner } from "@/features/confidential/components/confidential-banner";
+import { CreateBanner } from "@/features/onboarding/components/create-banner";
+import { NEW } from "@/features/onboarding/components/new";
+import {
+    PAGE_TOUR_SELECTORS,
+    useGuestSaveTour,
+} from "@/features/onboarding/steps/page-tours";
 import { useProposals } from "@/hooks/use-proposals";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useTreasury } from "@/hooks/use-treasury";
@@ -9,9 +18,16 @@ import { useSaveTreasuryMutation } from "@/hooks/use-treasury-mutations";
 import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 import { useResponsiveSidebar } from "@/stores/sidebar-store";
-import { ConfidentialBanner } from "@/features/confidential/components/confidential-banner";
-import { CreateBanner } from "@/features/onboarding/components/create-banner";
-import { SystemStatusBanner } from "@/components/system-status-banner";
+import { ArrowUpDown } from "./animate-ui/icons/arrow-up-down";
+import { Bookmark } from "./animate-ui/icons/bookmark";
+import { ChartColumn } from "./animate-ui/icons/chart-column";
+import { ContactRound } from "./animate-ui/icons/contact-round";
+import { CreditCard } from "./animate-ui/icons/credit-card";
+import { AnimateIcon, type IconProps } from "./animate-ui/icons/icon";
+import { MessageCircleQuestion } from "./animate-ui/icons/message-circle-question";
+import { Send } from "./animate-ui/icons/send";
+import { Settings } from "./animate-ui/icons/settings";
+import { Users } from "./animate-ui/icons/users";
 import { ApprovalInfo } from "./approval-info";
 import { Button } from "./button";
 import { GuestBadge } from "./guest-badge";
@@ -19,21 +35,6 @@ import { NumberBadge } from "./number-badge";
 import { SponsoredActionsLimitNotice } from "./sponsored-actions-limit-notice";
 import { SupportCenterModal } from "./support-center-modal";
 import { TreasurySelector } from "./treasury-selector";
-import { AnimateIcon, IconProps } from "./animate-ui/icons/icon";
-import { ChartColumn } from "./animate-ui/icons/chart-column";
-import { Send } from "./animate-ui/icons/send";
-import { Users } from "./animate-ui/icons/users";
-import { Settings } from "./animate-ui/icons/settings";
-import { MessageCircleQuestion } from "./animate-ui/icons/message-circle-question";
-import { ArrowUpDown } from "./animate-ui/icons/arrow-up-down";
-import { CreditCard } from "./animate-ui/icons/credit-card";
-import { Bookmark } from "./animate-ui/icons/bookmark";
-import { ContactRound } from "./animate-ui/icons/contact-round";
-import { NEW } from "@/features/onboarding/components/new";
-import {
-    PAGE_TOUR_SELECTORS,
-    useGuestSaveTour,
-} from "@/features/onboarding/steps/page-tours";
 
 interface NavLinkProps {
     isActive: boolean;
@@ -95,36 +96,43 @@ function NavLink({
     );
 }
 
+type NavTranslationKey =
+    | "dashboard"
+    | "requests"
+    | "payments"
+    | "exchange"
+    | "addressBook"
+    | "members"
+    | "settings";
+
 const topNavLinks: {
     path: string;
-    label: string;
+    labelKey: NavTranslationKey;
     icon: React.ComponentType<IconProps<"default">>;
     roleRequired?: boolean;
     id?: string;
 }[] = [
-    { path: "", label: "Dashboard", icon: ChartColumn },
-    { path: "requests", label: "Requests", icon: Send },
+    { path: "", labelKey: "dashboard", icon: ChartColumn },
+    { path: "requests", labelKey: "requests", icon: Send },
     {
         path: "payments",
-        label: "Payments",
+        labelKey: "payments",
         icon: CreditCard,
         roleRequired: true,
     },
     {
         path: "exchange",
-        label: "Exchange",
+        labelKey: "exchange",
         icon: ({ className, ...props }) => (
             <ArrowUpDown {...props} className={cn(className, "rotate-90")} />
         ),
         roleRequired: true,
     },
-    // { path: "earn", label: "Earn", icon: Database, roleRequired: true },
-    // { path: "vesting", label: "Vesting", icon: Clock10, roleRequired: true },
 ];
 
 const bottomNavLinks: {
     path: string;
-    label: string;
+    labelKey: NavTranslationKey;
     icon: React.ComponentType<IconProps<"default">>;
     id?: string;
     showNewPill?: boolean;
@@ -132,14 +140,19 @@ const bottomNavLinks: {
 }[] = [
     {
         path: "address-book",
-        label: "Address Book",
+        labelKey: "addressBook",
         icon: ContactRound,
         id: "address-book-link",
         showNewPill: true,
         memberRequired: true,
     },
-    { path: "members", label: "Members", icon: Users, id: "dashboard-step4" },
-    { path: "settings", label: "Settings", icon: Settings },
+    {
+        path: "members",
+        labelKey: "members",
+        icon: Users,
+        id: "dashboard-step4",
+    },
+    { path: "settings", labelKey: "settings", icon: Settings },
 ];
 
 interface SidebarProps {
@@ -154,6 +167,8 @@ export function Sidebar({ onClose }: SidebarProps) {
     const [hasInitialized, setHasInitialized] = useState(false);
     const [supportModalOpen, setSupportModalOpen] = useState(false);
     const { accountId } = useNear();
+    const tNav = useTranslations("nav");
+    const tCommon = useTranslations("common");
 
     const {
         isGuestTreasury,
@@ -251,7 +266,9 @@ export function Sidebar({ onClose }: SidebarProps) {
                                                 variant="outline"
                                                 size="sm"
                                                 className="w-fit h-6 justify-center gap-1.5"
-                                                tooltipContent="Save this guest treasury to your treasuries list."
+                                                tooltipContent={tNav(
+                                                    "saveGuestTreasury",
+                                                )}
                                                 side="right"
                                                 onClick={() =>
                                                     saveTreasuryMutation.mutate()
@@ -261,7 +278,7 @@ export function Sidebar({ onClose }: SidebarProps) {
                                                 }
                                             >
                                                 <Bookmark className="size-3 shrink-0" />
-                                                Save
+                                                {tCommon("save")}
                                             </Button>
                                         </AnimateIcon>
                                     )}
@@ -294,7 +311,7 @@ export function Sidebar({ onClose }: SidebarProps) {
                                 key={link.path}
                                 isActive={isActive}
                                 icon={link.icon}
-                                label={link.label}
+                                label={tNav(link.labelKey)}
                                 showBadge={showBadge}
                                 badgeCount={proposals?.total ?? 0}
                                 showLabels={showLabels}
@@ -352,7 +369,7 @@ export function Sidebar({ onClose }: SidebarProps) {
                                     key={link.path}
                                     isActive={isActive}
                                     icon={link.icon}
-                                    label={link.label}
+                                    label={tNav(link.labelKey)}
                                     showLabels={!isReduced}
                                     endAdornment={
                                         link.showNewPill ? (
@@ -371,7 +388,7 @@ export function Sidebar({ onClose }: SidebarProps) {
                         id="help-support-link"
                         isActive={false}
                         icon={MessageCircleQuestion}
-                        label="Help & Support"
+                        label={tNav("helpSupport")}
                         showLabels={!isReduced}
                         onClick={() => {
                             // close if mobile

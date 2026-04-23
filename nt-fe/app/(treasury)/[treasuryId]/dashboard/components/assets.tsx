@@ -1,4 +1,7 @@
+"use client";
+
 import { Coins } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { AssetsTable, AssetsTableSkeleton } from "@/components/assets-table";
 import { PageCard } from "@/components/card";
 import { EmptyState } from "@/components/empty-state";
@@ -14,6 +17,7 @@ interface Props {
 }
 
 export default function Assets({ tokens, state }: Props) {
+    const t = useTranslations("assetsPage");
     const aggregatedTokens = useAggregatedTokens(tokens);
     const bucketVisibility = getDashboardBucketVisibility(tokens);
     const hasTabs = bucketVisibility.showLocked || bucketVisibility.showEarning;
@@ -31,8 +35,8 @@ export default function Assets({ tokens, state }: Props) {
             return (
                 <EmptyState
                     icon={Coins}
-                    title="No assets yet"
-                    description="To get started, add assets to your Treasury by making a deposit."
+                    title={t("noAssetsTitle")}
+                    description={t("noAssetsDescription")}
                 />
             );
         }
@@ -48,7 +52,7 @@ export default function Assets({ tokens, state }: Props) {
         >
             {!hasTabs && (
                 <div className="flex justify-between">
-                    <StepperHeader title="Assets" />
+                    <StepperHeader title={t("title")} />
                 </div>
             )}
             {renderContent()}

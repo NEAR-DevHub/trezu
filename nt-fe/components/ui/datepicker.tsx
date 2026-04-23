@@ -25,6 +25,7 @@ import {
     XCircle,
 } from "lucide-react";
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
     DayPicker,
@@ -51,65 +52,91 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 
-// Default preset date ranges for common time periods
-export const DEFAULT_DATE_PRESETS = [
-    {
-        label: "Today",
-        value: {
-            from: startOfDay(new Date()),
-            to: endOfDay(new Date()),
+export interface DatePresetLabels {
+    today: string;
+    yesterday: string;
+    last3Days: string;
+    last7Days: string;
+    last14Days: string;
+    lastMonth: string;
+    last3Months: string;
+    last6Months: string;
+}
+
+export function buildDefaultDatePresets(labels: DatePresetLabels) {
+    return [
+        {
+            label: labels.today,
+            value: {
+                from: startOfDay(new Date()),
+                to: endOfDay(new Date()),
+            },
         },
-    },
-    {
-        label: "Yesterday",
-        value: {
-            from: subDays(startOfDay(new Date()), 1),
-            to: subDays(endOfDay(new Date()), 1),
+        {
+            label: labels.yesterday,
+            value: {
+                from: subDays(startOfDay(new Date()), 1),
+                to: subDays(endOfDay(new Date()), 1),
+            },
         },
-    },
-    {
-        label: "Last 3 days",
-        value: {
-            from: subDays(startOfDay(new Date()), 3),
-            to: endOfDay(new Date()),
+        {
+            label: labels.last3Days,
+            value: {
+                from: subDays(startOfDay(new Date()), 3),
+                to: endOfDay(new Date()),
+            },
         },
-    },
-    {
-        label: "Last 7 days",
-        value: {
-            from: subDays(startOfDay(new Date()), 7),
-            to: endOfDay(new Date()),
+        {
+            label: labels.last7Days,
+            value: {
+                from: subDays(startOfDay(new Date()), 7),
+                to: endOfDay(new Date()),
+            },
         },
-    },
-    {
-        label: "Last 14 days",
-        value: {
-            from: subDays(startOfDay(new Date()), 14),
-            to: endOfDay(new Date()),
+        {
+            label: labels.last14Days,
+            value: {
+                from: subDays(startOfDay(new Date()), 14),
+                to: endOfDay(new Date()),
+            },
         },
-    },
-    {
-        label: "Last month",
-        value: {
-            from: subMonths(startOfDay(new Date()), 1),
-            to: endOfDay(new Date()),
+        {
+            label: labels.lastMonth,
+            value: {
+                from: subMonths(startOfDay(new Date()), 1),
+                to: endOfDay(new Date()),
+            },
         },
-    },
-    {
-        label: "Last 3 months",
-        value: {
-            from: subMonths(startOfDay(new Date()), 3),
-            to: endOfDay(new Date()),
+        {
+            label: labels.last3Months,
+            value: {
+                from: subMonths(startOfDay(new Date()), 3),
+                to: endOfDay(new Date()),
+            },
         },
-    },
-    {
-        label: "Last 6 months",
-        value: {
-            from: subMonths(startOfDay(new Date()), 6),
-            to: endOfDay(new Date()),
+        {
+            label: labels.last6Months,
+            value: {
+                from: subMonths(startOfDay(new Date()), 6),
+                to: endOfDay(new Date()),
+            },
         },
-    },
-];
+    ];
+}
+
+export function useDefaultDatePresets() {
+    const t = useTranslations("datePresets");
+    return buildDefaultDatePresets({
+        today: t("today"),
+        yesterday: t("yesterday"),
+        last3Days: t("last3Days"),
+        last7Days: t("last7Days"),
+        last14Days: t("last14Days"),
+        lastMonth: t("lastMonth"),
+        last3Months: t("last3Months"),
+        last6Months: t("last6Months"),
+    });
+}
 
 export type CalendarProps = Omit<
     React.ComponentProps<typeof DayPicker>,
@@ -226,16 +253,21 @@ export function DateTimePicker({
     showCalendarIcon = true,
     clearable,
     borderless,
-    placeholder = "Pick a date",
+    placeholder: placeholderProp,
     classNames,
     minDateTooltipContent,
     maxDateTooltipContent,
     mode = "single",
     defaultMonth,
     numberOfMonths,
-    presets = mode === "range" ? DEFAULT_DATE_PRESETS : undefined,
+    presets: presetsProp,
     ...props
 }: DateTimePickerProps & CalendarProps) {
+    const tDate = useTranslations("datePicker");
+    const defaultPresets = useDefaultDatePresets();
+    const presets =
+        presetsProp ?? (mode === "range" ? defaultPresets : undefined);
+    const placeholder = placeholderProp ?? tDate("pickDate");
     // Helper to check if value is a range
     const isRange = (val: Date | DateRange | undefined): val is DateRange => {
         return (
@@ -515,7 +547,7 @@ export function DateTimePicker({
                 </div>
                 {timezone && (
                     <div className="mt-2 text-sm">
-                        <span>Timezone:</span>
+                        <span>{tDate("timezone")}:</span>
                         <span className="ms-1 font-semibold">{timezone}</span>
                     </div>
                 )}
@@ -684,12 +716,14 @@ export function DatePickerPopover({
     showCalendarIcon = true,
     clearable,
     borderless,
-    placeholder = "Pick a date",
+    placeholder: placeholderProp,
     classNames,
     align = "start",
     side = "bottom",
     ...dateTimePickerProps
 }: DatePickerPopoverProps) {
+    const tDate = useTranslations("datePicker");
+    const placeholder = placeholderProp ?? tDate("pickDate");
     const [open, setOpen] = useState(false);
 
     // Helper to check if value is a range

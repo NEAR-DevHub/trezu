@@ -1,14 +1,16 @@
 "use client";
 
-import { Sun, Moon, ArrowLeft, PanelLeft } from "lucide-react";
+import { ArrowLeft, Moon, PanelLeft, Sun } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { type ReactNode, useEffect } from "react";
+import { Button } from "@/components/button";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { SignIn } from "@/components/sign-in";
+import { SystemStatusBanner } from "@/components/system-status-banner";
+import { ConfidentialBanner } from "@/features/confidential/components/confidential-banner";
 import { useSidebarStore } from "@/stores/sidebar-store";
 import { useThemeStore } from "@/stores/theme-store";
-import { Button } from "@/components/button";
-import { SignIn } from "@/components/sign-in";
-import { ReactNode, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { ConfidentialBanner } from "@/features/confidential/components/confidential-banner";
-import { SystemStatusBanner } from "@/components/system-status-banner";
 
 interface PageComponentLayoutProps {
     title: string;
@@ -31,6 +33,7 @@ export function PageComponentLayout({
 }: PageComponentLayoutProps) {
     const { toggleSidebar } = useSidebarStore();
     const { theme, toggleTheme } = useThemeStore();
+    const tHeader = useTranslations("header");
 
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -50,7 +53,7 @@ export function PageComponentLayout({
                             size="icon"
                             onClick={toggleSidebar}
                             className="h-9 w-9 hover:bg-muted text-muted-foreground hover:text-foreground"
-                            aria-label="Toggle sidebar"
+                            aria-label={tHeader("toggleSidebar")}
                         >
                             <PanelLeft className="h-6 w-6" />
                         </Button>
@@ -91,10 +94,12 @@ export function PageComponentLayout({
 
                 {!hideLogin && (
                     <div className="flex items-center gap-3">
+                        <LanguageSwitcher />
                         <Button
                             variant="ghost"
                             size="icon"
                             onClick={toggleTheme}
+                            aria-label={tHeader("toggleTheme")}
                             className="h-9 w-9 hover:bg-muted text-muted-foreground hover:text-foreground"
                         >
                             {theme === "dark" ? (

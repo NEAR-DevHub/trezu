@@ -3,6 +3,7 @@ target
 .claude
 .env
 .DS_Store
+.next/
 nt-fe/screenshots/
 .env.local
 nt-be/examples/playwright/test-results/

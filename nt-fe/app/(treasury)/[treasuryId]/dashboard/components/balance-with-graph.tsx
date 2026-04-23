@@ -1,3 +1,5 @@
+"use client";
+
 import {
     ArrowLeftRight,
     ArrowUpRightIcon,
@@ -5,6 +7,7 @@ import {
     Download,
     Info,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { AuthButton } from "@/components/auth-button";
@@ -119,6 +122,7 @@ export default function BalanceWithGraph({
     onDepositClick,
     isLoading: isLoadingTokens,
 }: Props) {
+    const t = useTranslations("balanceWithGraph");
     const { treasuryId, isConfidential } = useTreasury();
     const [selectedToken, setSelectedToken] = useState<string>("all");
     const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>("1W");
@@ -336,7 +340,7 @@ export default function BalanceWithGraph({
                     )
                     .reduce((sum, t) => sum + t.balanceUSD, 0);
                 data.push({
-                    name: "Now",
+                    name: t("chartNow"),
                     fullDate: undefined,
                     usdValue: nowBalanceUSD,
                 });
@@ -433,7 +437,7 @@ export default function BalanceWithGraph({
                     0,
                 );
                 data.push({
-                    name: "Now",
+                    name: t("chartNow"),
                     fullDate: undefined,
                     usdValue: nowUSD,
                     balanceValue: nowBalance,
@@ -485,7 +489,7 @@ export default function BalanceWithGraph({
                 <div className="flex justify-around gap-4 mb-6">
                     <div className="flex-1">
                         <h3 className="text-xs font-medium text-muted-foreground">
-                            Total Balance
+                            {t("totalBalance")}
                         </h3>
                         <Skeleton className="h-9 w-40 mt-2" />
                     </div>
@@ -514,7 +518,7 @@ export default function BalanceWithGraph({
                 <div className="flex justify-between gap-4">
                     <div className="flex-1">
                         <h3 className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                            Total Balance
+                            {t("totalBalance")}
                             {!isConfidential &&
                                 selectedToken === "all" &&
                                 chartExcludedSymbols.length > 0 && (
@@ -523,7 +527,7 @@ export default function BalanceWithGraph({
                                         content={
                                             <div>
                                                 <p className="font-medium mb-1">
-                                                    Excluded tokens:
+                                                    {t("excludedTokens")}
                                                 </p>
                                                 <p>
                                                     {chartExcludedSymbols.join(
@@ -531,9 +535,7 @@ export default function BalanceWithGraph({
                                                     )}
                                                 </p>
                                                 <p className="text-muted-foreground mt-1 text-[10px]">
-                                                    No price history. Select a
-                                                    token to see its balance
-                                                    changes.
+                                                    {t("noPriceHistory")}
                                                 </p>
                                             </div>
                                         }
@@ -552,7 +554,7 @@ export default function BalanceWithGraph({
                                 <div className="mt-2 hidden md:flex items-center gap-2 text-sm text-muted-foreground">
                                     {balanceBreakdownItems.map((item, idx) => (
                                         <div
-                                            key={item.label}
+                                            key={item.key}
                                             className="contents"
                                         >
                                             {idx > 0 && (
@@ -562,7 +564,12 @@ export default function BalanceWithGraph({
                                                 />
                                             )}
                                             <span>
-                                                {item.label}{" "}
+                                                {t(
+                                                    `bucket${item.key[0].toUpperCase()}${item.key.slice(1)}` as
+                                                        | "bucketAvailable"
+                                                        | "bucketLocked"
+                                                        | "bucketEarning",
+                                                )}{" "}
                                                 <span className="font-semibold text-foreground">
                                                     {formatCurrency(item.value)}
                                                 </span>
@@ -573,11 +580,16 @@ export default function BalanceWithGraph({
                                 <div className="mt-4 border-t border-border/70 pt-3 space-y-3 md:hidden">
                                     {balanceBreakdownItems.map((item) => (
                                         <div
-                                            key={item.label}
+                                            key={item.key}
                                             className="flex items-center justify-between text-base"
                                         >
                                             <span className="text-muted-foreground">
-                                                {item.label}
+                                                {t(
+                                                    `bucket${item.key[0].toUpperCase()}${item.key.slice(1)}` as
+                                                        | "bucketAvailable"
+                                                        | "bucketLocked"
+                                                        | "bucketEarning",
+                                                )}
                                             </span>
                                             <span className="font-semibold text-foreground">
                                                 {formatCurrency(item.value)}
@@ -608,7 +620,7 @@ export default function BalanceWithGraph({
                                         {selectedToken === "all" ? (
                                             <div className="flex items-center gap-2">
                                                 <Coins className="size-4" />
-                                                <span>All Tokens</span>
+                                                <span>{t("allTokens")}</span>
                                             </div>
                                         ) : (
                                             <div className="flex items-center gap-2">
@@ -634,7 +646,7 @@ export default function BalanceWithGraph({
                                     <SelectItem value="all">
                                         <div className="flex items-center gap-2">
                                             <Coins className="size-4" />
-                                            <span>All Tokens</span>
+                                            <span>{t("allTokens")}</span>
                                         </div>
                                     </SelectItem>
                                     {groupedTokens.map((group) => (
@@ -680,7 +692,7 @@ export default function BalanceWithGraph({
                                             value={e}
                                             className="hover:text-foreground"
                                         >
-                                            {e}
+                                            {t(`period.${e}`)}
                                         </ToggleGroupItem>
                                     ))}
                                 </ToggleGroup>
@@ -696,7 +708,7 @@ export default function BalanceWithGraph({
                     id="dashboard-step1"
                     className="text-xs md:text-base"
                 >
-                    <Download className="md:size-4 size-3" /> Deposit
+                    <Download className="md:size-4 size-3" /> {t("deposit")}
                 </Button>
                 <AuthButton
                     permissionKind="transfer"
@@ -706,7 +718,7 @@ export default function BalanceWithGraph({
                     onClick={() => router.push(`/${treasuryId}/payments`)}
                 >
                     <ArrowUpRightIcon className="md:size-4 size-3" />
-                    Send
+                    {t("send")}
                 </AuthButton>
                 <AuthButton
                     permissionKind="call"
@@ -715,7 +727,8 @@ export default function BalanceWithGraph({
                     id="dashboard-step3"
                     onClick={() => router.push(`/${treasuryId}/exchange`)}
                 >
-                    <ArrowLeftRight className="md:size-4 size-3" /> Exchange
+                    <ArrowLeftRight className="md:size-4 size-3" />{" "}
+                    {t("exchange")}
                 </AuthButton>
                 {/*<AuthButton permissionKind="call" permissionAction="AddProposal" className="w-full">
                     <Database className="size-4" /> Earn
@@ -741,7 +754,7 @@ export default function BalanceWithGraph({
                             {selectedToken === "all" ? (
                                 <div className="flex items-center gap-2">
                                     <Coins className="size-4" />
-                                    <span>All Tokens</span>
+                                    <span>{t("allTokens")}</span>
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-2">
@@ -763,7 +776,7 @@ export default function BalanceWithGraph({
                         <SelectItem value="all">
                             <div className="flex items-center gap-2">
                                 <Coins className="size-4" />
-                                <span>All Tokens</span>
+                                <span>{t("allTokens")}</span>
                             </div>
                         </SelectItem>
                         {groupedTokens.map((group) => (
@@ -797,7 +810,7 @@ export default function BalanceWithGraph({
                         <SelectContent>
                             {TIME_PERIODS.map((period) => (
                                 <SelectItem key={period} value={period}>
-                                    {period}
+                                    {t(`period.${period}`)}
                                 </SelectItem>
                             ))}
                         </SelectContent>
