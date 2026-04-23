@@ -23,6 +23,7 @@ import { NumberBadge } from "@/components/number-badge";
 import type { BulkPaymentFormValues, BulkPaymentData } from "../schemas";
 import { cn, formatBalance, formatSmartAmount } from "@/lib/utils";
 import { validateAccountsAndStorage } from "../utils";
+import { useBulkParsingLabels } from "../utils/use-parsing-labels";
 import { useToken, useTokenBalance } from "@/hooks/use-treasury-queries";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useAddressBook } from "@/features/address-book";
@@ -51,6 +52,7 @@ export function ReviewPaymentsStep({
 }: ReviewPaymentsStepProps) {
     const tPay = useTranslations("payments");
     const tBulk = useTranslations("bulkPayment");
+    const parsingLabels = useBulkParsingLabels();
     const form = useFormContext<BulkPaymentFormValues>();
     const selectedToken = form.watch("selectedToken");
     const comment = form.watch("comment");
@@ -84,6 +86,7 @@ export function ReviewPaymentsStep({
                 const validatedPayments = await validateAccountsAndStorage(
                     paymentData,
                     selectedToken,
+                    parsingLabels,
                 );
                 setPaymentData(validatedPayments);
                 onPaymentDataChange(validatedPayments);

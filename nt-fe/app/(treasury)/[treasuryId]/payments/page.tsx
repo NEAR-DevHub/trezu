@@ -70,6 +70,7 @@ import {
     isIntentsToken,
     NETWORK_FEE_TOOLTIP_TEXT,
 } from "@/lib/intents-fee";
+import { useIntentsFeeLabels } from "@/lib/intents-fee-labels";
 import { FunctionCallKind, TransferKind } from "@/lib/proposals-api";
 
 function buildPaymentFormSchema(messages: {
@@ -512,6 +513,7 @@ export default function PaymentsPage() {
     const t = useTranslations("pages.payments");
     const tPay = useTranslations("payments");
     const tValidation = useTranslations("paymentForm.validation");
+    const intentsFeeLabels = useIntentsFeeLabels();
     const paymentFormSchema = useMemo(
         () =>
             buildPaymentFormSchema({
@@ -616,12 +618,15 @@ export default function PaymentsPage() {
             return null;
         }
 
-        return getNetworkFeeCoverageErrorMessage({
-            amount: watchedAmount,
-            networkFee: Big(intentsFeeData!.networkFee),
-            decimals: watchedToken.decimals,
-            symbol: watchedToken.symbol,
-        });
+        return getNetworkFeeCoverageErrorMessage(
+            {
+                amount: watchedAmount,
+                networkFee: Big(intentsFeeData!.networkFee),
+                decimals: watchedToken.decimals,
+                symbol: watchedToken.symbol,
+            },
+            intentsFeeLabels,
+        );
     }, [
         intentsFeeData,
         isIntentsCrossChainToken,
@@ -630,6 +635,7 @@ export default function PaymentsPage() {
         watchedAmount,
         watchedToken?.decimals,
         watchedToken?.symbol,
+        intentsFeeLabels,
     ]);
 
     const isSelectedTokenIntents = isIntentsToken(watchedToken);

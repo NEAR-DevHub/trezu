@@ -11,6 +11,7 @@ import {
     parseAndValidateAddressBookPaste,
     type ParsedRecipient,
 } from "../utils/parsing";
+import { useAddressBookParsingLabels } from "../utils/use-parsing-labels";
 
 export type { ParsedRecipient };
 
@@ -30,6 +31,7 @@ export function ImportUploadStep({
     onReview,
 }: ImportUploadStepProps) {
     const t = useTranslations("addressBook.import");
+    const parsingLabels = useAddressBookParsingLabels();
     const { data: chains = [] } = useChains();
 
     const [csvData, setCsvData] = useState<string | null>(null);
@@ -51,8 +53,12 @@ export function ImportUploadStep({
 
         const result =
             activeTab === "upload"
-                ? parseAndValidateAddressBookCsv(input, chains)
-                : parseAndValidateAddressBookPaste(input, chains);
+                ? parseAndValidateAddressBookCsv(input, chains, parsingLabels)
+                : parseAndValidateAddressBookPaste(
+                      input,
+                      chains,
+                      parsingLabels,
+                  );
 
         if (result.errors.length > 0) {
             return { recipients: [], errors: result.errors };
@@ -67,7 +73,7 @@ export function ImportUploadStep({
             recipientCount: result.recipients.length,
             networkCount: uniqueNetworks.size,
         };
-    }, [csvData, pasteData, activeTab, chains]);
+    }, [csvData, pasteData, activeTab, chains, parsingLabels]);
 
     const hasData =
         (activeTab === "upload" && !!csvData) ||

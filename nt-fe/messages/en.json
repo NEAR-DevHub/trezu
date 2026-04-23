@@ -95,6 +95,17 @@
         "title": "Service not available in your country",
         "description": "Due to restrictions, this service is currently unavailable in your region."
     },
+    "notFound": {
+        "title": "Wooops, this page is gone...",
+        "description": "It looks like you followed a link that no longer works. Try going back or return to the Dashboard.",
+        "backToDashboard": "Back to Dashboard"
+    },
+    "treasuryInfo": {
+        "logoAlt": "Treasury Logo"
+    },
+    "intentsFee": {
+        "amountTooLowForFee": "{prefix}Amount too low for network fee ({fee} {symbol}). Add at least {addMore} {symbol}."
+    },
     "metadata": {
         "treasuryTitle": "Dashboard | Trezu",
         "landingTitle": "Trezu | Cross-chain Treasury Management",
@@ -828,6 +839,17 @@
             "reviewTooltip": "All recipients must be complete before reviewing.",
             "invalidAddress": "Invalid address",
             "noCompatibleNetworks": "No compatible networks for this address"
+        },
+        "parsing": {
+            "rowPrefix": "Row {row}: {message}",
+            "missingName": "Missing recipient name. Please add a name.",
+            "missingAddress": "Missing recipient address. Please add a wallet address.",
+            "invalidAddressFormat": "The address \"{address}\" is not a valid format for any supported network.",
+            "unknownNetwork": "Unknown network \"{network}\". Supported networks include: {available}.",
+            "incompatibleNetwork": "The address \"{address}\" is not compatible with {network}. Compatible networks: {compatible}.",
+            "noDataFound": "No data found. Please add recipients in this format: Name, Address, Network, Note",
+            "headerColumnsNotFound": "We detected a header row, but couldn't find the 'Name' and 'Address' columns. Please use these column names, or remove the header row.",
+            "failedToParseCsv": "Failed to parse CSV data"
         }
     },
     "payments": {
@@ -890,6 +912,32 @@
         "editStep": {
             "title": "Edit Payment",
             "saveChanges": "Save Changes"
+        },
+        "parsing": {
+            "rowPrefix": "Row {row}: {message}",
+            "missingRecipientFirstColumn": "Missing recipient address. Please add an address in the first column.",
+            "invalidNearAddress": "The address \"{address}\" is not a valid NEAR account.",
+            "invalidChainAddress": "The address \"{address}\" is not valid {chain} account.",
+            "rowNeedsAmountRecipient": "Each row needs amount and recipient separated by a comma. Example: 100, alice.near",
+            "missingRecipientBeforeComma": "Missing recipient address. Please add an address before the comma.",
+            "missingAmountAfterComma": "Missing amount. Please add a number after the comma. Example: {recipient}, 100",
+            "invalidAmountNumber": "The amount \"{amountStr}\" is not a valid number. Please use only numbers and decimals (e.g., 100 or 100.50).",
+            "amountGreaterThanZero": "The amount must be greater than 0. You entered \"{amountStr}\".",
+            "amountTooLarge": "The amount \"{amountStr}\" is too large. Please use a smaller number.",
+            "invalidAmountFallback": "Invalid amount. Please use only numbers and decimals (e.g., 100 or 100.50).",
+            "pleaseRemoveChars": "Please remove these characters: {chars}. Only numbers, commas, and dots are allowed.",
+            "amountCannotBeEmpty": "Amount cannot be empty.",
+            "tokenMismatch": "You entered \"{provided}\" but {expected} is selected above. Either remove the token symbol or select {suggested} from the dropdown.",
+            "multipleTokenSymbols": "You're using multiple token symbols ({symbols}). Please use only one token type throughout your file, or remove the token symbols and let the selection above determine the token.",
+            "noPaymentDataFound": "No payment data found. Please add your payments in this format: recipient, amount",
+            "exceedsRecipientLimit": "You have {count} recipients, but the limit is {limit} per batch. Please remove {excess, plural, one {# recipient} other {# recipients}} or split into multiple batches.",
+            "noPaymentDataProvided": "No payment data provided. Please enter your payments in this format: recipient, amount",
+            "headerColumnsNotFound": "We detected a header row, but couldn't find the 'Recipient' and 'Amount' columns. Please use these column names, or remove the header row.",
+            "failedToParseCsv": "Failed to parse CSV data",
+            "failedToParsePaste": "Failed to parse paste data",
+            "failedToValidateAccount": "Failed to validate account",
+            "feeEstimationFailed": "Couldn't estimate network fee for this amount. Please verify and try again.",
+            "feeEstimationFailedRow": "Row {row} ({recipient}): Couldn't estimate network fee for this amount. Please verify and try again."
         },
         "recipients": "Recipients",
         "insufficientTokens": "Insufficient tokens. You can submit the request and top up before approval.",

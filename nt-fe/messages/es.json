@@ -95,6 +95,17 @@
         "title": "Servicio no disponible en tu país",
         "description": "Debido a restricciones, este servicio no está disponible actualmente en tu región."
     },
+    "notFound": {
+        "title": "Ups, esta página ya no existe...",
+        "description": "Parece que seguiste un enlace que ya no funciona. Intenta volver atrás o regresa al Panel.",
+        "backToDashboard": "Volver al Panel"
+    },
+    "treasuryInfo": {
+        "logoAlt": "Logotipo de tesorería"
+    },
+    "intentsFee": {
+        "amountTooLowForFee": "{prefix}La cantidad es demasiado baja para la tarifa de red ({fee} {symbol}). Añade al menos {addMore} {symbol}."
+    },
     "metadata": {
         "treasuryTitle": "Panel | Trezu",
         "landingTitle": "Trezu | Gestión de tesorería multicadena",
@@ -828,6 +839,17 @@
             "reviewTooltip": "Todos los destinatarios deben estar completos antes de revisar.",
             "invalidAddress": "Dirección no válida",
             "noCompatibleNetworks": "No hay redes compatibles con esta dirección"
+        },
+        "parsing": {
+            "rowPrefix": "Fila {row}: {message}",
+            "missingName": "Falta el nombre del destinatario. Añade un nombre.",
+            "missingAddress": "Falta la dirección del destinatario. Añade una dirección de billetera.",
+            "invalidAddressFormat": "La dirección \"{address}\" no tiene un formato válido para ninguna red compatible.",
+            "unknownNetwork": "Red desconocida \"{network}\". Las redes compatibles incluyen: {available}.",
+            "incompatibleNetwork": "La dirección \"{address}\" no es compatible con {network}. Redes compatibles: {compatible}.",
+            "noDataFound": "No se encontraron datos. Añade destinatarios en este formato: Nombre, Dirección, Red, Nota",
+            "headerColumnsNotFound": "Detectamos una fila de cabecera, pero no encontramos las columnas 'Name' y 'Address'. Usa estos nombres o elimina la cabecera.",
+            "failedToParseCsv": "Error al analizar los datos CSV"
         }
     },
     "payments": {
@@ -890,6 +912,32 @@
         "editStep": {
             "title": "Editar pago",
             "saveChanges": "Guardar cambios"
+        },
+        "parsing": {
+            "rowPrefix": "Fila {row}: {message}",
+            "missingRecipientFirstColumn": "Falta la dirección del destinatario. Añade una dirección en la primera columna.",
+            "invalidNearAddress": "La dirección \"{address}\" no es una cuenta NEAR válida.",
+            "invalidChainAddress": "La dirección \"{address}\" no es una cuenta válida de {chain}.",
+            "rowNeedsAmountRecipient": "Cada fila necesita cantidad y destinatario separados por una coma. Ejemplo: 100, alice.near",
+            "missingRecipientBeforeComma": "Falta la dirección del destinatario. Añade una dirección antes de la coma.",
+            "missingAmountAfterComma": "Falta la cantidad. Añade un número después de la coma. Ejemplo: {recipient}, 100",
+            "invalidAmountNumber": "La cantidad \"{amountStr}\" no es un número válido. Usa solo números y decimales (p. ej., 100 o 100,50).",
+            "amountGreaterThanZero": "La cantidad debe ser mayor que 0. Introdujiste \"{amountStr}\".",
+            "amountTooLarge": "La cantidad \"{amountStr}\" es demasiado grande. Usa un número menor.",
+            "invalidAmountFallback": "Cantidad no válida. Usa solo números y decimales (p. ej., 100 o 100,50).",
+            "pleaseRemoveChars": "Elimina estos caracteres: {chars}. Solo se permiten números, comas y puntos.",
+            "amountCannotBeEmpty": "La cantidad no puede estar vacía.",
+            "tokenMismatch": "Introdujiste \"{provided}\" pero arriba está seleccionado {expected}. Quita el símbolo del token o selecciona {suggested} en el menú.",
+            "multipleTokenSymbols": "Estás usando varios símbolos de token ({symbols}). Usa solo un tipo de token en todo el archivo, o elimina los símbolos y deja que la selección de arriba defina el token.",
+            "noPaymentDataFound": "No se encontraron datos de pago. Añade tus pagos en este formato: destinatario, cantidad",
+            "exceedsRecipientLimit": "Tienes {count} destinatarios, pero el límite es {limit} por lote. Elimina {excess, plural, one {# destinatario} other {# destinatarios}} o divídelo en varios lotes.",
+            "noPaymentDataProvided": "No se proporcionaron datos de pago. Introduce tus pagos en este formato: destinatario, cantidad",
+            "headerColumnsNotFound": "Detectamos una fila de cabecera, pero no encontramos las columnas 'Recipient' y 'Amount'. Usa estos nombres o elimina la cabecera.",
+            "failedToParseCsv": "Error al analizar los datos CSV",
+            "failedToParsePaste": "Error al analizar los datos pegados",
+            "failedToValidateAccount": "No se pudo validar la cuenta",
+            "feeEstimationFailed": "No se pudo estimar la tarifa de red para esta cantidad. Verifica e inténtalo de nuevo.",
+            "feeEstimationFailedRow": "Fila {row} ({recipient}): No se pudo estimar la tarifa de red para esta cantidad. Verifica e inténtalo de nuevo."
         },
         "recipients": "Destinatarios",
         "insufficientTokens": "Tokens insuficientes. Puedes enviar la solicitud y recargar antes de la aprobación.",

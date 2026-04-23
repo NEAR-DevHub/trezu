@@ -15,6 +15,7 @@ import { needsStorageDepositCheck } from "../utils";
 import { getBatchStorageDepositIsRegistered } from "@/lib/api";
 import Big from "@/lib/big";
 import { getNetworkFeeCoverageErrorMessage } from "@/lib/intents-fee";
+import { useIntentsFeeLabels } from "@/lib/intents-fee-labels";
 
 interface EditPaymentStepProps extends StepProps {
     payment: BulkPaymentData;
@@ -38,6 +39,7 @@ export function EditPaymentStep({
     onCancel,
 }: EditPaymentStepProps) {
     const tValidation = useTranslations("paymentForm.validation");
+    const intentsFeeLabels = useIntentsFeeLabels();
     const editPaymentSchema = useMemo(
         () =>
             buildEditPaymentSchema({
@@ -61,12 +63,15 @@ export function EditPaymentStep({
     const watchedAmount = form.watch("amount");
     const feeErrorMessage =
         networkFeePerRecipient && watchedAmount && Number(watchedAmount) > 0
-            ? getNetworkFeeCoverageErrorMessage({
-                  amount: watchedAmount,
-                  networkFee: Big(networkFeePerRecipient),
-                  decimals: selectedToken.decimals,
-                  symbol: selectedToken.symbol,
-              })
+            ? getNetworkFeeCoverageErrorMessage(
+                  {
+                      amount: watchedAmount,
+                      networkFee: Big(networkFeePerRecipient),
+                      decimals: selectedToken.decimals,
+                      symbol: selectedToken.symbol,
+                  },
+                  intentsFeeLabels,
+              )
             : null;
 
     const handleSave = async () => {

@@ -15,6 +15,22 @@ export interface ParseResult {
     errors: Array<{ row: number; message: string }>;
 }
 
+export interface AddressBookParsingLabels {
+    rowPrefix: (row: number, message: string) => string;
+    missingName: string;
+    missingAddress: string;
+    invalidAddressFormat: (address: string) => string;
+    unknownNetwork: (network: string, available: string) => string;
+    incompatibleNetwork: (
+        address: string,
+        network: string,
+        compatible: string,
+    ) => string;
+    noDataFound: string;
+    headerColumnsNotFound: string;
+    failedToParseCsv: string;
+}
+
 /**
  * Header keywords for each column
  */
@@ -90,6 +106,7 @@ function parseAddressBookData(
     rows: string[][],
     config: ReturnType<typeof detectHeaderAndGetConfig>,
     chains: ChainInfo[],
+    labels: AddressBookParsingLabels,
 ): ParseResult {
     const { startRow, nameIdx, addressIdx, networkIdx, noteIdx } = config;
     const errors: Array<{ row: number; message: string }> = [];
@@ -117,7 +134,7 @@ function parseAddressBookData(
         if (!name) {
             errors.push({
                 row: rowNum,
-                message: `Row ${rowNum}: Missing recipient name. Please add a name.`,
+                message: labels.rowPrefix(rowNum, labels.missingName),
             });
             continue;
         }
@@ -126,7 +143,7 @@ function parseAddressBookData(
         if (!address) {
             errors.push({
                 row: rowNum,
-                message: `Row ${rowNum}: Missing recipient address. Please add a wallet address.`,
+                message: labels.rowPrefix(rowNum, labels.missingAddress),
             });
             continue;
         }
@@ -136,7 +153,10 @@ function parseAddressBookData(
         if (compatibleChains.length === 0) {
             errors.push({
                 row: rowNum,
-                message: `Row ${rowNum}: The address "${address}" is not a valid format for any supported network.`,
+                message: labels.rowPrefix(
+                    rowNum,
+                    labels.invalidAddressFormat(address),
+                ),
             });
             continue;
         }
@@ -163,7 +183,10 @@ function parseAddressBookData(
                         .join(", ");
                     errors.push({
                         row: rowNum,
-                        message: `Row ${rowNum}: Unknown network "${input}". Supported networks include: ${available}.`,
+                        message: labels.rowPrefix(
+                            rowNum,
+                            labels.unknownNetwork(input, available),
+                        ),
                     });
                     hasError = true;
                     break;
@@ -179,7 +202,14 @@ function parseAddressBookData(
                         .join(", ");
                     errors.push({
                         row: rowNum,
-                        message: `Row ${rowNum}: The address "${address}" is not compatible with ${input}. Compatible networks: ${compatibleNames}.`,
+                        message: labels.rowPrefix(
+                            rowNum,
+                            labels.incompatibleNetwork(
+                                address,
+                                input,
+                                compatibleNames,
+                            ),
+                        ),
                     });
                     hasError = true;
                     break;
@@ -213,8 +243,7 @@ function parseAddressBookData(
             errors: [
                 {
                     row: 0,
-                    message:
-                        "No data found. Please add recipients in this format: Name, Address, Network, Note",
+                    message: labels.noDataFound,
                 },
             ],
         };
@@ -229,9 +258,10 @@ function parseAddressBookData(
 export function parseAndValidateAddressBookCsv(
     csvData: string,
     chains: ChainInfo[],
+    labels: AddressBookParsingLabels,
 ): ParseResult {
     try {
-        const rows = parseCsv(csvData);
+        const rows = parseCsv(csvData, labels.failedToParseCsv);
 
         if (rows.length === 0) {
             return {
@@ -239,8 +269,7 @@ export function parseAndValidateAddressBookCsv(
                 errors: [
                     {
                         row: 0,
-                        message:
-                            "No data found. Please add recipients in this format: Name, Address, Network, Note",
+                        message: labels.noDataFound,
                     },
                 ],
             };
@@ -257,14 +286,13 @@ export function parseAndValidateAddressBookCsv(
                 errors: [
                     {
                         row: 1,
-                        message:
-                            "We detected a header row, but couldn't find the 'Name' and 'Address' columns. Please use these column names, or remove the header row.",
+                        message: labels.headerColumnsNotFound,
                     },
                 ],
             };
         }
 
-        return parseAddressBookData(rows, config, chains);
+        return parseAddressBookData(rows, config, chains, labels);
     } catch (error) {
         return {
             recipients: [],
@@ -274,7 +302,7 @@ export function parseAndValidateAddressBookCsv(
                     message:
                         error instanceof Error
                             ? error.message
-                            : "Failed to parse CSV data",
+                            : labels.failedToParseCsv,
                 },
             ],
         };
@@ -287,7 +315,8 @@ export function parseAndValidateAddressBookCsv(
 export function parseAndValidateAddressBookPaste(
     pasteData: string,
     chains: ChainInfo[],
+    labels: AddressBookParsingLabels,
 ): ParseResult {
     const normalizedInput = pasteData.replace(/\\n/g, "\n").trim();
-    return parseAndValidateAddressBookCsv(normalizedInput, chains);
+    return parseAndValidateAddressBookCsv(normalizedInput, chains, labels);
 }

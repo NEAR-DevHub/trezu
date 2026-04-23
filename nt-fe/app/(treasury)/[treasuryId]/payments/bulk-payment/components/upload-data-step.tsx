@@ -27,6 +27,7 @@ import {
     parseAndValidatePasteData,
     validateIntentsFeeCoverage,
 } from "../utils";
+import { useBulkParsingLabels } from "../utils/use-parsing-labels";
 
 interface UploadDataStepProps {
     handleBack?: () => void;
@@ -43,6 +44,7 @@ export function UploadDataStep({
     onContinue,
 }: UploadDataStepProps) {
     const t = useTranslations("bulkPayment.upload");
+    const parsingLabels = useBulkParsingLabels();
     const form = useFormContext<BulkPaymentFormValues>();
     const { data: subscription, isLoading: isLoadingSubscription } =
         useSubscription(treasuryId);
@@ -161,10 +163,15 @@ export function UploadDataStep({
             };
 
             if (activeTab === "upload" && csvData) {
-                result = parseAndValidateCsv(csvData, selectedToken);
+                result = parseAndValidateCsv(
+                    csvData,
+                    parsingLabels,
+                    selectedToken,
+                );
             } else {
                 result = parseAndValidatePasteData(
                     pasteDataInput,
+                    parsingLabels,
                     selectedToken,
                 );
             }
@@ -179,6 +186,7 @@ export function UploadDataStep({
                 const feeValidationResult = await validateIntentsFeeCoverage(
                     result.payments,
                     selectedToken,
+                    parsingLabels,
                 );
                 const feeErrors = feeValidationResult.payments
                     .filter((payment) => !!payment.validationError)
