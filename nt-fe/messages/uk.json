@@ -1449,15 +1449,17 @@
         "restrictedRecipientTitle": "Транзакцію не дозволено",
         "restrictedRecipientMessage": "Ця адреса зараз обмежена через перевірки безпеки. Якщо ви вважаєте, що цю адресу слід дозволити, ви можете <link>подати запит на whitelist</link>.",
         "send": "Надіслати",
-        "to": "Кому",
-        "chooseNetworkFirst": "Спочатку оберіть мережу"
+        "to": "Кому"
     },
     "recipientNetworkSelect": {
         "label": "Мережа одержувача",
         "placeholder": "Оберіть мережу одержувача",
+        "enterAddressFirst": "Спочатку введіть адресу одержувача",
+        "noCompatibleNetwork": "Жодна мережа не підходить для цієї адреси",
         "selectPlaceholder": "Обрати мережу",
         "title": "Обрати мережу",
         "available": "Доступні",
+        "incompatible": "Несумісні",
         "comingSoon": "Скоро",
         "nearComName": "near.com",
         "nearComDescription": "Внутрішня мережа для near.com і trezu"

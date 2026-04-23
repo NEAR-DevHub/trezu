@@ -1449,15 +1449,17 @@
         "restrictedRecipientTitle": "Transacción no permitida",
         "restrictedRecipientMessage": "Esta dirección está restringida actualmente por controles de seguridad. Si crees que esta dirección debería permitirse, puedes <link>solicitar que se incluya en la lista blanca</link>.",
         "send": "Enviar",
-        "to": "Para",
-        "chooseNetworkFirst": "Elija primero la red"
+        "to": "Para"
     },
     "recipientNetworkSelect": {
         "label": "Red del destinatario",
         "placeholder": "Seleccione la red del destinatario",
+        "enterAddressFirst": "Introduce primero la dirección del destinatario",
+        "noCompatibleNetwork": "Ninguna red coincide con esta dirección",
         "selectPlaceholder": "Seleccionar red",
         "title": "Seleccionar red",
         "available": "Disponible",
+        "incompatible": "Incompatible",
         "comingSoon": "Próximamente",
         "nearComName": "near.com",
         "nearComDescription": "Red interna para near.com y trezu"

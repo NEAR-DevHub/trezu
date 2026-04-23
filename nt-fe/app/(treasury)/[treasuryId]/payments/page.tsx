@@ -110,13 +110,8 @@ interface Step1Props extends StepProps {
     quoteErrorMessage?: string | null;
     hasRestrictedRecipientError?: boolean;
     ensureQuoteBeforeReview?: () => Promise<boolean>;
-    validatedRecipients?: React.MutableRefObject<Set<string>>;
     onAmountInput?: () => void;
     onMaxSet?: (maxAmount: string) => void;
-    pendingRecipient?: {
-        address: string;
-        name?: string;
-    } | null;
 }
 
 function Step1({
@@ -126,10 +121,8 @@ function Step1({
     quoteErrorMessage,
     hasRestrictedRecipientError,
     ensureQuoteBeforeReview,
-    validatedRecipients,
     onAmountInput,
     onMaxSet,
-    pendingRecipient,
 }: Step1Props) {
     const tPay = useTranslations("payments");
     const form = useFormContext<PaymentFormValues>();
@@ -217,10 +210,8 @@ function Step1({
                 saveButtonText={saveButtonText}
                 onSave={handleSave}
                 isSubmitting={isFeeLoading}
-                validatedRecipients={validatedRecipients}
                 onAmountInput={onAmountInput}
                 onMaxSet={onMaxSet}
-                pendingRecipient={pendingRecipient}
             />
         </PageCard>
     );
@@ -580,7 +571,6 @@ export default function PaymentsPage() {
     const [step, setStep] = useState(0);
     const searchParams = useSearchParams();
     const autoSelectedTokenKeyRef = useRef<string | null>(null);
-    const validatedRecipientsRef = useRef(new Set<string>());
     // "recipient" for typed amount (exact output), "total" for MAX (exact input).
     const [intentsAmountMode, setIntentsAmountMode] =
         useState<IntentsAmountMode>("recipient");
@@ -954,15 +944,6 @@ export default function PaymentsPage() {
         }
     };
 
-    const pendingRecipient = useMemo(() => {
-        if (!defaultAddress) return null;
-        if (watchedAddress === defaultAddress) return null;
-        return {
-            address: defaultAddress,
-            name: defaultRecipientName || undefined,
-        };
-    }, [defaultAddress, defaultRecipientName, watchedAddress]);
-
     const steps = useMemo(
         () => [
             {
@@ -978,7 +959,6 @@ export default function PaymentsPage() {
                         hasLiveQuoteError &&
                         hasInvalidRecipientAddressError,
                     ensureQuoteBeforeReview,
-                    validatedRecipients: validatedRecipientsRef,
                     onAmountInput: () => {
                         if (isCrossChainIntentsToken) {
                             // "recipient" => EXACT_OUTPUT quote mode.
@@ -991,7 +971,6 @@ export default function PaymentsPage() {
                             setIntentsAmountMode("total");
                         }
                     },
-                    pendingRecipient,
                 },
             },
             {
@@ -1017,7 +996,6 @@ export default function PaymentsPage() {
             isQuoteBusy,
             ensureQuoteBeforeReview,
             isCrossChainIntentsToken,
-            pendingRecipient,
         ],
     );
 

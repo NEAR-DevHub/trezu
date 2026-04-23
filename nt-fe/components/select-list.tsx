@@ -12,6 +12,7 @@ export interface SelectListItem {
     symbol?: string;
     icon: string;
     gradient?: string;
+    disabled?: boolean;
 }
 
 interface SelectListProps<T extends SelectListItem> {
