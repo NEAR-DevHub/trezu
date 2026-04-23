@@ -240,8 +240,6 @@ export function RecentActivity() {
         );
     };
 
-    const historyDescription = formatHistoryDuration(historyMonths);
-
     const columns = useMemo<ColumnDef<GroupedActivity, any>[]>(
         () => [
             columnHelper.display({
@@ -460,7 +458,7 @@ export function RecentActivity() {
                 },
             }),
         ],
-        [expandedGroups],
+        [expandedGroups, t],
     );
 
     const table = useReactTable({
