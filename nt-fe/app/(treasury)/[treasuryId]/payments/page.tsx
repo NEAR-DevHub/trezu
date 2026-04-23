@@ -66,11 +66,7 @@ import {
     formatCurrency,
     formatSmartAmount,
 } from "@/lib/utils";
-import {
-    isIntentsCrossChainToken,
-    isIntentsToken,
-    NETWORK_FEE_TOOLTIP_TEXT,
-} from "@/lib/intents-fee";
+import { isIntentsCrossChainToken, isIntentsToken } from "@/lib/intents-fee";
 import { useIntentsFeeLabels } from "@/lib/intents-fee-labels";
 import { FunctionCallKind, TransferKind } from "@/lib/proposals-api";
 
@@ -230,6 +226,7 @@ function Step2({
     isFetchingLiveQuote,
 }: Step2Props) {
     const tPay = useTranslations("payments");
+    const tIntents = useTranslations("intentsQuote");
     const form = useFormContext<PaymentFormValues>();
     const token = form.watch("token");
     const address = form.watch("address");
@@ -366,7 +363,7 @@ function Step2({
                                 <div className="flex items-center gap-1 text-muted-foreground">
                                     <p>{tPay("networkFee")}</p>
                                     <Tooltip
-                                        content={NETWORK_FEE_TOOLTIP_TEXT}
+                                        content={tIntents("networkFeeTooltip")}
                                         side="top"
                                     >
                                         <Info

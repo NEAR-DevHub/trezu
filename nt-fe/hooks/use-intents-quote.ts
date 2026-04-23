@@ -9,11 +9,12 @@ import Big from "@/lib/big";
 import { getBlockchainType } from "@/lib/blockchain-utils";
 import { isValidNearAddressFormat } from "@/lib/near-validation";
 import { getIntentsQuote, type IntentsQuoteResponse } from "@/lib/api";
-import { nanosToMs } from "@/lib/utils";
+import { formatBalance, nanosToMs } from "@/lib/utils";
 import type { Token } from "@/components/token-input";
 import { isIntentsToken } from "@/lib/intents-fee";
 
 export type IntentsAmountMode = "recipient" | "total";
+const MAX_FEE_TO_RECIPIENT_RATIO = Big(1);
 
 function isAddressValidForToken(address: string, token: Token): boolean {
     if (!address) return false;
@@ -64,6 +65,7 @@ function formatErrorMessage(
     message: string,
     tokenDecimals: number,
     tokenSymbol: string,
+    t: ReturnType<typeof useTranslations>,
 ) {
     const lower = message.toLowerCase();
 
@@ -83,20 +85,23 @@ function formatErrorMessage(
                     .toFixed(tokenDecimals)
                     .replace(/\.?0+$/, "");
 
-                return `Amount is too low to cover network fees. Enter at least ${formatted} ${tokenSymbol}.`;
+                return t("amountTooLowWithMin", {
+                    min: formatted,
+                    token: tokenSymbol,
+                });
             } catch {
                 // Fall through to default low-amount message.
             }
         }
 
-        return "Amount is too low to cover network fees. Enter a higher amount and try again.";
+        return t("amountTooLow");
     }
 
     if (lower.includes("no route") || lower.includes("no quote")) {
-        return "No payment route found for this amount. Increase the amount or change token/network.";
+        return t("noRoute");
     }
 
-    return "Could not prepare a payment route right now. Please retry.";
+    return t("fetchFailed");
 }
 
 interface UseIntentsQuoteParams {
@@ -138,7 +143,7 @@ export function useIntentsQuote({
         data: quote,
         isLoading,
         isFetching,
-        isError: hasError,
+        isError: hasQueryError,
         error,
     } = useQuery({
         queryKey: [
@@ -175,14 +180,74 @@ export function useIntentsQuote({
         retry: false,
     });
 
+    // In recipient mode (EXACT_OUTPUT), some routes return a quote but with
+    // disproportionately high fees; treat those as "amount too low" in UI.
+    const lowAmountQuoteDetails = useMemo(() => {
+        if (amountMode !== "recipient" || !quote?.quote) return false;
+
+        const amountInRaw = quote.quote.minAmountIn ?? quote.quote.amountIn;
+        const amountOutRaw = quote.quote.minAmountOut ?? quote.quote.amountOut;
+
+        if (!amountInRaw || !amountOutRaw) return null;
+
+        try {
+            const amountIn = Big(amountInRaw);
+            const amountOut = Big(amountOutRaw);
+
+            if (amountOut.lte(0)) return null;
+
+            const fee = amountIn.minus(amountOut);
+            const feeToRecipientRatio = fee.div(amountOut);
+
+            // Treat routes where fee exceeds recipient amount as too low.
+            if (!feeToRecipientRatio.gt(MAX_FEE_TO_RECIPIENT_RATIO)) {
+                return null;
+            }
+
+            const feeAmount = formatBalance(
+                amountIn.minus(amountOut).toFixed(0),
+                token.decimals,
+                token.decimals,
+            );
+
+            return {
+                feeAmount,
+            };
+        } catch {
+            return null;
+        }
+    }, [amountMode, quote, token.decimals]);
+
+    const hasLowAmountQuote = !!lowAmountQuoteDetails;
+
+    const hasError = hasQueryError || hasLowAmountQuote;
+
     const errorMessage = useMemo(() => {
-        if (!hasError || !error) return null;
+        if (hasLowAmountQuote) {
+            if (lowAmountQuoteDetails) {
+                return t("amountTooLowWithMin", {
+                    min: lowAmountQuoteDetails.feeAmount,
+                    token: token.symbol,
+                });
+            }
+            return t("amountTooLow");
+        }
+
+        if (!hasQueryError || !error) return null;
         const msg =
             error instanceof Error
                 ? error.message
                 : "Failed to prepare 1Click transfer route";
-        return formatErrorMessage(msg, token.decimals, token.symbol);
-    }, [hasError, error, token.decimals, token.symbol]);
+        return formatErrorMessage(msg, token.decimals, token.symbol, t);
+    }, [
+        hasLowAmountQuote,
+        lowAmountQuoteDetails,
+        hasQueryError,
+        error,
+        token.decimals,
+        token.symbol,
+        t,
+    ]);
 
     const isSyncPending =
         amount !== debouncedAmount || address !== debouncedAddress;
@@ -209,6 +274,18 @@ export function useIntentsQuote({
             if (feeErrorMessage) return { ok: false };
 
             if (quote && !isLoading && !isFetching && !isSyncPending) {
+                if (hasLowAmountQuote) {
+                    if (lowAmountQuoteDetails) {
+                        return {
+                            ok: false,
+                            error: t("amountTooLowWithMin", {
+                                min: lowAmountQuoteDetails.feeAmount,
+                                token: formValues.token.symbol,
+                            }),
+                        };
+                    }
+                    return { ok: false, error: t("amountTooLow") };
+                }
                 return { ok: true, quote };
             }
 
@@ -246,8 +323,9 @@ export function useIntentsQuote({
                               err.message,
                               formValues.token.decimals,
                               formValues.token.symbol,
+                              t,
                           )
-                        : "Could not prepare a payment route right now. Please retry.";
+                        : t("fetchFailed");
                 return { ok: false, error: msg };
             } finally {
                 setIsEnsuring(false);
@@ -264,6 +342,9 @@ export function useIntentsQuote({
             isSyncPending,
             isConfidential,
             amountMode,
+            hasLowAmountQuote,
+            lowAmountQuoteDetails,
+            t,
         ],
     );
 
