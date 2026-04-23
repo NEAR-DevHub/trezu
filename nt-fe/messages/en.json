@@ -816,7 +816,7 @@
             "bulk": "This will remove <bold>{count, plural, one {# recipient} other {# recipients}}</bold> from your address book. You can add them again anytime.",
             "single": "This will remove <bold>{name}</bold> from your address book. You can add this recipient again anytime."
         },
-        "import": {
+        "importFlow": {
             "title": "Import Recipients",
             "description": "Upload a list of recipient addresses to your address book.",
             "foundSummary": "Found {count, plural, one {# recipient} other {# recipients}} on {networkCount, plural, one {# network} other {# networks}}",
@@ -1329,6 +1329,9 @@
         "invalidChainAddress": "Please enter a valid {chain} address.",
         "validating": "Validating address...",
         "validAddress": "Valid address",
+        "placeholderWithExample": "Recipient address (e.g.: {example})",
+        "placeholderNoExample": "Recipient address",
+        "nearExample": "alice.near, 0x..., or 64-char hex",
         "near": {
             "required": "Address is required",
             "length": "Address must be between 2 and 64 characters",
@@ -1504,7 +1507,8 @@
         "deposit": "Deposit",
         "send": "Send",
         "exchange": "Exchange",
-        "chartNow": "Now"
+        "chartNow": "Now",
+        "totalBalance": "Total Balance"
     },
     "changePolicyExpanded": {
         "proposalBond": "Proposal Bond",

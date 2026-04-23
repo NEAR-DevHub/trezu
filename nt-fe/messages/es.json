@@ -816,7 +816,7 @@
             "bulk": "Esto eliminará <bold>{count, plural, one {# destinatario} other {# destinatarios}}</bold> de tu libreta de direcciones. Puedes añadirlos de nuevo cuando quieras.",
             "single": "Esto eliminará <bold>{name}</bold> de tu libreta de direcciones. Puedes añadir este destinatario de nuevo cuando quieras."
         },
-        "import": {
+        "importFlow": {
             "title": "Importar destinatarios",
             "description": "Sube una lista de direcciones de destinatarios a tu libreta de direcciones.",
             "foundSummary": "Encontrados {count, plural, one {# destinatario} other {# destinatarios}} en {networkCount, plural, one {# red} other {# redes}}",
@@ -1329,6 +1329,9 @@
         "invalidChainAddress": "Introduce una dirección de {chain} válida.",
         "validating": "Validando dirección...",
         "validAddress": "Dirección válida",
+        "placeholderWithExample": "Dirección del destinatario (p. ej.: {example})",
+        "placeholderNoExample": "Dirección del destinatario",
+        "nearExample": "alice.near, 0x... o 64 caracteres hex",
         "near": {
             "required": "La dirección es obligatoria",
             "length": "La dirección debe tener entre 2 y 64 caracteres",
@@ -1504,7 +1507,8 @@
         "deposit": "Depositar",
         "send": "Enviar",
         "exchange": "Intercambiar",
-        "chartNow": "Ahora"
+        "chartNow": "Ahora",
+        "totalBalance": "Saldo total"
     },
     "changePolicyExpanded": {
         "proposalBond": "Garantía de propuesta",

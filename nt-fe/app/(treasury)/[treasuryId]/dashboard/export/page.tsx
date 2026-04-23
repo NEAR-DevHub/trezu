@@ -334,6 +334,7 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
 export default function ExportActivityPage() {
     const t = useTranslations("pages.dashboard");
     const tEx = useTranslations("exportToasts");
+    const tExport = useTranslations("export");
     const formatHistoryDuration = useFormatHistoryDuration();
     const router = useRouter();
     const queryClient = useQueryClient();
@@ -705,12 +706,10 @@ export default function ExportActivityPage() {
 
                                         <div className="flex flex-col">
                                             <p className="font-semibold mb-1">
-                                                Export Recent Transactions
+                                                {tExport("heading")}
                                             </p>
                                             <p className="text-sm text-muted-foreground">
-                                                Export generation and downloads
-                                                are available to team members
-                                                only.
+                                                {tExport("teamOnly")}
                                             </p>
                                         </div>
                                     </div>
@@ -722,12 +721,11 @@ export default function ExportActivityPage() {
                                         <Alert variant="info">
                                             <Info className="h-4 w-4 mt-[2px]" />
                                             <AlertTitle className="font-semibold">
-                                                You've used all your{" "}
                                                 {isTrialPlan(
                                                     planDetails.planConfig,
                                                 )
-                                                    ? "credits"
-                                                    : "exports"}
+                                                    ? tExport("creditsUsed")
+                                                    : tExport("exportsUsed")}
                                             </AlertTitle>
                                             <AlertDescription className="text-general-info-foreground">
                                                 {isTrialPlan(
@@ -745,10 +743,10 @@ export default function ExportActivityPage() {
                                 >
                                     <TabsList className="">
                                         <TabsTrigger value="generate">
-                                            Generate Export
+                                            {tExport("tabs.generate")}
                                         </TabsTrigger>
                                         <TabsTrigger value="history">
-                                            History
+                                            {tExport("tabs.history")}
                                         </TabsTrigger>
                                     </TabsList>
 
@@ -760,7 +758,9 @@ export default function ExportActivityPage() {
                                             {/* Document Type */}
                                             <div>
                                                 <label className="text-sm font-medium mb-2 block">
-                                                    Document Type
+                                                    {tExport(
+                                                        "fields.documentType",
+                                                    )}
                                                 </label>
                                                 <div className="flex gap-2">
                                                     {DOCUMENT_TYPES.map(
@@ -802,7 +802,9 @@ export default function ExportActivityPage() {
                                             {/* Time Range */}
                                             <div>
                                                 <label className="text-sm font-medium mb-2 block">
-                                                    Time Range
+                                                    {tExport(
+                                                        "fields.timeRange",
+                                                    )}
                                                 </label>
                                                 <DatePickerPopover
                                                     mode="range"
@@ -880,7 +882,7 @@ export default function ExportActivityPage() {
                                             {/* Asset Selection */}
                                             <div>
                                                 <label className="text-sm font-medium mb-2 block">
-                                                    Asset
+                                                    {tExport("fields.asset")}
                                                 </label>
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger
@@ -918,7 +920,9 @@ export default function ExportActivityPage() {
                                                         >
                                                             <div className="flex items-center">
                                                                 <Coins className="w-4 h-4 mr-2" />
-                                                                All Assets
+                                                                {tExport(
+                                                                    "fields.allAssets",
+                                                                )}
                                                             </div>
                                                         </DropdownMenuCheckboxItem>
                                                         {aggregatedTokens.map(
@@ -967,7 +971,9 @@ export default function ExportActivityPage() {
                                             {/* Transaction Type */}
                                             <div>
                                                 <label className="text-sm font-medium mb-2 block">
-                                                    Transaction Type
+                                                    {tExport(
+                                                        "fields.transactionType",
+                                                    )}
                                                 </label>
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger

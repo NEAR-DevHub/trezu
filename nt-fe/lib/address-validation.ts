@@ -69,7 +69,7 @@ const BLOCKCHAIN_DISPLAY_NAMES: Record<BlockchainType, string> = {
 /**
  * Address format examples for each blockchain
  */
-const ADDRESS_EXAMPLES: Record<BlockchainType, string> = {
+export const ADDRESS_EXAMPLES: Record<BlockchainType, string> = {
     near: "alice.near, 0x..., or 64-char hex",
     bitcoin: "bc1...",
     bitcoincash: "1... or bitcoincash:q...",
@@ -207,6 +207,14 @@ export function getAddressPattern(blockchain: BlockchainType): RegExp | null {
  */
 export function getAddressPlaceholder(blockchain: BlockchainType): string {
     return ADDRESS_PLACEHOLDERS[blockchain];
+}
+
+/**
+ * Get the address format example for a blockchain (e.g. "bc1...", "0x...").
+ * Returns "" for unknown chain.
+ */
+export function getAddressExample(blockchain: BlockchainType): string {
+    return ADDRESS_EXAMPLES[blockchain] ?? "";
 }
 
 /**

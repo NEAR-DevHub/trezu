@@ -489,7 +489,7 @@ export default function BalanceWithGraph({
                 <div className="flex justify-around gap-4 mb-6">
                     <div className="flex-1">
                         <h3 className="text-xs font-medium text-muted-foreground">
-                            Total Balance
+                            {t("totalBalance")}
                         </h3>
                         <Skeleton className="h-9 w-40 mt-2" />
                     </div>
@@ -518,7 +518,7 @@ export default function BalanceWithGraph({
                 <div className="flex justify-between gap-4">
                     <div className="flex-1">
                         <h3 className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                            Total Balance
+                            {t("totalBalance")}
                             {!isConfidential &&
                                 selectedToken === "all" &&
                                 chartExcludedSymbols.length > 0 && (

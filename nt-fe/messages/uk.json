@@ -816,7 +816,7 @@
             "bulk": "Це видалить <bold>{count, plural, one {# отримувача} few {# отримувачів} many {# отримувачів} other {# отримувачів}}</bold> з вашої адресної книги. Ви можете додати їх знову коли завгодно.",
             "single": "Це видалить <bold>{name}</bold> з вашої адресної книги. Ви можете додати цього отримувача знову коли завгодно."
         },
-        "import": {
+        "importFlow": {
             "title": "Імпорт отримувачів",
             "description": "Завантажте список адрес отримувачів до вашої адресної книги.",
             "foundSummary": "Знайдено {count, plural, one {# отримувача} few {# отримувачів} many {# отримувачів} other {# отримувачів}} у {networkCount, plural, one {# мережі} few {# мережах} many {# мережах} other {# мережах}}",
@@ -1329,6 +1329,9 @@
         "invalidChainAddress": "Введіть коректну адресу {chain}.",
         "validating": "Перевірка адреси...",
         "validAddress": "Адреса коректна",
+        "placeholderWithExample": "Адреса одержувача (напр.: {example})",
+        "placeholderNoExample": "Адреса одержувача",
+        "nearExample": "alice.near, 0x... або 64 hex-символи",
         "near": {
             "required": "Потрібна адреса",
             "length": "Адреса має містити від 2 до 64 символів",
@@ -1504,7 +1507,8 @@
         "deposit": "Поповнити",
         "send": "Надіслати",
         "exchange": "Обміняти",
-        "chartNow": "Зараз"
+        "chartNow": "Зараз",
+        "totalBalance": "Загальний баланс"
     },
     "changePolicyExpanded": {
         "proposalBond": "Застава пропозиції",

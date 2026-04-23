@@ -30,7 +30,7 @@ export function ImportUploadStep({
     handleBack,
     onReview,
 }: ImportUploadStepProps) {
-    const t = useTranslations("addressBook.import");
+    const t = useTranslations("addressBook.importFlow");
     const parsingLabels = useAddressBookParsingLabels();
     const { data: chains = [] } = useChains();
 

@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { LargeInput } from "./large-input";
 import {
     getAddressPattern,
-    getAddressPlaceholder,
+    getAddressExample,
     getBlockchainDisplayName,
 } from "@/lib/address-validation";
 import {
@@ -58,13 +58,18 @@ const AccountInput = ({
     const isNear = blockchain === "near";
 
     // Get blockchain-specific configuration
-    const config = useMemo(
-        () => ({
-            placeholder: getAddressPlaceholder(blockchain),
+    const config = useMemo(() => {
+        const example =
+            blockchain === "near"
+                ? t("nearExample")
+                : getAddressExample(blockchain);
+        return {
+            placeholder: example
+                ? t("placeholderWithExample", { example })
+                : t("placeholderNoExample"),
             regex: getAddressPattern(blockchain),
-        }),
-        [blockchain],
-    );
+        };
+    }, [blockchain, t]);
 
     // Wrapper to set isValidating and notify parent
     const updateValidationState = useCallback(
