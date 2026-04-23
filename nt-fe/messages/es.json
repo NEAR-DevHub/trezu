@@ -905,7 +905,7 @@
             "upgradeTrial": "Mejora tu plan para obtener más y seguir",
             "upgradePaid": "Mejora tu plan para tener más acceso, o espera a que tus límites se reinicien el próximo mes.",
             "selectAsset": "Seleccionar activo",
-            "disableTokenMessage": "Este token aún no es compatible con pagos masivos. Estamos trabajando en ello.",
+            "disableTokenMessage": "Los pagos masivos para estos tokens estarán disponibles pronto.",
             "providePaymentData": "Proporciona los datos del pago",
             "uploadFile": "Subir archivo",
             "provideData": "Introducir datos",
@@ -1648,7 +1648,8 @@
         "yourAssets": "Tus activos",
         "otherAssets": "Otros activos",
         "networksWithAssets": "Redes con activos",
-        "supportedNetworks": "Redes compatibles"
+        "supportedNetworks": "Redes compatibles",
+        "comingSoon": "Próximamente"
     },
     "intentsQuote": {
         "initializing": "El servicio de cotización aún se está iniciando. Inténtalo de nuevo.",

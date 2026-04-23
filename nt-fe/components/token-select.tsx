@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronLeft } from "lucide-react";
+import { ChevronDown, ChevronLeft, Info } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -23,6 +23,7 @@ import {
 import { SelectListIcon } from "./select-list";
 import { NetworkIconDisplay } from "./token-display";
 import { TokenDisplay } from "./token-display-with-network";
+import { Tooltip } from "./tooltip";
 import { ScrollArea } from "./ui/scroll-area";
 
 // Selected token (asset + specific network)
@@ -404,62 +405,53 @@ export default function TokenSelect({
                 {step === "network" && selectedAsset && (
                     <ScrollArea className="h-[400px]">
                         {(() => {
-                            const withBalance = networkItems
-                                .filter((item) => {
-                                    if (
-                                        !item.balance ||
-                                        item.balance.trim() === "" ||
-                                        item.decimals === undefined
-                                    )
-                                        return false;
-                                    try {
-                                        return !Big(
-                                            formatBalance(
-                                                item.balance,
-                                                item.decimals,
-                                            ),
-                                        ).eq(0);
-                                    } catch {
-                                        return false;
-                                    }
-                                })
-                                .sort((a, b) => {
-                                    const aDisabled = disableTokens?.({
-                                        address: a.id,
-                                        symbol: a.symbol,
-                                        network: a.name,
-                                        residency: a.residency,
-                                    });
-                                    return aDisabled ? 1 : -1;
-                                });
-                            const withoutBalance = networkItems
-                                .filter((item) => {
-                                    if (
-                                        !item.balance ||
-                                        item.balance.trim() === "" ||
-                                        item.decimals === undefined
-                                    )
-                                        return true;
-                                    try {
-                                        return Big(
-                                            formatBalance(
-                                                item.balance,
-                                                item.decimals,
-                                            ),
-                                        ).eq(0);
-                                    } catch {
-                                        return true;
-                                    }
-                                })
-                                .sort((a, b) => {
-                                    const aDisabled = disableTokens?.({
-                                        address: a.id,
-                                        symbol: a.symbol,
-                                        network: a.name,
-                                        residency: a.residency,
-                                    });
-                                    return aDisabled ? 1 : -1;
-                                });
+                            const hasBalance = (item: MergedNetwork) => {
+                                if (
+                                    !item.balance ||
+                                    item.balance.trim() === "" ||
+                                    item.decimals === undefined
+                                ) {
+                                    return false;
+                                }
+
+                                try {
+                                    return !Big(
+                                        formatBalance(
+                                            item.balance,
+                                            item.decimals,
+                                        ),
+                                    ).eq(0);
+                                } catch {
+                                    return false;
+                                }
+                            };
+
+                            const isComingSoon = (item: MergedNetwork) =>
+                                Boolean(
+                                    disableTokens?.({
+                                        address: item.id,
+                                        symbol: item.symbol,
+                                        network: item.name,
+                                        residency: item.residency,
+                                    }),
+                                );
+
+                            const withBalance = networkItems.filter(hasBalance);
+                            const withoutBalance = networkItems.filter(
+                                (item) => !hasBalance(item),
+                            );
+
+                            const supportedWithBalance = withBalance.filter(
+                                (item) => !isComingSoon(item),
+                            );
+                            const supportedWithoutBalance =
+                                withoutBalance.filter(
+                                    (item) => !isComingSoon(item),
+                                );
+                            const comingSoonNetworks = [
+                                ...withBalance.filter(isComingSoon),
+                                ...withoutBalance.filter(isComingSoon),
+                            ];
 
                             const renderNetworkButton = (
                                 item: MergedNetwork,
@@ -478,11 +470,6 @@ export default function TokenSelect({
                                         variant="ghost"
                                         type="button"
                                         disabled={isDisabled}
-                                        tooltipContent={
-                                            isDisabled
-                                                ? disableTokenMessage
-                                                : undefined
-                                        }
                                         className="w-full flex items-center gap-1 py-3 rounded-lg h-auto justify-start pl-1!"
                                     >
                                         <div className="pl-3 w-full">
@@ -495,7 +482,7 @@ export default function TokenSelect({
                                             </div>
                                         </div>
                                         <div className="flex-1" />
-                                        {withBalance.includes(item) && (
+                                        {hasBalance(item) && (
                                             <div className="flex flex-col items-end">
                                                 <span className="font-semibold">
                                                     {formatSmartAmount(
@@ -517,32 +504,54 @@ export default function TokenSelect({
                                 );
                             };
 
-                            if (withBalance.length > 0) {
-                                return (
-                                    <>
+                            return (
+                                <>
+                                    {supportedWithBalance.length > 0 && (
                                         <div className="mb-4">
                                             <div className="text-xs font-medium text-muted-foreground uppercase px-2 py-2">
                                                 {t("networksWithAssets")}
                                             </div>
-                                            {withBalance.map(
+                                            {supportedWithBalance.map(
                                                 renderNetworkButton,
                                             )}
                                         </div>
-                                        {withoutBalance.length > 0 && (
-                                            <div className="flex flex-col gap-2">
-                                                <div className="text-xs font-medium text-muted-foreground uppercase px-2 py-2">
-                                                    {t("supportedNetworks")}
-                                                </div>
-                                                {withoutBalance.map(
-                                                    renderNetworkButton,
+                                    )}
+
+                                    {supportedWithoutBalance.length > 0 && (
+                                        <div className="mb-4">
+                                            <div className="text-xs font-medium text-muted-foreground uppercase px-2 py-2">
+                                                {t("supportedNetworks")}
+                                            </div>
+                                            {supportedWithoutBalance.map(
+                                                renderNetworkButton,
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {comingSoonNetworks.length > 0 && (
+                                        <div className="mb-4">
+                                            <div className="text-xs font-medium text-muted-foreground uppercase px-2 py-2 flex items-center gap-1.5">
+                                                {t("comingSoon")}
+                                                {disableTokenMessage && (
+                                                    <Tooltip
+                                                        content={
+                                                            disableTokenMessage
+                                                        }
+                                                        side="top"
+                                                    >
+                                                        <span className="inline-flex items-center justify-center">
+                                                            <Info className="size-3.5 text-muted-foreground normal-case" />
+                                                        </span>
+                                                    </Tooltip>
                                                 )}
                                             </div>
-                                        )}
-                                    </>
-                                );
-                            }
-
-                            return networkItems.map(renderNetworkButton);
+                                            {comingSoonNetworks.map(
+                                                renderNetworkButton,
+                                            )}
+                                        </div>
+                                    )}
+                                </>
+                            );
                         })()}
                     </ScrollArea>
                 )}

@@ -905,7 +905,7 @@
             "upgradeTrial": "Upgrade your plan to get more and keep going",
             "upgradePaid": "Upgrade your plan for more access, or wait until your limits reset next month.",
             "selectAsset": "Select Asset",
-            "disableTokenMessage": "This token is not yet support for bulk payments. We are working on it.",
+            "disableTokenMessage": "Bulk payments for these tokens are coming soon.",
             "providePaymentData": "Provide Payment Data",
             "uploadFile": "Upload File",
             "provideData": "Provide Data",
@@ -1648,7 +1648,8 @@
         "yourAssets": "Your Assets",
         "otherAssets": "Other Assets",
         "networksWithAssets": "Networks with assets",
-        "supportedNetworks": "Supported Networks"
+        "supportedNetworks": "Supported Networks",
+        "comingSoon": "Coming soon"
     },
     "intentsQuote": {
         "initializing": "Quote service is still initializing. Please try again.",
