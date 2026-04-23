@@ -13,9 +13,10 @@ export interface DashboardBucketVisibility {
     showEarning: boolean;
 }
 
+export type DashboardBreakdownKey = "available" | "locked" | "earning";
+
 export interface DashboardBreakdownItem {
-    key: "available" | "locked" | "earning";
-    label: string;
+    key: DashboardBreakdownKey;
     value: number;
 }
 
@@ -98,21 +99,18 @@ export function getDashboardBreakdownItems(
     const items: DashboardBreakdownItem[] = [
         {
             key: "available",
-            label: "Available",
             value: balanceView.availableUsd,
         },
     ];
     if (visibility.showLocked) {
         items.push({
             key: "locked",
-            label: "Locked",
             value: balanceView.lockedUsd,
         });
     }
     if (visibility.showEarning) {
         items.push({
             key: "earning",
-            label: "Earning",
             value: balanceView.earningUsd,
         });
     }

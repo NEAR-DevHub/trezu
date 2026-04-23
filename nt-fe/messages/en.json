@@ -175,11 +175,18 @@
             "description": "Control which treasuries appear in your account"
         },
         "stats": {
-            "title": "Stats"
+            "title": "Stats",
+            "description": "Real-time assets under management across all sputnik DAOs treasuries."
         },
         "telegram": {
             "title": "Connect Treasury",
-            "description": "Link your treasuries to a Telegram chat"
+            "description": "Link your treasuries to a Telegram chat",
+            "metaTitle": "Trezu — Connect Telegram",
+            "metaDescription": "Connect your Trezu treasury to a Telegram chat"
+        },
+        "wallet": {
+            "title": "Trezu Wallet",
+            "description": "Sign treasury proposals via Trezu"
         }
     },
     "depositModal": {
@@ -1543,6 +1550,9 @@
         "totalBalance": "Total Balance",
         "excludedTokens": "Excluded tokens:",
         "noPriceHistory": "No price history. Select a token to see its balance changes.",
+        "bucketAvailable": "Available",
+        "bucketLocked": "Locked",
+        "bucketEarning": "Earning",
         "period": {
             "1W": "1W",
             "1M": "1M",

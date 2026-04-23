@@ -554,7 +554,7 @@ export default function BalanceWithGraph({
                                 <div className="mt-2 hidden md:flex items-center gap-2 text-sm text-muted-foreground">
                                     {balanceBreakdownItems.map((item, idx) => (
                                         <div
-                                            key={item.label}
+                                            key={item.key}
                                             className="contents"
                                         >
                                             {idx > 0 && (
@@ -564,7 +564,12 @@ export default function BalanceWithGraph({
                                                 />
                                             )}
                                             <span>
-                                                {item.label}{" "}
+                                                {t(
+                                                    `bucket${item.key[0].toUpperCase()}${item.key.slice(1)}` as
+                                                        | "bucketAvailable"
+                                                        | "bucketLocked"
+                                                        | "bucketEarning",
+                                                )}{" "}
                                                 <span className="font-semibold text-foreground">
                                                     {formatCurrency(item.value)}
                                                 </span>
@@ -575,11 +580,16 @@ export default function BalanceWithGraph({
                                 <div className="mt-4 border-t border-border/70 pt-3 space-y-3 md:hidden">
                                     {balanceBreakdownItems.map((item) => (
                                         <div
-                                            key={item.label}
+                                            key={item.key}
                                             className="flex items-center justify-between text-base"
                                         >
                                             <span className="text-muted-foreground">
-                                                {item.label}
+                                                {t(
+                                                    `bucket${item.key[0].toUpperCase()}${item.key.slice(1)}` as
+                                                        | "bucketAvailable"
+                                                        | "bucketLocked"
+                                                        | "bucketEarning",
+                                                )}
                                             </span>
                                             <span className="font-semibold text-foreground">
                                                 {formatCurrency(item.value)}

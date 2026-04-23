@@ -175,11 +175,18 @@
             "description": "Контролюйте, які скарбниці з'являються у вашому обліковому записі"
         },
         "stats": {
-            "title": "Статистика"
+            "title": "Статистика",
+            "description": "Активи під управлінням у реальному часі для всіх скарбниць sputnik DAO."
         },
         "telegram": {
             "title": "Підключити скарбницю",
-            "description": "Прив'яжіть скарбниці до чату Telegram"
+            "description": "Прив'яжіть скарбниці до чату Telegram",
+            "metaTitle": "Trezu — Підключити Telegram",
+            "metaDescription": "Підключіть вашу скарбницю Trezu до чату Telegram"
+        },
+        "wallet": {
+            "title": "Trezu Wallet",
+            "description": "Підписуйте пропозиції скарбниці через Trezu"
         }
     },
     "depositModal": {
@@ -1543,6 +1550,9 @@
         "totalBalance": "Загальний баланс",
         "excludedTokens": "Виключені токени:",
         "noPriceHistory": "Немає історії цін. Оберіть токен, щоб побачити зміни його балансу.",
+        "bucketAvailable": "Доступно",
+        "bucketLocked": "Заблоковано",
+        "bucketEarning": "Заробіток",
         "period": {
             "1W": "1т",
             "1M": "1м",

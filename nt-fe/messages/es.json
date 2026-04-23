@@ -175,11 +175,18 @@
             "description": "Controla qué tesorerías aparecen en tu cuenta"
         },
         "stats": {
-            "title": "Estadísticas"
+            "title": "Estadísticas",
+            "description": "Activos gestionados en tiempo real en todas las tesorerías de DAOs sputnik."
         },
         "telegram": {
             "title": "Conectar tesorería",
-            "description": "Vincula tus tesorerías a un chat de Telegram"
+            "description": "Vincula tus tesorerías a un chat de Telegram",
+            "metaTitle": "Trezu — Conectar Telegram",
+            "metaDescription": "Conecta tu tesorería Trezu a un chat de Telegram"
+        },
+        "wallet": {
+            "title": "Trezu Wallet",
+            "description": "Firma propuestas de tesorería a través de Trezu"
         }
     },
     "depositModal": {
@@ -1543,6 +1550,9 @@
         "totalBalance": "Saldo total",
         "excludedTokens": "Tokens excluidos:",
         "noPriceHistory": "Sin historial de precios. Selecciona un token para ver los cambios en su saldo.",
+        "bucketAvailable": "Disponible",
+        "bucketLocked": "Bloqueado",
+        "bucketEarning": "Rendimiento",
         "period": {
             "1W": "1s",
             "1M": "1m",
