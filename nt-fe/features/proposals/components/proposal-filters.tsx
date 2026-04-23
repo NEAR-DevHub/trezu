@@ -704,7 +704,12 @@ function MyVoteFilterContent({
             operations={MY_VOTE_OPERATIONS}
             options={MY_VOTE_OPTIONS.map((vote) => ({
                 value: vote,
-                label: vote,
+                label: tF(
+                    `voteStatus.${vote}` as
+                        | "voteStatus.Approved"
+                        | "voteStatus.Rejected"
+                        | "voteStatus.No Voted",
+                ),
             }))}
         />
     );

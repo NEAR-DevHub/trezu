@@ -127,10 +127,15 @@ export function ChangeConfigExpanded({
         const newValue = diff.newConfig.metadata[key] ?? null;
 
         if (oldValue !== newValue) {
-            let label = key
-                .replace(/([A-Z])/g, " $1")
-                .replace(/^./, (str) => str.toUpperCase());
-            if (key === "flagLogo") label = t("logo");
+            const knownMetadataLabels: Record<string, string> = {
+                flagLogo: t("logo"),
+                primaryColor: t("primaryColor"),
+            };
+            const label =
+                knownMetadataLabels[key] ??
+                key
+                    .replace(/([A-Z])/g, " $1")
+                    .replace(/^./, (str) => str.toUpperCase());
 
             infoItems.push({
                 label,

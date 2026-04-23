@@ -379,6 +379,11 @@
                 "Settings": "Налаштування",
                 "Confidential": "Конфіденційний"
             },
+            "voteStatus": {
+                "Approved": "Схвалено",
+                "Rejected": "Відхилено",
+                "No Voted": "Не голосував"
+            },
             "requestsType": "Тип запиту",
             "createdDate": "Дата створення",
             "recipient": "Отримувач",
@@ -402,6 +407,7 @@
             "noMembersFound": "Учасників не знайдено. Натисніть Enter, щоб додати \"{query}\"",
             "noMembersAvailable": "Немає доступних учасників",
             "reset": "Скинути",
+            "clear": "Очистити",
             "addFilter": "Додати фільтр"
         },
         "tabs": {
@@ -546,6 +552,7 @@
             "purpose": "Призначення",
             "logo": "Логотип",
             "logoAlt": "Логотип",
+            "primaryColor": "Основний колір",
             "noChangesCurrent": "Змін у конфігурації порівняно з поточним станом не виявлено.",
             "noChangesHistorical": "Змін у конфігурації порівняно з історичним станом не виявлено.",
             "method": "Метод",
@@ -1688,6 +1695,10 @@
         "expired": "Прострочено",
         "removed": "Видалено"
     },
+    "relativeTime": {
+        "justNow": "Щойно",
+        "moments": "мить"
+    },
     "amount": {
         "network": "Мережа: {network}"
     },
@@ -1723,7 +1734,7 @@
         "votesSubmitted": "Ваші голоси надіслано"
     },
     "tokenInput": {
-        "max": "MAX",
+        "max": "МАКС",
         "insufficientTokens": "Недостатньо токенів. Можете надіслати запит і поповнити перед затвердженням.",
         "balance": "Баланс: {amount} {symbol}"
     },

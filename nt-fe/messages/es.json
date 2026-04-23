@@ -379,6 +379,11 @@
                 "Settings": "Ajustes",
                 "Confidential": "Confidencial"
             },
+            "voteStatus": {
+                "Approved": "Aprobada",
+                "Rejected": "Rechazada",
+                "No Voted": "Sin votar"
+            },
             "requestsType": "Tipo de solicitud",
             "createdDate": "Fecha de creación",
             "recipient": "Destinatario",
@@ -402,6 +407,7 @@
             "noMembersFound": "No se encontraron miembros. Pulsa Intro para añadir \"{query}\"",
             "noMembersAvailable": "No hay miembros disponibles",
             "reset": "Restablecer",
+            "clear": "Limpiar",
             "addFilter": "Añadir filtro"
         },
         "tabs": {
@@ -546,6 +552,7 @@
             "purpose": "Propósito",
             "logo": "Logotipo",
             "logoAlt": "Logotipo",
+            "primaryColor": "Color principal",
             "noChangesCurrent": "No se detectaron cambios en la configuración respecto al estado actual.",
             "noChangesHistorical": "No se detectaron cambios en la configuración respecto al estado histórico.",
             "method": "Método",
@@ -1688,6 +1695,10 @@
         "expired": "Expirado",
         "removed": "Eliminado"
     },
+    "relativeTime": {
+        "justNow": "Ahora mismo",
+        "moments": "momentos"
+    },
     "amount": {
         "network": "Red: {network}"
     },
@@ -1723,7 +1734,7 @@
         "votesSubmitted": "Tus votos han sido enviados"
     },
     "tokenInput": {
-        "max": "MAX",
+        "max": "MÁX",
         "insufficientTokens": "Tokens insuficientes. Puedes enviar la solicitud y recargar antes de la aprobación.",
         "balance": "Saldo: {amount} {symbol}"
     },

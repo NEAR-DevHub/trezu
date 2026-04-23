@@ -1,12 +1,13 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
     formatUserDate,
     formatRelativeTime,
     formatProposalStatusDate,
     cn,
     type FormatUserDateOptions,
+    type RelativeTimeLabels,
 } from "@/lib/utils";
 import { useUserPreferences } from "@/hooks/use-user-preferences";
 import { Tooltip } from "@/components/tooltip";
@@ -59,6 +60,13 @@ type FormattedDateProps = StandardDateProps | ProposalStatusDateProps;
 export function FormattedDate(props: FormattedDateProps) {
     const preferences = useUserPreferences();
     const tDate = useTranslations("statusDate");
+    const tRel = useTranslations("relativeTime");
+    const locale = useLocale();
+    const relativeLabels: RelativeTimeLabels = {
+        justNow: tRel("justNow"),
+        moments: tRel("moments"),
+        locale,
+    };
 
     const timezone =
         props.timezone !== undefined
@@ -82,7 +90,11 @@ export function FormattedDate(props: FormattedDateProps) {
             urgentExpiry = true;
         }
         if (props.relative) {
-            const relativeStr = formatProposalStatusDate(date, isFuture);
+            const relativeStr = formatProposalStatusDate(
+                date,
+                isFuture,
+                relativeLabels,
+            );
             displayText = label ? `${label} ${relativeStr}` : relativeStr;
         } else {
             displayText = tooltipText;
@@ -104,7 +116,7 @@ export function FormattedDate(props: FormattedDateProps) {
             ...options,
         });
         if (relative) {
-            displayText = formatRelativeTime(date);
+            displayText = formatRelativeTime(date, relativeLabels);
         } else {
             displayText = tooltipText;
             tooltipText = undefined;

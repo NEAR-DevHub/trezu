@@ -25,7 +25,7 @@ import {
     XCircle,
 } from "lucide-react";
 import * as React from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
     DayPicker,
@@ -33,6 +33,16 @@ import {
     type Matcher,
     TZDate,
 } from "react-day-picker";
+import { enUS } from "date-fns/locale/en-US";
+import { es } from "date-fns/locale/es";
+import { uk } from "date-fns/locale/uk";
+import type { Locale } from "date-fns";
+
+const DATE_FNS_LOCALES: Record<string, Locale> = {
+    en: enUS,
+    es,
+    uk,
+};
 
 import { Button, buttonVariants } from "@/components/ui/button";
 
@@ -264,6 +274,8 @@ export function DateTimePicker({
     ...props
 }: DateTimePickerProps & CalendarProps) {
     const tDate = useTranslations("datePicker");
+    const locale = useLocale();
+    const dateFnsLocale = DATE_FNS_LOCALES[locale] ?? enUS;
     const defaultPresets = useDefaultDatePresets();
     const presets =
         presetsProp ?? (mode === "range" ? defaultPresets : undefined);
@@ -445,6 +457,7 @@ export function DateTimePicker({
 
                 <div className="relative overflow-hidden">
                     <DayPicker
+                        locale={dateFnsLocale}
                         timeZone={timezone}
                         mode={mode as any}
                         selected={value as any}

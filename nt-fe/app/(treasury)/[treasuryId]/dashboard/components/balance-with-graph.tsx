@@ -7,7 +7,7 @@ import {
     Download,
     Info,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { AuthButton } from "@/components/auth-button";
@@ -68,6 +68,7 @@ const PERIOD_TO_HOURS: Record<TimePeriod, number> = {
 const formatTimestampForPeriod = (
     timestamp: string,
     period: TimePeriod,
+    locale: string,
 ): string => {
     const date = new Date(timestamp);
 
@@ -75,21 +76,21 @@ const formatTimestampForPeriod = (
         case "1W":
         case "1M":
             // Show date: "6 Jan"
-            return date.toLocaleDateString("en-US", {
+            return date.toLocaleDateString(locale, {
                 day: "numeric",
                 month: "short",
             });
         case "3M":
             // Monthly label: "Nov"
-            return date.toLocaleDateString("en-US", { month: "short" });
+            return date.toLocaleDateString(locale, { month: "short" });
         case "1Y": {
             // Show month and year: "Mar '25"
-            const month = date.toLocaleDateString("en-US", { month: "short" });
-            const year = date.toLocaleDateString("en-US", { year: "2-digit" });
+            const month = date.toLocaleDateString(locale, { month: "short" });
+            const year = date.toLocaleDateString(locale, { year: "2-digit" });
             return `${month} '${year}`;
         }
         default:
-            return date.toLocaleDateString();
+            return date.toLocaleDateString(locale);
     }
 };
 
@@ -97,10 +98,11 @@ const formatTimestampForPeriod = (
 const formatFullDateForPeriod = (
     timestamp: string,
     period: TimePeriod,
+    locale: string,
 ): string | undefined => {
     if (period !== "3M" && period !== "1Y") return undefined;
     const date = new Date(timestamp);
-    return date.toLocaleDateString("en-US", {
+    return date.toLocaleDateString(locale, {
         day: "numeric",
         month: "short",
         year: "2-digit",
@@ -123,6 +125,7 @@ export default function BalanceWithGraph({
     isLoading: isLoadingTokens,
 }: Props) {
     const t = useTranslations("balanceWithGraph");
+    const locale = useLocale();
     const { treasuryId, isConfidential } = useTreasury();
     const [selectedToken, setSelectedToken] = useState<string>("all");
     const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>("1W");
@@ -306,10 +309,15 @@ export default function BalanceWithGraph({
                         new Date(a[0]).getTime() - new Date(b[0]).getTime(),
                 )
                 .map(([timestamp, { usdValue }]) => ({
-                    name: formatTimestampForPeriod(timestamp, selectedPeriod),
+                    name: formatTimestampForPeriod(
+                        timestamp,
+                        selectedPeriod,
+                        locale,
+                    ),
                     fullDate: formatFullDateForPeriod(
                         timestamp,
                         selectedPeriod,
+                        locale,
                     ),
                     usdValue: usdValue,
                 }));
@@ -397,10 +405,15 @@ export default function BalanceWithGraph({
                         new Date(a[0]).getTime() - new Date(b[0]).getTime(),
                 )
                 .map(([timestamp, { usdValue, balanceValue, hasUSD }]) => ({
-                    name: formatTimestampForPeriod(timestamp, selectedPeriod),
+                    name: formatTimestampForPeriod(
+                        timestamp,
+                        selectedPeriod,
+                        locale,
+                    ),
                     fullDate: formatFullDateForPeriod(
                         timestamp,
                         selectedPeriod,
+                        locale,
                     ),
                     usdValue: hasUSD ? usdValue : undefined,
                     balanceValue: balanceValue,
@@ -452,6 +465,7 @@ export default function BalanceWithGraph({
         selectedPeriod,
         tokens,
         groupedTokens,
+        locale,
     ]);
 
     // Symbols excluded from the "all tokens" chart USD calculation (no historical prices)
