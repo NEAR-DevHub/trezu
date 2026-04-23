@@ -25,7 +25,6 @@ import { Proposal } from "@/lib/proposals-api";
 import { getProposalStatus } from "../../utils/proposal-utils";
 import { Policy } from "@/types/policy";
 import Big from "@/lib/big";
-import { NETWORK_FEE_TOOLTIP_TEXT } from "@/lib/intents-fee";
 
 interface PaymentDisplayProps {
     number: number;
@@ -162,6 +161,7 @@ export function BatchPaymentRequestExpanded({
     proposal,
 }: BatchPaymentRequestExpandedProps) {
     const t = useTranslations("proposals.expanded");
+    const tIntents = useTranslations("intentsQuote");
     const [expanded, setExpanded] = useState<number[]>([]);
 
     // Check if we should auto-refetch
@@ -286,7 +286,7 @@ export function BatchPaymentRequestExpanded({
             ? [
                   {
                       label: t("networkFee"),
-                      info: NETWORK_FEE_TOOLTIP_TEXT,
+                      info: tIntents("networkFeeTooltip"),
                       value: `${totalNetworkFee.toString()} ${tokenData?.symbol || ""}`.trim(),
                   } satisfies InfoItem,
               ]

@@ -7,9 +7,6 @@ const intentsSdk = new IntentsSDK({
     referral: "",
 });
 
-export const NETWORK_FEE_TOOLTIP_TEXT =
-    "This fee is used to process the transaction on the selected chain. It is deducted from the amount you enter, so the recipient receives less.";
-
 export interface IntentsFeeLabels {
     amountTooLowForFee: (
         prefix: string,
