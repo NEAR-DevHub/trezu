@@ -257,6 +257,7 @@
         },
         "searchPlaceholder": "Search by transaction hash",
         "searchPlaceholderShort": "Transaction hash",
+        "fromPool": "from {pool}",
         "table": {
             "type": "TYPE",
             "transaction": "TRANSACTION",
@@ -1540,6 +1541,8 @@
         "exchange": "Exchange",
         "chartNow": "Now",
         "totalBalance": "Total Balance",
+        "excludedTokens": "Excluded tokens:",
+        "noPriceHistory": "No price history. Select a token to see its balance changes.",
         "period": {
             "1W": "1W",
             "1M": "1M",
@@ -1618,7 +1621,11 @@
         "selectNetworkFor": "Select network for {asset}",
         "searchByName": "Search by name",
         "noTokensWithBalance": "No tokens with balance found",
-        "noTokensFound": "No tokens found"
+        "noTokensFound": "No tokens found",
+        "yourAssets": "Your Assets",
+        "otherAssets": "Other Assets",
+        "networksWithAssets": "Networks with assets",
+        "supportedNetworks": "Supported Networks"
     },
     "intentsQuote": {
         "initializing": "Quote service is still initializing. Please try again.",
@@ -1685,6 +1692,10 @@
     "address": {
         "copied": "Address copied to clipboard"
     },
+    "memberAvatars": {
+        "membersWhoCanVote": "Members who can vote",
+        "moreMembers": "+{count, plural, one {# member} other {# members}}"
+    },
     "accountIdInput": {
         "minLength": "Account ID should be at least 2 characters",
         "maxLength": "Account ID must be less than 64 characters",
@@ -1724,6 +1735,7 @@
         "disconnectFailedToast": "Could not disconnect Telegram. Try again."
     },
     "assetsTable": {
+        "noAssetsFound": "No assets found.",
         "assetDetails": "Asset Details",
         "coinPrice": "Coin Price",
         "weight": "Weight",

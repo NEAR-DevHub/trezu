@@ -527,7 +527,7 @@ export default function BalanceWithGraph({
                                         content={
                                             <div>
                                                 <p className="font-medium mb-1">
-                                                    Excluded tokens:
+                                                    {t("excludedTokens")}
                                                 </p>
                                                 <p>
                                                     {chartExcludedSymbols.join(
@@ -535,9 +535,7 @@ export default function BalanceWithGraph({
                                                     )}
                                                 </p>
                                                 <p className="text-muted-foreground mt-1 text-[10px]">
-                                                    No price history. Select a
-                                                    token to see its balance
-                                                    changes.
+                                                    {t("noPriceHistory")}
                                                 </p>
                                             </div>
                                         }

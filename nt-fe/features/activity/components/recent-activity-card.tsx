@@ -258,10 +258,12 @@ export function RecentActivity() {
                                 </div>
                                 <div className="min-w-0 flex-1 overflow-hidden">
                                     <div className="text-sm sm:text-base font-semibold truncate">
-                                        Staking Rewards
+                                        {t("tabs.stakingRewards")}
                                     </div>
                                     <div className="text-xs sm:text-sm text-muted-foreground font-medium truncate">
-                                        from {grouped.pool}
+                                        {t("fromPool", {
+                                            pool: grouped.pool,
+                                        })}
                                     </div>
                                 </div>
                             </div>
@@ -613,14 +615,17 @@ export function RecentActivity() {
                                                                             </div>
                                                                             <div className="min-w-0 flex-1 overflow-hidden">
                                                                                 <div className="text-sm sm:text-base font-semibold truncate">
-                                                                                    Staking
-                                                                                    Rewards
+                                                                                    {t(
+                                                                                        "tabs.stakingRewards",
+                                                                                    )}
                                                                                 </div>
                                                                                 <div className="text-xs sm:text-sm text-muted-foreground font-medium truncate">
-                                                                                    from{" "}
-                                                                                    {
-                                                                                        grouped.pool
-                                                                                    }
+                                                                                    {t(
+                                                                                        "fromPool",
+                                                                                        {
+                                                                                            pool: grouped.pool,
+                                                                                        },
+                                                                                    )}
                                                                                 </div>
                                                                             </div>
                                                                         </div>

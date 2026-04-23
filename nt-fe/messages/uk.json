@@ -257,6 +257,7 @@
         },
         "searchPlaceholder": "Шукати за хешем транзакції",
         "searchPlaceholderShort": "Хеш транзакції",
+        "fromPool": "з {pool}",
         "table": {
             "type": "ТИП",
             "transaction": "ТРАНЗАКЦІЯ",
@@ -1540,6 +1541,8 @@
         "exchange": "Обміняти",
         "chartNow": "Зараз",
         "totalBalance": "Загальний баланс",
+        "excludedTokens": "Виключені токени:",
+        "noPriceHistory": "Немає історії цін. Оберіть токен, щоб побачити зміни його балансу.",
         "period": {
             "1W": "1т",
             "1M": "1м",
@@ -1618,7 +1621,11 @@
         "selectNetworkFor": "Обрати мережу для {asset}",
         "searchByName": "Пошук за назвою",
         "noTokensWithBalance": "Токенів з балансом не знайдено",
-        "noTokensFound": "Токени не знайдено"
+        "noTokensFound": "Токени не знайдено",
+        "yourAssets": "Ваші активи",
+        "otherAssets": "Інші активи",
+        "networksWithAssets": "Мережі з активами",
+        "supportedNetworks": "Підтримувані мережі"
     },
     "intentsQuote": {
         "initializing": "Сервіс котирувань ще ініціалізується. Спробуйте ще раз.",
@@ -1685,6 +1692,10 @@
     "address": {
         "copied": "Адресу скопійовано в буфер"
     },
+    "memberAvatars": {
+        "membersWhoCanVote": "Учасники, які можуть голосувати",
+        "moreMembers": "+{count, plural, one {# учасник} few {# учасники} many {# учасників} other {# учасників}}"
+    },
     "accountIdInput": {
         "minLength": "ID акаунта має містити щонайменше 2 символи",
         "maxLength": "ID акаунта має містити менше 64 символів",
@@ -1724,6 +1735,7 @@
         "disconnectFailedToast": "Не вдалось відключити Telegram. Спробуйте ще раз."
     },
     "assetsTable": {
+        "noAssetsFound": "Активи не знайдено.",
         "assetDetails": "Деталі активу",
         "coinPrice": "Ціна монети",
         "weight": "Вага",

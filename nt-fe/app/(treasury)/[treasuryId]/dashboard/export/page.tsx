@@ -153,6 +153,7 @@ function parseDateRangeFromUrl(
 
 function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
     const tEx = useTranslations("exportToasts");
+    const tExport = useTranslations("export");
     const { isGuestTreasury } = useTreasury();
     const { accountId } = useNear();
     const isMember = !isGuestTreasury;
@@ -231,7 +232,7 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
                             {item.status === "generating" ? (
                                 <div className="flex items-center gap-2 px-3 py-1.5 bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400 rounded-md text-sm">
                                     <Loader2 className="w-4 h-4 animate-spin" />
-                                    Generating
+                                    {tExport("status.generating")}
                                 </div>
                             ) : item.status === "completed" ? (
                                 <Button
@@ -249,15 +250,15 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
                                     }
                                 >
                                     <Download className="w-4 h-4" />
-                                    Download
+                                    {tExport("download")}
                                 </Button>
                             ) : item.status === "expired" ? (
                                 <div className="px-3 py-1.5 bg-muted rounded-md text-sm">
-                                    Expired
+                                    {tExport("status.expired")}
                                 </div>
                             ) : (
                                 <div className="px-3 py-1.5 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 rounded-md text-sm">
-                                    Failed
+                                    {tExport("status.failed")}
                                 </div>
                             )}
                         </div>

@@ -257,6 +257,7 @@
         },
         "searchPlaceholder": "Buscar por hash de transacción",
         "searchPlaceholderShort": "Hash de transacción",
+        "fromPool": "desde {pool}",
         "table": {
             "type": "TIPO",
             "transaction": "TRANSACCIÓN",
@@ -1540,6 +1541,8 @@
         "exchange": "Intercambiar",
         "chartNow": "Ahora",
         "totalBalance": "Saldo total",
+        "excludedTokens": "Tokens excluidos:",
+        "noPriceHistory": "Sin historial de precios. Selecciona un token para ver los cambios en su saldo.",
         "period": {
             "1W": "1s",
             "1M": "1m",
@@ -1618,7 +1621,11 @@
         "selectNetworkFor": "Seleccionar red para {asset}",
         "searchByName": "Buscar por nombre",
         "noTokensWithBalance": "No se encontraron tokens con saldo",
-        "noTokensFound": "No se encontraron tokens"
+        "noTokensFound": "No se encontraron tokens",
+        "yourAssets": "Tus activos",
+        "otherAssets": "Otros activos",
+        "networksWithAssets": "Redes con activos",
+        "supportedNetworks": "Redes compatibles"
     },
     "intentsQuote": {
         "initializing": "El servicio de cotización aún se está iniciando. Inténtalo de nuevo.",
@@ -1685,6 +1692,10 @@
     "address": {
         "copied": "Dirección copiada al portapapeles"
     },
+    "memberAvatars": {
+        "membersWhoCanVote": "Miembros que pueden votar",
+        "moreMembers": "+{count, plural, one {# miembro} other {# miembros}}"
+    },
     "accountIdInput": {
         "minLength": "El ID de cuenta debe tener al menos 2 caracteres",
         "maxLength": "El ID de cuenta debe tener menos de 64 caracteres",
@@ -1724,6 +1735,7 @@
         "disconnectFailedToast": "No se pudo desconectar Telegram. Inténtalo de nuevo."
     },
     "assetsTable": {
+        "noAssetsFound": "No se encontraron activos.",
         "assetDetails": "Detalles del activo",
         "coinPrice": "Precio de la moneda",
         "weight": "Peso",

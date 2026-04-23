@@ -375,7 +375,7 @@ export default function TokenSelect({
                                 {yourAssets.length > 0 && (
                                     <div className="mb-4">
                                         <div className="text-xs font-medium text-muted-foreground uppercase px-2 py-2">
-                                            Your Assets
+                                            {t("yourAssets")}
                                         </div>
                                         {yourAssets.map(renderTokenButton)}
                                     </div>
@@ -384,7 +384,7 @@ export default function TokenSelect({
                                 {otherAssets.length > 0 && (
                                     <div>
                                         <div className="text-xs font-medium text-muted-foreground uppercase px-2 py-2">
-                                            Other Assets
+                                            {t("otherAssets")}
                                         </div>
                                         {otherAssets.map(renderTokenButton)}
                                     </div>
@@ -522,7 +522,7 @@ export default function TokenSelect({
                                     <>
                                         <div className="mb-4">
                                             <div className="text-xs font-medium text-muted-foreground uppercase px-2 py-2">
-                                                Networks with assets
+                                                {t("networksWithAssets")}
                                             </div>
                                             {withBalance.map(
                                                 renderNetworkButton,
@@ -531,7 +531,7 @@ export default function TokenSelect({
                                         {withoutBalance.length > 0 && (
                                             <div className="flex flex-col gap-2">
                                                 <div className="text-xs font-medium text-muted-foreground uppercase px-2 py-2">
-                                                    Supported Networks
+                                                    {t("supportedNetworks")}
                                                 </div>
                                                 {withoutBalance.map(
                                                     renderNetworkButton,

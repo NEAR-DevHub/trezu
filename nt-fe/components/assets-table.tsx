@@ -1649,7 +1649,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
     if (aggregatedTokens.length === 0) {
         return (
             <div className="p-8 text-center text-muted-foreground">
-                No assets found.
+                {t("noAssetsFound")}
             </div>
         );
     }

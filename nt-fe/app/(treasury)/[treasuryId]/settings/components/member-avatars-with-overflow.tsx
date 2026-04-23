@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { User } from "@/components/user";
 import {
     Popover,
@@ -29,6 +30,7 @@ export function MemberAvatarsWithOverflow({
     totalCount,
     className,
 }: MemberAvatarsWithOverflowProps) {
+    const t = useTranslations("memberAvatars");
     const [open, setOpen] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [visibleCount, setVisibleCount] = useState(10); // Default fallback
@@ -154,8 +156,9 @@ export function MemberAvatarsWithOverflow({
                                     onMouseEnter={() => setOpen(true)}
                                     onMouseLeave={() => setOpen(false)}
                                 >
-                                    +{remainingCount} member
-                                    {remainingCount !== 1 ? "s" : ""}
+                                    {t("moreMembers", {
+                                        count: remainingCount,
+                                    })}
                                 </button>
                             </PopoverTrigger>
                             <PopoverContent
@@ -174,8 +177,9 @@ export function MemberAvatarsWithOverflow({
                         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                             <DialogTrigger asChild>
                                 <button className="ml-2 text-sm text-muted-foreground hover:text-foreground transition-colors focus:outline-none">
-                                    +{remainingCount} member
-                                    {remainingCount !== 1 ? "s" : ""}
+                                    {t("moreMembers", {
+                                        count: remainingCount,
+                                    })}
                                 </button>
                             </DialogTrigger>
                             <DialogContent
@@ -185,7 +189,7 @@ export function MemberAvatarsWithOverflow({
                                 <DialogHeader className="p-3 pb-2 border-b bg-background">
                                     <DialogTitle className="flex items-center justify-between">
                                         <span className="flex items-center gap-2">
-                                            Members who can vote
+                                            {t("membersWhoCanVote")}
                                             <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs">
                                                 {totalCount}
                                             </span>
