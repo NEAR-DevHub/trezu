@@ -1317,16 +1317,32 @@ export interface GenerateIntentResponse {
         standard: string; // "nep413"
         payload: GenerateIntentPayload;
     };
-    correlationId: string;
+    /**
+     * 1Click correlation IDs — one per input quote. Length 1 for a single
+     * payment, N for a bulk payment.
+     */
+    correlationIds: string[];
     /** NEP-413 payload hash (hex) — use directly in payload_v2.Eddsa */
     payloadHash: string;
+}
+
+export interface GenerateIntentQuote {
+    quoteMetadata: Record<string, unknown>;
+    recipient: string;
+    amount: string;
+    tokenId: string;
 }
 
 export async function generateIntent(request: {
     type: string;
     standard: string;
     signerId: string;
-    quoteMetadata: Record<string, unknown>;
+    /**
+     * One entry per recipient. Single-payment callers send a one-element array;
+     * bulk-payment callers send N entries which the backend merges into one
+     * signed NEP-413 message.
+     */
+    quotes: GenerateIntentQuote[];
     notes?: string;
 }): Promise<GenerateIntentResponse> {
     const url = `${BACKEND_API_BASE}/confidential-intents/generate-intent`;

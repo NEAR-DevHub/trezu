@@ -219,6 +219,30 @@ export interface VoteCounts {
     [roleName: string]: [number, number, number];
 }
 
+export interface ConfidentialQuoteMetadata {
+    quote: {
+        amountIn: string;
+        amountInFormatted: string;
+        amountInUsd: string;
+        amountOut: string;
+        amountOutFormatted: string;
+        amountOutUsd: string;
+        minAmountOut: string;
+        timeEstimate: number;
+        depositAddress: string;
+        deadline: string;
+    };
+    quoteRequest: {
+        originAsset: string;
+        destinationAsset: string;
+        recipient: string;
+        amount: string;
+        [key: string]: unknown;
+    };
+    signature: string;
+    timestamp: string;
+}
+
 export interface Proposal {
     description: string;
     id: number;
@@ -231,31 +255,16 @@ export interface Proposal {
     votes: {
         [account: string]: Vote;
     };
-    /** Populated by backend for confidential (v1.signer) proposals */
+    /**
+     * Populated by backend for confidential (v1.signer) proposals.
+     * `quote_metadata` is the full `getIntentsQuote` response for a single
+     * payment, or an array of such responses for a bulk payment.
+     */
     confidential_metadata?: {
-        quote_metadata?: {
-            quote: {
-                amountIn: string;
-                amountInFormatted: string;
-                amountInUsd: string;
-                amountOut: string;
-                amountOutFormatted: string;
-                amountOutUsd: string;
-                minAmountOut: string;
-                timeEstimate: number;
-                depositAddress: string;
-                deadline: string;
-            };
-            quoteRequest: {
-                originAsset: string;
-                destinationAsset: string;
-                recipient: string;
-                amount: string;
-                [key: string]: unknown;
-            };
-            signature: string;
-            timestamp: string;
-        };
+        quote_metadata?:
+            | ConfidentialQuoteMetadata
+            | ConfidentialQuoteMetadata[];
+        /** `pending` | `submitted` | `failed` */
         status?: string;
         correlation_id?: string;
         notes?: string;

@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { PageComponentLayout } from "@/components/page-component-layout";
@@ -12,7 +12,11 @@ import { default_near_token } from "@/constants/token";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
 import { trackEvent } from "@/lib/analytics";
-import { getBatchStorageDepositIsRegistered } from "@/lib/api";
+import {
+    generateIntent,
+    getBatchStorageDepositIsRegistered,
+    getIntentsQuote,
+} from "@/lib/api";
 import Big from "@/lib/big";
 import {
     BULK_PAYMENT_CONTRACT_ID,
@@ -20,6 +24,8 @@ import {
     generateListId,
     submitPaymentList,
 } from "@/lib/bulk-payment-api";
+import { buildConfidentialBulkProposal } from "@/features/confidential/utils/proposal-builder";
+import { buildIntentsQuoteRequest } from "@/hooks/use-intents-quote";
 import { encodeToMarkdown } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 import { BulkPaymentToast } from "../components/bulk-payment-toast";
@@ -53,13 +59,6 @@ export default function BulkPaymentPage() {
     const { treasuryId: selectedTreasury, isConfidential } = useTreasury();
     const { createProposal } = useNear();
     const { data: policy } = useTreasuryPolicy(selectedTreasury);
-
-    useEffect(() => {
-        if (isConfidential) {
-            toast.warning(tBulk("comingSoonToast"));
-            router.replace(`/${selectedTreasury}/payments`);
-        }
-    }, [isConfidential, selectedTreasury, router]);
 
     const [step, setStep] = useState(0);
 
@@ -152,6 +151,193 @@ export default function BulkPaymentPage() {
         );
 
         let loadingToastId: string | number | undefined;
+
+        if (isConfidential) {
+            try {
+                const proposalBond = policy?.proposal_bond || "0";
+
+                const makeStep = (
+                    idx: number,
+                    total: number,
+                    state: "loading" | "completed",
+                ) => ({
+                    label: tBulk("quotingRecipient", {
+                        index: idx,
+                        total,
+                    }),
+                    status: state,
+                });
+
+                const total = paymentData.length;
+                loadingToastId = toast(
+                    <BulkPaymentToast
+                        steps={[
+                            makeStep(1, total, "loading"),
+                            {
+                                label: tBulk("submittingProposal"),
+                                status: "pending",
+                            },
+                        ]}
+                    />,
+                    {
+                        duration: Infinity,
+                        classNames: { toast: "!p-3" },
+                    },
+                );
+
+                const quotes: {
+                    quoteMetadata: Record<string, unknown>;
+                    recipient: string;
+                    amount: string;
+                    tokenId: string;
+                }[] = [];
+
+                for (let i = 0; i < paymentData.length; i++) {
+                    const payment = paymentData[i];
+                    const amountYocto = Big(payment.amount || "0")
+                        .times(Big(10).pow(selectedToken.decimals))
+                        .toFixed(0);
+
+                    const quoteRequest = buildIntentsQuoteRequest(
+                        selectedTreasury,
+                        selectedToken,
+                        payment.recipient,
+                        amountYocto,
+                        true,
+                        policy?.proposal_period,
+                        "recipient",
+                    );
+                    const quote = await getIntentsQuote(quoteRequest, false);
+                    if (!quote) {
+                        throw new Error(
+                            tBulk("quoteFailedForRecipient", {
+                                recipient: payment.recipient,
+                            }),
+                        );
+                    }
+                    const { correlationId: _omit, ...quoteMetadata } =
+                        quote as unknown as Record<string, unknown>;
+                    quotes.push({
+                        quoteMetadata,
+                        recipient: payment.recipient,
+                        amount: amountYocto,
+                        tokenId: selectedToken.address,
+                    });
+
+                    if (i + 1 < paymentData.length) {
+                        toast(
+                            <BulkPaymentToast
+                                steps={[
+                                    makeStep(i + 2, total, "loading"),
+                                    {
+                                        label: tBulk("submittingProposal"),
+                                        status: "pending",
+                                    },
+                                ]}
+                            />,
+                            {
+                                id: loadingToastId,
+                                duration: Infinity,
+                                classNames: { toast: "!p-3" },
+                            },
+                        );
+                    }
+                }
+
+                toast(
+                    <BulkPaymentToast
+                        steps={[
+                            {
+                                label: tBulk("quotesComplete", { total }),
+                                status: "completed",
+                            },
+                            {
+                                label: tBulk("submittingProposal"),
+                                status: "loading",
+                            },
+                        ]}
+                    />,
+                    {
+                        id: loadingToastId,
+                        duration: Infinity,
+                        classNames: { toast: "!p-3" },
+                    },
+                );
+
+                const intentResponse = await generateIntent({
+                    type: "swap_transfer",
+                    standard: "nep413",
+                    signerId: selectedTreasury,
+                    quotes,
+                    notes: comment?.trim() || undefined,
+                });
+
+                const { proposal } = buildConfidentialBulkProposal({
+                    payloadHash: intentResponse.payloadHash,
+                    treasuryId: selectedTreasury,
+                });
+
+                await createProposal(
+                    tBulk("proposalSubmitted"),
+                    {
+                        treasuryId: selectedTreasury,
+                        proposal: {
+                            description: proposal.description,
+                            kind: proposal.kind,
+                        },
+                        proposalBond,
+                        additionalTransactions: [],
+                        proposalType: "payment",
+                    },
+                    false,
+                );
+
+                trackEvent("bulk-payment-submitted", {
+                    treasury_id: selectedTreasury ?? "",
+                    token_symbol: selectedToken.symbol,
+                    recipients_count: paymentData.length,
+                });
+
+                toast.dismiss(loadingToastId);
+                toast.success(tBulk("proposalSubmitted"), {
+                    duration: 10000,
+                    action: {
+                        label: tReq("viewRequest"),
+                        onClick: () =>
+                            router.push(
+                                `/${selectedTreasury}/requests?tab=InProgress`,
+                            ),
+                    },
+                    classNames: {
+                        toast: "!p-2 !px-4",
+                        actionButton:
+                            "!bg-transparent !text-foreground hover:!bg-muted !border-0",
+                        title: "!border-r !border-r-border !pr-4",
+                    },
+                });
+
+                await queryClient.invalidateQueries({
+                    queryKey: ["subscription", selectedTreasury],
+                });
+
+                form.reset();
+                setStep(0);
+                setPaymentData([]);
+                setNetworkFeePerRecipient(null);
+            } catch (error) {
+                console.error(
+                    "Failed to submit confidential bulk payment:",
+                    error,
+                );
+                if (loadingToastId) toast.dismiss(loadingToastId);
+                toast.error(
+                    error instanceof Error
+                        ? error.message
+                        : tBulk("submitFailed"),
+                );
+            }
+            return;
+        }
 
         try {
             // Show loading toast

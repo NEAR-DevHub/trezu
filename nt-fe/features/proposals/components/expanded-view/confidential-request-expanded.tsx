@@ -1,6 +1,7 @@
 import { ConfidentialRequestData } from "../../types/index";
 import { SwapExpanded } from "./swap-expanded";
 import { TransferExpanded } from "./transfer-expanded";
+import { IntentsBatchPaymentExpanded } from "./batch-payment-expanded";
 import { ConfidentialState } from "@/components/confidential-state";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -29,6 +30,10 @@ export function ConfidentialRequestExpanded({
 
     if (mapped.type === "swap") {
         return <SwapExpanded data={mapped.data} />;
+    }
+
+    if (mapped.type === "bulk_payment") {
+        return <IntentsBatchPaymentExpanded data={mapped.data} />;
     }
 
     return <TransferExpanded data={mapped.data} />;

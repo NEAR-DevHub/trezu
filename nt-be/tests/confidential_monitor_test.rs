@@ -92,7 +92,7 @@ async fn seed_confidential_intent(
         INSERT INTO confidential_intents
             (dao_id, payload_hash, intent_payload, correlation_id, quote_metadata,
              status, intent_type)
-        VALUES ($1, $2, $3, $4, $5, $6, 'shield')
+        VALUES ($1, $2, $3, $4, $5, $6, 'payment')
         ON CONFLICT (dao_id, payload_hash) DO UPDATE SET
             quote_metadata = EXCLUDED.quote_metadata,
             correlation_id = EXCLUDED.correlation_id,

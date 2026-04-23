@@ -895,6 +895,9 @@
         "proposalSubmitted": "Bulk payment proposal submitted",
         "submitListFailed": "Failed to submit payment list",
         "submitFailed": "Failed to submit bulk payment",
+        "quotingRecipient": "Quoting recipient {index}/{total}",
+        "quotesComplete": "Quoted {total} recipients",
+        "quoteFailedForRecipient": "Quote failed for {recipient}",
         "upload": {
             "pleaseUploadCsv": "Please upload a CSV file",
             "fileSizeLimit": "File size must be less than 1.5 MB",
@@ -906,6 +909,7 @@
             "upgradePaid": "Upgrade your plan for more access, or wait until your limits reset next month.",
             "selectAsset": "Select Asset",
             "disableTokenMessage": "This token is not yet support for bulk payments. We are working on it.",
+            "disableTokenMessageConfidential": "Only Intents tokens can be used for confidential bulk payments.",
             "providePaymentData": "Provide Payment Data",
             "uploadFile": "Upload File",
             "provideData": "Provide Data",

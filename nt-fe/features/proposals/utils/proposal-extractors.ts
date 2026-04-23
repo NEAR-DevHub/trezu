@@ -755,7 +755,27 @@ export function extractConfidentialRequestData(
 
     let mapped: MappedConfidentialRequest = null;
     let title = "Confidential Request";
-    if (quoteMeta) {
+    if (Array.isArray(quoteMeta)) {
+        // Bulk confidential payment: N quotes merged into one signed message.
+        const recipients = quoteMeta
+            .map((entry) => {
+                const q = entry as IntentsQuoteResponse;
+                return {
+                    receiver: q.quoteRequest?.recipient ?? "",
+                    tokenId: q.quoteRequest?.originAsset ?? "",
+                    amount: q.quote?.amountIn ?? "",
+                };
+            })
+            .filter((r) => r.receiver);
+        mapped = {
+            type: "bulk_payment",
+            data: {
+                recipients,
+                notes: meta?.notes ?? undefined,
+            },
+        };
+        title = "Confidential Bulk Payment";
+    } else if (quoteMeta) {
         const quoteResponse = {
             ...quoteMeta,
             correlationId,

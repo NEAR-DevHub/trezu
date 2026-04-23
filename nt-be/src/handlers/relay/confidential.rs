@@ -72,10 +72,15 @@ pub(crate) async fn fetch_mpc_public_key(
 }
 
 /// Store a pending intent for later auto-submission.
+///
+/// `intent_type` is `payment` for single-recipient confidential transfers and
+/// `bulk_payment` for multi-recipient ones. The `auth` type is written via a
+/// separate path in prepare_auth.
 pub async fn store_pending_intent(
     pool: &PgPool,
     dao_id: &str,
     payload_hash: &str,
+    intent_type: &str,
     intent_payload: &Value,
     correlation_id: Option<&str>,
     quote_metadata: Option<&Value>,
@@ -83,20 +88,21 @@ pub async fn store_pending_intent(
 ) -> Result<(), String> {
     sqlx::query!(
         r#"
-        INSERT INTO confidential_intents (dao_id, payload_hash, intent_payload, correlation_id, quote_metadata, notes)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO confidential_intents (dao_id, payload_hash, intent_type, intent_payload, correlation_id, quote_metadata, notes)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         ON CONFLICT (dao_id, payload_hash) DO UPDATE SET
             intent_payload = EXCLUDED.intent_payload,
             correlation_id = EXCLUDED.correlation_id,
             quote_metadata = EXCLUDED.quote_metadata,
             notes = EXCLUDED.notes,
-            intent_type = 'shield',
+            intent_type = EXCLUDED.intent_type,
             status = 'pending',
             submit_result = NULL,
             updated_at = NOW()
         "#,
         dao_id,
         payload_hash,
+        intent_type,
         intent_payload,
         correlation_id,
         quote_metadata,
@@ -107,9 +113,10 @@ pub async fn store_pending_intent(
     .map_err(|e| format!("Failed to store pending intent: {}", e))?;
 
     log::info!(
-        "Stored pending confidential intent for {} (hash={})",
+        "Stored pending confidential intent for {} (hash={}, type={})",
         dao_id,
-        payload_hash
+        payload_hash,
+        intent_type,
     );
     Ok(())
 }
@@ -275,34 +282,47 @@ pub async fn try_auto_submit_intent(
         mpc_public_key
     );
 
-    let (url, body) = if intent_type == "auth" {
-        // Authentication: call 1Click auth/authenticate
-        let url = format!(
-            "{}/v0/auth/authenticate",
-            state.env_vars.confidential_api_url
-        );
-        let body = serde_json::json!({
-            "signedData": {
-                "standard": "nep413",
-                "payload": intent_payload,
-                "public_key": mpc_public_key,
-                "signature": sig_b58,
-            }
-        });
-        (url, body)
-    } else {
-        // Shield: call 1Click submit-intent
-        let url = format!("{}/v0/submit-intent", state.env_vars.confidential_api_url);
-        let body = serde_json::json!({
-            "type": "swap_transfer",
-            "signedData": {
-                "standard": "nep413",
-                "payload": intent_payload,
-                "public_key": mpc_public_key,
-                "signature": sig_b58,
-            }
-        });
-        (url, body)
+    let (url, body) = match intent_type.as_str() {
+        "auth" => {
+            let url = format!(
+                "{}/v0/auth/authenticate",
+                state.env_vars.confidential_api_url
+            );
+            let body = serde_json::json!({
+                "signedData": {
+                    "standard": "nep413",
+                    "payload": intent_payload,
+                    "public_key": mpc_public_key,
+                    "signature": sig_b58,
+                }
+            });
+            (url, body)
+        }
+        // payment (single recipient) and bulk_payment (N recipients) share the
+        // same /v0/submit-intent shape — the difference is purely the number of
+        // entries in payload.message.intents.
+        "payment" | "bulk_payment" => {
+            let url = format!("{}/v0/submit-intent", state.env_vars.confidential_api_url);
+            let body = serde_json::json!({
+                "type": "swap_transfer",
+                "signedData": {
+                    "standard": "nep413",
+                    "payload": intent_payload,
+                    "public_key": mpc_public_key,
+                    "signature": sig_b58,
+                }
+            });
+            (url, body)
+        }
+        other => {
+            log::error!(
+                "Unknown intent_type '{}' for {} (hash={}); skipping auto-submit",
+                other,
+                treasury_id,
+                payload_hash
+            );
+            return;
+        }
     };
 
     let mut req = state
@@ -312,6 +332,33 @@ pub async fn try_auto_submit_intent(
 
     if let Some(api_key) = &state.env_vars.oneclick_api_key {
         req = req.header("x-api-key", api_key);
+    }
+
+    // /v0/submit-intent requires an authenticated DAO session. /v0/auth/authenticate
+    // is what mints that session, so skip the Bearer for the auth call.
+    if intent_type != "auth" {
+        match crate::handlers::intents::confidential::refresh_dao_jwt(state, treasury_id).await {
+            Ok(token) => {
+                req = req.header("Authorization", format!("Bearer {}", token));
+            }
+            Err((status, msg)) => {
+                log::error!(
+                    "Failed to load DAO JWT for submit-intent ({} {}): {}",
+                    treasury_id,
+                    status,
+                    msg
+                );
+                let _ = sqlx::query!(
+                    "UPDATE confidential_intents SET status = 'failed', submit_result = $1, updated_at = NOW() WHERE dao_id = $2 AND payload_hash = $3",
+                    serde_json::json!({"error": format!("DAO JWT refresh failed: {}", msg)}),
+                    treasury_id,
+                    payload_hash,
+                )
+                .execute(&state.db_pool)
+                .await;
+                return;
+            }
+        }
     }
 
     let result = req.json(&body).send().await;
