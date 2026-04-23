@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
@@ -26,7 +27,7 @@ import { useExportHistory } from "@/hooks/use-treasury-queries";
 import { APP_CONTACT_US_URL } from "@/constants/config";
 import {
     DatePickerPopover,
-    DEFAULT_DATE_PRESETS,
+    useDefaultDatePresets,
 } from "@/components/datepicker";
 import { Input } from "@/components/input";
 import {
@@ -57,7 +58,7 @@ import {
 } from "@/components/underline-tabs";
 import { EmptyState } from "@/components/empty-state";
 import { toast } from "sonner";
-import { formatHistoryDuration } from "@/features/activity";
+import { useFormatHistoryDuration } from "@/features/activity";
 import { format } from "date-fns";
 import { ExportHistoryItem } from "@/lib/api";
 import { Download, Loader2 } from "lucide-react";
@@ -94,27 +95,29 @@ const DOCUMENT_TYPES: { value: DocumentType; label: string }[] = [
     { value: "xlsx", label: ".XLSX" },
 ];
 
-const TRANSACTION_TYPES: { value: TransactionType; label: string }[] = [
-    { value: "all", label: "All Types" },
-    { value: "outgoing", label: "Sent" },
-    { value: "incoming", label: "Received" },
-    { value: "staking_rewards", label: "Staking Rewards" },
+const TRANSACTION_TYPES: { value: TransactionType; labelKey: string }[] = [
+    { value: "all", labelKey: "typeAll" },
+    { value: "outgoing", labelKey: "typeSent" },
+    { value: "incoming", labelKey: "typeReceived" },
+    { value: "staking_rewards", labelKey: "typeStakingRewards" },
 ];
 
-const exportFormSchema = z.object({
-    email: z
-        .string()
-        .email("Please enter a valid email address")
-        .optional()
-        .or(z.literal("")),
-    documentType: z.enum(["csv", "json", "xlsx"]),
-    dateRange: z.object({
-        from: z.date(),
-        to: z.date().optional(),
-    }),
-    selectedAssets: z.array(z.string()).min(1),
-    selectedTransactionTypes: z.array(z.string()).min(1),
-});
+function buildExportFormSchema(messages: { invalidEmail: string }) {
+    return z.object({
+        email: z
+            .string()
+            .email(messages.invalidEmail)
+            .optional()
+            .or(z.literal("")),
+        documentType: z.enum(["csv", "json", "xlsx"]),
+        dateRange: z.object({
+            from: z.date(),
+            to: z.date().optional(),
+        }),
+        selectedAssets: z.array(z.string()).min(1),
+        selectedTransactionTypes: z.array(z.string()).min(1),
+    });
+}
 
 // Helper to parse date range from file URL
 function parseDateRangeFromUrl(
@@ -149,28 +152,33 @@ function parseDateRangeFromUrl(
 }
 
 function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
+    const tEx = useTranslations("exportToasts");
+    const tExport = useTranslations("export");
     const { isGuestTreasury } = useTreasury();
     const { accountId } = useNear();
     const isMember = !isGuestTreasury;
 
-    const handleDownload = useCallback((item: ExportHistoryItem) => {
-        try {
-            const url = new URL(item.fileUrl, BACKEND_API_BASE);
-            const fullUrl = `${BACKEND_API_BASE}${url.pathname}${url.search}`;
+    const handleDownload = useCallback(
+        (item: ExportHistoryItem) => {
+            try {
+                const url = new URL(item.fileUrl, BACKEND_API_BASE);
+                const fullUrl = `${BACKEND_API_BASE}${url.pathname}${url.search}`;
 
-            // Open in new tab
-            window.open(fullUrl, "_blank", "noopener,noreferrer");
-        } catch (error) {
-            console.error("Download error:", error);
-            toast.error("Failed to download export");
-        }
-    }, []);
+                // Open in new tab
+                window.open(fullUrl, "_blank", "noopener,noreferrer");
+            } catch (error) {
+                console.error("Download error:", error);
+                toast.error(tEx("downloadFailed"));
+            }
+        },
+        [tEx],
+    );
 
     const columns = useMemo<ColumnDef<ExportHistoryItem, any>[]>(
         () => [
             columnHelper.display({
                 id: "submissionTime",
-                header: "Submission Time",
+                header: tEx("columnSubmissionTime"),
                 cell: ({ row }) => {
                     const item = row.original;
                     return (
@@ -185,7 +193,7 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
             }),
             columnHelper.display({
                 id: "dateRange",
-                header: "Date Range",
+                header: tEx("columnDateRange"),
                 cell: ({ row }) => {
                     const item = row.original;
                     const dateRange = parseDateRangeFromUrl(item.fileUrl);
@@ -200,7 +208,7 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
             }),
             columnHelper.display({
                 id: "generatedBy",
-                header: "Generated By",
+                header: tEx("columnGeneratedBy"),
                 cell: ({ row }) => {
                     const item = row.original;
                     return (
@@ -216,7 +224,7 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
             }),
             columnHelper.display({
                 id: "status",
-                header: "Status",
+                header: tEx("columnStatus"),
                 cell: ({ row }) => {
                     const item = row.original;
                     return (
@@ -224,7 +232,7 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
                             {item.status === "generating" ? (
                                 <div className="flex items-center gap-2 px-3 py-1.5 bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400 rounded-md text-sm">
                                     <Loader2 className="w-4 h-4 animate-spin" />
-                                    Generating
+                                    {tExport("status.generating")}
                                 </div>
                             ) : item.status === "completed" ? (
                                 <Button
@@ -237,20 +245,20 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
                                     disabled={!isMember || !accountId}
                                     tooltipContent={
                                         !isMember || !accountId
-                                            ? "You don't have permission to download the file."
+                                            ? tEx("noDownloadPermission")
                                             : undefined
                                     }
                                 >
                                     <Download className="w-4 h-4" />
-                                    Download
+                                    {tExport("download")}
                                 </Button>
                             ) : item.status === "expired" ? (
                                 <div className="px-3 py-1.5 bg-muted rounded-md text-sm">
-                                    Expired
+                                    {tExport("status.expired")}
                                 </div>
                             ) : (
                                 <div className="px-3 py-1.5 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 rounded-md text-sm">
-                                    Failed
+                                    {tExport("status.failed")}
                                 </div>
                             )}
                         </div>
@@ -258,7 +266,7 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
                 },
             }),
         ],
-        [handleDownload, isMember, accountId],
+        [handleDownload, isMember, accountId, tEx],
     );
 
     const table = useReactTable({
@@ -325,6 +333,10 @@ function ExportHistoryTable({ items }: { items: ExportHistoryItem[] }) {
 }
 
 export default function ExportActivityPage() {
+    const t = useTranslations("pages.dashboard");
+    const tEx = useTranslations("exportToasts");
+    const tExport = useTranslations("export");
+    const formatHistoryDuration = useFormatHistoryDuration();
     const router = useRouter();
     const queryClient = useQueryClient();
     const { treasuryId, isGuestTreasury } = useTreasury();
@@ -358,20 +370,20 @@ export default function ExportActivityPage() {
         return minDate || subMonths(new Date(), 6);
     }, [minDate]);
 
+    const defaultDatePresets = useDefaultDatePresets();
     // Create custom date presets based on plan's history limit
     const datePresets = useMemo(() => {
         const historyMonths =
             planDetails?.planConfig?.limits?.historyLookupMonths;
-        const presets = [...DEFAULT_DATE_PRESETS];
+        const presets = [...defaultDatePresets];
 
         if (historyMonths) {
             // Add year-based presets based on plan
             const years = Math.floor(historyMonths / 12);
 
             if (years >= 1) {
-                // Add "Last 1 year" preset
                 presets.push({
-                    label: "Last 1 year",
+                    label: tEx("last1Year"),
                     value: {
                         from: subMonths(startOfDay(new Date()), 12),
                         to: endOfDay(new Date()),
@@ -380,9 +392,8 @@ export default function ExportActivityPage() {
             }
 
             if (years >= 2) {
-                // Add "Last 2 years" preset
                 presets.push({
-                    label: "Last 2 years",
+                    label: tEx("last2Years"),
                     value: {
                         from: subMonths(startOfDay(new Date()), 24),
                         to: endOfDay(new Date()),
@@ -392,9 +403,21 @@ export default function ExportActivityPage() {
         }
 
         return presets;
-    }, [planDetails?.planConfig?.limits?.historyLookupMonths]);
+    }, [
+        planDetails?.planConfig?.limits?.historyLookupMonths,
+        defaultDatePresets,
+        tEx,
+    ]);
 
-    const form = useForm<z.infer<typeof exportFormSchema>>({
+    const exportFormSchema = useMemo(
+        () =>
+            buildExportFormSchema({
+                invalidEmail: tEx("invalidEmail"),
+            }),
+        [tEx],
+    );
+
+    const form = useForm<z.infer<ReturnType<typeof buildExportFormSchema>>>({
         resolver: zodResolver(exportFormSchema),
         defaultValues: {
             email: "",
@@ -424,8 +447,8 @@ export default function ExportActivityPage() {
 
     const handleExport = async () => {
         if (!treasuryId || !dateRange.from || !dateRange.to) {
-            toast.error("Invalid date range", {
-                description: "Please select a valid date range for export.",
+            toast.error(tEx("invalidDateRange"), {
+                description: tEx("invalidDateRangeDescription"),
             });
             return;
         }
@@ -489,14 +512,17 @@ export default function ExportActivityPage() {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                let errorMessage = "Export failed";
+                let errorMessage = tEx("exportFailed");
 
                 try {
                     const errorJson = JSON.parse(errorText);
                     errorMessage =
-                        errorJson.message || errorJson.error || errorText;
+                        errorJson.message ||
+                        errorJson.error ||
+                        errorText ||
+                        tEx("exportFailed");
                 } catch {
-                    errorMessage = errorText || "Export failed";
+                    errorMessage = errorText || tEx("exportFailed");
                 }
 
                 throw new Error(errorMessage);
@@ -515,8 +541,10 @@ export default function ExportActivityPage() {
             document.body.removeChild(link);
             window.URL.revokeObjectURL(downloadUrl);
 
-            toast.success("Export successful!", {
-                description: `Your ${documentType.toUpperCase()} file has been downloaded. Check your export history for details.`,
+            toast.success(tEx("exportSuccess"), {
+                description: tEx("exportSuccessDescription", {
+                    type: documentType.toUpperCase(),
+                }),
             });
 
             // Refetch subscription data and history
@@ -534,9 +562,9 @@ export default function ExportActivityPage() {
             const errorMessage =
                 error instanceof Error
                     ? error.message
-                    : "Failed to export data. Please try again.";
+                    : tEx("exportFailedFallback");
 
-            toast.error("Export failed", {
+            toast.error(tEx("exportFailed"), {
                 description: errorMessage,
             });
         } finally {
@@ -575,7 +603,7 @@ export default function ExportActivityPage() {
 
     const getSelectedAssetsLabel = () => {
         if (selectedAssets.includes("all") || selectedAssets.length === 0)
-            return "All Assets";
+            return tEx("allAssets");
         const selectedLabels = selectedAssets
             .filter((assetId) => assetId !== "all")
             .map((assetId) => {
@@ -593,19 +621,19 @@ export default function ExportActivityPage() {
             selectedTransactionTypes.includes("all") ||
             selectedTransactionTypes.length === 0
         )
-            return "All Types";
+            return tEx("typeAll");
         if (selectedTransactionTypes.length === 1) {
             const type = TRANSACTION_TYPES.find(
                 (t) => t.value === selectedTransactionTypes[0],
             );
-            return type?.label || "All Types";
+            return type ? tEx(type.labelKey) : tEx("typeAll");
         }
         // Show comma-separated list: "Sent, Received"
         const labels = selectedTransactionTypes
             .filter((t) => t !== "all")
             .map((t) => {
                 const type = TRANSACTION_TYPES.find((tt) => tt.value === t);
-                return type?.label || t;
+                return type ? tEx(type.labelKey) : t;
             });
         return labels.join(", ");
     };
@@ -632,8 +660,8 @@ export default function ExportActivityPage() {
     if (planLoading) {
         return (
             <PageComponentLayout
-                title="Dashboard"
-                description="Manage your treasury assets and track activity"
+                title={t("title")}
+                description={t("descriptionLong")}
             >
                 <div className="flex flex-wrap justify-center gap-6 w-full">
                     <div className="flex-1 min-w-0 max-w-3xl">
@@ -654,8 +682,8 @@ export default function ExportActivityPage() {
     return (
         <Form {...form}>
             <PageComponentLayout
-                title="Dashboard"
-                description="Manage your treasury assets and track activity"
+                title={t("title")}
+                description={t("descriptionLong")}
             >
                 <div className="flex flex-wrap justify-center gap-6 w-full">
                     {/* Main Content */}
@@ -679,12 +707,10 @@ export default function ExportActivityPage() {
 
                                         <div className="flex flex-col">
                                             <p className="font-semibold mb-1">
-                                                Export Recent Transactions
+                                                {tExport("heading")}
                                             </p>
                                             <p className="text-sm text-muted-foreground">
-                                                Export generation and downloads
-                                                are available to team members
-                                                only.
+                                                {tExport("teamOnly")}
                                             </p>
                                         </div>
                                     </div>
@@ -696,19 +722,18 @@ export default function ExportActivityPage() {
                                         <Alert variant="info">
                                             <Info className="h-4 w-4 mt-[2px]" />
                                             <AlertTitle className="font-semibold">
-                                                You've used all your{" "}
                                                 {isTrialPlan(
                                                     planDetails.planConfig,
                                                 )
-                                                    ? "credits"
-                                                    : "exports"}
+                                                    ? tExport("creditsUsed")
+                                                    : tExport("exportsUsed")}
                                             </AlertTitle>
                                             <AlertDescription className="text-general-info-foreground">
                                                 {isTrialPlan(
                                                     planDetails.planConfig,
                                                 )
-                                                    ? "Upgrade your plan to get more and keep going"
-                                                    : "Upgrade your plan for more access, or wait until your limits reset next month."}
+                                                    ? tEx("upgradeTrial")
+                                                    : tEx("upgradePaid")}
                                             </AlertDescription>
                                         </Alert>
                                     )}
@@ -719,10 +744,10 @@ export default function ExportActivityPage() {
                                 >
                                     <TabsList className="">
                                         <TabsTrigger value="generate">
-                                            Generate Export
+                                            {tExport("tabs.generate")}
                                         </TabsTrigger>
                                         <TabsTrigger value="history">
-                                            History
+                                            {tExport("tabs.history")}
                                         </TabsTrigger>
                                     </TabsList>
 
@@ -734,7 +759,9 @@ export default function ExportActivityPage() {
                                             {/* Document Type */}
                                             <div>
                                                 <label className="text-sm font-medium mb-2 block">
-                                                    Document Type
+                                                    {tExport(
+                                                        "fields.documentType",
+                                                    )}
                                                 </label>
                                                 <div className="flex gap-2">
                                                     {DOCUMENT_TYPES.map(
@@ -776,7 +803,9 @@ export default function ExportActivityPage() {
                                             {/* Time Range */}
                                             <div>
                                                 <label className="text-sm font-medium mb-2 block">
-                                                    Time Range
+                                                    {tExport(
+                                                        "fields.timeRange",
+                                                    )}
                                                 </label>
                                                 <DatePickerPopover
                                                     mode="range"
@@ -845,14 +874,16 @@ export default function ExportActivityPage() {
                                                         trigger:
                                                             "w-full justify-start bg-transparent! border-2 font-normal",
                                                     }}
-                                                    placeholder="Select date range"
+                                                    placeholder={tEx(
+                                                        "selectDateRange",
+                                                    )}
                                                 />
                                             </div>
 
                                             {/* Asset Selection */}
                                             <div>
                                                 <label className="text-sm font-medium mb-2 block">
-                                                    Asset
+                                                    {tExport("fields.asset")}
                                                 </label>
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger
@@ -890,7 +921,9 @@ export default function ExportActivityPage() {
                                                         >
                                                             <div className="flex items-center">
                                                                 <Coins className="w-4 h-4 mr-2" />
-                                                                All Assets
+                                                                {tExport(
+                                                                    "fields.allAssets",
+                                                                )}
                                                             </div>
                                                         </DropdownMenuCheckboxItem>
                                                         {aggregatedTokens.map(
@@ -939,7 +972,9 @@ export default function ExportActivityPage() {
                                             {/* Transaction Type */}
                                             <div>
                                                 <label className="text-sm font-medium mb-2 block">
-                                                    Transaction Type
+                                                    {tExport(
+                                                        "fields.transactionType",
+                                                    )}
                                                 </label>
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger
@@ -979,7 +1014,9 @@ export default function ExportActivityPage() {
                                                                         e.preventDefault()
                                                                     }
                                                                 >
-                                                                    {type.label}
+                                                                    {tEx(
+                                                                        type.labelKey,
+                                                                    )}
                                                                 </DropdownMenuCheckboxItem>
                                                             ),
                                                         )}
@@ -1026,12 +1063,12 @@ export default function ExportActivityPage() {
                                                 className="w-full mt-3"
                                             >
                                                 {!isMember || !accountId
-                                                    ? "You don't have permission to export"
+                                                    ? tEx("noExportPermission")
                                                     : !canGenerateExport
-                                                      ? "You’ve used all your quota"
+                                                      ? tEx("quotaUsed")
                                                       : isExporting
-                                                        ? "Exporting..."
-                                                        : "Export"}
+                                                        ? tEx("exporting")
+                                                        : tEx("export")}
                                             </Button>
                                         </div>
                                     </TabsContent>
@@ -1044,8 +1081,10 @@ export default function ExportActivityPage() {
                                         exportHistoryData.data.length === 0 ? (
                                             <EmptyState
                                                 icon={FileX}
-                                                title="No exports yet"
-                                                description="Your exported files from the last month will appear here once they're generated."
+                                                title={tEx("noExportsTitle")}
+                                                description={tEx(
+                                                    "noExportsDescription",
+                                                )}
                                             />
                                         ) : (
                                             <ExportHistoryTable
@@ -1068,28 +1107,21 @@ export default function ExportActivityPage() {
                             }}
                             className="gap-3 w-full"
                         >
-                            <p className="font-semibold">Export Requirements</p>
+                            <p className="font-semibold">
+                                {tEx("requirementsTitle")}
+                            </p>
                             <div className="space-y-3 text-sm">
                                 <div className="flex gap-2.5">
                                     <Calendar className="w-5 h-5 shrink-0 mt-0.5" />
                                     <span>
-                                        You can export data from the{" "}
-                                        {historyText}.
+                                        {tEx("exportFromPeriod", {
+                                            period: historyText,
+                                        })}
                                     </span>
                                 </div>
-                                {/* TODO: Email notification feature to be implemented later */}
-                                {/* <div className="flex gap-2.5">
-                                    <Mail className="w-5 h-5 shrink-0 mt-0.5" />
-                                    <span>
-                                        We'll notify you by email when the export is ready.
-                                    </span>
-                                </div> */}
                                 <div className="flex gap-2.5">
                                     <Clock className="w-5 h-5 shrink-0 mt-0.5" />
-                                    <span>
-                                        Exported files are available for
-                                        download for 48 hours.
-                                    </span>
+                                    <span>{tEx("availableFor48Hours")}</span>
                                 </div>
                             </div>
                         </PageCard>
@@ -1108,13 +1140,15 @@ export default function ExportActivityPage() {
                                 {/* Header */}
                                 <div className="flex items-center justify-between">
                                     <h3 className="font-semibold">
-                                        Export Quota
+                                        {tEx("quotaTitle")}
                                     </h3>
                                     <span className="text-sm font-medium border py-1 px-2 rounded-lg border-general-border bg-general-unofficial-outline">
                                         {planDetails?.planConfig?.limits
                                             ?.monthlyExportCredits === null
-                                            ? "Unlimited"
-                                            : `${exportCreditsTotal} / month`}
+                                            ? tEx("unlimited")
+                                            : tEx("creditsPerMonth", {
+                                                  total: exportCreditsTotal,
+                                              })}
                                     </span>
                                 </div>
 
@@ -1138,7 +1172,7 @@ export default function ExportActivityPage() {
                                 {!isUnlimitedExport && (
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm text-secondary-foreground">
-                                            Looking for more flexibility?
+                                            {tEx("moreFlexibility")}
                                         </span>
                                         <Button
                                             variant={
@@ -1155,7 +1189,7 @@ export default function ExportActivityPage() {
                                                 );
                                             }}
                                         >
-                                            Contact Us
+                                            {tEx("contactUs")}
                                         </Button>
                                     </div>
                                 )}

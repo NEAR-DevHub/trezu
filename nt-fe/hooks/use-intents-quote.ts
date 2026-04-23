@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useDebounce } from "use-debounce";
+import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
 import { getAddressPattern } from "@/lib/address-validation";
 import Big from "@/lib/big";
@@ -119,6 +120,7 @@ export function useIntentsQuote({
     feeErrorMessage,
     amountMode = "recipient",
 }: UseIntentsQuoteParams) {
+    const t = useTranslations("intentsQuote");
     const isIntents = isIntentsToken(token);
     const [debouncedAddress] = useDebounce(address, 300);
     const [debouncedAmount] = useDebounce(amount, 400);
@@ -200,7 +202,7 @@ export function useIntentsQuote({
             if (!treasuryId || !proposalPeriod) {
                 return {
                     ok: false,
-                    error: "Quote service is still initializing. Please try again.",
+                    error: t("initializing"),
                 };
             }
 
@@ -232,7 +234,7 @@ export function useIntentsQuote({
                 if (!freshQuote) {
                     return {
                         ok: false,
-                        error: "Could not prepare a payment route right now. Please retry.",
+                        error: t("noRoute"),
                     };
                 }
 

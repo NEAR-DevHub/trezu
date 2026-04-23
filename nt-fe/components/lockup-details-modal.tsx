@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
     BadgeDollarSign,
     Info,
@@ -35,64 +36,82 @@ interface LockupDetailsModalProps {
     treasuryId: string | null;
 }
 
-function formatDateFromSeconds(seconds?: number): string {
-    if (!seconds || Number.isNaN(seconds) || seconds <= 0) return "N/A";
+interface LockupFormatLabels {
+    notAvailable: string;
+    everyMonth: string;
+    everyQuarter: string;
+    everyUnit: (unit: string) => string;
+    everyMultiple: (text: string) => string;
+    completed: string;
+    unit: (key: string, count: number) => string;
+}
+
+function formatDateFromSeconds(
+    seconds: number | undefined,
+    notAvailable: string,
+): string {
+    if (!seconds || Number.isNaN(seconds) || seconds <= 0) return notAvailable;
     return formatUserDate(seconds * 1000, {
         includeTime: false,
         customFormat: "MMM dd, yyyy",
     });
 }
 
-function formatDateFromNanoseconds(nanos?: number | null): string {
-    if (!nanos || Number.isNaN(nanos) || nanos <= 0) return "N/A";
+function formatDateFromNanoseconds(
+    nanos: number | null | undefined,
+    notAvailable: string,
+): string {
+    if (!nanos || Number.isNaN(nanos) || nanos <= 0) return notAvailable;
     return formatUserDate(nanos / 1_000_000, {
         includeTime: false,
         customFormat: "MMM dd, yyyy",
     });
 }
 
-function formatReleaseInterval(seconds?: number): string {
-    if (!seconds || seconds <= 0) return "N/A";
+function formatReleaseInterval(
+    seconds: number | undefined,
+    labels: LockupFormatLabels,
+): string {
+    if (!seconds || seconds <= 0) return labels.notAvailable;
 
-    if (seconds === 2592000) return "Every month";
-    if (seconds === 7776000) return "Every quarter";
+    if (seconds === 2592000) return labels.everyMonth;
+    if (seconds === 7776000) return labels.everyQuarter;
 
     const units = [
-        { seconds: 31536000, label: "year" },
-        { seconds: 86400, label: "day" },
-        { seconds: 3600, label: "hour" },
-        { seconds: 60, label: "minute" },
-        { seconds: 1, label: "second" },
+        { seconds: 31536000, key: "year" },
+        { seconds: 86400, key: "day" },
+        { seconds: 3600, key: "hour" },
+        { seconds: 60, key: "minute" },
+        { seconds: 1, key: "second" },
     ];
 
     let remaining = seconds;
-    const parts: Array<{ count: number; label: string }> = [];
+    const parts: Array<{ count: number; key: string }> = [];
 
     for (const unit of units) {
         if (remaining < unit.seconds) continue;
         const count = Math.floor(remaining / unit.seconds);
         if (count <= 0) continue;
-        parts.push({ count, label: unit.label });
+        parts.push({ count, key: unit.key });
         remaining %= unit.seconds;
     }
 
     if (parts.length === 1 && parts[0].count === 1) {
-        return `Every ${parts[0].label}`;
+        return labels.everyUnit(labels.unit(parts[0].key, 1));
     }
 
     const text = parts
-        .map(
-            (part) => `${part.count} ${part.label}${part.count > 1 ? "s" : ""}`,
-        )
+        .map((part) => labels.unit(part.key, part.count))
         .join(" ");
 
-    return text ? `Every ${text}` : "N/A";
+    return text ? labels.everyMultiple(text) : labels.notAvailable;
 }
 
 function calculateNextFtUnlockDate(
-    startTimestamp?: number,
-    roundInterval?: number,
-    roundsTotal?: number,
+    startTimestamp: number | undefined,
+    roundInterval: number | undefined,
+    roundsTotal: number | undefined,
+    labels: LockupFormatLabels,
 ): string {
     if (
         !startTimestamp ||
@@ -101,7 +120,7 @@ function calculateNextFtUnlockDate(
         Number.isNaN(roundInterval) ||
         roundInterval <= 0
     ) {
-        return "N/A";
+        return labels.notAvailable;
     }
 
     const totalRounds = roundsTotal ?? 0;
@@ -122,10 +141,10 @@ function calculateNextFtUnlockDate(
         releaseIndex >= totalRounds &&
         nextUnlock <= nowSeconds
     ) {
-        return "Completed";
+        return labels.completed;
     }
 
-    return formatDateFromSeconds(nextUnlock);
+    return formatDateFromSeconds(nextUnlock, labels.notAvailable);
 }
 
 export function LockupDetailsModal({
@@ -135,6 +154,7 @@ export function LockupDetailsModal({
     asset,
     treasuryId,
 }: LockupDetailsModalProps) {
+    const t = useTranslations("lockupDetails");
     const [guideOpen, setGuideOpen] = useState(false);
     const isNearLockup = asset?.balance.type === "Vested";
     const isFtLockup = !isNearLockup && !!asset?.lockupInstanceId;
@@ -231,17 +251,30 @@ export function LockupDetailsModal({
 
     const roundsTotal = asset.ftLockupSchedule?.roundsTotal ?? 0;
 
+    const lockupFormatLabels: LockupFormatLabels = {
+        notAvailable: t("notAvailable"),
+        everyMonth: t("everyMonth"),
+        everyQuarter: t("everyQuarter"),
+        everyUnit: (unit: string) => t("everyUnit", { unit }),
+        everyMultiple: (text: string) => t("everyMultiple", { text }),
+        completed: t("completed"),
+        unit: (key: string, count: number) => t(`unit.${key}`, { count }),
+    };
+
     const nextUnlockDate = calculateNextFtUnlockDate(
         asset.ftLockupSchedule?.startTimestamp,
         asset.ftLockupSchedule?.roundInterval,
         asset.ftLockupSchedule?.roundsTotal,
+        lockupFormatLabels,
     );
 
     const nearStartDate = formatDateFromNanoseconds(
         lockupContract?.vestingSchedule?.startTimestamp,
+        lockupFormatLabels.notAvailable,
     );
     const nearEndDate = formatDateFromNanoseconds(
         lockupContract?.vestingSchedule?.endTimestamp,
+        lockupFormatLabels.notAvailable,
     );
     const amountSummaryToken = {
         address: asset.contractId || "",
@@ -254,7 +287,7 @@ export function LockupDetailsModal({
     };
     const allocatedAmountSummary = (
         <AmountSummary
-            title={isNearLockup ? "Balance" : "Allocated Amount"}
+            title={isNearLockup ? t("balance") : t("allocatedAmount")}
             total={summaryTotal.toFixed(2)}
             totalUSD={totalUsd}
             token={amountSummaryToken}
@@ -290,7 +323,7 @@ export function LockupDetailsModal({
                             </Button>
                         ) : null}
                         <DialogTitle className="text-left">
-                            Lockup Details
+                            {t("title")}
                         </DialogTitle>
                     </div>
                 </DialogHeader>
@@ -306,8 +339,12 @@ export function LockupDetailsModal({
                                 {reservedStorage.gt(0) ? (
                                     <div className="flex items-center justify-between px-2 py-2 text-sm">
                                         <div className="flex items-center gap-1.5 text-muted-foreground">
-                                            Reserved For Storage{" "}
-                                            <Tooltip content="NEAR reserved by the lockup account to pay storage costs.">
+                                            {t("reservedForStorage")}{" "}
+                                            <Tooltip
+                                                content={t(
+                                                    "reservedForStorageInfo",
+                                                )}
+                                            >
                                                 <Info className="size-3.5" />
                                             </Tooltip>
                                         </div>
@@ -326,20 +363,27 @@ export function LockupDetailsModal({
                                 <Info className="size-4 mt-0.5 shrink-0" />
                                 <p className="text-foreground">
                                     {isFullLockupStaked
-                                        ? `All ${lockupStakedDisplay} ${asset.symbol} from your lockup is earning right now.`
-                                        : `Part of your lockup (${lockupStakedDisplay} ${asset.symbol}) is earning right now.`}{" "}
-                                    To use unlocked tokens, stop earning first
-                                    and withdraw them.
+                                        ? t("allEarning", {
+                                              amount: lockupStakedDisplay,
+                                              symbol: asset.symbol,
+                                          })
+                                        : t("partEarning", {
+                                              amount: lockupStakedDisplay,
+                                              symbol: asset.symbol,
+                                          })}{" "}
+                                    {t("stopEarningFirst")}
                                 </p>
                             </div>
                         ) : null}
                         {showTokenBreakdown ? (
                             <div className="space-y-2 text-sm">
-                                <p className="font-semibold">Token Breakdown</p>
+                                <p className="font-semibold">
+                                    {t("tokenBreakdown")}
+                                </p>
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between">
                                         <p className="text-muted-foreground">
-                                            Allocated Amount
+                                            {t("allocatedAmount")}
                                         </p>
                                         <p className="font-medium">
                                             {allocatedFromContract.toFixed(2)}{" "}
@@ -348,7 +392,7 @@ export function LockupDetailsModal({
                                     </div>
                                     <div className="flex items-center justify-between">
                                         <p className="text-muted-foreground">
-                                            Earned
+                                            {t("earned")}
                                         </p>
                                         <p className="text-general-success-foreground font-medium">
                                             +{earnedFromStaking.toFixed(2)}{" "}
@@ -361,7 +405,7 @@ export function LockupDetailsModal({
 
                         <div className="space-y-2 text-sm">
                             <div className="flex items-center justify-between ">
-                                <p className="font-semibold">Progress</p>
+                                <p className="font-semibold">{t("progress")}</p>
                                 <p>{progressLabel}</p>
                             </div>
                             <div className="h-1.5 rounded-full bg-muted overflow-hidden">
@@ -375,7 +419,7 @@ export function LockupDetailsModal({
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-muted-foreground">
-                                        Unlocked
+                                        {t("unlocked")}
                                     </p>
                                     <p className="text-general-success-foreground font-medium">
                                         {unlocked.toFixed(2)} {asset.symbol}
@@ -383,7 +427,7 @@ export function LockupDetailsModal({
                                 </div>
                                 <div className="text-right">
                                     <p className="text-muted-foreground">
-                                        Locked
+                                        {t("locked")}
                                     </p>
                                     <p className="font-medium">
                                         {locked.toFixed(2)} {asset.symbol}
@@ -393,40 +437,45 @@ export function LockupDetailsModal({
                         </div>
 
                         <div className="space-y-2 text-sm">
-                            <p className="font-semibold">Schedule</p>
+                            <p className="font-semibold">{t("schedule")}</p>
                             {isFtLockup ? (
                                 <div className="space-y-2">
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">
-                                            Start Date
+                                            {t("startDate")}
                                         </span>
                                         <span>
                                             {formatDateFromSeconds(
                                                 asset.ftLockupSchedule
                                                     ?.startTimestamp,
+                                                lockupFormatLabels.notAvailable,
                                             )}
                                         </span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">
-                                            Rounds
+                                            {t("rounds")}
                                         </span>
-                                        <span>{roundsTotal || "N/A"}</span>
+                                        <span>
+                                            {roundsTotal ||
+                                                lockupFormatLabels.notAvailable}
+                                        </span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">
-                                            Release Interval
+                                            {t("releaseInterval")}
                                         </span>
                                         <span>
                                             {formatReleaseInterval(
                                                 asset.ftLockupSchedule
                                                     ?.roundInterval,
+                                                lockupFormatLabels,
                                             )}
                                         </span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">
-                                            Next Unlock Date
+                                            {t("nextUnlockDate")}
                                         </span>
                                         <span>{nextUnlockDate}</span>
                                     </div>
@@ -435,13 +484,13 @@ export function LockupDetailsModal({
                                 <div className="space-y-2">
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">
-                                            Start Date
+                                            {t("startDate")}
                                         </span>
                                         <span>{nearStartDate}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">
-                                            End Date
+                                            {t("endDate")}
                                         </span>
                                         <span>{nearEndDate}</span>
                                     </div>
@@ -461,7 +510,7 @@ export function LockupDetailsModal({
                                 >
                                     <span className="flex items-center gap-2">
                                         <BadgeDollarSign className="size-4 text-muted-foreground" />
-                                        How your grant works
+                                        {t("howGrantWorks")}
                                     </span>
                                     {guideOpen ? (
                                         <ChevronUp className="size-4 text-muted-foreground" />
@@ -473,42 +522,15 @@ export function LockupDetailsModal({
                             <CollapsibleContent className="px-3 pb-3 text-xs text-muted-foreground">
                                 {isFtLockup ? (
                                     <ol className="list-decimal pl-4 space-y-1">
-                                        <li>
-                                            You receive a grant for a specific
-                                            period of time. Instead of getting
-                                            the full amount at once, the assets
-                                            become available in parts over time.
-                                        </li>
-                                        <li>
-                                            When the date for the next release
-                                            arrives, that portion of tokens is
-                                            automatically unlocked and moved to
-                                            your treasury balance.
-                                        </li>
-                                        <li>
-                                            Once they appear in your balance,
-                                            you can immediately use them for
-                                            payments, transfers, or other
-                                            transactions.
-                                        </li>
+                                        <li>{t("ftStep1")}</li>
+                                        <li>{t("ftStep2")}</li>
+                                        <li>{t("ftStep3")}</li>
                                     </ol>
                                 ) : (
                                     <ol className="list-decimal pl-4 space-y-1">
-                                        <li>
-                                            You receive a grant for a set period
-                                            of time with a defined start and end
-                                            date.
-                                        </li>
-                                        <li>
-                                            As tokens unlock, they automatically
-                                            become available in your treasury
-                                            balance.
-                                        </li>
-                                        <li>
-                                            You can use the unlocked tokens
-                                            immediately for payments, transfers,
-                                            or other transactions.
-                                        </li>
+                                        <li>{t("nearStep1")}</li>
+                                        <li>{t("nearStep2")}</li>
+                                        <li>{t("nearStep3")}</li>
                                     </ol>
                                 )}
                             </CollapsibleContent>

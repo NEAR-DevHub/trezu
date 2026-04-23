@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/button";
 import {
     Dialog,
@@ -26,12 +27,12 @@ export function CreateTreasuryPromptModal({
     onOpenChange,
     onCreateTreasury,
 }: CreateTreasuryPromptModalProps) {
+    const t = useTranslations("onboarding.createPrompt");
     const pathname = usePathname();
     const isOnboardingPath = pathname === "/";
     const descriptionSuffix = isOnboardingPath
-        ? "check out the demo."
-        : "keep exploring.";
-    const description = `Your wallet is connected, but you haven't created a treasury yet. Create an account to start using Trezu, or ${descriptionSuffix}`;
+        ? t("suffixDemo")
+        : t("suffixExploring");
 
     const trackClick = (button: string) => {
         trackEvent("create-treasury-prompt-clicked", { button, source });
@@ -48,11 +49,11 @@ export function CreateTreasuryPromptModal({
             <DialogContent>
                 <DialogHeader className="mb-1">
                     <DialogTitle className="text-left">
-                        You're almost set
+                        {t("title")}
                     </DialogTitle>
                 </DialogHeader>
                 <DialogDescription className="text-muted-foreground">
-                    {description}
+                    {t("description", { suffix: descriptionSuffix })}
                 </DialogDescription>
                 <div className="flex flex-col gap-3 mt-2">
                     <Button
@@ -62,7 +63,7 @@ export function CreateTreasuryPromptModal({
                             onCreateTreasury();
                         }}
                     >
-                        Create a Treasury
+                        {t("createCta")}
                     </Button>
                     {isOnboardingPath ? (
                         <Button
@@ -71,7 +72,9 @@ export function CreateTreasuryPromptModal({
                             asChild
                             onClick={() => trackClick("view_demo")}
                         >
-                            <Link href={APP_ACTIVE_TREASURY}>View Demo</Link>
+                            <Link href={APP_ACTIVE_TREASURY}>
+                                {t("viewDemo")}
+                            </Link>
                         </Button>
                     ) : (
                         <Button
@@ -82,7 +85,7 @@ export function CreateTreasuryPromptModal({
                                 onOpenChange(false);
                             }}
                         >
-                            Keep Exploring
+                            {t("keepExploring")}
                         </Button>
                     )}
                 </div>

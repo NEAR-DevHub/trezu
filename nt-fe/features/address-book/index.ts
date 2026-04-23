@@ -8,7 +8,7 @@ export {
 } from "./api";
 
 // Types
-export { recipientSchema } from "./types";
+export { buildRecipientSchema } from "./types";
 export type {
     RecipientDraft,
     AddressBookEntry,

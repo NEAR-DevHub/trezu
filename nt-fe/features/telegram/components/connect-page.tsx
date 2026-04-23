@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Link2Off, MessageCircle, Wallet } from "lucide-react";
 import { toast } from "sonner";
@@ -28,10 +29,12 @@ import type { ConnectedTreasury, TelegramStatus } from "@/lib/telegram-api";
 import { useNear } from "@/stores/near-store";
 
 function TelegramConnectShell({ children }: { children: React.ReactNode }) {
+    const tPage = useTranslations("pages.telegram");
+    const tTg = useTranslations("telegram");
     return (
         <PageComponentLayout
-            title="Connect Treasury"
-            description="Link your treasuries to a Telegram chat"
+            title={tPage("title")}
+            description={tPage("description")}
             hideCollapseButton
             hideLogin
             logo={
@@ -40,7 +43,7 @@ function TelegramConnectShell({ children }: { children: React.ReactNode }) {
                         <Logo size="sm" />
                     </Link>
                     <span className="hidden sm:inline text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
-                        Telegram
+                        {tTg("tagPill")}
                     </span>
                 </div>
             }
@@ -88,6 +91,7 @@ function MessageCard({
 }
 
 function ConnectPageInner() {
+    const tTg = useTranslations("telegram");
     const { lastTreasuryId } = useTreasury();
     const token = useSearchParams().get("token") ?? "";
     const { accountId, isInitializing, connect } = useNear();
@@ -196,15 +200,15 @@ function ConnectPageInner() {
     useEffect(() => {
         if (!connectMutation.isSuccess || didShowSuccessToast) return;
         setDidShowSuccessToast(true);
-        toast.success("Treasuries connected successfully");
+        toast.success(tTg("successToast"));
     }, [connectMutation.isSuccess, didShowSuccessToast]);
 
     if (!token) {
         return (
             <TelegramConnectShell>
                 <MessageCard
-                    title="Invalid link"
-                    description="This Telegram connection link is missing a token. Re-click Connect Treasury in Telegram to generate a fresh link."
+                    title={tTg("invalidLinkTitle")}
+                    description={tTg("invalidLinkDescription")}
                 />
             </TelegramConnectShell>
         );
@@ -225,8 +229,8 @@ function ConnectPageInner() {
                     <div className="w-full max-w-md flex flex-col gap-5">
                         <EmptyState
                             icon={CheckCircle2}
-                            title="Connected successfully"
-                            description="Treasuries were linked to this Telegram chat."
+                            title={tTg("successTitle")}
+                            description={tTg("successDescription")}
                             className="py-0"
                         />
                         <Button className="w-full" asChild>
@@ -235,7 +239,7 @@ function ConnectPageInner() {
                                     lastTreasuryId ? `/${lastTreasuryId}` : "/"
                                 }
                             >
-                                Go to App
+                                {tTg("goToApp")}
                             </Link>
                         </Button>
                     </div>
@@ -255,8 +259,8 @@ function ConnectPageInner() {
                         <div className="w-full max-w-md flex flex-col gap-5">
                             <EmptyState
                                 icon={Link2Off}
-                                title="Link expired"
-                                description="This link has expired or has already been used. In Telegram, type the command below to restart the connect flow."
+                                title={tTg("linkExpiredTitle")}
+                                description={tTg("linkExpiredDescription")}
                                 className="py-0"
                             />
                             <div className="rounded-md bg-general-tertiary p-2 flex items-center justify-between gap-2">
@@ -265,11 +269,11 @@ function ConnectPageInner() {
                                 </code>
                                 <CopyButton
                                     text="/connect"
-                                    toastMessage="Command copied"
+                                    toastMessage={tTg("commandCopied")}
                                     variant="secondary"
                                     size="sm"
                                 >
-                                    Copy
+                                    {tTg("copy")}
                                 </CopyButton>
                             </div>
                         </div>
@@ -280,8 +284,8 @@ function ConnectPageInner() {
         return (
             <TelegramConnectShell>
                 <MessageCard
-                    title="Unable to load chat"
-                    description="The chat details could not be loaded right now. Please retry from Telegram."
+                    title={tTg("unableToLoadTitle")}
+                    description={tTg("unableToLoadDescription")}
                 />
             </TelegramConnectShell>
         );
@@ -294,12 +298,12 @@ function ConnectPageInner() {
                     <div className="w-full max-w-md flex flex-col gap-5">
                         <EmptyState
                             icon={Wallet}
-                            title="Sign in to continue"
-                            description="Connect your NEAR wallet first, then choose which treasuries to link to this Telegram chat."
+                            title={tTg("signInTitle")}
+                            description={tTg("signInDescription")}
                             className="py-0"
                         />
                         <Button className="w-full" onClick={() => connect()}>
-                            Connect Wallet
+                            {tTg("connectWallet")}
                         </Button>
                     </div>
                 </PageCard>
@@ -312,19 +316,21 @@ function ConnectPageInner() {
             <PageCard>
                 <div className="flex flex-col gap-1">
                     <StepperHeader
-                        title="Select Treasuries"
-                        description="Choose which treasuries to connect to this Telegram chat."
+                        title={tTg("selectTreasuriesTitle")}
+                        description={tTg("selectTreasuriesDescription")}
                     />
                     {chatInfo && (
                         <div className="mt-1 flex items-center gap-2 rounded-md bg-general-tertiary px-3 py-2">
                             <MessageCircle className="size-4 text-muted-foreground shrink-0" />
                             <div className="min-w-0">
                                 <p className="text-xs text-muted-foreground">
-                                    Telegram chat
+                                    {tTg("telegramChat")}
                                 </p>
                                 <p className="text-sm font-medium truncate">
                                     {chatInfo.chatTitle ||
-                                        `Chat #${chatInfo.chatId}`}
+                                        tTg("chatIdFallback", {
+                                            id: chatInfo.chatId,
+                                        })}
                                 </p>
                             </div>
                         </div>
@@ -337,19 +343,12 @@ function ConnectPageInner() {
                             connectMutation.error as {
                                 response?: { data?: string };
                             }
-                        )?.response?.data ??
-                            "Failed to connect treasuries. Please try again."}
+                        )?.response?.data ?? tTg("failedToConnect")}
                     </p>
                 )}
                 {relinkingCount > 0 && (
                     <InfoAlert
-                        message={
-                            <>
-                                {relinkingCount === 1
-                                    ? "1 selected treasury is linked to another Telegram chat. Connecting will re-connect it and change its chat ID link to this chat."
-                                    : `${relinkingCount} selected treasuries are linked to other Telegram chats. Connecting will re-connect them and change their chat ID links to this chat.`}
-                            </>
-                        }
+                        message={tTg("relinking", { count: relinkingCount })}
                     />
                 )}
 
@@ -392,12 +391,12 @@ function ConnectPageInner() {
                                         </span>
                                         {alreadyHere && (
                                             <span className="inline-block text-xs text-green-600 dark:text-green-400">
-                                                Already connected to this chat
+                                                {tTg("alreadyConnected")}
                                             </span>
                                         )}
                                         {!alreadyHere && elsewhereStatus && (
                                             <span className="inline-block rounded bg-yellow-100 px-1.5 py-0.5 text-xs text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
-                                                Connected to another chat
+                                                {tTg("connectedToAnother")}
                                             </span>
                                         )}
                                     </span>
@@ -409,7 +408,7 @@ function ConnectPageInner() {
 
                 {visibleTreasuries.length === 0 && (
                     <p className="text-sm text-muted-foreground">
-                        You are not a policy member of any treasuries.
+                        {tTg("notMember")}
                     </p>
                 )}
 
@@ -419,7 +418,7 @@ function ConnectPageInner() {
                     disabled={selectedIds.size === 0 || isConnecting}
                     onClick={handleConnect}
                 >
-                    {isConnecting ? "Connecting…" : "Connect"}
+                    {isConnecting ? tTg("connecting") : tTg("connect")}
                 </Button>
             </PageCard>
         </TelegramConnectShell>

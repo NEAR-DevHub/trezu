@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowLeftIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/button";
 import { PageCard } from "@/components/card";
 import {
@@ -41,6 +42,7 @@ export function OnboardingQuestionnaireCard({
     actions,
     showBack,
 }: OnboardingQuestionnaireCardProps) {
+    const t = useTranslations("onboarding.questionnaire");
     return (
         <PageCard>
             <div className="flex flex-col gap-5">
@@ -101,7 +103,7 @@ export function OnboardingQuestionnaireCard({
                             onClick={actions.onContinue}
                             disabled={!question.canContinue}
                         >
-                            Continue
+                            {t("continue")}
                         </Button>
                     </div>
                     <Button
@@ -110,7 +112,7 @@ export function OnboardingQuestionnaireCard({
                         className="w-full"
                         onClick={actions.onSkip}
                     >
-                        Skip
+                        {t("skip")}
                     </Button>
                 </div>
             </div>

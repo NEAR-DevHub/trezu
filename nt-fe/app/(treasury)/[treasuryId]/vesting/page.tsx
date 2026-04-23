@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { PageCard } from "@/components/card";
 import { CheckboxInput } from "@/components/checkbox-input";
 import { DateInput } from "@/components/date-input";
@@ -38,61 +39,83 @@ import { LOCKUP_NO_WHITELIST_ACCOUNT_ID } from "@/constants/config";
 import { AmountSummary } from "@/components/amount-summary";
 import { CreateRequestButton } from "@/components/create-request-button";
 
-const vestingFormSchema = z
-    .object({
-        vesting: z.object({
-            address: z
-                .string()
-                .min(2, "Recipient should be at least 2 characters")
-                .max(64, "Recipient must be less than 64 characters"),
-            amount: z
-                .string()
-                .refine((val) => !isNaN(Number(val)) && Big(val).gte(3.5), {
-                    message: "Amount must be greater than or equal to 3.5",
-                }),
-            memo: z.string().optional(),
-            isRegistered: z.boolean().optional(),
-            token: tokenSchema,
-            startDate: z.date({ message: "Start date is required" }),
-            endDate: z.date({ message: "End date is required" }),
-            cliffDate: z.date({ message: "Cliff date is required" }).optional(),
-            allowEarn: z.boolean().optional(),
-            allowCancel: z.boolean().optional(),
-        }),
-    })
-    .superRefine((data, ctx) => {
-        if (data.vesting.address === data.vesting.token.address) {
-            ctx.addIssue({
-                code: "custom",
-                path: [`vesting.address`],
-                message: "Recipient and token address cannot be the same",
-            });
-        }
-        if (data.vesting.startDate >= data.vesting.endDate) {
-            ctx.addIssue({
-                code: "custom",
-                path: [`vesting.endDate`],
-                message: "Start date must be before end date",
-            });
-        }
-
-        if (data.vesting.cliffDate) {
-            if (
-                data.vesting.cliffDate < data.vesting.startDate ||
-                data.vesting.cliffDate >= data.vesting.endDate
-            ) {
+function buildVestingFormSchema(messages: {
+    recipientMin: string;
+    recipientMax64: string;
+    amountMinLockup: string;
+    startDateRequired: string;
+    endDateRequired: string;
+    cliffDateRequired: string;
+    recipientSameAsToken: string;
+    startBeforeEnd: string;
+    cliffBetween: (start: string, end: string) => string;
+}) {
+    return z
+        .object({
+            vesting: z.object({
+                address: z
+                    .string()
+                    .min(2, messages.recipientMin)
+                    .max(64, messages.recipientMax64),
+                amount: z
+                    .string()
+                    .refine((val) => !isNaN(Number(val)) && Big(val).gte(3.5), {
+                        message: messages.amountMinLockup,
+                    }),
+                memo: z.string().optional(),
+                isRegistered: z.boolean().optional(),
+                token: tokenSchema,
+                startDate: z.date({ message: messages.startDateRequired }),
+                endDate: z.date({ message: messages.endDateRequired }),
+                cliffDate: z
+                    .date({ message: messages.cliffDateRequired })
+                    .optional(),
+                allowEarn: z.boolean().optional(),
+                allowCancel: z.boolean().optional(),
+            }),
+        })
+        .superRefine((data, ctx) => {
+            if (data.vesting.address === data.vesting.token.address) {
                 ctx.addIssue({
                     code: "custom",
-                    path: [`vesting.cliffDate`],
-                    message: `Cliff date must be between ${formatUserDate(data.vesting.startDate, { includeTime: false })} and ${formatUserDate(data.vesting.endDate, { includeTime: false })}`,
+                    path: [`vesting.address`],
+                    message: messages.recipientSameAsToken,
                 });
             }
-        }
-    });
+            if (data.vesting.startDate >= data.vesting.endDate) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: [`vesting.endDate`],
+                    message: messages.startBeforeEnd,
+                });
+            }
 
-type VestingFormValues = z.infer<typeof vestingFormSchema>;
+            if (data.vesting.cliffDate) {
+                if (
+                    data.vesting.cliffDate < data.vesting.startDate ||
+                    data.vesting.cliffDate >= data.vesting.endDate
+                ) {
+                    ctx.addIssue({
+                        code: "custom",
+                        path: [`vesting.cliffDate`],
+                        message: messages.cliffBetween(
+                            formatUserDate(data.vesting.startDate, {
+                                includeTime: false,
+                            }),
+                            formatUserDate(data.vesting.endDate, {
+                                includeTime: false,
+                            }),
+                        ),
+                    });
+                }
+            }
+        });
+}
+
+type VestingFormValues = z.infer<ReturnType<typeof buildVestingFormSchema>>;
 
 function Step1({ handleNext }: StepProps) {
+    const tV = useTranslations("vesting");
     const form = useFormContext<VestingFormValues>();
     const startDate = form.watch("vesting.startDate");
     const endDate = form.watch("vesting.endDate");
@@ -112,9 +135,9 @@ function Step1({ handleNext }: StepProps) {
 
     return (
         <PageCard>
-            <StepperHeader title="New Vesting Schedule" />
+            <StepperHeader title={tV("heading")} />
             <TokenInput
-                title="Amount"
+                title={tV("amount")}
                 tokenSelect={{
                     locked: true,
                 }}
@@ -128,13 +151,13 @@ function Step1({ handleNext }: StepProps) {
                 <DateInput
                     control={form.control}
                     name="vesting.startDate"
-                    title="Start Date"
+                    title={tV("startDate")}
                     maxDate={endDate}
                 />
                 <DateInput
                     control={form.control}
                     name="vesting.endDate"
-                    title="End Date"
+                    title={tV("endDate")}
                     minDate={startDate}
                 />
             </div>
@@ -142,13 +165,14 @@ function Step1({ handleNext }: StepProps) {
             <CreateRequestButton
                 onClick={handleContinue}
                 permissions={{ kind: "call", action: "AddProposal" }}
-                idleMessage="Continue"
+                idleMessage={tV("continue")}
             />
         </PageCard>
     );
 }
 
 function Step2({ handleBack, handleNext }: StepProps) {
+    const tV = useTranslations("vesting");
     const form = useFormContext<VestingFormValues>();
     const allowCancel = form.watch("vesting.allowCancel");
     const startDate = form.watch("vesting.startDate");
@@ -164,18 +188,21 @@ function Step2({ handleBack, handleNext }: StepProps) {
 
     return (
         <PageCard>
-            <StepperHeader title="Advanced Settings" handleBack={handleBack} />
+            <StepperHeader
+                title={tV("advancedSettings")}
+                handleBack={handleBack}
+            />
             <CheckboxInput
                 control={form.control}
                 name="vesting.allowCancel"
-                title="Allow Cancellation"
-                description="Allows the NEAR Foundation to cancel the lockup at any time. Non-cancellable lockups are not compatible with cliff dates."
+                title={tV("allowCancellation")}
+                description={tV("allowCancellationDescription")}
             />
             {allowCancel && (
                 <DateInput
                     control={form.control}
                     name="vesting.cliffDate"
-                    title="Cliff Date"
+                    title={tV("cliffDate")}
                     minDate={startDate}
                     maxDate={endDate}
                 />
@@ -183,21 +210,21 @@ function Step2({ handleBack, handleNext }: StepProps) {
             <CheckboxInput
                 control={form.control}
                 name="vesting.allowEarn"
-                title="Allow Earn"
-                description="Allows the owner of the lockup to stake the full amount of tokens in the lockup (even before the cliff date)."
+                title={tV("allowEarn")}
+                description={tV("allowEarnDescription")}
             />
             <FormField
                 control={form.control}
                 name={`vesting.memo`}
                 render={({ field }) => (
-                    <InputBlock title="Note (optional)" invalid={false}>
+                    <InputBlock title={tV("noteOptional")} invalid={false}>
                         <Textarea
                             borderless
                             value={field.value}
                             onChange={field.onChange}
                             rows={2}
                             className="p-0 pt-1"
-                            placeholder="Add a comment for this vesting schedule (optional)..."
+                            placeholder={tV("commentPlaceholder")}
                         />
                     </InputBlock>
                 )}
@@ -208,7 +235,7 @@ function Step2({ handleBack, handleNext }: StepProps) {
                     onClick={handleReview}
                     className="w-full h-10 rounded-none"
                     permissions={{ kind: "call", action: "AddProposal" }}
-                    idleMessage="Review Request"
+                    idleMessage={tV("reviewRequest")}
                 />
             </div>
         </PageCard>
@@ -216,6 +243,9 @@ function Step2({ handleBack, handleNext }: StepProps) {
 }
 
 function Step3({ handleBack }: StepProps) {
+    const tV = useTranslations("vesting");
+    const tRev = useTranslations("vesting.review");
+    const tCommon = useTranslations("common");
     const form = useFormContext<VestingFormValues>();
     const { vesting } = form.watch();
     const { data: token } = useToken(vesting.token.address);
@@ -229,42 +259,42 @@ function Step3({ handleBack }: StepProps) {
     }, [token?.price, vesting.amount]);
 
     const infoItems = useMemo(() => {
-        let items = [
+        const items = [
             {
-                label: "Recipient",
+                label: tRev("recipient"),
                 value: vesting.address,
             },
             {
-                label: "Start Date",
+                label: tRev("startDate"),
                 value: formatDate(vesting.startDate, { includeTime: false }),
             },
             {
-                label: "End Date",
+                label: tRev("endDate"),
                 value: formatDate(vesting.endDate, { includeTime: false }),
             },
             {
-                label: "Cliff Date",
+                label: tRev("cliffDate"),
                 value: vesting.cliffDate
                     ? formatDate(vesting.cliffDate, { includeTime: false })
-                    : "N/A",
+                    : tRev("na"),
             },
             {
-                label: "Cancelable",
-                value: vesting.allowCancel ? "Yes" : "No",
+                label: tRev("cancelable"),
+                value: vesting.allowCancel ? tCommon("yes") : tCommon("no"),
             },
             {
-                label: "Allow Earn",
-                value: vesting.allowEarn ? "Yes" : "No",
+                label: tRev("allowEarn"),
+                value: vesting.allowEarn ? tCommon("yes") : tCommon("no"),
             },
         ];
 
         return items;
-    }, [vesting, formatDate]);
+    }, [vesting, formatDate, tRev, tCommon]);
 
     return (
         <PageCard>
             <ReviewStep
-                reviewingTitle="Review Your Vesting Schedule"
+                reviewingTitle={tV("reviewHeading")}
                 handleBack={handleBack}
             >
                 <div className="flex flex-col gap-6">
@@ -284,13 +314,33 @@ function Step3({ handleBack }: StepProps) {
                 type="submit"
                 className="w-full h-10 rounded-none"
                 permissions={{ kind: "call", action: "AddProposal" }}
-                idleMessage="Confirm and Submit Request"
+                idleMessage={tV("confirmSubmit")}
             />
         </PageCard>
     );
 }
 
 export default function VestingPage() {
+    const t = useTranslations("pages.vesting");
+    const tV = useTranslations("vesting");
+    const tSteps = useTranslations("vesting.stepTitles");
+    const tValidation = useTranslations("paymentForm.validation");
+    const vestingFormSchema = useMemo(
+        () =>
+            buildVestingFormSchema({
+                recipientMin: tValidation("recipientMin"),
+                recipientMax64: tValidation("recipientMax64"),
+                amountMinLockup: tValidation("amountMinLockup"),
+                startDateRequired: tValidation("startDateRequired"),
+                endDateRequired: tValidation("endDateRequired"),
+                cliffDateRequired: tValidation("cliffDateRequired"),
+                recipientSameAsToken: tValidation("recipientSameAsToken"),
+                startBeforeEnd: tValidation("startBeforeEnd"),
+                cliffBetween: (start, end) =>
+                    tValidation("cliffBetween", { start, end }),
+            }),
+        [tValidation],
+    );
     const { treasuryId, isConfidential } = useTreasury();
     const { createProposal } = useNear();
     const { data: policy } = useTreasuryPolicy(treasuryId);
@@ -315,7 +365,7 @@ export default function VestingPage() {
 
     const onSubmit = async (data: VestingFormValues) => {
         const description = {
-            title: `Create vesting schedule for ${data.vesting.address}`,
+            title: tV("proposalTitle", { address: data.vesting.address }),
             notes: data.vesting.memo || "",
         };
         const proposalBond = policy?.proposal_bond || "0";
@@ -359,7 +409,7 @@ export default function VestingPage() {
               }
             : {};
 
-        await createProposal("Request to create vesting schedule submitted", {
+        await createProposal(tV("scheduleSubmitted"), {
             treasuryId: treasuryId!,
             proposal: {
                 description: encodeToMarkdown(description),
@@ -396,10 +446,7 @@ export default function VestingPage() {
     };
 
     return (
-        <PageComponentLayout
-            title="Vesting"
-            description="Create vesting schedules quickly and effortlessly"
-        >
+        <PageComponentLayout title={t("title")} description={t("description")}>
             <Form {...form}>
                 <form
                     onSubmit={form.handleSubmit(onSubmit)}
@@ -408,7 +455,11 @@ export default function VestingPage() {
                     <StepWizard
                         step={step}
                         onStepChange={setStep}
-                        stepTitles={["Details", "Settings", "Review"]}
+                        stepTitles={[
+                            tSteps("details"),
+                            tSteps("settings"),
+                            tSteps("review"),
+                        ]}
                         steps={[
                             {
                                 component: Step1,

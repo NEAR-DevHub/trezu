@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import Big from "@/lib/big";
 import { Token } from "./token-input";
 import { formatCurrency } from "@/lib/utils";
@@ -25,17 +28,18 @@ interface AmountSummaryProps {
 export function AmountSummary({
     total,
     token,
-    title = "You are sending a total of",
+    title,
     totalUSD,
     children,
     useInputBlock = true,
     showNetworkIcon = false,
 }: AmountSummaryProps) {
+    const t = useTranslations("amountSummary");
     const totalString = total.toString();
 
     return (
         <SummaryBlock
-            title={title}
+            title={title ?? t("defaultTitle")}
             useInputBlock={useInputBlock}
             icon={
                 <TokenDisplay

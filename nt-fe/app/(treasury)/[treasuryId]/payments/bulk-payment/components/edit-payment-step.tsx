@@ -1,19 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslations } from "next-intl";
 import { Form } from "@/components/ui/form";
 import { PageCard } from "@/components/card";
 import { StepProps, StepperHeader } from "@/components/step-wizard";
 import { PaymentFormSection } from "../../components/payment-form-section";
 import type { EditPaymentFormValues, BulkPaymentData } from "../schemas";
-import { editPaymentSchema } from "../schemas";
+import { buildEditPaymentSchema } from "../schemas";
 import type { SelectedTokenData } from "@/components/token-select";
 import { needsStorageDepositCheck } from "../utils";
 import { getBatchStorageDepositIsRegistered } from "@/lib/api";
 import Big from "@/lib/big";
 import { getNetworkFeeCoverageErrorMessage } from "@/lib/intents-fee";
+import { useIntentsFeeLabels } from "@/lib/intents-fee-labels";
 
 interface EditPaymentStepProps extends StepProps {
     payment: BulkPaymentData;
@@ -36,6 +38,18 @@ export function EditPaymentStep({
     onSave,
     onCancel,
 }: EditPaymentStepProps) {
+    const tValidation = useTranslations("paymentForm.validation");
+    const intentsFeeLabels = useIntentsFeeLabels();
+    const editPaymentSchema = useMemo(
+        () =>
+            buildEditPaymentSchema({
+                recipientMin: tValidation("recipientMin"),
+                recipientMax: tValidation("recipientMax"),
+                amountGreaterThanZero: tValidation("amountGreaterThanZero"),
+                selectToken: tValidation("selectToken"),
+            }),
+        [tValidation],
+    );
     const [isSaving, setIsSaving] = useState(false);
 
     const form = useForm<EditPaymentFormValues>({
@@ -49,12 +63,15 @@ export function EditPaymentStep({
     const watchedAmount = form.watch("amount");
     const feeErrorMessage =
         networkFeePerRecipient && watchedAmount && Number(watchedAmount) > 0
-            ? getNetworkFeeCoverageErrorMessage({
-                  amount: watchedAmount,
-                  networkFee: Big(networkFeePerRecipient),
-                  decimals: selectedToken.decimals,
-                  symbol: selectedToken.symbol,
-              })
+            ? getNetworkFeeCoverageErrorMessage(
+                  {
+                      amount: watchedAmount,
+                      networkFee: Big(networkFeePerRecipient),
+                      decimals: selectedToken.decimals,
+                      symbol: selectedToken.symbol,
+                  },
+                  intentsFeeLabels,
+              )
             : null;
 
     const handleSave = async () => {
@@ -89,9 +106,10 @@ export function EditPaymentStep({
         }
     };
 
+    const tBulk = useTranslations("bulkPayment.editStep");
     return (
         <PageCard>
-            <StepperHeader title="Edit Payment" handleBack={onCancel} />
+            <StepperHeader title={tBulk("title")} handleBack={onCancel} />
 
             <Form {...form}>
                 <PaymentFormSection
@@ -101,7 +119,7 @@ export function EditPaymentStep({
                     recipientName="recipient"
                     tokenLocked={true}
                     feeErrorMessage={feeErrorMessage}
-                    saveButtonText="Save Changes"
+                    saveButtonText={tBulk("saveChanges")}
                     onSave={handleSave}
                     isSubmitting={isSaving}
                 />

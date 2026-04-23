@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Database, Shield } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useAssets } from "@/hooks/use-assets";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Skeleton } from "./ui/skeleton";
@@ -13,6 +14,7 @@ export function TreasuryLogo({
     logo?: string;
     isConfidential?: boolean;
 }) {
+    const t = useTranslations("treasuryInfo");
     const [hasImageError, setHasImageError] = useState(false);
 
     useEffect(() => {
@@ -24,7 +26,7 @@ export function TreasuryLogo({
     const item = shouldShowImage ? (
         <img
             src={logo}
-            alt="Treasury Logo"
+            alt={t("logoAlt")}
             className="rounded-md size-7 shrink-0 object-cover"
             onError={() => setHasImageError(true)}
         />

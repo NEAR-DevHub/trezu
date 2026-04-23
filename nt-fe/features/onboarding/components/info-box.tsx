@@ -7,7 +7,8 @@ import {
 } from "@/constants/config";
 import Link from "next/link";
 import { CirclePlay, Eye, File, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
+import { useMemo, useState, useEffect } from "react";
 import { PageCard } from "@/components/card";
 import { useNextStep } from "nextstepjs";
 import { LOCAL_STORAGE_KEYS, TOUR_NAMES } from "../steps/dashboard";
@@ -39,29 +40,32 @@ function InfoItem({ icon, title, description, href }: InfoItemProps) {
     );
 }
 
-const infoItems: InfoItemProps[] = [
-    {
-        icon: <Eye className="size-4" />,
-        title: "Explore the Trezu Demo",
-        description: "See a live demo account in action.",
-        href: APP_ACTIVE_TREASURY,
-    },
-    {
-        icon: <File className="size-4" />,
-        title: "Documentation",
-        description: "Learn about all features in the docs.",
-        href: APP_DOCS_URL,
-    },
-    {
-        icon: <CirclePlay className="size-4" />,
-        title: "Watch the Demo",
-        description: "Watch a short video showing how Trezu works.",
-        href: APP_DEMO_URL,
-    },
-];
-
 export function InfoBox() {
+    const t = useTranslations("onboarding.infoBox");
     const [isClosed, setIsClosed] = useState(true);
+    const infoItems = useMemo<InfoItemProps[]>(
+        () => [
+            {
+                icon: <Eye className="size-4" />,
+                title: t("demoTitle"),
+                description: t("demoDescription"),
+                href: APP_ACTIVE_TREASURY,
+            },
+            {
+                icon: <File className="size-4" />,
+                title: t("docsTitle"),
+                description: t("docsDescription"),
+                href: APP_DOCS_URL,
+            },
+            {
+                icon: <CirclePlay className="size-4" />,
+                title: t("videoTitle"),
+                description: t("videoDescription"),
+                href: APP_DEMO_URL,
+            },
+        ],
+        [t],
+    );
     const { startNextStep } = useNextStep();
     const setSidebarOpen = useSidebarStore((state) => state.setSidebarOpen);
     const isMobile = typeof window !== "undefined" && window.innerWidth < 1024;
@@ -92,18 +96,18 @@ export function InfoBox() {
         <div className="bg-general-tertiary rounded-lg p-5 flex flex-col w-full h-fit gap-5 cursor-pointer">
             <div className="flex flex-col gap-0.5">
                 <div className="flex items-center justify-between">
-                    <h1 className="font-semibold">Get more from Trezu</h1>
+                    <h1 className="font-semibold">{t("title")}</h1>
                     <button
+                        type="button"
                         onClick={handleInfoBoxClick}
                         className="text-muted-foreground hover:text-foreground transition-colors"
-                        aria-label="Close"
+                        aria-label={t("close")}
                     >
                         <X className="size-4" />
                     </button>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                    Discover how others use Treasury, try the demo, and check
-                    the docs to learn the features.
+                    {t("description")}
                 </p>
             </div>
             <div className="flex flex-col gap-3">

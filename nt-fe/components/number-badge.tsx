@@ -1,5 +1,8 @@
+"use client";
+
 import { cn } from "@/lib/utils";
 import { cva } from "class-variance-authority";
+import { useTranslations } from "next-intl";
 
 const styles = cva(
     "flex items-center justify-center rounded-[8px] text-xs font-semibold",
@@ -27,14 +30,17 @@ export function NumberBadge({
     number,
     variant = "default",
     sizes = "default",
+    ariaLabel,
 }: {
     number: number;
     variant?: "default" | "secondary" | "accent" | "error";
     sizes?: "default" | "sm";
+    ariaLabel?: string;
 }) {
+    const t = useTranslations("numberBadge");
     return (
         <span
-            aria-label={`${number} pending requests`}
+            aria-label={ariaLabel ?? t("pendingRequests", { count: number })}
             className={styles({ variant, sizes })}
         >
             {number}

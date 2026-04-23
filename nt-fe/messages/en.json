@@ -1,0 +1,2037 @@
+{
+    "common": {
+        "loading": "Loading...",
+        "notAvailable": "N/A",
+        "connecting": "Connecting...",
+        "save": "Save",
+        "cancel": "Cancel",
+        "submit": "Submit",
+        "close": "Close",
+        "back": "Back",
+        "seeDemo": "See Demo Trezu",
+        "search": "Search",
+        "filter": "Filter",
+        "filterActive": "Filter (active)",
+        "export": "Export",
+        "exporting": "Exporting",
+        "import": "Import",
+        "remove": "Remove",
+        "removing": "Removing...",
+        "edit": "Edit",
+        "continue": "Continue",
+        "select": "Select",
+        "all": "All",
+        "none": "None",
+        "retry": "Retry",
+        "tryAgain": "Please try again.",
+        "confirm": "Confirm",
+        "next": "Next",
+        "previous": "Previous",
+        "yes": "Yes",
+        "no": "No",
+        "approve": "Approve",
+        "reject": "Reject",
+        "copy": "Copy",
+        "copied": "Copied",
+        "viewAll": "View All",
+        "viewDetails": "View details",
+        "noResults": "No results found",
+        "add": "Add"
+    },
+    "languageSwitcher": {
+        "label": "Language",
+        "select": "Select language",
+        "english": "English",
+        "spanish": "Español",
+        "ukrainian": "Українська"
+    },
+    "header": {
+        "toggleSidebar": "Toggle sidebar",
+        "toggleTheme": "Toggle theme"
+    },
+    "nav": {
+        "dashboard": "Dashboard",
+        "requests": "Requests",
+        "payments": "Payments",
+        "exchange": "Exchange",
+        "addressBook": "Address Book",
+        "members": "Members",
+        "settings": "Settings",
+        "helpSupport": "Help & Support",
+        "saveGuestTreasury": "Save this guest treasury to your treasuries list."
+    },
+    "signIn": {
+        "connect": "Connect",
+        "connectWallet": "Connect Wallet",
+        "wallet": "Wallet",
+        "termsOfService": "Terms of Service",
+        "privacyPolicy": "Privacy Policy",
+        "disconnect": "Disconnect"
+    },
+    "auth": {
+        "noWallet": "Connect your wallet",
+        "noPermission": "You don't have permission to perform this action",
+        "noVote": "You have already voted on this proposal",
+        "noSponsoredTransactions": "No sponsored transactions remaining"
+    },
+    "landing": {
+        "welcome": "Welcome to Trezu",
+        "chooseOption": "Choose an option below to get started.",
+        "newUserTitle": "I’m new to Trezu",
+        "newUserDescription": "I’ve heard about Trezu but don't have a treasury yet.",
+        "existingUserTitle": "I already use Trezu",
+        "existingUserDescription": "I have an account and manage a treasury.",
+        "gradientTagline": "Cross-chain multisig security for managing digital assets",
+        "waitlistTitle": "Join the Trezu Waitlist",
+        "waitlistSubmittedTitle": "You're on the list 🎉",
+        "waitlistSubmittedDescription": "Thanks! We'll notify you as soon as treasury creation becomes available.",
+        "waitlistDescription": "We've hit today's treasury limit. No worries - try again later or leave your contact to join the waitlist. We'll let you know when a spot opens.",
+        "waitlistInputPlaceholder": "Email address or Telegram (e.g. @username)",
+        "waitlistPrivacyNote": "We will only use this to notify you",
+        "waitlistSubmit": "Join the Waitlist",
+        "waitlistSubmitFailed": "Failed to submit. Please try again.",
+        "welcomeAlt": "welcome"
+    },
+    "blocked": {
+        "title": "Service not available in your country",
+        "description": "Due to restrictions, this service is currently unavailable in your region."
+    },
+    "notFound": {
+        "title": "Wooops, this page is gone...",
+        "description": "It looks like you followed a link that no longer works. Try going back or return to the Dashboard.",
+        "backToDashboard": "Back to Dashboard"
+    },
+    "treasuryInfo": {
+        "logoAlt": "Treasury Logo"
+    },
+    "dateInput": {
+        "placeholder": "mm/dd/yyyy"
+    },
+    "thresholdSlider": {
+        "warningSingleMember": "A 1-of-{memberCount} threshold means any single member can execute transactions. This reduces security.",
+        "infoBalanced": "A {currentThreshold}-of-{memberCount} threshold provides a good balance between security and operational flexibility."
+    },
+    "intentsFee": {
+        "amountTooLowForFee": "{prefix}Amount too low for network fee ({fee} {symbol}). Add at least {addMore} {symbol}."
+    },
+    "metadata": {
+        "treasuryTitle": "Dashboard | Trezu",
+        "landingTitle": "Trezu | Cross-chain Treasury Management",
+        "description": "Manage your team's capital in minutes from a single dashboard without ever giving up your keys.",
+        "ogTitle": "Trezu | One multisig. Any crypto. Total control."
+    },
+    "pages": {
+        "dashboard": {
+            "title": "Dashboard",
+            "description": "Overview of your treasury assets and activity",
+            "descriptionLong": "Manage your treasury assets and track activity"
+        },
+        "activity": {
+            "title": "Recent Transactions",
+            "descriptionDetails": "Details for Request",
+            "descriptionList": "Recent transactions across all assets"
+        },
+        "requests": {
+            "title": "Requests",
+            "description": "View and manage all pending multisig requests",
+            "detailDescription": "Details for Request",
+            "detailTitle": "Request #{id}"
+        },
+        "members": {
+            "title": "Members",
+            "description": "Manage team members and permissions"
+        },
+        "settings": {
+            "title": "Settings",
+            "description": "Adjust your application settings"
+        },
+        "addressBook": {
+            "title": "Address Book",
+            "description": "Manage your saved recipients"
+        },
+        "payments": {
+            "title": "Payments",
+            "description": "Send and receive funds securely"
+        },
+        "exchange": {
+            "title": "Exchange",
+            "description": "Exchange your tokens securely and efficiently"
+        },
+        "vesting": {
+            "title": "Vesting",
+            "description": "Create vesting schedules quickly and effortlessly"
+        },
+        "earn": {
+            "title": "Earn",
+            "description": "Earn rewards on your assets",
+            "placeholder": "Explore earning opportunities and staking rewards."
+        },
+        "createTreasury": {
+            "title": "Create Treasury",
+            "description": "Set up a new multisig treasury for your team"
+        },
+        "manageTreasuries": {
+            "title": "Manage Treasuries",
+            "description": "Control which treasuries appear in your account"
+        },
+        "stats": {
+            "title": "Stats",
+            "description": "Real-time assets under management across all sputnik DAOs treasuries."
+        },
+        "telegram": {
+            "title": "Connect Treasury",
+            "description": "Link your treasuries to a Telegram chat",
+            "metaTitle": "Trezu — Connect Telegram",
+            "metaDescription": "Connect your Trezu treasury to a Telegram chat"
+        },
+        "wallet": {
+            "title": "Trezu Wallet",
+            "description": "Sign treasury proposals via Trezu"
+        }
+    },
+    "depositModal": {
+        "validation": {
+            "selectAsset": "Please select an asset",
+            "selectNetwork": "Please select a network"
+        },
+        "sections": {
+            "supportedNetworks": "Supported Networks",
+            "networksWithAssets": "Networks with Assets",
+            "yourAssets": "Your Assets",
+            "otherAssets": "Other Assets"
+        },
+        "errors": {
+            "addressUnavailable": "Could not retrieve deposit address for the selected asset and network.",
+            "fetchFailed": "Failed to fetch deposit address. Please try again."
+        },
+        "title": "Deposit",
+        "subtitle": "Select asset and network to see deposit address",
+        "assetLabel": "Asset",
+        "networkLabel": "Network",
+        "selectAsset": "Select Asset",
+        "selectNetwork": "Select Network",
+        "otherAssetName": "Other",
+        "otherNetworkInfo": "You can deposit any token not listed in the assets, but only via the NEAR network.",
+        "depositAddressHeading": "Deposit Address",
+        "depositAddressSubtitle": "Always double-check your deposit address.",
+        "addressLabel": "Address",
+        "addressCopied": "Address copied to clipboard",
+        "memoLabel": "Memo",
+        "memoCopied": "Memo copied to clipboard",
+        "memoWarning": "You <bold>must</bold> include the memo when sending funds to this address. Sending without the memo may result in permanent loss of funds.",
+        "onlyDeposit": "Only deposit <symbolTag>{symbol}</symbolTag> from the <networkTag>{network}</networkTag> network. We recommend starting with a small test transaction to ensure everything works correctly before sending the full amount.",
+        "minimumDeposit": "Minimum deposit is <amountTag>{amount} {symbol}</amountTag>",
+        "searchByName": "Search by name"
+    },
+    "assetDetails": {
+        "coinPrice": "Coin Price",
+        "weight": "Weight",
+        "source": "Source",
+        "send": "Send",
+        "exchange": "Exchange",
+        "comingSoon": "Coming soon",
+        "vesting": "Vesting",
+        "vestedPercent": "{percent}% Vested",
+        "frozen": "Frozen",
+        "frozenTooltip": "Frozen tokens are locked and cannot be used. They might be locked due to being used for storage, staked, or not yet vested.",
+        "vested": "Vested"
+    },
+    "dashboard": {
+        "overview": "Overview of your treasury assets and activity",
+        "assets": "Assets",
+        "balance": "Balance",
+        "totalBalance": "Total Balance",
+        "deposit": "Deposit",
+        "addAssets": "Add assets",
+        "hidden": "Hidden",
+        "confidentialHidden": "Balances hidden for confidential treasuries",
+        "recentActivity": "Recent Activity",
+        "viewAllTransactions": "View all transactions"
+    },
+    "activity": {
+        "filters": {
+            "createdDate": "Created Date",
+            "token": "Token",
+            "from": "From",
+            "to": "To"
+        },
+        "tabs": {
+            "all": "All",
+            "sent": "Sent",
+            "received": "Received",
+            "stakingRewards": "Staking Rewards",
+            "exchange": "Exchange"
+        },
+        "searchPlaceholder": "Search by transaction hash",
+        "searchPlaceholderShort": "Transaction hash",
+        "fromPool": "from {pool}",
+        "table": {
+            "type": "TYPE",
+            "transaction": "TRANSACTION",
+            "from": "FROM",
+            "to": "TO",
+            "transactionHash": "TRANSACTION HASH",
+            "hashTooltip": "Unique identifier (hash) of this transaction"
+        },
+        "empty": {
+            "title": "No transactions found",
+            "description": "Your transactions will appear here once they happen"
+        },
+        "emptyDashboard": {
+            "title": "Nothing to show yet",
+            "description": "Your transactions and actions will appear here once they happen"
+        },
+        "recentTitle": "Recent Transactions",
+        "details": {
+            "title": "Transaction Details",
+            "copyAddress": "Copy Address",
+            "addressCopied": "Address copied to clipboard",
+            "sell": "Sell",
+            "receive": "Receive",
+            "pending": "Pending",
+            "type": "Type",
+            "date": "Date",
+            "from": "From",
+            "to": "To",
+            "method": "Method",
+            "contract": "Contract",
+            "transaction": "Transaction"
+        }
+    },
+    "export": {
+        "types": {
+            "csv": ".CSV",
+            "json": ".JSON",
+            "xlsx": ".XLSX"
+        },
+        "transactionTypes": {
+            "all": "All Types",
+            "sent": "Sent",
+            "received": "Received",
+            "stakingRewards": "Staking Rewards"
+        },
+        "validation": {
+            "invalidEmail": "Please enter a valid email address"
+        },
+        "columns": {
+            "submissionTime": "Submission Time",
+            "dateRange": "Date Range",
+            "generatedBy": "Generated By",
+            "status": "Status"
+        },
+        "status": {
+            "generating": "Generating",
+            "expired": "Expired",
+            "failed": "Failed"
+        },
+        "noPermission": "You don't have permission to download the file.",
+        "download": "Download",
+        "heading": "Export Recent Transactions",
+        "teamOnly": "Export generation and downloads are available to team members only.",
+        "creditsUsed": "You've used all your credits",
+        "exportsUsed": "You've used all your exports",
+        "upgradePrompt": "Upgrade your plan to get more and keep going",
+        "resetPrompt": "Upgrade your plan for more access, or wait until your limits reset next month.",
+        "tabs": {
+            "generate": "Generate Export",
+            "history": "History"
+        },
+        "fields": {
+            "documentType": "Document Type",
+            "timeRange": "Time Range",
+            "selectDateRange": "Select date range",
+            "asset": "Asset",
+            "allAssets": "All Assets",
+            "transactionType": "Transaction Type"
+        },
+        "buttons": {
+            "noPermissionExport": "You don't have permission to export",
+            "quotaExhausted": "You've used all your quota",
+            "exporting": "Exporting...",
+            "export": "Export"
+        },
+        "empty": {
+            "title": "No exports yet",
+            "description": "Your exported files from the last month will appear here once they're generated."
+        },
+        "requirements": {
+            "heading": "Export Requirements",
+            "canExportFrom": "You can export data from the",
+            "availability": "Exported files are available for download for 48 hours."
+        },
+        "quota": {
+            "heading": "Export Quota",
+            "unlimited": "Unlimited",
+            "perMonth": "{count} / month",
+            "flexibilityPrompt": "Looking for more flexibility?",
+            "contactUs": "Contact Us"
+        }
+    },
+    "requests": {
+        "filters": {
+            "proposalTypes": {
+                "Payments": "Payments",
+                "Exchange": "Exchange",
+                "Earn": "Earn",
+                "Vesting": "Vesting",
+                "Function Call": "Function Call",
+                "Change Policy": "Change Policy",
+                "Settings": "Settings",
+                "Confidential": "Confidential"
+            },
+            "requestsType": "Requests Type",
+            "createdDate": "Created Date",
+            "recipient": "Recipient",
+            "token": "Token",
+            "requester": "Requester",
+            "approver": "Approver",
+            "myVoteStatus": "My Vote Status",
+            "all": "ALL",
+            "amount": "Amount",
+            "from": "From",
+            "to": "To",
+            "min": "Min",
+            "max": "Max",
+            "invalidDate": "Invalid date",
+            "operationIsNot": " is not",
+            "operationBefore": " before",
+            "operationAfter": " after",
+            "operationContains": " contains",
+            "searchByAddress": "Search by address",
+            "loadingMembers": "Loading members...",
+            "noMembersFound": "No members found. Press Enter to add \"{query}\"",
+            "noMembersAvailable": "No members available",
+            "reset": "Reset",
+            "addFilter": "Add Filter"
+        },
+        "tabs": {
+            "all": "All",
+            "pending": "Pending",
+            "executed": "Executed",
+            "rejected": "Rejected",
+            "expired": "Expired",
+            "failed": "Failed"
+        },
+        "searchPlaceholder": "Search request by name or ID",
+        "searchPlaceholderShort": "Search by name or ID",
+        "errorLoading": "Error loading proposals. Please try again.",
+        "empty": {
+            "title": "Create your first request",
+            "description": "Requests for payments, exchanges, and other actions will appear here once created.",
+            "send": "Send",
+            "exchange": "Exchange"
+        },
+        "actions": {
+            "approve": "Approve",
+            "reject": "Reject",
+            "deposit": "Deposit",
+            "viewRequest": "View Request"
+        },
+        "table": {
+            "selectAll": "Select all",
+            "selectRow": "Select row",
+            "request": "Request",
+            "transaction": "Transaction",
+            "requester": "Requester",
+            "voting": "Voting",
+            "votingTooltip": "First number shows approvals received. Second number shows approvals required to execute.",
+            "status": "Status",
+            "notPending": "Proposal is not pending.",
+            "noPermissionVote": "You don't have permission to vote on this request.",
+            "alreadyVoted": "You already voted on this request.",
+            "noResults": "No requests found matching your filters.",
+            "allCaughtUp": "All caught up!",
+            "noPending": "There are no pending requests.",
+            "send": "Send",
+            "exchange": "Exchange",
+            "requestsSelected": "{count, plural, one {# Request Selected} other {# Requests Selected}}",
+            "bulkApproveDisabled": "This request can't be approved because the treasury has insufficient balance."
+        },
+        "pending": {
+            "title": "Pending Requests",
+            "viewAll": "View All",
+            "emptyTitle": "All caught up!",
+            "emptyDescription": "There are no pending requests."
+        }
+    },
+    "proposals": {
+        "status": {
+            "pending": "Pending",
+            "approved": "Approved",
+            "rejected": "Rejected",
+            "executed": "Executed",
+            "expired": "Expired",
+            "failed": "Failed",
+            "removed": "Removed",
+            "inProgress": "In Progress"
+        },
+        "statusTooltip": {
+            "pending": "This request is still pending and has not yet reached the required number of votes for execution.",
+            "executed": "Executed after {approved} of {required} members approved the request.",
+            "rejected": "Rejected after {rejected} of {required} members voted to reject the request.",
+            "expired": "Expired as it did not receive enough votes to execute.",
+            "failed": "The request failed to complete. Check the transaction details <link>here</link>.",
+            "failedPlain": "The request failed to complete. Check the transaction details here."
+        },
+        "votes": {
+            "approved": "Approved",
+            "rejected": "Rejected",
+            "pending": "Pending"
+        },
+        "voteModal": {
+            "confirmTitle": "Confirm Your Vote",
+            "removeTitle": "Remove Request",
+            "bulkBody": "You are about to {action} multiple requests. Once submitted, this decision cannot be changed.",
+            "singleBody": "You are about to {action} this request. Once confirmed, this action cannot be undone.",
+            "actionApprove": "approve",
+            "actionReject": "reject",
+            "actionRemove": "remove",
+            "insufficientBalance": "Requests <highlight>{ids}</highlight> cannot be approved due to insufficient balance. Your approval will only apply to the remaining requests.",
+            "remove": "Remove",
+            "confirm": "Confirm"
+        },
+        "expanded": {
+            "recipient": "Recipient",
+            "amount": "Amount",
+            "networkFee": "Network Fee",
+            "notes": "Notes",
+            "sent": "Sent",
+            "received": "Received",
+            "priceDifference": "Price Difference",
+            "priceDifferenceTooltip": "Difference between the quote rate and the current market rate. Positive values indicate a better rate than market.",
+            "slippageTolerance": "Slippage Tolerance",
+            "estimatedTime": "Estimated Time",
+            "seconds": "{count} seconds",
+            "description": "Description",
+            "methodName": "Method Name",
+            "args": "Args",
+            "deposit": "Deposit",
+            "gas": "Gas",
+            "totalDeposit": "Total Deposit",
+            "totalGas": "Total Gas",
+            "receiverId": "Receiver ID",
+            "contractId": "Contract ID",
+            "actionsCount": "{count, plural, one {# action} other {# actions}}",
+            "functionCallsCount": "{count, plural, one {# function call} other {# function calls}}",
+            "showLess": "Show less",
+            "showMore": "Show more",
+            "stakingPool": "Staking Pool",
+            "validator": "Validator",
+            "action": "Action",
+            "stake": "Stake",
+            "unstake": "Unstake",
+            "withdraw": "Withdraw",
+            "lockupOwner": "Lockup owner",
+            "lockupDuration": "Lockup duration",
+            "cliff": "Cliff",
+            "releaseDuration": "Release duration",
+            "vestingSchedule": "Vesting schedule",
+            "cancellable": "Cancellable",
+            "allowEarn": "Allow staking",
+            "yes": "Yes",
+            "no": "No",
+            "notSet": "Not set",
+            "from": "From",
+            "to": "To",
+            "paymentsCount": "{count, plural, one {# payment} other {# payments}}",
+            "sourceWallet": "Source Wallet",
+            "allNear": "All NEAR",
+            "startDate": "Start Date",
+            "endDate": "End Date",
+            "cliffDate": "Cliff Date",
+            "allowCancellation": "Allow Cancellation",
+            "allowStaking": "Allow Staking",
+            "loadingHistorical": "Loading historical configuration...",
+            "name": "Name",
+            "purpose": "Purpose",
+            "logo": "Logo",
+            "logoAlt": "Logo",
+            "noChangesCurrent": "No changes detected in configuration compared to the current state.",
+            "noChangesHistorical": "No changes detected in configuration compared to the historical state.",
+            "method": "Method",
+            "arguments": "Arguments",
+            "contract": "Contract",
+            "actionNumber": "Action {number}",
+            "actions": "Actions",
+            "collapseAll": "Collapse all",
+            "expandAll": "Expand all",
+            "send": "Send",
+            "receive": "Receive",
+            "rate": "Rate",
+            "priceSlippageLimit": "Price Slippage Limit",
+            "slippageTooltip": "This is the slippage limit defined for this request. If the market rate changes beyond this threshold during execution, the request will automatically fail.",
+            "estimatedTimeTooltip": "Estimated time for the swap to be executed after the deposit transaction is confirmed.",
+            "minReceive": "Min. Receive",
+            "minimumReceived": "Minimum Received",
+            "minReceiveTooltip": "This is the minimum amount you'll receive from this exchange, based on the slippage limit set for the request.",
+            "depositAddress": "Deposit Address",
+            "depositAddressTooltip": "The 1Click deposit address where tokens will be sent for the cross-chain swap execution.",
+            "quoteSignature": "Quote Signature",
+            "quoteSignatureTooltip": "The cryptographic signature from 1Click API that validates this quote.",
+            "quoteDeadline": "1-Click Quote Deadline",
+            "quoteDeadlineTooltip": "Time when the deposit address becomes inactive and funds may be lost.",
+            "status": "Status",
+            "transactionLink": "Transaction Link",
+            "viewTransaction": "View Transaction",
+            "recipientNumber": "Recipient {number}",
+            "oopsTitle": "Oops! Something went wrong",
+            "oopsDescription": "We couldn't find any data to show here.",
+            "totalAmount": "Total Amount",
+            "recipients": "Recipients",
+            "recipientsCount": "{count, plural, one {# recipient} other {# recipients}}",
+            "unsupportedProposal": "Unsupported proposal type",
+            "requestDetails": "Request Details",
+            "linkCopied": "Link copied to clipboard",
+            "copyLink": "Copy Link",
+            "openRequestPage": "Open Request Page",
+            "deleteRequest": "Delete Request",
+            "unknownRecipients": "Unknown recipients",
+            "loadingConfig": "Loading config...",
+            "historicalData": "Historical data...",
+            "generalUpdate": "General Update",
+            "detailsUnavailable": "Details unavailable",
+            "changesCount": "{count, plural, one {# Change} other {# Changes}}",
+            "policyUpdate": "Policy Update",
+            "noChangesDetected": "No changes detected",
+            "loadingPolicy": "Loading policy...",
+            "roleChanges": "Role Changes",
+            "policyParameters": "Policy Parameters",
+            "defaultVotePolicy": "Default Vote Policy",
+            "policyRoleChanges": "Policy & Role Changes",
+            "membersAdded": "{count, plural, one {# member added} other {# members added}}",
+            "membersRemoved": "{count, plural, one {# member removed} other {# members removed}}",
+            "membersUpdated": "{count, plural, one {# member updated} other {# members updated}}",
+            "rolesModified": "{count, plural, one {# role modified} other {# roles modified}}",
+            "parametersChanged": "{count, plural, one {# parameter changed} other {# parameters changed}}",
+            "defaultVotePolicyPart": "default vote policy",
+            "onReceiver": "on {receiver}",
+            "toPrefix": "To:",
+            "validatorPrefix": "Validator:",
+            "validatorSubtitle": "Validator: {address}",
+            "impactTitle": "Impact of Changing Voting Duration",
+            "impactBody": "You are about to update the voting duration. This will affect the following existing requests.",
+            "activeRequestsBullet": "{count, plural, one {# request will be active for voting after this change, with updated expiration dates.} other {# requests will be active for voting after this change, with updated expiration dates.}}",
+            "expiringRequestsBullet": "{count, plural, one {# request will be marked as \"Expired\" under the new voting duration.} other {# requests will be marked as \"Expired\" under the new voting duration.}}",
+            "remainActiveHeading": "Requests that remain active for voting with a new expiration date",
+            "willExpireHeading": "Requests that will marked as \"Expire\"",
+            "tableRequest": "Request",
+            "tableTransaction": "Transaction",
+            "tableNewExpiry": "New Expiry",
+            "expireInDays": "{count, plural, one {Expire in # day} other {Expire in # days}}",
+            "today": "Today",
+            "uponApproval": "Upon approval",
+            "yesContinue": "Yes, Continue",
+            "transactionCreated": "Transaction Created",
+            "voting": "Voting",
+            "approvalsReceived": "{received}/{required} approvals received",
+            "expiresAt": "Expires At",
+            "expiredAt": "Expired At",
+            "viewTransaction": "View Transaction",
+            "exchangingTokens": "Exchanging Tokens",
+            "exchangingTokensBody": "This request has been approved by the team. Token exchange is now in progress and may take some time.",
+            "requestFailed": "Request Failed",
+            "requestFailedBody": "The team approved this request, but it failed due to rate fluctuations. Please create a new request and try again.",
+            "votingPeriod24h": "Voting period: 24 hours",
+            "votingPeriod24hBody": "This exchange request has a 24-hour voting duration. Approve this request within this time, or the request will expire.",
+            "reject": "Reject",
+            "deposit": "Deposit",
+            "approve": "Approve"
+        },
+        "insufficientBalance": {
+            "noAsset": "This request can't be approved because the required token is not available in the treasury.",
+            "bond": "This request can't be approved because the treasury has insufficient <token>{symbol}</token> balance. Add <token>{amount} {symbol}</token> to cover proposal bond costs.",
+            "continue": "This request can't be approved because the treasury has insufficient <token>{symbol}</token> balance. Add <token>{amount} {symbol}</token> to continue.",
+            "modalTitle": "Insufficient NEAR Balance",
+            "modalBodyVote": "You don't have enough NEAR tokens in your wallet to cast this vote. Voting requires a minimum balance of <amount>{required} NEAR</amount>. Please add NEAR to your wallet and try again.",
+            "modalBodyProposal": "You don't have enough NEAR tokens in your wallet to create this request. Creating a request requires a minimum balance of <amount>{required} NEAR</amount>. Please add NEAR to your wallet and try again.",
+            "gotIt": "Got It"
+        }
+    },
+    "members": {
+        "title": "Members",
+        "description": "Manage team members and permissions",
+        "permissions": "Permissions",
+        "member": "Member",
+        "activeMembers": "Active Members",
+        "noActiveMembers": "No active members found.",
+        "addNewMember": "Add New Member",
+        "membersSelected": "{count, plural, =0 {no members} one {# member} other {# members}} selected",
+        "remove": "Remove",
+        "edit": "Edit",
+        "requestorOnlyTooltip": "You can only add the Requestor role for this member, as they are responsible for creating payment requests from NEARN.",
+        "memberModal": {
+            "editRoles": "Edit Roles",
+            "addNewMember": "Add New Member",
+            "validatingAddresses": "Validating addresses...",
+            "creatingProposal": "Creating proposal...",
+            "reviewRequest": "Review Request",
+            "noChanges": "No changes have been made to member roles"
+        },
+        "previewModal": {
+            "title": "Review Your Request",
+            "youAreEditing": "You are editing",
+            "youAreAdding": "You are adding",
+            "membersCount": "{count, plural, one {# member} other {# members}}",
+            "newMembersCount": "{count, plural, one {# new member} other {# new members}}",
+            "updatedMembers": "Updated Members",
+            "newMembers": "New Members",
+            "creatingProposal": "Creating Proposal...",
+            "confirmSubmit": "Confirm and Submit Request"
+        },
+        "removeDialog": {
+            "title": "Remove Request",
+            "nearnBody": "Once approved, {account} will be permanently removed from the treasury and all associated permissions will be revoked. After removal, this account will no longer be able to create requests from NEARN.",
+            "genericBody": "Once approved, this action will permanently remove <bold>{accounts}</bold> from the treasury and revoke all assigned permissions.",
+            "creatingProposal": "Creating Proposal..."
+        },
+        "validation": {
+            "accountIdRequired": "Account ID is required",
+            "invalidNearAddress": "Invalid NEAR address.",
+            "atLeastOneRole": "At least one role must be selected",
+            "atLeastOneMember": "At least one member is required",
+            "alreadyAdded": "This member has already been added above",
+            "alreadyInTreasury": "This member already exists in the treasury",
+            "cannotRemoveRoleAfter": "You can't remove the {role} role from this member. After all your changes, they would be the only person assigned to this role.",
+            "cannotRemoveRoleAfterGov": "You can't remove the {role} role from this member. After all your changes, they would be the only {role} member, and without this role you won't be able to manage team members or configure voting."
+        },
+        "policy": {
+            "addMembers": "Update Policy - Add New Members",
+            "addMembersSuccess": "New member request created successfully",
+            "editMember": "Update Policy - Edit Member Permissions",
+            "editMembers": "Update Policy - Edit Multiple Members",
+            "editMemberSuccess": "Member roles update request created successfully",
+            "editMembersSuccess": "Bulk member roles update request created successfully",
+            "removeMember": "Update Policy - Remove Member",
+            "removeMembers": "Update Policy - Remove Members",
+            "removeMemberSuccess": "Member removal request created successfully"
+        }
+    },
+    "settings": {
+        "tabs": {
+            "general": "General",
+            "voting": "Voting",
+            "preferences": "Preferences",
+            "integrations": "Integrations"
+        },
+        "general": {
+            "validation": {
+                "displayNameRequired": "Display name is required",
+                "displayNameMax": "Display name must be less than 100 characters"
+            },
+            "proposalDescriptionTitle": "Update Config - Theme & logo",
+            "proposalSubmitted": "Request to update configuration submitted",
+            "treasuryNotFound": "Treasury not found",
+            "treasuryName": "Treasury Name",
+            "treasuryNameDescription": "The name of your treasury. This will be displayed across the app.",
+            "displayName": "Display Name",
+            "displayNamePlaceholder": "Enter display name",
+            "accountName": "Account Name",
+            "logo": "Logo",
+            "logoDescription": "Upload a logo for your treasury. Recommended SVG, PNG, or JPG (256x256 px).",
+            "treasuryLogoAlt": "Treasury logo",
+            "uploading": "Uploading...",
+            "uploadLogo": "Upload Logo",
+            "removeLogo": "Remove Logo",
+            "logoUploaded": "Logo uploaded successfully",
+            "uploadError": "Error occurred while uploading image, please try again.",
+            "invalidLogo": "Invalid logo. Please upload a PNG, JPG, or SVG file that is exactly 256x256 px",
+            "invalidImage": "Invalid image file. Please upload a valid image.",
+            "fileReadError": "Error reading file. Please try again.",
+            "primaryColor": "Primary Color",
+            "primaryColorDescription": "Set the primary color for your treasury's interface elements. This color will be used in both light and dark modes, so keep contrast in mind when choosing neutral shades.",
+            "selectColorLabel": "Select color {color}"
+        },
+        "voting": {
+            "validation": {
+                "required": "Vote duration is required",
+                "validNumber": "Vote duration must be a valid number",
+                "min": "Vote duration must be at least 1 day",
+                "max": "Vote duration must be less than 1000 days",
+                "whole": "Vote duration must be a whole day"
+            },
+            "missingData": "Missing required data",
+            "thresholdProposalTitle": "Update policy - Voting Thresholds",
+            "thresholdProposalSummary": "{account} requested to change voting threshold from {oldValue} to {newValue}.",
+            "thresholdSubmitted": "Request to update voting threshold submitted",
+            "createProposalFailed": "Failed to create proposal",
+            "durationProposalTitle": "Update policy - Voting Duration",
+            "durationProposalSummary": "{account} requested to change voting duration from {oldValue} to {newValue}.",
+            "durationSubmitted": "Request created successfully",
+            "pendingTitle": "Active Voting Threshold Request",
+            "pendingBody": "To avoid conflicts, you need to complete or resolve the existing pending requests before proceeding. These requests are currently active and must be approved or rejected first.",
+            "viewRequest": "View Request",
+            "thresholdHeading": "Voting Threshold",
+            "thresholdDescriptionApprovers": "Define how many votes are required to approve payment and team-related requests. Configure thresholds separately for Approvers and Governance.",
+            "thresholdDescriptionGeneric": "Define how many votes are required to approve requests. Configure thresholds for each role based on their responsibilities.",
+            "membersWhoCanVote": "Members who can vote",
+            "votesRequired": "Votes are required to approve requests",
+            "durationHeading": "Vote Duration",
+            "durationDescription": "The length of time (in days) a proposal will remain open for voting. If voting is not completed within this period, the decision expires.",
+            "durationApprovers": " This duration applies equally to both Governance and Approver roles.",
+            "durationGeneric": " This duration is consistent across all treasury roles.",
+            "days": "Days"
+        },
+        "preferences": {
+            "timeZone": "Time Zone",
+            "timeZoneDescription": "Set your local time zone for accurate date and time display.",
+            "timeFormat": "Time Format",
+            "hour12": "12-hour (1:00 PM)",
+            "hour24": "24-hour (13:00)",
+            "autoTimezone": "Set timezone automatically using your location",
+            "timezone": "Timezone",
+            "loadingTimezones": "Loading timezones...",
+            "selectTimezone": "Select Timezone",
+            "searchTimezones": "Search timezones...",
+            "noTimezones": "No timezones found",
+            "save": "Save",
+            "savedToast": "Preferences saved successfully",
+            "saveFailed": "Failed to save preferences",
+            "loadFailed": "Failed to load timezones"
+        }
+    },
+    "addressBook": {
+        "emptyTitle": "Add your first recipient",
+        "emptyDescription": "Save frequently used addresses for faster, error-free payouts. Your contacts stay private and visible only to your team.",
+        "import": "Import",
+        "addRecipient": "Add Recipient",
+        "recipientsHeading": "Recipients",
+        "recipientsSelected": "{count, plural, =0 {no recipients} one {# recipient} other {# recipients}} selected",
+        "sectionHeading": "Recipients",
+        "privacyNote": "Saved addresses are private and visible only to your team.",
+        "searchPlaceholder": "Search recipient by name",
+        "searchPlaceholderShort": "Search",
+        "review": {
+            "header": "Review Details",
+            "youAreAdding": "You're adding",
+            "newRecipients": "{count, plural, one {# new recipient} other {# new recipients}}",
+            "onNetworks": "on {count, plural, one {# network} other {# networks}}",
+            "recipients": "Recipients",
+            "allDuplicates": "All imported recipients already exist in your address book. Go back to upload a different list or remove duplicates from this review.",
+            "someDuplicates": "{duplicates} duplicated recipients out of {total} total recipients. Continue to upload only the new recipients.",
+            "duplicated": "Duplicated",
+            "notePlaceholder": "Add a note to help identify this recipient (e.g. contractor payment, vesting distribution).",
+            "skipDuplicates": "Skip duplicates and import only new ones.",
+            "allDuplicatesTooltip": "All imported recipients are already in your address book, so there is nothing new to import.",
+            "duplicateActionTooltip": "Enable duplicate skipping or remove duplicate recipients to continue.",
+            "adding": "Adding…",
+            "nothingNew": "Nothing New to Import",
+            "addRecipientsButton": "{count, plural, one {Add Recipient} other {Add Recipients}}"
+        },
+        "removeDialog": {
+            "title": "Remove Recipient",
+            "bulk": "This will remove <bold>{count, plural, one {# recipient} other {# recipients}}</bold> from your address book. You can add them again anytime.",
+            "single": "This will remove <bold>{name}</bold> from your address book. You can add this recipient again anytime."
+        },
+        "importFlow": {
+            "title": "Import Recipients",
+            "description": "Upload a list of recipient addresses to your address book.",
+            "foundSummary": "Found {count, plural, one {# recipient} other {# recipients}} on {networkCount, plural, one {# network} other {# networks}}",
+            "uploadPrompt": "Upload or paste recipient data",
+            "fixErrors": "Fix errors to continue",
+            "continueReview": "Continue to Review"
+        },
+        "form": {
+            "editRecipient": "Edit Recipient",
+            "addRecipient": "Add Recipient",
+            "import": "Import",
+            "recipientName": "Recipient Name",
+            "namePlaceholder": "Alice",
+            "recipientAddress": "Recipient Address",
+            "network": "Network",
+            "networkInfo": "Networks compatible with this address",
+            "enterAddressFirst": "Enter recipient address first",
+            "selectNetwork": "Select network",
+            "selectNetworksTitle": "Select Networks",
+            "searchNetworksPlaceholder": "Search networks…",
+            "done": "Done",
+            "edit": "Edit",
+            "remove": "Remove",
+            "incomplete": "Incomplete",
+            "addAnother": "Add Another Recipient",
+            "fillAllTooltip": "You must fill out all fields to add a recipient.",
+            "reviewDetails": "Review Details",
+            "reviewTooltip": "All recipients must be complete before reviewing.",
+            "invalidAddress": "Invalid address",
+            "noCompatibleNetworks": "No compatible networks for this address"
+        },
+        "parsing": {
+            "rowPrefix": "Row {row}: {message}",
+            "missingName": "Missing recipient name. Please add a name.",
+            "missingAddress": "Missing recipient address. Please add a wallet address.",
+            "invalidAddressFormat": "The address \"{address}\" is not a valid format for any supported network.",
+            "unknownNetwork": "Unknown network \"{network}\". Supported networks include: {available}.",
+            "incompatibleNetwork": "The address \"{address}\" is not compatible with {network}. Compatible networks: {compatible}.",
+            "noDataFound": "No data found. Please add recipients in this format: Name, Address, Network, Note",
+            "headerColumnsNotFound": "We detected a header row, but couldn't find the 'Name' and 'Address' columns. Please use these column names, or remove the header row.",
+            "failedToParseCsv": "Failed to parse CSV data"
+        }
+    },
+    "payments": {
+        "validation": {
+            "recipientMin": "Recipient should be at least 2 characters",
+            "recipientMax": "Recipient must be less than 128 characters",
+            "amountPositive": "Amount must be greater than 0",
+            "recipientTokenSame": "Recipient and token address cannot be the same"
+        },
+        "newPayment": "New Payment",
+        "reviewYourPayment": "Review Your Payment",
+        "reviewButton": "Review Payment",
+        "reviewButtonDisabled": "Enter amount and address",
+        "comingSoon": "Coming soon",
+        "bulkPayments": "Bulk Payments",
+        "summaryRecipients": "to {count, plural, one {# recipient} other {# recipients}}",
+        "networkFee": "Network Fee",
+        "networkFeeInfo": "Network fee info",
+        "commentPlaceholder": "Add a comment (optional)...",
+        "preparingRoute": "Preparing 1Click transfer route...",
+        "confirmSubmit": "Confirm and Submit Request",
+        "failed1ClickQuote": "Failed to create 1Click transfer quote",
+        "paymentSubmitted": "Request to send payment submitted"
+    },
+    "bulkPayment": {
+        "comingSoonToast": "Bulk payments are coming soon!",
+        "submittingList": "Submitting bulk payment list",
+        "submittingProposal": "Submitting proposal",
+        "proposalSubmitted": "Bulk payment proposal submitted",
+        "submitListFailed": "Failed to submit payment list",
+        "submitFailed": "Failed to submit bulk payment",
+        "upload": {
+            "pleaseUploadCsv": "Please upload a CSV file",
+            "fileSizeLimit": "File size must be less than 1.5 MB",
+            "headerTitle": "Bulk Payment Requests",
+            "headerSubtitle": "Pay multiple recipients with a single proposal.",
+            "creditsUsed": "You've used all your credits",
+            "bulkPaymentsUsed": "You've used all your bulk payments",
+            "upgradeTrial": "Upgrade your plan to get more and keep going",
+            "upgradePaid": "Upgrade your plan for more access, or wait until your limits reset next month.",
+            "selectAsset": "Select Asset",
+            "disableTokenMessage": "This token is not yet support for bulk payments. We are working on it.",
+            "providePaymentData": "Provide Payment Data",
+            "uploadFile": "Upload File",
+            "provideData": "Provide Data",
+            "chooseFile": "Choose File",
+            "orDragDrop": "or drag and drop",
+            "maxFileSize": "max 1 file up to 1.5 MB, CSV file only",
+            "noFilePrompt": "Don't have a file to upload?",
+            "downloadTemplate": "Download a template",
+            "requirements": "Bulk Payment Requirements",
+            "maxTransactions": "Max {max} transactions per import",
+            "singleTokenNetwork": "Single token and network",
+            "limitsUsed": "You've used all your limits",
+            "selectAndProvide": "Select asset and provide payment data",
+            "continueToReview": "Continue to Review",
+            "selectTokenError": "Please select a token",
+            "providePaymentDataError": "Please provide payment data"
+        },
+        "editStep": {
+            "title": "Edit Payment",
+            "saveChanges": "Save Changes"
+        },
+        "parsing": {
+            "rowPrefix": "Row {row}: {message}",
+            "missingRecipientFirstColumn": "Missing recipient address. Please add an address in the first column.",
+            "invalidNearAddress": "The address \"{address}\" is not a valid NEAR account.",
+            "invalidChainAddress": "The address \"{address}\" is not valid {chain} account.",
+            "rowNeedsAmountRecipient": "Each row needs amount and recipient separated by a comma. Example: 100, alice.near",
+            "missingRecipientBeforeComma": "Missing recipient address. Please add an address before the comma.",
+            "missingAmountAfterComma": "Missing amount. Please add a number after the comma. Example: {recipient}, 100",
+            "invalidAmountNumber": "The amount \"{amountStr}\" is not a valid number. Please use only numbers and decimals (e.g., 100 or 100.50).",
+            "amountGreaterThanZero": "The amount must be greater than 0. You entered \"{amountStr}\".",
+            "amountTooLarge": "The amount \"{amountStr}\" is too large. Please use a smaller number.",
+            "invalidAmountFallback": "Invalid amount. Please use only numbers and decimals (e.g., 100 or 100.50).",
+            "pleaseRemoveChars": "Please remove these characters: {chars}. Only numbers, commas, and dots are allowed.",
+            "amountCannotBeEmpty": "Amount cannot be empty.",
+            "tokenMismatch": "You entered \"{provided}\" but {expected} is selected above. Either remove the token symbol or select {suggested} from the dropdown.",
+            "multipleTokenSymbols": "You're using multiple token symbols ({symbols}). Please use only one token type throughout your file, or remove the token symbols and let the selection above determine the token.",
+            "noPaymentDataFound": "No payment data found. Please add your payments in this format: recipient, amount",
+            "exceedsRecipientLimit": "You have {count} recipients, but the limit is {limit} per batch. Please remove {excess, plural, one {# recipient} other {# recipients}} or split into multiple batches.",
+            "noPaymentDataProvided": "No payment data provided. Please enter your payments in this format: recipient, amount",
+            "headerColumnsNotFound": "We detected a header row, but couldn't find the 'Recipient' and 'Amount' columns. Please use these column names, or remove the header row.",
+            "failedToParseCsv": "Failed to parse CSV data",
+            "failedToParsePaste": "Failed to parse paste data",
+            "failedToValidateAccount": "Failed to validate account",
+            "feeEstimationFailed": "Couldn't estimate network fee for this amount. Please verify and try again.",
+            "feeEstimationFailedRow": "Row {row} ({recipient}): Couldn't estimate network fee for this amount. Please verify and try again."
+        },
+        "recipients": "Recipients",
+        "insufficientTokens": "Insufficient tokens. You can submit the request and top up before approval.",
+        "removeRecipient": "Remove Recipient",
+        "removeRecipientConfirm": "Are you sure you want to remove the payment to <strong>{recipient}</strong>? This action cannot be undone.",
+        "remove": "Remove",
+        "edit": "Edit"
+    },
+    "bulkPaymentCredits": {
+        "title": "Bulk Payments",
+        "unlimited": "Unlimited",
+        "creditsPerPeriod": "{amount} / {period}",
+        "oneTimeTrial": "one-time trial",
+        "month": "month",
+        "moreFlexibility": "Looking for more flexibility?",
+        "contactUs": "Contact Us"
+    },
+    "exchange": {
+        "validation": {
+            "amountPositive": "Amount must be greater than 0"
+        },
+        "requestSubmitted": "Exchange request submitted",
+        "heading": "Exchange",
+        "sell": "Sell",
+        "receive": "Receive",
+        "slippageTolerance": "Slippage Tolerance",
+        "disabled": {
+            "differentTokens": "Tokens must be different",
+            "enterAmount": "Enter an amount to exchange"
+        },
+        "review": "Review Exchange",
+        "poweredBy": "Powered by",
+        "info": {
+            "priceDifference": "Price Difference",
+            "priceDifferenceTooltip": "Difference between the quote rate and the current market rate. Positive values indicate a better rate than market.",
+            "estimatedTime": "Estimated Time",
+            "estimatedTimeValue": "{seconds} seconds",
+            "estimatedTimeTooltip": "Approximate time to complete the exchange.",
+            "minimumReceived": "Minimum Received",
+            "minimumReceivedTooltip": "This is the minimum amount you'll receive from this exchange, based on the slippage limit set for the request.",
+            "depositAddress": "Deposit Address",
+            "depositAddressCopied": "Deposit address copied",
+            "quoteExpires": "Quote Expires",
+            "exchangeFee": "Exchange Fee",
+            "exchangeFeeTooltip": "The 0.70% fee incurred here covers the NEAR Intents protocol costs to facilitate your trade and the Trezu widget fee. This amount is automatically calculated into your quoted rate."
+        },
+        "approveWithin24h": "Please approve this request within 24 hours, otherwise it will expire. We recommend confirming as soon as possible.",
+        "confirmSubmit": "Confirm and Submit Request",
+        "refreshingIn": "Exchange rate will refresh in {seconds}s"
+    },
+    "vesting": {
+        "validation": {
+            "amountMin": "Amount must be greater than or equal to 3.5",
+            "startBeforeEnd": "Start date must be before end date",
+            "cliffBetween": "Cliff date must be between"
+        },
+        "stepTitles": {
+            "details": "Details",
+            "settings": "Settings",
+            "review": "Review"
+        },
+        "proposalTitle": "Create vesting schedule for {address}",
+        "scheduleSubmitted": "Request to create vesting schedule submitted",
+        "heading": "New Vesting Schedule",
+        "amount": "Amount",
+        "startDate": "Start Date",
+        "endDate": "End Date",
+        "noteOptional": "Note (optional)",
+        "continue": "Continue",
+        "advancedSettings": "Advanced Settings",
+        "allowCancellation": "Allow Cancellation",
+        "allowCancellationDescription": "Allows the NEAR Foundation to cancel the lockup at any time. Non-cancellable lockups are not compatible with cliff dates.",
+        "cliffDate": "Cliff Date",
+        "allowEarn": "Allow Earn",
+        "allowEarnDescription": "Allows the owner of the lockup to stake the full amount of tokens in the lockup (even before the cliff date).",
+        "commentPlaceholder": "Add a comment for this vesting schedule (optional)...",
+        "reviewRequest": "Review Request",
+        "reviewHeading": "Review Your Vesting Schedule",
+        "confirmSubmit": "Confirm and Submit Request",
+        "review": {
+            "recipient": "Recipient",
+            "startDate": "Start Date",
+            "endDate": "End Date",
+            "cliffDate": "Cliff Date",
+            "cancelable": "Cancelable",
+            "allowEarn": "Allow Earn",
+            "na": "N/A"
+        }
+    },
+    "earn": {
+        "placeholder": "Explore earning opportunities and staking rewards."
+    },
+    "createTreasury": {
+        "validation": {
+            "nameMin": "Treasury name should be at least 2 characters",
+            "nameMax": "Treasury name must be less than 64 characters",
+            "accountMin": "Account name should be at least 2 characters",
+            "accountMax": "Account name must be less than 64 characters",
+            "accountChars": "Account name can contain only Latin letters, numbers, and hyphens",
+            "accountTaken": "This account name is already taken"
+        },
+        "votingNote": "You need more members to modify voting settings. Add another member to configure voting.",
+        "minimumVoteNote": "Minimum one approval vote required.",
+        "heading": "Create a Treasury",
+        "addMembers": "Add Members",
+        "addMembersInfo": "You can add or update members now and edit this later at any time.",
+        "treasuryName": "Treasury Name",
+        "treasuryNamePlaceholder": "My Treasury",
+        "accountName": "Account Name",
+        "accountNameInfo": "This is your account's unique name. It will be used in your Treasury URL and shown in transactions to identify who sent the payment. Choose a short, recognizable name for your account.",
+        "accountPlaceholder": "my-treasury",
+        "continue": "Continue",
+        "votingThreshold": "Voting Threshold",
+        "thresholdDescription": "Set how many votes are required to approve requests:",
+        "financial": "Financial",
+        "financialDescription": "Approving payment & exchange requests.",
+        "governance": "Governance",
+        "governanceDescription": "Approving settings, members, and voting configuration.",
+        "confidential": "Confidential",
+        "public": "Public",
+        "anyone": "Anyone",
+        "teamOnly": "Team Only",
+        "soon": "Soon",
+        "publicDescription": "All balances, activities, and transactions are visible to anyone on the blockchain. This option is best for transparent organizations and public DAOs.",
+        "balanceTransactions": "Balance, Transactions",
+        "membersVoting": "Members, Voting",
+        "allFeatures": "All features available",
+        "confidentialDescription": "All balances, activities, and transfers private on the blockchain. Only your team can view this information. Best for private companies, family offices, or teams that want financial privacy.",
+        "recentTransactionsExport": "Recent Transactions Export",
+        "bulkPayment": "Bulk Payment",
+        "treasuryType": "Treasury Type",
+        "treasuryTypeWarning": "You can select only one time per tresury and you cannot change it later.",
+        "select": "Select",
+        "visibleOnChain": "Visible on chain",
+        "featuresAvailable": "Features available",
+        "mostFeaturesSupported": "Most features supported",
+        "reviewTreasury": "Review Treasury",
+        "membersLabel": "Members",
+        "financialThreshold": "Financial Threshold",
+        "governanceThreshold": "Governance Threshold",
+        "noDeploymentFee": "🎉 No deployment fee",
+        "noDeploymentFeeDescription": "To support new projects, TREZU covers all one-time deployment and network storage fees.",
+        "createButton": "Create Treasury",
+        "connectWalletCreate": "Connect Wallet To Create Treasury",
+        "unexpectedError": "An unexpected error occurred",
+        "creationFailed": "Failed to create treasury. Please try again.",
+        "stepTitles": {
+            "aboutYou": "About You",
+            "details": "Details",
+            "members": "Members",
+            "treasuryType": "Treasury Type",
+            "review": "Review"
+        },
+        "steps": {
+            "creatingNear": "Creating your treasury on NEAR",
+            "registeringKey": "Registering public key",
+            "settingUpConfidential": "Setting up confidential transactions",
+            "configuringMembers": "Configuring treasury members",
+            "finalizingSetup": "Finalizing setup"
+        }
+    },
+    "manageTreasuries": {
+        "warningOne": "At least one treasury should remain available",
+        "warningOnePeriod": "At least one treasury should remain available.",
+        "activeHeading": "Active Treasuries",
+        "activeDescription": "Treasuries currently visible in your accounts list.",
+        "activeEmpty": "No active treasuries.",
+        "hiddenHeading": "Hidden Treasuries",
+        "hiddenDescription": "Treasuries hidden from your accounts list.",
+        "removeGuestTitle": "Remove Guest Treasury",
+        "removeDialog": "You are about to remove <bold>{name}</bold>. Once confirmed, this action cannot be undone.",
+        "tooltips": {
+            "removeFromList": "Remove from your list",
+            "viewTreasury": "View treasury",
+            "hideFromList": "Hide from your list",
+            "showInList": "Show in your list"
+        }
+    },
+    "wallet": {
+        "proposal": {
+            "transfer": "Proposal from external dApp: Transfer NEAR to {receiverId}",
+            "functionCall": "Proposal from external dApp: {methods} on {receiverId}",
+            "unsupportedAction": "Unsupported action type \"{type}\". Only Transfer and FunctionCall actions can be converted to Trezu proposals."
+        },
+        "loading": "Loading...",
+        "connectPrompt": "Connect your NEAR wallet to continue. You will then select a treasury to act on behalf of.",
+        "connectWallet": "Connect Wallet",
+        "cancel": "Cancel",
+        "connectedAs": "Connected as <strong>{account}</strong>",
+        "loadingTreasuries": "Loading treasuries...",
+        "selectSignIn": "Select a treasury to sign in as:",
+        "selectSignTx": "Select a treasury to create a proposal on:",
+        "notMember": "You are not a member of any treasuries.",
+        "actingAs": "Acting as",
+        "signedBy": "Signed by {account}",
+        "createsNProposals": "This will create {count, plural, one {a Trezu proposal} other {# Trezu proposals}} for:",
+        "proposalDescriptionLabel": "Proposal description (optional)",
+        "proposalDescriptionPlaceholder": "Describe this proposal...",
+        "createProposal": "Create Proposal",
+        "creatingProposal": "Creating proposal...",
+        "confirmInWallet": "Please confirm in your wallet",
+        "proposalSubmitted": "Proposal Submitted",
+        "shareProposal": "Your proposal has been created. Share the link below with the treasury members to vote.",
+        "proposalLink": "{daoId} — Proposal #{id}",
+        "checking": "Checking...",
+        "proposalApprovedProceed": "The Proposal is Approved. Proceed",
+        "signedInSuccess": "Signed in successfully",
+        "proposalCreatedSuccess": "Proposal created successfully",
+        "closeWindow": "You can close this window.",
+        "errorGeneric": "An error occurred",
+        "tryAgain": "Try again",
+        "errors": {
+            "parseTx": "Failed to parse the transaction request. Please try again.",
+            "fetchTreasuries": "Failed to fetch your treasuries. Please try again.",
+            "connectFailed": "Failed to connect wallet",
+            "createProposalFailed": "Failed to create proposal",
+            "stillPending": "Proposal is still pending approval. Please wait for the treasury members to vote.",
+            "wasStatus": "Proposal #{id} was {status}",
+            "awaitIndex": "Proposal is approved but the execution transaction is not yet indexed. Please try again in a moment.",
+            "checkStatusFailed": "Failed to check proposal status",
+            "userCancelled": "User cancelled",
+            "proposalWasStatus": "Proposal was {status}"
+        }
+    },
+    "telegram": {
+        "tagPill": "Telegram",
+        "invalidLinkTitle": "Invalid link",
+        "invalidLinkDescription": "This Telegram connection link is missing a token. Re-click Connect Treasury in Telegram to generate a fresh link.",
+        "successTitle": "Connected successfully",
+        "successDescription": "Treasuries were linked to this Telegram chat.",
+        "successToast": "Treasuries connected successfully",
+        "goToApp": "Go to App",
+        "linkExpiredTitle": "Link expired",
+        "linkExpiredDescription": "This link has expired or has already been used. In Telegram, type the command below to restart the connect flow.",
+        "commandCopied": "Command copied",
+        "copy": "Copy",
+        "unableToLoadTitle": "Unable to load chat",
+        "unableToLoadDescription": "The chat details could not be loaded right now. Please retry from Telegram.",
+        "signInTitle": "Sign in to continue",
+        "signInDescription": "Connect your NEAR wallet first, then choose which treasuries to link to this Telegram chat.",
+        "connectWallet": "Connect Wallet",
+        "selectTreasuriesTitle": "Select Treasuries",
+        "selectTreasuriesDescription": "Choose which treasuries to connect to this Telegram chat.",
+        "telegramChat": "Telegram chat",
+        "chatIdFallback": "Chat #{id}",
+        "failedToConnect": "Failed to connect treasuries. Please try again.",
+        "relinking": "{count, plural, one {# selected treasury is linked to another Telegram chat. Connecting will re-connect it and change its chat ID link to this chat.} other {# selected treasuries are linked to other Telegram chats. Connecting will re-connect them and change their chat ID links to this chat.}}",
+        "alreadyConnected": "Already connected to this chat",
+        "connectedToAnother": "Connected to another chat",
+        "notMember": "You are not a policy member of any treasuries.",
+        "connecting": "Connecting…",
+        "connect": "Connect"
+    },
+    "systemStatus": {
+        "underMaintenance": "Under Maintenance",
+        "maintenanceMessage": "We're currently performing maintenance. Some features may be temporarily unavailable. Please check back soon."
+    },
+    "creditsQuota": {
+        "available": "{count} Available",
+        "used": "{count} Used",
+        "resetOn": "Limit will reset on {date}"
+    },
+    "approvalInfo": {
+        "infoText": "Votes required to approve payment-related requests. Editable in Voting settings.",
+        "thresholdPill": "Threshold {required} out of {total}",
+        "alertBody": "This payment will require approval from <bold>{required}</bold> treasury members before execution."
+    },
+    "guestBadge": {
+        "title": "Guest",
+        "tooltip": "You are a guest of this treasury. You can only view the data."
+    },
+    "exportButton": {
+        "confidentialTooltip": "Export is not available in confidential mode yet. This feature is coming soon!"
+    },
+    "sponsoredActions": {
+        "titleExhausted": "Sponsored Actions Used",
+        "titleAlmost": "Your team is almost out of sponsored actions",
+        "closeNotice": "Close notice",
+        "teamUsage": "Team usage: {total} actions per month",
+        "available": "{count} Available",
+        "used": "{count} Used",
+        "exhaustedBody": "Your team has reached the monthly sponsored actions. You can continue after {date} or contact us",
+        "almostBody": "TREZU currently sponsors storage costs for all team actions, such as creating requests and voting on them. Your team is close to reaching the monthly sponsored limit.",
+        "contactUs": "Contact Us",
+        "nextMonthlyReset": "your next monthly reset",
+        "sidebarBody": "Your team has reached the monthly sponsored actions. You can continue after {date} or ⬇️"
+    },
+    "acceptTerms": {
+        "title": "Accept Terms to Continue",
+        "privacyTitle": "Your Privacy at Trezu",
+        "privacyBody": "Trezu is a non-custodial interface. We prioritize your privacy while ensuring the platform stays secure and functional.",
+        "minimalTitle": "Minimal Data",
+        "minimalBody": "We collect limited information, such as public wallet addresses, IP addresses, and usage analytics, to operate and improve the Interface.",
+        "noCustodyTitle": "No Custody",
+        "noCustodyBody": "We never have access to your private keys, recovery phrases, or digital assets.",
+        "publicTitle": "Public Records",
+        "publicBody": "Remember that all blockchain transactions are inherently public and are not controlled by us.",
+        "responsibilityTitle": "Your Responsibility",
+        "responsibilityBody": "You are solely responsible for monitoring your wallet activity and securing your credentials.",
+        "futureTitle": "Future Updates",
+        "futureBody": "If you opt-in to future notifications (like email or Telegram), we will only use that data to keep you informed.",
+        "agreement": "I have read and agree to the <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>",
+        "accepting": "Accepting...",
+        "continue": "Continue"
+    },
+    "confidentialBanner": {
+        "label": "Confidential",
+        "description": "Balances, activity, and transfers are visible only to your team — not the public blockchain."
+    },
+    "supportCenter": {
+        "title": "Support Center",
+        "resources": "Resources",
+        "support": "Support",
+        "websiteTitle": "Trezu Website",
+        "websiteDescription": "Learn more about Trezu and read our blog.",
+        "demoTitle": "Explore the Trezu Demo",
+        "demoDescription": "See a live demo account in action.",
+        "videoTitle": "Watch the Demo",
+        "videoDescription": "Watch a short video showing how Trezu works.",
+        "xTitle": "Follow Us on X",
+        "xDescription": "Stay updated with our latest releases and insights.",
+        "statsTitle": "Stats",
+        "statsDescription": "View total assets under management across all sputnik DAOs.",
+        "docsTitle": "Documentation",
+        "docsDescription": "Learn about all features in the docs.",
+        "productSupportTitle": "Product Support",
+        "productSupportDescription": "Contact our support team for help."
+    },
+    "progressModal": {
+        "titleCreating": "Creating Treasury...",
+        "titleDone": "Treasury Created",
+        "titleFailed": "Treasury Creation Failed",
+        "viewTreasury": "View Treasury"
+    },
+    "memberValidation": {
+        "noManagePermission": "You don't have permission to manage members",
+        "pendingRequest": "You can't manage members while there is an active request",
+        "rolesAnd": "{first} and {second}",
+        "rolesMany": "{list}, and {last}",
+        "cannotRemoveMember": "Cannot remove this member. They are the only person assigned to the {roles} {count, plural, one {role} other {roles}}.",
+        "cannotRemoveMemberGov": "Cannot remove this member. They are the only person assigned to the {roles} {count, plural, one {role, which is} other {roles, which are}} required to manage team members and configure voting.",
+        "cannotBulkRemove": "Cannot remove these members. This would leave the {roles} {count, plural, one {role} other {roles}} empty.",
+        "cannotBulkRemoveGov": "Cannot remove these members. This would leave the {roles} {count, plural, one {role, which is} other {roles, which are}} empty, required to manage team members and configure voting.",
+        "cannotRemoveRole": "You can't remove the {role} role from this member. They are the only person assigned to this role.",
+        "cannotRemoveRoleGov": "You can't remove the {role} role from this member. They are the only {role} member, and without this role you won't be able to manage team members or configure voting."
+    },
+    "roleSelector": {
+        "setRole": "Set Role",
+        "allRoles": "All Roles",
+        "roles": {
+            "governance": {
+                "title": "Governance",
+                "description": "Governance can create and vote on team-related treasury settings, including members, permissions, and treasury appearance."
+            },
+            "requestor": {
+                "title": "Requestor",
+                "description": "Requestor can create payment-related transaction requests, without voting or approval rights."
+            },
+            "financial": {
+                "title": "Financial",
+                "description": "Financial can vote on payment-related transaction requests but cannot create them."
+            }
+        }
+    },
+    "memberInput": {
+        "creatorYou": "Creator (you)",
+        "memberAddress": "Member Address",
+        "addNewMember": "Add New Member",
+        "validation": {
+            "rolesRequired": "At least one role is required",
+            "duplicateAddress": "Address is already a member"
+        }
+    },
+    "recipientInput": {
+        "title": "To",
+        "placeholder": "Recipient address"
+    },
+    "accountInput": {
+        "failedValidation": "Failed to validate address",
+        "invalidNearFormat": "Invalid NEAR account format",
+        "invalidChainAddress": "Please enter a valid {chain} address.",
+        "validating": "Validating address...",
+        "validAddress": "Valid address",
+        "placeholderWithExample": "Recipient address (e.g.: {example})",
+        "placeholderNoExample": "Recipient address",
+        "nearExample": "alice.near, 0x..., or 64-char hex",
+        "near": {
+            "required": "Address is required",
+            "length": "Address must be between 2 and 64 characters",
+            "missingTld": "Named accounts must end with .near, .aurora, or .tg",
+            "invalidChars": "Address can only contain lowercase letters, digits, and separators (., -, _)",
+            "accountMissing": "Account does not exist on NEAR blockchain",
+            "verifyFailed": "Failed to verify account existence"
+        }
+    },
+    "csvUpload": {
+        "uploadFile": "Upload File",
+        "provideData": "Provide Data",
+        "chooseFile": "Choose File",
+        "orDragDrop": "or drag and drop",
+        "maxFileSize": "max 1 file up to {maxSize} MB, CSV file only",
+        "noFilePrompt": "Don't have a file to upload?",
+        "downloadTemplate": "Download a template"
+    },
+    "tokenSelect": {
+        "selectToken": "Select token",
+        "searchPlaceholder": "Search tokens...",
+        "noTokensFound": "No tokens found"
+    },
+    "filterOperations": {
+        "is": "Is",
+        "isNot": "Is Not",
+        "before": "Before",
+        "after": "After",
+        "between": "Between",
+        "equal": "Equal",
+        "moreThan": "More Than",
+        "lessThan": "Less Than",
+        "contains": "Contains"
+    },
+    "copyButton": {
+        "copied": "Copied to clipboard",
+        "failed": "Failed to copy"
+    },
+    "recipientForm": {
+        "validation": {
+            "nameRequired": "Name is required",
+            "nameMax": "Recipient must be less than {max} characters",
+            "addressRequired": "Address is required",
+            "networksRequired": "Select at least one network"
+        }
+    },
+    "paymentForm": {
+        "validation": {
+            "recipientMin": "Recipient should be at least 2 characters",
+            "recipientMax": "Recipient must be less than 128 characters",
+            "amountGreaterThanZero": "Amount must be greater than 0",
+            "recipientSameAsToken": "Recipient and token address cannot be the same",
+            "selectToken": "Please select a token",
+            "recipientMax64": "Recipient must be less than 64 characters",
+            "amountMinLockup": "Amount must be greater than or equal to 3.5",
+            "startDateRequired": "Start date is required",
+            "endDateRequired": "End date is required",
+            "cliffDateRequired": "Cliff date is required",
+            "startBeforeEnd": "Start date must be before end date",
+            "cliffBetween": "Cliff date must be between {start} and {end}"
+        }
+    },
+    "exportToasts": {
+        "downloadFailed": "Failed to download export",
+        "invalidDateRange": "Invalid date range",
+        "invalidDateRangeDescription": "Please select a valid date range for export.",
+        "exportSuccess": "Export successful!",
+        "exportSuccessDescription": "Your {type} file has been downloaded. Check your export history for details.",
+        "exportFailed": "Export failed",
+        "exportFailedFallback": "Failed to export data. Please try again.",
+        "noDownloadPermission": "You don't have permission to download the file.",
+        "noExportPermission": "You don't have permission to export",
+        "quotaUsed": "You've used all your quota",
+        "exporting": "Exporting...",
+        "export": "Export",
+        "columnSubmissionTime": "Submission Time",
+        "columnDateRange": "Date Range",
+        "columnGeneratedBy": "Generated By",
+        "columnStatus": "Status",
+        "typeAll": "All Types",
+        "typeSent": "Sent",
+        "typeReceived": "Received",
+        "typeStakingRewards": "Staking Rewards",
+        "allAssets": "All Assets",
+        "upgradeTrial": "Upgrade your plan to get more and keep going",
+        "upgradePaid": "Upgrade your plan for more access, or wait until your limits reset next month.",
+        "selectDateRange": "Select date range",
+        "noExportsTitle": "No exports yet",
+        "noExportsDescription": "Your exported files from the last month will appear here once they're generated.",
+        "quotaTitle": "Export Quota",
+        "unlimited": "Unlimited",
+        "creditsPerMonth": "{total} / month",
+        "requirementsTitle": "Export Requirements",
+        "exportFromPeriod": "You can export data from the {period}.",
+        "availableFor48Hours": "Exported files are available for download for 48 hours.",
+        "moreFlexibility": "Looking for more flexibility?",
+        "contactUs": "Contact Us",
+        "last1Year": "Last 1 year",
+        "last2Years": "Last 2 years",
+        "invalidEmail": "Please enter a valid email address"
+    },
+    "paymentFormSection": {
+        "selectRecipient": "Select Recipient",
+        "searchByNameOrAddress": "Search by name or address",
+        "privateNetworkAlert": "This will send funds to an account on the near.com private network — not to an external wallet.",
+        "send": "Send",
+        "to": "To"
+    },
+    "addressBookTable": {
+        "emptyTitle": "No recipients yet",
+        "emptyDescription": "Add recipients to this address book for faster payouts.",
+        "selectAll": "Select all recipients",
+        "selectEntry": "Select {name}",
+        "recipient": "Recipient",
+        "network": "Network",
+        "addedBy": "Added By",
+        "note": "Note",
+        "added": "Added",
+        "remove": "Remove",
+        "send": "Send"
+    },
+    "publicDashboard": {
+        "updatesDaily": "Updates daily",
+        "noDataTitle": "No data yet",
+        "noDataDescription": "Stats will appear after the first daily snapshot is computed.",
+        "assetsSecured": "Assets Secured With Sputnik DAO Contract",
+        "acrossDaos": "Across <bold>{count, plural, one {# DAO} other {# DAOs}}</bold>",
+        "updatedOn": "Updated {date}",
+        "topAssets": "Top 20 Assets",
+        "noAssetsTitle": "No assets yet",
+        "noAssetsDescription": "Token data will appear once the daily snapshot is computed.",
+        "tableToken": "Token",
+        "tableTotalValue": "Total Value"
+    },
+    "telegramConnectInstructions": {
+        "title": "Connect Telegram",
+        "subtitle": "Get notifications about proposals and activity in your Telegram.",
+        "step3": "Press Start and follow instructions.",
+        "success": "You're all set!",
+        "copyBotTooltip": "Copy bot handle",
+        "botCopiedToast": "Bot handle copied",
+        "openInTelegram": "Open {bot} in Telegram"
+    },
+    "transactionHashCell": {
+        "copyHash": "Copy hash",
+        "hashCopied": "Hash copied",
+        "openInExplorer": "Open in explorer"
+    },
+    "treasurySelector": {
+        "select": "Select treasury",
+        "connectWalletTooltip": "Connect wallet to view treasuries",
+        "manageTreasuries": "Manage Treasuries",
+        "createTreasury": "Create Treasury",
+        "memberOf": "Member Of",
+        "guestTreasuries": "Guest Treasuries"
+    },
+    "selectModal": {
+        "searchByName": "Search by name",
+        "noResults": "No results found"
+    },
+    "selectList": {
+        "noResults": "No results found"
+    },
+    "datePicker": {
+        "pickDate": "Pick a date",
+        "timezone": "Timezone"
+    },
+    "datePresets": {
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "last3Days": "Last 3 days",
+        "last7Days": "Last 7 days",
+        "last14Days": "Last 14 days",
+        "lastMonth": "Last month",
+        "last3Months": "Last 3 months",
+        "last6Months": "Last 6 months"
+    },
+    "input": {
+        "openSearch": "Open search"
+    },
+    "pagination": {
+        "previous": "Previous",
+        "next": "Next"
+    },
+    "confidentialState": {
+        "title": "Confidential",
+        "description": "Only treasury members have access."
+    },
+    "exchangeRate": {
+        "rate": "Rate",
+        "clickToReverse": "Click to reverse rate"
+    },
+    "exchangeSettings": {
+        "title": "Exchange Settings",
+        "slippageTolerance": "Slippage Tolerance",
+        "custom": "Custom",
+        "customPlaceholder": "ex: 2%",
+        "slippageRange": "Slippage must be between 0.01% and 100%",
+        "enterSlippage": "Please enter a slippage tolerance",
+        "slippageHelp": "If the price changes by more than this percentage, the transaction will be cancelled to protect your funds.",
+        "save": "Save"
+    },
+    "assetsPage": {
+        "title": "Assets",
+        "noAssetsTitle": "No assets yet",
+        "noAssetsDescription": "To get started, add assets to your Treasury by making a deposit."
+    },
+    "newBadge": {
+        "label": "New"
+    },
+    "numberBadge": {
+        "pendingRequests": "{count, plural, one {# pending request} other {# pending requests}}"
+    },
+    "balanceWithGraph": {
+        "allTokens": "All Tokens",
+        "deposit": "Deposit",
+        "send": "Send",
+        "exchange": "Exchange",
+        "chartNow": "Now",
+        "totalBalance": "Total Balance",
+        "excludedTokens": "Excluded tokens:",
+        "noPriceHistory": "No price history. Select a token to see its balance changes.",
+        "bucketAvailable": "Available",
+        "bucketLocked": "Locked",
+        "bucketEarning": "Earning",
+        "period": {
+            "1W": "1W",
+            "1M": "1M",
+            "3M": "3M",
+            "1Y": "1Y"
+        }
+    },
+    "changePolicyExpanded": {
+        "proposalBond": "Proposal Bond",
+        "proposalPeriod": "Proposal Period",
+        "bountyBond": "Bounty Bond",
+        "bountyForgivenessPeriod": "Bounty Forgiveness Period",
+        "votesCount": "{count} Votes",
+        "weightKind": "Weight Kind",
+        "quorum": "Quorum",
+        "threshold": "Threshold",
+        "defaultThreshold": "Default Threshold",
+        "roleThreshold": "{role} Threshold",
+        "member": "Member",
+        "members": "Members",
+        "permissions": "Permissions",
+        "oldPermissions": "Old Permissions",
+        "newPermissions": "New Permissions",
+        "category": "Category",
+        "transactionDetails": "Transaction Details",
+        "addNewMember": "Add New Member",
+        "addNewMembers": "Add New Members",
+        "removeMember": "Remove Member",
+        "removeMembers": "Remove Members",
+        "updateMemberPermissions": "Update Member Permissions",
+        "updateMembersPermissions": "Update Members Permissions",
+        "memberIndex": "Member {index}",
+        "membersCount": "{count} members",
+        "collapseAll": "Collapse all",
+        "expandAll": "Expand all",
+        "loadingHistorical": "Loading historical policy...",
+        "unableToDiff": "Unable to compute differences for this proposal.",
+        "noChangesCurrent": "No changes detected - the proposed policy is identical to the current policy.",
+        "noChangesHistorical": "No changes detected - the proposed policy is identical to the historical policy."
+    },
+    "balanceChart": {
+        "usdValue": "USD Value",
+        "tokenBalance": "Token Balance",
+        "emptyTitle": "Nothing to show yet",
+        "emptyDescription": "Add assets to start tracking your portfolio."
+    },
+    "user": {
+        "saveToAddressBook": "Save to Address book",
+        "walletCopiedToast": "Wallet address copied to clipboard",
+        "copyWalletAddress": "Copy Wallet Address"
+    },
+    "infoDisplay": {
+        "viewLess": "View Less",
+        "viewAllDetails": "View All Details"
+    },
+    "amountSummary": {
+        "defaultTitle": "You are sending a total of"
+    },
+    "residency": {
+        "vestedToken": "Vested Token",
+        "staked": "Staked",
+        "fungibleToken": "Fungible Token",
+        "intentsToken": "Intents Token",
+        "nativeToken": "Native Token"
+    },
+    "exchangeErrors": {
+        "noRoute": "No exchange found. Try a smaller amount or different token.",
+        "amountTooLow": "Amount too low for swap. Cross-chain swaps require a higher minimum to cover network fees.",
+        "insufficientBalance": "Insufficient balance for this swap.",
+        "networkError": "Network error. Please check your connection and try again.",
+        "fetchFailed": "Failed to fetch quote"
+    },
+    "tokenSelectDialog": {
+        "selectToken": "Select token",
+        "selectAsset": "Select Asset",
+        "selectNetworkFor": "Select network for {asset}",
+        "searchByName": "Search by name",
+        "noTokensWithBalance": "No tokens with balance found",
+        "noTokensFound": "No tokens found",
+        "yourAssets": "Your Assets",
+        "otherAssets": "Other Assets",
+        "networksWithAssets": "Networks with assets",
+        "supportedNetworks": "Supported Networks"
+    },
+    "intentsQuote": {
+        "initializing": "Quote service is still initializing. Please try again.",
+        "noRoute": "Could not prepare a payment route right now. Please retry."
+    },
+    "pageTours": {
+        "paymentsBulk": "Bulk creation is here! Create several requests in just a few steps.",
+        "paymentsPending": "View requests that are pending approval here.",
+        "exchangeSettings": "Here you can set how much price change you're willing to accept.",
+        "membersPending": "Click to see active requests waiting for approval.",
+        "guestSaveIntro": "You are a guest of this treasury. You can only view the data.",
+        "guestSaveAction": "You can save this guest treasury to your treasuries list.",
+        "newFeatureRich": "New! 🎉 Save frequently used addresses for faster, error-free payouts.<br></br> Your contacts stay private and visible only to your team.",
+        "newFeatureCta": "Try It"
+    },
+    "statusDate": {
+        "expires": "Expires",
+        "created": "Created",
+        "expired": "Expired",
+        "removed": "Removed"
+    },
+    "amount": {
+        "network": "Network: {network}"
+    },
+    "activityLabels": {
+        "exchangePending": "Exchange Pending",
+        "exchangeRequest": "Exchange Request",
+        "exchangeFulfillment": "Exchange Fulfillment",
+        "stakingRewards": "Staking Rewards",
+        "proposalAction": "Proposal Action",
+        "deposit": "Deposit {symbol}",
+        "paymentSent": "Payment Sent",
+        "transaction": "Transaction",
+        "fallbackToken": "Token",
+        "viaIntents": "via NEAR Intents",
+        "from": "from {account}",
+        "to": "to {account}",
+        "viewAll": "View all your transaction history",
+        "sentReceived": "Sent and received transactions ({duration})",
+        "unlimitedHistory": "unlimited history",
+        "oneYear": "1 year",
+        "yearsCount": "{count} years",
+        "monthsCount": "{count} months",
+        "lastDuration": "last {duration}"
+    },
+    "nearStore": {
+        "connectAndAcceptTerms": "Please connect wallet and accept terms to continue.",
+        "transactionNotApproved": "Transaction wasn't approved in your wallet.",
+        "failedSubmitVote": "Failed to submit vote",
+        "failedSubmitVotes": "Failed to submit votes",
+        "viewRequest": "View Request",
+        "proposalRemoved": "Your proposal has been removed",
+        "voteSubmitted": "Your vote has been submitted",
+        "votesSubmitted": "Your votes have been submitted"
+    },
+    "tokenInput": {
+        "max": "MAX",
+        "insufficientTokens": "Insufficient tokens. You can submit the request and top up before approval.",
+        "balance": "Balance: {amount} {symbol}"
+    },
+    "createRequestButton": {
+        "idle": "Create Request",
+        "noPermission": "You don't have permission to create a request"
+    },
+    "address": {
+        "copied": "Address copied to clipboard"
+    },
+    "memberAvatars": {
+        "membersWhoCanVote": "Members who can vote",
+        "moreMembers": "+{count, plural, one {# member} other {# members}}"
+    },
+    "accountIdInput": {
+        "minLength": "Account ID should be at least 2 characters",
+        "maxLength": "Account ID must be less than 64 characters",
+        "charset": "Account ID must contain only lowercase letters, digits, dots, hyphens, and underscores, with no leading or trailing separators",
+        "doesNotExist": "Account ID doesn't exist"
+    },
+    "addressBookMutations": {
+        "addedToast": "{count, plural, one {Recipient added} other {# recipients added}}",
+        "addedSingleToast": "Recipient added",
+        "addFailedToast": "Failed to add recipients",
+        "addSingleFailedToast": "Failed to add recipient",
+        "removedToast": "{count, plural, one {Recipient removed} other {# recipients removed}}",
+        "removeFailedToast": "Failed to remove recipients",
+        "exportFailedToast": "Failed to export recipients"
+    },
+    "treasuryMutations": {
+        "savedToast": "Treasury saved to your list",
+        "saveFailedToast": "Failed to save treasury",
+        "hiddenToast": "Treasury hidden from list",
+        "hideFailedToast": "Failed to hide treasury",
+        "unhiddenToast": "Treasury is visible again",
+        "unhideFailedToast": "Failed to unhide treasury",
+        "removedToast": "Treasury removed from saved list",
+        "removeFailedToast": "Failed to remove treasury from saved list"
+    },
+    "telegramSettings": {
+        "title": "Telegram",
+        "connectedTo": "Connected to {chat}",
+        "chatNumber": "Chat #{id}",
+        "fallbackChat": "a Telegram chat",
+        "disconnect": "Disconnect",
+        "connect": "Connect",
+        "connectDescription": "Link your treasury to a Telegram chat to receive notifications.",
+        "noTreasuryDescription": "Link your treasuries to a Telegram chat.",
+        "openSettingsHint": "Open settings from a treasury to manage integrations.",
+        "disconnectedToast": "Telegram disconnected for this treasury",
+        "disconnectFailedToast": "Could not disconnect Telegram. Try again."
+    },
+    "assetsTable": {
+        "noAssetsFound": "No assets found.",
+        "assetDetails": "Asset Details",
+        "coinPrice": "Coin Price",
+        "weight": "Weight",
+        "balance": "Balance",
+        "lockedBalance": "Locked Balance",
+        "totalBalance": "Total Balance",
+        "source": "Source",
+        "balanceByInvestors": "Balance by {count, plural, one {Investor} other {Investors}}",
+        "investors": "{count, plural, one {Investor} other {Investors}}",
+        "poolBreakdown": "Pool Breakdown",
+        "unlockedToken": "Unlocked Token",
+        "lockupStakingPool": "Lockup staking pool",
+        "exchange": "Exchange",
+        "send": "Send",
+        "details": "Details",
+        "columnToken": "Token",
+        "columnLocked": "Locked",
+        "columnUnlocked": "Unlocked",
+        "columnTotalAllocated": "Total Allocated",
+        "columnAvailableToWithdraw": "Available To Withdraw",
+        "viewAvailable": "Available",
+        "viewLocked": "Locked",
+        "viewEarning": "Earning",
+        "fullAllocatedBalance": "Your full allocated balance",
+        "partAllocatedBalance": "Part of your allocated balance",
+        "currentlyEarning": "({amount} {symbol}) is currently earning.",
+        "willAppearHere": " It will appear here once you stop earning.",
+        "seeInEarningTab": "See in Earning tab",
+        "seeInEarning": "See in Earning"
+    },
+    "earningDetails": {
+        "title": "Earning Details",
+        "totalStaked": "Total Staked",
+        "earningOverview": "Earning Overview",
+        "poolBreakdown": "Pool Breakdown ({count, plural, one {# pool} other {# pools}})",
+        "almostReady": "Earn is almost ready!",
+        "finalizingFeature": "We're finalizing this feature<br></br>so you can start earning tokens shortly.",
+        "comingSoon": "Coming soon",
+        "goToEarn": "Go To Earn",
+        "readyToWithdraw": "Ready to withdraw",
+        "unstaking": "Unstaking",
+        "overview": {
+            "staked": "Staked",
+            "stakedInfo": "Tokens currently delegated to validators earning rewards.",
+            "pendingRelease": "Pending Release",
+            "pendingReleaseInfo": "Tokens that have been unstaked but are still in the unbonding period (typically 2-3 days).",
+            "availableForWithdraw": "Available for Withdraw",
+            "availableForWithdrawInfo": "Unstaked tokens that have completed the unbonding period and can be withdrawn."
+        }
+    },
+    "lockupDetails": {
+        "title": "Lockup Details",
+        "balance": "Balance",
+        "reservedForStorage": "Reserved For Storage",
+        "reservedForStorageInfo": "NEAR reserved by the lockup account to pay storage costs.",
+        "tokenBreakdown": "Token Breakdown",
+        "allocatedAmount": "Allocated Amount",
+        "earned": "Earned",
+        "progress": "Progress",
+        "unlocked": "Unlocked",
+        "locked": "Locked",
+        "schedule": "Schedule",
+        "startDate": "Start Date",
+        "endDate": "End Date",
+        "rounds": "Rounds",
+        "releaseInterval": "Release Interval",
+        "nextUnlockDate": "Next Unlock Date",
+        "allEarning": "All {amount} {symbol} from your lockup is earning right now.",
+        "partEarning": "Part of your lockup ({amount} {symbol}) is earning right now.",
+        "stopEarningFirst": "To use unlocked tokens, stop earning first and withdraw them.",
+        "howGrantWorks": "How your grant works",
+        "ftStep1": "You receive a grant for a specific period of time. Instead of getting the full amount at once, the assets become available in parts over time.",
+        "ftStep2": "When the date for the next release arrives, that portion of tokens is automatically unlocked and moved to your treasury balance.",
+        "ftStep3": "Once they appear in your balance, you can immediately use them for payments, transfers, or other transactions.",
+        "nearStep1": "You receive a grant for a set period of time with a defined start and end date.",
+        "nearStep2": "As tokens unlock, they automatically become available in your treasury balance.",
+        "nearStep3": "You can use the unlocked tokens immediately for payments, transfers, or other transactions.",
+        "notAvailable": "N/A",
+        "everyMonth": "Every month",
+        "everyQuarter": "Every quarter",
+        "everyUnit": "Every {unit}",
+        "everyMultiple": "Every {text}",
+        "completed": "Completed",
+        "unit": {
+            "year": "{count, plural, one {# year} other {# years}}",
+            "day": "{count, plural, one {# day} other {# days}}",
+            "hour": "{count, plural, one {# hour} other {# hours}}",
+            "minute": "{count, plural, one {# minute} other {# minutes}}",
+            "second": "{count, plural, one {# second} other {# seconds}}"
+        }
+    },
+    "vestingDetails": {
+        "title": "Vesting Details",
+        "availableToUse": "Available To Use",
+        "vestingPeriod": "Vesting Period",
+        "vestingPeriodDescription": "Tokens unlock daily during this period.",
+        "startDate": "Start Date",
+        "endDate": "End Date",
+        "tokenBreakdown": "Token Breakdown",
+        "originalVestedAmount": "Original Vested Amount",
+        "reservedForStorage": "Reserved For Storage",
+        "reservedForStorageInfo": "A small amount of tokens required to keep the vesting active and cover storage costs.",
+        "percentVested": "{percent}% Vested",
+        "vestedOf": "{vested} of {total} {symbol}",
+        "send": "Send"
+    },
+    "earningPoolDetails": {
+        "balance": "Balance",
+        "apy": "APY",
+        "fee": "Fee",
+        "notAvailable": "N/A",
+        "lockupStakingPool": "Lockup staking pool",
+        "lockupAssetsNote": "All assets in this position are from your lockup. After you stop earning, some tokens may still be locked and unavailable - check your lockup schedule to see when they unlock."
+    },
+    "onboardingQuestions": {
+        "stepTitle": "A few quick questions to begin.",
+        "other": "Other",
+        "placeholders": {
+            "describeRole": "Describe your role (optional)",
+            "describeUseCase": "Describe your use case (optional)",
+            "networkName": "Enter network name (optional)",
+            "currentChallenge": "Enter your current challenge (optional)",
+            "describeOther": "Describe other (optional)"
+        },
+        "questions": {
+            "role": "What best describes your role?",
+            "useCases": "What do you plan to use Trezu for?",
+            "teamSize": "How many people will manage the treasury?",
+            "networks": "Which networks do you use most often?",
+            "multisigExperience": "What's your experience with multisig?",
+            "currentTools": "What tools do you currently use to manage finances?",
+            "monthlyVolume": "Approximate monthly transaction volume?",
+            "biggestChallenges": "What's your biggest challenge right now?"
+        },
+        "options": {
+            "role": {
+                "founder": "Founder",
+                "co-founder": "Co-founder",
+                "cfo-finance-lead": "CFO / Finance Lead",
+                "operations-manager": "Operations Manager",
+                "treasury-manager": "Treasury Manager",
+                "other": "Other"
+            },
+            "useCases": {
+                "team-payroll-grants": "Team payroll & grants",
+                "company-assets-management": "Company assets management",
+                "dao-treasury-management": "DAO treasury management",
+                "investment-portfolio": "Investment portfolio",
+                "operational-spending": "Operational spending",
+                "other": "Other"
+            },
+            "teamSize": {
+                "just-me": "Just me",
+                "2-5-people": "2-5 people",
+                "6-15-people": "6-15 people",
+                "15-plus-people": "15+"
+            },
+            "networks": {
+                "near": "NEAR",
+                "bitcoin": "Bitcoin",
+                "ethereum": "Ethereum",
+                "solana": "Solana",
+                "arbitrum": "Arbitrum",
+                "base": "Base",
+                "optimism": "Optimism",
+                "polygon": "Polygon",
+                "gnosis": "Gnosis",
+                "avalanche": "Avalanche",
+                "bnb-chain": "BNB Chain",
+                "other": "Other"
+            },
+            "multisigExperience": {
+                "never-heard-of-it": "Never heard of it",
+                "heard-about-it": "Heard about it",
+                "never-used-it": "Never used it",
+                "used-gnosis-safe-or-similar": "Used Gnosis Safe or similar",
+                "experienced": "Experienced",
+                "looking-for-a-better-option": "Looking for a better option"
+            },
+            "currentTools": {
+                "gnosis-safe": "Gnosis Safe",
+                "fireblocks": "Fireblocks",
+                "tholos": "Tholos",
+                "squads-multisig": "Squads Multisig",
+                "mpc-vault": "MPC Vault",
+                "other": "Other"
+            },
+            "monthlyVolume": {
+                "under-10k": "Under $10K",
+                "10k-100k": "$10K - $100K",
+                "100k-1m": "$100K - $1M",
+                "1m-plus": "$1M+"
+            },
+            "biggestChallenges": {
+                "slow-approvals-and-signing": "Slow approvals and signing",
+                "lack-of-transparency-in-the-team": "Lack of transparency in the team",
+                "hard-to-track-spending-and-balances": "Hard to track spending and balances",
+                "security-and-access-control": "Security and access control",
+                "no-good-web3-tool-yet": "No good Web3 tool yet",
+                "looking-for-crypto-earnings": "I am looking for crypto earnings",
+                "other": "Other"
+            }
+        }
+    },
+    "onboarding": {
+        "tour": {
+            "addAssets": "Add assets to your Treasury by making a deposit.",
+            "makeRequests": "Make payment requests whenever you need to send assets.",
+            "exchangeAssets": "Here you can exchange your assets.",
+            "addMembers": "Add members to your Treasury and assign them roles.",
+            "newTreasury": "Want to set up a new Treasury? You can do it here in just a few clicks.",
+            "helpSupport": "Get help and support whenever you need it."
+        },
+        "tourCard": {
+            "close": "Close",
+            "stepProgress": "{current} of {total}",
+            "gotIt": "Got It",
+            "done": "Done",
+            "next": "Next"
+        },
+        "progress": {
+            "title": "Follow Quick Steps to Explore the Treasury",
+            "createTreasuryTitle": "Create Treasury account",
+            "createTreasuryDescription": "You've successfully set up your account. Great start!",
+            "addAssetsTitle": "Add Your Assets",
+            "addAssetsDescription": "Begin by adding assets to see them in action.",
+            "deposit": "Deposit",
+            "createPaymentTitle": "Create a Payment Request",
+            "createPaymentDescription": "Create a payment request to complete your setup.",
+            "send": "Send"
+        },
+        "welcome": {
+            "heading": "🎉 Welcome!",
+            "subheading": "Take a quick tour of Treasury",
+            "body": "Hey there! Your Trezu is ready - start building your portfolio by adding assets from supported networks.",
+            "progress": "{current} of {total}",
+            "next": "Next",
+            "body2": "See how to make a deposit, create a request, and set up a new account.",
+            "noThanks": "No, thanks",
+            "letsGo": "Let's go"
+        },
+        "congrats": {
+            "heading": "🎉 Congrats!",
+            "body": "You've completed your Treasury setup. Enjoy easy management of your assets.",
+            "letsGo": "Let's go!"
+        },
+        "createBanner": {
+            "close": "Close",
+            "title": "Explore Trezu",
+            "description": "Create an account to unlock permissions to all features and benefits of Trezu.",
+            "cta": "Create Treasury"
+        },
+        "questionnaire": {
+            "continue": "Continue",
+            "skip": "Skip"
+        },
+        "createPrompt": {
+            "title": "You're almost set",
+            "description": "Your wallet is connected, but you haven't created a treasury yet. Create an account to start using Trezu, or {suffix}",
+            "suffixDemo": "check out the demo.",
+            "suffixExploring": "keep exploring.",
+            "createCta": "Create a Treasury",
+            "viewDemo": "View Demo",
+            "keepExploring": "Keep Exploring"
+        },
+        "infoBox": {
+            "title": "Get more from Trezu",
+            "close": "Close",
+            "description": "Discover how others use Treasury, try the demo, and check the docs to learn the features.",
+            "demoTitle": "Explore the Trezu Demo",
+            "demoDescription": "See a live demo account in action.",
+            "docsTitle": "Documentation",
+            "docsDescription": "Learn about all features in the docs.",
+            "videoTitle": "Watch the Demo",
+            "videoDescription": "Watch a short video showing how Trezu works."
+        }
+    }
+}

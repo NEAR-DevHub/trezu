@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Slider } from "@/components/slider";
 import { InputBlock } from "./input-block";
 import { WarningAlert } from "./warning-alert";
@@ -20,6 +21,7 @@ export function ThresholdSlider({
     onValueChange,
     disabled = false,
 }: ThresholdSliderProps) {
+    const t = useTranslations("thresholdSlider");
     // Show 0 in these cases to ensure visual fill:
     // 1. When memberCount is 1 or 2
     // 2. When originalThreshold (prevents labels from changing during drag)
@@ -81,7 +83,7 @@ export function ThresholdSlider({
             {/* Warning banner - show when threshold is 1 */}
             {currentThreshold === 1 && (
                 <WarningAlert
-                    message={`A 1-of-${memberCount} threshold means any single member can execute transactions. This reduces security.`}
+                    message={t("warningSingleMember", { memberCount })}
                     className="mt-3"
                 />
             )}
@@ -89,7 +91,10 @@ export function ThresholdSlider({
             {/* Info banner - only show if threshold is between 1 and less than total */}
             {currentThreshold > 1 && currentThreshold < memberCount && (
                 <InfoAlert
-                    message={`A ${currentThreshold}-of-${memberCount} threshold provides a good balance between security and operational flexibility.`}
+                    message={t("infoBalanced", {
+                        currentThreshold,
+                        memberCount,
+                    })}
                     className="mt-3"
                 />
             )}

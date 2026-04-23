@@ -1,4 +1,7 @@
+"use client";
+
 import { ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "./button";
 import { ScrollArea } from "./ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -93,13 +96,15 @@ export function SelectList<T extends SelectListItem>({
     onSelect,
     isLoading = false,
     selectedId,
-    emptyMessage = "No results found",
+    emptyMessage,
     renderIcon,
     renderContent,
     renderRight,
     roundIcons = true,
     fixNear = false,
 }: SelectListProps<T>) {
+    const tSelect = useTranslations("selectList");
+    const effectiveEmptyMessage = emptyMessage ?? tSelect("noResults");
     if (isLoading) {
         return <SelectListSkeleton />;
     }
@@ -146,7 +151,7 @@ export function SelectList<T extends SelectListItem>({
             ))}
             {items.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
-                    {emptyMessage}
+                    {effectiveEmptyMessage}
                 </div>
             )}
         </ScrollArea>

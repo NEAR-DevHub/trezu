@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
 import { useTreasury } from "@/hooks/use-treasury";
@@ -12,6 +13,7 @@ import {
     isValidNearAddressFormat,
     validateNearAddress,
 } from "@/lib/near-validation";
+import { translateNearValidationError } from "@/lib/near-validation-i18n";
 import { hasPermission } from "@/lib/config-utils";
 import { useProposals } from "@/hooks/use-proposals";
 import { useQueryClient } from "@tanstack/react-query";
@@ -43,8 +45,9 @@ import { useMemberValidation } from "./hooks/use-member-validation";
 import { useTreasuryMembers } from "@/hooks/use-treasury-members";
 import { AuthButton } from "@/components/auth-button";
 import { RolePermission } from "@/types/policy";
-import { sortRolesByOrder, getRoleDescription } from "@/lib/role-utils";
-import { formatRoleName } from "@/components/role-name";
+import { sortRolesByOrder } from "@/lib/role-utils";
+import { useRoleDescription } from "@/lib/use-role-description";
+import { useFormatRoleName } from "@/components/role-name";
 import { StepperHeader } from "@/components/step-wizard";
 import { NumberBadge } from "@/components/number-badge";
 import { NEARN_IO_ACCOUNT } from "./constants";
@@ -65,6 +68,9 @@ interface AddMemberFormData {
 }
 
 function PermissionsHeader({ policyRoles }: { policyRoles: RolePermission[] }) {
+    const tMembers = useTranslations("members");
+    const formatRoleName = useFormatRoleName();
+    const getRoleDescription = useRoleDescription();
     // Get role descriptions and sort them
     const roleNames = policyRoles.map((r) => r.name);
     const sortedRoleNames = sortRolesByOrder(roleNames);
@@ -79,7 +85,7 @@ function PermissionsHeader({ policyRoles }: { policyRoles: RolePermission[] }) {
     return (
         <div className="flex items-center gap-1.5">
             <span className="text-xs font-medium uppercase text-muted-foreground">
-                Permissions
+                {tMembers("permissions")}
             </span>
             {sortedDescriptions.length > 0 && (
                 <Tooltip
@@ -107,6 +113,9 @@ function PermissionsHeader({ policyRoles }: { policyRoles: RolePermission[] }) {
 }
 
 export default function MembersPage() {
+    const t = useTranslations("pages.members");
+    const tMembers = useTranslations("members");
+    const tAccountInput = useTranslations("accountInput");
     const { treasuryId } = useTreasury();
     const { data: policy, isLoading } = useTreasuryPolicy(treasuryId || "");
     const { accountId } = useNear();
@@ -163,6 +172,16 @@ export default function MembersPage() {
         Array<{ accountId: string; roles: string[] }>
     >([]);
 
+    const getAccountValidationMessage = useCallback(
+        (errorCode: Parameters<typeof translateNearValidationError>[1]) =>
+            translateNearValidationError(
+                tAccountInput,
+                errorCode,
+                tMembers("validation.invalidNearAddress"),
+            ),
+        [tAccountInput, tMembers],
+    );
+
     // Create dynamic schema with access to existing members and mode
     const addMemberSchemaWithContext = useMemo(() => {
         const existingMembersSet = new Set(
@@ -174,16 +193,36 @@ export default function MembersPage() {
                     z.object({
                         accountId: z
                             .string()
-                            .min(1, "Account ID is required")
-                            .refine(isValidNearAddressFormat, {
-                                message: "Invalid NEAR address.",
+                            .min(1, tMembers("validation.accountIdRequired"))
+                            .superRefine(async (accountId, ctx) => {
+                                if (!isValidNearAddressFormat(accountId)) {
+                                    ctx.addIssue({
+                                        code: "custom",
+                                        message: tMembers(
+                                            "validation.invalidNearAddress",
+                                        ),
+                                    });
+                                    return;
+                                }
+
+                                const nearValidationError =
+                                    await validateNearAddress(accountId);
+                                if (!nearValidationError) return;
+
+                                ctx.addIssue({
+                                    code: "custom",
+                                    message:
+                                        getAccountValidationMessage(
+                                            nearValidationError,
+                                        ),
+                                });
                             }),
                         roles: z
                             .array(z.string())
-                            .min(1, "At least one role must be selected"),
+                            .min(1, tMembers("validation.atLeastOneRole")),
                     }),
                 )
-                .min(1, "At least one member is required")
+                .min(1, tMembers("validation.atLeastOneMember"))
                 .superRefine((members, ctx) => {
                     const seenAccountIds = new Map<string, number>();
 
@@ -197,9 +236,8 @@ export default function MembersPage() {
                             seenAccountIds.get(normalizedId);
                         if (firstOccurrence !== undefined) {
                             ctx.addIssue({
-                                code: z.ZodIssueCode.custom,
-                                message:
-                                    "This member has already been added above",
+                                code: "custom",
+                                message: tMembers("validation.alreadyAdded"),
                                 path: [index, "accountId"],
                             });
                         } else {
@@ -212,9 +250,10 @@ export default function MembersPage() {
                                 existingMembersSet.has(normalizedId)
                             ) {
                                 ctx.addIssue({
-                                    code: z.ZodIssueCode.custom,
-                                    message:
-                                        "This member already exists in the treasury",
+                                    code: "custom",
+                                    message: tMembers(
+                                        "validation.alreadyInTreasury",
+                                    ),
                                     path: [index, "accountId"],
                                 });
                             }
@@ -222,7 +261,13 @@ export default function MembersPage() {
                     });
                 }),
         });
-    }, [existingMembers, currentModalMode, membersBeingEdited]);
+    }, [
+        existingMembers,
+        currentModalMode,
+        membersBeingEdited,
+        tMembers,
+        getAccountValidationMessage,
+    ]);
 
     const form = useForm<AddMemberFormData>({
         resolver: zodResolver(addMemberSchemaWithContext),
@@ -350,7 +395,7 @@ export default function MembersPage() {
                     if (!isAllowed) {
                         disabledRoles.push({
                             roleId: role.name,
-                            reason: "You can only add the Requestor role for this member, as they are responsible for creating payment requests from NEARN.",
+                            reason: tMembers("requestorOnlyTooltip"),
                         });
                     }
                 });
@@ -427,8 +472,12 @@ export default function MembersPage() {
                         role.toLowerCase().includes("governance") ||
                         role.toLowerCase().includes("admin");
                     const reason = hasGovernance
-                        ? `You can't remove the ${role} role from this member. After all your changes, they would be the only ${role} member, and without this role you won't be able to manage team members or configure voting.`
-                        : `You can't remove the ${role} role from this member. After all your changes, they would be the only person assigned to this role.`;
+                        ? tMembers("validation.cannotRemoveRoleAfterGov", {
+                              role,
+                          })
+                        : tMembers("validation.cannotRemoveRoleAfter", {
+                              role,
+                          });
 
                     disabledRoles.push({
                         roleId: role,
@@ -470,7 +519,13 @@ export default function MembersPage() {
             if (failedValidation) {
                 form.setError(`members.${failedValidation.index}.accountId`, {
                     type: "manual",
-                    message: failedValidation.error || "Invalid address",
+                    message:
+                        (failedValidation.error
+                            ? getAccountValidationMessage(
+                                  failedValidation.error,
+                              )
+                            : undefined) ||
+                        tMembers("validation.invalidNearAddress"),
                 });
                 setIsValidatingAddresses(false);
                 return;
@@ -514,8 +569,8 @@ export default function MembersPage() {
             await createPolicyChangeProposal(
                 updatedPolicy,
                 summary,
-                "Update Policy - Add New Members",
-                "New member request created successfully",
+                tMembers("policy.addMembers"),
+                tMembers("policy.addMembersSuccess"),
             );
 
             trackEvent("member-add-submitted", {
@@ -706,12 +761,12 @@ export default function MembersPage() {
 
             const title =
                 membersData.length === 1
-                    ? "Update Policy - Edit Member Permissions"
-                    : "Update Policy - Edit Multiple Members";
+                    ? tMembers("policy.editMember")
+                    : tMembers("policy.editMembers");
             const successMessage =
                 membersData.length === 1
-                    ? "Member roles update request created successfully"
-                    : "Bulk member roles update request created successfully";
+                    ? tMembers("policy.editMemberSuccess")
+                    : tMembers("policy.editMembersSuccess");
 
             await createPolicyChangeProposal(
                 updatedPolicy,
@@ -781,9 +836,10 @@ export default function MembersPage() {
             await createPolicyChangeProposal(
                 updatedPolicy,
                 summary,
-                "Update Policy - Remove Member" +
-                    (membersToRemove.length > 1 ? "s" : ""),
-                `Member removal request created successfully`,
+                membersToRemove.length > 1
+                    ? tMembers("policy.removeMembers")
+                    : tMembers("policy.removeMember"),
+                tMembers("policy.removeMemberSuccess"),
             );
 
             trackEvent("member-delete-submitted", {
@@ -893,7 +949,7 @@ export default function MembersPage() {
                             <TableHead className="w-12"></TableHead>
                             <TableHead className="w-1/2">
                                 <span className="text-xs font-medium uppercase text-muted-foreground">
-                                    Member
+                                    {tMembers("member")}
                                 </span>
                             </TableHead>
                             <TableHead>
@@ -942,7 +998,7 @@ export default function MembersPage() {
             return (
                 <div className="flex items-center justify-center py-8">
                     <p className="text-muted-foreground">
-                        No active members found.
+                        {tMembers("noActiveMembers")}
                     </p>
                 </div>
             );
@@ -968,7 +1024,7 @@ export default function MembersPage() {
                         </TableHead>
                         <TableHead className="w-1/2">
                             <span className="text-xs font-medium uppercase text-muted-foreground">
-                                Member
+                                {tMembers("member")}
                             </span>
                         </TableHead>
                         <TableHead>
@@ -1091,16 +1147,13 @@ export default function MembersPage() {
     };
 
     return (
-        <PageComponentLayout
-            title="Members"
-            description="Manage team members and permissions"
-        >
+        <PageComponentLayout title={t("title")} description={t("description")}>
             <PageCard className="gap-0 p-0">
                 {/* Hide header when members are selected */}
                 {!(selectedMembers.length > 0) && (
                     <div className="flex flex-row items-center justify-between gap-3 sm:gap-4 py-3.5 px-8 border-b">
                         <div className="flex items-center gap-2 w-fit">
-                            <StepperHeader title="Active Members" />
+                            <StepperHeader title={tMembers("activeMembers")} />
                             <NumberBadge
                                 number={existingMembers.length}
                                 variant="secondary"
@@ -1128,7 +1181,7 @@ export default function MembersPage() {
                                 >
                                     <Plus className="size-4" />
                                     <span className="hidden sm:inline">
-                                        Add New Member
+                                        {tMembers("addNewMember")}
                                     </span>
                                 </AuthButton>
                             )}
@@ -1140,8 +1193,9 @@ export default function MembersPage() {
                 {selectedMembers.length > 0 && (
                     <div className="flex items-center justify-between gap-4 py-3.5 px-8 border-b">
                         <span className="font-semibold text-base sm:text-lg">
-                            {selectedMembers.length} member
-                            {selectedMembers.length !== 1 ? "s" : ""} selected
+                            {tMembers("membersSelected", {
+                                count: selectedMembers.length,
+                            })}
                         </span>
                         <div className="flex items-center gap-2 w-fit">
                             <Tooltip
@@ -1171,7 +1225,7 @@ export default function MembersPage() {
                                     >
                                         <Trash2 className="w-4 h-4 mr-1" />
                                         <span className="hidden sm:inline">
-                                            Remove
+                                            {tMembers("remove")}
                                         </span>
                                     </AuthButton>
                                 </span>
@@ -1189,7 +1243,7 @@ export default function MembersPage() {
                                 >
                                     <Pencil className="w-4 h-4 mr-1" />
                                     <span className="hidden sm:inline">
-                                        Edit
+                                        {tMembers("edit")}
                                     </span>
                                 </AuthButton>
                             </span>

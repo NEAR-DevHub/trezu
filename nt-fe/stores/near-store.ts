@@ -24,6 +24,7 @@ import {
 } from "@/lib/auth-api";
 import { markDaoDirty, relayDelegateAction } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { getNearStoreMessages } from "@/i18n/store-messages";
 import {
     EventMap,
     SignDelegateActionsParams,
@@ -489,7 +490,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
     createProposal: async (params: CreateProposalParams) => {
         const state = get();
         if (!isFullyAuthenticated(state)) {
-            toast.error("Please connect wallet and accept terms to continue.");
+            toast.error(getNearStoreMessages().connectAndAcceptTerms);
             throw new Error(
                 "Not authorized. Please connect wallet and accept terms.",
             );
@@ -548,7 +549,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
             );
         } catch (error) {
             console.error("Failed to create proposal:", error);
-            toast.error("Transaction wasn't approved in your wallet.");
+            toast.error(getNearStoreMessages().transactionNotApproved);
             throw error;
         }
     },
@@ -556,7 +557,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
     voteProposals: async (treasuryId: string, votes: Vote[]) => {
         const state = get();
         if (!isFullyAuthenticated(state)) {
-            toast.error("Please connect wallet and accept terms to continue.");
+            toast.error(getNearStoreMessages().connectAndAcceptTerms);
             throw new Error(
                 "Not authorized. Please connect wallet and accept terms.",
             );
@@ -620,7 +621,11 @@ export const useNearStore = create<NearStore>((set, get) => ({
             });
         } catch (error) {
             console.error("Failed to vote proposals:", error);
-            toast.error(`Failed to submit vote${votes.length > 1 ? "s" : ""}`);
+            toast.error(
+                votes.length > 1
+                    ? getNearStoreMessages().failedSubmitVotes
+                    : getNearStoreMessages().failedSubmitVote,
+            );
             throw error;
         }
     },
@@ -675,7 +680,7 @@ export const useNear = () => {
             toast.success(toastMessage, {
                 duration: 10000,
                 action: {
-                    label: "View Request",
+                    label: getNearStoreMessages().viewRequest,
                     onClick: () =>
                         window.open(
                             `/${params.treasuryId}/requests?tab=InProgress`,
@@ -700,17 +705,20 @@ export const useNear = () => {
         const toastAction =
             votes.length === 1 && votes[0].vote !== "Remove"
                 ? {
-                      label: "View Request",
+                      label: getNearStoreMessages().viewRequest,
                       onClick: () =>
                           window.open(
                               `/${treasuryId}/requests/${votes[0].proposalId}`,
                           ),
                   }
                 : undefined;
+        const messages = getNearStoreMessages();
         const text =
             votes.length === 1 && votes[0].vote === "Remove"
-                ? "Your proposal has been removed"
-                : `Your vote${votes.length > 1 ? "s" : ""} have been submitted`;
+                ? messages.proposalRemoved
+                : votes.length > 1
+                  ? messages.votesSubmitted
+                  : messages.voteSubmitted;
         toast.success(text, {
             duration: 10000,
             action: toastAction,

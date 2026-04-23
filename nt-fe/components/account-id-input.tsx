@@ -1,30 +1,50 @@
+"use client";
+
 import { checkAccountExists } from "@/lib/api";
 import { Control, FieldValues, Path, PathValue } from "react-hook-form";
 import z from "zod";
+import { useTranslations } from "next-intl";
 import { FormField } from "./ui/form";
 import { LargeInput } from "./large-input";
 
-export const accountIdSchema = z
-    .string()
-    .min(2, "Account ID should be at least 2 characters")
-    .max(64, "Account ID must be less than 64 characters")
-    .regex(
-        /^[a-z0-9.-]+$/,
-        "Account ID can only contain lowercase letters, numbers, hyphens, and underscores",
-    )
-    .refine(
-        async (accountId) => {
-            if (!accountId || accountId.length < 2) return true;
-            const result = await checkAccountExists(accountId);
-            return result?.exists === true;
-        },
-        {
-            message: "Account ID doesn't exist",
-            path: [""],
-        },
+export function buildAccountIdSchema(messages: {
+    minLength: string;
+    maxLength: string;
+    charset: string;
+    doesNotExist: string;
+}) {
+    return (
+        z
+            .string()
+            .min(2, messages.minLength)
+            .max(64, messages.maxLength)
+            // NEAR account ID format: https://nomicon.io/DataStructures/Account.html
+            .regex(
+                /^(([a-z\d]+[\-_])*[a-z\d]+\.)*([a-z\d]+[\-_])*[a-z\d]+$/,
+                messages.charset,
+            )
+            .refine(
+                async (accountId) => {
+                    if (!accountId || accountId.length < 2) return true;
+                    const result = await checkAccountExists(accountId);
+                    return result?.exists === true;
+                },
+                {
+                    message: messages.doesNotExist,
+                    path: [""],
+                },
+            )
     );
+}
 
-export type AccountId = z.infer<typeof accountIdSchema>;
+const _accountIdSchemaForType = buildAccountIdSchema({
+    minLength: "",
+    maxLength: "",
+    charset: "",
+    doesNotExist: "",
+});
+
+export type AccountId = z.infer<typeof _accountIdSchemaForType>;
 
 interface AccountIdInputProps<
     TFieldValues extends FieldValues = FieldValues,

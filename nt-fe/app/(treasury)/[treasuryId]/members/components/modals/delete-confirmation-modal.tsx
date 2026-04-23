@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import {
     Dialog,
@@ -32,6 +33,8 @@ export function DeleteConfirmationModal({
     onConfirm,
     validationError,
 }: DeleteConfirmationModalProps) {
+    const t = useTranslations("members.removeDialog");
+    const tCommon = useTranslations("common");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleConfirm = async () => {
@@ -43,11 +46,9 @@ export function DeleteConfirmationModal({
         }
     };
 
-    // Determine if this is bulk delete
     const membersToDelete =
         members && members.length > 0 ? members : member ? [member] : [];
 
-    // Check if nearn-io.near account is being deleted
     const isNearnAccountBeingDeleted = membersToDelete.some(
         (m) => m.accountId.toLowerCase() === NEARN_IO_ACCOUNT,
     );
@@ -60,29 +61,27 @@ export function DeleteConfirmationModal({
             <DialogContent className="max-w-md gap-4">
                 <DialogHeader>
                     <DialogTitle className="text-left">
-                        Remove Request
+                        {t("title")}
                     </DialogTitle>
                 </DialogHeader>
 
                 <DialogDescription>
                     {isNearnAccountBeingDeleted ? (
                         <span>
-                            Once approved, {NEARN_IO_ACCOUNT} will be
-                            permanently removed from the treasury and all
-                            associated permissions will be revoked.
-                            <br /> <br /> After removal, this account will no
-                            longer be able to create requests from NEARN.
+                            {t("nearnBody", { account: NEARN_IO_ACCOUNT })}
                         </span>
                     ) : (
                         <span>
-                            Once approved, this action will permanently remove{" "}
-                            <span className="font-semibold break-all overflow-wrap-anywhere text-wrap">
-                                {membersToDelete
+                            {t.rich("genericBody", {
+                                accounts: membersToDelete
                                     .map((m) => m.accountId)
-                                    .join(", ")}
-                            </span>{" "}
-                            from the treasury and revoke all assigned
-                            permissions.
+                                    .join(", "),
+                                bold: (chunks) => (
+                                    <span className="font-semibold break-all overflow-wrap-anywhere text-wrap">
+                                        {chunks}
+                                    </span>
+                                ),
+                            })}
                         </span>
                     )}
                 </DialogDescription>
@@ -96,7 +95,9 @@ export function DeleteConfirmationModal({
                             disabled={isSubmitting || !!validationError}
                             tooltipMessage={validationError}
                         >
-                            {isSubmitting ? "Creating Proposal..." : "Remove"}
+                            {isSubmitting
+                                ? t("creatingProposal")
+                                : tCommon("remove")}
                         </ButtonWithTooltip>
                     </div>
                 </DialogFooter>

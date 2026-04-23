@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { ArrowDownToLine, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/button";
@@ -183,6 +184,7 @@ export function OnboardingProgress({
     className,
     onDepositClick,
 }: OnboardingProgressProps) {
+    const t = useTranslations("onboarding.progress");
     const router = useRouter();
     const {
         isGuestTreasury,
@@ -218,32 +220,31 @@ export function OnboardingProgress({
         return [
             {
                 id: "create-treasury",
-                title: "Create Treasury account",
-                description:
-                    "You've successfully set up your account. Great start!",
+                title: t("createTreasuryTitle"),
+                description: t("createTreasuryDescription"),
                 completed: true,
                 active: false,
             },
             {
                 id: "add-assets",
-                title: "Add Your Assets",
-                description: "Begin by adding assets to see them in action.",
+                title: t("addAssetsTitle"),
+                description: t("addAssetsDescription"),
                 completed: step2Completed,
                 active: activeStep === 2,
                 action: {
-                    label: "Deposit",
+                    label: t("deposit"),
                     icon: "deposit" as const,
                     onClick: () => onDepositClick?.() || (() => {}),
                 },
             },
             {
                 id: "create-payment",
-                title: "Create a Payment Request",
-                description: "Create a payment request to complete your setup.",
+                title: t("createPaymentTitle"),
+                description: t("createPaymentDescription"),
                 completed: step3Completed,
                 active: activeStep === 3,
                 action: {
-                    label: "Send",
+                    label: t("send"),
                     icon: "send" as const,
                     onClick: () =>
                         router.push(
@@ -254,7 +255,7 @@ export function OnboardingProgress({
                 },
             },
         ];
-    }, [hasAssets, proposals, treasuryId, router, onDepositClick]);
+    }, [hasAssets, proposals, treasuryId, router, onDepositClick, t]);
 
     const completedSteps = steps.filter((s) => s.completed).length;
 
@@ -282,9 +283,7 @@ export function OnboardingProgress({
                     total={steps.length}
                 />
                 <p className="text-base font-semibold text-foreground text-center leading-snug">
-                    Follow Quick Steps to
-                    <br />
-                    Explore the Treasury
+                    {t("title")}
                 </p>
             </div>
 

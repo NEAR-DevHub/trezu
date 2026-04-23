@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { CopyButton } from "./copy-button";
 
@@ -16,6 +19,7 @@ export function Address({
     prefixLength = 8,
     suffixLength = 8,
 }: AddressProps) {
+    const t = useTranslations("address");
     const prefix = address.slice(0, prefixLength);
     const suffix = address.slice(address.length - suffixLength);
     const displayedAddress =
@@ -28,7 +32,7 @@ export function Address({
             {copyable && (
                 <CopyButton
                     text={address}
-                    toastMessage="Address copied to clipboard"
+                    toastMessage={t("copied")}
                     variant="ghost"
                     size="icon-sm"
                 />

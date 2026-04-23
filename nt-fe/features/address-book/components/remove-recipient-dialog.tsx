@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import {
     Dialog,
@@ -25,6 +26,8 @@ export function RemoveRecipientDialog({
     onConfirm,
     onClose,
 }: RemoveRecipientDialogProps) {
+    const t = useTranslations("addressBook.removeDialog");
+    const tCommon = useTranslations("common");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const isBulk = typeof count === "number" && entry === null && count > 0;
@@ -43,26 +46,26 @@ export function RemoveRecipientDialog({
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="max-w-md gap-4">
                 <DialogHeader>
-                    <DialogTitle>Remove Recipient</DialogTitle>
+                    <DialogTitle>{t("title")}</DialogTitle>
                 </DialogHeader>
                 <DialogDescription>
-                    {isBulk ? (
-                        <>
-                            This will remove{" "}
-                            <span className="font-semibold">
-                                {count} recipient{count > 1 ? "s" : ""}
-                            </span>{" "}
-                            from your address book. You can add them again
-                            anytime.
-                        </>
-                    ) : (
-                        <>
-                            This will remove{" "}
-                            <span className="font-semibold">{entry?.name}</span>{" "}
-                            from your address book. You can add this recipient
-                            again anytime.
-                        </>
-                    )}
+                    {isBulk
+                        ? t.rich("bulk", {
+                              count: count ?? 0,
+                              bold: (chunks) => (
+                                  <span className="font-semibold">
+                                      {chunks}
+                                  </span>
+                              ),
+                          })
+                        : t.rich("single", {
+                              name: entry?.name ?? "",
+                              bold: (chunks) => (
+                                  <span className="font-semibold">
+                                      {chunks}
+                                  </span>
+                              ),
+                          })}
                 </DialogDescription>
                 <DialogFooter>
                     <Button
@@ -71,7 +74,7 @@ export function RemoveRecipientDialog({
                         onClick={handleConfirm}
                         disabled={isSubmitting}
                     >
-                        {isSubmitting ? "Removing..." : "Remove"}
+                        {isSubmitting ? tCommon("removing") : tCommon("remove")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/button";
 import { Plus, ChevronDown } from "lucide-react";
@@ -84,6 +85,7 @@ export function ProposalFilters({
     className,
     filterOptions,
 }: ProposalFiltersProps) {
+    const tF = useTranslations("requests.filters");
     const searchParams = useSearchParams();
     const router = useRouter();
     const pathname = usePathname();
@@ -138,7 +140,7 @@ export function ProposalFilters({
                 onClick={resetFilters}
                 className="h-9 rounded-md px-3 border-none bg-muted/50 hover:bg-muted font-medium"
             >
-                Reset
+                {tF("reset")}
             </Button>
 
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
@@ -176,7 +178,7 @@ export function ProposalFilters({
                                 className="h-8 gap-1.5 text-muted-foreground hover:text-foreground font-medium shrink-0"
                             >
                                 <Plus className="h-4 w-4" />
-                                Add Filter
+                                {tF("addFilter")}
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent
@@ -229,6 +231,7 @@ function FilterPill({
     hideAmount,
     options,
 }: FilterPillProps) {
+    const tF = useTranslations("requests.filters");
     const [isOpen, setIsOpen] = useState(false);
 
     // Single unified parsing - no backward compatibility
@@ -237,9 +240,9 @@ function FilterPill({
     }, [value]);
 
     const displayValue = useMemo(() => {
-        if (!value || filterData) return "ALL"; // Use custom rendering for all filter types
+        if (!value || filterData) return tF("all");
         return value;
-    }, [value, filterData]);
+    }, [value, filterData, tF]);
 
     const renderFilterContent = () => {
         switch (id) {
@@ -319,7 +322,7 @@ function FilterPill({
                         onUpdate={onUpdate}
                         setIsOpen={setIsOpen}
                         onRemove={onRemove}
-                        label="From"
+                        label={tF("from")}
                         operations={FROM_OPERATIONS}
                         suggestedUsers={(options || []).map(
                             (option) => option.value,
@@ -333,7 +336,7 @@ function FilterPill({
                         onUpdate={onUpdate}
                         setIsOpen={setIsOpen}
                         onRemove={onRemove}
-                        label="To"
+                        label={tF("to")}
                         operations={FROM_OPERATIONS}
                         suggestedUsers={(options || []).map(
                             (option) => option.value,
@@ -346,10 +349,10 @@ function FilterPill({
     const getOperationSuffix = () => {
         if (!filterData?.operation) return "";
         const op = filterData.operation;
-        if (op === "Is Not") return " is not";
-        if (op === "Before") return " before";
-        if (op === "After") return " after";
-        if (op === "Contains") return " contains";
+        if (op === "Is Not") return tF("operationIsNot");
+        if (op === "Before") return tF("operationBefore");
+        if (op === "After") return tF("operationAfter");
+        if (op === "Contains") return tF("operationContains");
         return "";
     };
 
@@ -403,7 +406,7 @@ function FilterPill({
         // My Vote filter display
         if (id === "my_vote" && (filterData as any).selected) {
             const selected = (filterData as any).selected as string[];
-            if (selected.length === 0) return "ALL";
+            if (selected.length === 0) return tF("all");
             return (
                 <span className="font-medium text-sm">
                     {selected.join(", ")}
@@ -414,7 +417,7 @@ function FilterPill({
         if (id === "from" || id === "to") {
             const users = (filterData as any).users;
             if (Array.isArray(users)) {
-                if (users.length === 0) return "ALL";
+                if (users.length === 0) return tF("all");
                 return (
                     <span className="font-medium text-sm">
                         {users.length > 1
@@ -424,14 +427,16 @@ function FilterPill({
                 );
             }
             return (
-                <span className="font-medium text-sm">{users || "ALL"}</span>
+                <span className="font-medium text-sm">
+                    {users || tF("all")}
+                </span>
             );
         }
 
         // Proposal Type filter display
         if (id === "proposal_types" && (filterData as any).selected) {
             const selected = (filterData as any).selected as string[];
-            if (selected.length === 0) return "ALL";
+            if (selected.length === 0) return tF("all");
             return (
                 <span className="font-medium text-sm">
                     {selected.join(", ")}
@@ -443,7 +448,7 @@ function FilterPill({
         if (id === "created_date" && (filterData as any).dateRange) {
             try {
                 const { from, to } = (filterData as any).dateRange;
-                if (!from && !to) return "ALL";
+                if (!from && !to) return tF("all");
                 if (from && to && !isSameDay(new Date(from), new Date(to))) {
                     return (
                         <span className="font-medium text-sm">
@@ -460,7 +465,9 @@ function FilterPill({
                 }
             } catch {
                 return (
-                    <span className="font-medium text-sm">Invalid date</span>
+                    <span className="font-medium text-sm">
+                        {tF("invalidDate")}
+                    </span>
                 );
             }
         }
@@ -471,7 +478,7 @@ function FilterPill({
             (filterData as any).users
         ) {
             const users = (filterData as any).users as string[];
-            if (users.length === 0) return "ALL";
+            if (users.length === 0) return tF("all");
             return (
                 <div className="flex items-center">
                     {users.slice(0, 3).map((accountId, index) => (
@@ -547,6 +554,7 @@ function TokenFilterContent({
     onRemove,
     hideAmount,
 }: TokenFilterContentProps) {
+    const tF = useTranslations("requests.filters");
     const { operation, setOperation, data, setData, handleClear } =
         useFilterState<TokenData>({
             value,
@@ -586,7 +594,7 @@ function TokenFilterContent({
 
     return (
         <BaseFilterPopover
-            filterLabel="Token"
+            filterLabel={tF("token")}
             operation={operation}
             operations={TOKEN_OPERATIONS}
             onOperationChange={setOperation}
@@ -606,7 +614,7 @@ function TokenFilterContent({
                 <>
                     <div className="py-2 px-2 flex items-baseline gap-1">
                         <span className="text-xs  text-muted-foreground">
-                            Amount
+                            {tF("amount")}
                         </span>
                         <OperationSelect
                             operations={AMOUNT_OPERATIONS}
@@ -624,11 +632,11 @@ function TokenFilterContent({
                             <div className="flex-col flex gap-2">
                                 <div className="flex flex-col gap-1">
                                     <span className="text-sm text-foreground font-medium">
-                                        From
+                                        {tF("from")}
                                     </span>
                                     <Input
                                         type="number"
-                                        placeholder="Min"
+                                        placeholder={tF("min")}
                                         value={data.minAmount || ""}
                                         onChange={(e) =>
                                             updateData({
@@ -640,11 +648,11 @@ function TokenFilterContent({
                                 </div>
                                 <div className="flex flex-col gap-1">
                                     <span className="text-sm text-foreground font-medium">
-                                        To
+                                        {tF("to")}
                                     </span>
                                     <Input
                                         type="number"
-                                        placeholder="Max"
+                                        placeholder={tF("max")}
                                         value={data.maxAmount || ""}
                                         onChange={(e) =>
                                             updateData({
@@ -658,7 +666,7 @@ function TokenFilterContent({
                         ) : (
                             <Input
                                 type="number"
-                                placeholder="Amount"
+                                placeholder={tF("amount")}
                                 value={data.minAmount || ""}
                                 onChange={(e) =>
                                     updateData({ minAmount: e.target.value })
@@ -685,13 +693,14 @@ function MyVoteFilterContent({
     setIsOpen: (isOpen: boolean) => void;
     onRemove: () => void;
 }) {
+    const tF = useTranslations("requests.filters");
     return (
         <CheckboxFilterContent
             value={value}
             onUpdate={onUpdate}
             setIsOpen={setIsOpen}
             onRemove={onRemove}
-            filterLabel="My Vote Status"
+            filterLabel={tF("myVoteStatus")}
             operations={MY_VOTE_OPERATIONS}
             options={MY_VOTE_OPTIONS.map((vote) => ({
                 value: vote,
@@ -713,6 +722,7 @@ function ProposalTypeFilterContent({
     setIsOpen: (isOpen: boolean) => void;
     onRemove: () => void;
 }) {
+    const tF = useTranslations("requests.filters");
     const { isConfidential, isGuestTreasury } = useTreasury();
     const options =
         isConfidential && isGuestTreasury
@@ -724,11 +734,21 @@ function ProposalTypeFilterContent({
             onUpdate={onUpdate}
             setIsOpen={setIsOpen}
             onRemove={onRemove}
-            filterLabel="Request Type"
+            filterLabel={tF("requestsType")}
             operations={PROPOSAL_TYPE_OPERATIONS}
             options={options.map((type) => ({
                 value: type,
-                label: type,
+                label: tF(
+                    `proposalTypes.${type}` as
+                        | "proposalTypes.Payments"
+                        | "proposalTypes.Exchange"
+                        | "proposalTypes.Earn"
+                        | "proposalTypes.Vesting"
+                        | "proposalTypes.Function Call"
+                        | "proposalTypes.Change Policy"
+                        | "proposalTypes.Settings"
+                        | "proposalTypes.Confidential",
+                ),
             }))}
         />
     );
@@ -758,6 +778,7 @@ function CreatedDateFilterContent({
     minDate,
     maxDate,
 }: CreatedDateFilterContentProps) {
+    const tF = useTranslations("requests.filters");
     const { operation, setOperation, data, setData, handleClear } =
         useFilterState<DateData>({
             value,
@@ -802,7 +823,7 @@ function CreatedDateFilterContent({
 
     return (
         <BaseFilterPopover
-            filterLabel="Created Date"
+            filterLabel={tF("createdDate")}
             operation={operation}
             operations={DATE_OPERATIONS}
             onOperationChange={setOperation}
@@ -881,6 +902,7 @@ function UserFilterContent({
     operations = USER_OPERATIONS,
     suggestedUsers,
 }: UserFilterContentProps) {
+    const tF = useTranslations("requests.filters");
     const { treasuryId } = useTreasury();
     const { recentAddresses, addRecentAddress } = useRecentAddresses();
     const [searchQuery, setSearchQuery] = useState("");
@@ -994,7 +1016,7 @@ function UserFilterContent({
                 <div className="px-2 py-1.5">
                     <Input
                         autoFocus
-                        placeholder="Search by address"
+                        placeholder={tF("searchByAddress")}
                         search
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -1006,7 +1028,7 @@ function UserFilterContent({
                 {/* Loading state */}
                 {!shouldUseSuggestedUsers && isLoadingMembers ? (
                     <div className="text-xs text-muted-foreground text-center py-2">
-                        Loading members...
+                        {tF("loadingMembers")}
                     </div>
                 ) : (
                     <ScrollArea
@@ -1047,14 +1069,13 @@ function UserFilterContent({
 
                         {searchQuery && filteredMembers.length === 0 && (
                             <p className="text-xs text-muted-foreground text-center py-2">
-                                No members found. Press Enter to add "
-                                {searchQuery}"
+                                {tF("noMembersFound", { query: searchQuery })}
                             </p>
                         )}
 
                         {!searchQuery && filteredMembers.length === 0 && (
                             <p className="text-xs text-muted-foreground text-center py-2">
-                                No members available
+                                {tF("noMembersAvailable")}
                             </p>
                         )}
                     </ScrollArea>

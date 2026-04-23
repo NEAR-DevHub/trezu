@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import {
     BatchPaymentRequestData,
     PaymentRequestData,
@@ -17,6 +18,7 @@ export function BatchPaymentCell({
     timestamp,
     textOnly = false,
 }: BatchPaymentCellProps) {
+    const t = useTranslations("proposals.expanded");
     const { data: batchData, isLoading } = useBatchPayment(data.batchId);
 
     // Loading state
@@ -30,8 +32,8 @@ export function BatchPaymentCell({
     }
 
     const recipients = batchData?.payments
-        ? `${batchData.payments.length} recipient${batchData.payments.length > 1 ? "s" : ""}`
-        : "Unknown recipients";
+        ? t("recipientsCount", { count: batchData.payments.length })
+        : t("unknownRecipients");
 
     let tokenId = data.tokenId;
     if (batchData?.tokenId?.toLowerCase() === "native") {

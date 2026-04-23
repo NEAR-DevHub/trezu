@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronDown, ChevronLeft } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
     useMergedTokens,
@@ -91,6 +92,7 @@ export default function TokenSelect({
     iconSize = "md",
     filterTokens,
 }: TokenSelectProps) {
+    const t = useTranslations("tokenSelectDialog");
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
     const [selectedAsset, setSelectedAsset] = useState<MergedToken | null>(
@@ -317,7 +319,7 @@ export default function TokenSelect({
                         </>
                     ) : (
                         <span className="text-muted-foreground">
-                            Select token
+                            {t("selectToken")}
                         </span>
                     )}
                     <ChevronDown className="size-4 text-muted-foreground ml-auto" />
@@ -338,15 +340,17 @@ export default function TokenSelect({
                         )}
                         <DialogTitle className="w-full text-center">
                             {step === "token"
-                                ? "Select Asset"
-                                : `Select network for ${selectedAsset?.name}`}
+                                ? t("selectAsset")
+                                : t("selectNetworkFor", {
+                                      asset: selectedAsset?.name ?? "",
+                                  })}
                         </DialogTitle>
                     </div>
                 </DialogHeader>
                 {step === "token" && (
                     <div className="space-y-4">
                         <Input
-                            placeholder="Search by name"
+                            placeholder={t("searchByName")}
                             search
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
@@ -371,7 +375,7 @@ export default function TokenSelect({
                                 {yourAssets.length > 0 && (
                                     <div className="mb-4">
                                         <div className="text-xs font-medium text-muted-foreground uppercase px-2 py-2">
-                                            Your Assets
+                                            {t("yourAssets")}
                                         </div>
                                         {yourAssets.map(renderTokenButton)}
                                     </div>
@@ -380,7 +384,7 @@ export default function TokenSelect({
                                 {otherAssets.length > 0 && (
                                     <div>
                                         <div className="text-xs font-medium text-muted-foreground uppercase px-2 py-2">
-                                            Other Assets
+                                            {t("otherAssets")}
                                         </div>
                                         {otherAssets.map(renderTokenButton)}
                                     </div>
@@ -389,8 +393,8 @@ export default function TokenSelect({
                                 {filteredTokens.length === 0 && (
                                     <div className="text-center py-8 text-muted-foreground">
                                         {showOnlyOwnedAssets
-                                            ? "No tokens with balance found"
-                                            : "No tokens found"}
+                                            ? t("noTokensWithBalance")
+                                            : t("noTokensFound")}
                                     </div>
                                 )}
                             </ScrollArea>
@@ -518,7 +522,7 @@ export default function TokenSelect({
                                     <>
                                         <div className="mb-4">
                                             <div className="text-xs font-medium text-muted-foreground uppercase px-2 py-2">
-                                                Networks with assets
+                                                {t("networksWithAssets")}
                                             </div>
                                             {withBalance.map(
                                                 renderNetworkButton,
@@ -527,7 +531,7 @@ export default function TokenSelect({
                                         {withoutBalance.length > 0 && (
                                             <div className="flex flex-col gap-2">
                                                 <div className="text-xs font-medium text-muted-foreground uppercase px-2 py-2">
-                                                    Supported Networks
+                                                    {t("supportedNetworks")}
                                                 </div>
                                                 {withoutBalance.map(
                                                     renderNetworkButton,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import {
     Control,
     FieldValues,
@@ -65,6 +66,7 @@ export function PaymentFormSection<
     onAmountInput,
     onMaxSet,
 }: PaymentFormSectionProps<TFieldValues, TTokenPath>) {
+    const t = useTranslations("paymentFormSection");
     const { setValue, setError, clearErrors } = useFormContext<TFieldValues>();
     const [isRecipientValid, setIsRecipientValid] = useState(false);
     const [isValidatingRecipient, setIsValidatingRecipient] = useState(false);
@@ -220,7 +222,7 @@ export function PaymentFormSection<
         <>
             <TokenInput
                 control={control}
-                title="Send"
+                title={t("send")}
                 amountName={amountName}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 tokenName={tokenName as any}
@@ -237,7 +239,7 @@ export function PaymentFormSection<
 
             <InputBlock
                 interactive={!selectedContact}
-                title="To"
+                title={t("to")}
                 className="relative"
                 invalid={
                     !selectedContact &&
@@ -338,16 +340,14 @@ export function PaymentFormSection<
                 )}
             </InputBlock>
 
-            {isConfidential && (
-                <InfoAlert message="This will send funds to an account on the near.com private network — not to an external wallet." />
-            )}
+            {isConfidential && <InfoAlert message={t("privateNetworkAlert")} />}
 
             <SelectModal
                 isOpen={isContactModalOpen}
                 onClose={() => setIsContactModalOpen(false)}
-                title="Select Recipient"
+                title={t("selectRecipient")}
                 options={contactOptions}
-                searchPlaceholder="Search by name or address"
+                searchPlaceholder={t("searchByNameOrAddress")}
                 onSelect={(option) => {
                     const entry = filteredAddressBook.find(
                         (e) => e.id === option.id,

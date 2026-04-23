@@ -9,6 +9,7 @@ import {
     useMemo,
 } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { NearConnector } from "@hot-labs/near-connect";
 import type { Network, EventMap } from "@hot-labs/near-connect/build/types";
 import axios from "axios";
@@ -56,9 +57,16 @@ interface ProposalData {
     kind: any;
 }
 
+interface WalletProposalLabels {
+    transferDescription: (receiverId: string) => string;
+    functionCallDescription: (methods: string, receiverId: string) => string;
+    unsupportedAction: (type: string) => string;
+}
+
 function translateToProposals(
     daoId: string,
     tx: TransactionRequest,
+    labels: WalletProposalLabels,
 ): ProposalData[] {
     const proposals: ProposalData[] = [];
     const functionCallActions: TransactionRequest["actions"] = [];
@@ -68,7 +76,7 @@ function translateToProposals(
             case "Transfer":
                 proposals.push({
                     receiverId: daoId,
-                    description: `Proposal from external dApp: Transfer NEAR to ${tx.receiverId}`,
+                    description: labels.transferDescription(tx.receiverId),
                     kind: {
                         Transfer: {
                             msg: null,
@@ -85,9 +93,7 @@ function translateToProposals(
                 break;
 
             default:
-                throw new Error(
-                    `Unsupported action type "${action.type}". Only Transfer and FunctionCall actions can be converted to Trezu proposals.`,
-                );
+                throw new Error(labels.unsupportedAction(action.type));
         }
     }
 
@@ -102,7 +108,10 @@ function translateToProposals(
 
         proposals.push({
             receiverId: daoId,
-            description: `Proposal from external dApp: ${functionCallActions.map((a) => a.params.methodName).join(", ")} on ${tx.receiverId}`,
+            description: labels.functionCallDescription(
+                functionCallActions.map((a) => a.params.methodName).join(", "),
+                tx.receiverId,
+            ),
             kind: {
                 FunctionCall: {
                     receiver_id: tx.receiverId,
@@ -166,6 +175,20 @@ export default function WalletPage() {
 }
 
 function WalletPageContent() {
+    const tW = useTranslations("wallet");
+    const tWErr = useTranslations("wallet.errors");
+    const tWProposal = useTranslations("wallet.proposal");
+    const walletProposalLabels = useMemo<WalletProposalLabels>(
+        () => ({
+            transferDescription: (receiverId: string) =>
+                tWProposal("transfer", { receiverId }),
+            functionCallDescription: (methods: string, receiverId: string) =>
+                tWProposal("functionCall", { methods, receiverId }),
+            unsupportedAction: (type: string) =>
+                tWProposal("unsupportedAction", { type }),
+        }),
+        [tWProposal],
+    );
     const searchParams = useSearchParams();
     const router = useRouter();
 
@@ -199,7 +222,13 @@ function WalletPageContent() {
         try {
             const all: ProposalData[] = [];
             for (const tx of transactions) {
-                all.push(...translateToProposals(selectedDao, tx));
+                all.push(
+                    ...translateToProposals(
+                        selectedDao,
+                        tx,
+                        walletProposalLabels,
+                    ),
+                );
             }
             return all;
         } catch {
@@ -273,9 +302,7 @@ function WalletPageContent() {
                 setTransactions(txs);
             } catch (e) {
                 console.error("Failed to parse transactions:", e);
-                setError(
-                    "Failed to parse the transaction request. Please try again.",
-                );
+                setError(tWErr("parseTx"));
                 setStep("error");
                 return;
             }
@@ -317,7 +344,7 @@ function WalletPageContent() {
             })
             .catch((err) => {
                 console.error("Failed to fetch treasuries:", err);
-                setError("Failed to fetch your treasuries. Please try again.");
+                setError(tWErr("fetchTreasuries"));
                 setStep("error");
             });
     }, [accountId, action, signerId, step]);
@@ -328,7 +355,7 @@ function WalletPageContent() {
             await connector.connect({});
         } catch (e) {
             console.error("Connection failed:", e);
-            setError("Failed to connect wallet");
+            setError(tWErr("connectFailed"));
             setStep("error");
         }
     }, [connector]);
@@ -407,7 +434,13 @@ function WalletPageContent() {
             const submittedProposalIds: number[] = [];
             const allProposals: ProposalData[] = [];
             for (const tx of transactions) {
-                allProposals.push(...translateToProposals(selectedDao, tx));
+                allProposals.push(
+                    ...translateToProposals(
+                        selectedDao,
+                        tx,
+                        walletProposalLabels,
+                    ),
+                );
             }
 
             for (const proposal of allProposals) {
@@ -470,7 +503,7 @@ function WalletPageContent() {
             setStep("waiting-approval");
         } catch (e: any) {
             console.error("Failed to create proposal:", e);
-            setError(e.message || "Failed to create proposal");
+            setError(e.message || tWErr("createProposalFailed"));
             setStep("error");
         }
     }, [
@@ -515,21 +548,25 @@ function WalletPageContent() {
 
                 if (!proposal || proposal.status === "InProgress") {
                     setApprovalLoading(false);
-                    setError(
-                        "Proposal is still pending approval. Please wait for the treasury members to vote.",
-                    );
+                    setError(tWErr("stillPending"));
                     return;
                 }
 
                 if (proposal.status !== "Approved") {
                     setApprovalLoading(false);
+                    const statusLower = proposal.status.toLowerCase();
                     sendResultToOpener({
                         type: "trezu:result",
                         status: "failure",
-                        errorMessage: `Proposal was ${proposal.status.toLowerCase()}`,
+                        errorMessage: tWErr("proposalWasStatus", {
+                            status: statusLower,
+                        }),
                     });
                     setError(
-                        `Proposal #${proposalId} was ${proposal.status.toLowerCase()}`,
+                        tWErr("wasStatus", {
+                            id: proposalId,
+                            status: statusLower,
+                        }),
                     );
                     setStep("error");
                     return;
@@ -576,13 +613,11 @@ function WalletPageContent() {
                 setStep("done");
             } else {
                 setApprovalLoading(false);
-                setError(
-                    "Proposal is approved but the execution transaction is not yet indexed. Please try again in a moment.",
-                );
+                setError(tWErr("awaitIndex"));
             }
         } catch (e: any) {
             setApprovalLoading(false);
-            setError(e.message || "Failed to check proposal status");
+            setError(e.message || tWErr("checkStatusFailed"));
         }
     }, [selectedDao, proposalIds]);
 
@@ -590,10 +625,10 @@ function WalletPageContent() {
         sendResultToOpener({
             type: "trezu:result",
             status: "failure",
-            errorMessage: "User cancelled",
+            errorMessage: tWErr("userCancelled"),
         });
         window.close();
-    }, []);
+    }, [tWErr]);
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4">
@@ -610,27 +645,30 @@ function WalletPageContent() {
                     {step === "loading" && (
                         <div className="text-center py-8">
                             <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4" />
-                            <p className="text-muted-foreground">Loading...</p>
+                            <p className="text-muted-foreground">
+                                {tW("loading")}
+                            </p>
                         </div>
                     )}
 
                     {step === "connect" && !accountId && (
                         <div className="space-y-4">
                             <p className="text-sm text-muted-foreground">
-                                Connect your NEAR wallet to continue. You will
-                                then select a treasury to act on behalf of.
+                                {tW("connectPrompt")}
                             </p>
                             <button
+                                type="button"
                                 onClick={handleConnect}
                                 className="w-full py-3 px-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
                             >
-                                Connect Wallet
+                                {tW("connectWallet")}
                             </button>
                             <button
+                                type="button"
                                 onClick={handleCancel}
                                 className="w-full py-2 px-4 text-muted-foreground hover:text-foreground transition-colors text-sm"
                             >
-                                Cancel
+                                {tW("cancel")}
                             </button>
                         </div>
                     )}
@@ -639,13 +677,17 @@ function WalletPageContent() {
                         <div className="text-center py-8">
                             <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4" />
                             <p className="text-sm text-muted-foreground">
-                                Connected as{" "}
-                                <span className="font-mono font-medium text-foreground">
-                                    {accountId}
-                                </span>
+                                {tW.rich("connectedAs", {
+                                    account: accountId,
+                                    strong: (chunks) => (
+                                        <span className="font-mono font-medium text-foreground">
+                                            {chunks}
+                                        </span>
+                                    ),
+                                })}
                             </p>
                             <p className="text-sm text-muted-foreground mt-1">
-                                Loading treasuries...
+                                {tW("loadingTreasuries")}
                             </p>
                         </div>
                     )}
@@ -654,22 +696,24 @@ function WalletPageContent() {
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
                                 <p className="text-sm text-muted-foreground">
-                                    Connected as{" "}
-                                    <span className="font-mono font-medium text-foreground">
-                                        {accountId}
-                                    </span>
+                                    {tW.rich("connectedAs", {
+                                        account: accountId ?? "",
+                                        strong: (chunks) => (
+                                            <span className="font-mono font-medium text-foreground">
+                                                {chunks}
+                                            </span>
+                                        ),
+                                    })}
                                 </p>
                             </div>
                             <p className="text-sm font-medium">
-                                Select a treasury to{" "}
                                 {action === "sign_in"
-                                    ? "sign in as"
-                                    : "create a proposal on"}
-                                :
+                                    ? tW("selectSignIn")
+                                    : tW("selectSignTx")}
                             </p>
                             {treasuries.length === 0 ? (
                                 <p className="text-sm text-muted-foreground text-center py-4">
-                                    You are not a member of any treasuries.
+                                    {tW("notMember")}
                                 </p>
                             ) : (
                                 <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -694,10 +738,11 @@ function WalletPageContent() {
                                 </div>
                             )}
                             <button
+                                type="button"
                                 onClick={handleCancel}
                                 className="w-full py-2 px-4 text-muted-foreground hover:text-foreground transition-colors text-sm"
                             >
-                                Cancel
+                                {tW("cancel")}
                             </button>
                         </div>
                     )}
@@ -706,22 +751,22 @@ function WalletPageContent() {
                         <div className="space-y-4">
                             <div className="p-3 bg-muted/50 rounded-lg">
                                 <p className="text-xs text-muted-foreground">
-                                    Acting as
+                                    {tW("actingAs")}
                                 </p>
                                 <p className="font-mono text-sm font-medium">
                                     {selectedDao}
                                 </p>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                    Signed by {accountId}
+                                    {tW("signedBy", {
+                                        account: accountId ?? "",
+                                    })}
                                 </p>
                             </div>
 
                             <p className="text-sm font-medium">
-                                This will create{" "}
-                                {previewProposals.length === 1
-                                    ? "a Trezu proposal"
-                                    : `${previewProposals.length} Trezu proposals`}{" "}
-                                for:
+                                {tW("createsNProposals", {
+                                    count: previewProposals.length,
+                                })}
                             </p>
 
                             {previewProposals.map((proposal, i) => (
@@ -735,7 +780,7 @@ function WalletPageContent() {
 
                             <div>
                                 <label className="text-sm font-medium block mb-1">
-                                    Proposal description (optional)
+                                    {tW("proposalDescriptionLabel")}
                                 </label>
                                 <input
                                     type="text"
@@ -743,22 +788,26 @@ function WalletPageContent() {
                                     onChange={(e) =>
                                         setProposalDescription(e.target.value)
                                     }
-                                    placeholder="Describe this proposal..."
+                                    placeholder={tW(
+                                        "proposalDescriptionPlaceholder",
+                                    )}
                                     className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-background"
                                 />
                             </div>
 
                             <button
+                                type="button"
                                 onClick={handleConfirmTransactions}
                                 className="w-full py-3 px-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
                             >
-                                Create Proposal
+                                {tW("createProposal")}
                             </button>
                             <button
+                                type="button"
                                 onClick={handleCancel}
                                 className="w-full py-2 px-4 text-muted-foreground hover:text-foreground transition-colors text-sm"
                             >
-                                Cancel
+                                {tW("cancel")}
                             </button>
                         </div>
                     )}
@@ -767,10 +816,10 @@ function WalletPageContent() {
                         <div className="text-center py-8">
                             <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4" />
                             <p className="text-muted-foreground">
-                                Creating proposal...
+                                {tW("creatingProposal")}
                             </p>
                             <p className="text-xs text-muted-foreground mt-2">
-                                Please confirm in your wallet
+                                {tW("confirmInWallet")}
                             </p>
                         </div>
                     )}
@@ -793,11 +842,10 @@ function WalletPageContent() {
                                 </svg>
                             </div>
                             <p className="text-center font-medium">
-                                Proposal Submitted
+                                {tW("proposalSubmitted")}
                             </p>
                             <p className="text-sm text-muted-foreground text-center">
-                                Your proposal has been created. Share the link
-                                below with the treasury members to vote.
+                                {tW("shareProposal")}
                             </p>
 
                             {proposalIds.map((id) => (
@@ -808,7 +856,10 @@ function WalletPageContent() {
                                     rel="noopener noreferrer"
                                     className="block w-full p-3 text-center border border-border rounded-lg hover:bg-muted/50 transition-colors text-sm font-mono text-primary underline"
                                 >
-                                    {selectedDao} — Proposal #{id}
+                                    {tW("proposalLink", {
+                                        daoId: selectedDao ?? "",
+                                        id,
+                                    })}
                                 </a>
                             ))}
 
@@ -819,19 +870,21 @@ function WalletPageContent() {
                             )}
 
                             <button
+                                type="button"
                                 onClick={handleProceed}
                                 disabled={approvalLoading}
                                 className="w-full py-3 px-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
                             >
                                 {approvalLoading
-                                    ? "Checking..."
-                                    : "The Proposal is Approved. Proceed"}
+                                    ? tW("checking")
+                                    : tW("proposalApprovedProceed")}
                             </button>
                             <button
+                                type="button"
                                 onClick={handleCancel}
                                 className="w-full py-2 px-4 text-muted-foreground hover:text-foreground transition-colors text-sm"
                             >
-                                Cancel
+                                {tW("cancel")}
                             </button>
                         </div>
                     )}
@@ -855,11 +908,11 @@ function WalletPageContent() {
                             </div>
                             <p className="font-medium">
                                 {action === "sign_in"
-                                    ? "Signed in successfully"
-                                    : "Proposal created successfully"}
+                                    ? tW("signedInSuccess")
+                                    : tW("proposalCreatedSuccess")}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                                You can close this window.
+                                {tW("closeWindow")}
                             </p>
                         </div>
                     )}
@@ -882,22 +935,24 @@ function WalletPageContent() {
                                 </svg>
                             </div>
                             <p className="font-medium text-red-600 dark:text-red-400">
-                                {error || "An error occurred"}
+                                {error || tW("errorGeneric")}
                             </p>
                             <button
+                                type="button"
                                 onClick={() => {
                                     setError(null);
                                     setStep("connect");
                                 }}
                                 className="text-sm text-primary hover:underline"
                             >
-                                Try again
+                                {tW("tryAgain")}
                             </button>
                             <button
+                                type="button"
                                 onClick={handleCancel}
                                 className="block mx-auto text-sm text-muted-foreground hover:text-foreground"
                             >
-                                Cancel
+                                {tW("cancel")}
                             </button>
                         </div>
                     )}

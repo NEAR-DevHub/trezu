@@ -1,4 +1,7 @@
+"use client";
+
 import { useMemo, useCallback } from "react";
+import { useTranslations } from "next-intl";
 
 interface Member {
     accountId: string;
@@ -20,6 +23,8 @@ export function useMemberValidation(
     members: Member[],
     options?: ValidationOptions,
 ) {
+    const tAuth = useTranslations("auth");
+    const tMembers = useTranslations("memberValidation");
     const { accountId, canAddMember, hasPendingMemberRequest } = options || {};
 
     const roleMembersMap = useMemo(() => {
@@ -43,14 +48,21 @@ export function useMemberValidation(
     );
 
     // Helper to format critical roles list - memoized function
-    const formatRolesList = useCallback((criticalRoles: string[]): string => {
-        if (criticalRoles.length === 1) return criticalRoles[0];
-        if (criticalRoles.length === 2)
-            return `${criticalRoles[0]} and ${criticalRoles[1]}`;
-        return `${criticalRoles.slice(0, -1).join(", ")}, and ${
-            criticalRoles[criticalRoles.length - 1]
-        }`;
-    }, []);
+    const formatRolesList = useCallback(
+        (criticalRoles: string[]): string => {
+            if (criticalRoles.length === 1) return criticalRoles[0];
+            if (criticalRoles.length === 2)
+                return tMembers("rolesAnd", {
+                    first: criticalRoles[0],
+                    second: criticalRoles[1],
+                });
+            return tMembers("rolesMany", {
+                list: criticalRoles.slice(0, -1).join(", "),
+                last: criticalRoles[criticalRoles.length - 1],
+            });
+        },
+        [tMembers],
+    );
 
     // Helper to check if roles contain governance - memoized
     const hasGovernanceRole = useCallback((roles: string[]): boolean => {
@@ -64,16 +76,16 @@ export function useMemberValidation(
     // Check permission/auth issues first - memoized result
     const permissionError = useMemo((): string | undefined => {
         if (!accountId) {
-            return "Connect your wallet";
+            return tAuth("noWallet");
         }
         if (!canAddMember) {
-            return "You don’t have permission to manage members";
+            return tMembers("noManagePermission");
         }
         if (hasPendingMemberRequest) {
-            return "You can't manage members while there is an active request";
+            return tMembers("pendingRequest");
         }
         return undefined;
-    }, [accountId, canAddMember, hasPendingMemberRequest]);
+    }, [accountId, canAddMember, hasPendingMemberRequest, tAuth, tMembers]);
 
     // Check if modifying member roles would leave any role empty
     const canModifyMember = useCallback(
@@ -105,14 +117,14 @@ export function useMemberValidation(
                 const hasGovernance = hasGovernanceRole(criticalRoles);
                 const rolesList = formatRolesList(criticalRoles);
                 const reason = hasGovernance
-                    ? `Cannot remove this member. They are the only person assigned to the ${rolesList} ${
-                          criticalRoles.length === 1 ? "role" : "roles"
-                      }, which ${
-                          criticalRoles.length === 1 ? "is" : "are"
-                      } required to manage team members and configure voting.`
-                    : `Cannot remove this member. They are the only person assigned to the ${rolesList} ${
-                          criticalRoles.length === 1 ? "role" : "roles"
-                      }.`;
+                    ? tMembers("cannotRemoveMemberGov", {
+                          roles: rolesList,
+                          count: criticalRoles.length,
+                      })
+                    : tMembers("cannotRemoveMember", {
+                          roles: rolesList,
+                          count: criticalRoles.length,
+                      });
 
                 return {
                     canModify: false,
@@ -127,6 +139,7 @@ export function useMemberValidation(
             getRoleMemberCount,
             hasGovernanceRole,
             formatRolesList,
+            tMembers,
         ],
     );
 
@@ -172,14 +185,14 @@ export function useMemberValidation(
                 const hasGovernance = hasGovernanceRole(criticalRoles);
                 const rolesList = formatRolesList(criticalRoles);
                 const reason = hasGovernance
-                    ? `Cannot remove these members. This would leave the ${rolesList} ${
-                          criticalRoles.length === 1 ? "role" : "roles"
-                      } empty, which ${
-                          criticalRoles.length === 1 ? "is" : "are"
-                      } required to manage team members and configure voting.`
-                    : `Cannot remove these members. This would leave the ${rolesList} ${
-                          criticalRoles.length === 1 ? "role" : "roles"
-                      } empty.`;
+                    ? tMembers("cannotBulkRemoveGov", {
+                          roles: rolesList,
+                          count: criticalRoles.length,
+                      })
+                    : tMembers("cannotBulkRemove", {
+                          roles: rolesList,
+                          count: criticalRoles.length,
+                      });
 
                 return {
                     canModify: false,
@@ -189,7 +202,13 @@ export function useMemberValidation(
 
             return { canModify: true };
         },
-        [permissionError, roleMembersMap, hasGovernanceRole, formatRolesList],
+        [
+            permissionError,
+            roleMembersMap,
+            hasGovernanceRole,
+            formatRolesList,
+            tMembers,
+        ],
     );
 
     // Check if a single role change for a member would leave any role empty
@@ -204,8 +223,8 @@ export function useMemberValidation(
             if (membersWithRole.size === 1 && membersWithRole.has(accountId)) {
                 const hasGovernance = hasGovernanceRole([roleToRemove]);
                 const reason = hasGovernance
-                    ? `You can't remove the ${roleToRemove} role from this member. They are the only ${roleToRemove} member, and without this role you won't be able to manage team members or configure voting.`
-                    : `You can't remove the ${roleToRemove} role from this member. They are the only person assigned to this role.`;
+                    ? tMembers("cannotRemoveRoleGov", { role: roleToRemove })
+                    : tMembers("cannotRemoveRole", { role: roleToRemove });
 
                 return {
                     canModify: false,
@@ -215,7 +234,7 @@ export function useMemberValidation(
 
             return { canModify: true };
         },
-        [roleMembersMap, hasGovernanceRole],
+        [roleMembersMap, hasGovernanceRole, tMembers],
     );
 
     return {

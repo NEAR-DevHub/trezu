@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { InfoDisplay, InfoItem } from "@/components/info-display";
 import { ChangeConfigData } from "../../types/index";
 import { isNullValue, renderDiff } from "../../utils/diff-utils";
@@ -17,6 +18,7 @@ export function ChangeConfigExpanded({
     data,
     proposal,
 }: ChangeConfigExpandedProps) {
+    const t = useTranslations("proposals.expanded");
     const { treasuryId } = useTreasury();
 
     const isPending = proposal.status === "InProgress";
@@ -47,7 +49,7 @@ export function ChangeConfigExpanded({
             <div className="flex items-center justify-center p-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 <span className="ml-2 text-muted-foreground text-sm">
-                    Loading historical configuration...
+                    {t("loadingHistorical")}
                 </span>
             </div>
         );
@@ -57,7 +59,9 @@ export function ChangeConfigExpanded({
 
     const formatValue = (key: string, val: any) => {
         if (isNullValue(val))
-            return <span className="text-muted-foreground/50">Not set</span>;
+            return (
+                <span className="text-muted-foreground/50">{t("notSet")}</span>
+            );
         if (key === "primaryColor") {
             return (
                 <div
@@ -70,7 +74,7 @@ export function ChangeConfigExpanded({
             return (
                 <img
                     src={val}
-                    alt="Logo"
+                    alt={t("logoAlt")}
                     className="w-5 h-5 rounded-md object-cover inline-block align-middle"
                 />
             );
@@ -95,14 +99,14 @@ export function ChangeConfigExpanded({
 
     if (diff.nameChanged) {
         infoItems.push({
-            label: "Name",
+            label: t("name"),
             value: configDiff("name", diff.oldConfig.name, diff.newConfig.name),
         });
     }
 
     if (diff.purposeChanged) {
         infoItems.push({
-            label: "Purpose",
+            label: t("purpose"),
             value: configDiff(
                 "purpose",
                 diff.oldConfig.purpose,
@@ -126,7 +130,7 @@ export function ChangeConfigExpanded({
             let label = key
                 .replace(/([A-Z])/g, " $1")
                 .replace(/^./, (str) => str.toUpperCase());
-            if (key === "flagLogo") label = "Logo";
+            if (key === "flagLogo") label = t("logo");
 
             infoItems.push({
                 label,
@@ -138,8 +142,7 @@ export function ChangeConfigExpanded({
     if (infoItems.length === 0) {
         return (
             <div className="p-4 text-center text-muted-foreground">
-                No changes detected in configuration compared to the{" "}
-                {isPending ? "current" : "historical"} state.
+                {isPending ? t("noChangesCurrent") : t("noChangesHistorical")}
             </div>
         );
     }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { PageCard } from "@/components/card";
 import { Button } from "@/components/button";
 import { Label } from "@/components/ui/label";
@@ -39,6 +40,7 @@ type PreferencesFormValues = z.infer<typeof preferencesSchema>;
 const PREFERENCES_STORAGE_KEY = "treasury-timezone-preferences";
 
 export function PreferencesTab() {
+    const t = useTranslations("settings.preferences");
     const [isMounted, setIsMounted] = useState(false);
     const [timezones, setTimezones] = useState<Timezone[]>([]);
     const [isLoadingTimezones, setIsLoadingTimezones] = useState(true);
@@ -90,7 +92,7 @@ export function PreferencesTab() {
                 setTimezones(data);
             } catch (error) {
                 console.error("Error fetching timezones:", error);
-                toast.error("Failed to load timezones");
+                toast.error(t("loadFailed"));
             } finally {
                 setIsLoadingTimezones(false);
             }
@@ -174,10 +176,10 @@ export function PreferencesTab() {
         try {
             localStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify(data));
             form.reset(data); // Reset form state to mark as unchanged
-            toast.success("Preferences saved successfully");
+            toast.success(t("savedToast"));
         } catch (error) {
             console.error("Failed to save preferences:", error);
-            toast.error("Failed to save preferences");
+            toast.error(t("saveFailed"));
         }
     };
 
@@ -212,16 +214,17 @@ export function PreferencesTab() {
             >
                 <PageCard>
                     <div>
-                        <h3 className="text-lg font-semibold">Time Zone</h3>
+                        <h3 className="text-lg font-semibold">
+                            {t("timeZone")}
+                        </h3>
                         <p className="text-sm text-muted-foreground">
-                            Set your local time zone for accurate date and time
-                            display.
+                            {t("timeZoneDescription")}
                         </p>
                     </div>
 
                     {/* Time Format */}
                     <div className="space-y-2">
-                        <Label>Time Format</Label>
+                        <Label>{t("timeFormat")}</Label>
                         <FormField
                             control={form.control}
                             name="timeFormat"
@@ -237,10 +240,10 @@ export function PreferencesTab() {
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="12">
-                                                    12-hour (1:00 PM)
+                                                    {t("hour12")}
                                                 </SelectItem>
                                                 <SelectItem value="24">
-                                                    24-hour (13:00)
+                                                    {t("hour24")}
                                                 </SelectItem>
                                             </SelectContent>
                                         </Select>
@@ -273,8 +276,7 @@ export function PreferencesTab() {
                                             )
                                         }
                                     >
-                                        Set timezone automatically using your
-                                        location
+                                        {t("autoTimezone")}
                                     </Label>
                                 </div>
                             </FormItem>
@@ -283,7 +285,7 @@ export function PreferencesTab() {
 
                     {/* Timezone Select */}
                     <div className="space-y-2">
-                        <Label>Timezone</Label>
+                        <Label>{t("timezone")}</Label>
                         <FormField
                             control={form.control}
                             name="timezone"
@@ -311,17 +313,19 @@ export function PreferencesTab() {
                                             <SelectTrigger className="w-full overflow-hidden [&>span]:truncate [&>span]:min-w-0">
                                                 <span className="truncate block min-w-0">
                                                     {isLoadingTimezones
-                                                        ? "Loading timezones..."
+                                                        ? t("loadingTimezones")
                                                         : field.value
                                                           ? `(${field.value.utc}) ${field.value.value}`
-                                                          : "Select Timezone"}
+                                                          : t("selectTimezone")}
                                                 </span>
                                             </SelectTrigger>
                                             <SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
                                                 <div className="px-2 pb-2 sticky top-0  z-10">
                                                     <Input
                                                         search
-                                                        placeholder="Search timezones..."
+                                                        placeholder={t(
+                                                            "searchTimezones",
+                                                        )}
                                                         value={timezoneSearch}
                                                         onChange={(e) =>
                                                             setTimezoneSearch(
@@ -364,7 +368,7 @@ export function PreferencesTab() {
                                                         )
                                                     ) : (
                                                         <div className="py-6 text-center text-sm text-muted-foreground">
-                                                            No timezones found
+                                                            {t("noTimezones")}
                                                         </div>
                                                     )}
                                                 </ScrollArea>
@@ -383,7 +387,7 @@ export function PreferencesTab() {
                         className="w-full"
                         disabled={!form.formState.isDirty}
                     >
-                        Save
+                        {t("save")}
                     </Button>
                 </div>
             </form>

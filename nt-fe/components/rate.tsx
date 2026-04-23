@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import { Amount } from "@/features/proposals/components/amount";
 import { useToken } from "@/hooks/use-treasury-queries";
 import { formatBalance, formatCurrency } from "@/lib/utils";
@@ -21,6 +24,7 @@ export function Rate({
     amountOut,
     amountOutWithDecimals,
 }: RateProps) {
+    const tCommon = useTranslations("common");
     const { data: tokenInData } = useToken(tokenIn);
     const { data: tokenOutData } = useToken(tokenOut);
     const amount1 = amountIn
@@ -32,10 +36,10 @@ export function Rate({
 
     const cost = useMemo(() => {
         if (!amount1 || !amount2 || amount1 === "0" || amount2 === "0") {
-            return "N/A";
+            return tCommon("notAvailable");
         }
         return Big(amount2).div(Big(amount1)).toFixed(6);
-    }, [amount1, amount2]);
+    }, [amount1, amount2, tCommon]);
 
     return (
         <p className="text-sm text-foreground">

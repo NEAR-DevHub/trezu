@@ -10,6 +10,15 @@ const intentsSdk = new IntentsSDK({
 export const NETWORK_FEE_TOOLTIP_TEXT =
     "This fee is used to process the transaction on the selected chain.";
 
+export interface IntentsFeeLabels {
+    amountTooLowForFee: (
+        prefix: string,
+        fee: string,
+        symbol: string,
+        addMore: string,
+    ) => string;
+}
+
 export interface NetworkFeeCoverageResult {
     isCovered: boolean;
     enteredAmount: Big;
@@ -119,13 +128,16 @@ function formatFeeAmountForMessage(value: Big, decimals: number): string {
     return "0";
 }
 
-export function getNetworkFeeCoverageErrorMessage(args: {
-    amount: string;
-    networkFee: Big;
-    decimals: number;
-    symbol: string;
-    prefix?: string;
-}): string | null {
+export function getNetworkFeeCoverageErrorMessage(
+    args: {
+        amount: string;
+        networkFee: Big;
+        decimals: number;
+        symbol: string;
+        prefix?: string;
+    },
+    labels: IntentsFeeLabels,
+): string | null {
     const feeCoverage = evaluateNetworkFeeCoverage({
         amount: args.amount,
         networkFee: args.networkFee,
@@ -136,7 +148,15 @@ export function getNetworkFeeCoverageErrorMessage(args: {
     }
 
     const rowPrefix = args.prefix ?? "";
-    return `${rowPrefix}Amount too low for network fee (${formatFeeAmountForMessage(feeCoverage.networkFee, args.decimals)} ${args.symbol}). Add at least ${formatFeeAmountForMessage(feeCoverage.addMore, args.decimals)} ${args.symbol}.`;
+    const fee = formatFeeAmountForMessage(
+        feeCoverage.networkFee,
+        args.decimals,
+    );
+    const addMore = formatFeeAmountForMessage(
+        feeCoverage.addMore,
+        args.decimals,
+    );
+    return labels.amountTooLowForFee(rowPrefix, fee, args.symbol, addMore);
 }
 
 export function sumNetworkFees(underlyingFees: unknown): bigint {

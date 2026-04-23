@@ -1,7 +1,8 @@
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/button";
 import {
     AuthButtonWithProposal,
-    NO_VOTE_MESSAGE,
+    useNoVoteMessage,
 } from "@/components/auth-button";
 import { PageCard } from "@/components/card";
 import { NumberBadge } from "@/components/number-badge";
@@ -34,16 +35,15 @@ function PendingRequestItemSkeleton() {
 }
 
 function PendingRequestsSkeleton() {
+    const t = useTranslations("requests.pending");
     return (
         <div className="border bg-general-tertiary border-border rounded-lg p-5 gap-3 flex flex-col w-full h-fit min-h-[300px]">
             <div className="flex justify-between">
                 <div className="flex items-center gap-1">
-                    <h1 className="font-semibold text-nowrap">
-                        Pending Requests
-                    </h1>
+                    <h1 className="font-semibold text-nowrap">{t("title")}</h1>
                 </div>
                 <Button variant="ghost" className="flex gap-2" disabled>
-                    View All
+                    {t("viewAll")}
                     <ChevronRight className="size-4" />
                 </Button>
             </div>
@@ -73,6 +73,8 @@ export function PendingRequestItem({
     onVote,
     onDeposit,
 }: PendingRequestItemProps) {
+    const tActions = useTranslations("requests.actions");
+    const noVoteMessage = useNoVoteMessage();
     const type = getProposalUIKind(proposal);
     const { data: insufficientBalanceInfo } = useProposalInsufficientBalance(
         proposal,
@@ -118,14 +120,12 @@ export function PendingRequestItem({
                                         onVote("Reject");
                                     }}
                                     tooltip={
-                                        isUserVoter
-                                            ? NO_VOTE_MESSAGE
-                                            : undefined
+                                        isUserVoter ? noVoteMessage : undefined
                                     }
                                     disabled={isUserVoter}
                                 >
                                     <X className="size-3.5" />
-                                    Reject
+                                    {tActions("reject")}
                                 </AuthButtonWithProposal>
                                 {insufficientBalanceInfo.hasInsufficientBalance ? (
                                     <span className="w-full">
@@ -141,7 +141,7 @@ export function PendingRequestItem({
                                             }}
                                         >
                                             <Download className="size-3.5" />
-                                            Deposit
+                                            {tActions("deposit")}
                                         </Button>
                                     </span>
                                 ) : (
@@ -156,12 +156,12 @@ export function PendingRequestItem({
                                         disabled={isUserVoter}
                                         tooltip={
                                             isUserVoter
-                                                ? NO_VOTE_MESSAGE
+                                                ? noVoteMessage
                                                 : undefined
                                         }
                                     >
                                         <Check className="size-3.5" />
-                                        Approve
+                                        {tActions("approve")}
                                     </AuthButtonWithProposal>
                                 )}
                             </div>
@@ -175,6 +175,7 @@ export function PendingRequestItem({
 }
 
 export function PendingRequests() {
+    const t = useTranslations("requests.pending");
     const { accountId } = useNear();
     const { treasuryId } = useTreasury();
     const { data: policy } = useTreasuryPolicy(treasuryId);
@@ -215,7 +216,7 @@ export function PendingRequests() {
                 <div className="flex justify-between">
                     <div className="flex items-center gap-1">
                         <h1 className="font-semibold text-nowrap">
-                            Pending Requests
+                            {t("title")}
                         </h1>
                         {hasPendingRequests && (
                             <NumberBadge
@@ -227,7 +228,7 @@ export function PendingRequests() {
                     {hasPendingRequests && (
                         <Link href={`/${treasuryId}/requests`}>
                             <Button variant="ghost" className="flex gap-2">
-                                View All
+                                {t("viewAll")}
                                 <ChevronRight className="size-4" />
                             </Button>
                         </Link>
@@ -264,8 +265,8 @@ export function PendingRequests() {
                 ) : (
                     <EmptyState
                         icon={Send}
-                        title="All caught up!"
-                        description="There are no pending requests."
+                        title={t("emptyTitle")}
+                        description={t("emptyDescription")}
                     />
                 )}
             </div>

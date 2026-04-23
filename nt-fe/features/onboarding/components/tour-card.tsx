@@ -4,6 +4,7 @@ import type { CardComponentProps } from "nextstepjs";
 import { useNextStep } from "nextstepjs";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/button";
 import { useTreasury } from "@/hooks/use-treasury";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,7 @@ const TOUR_ACTIONS = {
     [NEW_FEATURE_ANNOUNCEMENT.tourName]: {
         getHref: (treasuryId?: string | null) =>
             NEW_FEATURE_ANNOUNCEMENT.href(treasuryId),
+        ctaKey: NEW_FEATURE_ANNOUNCEMENT.ctaLabelKey,
     },
 } as const;
 
@@ -39,6 +41,8 @@ export function TourCard({
     skipTour,
     arrow,
 }: CardComponentProps) {
+    const t = useTranslations("onboarding.tourCard");
+    const tTours = useTranslations("pageTours");
     const { setCurrentStep, currentTour } = useNextStep();
     const router = useRouter();
     const { treasuryId } = useTreasury();
@@ -101,14 +105,19 @@ export function TourCard({
         handleNext();
     };
 
+    const tourCtaLabel =
+        isLastStep && tourAction && "ctaKey" in tourAction
+            ? tTours(tourAction.ctaKey)
+            : null;
     const buttonText =
-        isLastStep && step.title
+        tourCtaLabel ??
+        (isLastStep && step.title
             ? step.title
             : totalSteps === 1
-              ? "Got It"
+              ? t("gotIt")
               : isLastStep
-                ? "Done"
-                : "Next";
+                ? t("done")
+                : t("next"));
 
     return (
         <div className="bg-popover-foreground text-popover rounded-md px-2 py-3 shadow-md min-w-[200px] animate-in fade-in-0 zoom-in-95">
@@ -122,7 +131,7 @@ export function TourCard({
                         className="rounded-sm opacity-70 transition-opacity hover:opacity-100 shrink-0"
                     >
                         <X className="h-3.5 w-3.5" />
-                        <span className="sr-only">Close</span>
+                        <span className="sr-only">{t("close")}</span>
                     </button>
                 </div>
 
@@ -134,7 +143,10 @@ export function TourCard({
                 >
                     {totalSteps > 1 && (
                         <p className="text-xs rounded-full text-muted-foreground">
-                            {currentStep + 1} of {totalSteps}
+                            {t("stepProgress", {
+                                current: currentStep + 1,
+                                total: totalSteps,
+                            })}
                         </p>
                     )}
 

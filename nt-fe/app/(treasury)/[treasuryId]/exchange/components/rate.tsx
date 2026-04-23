@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Token } from "@/components/token-input";
 import { cn, formatSmartAmount } from "@/lib/utils";
 import Big from "@/lib/big";
@@ -32,13 +33,14 @@ function calculateExchangeRate(
     receiveTokenDecimals: number,
     sellTokenSymbol: string,
     receiveTokenSymbol: string,
-    isReversed: boolean = false,
+    isReversed: boolean,
+    notAvailable: string,
 ): string {
     const sellAmount = Big(amountIn).div(Big(10).pow(sellTokenDecimals));
     const receiveAmount = Big(amountOut).div(Big(10).pow(receiveTokenDecimals));
 
     if (sellAmount.lte(0) || receiveAmount.lte(0)) {
-        return "N/A";
+        return notAvailable;
     }
 
     if (isReversed) {
@@ -68,13 +70,14 @@ function calculateDetailedExchangeRate(
     receiveTokenDecimals: number,
     sellTokenSymbol: string,
     receiveTokenSymbol: string,
-    isReversed: boolean = false,
+    isReversed: boolean,
+    notAvailable: string,
 ): string {
     const sellAmount = Big(amountIn).div(Big(10).pow(sellTokenDecimals));
     const receiveAmount = Big(amountOut).div(Big(10).pow(receiveTokenDecimals));
 
     if (sellAmount.lte(0) || receiveAmount.lte(0)) {
-        return "N/A";
+        return notAvailable;
     }
 
     if (isReversed) {
@@ -111,6 +114,7 @@ export function Rate({
     detailed = false,
     className = "",
 }: RateProps) {
+    const t = useTranslations("exchangeRate");
     const [isReversed, setIsReversed] = useState(false);
 
     if (!quote) return null;
@@ -119,6 +123,7 @@ export function Rate({
         ? calculateDetailedExchangeRate
         : calculateExchangeRate;
 
+    const tCommon = useTranslations("common");
     const rate = calculateRate(
         quote.amountIn,
         quote.amountOut,
@@ -129,6 +134,7 @@ export function Rate({
         sellToken.symbol,
         receiveToken.symbol,
         isReversed,
+        tCommon("notAvailable"),
     );
 
     return (
@@ -138,9 +144,9 @@ export function Rate({
                 className,
             )}
             onClick={() => setIsReversed(!isReversed)}
-            title="Click to reverse rate"
+            title={t("clickToReverse")}
         >
-            <span className="text-muted-foreground">Rate</span>
+            <span className="text-muted-foreground">{t("rate")}</span>
             <span className="font-medium">{rate}</span>
         </div>
     );

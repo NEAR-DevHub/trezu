@@ -15,6 +15,8 @@ import {
 } from "@/constants/config";
 import Link from "next/link";
 import { BarChart3, CirclePlay, Eye, File, Headphones } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { useMemo } from "react";
 import Gleap from "gleap";
 import { LogoInlined } from "./icons/logo";
 
@@ -78,57 +80,6 @@ function SupportItem({
     );
 }
 
-const resourceItems: SupportItemProps[] = [
-    {
-        icon: <LogoInlined className="size-5" />,
-        title: "Trezu Website",
-        description: "Learn more about Trezu and read our blog.",
-        href: LANDING_PAGE,
-    },
-    {
-        icon: <Eye className="size-5" />,
-        title: "Explore the Trezu Demo",
-        description: "See a live demo account in action.",
-        href: APP_ACTIVE_TREASURY,
-    },
-    {
-        icon: <CirclePlay className="size-5" />,
-        title: "Watch the Demo",
-        description: "Watch a short video showing how Trezu works.",
-        href: APP_DEMO_URL,
-    },
-    {
-        icon: <XIcon className="size-5" />,
-        title: "Follow Us on X",
-        description: "Stay updated with our latest releases and insights.",
-        href: APP_TWITTER_URL,
-    },
-    {
-        icon: <BarChart3 className="size-5" />,
-        title: "Stats",
-        description:
-            "View total assets under management across all sputnik DAOs.",
-        href: "/stats",
-    },
-];
-
-const supportItems: SupportItemProps[] = [
-    {
-        icon: <File className="size-5" />,
-        title: "Documentation",
-        description: "Learn about all features in the docs.",
-        href: APP_DOCS_URL,
-    },
-    {
-        icon: <Headphones className="size-5" />,
-        title: "Product Support",
-        description: "Contact our support team for help.",
-        onClick: () => {
-            Gleap.open();
-        },
-    },
-];
-
 interface SupportCenterModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -138,19 +89,74 @@ export function SupportCenterModal({
     open,
     onOpenChange,
 }: SupportCenterModalProps) {
+    const t = useTranslations("supportCenter");
+    const resourceItems = useMemo<SupportItemProps[]>(
+        () => [
+            {
+                icon: <LogoInlined className="size-5" />,
+                title: t("websiteTitle"),
+                description: t("websiteDescription"),
+                href: LANDING_PAGE,
+            },
+            {
+                icon: <Eye className="size-5" />,
+                title: t("demoTitle"),
+                description: t("demoDescription"),
+                href: APP_ACTIVE_TREASURY,
+            },
+            {
+                icon: <CirclePlay className="size-5" />,
+                title: t("videoTitle"),
+                description: t("videoDescription"),
+                href: APP_DEMO_URL,
+            },
+            {
+                icon: <XIcon className="size-5" />,
+                title: t("xTitle"),
+                description: t("xDescription"),
+                href: APP_TWITTER_URL,
+            },
+            {
+                icon: <BarChart3 className="size-5" />,
+                title: t("statsTitle"),
+                description: t("statsDescription"),
+                href: "/stats",
+            },
+        ],
+        [t],
+    );
+    const supportItems = useMemo<SupportItemProps[]>(
+        () => [
+            {
+                icon: <File className="size-5" />,
+                title: t("docsTitle"),
+                description: t("docsDescription"),
+                href: APP_DOCS_URL,
+            },
+            {
+                icon: <Headphones className="size-5" />,
+                title: t("productSupportTitle"),
+                description: t("productSupportDescription"),
+                onClick: () => {
+                    Gleap.open();
+                },
+            },
+        ],
+        [t],
+    );
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[448px]">
                 <DialogHeader>
                     <DialogTitle className="text-left">
-                        Support Center
+                        {t("title")}
                     </DialogTitle>
                 </DialogHeader>
 
                 <div className="flex flex-col gap-5">
                     <div className="flex flex-col gap-2">
                         <span className="text-sm font-semibold text-muted-foreground">
-                            Resources
+                            {t("resources")}
                         </span>
                         <div className="flex flex-col gap-3">
                             {resourceItems.map((item) => (
@@ -161,7 +167,7 @@ export function SupportCenterModal({
 
                     <div className="flex flex-col gap-2">
                         <span className="text-sm font-semibold text-muted-foreground">
-                            Support
+                            {t("support")}
                         </span>
                         <div className="flex flex-col gap-3">
                             {supportItems.map((item) => (

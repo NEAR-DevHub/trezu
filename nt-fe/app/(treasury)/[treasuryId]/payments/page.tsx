@@ -5,6 +5,7 @@ import type { ConnectorAction } from "@hot-labs/near-connect";
 import { ArrowDownToLine, Info } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useFormContext, useWatch } from "react-hook-form";
 import { z } from "zod";
@@ -70,32 +71,40 @@ import {
     isIntentsToken,
     NETWORK_FEE_TOOLTIP_TEXT,
 } from "@/lib/intents-fee";
+import { useIntentsFeeLabels } from "@/lib/intents-fee-labels";
 import { FunctionCallKind, TransferKind } from "@/lib/proposals-api";
 
-const paymentFormSchema = z
-    .object({
-        address: z
-            .string()
-            .min(2, "Recipient should be at least 2 characters")
-            .max(128, "Recipient must be less than 128 characters"),
-        amount: z
-            .string()
-            .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
-                message: "Amount must be greater than 0",
-            }),
-        memo: z.string().optional(),
-        isRegistered: z.boolean().optional(),
-        token: tokenSchema,
-    })
-    .superRefine((data, ctx) => {
-        if (data.address === data.token.address) {
-            ctx.addIssue({
-                code: "custom",
-                path: ["address"],
-                message: "Recipient and token address cannot be the same",
-            });
-        }
-    });
+function buildPaymentFormSchema(messages: {
+    recipientMin: string;
+    recipientMax: string;
+    amountGreaterThanZero: string;
+    recipientSameAsToken: string;
+}) {
+    return z
+        .object({
+            address: z
+                .string()
+                .min(2, messages.recipientMin)
+                .max(128, messages.recipientMax),
+            amount: z
+                .string()
+                .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+                    message: messages.amountGreaterThanZero,
+                }),
+            memo: z.string().optional(),
+            isRegistered: z.boolean().optional(),
+            token: tokenSchema,
+        })
+        .superRefine((data, ctx) => {
+            if (data.address === data.token.address) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["address"],
+                    message: messages.recipientSameAsToken,
+                });
+            }
+        });
+}
 
 interface Step1Props extends StepProps {
     feeErrorMessage?: string | null;
@@ -117,6 +126,7 @@ function Step1({
     onAmountInput,
     onMaxSet,
 }: Step1Props) {
+    const tPay = useTranslations("payments");
     const form = useFormContext<PaymentFormValues>();
     const { treasuryId, isConfidential } = useTreasury();
     const isMobile = useMediaQuery("(max-width: 768px)");
@@ -138,13 +148,13 @@ function Step1({
 
     const isFormFilled = !!amount && Number(amount) > 0 && !!address;
     const saveButtonText = isFormFilled
-        ? "Review Payment"
-        : "Enter amount and address";
+        ? tPay("reviewButton")
+        : tPay("reviewButtonDisabled");
 
     return (
         <PageCard>
             <div className="flex justify-between items-center">
-                <StepperHeader title="New Payment" />
+                <StepperHeader title={tPay("newPayment")} />
                 <div className="flex items-center gap-2">
                     {isConfidential ? (
                         <Button
@@ -153,11 +163,11 @@ function Step1({
                             className="flex items-center gap-2"
                             id="payments-bulk-btn"
                             disabled
-                            tooltipContent="Coming soon"
+                            tooltipContent={tPay("comingSoon")}
                         >
                             <ArrowDownToLine className="w-4 h-4" />
                             <span className="hidden md:block">
-                                Bulk Payments
+                                {tPay("bulkPayments")}
                             </span>
                         </Button>
                     ) : (
@@ -176,7 +186,7 @@ function Step1({
                             >
                                 <ArrowDownToLine className="w-4 h-4" />
                                 <span className="hidden md:block">
-                                    Bulk Payments
+                                    {tPay("bulkPayments")}
                                 </span>
                             </Button>
                         </Link>
@@ -219,6 +229,7 @@ function Step2({
     isLoadingLiveQuote,
     isFetchingLiveQuote,
 }: Step2Props) {
+    const tPay = useTranslations("payments");
     const form = useFormContext<PaymentFormValues>();
     const token = form.watch("token");
     const address = form.watch("address");
@@ -301,7 +312,7 @@ function Step2({
     return (
         <PageCard>
             <ReviewStep
-                reviewingTitle="Review Your Payment"
+                reviewingTitle={tPay("reviewYourPayment")}
                 handleBack={handleBack}
             >
                 <AmountSummary
@@ -310,7 +321,7 @@ function Step2({
                     token={token}
                     showNetworkIcon={true}
                 >
-                    <p>to 1 recipient</p>
+                    <p>{tPay("summaryRecipients", { count: 1 })}</p>
                 </AmountSummary>
                 <div className="flex flex-col gap-2">
                     <div className="flex flex-col gap-1 w-full">
@@ -353,14 +364,14 @@ function Step2({
                         {showFeeBreakdown && displayNetworkFee.gt(0) && (
                             <div className="flex items-center justify-between gap-2 text-sm my-3">
                                 <div className="flex items-center gap-1 text-muted-foreground">
-                                    <p>Network Fee</p>
+                                    <p>{tPay("networkFee")}</p>
                                     <Tooltip
                                         content={NETWORK_FEE_TOOLTIP_TEXT}
                                         side="top"
                                     >
                                         <Info
                                             className="size-3 shrink-0"
-                                            aria-label="Network fee info"
+                                            aria-label={tPay("networkFeeInfo")}
                                         />
                                     </Tooltip>
                                 </div>
@@ -379,7 +390,7 @@ function Step2({
                                     onChange={field.onChange}
                                     borderless
                                     rows={2}
-                                    placeholder="Add a comment (optional)..."
+                                    placeholder={tPay("commentPlaceholder")}
                                 />
                             )}
                         />
@@ -403,8 +414,8 @@ function Step2({
                     idleMessage={
                         isSelectedTokenIntents &&
                         (isLoadingLiveQuote || isFetchingLiveQuote)
-                            ? "Preparing 1Click transfer route..."
-                            : "Confirm and Submit Request"
+                            ? tPay("preparingRoute")
+                            : tPay("confirmSubmit")
                     }
                     disabled={
                         isSelectedTokenIntents &&
@@ -416,7 +427,7 @@ function Step2({
     );
 }
 
-type PaymentFormValues = z.infer<typeof paymentFormSchema>;
+type PaymentFormValues = z.infer<ReturnType<typeof buildPaymentFormSchema>>;
 
 const STABLE_TOKEN_PRIORITY: Record<string, number> = {
     USDC: 2,
@@ -537,6 +548,20 @@ const buildTransferProposal = (
 };
 
 export default function PaymentsPage() {
+    const t = useTranslations("pages.payments");
+    const tPay = useTranslations("payments");
+    const tValidation = useTranslations("paymentForm.validation");
+    const intentsFeeLabels = useIntentsFeeLabels();
+    const paymentFormSchema = useMemo(
+        () =>
+            buildPaymentFormSchema({
+                recipientMin: tValidation("recipientMin"),
+                recipientMax: tValidation("recipientMax"),
+                amountGreaterThanZero: tValidation("amountGreaterThanZero"),
+                recipientSameAsToken: tValidation("recipientSameAsToken"),
+            }),
+        [tValidation],
+    );
     const { treasuryId, isConfidential } = useTreasury();
     const { createProposal } = useNear();
     const { data: policy } = useTreasuryPolicy(treasuryId);
@@ -772,7 +797,7 @@ export default function PaymentsPage() {
                     ));
 
                 if (!quote) {
-                    throw new Error("Failed to create 1Click transfer quote");
+                    throw new Error(tPay("failed1ClickQuote"));
                 }
 
                 if (isConfidential) {
@@ -813,7 +838,7 @@ export default function PaymentsPage() {
                 );
             }
 
-            await createProposal("Request to send payment submitted", {
+            await createProposal(tPay("paymentSubmitted"), {
                 treasuryId: treasuryId!,
                 proposal: {
                     description,
@@ -893,10 +918,7 @@ export default function PaymentsPage() {
     );
 
     return (
-        <PageComponentLayout
-            title="Payments"
-            description="Send and receive funds securely"
-        >
+        <PageComponentLayout title={t("title")} description={t("description")}>
             <Form {...form}>
                 <form
                     onSubmit={form.handleSubmit(onSubmit)}

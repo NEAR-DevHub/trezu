@@ -10,36 +10,50 @@ export interface BulkPaymentData {
     validationError?: string;
 }
 
-// Schema for the token selection
-export const tokenSchema = z.custom<SelectedTokenData>(
-    (val) => val !== null && typeof val === "object",
-    {
-        message: "Please select a token",
-    },
-);
+export function buildTokenSchema(selectTokenMessage: string) {
+    return z.custom<SelectedTokenData>(
+        (val) => val !== null && typeof val === "object",
+        {
+            message: selectTokenMessage,
+        },
+    );
+}
 
-// Schema for the bulk payment form
-export const bulkPaymentFormSchema = z.object({
-    selectedToken: tokenSchema.nullable(),
-    comment: z.string().optional(),
-    csvData: z.string().nullable(),
-    pasteDataInput: z.string(),
-    activeTab: z.enum(["upload", "paste"]),
-    uploadedFileName: z.string().nullable(),
-});
+export function buildBulkPaymentFormSchema(messages: { selectToken: string }) {
+    return z.object({
+        selectedToken: buildTokenSchema(messages.selectToken).nullable(),
+        comment: z.string().optional(),
+        csvData: z.string().nullable(),
+        pasteDataInput: z.string(),
+        activeTab: z.enum(["upload", "paste"]),
+        uploadedFileName: z.string().nullable(),
+    });
+}
 
-export type BulkPaymentFormValues = z.infer<typeof bulkPaymentFormSchema>;
+export type BulkPaymentFormValues = z.infer<
+    ReturnType<typeof buildBulkPaymentFormSchema>
+>;
 
-// Schema for editing a single payment
-export const editPaymentSchema = z.object({
-    recipient: z
-        .string()
-        .min(2, "Recipient should be at least 2 characters")
-        .max(128, "Recipient must be less than 128 characters"),
-    amount: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
-        message: "Amount must be greater than 0",
-    }),
-    token: tokenSchema,
-});
+export function buildEditPaymentSchema(messages: {
+    recipientMin: string;
+    recipientMax: string;
+    amountGreaterThanZero: string;
+    selectToken: string;
+}) {
+    return z.object({
+        recipient: z
+            .string()
+            .min(2, messages.recipientMin)
+            .max(128, messages.recipientMax),
+        amount: z
+            .string()
+            .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+                message: messages.amountGreaterThanZero,
+            }),
+        token: buildTokenSchema(messages.selectToken),
+    });
+}
 
-export type EditPaymentFormValues = z.infer<typeof editPaymentSchema>;
+export type EditPaymentFormValues = z.infer<
+    ReturnType<typeof buildEditPaymentSchema>
+>;

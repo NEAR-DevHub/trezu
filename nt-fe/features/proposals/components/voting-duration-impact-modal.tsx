@@ -7,6 +7,7 @@ import {
 } from "@/components/modal";
 import { Button } from "@/components/button";
 import { ChevronDown, ChevronRight, ArrowUpRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useTreasury } from "@/hooks/use-treasury";
@@ -55,6 +56,7 @@ export function VotingDurationImpactModal({
     activeProposals,
     isLoadingProposals = false,
 }: VotingDurationImpactModalProps) {
+    const t = useTranslations("proposals.expanded");
     const { treasuryId } = useTreasury();
     const [activeExpanded, setActiveExpanded] = useState(false);
     const [expiringExpanded, setExpiringExpanded] = useState(false);
@@ -149,16 +151,11 @@ export function VotingDurationImpactModal({
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-3xl! max-h-[85vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>
-                        Impact of Changing Voting Duration
-                    </DialogTitle>
+                    <DialogTitle>{t("impactTitle")}</DialogTitle>
                 </DialogHeader>
 
                 <div className="space-y-4">
-                    <p className="text-sm text-foreground">
-                        You are about to update the voting duration. This will
-                        affect the following existing requests.
-                    </p>
+                    <p className="text-sm text-foreground">{t("impactBody")}</p>
 
                     {isLoadingProposals && (
                         <div className="border rounded-lg overflow-hidden">
@@ -197,24 +194,16 @@ export function VotingDurationImpactModal({
                                     <ul className="list-disc list-outside pl-4 space-y-1">
                                         {activeProposalsCount > 0 && (
                                             <li>
-                                                {activeProposalsCount} request
-                                                {activeProposalsCount !== 1
-                                                    ? "s"
-                                                    : ""}{" "}
-                                                will be active for voting after
-                                                this change, with updated
-                                                expiration dates.
+                                                {t("activeRequestsBullet", {
+                                                    count: activeProposalsCount,
+                                                })}
                                             </li>
                                         )}
                                         {expiringProposalsCount > 0 && (
                                             <li>
-                                                {expiringProposalsCount} request
-                                                {expiringProposalsCount !== 1
-                                                    ? "s"
-                                                    : ""}{" "}
-                                                will be marked as
-                                                &quot;Expired&quot; under the
-                                                new voting duration.
+                                                {t("expiringRequestsBullet", {
+                                                    count: expiringProposalsCount,
+                                                })}
                                             </li>
                                         )}
                                     </ul>
@@ -237,9 +226,7 @@ export function VotingDurationImpactModal({
                                                 <ChevronRight className="h-4 w-4" />
                                             )}
                                             <span className="text-sm text-left">
-                                                Requests that remain active for
-                                                voting with a new expiration
-                                                date
+                                                {t("remainActiveHeading")}
                                             </span>
                                         </div>
                                     </button>
@@ -248,9 +235,11 @@ export function VotingDurationImpactModal({
                                         <div className="border-t">
                                             {/* Header */}
                                             <div className="grid grid-cols-[1fr_1fr_140px] gap-4 px-4 py-2 bg-general-tertiary border-b text-xs font-medium uppercase text-muted-foreground">
-                                                <div>Request</div>
-                                                <div>Transaction</div>
-                                                <div>New Expiry</div>
+                                                <div>{t("tableRequest")}</div>
+                                                <div>
+                                                    {t("tableTransaction")}
+                                                </div>
+                                                <div>{t("tableNewExpiry")}</div>
                                             </div>
 
                                             {/* Rows */}
@@ -331,8 +320,15 @@ export function VotingDurationImpactModal({
                                                                 >
                                                                     {daysLeft >
                                                                     0
-                                                                        ? `Expire in ${daysLeft} day${daysLeft !== 1 ? "s" : ""}`
-                                                                        : "Today"}
+                                                                        ? t(
+                                                                              "expireInDays",
+                                                                              {
+                                                                                  count: daysLeft,
+                                                                              },
+                                                                          )
+                                                                        : t(
+                                                                              "today",
+                                                                          )}
                                                                     <ArrowUpRight className="h-3.5 w-3.5 shrink-0" />
                                                                 </Link>
                                                             </div>
@@ -362,8 +358,7 @@ export function VotingDurationImpactModal({
                                                 <ChevronRight className="h-4 w-4" />
                                             )}
                                             <span className="text-sm text-left">
-                                                Requests that will marked as
-                                                &quot;Expire&quot;
+                                                {t("willExpireHeading")}
                                             </span>
                                         </div>
                                     </button>
@@ -372,9 +367,11 @@ export function VotingDurationImpactModal({
                                         <div className="border-t">
                                             {/* Header */}
                                             <div className="grid grid-cols-[1fr_1fr_140px] gap-4 px-4 py-2 bg-general-tertiary border-b text-xs font-medium uppercase text-muted-foreground">
-                                                <div>Request</div>
-                                                <div>Transaction</div>
-                                                <div>New Expiry</div>
+                                                <div>{t("tableRequest")}</div>
+                                                <div>
+                                                    {t("tableTransaction")}
+                                                </div>
+                                                <div>{t("tableNewExpiry")}</div>
                                             </div>
                                             {impactedProposals
                                                 .filter(
@@ -433,7 +430,7 @@ export function VotingDurationImpactModal({
                                                                 e.stopPropagation()
                                                             }
                                                         >
-                                                            Upon approval
+                                                            {t("uponApproval")}
                                                             <ArrowUpRight className="h-3.5 w-3.5 shrink-0" />
                                                         </Link>
                                                     </div>
@@ -452,7 +449,7 @@ export function VotingDurationImpactModal({
                         onClick={onConfirm}
                         className="w-full"
                     >
-                        Yes, Continue
+                        {t("yesContinue")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

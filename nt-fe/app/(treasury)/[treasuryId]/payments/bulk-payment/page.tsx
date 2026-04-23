@@ -3,7 +3,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
+import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { PageComponentLayout } from "@/components/page-component-layout";
@@ -30,12 +31,23 @@ import {
 import {
     type BulkPaymentData,
     type BulkPaymentFormValues,
-    bulkPaymentFormSchema,
+    buildBulkPaymentFormSchema,
     type EditPaymentFormValues,
 } from "./schemas";
 import { needsStorageDepositCheck } from "./utils";
 
 export default function BulkPaymentPage() {
+    const t = useTranslations("pages.payments");
+    const tBulk = useTranslations("bulkPayment");
+    const tReq = useTranslations("requests.actions");
+    const tPaymentValidation = useTranslations("paymentForm.validation");
+    const bulkPaymentFormSchema = useMemo(
+        () =>
+            buildBulkPaymentFormSchema({
+                selectToken: tPaymentValidation("selectToken"),
+            }),
+        [tPaymentValidation],
+    );
     const router = useRouter();
     const queryClient = useQueryClient();
     const { treasuryId: selectedTreasury, isConfidential } = useTreasury();
@@ -44,7 +56,7 @@ export default function BulkPaymentPage() {
 
     useEffect(() => {
         if (isConfidential) {
-            toast.warning("Bulk payments are coming soon!");
+            toast.warning(tBulk("comingSoonToast"));
             router.replace(`/${selectedTreasury}/payments`);
         }
     }, [isConfidential, selectedTreasury, router]);
@@ -147,11 +159,11 @@ export default function BulkPaymentPage() {
                 <BulkPaymentToast
                     steps={[
                         {
-                            label: "Submitting bulk payment list",
+                            label: tBulk("submittingList"),
                             status: "loading",
                         },
                         {
-                            label: "Submitting proposal",
+                            label: tBulk("submittingProposal"),
                             status: "pending",
                         },
                     ]}
@@ -303,7 +315,7 @@ export default function BulkPaymentPage() {
 
             if (!submitResult.success) {
                 throw new Error(
-                    submitResult.error || "Failed to submit payment list",
+                    submitResult.error || tBulk("submitListFailed"),
                 );
             }
 
@@ -312,11 +324,11 @@ export default function BulkPaymentPage() {
                 <BulkPaymentToast
                     steps={[
                         {
-                            label: "Submitting bulk payment list",
+                            label: tBulk("submittingList"),
                             status: "completed",
                         },
                         {
-                            label: "Submitting proposal",
+                            label: tBulk("submittingProposal"),
                             status: "loading",
                         },
                     ]}
@@ -332,7 +344,7 @@ export default function BulkPaymentPage() {
 
             // Create proposal (throws on failure)
             await createProposal(
-                "Bulk payment proposal submitted",
+                tBulk("proposalSubmitted"),
                 {
                     treasuryId: selectedTreasury,
                     proposal: {
@@ -354,10 +366,10 @@ export default function BulkPaymentPage() {
 
             toast.dismiss(loadingToastId);
 
-            toast.success("Bulk Payment Request submitted", {
+            toast.success(tBulk("proposalSubmitted"), {
                 duration: 10000,
                 action: {
-                    label: "View Request",
+                    label: tReq("viewRequest"),
                     onClick: () =>
                         router.push(
                             `/${selectedTreasury}/requests?tab=InProgress`,
@@ -386,9 +398,7 @@ export default function BulkPaymentPage() {
             }
             // createProposal already handles wallet rejection UI; submit list errors need a toast.
             toast.error(
-                error instanceof Error
-                    ? error.message
-                    : "Failed to submit bulk payment",
+                error instanceof Error ? error.message : tBulk("submitFailed"),
             );
         }
     };
@@ -398,8 +408,8 @@ export default function BulkPaymentPage() {
         const payment = paymentData[editingIndex];
         return (
             <PageComponentLayout
-                title="Payments"
-                description="Send and receive funds securely"
+                title={t("title")}
+                description={t("description")}
             >
                 <div className="w-full max-w-[600px] mx-auto">
                     <EditPaymentStep
@@ -417,10 +427,7 @@ export default function BulkPaymentPage() {
     }
 
     return (
-        <PageComponentLayout
-            title="Payments"
-            description="Send and receive funds securely"
-        >
+        <PageComponentLayout title={t("title")} description={t("description")}>
             <FormProvider {...form}>
                 <div
                     className={`w-full mx-auto ${step === 1 ? "max-w-3xl" : "max-w-7xl"}`}

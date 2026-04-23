@@ -3,6 +3,7 @@
 import posthog from "posthog-js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import z from "zod";
 import { type StepProps } from "@/components/step-wizard";
 import { useChains } from "@/features/address-book/chains";
@@ -74,97 +75,88 @@ interface QuestionnaireStep {
     placeholder?: string;
 }
 
-const ROLE_OPTIONS: QuestionnaireOption[] = [
-    { id: "founder", label: "Founder" },
-    { id: "co-founder", label: "Co-founder" },
-    { id: "cfo-finance-lead", label: "CFO / Finance Lead" },
-    { id: "operations-manager", label: "Operations Manager" },
-    { id: "treasury-manager", label: "Treasury Manager" },
-    { id: "other", label: "Other" },
-];
+const ROLE_OPTION_IDS = [
+    "founder",
+    "co-founder",
+    "cfo-finance-lead",
+    "operations-manager",
+    "treasury-manager",
+    "other",
+] as const;
 
-const USE_CASE_OPTIONS: QuestionnaireOption[] = [
-    { id: "team-payroll-grants", label: "Team payroll & grants" },
-    { id: "company-assets-management", label: "Company assets management" },
-    { id: "dao-treasury-management", label: "DAO treasury management" },
-    { id: "investment-portfolio", label: "Investment portfolio" },
-    { id: "operational-spending", label: "Operational spending" },
-    { id: "other", label: "Other" },
-];
+const USE_CASE_OPTION_IDS = [
+    "team-payroll-grants",
+    "company-assets-management",
+    "dao-treasury-management",
+    "investment-portfolio",
+    "operational-spending",
+    "other",
+] as const;
 
-const TEAM_SIZE_OPTIONS: QuestionnaireOption[] = [
-    { id: "just-me", label: "Just me" },
-    { id: "2-5-people", label: "2-5 people" },
-    { id: "6-15-people", label: "6-15 people" },
-    { id: "15-plus-people", label: "15+" },
-];
+const TEAM_SIZE_OPTION_IDS = [
+    "just-me",
+    "2-5-people",
+    "6-15-people",
+    "15-plus-people",
+] as const;
 
-const NETWORK_OPTIONS: QuestionnaireOption[] = [
-    { id: "near", label: "NEAR" },
-    { id: "bitcoin", label: "Bitcoin" },
-    { id: "ethereum", label: "Ethereum" },
-    { id: "solana", label: "Solana" },
-    { id: "arbitrum", label: "Arbitrum" },
-    { id: "base", label: "Base" },
-    { id: "optimism", label: "Optimism" },
-    { id: "polygon", label: "Polygon" },
-    { id: "gnosis", label: "Gnosis" },
-    { id: "avalanche", label: "Avalanche" },
-    { id: "bnb-chain", label: "BNB Chain" },
-    { id: "other", label: "Other" },
-];
+const NETWORK_OPTION_IDS = [
+    "near",
+    "bitcoin",
+    "ethereum",
+    "solana",
+    "arbitrum",
+    "base",
+    "optimism",
+    "polygon",
+    "gnosis",
+    "avalanche",
+    "bnb-chain",
+    "other",
+] as const;
 
-const MULTISIG_EXPERIENCE_OPTIONS: QuestionnaireOption[] = [
-    { id: "never-heard-of-it", label: "Never heard of it" },
-    { id: "heard-about-it", label: "Heard about it" },
-    { id: "never-used-it", label: "Never used it" },
-    { id: "used-gnosis-safe-or-similar", label: "Used Gnosis Safe or similar" },
-    { id: "experienced", label: "Experienced" },
-    { id: "looking-for-a-better-option", label: "Looking for a better option" },
-];
+const MULTISIG_EXPERIENCE_OPTION_IDS = [
+    "never-heard-of-it",
+    "heard-about-it",
+    "never-used-it",
+    "used-gnosis-safe-or-similar",
+    "experienced",
+    "looking-for-a-better-option",
+] as const;
 
-const CURRENT_TOOLS_OPTIONS: QuestionnaireOption[] = [
-    {
-        id: "gnosis-safe",
-        label: "Gnosis Safe",
-        iconSrc: "/icons/gnosis-safe.svg",
-    },
-    { id: "fireblocks", label: "Fireblocks", iconSrc: "/icons/fireblocks.svg" },
-    { id: "tholos", label: "Tholos", iconSrc: "/icons/tholos.svg" },
-    {
-        id: "squads-multisig",
-        label: "Squads Multisig",
-        iconSrc: "/icons/squads-multisig.svg",
-    },
-    { id: "mpc-vault", label: "MPC Vault", iconSrc: "/icons/mpc-vault.svg" },
-    { id: "other", label: "Other" },
-];
+const CURRENT_TOOLS_WITH_ICONS: Record<string, string> = {
+    "gnosis-safe": "/icons/gnosis-safe.svg",
+    fireblocks: "/icons/fireblocks.svg",
+    tholos: "/icons/tholos.svg",
+    "squads-multisig": "/icons/squads-multisig.svg",
+    "mpc-vault": "/icons/mpc-vault.svg",
+};
 
-const MONTHLY_VOLUME_OPTIONS: QuestionnaireOption[] = [
-    { id: "under-10k", label: "Under $10K" },
-    { id: "10k-100k", label: "$10K - $100K" },
-    { id: "100k-1m", label: "$100K - $1M" },
-    { id: "1m-plus", label: "$1M+" },
-];
+const CURRENT_TOOLS_OPTION_IDS = [
+    "gnosis-safe",
+    "fireblocks",
+    "tholos",
+    "squads-multisig",
+    "mpc-vault",
+    "other",
+] as const;
 
-const BIGGEST_CHALLENGE_OPTIONS: QuestionnaireOption[] = [
-    { id: "slow-approvals-and-signing", label: "Slow approvals and signing" },
-    {
-        id: "lack-of-transparency-in-the-team",
-        label: "Lack of transparency in the team",
-    },
-    {
-        id: "hard-to-track-spending-and-balances",
-        label: "Hard to track spending and balances",
-    },
-    { id: "security-and-access-control", label: "Security and access control" },
-    { id: "no-good-web3-tool-yet", label: "No good Web3 tool yet" },
-    {
-        id: "looking-for-crypto-earnings",
-        label: "I am looking for crypto earnings",
-    },
-    { id: "other", label: "Other" },
-];
+const MONTHLY_VOLUME_OPTION_IDS = [
+    "under-10k",
+    "10k-100k",
+    "100k-1m",
+    "1m-plus",
+] as const;
+
+const BIGGEST_CHALLENGE_OPTION_IDS = [
+    "slow-approvals-and-signing",
+    "lack-of-transparency-in-the-team",
+    "hard-to-track-spending-and-balances",
+    "security-and-access-control",
+    "no-good-web3-tool-yet",
+    "looking-for-crypto-earnings",
+    "other",
+] as const;
 
 const MULTISIG_BEGINNER_EXPERIENCE_OPTIONS = new Set([
     "never-heard-of-it",
@@ -219,97 +211,48 @@ const POSTHOG_SURVEY_QUESTION_IDS: Record<string, string> = {
         "",
 };
 
-const QUESTIONNAIRE_STEPS: QuestionnaireStep[] = [
-    {
-        title: "A few quick questions to begin.",
-        question: "What best describes your role?",
-        fieldName: "about.role",
-        placeholder: "Describe your role (optional)",
-        options: ROLE_OPTIONS,
-        selectionMode: "single",
-    },
-    {
-        title: "",
-        question: "What do you plan to use Trezu for?",
-        fieldName: "about.useCases",
-        placeholder: "Describe your use case (optional)",
-        options: USE_CASE_OPTIONS,
-        selectionMode: "multiple",
-    },
-    {
-        title: "",
-        question: "How many people will manage the treasury?",
-        fieldName: "about.teamSize",
-        options: TEAM_SIZE_OPTIONS,
-        selectionMode: "single",
-    },
-    {
-        title: "",
-        question: "Which networks do you use most often?",
-        fieldName: "about.networks",
-        placeholder: "Enter network name (optional)",
-        options: NETWORK_OPTIONS,
-        selectionMode: "multiple",
-    },
-    {
-        title: "",
-        question: "What's your experience with multisig?",
-        fieldName: "about.multisigExperience",
-        options: MULTISIG_EXPERIENCE_OPTIONS,
-        selectionMode: "single",
-    },
-    {
-        title: "",
-        question: "What tools do you currently use to manage finances?",
-        fieldName: "about.currentTools",
-        options: CURRENT_TOOLS_OPTIONS,
-        selectionMode: "multiple",
-    },
-    {
-        title: "",
-        question: "Approximate monthly transaction volume?",
-        fieldName: "about.monthlyVolume",
-        options: MONTHLY_VOLUME_OPTIONS,
-        selectionMode: "single",
-    },
-    {
-        title: "",
-        question: "What's your biggest challenge right now?",
-        fieldName: "about.biggestChallenges",
-        placeholder: "Enter your current challenge (optional)",
-        options: BIGGEST_CHALLENGE_OPTIONS,
-        selectionMode: "multiple",
-    },
+const QUESTIONNAIRE_FIELD_ORDER: QuestionnaireBaseFieldName[] = [
+    "about.role",
+    "about.useCases",
+    "about.teamSize",
+    "about.networks",
+    "about.multisigExperience",
+    "about.currentTools",
+    "about.monthlyVolume",
+    "about.biggestChallenges",
 ];
 
-export const ONBOARDING_QUESTIONNAIRE_STEP_COUNT = QUESTIONNAIRE_STEPS.length;
+export const ONBOARDING_QUESTIONNAIRE_STEP_COUNT =
+    QUESTIONNAIRE_FIELD_ORDER.length;
 
-function getVisibleQuestionnaireSteps(selectedExperience?: string) {
+function getVisibleQuestionnaireSteps(
+    steps: QuestionnaireStep[],
+    selectedExperience?: string,
+) {
     // Hide the "current tools" step for beginner users with little/no multisig exposure.
     const skipToolsQuestion =
         !!selectedExperience &&
         MULTISIG_BEGINNER_EXPERIENCE_OPTIONS.has(selectedExperience);
 
     if (!skipToolsQuestion) {
-        return QUESTIONNAIRE_STEPS;
+        return steps;
     }
 
-    return QUESTIONNAIRE_STEPS.filter(
-        (step) => step.fieldName !== "about.currentTools",
-    );
+    return steps.filter((step) => step.fieldName !== "about.currentTools");
 }
 
 function formatSurveyResponse(
     answer: { selected: string[]; other?: string },
     options: QuestionnaireOption[],
     selectionMode: QuestionnaireSelectionMode,
+    otherLabel: string,
 ): string | string[] {
     const optionLabelById = new Map(
         options.map((option) => [option.id, option.label]),
     );
     const values = answer.selected.map((id) => {
         if (id === "other") {
-            return answer.other?.trim() || "Other";
+            return answer.other?.trim() || otherLabel;
         }
         return optionLabelById.get(id) ?? id;
     });
@@ -319,6 +262,7 @@ function formatSurveyResponse(
 function buildCumulativeSurveyResponses(
     about: OnboardingAboutValues,
     steps: QuestionnaireStep[],
+    otherLabel: string,
 ): Record<string, string | string[]> {
     const responses: Record<string, string | string[]> = {};
     for (const step of steps) {
@@ -334,6 +278,7 @@ function buildCumulativeSurveyResponses(
             answer,
             step.options,
             step.selectionMode,
+            otherLabel,
         );
     }
     return responses;
@@ -343,10 +288,11 @@ export function OnboardingQuestionsStep({
     handleNext,
     startFromLastQuestion = false,
 }: StepProps & { startFromLastQuestion?: boolean }) {
+    const t = useTranslations("onboardingQuestions");
     const form = useFormContext<{ about: OnboardingAboutValues }>();
     const { data: chains = [] } = useChains();
     const [activeQuestionField, setActiveQuestionField] =
-        useState<QuestionnaireBaseFieldName>(QUESTIONNAIRE_STEPS[0].fieldName);
+        useState<QuestionnaireBaseFieldName>(QUESTIONNAIRE_FIELD_ORDER[0]);
     const hasInitializedQuestionRef = useRef(false);
     const surveySubmissionIdRef = useRef(crypto.randomUUID());
     const surveyShownFiredRef = useRef(false);
@@ -358,14 +304,122 @@ export function OnboardingQuestionsStep({
         control: form.control,
         name: "about.currentTools",
     });
+
+    const buildOptions = useMemo(
+        () =>
+            (
+                namespace:
+                    | "role"
+                    | "useCases"
+                    | "teamSize"
+                    | "networks"
+                    | "multisigExperience"
+                    | "currentTools"
+                    | "monthlyVolume"
+                    | "biggestChallenges",
+                ids: readonly string[],
+            ): QuestionnaireOption[] =>
+                ids.map((id) => {
+                    const base: QuestionnaireOption = {
+                        id,
+                        label: t(`options.${namespace}.${id}`),
+                    };
+                    if (namespace === "currentTools") {
+                        const icon = CURRENT_TOOLS_WITH_ICONS[id];
+                        if (icon) base.iconSrc = icon;
+                    }
+                    return base;
+                }),
+        [t],
+    );
+
+    const questionnaireSteps: QuestionnaireStep[] = useMemo(
+        () => [
+            {
+                title: t("stepTitle"),
+                question: t("questions.role"),
+                fieldName: "about.role",
+                placeholder: t("placeholders.describeRole"),
+                options: buildOptions("role", ROLE_OPTION_IDS),
+                selectionMode: "single",
+            },
+            {
+                title: "",
+                question: t("questions.useCases"),
+                fieldName: "about.useCases",
+                placeholder: t("placeholders.describeUseCase"),
+                options: buildOptions("useCases", USE_CASE_OPTION_IDS),
+                selectionMode: "multiple",
+            },
+            {
+                title: "",
+                question: t("questions.teamSize"),
+                fieldName: "about.teamSize",
+                options: buildOptions("teamSize", TEAM_SIZE_OPTION_IDS),
+                selectionMode: "single",
+            },
+            {
+                title: "",
+                question: t("questions.networks"),
+                fieldName: "about.networks",
+                placeholder: t("placeholders.networkName"),
+                options: buildOptions("networks", NETWORK_OPTION_IDS),
+                selectionMode: "multiple",
+            },
+            {
+                title: "",
+                question: t("questions.multisigExperience"),
+                fieldName: "about.multisigExperience",
+                options: buildOptions(
+                    "multisigExperience",
+                    MULTISIG_EXPERIENCE_OPTION_IDS,
+                ),
+                selectionMode: "single",
+            },
+            {
+                title: "",
+                question: t("questions.currentTools"),
+                fieldName: "about.currentTools",
+                options: buildOptions("currentTools", CURRENT_TOOLS_OPTION_IDS),
+                selectionMode: "multiple",
+            },
+            {
+                title: "",
+                question: t("questions.monthlyVolume"),
+                fieldName: "about.monthlyVolume",
+                options: buildOptions(
+                    "monthlyVolume",
+                    MONTHLY_VOLUME_OPTION_IDS,
+                ),
+                selectionMode: "single",
+            },
+            {
+                title: "",
+                question: t("questions.biggestChallenges"),
+                fieldName: "about.biggestChallenges",
+                placeholder: t("placeholders.currentChallenge"),
+                options: buildOptions(
+                    "biggestChallenges",
+                    BIGGEST_CHALLENGE_OPTION_IDS,
+                ),
+                selectionMode: "multiple",
+            },
+        ],
+        [t, buildOptions],
+    );
+
     const visibleQuestions = useMemo(
-        () => getVisibleQuestionnaireSteps(selectedExperience),
-        [selectedExperience],
+        () =>
+            getVisibleQuestionnaireSteps(
+                questionnaireSteps,
+                selectedExperience,
+            ),
+        [questionnaireSteps, selectedExperience],
     );
     const isSurveyConfigReady = useMemo(() => {
         if (!POSTHOG_SURVEY_ID) return false;
-        return QUESTIONNAIRE_STEPS.every((step) =>
-            Boolean(POSTHOG_SURVEY_QUESTION_IDS[step.fieldName]),
+        return QUESTIONNAIRE_FIELD_ORDER.every((field) =>
+            Boolean(POSTHOG_SURVEY_QUESTION_IDS[field]),
         );
     }, []);
     const visibleQuestionIndexMap = useMemo(
@@ -478,6 +532,7 @@ export function OnboardingQuestionsStep({
 
     const advanceQuestion = () => {
         const latestVisibleQuestions = getVisibleQuestionnaireSteps(
+            questionnaireSteps,
             form.getValues("about.multisigExperience.selected")?.[0],
         );
         const currentFieldName = activeQuestionField;
@@ -499,6 +554,7 @@ export function OnboardingQuestionsStep({
 
     const goToPreviousQuestion = () => {
         const latestVisibleQuestions = getVisibleQuestionnaireSteps(
+            questionnaireSteps,
             form.getValues("about.multisigExperience.selected")?.[0],
         );
         const currentFieldName = activeQuestionField;
@@ -515,6 +571,7 @@ export function OnboardingQuestionsStep({
         if (!isSurveyConfigReady || !POSTHOG_SURVEY_ID) return;
         const about = form.getValues("about");
         const latestVisible = getVisibleQuestionnaireSteps(
+            questionnaireSteps,
             about.multisigExperience.selected?.[0],
         );
         const idx = latestVisible.findIndex(
@@ -526,7 +583,7 @@ export function OnboardingQuestionsStep({
             $survey_id: POSTHOG_SURVEY_ID,
             $survey_submission_id: surveySubmissionIdRef.current,
             $survey_completed: isCompleted,
-            ...buildCumulativeSurveyResponses(about, latestVisible),
+            ...buildCumulativeSurveyResponses(about, latestVisible, t("other")),
             ...(isCompleted && {
                 $set: {
                     onboarding_role: about.role.selected[0],
@@ -589,7 +646,8 @@ export function OnboardingQuestionsStep({
                 showOtherInput: hasOtherSelected && questionHasOtherOption,
                 otherValue: currentValue?.other ?? "",
                 otherPlaceholder:
-                    currentQuestion.placeholder ?? "Describe other (optional)",
+                    currentQuestion.placeholder ??
+                    t("placeholders.describeOther"),
                 canContinue,
             }}
             actions={{
