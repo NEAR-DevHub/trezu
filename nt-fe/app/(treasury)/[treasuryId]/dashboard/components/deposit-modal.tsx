@@ -91,6 +91,8 @@ interface NetworkBalanceDisplay {
 
 const STABLE_EMPTY_ARRAY: never[] = [];
 
+const NEAR_DIRECT_NETWORK_ID = "near.com:direct";
+
 export function DepositModal({
     isOpen,
     onClose,
@@ -207,7 +209,11 @@ export function DepositModal({
                 const balance = selectedNetworkBalances.get(network.id);
                 return !balance || !Big(balance.amount).gt(0);
             })
-            .sort((a, b) => a.name.localeCompare(b.name));
+            .sort((a, b) => {
+                if (a.id === NEAR_DIRECT_NETWORK_ID) return -1;
+                if (b.id === NEAR_DIRECT_NETWORK_ID) return 1;
+                return a.name.localeCompare(b.name);
+            });
 
         if (withAssets.length === 0) {
             return [
@@ -368,8 +374,17 @@ export function DepositModal({
             return balances;
         };
 
+        const nearDirectNetworkOption = (): SelectOption => ({
+            id: NEAR_DIRECT_NETWORK_ID,
+            name: "near.com",
+            icon: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y+mAAAAPFBMVEVHcEwA7JcA7JcA7JcA7JcA65YA7JcA75kAyIAA3IwANiIAAAAAvXkAGhAA9p0AdUsAwnwAlF8AaUMAtXS/E4peAAAAB3RSTlMAZsz/ZQfmMR3ddQAAAMdJREFUeAF9k1EShCAIQDUsNBSr7n/Xxc3WZtHeF/iGEQc0gp1AMTlTmBfosswiB06sMQ6GWFPvQ3hQk8nU1Iem0df4krgSRbxdohWbRE9CreUsscc/mQBLvJGWmWhlEIh2Jb0cHQx8UNiUjHJMO58JOGqJXFoOgNiTCFfLXQkYxA4rQywt9yRDOvnbspZbqC+h3SspNSCUlrOSUoslhESkZWYoYKjyObL0m1ikNrLnfGvtnXTWBNuaWBjiXlfzfakF1/sOVsQHNdERKfT2DooAAAAASUVORK5CYII=",
+        });
+
         for (const asset of bridgeAssets) {
             const networks = asset.networks.map(toNetworkOption);
+            if (isConfidential) {
+                networks.unshift(nearDirectNetworkOption());
+            }
             newAssetNetworksMap.set(asset.id, networks);
             networkBalancesByAssetId.set(
                 asset.id,
@@ -488,6 +503,13 @@ export function DepositModal({
                 if (prefillNetwork) networkToSelect = prefillNetwork;
             }
 
+            if (!networkToSelect && isConfidential) {
+                networkToSelect =
+                    availableNetworks.find(
+                        (n) => n.id === NEAR_DIRECT_NETWORK_ID,
+                    ) || null;
+            }
+
             if (!networkToSelect && availableNetworks.length === 1) {
                 networkToSelect = availableNetworks[0];
             }
@@ -528,9 +550,15 @@ export function DepositModal({
                 networkBalancesByAsset.get(asset.id) || new Map(),
             );
 
-            // Auto-select network if only one is available
+            const nearDirectNetwork = availableNetworks.find(
+                (n) => n.id === NEAR_DIRECT_NETWORK_ID,
+            );
+
+            // Auto-select network if only one is available, or near.com for confidential
             if (availableNetworks.length === 1) {
                 form.setValue("network", availableNetworks[0]);
+            } else if (isConfidential && nearDirectNetwork) {
+                form.setValue("network", nearDirectNetwork);
             } else if (
                 selectedNetwork &&
                 !availableNetworks.some((n) => n.id === selectedNetwork.id)
@@ -538,7 +566,13 @@ export function DepositModal({
                 form.setValue("network", null);
             }
         },
-        [form, assetNetworksMap, selectedNetwork, networkBalancesByAsset],
+        [
+            form,
+            assetNetworksMap,
+            selectedNetwork,
+            networkBalancesByAsset,
+            isConfidential,
+        ],
     );
 
     // Handle network selection
@@ -561,6 +595,16 @@ export function DepositModal({
                 return;
             }
             const requestId = ++latestAddressRequestRef.current;
+
+            if (selectedNetwork.id === NEAR_DIRECT_NETWORK_ID) {
+                if (requestId !== latestAddressRequestRef.current) return;
+                setDepositInfo({
+                    address: treasuryId,
+                    memo: null,
+                    minDepositAmount: null,
+                });
+                return;
+            }
 
             // All NEAR networks deposit directly to treasury account ID
             // (except confidential treasuries which always go through intents)
@@ -829,7 +873,7 @@ export function DepositModal({
                                                                         </span>
                                                                     </div>
                                                                 )}
-                                                                <span className="text-foreground font-medium capitalize">
+                                                                <span className="text-foreground font-medium uppercase">
                                                                     {getNetworkDisplayName(
                                                                         selectedNetwork.name,
                                                                     )}

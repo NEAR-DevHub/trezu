@@ -55,7 +55,7 @@ function AccountValue({
     return (
         <div className="flex items-center gap-1">
             <span className="max-w-[300px] truncate">{value}</span>
-            {showCopy ? (
+            {showCopy && value !== "—" ? (
                 <CopyButton
                     text={value}
                     variant="ghost"

@@ -369,6 +369,16 @@
     },
     "requests": {
         "filters": {
+            "proposalTypes": {
+                "Payments": "Pagos",
+                "Exchange": "Intercambio",
+                "Earn": "Ganar",
+                "Vesting": "Vesting",
+                "Function Call": "Llamada a función",
+                "Change Policy": "Cambiar política",
+                "Settings": "Ajustes",
+                "Confidential": "Confidencial"
+            },
             "requestsType": "Tipo de solicitud",
             "createdDate": "Fecha de creación",
             "recipient": "Destinatario",

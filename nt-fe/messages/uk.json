@@ -369,6 +369,16 @@
     },
     "requests": {
         "filters": {
+            "proposalTypes": {
+                "Payments": "Платежі",
+                "Exchange": "Обмін",
+                "Earn": "Заробіток",
+                "Vesting": "Вестинг",
+                "Function Call": "Виклик функції",
+                "Change Policy": "Зміна політики",
+                "Settings": "Налаштування",
+                "Confidential": "Конфіденційний"
+            },
             "requestsType": "Тип запиту",
             "createdDate": "Дата створення",
             "recipient": "Отримувач",

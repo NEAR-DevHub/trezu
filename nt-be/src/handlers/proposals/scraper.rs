@@ -471,6 +471,114 @@ pub struct StakeDelegationInfo {
     pub validator: AccountId,
 }
 
+/// Confidential request subtype, derived from confidential_metadata.quote_metadata
+/// and the treasury (dao) account id. Mirrors FE `extractConfidentialRequestData`.
+#[derive(Debug, Clone)]
+pub enum ConfidentialRequestInfo {
+    Payment {
+        token_id: String,
+        amount: String,
+        receiver: String,
+    },
+    Swap {
+        token_in_address: String,
+        amount_in: String,
+        token_out_address: String,
+        amount_out: String,
+        deposit_address: String,
+    },
+}
+
+impl ConfidentialRequestInfo {
+    /// Detect confidential proposal and classify as payment or swap.
+    /// - Confidential = description field `proposal action: confidential`
+    ///   AND FunctionCall to `v1.signer` with `sign` method.
+    /// - Subtype: if `quoteRequest.recipient == treasury_id` -> Swap, else Payment.
+    ///   Without quote_metadata (unenriched) returns None.
+    pub fn from_proposal(proposal: &Proposal, treasury_id: &str) -> Option<Self> {
+        if extract_from_description(&proposal.description, "proposalaction")
+            != Some("confidential".to_string())
+        {
+            return None;
+        }
+
+        // Confirm v1.signer sign proposal structurally.
+        extract_payload_hash_from_kind(&proposal.kind)?;
+
+        let meta = proposal.confidential_metadata.as_ref()?;
+        let quote_meta = meta.get("quote_metadata")?;
+        if quote_meta.is_null() {
+            return None;
+        }
+        let quote = quote_meta.get("quote")?;
+        let quote_request = quote_meta.get("quoteRequest")?;
+
+        let recipient = quote_request
+            .get("recipient")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let is_swap = recipient == treasury_id;
+
+        if is_swap {
+            let token_in_address = quote_request
+                .get("originAsset")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let token_out_address = quote_request
+                .get("destinationAsset")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let amount_in = quote
+                .get("amountIn")
+                .and_then(|v| v.as_str())
+                .unwrap_or("0")
+                .to_string();
+            let amount_out = quote
+                .get("amountOutFormatted")
+                .and_then(|v| v.as_str())
+                .unwrap_or("0")
+                .to_string();
+            let deposit_address = quote
+                .get("depositAddress")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            Some(ConfidentialRequestInfo::Swap {
+                token_in_address,
+                amount_in,
+                token_out_address,
+                amount_out,
+                deposit_address,
+            })
+        } else {
+            let token_id = quote_request
+                .get("originAsset")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let amount = quote
+                .get("amountIn")
+                .and_then(|v| v.as_str())
+                .unwrap_or("0")
+                .to_string();
+            Some(ConfidentialRequestInfo::Payment {
+                token_id,
+                amount,
+                receiver: recipient.to_string(),
+            })
+        }
+    }
+
+    /// Returns true if this is confidential regardless of enrichment (uses description+kind only).
+    pub fn is_confidential(proposal: &Proposal) -> bool {
+        extract_from_description(&proposal.description, "proposalaction")
+            == Some("confidential".to_string())
+            && extract_payload_hash_from_kind(&proposal.kind).is_some()
+    }
+}
+
 impl PaymentProposalType for PaymentInfo {
     fn from_proposal(
         proposal: &Proposal,

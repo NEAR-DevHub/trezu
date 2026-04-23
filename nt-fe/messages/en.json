@@ -369,6 +369,16 @@
     },
     "requests": {
         "filters": {
+            "proposalTypes": {
+                "Payments": "Payments",
+                "Exchange": "Exchange",
+                "Earn": "Earn",
+                "Vesting": "Vesting",
+                "Function Call": "Function Call",
+                "Change Policy": "Change Policy",
+                "Settings": "Settings",
+                "Confidential": "Confidential"
+            },
             "requestsType": "Requests Type",
             "createdDate": "Created Date",
             "recipient": "Recipient",
