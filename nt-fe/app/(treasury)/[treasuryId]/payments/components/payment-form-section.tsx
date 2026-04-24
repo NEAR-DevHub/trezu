@@ -315,16 +315,6 @@ export function PaymentFormSection<
                     />
                 )}
                 <div className="absolute top-1/2 -translate-y-1/2 right-3 flex items-center gap-1">
-                    {showContactButton && (
-                        <Button
-                            variant="card"
-                            size="icon-sm"
-                            onClick={() => setIsContactModalOpen(true)}
-                            type="button"
-                        >
-                            <ContactRound className="size-4" />
-                        </Button>
-                    )}
                     <Button
                         variant="secondary"
                         size="icon-sm"
@@ -338,6 +328,16 @@ export function PaymentFormSection<
                     >
                         <X className="size-3.5" />
                     </Button>
+                    {showContactButton && (
+                        <Button
+                            variant="card"
+                            size="icon-sm"
+                            onClick={() => setIsContactModalOpen(true)}
+                            type="button"
+                        >
+                            <ContactRound className="size-4" />
+                        </Button>
+                    )}
                 </div>
                 {selectedContact && (
                     <div className="hidden" aria-hidden>
