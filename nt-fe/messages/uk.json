@@ -43,7 +43,8 @@
         "select": "Обрати мову",
         "english": "English",
         "spanish": "Español",
-        "ukrainian": "Українська"
+        "ukrainian": "Українська",
+        "hebrew": "עברית"
     },
     "header": {
         "toggleSidebar": "Перемкнути бічну панель",

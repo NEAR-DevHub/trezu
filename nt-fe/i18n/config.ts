@@ -1,4 +1,4 @@
-export const locales = ["en", "es", "uk"] as const;
+export const locales = ["en", "es", "uk", "he"] as const;
 export type Locale = (typeof locales)[number];
 
 export const defaultLocale: Locale = "en";
@@ -7,7 +7,15 @@ export const localeNames: Record<Locale, string> = {
     en: "English",
     es: "Español",
     uk: "Українська",
+    he: "עברית",
 };
+
+/** Right-to-left locales. */
+export const rtlLocales: readonly Locale[] = ["he"];
+
+export function getLocaleDirection(locale: Locale): "ltr" | "rtl" {
+    return rtlLocales.includes(locale) ? "rtl" : "ltr";
+}
 
 export const LOCALE_COOKIE = "NEXT_LOCALE";
 
