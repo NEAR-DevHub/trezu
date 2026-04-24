@@ -90,7 +90,7 @@
         "waitlistPrivacyNote": "Solo lo usaremos para avisarte",
         "waitlistSubmit": "Unirme a la lista de espera",
         "waitlistSubmitFailed": "Error al enviar. Inténtalo de nuevo.",
-        "welcomeAlt": "bienvenida"
+        "welcomeAlt": "bienvenido"
     },
     "blocked": {
         "title": "Servicio no disponible en tu país",
@@ -560,7 +560,7 @@
             "contract": "Contrato",
             "actionNumber": "Acción {number}",
             "actions": "Acciones",
-            "collapseAll": "Colapsar todo",
+            "collapseAll": "Contraer todo",
             "expandAll": "Expandir todo",
             "send": "Enviar",
             "receive": "Recibir",
@@ -864,7 +864,7 @@
         "parsing": {
             "rowPrefix": "Fila {row}: {message}",
             "missingName": "Falta el nombre del destinatario. Añade un nombre.",
-            "missingAddress": "Falta la dirección del destinatario. Añade una dirección de billetera.",
+            "missingAddress": "Falta la dirección del destinatario. Añade una dirección de cartera.",
             "invalidAddressFormat": "La dirección \"{address}\" no tiene un formato válido para ninguna red compatible.",
             "unknownNetwork": "Red desconocida \"{network}\". Las redes compatibles incluyen: {available}.",
             "incompatibleNetwork": "La dirección \"{address}\" no es compatible con {network}. Redes compatibles: {compatible}.",
@@ -991,7 +991,7 @@
             "enterAmount": "Introduce un importe para intercambiar"
         },
         "review": "Revisar intercambio",
-        "poweredBy": "Con tecnología de",
+        "poweredBy": "Impulsado por",
         "info": {
             "priceDifference": "Diferencia de precio",
             "priceDifferenceTooltip": "Diferencia entre la tasa de cotización y la tasa de mercado actual. Los valores positivos indican una tasa mejor que la del mercado.",
@@ -1033,7 +1033,7 @@
         "allowCancellation": "Permitir cancelación",
         "allowCancellationDescription": "Permite a NEAR Foundation cancelar el bloqueo en cualquier momento. Los bloqueos no cancelables no son compatibles con fechas de cliff.",
         "cliffDate": "Fecha de cliff",
-        "allowEarn": "Permitir ganar",
+        "allowEarn": "Permitir staking",
         "allowEarnDescription": "Permite al propietario del bloqueo hacer staking del importe total de tokens bloqueados (incluso antes de la fecha de cliff).",
         "commentPlaceholder": "Añade un comentario para este plan de vesting (opcional)...",
         "reviewRequest": "Revisar solicitud",
@@ -1045,7 +1045,7 @@
             "endDate": "Fecha de fin",
             "cliffDate": "Fecha de cliff",
             "cancelable": "Cancelable",
-            "allowEarn": "Permite ganar",
+            "allowEarn": "Permite staking",
             "na": "N/D"
         }
     },
@@ -1186,7 +1186,7 @@
     },
     "telegram": {
         "tagPill": "Telegram",
-        "invalidLinkTitle": "Enlace inválido",
+        "invalidLinkTitle": "Enlace no válido",
         "invalidLinkDescription": "A este enlace de conexión de Telegram le falta un token. Vuelve a pulsar Conectar tesorería en Telegram para generar un enlace nuevo.",
         "successTitle": "Conectado correctamente",
         "successDescription": "Las tesorerías se vincularon a este chat de Telegram.",
@@ -1480,7 +1480,7 @@
     },
     "recipientNetworkSelect": {
         "label": "Red del destinatario",
-        "placeholder": "Seleccione la red del destinatario",
+        "placeholder": "Selecciona la red del destinatario",
         "enterAddressFirst": "Introduce primero la dirección del destinatario",
         "noCompatibleNetwork": "Ninguna red coincide con esta dirección",
         "selectPlaceholder": "Seleccionar red",
@@ -1533,7 +1533,7 @@
     },
     "treasurySelector": {
         "select": "Seleccionar tesorería",
-        "connectWalletTooltip": "Conecta la billetera para ver tesorerías",
+        "connectWalletTooltip": "Conecta la cartera para ver tesorerías",
         "manageTreasuries": "Gestionar tesorerías",
         "createTreasury": "Crear tesorería",
         "memberOf": "Miembro de",
@@ -1609,7 +1609,7 @@
         "bucketLocked": "Bloqueado",
         "bucketEarning": "Rendimiento",
         "period": {
-            "1W": "1s",
+            "1W": "1S",
             "1M": "1m",
             "3M": "3m",
             "1Y": "1a"
@@ -1619,7 +1619,7 @@
         "proposalBond": "Garantía de propuesta",
         "proposalPeriod": "Período de propuesta",
         "bountyBond": "Garantía de recompensa",
-        "bountyForgivenessPeriod": "Período de indulto de recompensa",
+        "bountyForgivenessPeriod": "Período de gracia de recompensa",
         "votesCount": "{count} votos",
         "weightKind": "Tipo de peso",
         "quorum": "Quórum",
@@ -1655,8 +1655,8 @@
         "emptyDescription": "Añade activos para empezar a seguir tu cartera."
     },
     "user": {
-        "saveToAddressBook": "Guardar en agenda",
-        "walletCopiedToast": "Dirección de billetera copiada al portapapeles",
+        "saveToAddressBook": "Guardar en libreta de direcciones",
+        "walletCopiedToast": "Dirección de cartera copiada al portapapeles",
         "copyWalletAddress": "Copiar dirección"
     },
     "infoDisplay": {
@@ -1712,9 +1712,9 @@
         "newFeatureCta": "Pruébalo"
     },
     "statusDate": {
-        "expires": "Expira",
+        "expires": "Caduca",
         "created": "Creado",
-        "expired": "Expirado",
+        "expired": "Caducado",
         "removed": "Eliminado"
     },
     "relativeTime": {
@@ -1727,7 +1727,7 @@
     "activityLabels": {
         "exchangePending": "Intercambio pendiente",
         "exchangeRequest": "Solicitud de intercambio",
-        "exchangeFulfillment": "Cumplimiento de intercambio",
+        "exchangeFulfillment": "Ejecución del intercambio",
         "stakingRewards": "Recompensas de staking",
         "proposalAction": "Acción de propuesta",
         "deposit": "Depósito {symbol}",
@@ -1746,8 +1746,8 @@
         "lastDuration": "últimos {duration}"
     },
     "nearStore": {
-        "connectAndAcceptTerms": "Conecta la billetera y acepta los términos para continuar.",
-        "transactionNotApproved": "La transacción no fue aprobada en tu billetera.",
+        "connectAndAcceptTerms": "Conecta la cartera y acepta los términos para continuar.",
+        "transactionNotApproved": "La transacción no fue aprobada en tu cartera.",
         "failedSubmitVote": "No se pudo enviar el voto",
         "failedSubmitVotes": "No se pudieron enviar los votos",
         "viewRequest": "Ver solicitud",
@@ -1843,7 +1843,7 @@
     },
     "earningDetails": {
         "title": "Detalles de ingresos",
-        "totalStaked": "Total apostado",
+        "totalStaked": "Total en staking",
         "earningOverview": "Resumen de ingresos",
         "poolBreakdown": "Desglose por pool ({count, plural, one {# pool} other {# pools}})",
         "almostReady": "¡Earn está casi listo!",
@@ -1851,9 +1851,9 @@
         "comingSoon": "Próximamente",
         "goToEarn": "Ir a Earn",
         "readyToWithdraw": "Listo para retirar",
-        "unstaking": "Retirando apuesta",
+        "unstaking": "Retirando del staking",
         "overview": {
-            "staked": "Apostado",
+            "staked": "En staking",
             "stakedInfo": "Tokens delegados actualmente a validadores que generan recompensas.",
             "pendingRelease": "Pendiente de liberación",
             "pendingReleaseInfo": "Tokens que se han retirado pero siguen en el período de desvinculación (normalmente 2-3 días).",
@@ -1865,7 +1865,7 @@
         "title": "Detalles del lockup",
         "balance": "Saldo",
         "reservedForStorage": "Reservado para almacenamiento",
-        "reservedForStorageInfo": "NEAR reservado por la cuenta de lockup para pagar costos de almacenamiento.",
+        "reservedForStorageInfo": "NEAR reservado por la cuenta de lockup para pagar costes de almacenamiento.",
         "tokenBreakdown": "Desglose de tokens",
         "allocatedAmount": "Cantidad asignada",
         "earned": "Ganado",
@@ -1912,7 +1912,7 @@
         "tokenBreakdown": "Desglose de tokens",
         "originalVestedAmount": "Cantidad original en vesting",
         "reservedForStorage": "Reservado para almacenamiento",
-        "reservedForStorageInfo": "Una pequeña cantidad de tokens necesaria para mantener el vesting activo y cubrir los costos de almacenamiento.",
+        "reservedForStorageInfo": "Una pequeña cantidad de tokens necesaria para mantener el vesting activo y cubrir los costes de almacenamiento.",
         "percentVested": "{percent}% liberado",
         "vestedOf": "{vested} de {total} {symbol}",
         "send": "Enviar"
