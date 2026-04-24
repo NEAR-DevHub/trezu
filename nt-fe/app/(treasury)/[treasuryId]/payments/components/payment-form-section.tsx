@@ -27,6 +27,7 @@ import { Button } from "@/components/button";
 import { UserWithData } from "@/components/user";
 import { FormField } from "@/components/ui/form";
 import { RecipientNetworkSelect } from "./recipient-network-select";
+import { cn } from "@/lib/utils";
 
 interface PaymentFormSectionProps<
     TFieldValues extends FieldValues = FieldValues,
@@ -283,7 +284,7 @@ export function PaymentFormSection<
                 }
             >
                 {selectedContact ? (
-                    <div className="flex items-center justify-between gap-2 pt-1">
+                    <div className="flex items-center pt-1 pr-20">
                         <div className="flex flex-col gap-1 min-w-0">
                             <UserWithData
                                 name={selectedContact.name}
@@ -292,71 +293,52 @@ export function PaymentFormSection<
                                 size="md"
                                 withLink={false}
                             />
-                            {selectedContact.networks.length > 0 && (
-                                <NetworkList
-                                    chains={
-                                        selectedContact.networks
-                                            .map((key) => chainMap.get(key))
-                                            .filter(Boolean) as ChainInfo[]
-                                    }
-                                    badgeSize="sm"
-                                    maxVisible={2}
-                                />
-                            )}
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                            <Button
-                                variant="card"
-                                size="icon-sm"
-                                onClick={() => setIsContactModalOpen(true)}
-                                type="button"
-                            >
-                                <ContactRound className="size-4" />
-                            </Button>
-                            <Button
-                                variant="secondary"
-                                size="icon-sm"
-                                onClick={handleClearContact}
-                                type="button"
-                            >
-                                <X className="size-3.5" />
-                            </Button>
                         </div>
                     </div>
                 ) : (
-                    <>
-                        <AccountInput
-                            key={blockchainType}
-                            blockchain={blockchainType}
-                            value={recipient}
-                            setValue={(val) =>
-                                setRecipientValue(
-                                    val as PathValue<
-                                        TFieldValues,
-                                        Path<TFieldValues>
-                                    >,
-                                )
-                            }
-                            setIsValid={setIsRecipientValid}
-                            setIsValidating={setIsValidatingRecipient}
-                            borderless
-                            validateOnMount={
-                                hideRecipientNetwork && !!recipient
-                            }
-                        />
-                        {showContactButton && (
-                            <Button
-                                variant="card"
-                                size="icon-sm"
-                                className="absolute top-1/2 -translate-y-1/2 right-3"
-                                onClick={() => setIsContactModalOpen(true)}
-                                type="button"
-                            >
-                                <ContactRound className="size-4" />
-                            </Button>
-                        )}
-                    </>
+                    <AccountInput
+                        key={blockchainType}
+                        blockchain={blockchainType}
+                        value={recipient}
+                        setValue={(val) =>
+                            setRecipientValue(
+                                val as PathValue<
+                                    TFieldValues,
+                                    Path<TFieldValues>
+                                >,
+                            )
+                        }
+                        setIsValid={setIsRecipientValid}
+                        setIsValidating={setIsValidatingRecipient}
+                        borderless
+                        validateOnMount={hideRecipientNetwork && !!recipient}
+                    />
                 )}
+                <div className="absolute top-1/2 -translate-y-1/2 right-3 flex items-center gap-1">
+                    {showContactButton && (
+                        <Button
+                            variant="card"
+                            size="icon-sm"
+                            onClick={() => setIsContactModalOpen(true)}
+                            type="button"
+                        >
+                            <ContactRound className="size-4" />
+                        </Button>
+                    )}
+                    <Button
+                        variant="secondary"
+                        size="icon-sm"
+                        onClick={handleClearContact}
+                        type="button"
+                        aria-hidden={!selectedContact}
+                        tabIndex={selectedContact ? 0 : -1}
+                        className={cn(
+                            !selectedContact && "invisible pointer-events-none",
+                        )}
+                    >
+                        <X className="size-3.5" />
+                    </Button>
+                </div>
                 {selectedContact && (
                     <div className="hidden" aria-hidden>
                         <AccountInput
@@ -381,6 +363,7 @@ export function PaymentFormSection<
                         <RecipientNetworkSelect
                             value={(field.value as string | undefined) ?? ""}
                             recipient={recipient}
+                            contactNetworks={selectedContact?.networks}
                             onChange={(id) => {
                                 field.onChange(id);
                             }}

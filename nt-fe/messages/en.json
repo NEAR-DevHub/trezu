@@ -1486,6 +1486,8 @@
         "selectPlaceholder": "Select network",
         "title": "Select Network",
         "available": "Available",
+        "fromAddressBook": "From Address Book",
+        "otherAvailable": "Other Available",
         "incompatible": "Incompatible",
         "comingSoon": "Coming Soon",
         "nearComName": "near.com",

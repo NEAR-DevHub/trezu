@@ -1486,6 +1486,8 @@
         "selectPlaceholder": "Обрати мережу",
         "title": "Обрати мережу",
         "available": "Доступні",
+        "fromAddressBook": "З адресної книги",
+        "otherAvailable": "Інші доступні",
         "incompatible": "Несумісні",
         "comingSoon": "Скоро",
         "nearComName": "near.com",

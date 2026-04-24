@@ -39,6 +39,12 @@ interface RecipientNetworkSelectProps {
      */
     recipient: string;
     /**
+     * Chain keys attached to the selected address-book contact. When present
+     * and non-empty, compatible options are split into "Available" (keys
+     * matching the contact) and "Other Available" (remaining compatible).
+     */
+    contactNetworks?: string[];
+    /**
      * Fires when the user picks a network. Carries the raw network name so
      * callers can derive blockchain type (for downstream address validation).
      */
@@ -112,6 +118,7 @@ export function RecipientNetworkSelect({
     onChange,
     token,
     recipient,
+    contactNetworks,
     onNetworkChange,
     comingSoonFilter,
 }: RecipientNetworkSelectProps) {
@@ -205,15 +212,37 @@ export function RecipientNetworkSelect({
         const compatible = compatibleOptions;
         const incompatible = incompatibleOptions;
 
-        if (compatible.length > 0) {
+        const hasContactSplit = !!contactNetworks && contactNetworks.length > 0;
+        const contactSet = new Set(contactNetworks ?? []);
+        const inContact = (o: RecipientNetworkOption) =>
+            contactSet.has(o.networkName);
+
+        const mapOption = (o: RecipientNetworkOption) => ({
+            id: o.id,
+            name: o.name,
+            icon: "",
+            _option: o,
+        });
+
+        if (hasContactSplit) {
+            const primary = compatible.filter(inContact);
+            const other = compatible.filter((o) => !inContact(o));
+            if (primary.length > 0) {
+                out.push({
+                    title: t("fromAddressBook"),
+                    options: primary.map(mapOption),
+                });
+            }
+            if (other.length > 0) {
+                out.push({
+                    title: t("otherAvailable"),
+                    options: other.map(mapOption),
+                });
+            }
+        } else if (compatible.length > 0) {
             out.push({
                 title: t("available"),
-                options: compatible.map((o) => ({
-                    id: o.id,
-                    name: o.name,
-                    icon: "",
-                    _option: o,
-                })),
+                options: compatible.map(mapOption),
             });
         }
         if (incompatible.length > 0) {
@@ -243,7 +272,13 @@ export function RecipientNetworkSelect({
             });
         }
         return out;
-    }, [compatibleOptions, incompatibleOptions, comingSoonOptions, t]);
+    }, [
+        compatibleOptions,
+        incompatibleOptions,
+        comingSoonOptions,
+        contactNetworks,
+        t,
+    ]);
 
     const hasCompatibleNetwork = compatibleOptions.length > 0;
     const isDisabled = !recipient || !hasCompatibleNetwork;

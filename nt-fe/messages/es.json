@@ -1486,6 +1486,8 @@
         "selectPlaceholder": "Seleccionar red",
         "title": "Seleccionar red",
         "available": "Disponible",
+        "fromAddressBook": "De la libreta de direcciones",
+        "otherAvailable": "Otras disponibles",
         "incompatible": "Incompatible",
         "comingSoon": "Próximamente",
         "nearComName": "near.com",
