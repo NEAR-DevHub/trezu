@@ -1,0 +1,2101 @@
+{
+    "common": {
+        "loading": "Đang tải...",
+        "notAvailable": "N/A",
+        "connecting": "Đang kết nối...",
+        "save": "Lưu",
+        "cancel": "Hủy",
+        "submit": "Gửi",
+        "close": "Đóng",
+        "back": "Quay lại",
+        "seeDemo": "Xem Demo Trezu",
+        "search": "Tìm kiếm",
+        "filter": "Lọc",
+        "filterActive": "Lọc (đang hoạt động)",
+        "export": "Xuất",
+        "exporting": "Đang xuất",
+        "import": "Nhập",
+        "remove": "Xóa",
+        "removing": "Đang xóa...",
+        "edit": "Chỉnh sửa",
+        "continue": "Tiếp tục",
+        "select": "Chọn",
+        "all": "Tất cả",
+        "none": "Không có",
+        "retry": "Thử lại",
+        "tryAgain": "Vui lòng thử lại.",
+        "confirm": "Xác nhận",
+        "next": "Tiếp",
+        "previous": "Trước",
+        "yes": "Có",
+        "no": "Không",
+        "approve": "Phê duyệt",
+        "reject": "Từ chối",
+        "copy": "Sao chép",
+        "copied": "Đã sao chép",
+        "viewAll": "Xem tất cả",
+        "viewDetails": "Xem chi tiết",
+        "noResults": "Không tìm thấy kết quả",
+        "add": "Thêm"
+    },
+    "languageSwitcher": {
+        "label": "Ngôn ngữ",
+        "select": "Chọn ngôn ngữ",
+        "english": "English",
+        "spanish": "Español",
+        "ukrainian": "Українська",
+        "hebrew": "עברית",
+        "german": "Deutsch",
+        "french": "Français",
+        "vietnamese": "Tiếng Việt",
+        "chinese": "中文",
+        "turkish": "Türkçe",
+        "indonesian": "Bahasa Indonesia",
+        "portuguese": "Português",
+        "japanese": "日本語",
+        "korean": "한국어"
+    },
+    "header": {
+        "toggleSidebar": "Bật/tắt thanh bên",
+        "toggleTheme": "Chuyển đổi giao diện"
+    },
+    "nav": {
+        "dashboard": "Bảng điều khiển",
+        "requests": "Yêu cầu",
+        "payments": "Thanh toán",
+        "exchange": "Trao đổi",
+        "addressBook": "Sổ địa chỉ",
+        "members": "Thành viên",
+        "settings": "Cài đặt",
+        "helpSupport": "Trợ giúp & Hỗ trợ",
+        "saveGuestTreasury": "Lưu ngân quỹ khách này vào danh sách ngân quỹ của bạn."
+    },
+    "signIn": {
+        "connect": "Kết nối",
+        "connectWallet": "Kết nối ví",
+        "wallet": "Ví",
+        "termsOfService": "Điều khoản dịch vụ",
+        "privacyPolicy": "Chính sách bảo mật",
+        "disconnect": "Ngắt kết nối"
+    },
+    "auth": {
+        "noWallet": "Kết nối ví của bạn",
+        "noPermission": "Bạn không có quyền thực hiện hành động này",
+        "noVote": "Bạn đã bỏ phiếu cho đề xuất này",
+        "noSponsoredTransactions": "Không còn giao dịch được tài trợ"
+    },
+    "landing": {
+        "welcome": "Chào mừng đến với Trezu",
+        "chooseOption": "Chọn một tùy chọn bên dưới để bắt đầu.",
+        "newUserTitle": "Tôi mới biết đến Trezu",
+        "newUserDescription": "Tôi đã nghe về Trezu nhưng chưa có ngân quỹ.",
+        "existingUserTitle": "Tôi đã sử dụng Trezu",
+        "existingUserDescription": "Tôi đã có tài khoản và đang quản lý một ngân quỹ.",
+        "gradientTagline": "Bảo mật multisig liên chuỗi để quản lý tài sản số",
+        "waitlistTitle": "Tham gia danh sách chờ Trezu",
+        "waitlistSubmittedTitle": "Bạn đã có trong danh sách 🎉",
+        "waitlistSubmittedDescription": "Cảm ơn! Chúng tôi sẽ thông báo cho bạn ngay khi có thể tạo ngân quỹ.",
+        "waitlistDescription": "Chúng tôi đã đạt giới hạn tạo ngân quỹ hôm nay. Đừng lo - hãy thử lại sau hoặc để lại thông tin liên hệ để vào danh sách chờ. Chúng tôi sẽ báo cho bạn khi có chỗ trống.",
+        "waitlistInputPlaceholder": "Địa chỉ email hoặc Telegram (ví dụ: @username)",
+        "waitlistPrivacyNote": "Chúng tôi chỉ sử dụng thông tin này để thông báo cho bạn",
+        "waitlistSubmit": "Tham gia danh sách chờ",
+        "waitlistSubmitFailed": "Gửi không thành công. Vui lòng thử lại.",
+        "welcomeAlt": "chào mừng"
+    },
+    "blocked": {
+        "title": "Dịch vụ không khả dụng tại quốc gia của bạn",
+        "description": "Do các hạn chế, dịch vụ này hiện không khả dụng tại khu vực của bạn."
+    },
+    "notFound": {
+        "title": "Rất tiếc, trang này không còn nữa...",
+        "description": "Có vẻ như bạn đã đi theo một liên kết không còn hoạt động. Hãy thử quay lại hoặc trở về Bảng điều khiển.",
+        "backToDashboard": "Quay lại Bảng điều khiển"
+    },
+    "treasuryInfo": {
+        "logoAlt": "Logo Ngân quỹ"
+    },
+    "dateInput": {
+        "placeholder": "dd/mm/yyyy"
+    },
+    "thresholdSlider": {
+        "warningSingleMember": "Ngưỡng 1-trên-{memberCount} có nghĩa là bất kỳ thành viên nào cũng có thể thực thi giao dịch. Điều này làm giảm tính bảo mật.",
+        "infoBalanced": "Ngưỡng {currentThreshold}-trên-{memberCount} mang lại sự cân bằng tốt giữa bảo mật và linh hoạt vận hành."
+    },
+    "intentsFee": {
+        "amountTooLowForFee": "{prefix}Số tiền quá thấp so với phí mạng ({fee} {symbol}). Hãy thêm ít nhất {addMore} {symbol}."
+    },
+    "metadata": {
+        "treasuryTitle": "Bảng điều khiển | Trezu",
+        "landingTitle": "Trezu | Quản lý ngân quỹ liên chuỗi",
+        "description": "Quản lý vốn của đội bạn trong vài phút từ một bảng điều khiển duy nhất mà không cần từ bỏ khóa của mình.",
+        "ogTitle": "Trezu | Một multisig. Mọi loại crypto. Toàn quyền kiểm soát."
+    },
+    "pages": {
+        "dashboard": {
+            "title": "Bảng điều khiển",
+            "description": "Tổng quan về tài sản và hoạt động của ngân quỹ",
+            "descriptionLong": "Quản lý tài sản ngân quỹ và theo dõi hoạt động"
+        },
+        "activity": {
+            "title": "Giao dịch gần đây",
+            "descriptionDetails": "Chi tiết yêu cầu",
+            "descriptionList": "Giao dịch gần đây trên tất cả tài sản"
+        },
+        "requests": {
+            "title": "Yêu cầu",
+            "description": "Xem và quản lý tất cả yêu cầu multisig đang chờ",
+            "detailDescription": "Chi tiết yêu cầu",
+            "detailTitle": "Yêu cầu #{id}"
+        },
+        "members": {
+            "title": "Thành viên",
+            "description": "Quản lý thành viên đội và quyền hạn"
+        },
+        "settings": {
+            "title": "Cài đặt",
+            "description": "Điều chỉnh cài đặt ứng dụng của bạn"
+        },
+        "addressBook": {
+            "title": "Sổ địa chỉ",
+            "description": "Quản lý người nhận đã lưu của bạn"
+        },
+        "payments": {
+            "title": "Thanh toán",
+            "description": "Gửi và nhận tiền một cách an toàn"
+        },
+        "exchange": {
+            "title": "Trao đổi",
+            "description": "Trao đổi token một cách an toàn và hiệu quả"
+        },
+        "vesting": {
+            "title": "Vesting",
+            "description": "Tạo lịch vesting nhanh chóng và dễ dàng"
+        },
+        "earn": {
+            "title": "Thu nhập",
+            "description": "Kiếm phần thưởng từ tài sản của bạn",
+            "placeholder": "Khám phá cơ hội thu nhập và phần thưởng staking."
+        },
+        "createTreasury": {
+            "title": "Tạo Ngân quỹ",
+            "description": "Thiết lập một ngân quỹ multisig mới cho đội của bạn"
+        },
+        "manageTreasuries": {
+            "title": "Quản lý Ngân quỹ",
+            "description": "Kiểm soát các ngân quỹ hiển thị trong tài khoản của bạn"
+        },
+        "stats": {
+            "title": "Thống kê",
+            "description": "Tài sản đang quản lý theo thời gian thực trên tất cả ngân quỹ sputnik DAO."
+        },
+        "telegram": {
+            "title": "Kết nối Ngân quỹ",
+            "description": "Liên kết ngân quỹ của bạn với một cuộc trò chuyện Telegram",
+            "metaTitle": "Trezu — Kết nối Telegram",
+            "metaDescription": "Kết nối ngân quỹ Trezu của bạn với một cuộc trò chuyện Telegram"
+        },
+        "wallet": {
+            "title": "Ví Trezu",
+            "description": "Ký các đề xuất ngân quỹ thông qua Trezu"
+        }
+    },
+    "depositModal": {
+        "validation": {
+            "selectAsset": "Vui lòng chọn một tài sản",
+            "selectNetwork": "Vui lòng chọn một mạng"
+        },
+        "sections": {
+            "supportedNetworks": "Mạng được hỗ trợ",
+            "networksWithAssets": "Mạng có tài sản",
+            "yourAssets": "Tài sản của bạn",
+            "otherAssets": "Tài sản khác"
+        },
+        "errors": {
+            "addressUnavailable": "Không thể lấy địa chỉ nạp tiền cho tài sản và mạng đã chọn.",
+            "fetchFailed": "Không thể lấy địa chỉ nạp tiền. Vui lòng thử lại."
+        },
+        "title": "Nạp tiền",
+        "subtitle": "Chọn tài sản và mạng để xem địa chỉ nạp tiền",
+        "assetLabel": "Tài sản",
+        "networkLabel": "Mạng",
+        "selectAsset": "Chọn tài sản",
+        "selectNetwork": "Chọn mạng",
+        "otherAssetName": "Khác",
+        "otherNetworkInfo": "Bạn có thể nạp bất kỳ token nào không có trong danh sách tài sản, nhưng chỉ qua mạng NEAR.",
+        "depositAddressHeading": "Địa chỉ nạp tiền",
+        "depositAddressSubtitle": "Hãy luôn kiểm tra kỹ địa chỉ nạp tiền của bạn.",
+        "addressLabel": "Địa chỉ",
+        "addressCopied": "Đã sao chép địa chỉ vào bộ nhớ tạm",
+        "memoLabel": "Memo",
+        "memoCopied": "Đã sao chép memo vào bộ nhớ tạm",
+        "memoWarning": "Bạn <bold>phải</bold> thêm memo khi gửi tiền đến địa chỉ này. Gửi mà không có memo có thể dẫn đến mất tiền vĩnh viễn.",
+        "onlyDeposit": "Chỉ nạp <symbolTag>{symbol}</symbolTag> từ mạng <networkTag>{network}</networkTag>. Chúng tôi khuyên bạn bắt đầu với một giao dịch thử nhỏ để đảm bảo mọi thứ hoạt động chính xác trước khi gửi toàn bộ số tiền.",
+        "minimumDeposit": "Số tiền nạp tối thiểu là <amountTag>{amount} {symbol}</amountTag>",
+        "searchByName": "Tìm theo tên"
+    },
+    "assetDetails": {
+        "coinPrice": "Giá Coin",
+        "weight": "Trọng số",
+        "source": "Nguồn",
+        "send": "Gửi",
+        "exchange": "Trao đổi",
+        "comingSoon": "Sắp ra mắt",
+        "vesting": "Vesting",
+        "vestedPercent": "Đã vesting {percent}%",
+        "frozen": "Đã đóng băng",
+        "frozenTooltip": "Token bị đóng băng đã bị khóa và không thể sử dụng. Chúng có thể bị khóa do được dùng cho lưu trữ, staking, hoặc chưa được vesting.",
+        "vested": "Đã vesting"
+    },
+    "dashboard": {
+        "overview": "Tổng quan về tài sản và hoạt động ngân quỹ của bạn",
+        "assets": "Tài sản",
+        "balance": "Số dư",
+        "totalBalance": "Tổng số dư",
+        "deposit": "Nạp tiền",
+        "addAssets": "Thêm tài sản",
+        "hidden": "Đã ẩn",
+        "confidentialHidden": "Số dư bị ẩn đối với ngân quỹ bảo mật",
+        "recentActivity": "Hoạt động gần đây",
+        "viewAllTransactions": "Xem tất cả giao dịch"
+    },
+    "activity": {
+        "filters": {
+            "createdDate": "Ngày tạo",
+            "token": "Token",
+            "from": "Từ",
+            "to": "Đến"
+        },
+        "tabs": {
+            "all": "Tất cả",
+            "sent": "Đã gửi",
+            "received": "Đã nhận",
+            "stakingRewards": "Phần thưởng Staking",
+            "exchange": "Trao đổi"
+        },
+        "searchPlaceholder": "Tìm theo hash giao dịch",
+        "searchPlaceholderShort": "Hash giao dịch",
+        "fromPool": "từ {pool}",
+        "table": {
+            "type": "LOẠI",
+            "transaction": "GIAO DỊCH",
+            "from": "TỪ",
+            "to": "ĐẾN",
+            "transactionHash": "HASH GIAO DỊCH",
+            "hashTooltip": "Định danh duy nhất (hash) của giao dịch này"
+        },
+        "empty": {
+            "title": "Không tìm thấy giao dịch nào",
+            "description": "Giao dịch của bạn sẽ xuất hiện ở đây khi chúng diễn ra"
+        },
+        "emptyDashboard": {
+            "title": "Chưa có gì để hiển thị",
+            "description": "Giao dịch và các hành động của bạn sẽ xuất hiện ở đây khi chúng diễn ra"
+        },
+        "recentTitle": "Giao dịch gần đây",
+        "details": {
+            "title": "Chi tiết giao dịch",
+            "copyAddress": "Sao chép địa chỉ",
+            "addressCopied": "Đã sao chép địa chỉ vào bộ nhớ tạm",
+            "sell": "Bán",
+            "receive": "Nhận",
+            "pending": "Đang chờ",
+            "type": "Loại",
+            "date": "Ngày",
+            "from": "Từ",
+            "to": "Đến",
+            "method": "Phương thức",
+            "contract": "Hợp đồng",
+            "transaction": "Giao dịch"
+        }
+    },
+    "export": {
+        "types": {
+            "csv": ".CSV",
+            "json": ".JSON",
+            "xlsx": ".XLSX"
+        },
+        "transactionTypes": {
+            "all": "Tất cả loại",
+            "sent": "Đã gửi",
+            "received": "Đã nhận",
+            "stakingRewards": "Phần thưởng Staking"
+        },
+        "validation": {
+            "invalidEmail": "Vui lòng nhập một địa chỉ email hợp lệ"
+        },
+        "columns": {
+            "submissionTime": "Thời gian gửi",
+            "dateRange": "Khoảng ngày",
+            "generatedBy": "Tạo bởi",
+            "status": "Trạng thái"
+        },
+        "status": {
+            "generating": "Đang tạo",
+            "expired": "Đã hết hạn",
+            "failed": "Thất bại"
+        },
+        "noPermission": "Bạn không có quyền tải tệp này.",
+        "download": "Tải xuống",
+        "heading": "Xuất các giao dịch gần đây",
+        "teamOnly": "Việc tạo và tải xuống bản xuất chỉ dành cho thành viên đội.",
+        "creditsUsed": "Bạn đã dùng hết tín dụng",
+        "exportsUsed": "Bạn đã dùng hết lượt xuất",
+        "upgradePrompt": "Nâng cấp gói của bạn để có thêm và tiếp tục",
+        "resetPrompt": "Nâng cấp gói để có thêm quyền truy cập, hoặc đợi đến khi giới hạn của bạn được đặt lại vào tháng sau.",
+        "tabs": {
+            "generate": "Tạo bản xuất",
+            "history": "Lịch sử"
+        },
+        "fields": {
+            "documentType": "Loại tài liệu",
+            "timeRange": "Khoảng thời gian",
+            "selectDateRange": "Chọn khoảng ngày",
+            "asset": "Tài sản",
+            "allAssets": "Tất cả tài sản",
+            "transactionType": "Loại giao dịch"
+        },
+        "buttons": {
+            "noPermissionExport": "Bạn không có quyền xuất",
+            "quotaExhausted": "Bạn đã dùng hết hạn mức",
+            "exporting": "Đang xuất...",
+            "export": "Xuất"
+        },
+        "empty": {
+            "title": "Chưa có bản xuất nào",
+            "description": "Các tệp đã xuất trong tháng vừa qua sẽ xuất hiện ở đây sau khi được tạo."
+        },
+        "requirements": {
+            "heading": "Yêu cầu xuất",
+            "canExportFrom": "Bạn có thể xuất dữ liệu từ",
+            "availability": "Các tệp đã xuất khả dụng để tải trong 48 giờ."
+        },
+        "quota": {
+            "heading": "Hạn mức xuất",
+            "unlimited": "Không giới hạn",
+            "perMonth": "{count} / tháng",
+            "flexibilityPrompt": "Cần thêm sự linh hoạt?",
+            "contactUs": "Liên hệ với chúng tôi"
+        }
+    },
+    "requests": {
+        "filters": {
+            "proposalTypes": {
+                "Payments": "Thanh toán",
+                "Exchange": "Trao đổi",
+                "Earn": "Thu nhập",
+                "Vesting": "Vesting",
+                "Function Call": "Gọi hàm",
+                "Change Policy": "Thay đổi chính sách",
+                "Settings": "Cài đặt",
+                "Confidential": "Bảo mật"
+            },
+            "voteStatus": {
+                "Approved": "Đã phê duyệt",
+                "Rejected": "Đã từ chối",
+                "No Voted": "Chưa bỏ phiếu"
+            },
+            "requestsType": "Loại yêu cầu",
+            "createdDate": "Ngày tạo",
+            "recipient": "Người nhận",
+            "token": "Token",
+            "requester": "Người yêu cầu",
+            "approver": "Người phê duyệt",
+            "myVoteStatus": "Trạng thái phiếu của tôi",
+            "all": "TẤT CẢ",
+            "amount": "Số tiền",
+            "from": "Từ",
+            "to": "Đến",
+            "min": "Tối thiểu",
+            "max": "Tối đa",
+            "invalidDate": "Ngày không hợp lệ",
+            "operationIsNot": " không phải là",
+            "operationBefore": " trước",
+            "operationAfter": " sau",
+            "operationContains": " chứa",
+            "searchByAddress": "Tìm theo địa chỉ",
+            "loadingMembers": "Đang tải thành viên...",
+            "noMembersFound": "Không tìm thấy thành viên. Nhấn Enter để thêm \"{query}\"",
+            "noMembersAvailable": "Không có thành viên khả dụng",
+            "reset": "Đặt lại",
+            "clear": "Xóa",
+            "addFilter": "Thêm bộ lọc"
+        },
+        "tabs": {
+            "all": "Tất cả",
+            "pending": "Đang chờ",
+            "executed": "Đã thực thi",
+            "rejected": "Đã từ chối",
+            "expired": "Đã hết hạn",
+            "failed": "Thất bại"
+        },
+        "searchPlaceholder": "Tìm yêu cầu theo tên hoặc ID",
+        "searchPlaceholderShort": "Tìm theo tên hoặc ID",
+        "errorLoading": "Lỗi khi tải đề xuất. Vui lòng thử lại.",
+        "empty": {
+            "title": "Tạo yêu cầu đầu tiên của bạn",
+            "description": "Yêu cầu thanh toán, trao đổi và các hành động khác sẽ xuất hiện ở đây khi được tạo.",
+            "send": "Gửi",
+            "exchange": "Trao đổi"
+        },
+        "actions": {
+            "approve": "Phê duyệt",
+            "reject": "Từ chối",
+            "deposit": "Nạp tiền",
+            "viewRequest": "Xem yêu cầu"
+        },
+        "table": {
+            "selectAll": "Chọn tất cả",
+            "selectRow": "Chọn hàng",
+            "request": "Yêu cầu",
+            "transaction": "Giao dịch",
+            "requester": "Người yêu cầu",
+            "voting": "Bỏ phiếu",
+            "votingTooltip": "Số đầu tiên cho biết số phê duyệt đã nhận. Số thứ hai cho biết số phê duyệt cần để thực thi.",
+            "status": "Trạng thái",
+            "notPending": "Đề xuất không ở trạng thái chờ.",
+            "noPermissionVote": "Bạn không có quyền bỏ phiếu cho yêu cầu này.",
+            "alreadyVoted": "Bạn đã bỏ phiếu cho yêu cầu này.",
+            "noResults": "Không tìm thấy yêu cầu nào phù hợp với bộ lọc của bạn.",
+            "allCaughtUp": "Đã xử lý hết!",
+            "noPending": "Không có yêu cầu đang chờ nào.",
+            "send": "Gửi",
+            "exchange": "Trao đổi",
+            "requestsSelected": "{count, plural, other {# yêu cầu đã chọn}}",
+            "bulkApproveDisabled": "Yêu cầu này không thể được phê duyệt vì ngân quỹ không đủ số dư."
+        },
+        "pending": {
+            "title": "Yêu cầu đang chờ",
+            "viewAll": "Xem tất cả",
+            "emptyTitle": "Đã xử lý hết!",
+            "emptyDescription": "Không có yêu cầu đang chờ nào."
+        }
+    },
+    "proposals": {
+        "status": {
+            "pending": "Đang chờ",
+            "approved": "Đã phê duyệt",
+            "rejected": "Đã từ chối",
+            "executed": "Đã thực thi",
+            "expired": "Đã hết hạn",
+            "failed": "Thất bại",
+            "removed": "Đã xóa",
+            "inProgress": "Đang xử lý"
+        },
+        "statusTooltip": {
+            "pending": "Yêu cầu này vẫn đang chờ và chưa đạt được số phiếu cần thiết để thực thi.",
+            "executed": "Đã thực thi sau khi {approved} trên {required} thành viên phê duyệt yêu cầu.",
+            "rejected": "Đã từ chối sau khi {rejected} trên {required} thành viên bỏ phiếu từ chối yêu cầu.",
+            "expired": "Đã hết hạn vì không nhận đủ số phiếu để thực thi.",
+            "failed": "Yêu cầu không thể hoàn tất. Kiểm tra chi tiết giao dịch <link>tại đây</link>.",
+            "failedPlain": "Yêu cầu không thể hoàn tất. Kiểm tra chi tiết giao dịch tại đây."
+        },
+        "votes": {
+            "approved": "Đã phê duyệt",
+            "rejected": "Đã từ chối",
+            "pending": "Đang chờ"
+        },
+        "voteModal": {
+            "confirmTitle": "Xác nhận phiếu của bạn",
+            "removeTitle": "Xóa yêu cầu",
+            "bulkBody": "Bạn sắp {action} nhiều yêu cầu. Sau khi gửi, quyết định này không thể thay đổi.",
+            "singleBody": "Bạn sắp {action} yêu cầu này. Sau khi xác nhận, hành động này không thể hoàn tác.",
+            "actionApprove": "phê duyệt",
+            "actionReject": "từ chối",
+            "actionRemove": "xóa",
+            "insufficientBalance": "Yêu cầu <highlight>{ids}</highlight> không thể phê duyệt do số dư không đủ. Phê duyệt của bạn sẽ chỉ áp dụng cho các yêu cầu còn lại.",
+            "remove": "Xóa",
+            "confirm": "Xác nhận"
+        },
+        "expanded": {
+            "recipient": "Người nhận",
+            "amount": "Số tiền",
+            "networkFee": "Phí mạng",
+            "notes": "Ghi chú",
+            "sent": "Đã gửi",
+            "received": "Đã nhận",
+            "priceDifference": "Chênh lệch giá",
+            "priceDifferenceTooltip": "Chênh lệch giữa tỷ giá báo và tỷ giá thị trường hiện tại. Giá trị dương cho biết tỷ giá tốt hơn thị trường.",
+            "slippageTolerance": "Dung sai trượt giá",
+            "estimatedTime": "Thời gian ước tính",
+            "seconds": "{count} giây",
+            "description": "Mô tả",
+            "methodName": "Tên phương thức",
+            "args": "Tham số",
+            "deposit": "Nạp tiền",
+            "gas": "Gas",
+            "totalDeposit": "Tổng số tiền nạp",
+            "totalGas": "Tổng Gas",
+            "receiverId": "ID Người nhận",
+            "contractId": "ID Hợp đồng",
+            "actionsCount": "{count, plural, other {# hành động}}",
+            "functionCallsCount": "{count, plural, other {# lệnh gọi hàm}}",
+            "showLess": "Thu gọn",
+            "showMore": "Xem thêm",
+            "stakingPool": "Pool Staking",
+            "validator": "Validator",
+            "action": "Hành động",
+            "stake": "Stake",
+            "unstake": "Bỏ stake",
+            "withdraw": "Rút tiền",
+            "lockupOwner": "Chủ sở hữu lockup",
+            "lockupDuration": "Thời gian lockup",
+            "cliff": "Cliff",
+            "releaseDuration": "Thời gian phát hành",
+            "vestingSchedule": "Lịch vesting",
+            "cancellable": "Có thể hủy",
+            "allowEarn": "Cho phép staking",
+            "yes": "Có",
+            "no": "Không",
+            "notSet": "Chưa đặt",
+            "from": "Từ",
+            "to": "Đến",
+            "paymentsCount": "{count, plural, other {# thanh toán}}",
+            "sourceWallet": "Ví nguồn",
+            "allNear": "Tất cả NEAR",
+            "startDate": "Ngày bắt đầu",
+            "endDate": "Ngày kết thúc",
+            "cliffDate": "Ngày Cliff",
+            "allowCancellation": "Cho phép hủy",
+            "allowStaking": "Cho phép staking",
+            "loadingHistorical": "Đang tải cấu hình lịch sử...",
+            "name": "Tên",
+            "purpose": "Mục đích",
+            "logo": "Logo",
+            "logoAlt": "Logo",
+            "primaryColor": "Màu chính",
+            "noChangesCurrent": "Không phát hiện thay đổi nào trong cấu hình so với trạng thái hiện tại.",
+            "noChangesHistorical": "Không phát hiện thay đổi nào trong cấu hình so với trạng thái lịch sử.",
+            "method": "Phương thức",
+            "arguments": "Tham số",
+            "contract": "Hợp đồng",
+            "actionNumber": "Hành động {number}",
+            "actions": "Hành động",
+            "collapseAll": "Thu gọn tất cả",
+            "expandAll": "Mở rộng tất cả",
+            "send": "Gửi",
+            "receive": "Nhận",
+            "rate": "Tỷ giá",
+            "priceSlippageLimit": "Giới hạn trượt giá",
+            "slippageTooltip": "Đây là giới hạn trượt giá được xác định cho yêu cầu này. Nếu tỷ giá thị trường thay đổi vượt ngưỡng này trong quá trình thực thi, yêu cầu sẽ tự động thất bại.",
+            "estimatedTimeTooltip": "Thời gian ước tính để hoán đổi được thực thi sau khi giao dịch nạp được xác nhận.",
+            "minReceive": "Tối thiểu nhận",
+            "minimumReceived": "Số tiền nhận tối thiểu",
+            "minReceiveTooltip": "Đây là số tiền tối thiểu bạn sẽ nhận từ giao dịch trao đổi này, dựa trên giới hạn trượt giá đã đặt cho yêu cầu.",
+            "depositAddress": "Địa chỉ nạp tiền",
+            "depositAddressTooltip": "Địa chỉ nạp tiền 1Click nơi token sẽ được gửi đến để thực thi hoán đổi liên chuỗi.",
+            "quoteSignature": "Chữ ký báo giá",
+            "quoteSignatureTooltip": "Chữ ký mã hóa từ API 1Click xác thực báo giá này.",
+            "quoteDeadline": "Hạn báo giá 1-Click",
+            "quoteDeadlineTooltip": "Thời gian khi địa chỉ nạp tiền trở nên không hoạt động và tiền có thể bị mất.",
+            "status": "Trạng thái",
+            "transactionLink": "Liên kết giao dịch",
+            "viewTransaction": "Xem giao dịch",
+            "recipientNumber": "Người nhận {number}",
+            "oopsTitle": "Rất tiếc! Đã xảy ra lỗi",
+            "oopsDescription": "Chúng tôi không thể tìm thấy dữ liệu nào để hiển thị tại đây.",
+            "totalAmount": "Tổng số tiền",
+            "recipients": "Người nhận",
+            "recipientsCount": "{count, plural, other {# người nhận}}",
+            "unsupportedProposal": "Loại đề xuất không được hỗ trợ",
+            "requestDetails": "Chi tiết yêu cầu",
+            "linkCopied": "Đã sao chép liên kết vào bộ nhớ tạm",
+            "copyLink": "Sao chép liên kết",
+            "openRequestPage": "Mở trang yêu cầu",
+            "deleteRequest": "Xóa yêu cầu",
+            "unknownRecipients": "Người nhận không xác định",
+            "loadingConfig": "Đang tải cấu hình...",
+            "historicalData": "Dữ liệu lịch sử...",
+            "generalUpdate": "Cập nhật chung",
+            "detailsUnavailable": "Chi tiết không khả dụng",
+            "changesCount": "{count, plural, other {# thay đổi}}",
+            "policyUpdate": "Cập nhật chính sách",
+            "noChangesDetected": "Không phát hiện thay đổi",
+            "loadingPolicy": "Đang tải chính sách...",
+            "roleChanges": "Thay đổi vai trò",
+            "policyParameters": "Tham số chính sách",
+            "defaultVotePolicy": "Chính sách bỏ phiếu mặc định",
+            "policyRoleChanges": "Thay đổi chính sách & vai trò",
+            "membersAdded": "{count, plural, other {# thành viên đã thêm}}",
+            "membersRemoved": "{count, plural, other {# thành viên đã xóa}}",
+            "membersUpdated": "{count, plural, other {# thành viên đã cập nhật}}",
+            "rolesModified": "{count, plural, other {# vai trò đã sửa}}",
+            "parametersChanged": "{count, plural, other {# tham số đã thay đổi}}",
+            "defaultVotePolicyPart": "chính sách bỏ phiếu mặc định",
+            "onReceiver": "trên {receiver}",
+            "toPrefix": "Đến:",
+            "validatorPrefix": "Validator:",
+            "validatorSubtitle": "Validator: {address}",
+            "impactTitle": "Tác động của việc thay đổi thời gian bỏ phiếu",
+            "impactBody": "Bạn sắp cập nhật thời gian bỏ phiếu. Điều này sẽ ảnh hưởng đến các yêu cầu hiện có sau đây.",
+            "activeRequestsBullet": "{count, plural, other {# yêu cầu sẽ vẫn hoạt động để bỏ phiếu sau khi thay đổi này, với ngày hết hạn được cập nhật.}}",
+            "expiringRequestsBullet": "{count, plural, other {# yêu cầu sẽ được đánh dấu là \"Đã hết hạn\" theo thời gian bỏ phiếu mới.}}",
+            "remainActiveHeading": "Yêu cầu vẫn hoạt động để bỏ phiếu với ngày hết hạn mới",
+            "willExpireHeading": "Yêu cầu sẽ được đánh dấu là \"Hết hạn\"",
+            "tableRequest": "Yêu cầu",
+            "tableTransaction": "Giao dịch",
+            "tableNewExpiry": "Hết hạn mới",
+            "expireInDays": "{count, plural, other {Hết hạn trong # ngày}}",
+            "today": "Hôm nay",
+            "uponApproval": "Khi phê duyệt",
+            "yesContinue": "Có, tiếp tục",
+            "transactionCreated": "Đã tạo giao dịch",
+            "voting": "Bỏ phiếu",
+            "approvalsReceived": "Đã nhận {received}/{required} phê duyệt",
+            "expiresAt": "Hết hạn vào",
+            "expiredAt": "Đã hết hạn vào",
+            "exchangingTokens": "Đang trao đổi token",
+            "exchangingTokensBody": "Yêu cầu này đã được đội phê duyệt. Việc trao đổi token đang diễn ra và có thể mất một chút thời gian.",
+            "requestFailed": "Yêu cầu thất bại",
+            "requestFailedBody": "Đội đã phê duyệt yêu cầu này, nhưng nó đã thất bại do biến động tỷ giá. Vui lòng tạo yêu cầu mới và thử lại.",
+            "votingPeriod24h": "Thời gian bỏ phiếu: 24 giờ",
+            "votingPeriod24hBody": "Yêu cầu trao đổi này có thời gian bỏ phiếu 24 giờ. Hãy phê duyệt yêu cầu trong khoảng thời gian này, nếu không yêu cầu sẽ hết hạn.",
+            "reject": "Từ chối",
+            "approve": "Phê duyệt"
+        },
+        "insufficientBalance": {
+            "noAsset": "Yêu cầu này không thể được phê duyệt vì token cần thiết không có sẵn trong ngân quỹ.",
+            "bond": "Yêu cầu này không thể được phê duyệt vì ngân quỹ không đủ số dư <token>{symbol}</token>. Hãy thêm <token>{amount} {symbol}</token> để chi trả phí bond đề xuất.",
+            "continue": "Yêu cầu này không thể được phê duyệt vì ngân quỹ không đủ số dư <token>{symbol}</token>. Hãy thêm <token>{amount} {symbol}</token> để tiếp tục.",
+            "modalTitle": "Số dư NEAR không đủ",
+            "modalBodyVote": "Bạn không có đủ token NEAR trong ví để bỏ phiếu này. Việc bỏ phiếu yêu cầu số dư tối thiểu là <amount>{required} NEAR</amount>. Vui lòng thêm NEAR vào ví và thử lại.",
+            "modalBodyProposal": "Bạn không có đủ token NEAR trong ví để tạo yêu cầu này. Việc tạo yêu cầu cần số dư tối thiểu là <amount>{required} NEAR</amount>. Vui lòng thêm NEAR vào ví và thử lại.",
+            "gotIt": "Đã hiểu"
+        }
+    },
+    "members": {
+        "title": "Thành viên",
+        "description": "Quản lý thành viên đội và quyền hạn",
+        "permissions": "Quyền",
+        "member": "Thành viên",
+        "activeMembers": "Thành viên đang hoạt động",
+        "noActiveMembers": "Không tìm thấy thành viên đang hoạt động.",
+        "addNewMember": "Thêm thành viên mới",
+        "membersSelected": "Đã chọn {count, plural, =0 {không có thành viên nào} other {# thành viên}}",
+        "remove": "Xóa",
+        "edit": "Chỉnh sửa",
+        "requestorOnlyTooltip": "Bạn chỉ có thể thêm vai trò Người yêu cầu cho thành viên này, vì họ chịu trách nhiệm tạo các yêu cầu thanh toán từ NEARN.",
+        "memberModal": {
+            "editRoles": "Chỉnh sửa vai trò",
+            "addNewMember": "Thêm thành viên mới",
+            "validatingAddresses": "Đang xác thực địa chỉ...",
+            "creatingProposal": "Đang tạo đề xuất...",
+            "reviewRequest": "Xem lại yêu cầu",
+            "noChanges": "Không có thay đổi nào đối với vai trò thành viên"
+        },
+        "previewModal": {
+            "title": "Xem lại yêu cầu của bạn",
+            "youAreEditing": "Bạn đang chỉnh sửa",
+            "youAreAdding": "Bạn đang thêm",
+            "membersCount": "{count, plural, other {# thành viên}}",
+            "newMembersCount": "{count, plural, other {# thành viên mới}}",
+            "updatedMembers": "Thành viên đã cập nhật",
+            "newMembers": "Thành viên mới",
+            "creatingProposal": "Đang tạo đề xuất...",
+            "confirmSubmit": "Xác nhận và gửi yêu cầu"
+        },
+        "removeDialog": {
+            "title": "Xóa yêu cầu",
+            "nearnBody": "Sau khi được phê duyệt, {account} sẽ bị xóa vĩnh viễn khỏi ngân quỹ và mọi quyền liên quan sẽ bị thu hồi. Sau khi xóa, tài khoản này sẽ không thể tạo yêu cầu từ NEARN nữa.",
+            "genericBody": "Sau khi phê duyệt, hành động này sẽ xóa vĩnh viễn <bold>{accounts}</bold> khỏi ngân quỹ và thu hồi tất cả quyền đã gán.",
+            "creatingProposal": "Đang tạo đề xuất..."
+        },
+        "validation": {
+            "accountIdRequired": "Bắt buộc nhập ID tài khoản",
+            "invalidNearAddress": "Địa chỉ NEAR không hợp lệ.",
+            "atLeastOneRole": "Phải chọn ít nhất một vai trò",
+            "atLeastOneMember": "Cần ít nhất một thành viên",
+            "alreadyAdded": "Thành viên này đã được thêm ở trên",
+            "alreadyInTreasury": "Thành viên này đã có trong ngân quỹ",
+            "cannotRemoveRoleAfter": "Bạn không thể xóa vai trò {role} của thành viên này. Sau tất cả các thay đổi, họ sẽ là người duy nhất được gán vai trò này.",
+            "cannotRemoveRoleAfterGov": "Bạn không thể xóa vai trò {role} của thành viên này. Sau tất cả các thay đổi, họ sẽ là thành viên {role} duy nhất, và không có vai trò này bạn sẽ không thể quản lý thành viên đội hay cấu hình bỏ phiếu."
+        },
+        "policy": {
+            "addMembers": "Cập nhật chính sách - Thêm thành viên mới",
+            "addMembersSuccess": "Đã tạo thành công yêu cầu thêm thành viên mới",
+            "editMember": "Cập nhật chính sách - Chỉnh sửa quyền thành viên",
+            "editMembers": "Cập nhật chính sách - Chỉnh sửa nhiều thành viên",
+            "editMemberSuccess": "Đã tạo thành công yêu cầu cập nhật vai trò thành viên",
+            "editMembersSuccess": "Đã tạo thành công yêu cầu cập nhật vai trò hàng loạt",
+            "removeMember": "Cập nhật chính sách - Xóa thành viên",
+            "removeMembers": "Cập nhật chính sách - Xóa các thành viên",
+            "removeMemberSuccess": "Đã tạo thành công yêu cầu xóa thành viên"
+        }
+    },
+    "settings": {
+        "tabs": {
+            "general": "Chung",
+            "voting": "Bỏ phiếu",
+            "preferences": "Tùy chọn",
+            "integrations": "Tích hợp"
+        },
+        "general": {
+            "validation": {
+                "displayNameRequired": "Bắt buộc nhập tên hiển thị",
+                "displayNameMax": "Tên hiển thị phải ít hơn 100 ký tự"
+            },
+            "proposalDescriptionTitle": "Cập nhật cấu hình - Giao diện & logo",
+            "proposalSubmitted": "Đã gửi yêu cầu cập nhật cấu hình",
+            "treasuryNotFound": "Không tìm thấy ngân quỹ",
+            "treasuryName": "Tên ngân quỹ",
+            "treasuryNameDescription": "Tên ngân quỹ của bạn. Tên này sẽ hiển thị trên toàn bộ ứng dụng.",
+            "displayName": "Tên hiển thị",
+            "displayNamePlaceholder": "Nhập tên hiển thị",
+            "accountName": "Tên tài khoản",
+            "logo": "Logo",
+            "logoDescription": "Tải lên logo cho ngân quỹ của bạn. Khuyến nghị SVG, PNG hoặc JPG (256x256 px).",
+            "treasuryLogoAlt": "Logo ngân quỹ",
+            "uploading": "Đang tải lên...",
+            "uploadLogo": "Tải lên logo",
+            "removeLogo": "Xóa logo",
+            "logoUploaded": "Đã tải lên logo thành công",
+            "uploadError": "Đã xảy ra lỗi khi tải lên hình ảnh, vui lòng thử lại.",
+            "invalidLogo": "Logo không hợp lệ. Vui lòng tải lên tệp PNG, JPG hoặc SVG có kích thước chính xác 256x256 px",
+            "invalidImage": "Tệp hình ảnh không hợp lệ. Vui lòng tải lên một hình ảnh hợp lệ.",
+            "fileReadError": "Lỗi khi đọc tệp. Vui lòng thử lại.",
+            "primaryColor": "Màu chính",
+            "primaryColorDescription": "Đặt màu chính cho các thành phần giao diện ngân quỹ. Màu này sẽ được dùng ở cả chế độ sáng và tối, nên hãy chú ý đến độ tương phản khi chọn các sắc trung tính.",
+            "selectColorLabel": "Chọn màu {color}"
+        },
+        "voting": {
+            "validation": {
+                "required": "Bắt buộc nhập thời gian bỏ phiếu",
+                "validNumber": "Thời gian bỏ phiếu phải là một số hợp lệ",
+                "min": "Thời gian bỏ phiếu phải ít nhất 1 ngày",
+                "max": "Thời gian bỏ phiếu phải ít hơn 1000 ngày",
+                "whole": "Thời gian bỏ phiếu phải là số ngày nguyên"
+            },
+            "missingData": "Thiếu dữ liệu bắt buộc",
+            "thresholdProposalTitle": "Cập nhật chính sách - Ngưỡng bỏ phiếu",
+            "thresholdProposalSummary": "{account} đã yêu cầu thay đổi ngưỡng bỏ phiếu từ {oldValue} thành {newValue}.",
+            "thresholdSubmitted": "Đã gửi yêu cầu cập nhật ngưỡng bỏ phiếu",
+            "createProposalFailed": "Không thể tạo đề xuất",
+            "durationProposalTitle": "Cập nhật chính sách - Thời gian bỏ phiếu",
+            "durationProposalSummary": "{account} đã yêu cầu thay đổi thời gian bỏ phiếu từ {oldValue} thành {newValue}.",
+            "durationSubmitted": "Đã tạo yêu cầu thành công",
+            "pendingTitle": "Yêu cầu ngưỡng bỏ phiếu đang hoạt động",
+            "pendingBody": "Để tránh xung đột, bạn cần hoàn tất hoặc giải quyết các yêu cầu đang chờ trước khi tiếp tục. Các yêu cầu này hiện đang hoạt động và phải được phê duyệt hoặc từ chối trước.",
+            "viewRequest": "Xem yêu cầu",
+            "thresholdHeading": "Ngưỡng bỏ phiếu",
+            "thresholdDescriptionApprovers": "Xác định số phiếu cần thiết để phê duyệt các yêu cầu liên quan đến thanh toán và đội. Cấu hình ngưỡng riêng cho Người phê duyệt và Quản trị.",
+            "thresholdDescriptionGeneric": "Xác định số phiếu cần thiết để phê duyệt yêu cầu. Cấu hình ngưỡng cho từng vai trò dựa trên trách nhiệm của họ.",
+            "membersWhoCanVote": "Thành viên có thể bỏ phiếu",
+            "votesRequired": "Số phiếu cần để phê duyệt yêu cầu",
+            "durationHeading": "Thời gian bỏ phiếu",
+            "durationDescription": "Khoảng thời gian (tính bằng ngày) một đề xuất sẽ vẫn mở để bỏ phiếu. Nếu việc bỏ phiếu không hoàn tất trong khoảng thời gian này, quyết định sẽ hết hạn.",
+            "durationApprovers": " Thời gian này áp dụng tương tự cho cả vai trò Quản trị và Người phê duyệt.",
+            "durationGeneric": " Thời gian này nhất quán trên tất cả các vai trò ngân quỹ.",
+            "days": "Ngày"
+        },
+        "preferences": {
+            "timeZone": "Múi giờ",
+            "timeZoneDescription": "Đặt múi giờ địa phương để hiển thị ngày giờ chính xác.",
+            "timeFormat": "Định dạng giờ",
+            "hour12": "12 giờ (1:00 PM)",
+            "hour24": "24 giờ (13:00)",
+            "autoTimezone": "Tự động đặt múi giờ theo vị trí của bạn",
+            "timezone": "Múi giờ",
+            "loadingTimezones": "Đang tải múi giờ...",
+            "selectTimezone": "Chọn múi giờ",
+            "searchTimezones": "Tìm múi giờ...",
+            "noTimezones": "Không tìm thấy múi giờ",
+            "save": "Lưu",
+            "savedToast": "Đã lưu tùy chọn thành công",
+            "saveFailed": "Không thể lưu tùy chọn",
+            "loadFailed": "Không thể tải múi giờ"
+        }
+    },
+    "addressBook": {
+        "emptyTitle": "Thêm người nhận đầu tiên của bạn",
+        "emptyDescription": "Lưu các địa chỉ thường dùng để chi trả nhanh hơn và không có lỗi. Liên hệ của bạn được giữ riêng tư và chỉ đội của bạn nhìn thấy.",
+        "import": "Nhập",
+        "addRecipient": "Thêm người nhận",
+        "recipientsHeading": "Người nhận",
+        "recipientsSelected": "Đã chọn {count, plural, =0 {không có người nhận nào} other {# người nhận}}",
+        "sectionHeading": "Người nhận",
+        "privacyNote": "Các địa chỉ đã lưu là riêng tư và chỉ đội của bạn nhìn thấy.",
+        "searchPlaceholder": "Tìm người nhận theo tên",
+        "searchPlaceholderShort": "Tìm kiếm",
+        "review": {
+            "header": "Xem lại chi tiết",
+            "youAreAdding": "Bạn đang thêm",
+            "newRecipients": "{count, plural, other {# người nhận mới}}",
+            "onNetworks": "trên {count, plural, other {# mạng}}",
+            "recipients": "Người nhận",
+            "allDuplicates": "Tất cả người nhận đã nhập đều đã có trong sổ địa chỉ của bạn. Quay lại để tải lên một danh sách khác hoặc xóa các bản trùng lặp khỏi đợt xem lại này.",
+            "someDuplicates": "{duplicates} người nhận trùng lặp trên tổng số {total} người nhận. Tiếp tục để chỉ tải lên những người nhận mới.",
+            "duplicated": "Trùng lặp",
+            "notePlaceholder": "Thêm ghi chú để giúp xác định người nhận này (ví dụ: thanh toán cho nhà thầu, phân phối vesting).",
+            "skipDuplicates": "Bỏ qua bản trùng lặp và chỉ nhập những bản mới.",
+            "allDuplicatesTooltip": "Tất cả người nhận đã nhập đều đã có trong sổ địa chỉ, nên không có gì mới để nhập.",
+            "duplicateActionTooltip": "Bật bỏ qua bản trùng lặp hoặc xóa người nhận trùng lặp để tiếp tục.",
+            "adding": "Đang thêm…",
+            "nothingNew": "Không có gì mới để nhập",
+            "addRecipientsButton": "{count, plural, one {Thêm người nhận} other {Thêm người nhận}}"
+        },
+        "removeDialog": {
+            "title": "Xóa người nhận",
+            "bulk": "Thao tác này sẽ xóa <bold>{count, plural, other {# người nhận}}</bold> khỏi sổ địa chỉ của bạn. Bạn có thể thêm lại bất kỳ lúc nào.",
+            "single": "Thao tác này sẽ xóa <bold>{name}</bold> khỏi sổ địa chỉ của bạn. Bạn có thể thêm lại người nhận này bất kỳ lúc nào."
+        },
+        "importFlow": {
+            "title": "Nhập người nhận",
+            "description": "Tải lên danh sách địa chỉ người nhận vào sổ địa chỉ của bạn.",
+            "foundSummary": "Tìm thấy {count, plural, other {# người nhận}} trên {networkCount, plural, other {# mạng}}",
+            "uploadPrompt": "Tải lên hoặc dán dữ liệu người nhận",
+            "fixErrors": "Sửa lỗi để tiếp tục",
+            "continueReview": "Tiếp tục xem lại"
+        },
+        "form": {
+            "editRecipient": "Chỉnh sửa người nhận",
+            "addRecipient": "Thêm người nhận",
+            "import": "Nhập",
+            "recipientName": "Tên người nhận",
+            "namePlaceholder": "Alice",
+            "recipientAddress": "Địa chỉ người nhận",
+            "network": "Mạng",
+            "networkInfo": "Các mạng tương thích với địa chỉ này",
+            "enterAddressFirst": "Hãy nhập địa chỉ người nhận trước",
+            "selectNetwork": "Chọn mạng",
+            "selectNetworksTitle": "Chọn các mạng",
+            "searchNetworksPlaceholder": "Tìm mạng…",
+            "done": "Xong",
+            "edit": "Chỉnh sửa",
+            "remove": "Xóa",
+            "incomplete": "Chưa hoàn tất",
+            "addAnother": "Thêm người nhận khác",
+            "fillAllTooltip": "Bạn phải điền tất cả các trường để thêm một người nhận.",
+            "reviewDetails": "Xem lại chi tiết",
+            "reviewTooltip": "Tất cả người nhận phải được hoàn tất trước khi xem lại.",
+            "invalidAddress": "Địa chỉ không hợp lệ",
+            "noCompatibleNetworks": "Không có mạng nào tương thích với địa chỉ này"
+        },
+        "parsing": {
+            "rowPrefix": "Hàng {row}: {message}",
+            "missingName": "Thiếu tên người nhận. Vui lòng thêm tên.",
+            "missingAddress": "Thiếu địa chỉ người nhận. Vui lòng thêm địa chỉ ví.",
+            "invalidAddressFormat": "Địa chỉ \"{address}\" không hợp lệ với bất kỳ mạng được hỗ trợ nào.",
+            "unknownNetwork": "Mạng không xác định \"{network}\". Các mạng được hỗ trợ bao gồm: {available}.",
+            "incompatibleNetwork": "Địa chỉ \"{address}\" không tương thích với {network}. Các mạng tương thích: {compatible}.",
+            "noDataFound": "Không tìm thấy dữ liệu. Vui lòng thêm người nhận theo định dạng: Name, Address, Network, Note",
+            "headerColumnsNotFound": "Chúng tôi đã phát hiện một hàng tiêu đề, nhưng không tìm thấy các cột 'Name' và 'Address'. Vui lòng dùng các tên cột này, hoặc xóa hàng tiêu đề.",
+            "failedToParseCsv": "Không thể phân tích dữ liệu CSV"
+        }
+    },
+    "payments": {
+        "validation": {
+            "recipientMin": "Người nhận phải có ít nhất 2 ký tự",
+            "recipientMax": "Người nhận phải ít hơn 128 ký tự",
+            "amountPositive": "Số tiền phải lớn hơn 0",
+            "recipientTokenSame": "Địa chỉ người nhận và token không thể giống nhau"
+        },
+        "newPayment": "Thanh toán mới",
+        "reviewYourPayment": "Xem lại thanh toán của bạn",
+        "reviewButton": "Xem lại thanh toán",
+        "reviewButtonDisabled": "Nhập số tiền và địa chỉ",
+        "comingSoon": "Sắp ra mắt",
+        "bulkPayments": "Thanh toán hàng loạt",
+        "summaryRecipients": "đến {count, plural, other {# người nhận}}",
+        "networkFee": "Phí mạng",
+        "networkFeeInfo": "Thông tin phí mạng",
+        "commentPlaceholder": "Thêm bình luận (tùy chọn)...",
+        "preparingRoute": "Đang chuẩn bị tuyến chuyển 1Click...",
+        "confirmSubmit": "Xác nhận và gửi yêu cầu",
+        "useDifferentAddress": "Dùng một địa chỉ khác",
+        "failed1ClickQuote": "Không thể tạo báo giá chuyển 1Click",
+        "paymentSubmitted": "Đã gửi yêu cầu thanh toán"
+    },
+    "bulkPayment": {
+        "comingSoonToast": "Thanh toán hàng loạt sắp ra mắt!",
+        "submittingList": "Đang gửi danh sách thanh toán hàng loạt",
+        "submittingProposal": "Đang gửi đề xuất",
+        "proposalSubmitted": "Đã gửi đề xuất thanh toán hàng loạt",
+        "submitListFailed": "Không thể gửi danh sách thanh toán",
+        "submitFailed": "Không thể gửi thanh toán hàng loạt",
+        "upload": {
+            "pleaseUploadCsv": "Vui lòng tải lên một tệp CSV",
+            "fileSizeLimit": "Kích thước tệp phải nhỏ hơn 1.5 MB",
+            "headerTitle": "Yêu cầu thanh toán hàng loạt",
+            "headerSubtitle": "Trả nhiều người nhận với một đề xuất duy nhất.",
+            "creditsUsed": "Bạn đã dùng hết tín dụng",
+            "bulkPaymentsUsed": "Bạn đã dùng hết lượt thanh toán hàng loạt",
+            "upgradeTrial": "Nâng cấp gói của bạn để có thêm và tiếp tục",
+            "upgradePaid": "Nâng cấp gói để có thêm quyền truy cập, hoặc đợi đến khi giới hạn của bạn được đặt lại vào tháng sau.",
+            "selectAsset": "Chọn tài sản",
+            "disableTokenMessage": "Thanh toán hàng loạt cho các token này sắp ra mắt.",
+            "providePaymentData": "Cung cấp dữ liệu thanh toán",
+            "uploadFile": "Tải lên tệp",
+            "provideData": "Cung cấp dữ liệu",
+            "chooseFile": "Chọn tệp",
+            "orDragDrop": "hoặc kéo và thả",
+            "maxFileSize": "tối đa 1 tệp lên đến 1.5 MB, chỉ chấp nhận tệp CSV",
+            "noFilePrompt": "Không có tệp để tải lên?",
+            "downloadTemplate": "Tải xuống mẫu",
+            "requirements": "Yêu cầu thanh toán hàng loạt",
+            "maxTransactions": "Tối đa {max} giao dịch mỗi lần nhập",
+            "singleTokenNetwork": "Một token và mạng duy nhất",
+            "limitsUsed": "Bạn đã dùng hết giới hạn",
+            "selectAndProvide": "Chọn tài sản và cung cấp dữ liệu thanh toán",
+            "continueToReview": "Tiếp tục xem lại",
+            "selectTokenError": "Vui lòng chọn một token",
+            "providePaymentDataError": "Vui lòng cung cấp dữ liệu thanh toán"
+        },
+        "editStep": {
+            "title": "Chỉnh sửa thanh toán",
+            "saveChanges": "Lưu thay đổi"
+        },
+        "parsing": {
+            "rowPrefix": "Hàng {row}: {message}",
+            "missingRecipientFirstColumn": "Thiếu địa chỉ người nhận. Vui lòng thêm địa chỉ vào cột đầu tiên.",
+            "invalidNearAddress": "Địa chỉ \"{address}\" không phải là tài khoản NEAR hợp lệ.",
+            "invalidChainAddress": "Địa chỉ \"{address}\" không phải là tài khoản {chain} hợp lệ.",
+            "rowNeedsAmountRecipient": "Mỗi hàng cần số tiền và người nhận, ngăn cách bởi dấu phẩy. Ví dụ: 100, alice.near",
+            "missingRecipientBeforeComma": "Thiếu địa chỉ người nhận. Vui lòng thêm địa chỉ trước dấu phẩy.",
+            "missingAmountAfterComma": "Thiếu số tiền. Vui lòng thêm một số sau dấu phẩy. Ví dụ: {recipient}, 100",
+            "invalidAmountNumber": "Số tiền \"{amountStr}\" không phải là một số hợp lệ. Vui lòng chỉ dùng số và phần thập phân (ví dụ: 100 hoặc 100.50).",
+            "amountGreaterThanZero": "Số tiền phải lớn hơn 0. Bạn đã nhập \"{amountStr}\".",
+            "amountTooLarge": "Số tiền \"{amountStr}\" quá lớn. Vui lòng dùng một số nhỏ hơn.",
+            "invalidAmountFallback": "Số tiền không hợp lệ. Vui lòng chỉ dùng số và phần thập phân (ví dụ: 100 hoặc 100.50).",
+            "pleaseRemoveChars": "Vui lòng xóa các ký tự sau: {chars}. Chỉ chấp nhận số, dấu phẩy và dấu chấm.",
+            "amountCannotBeEmpty": "Số tiền không được để trống.",
+            "tokenMismatch": "Bạn đã nhập \"{provided}\" nhưng {expected} đang được chọn ở trên. Hãy bỏ ký hiệu token hoặc chọn {suggested} từ danh sách thả xuống.",
+            "multipleTokenSymbols": "Bạn đang dùng nhiều ký hiệu token ({symbols}). Vui lòng chỉ dùng một loại token trong toàn bộ tệp, hoặc bỏ các ký hiệu token và để lựa chọn ở trên xác định token.",
+            "noPaymentDataFound": "Không tìm thấy dữ liệu thanh toán. Vui lòng thêm các khoản thanh toán theo định dạng: recipient, amount",
+            "exceedsRecipientLimit": "Bạn có {count} người nhận, nhưng giới hạn là {limit} mỗi đợt. Vui lòng xóa {excess, plural, other {# người nhận}} hoặc chia thành nhiều đợt.",
+            "noPaymentDataProvided": "Không có dữ liệu thanh toán nào được cung cấp. Vui lòng nhập các khoản thanh toán theo định dạng: recipient, amount",
+            "headerColumnsNotFound": "Chúng tôi đã phát hiện một hàng tiêu đề, nhưng không tìm thấy các cột 'Recipient' và 'Amount'. Vui lòng dùng các tên cột này, hoặc xóa hàng tiêu đề.",
+            "failedToParseCsv": "Không thể phân tích dữ liệu CSV",
+            "failedToParsePaste": "Không thể phân tích dữ liệu đã dán",
+            "failedToValidateAccount": "Không thể xác thực tài khoản",
+            "feeEstimationFailed": "Không thể ước tính phí mạng cho số tiền này. Vui lòng kiểm tra lại và thử lại.",
+            "feeEstimationFailedRow": "Hàng {row} ({recipient}): Không thể ước tính phí mạng cho số tiền này. Vui lòng kiểm tra lại và thử lại."
+        },
+        "recipients": "Người nhận",
+        "insufficientTokens": "Không đủ token. Bạn có thể gửi yêu cầu và nạp thêm trước khi phê duyệt.",
+        "removeRecipient": "Xóa người nhận",
+        "removeRecipientConfirm": "Bạn có chắc muốn xóa khoản thanh toán cho <strong>{recipient}</strong> không? Hành động này không thể hoàn tác.",
+        "remove": "Xóa",
+        "edit": "Chỉnh sửa"
+    },
+    "bulkPaymentCredits": {
+        "title": "Thanh toán hàng loạt",
+        "unlimited": "Không giới hạn",
+        "creditsPerPeriod": "{amount} / {period}",
+        "oneTimeTrial": "dùng thử một lần",
+        "month": "tháng",
+        "moreFlexibility": "Cần thêm sự linh hoạt?",
+        "contactUs": "Liên hệ với chúng tôi"
+    },
+    "exchange": {
+        "validation": {
+            "amountPositive": "Số tiền phải lớn hơn 0"
+        },
+        "requestSubmitted": "Đã gửi yêu cầu trao đổi",
+        "heading": "Trao đổi",
+        "sell": "Bán",
+        "receive": "Nhận",
+        "slippageTolerance": "Dung sai trượt giá",
+        "disabled": {
+            "differentTokens": "Token phải khác nhau",
+            "enterAmount": "Nhập số tiền để trao đổi"
+        },
+        "review": "Xem lại trao đổi",
+        "poweredBy": "Cung cấp bởi",
+        "info": {
+            "priceDifference": "Chênh lệch giá",
+            "priceDifferenceTooltip": "Chênh lệch giữa tỷ giá báo và tỷ giá thị trường hiện tại. Giá trị dương cho biết tỷ giá tốt hơn thị trường.",
+            "estimatedTime": "Thời gian ước tính",
+            "estimatedTimeValue": "{seconds} giây",
+            "estimatedTimeTooltip": "Thời gian xấp xỉ để hoàn tất giao dịch trao đổi.",
+            "minimumReceived": "Số tiền nhận tối thiểu",
+            "minimumReceivedTooltip": "Đây là số tiền tối thiểu bạn sẽ nhận từ giao dịch trao đổi này, dựa trên giới hạn trượt giá đã đặt cho yêu cầu.",
+            "depositAddress": "Địa chỉ nạp tiền",
+            "depositAddressCopied": "Đã sao chép địa chỉ nạp tiền",
+            "quoteExpires": "Hết hạn báo giá",
+            "exchangeFee": "Phí trao đổi",
+            "exchangeFeeTooltip": "Phí 0.70% phát sinh ở đây bao gồm chi phí giao thức NEAR Intents để hỗ trợ giao dịch của bạn và phí widget Trezu. Số tiền này được tự động tính vào tỷ giá đã báo của bạn."
+        },
+        "approveWithin24h": "Vui lòng phê duyệt yêu cầu này trong vòng 24 giờ, nếu không nó sẽ hết hạn. Chúng tôi khuyên bạn xác nhận càng sớm càng tốt.",
+        "confirmSubmit": "Xác nhận và gửi yêu cầu",
+        "refreshingIn": "Tỷ giá trao đổi sẽ làm mới trong {seconds}s"
+    },
+    "vesting": {
+        "validation": {
+            "amountMin": "Số tiền phải lớn hơn hoặc bằng 3.5",
+            "startBeforeEnd": "Ngày bắt đầu phải trước ngày kết thúc",
+            "cliffBetween": "Ngày Cliff phải nằm giữa"
+        },
+        "stepTitles": {
+            "details": "Chi tiết",
+            "settings": "Cài đặt",
+            "review": "Xem lại"
+        },
+        "proposalTitle": "Tạo lịch vesting cho {address}",
+        "scheduleSubmitted": "Đã gửi yêu cầu tạo lịch vesting",
+        "heading": "Lịch vesting mới",
+        "amount": "Số tiền",
+        "startDate": "Ngày bắt đầu",
+        "endDate": "Ngày kết thúc",
+        "noteOptional": "Ghi chú (tùy chọn)",
+        "continue": "Tiếp tục",
+        "advancedSettings": "Cài đặt nâng cao",
+        "allowCancellation": "Cho phép hủy",
+        "allowCancellationDescription": "Cho phép NEAR Foundation hủy lockup bất kỳ lúc nào. Lockup không thể hủy không tương thích với ngày Cliff.",
+        "cliffDate": "Ngày Cliff",
+        "allowEarn": "Cho phép thu nhập",
+        "allowEarnDescription": "Cho phép chủ sở hữu lockup stake toàn bộ số token trong lockup (kể cả trước ngày Cliff).",
+        "commentPlaceholder": "Thêm bình luận cho lịch vesting này (tùy chọn)...",
+        "reviewRequest": "Xem lại yêu cầu",
+        "reviewHeading": "Xem lại lịch vesting của bạn",
+        "confirmSubmit": "Xác nhận và gửi yêu cầu",
+        "review": {
+            "recipient": "Người nhận",
+            "startDate": "Ngày bắt đầu",
+            "endDate": "Ngày kết thúc",
+            "cliffDate": "Ngày Cliff",
+            "cancelable": "Có thể hủy",
+            "allowEarn": "Cho phép thu nhập",
+            "na": "N/A"
+        }
+    },
+    "earn": {
+        "placeholder": "Khám phá cơ hội thu nhập và phần thưởng staking."
+    },
+    "createTreasury": {
+        "validation": {
+            "nameMin": "Tên ngân quỹ phải có ít nhất 2 ký tự",
+            "nameMax": "Tên ngân quỹ phải ít hơn 64 ký tự",
+            "accountMin": "Tên tài khoản phải có ít nhất 2 ký tự",
+            "accountMax": "Tên tài khoản phải ít hơn 64 ký tự",
+            "accountChars": "Tên tài khoản chỉ có thể chứa chữ cái Latin, số và dấu gạch nối",
+            "accountTaken": "Tên tài khoản này đã được dùng"
+        },
+        "votingNote": "Bạn cần thêm thành viên để chỉnh sửa cài đặt bỏ phiếu. Hãy thêm thành viên khác để cấu hình bỏ phiếu.",
+        "minimumVoteNote": "Cần ít nhất một phiếu phê duyệt.",
+        "heading": "Tạo một Ngân quỹ",
+        "addMembers": "Thêm thành viên",
+        "addMembersInfo": "Bạn có thể thêm hoặc cập nhật thành viên ngay bây giờ và chỉnh sửa sau bất cứ lúc nào.",
+        "treasuryName": "Tên ngân quỹ",
+        "treasuryNamePlaceholder": "Ngân quỹ của tôi",
+        "accountName": "Tên tài khoản",
+        "accountNameInfo": "Đây là tên duy nhất của tài khoản bạn. Nó sẽ được dùng trong URL ngân quỹ của bạn và hiển thị trong các giao dịch để xác định người gửi tiền. Hãy chọn một cái tên ngắn và dễ nhận biết cho tài khoản.",
+        "accountPlaceholder": "my-treasury",
+        "continue": "Tiếp tục",
+        "votingThreshold": "Ngưỡng bỏ phiếu",
+        "thresholdDescription": "Đặt số phiếu cần thiết để phê duyệt yêu cầu:",
+        "financial": "Tài chính",
+        "financialDescription": "Phê duyệt các yêu cầu thanh toán & trao đổi.",
+        "governance": "Quản trị",
+        "governanceDescription": "Phê duyệt cài đặt, thành viên và cấu hình bỏ phiếu.",
+        "confidential": "Bảo mật",
+        "public": "Công khai",
+        "anyone": "Bất kỳ ai",
+        "teamOnly": "Chỉ đội",
+        "soon": "Sắp",
+        "publicDescription": "Tất cả số dư, hoạt động và giao dịch đều hiển thị với bất kỳ ai trên blockchain. Tùy chọn này phù hợp nhất với các tổ chức minh bạch và DAO công khai.",
+        "balanceTransactions": "Số dư, Giao dịch",
+        "membersVoting": "Thành viên, Bỏ phiếu",
+        "allFeatures": "Tất cả các tính năng có sẵn",
+        "confidentialDescription": "Tất cả số dư, hoạt động và chuyển khoản đều riêng tư trên blockchain. Chỉ đội của bạn có thể xem thông tin này. Phù hợp nhất cho công ty tư nhân, văn phòng gia đình hoặc các đội muốn quyền riêng tư về tài chính.",
+        "recentTransactionsExport": "Xuất giao dịch gần đây",
+        "bulkPayment": "Thanh toán hàng loạt",
+        "treasuryType": "Loại ngân quỹ",
+        "treasuryTypeWarning": "Bạn chỉ có thể chọn một lần cho mỗi ngân quỹ và không thể thay đổi sau này.",
+        "select": "Chọn",
+        "visibleOnChain": "Hiển thị trên chuỗi",
+        "featuresAvailable": "Các tính năng có sẵn",
+        "mostFeaturesSupported": "Hầu hết các tính năng được hỗ trợ",
+        "reviewTreasury": "Xem lại Ngân quỹ",
+        "membersLabel": "Thành viên",
+        "financialThreshold": "Ngưỡng tài chính",
+        "governanceThreshold": "Ngưỡng quản trị",
+        "noDeploymentFee": "🎉 Không phí triển khai",
+        "noDeploymentFeeDescription": "Để hỗ trợ các dự án mới, TREZU bao gồm tất cả phí triển khai một lần và phí lưu trữ mạng.",
+        "createButton": "Tạo Ngân quỹ",
+        "connectWalletCreate": "Kết nối ví để tạo ngân quỹ",
+        "unexpectedError": "Đã xảy ra lỗi không mong muốn",
+        "creationFailed": "Không thể tạo ngân quỹ. Vui lòng thử lại.",
+        "stepTitles": {
+            "aboutYou": "Về bạn",
+            "details": "Chi tiết",
+            "members": "Thành viên",
+            "treasuryType": "Loại ngân quỹ",
+            "review": "Xem lại"
+        },
+        "steps": {
+            "creatingNear": "Đang tạo ngân quỹ trên NEAR",
+            "registeringKey": "Đang đăng ký khóa công khai",
+            "settingUpConfidential": "Đang thiết lập giao dịch bảo mật",
+            "configuringMembers": "Đang cấu hình thành viên ngân quỹ",
+            "finalizingSetup": "Đang hoàn tất thiết lập"
+        }
+    },
+    "manageTreasuries": {
+        "warningOne": "Phải còn ít nhất một ngân quỹ khả dụng",
+        "warningOnePeriod": "Phải còn ít nhất một ngân quỹ khả dụng.",
+        "activeHeading": "Ngân quỹ đang hoạt động",
+        "activeDescription": "Các ngân quỹ hiện đang hiển thị trong danh sách tài khoản của bạn.",
+        "activeEmpty": "Không có ngân quỹ đang hoạt động.",
+        "hiddenHeading": "Ngân quỹ đã ẩn",
+        "hiddenDescription": "Các ngân quỹ đã ẩn khỏi danh sách tài khoản của bạn.",
+        "removeGuestTitle": "Xóa Ngân quỹ Khách",
+        "removeDialog": "Bạn sắp xóa <bold>{name}</bold>. Sau khi xác nhận, hành động này không thể hoàn tác.",
+        "tooltips": {
+            "removeFromList": "Xóa khỏi danh sách của bạn",
+            "viewTreasury": "Xem ngân quỹ",
+            "hideFromList": "Ẩn khỏi danh sách của bạn",
+            "showInList": "Hiển thị trong danh sách của bạn"
+        }
+    },
+    "wallet": {
+        "proposal": {
+            "transfer": "Đề xuất từ dApp bên ngoài: Chuyển NEAR cho {receiverId}",
+            "functionCall": "Đề xuất từ dApp bên ngoài: {methods} trên {receiverId}",
+            "unsupportedAction": "Loại hành động không được hỗ trợ \"{type}\". Chỉ có thể chuyển đổi hành động Transfer và FunctionCall thành đề xuất Trezu."
+        },
+        "loading": "Đang tải...",
+        "connectPrompt": "Kết nối ví NEAR của bạn để tiếp tục. Sau đó bạn sẽ chọn một ngân quỹ để hành động thay mặt.",
+        "connectWallet": "Kết nối ví",
+        "cancel": "Hủy",
+        "connectedAs": "Đã kết nối với tư cách <strong>{account}</strong>",
+        "loadingTreasuries": "Đang tải các ngân quỹ...",
+        "selectSignIn": "Chọn một ngân quỹ để đăng nhập với:",
+        "selectSignTx": "Chọn một ngân quỹ để tạo đề xuất trên:",
+        "notMember": "Bạn không phải là thành viên của ngân quỹ nào.",
+        "actingAs": "Đang hành động với tư cách",
+        "signedBy": "Được ký bởi {account}",
+        "createsNProposals": "Việc này sẽ tạo {count, plural, other {# đề xuất Trezu}} cho:",
+        "proposalDescriptionLabel": "Mô tả đề xuất (tùy chọn)",
+        "proposalDescriptionPlaceholder": "Mô tả đề xuất này...",
+        "createProposal": "Tạo đề xuất",
+        "creatingProposal": "Đang tạo đề xuất...",
+        "confirmInWallet": "Vui lòng xác nhận trong ví của bạn",
+        "proposalSubmitted": "Đã gửi đề xuất",
+        "shareProposal": "Đề xuất của bạn đã được tạo. Chia sẻ liên kết bên dưới với các thành viên ngân quỹ để bỏ phiếu.",
+        "proposalLink": "{daoId} — Đề xuất #{id}",
+        "checking": "Đang kiểm tra...",
+        "proposalApprovedProceed": "Đề xuất đã được phê duyệt. Tiếp tục",
+        "signedInSuccess": "Đăng nhập thành công",
+        "proposalCreatedSuccess": "Đã tạo đề xuất thành công",
+        "closeWindow": "Bạn có thể đóng cửa sổ này.",
+        "errorGeneric": "Đã xảy ra lỗi",
+        "tryAgain": "Thử lại",
+        "errors": {
+            "parseTx": "Không thể phân tích yêu cầu giao dịch. Vui lòng thử lại.",
+            "fetchTreasuries": "Không thể tải các ngân quỹ của bạn. Vui lòng thử lại.",
+            "connectFailed": "Không thể kết nối ví",
+            "createProposalFailed": "Không thể tạo đề xuất",
+            "stillPending": "Đề xuất vẫn đang chờ phê duyệt. Vui lòng đợi các thành viên ngân quỹ bỏ phiếu.",
+            "wasStatus": "Đề xuất #{id} đã {status}",
+            "awaitIndex": "Đề xuất đã được phê duyệt nhưng giao dịch thực thi chưa được lập chỉ mục. Vui lòng thử lại sau giây lát.",
+            "checkStatusFailed": "Không thể kiểm tra trạng thái đề xuất",
+            "userCancelled": "Người dùng đã hủy",
+            "proposalWasStatus": "Đề xuất đã {status}"
+        }
+    },
+    "telegram": {
+        "tagPill": "Telegram",
+        "invalidLinkTitle": "Liên kết không hợp lệ",
+        "invalidLinkDescription": "Liên kết kết nối Telegram này thiếu một token. Hãy nhấp lại Connect Treasury trong Telegram để tạo một liên kết mới.",
+        "successTitle": "Đã kết nối thành công",
+        "successDescription": "Các ngân quỹ đã được liên kết với cuộc trò chuyện Telegram này.",
+        "successToast": "Đã kết nối các ngân quỹ thành công",
+        "goToApp": "Đi tới ứng dụng",
+        "linkExpiredTitle": "Liên kết đã hết hạn",
+        "linkExpiredDescription": "Liên kết này đã hết hạn hoặc đã được sử dụng. Trong Telegram, hãy nhập lệnh bên dưới để khởi động lại quy trình kết nối.",
+        "commandCopied": "Đã sao chép lệnh",
+        "copy": "Sao chép",
+        "unableToLoadTitle": "Không thể tải cuộc trò chuyện",
+        "unableToLoadDescription": "Hiện không thể tải chi tiết cuộc trò chuyện. Vui lòng thử lại từ Telegram.",
+        "signInTitle": "Đăng nhập để tiếp tục",
+        "signInDescription": "Trước tiên, hãy kết nối ví NEAR, sau đó chọn các ngân quỹ để liên kết với cuộc trò chuyện Telegram này.",
+        "connectWallet": "Kết nối ví",
+        "selectTreasuriesTitle": "Chọn ngân quỹ",
+        "selectTreasuriesDescription": "Chọn các ngân quỹ để kết nối với cuộc trò chuyện Telegram này.",
+        "telegramChat": "Cuộc trò chuyện Telegram",
+        "chatIdFallback": "Trò chuyện #{id}",
+        "failedToConnect": "Không thể kết nối các ngân quỹ. Vui lòng thử lại.",
+        "relinking": "{count, plural, other {# ngân quỹ đã chọn được liên kết với các cuộc trò chuyện Telegram khác. Việc kết nối sẽ kết nối lại và thay đổi liên kết ID cuộc trò chuyện sang cuộc trò chuyện này.}}",
+        "alreadyConnected": "Đã kết nối với cuộc trò chuyện này",
+        "connectedToAnother": "Đã kết nối với một cuộc trò chuyện khác",
+        "notMember": "Bạn không phải là thành viên chính sách của bất kỳ ngân quỹ nào.",
+        "connecting": "Đang kết nối…",
+        "connect": "Kết nối"
+    },
+    "systemStatus": {
+        "underMaintenance": "Đang bảo trì",
+        "maintenanceMessage": "Chúng tôi đang thực hiện bảo trì. Một số tính năng có thể tạm thời không khả dụng. Vui lòng quay lại sau."
+    },
+    "creditsQuota": {
+        "available": "{count} khả dụng",
+        "used": "Đã dùng {count}",
+        "resetOn": "Giới hạn sẽ được đặt lại vào {date}"
+    },
+    "approvalInfo": {
+        "infoText": "Số phiếu cần để phê duyệt các yêu cầu liên quan đến thanh toán. Có thể chỉnh sửa trong cài đặt Bỏ phiếu.",
+        "thresholdPill": "Ngưỡng {required} trên {total}",
+        "alertBody": "Khoản thanh toán này sẽ cần phê duyệt từ <bold>{required}</bold> thành viên ngân quỹ trước khi thực thi."
+    },
+    "guestBadge": {
+        "title": "Khách",
+        "tooltip": "Bạn là khách của ngân quỹ này. Bạn chỉ có thể xem dữ liệu."
+    },
+    "exportButton": {
+        "confidentialTooltip": "Xuất chưa khả dụng ở chế độ bảo mật. Tính năng này sắp ra mắt!"
+    },
+    "sponsoredActions": {
+        "titleExhausted": "Đã sử dụng hết Hành động được tài trợ",
+        "titleAlmost": "Đội của bạn sắp hết các hành động được tài trợ",
+        "closeNotice": "Đóng thông báo",
+        "teamUsage": "Mức sử dụng của đội: {total} hành động mỗi tháng",
+        "available": "{count} khả dụng",
+        "used": "Đã dùng {count}",
+        "exhaustedBody": "Đội của bạn đã đạt số hành động được tài trợ trong tháng. Bạn có thể tiếp tục sau {date} hoặc liên hệ với chúng tôi",
+        "almostBody": "TREZU hiện tài trợ chi phí lưu trữ cho tất cả các hành động của đội, như tạo yêu cầu và bỏ phiếu cho chúng. Đội của bạn sắp đạt giới hạn được tài trợ trong tháng.",
+        "contactUs": "Liên hệ với chúng tôi",
+        "nextMonthlyReset": "lần đặt lại hàng tháng tiếp theo của bạn",
+        "sidebarBody": "Đội của bạn đã đạt số hành động được tài trợ trong tháng. Bạn có thể tiếp tục sau {date} hoặc ⬇️"
+    },
+    "acceptTerms": {
+        "title": "Chấp nhận điều khoản để tiếp tục",
+        "privacyTitle": "Quyền riêng tư của bạn tại Trezu",
+        "privacyBody": "Trezu là giao diện không lưu ký. Chúng tôi ưu tiên quyền riêng tư của bạn đồng thời đảm bảo nền tảng vẫn an toàn và hoạt động tốt.",
+        "minimalTitle": "Dữ liệu tối thiểu",
+        "minimalBody": "Chúng tôi thu thập thông tin hạn chế, như địa chỉ ví công khai, địa chỉ IP và phân tích sử dụng, để vận hành và cải thiện Giao diện.",
+        "noCustodyTitle": "Không lưu ký",
+        "noCustodyBody": "Chúng tôi không bao giờ có quyền truy cập vào khóa cá nhân, cụm từ khôi phục hay tài sản số của bạn.",
+        "publicTitle": "Hồ sơ công khai",
+        "publicBody": "Hãy nhớ rằng tất cả các giao dịch blockchain vốn đã công khai và không do chúng tôi kiểm soát.",
+        "responsibilityTitle": "Trách nhiệm của bạn",
+        "responsibilityBody": "Bạn hoàn toàn chịu trách nhiệm theo dõi hoạt động ví của mình và bảo mật thông tin xác thực.",
+        "futureTitle": "Cập nhật trong tương lai",
+        "futureBody": "Nếu bạn chọn nhận thông báo trong tương lai (như email hoặc Telegram), chúng tôi sẽ chỉ sử dụng dữ liệu đó để giữ cho bạn được cập nhật.",
+        "agreement": "Tôi đã đọc và đồng ý với <terms>Điều khoản dịch vụ</terms> và <privacy>Chính sách bảo mật</privacy>",
+        "accepting": "Đang chấp nhận...",
+        "continue": "Tiếp tục"
+    },
+    "confidentialBanner": {
+        "label": "Bảo mật",
+        "description": "Số dư, hoạt động và chuyển khoản chỉ hiển thị với đội của bạn — không phải blockchain công khai."
+    },
+    "supportCenter": {
+        "title": "Trung tâm hỗ trợ",
+        "resources": "Tài nguyên",
+        "support": "Hỗ trợ",
+        "websiteTitle": "Trang web Trezu",
+        "websiteDescription": "Tìm hiểu thêm về Trezu và đọc blog của chúng tôi.",
+        "demo": "Demo Trezu",
+        "demoTitle": "Khám phá phiên bản công khai",
+        "demoDescription": "Xem một tài khoản công khai trực tiếp đang hoạt động.",
+        "confidentialDemoTitle": "Khám phá phiên bản bảo mật",
+        "confidentialDemoDescription": "Khám phá một tài khoản bảo mật trực tiếp đang hoạt động.",
+        "videoTitle": "Xem demo",
+        "videoDescription": "Xem video ngắn cho thấy cách Trezu hoạt động.",
+        "xTitle": "Theo dõi chúng tôi trên X",
+        "xDescription": "Cập nhật các bản phát hành và thông tin chi tiết mới nhất của chúng tôi.",
+        "statsTitle": "Thống kê",
+        "statsDescription": "Xem tổng tài sản đang quản lý trên tất cả các sputnik DAO.",
+        "docsTitle": "Tài liệu",
+        "docsDescription": "Tìm hiểu về tất cả tính năng trong tài liệu.",
+        "productSupportTitle": "Hỗ trợ sản phẩm",
+        "productSupportDescription": "Liên hệ đội hỗ trợ của chúng tôi để được giúp đỡ."
+    },
+    "progressModal": {
+        "titleCreating": "Đang tạo Ngân quỹ...",
+        "titleDone": "Đã tạo Ngân quỹ",
+        "titleFailed": "Tạo Ngân quỹ thất bại",
+        "viewTreasury": "Xem Ngân quỹ"
+    },
+    "memberValidation": {
+        "noManagePermission": "Bạn không có quyền quản lý thành viên",
+        "pendingRequest": "Bạn không thể quản lý thành viên khi có yêu cầu đang hoạt động",
+        "rolesAnd": "{first} và {second}",
+        "rolesMany": "{list}, và {last}",
+        "cannotRemoveMember": "Không thể xóa thành viên này. Họ là người duy nhất được gán {roles} {count, plural, other {vai trò}}.",
+        "cannotRemoveMemberGov": "Không thể xóa thành viên này. Họ là người duy nhất được gán {roles} {count, plural, other {vai trò, vốn cần thiết}} để quản lý thành viên đội và cấu hình bỏ phiếu.",
+        "cannotBulkRemove": "Không thể xóa các thành viên này. Việc này sẽ khiến {roles} {count, plural, other {vai trò}} trống.",
+        "cannotBulkRemoveGov": "Không thể xóa các thành viên này. Việc này sẽ khiến {roles} {count, plural, other {vai trò, vốn cần thiết}} trống, vốn cần để quản lý thành viên đội và cấu hình bỏ phiếu.",
+        "cannotRemoveRole": "Bạn không thể xóa vai trò {role} của thành viên này. Họ là người duy nhất được gán vai trò này.",
+        "cannotRemoveRoleGov": "Bạn không thể xóa vai trò {role} của thành viên này. Họ là thành viên {role} duy nhất, và không có vai trò này bạn sẽ không thể quản lý thành viên đội hay cấu hình bỏ phiếu."
+    },
+    "roleSelector": {
+        "setRole": "Đặt vai trò",
+        "allRoles": "Tất cả vai trò",
+        "roles": {
+            "governance": {
+                "title": "Quản trị",
+                "description": "Quản trị có thể tạo và bỏ phiếu cho các cài đặt ngân quỹ liên quan đến đội, bao gồm thành viên, quyền và giao diện ngân quỹ."
+            },
+            "requestor": {
+                "title": "Người yêu cầu",
+                "description": "Người yêu cầu có thể tạo các yêu cầu giao dịch liên quan đến thanh toán, không có quyền bỏ phiếu hoặc phê duyệt."
+            },
+            "financial": {
+                "title": "Tài chính",
+                "description": "Tài chính có thể bỏ phiếu cho các yêu cầu giao dịch liên quan đến thanh toán nhưng không thể tạo chúng."
+            }
+        }
+    },
+    "memberInput": {
+        "creatorYou": "Người tạo (bạn)",
+        "memberAddress": "Địa chỉ thành viên",
+        "addNewMember": "Thêm thành viên mới",
+        "validation": {
+            "rolesRequired": "Cần ít nhất một vai trò",
+            "duplicateAddress": "Địa chỉ đã là một thành viên"
+        }
+    },
+    "recipientInput": {
+        "title": "Đến",
+        "placeholder": "Địa chỉ người nhận"
+    },
+    "accountInput": {
+        "failedValidation": "Không thể xác thực địa chỉ",
+        "invalidNearFormat": "Định dạng tài khoản NEAR không hợp lệ",
+        "invalidChainAddress": "Vui lòng nhập một địa chỉ {chain} hợp lệ.",
+        "validating": "Đang xác thực địa chỉ...",
+        "validAddress": "Địa chỉ hợp lệ",
+        "placeholderWithExample": "Địa chỉ người nhận (ví dụ: {example})",
+        "placeholderNoExample": "Địa chỉ người nhận",
+        "nearExample": "alice.near, 0x..., hoặc hex 64 ký tự",
+        "near": {
+            "required": "Bắt buộc nhập địa chỉ",
+            "length": "Địa chỉ phải có từ 2 đến 64 ký tự",
+            "missingTld": "Tài khoản có tên phải kết thúc bằng .near, .aurora hoặc .tg",
+            "invalidChars": "Địa chỉ chỉ có thể chứa chữ thường, số và dấu phân cách (., -, _)",
+            "accountMissing": "Tài khoản không tồn tại trên blockchain NEAR",
+            "verifyFailed": "Không thể xác minh sự tồn tại của tài khoản"
+        }
+    },
+    "csvUpload": {
+        "uploadFile": "Tải lên tệp",
+        "provideData": "Cung cấp dữ liệu",
+        "chooseFile": "Chọn tệp",
+        "orDragDrop": "hoặc kéo và thả",
+        "maxFileSize": "tối đa 1 tệp lên đến {maxSize} MB, chỉ chấp nhận tệp CSV",
+        "noFilePrompt": "Không có tệp để tải lên?",
+        "downloadTemplate": "Tải xuống mẫu"
+    },
+    "tokenSelect": {
+        "selectToken": "Chọn token",
+        "searchPlaceholder": "Tìm token...",
+        "noTokensFound": "Không tìm thấy token"
+    },
+    "filterOperations": {
+        "is": "Là",
+        "isNot": "Không phải là",
+        "before": "Trước",
+        "after": "Sau",
+        "between": "Giữa",
+        "equal": "Bằng",
+        "moreThan": "Lớn hơn",
+        "lessThan": "Nhỏ hơn",
+        "contains": "Chứa"
+    },
+    "copyButton": {
+        "copied": "Đã sao chép vào bộ nhớ tạm",
+        "failed": "Không thể sao chép"
+    },
+    "recipientForm": {
+        "validation": {
+            "nameRequired": "Bắt buộc nhập tên",
+            "nameMax": "Tên người nhận phải ít hơn {max} ký tự",
+            "addressRequired": "Bắt buộc nhập địa chỉ",
+            "networksRequired": "Hãy chọn ít nhất một mạng"
+        }
+    },
+    "paymentForm": {
+        "validation": {
+            "recipientMin": "Người nhận phải có ít nhất 2 ký tự",
+            "recipientMax": "Người nhận phải ít hơn 128 ký tự",
+            "amountGreaterThanZero": "Số tiền phải lớn hơn 0",
+            "recipientSameAsToken": "Địa chỉ người nhận và token không thể giống nhau",
+            "selectToken": "Vui lòng chọn một token",
+            "recipientMax64": "Người nhận phải ít hơn 64 ký tự",
+            "amountMinLockup": "Số tiền phải lớn hơn hoặc bằng 3.5",
+            "startDateRequired": "Bắt buộc nhập ngày bắt đầu",
+            "endDateRequired": "Bắt buộc nhập ngày kết thúc",
+            "cliffDateRequired": "Bắt buộc nhập ngày Cliff",
+            "startBeforeEnd": "Ngày bắt đầu phải trước ngày kết thúc",
+            "cliffBetween": "Ngày Cliff phải nằm giữa {start} và {end}"
+        }
+    },
+    "exportToasts": {
+        "downloadFailed": "Không thể tải xuống bản xuất",
+        "invalidDateRange": "Khoảng ngày không hợp lệ",
+        "invalidDateRangeDescription": "Vui lòng chọn một khoảng ngày hợp lệ để xuất.",
+        "exportSuccess": "Xuất thành công!",
+        "exportSuccessDescription": "Tệp {type} của bạn đã được tải xuống. Kiểm tra lịch sử xuất để biết chi tiết.",
+        "exportFailed": "Xuất thất bại",
+        "exportFailedFallback": "Không thể xuất dữ liệu. Vui lòng thử lại.",
+        "noDownloadPermission": "Bạn không có quyền tải tệp này.",
+        "noExportPermission": "Bạn không có quyền xuất",
+        "quotaUsed": "Bạn đã dùng hết hạn mức",
+        "exporting": "Đang xuất...",
+        "export": "Xuất",
+        "columnSubmissionTime": "Thời gian gửi",
+        "columnDateRange": "Khoảng ngày",
+        "columnGeneratedBy": "Tạo bởi",
+        "columnStatus": "Trạng thái",
+        "typeAll": "Tất cả loại",
+        "typeSent": "Đã gửi",
+        "typeReceived": "Đã nhận",
+        "typeStakingRewards": "Phần thưởng Staking",
+        "allAssets": "Tất cả tài sản",
+        "upgradeTrial": "Nâng cấp gói của bạn để có thêm và tiếp tục",
+        "upgradePaid": "Nâng cấp gói để có thêm quyền truy cập, hoặc đợi đến khi giới hạn của bạn được đặt lại vào tháng sau.",
+        "selectDateRange": "Chọn khoảng ngày",
+        "noExportsTitle": "Chưa có bản xuất nào",
+        "noExportsDescription": "Các tệp đã xuất trong tháng vừa qua sẽ xuất hiện ở đây sau khi được tạo.",
+        "quotaTitle": "Hạn mức xuất",
+        "unlimited": "Không giới hạn",
+        "creditsPerMonth": "{total} / tháng",
+        "requirementsTitle": "Yêu cầu xuất",
+        "exportFromPeriod": "Bạn có thể xuất dữ liệu từ {period}.",
+        "availableFor48Hours": "Các tệp đã xuất khả dụng để tải trong 48 giờ.",
+        "moreFlexibility": "Cần thêm sự linh hoạt?",
+        "contactUs": "Liên hệ với chúng tôi",
+        "last1Year": "1 năm qua",
+        "last2Years": "2 năm qua",
+        "invalidEmail": "Vui lòng nhập một địa chỉ email hợp lệ"
+    },
+    "proposalKinds": {
+        "Batch Payment Request": "Yêu cầu thanh toán hàng loạt",
+        "Payment Request": "Yêu cầu thanh toán",
+        "Confidential Request": "Yêu cầu bảo mật",
+        "Exchange": "Trao đổi",
+        "Function Call": "Gọi hàm",
+        "Change Policy": "Thay đổi chính sách",
+        "Update General Settings": "Cập nhật cài đặt chung",
+        "Earn NEAR": "Kiếm NEAR",
+        "Unstake NEAR": "Bỏ stake NEAR",
+        "Vesting": "Vesting",
+        "Withdraw Earnings": "Rút thu nhập",
+        "Members": "Thành viên",
+        "Upgrade": "Nâng cấp",
+        "Set Staking Contract": "Đặt hợp đồng Staking",
+        "Bounty": "Tiền thưởng",
+        "Vote": "Bỏ phiếu",
+        "Factory Info Update": "Cập nhật thông tin Factory",
+        "Unsupported": "Không được hỗ trợ"
+    },
+    "paymentFormSection": {
+        "selectRecipient": "Chọn người nhận",
+        "searchByNameOrAddress": "Tìm theo tên hoặc địa chỉ",
+        "restrictedRecipientTitle": "Giao dịch không được phép",
+        "restrictedRecipientMessage": "Địa chỉ này hiện đang bị hạn chế do các kiểm tra bảo mật. Nếu bạn cho rằng địa chỉ này nên được phép, bạn có thể <link>yêu cầu đưa vào danh sách trắng</link>.",
+        "send": "Gửi",
+        "to": "Đến"
+    },
+    "recipientNetworkSelect": {
+        "label": "Mạng người nhận",
+        "placeholder": "Chọn mạng người nhận",
+        "enterAddressFirst": "Hãy nhập địa chỉ người nhận trước",
+        "noCompatibleNetwork": "Không có mạng nào phù hợp với địa chỉ này",
+        "selectPlaceholder": "Chọn mạng",
+        "title": "Chọn mạng",
+        "available": "Khả dụng",
+        "fromAddressBook": "Từ sổ địa chỉ",
+        "otherAvailable": "Khác khả dụng",
+        "incompatible": "Không tương thích",
+        "comingSoon": "Sắp ra mắt",
+        "nearComName": "near.com",
+        "nearComDescription": "Mạng nội bộ cho near.com và trezu"
+    },
+    "addressBookTable": {
+        "emptyTitle": "Chưa có người nhận nào",
+        "emptyDescription": "Thêm người nhận vào sổ địa chỉ này để chi trả nhanh hơn.",
+        "selectAll": "Chọn tất cả người nhận",
+        "selectEntry": "Chọn {name}",
+        "recipient": "Người nhận",
+        "network": "Mạng",
+        "addedBy": "Được thêm bởi",
+        "note": "Ghi chú",
+        "added": "Đã thêm",
+        "remove": "Xóa",
+        "send": "Gửi"
+    },
+    "publicDashboard": {
+        "updatesDaily": "Cập nhật hàng ngày",
+        "noDataTitle": "Chưa có dữ liệu",
+        "noDataDescription": "Thống kê sẽ xuất hiện sau khi ảnh chụp hàng ngày đầu tiên được tính toán.",
+        "assetsSecured": "Tài sản được bảo mật bằng hợp đồng Sputnik DAO",
+        "acrossDaos": "Trên <bold>{count, plural, other {# DAO}}</bold>",
+        "updatedOn": "Cập nhật {date}",
+        "topAssets": "20 tài sản hàng đầu",
+        "noAssetsTitle": "Chưa có tài sản nào",
+        "noAssetsDescription": "Dữ liệu token sẽ xuất hiện sau khi ảnh chụp hàng ngày được tính toán.",
+        "tableToken": "Token",
+        "tableTotalValue": "Tổng giá trị"
+    },
+    "telegramConnectInstructions": {
+        "title": "Kết nối Telegram",
+        "subtitle": "Nhận thông báo về đề xuất và hoạt động trong Telegram của bạn.",
+        "step3": "Nhấn Start và làm theo hướng dẫn.",
+        "success": "Bạn đã sẵn sàng!",
+        "copyBotTooltip": "Sao chép tên bot",
+        "botCopiedToast": "Đã sao chép tên bot",
+        "openInTelegram": "Mở {bot} trong Telegram"
+    },
+    "transactionHashCell": {
+        "copyHash": "Sao chép hash",
+        "hashCopied": "Đã sao chép hash",
+        "openInExplorer": "Mở trong trình khám phá"
+    },
+    "treasurySelector": {
+        "select": "Chọn ngân quỹ",
+        "connectWalletTooltip": "Kết nối ví để xem các ngân quỹ",
+        "manageTreasuries": "Quản lý ngân quỹ",
+        "createTreasury": "Tạo ngân quỹ",
+        "memberOf": "Thành viên của",
+        "guestTreasuries": "Ngân quỹ khách"
+    },
+    "selectModal": {
+        "searchByName": "Tìm theo tên",
+        "noResults": "Không tìm thấy kết quả"
+    },
+    "selectList": {
+        "noResults": "Không tìm thấy kết quả"
+    },
+    "datePicker": {
+        "pickDate": "Chọn một ngày",
+        "timezone": "Múi giờ"
+    },
+    "datePresets": {
+        "today": "Hôm nay",
+        "yesterday": "Hôm qua",
+        "last3Days": "3 ngày qua",
+        "last7Days": "7 ngày qua",
+        "last14Days": "14 ngày qua",
+        "lastMonth": "Tháng trước",
+        "last3Months": "3 tháng qua",
+        "last6Months": "6 tháng qua"
+    },
+    "input": {
+        "openSearch": "Mở tìm kiếm"
+    },
+    "pagination": {
+        "previous": "Trước",
+        "next": "Tiếp"
+    },
+    "confidentialState": {
+        "title": "Bảo mật",
+        "description": "Chỉ thành viên ngân quỹ mới có quyền truy cập."
+    },
+    "exchangeRate": {
+        "rate": "Tỷ giá",
+        "clickToReverse": "Nhấp để đảo ngược tỷ giá"
+    },
+    "exchangeSettings": {
+        "title": "Cài đặt trao đổi",
+        "slippageTolerance": "Dung sai trượt giá",
+        "custom": "Tùy chỉnh",
+        "customPlaceholder": "ví dụ: 2%",
+        "slippageRange": "Trượt giá phải nằm trong khoảng 0.01% và 100%",
+        "enterSlippage": "Vui lòng nhập dung sai trượt giá",
+        "slippageHelp": "Nếu giá thay đổi nhiều hơn tỷ lệ phần trăm này, giao dịch sẽ bị hủy để bảo vệ tiền của bạn.",
+        "save": "Lưu"
+    },
+    "assetsPage": {
+        "title": "Tài sản",
+        "noAssetsTitle": "Chưa có tài sản nào",
+        "noAssetsDescription": "Để bắt đầu, hãy thêm tài sản vào Ngân quỹ của bạn bằng cách nạp tiền."
+    },
+    "newBadge": {
+        "label": "Mới"
+    },
+    "numberBadge": {
+        "pendingRequests": "{count, plural, other {# yêu cầu đang chờ}}"
+    },
+    "balanceWithGraph": {
+        "allTokens": "Tất cả token",
+        "deposit": "Nạp tiền",
+        "send": "Gửi",
+        "exchange": "Trao đổi",
+        "chartNow": "Bây giờ",
+        "totalBalance": "Tổng số dư",
+        "excludedTokens": "Token bị loại trừ:",
+        "noPriceHistory": "Không có lịch sử giá. Chọn một token để xem thay đổi số dư.",
+        "bucketAvailable": "Khả dụng",
+        "bucketLocked": "Đã khóa",
+        "bucketEarning": "Thu nhập",
+        "period": {
+            "1W": "1T",
+            "1M": "1Th",
+            "3M": "3Th",
+            "1Y": "1N"
+        }
+    },
+    "changePolicyExpanded": {
+        "proposalBond": "Bond đề xuất",
+        "proposalPeriod": "Thời gian đề xuất",
+        "bountyBond": "Bond tiền thưởng",
+        "bountyForgivenessPeriod": "Thời gian miễn tiền thưởng",
+        "votesCount": "{count} phiếu",
+        "weightKind": "Loại trọng số",
+        "quorum": "Số đại biểu",
+        "threshold": "Ngưỡng",
+        "defaultThreshold": "Ngưỡng mặc định",
+        "roleThreshold": "Ngưỡng {role}",
+        "member": "Thành viên",
+        "members": "Thành viên",
+        "permissions": "Quyền",
+        "oldPermissions": "Quyền cũ",
+        "newPermissions": "Quyền mới",
+        "category": "Danh mục",
+        "transactionDetails": "Chi tiết giao dịch",
+        "addNewMember": "Thêm thành viên mới",
+        "addNewMembers": "Thêm thành viên mới",
+        "removeMember": "Xóa thành viên",
+        "removeMembers": "Xóa thành viên",
+        "updateMemberPermissions": "Cập nhật quyền thành viên",
+        "updateMembersPermissions": "Cập nhật quyền các thành viên",
+        "memberIndex": "Thành viên {index}",
+        "membersCount": "{count} thành viên",
+        "collapseAll": "Thu gọn tất cả",
+        "expandAll": "Mở rộng tất cả",
+        "loadingHistorical": "Đang tải chính sách lịch sử...",
+        "unableToDiff": "Không thể tính toán khác biệt cho đề xuất này.",
+        "noChangesCurrent": "Không phát hiện thay đổi - chính sách đề xuất giống với chính sách hiện tại.",
+        "noChangesHistorical": "Không phát hiện thay đổi - chính sách đề xuất giống với chính sách lịch sử."
+    },
+    "balanceChart": {
+        "usdValue": "Giá trị USD",
+        "tokenBalance": "Số dư token",
+        "emptyTitle": "Chưa có gì để hiển thị",
+        "emptyDescription": "Thêm tài sản để bắt đầu theo dõi danh mục đầu tư của bạn."
+    },
+    "user": {
+        "saveToAddressBook": "Lưu vào sổ địa chỉ",
+        "walletCopiedToast": "Đã sao chép địa chỉ ví vào bộ nhớ tạm",
+        "copyWalletAddress": "Sao chép địa chỉ ví"
+    },
+    "infoDisplay": {
+        "viewLess": "Xem ít hơn",
+        "viewAllDetails": "Xem tất cả chi tiết"
+    },
+    "amountSummary": {
+        "defaultTitle": "Bạn đang gửi tổng cộng"
+    },
+    "residency": {
+        "vestedToken": "Token đã vesting",
+        "staked": "Đã stake",
+        "fungibleToken": "Token có thể thay thế",
+        "intentsToken": "Token Intents",
+        "nativeToken": "Token gốc"
+    },
+    "exchangeErrors": {
+        "noRoute": "Không tìm thấy giao dịch trao đổi. Hãy thử số tiền nhỏ hơn hoặc token khác.",
+        "amountTooLow": "Số tiền quá thấp để hoán đổi. Hoán đổi liên chuỗi yêu cầu mức tối thiểu cao hơn để chi trả phí mạng.",
+        "insufficientBalance": "Số dư không đủ cho giao dịch hoán đổi này.",
+        "networkError": "Lỗi mạng. Vui lòng kiểm tra kết nối và thử lại.",
+        "fetchFailed": "Không thể lấy báo giá"
+    },
+    "tokenSelectDialog": {
+        "selectToken": "Chọn token",
+        "selectAsset": "Chọn tài sản",
+        "selectNetworkFor": "Chọn mạng cho {asset}",
+        "searchByName": "Tìm theo tên",
+        "noTokensWithBalance": "Không tìm thấy token có số dư",
+        "noTokensFound": "Không tìm thấy token",
+        "yourAssets": "Tài sản của bạn",
+        "otherAssets": "Tài sản khác",
+        "networksWithAssets": "Mạng có tài sản",
+        "supportedNetworks": "Mạng được hỗ trợ",
+        "comingSoon": "Sắp ra mắt"
+    },
+    "intentsQuote": {
+        "initializing": "Dịch vụ báo giá vẫn đang khởi tạo. Vui lòng thử lại.",
+        "noRoute": "Hiện không thể chuẩn bị tuyến thanh toán. Vui lòng thử lại.",
+        "fetchFailed": "Hiện không thể chuẩn bị tuyến thanh toán. Vui lòng thử lại.",
+        "amountTooLow": "Số tiền quá thấp để chi trả phí mạng. Hãy nhập số tiền cao hơn và thử lại.",
+        "amountTooLowWithMin": "Số tiền quá thấp để chi trả phí mạng. Hãy nhập ít nhất {min} {token}.",
+        "networkFeeTooltip": "Phí này được dùng để xử lý giao dịch trên chuỗi đã chọn."
+    },
+    "pageTours": {
+        "paymentsBulk": "Tạo hàng loạt đã có mặt! Tạo nhiều yêu cầu chỉ trong vài bước.",
+        "paymentsPending": "Xem các yêu cầu đang chờ phê duyệt tại đây.",
+        "exchangeSettings": "Tại đây bạn có thể đặt mức thay đổi giá mà bạn sẵn sàng chấp nhận.",
+        "membersPending": "Nhấp để xem các yêu cầu đang chờ phê duyệt.",
+        "guestSaveIntro": "Bạn là khách của ngân quỹ này. Bạn chỉ có thể xem dữ liệu.",
+        "guestSaveAction": "Bạn có thể lưu ngân quỹ khách này vào danh sách ngân quỹ của bạn.",
+        "newFeatureRich": "Mới! 🎉 Lưu các địa chỉ thường dùng để chi trả nhanh hơn và không có lỗi.<br></br> Liên hệ của bạn được giữ riêng tư và chỉ đội của bạn nhìn thấy.",
+        "newFeatureCta": "Hãy thử"
+    },
+    "statusDate": {
+        "expires": "Hết hạn",
+        "created": "Đã tạo",
+        "expired": "Đã hết hạn",
+        "removed": "Đã xóa"
+    },
+    "relativeTime": {
+        "justNow": "Vừa xong",
+        "moments": "khoảnh khắc"
+    },
+    "amount": {
+        "network": "Mạng: {network}"
+    },
+    "activityLabels": {
+        "exchangePending": "Trao đổi đang chờ",
+        "exchangeRequest": "Yêu cầu trao đổi",
+        "exchangeFulfillment": "Hoàn tất trao đổi",
+        "stakingRewards": "Phần thưởng Staking",
+        "proposalAction": "Hành động đề xuất",
+        "deposit": "Nạp {symbol}",
+        "paymentSent": "Đã gửi thanh toán",
+        "transaction": "Giao dịch",
+        "fallbackToken": "Token",
+        "viaIntents": "thông qua NEAR Intents",
+        "from": "từ {account}",
+        "to": "đến {account}",
+        "viewAll": "Xem toàn bộ lịch sử giao dịch của bạn",
+        "sentReceived": "Giao dịch đã gửi và đã nhận ({duration})",
+        "unlimitedHistory": "lịch sử không giới hạn",
+        "oneYear": "1 năm",
+        "yearsCount": "{count} năm",
+        "monthsCount": "{count} tháng",
+        "lastDuration": "{duration} qua"
+    },
+    "nearStore": {
+        "connectAndAcceptTerms": "Vui lòng kết nối ví và chấp nhận các điều khoản để tiếp tục.",
+        "transactionNotApproved": "Giao dịch đã không được phê duyệt trong ví của bạn.",
+        "failedSubmitVote": "Không thể gửi phiếu",
+        "failedSubmitVotes": "Không thể gửi các phiếu",
+        "viewRequest": "Xem yêu cầu",
+        "proposalRemoved": "Đề xuất của bạn đã được xóa",
+        "voteSubmitted": "Phiếu của bạn đã được gửi",
+        "votesSubmitted": "Các phiếu của bạn đã được gửi"
+    },
+    "tokenInput": {
+        "max": "MAX",
+        "insufficientTokens": "Không đủ token. Bạn có thể gửi yêu cầu và nạp thêm trước khi phê duyệt.",
+        "balance": "Số dư: {amount} {symbol}"
+    },
+    "createRequestButton": {
+        "idle": "Tạo yêu cầu",
+        "noPermission": "Bạn không có quyền tạo yêu cầu"
+    },
+    "address": {
+        "copied": "Đã sao chép địa chỉ vào bộ nhớ tạm"
+    },
+    "memberAvatars": {
+        "membersWhoCanVote": "Thành viên có thể bỏ phiếu",
+        "moreMembers": "+{count, plural, other {# thành viên}}"
+    },
+    "accountIdInput": {
+        "minLength": "ID tài khoản phải có ít nhất 2 ký tự",
+        "maxLength": "ID tài khoản phải ít hơn 64 ký tự",
+        "charset": "ID tài khoản chỉ có thể chứa chữ thường, số, dấu chấm, dấu gạch nối và gạch dưới, không có dấu phân cách ở đầu hoặc cuối",
+        "doesNotExist": "ID tài khoản không tồn tại"
+    },
+    "addressBookMutations": {
+        "addedToast": "{count, plural, one {Đã thêm người nhận} other {Đã thêm # người nhận}}",
+        "addedSingleToast": "Đã thêm người nhận",
+        "addFailedToast": "Không thể thêm người nhận",
+        "addSingleFailedToast": "Không thể thêm người nhận",
+        "removedToast": "{count, plural, one {Đã xóa người nhận} other {Đã xóa # người nhận}}",
+        "removeFailedToast": "Không thể xóa người nhận",
+        "exportFailedToast": "Không thể xuất danh sách người nhận"
+    },
+    "treasuryMutations": {
+        "savedToast": "Đã lưu ngân quỹ vào danh sách của bạn",
+        "saveFailedToast": "Không thể lưu ngân quỹ",
+        "hiddenToast": "Đã ẩn ngân quỹ khỏi danh sách",
+        "hideFailedToast": "Không thể ẩn ngân quỹ",
+        "unhiddenToast": "Ngân quỹ lại hiển thị",
+        "unhideFailedToast": "Không thể bỏ ẩn ngân quỹ",
+        "removedToast": "Đã xóa ngân quỹ khỏi danh sách đã lưu",
+        "removeFailedToast": "Không thể xóa ngân quỹ khỏi danh sách đã lưu"
+    },
+    "telegramSettings": {
+        "title": "Telegram",
+        "connectedTo": "Đã kết nối với {chat}",
+        "chatNumber": "Trò chuyện #{id}",
+        "fallbackChat": "một cuộc trò chuyện Telegram",
+        "disconnect": "Ngắt kết nối",
+        "connect": "Kết nối",
+        "connectDescription": "Liên kết ngân quỹ của bạn với một cuộc trò chuyện Telegram để nhận thông báo.",
+        "noTreasuryDescription": "Liên kết các ngân quỹ của bạn với một cuộc trò chuyện Telegram.",
+        "openSettingsHint": "Mở cài đặt từ một ngân quỹ để quản lý tích hợp.",
+        "disconnectedToast": "Đã ngắt kết nối Telegram cho ngân quỹ này",
+        "disconnectFailedToast": "Không thể ngắt kết nối Telegram. Hãy thử lại."
+    },
+    "assetsTable": {
+        "noAssetsFound": "Không tìm thấy tài sản nào.",
+        "assetDetails": "Chi tiết tài sản",
+        "coinPrice": "Giá Coin",
+        "weight": "Trọng số",
+        "balance": "Số dư",
+        "lockedBalance": "Số dư đã khóa",
+        "totalBalance": "Tổng số dư",
+        "source": "Nguồn",
+        "balanceByInvestors": "Số dư theo {count, plural, other {Nhà đầu tư}}",
+        "investors": "{count, plural, other {Nhà đầu tư}}",
+        "poolBreakdown": "Phân tích Pool",
+        "unlockedToken": "Token đã mở khóa",
+        "lockupStakingPool": "Pool staking lockup",
+        "exchange": "Trao đổi",
+        "send": "Gửi",
+        "details": "Chi tiết",
+        "columnToken": "Token",
+        "columnLocked": "Đã khóa",
+        "columnUnlocked": "Đã mở khóa",
+        "columnTotalAllocated": "Tổng đã phân bổ",
+        "columnAvailableToWithdraw": "Có thể rút",
+        "viewAvailable": "Khả dụng",
+        "viewLocked": "Đã khóa",
+        "viewEarning": "Thu nhập",
+        "fullAllocatedBalance": "Toàn bộ số dư đã phân bổ của bạn",
+        "partAllocatedBalance": "Một phần số dư đã phân bổ của bạn",
+        "currentlyEarning": "({amount} {symbol}) hiện đang tạo thu nhập.",
+        "willAppearHere": " Số tiền sẽ xuất hiện ở đây sau khi bạn dừng tạo thu nhập.",
+        "seeInEarningTab": "Xem trong tab Thu nhập",
+        "seeInEarning": "Xem trong Thu nhập"
+    },
+    "earningDetails": {
+        "title": "Chi tiết thu nhập",
+        "totalStaked": "Tổng đã stake",
+        "earningOverview": "Tổng quan thu nhập",
+        "poolBreakdown": "Phân tích Pool ({count, plural, other {# pool}})",
+        "almostReady": "Thu nhập sắp sẵn sàng!",
+        "finalizingFeature": "Chúng tôi đang hoàn tất tính năng này<br></br>để bạn có thể bắt đầu kiếm token sớm.",
+        "comingSoon": "Sắp ra mắt",
+        "goToEarn": "Đi đến Thu nhập",
+        "readyToWithdraw": "Sẵn sàng rút",
+        "unstaking": "Đang bỏ stake",
+        "overview": {
+            "staked": "Đã stake",
+            "stakedInfo": "Token hiện đang được ủy quyền cho validator để kiếm phần thưởng.",
+            "pendingRelease": "Đang chờ phát hành",
+            "pendingReleaseInfo": "Token đã được bỏ stake nhưng vẫn trong giai đoạn unbonding (thường là 2-3 ngày).",
+            "availableForWithdraw": "Có thể rút",
+            "availableForWithdrawInfo": "Token đã bỏ stake hoàn tất giai đoạn unbonding và có thể rút."
+        }
+    },
+    "lockupDetails": {
+        "title": "Chi tiết Lockup",
+        "balance": "Số dư",
+        "reservedForStorage": "Dự trữ cho lưu trữ",
+        "reservedForStorageInfo": "NEAR được tài khoản lockup dự trữ để chi trả chi phí lưu trữ.",
+        "tokenBreakdown": "Phân tích token",
+        "allocatedAmount": "Số tiền đã phân bổ",
+        "earned": "Đã kiếm được",
+        "progress": "Tiến độ",
+        "unlocked": "Đã mở khóa",
+        "locked": "Đã khóa",
+        "schedule": "Lịch trình",
+        "startDate": "Ngày bắt đầu",
+        "endDate": "Ngày kết thúc",
+        "rounds": "Vòng",
+        "releaseInterval": "Khoảng phát hành",
+        "nextUnlockDate": "Ngày mở khóa kế tiếp",
+        "allEarning": "Toàn bộ {amount} {symbol} từ lockup của bạn hiện đang tạo thu nhập.",
+        "partEarning": "Một phần lockup của bạn ({amount} {symbol}) hiện đang tạo thu nhập.",
+        "stopEarningFirst": "Để dùng các token đã mở khóa, hãy dừng kiếm thu nhập trước rồi rút chúng.",
+        "howGrantWorks": "Cách hoạt động của khoản tài trợ",
+        "ftStep1": "Bạn nhận được một khoản tài trợ trong khoảng thời gian cụ thể. Thay vì nhận toàn bộ cùng lúc, tài sản sẽ được mở khóa từng phần theo thời gian.",
+        "ftStep2": "Khi đến ngày phát hành kế tiếp, phần token đó sẽ tự động được mở khóa và chuyển vào số dư ngân quỹ của bạn.",
+        "ftStep3": "Khi chúng xuất hiện trong số dư, bạn có thể sử dụng ngay cho thanh toán, chuyển khoản hoặc các giao dịch khác.",
+        "nearStep1": "Bạn nhận được một khoản tài trợ trong khoảng thời gian cố định với ngày bắt đầu và kết thúc xác định.",
+        "nearStep2": "Khi token được mở khóa, chúng sẽ tự động khả dụng trong số dư ngân quỹ của bạn.",
+        "nearStep3": "Bạn có thể sử dụng các token đã mở khóa ngay lập tức cho thanh toán, chuyển khoản hoặc các giao dịch khác.",
+        "notAvailable": "N/A",
+        "everyMonth": "Mỗi tháng",
+        "everyQuarter": "Mỗi quý",
+        "everyUnit": "Mỗi {unit}",
+        "everyMultiple": "Mỗi {text}",
+        "completed": "Đã hoàn tất",
+        "unit": {
+            "year": "{count, plural, other {# năm}}",
+            "day": "{count, plural, other {# ngày}}",
+            "hour": "{count, plural, other {# giờ}}",
+            "minute": "{count, plural, other {# phút}}",
+            "second": "{count, plural, other {# giây}}"
+        }
+    },
+    "vestingDetails": {
+        "title": "Chi tiết Vesting",
+        "availableToUse": "Có thể sử dụng",
+        "vestingPeriod": "Thời gian Vesting",
+        "vestingPeriodDescription": "Token được mở khóa hàng ngày trong khoảng thời gian này.",
+        "startDate": "Ngày bắt đầu",
+        "endDate": "Ngày kết thúc",
+        "tokenBreakdown": "Phân tích token",
+        "originalVestedAmount": "Số tiền vesting ban đầu",
+        "reservedForStorage": "Dự trữ cho lưu trữ",
+        "reservedForStorageInfo": "Một lượng nhỏ token cần thiết để giữ vesting hoạt động và chi trả chi phí lưu trữ.",
+        "percentVested": "Đã vesting {percent}%",
+        "vestedOf": "{vested} trên {total} {symbol}",
+        "send": "Gửi"
+    },
+    "earningPoolDetails": {
+        "balance": "Số dư",
+        "apy": "APY",
+        "fee": "Phí",
+        "notAvailable": "N/A",
+        "lockupStakingPool": "Pool staking lockup",
+        "lockupAssetsNote": "Tất cả tài sản trong vị thế này đều từ lockup của bạn. Sau khi bạn dừng kiếm thu nhập, một số token vẫn có thể bị khóa và không khả dụng - hãy kiểm tra lịch lockup để biết khi nào chúng được mở khóa."
+    },
+    "onboardingQuestions": {
+        "stepTitle": "Một vài câu hỏi nhanh để bắt đầu.",
+        "other": "Khác",
+        "placeholders": {
+            "describeRole": "Mô tả vai trò của bạn (tùy chọn)",
+            "describeUseCase": "Mô tả trường hợp sử dụng của bạn (tùy chọn)",
+            "networkName": "Nhập tên mạng (tùy chọn)",
+            "currentChallenge": "Nhập thách thức hiện tại của bạn (tùy chọn)",
+            "describeOther": "Mô tả khác (tùy chọn)"
+        },
+        "questions": {
+            "role": "Vai trò nào mô tả bạn tốt nhất?",
+            "useCases": "Bạn dự định dùng Trezu cho mục đích gì?",
+            "teamSize": "Có bao nhiêu người sẽ quản lý ngân quỹ?",
+            "networks": "Bạn sử dụng mạng nào thường xuyên nhất?",
+            "multisigExperience": "Kinh nghiệm của bạn với multisig là gì?",
+            "currentTools": "Bạn hiện đang dùng công cụ gì để quản lý tài chính?",
+            "monthlyVolume": "Khối lượng giao dịch hàng tháng xấp xỉ?",
+            "biggestChallenges": "Thách thức lớn nhất của bạn hiện tại là gì?"
+        },
+        "options": {
+            "role": {
+                "founder": "Người sáng lập",
+                "co-founder": "Đồng sáng lập",
+                "cfo-finance-lead": "CFO / Trưởng phòng Tài chính",
+                "operations-manager": "Quản lý vận hành",
+                "treasury-manager": "Quản lý ngân quỹ",
+                "other": "Khác"
+            },
+            "useCases": {
+                "team-payroll-grants": "Lương đội & tài trợ",
+                "company-assets-management": "Quản lý tài sản công ty",
+                "dao-treasury-management": "Quản lý ngân quỹ DAO",
+                "investment-portfolio": "Danh mục đầu tư",
+                "operational-spending": "Chi tiêu vận hành",
+                "other": "Khác"
+            },
+            "teamSize": {
+                "just-me": "Chỉ tôi",
+                "2-5-people": "2-5 người",
+                "6-15-people": "6-15 người",
+                "15-plus-people": "15+"
+            },
+            "networks": {
+                "near": "NEAR",
+                "bitcoin": "Bitcoin",
+                "ethereum": "Ethereum",
+                "solana": "Solana",
+                "arbitrum": "Arbitrum",
+                "base": "Base",
+                "optimism": "Optimism",
+                "polygon": "Polygon",
+                "gnosis": "Gnosis",
+                "avalanche": "Avalanche",
+                "bnb-chain": "BNB Chain",
+                "other": "Khác"
+            },
+            "multisigExperience": {
+                "never-heard-of-it": "Chưa từng nghe về nó",
+                "heard-about-it": "Đã nghe về nó",
+                "never-used-it": "Chưa từng sử dụng",
+                "used-gnosis-safe-or-similar": "Đã dùng Gnosis Safe hoặc tương tự",
+                "experienced": "Có kinh nghiệm",
+                "looking-for-a-better-option": "Đang tìm một lựa chọn tốt hơn"
+            },
+            "currentTools": {
+                "gnosis-safe": "Gnosis Safe",
+                "fireblocks": "Fireblocks",
+                "tholos": "Tholos",
+                "squads-multisig": "Squads Multisig",
+                "mpc-vault": "MPC Vault",
+                "other": "Khác"
+            },
+            "monthlyVolume": {
+                "under-10k": "Dưới $10K",
+                "10k-100k": "$10K - $100K",
+                "100k-1m": "$100K - $1M",
+                "1m-plus": "$1M+"
+            },
+            "biggestChallenges": {
+                "slow-approvals-and-signing": "Phê duyệt và ký chậm",
+                "lack-of-transparency-in-the-team": "Thiếu minh bạch trong đội",
+                "hard-to-track-spending-and-balances": "Khó theo dõi chi tiêu và số dư",
+                "security-and-access-control": "Bảo mật và kiểm soát truy cập",
+                "no-good-web3-tool-yet": "Chưa có công cụ Web3 tốt",
+                "looking-for-crypto-earnings": "Tôi đang tìm thu nhập từ crypto",
+                "other": "Khác"
+            }
+        }
+    },
+    "onboarding": {
+        "tour": {
+            "addAssets": "Thêm tài sản vào Ngân quỹ của bạn bằng cách nạp tiền.",
+            "makeRequests": "Tạo yêu cầu thanh toán bất cứ khi nào bạn cần gửi tài sản.",
+            "exchangeAssets": "Tại đây bạn có thể trao đổi tài sản của mình.",
+            "addMembers": "Thêm thành viên vào Ngân quỹ của bạn và gán vai trò cho họ.",
+            "newTreasury": "Muốn thiết lập một Ngân quỹ mới? Bạn có thể làm điều đó tại đây chỉ trong vài cú nhấp chuột.",
+            "helpSupport": "Nhận trợ giúp và hỗ trợ bất cứ khi nào bạn cần."
+        },
+        "tourCard": {
+            "close": "Đóng",
+            "stepProgress": "{current} trên {total}",
+            "gotIt": "Đã hiểu",
+            "done": "Xong",
+            "next": "Tiếp"
+        },
+        "progress": {
+            "title": "Làm theo các bước nhanh để khám phá Ngân quỹ",
+            "createTreasuryTitle": "Tạo tài khoản Ngân quỹ",
+            "createTreasuryDescription": "Bạn đã thiết lập tài khoản thành công. Khởi đầu tuyệt vời!",
+            "addAssetsTitle": "Thêm tài sản của bạn",
+            "addAssetsDescription": "Bắt đầu bằng cách thêm tài sản để xem chúng hoạt động.",
+            "deposit": "Nạp tiền",
+            "createPaymentTitle": "Tạo yêu cầu thanh toán",
+            "createPaymentDescription": "Tạo một yêu cầu thanh toán để hoàn tất thiết lập của bạn.",
+            "send": "Gửi"
+        },
+        "welcome": {
+            "heading": "🎉 Chào mừng!",
+            "subheading": "Tham quan nhanh Ngân quỹ",
+            "body": "Xin chào! Trezu của bạn đã sẵn sàng - hãy bắt đầu xây dựng danh mục bằng cách thêm tài sản từ các mạng được hỗ trợ.",
+            "progress": "{current} trên {total}",
+            "next": "Tiếp",
+            "body2": "Xem cách thực hiện nạp tiền, tạo yêu cầu và thiết lập tài khoản mới.",
+            "noThanks": "Không, cảm ơn",
+            "letsGo": "Bắt đầu thôi"
+        },
+        "congrats": {
+            "heading": "🎉 Chúc mừng!",
+            "body": "Bạn đã hoàn tất thiết lập Ngân quỹ. Tận hưởng việc quản lý tài sản dễ dàng.",
+            "letsGo": "Bắt đầu thôi!"
+        },
+        "createBanner": {
+            "close": "Đóng",
+            "title": "Khám phá Trezu",
+            "description": "Tạo một tài khoản để mở khóa quyền truy cập tất cả các tính năng và lợi ích của Trezu.",
+            "cta": "Tạo Ngân quỹ"
+        },
+        "questionnaire": {
+            "continue": "Tiếp tục",
+            "skip": "Bỏ qua"
+        },
+        "createPrompt": {
+            "title": "Bạn gần xong rồi",
+            "description": "Ví của bạn đã được kết nối, nhưng bạn chưa tạo ngân quỹ. Hãy tạo tài khoản để bắt đầu sử dụng Trezu, hoặc {suffix}",
+            "suffixDemo": "xem demo.",
+            "suffixExploring": "tiếp tục khám phá.",
+            "createCta": "Tạo một Ngân quỹ",
+            "viewDemo": "Xem Demo",
+            "keepExploring": "Tiếp tục khám phá"
+        },
+        "infoBox": {
+            "title": "Tận dụng Trezu nhiều hơn",
+            "close": "Đóng",
+            "description": "Khám phá cách người khác sử dụng Ngân quỹ, thử demo và xem tài liệu để tìm hiểu các tính năng.",
+            "demoTitle": "Khám phá Trezu Demo",
+            "demoDescription": "Xem một tài khoản demo trực tiếp đang hoạt động.",
+            "docsTitle": "Tài liệu",
+            "docsDescription": "Tìm hiểu về tất cả tính năng trong tài liệu.",
+            "videoTitle": "Xem demo",
+            "videoDescription": "Xem video ngắn cho thấy cách Trezu hoạt động."
+        }
+    }
+}

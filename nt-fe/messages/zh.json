@@ -1,0 +1,2101 @@
+{
+    "common": {
+        "loading": "加载中...",
+        "notAvailable": "不适用",
+        "connecting": "连接中...",
+        "save": "保存",
+        "cancel": "取消",
+        "submit": "提交",
+        "close": "关闭",
+        "back": "返回",
+        "seeDemo": "查看 Trezu 演示",
+        "search": "搜索",
+        "filter": "筛选",
+        "filterActive": "筛选(已启用)",
+        "export": "导出",
+        "exporting": "导出中",
+        "import": "导入",
+        "remove": "移除",
+        "removing": "移除中...",
+        "edit": "编辑",
+        "continue": "继续",
+        "select": "选择",
+        "all": "全部",
+        "none": "无",
+        "retry": "重试",
+        "tryAgain": "请再试一次。",
+        "confirm": "确认",
+        "next": "下一步",
+        "previous": "上一步",
+        "yes": "是",
+        "no": "否",
+        "approve": "批准",
+        "reject": "拒绝",
+        "copy": "复制",
+        "copied": "已复制",
+        "viewAll": "查看全部",
+        "viewDetails": "查看详情",
+        "noResults": "未找到结果",
+        "add": "添加"
+    },
+    "languageSwitcher": {
+        "label": "语言",
+        "select": "选择语言",
+        "english": "English",
+        "spanish": "Español",
+        "ukrainian": "Українська",
+        "hebrew": "עברית",
+        "german": "Deutsch",
+        "french": "Français",
+        "vietnamese": "Tiếng Việt",
+        "chinese": "中文",
+        "turkish": "Türkçe",
+        "indonesian": "Bahasa Indonesia",
+        "portuguese": "Português",
+        "japanese": "日本語",
+        "korean": "한국어"
+    },
+    "header": {
+        "toggleSidebar": "切换侧边栏",
+        "toggleTheme": "切换主题"
+    },
+    "nav": {
+        "dashboard": "仪表板",
+        "requests": "请求",
+        "payments": "付款",
+        "exchange": "兑换",
+        "addressBook": "地址簿",
+        "members": "成员",
+        "settings": "设置",
+        "helpSupport": "帮助与支持",
+        "saveGuestTreasury": "将此访客金库保存到您的金库列表。"
+    },
+    "signIn": {
+        "connect": "连接",
+        "connectWallet": "连接钱包",
+        "wallet": "钱包",
+        "termsOfService": "服务条款",
+        "privacyPolicy": "隐私政策",
+        "disconnect": "断开连接"
+    },
+    "auth": {
+        "noWallet": "请连接您的钱包",
+        "noPermission": "您没有执行此操作的权限",
+        "noVote": "您已对此提案投过票",
+        "noSponsoredTransactions": "已用尽赞助交易额度"
+    },
+    "landing": {
+        "welcome": "欢迎使用 Trezu",
+        "chooseOption": "请选择下方选项以开始使用。",
+        "newUserTitle": "我是 Trezu 新用户",
+        "newUserDescription": "我听说过 Trezu,但还没有金库。",
+        "existingUserTitle": "我已在使用 Trezu",
+        "existingUserDescription": "我已有账户并在管理金库。",
+        "gradientTagline": "用于管理数字资产的跨链多签安全方案",
+        "waitlistTitle": "加入 Trezu 等待名单",
+        "waitlistSubmittedTitle": "您已加入名单 🎉",
+        "waitlistSubmittedDescription": "感谢!一旦可以创建金库,我们会立即通知您。",
+        "waitlistDescription": "我们今天的金库创建额度已用尽。别担心 — 稍后再试,或留下联系方式加入等待名单。有名额时我们会通知您。",
+        "waitlistInputPlaceholder": "电子邮箱或 Telegram(例如 @username)",
+        "waitlistPrivacyNote": "我们仅会用此信息来通知您",
+        "waitlistSubmit": "加入等待名单",
+        "waitlistSubmitFailed": "提交失败。请再试一次。",
+        "welcomeAlt": "欢迎"
+    },
+    "blocked": {
+        "title": "服务在您所在的国家/地区不可用",
+        "description": "由于相关限制,此服务目前在您所在地区不可用。"
+    },
+    "notFound": {
+        "title": "哎呀,此页面已不存在...",
+        "description": "您访问的链接已失效。请返回上一页或回到仪表板。",
+        "backToDashboard": "返回仪表板"
+    },
+    "treasuryInfo": {
+        "logoAlt": "金库标志"
+    },
+    "dateInput": {
+        "placeholder": "yyyy/mm/dd"
+    },
+    "thresholdSlider": {
+        "warningSingleMember": "1/{memberCount} 的阈值意味着任意单个成员均可执行交易。这会降低安全性。",
+        "infoBalanced": "{currentThreshold}/{memberCount} 的阈值在安全性与运营灵活性之间取得了良好平衡。"
+    },
+    "intentsFee": {
+        "amountTooLowForFee": "{prefix}金额过低,无法支付网络手续费({fee} {symbol})。请至少再增加 {addMore} {symbol}。"
+    },
+    "metadata": {
+        "treasuryTitle": "仪表板 | Trezu",
+        "landingTitle": "Trezu | 跨链金库管理",
+        "description": "通过单一仪表板,几分钟内即可管理团队资金,而无需交出您的密钥。",
+        "ogTitle": "Trezu | 一个多签。任意加密货币。完全掌控。"
+    },
+    "pages": {
+        "dashboard": {
+            "title": "仪表板",
+            "description": "金库资产与活动概览",
+            "descriptionLong": "管理金库资产并跟踪活动"
+        },
+        "activity": {
+            "title": "近期交易",
+            "descriptionDetails": "请求详情",
+            "descriptionList": "所有资产的近期交易"
+        },
+        "requests": {
+            "title": "请求",
+            "description": "查看并管理所有待处理的多签请求",
+            "detailDescription": "请求详情",
+            "detailTitle": "请求 #{id}"
+        },
+        "members": {
+            "title": "成员",
+            "description": "管理团队成员与权限"
+        },
+        "settings": {
+            "title": "设置",
+            "description": "调整应用设置"
+        },
+        "addressBook": {
+            "title": "地址簿",
+            "description": "管理已保存的收款人"
+        },
+        "payments": {
+            "title": "付款",
+            "description": "安全地发送与接收资金"
+        },
+        "exchange": {
+            "title": "兑换",
+            "description": "安全高效地兑换您的代币"
+        },
+        "vesting": {
+            "title": "归属",
+            "description": "快速轻松地创建归属计划"
+        },
+        "earn": {
+            "title": "收益",
+            "description": "通过您的资产赚取奖励",
+            "placeholder": "探索收益机会与质押奖励。"
+        },
+        "createTreasury": {
+            "title": "创建金库",
+            "description": "为您的团队创建新的多签金库"
+        },
+        "manageTreasuries": {
+            "title": "管理金库",
+            "description": "控制账户中显示的金库"
+        },
+        "stats": {
+            "title": "统计",
+            "description": "所有 sputnik DAO 金库的实时管理资产数据。"
+        },
+        "telegram": {
+            "title": "连接金库",
+            "description": "将您的金库链接到 Telegram 聊天",
+            "metaTitle": "Trezu — 连接 Telegram",
+            "metaDescription": "将您的 Trezu 金库连接到 Telegram 聊天"
+        },
+        "wallet": {
+            "title": "Trezu 钱包",
+            "description": "通过 Trezu 签署金库提案"
+        }
+    },
+    "depositModal": {
+        "validation": {
+            "selectAsset": "请选择一项资产",
+            "selectNetwork": "请选择一个网络"
+        },
+        "sections": {
+            "supportedNetworks": "支持的网络",
+            "networksWithAssets": "包含资产的网络",
+            "yourAssets": "您的资产",
+            "otherAssets": "其他资产"
+        },
+        "errors": {
+            "addressUnavailable": "无法获取所选资产和网络的存款地址。",
+            "fetchFailed": "获取存款地址失败。请再试一次。"
+        },
+        "title": "存款",
+        "subtitle": "选择资产和网络以查看存款地址",
+        "assetLabel": "资产",
+        "networkLabel": "网络",
+        "selectAsset": "选择资产",
+        "selectNetwork": "选择网络",
+        "otherAssetName": "其他",
+        "otherNetworkInfo": "您可以存入资产列表中未列出的任何代币,但仅限通过 NEAR 网络。",
+        "depositAddressHeading": "存款地址",
+        "depositAddressSubtitle": "请始终仔细核对您的存款地址。",
+        "addressLabel": "地址",
+        "addressCopied": "地址已复制到剪贴板",
+        "memoLabel": "Memo",
+        "memoCopied": "Memo 已复制到剪贴板",
+        "memoWarning": "向此地址转账时,您<bold>必须</bold>包含 Memo。未包含 Memo 的转账可能导致资金永久丢失。",
+        "onlyDeposit": "仅可从 <networkTag>{network}</networkTag> 网络存入 <symbolTag>{symbol}</symbolTag>。建议先进行小额测试交易,确认一切正常后再发送全部金额。",
+        "minimumDeposit": "最低存款金额为 <amountTag>{amount} {symbol}</amountTag>",
+        "searchByName": "按名称搜索"
+    },
+    "assetDetails": {
+        "coinPrice": "币价",
+        "weight": "权重",
+        "source": "来源",
+        "send": "发送",
+        "exchange": "兑换",
+        "comingSoon": "即将推出",
+        "vesting": "归属",
+        "vestedPercent": "已归属 {percent}%",
+        "frozen": "已冻结",
+        "frozenTooltip": "已冻结的代币已锁定,无法使用。它们可能因用于存储、质押或尚未归属而被锁定。",
+        "vested": "已归属"
+    },
+    "dashboard": {
+        "overview": "金库资产与活动概览",
+        "assets": "资产",
+        "balance": "余额",
+        "totalBalance": "总余额",
+        "deposit": "存款",
+        "addAssets": "添加资产",
+        "hidden": "已隐藏",
+        "confidentialHidden": "机密金库的余额已隐藏",
+        "recentActivity": "近期活动",
+        "viewAllTransactions": "查看所有交易"
+    },
+    "activity": {
+        "filters": {
+            "createdDate": "创建日期",
+            "token": "代币",
+            "from": "发送方",
+            "to": "接收方"
+        },
+        "tabs": {
+            "all": "全部",
+            "sent": "已发送",
+            "received": "已接收",
+            "stakingRewards": "质押奖励",
+            "exchange": "兑换"
+        },
+        "searchPlaceholder": "按交易哈希搜索",
+        "searchPlaceholderShort": "交易哈希",
+        "fromPool": "来自 {pool}",
+        "table": {
+            "type": "类型",
+            "transaction": "交易",
+            "from": "发送方",
+            "to": "接收方",
+            "transactionHash": "交易哈希",
+            "hashTooltip": "此交易的唯一标识符(哈希)"
+        },
+        "empty": {
+            "title": "未找到交易",
+            "description": "您的交易在发生后将显示在此处"
+        },
+        "emptyDashboard": {
+            "title": "暂无内容",
+            "description": "您的交易和操作在发生后将显示在此处"
+        },
+        "recentTitle": "近期交易",
+        "details": {
+            "title": "交易详情",
+            "copyAddress": "复制地址",
+            "addressCopied": "地址已复制到剪贴板",
+            "sell": "卖出",
+            "receive": "接收",
+            "pending": "待处理",
+            "type": "类型",
+            "date": "日期",
+            "from": "发送方",
+            "to": "接收方",
+            "method": "方法",
+            "contract": "合约",
+            "transaction": "交易"
+        }
+    },
+    "export": {
+        "types": {
+            "csv": ".CSV",
+            "json": ".JSON",
+            "xlsx": ".XLSX"
+        },
+        "transactionTypes": {
+            "all": "所有类型",
+            "sent": "已发送",
+            "received": "已接收",
+            "stakingRewards": "质押奖励"
+        },
+        "validation": {
+            "invalidEmail": "请输入有效的电子邮箱地址"
+        },
+        "columns": {
+            "submissionTime": "提交时间",
+            "dateRange": "日期范围",
+            "generatedBy": "生成者",
+            "status": "状态"
+        },
+        "status": {
+            "generating": "生成中",
+            "expired": "已过期",
+            "failed": "失败"
+        },
+        "noPermission": "您没有下载此文件的权限。",
+        "download": "下载",
+        "heading": "导出近期交易",
+        "teamOnly": "导出生成与下载仅对团队成员开放。",
+        "creditsUsed": "您的额度已用完",
+        "exportsUsed": "您的导出次数已用完",
+        "upgradePrompt": "升级套餐以获得更多额度并继续使用",
+        "resetPrompt": "升级套餐以获得更多权限,或等待下个月限额重置。",
+        "tabs": {
+            "generate": "生成导出",
+            "history": "历史记录"
+        },
+        "fields": {
+            "documentType": "文档类型",
+            "timeRange": "时间范围",
+            "selectDateRange": "选择日期范围",
+            "asset": "资产",
+            "allAssets": "所有资产",
+            "transactionType": "交易类型"
+        },
+        "buttons": {
+            "noPermissionExport": "您没有导出权限",
+            "quotaExhausted": "您的配额已用完",
+            "exporting": "导出中...",
+            "export": "导出"
+        },
+        "empty": {
+            "title": "暂无导出记录",
+            "description": "上个月的导出文件生成后将显示在此处。"
+        },
+        "requirements": {
+            "heading": "导出要求",
+            "canExportFrom": "您可以从以下时间段导出数据:",
+            "availability": "导出文件可在 48 小时内下载。"
+        },
+        "quota": {
+            "heading": "导出配额",
+            "unlimited": "无限制",
+            "perMonth": "{count} / 月",
+            "flexibilityPrompt": "需要更大的灵活性?",
+            "contactUs": "联系我们"
+        }
+    },
+    "requests": {
+        "filters": {
+            "proposalTypes": {
+                "Payments": "付款",
+                "Exchange": "兑换",
+                "Earn": "收益",
+                "Vesting": "归属",
+                "Function Call": "函数调用",
+                "Change Policy": "修改策略",
+                "Settings": "设置",
+                "Confidential": "机密"
+            },
+            "voteStatus": {
+                "Approved": "已批准",
+                "Rejected": "已拒绝",
+                "No Voted": "未投票"
+            },
+            "requestsType": "请求类型",
+            "createdDate": "创建日期",
+            "recipient": "收款人",
+            "token": "代币",
+            "requester": "请求者",
+            "approver": "批准者",
+            "myVoteStatus": "我的投票状态",
+            "all": "全部",
+            "amount": "金额",
+            "from": "从",
+            "to": "至",
+            "min": "最小",
+            "max": "最大",
+            "invalidDate": "无效日期",
+            "operationIsNot": " 不是",
+            "operationBefore": " 早于",
+            "operationAfter": " 晚于",
+            "operationContains": " 包含",
+            "searchByAddress": "按地址搜索",
+            "loadingMembers": "正在加载成员...",
+            "noMembersFound": "未找到成员。按 Enter 添加“{query}”",
+            "noMembersAvailable": "无可用成员",
+            "reset": "重置",
+            "clear": "清除",
+            "addFilter": "添加筛选"
+        },
+        "tabs": {
+            "all": "全部",
+            "pending": "待处理",
+            "executed": "已执行",
+            "rejected": "已拒绝",
+            "expired": "已过期",
+            "failed": "失败"
+        },
+        "searchPlaceholder": "按名称或 ID 搜索请求",
+        "searchPlaceholderShort": "按名称或 ID 搜索",
+        "errorLoading": "加载提案出错。请再试一次。",
+        "empty": {
+            "title": "创建您的第一个请求",
+            "description": "付款、兑换及其他操作的请求在创建后将显示在此处。",
+            "send": "发送",
+            "exchange": "兑换"
+        },
+        "actions": {
+            "approve": "批准",
+            "reject": "拒绝",
+            "deposit": "存款",
+            "viewRequest": "查看请求"
+        },
+        "table": {
+            "selectAll": "全选",
+            "selectRow": "选择行",
+            "request": "请求",
+            "transaction": "交易",
+            "requester": "请求者",
+            "voting": "投票",
+            "votingTooltip": "第一个数字显示已收到的批准数。第二个数字显示执行所需的批准数。",
+            "status": "状态",
+            "notPending": "提案不处于待处理状态。",
+            "noPermissionVote": "您没有对此请求投票的权限。",
+            "alreadyVoted": "您已对此请求投过票。",
+            "noResults": "未找到符合筛选条件的请求。",
+            "allCaughtUp": "全部处理完毕!",
+            "noPending": "没有待处理的请求。",
+            "send": "发送",
+            "exchange": "兑换",
+            "requestsSelected": "{count, plural, other {已选 # 个请求}}",
+            "bulkApproveDisabled": "由于金库余额不足,此请求无法被批准。"
+        },
+        "pending": {
+            "title": "待处理请求",
+            "viewAll": "查看全部",
+            "emptyTitle": "全部处理完毕!",
+            "emptyDescription": "没有待处理的请求。"
+        }
+    },
+    "proposals": {
+        "status": {
+            "pending": "待处理",
+            "approved": "已批准",
+            "rejected": "已拒绝",
+            "executed": "已执行",
+            "expired": "已过期",
+            "failed": "失败",
+            "removed": "已移除",
+            "inProgress": "进行中"
+        },
+        "statusTooltip": {
+            "pending": "此请求仍待处理,尚未达到执行所需的投票数。",
+            "executed": "在 {required} 名成员中有 {approved} 人批准后已执行。",
+            "rejected": "在 {required} 名成员中有 {rejected} 人投票拒绝后已被拒绝。",
+            "expired": "由于未获得足够的投票而过期。",
+            "failed": "请求未能完成。请在<link>此处</link>查看交易详情。",
+            "failedPlain": "请求未能完成。请在此处查看交易详情。"
+        },
+        "votes": {
+            "approved": "已批准",
+            "rejected": "已拒绝",
+            "pending": "待处理"
+        },
+        "voteModal": {
+            "confirmTitle": "确认您的投票",
+            "removeTitle": "移除请求",
+            "bulkBody": "您即将{action}多个请求。提交后,此决定无法更改。",
+            "singleBody": "您即将{action}此请求。确认后,此操作无法撤销。",
+            "actionApprove": "批准",
+            "actionReject": "拒绝",
+            "actionRemove": "移除",
+            "insufficientBalance": "由于余额不足,请求 <highlight>{ids}</highlight> 无法被批准。您的批准将仅适用于其余请求。",
+            "remove": "移除",
+            "confirm": "确认"
+        },
+        "expanded": {
+            "recipient": "收款人",
+            "amount": "金额",
+            "networkFee": "网络手续费",
+            "notes": "备注",
+            "sent": "已发送",
+            "received": "已接收",
+            "priceDifference": "价差",
+            "priceDifferenceTooltip": "报价汇率与当前市场汇率之间的差额。正值表示汇率优于市场价。",
+            "slippageTolerance": "滑点容忍度",
+            "estimatedTime": "预计时间",
+            "seconds": "{count} 秒",
+            "description": "描述",
+            "methodName": "方法名称",
+            "args": "参数",
+            "deposit": "存款",
+            "gas": "Gas",
+            "totalDeposit": "总存款",
+            "totalGas": "总 Gas",
+            "receiverId": "接收方 ID",
+            "contractId": "合约 ID",
+            "actionsCount": "{count, plural, other {# 个操作}}",
+            "functionCallsCount": "{count, plural, other {# 个函数调用}}",
+            "showLess": "收起",
+            "showMore": "展开",
+            "stakingPool": "质押池",
+            "validator": "验证人",
+            "action": "操作",
+            "stake": "质押",
+            "unstake": "取消质押",
+            "withdraw": "提取",
+            "lockupOwner": "锁仓所有者",
+            "lockupDuration": "锁仓时长",
+            "cliff": "Cliff",
+            "releaseDuration": "释放时长",
+            "vestingSchedule": "归属计划",
+            "cancellable": "可取消",
+            "allowEarn": "允许质押",
+            "yes": "是",
+            "no": "否",
+            "notSet": "未设置",
+            "from": "从",
+            "to": "至",
+            "paymentsCount": "{count, plural, other {# 笔付款}}",
+            "sourceWallet": "来源钱包",
+            "allNear": "全部 NEAR",
+            "startDate": "开始日期",
+            "endDate": "结束日期",
+            "cliffDate": "Cliff 日期",
+            "allowCancellation": "允许取消",
+            "allowStaking": "允许质押",
+            "loadingHistorical": "正在加载历史配置...",
+            "name": "名称",
+            "purpose": "目的",
+            "logo": "标志",
+            "logoAlt": "标志",
+            "primaryColor": "主色",
+            "noChangesCurrent": "与当前状态相比,配置中未检测到任何更改。",
+            "noChangesHistorical": "与历史状态相比,配置中未检测到任何更改。",
+            "method": "方法",
+            "arguments": "参数",
+            "contract": "合约",
+            "actionNumber": "操作 {number}",
+            "actions": "操作",
+            "collapseAll": "全部折叠",
+            "expandAll": "全部展开",
+            "send": "发送",
+            "receive": "接收",
+            "rate": "汇率",
+            "priceSlippageLimit": "价格滑点上限",
+            "slippageTooltip": "这是为此请求设定的滑点上限。如果在执行期间市场汇率变动超过此阈值,请求将自动失败。",
+            "estimatedTimeTooltip": "存款交易确认后,完成兑换所需的预计时间。",
+            "minReceive": "最低接收",
+            "minimumReceived": "最低接收量",
+            "minReceiveTooltip": "这是您将通过此次兑换至少收到的金额,基于为请求设定的滑点上限。",
+            "depositAddress": "存款地址",
+            "depositAddressTooltip": "代币将被发送至此 1Click 存款地址以执行跨链兑换。",
+            "quoteSignature": "报价签名",
+            "quoteSignatureTooltip": "来自 1Click API 的加密签名,用于验证此报价的有效性。",
+            "quoteDeadline": "1-Click 报价截止时间",
+            "quoteDeadlineTooltip": "存款地址失效的时间,届时资金可能丢失。",
+            "status": "状态",
+            "transactionLink": "交易链接",
+            "viewTransaction": "查看交易",
+            "recipientNumber": "收款人 {number}",
+            "oopsTitle": "哎呀!出现了问题",
+            "oopsDescription": "我们找不到可显示的数据。",
+            "totalAmount": "总金额",
+            "recipients": "收款人",
+            "recipientsCount": "{count, plural, other {# 个收款人}}",
+            "unsupportedProposal": "不支持的提案类型",
+            "requestDetails": "请求详情",
+            "linkCopied": "链接已复制到剪贴板",
+            "copyLink": "复制链接",
+            "openRequestPage": "打开请求页面",
+            "deleteRequest": "删除请求",
+            "unknownRecipients": "未知收款人",
+            "loadingConfig": "正在加载配置...",
+            "historicalData": "历史数据...",
+            "generalUpdate": "常规更新",
+            "detailsUnavailable": "详情不可用",
+            "changesCount": "{count, plural, other {# 项更改}}",
+            "policyUpdate": "策略更新",
+            "noChangesDetected": "未检测到任何更改",
+            "loadingPolicy": "正在加载策略...",
+            "roleChanges": "角色更改",
+            "policyParameters": "策略参数",
+            "defaultVotePolicy": "默认投票策略",
+            "policyRoleChanges": "策略与角色更改",
+            "membersAdded": "{count, plural, other {新增 # 名成员}}",
+            "membersRemoved": "{count, plural, other {移除 # 名成员}}",
+            "membersUpdated": "{count, plural, other {更新 # 名成员}}",
+            "rolesModified": "{count, plural, other {修改 # 个角色}}",
+            "parametersChanged": "{count, plural, other {更改 # 个参数}}",
+            "defaultVotePolicyPart": "默认投票策略",
+            "onReceiver": "在 {receiver} 上",
+            "toPrefix": "至:",
+            "validatorPrefix": "验证人:",
+            "validatorSubtitle": "验证人:{address}",
+            "impactTitle": "更改投票时长的影响",
+            "impactBody": "您即将更新投票时长。这将影响以下现有请求。",
+            "activeRequestsBullet": "{count, plural, other {更改后,# 个请求将继续可投票,过期日期会被更新。}}",
+            "expiringRequestsBullet": "{count, plural, other {在新的投票时长下,# 个请求将被标记为“已过期”。}}",
+            "remainActiveHeading": "继续可投票且过期日期已更新的请求",
+            "willExpireHeading": "将被标记为“过期”的请求",
+            "tableRequest": "请求",
+            "tableTransaction": "交易",
+            "tableNewExpiry": "新过期时间",
+            "expireInDays": "{count, plural, other {# 天后过期}}",
+            "today": "今天",
+            "uponApproval": "获批后",
+            "yesContinue": "是,继续",
+            "transactionCreated": "交易已创建",
+            "voting": "投票",
+            "approvalsReceived": "已收到 {received}/{required} 个批准",
+            "expiresAt": "过期时间",
+            "expiredAt": "已过期于",
+            "exchangingTokens": "正在兑换代币",
+            "exchangingTokensBody": "此请求已获团队批准。代币兑换正在进行中,可能需要一些时间。",
+            "requestFailed": "请求失败",
+            "requestFailedBody": "团队已批准此请求,但因汇率波动而失败。请创建新请求并再次尝试。",
+            "votingPeriod24h": "投票期:24 小时",
+            "votingPeriod24hBody": "此兑换请求的投票时长为 24 小时。请在此时间内批准请求,否则该请求将过期。",
+            "reject": "拒绝",
+            "approve": "批准"
+        },
+        "insufficientBalance": {
+            "noAsset": "由于金库中没有所需代币,此请求无法被批准。",
+            "bond": "由于金库的 <token>{symbol}</token> 余额不足,此请求无法被批准。请添加 <token>{amount} {symbol}</token> 以支付提案保证金。",
+            "continue": "由于金库的 <token>{symbol}</token> 余额不足,此请求无法被批准。请添加 <token>{amount} {symbol}</token> 以继续。",
+            "modalTitle": "NEAR 余额不足",
+            "modalBodyVote": "您钱包中的 NEAR 代币不足以投票。投票需要至少 <amount>{required} NEAR</amount> 的余额。请向钱包中添加 NEAR 后再试。",
+            "modalBodyProposal": "您钱包中的 NEAR 代币不足以创建此请求。创建请求需要至少 <amount>{required} NEAR</amount> 的余额。请向钱包中添加 NEAR 后再试。",
+            "gotIt": "知道了"
+        }
+    },
+    "members": {
+        "title": "成员",
+        "description": "管理团队成员与权限",
+        "permissions": "权限",
+        "member": "成员",
+        "activeMembers": "活跃成员",
+        "noActiveMembers": "未找到活跃成员。",
+        "addNewMember": "添加新成员",
+        "membersSelected": "已选择 {count, plural, =0 {无成员} other {# 名成员}}",
+        "remove": "移除",
+        "edit": "编辑",
+        "requestorOnlyTooltip": "您只能为此成员添加 Requestor 角色,因为他们负责从 NEARN 创建付款请求。",
+        "memberModal": {
+            "editRoles": "编辑角色",
+            "addNewMember": "添加新成员",
+            "validatingAddresses": "正在验证地址...",
+            "creatingProposal": "正在创建提案...",
+            "reviewRequest": "审核请求",
+            "noChanges": "未对成员角色进行任何更改"
+        },
+        "previewModal": {
+            "title": "审核您的请求",
+            "youAreEditing": "您正在编辑",
+            "youAreAdding": "您正在添加",
+            "membersCount": "{count, plural, other {# 名成员}}",
+            "newMembersCount": "{count, plural, other {# 名新成员}}",
+            "updatedMembers": "已更新成员",
+            "newMembers": "新成员",
+            "creatingProposal": "正在创建提案...",
+            "confirmSubmit": "确认并提交请求"
+        },
+        "removeDialog": {
+            "title": "移除请求",
+            "nearnBody": "一旦获批,{account} 将从金库中被永久移除,所有相关权限也将被撤销。移除后,此账户将无法再从 NEARN 创建请求。",
+            "genericBody": "一旦获批,此操作将从金库中永久移除 <bold>{accounts}</bold>,并撤销所有已分配的权限。",
+            "creatingProposal": "正在创建提案..."
+        },
+        "validation": {
+            "accountIdRequired": "账户 ID 为必填项",
+            "invalidNearAddress": "无效的 NEAR 地址。",
+            "atLeastOneRole": "必须至少选择一个角色",
+            "atLeastOneMember": "至少需要一名成员",
+            "alreadyAdded": "该成员已在上方添加",
+            "alreadyInTreasury": "该成员已存在于金库中",
+            "cannotRemoveRoleAfter": "您不能从此成员中移除 {role} 角色。在所有更改之后,他们将是唯一被分配此角色的人。",
+            "cannotRemoveRoleAfterGov": "您不能从此成员中移除 {role} 角色。在所有更改之后,他们将是唯一的 {role} 成员,缺少此角色将无法管理团队成员或配置投票。"
+        },
+        "policy": {
+            "addMembers": "更新策略 - 添加新成员",
+            "addMembersSuccess": "新成员请求已成功创建",
+            "editMember": "更新策略 - 编辑成员权限",
+            "editMembers": "更新策略 - 编辑多个成员",
+            "editMemberSuccess": "成员角色更新请求已成功创建",
+            "editMembersSuccess": "批量成员角色更新请求已成功创建",
+            "removeMember": "更新策略 - 移除成员",
+            "removeMembers": "更新策略 - 移除成员",
+            "removeMemberSuccess": "成员移除请求已成功创建"
+        }
+    },
+    "settings": {
+        "tabs": {
+            "general": "常规",
+            "voting": "投票",
+            "preferences": "偏好设置",
+            "integrations": "集成"
+        },
+        "general": {
+            "validation": {
+                "displayNameRequired": "显示名称为必填项",
+                "displayNameMax": "显示名称必须少于 100 个字符"
+            },
+            "proposalDescriptionTitle": "更新配置 - 主题与标志",
+            "proposalSubmitted": "更新配置的请求已提交",
+            "treasuryNotFound": "未找到金库",
+            "treasuryName": "金库名称",
+            "treasuryNameDescription": "您金库的名称。该名称将在应用中显示。",
+            "displayName": "显示名称",
+            "displayNamePlaceholder": "输入显示名称",
+            "accountName": "账户名称",
+            "logo": "标志",
+            "logoDescription": "为您的金库上传标志。建议使用 SVG、PNG 或 JPG 格式(256x256 像素)。",
+            "treasuryLogoAlt": "金库标志",
+            "uploading": "上传中...",
+            "uploadLogo": "上传标志",
+            "removeLogo": "移除标志",
+            "logoUploaded": "标志上传成功",
+            "uploadError": "上传图片时出错,请再试一次。",
+            "invalidLogo": "无效的标志。请上传恰好为 256x256 像素的 PNG、JPG 或 SVG 文件",
+            "invalidImage": "无效的图片文件。请上传有效的图片。",
+            "fileReadError": "读取文件时出错。请再试一次。",
+            "primaryColor": "主色",
+            "primaryColorDescription": "为金库界面元素设置主色。该颜色将在浅色和深色模式中均会使用,因此选择中性色调时请注意对比度。",
+            "selectColorLabel": "选择颜色 {color}"
+        },
+        "voting": {
+            "validation": {
+                "required": "投票时长为必填项",
+                "validNumber": "投票时长必须是有效的数字",
+                "min": "投票时长至少为 1 天",
+                "max": "投票时长必须少于 1000 天",
+                "whole": "投票时长必须为整天数"
+            },
+            "missingData": "缺少必要数据",
+            "thresholdProposalTitle": "更新策略 - 投票阈值",
+            "thresholdProposalSummary": "{account} 请求将投票阈值从 {oldValue} 更改为 {newValue}。",
+            "thresholdSubmitted": "更新投票阈值的请求已提交",
+            "createProposalFailed": "创建提案失败",
+            "durationProposalTitle": "更新策略 - 投票时长",
+            "durationProposalSummary": "{account} 请求将投票时长从 {oldValue} 更改为 {newValue}。",
+            "durationSubmitted": "请求已成功创建",
+            "pendingTitle": "活动中的投票阈值请求",
+            "pendingBody": "为避免冲突,您需要先完成或解决现有的待处理请求,然后再继续。这些请求当前处于活动状态,必须先批准或拒绝。",
+            "viewRequest": "查看请求",
+            "thresholdHeading": "投票阈值",
+            "thresholdDescriptionApprovers": "定义批准付款及团队相关请求所需的投票数。可分别为批准者和治理角色配置阈值。",
+            "thresholdDescriptionGeneric": "定义批准请求所需的投票数。根据各角色的职责分别配置阈值。",
+            "membersWhoCanVote": "可投票的成员",
+            "votesRequired": "批准请求所需的投票数",
+            "durationHeading": "投票时长",
+            "durationDescription": "提案保持开放投票的时长(以天为单位)。如果未在该时段内完成投票,该决定将过期。",
+            "durationApprovers": " 此时长同样适用于治理与批准者角色。",
+            "durationGeneric": " 此时长在所有金库角色中保持一致。",
+            "days": "天"
+        },
+        "preferences": {
+            "timeZone": "时区",
+            "timeZoneDescription": "设置您所在的时区,以便准确显示日期和时间。",
+            "timeFormat": "时间格式",
+            "hour12": "12 小时制(下午 1:00)",
+            "hour24": "24 小时制(13:00)",
+            "autoTimezone": "根据您的位置自动设置时区",
+            "timezone": "时区",
+            "loadingTimezones": "正在加载时区...",
+            "selectTimezone": "选择时区",
+            "searchTimezones": "搜索时区...",
+            "noTimezones": "未找到时区",
+            "save": "保存",
+            "savedToast": "偏好设置保存成功",
+            "saveFailed": "保存偏好设置失败",
+            "loadFailed": "加载时区失败"
+        }
+    },
+    "addressBook": {
+        "emptyTitle": "添加您的第一个收款人",
+        "emptyDescription": "保存常用地址,实现更快、零错误的付款。您的联系人保持私密,仅对您的团队可见。",
+        "import": "导入",
+        "addRecipient": "添加收款人",
+        "recipientsHeading": "收款人",
+        "recipientsSelected": "已选择 {count, plural, =0 {无收款人} other {# 个收款人}}",
+        "sectionHeading": "收款人",
+        "privacyNote": "已保存的地址保持私密,仅对您的团队可见。",
+        "searchPlaceholder": "按名称搜索收款人",
+        "searchPlaceholderShort": "搜索",
+        "review": {
+            "header": "审核详情",
+            "youAreAdding": "您正在添加",
+            "newRecipients": "{count, plural, other {# 个新收款人}}",
+            "onNetworks": "在 {count, plural, other {# 个网络}}上",
+            "recipients": "收款人",
+            "allDuplicates": "所有导入的收款人在您的地址簿中已存在。请返回上传其他列表,或在此审核中移除重复项。",
+            "someDuplicates": "{total} 个收款人中有 {duplicates} 个重复。继续将仅上传新的收款人。",
+            "duplicated": "已重复",
+            "notePlaceholder": "添加备注以便识别此收款人(例如承包商付款、归属分发)。",
+            "skipDuplicates": "跳过重复项,仅导入新收款人。",
+            "allDuplicatesTooltip": "所有导入的收款人均已在您的地址簿中,因此没有新的可导入项。",
+            "duplicateActionTooltip": "启用跳过重复项或移除重复收款人后即可继续。",
+            "adding": "正在添加…",
+            "nothingNew": "没有可导入的新内容",
+            "addRecipientsButton": "{count, plural, other {添加收款人}}"
+        },
+        "removeDialog": {
+            "title": "移除收款人",
+            "bulk": "这将从您的地址簿中移除 <bold>{count, plural, other {# 个收款人}}</bold>。您可以随时再次添加。",
+            "single": "这将从您的地址簿中移除 <bold>{name}</bold>。您可以随时再次添加此收款人。"
+        },
+        "importFlow": {
+            "title": "导入收款人",
+            "description": "将一份收款人地址列表上传到您的地址簿。",
+            "foundSummary": "在 {networkCount, plural, other {# 个网络}}上找到 {count, plural, other {# 个收款人}}",
+            "uploadPrompt": "上传或粘贴收款人数据",
+            "fixErrors": "修复错误以继续",
+            "continueReview": "继续审核"
+        },
+        "form": {
+            "editRecipient": "编辑收款人",
+            "addRecipient": "添加收款人",
+            "import": "导入",
+            "recipientName": "收款人姓名",
+            "namePlaceholder": "Alice",
+            "recipientAddress": "收款人地址",
+            "network": "网络",
+            "networkInfo": "与此地址兼容的网络",
+            "enterAddressFirst": "请先输入收款人地址",
+            "selectNetwork": "选择网络",
+            "selectNetworksTitle": "选择网络",
+            "searchNetworksPlaceholder": "搜索网络…",
+            "done": "完成",
+            "edit": "编辑",
+            "remove": "移除",
+            "incomplete": "未完成",
+            "addAnother": "添加另一位收款人",
+            "fillAllTooltip": "您必须填写所有字段才能添加收款人。",
+            "reviewDetails": "审核详情",
+            "reviewTooltip": "审核前所有收款人信息必须填写完整。",
+            "invalidAddress": "无效地址",
+            "noCompatibleNetworks": "没有与此地址兼容的网络"
+        },
+        "parsing": {
+            "rowPrefix": "第 {row} 行:{message}",
+            "missingName": "缺少收款人姓名。请添加姓名。",
+            "missingAddress": "缺少收款人地址。请添加钱包地址。",
+            "invalidAddressFormat": "地址 “{address}” 不符合任何受支持网络的有效格式。",
+            "unknownNetwork": "未知网络 “{network}”。受支持的网络包括:{available}。",
+            "incompatibleNetwork": "地址 “{address}” 与 {network} 不兼容。兼容的网络:{compatible}。",
+            "noDataFound": "未找到数据。请按以下格式添加收款人:Name, Address, Network, Note",
+            "headerColumnsNotFound": "我们检测到表头行,但未能找到 'Name' 和 'Address' 列。请使用这些列名,或删除表头行。",
+            "failedToParseCsv": "解析 CSV 数据失败"
+        }
+    },
+    "payments": {
+        "validation": {
+            "recipientMin": "收款人至少需 2 个字符",
+            "recipientMax": "收款人必须少于 128 个字符",
+            "amountPositive": "金额必须大于 0",
+            "recipientTokenSame": "收款人地址不能与代币地址相同"
+        },
+        "newPayment": "新建付款",
+        "reviewYourPayment": "审核您的付款",
+        "reviewButton": "审核付款",
+        "reviewButtonDisabled": "请输入金额和地址",
+        "comingSoon": "即将推出",
+        "bulkPayments": "批量付款",
+        "summaryRecipients": "至 {count, plural, other {# 个收款人}}",
+        "networkFee": "网络手续费",
+        "networkFeeInfo": "网络手续费信息",
+        "commentPlaceholder": "添加备注(可选)...",
+        "preparingRoute": "正在准备 1Click 转账路径...",
+        "confirmSubmit": "确认并提交请求",
+        "useDifferentAddress": "使用其他地址",
+        "failed1ClickQuote": "创建 1Click 转账报价失败",
+        "paymentSubmitted": "发送付款的请求已提交"
+    },
+    "bulkPayment": {
+        "comingSoonToast": "批量付款功能即将推出!",
+        "submittingList": "正在提交批量付款列表",
+        "submittingProposal": "正在提交提案",
+        "proposalSubmitted": "批量付款提案已提交",
+        "submitListFailed": "提交付款列表失败",
+        "submitFailed": "提交批量付款失败",
+        "upload": {
+            "pleaseUploadCsv": "请上传 CSV 文件",
+            "fileSizeLimit": "文件大小必须小于 1.5 MB",
+            "headerTitle": "批量付款请求",
+            "headerSubtitle": "通过单个提案向多个收款人付款。",
+            "creditsUsed": "您的额度已用完",
+            "bulkPaymentsUsed": "您的批量付款次数已用完",
+            "upgradeTrial": "升级套餐以获得更多额度并继续使用",
+            "upgradePaid": "升级套餐以获得更多权限,或等待下个月限额重置。",
+            "selectAsset": "选择资产",
+            "disableTokenMessage": "对这些代币的批量付款即将推出。",
+            "providePaymentData": "提供付款数据",
+            "uploadFile": "上传文件",
+            "provideData": "提供数据",
+            "chooseFile": "选择文件",
+            "orDragDrop": "或拖放至此",
+            "maxFileSize": "最多 1 个文件,最大 1.5 MB,仅限 CSV 文件",
+            "noFilePrompt": "没有文件可上传?",
+            "downloadTemplate": "下载模板",
+            "requirements": "批量付款要求",
+            "maxTransactions": "每次导入最多 {max} 笔交易",
+            "singleTokenNetwork": "单一代币和网络",
+            "limitsUsed": "您的额度已用完",
+            "selectAndProvide": "选择资产并提供付款数据",
+            "continueToReview": "继续审核",
+            "selectTokenError": "请选择一个代币",
+            "providePaymentDataError": "请提供付款数据"
+        },
+        "editStep": {
+            "title": "编辑付款",
+            "saveChanges": "保存更改"
+        },
+        "parsing": {
+            "rowPrefix": "第 {row} 行:{message}",
+            "missingRecipientFirstColumn": "缺少收款人地址。请在第一列添加地址。",
+            "invalidNearAddress": "地址 “{address}” 不是有效的 NEAR 账户。",
+            "invalidChainAddress": "地址 “{address}” 不是有效的 {chain} 账户。",
+            "rowNeedsAmountRecipient": "每行需要金额和收款人,以逗号分隔。例如:100, alice.near",
+            "missingRecipientBeforeComma": "缺少收款人地址。请在逗号前添加地址。",
+            "missingAmountAfterComma": "缺少金额。请在逗号后添加数字。例如:{recipient}, 100",
+            "invalidAmountNumber": "金额 “{amountStr}” 不是有效的数字。请仅使用数字和小数点(例如 100 或 100.50)。",
+            "amountGreaterThanZero": "金额必须大于 0。您输入的是 “{amountStr}”。",
+            "amountTooLarge": "金额 “{amountStr}” 过大。请使用更小的数字。",
+            "invalidAmountFallback": "无效金额。请仅使用数字和小数点(例如 100 或 100.50)。",
+            "pleaseRemoveChars": "请移除以下字符:{chars}。仅允许数字、逗号和句点。",
+            "amountCannotBeEmpty": "金额不能为空。",
+            "tokenMismatch": "您输入了 “{provided}”,但上方选择的是 {expected}。请移除代币符号,或在下拉框中选择 {suggested}。",
+            "multipleTokenSymbols": "您在文件中使用了多种代币符号({symbols})。请在文件中仅使用一种代币类型,或移除代币符号并使用上方所选的代币。",
+            "noPaymentDataFound": "未找到付款数据。请按以下格式添加付款:recipient, amount",
+            "exceedsRecipientLimit": "您有 {count} 个收款人,但每批的限制为 {limit}。请移除 {excess, plural, other {# 个收款人}} 或拆分为多批。",
+            "noPaymentDataProvided": "未提供付款数据。请按以下格式输入付款:recipient, amount",
+            "headerColumnsNotFound": "我们检测到表头行,但未能找到 'Recipient' 和 'Amount' 列。请使用这些列名,或删除表头行。",
+            "failedToParseCsv": "解析 CSV 数据失败",
+            "failedToParsePaste": "解析粘贴的数据失败",
+            "failedToValidateAccount": "验证账户失败",
+            "feeEstimationFailed": "无法估算此金额的网络手续费。请确认后再试。",
+            "feeEstimationFailedRow": "第 {row} 行({recipient}):无法估算此金额的网络手续费。请确认后再试。"
+        },
+        "recipients": "收款人",
+        "insufficientTokens": "代币不足。您可以提交请求,并在批准前充值。",
+        "removeRecipient": "移除收款人",
+        "removeRecipientConfirm": "您确定要移除给 <strong>{recipient}</strong> 的付款吗?此操作无法撤销。",
+        "remove": "移除",
+        "edit": "编辑"
+    },
+    "bulkPaymentCredits": {
+        "title": "批量付款",
+        "unlimited": "无限制",
+        "creditsPerPeriod": "{amount} / {period}",
+        "oneTimeTrial": "一次性试用",
+        "month": "月",
+        "moreFlexibility": "需要更大的灵活性?",
+        "contactUs": "联系我们"
+    },
+    "exchange": {
+        "validation": {
+            "amountPositive": "金额必须大于 0"
+        },
+        "requestSubmitted": "兑换请求已提交",
+        "heading": "兑换",
+        "sell": "卖出",
+        "receive": "接收",
+        "slippageTolerance": "滑点容忍度",
+        "disabled": {
+            "differentTokens": "代币必须不同",
+            "enterAmount": "请输入要兑换的金额"
+        },
+        "review": "审核兑换",
+        "poweredBy": "技术支持:",
+        "info": {
+            "priceDifference": "价差",
+            "priceDifferenceTooltip": "报价汇率与当前市场汇率之间的差额。正值表示汇率优于市场价。",
+            "estimatedTime": "预计时间",
+            "estimatedTimeValue": "{seconds} 秒",
+            "estimatedTimeTooltip": "完成兑换的大致时间。",
+            "minimumReceived": "最低接收量",
+            "minimumReceivedTooltip": "这是您将通过此次兑换至少收到的金额,基于为请求设定的滑点上限。",
+            "depositAddress": "存款地址",
+            "depositAddressCopied": "存款地址已复制",
+            "quoteExpires": "报价过期时间",
+            "exchangeFee": "兑换手续费",
+            "exchangeFeeTooltip": "此处产生的 0.70% 手续费用于支付 NEAR Intents 协议的交易处理成本及 Trezu 小部件费用。该金额已自动计入您的报价汇率中。"
+        },
+        "approveWithin24h": "请在 24 小时内批准此请求,否则它将过期。建议尽快确认。",
+        "confirmSubmit": "确认并提交请求",
+        "refreshingIn": "兑换汇率将在 {seconds} 秒后刷新"
+    },
+    "vesting": {
+        "validation": {
+            "amountMin": "金额必须大于或等于 3.5",
+            "startBeforeEnd": "开始日期必须早于结束日期",
+            "cliffBetween": "Cliff 日期必须介于"
+        },
+        "stepTitles": {
+            "details": "详情",
+            "settings": "设置",
+            "review": "审核"
+        },
+        "proposalTitle": "为 {address} 创建归属计划",
+        "scheduleSubmitted": "创建归属计划的请求已提交",
+        "heading": "新建归属计划",
+        "amount": "金额",
+        "startDate": "开始日期",
+        "endDate": "结束日期",
+        "noteOptional": "备注(可选)",
+        "continue": "继续",
+        "advancedSettings": "高级设置",
+        "allowCancellation": "允许取消",
+        "allowCancellationDescription": "允许 NEAR Foundation 随时取消锁仓。不可取消的锁仓与 Cliff 日期不兼容。",
+        "cliffDate": "Cliff 日期",
+        "allowEarn": "允许赚取收益",
+        "allowEarnDescription": "允许锁仓所有者将锁仓中的全部代币用于质押(即使在 Cliff 日期之前)。",
+        "commentPlaceholder": "为此归属计划添加备注(可选)...",
+        "reviewRequest": "审核请求",
+        "reviewHeading": "审核您的归属计划",
+        "confirmSubmit": "确认并提交请求",
+        "review": {
+            "recipient": "收款人",
+            "startDate": "开始日期",
+            "endDate": "结束日期",
+            "cliffDate": "Cliff 日期",
+            "cancelable": "可取消",
+            "allowEarn": "允许赚取收益",
+            "na": "不适用"
+        }
+    },
+    "earn": {
+        "placeholder": "探索收益机会与质押奖励。"
+    },
+    "createTreasury": {
+        "validation": {
+            "nameMin": "金库名称至少需 2 个字符",
+            "nameMax": "金库名称必须少于 64 个字符",
+            "accountMin": "账户名称至少需 2 个字符",
+            "accountMax": "账户名称必须少于 64 个字符",
+            "accountChars": "账户名称只能包含拉丁字母、数字和连字符",
+            "accountTaken": "此账户名称已被占用"
+        },
+        "votingNote": "您需要更多成员才能修改投票设置。请添加另一名成员以配置投票。",
+        "minimumVoteNote": "至少需要一个批准投票。",
+        "heading": "创建金库",
+        "addMembers": "添加成员",
+        "addMembersInfo": "您现在可以添加或更新成员,稍后随时可以再次编辑。",
+        "treasuryName": "金库名称",
+        "treasuryNamePlaceholder": "我的金库",
+        "accountName": "账户名称",
+        "accountNameInfo": "这是您账户的唯一名称。它将用于您的金库 URL,并显示在交易中以标识付款人。请为您的账户选择一个简短易识别的名称。",
+        "accountPlaceholder": "my-treasury",
+        "continue": "继续",
+        "votingThreshold": "投票阈值",
+        "thresholdDescription": "设置批准请求所需的投票数:",
+        "financial": "财务",
+        "financialDescription": "批准付款与兑换请求。",
+        "governance": "治理",
+        "governanceDescription": "批准设置、成员及投票配置。",
+        "confidential": "机密",
+        "public": "公开",
+        "anyone": "任何人",
+        "teamOnly": "仅限团队",
+        "soon": "即将推出",
+        "publicDescription": "所有余额、活动和交易在区块链上对任何人都可见。此选项最适合透明的组织和公共 DAO。",
+        "balanceTransactions": "余额、交易",
+        "membersVoting": "成员、投票",
+        "allFeatures": "所有功能可用",
+        "confidentialDescription": "所有余额、活动和转账在区块链上保持私密。仅您的团队可以查看这些信息。最适合需要财务隐私的私人公司、家族办公室或团队。",
+        "recentTransactionsExport": "近期交易导出",
+        "bulkPayment": "批量付款",
+        "treasuryType": "金库类型",
+        "treasuryTypeWarning": "每个金库只能选择一次,后续无法更改。",
+        "select": "选择",
+        "visibleOnChain": "链上可见",
+        "featuresAvailable": "可用功能",
+        "mostFeaturesSupported": "支持大多数功能",
+        "reviewTreasury": "审核金库",
+        "membersLabel": "成员",
+        "financialThreshold": "财务阈值",
+        "governanceThreshold": "治理阈值",
+        "noDeploymentFee": "🎉 无部署费用",
+        "noDeploymentFeeDescription": "为支持新项目,TREZU 承担所有一次性部署及网络存储费用。",
+        "createButton": "创建金库",
+        "connectWalletCreate": "连接钱包以创建金库",
+        "unexpectedError": "发生意外错误",
+        "creationFailed": "创建金库失败。请再试一次。",
+        "stepTitles": {
+            "aboutYou": "关于您",
+            "details": "详情",
+            "members": "成员",
+            "treasuryType": "金库类型",
+            "review": "审核"
+        },
+        "steps": {
+            "creatingNear": "正在 NEAR 上创建您的金库",
+            "registeringKey": "正在注册公钥",
+            "settingUpConfidential": "正在设置机密交易",
+            "configuringMembers": "正在配置金库成员",
+            "finalizingSetup": "正在完成设置"
+        }
+    },
+    "manageTreasuries": {
+        "warningOne": "至少需保留一个金库可见",
+        "warningOnePeriod": "至少需保留一个金库可见。",
+        "activeHeading": "活跃金库",
+        "activeDescription": "当前在您账户列表中可见的金库。",
+        "activeEmpty": "无活跃金库。",
+        "hiddenHeading": "已隐藏金库",
+        "hiddenDescription": "已从您的账户列表中隐藏的金库。",
+        "removeGuestTitle": "移除访客金库",
+        "removeDialog": "您即将移除 <bold>{name}</bold>。一旦确认,此操作无法撤销。",
+        "tooltips": {
+            "removeFromList": "从您的列表中移除",
+            "viewTreasury": "查看金库",
+            "hideFromList": "从您的列表中隐藏",
+            "showInList": "显示在您的列表中"
+        }
+    },
+    "wallet": {
+        "proposal": {
+            "transfer": "来自外部 dApp 的提案:向 {receiverId} 转账 NEAR",
+            "functionCall": "来自外部 dApp 的提案:在 {receiverId} 上调用 {methods}",
+            "unsupportedAction": "不支持的操作类型 “{type}”。仅 Transfer 和 FunctionCall 操作可转换为 Trezu 提案。"
+        },
+        "loading": "加载中...",
+        "connectPrompt": "请连接您的 NEAR 钱包以继续。然后您将选择要代表其操作的金库。",
+        "connectWallet": "连接钱包",
+        "cancel": "取消",
+        "connectedAs": "已以 <strong>{account}</strong> 身份连接",
+        "loadingTreasuries": "正在加载金库...",
+        "selectSignIn": "选择要登录的金库:",
+        "selectSignTx": "选择要为其创建提案的金库:",
+        "notMember": "您不是任何金库的成员。",
+        "actingAs": "代表",
+        "signedBy": "由 {account} 签署",
+        "createsNProposals": "这将为以下内容创建 {count, plural, other {# 个 Trezu 提案}}:",
+        "proposalDescriptionLabel": "提案描述(可选)",
+        "proposalDescriptionPlaceholder": "描述此提案...",
+        "createProposal": "创建提案",
+        "creatingProposal": "正在创建提案...",
+        "confirmInWallet": "请在您的钱包中确认",
+        "proposalSubmitted": "提案已提交",
+        "shareProposal": "您的提案已创建。请将下方链接分享给金库成员进行投票。",
+        "proposalLink": "{daoId} — 提案 #{id}",
+        "checking": "检查中...",
+        "proposalApprovedProceed": "提案已获批准。请继续",
+        "signedInSuccess": "登录成功",
+        "proposalCreatedSuccess": "提案创建成功",
+        "closeWindow": "您可以关闭此窗口。",
+        "errorGeneric": "发生错误",
+        "tryAgain": "再试一次",
+        "errors": {
+            "parseTx": "解析交易请求失败。请再试一次。",
+            "fetchTreasuries": "获取您的金库失败。请再试一次。",
+            "connectFailed": "连接钱包失败",
+            "createProposalFailed": "创建提案失败",
+            "stillPending": "提案仍在等待批准。请等待金库成员投票。",
+            "wasStatus": "提案 #{id} 的状态为 {status}",
+            "awaitIndex": "提案已获批准,但执行交易尚未被索引。请稍后再试。",
+            "checkStatusFailed": "检查提案状态失败",
+            "userCancelled": "用户已取消",
+            "proposalWasStatus": "提案状态为 {status}"
+        }
+    },
+    "telegram": {
+        "tagPill": "Telegram",
+        "invalidLinkTitle": "链接无效",
+        "invalidLinkDescription": "此 Telegram 连接链接缺少令牌。请在 Telegram 中重新点击 Connect Treasury 以生成新的链接。",
+        "successTitle": "连接成功",
+        "successDescription": "金库已链接到此 Telegram 聊天。",
+        "successToast": "金库连接成功",
+        "goToApp": "前往应用",
+        "linkExpiredTitle": "链接已过期",
+        "linkExpiredDescription": "此链接已过期或已被使用。在 Telegram 中输入下方命令以重新启动连接流程。",
+        "commandCopied": "命令已复制",
+        "copy": "复制",
+        "unableToLoadTitle": "无法加载聊天",
+        "unableToLoadDescription": "目前无法加载聊天详情。请从 Telegram 重试。",
+        "signInTitle": "登录以继续",
+        "signInDescription": "请先连接您的 NEAR 钱包,然后选择要链接到此 Telegram 聊天的金库。",
+        "connectWallet": "连接钱包",
+        "selectTreasuriesTitle": "选择金库",
+        "selectTreasuriesDescription": "选择要连接到此 Telegram 聊天的金库。",
+        "telegramChat": "Telegram 聊天",
+        "chatIdFallback": "聊天 #{id}",
+        "failedToConnect": "连接金库失败。请再试一次。",
+        "relinking": "{count, plural, other {# 个所选金库当前已链接到其他 Telegram 聊天。连接将重新链接它们,并将其聊天 ID 更改为此聊天。}}",
+        "alreadyConnected": "已连接到此聊天",
+        "connectedToAnother": "已连接到其他聊天",
+        "notMember": "您不是任何金库的策略成员。",
+        "connecting": "连接中…",
+        "connect": "连接"
+    },
+    "systemStatus": {
+        "underMaintenance": "维护中",
+        "maintenanceMessage": "我们正在进行维护。某些功能可能暂时不可用。请稍后再试。"
+    },
+    "creditsQuota": {
+        "available": "{count} 可用",
+        "used": "已用 {count}",
+        "resetOn": "限额将于 {date} 重置"
+    },
+    "approvalInfo": {
+        "infoText": "批准付款相关请求所需的投票数。可在“投票”设置中编辑。",
+        "thresholdPill": "阈值 {required} / {total}",
+        "alertBody": "此付款执行前需要 <bold>{required}</bold> 名金库成员的批准。"
+    },
+    "guestBadge": {
+        "title": "访客",
+        "tooltip": "您是此金库的访客。您只能查看数据。"
+    },
+    "exportButton": {
+        "confidentialTooltip": "导出功能在机密模式下尚不可用。此功能即将推出!"
+    },
+    "sponsoredActions": {
+        "titleExhausted": "赞助操作已用完",
+        "titleAlmost": "您的团队即将用完赞助操作",
+        "closeNotice": "关闭提示",
+        "teamUsage": "团队用量:每月 {total} 次操作",
+        "available": "{count} 可用",
+        "used": "已用 {count}",
+        "exhaustedBody": "您的团队已达到本月赞助操作上限。您可以在 {date} 之后继续,或与我们联系",
+        "almostBody": "TREZU 当前为所有团队操作(如创建请求和投票)赞助存储费用。您的团队即将达到月度赞助上限。",
+        "contactUs": "联系我们",
+        "nextMonthlyReset": "下次月度重置时间",
+        "sidebarBody": "您的团队已达到本月赞助操作上限。您可以在 {date} 之后继续,或 ⬇️"
+    },
+    "acceptTerms": {
+        "title": "接受条款以继续",
+        "privacyTitle": "您在 Trezu 的隐私",
+        "privacyBody": "Trezu 是一个非托管界面。我们在确保平台安全和功能正常的同时,优先保护您的隐私。",
+        "minimalTitle": "最少数据",
+        "minimalBody": "我们仅收集有限的信息,例如公开钱包地址、IP 地址和使用分析,以运营和改进本界面。",
+        "noCustodyTitle": "非托管",
+        "noCustodyBody": "我们绝不会访问您的私钥、助记词或数字资产。",
+        "publicTitle": "公开记录",
+        "publicBody": "请记住,所有区块链交易本身都是公开的,且不受我们控制。",
+        "responsibilityTitle": "您的责任",
+        "responsibilityBody": "您需自行负责监控钱包活动并保护您的凭证。",
+        "futureTitle": "未来更新",
+        "futureBody": "如果您选择接收未来的通知(如电子邮件或 Telegram),我们将仅使用这些数据来通知您。",
+        "agreement": "我已阅读并同意<terms>服务条款</terms>和<privacy>隐私政策</privacy>",
+        "accepting": "正在接受...",
+        "continue": "继续"
+    },
+    "confidentialBanner": {
+        "label": "机密",
+        "description": "余额、活动和转账仅对您的团队可见 — 公共区块链上不可见。"
+    },
+    "supportCenter": {
+        "title": "支持中心",
+        "resources": "资源",
+        "support": "支持",
+        "websiteTitle": "Trezu 网站",
+        "websiteDescription": "了解更多关于 Trezu 的信息并阅读我们的博客。",
+        "demo": "Trezu 演示",
+        "demoTitle": "探索公开版本",
+        "demoDescription": "查看一个实时的公开账户。",
+        "confidentialDemoTitle": "探索机密版本",
+        "confidentialDemoDescription": "探索一个实时的机密账户。",
+        "videoTitle": "观看演示",
+        "videoDescription": "观看一段简短视频,了解 Trezu 的工作方式。",
+        "xTitle": "在 X 上关注我们",
+        "xDescription": "及时获取我们的最新发布与见解。",
+        "statsTitle": "统计",
+        "statsDescription": "查看所有 sputnik DAO 的总管理资产。",
+        "docsTitle": "文档",
+        "docsDescription": "在文档中了解所有功能。",
+        "productSupportTitle": "产品支持",
+        "productSupportDescription": "联系我们的支持团队寻求帮助。"
+    },
+    "progressModal": {
+        "titleCreating": "正在创建金库...",
+        "titleDone": "金库已创建",
+        "titleFailed": "金库创建失败",
+        "viewTreasury": "查看金库"
+    },
+    "memberValidation": {
+        "noManagePermission": "您没有管理成员的权限",
+        "pendingRequest": "存在活动请求时,您无法管理成员",
+        "rolesAnd": "{first} 和 {second}",
+        "rolesMany": "{list} 以及 {last}",
+        "cannotRemoveMember": "无法移除此成员。他们是唯一被分配 {roles} {count, plural, other {角色}}的成员。",
+        "cannotRemoveMemberGov": "无法移除此成员。他们是唯一被分配 {roles} {count, plural, other {角色,而该角色}}的成员,该角色用于管理团队成员和配置投票。",
+        "cannotBulkRemove": "无法移除这些成员。这将使 {roles} {count, plural, other {角色}}变空。",
+        "cannotBulkRemoveGov": "无法移除这些成员。这将使 {roles} {count, plural, other {角色,而该角色}}变空,该角色用于管理团队成员和配置投票。",
+        "cannotRemoveRole": "您不能从此成员中移除 {role} 角色。他们是唯一被分配此角色的人。",
+        "cannotRemoveRoleGov": "您不能从此成员中移除 {role} 角色。他们是唯一的 {role} 成员,缺少此角色将无法管理团队成员或配置投票。"
+    },
+    "roleSelector": {
+        "setRole": "设置角色",
+        "allRoles": "所有角色",
+        "roles": {
+            "governance": {
+                "title": "治理",
+                "description": "治理可以创建并投票决定团队相关的金库设置,包括成员、权限和金库外观。"
+            },
+            "requestor": {
+                "title": "请求者",
+                "description": "请求者可以创建付款相关的交易请求,但没有投票或批准权限。"
+            },
+            "financial": {
+                "title": "财务",
+                "description": "财务可以对付款相关的交易请求投票,但不能创建请求。"
+            }
+        }
+    },
+    "memberInput": {
+        "creatorYou": "创建者(您)",
+        "memberAddress": "成员地址",
+        "addNewMember": "添加新成员",
+        "validation": {
+            "rolesRequired": "至少需要一个角色",
+            "duplicateAddress": "地址已是成员"
+        }
+    },
+    "recipientInput": {
+        "title": "至",
+        "placeholder": "收款人地址"
+    },
+    "accountInput": {
+        "failedValidation": "验证地址失败",
+        "invalidNearFormat": "无效的 NEAR 账户格式",
+        "invalidChainAddress": "请输入有效的 {chain} 地址。",
+        "validating": "正在验证地址...",
+        "validAddress": "有效地址",
+        "placeholderWithExample": "收款人地址(例如:{example})",
+        "placeholderNoExample": "收款人地址",
+        "nearExample": "alice.near、0x...,或 64 字符十六进制",
+        "near": {
+            "required": "地址为必填项",
+            "length": "地址长度必须在 2 到 64 个字符之间",
+            "missingTld": "命名账户必须以 .near、.aurora 或 .tg 结尾",
+            "invalidChars": "地址只能包含小写字母、数字和分隔符(.、-、_)",
+            "accountMissing": "账户在 NEAR 区块链上不存在",
+            "verifyFailed": "验证账户存在性失败"
+        }
+    },
+    "csvUpload": {
+        "uploadFile": "上传文件",
+        "provideData": "提供数据",
+        "chooseFile": "选择文件",
+        "orDragDrop": "或拖放至此",
+        "maxFileSize": "最多 1 个文件,最大 {maxSize} MB,仅限 CSV 文件",
+        "noFilePrompt": "没有文件可上传?",
+        "downloadTemplate": "下载模板"
+    },
+    "tokenSelect": {
+        "selectToken": "选择代币",
+        "searchPlaceholder": "搜索代币...",
+        "noTokensFound": "未找到代币"
+    },
+    "filterOperations": {
+        "is": "是",
+        "isNot": "不是",
+        "before": "早于",
+        "after": "晚于",
+        "between": "介于",
+        "equal": "等于",
+        "moreThan": "大于",
+        "lessThan": "小于",
+        "contains": "包含"
+    },
+    "copyButton": {
+        "copied": "已复制到剪贴板",
+        "failed": "复制失败"
+    },
+    "recipientForm": {
+        "validation": {
+            "nameRequired": "姓名为必填项",
+            "nameMax": "收款人必须少于 {max} 个字符",
+            "addressRequired": "地址为必填项",
+            "networksRequired": "请至少选择一个网络"
+        }
+    },
+    "paymentForm": {
+        "validation": {
+            "recipientMin": "收款人至少需 2 个字符",
+            "recipientMax": "收款人必须少于 128 个字符",
+            "amountGreaterThanZero": "金额必须大于 0",
+            "recipientSameAsToken": "收款人地址不能与代币地址相同",
+            "selectToken": "请选择一个代币",
+            "recipientMax64": "收款人必须少于 64 个字符",
+            "amountMinLockup": "金额必须大于或等于 3.5",
+            "startDateRequired": "开始日期为必填项",
+            "endDateRequired": "结束日期为必填项",
+            "cliffDateRequired": "Cliff 日期为必填项",
+            "startBeforeEnd": "开始日期必须早于结束日期",
+            "cliffBetween": "Cliff 日期必须介于 {start} 和 {end} 之间"
+        }
+    },
+    "exportToasts": {
+        "downloadFailed": "下载导出文件失败",
+        "invalidDateRange": "无效的日期范围",
+        "invalidDateRangeDescription": "请为导出选择有效的日期范围。",
+        "exportSuccess": "导出成功!",
+        "exportSuccessDescription": "您的 {type} 文件已下载。请查看导出历史以了解详情。",
+        "exportFailed": "导出失败",
+        "exportFailedFallback": "导出数据失败。请再试一次。",
+        "noDownloadPermission": "您没有下载此文件的权限。",
+        "noExportPermission": "您没有导出权限",
+        "quotaUsed": "您的配额已用完",
+        "exporting": "导出中...",
+        "export": "导出",
+        "columnSubmissionTime": "提交时间",
+        "columnDateRange": "日期范围",
+        "columnGeneratedBy": "生成者",
+        "columnStatus": "状态",
+        "typeAll": "所有类型",
+        "typeSent": "已发送",
+        "typeReceived": "已接收",
+        "typeStakingRewards": "质押奖励",
+        "allAssets": "所有资产",
+        "upgradeTrial": "升级套餐以获得更多额度并继续使用",
+        "upgradePaid": "升级套餐以获得更多权限,或等待下个月限额重置。",
+        "selectDateRange": "选择日期范围",
+        "noExportsTitle": "暂无导出记录",
+        "noExportsDescription": "上个月的导出文件生成后将显示在此处。",
+        "quotaTitle": "导出配额",
+        "unlimited": "无限制",
+        "creditsPerMonth": "{total} / 月",
+        "requirementsTitle": "导出要求",
+        "exportFromPeriod": "您可以从 {period} 导出数据。",
+        "availableFor48Hours": "导出文件可在 48 小时内下载。",
+        "moreFlexibility": "需要更大的灵活性?",
+        "contactUs": "联系我们",
+        "last1Year": "过去 1 年",
+        "last2Years": "过去 2 年",
+        "invalidEmail": "请输入有效的电子邮箱地址"
+    },
+    "proposalKinds": {
+        "Batch Payment Request": "批量付款请求",
+        "Payment Request": "付款请求",
+        "Confidential Request": "机密请求",
+        "Exchange": "兑换",
+        "Function Call": "函数调用",
+        "Change Policy": "修改策略",
+        "Update General Settings": "更新常规设置",
+        "Earn NEAR": "赚取 NEAR",
+        "Unstake NEAR": "取消质押 NEAR",
+        "Vesting": "归属",
+        "Withdraw Earnings": "提取收益",
+        "Members": "成员",
+        "Upgrade": "升级",
+        "Set Staking Contract": "设置质押合约",
+        "Bounty": "悬赏",
+        "Vote": "投票",
+        "Factory Info Update": "工厂信息更新",
+        "Unsupported": "不支持"
+    },
+    "paymentFormSection": {
+        "selectRecipient": "选择收款人",
+        "searchByNameOrAddress": "按名称或地址搜索",
+        "restrictedRecipientTitle": "不允许此交易",
+        "restrictedRecipientMessage": "由于安全检查,该地址当前受到限制。如果您认为该地址应被允许,可<link>申请将其加入白名单</link>。",
+        "send": "发送",
+        "to": "至"
+    },
+    "recipientNetworkSelect": {
+        "label": "收款人网络",
+        "placeholder": "选择收款人网络",
+        "enterAddressFirst": "请先输入收款人地址",
+        "noCompatibleNetwork": "没有与此地址匹配的网络",
+        "selectPlaceholder": "选择网络",
+        "title": "选择网络",
+        "available": "可用",
+        "fromAddressBook": "来自地址簿",
+        "otherAvailable": "其他可用",
+        "incompatible": "不兼容",
+        "comingSoon": "即将推出",
+        "nearComName": "near.com",
+        "nearComDescription": "near.com 与 trezu 的内部网络"
+    },
+    "addressBookTable": {
+        "emptyTitle": "暂无收款人",
+        "emptyDescription": "向此地址簿添加收款人以加快付款速度。",
+        "selectAll": "选择所有收款人",
+        "selectEntry": "选择 {name}",
+        "recipient": "收款人",
+        "network": "网络",
+        "addedBy": "添加者",
+        "note": "备注",
+        "added": "已添加",
+        "remove": "移除",
+        "send": "发送"
+    },
+    "publicDashboard": {
+        "updatesDaily": "每日更新",
+        "noDataTitle": "暂无数据",
+        "noDataDescription": "在计算首次每日快照后将显示统计数据。",
+        "assetsSecured": "由 Sputnik DAO 合约保护的资产",
+        "acrossDaos": "跨 <bold>{count, plural, other {# 个 DAO}}</bold>",
+        "updatedOn": "更新于 {date}",
+        "topAssets": "前 20 大资产",
+        "noAssetsTitle": "暂无资产",
+        "noAssetsDescription": "在计算每日快照后将显示代币数据。",
+        "tableToken": "代币",
+        "tableTotalValue": "总价值"
+    },
+    "telegramConnectInstructions": {
+        "title": "连接 Telegram",
+        "subtitle": "在您的 Telegram 中接收提案与活动通知。",
+        "step3": "按下 Start 并按照说明操作。",
+        "success": "全部就绪!",
+        "copyBotTooltip": "复制机器人账号",
+        "botCopiedToast": "机器人账号已复制",
+        "openInTelegram": "在 Telegram 中打开 {bot}"
+    },
+    "transactionHashCell": {
+        "copyHash": "复制哈希",
+        "hashCopied": "哈希已复制",
+        "openInExplorer": "在区块浏览器中打开"
+    },
+    "treasurySelector": {
+        "select": "选择金库",
+        "connectWalletTooltip": "连接钱包以查看金库",
+        "manageTreasuries": "管理金库",
+        "createTreasury": "创建金库",
+        "memberOf": "所属",
+        "guestTreasuries": "访客金库"
+    },
+    "selectModal": {
+        "searchByName": "按名称搜索",
+        "noResults": "未找到结果"
+    },
+    "selectList": {
+        "noResults": "未找到结果"
+    },
+    "datePicker": {
+        "pickDate": "选择日期",
+        "timezone": "时区"
+    },
+    "datePresets": {
+        "today": "今天",
+        "yesterday": "昨天",
+        "last3Days": "过去 3 天",
+        "last7Days": "过去 7 天",
+        "last14Days": "过去 14 天",
+        "lastMonth": "上个月",
+        "last3Months": "过去 3 个月",
+        "last6Months": "过去 6 个月"
+    },
+    "input": {
+        "openSearch": "打开搜索"
+    },
+    "pagination": {
+        "previous": "上一页",
+        "next": "下一页"
+    },
+    "confidentialState": {
+        "title": "机密",
+        "description": "仅金库成员可访问。"
+    },
+    "exchangeRate": {
+        "rate": "汇率",
+        "clickToReverse": "点击反转汇率"
+    },
+    "exchangeSettings": {
+        "title": "兑换设置",
+        "slippageTolerance": "滑点容忍度",
+        "custom": "自定义",
+        "customPlaceholder": "例如:2%",
+        "slippageRange": "滑点必须介于 0.01% 和 100% 之间",
+        "enterSlippage": "请输入滑点容忍度",
+        "slippageHelp": "如果价格变动超过此百分比,交易将被取消以保护您的资金。",
+        "save": "保存"
+    },
+    "assetsPage": {
+        "title": "资产",
+        "noAssetsTitle": "暂无资产",
+        "noAssetsDescription": "请通过存款向您的金库添加资产以开始使用。"
+    },
+    "newBadge": {
+        "label": "新"
+    },
+    "numberBadge": {
+        "pendingRequests": "{count, plural, other {# 个待处理请求}}"
+    },
+    "balanceWithGraph": {
+        "allTokens": "所有代币",
+        "deposit": "存款",
+        "send": "发送",
+        "exchange": "兑换",
+        "chartNow": "现在",
+        "totalBalance": "总余额",
+        "excludedTokens": "已排除代币:",
+        "noPriceHistory": "无价格历史。请选择代币以查看其余额变化。",
+        "bucketAvailable": "可用",
+        "bucketLocked": "已锁定",
+        "bucketEarning": "收益中",
+        "period": {
+            "1W": "1周",
+            "1M": "1月",
+            "3M": "3月",
+            "1Y": "1年"
+        }
+    },
+    "changePolicyExpanded": {
+        "proposalBond": "提案保证金",
+        "proposalPeriod": "提案期限",
+        "bountyBond": "悬赏保证金",
+        "bountyForgivenessPeriod": "悬赏宽限期",
+        "votesCount": "{count} 票",
+        "weightKind": "权重类型",
+        "quorum": "法定人数",
+        "threshold": "阈值",
+        "defaultThreshold": "默认阈值",
+        "roleThreshold": "{role} 阈值",
+        "member": "成员",
+        "members": "成员",
+        "permissions": "权限",
+        "oldPermissions": "旧权限",
+        "newPermissions": "新权限",
+        "category": "类别",
+        "transactionDetails": "交易详情",
+        "addNewMember": "添加新成员",
+        "addNewMembers": "添加新成员",
+        "removeMember": "移除成员",
+        "removeMembers": "移除成员",
+        "updateMemberPermissions": "更新成员权限",
+        "updateMembersPermissions": "更新成员权限",
+        "memberIndex": "成员 {index}",
+        "membersCount": "{count} 名成员",
+        "collapseAll": "全部折叠",
+        "expandAll": "全部展开",
+        "loadingHistorical": "正在加载历史策略...",
+        "unableToDiff": "无法计算此提案的差异。",
+        "noChangesCurrent": "未检测到任何更改 — 提议的策略与当前策略一致。",
+        "noChangesHistorical": "未检测到任何更改 — 提议的策略与历史策略一致。"
+    },
+    "balanceChart": {
+        "usdValue": "美元价值",
+        "tokenBalance": "代币余额",
+        "emptyTitle": "暂无内容",
+        "emptyDescription": "添加资产以开始跟踪您的投资组合。"
+    },
+    "user": {
+        "saveToAddressBook": "保存到地址簿",
+        "walletCopiedToast": "钱包地址已复制到剪贴板",
+        "copyWalletAddress": "复制钱包地址"
+    },
+    "infoDisplay": {
+        "viewLess": "收起",
+        "viewAllDetails": "查看所有详情"
+    },
+    "amountSummary": {
+        "defaultTitle": "您正在发送的总金额为"
+    },
+    "residency": {
+        "vestedToken": "归属代币",
+        "staked": "已质押",
+        "fungibleToken": "同质化代币",
+        "intentsToken": "Intents 代币",
+        "nativeToken": "原生代币"
+    },
+    "exchangeErrors": {
+        "noRoute": "未找到兑换路径。请尝试更小的金额或不同的代币。",
+        "amountTooLow": "兑换金额过低。跨链兑换需要更高的最低金额以支付网络手续费。",
+        "insufficientBalance": "此次兑换余额不足。",
+        "networkError": "网络错误。请检查您的连接并再试一次。",
+        "fetchFailed": "获取报价失败"
+    },
+    "tokenSelectDialog": {
+        "selectToken": "选择代币",
+        "selectAsset": "选择资产",
+        "selectNetworkFor": "为 {asset} 选择网络",
+        "searchByName": "按名称搜索",
+        "noTokensWithBalance": "未找到有余额的代币",
+        "noTokensFound": "未找到代币",
+        "yourAssets": "您的资产",
+        "otherAssets": "其他资产",
+        "networksWithAssets": "包含资产的网络",
+        "supportedNetworks": "支持的网络",
+        "comingSoon": "即将推出"
+    },
+    "intentsQuote": {
+        "initializing": "报价服务仍在初始化中。请再试一次。",
+        "noRoute": "目前无法准备付款路径。请重试。",
+        "fetchFailed": "目前无法准备付款路径。请重试。",
+        "amountTooLow": "金额过低,无法支付网络手续费。请输入更高金额后再试。",
+        "amountTooLowWithMin": "金额过低,无法支付网络手续费。请输入至少 {min} {token}。",
+        "networkFeeTooltip": "此手续费用于在所选链上处理交易。"
+    },
+    "pageTours": {
+        "paymentsBulk": "批量创建功能已上线!只需几步即可创建多个请求。",
+        "paymentsPending": "在此查看等待批准的请求。",
+        "exchangeSettings": "在此设置您愿意接受的价格变动幅度。",
+        "membersPending": "点击查看等待批准的活动请求。",
+        "guestSaveIntro": "您是此金库的访客。您只能查看数据。",
+        "guestSaveAction": "您可以将此访客金库保存到您的金库列表。",
+        "newFeatureRich": "新功能!🎉 保存常用地址,实现更快、零错误的付款。<br></br> 您的联系人保持私密,仅对您的团队可见。",
+        "newFeatureCta": "试用一下"
+    },
+    "statusDate": {
+        "expires": "过期",
+        "created": "已创建",
+        "expired": "已过期",
+        "removed": "已移除"
+    },
+    "relativeTime": {
+        "justNow": "刚刚",
+        "moments": "片刻"
+    },
+    "amount": {
+        "network": "网络:{network}"
+    },
+    "activityLabels": {
+        "exchangePending": "兑换待处理",
+        "exchangeRequest": "兑换请求",
+        "exchangeFulfillment": "兑换完成",
+        "stakingRewards": "质押奖励",
+        "proposalAction": "提案操作",
+        "deposit": "存入 {symbol}",
+        "paymentSent": "付款已发送",
+        "transaction": "交易",
+        "fallbackToken": "代币",
+        "viaIntents": "通过 NEAR Intents",
+        "from": "来自 {account}",
+        "to": "至 {account}",
+        "viewAll": "查看您的所有交易历史",
+        "sentReceived": "已发送和已接收的交易({duration})",
+        "unlimitedHistory": "无限历史记录",
+        "oneYear": "1 年",
+        "yearsCount": "{count} 年",
+        "monthsCount": "{count} 个月",
+        "lastDuration": "过去 {duration}"
+    },
+    "nearStore": {
+        "connectAndAcceptTerms": "请连接钱包并接受条款以继续。",
+        "transactionNotApproved": "交易未在您的钱包中获批。",
+        "failedSubmitVote": "提交投票失败",
+        "failedSubmitVotes": "提交投票失败",
+        "viewRequest": "查看请求",
+        "proposalRemoved": "您的提案已被移除",
+        "voteSubmitted": "您的投票已提交",
+        "votesSubmitted": "您的投票已提交"
+    },
+    "tokenInput": {
+        "max": "MAX",
+        "insufficientTokens": "代币不足。您可以提交请求,并在批准前充值。",
+        "balance": "余额:{amount} {symbol}"
+    },
+    "createRequestButton": {
+        "idle": "创建请求",
+        "noPermission": "您没有创建请求的权限"
+    },
+    "address": {
+        "copied": "地址已复制到剪贴板"
+    },
+    "memberAvatars": {
+        "membersWhoCanVote": "可投票的成员",
+        "moreMembers": "+{count, plural, other {# 名成员}}"
+    },
+    "accountIdInput": {
+        "minLength": "账户 ID 至少需 2 个字符",
+        "maxLength": "账户 ID 必须少于 64 个字符",
+        "charset": "账户 ID 只能包含小写字母、数字、句点、连字符和下划线,且不能以分隔符开头或结尾",
+        "doesNotExist": "账户 ID 不存在"
+    },
+    "addressBookMutations": {
+        "addedToast": "{count, plural, other {已添加 # 个收款人}}",
+        "addedSingleToast": "已添加收款人",
+        "addFailedToast": "添加收款人失败",
+        "addSingleFailedToast": "添加收款人失败",
+        "removedToast": "{count, plural, other {已移除 # 个收款人}}",
+        "removeFailedToast": "移除收款人失败",
+        "exportFailedToast": "导出收款人失败"
+    },
+    "treasuryMutations": {
+        "savedToast": "金库已保存到您的列表",
+        "saveFailedToast": "保存金库失败",
+        "hiddenToast": "金库已从列表中隐藏",
+        "hideFailedToast": "隐藏金库失败",
+        "unhiddenToast": "金库再次可见",
+        "unhideFailedToast": "取消隐藏金库失败",
+        "removedToast": "金库已从已保存列表中移除",
+        "removeFailedToast": "从已保存列表中移除金库失败"
+    },
+    "telegramSettings": {
+        "title": "Telegram",
+        "connectedTo": "已连接到 {chat}",
+        "chatNumber": "聊天 #{id}",
+        "fallbackChat": "一个 Telegram 聊天",
+        "disconnect": "断开连接",
+        "connect": "连接",
+        "connectDescription": "将您的金库链接到 Telegram 聊天以接收通知。",
+        "noTreasuryDescription": "将您的金库链接到 Telegram 聊天。",
+        "openSettingsHint": "从某个金库打开设置以管理集成。",
+        "disconnectedToast": "已为此金库断开 Telegram 连接",
+        "disconnectFailedToast": "无法断开 Telegram 连接。请再试一次。"
+    },
+    "assetsTable": {
+        "noAssetsFound": "未找到资产。",
+        "assetDetails": "资产详情",
+        "coinPrice": "币价",
+        "weight": "权重",
+        "balance": "余额",
+        "lockedBalance": "已锁定余额",
+        "totalBalance": "总余额",
+        "source": "来源",
+        "balanceByInvestors": "按 {count, plural, other {投资者}}划分的余额",
+        "investors": "{count, plural, other {投资者}}",
+        "poolBreakdown": "矿池明细",
+        "unlockedToken": "已解锁代币",
+        "lockupStakingPool": "锁仓质押池",
+        "exchange": "兑换",
+        "send": "发送",
+        "details": "详情",
+        "columnToken": "代币",
+        "columnLocked": "已锁定",
+        "columnUnlocked": "已解锁",
+        "columnTotalAllocated": "总分配量",
+        "columnAvailableToWithdraw": "可提取",
+        "viewAvailable": "可用",
+        "viewLocked": "已锁定",
+        "viewEarning": "收益中",
+        "fullAllocatedBalance": "您的全部已分配余额",
+        "partAllocatedBalance": "您已分配余额的一部分",
+        "currentlyEarning": "({amount} {symbol}) 当前正在产生收益。",
+        "willAppearHere": " 在您停止产生收益后,它将显示在此处。",
+        "seeInEarningTab": "在“收益”标签页中查看",
+        "seeInEarning": "在“收益”中查看"
+    },
+    "earningDetails": {
+        "title": "收益详情",
+        "totalStaked": "总质押量",
+        "earningOverview": "收益概览",
+        "poolBreakdown": "矿池明细({count, plural, other {# 个矿池}})",
+        "almostReady": "收益功能即将就绪!",
+        "finalizingFeature": "我们正在完善此功能,<br></br>您很快就能开始通过代币赚取收益。",
+        "comingSoon": "即将推出",
+        "goToEarn": "前往收益",
+        "readyToWithdraw": "可以提取",
+        "unstaking": "正在取消质押",
+        "overview": {
+            "staked": "已质押",
+            "stakedInfo": "当前委托给验证人以赚取奖励的代币。",
+            "pendingRelease": "待释放",
+            "pendingReleaseInfo": "已取消质押但仍处于解绑期(通常为 2-3 天)的代币。",
+            "availableForWithdraw": "可提取",
+            "availableForWithdrawInfo": "已完成解绑期、可以提取的已取消质押代币。"
+        }
+    },
+    "lockupDetails": {
+        "title": "锁仓详情",
+        "balance": "余额",
+        "reservedForStorage": "存储预留",
+        "reservedForStorageInfo": "锁仓账户为支付存储费用而预留的 NEAR。",
+        "tokenBreakdown": "代币明细",
+        "allocatedAmount": "已分配数量",
+        "earned": "已赚取",
+        "progress": "进度",
+        "unlocked": "已解锁",
+        "locked": "已锁定",
+        "schedule": "计划",
+        "startDate": "开始日期",
+        "endDate": "结束日期",
+        "rounds": "轮次",
+        "releaseInterval": "释放间隔",
+        "nextUnlockDate": "下次解锁日期",
+        "allEarning": "您锁仓中的全部 {amount} {symbol} 当前正在产生收益。",
+        "partEarning": "您锁仓的一部分({amount} {symbol})当前正在产生收益。",
+        "stopEarningFirst": "要使用已解锁的代币,请先停止产生收益并提取它们。",
+        "howGrantWorks": "您的授予如何运作",
+        "ftStep1": "您将获得一份特定时段的授予。资产不会一次性全部到账,而是在一段时间内分批可用。",
+        "ftStep2": "下一个释放日期到达时,该部分代币将自动解锁并转入您的金库余额。",
+        "ftStep3": "代币出现在您的余额中后,您即可立即将其用于付款、转账或其他交易。",
+        "nearStep1": "您将获得一份具有明确开始和结束日期的限时授予。",
+        "nearStep2": "代币解锁后,会自动出现在您的金库余额中。",
+        "nearStep3": "您可以立即将已解锁的代币用于付款、转账或其他交易。",
+        "notAvailable": "不适用",
+        "everyMonth": "每月",
+        "everyQuarter": "每季度",
+        "everyUnit": "每{unit}",
+        "everyMultiple": "每{text}",
+        "completed": "已完成",
+        "unit": {
+            "year": "{count, plural, other {# 年}}",
+            "day": "{count, plural, other {# 天}}",
+            "hour": "{count, plural, other {# 小时}}",
+            "minute": "{count, plural, other {# 分钟}}",
+            "second": "{count, plural, other {# 秒}}"
+        }
+    },
+    "vestingDetails": {
+        "title": "归属详情",
+        "availableToUse": "可使用",
+        "vestingPeriod": "归属期",
+        "vestingPeriodDescription": "代币在此期间每日解锁。",
+        "startDate": "开始日期",
+        "endDate": "结束日期",
+        "tokenBreakdown": "代币明细",
+        "originalVestedAmount": "原始归属数量",
+        "reservedForStorage": "存储预留",
+        "reservedForStorageInfo": "为保持归属生效并支付存储费用所需的少量代币。",
+        "percentVested": "已归属 {percent}%",
+        "vestedOf": "已归属 {vested} / {total} {symbol}",
+        "send": "发送"
+    },
+    "earningPoolDetails": {
+        "balance": "余额",
+        "apy": "年化收益率",
+        "fee": "手续费",
+        "notAvailable": "不适用",
+        "lockupStakingPool": "锁仓质押池",
+        "lockupAssetsNote": "此持仓中的所有资产均来自您的锁仓。停止产生收益后,某些代币可能仍处于锁定状态而无法使用 — 请查看您的锁仓计划以了解解锁时间。"
+    },
+    "onboardingQuestions": {
+        "stepTitle": "几个简单的问题以开始。",
+        "other": "其他",
+        "placeholders": {
+            "describeRole": "描述您的角色(可选)",
+            "describeUseCase": "描述您的使用场景(可选)",
+            "networkName": "输入网络名称(可选)",
+            "currentChallenge": "输入您当前面临的挑战(可选)",
+            "describeOther": "描述其他(可选)"
+        },
+        "questions": {
+            "role": "以下哪项最能描述您的角色?",
+            "useCases": "您打算将 Trezu 用于什么?",
+            "teamSize": "将由多少人来管理金库?",
+            "networks": "您最常使用哪些网络?",
+            "multisigExperience": "您对多签的使用经验如何?",
+            "currentTools": "您目前使用哪些工具来管理财务?",
+            "monthlyVolume": "大致的月交易量是多少?",
+            "biggestChallenges": "您目前面临的最大挑战是什么?"
+        },
+        "options": {
+            "role": {
+                "founder": "创始人",
+                "co-founder": "联合创始人",
+                "cfo-finance-lead": "CFO / 财务负责人",
+                "operations-manager": "运营经理",
+                "treasury-manager": "金库经理",
+                "other": "其他"
+            },
+            "useCases": {
+                "team-payroll-grants": "团队薪酬与赠款",
+                "company-assets-management": "公司资产管理",
+                "dao-treasury-management": "DAO 金库管理",
+                "investment-portfolio": "投资组合",
+                "operational-spending": "运营支出",
+                "other": "其他"
+            },
+            "teamSize": {
+                "just-me": "只有我",
+                "2-5-people": "2-5 人",
+                "6-15-people": "6-15 人",
+                "15-plus-people": "15 人以上"
+            },
+            "networks": {
+                "near": "NEAR",
+                "bitcoin": "Bitcoin",
+                "ethereum": "Ethereum",
+                "solana": "Solana",
+                "arbitrum": "Arbitrum",
+                "base": "Base",
+                "optimism": "Optimism",
+                "polygon": "Polygon",
+                "gnosis": "Gnosis",
+                "avalanche": "Avalanche",
+                "bnb-chain": "BNB Chain",
+                "other": "其他"
+            },
+            "multisigExperience": {
+                "never-heard-of-it": "从未听说过",
+                "heard-about-it": "听说过",
+                "never-used-it": "从未使用过",
+                "used-gnosis-safe-or-similar": "使用过 Gnosis Safe 或类似工具",
+                "experienced": "经验丰富",
+                "looking-for-a-better-option": "正在寻找更好的选择"
+            },
+            "currentTools": {
+                "gnosis-safe": "Gnosis Safe",
+                "fireblocks": "Fireblocks",
+                "tholos": "Tholos",
+                "squads-multisig": "Squads Multisig",
+                "mpc-vault": "MPC Vault",
+                "other": "其他"
+            },
+            "monthlyVolume": {
+                "under-10k": "低于 $10K",
+                "10k-100k": "$10K - $100K",
+                "100k-1m": "$100K - $1M",
+                "1m-plus": "$1M 以上"
+            },
+            "biggestChallenges": {
+                "slow-approvals-and-signing": "审批与签名速度慢",
+                "lack-of-transparency-in-the-team": "团队中缺乏透明度",
+                "hard-to-track-spending-and-balances": "难以跟踪支出与余额",
+                "security-and-access-control": "安全与访问控制",
+                "no-good-web3-tool-yet": "尚无好用的 Web3 工具",
+                "looking-for-crypto-earnings": "我正在寻找加密货币收益",
+                "other": "其他"
+            }
+        }
+    },
+    "onboarding": {
+        "tour": {
+            "addAssets": "通过存款向您的金库添加资产。",
+            "makeRequests": "在需要发送资产时随时创建付款请求。",
+            "exchangeAssets": "在此兑换您的资产。",
+            "addMembers": "向您的金库添加成员并分配角色。",
+            "newTreasury": "想创建新金库?在此只需几次点击即可完成。",
+            "helpSupport": "随时获取帮助与支持。"
+        },
+        "tourCard": {
+            "close": "关闭",
+            "stepProgress": "{current} / {total}",
+            "gotIt": "知道了",
+            "done": "完成",
+            "next": "下一步"
+        },
+        "progress": {
+            "title": "按照以下快捷步骤探索金库",
+            "createTreasuryTitle": "创建金库账户",
+            "createTreasuryDescription": "您已成功设置账户。开端不错!",
+            "addAssetsTitle": "添加您的资产",
+            "addAssetsDescription": "首先添加资产以查看其运行情况。",
+            "deposit": "存款",
+            "createPaymentTitle": "创建付款请求",
+            "createPaymentDescription": "创建付款请求以完成您的设置。",
+            "send": "发送"
+        },
+        "welcome": {
+            "heading": "🎉 欢迎!",
+            "subheading": "快速浏览金库",
+            "body": "您好!您的 Trezu 已就绪 — 通过从受支持的网络添加资产开始构建您的投资组合。",
+            "progress": "{current} / {total}",
+            "next": "下一步",
+            "body2": "了解如何存款、创建请求以及设置新账户。",
+            "noThanks": "不,谢谢",
+            "letsGo": "开始吧"
+        },
+        "congrats": {
+            "heading": "🎉 恭喜!",
+            "body": "您已完成金库设置。享受轻松的资产管理。",
+            "letsGo": "开始吧!"
+        },
+        "createBanner": {
+            "close": "关闭",
+            "title": "探索 Trezu",
+            "description": "创建账户以解锁 Trezu 所有功能与权益的访问权限。",
+            "cta": "创建金库"
+        },
+        "questionnaire": {
+            "continue": "继续",
+            "skip": "跳过"
+        },
+        "createPrompt": {
+            "title": "您即将就绪",
+            "description": "您的钱包已连接,但您尚未创建金库。请创建账户以开始使用 Trezu,或{suffix}",
+            "suffixDemo": "查看演示。",
+            "suffixExploring": "继续探索。",
+            "createCta": "创建金库",
+            "viewDemo": "查看演示",
+            "keepExploring": "继续探索"
+        },
+        "infoBox": {
+            "title": "更好地利用 Trezu",
+            "close": "关闭",
+            "description": "了解他人如何使用金库,试用演示,并查看文档以了解各项功能。",
+            "demoTitle": "探索 Trezu 演示",
+            "demoDescription": "查看一个实时的演示账户。",
+            "docsTitle": "文档",
+            "docsDescription": "在文档中了解所有功能。",
+            "videoTitle": "观看演示",
+            "videoDescription": "观看一段简短视频,了解 Trezu 的工作方式。"
+        }
+    }
+}

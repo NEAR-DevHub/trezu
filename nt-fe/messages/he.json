@@ -44,7 +44,16 @@
         "english": "English",
         "spanish": "Español",
         "ukrainian": "Українська",
-        "hebrew": "עברית"
+        "hebrew": "עברית",
+        "german": "Deutsch",
+        "french": "Français",
+        "vietnamese": "Tiếng Việt",
+        "chinese": "中文",
+        "turkish": "Türkçe",
+        "indonesian": "Bahasa Indonesia",
+        "portuguese": "Português",
+        "japanese": "日本語",
+        "korean": "한국어"
     },
     "header": {
         "toggleSidebar": "הצג/הסתר סרגל צד",
@@ -634,7 +643,6 @@
             "approvalsReceived": "{received}/{required} אישורים התקבלו",
             "expiresAt": "פג תוקף ב-",
             "expiredAt": "פג תוקף ב-",
-            "viewTransaction": "הצג עסקה",
             "exchangingTokens": "מחליף טוקנים",
             "exchangingTokensBody": "בקשה זו אושרה על ידי הצוות. החלפת הטוקנים מתבצעת כעת ועשויה לקחת זמן מה.",
             "requestFailed": "הבקשה נכשלה",
@@ -642,7 +650,6 @@
             "votingPeriod24h": "תקופת הצבעה: 24 שעות",
             "votingPeriod24hBody": "לבקשת החלפה זו יש משך הצבעה של 24 שעות. אשר בקשה זו בתוך זמן זה, אחרת הבקשה תפוג.",
             "reject": "דחייה",
-            "deposit": "הפקדה",
             "approve": "אישור"
         },
         "insufficientBalance": {
@@ -1487,6 +1494,8 @@
         "selectPlaceholder": "בחר רשת",
         "title": "בחר רשת",
         "available": "זמין",
+        "fromAddressBook": "מספר הכתובות",
+        "otherAvailable": "זמינים אחרים",
         "incompatible": "לא תואם",
         "comingSoon": "בקרוב",
         "nearComName": "near.com",

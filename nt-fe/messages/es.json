@@ -44,7 +44,16 @@
         "english": "English",
         "spanish": "Español",
         "ukrainian": "Українська",
-        "hebrew": "עברית"
+        "hebrew": "עברית",
+        "german": "Deutsch",
+        "french": "Français",
+        "vietnamese": "Tiếng Việt",
+        "chinese": "中文",
+        "turkish": "Türkçe",
+        "indonesian": "Bahasa Indonesia",
+        "portuguese": "Português",
+        "japanese": "日本語",
+        "korean": "한국어"
     },
     "header": {
         "toggleSidebar": "Alternar barra lateral",
@@ -512,7 +521,7 @@
             "description": "Descripción",
             "methodName": "Nombre del método",
             "args": "Argumentos",
-            "deposit": "Depósito",
+            "deposit": "Depositar",
             "gas": "Gas",
             "totalDeposit": "Depósito total",
             "totalGas": "Gas total",
@@ -634,7 +643,6 @@
             "approvalsReceived": "{received}/{required} aprobaciones recibidas",
             "expiresAt": "Caduca el",
             "expiredAt": "Caducó el",
-            "viewTransaction": "Ver transacción",
             "exchangingTokens": "Intercambiando tokens",
             "exchangingTokensBody": "Esta solicitud ha sido aprobada por el equipo. El intercambio de tokens está en progreso y puede tardar un tiempo.",
             "requestFailed": "Solicitud fallida",
@@ -642,7 +650,6 @@
             "votingPeriod24h": "Periodo de votación: 24 horas",
             "votingPeriod24hBody": "Esta solicitud de intercambio tiene una duración de votación de 24 horas. Aprueba esta solicitud en ese plazo o caducará.",
             "reject": "Rechazar",
-            "deposit": "Depositar",
             "approve": "Aprobar"
         },
         "insufficientBalance": {
