@@ -30,6 +30,22 @@ const labelKeyByLocale: Record<Locale, string> = {
     ko: "korean",
 };
 
+const flagByLocale: Record<Locale, string> = {
+    en: "🇬🇧",
+    es: "🇪🇸",
+    uk: "🇺🇦",
+    he: "🇮🇱",
+    de: "🇩🇪",
+    fr: "🇫🇷",
+    vi: "🇻🇳",
+    zh: "🇨🇳",
+    tr: "🇹🇷",
+    id: "🇮🇩",
+    pt: "🇧🇷",
+    ja: "🇯🇵",
+    ko: "🇰🇷",
+};
+
 interface LanguageSwitcherProps {
     align?: "start" | "end" | "center";
     className?: string;
@@ -83,7 +99,12 @@ export function LanguageSwitcher({
                         onSelect={() => handleSelect(code)}
                         className="flex items-center justify-between gap-2"
                     >
-                        <span>{t(labelKeyByLocale[code])}</span>
+                        <span className="flex items-center gap-2">
+                            <span aria-hidden="true" className="text-base">
+                                {flagByLocale[code]}
+                            </span>
+                            <span>{t(labelKeyByLocale[code])}</span>
+                        </span>
                         {code === locale && <Check className="h-4 w-4" />}
                     </DropdownMenuItem>
                 ))}
