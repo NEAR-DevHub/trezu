@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Languages } from "lucide-react";
+import { Check, Globe } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useTransition } from "react";
@@ -89,7 +89,7 @@ export function LanguageSwitcher({
                         className,
                     )}
                 >
-                    <Languages className="h-5 w-5" />
+                    <Globe className="h-5 w-5" />
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align={align} className="min-w-[160px]">
