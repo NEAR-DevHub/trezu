@@ -36,12 +36,14 @@ import {
 import { enUS } from "date-fns/locale/en-US";
 import { es } from "date-fns/locale/es";
 import { uk } from "date-fns/locale/uk";
+import { he } from "date-fns/locale/he";
 import type { Locale } from "date-fns";
 
 const DATE_FNS_LOCALES: Record<string, Locale> = {
     en: enUS,
     es,
     uk,
+    he,
 };
 
 import { Button, buttonVariants } from "@/components/ui/button";

@@ -18,6 +18,7 @@ const labelKeyByLocale: Record<Locale, string> = {
     en: "english",
     es: "spanish",
     uk: "ukrainian",
+    he: "hebrew",
 };
 
 interface LanguageSwitcherProps {
