@@ -44,7 +44,16 @@
         "english": "English",
         "spanish": "Español",
         "ukrainian": "Українська",
-        "hebrew": "עברית"
+        "hebrew": "עברית",
+        "german": "Deutsch",
+        "french": "Français",
+        "vietnamese": "Tiếng Việt",
+        "chinese": "中文",
+        "turkish": "Türkçe",
+        "indonesian": "Bahasa Indonesia",
+        "portuguese": "Português",
+        "japanese": "日本語",
+        "korean": "한국어"
     },
     "header": {
         "toggleSidebar": "Перемкнути бічну панель",
@@ -512,7 +521,7 @@
             "description": "Опис",
             "methodName": "Назва методу",
             "args": "Аргументи",
-            "deposit": "Депозит",
+            "deposit": "Поповнити",
             "gas": "Газ",
             "totalDeposit": "Загальний депозит",
             "totalGas": "Загальний газ",
@@ -634,7 +643,6 @@
             "approvalsReceived": "{received}/{required} отримано схвалень",
             "expiresAt": "Спливає",
             "expiredAt": "Спливло",
-            "viewTransaction": "Переглянути транзакцію",
             "exchangingTokens": "Обмін токенів",
             "exchangingTokensBody": "Цей запит схвалила команда. Обмін токенів триває і може зайняти деякий час.",
             "requestFailed": "Запит не виконано",
@@ -642,7 +650,6 @@
             "votingPeriod24h": "Період голосування: 24 години",
             "votingPeriod24hBody": "Цей запит на обмін має 24-годинний період голосування. Схваліть його за цей час, інакше запит спливе.",
             "reject": "Відхилити",
-            "deposit": "Поповнити",
             "approve": "Схвалити"
         },
         "insufficientBalance": {

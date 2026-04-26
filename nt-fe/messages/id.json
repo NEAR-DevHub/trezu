@@ -1,0 +1,2101 @@
+{
+    "common": {
+        "loading": "Memuat...",
+        "notAvailable": "T/A",
+        "connecting": "Menghubungkan...",
+        "save": "Simpan",
+        "cancel": "Batal",
+        "submit": "Kirim",
+        "close": "Tutup",
+        "back": "Kembali",
+        "seeDemo": "Lihat Demo Trezu",
+        "search": "Cari",
+        "filter": "Filter",
+        "filterActive": "Filter (aktif)",
+        "export": "Ekspor",
+        "exporting": "Mengekspor",
+        "import": "Impor",
+        "remove": "Hapus",
+        "removing": "Menghapus...",
+        "edit": "Ubah",
+        "continue": "Lanjutkan",
+        "select": "Pilih",
+        "all": "Semua",
+        "none": "Tidak ada",
+        "retry": "Coba lagi",
+        "tryAgain": "Silakan coba lagi.",
+        "confirm": "Konfirmasi",
+        "next": "Berikutnya",
+        "previous": "Sebelumnya",
+        "yes": "Ya",
+        "no": "Tidak",
+        "approve": "Setujui",
+        "reject": "Tolak",
+        "copy": "Salin",
+        "copied": "Tersalin",
+        "viewAll": "Lihat Semua",
+        "viewDetails": "Lihat detail",
+        "noResults": "Tidak ada hasil ditemukan",
+        "add": "Tambah"
+    },
+    "languageSwitcher": {
+        "label": "Bahasa",
+        "select": "Pilih bahasa",
+        "english": "English",
+        "spanish": "Español",
+        "ukrainian": "Українська",
+        "hebrew": "עברית",
+        "german": "Deutsch",
+        "french": "Français",
+        "vietnamese": "Tiếng Việt",
+        "chinese": "中文",
+        "turkish": "Türkçe",
+        "indonesian": "Bahasa Indonesia",
+        "portuguese": "Português",
+        "japanese": "日本語",
+        "korean": "한국어"
+    },
+    "header": {
+        "toggleSidebar": "Alihkan bilah samping",
+        "toggleTheme": "Alihkan tema"
+    },
+    "nav": {
+        "dashboard": "Dasbor",
+        "requests": "Permintaan",
+        "payments": "Pembayaran",
+        "exchange": "Tukar",
+        "addressBook": "Buku Alamat",
+        "members": "Anggota",
+        "settings": "Pengaturan",
+        "helpSupport": "Bantuan & Dukungan",
+        "saveGuestTreasury": "Simpan treasury tamu ini ke daftar treasury Anda."
+    },
+    "signIn": {
+        "connect": "Hubungkan",
+        "connectWallet": "Hubungkan Dompet",
+        "wallet": "Dompet",
+        "termsOfService": "Ketentuan Layanan",
+        "privacyPolicy": "Kebijakan Privasi",
+        "disconnect": "Putuskan"
+    },
+    "auth": {
+        "noWallet": "Hubungkan dompet Anda",
+        "noPermission": "Anda tidak memiliki izin untuk melakukan tindakan ini",
+        "noVote": "Anda sudah memberikan suara pada usulan ini",
+        "noSponsoredTransactions": "Tidak ada transaksi tersponsor yang tersisa"
+    },
+    "landing": {
+        "welcome": "Selamat datang di Trezu",
+        "chooseOption": "Pilih salah satu opsi di bawah untuk memulai.",
+        "newUserTitle": "Saya baru di Trezu",
+        "newUserDescription": "Saya pernah mendengar tentang Trezu tetapi belum memiliki treasury.",
+        "existingUserTitle": "Saya sudah menggunakan Trezu",
+        "existingUserDescription": "Saya memiliki akun dan mengelola treasury.",
+        "gradientTagline": "Keamanan multisig lintas-rantai untuk mengelola aset digital",
+        "waitlistTitle": "Bergabung dengan Daftar Tunggu Trezu",
+        "waitlistSubmittedTitle": "Anda sudah masuk daftar 🎉",
+        "waitlistSubmittedDescription": "Terima kasih! Kami akan memberi tahu Anda segera setelah pembuatan treasury tersedia.",
+        "waitlistDescription": "Kami telah mencapai batas treasury hari ini. Tidak masalah - coba lagi nanti atau tinggalkan kontak Anda untuk bergabung dengan daftar tunggu. Kami akan memberi tahu Anda saat tersedia tempat.",
+        "waitlistInputPlaceholder": "Alamat email atau Telegram (mis. @username)",
+        "waitlistPrivacyNote": "Kami hanya akan menggunakan ini untuk memberi tahu Anda",
+        "waitlistSubmit": "Bergabung dengan Daftar Tunggu",
+        "waitlistSubmitFailed": "Gagal mengirim. Silakan coba lagi.",
+        "welcomeAlt": "selamat datang"
+    },
+    "blocked": {
+        "title": "Layanan tidak tersedia di negara Anda",
+        "description": "Karena pembatasan, layanan ini saat ini tidak tersedia di wilayah Anda."
+    },
+    "notFound": {
+        "title": "Wah, halaman ini hilang...",
+        "description": "Sepertinya Anda mengikuti tautan yang sudah tidak berfungsi. Coba kembali atau pergi ke Dasbor.",
+        "backToDashboard": "Kembali ke Dasbor"
+    },
+    "treasuryInfo": {
+        "logoAlt": "Logo Treasury"
+    },
+    "dateInput": {
+        "placeholder": "dd/mm/yyyy"
+    },
+    "thresholdSlider": {
+        "warningSingleMember": "Ambang batas 1-dari-{memberCount} berarti satu anggota mana pun dapat mengeksekusi transaksi. Ini mengurangi keamanan.",
+        "infoBalanced": "Ambang batas {currentThreshold}-dari-{memberCount} memberikan keseimbangan yang baik antara keamanan dan fleksibilitas operasional."
+    },
+    "intentsFee": {
+        "amountTooLowForFee": "{prefix}Jumlah terlalu rendah untuk biaya jaringan ({fee} {symbol}). Tambahkan minimal {addMore} {symbol}."
+    },
+    "metadata": {
+        "treasuryTitle": "Dasbor | Trezu",
+        "landingTitle": "Trezu | Manajemen Treasury Lintas-rantai",
+        "description": "Kelola modal tim Anda dalam hitungan menit dari satu dasbor tanpa harus menyerahkan kunci Anda.",
+        "ogTitle": "Trezu | Satu multisig. Semua kripto. Kendali penuh."
+    },
+    "pages": {
+        "dashboard": {
+            "title": "Dasbor",
+            "description": "Ringkasan aset dan aktivitas treasury Anda",
+            "descriptionLong": "Kelola aset treasury Anda dan lacak aktivitas"
+        },
+        "activity": {
+            "title": "Transaksi Terbaru",
+            "descriptionDetails": "Detail Permintaan",
+            "descriptionList": "Transaksi terbaru di semua aset"
+        },
+        "requests": {
+            "title": "Permintaan",
+            "description": "Lihat dan kelola semua permintaan multisig yang tertunda",
+            "detailDescription": "Detail Permintaan",
+            "detailTitle": "Permintaan #{id}"
+        },
+        "members": {
+            "title": "Anggota",
+            "description": "Kelola anggota tim dan izin"
+        },
+        "settings": {
+            "title": "Pengaturan",
+            "description": "Sesuaikan pengaturan aplikasi Anda"
+        },
+        "addressBook": {
+            "title": "Buku Alamat",
+            "description": "Kelola penerima yang Anda simpan"
+        },
+        "payments": {
+            "title": "Pembayaran",
+            "description": "Kirim dan terima dana dengan aman"
+        },
+        "exchange": {
+            "title": "Tukar",
+            "description": "Tukar token Anda dengan aman dan efisien"
+        },
+        "vesting": {
+            "title": "Vesting",
+            "description": "Buat jadwal vesting dengan cepat dan mudah"
+        },
+        "earn": {
+            "title": "Pendapatan",
+            "description": "Dapatkan imbalan atas aset Anda",
+            "placeholder": "Jelajahi peluang pendapatan dan imbalan staking."
+        },
+        "createTreasury": {
+            "title": "Buat Treasury",
+            "description": "Siapkan treasury multisig baru untuk tim Anda"
+        },
+        "manageTreasuries": {
+            "title": "Kelola Treasury",
+            "description": "Kontrol treasury mana yang muncul di akun Anda"
+        },
+        "stats": {
+            "title": "Statistik",
+            "description": "Aset di bawah pengelolaan secara real-time di semua treasury sputnik DAO."
+        },
+        "telegram": {
+            "title": "Hubungkan Treasury",
+            "description": "Tautkan treasury Anda ke chat Telegram",
+            "metaTitle": "Trezu — Hubungkan Telegram",
+            "metaDescription": "Hubungkan treasury Trezu Anda ke chat Telegram"
+        },
+        "wallet": {
+            "title": "Dompet Trezu",
+            "description": "Tandatangani usulan treasury via Trezu"
+        }
+    },
+    "depositModal": {
+        "validation": {
+            "selectAsset": "Silakan pilih aset",
+            "selectNetwork": "Silakan pilih jaringan"
+        },
+        "sections": {
+            "supportedNetworks": "Jaringan yang Didukung",
+            "networksWithAssets": "Jaringan dengan Aset",
+            "yourAssets": "Aset Anda",
+            "otherAssets": "Aset Lainnya"
+        },
+        "errors": {
+            "addressUnavailable": "Tidak dapat mengambil alamat deposit untuk aset dan jaringan yang dipilih.",
+            "fetchFailed": "Gagal mengambil alamat deposit. Silakan coba lagi."
+        },
+        "title": "Deposit",
+        "subtitle": "Pilih aset dan jaringan untuk melihat alamat deposit",
+        "assetLabel": "Aset",
+        "networkLabel": "Jaringan",
+        "selectAsset": "Pilih Aset",
+        "selectNetwork": "Pilih Jaringan",
+        "otherAssetName": "Lainnya",
+        "otherNetworkInfo": "Anda dapat mendepositkan token apa pun yang tidak tercantum dalam aset, tetapi hanya melalui jaringan NEAR.",
+        "depositAddressHeading": "Alamat Deposit",
+        "depositAddressSubtitle": "Selalu periksa kembali alamat deposit Anda.",
+        "addressLabel": "Alamat",
+        "addressCopied": "Alamat disalin ke papan klip",
+        "memoLabel": "Memo",
+        "memoCopied": "Memo disalin ke papan klip",
+        "memoWarning": "Anda <bold>harus</bold> menyertakan memo saat mengirim dana ke alamat ini. Mengirim tanpa memo dapat mengakibatkan kehilangan dana secara permanen.",
+        "onlyDeposit": "Hanya deposit <symbolTag>{symbol}</symbolTag> dari jaringan <networkTag>{network}</networkTag>. Kami sarankan memulai dengan transaksi uji coba kecil untuk memastikan semuanya berjalan dengan benar sebelum mengirim jumlah penuh.",
+        "minimumDeposit": "Deposit minimum adalah <amountTag>{amount} {symbol}</amountTag>",
+        "searchByName": "Cari berdasarkan nama"
+    },
+    "assetDetails": {
+        "coinPrice": "Harga Koin",
+        "weight": "Bobot",
+        "source": "Sumber",
+        "send": "Kirim",
+        "exchange": "Tukar",
+        "comingSoon": "Segera hadir",
+        "vesting": "Vesting",
+        "vestedPercent": "{percent}% Tervesting",
+        "frozen": "Dibekukan",
+        "frozenTooltip": "Token yang dibekukan terkunci dan tidak dapat digunakan. Mereka mungkin terkunci karena digunakan untuk penyimpanan, di-staking, atau belum tervesting.",
+        "vested": "Tervesting"
+    },
+    "dashboard": {
+        "overview": "Ringkasan aset dan aktivitas treasury Anda",
+        "assets": "Aset",
+        "balance": "Saldo",
+        "totalBalance": "Saldo Total",
+        "deposit": "Deposit",
+        "addAssets": "Tambah aset",
+        "hidden": "Tersembunyi",
+        "confidentialHidden": "Saldo disembunyikan untuk treasury rahasia",
+        "recentActivity": "Aktivitas Terbaru",
+        "viewAllTransactions": "Lihat semua transaksi"
+    },
+    "activity": {
+        "filters": {
+            "createdDate": "Tanggal Dibuat",
+            "token": "Token",
+            "from": "Dari",
+            "to": "Ke"
+        },
+        "tabs": {
+            "all": "Semua",
+            "sent": "Terkirim",
+            "received": "Diterima",
+            "stakingRewards": "Imbalan Staking",
+            "exchange": "Tukar"
+        },
+        "searchPlaceholder": "Cari berdasarkan hash transaksi",
+        "searchPlaceholderShort": "Hash transaksi",
+        "fromPool": "dari {pool}",
+        "table": {
+            "type": "TIPE",
+            "transaction": "TRANSAKSI",
+            "from": "DARI",
+            "to": "KE",
+            "transactionHash": "HASH TRANSAKSI",
+            "hashTooltip": "Pengenal unik (hash) dari transaksi ini"
+        },
+        "empty": {
+            "title": "Tidak ada transaksi ditemukan",
+            "description": "Transaksi Anda akan muncul di sini setelah terjadi"
+        },
+        "emptyDashboard": {
+            "title": "Belum ada apa-apa untuk ditampilkan",
+            "description": "Transaksi dan tindakan Anda akan muncul di sini setelah terjadi"
+        },
+        "recentTitle": "Transaksi Terbaru",
+        "details": {
+            "title": "Detail Transaksi",
+            "copyAddress": "Salin Alamat",
+            "addressCopied": "Alamat disalin ke papan klip",
+            "sell": "Jual",
+            "receive": "Terima",
+            "pending": "Tertunda",
+            "type": "Tipe",
+            "date": "Tanggal",
+            "from": "Dari",
+            "to": "Ke",
+            "method": "Metode",
+            "contract": "Kontrak",
+            "transaction": "Transaksi"
+        }
+    },
+    "export": {
+        "types": {
+            "csv": ".CSV",
+            "json": ".JSON",
+            "xlsx": ".XLSX"
+        },
+        "transactionTypes": {
+            "all": "Semua Tipe",
+            "sent": "Terkirim",
+            "received": "Diterima",
+            "stakingRewards": "Imbalan Staking"
+        },
+        "validation": {
+            "invalidEmail": "Silakan masukkan alamat email yang valid"
+        },
+        "columns": {
+            "submissionTime": "Waktu Pengiriman",
+            "dateRange": "Rentang Tanggal",
+            "generatedBy": "Dibuat Oleh",
+            "status": "Status"
+        },
+        "status": {
+            "generating": "Membuat",
+            "expired": "Kedaluwarsa",
+            "failed": "Gagal"
+        },
+        "noPermission": "Anda tidak memiliki izin untuk mengunduh file.",
+        "download": "Unduh",
+        "heading": "Ekspor Transaksi Terbaru",
+        "teamOnly": "Pembuatan dan pengunduhan ekspor hanya tersedia untuk anggota tim.",
+        "creditsUsed": "Anda telah menggunakan semua kredit Anda",
+        "exportsUsed": "Anda telah menggunakan semua ekspor Anda",
+        "upgradePrompt": "Tingkatkan paket Anda untuk mendapatkan lebih banyak dan terus berlanjut",
+        "resetPrompt": "Tingkatkan paket Anda untuk akses lebih banyak, atau tunggu hingga batas Anda diatur ulang bulan depan.",
+        "tabs": {
+            "generate": "Buat Ekspor",
+            "history": "Riwayat"
+        },
+        "fields": {
+            "documentType": "Tipe Dokumen",
+            "timeRange": "Rentang Waktu",
+            "selectDateRange": "Pilih rentang tanggal",
+            "asset": "Aset",
+            "allAssets": "Semua Aset",
+            "transactionType": "Tipe Transaksi"
+        },
+        "buttons": {
+            "noPermissionExport": "Anda tidak memiliki izin untuk mengekspor",
+            "quotaExhausted": "Anda telah menggunakan semua kuota Anda",
+            "exporting": "Mengekspor...",
+            "export": "Ekspor"
+        },
+        "empty": {
+            "title": "Belum ada ekspor",
+            "description": "File yang Anda ekspor dari bulan terakhir akan muncul di sini setelah dibuat."
+        },
+        "requirements": {
+            "heading": "Persyaratan Ekspor",
+            "canExportFrom": "Anda dapat mengekspor data dari",
+            "availability": "File yang diekspor tersedia untuk diunduh selama 48 jam."
+        },
+        "quota": {
+            "heading": "Kuota Ekspor",
+            "unlimited": "Tidak Terbatas",
+            "perMonth": "{count} / bulan",
+            "flexibilityPrompt": "Mencari fleksibilitas lebih?",
+            "contactUs": "Hubungi Kami"
+        }
+    },
+    "requests": {
+        "filters": {
+            "proposalTypes": {
+                "Payments": "Pembayaran",
+                "Exchange": "Tukar",
+                "Earn": "Pendapatan",
+                "Vesting": "Vesting",
+                "Function Call": "Panggilan Fungsi",
+                "Change Policy": "Ubah Kebijakan",
+                "Settings": "Pengaturan",
+                "Confidential": "Rahasia"
+            },
+            "voteStatus": {
+                "Approved": "Disetujui",
+                "Rejected": "Ditolak",
+                "No Voted": "Belum Memilih"
+            },
+            "requestsType": "Tipe Permintaan",
+            "createdDate": "Tanggal Dibuat",
+            "recipient": "Penerima",
+            "token": "Token",
+            "requester": "Pemohon",
+            "approver": "Penyetuju",
+            "myVoteStatus": "Status Suara Saya",
+            "all": "SEMUA",
+            "amount": "Jumlah",
+            "from": "Dari",
+            "to": "Ke",
+            "min": "Min",
+            "max": "Max",
+            "invalidDate": "Tanggal tidak valid",
+            "operationIsNot": " bukan",
+            "operationBefore": " sebelum",
+            "operationAfter": " setelah",
+            "operationContains": " mengandung",
+            "searchByAddress": "Cari berdasarkan alamat",
+            "loadingMembers": "Memuat anggota...",
+            "noMembersFound": "Tidak ada anggota ditemukan. Tekan Enter untuk menambahkan \"{query}\"",
+            "noMembersAvailable": "Tidak ada anggota yang tersedia",
+            "reset": "Atur Ulang",
+            "clear": "Bersihkan",
+            "addFilter": "Tambah Filter"
+        },
+        "tabs": {
+            "all": "Semua",
+            "pending": "Tertunda",
+            "executed": "Dieksekusi",
+            "rejected": "Ditolak",
+            "expired": "Kedaluwarsa",
+            "failed": "Gagal"
+        },
+        "searchPlaceholder": "Cari permintaan berdasarkan nama atau ID",
+        "searchPlaceholderShort": "Cari berdasarkan nama atau ID",
+        "errorLoading": "Kesalahan saat memuat usulan. Silakan coba lagi.",
+        "empty": {
+            "title": "Buat permintaan pertama Anda",
+            "description": "Permintaan pembayaran, pertukaran, dan tindakan lainnya akan muncul di sini setelah dibuat.",
+            "send": "Kirim",
+            "exchange": "Tukar"
+        },
+        "actions": {
+            "approve": "Setujui",
+            "reject": "Tolak",
+            "deposit": "Deposit",
+            "viewRequest": "Lihat Permintaan"
+        },
+        "table": {
+            "selectAll": "Pilih semua",
+            "selectRow": "Pilih baris",
+            "request": "Permintaan",
+            "transaction": "Transaksi",
+            "requester": "Pemohon",
+            "voting": "Pemungutan Suara",
+            "votingTooltip": "Angka pertama menunjukkan persetujuan yang diterima. Angka kedua menunjukkan persetujuan yang diperlukan untuk mengeksekusi.",
+            "status": "Status",
+            "notPending": "Usulan tidak tertunda.",
+            "noPermissionVote": "Anda tidak memiliki izin untuk memilih pada permintaan ini.",
+            "alreadyVoted": "Anda sudah memilih pada permintaan ini.",
+            "noResults": "Tidak ada permintaan yang cocok dengan filter Anda.",
+            "allCaughtUp": "Semua sudah selesai!",
+            "noPending": "Tidak ada permintaan yang tertunda.",
+            "send": "Kirim",
+            "exchange": "Tukar",
+            "requestsSelected": "{count, plural, other {# Permintaan Dipilih}}",
+            "bulkApproveDisabled": "Permintaan ini tidak dapat disetujui karena treasury memiliki saldo yang tidak mencukupi."
+        },
+        "pending": {
+            "title": "Permintaan Tertunda",
+            "viewAll": "Lihat Semua",
+            "emptyTitle": "Semua sudah selesai!",
+            "emptyDescription": "Tidak ada permintaan yang tertunda."
+        }
+    },
+    "proposals": {
+        "status": {
+            "pending": "Tertunda",
+            "approved": "Disetujui",
+            "rejected": "Ditolak",
+            "executed": "Dieksekusi",
+            "expired": "Kedaluwarsa",
+            "failed": "Gagal",
+            "removed": "Dihapus",
+            "inProgress": "Sedang Berlangsung"
+        },
+        "statusTooltip": {
+            "pending": "Permintaan ini masih tertunda dan belum mencapai jumlah suara yang diperlukan untuk eksekusi.",
+            "executed": "Dieksekusi setelah {approved} dari {required} anggota menyetujui permintaan.",
+            "rejected": "Ditolak setelah {rejected} dari {required} anggota memilih untuk menolak permintaan.",
+            "expired": "Kedaluwarsa karena tidak menerima cukup suara untuk dieksekusi.",
+            "failed": "Permintaan gagal diselesaikan. Periksa detail transaksi <link>di sini</link>.",
+            "failedPlain": "Permintaan gagal diselesaikan. Periksa detail transaksi di sini."
+        },
+        "votes": {
+            "approved": "Disetujui",
+            "rejected": "Ditolak",
+            "pending": "Tertunda"
+        },
+        "voteModal": {
+            "confirmTitle": "Konfirmasi Suara Anda",
+            "removeTitle": "Hapus Permintaan",
+            "bulkBody": "Anda akan {action} beberapa permintaan. Setelah dikirim, keputusan ini tidak dapat diubah.",
+            "singleBody": "Anda akan {action} permintaan ini. Setelah dikonfirmasi, tindakan ini tidak dapat dibatalkan.",
+            "actionApprove": "menyetujui",
+            "actionReject": "menolak",
+            "actionRemove": "menghapus",
+            "insufficientBalance": "Permintaan <highlight>{ids}</highlight> tidak dapat disetujui karena saldo tidak mencukupi. Persetujuan Anda hanya akan berlaku untuk permintaan yang tersisa.",
+            "remove": "Hapus",
+            "confirm": "Konfirmasi"
+        },
+        "expanded": {
+            "recipient": "Penerima",
+            "amount": "Jumlah",
+            "networkFee": "Biaya Jaringan",
+            "notes": "Catatan",
+            "sent": "Terkirim",
+            "received": "Diterima",
+            "priceDifference": "Selisih Harga",
+            "priceDifferenceTooltip": "Selisih antara nilai tukar kuotasi dan nilai tukar pasar saat ini. Nilai positif menunjukkan nilai tukar yang lebih baik dari pasar.",
+            "slippageTolerance": "Toleransi Slippage",
+            "estimatedTime": "Estimasi Waktu",
+            "seconds": "{count} detik",
+            "description": "Deskripsi",
+            "methodName": "Nama Metode",
+            "args": "Argumen",
+            "deposit": "Deposit",
+            "gas": "Gas",
+            "totalDeposit": "Total Deposit",
+            "totalGas": "Total Gas",
+            "receiverId": "ID Penerima",
+            "contractId": "ID Kontrak",
+            "actionsCount": "{count, plural, other {# tindakan}}",
+            "functionCallsCount": "{count, plural, other {# panggilan fungsi}}",
+            "showLess": "Tampilkan lebih sedikit",
+            "showMore": "Tampilkan lebih banyak",
+            "stakingPool": "Pool Staking",
+            "validator": "Validator",
+            "action": "Tindakan",
+            "stake": "Stake",
+            "unstake": "Unstake",
+            "withdraw": "Tarik",
+            "lockupOwner": "Pemilik lockup",
+            "lockupDuration": "Durasi lockup",
+            "cliff": "Cliff",
+            "releaseDuration": "Durasi rilis",
+            "vestingSchedule": "Jadwal vesting",
+            "cancellable": "Dapat dibatalkan",
+            "allowEarn": "Izinkan staking",
+            "yes": "Ya",
+            "no": "Tidak",
+            "notSet": "Belum diatur",
+            "from": "Dari",
+            "to": "Ke",
+            "paymentsCount": "{count, plural, other {# pembayaran}}",
+            "sourceWallet": "Dompet Sumber",
+            "allNear": "Semua NEAR",
+            "startDate": "Tanggal Mulai",
+            "endDate": "Tanggal Berakhir",
+            "cliffDate": "Tanggal Cliff",
+            "allowCancellation": "Izinkan Pembatalan",
+            "allowStaking": "Izinkan Staking",
+            "loadingHistorical": "Memuat konfigurasi historis...",
+            "name": "Nama",
+            "purpose": "Tujuan",
+            "logo": "Logo",
+            "logoAlt": "Logo",
+            "primaryColor": "Warna Utama",
+            "noChangesCurrent": "Tidak ada perubahan terdeteksi pada konfigurasi dibandingkan dengan kondisi saat ini.",
+            "noChangesHistorical": "Tidak ada perubahan terdeteksi pada konfigurasi dibandingkan dengan kondisi historis.",
+            "method": "Metode",
+            "arguments": "Argumen",
+            "contract": "Kontrak",
+            "actionNumber": "Tindakan {number}",
+            "actions": "Tindakan",
+            "collapseAll": "Tutup semua",
+            "expandAll": "Buka semua",
+            "send": "Kirim",
+            "receive": "Terima",
+            "rate": "Nilai Tukar",
+            "priceSlippageLimit": "Batas Slippage Harga",
+            "slippageTooltip": "Ini adalah batas slippage yang ditentukan untuk permintaan ini. Jika nilai tukar pasar berubah melampaui ambang ini selama eksekusi, permintaan akan otomatis gagal.",
+            "estimatedTimeTooltip": "Estimasi waktu untuk swap dieksekusi setelah transaksi deposit dikonfirmasi.",
+            "minReceive": "Min. Diterima",
+            "minimumReceived": "Minimum Diterima",
+            "minReceiveTooltip": "Ini adalah jumlah minimum yang akan Anda terima dari pertukaran ini, berdasarkan batas slippage yang ditetapkan untuk permintaan.",
+            "depositAddress": "Alamat Deposit",
+            "depositAddressTooltip": "Alamat deposit 1Click tempat token akan dikirim untuk eksekusi swap lintas-rantai.",
+            "quoteSignature": "Tanda Tangan Kuotasi",
+            "quoteSignatureTooltip": "Tanda tangan kriptografi dari API 1Click yang memvalidasi kuotasi ini.",
+            "quoteDeadline": "Batas Waktu Kuotasi 1-Click",
+            "quoteDeadlineTooltip": "Waktu ketika alamat deposit menjadi tidak aktif dan dana mungkin hilang.",
+            "status": "Status",
+            "transactionLink": "Tautan Transaksi",
+            "viewTransaction": "Lihat Transaksi",
+            "recipientNumber": "Penerima {number}",
+            "oopsTitle": "Ups! Terjadi kesalahan",
+            "oopsDescription": "Kami tidak dapat menemukan data untuk ditampilkan di sini.",
+            "totalAmount": "Jumlah Total",
+            "recipients": "Penerima",
+            "recipientsCount": "{count, plural, other {# penerima}}",
+            "unsupportedProposal": "Tipe usulan tidak didukung",
+            "requestDetails": "Detail Permintaan",
+            "linkCopied": "Tautan disalin ke papan klip",
+            "copyLink": "Salin Tautan",
+            "openRequestPage": "Buka Halaman Permintaan",
+            "deleteRequest": "Hapus Permintaan",
+            "unknownRecipients": "Penerima tidak diketahui",
+            "loadingConfig": "Memuat konfigurasi...",
+            "historicalData": "Data historis...",
+            "generalUpdate": "Pembaruan Umum",
+            "detailsUnavailable": "Detail tidak tersedia",
+            "changesCount": "{count, plural, other {# Perubahan}}",
+            "policyUpdate": "Pembaruan Kebijakan",
+            "noChangesDetected": "Tidak ada perubahan terdeteksi",
+            "loadingPolicy": "Memuat kebijakan...",
+            "roleChanges": "Perubahan Peran",
+            "policyParameters": "Parameter Kebijakan",
+            "defaultVotePolicy": "Kebijakan Suara Default",
+            "policyRoleChanges": "Perubahan Kebijakan & Peran",
+            "membersAdded": "{count, plural, other {# anggota ditambahkan}}",
+            "membersRemoved": "{count, plural, other {# anggota dihapus}}",
+            "membersUpdated": "{count, plural, other {# anggota diperbarui}}",
+            "rolesModified": "{count, plural, other {# peran dimodifikasi}}",
+            "parametersChanged": "{count, plural, other {# parameter diubah}}",
+            "defaultVotePolicyPart": "kebijakan suara default",
+            "onReceiver": "pada {receiver}",
+            "toPrefix": "Ke:",
+            "validatorPrefix": "Validator:",
+            "validatorSubtitle": "Validator: {address}",
+            "impactTitle": "Dampak Perubahan Durasi Pemungutan Suara",
+            "impactBody": "Anda akan memperbarui durasi pemungutan suara. Ini akan memengaruhi permintaan yang ada berikut.",
+            "activeRequestsBullet": "{count, plural, other {# permintaan akan aktif untuk pemungutan suara setelah perubahan ini, dengan tanggal kedaluwarsa yang diperbarui.}}",
+            "expiringRequestsBullet": "{count, plural, other {# permintaan akan ditandai sebagai \"Kedaluwarsa\" di bawah durasi pemungutan suara baru.}}",
+            "remainActiveHeading": "Permintaan yang tetap aktif untuk pemungutan suara dengan tanggal kedaluwarsa baru",
+            "willExpireHeading": "Permintaan yang akan ditandai sebagai \"Kedaluwarsa\"",
+            "tableRequest": "Permintaan",
+            "tableTransaction": "Transaksi",
+            "tableNewExpiry": "Kedaluwarsa Baru",
+            "expireInDays": "{count, plural, other {Kedaluwarsa dalam # hari}}",
+            "today": "Hari ini",
+            "uponApproval": "Saat persetujuan",
+            "yesContinue": "Ya, Lanjutkan",
+            "transactionCreated": "Transaksi Dibuat",
+            "voting": "Pemungutan Suara",
+            "approvalsReceived": "{received}/{required} persetujuan diterima",
+            "expiresAt": "Kedaluwarsa Pada",
+            "expiredAt": "Kedaluwarsa Pada",
+            "exchangingTokens": "Menukar Token",
+            "exchangingTokensBody": "Permintaan ini telah disetujui oleh tim. Pertukaran token sedang berlangsung dan mungkin memerlukan beberapa waktu.",
+            "requestFailed": "Permintaan Gagal",
+            "requestFailedBody": "Tim menyetujui permintaan ini, tetapi gagal karena fluktuasi nilai tukar. Silakan buat permintaan baru dan coba lagi.",
+            "votingPeriod24h": "Periode pemungutan suara: 24 jam",
+            "votingPeriod24hBody": "Permintaan pertukaran ini memiliki durasi pemungutan suara 24 jam. Setujui permintaan ini dalam waktu ini, atau permintaan akan kedaluwarsa.",
+            "reject": "Tolak",
+            "approve": "Setujui"
+        },
+        "insufficientBalance": {
+            "noAsset": "Permintaan ini tidak dapat disetujui karena token yang diperlukan tidak tersedia di treasury.",
+            "bond": "Permintaan ini tidak dapat disetujui karena treasury memiliki saldo <token>{symbol}</token> yang tidak mencukupi. Tambahkan <token>{amount} {symbol}</token> untuk menutupi biaya bond usulan.",
+            "continue": "Permintaan ini tidak dapat disetujui karena treasury memiliki saldo <token>{symbol}</token> yang tidak mencukupi. Tambahkan <token>{amount} {symbol}</token> untuk melanjutkan.",
+            "modalTitle": "Saldo NEAR Tidak Mencukupi",
+            "modalBodyVote": "Anda tidak memiliki cukup token NEAR di dompet Anda untuk memberikan suara ini. Pemungutan suara memerlukan saldo minimum <amount>{required} NEAR</amount>. Silakan tambahkan NEAR ke dompet Anda dan coba lagi.",
+            "modalBodyProposal": "Anda tidak memiliki cukup token NEAR di dompet Anda untuk membuat permintaan ini. Membuat permintaan memerlukan saldo minimum <amount>{required} NEAR</amount>. Silakan tambahkan NEAR ke dompet Anda dan coba lagi.",
+            "gotIt": "Mengerti"
+        }
+    },
+    "members": {
+        "title": "Anggota",
+        "description": "Kelola anggota tim dan izin",
+        "permissions": "Izin",
+        "member": "Anggota",
+        "activeMembers": "Anggota Aktif",
+        "noActiveMembers": "Tidak ada anggota aktif ditemukan.",
+        "addNewMember": "Tambah Anggota Baru",
+        "membersSelected": "{count, plural, =0 {tidak ada anggota} other {# anggota}} dipilih",
+        "remove": "Hapus",
+        "edit": "Ubah",
+        "requestorOnlyTooltip": "Anda hanya dapat menambahkan peran Requestor untuk anggota ini, karena mereka bertanggung jawab membuat permintaan pembayaran dari NEARN.",
+        "memberModal": {
+            "editRoles": "Ubah Peran",
+            "addNewMember": "Tambah Anggota Baru",
+            "validatingAddresses": "Memvalidasi alamat...",
+            "creatingProposal": "Membuat usulan...",
+            "reviewRequest": "Tinjau Permintaan",
+            "noChanges": "Tidak ada perubahan yang dilakukan pada peran anggota"
+        },
+        "previewModal": {
+            "title": "Tinjau Permintaan Anda",
+            "youAreEditing": "Anda sedang mengubah",
+            "youAreAdding": "Anda sedang menambahkan",
+            "membersCount": "{count, plural, other {# anggota}}",
+            "newMembersCount": "{count, plural, other {# anggota baru}}",
+            "updatedMembers": "Anggota yang Diperbarui",
+            "newMembers": "Anggota Baru",
+            "creatingProposal": "Membuat Usulan...",
+            "confirmSubmit": "Konfirmasi dan Kirim Permintaan"
+        },
+        "removeDialog": {
+            "title": "Hapus Permintaan",
+            "nearnBody": "Setelah disetujui, {account} akan dihapus secara permanen dari treasury dan semua izin terkait akan dicabut. Setelah dihapus, akun ini tidak akan dapat lagi membuat permintaan dari NEARN.",
+            "genericBody": "Setelah disetujui, tindakan ini akan menghapus secara permanen <bold>{accounts}</bold> dari treasury dan mencabut semua izin yang ditetapkan.",
+            "creatingProposal": "Membuat Usulan..."
+        },
+        "validation": {
+            "accountIdRequired": "ID Akun diperlukan",
+            "invalidNearAddress": "Alamat NEAR tidak valid.",
+            "atLeastOneRole": "Setidaknya satu peran harus dipilih",
+            "atLeastOneMember": "Setidaknya satu anggota diperlukan",
+            "alreadyAdded": "Anggota ini sudah ditambahkan di atas",
+            "alreadyInTreasury": "Anggota ini sudah ada di treasury",
+            "cannotRemoveRoleAfter": "Anda tidak dapat menghapus peran {role} dari anggota ini. Setelah semua perubahan Anda, mereka akan menjadi satu-satunya orang yang ditugaskan ke peran ini.",
+            "cannotRemoveRoleAfterGov": "Anda tidak dapat menghapus peran {role} dari anggota ini. Setelah semua perubahan Anda, mereka akan menjadi satu-satunya anggota {role}, dan tanpa peran ini Anda tidak akan dapat mengelola anggota tim atau mengonfigurasi pemungutan suara."
+        },
+        "policy": {
+            "addMembers": "Perbarui Kebijakan - Tambah Anggota Baru",
+            "addMembersSuccess": "Permintaan anggota baru berhasil dibuat",
+            "editMember": "Perbarui Kebijakan - Ubah Izin Anggota",
+            "editMembers": "Perbarui Kebijakan - Ubah Beberapa Anggota",
+            "editMemberSuccess": "Permintaan pembaruan peran anggota berhasil dibuat",
+            "editMembersSuccess": "Permintaan pembaruan peran anggota massal berhasil dibuat",
+            "removeMember": "Perbarui Kebijakan - Hapus Anggota",
+            "removeMembers": "Perbarui Kebijakan - Hapus Anggota",
+            "removeMemberSuccess": "Permintaan penghapusan anggota berhasil dibuat"
+        }
+    },
+    "settings": {
+        "tabs": {
+            "general": "Umum",
+            "voting": "Pemungutan Suara",
+            "preferences": "Preferensi",
+            "integrations": "Integrasi"
+        },
+        "general": {
+            "validation": {
+                "displayNameRequired": "Nama tampilan diperlukan",
+                "displayNameMax": "Nama tampilan harus kurang dari 100 karakter"
+            },
+            "proposalDescriptionTitle": "Perbarui Konfigurasi - Tema & logo",
+            "proposalSubmitted": "Permintaan untuk memperbarui konfigurasi telah dikirim",
+            "treasuryNotFound": "Treasury tidak ditemukan",
+            "treasuryName": "Nama Treasury",
+            "treasuryNameDescription": "Nama treasury Anda. Ini akan ditampilkan di seluruh aplikasi.",
+            "displayName": "Nama Tampilan",
+            "displayNamePlaceholder": "Masukkan nama tampilan",
+            "accountName": "Nama Akun",
+            "logo": "Logo",
+            "logoDescription": "Unggah logo untuk treasury Anda. Direkomendasikan SVG, PNG, atau JPG (256x256 px).",
+            "treasuryLogoAlt": "Logo treasury",
+            "uploading": "Mengunggah...",
+            "uploadLogo": "Unggah Logo",
+            "removeLogo": "Hapus Logo",
+            "logoUploaded": "Logo berhasil diunggah",
+            "uploadError": "Terjadi kesalahan saat mengunggah gambar, silakan coba lagi.",
+            "invalidLogo": "Logo tidak valid. Silakan unggah file PNG, JPG, atau SVG yang berukuran tepat 256x256 px",
+            "invalidImage": "File gambar tidak valid. Silakan unggah gambar yang valid.",
+            "fileReadError": "Kesalahan membaca file. Silakan coba lagi.",
+            "primaryColor": "Warna Utama",
+            "primaryColorDescription": "Tetapkan warna utama untuk elemen antarmuka treasury Anda. Warna ini akan digunakan dalam mode terang dan gelap, jadi pertimbangkan kontras saat memilih corak netral.",
+            "selectColorLabel": "Pilih warna {color}"
+        },
+        "voting": {
+            "validation": {
+                "required": "Durasi suara diperlukan",
+                "validNumber": "Durasi suara harus berupa angka yang valid",
+                "min": "Durasi suara harus minimal 1 hari",
+                "max": "Durasi suara harus kurang dari 1000 hari",
+                "whole": "Durasi suara harus berupa hari penuh"
+            },
+            "missingData": "Data yang diperlukan hilang",
+            "thresholdProposalTitle": "Perbarui kebijakan - Ambang Pemungutan Suara",
+            "thresholdProposalSummary": "{account} meminta untuk mengubah ambang pemungutan suara dari {oldValue} menjadi {newValue}.",
+            "thresholdSubmitted": "Permintaan untuk memperbarui ambang pemungutan suara telah dikirim",
+            "createProposalFailed": "Gagal membuat usulan",
+            "durationProposalTitle": "Perbarui kebijakan - Durasi Pemungutan Suara",
+            "durationProposalSummary": "{account} meminta untuk mengubah durasi pemungutan suara dari {oldValue} menjadi {newValue}.",
+            "durationSubmitted": "Permintaan berhasil dibuat",
+            "pendingTitle": "Permintaan Ambang Pemungutan Suara Aktif",
+            "pendingBody": "Untuk menghindari konflik, Anda perlu menyelesaikan atau menyelesaikan permintaan tertunda yang ada sebelum melanjutkan. Permintaan ini saat ini aktif dan harus disetujui atau ditolak terlebih dahulu.",
+            "viewRequest": "Lihat Permintaan",
+            "thresholdHeading": "Ambang Pemungutan Suara",
+            "thresholdDescriptionApprovers": "Tentukan berapa banyak suara yang diperlukan untuk menyetujui permintaan pembayaran dan terkait tim. Konfigurasikan ambang secara terpisah untuk Approver dan Governance.",
+            "thresholdDescriptionGeneric": "Tentukan berapa banyak suara yang diperlukan untuk menyetujui permintaan. Konfigurasikan ambang untuk setiap peran berdasarkan tanggung jawab mereka.",
+            "membersWhoCanVote": "Anggota yang dapat memilih",
+            "votesRequired": "Suara diperlukan untuk menyetujui permintaan",
+            "durationHeading": "Durasi Pemungutan Suara",
+            "durationDescription": "Lamanya waktu (dalam hari) sebuah usulan akan tetap terbuka untuk pemungutan suara. Jika pemungutan suara tidak selesai dalam periode ini, keputusan akan kedaluwarsa.",
+            "durationApprovers": " Durasi ini berlaku sama untuk peran Governance dan Approver.",
+            "durationGeneric": " Durasi ini konsisten di semua peran treasury.",
+            "days": "Hari"
+        },
+        "preferences": {
+            "timeZone": "Zona Waktu",
+            "timeZoneDescription": "Tetapkan zona waktu lokal Anda untuk tampilan tanggal dan waktu yang akurat.",
+            "timeFormat": "Format Waktu",
+            "hour12": "12 jam (1:00 PM)",
+            "hour24": "24 jam (13:00)",
+            "autoTimezone": "Atur zona waktu otomatis menggunakan lokasi Anda",
+            "timezone": "Zona Waktu",
+            "loadingTimezones": "Memuat zona waktu...",
+            "selectTimezone": "Pilih Zona Waktu",
+            "searchTimezones": "Cari zona waktu...",
+            "noTimezones": "Tidak ada zona waktu ditemukan",
+            "save": "Simpan",
+            "savedToast": "Preferensi berhasil disimpan",
+            "saveFailed": "Gagal menyimpan preferensi",
+            "loadFailed": "Gagal memuat zona waktu"
+        }
+    },
+    "addressBook": {
+        "emptyTitle": "Tambahkan penerima pertama Anda",
+        "emptyDescription": "Simpan alamat yang sering digunakan untuk pembayaran yang lebih cepat dan bebas kesalahan. Kontak Anda tetap pribadi dan hanya terlihat oleh tim Anda.",
+        "import": "Impor",
+        "addRecipient": "Tambah Penerima",
+        "recipientsHeading": "Penerima",
+        "recipientsSelected": "{count, plural, =0 {tidak ada penerima} other {# penerima}} dipilih",
+        "sectionHeading": "Penerima",
+        "privacyNote": "Alamat yang disimpan bersifat pribadi dan hanya terlihat oleh tim Anda.",
+        "searchPlaceholder": "Cari penerima berdasarkan nama",
+        "searchPlaceholderShort": "Cari",
+        "review": {
+            "header": "Tinjau Detail",
+            "youAreAdding": "Anda menambahkan",
+            "newRecipients": "{count, plural, other {# penerima baru}}",
+            "onNetworks": "di {count, plural, other {# jaringan}}",
+            "recipients": "Penerima",
+            "allDuplicates": "Semua penerima yang diimpor sudah ada di buku alamat Anda. Kembali untuk mengunggah daftar berbeda atau hapus duplikat dari tinjauan ini.",
+            "someDuplicates": "{duplicates} penerima duplikat dari total {total} penerima. Lanjutkan untuk mengunggah hanya penerima baru.",
+            "duplicated": "Duplikat",
+            "notePlaceholder": "Tambahkan catatan untuk membantu mengidentifikasi penerima ini (mis. pembayaran kontraktor, distribusi vesting).",
+            "skipDuplicates": "Lewati duplikat dan hanya impor yang baru.",
+            "allDuplicatesTooltip": "Semua penerima yang diimpor sudah ada di buku alamat Anda, jadi tidak ada yang baru untuk diimpor.",
+            "duplicateActionTooltip": "Aktifkan lewati duplikat atau hapus penerima duplikat untuk melanjutkan.",
+            "adding": "Menambahkan…",
+            "nothingNew": "Tidak Ada yang Baru untuk Diimpor",
+            "addRecipientsButton": "{count, plural, other {Tambah Penerima}}"
+        },
+        "removeDialog": {
+            "title": "Hapus Penerima",
+            "bulk": "Ini akan menghapus <bold>{count, plural, other {# penerima}}</bold> dari buku alamat Anda. Anda dapat menambahkannya lagi kapan saja.",
+            "single": "Ini akan menghapus <bold>{name}</bold> dari buku alamat Anda. Anda dapat menambahkan penerima ini lagi kapan saja."
+        },
+        "importFlow": {
+            "title": "Impor Penerima",
+            "description": "Unggah daftar alamat penerima ke buku alamat Anda.",
+            "foundSummary": "Ditemukan {count, plural, other {# penerima}} di {networkCount, plural, other {# jaringan}}",
+            "uploadPrompt": "Unggah atau tempel data penerima",
+            "fixErrors": "Perbaiki kesalahan untuk melanjutkan",
+            "continueReview": "Lanjutkan ke Tinjauan"
+        },
+        "form": {
+            "editRecipient": "Ubah Penerima",
+            "addRecipient": "Tambah Penerima",
+            "import": "Impor",
+            "recipientName": "Nama Penerima",
+            "namePlaceholder": "Alice",
+            "recipientAddress": "Alamat Penerima",
+            "network": "Jaringan",
+            "networkInfo": "Jaringan yang kompatibel dengan alamat ini",
+            "enterAddressFirst": "Masukkan alamat penerima terlebih dahulu",
+            "selectNetwork": "Pilih jaringan",
+            "selectNetworksTitle": "Pilih Jaringan",
+            "searchNetworksPlaceholder": "Cari jaringan…",
+            "done": "Selesai",
+            "edit": "Ubah",
+            "remove": "Hapus",
+            "incomplete": "Tidak lengkap",
+            "addAnother": "Tambah Penerima Lain",
+            "fillAllTooltip": "Anda harus mengisi semua kolom untuk menambahkan penerima.",
+            "reviewDetails": "Tinjau Detail",
+            "reviewTooltip": "Semua penerima harus lengkap sebelum ditinjau.",
+            "invalidAddress": "Alamat tidak valid",
+            "noCompatibleNetworks": "Tidak ada jaringan yang kompatibel untuk alamat ini"
+        },
+        "parsing": {
+            "rowPrefix": "Baris {row}: {message}",
+            "missingName": "Nama penerima hilang. Silakan tambahkan nama.",
+            "missingAddress": "Alamat penerima hilang. Silakan tambahkan alamat dompet.",
+            "invalidAddressFormat": "Alamat \"{address}\" bukan format yang valid untuk jaringan yang didukung.",
+            "unknownNetwork": "Jaringan tidak dikenal \"{network}\". Jaringan yang didukung meliputi: {available}.",
+            "incompatibleNetwork": "Alamat \"{address}\" tidak kompatibel dengan {network}. Jaringan yang kompatibel: {compatible}.",
+            "noDataFound": "Tidak ada data ditemukan. Silakan tambahkan penerima dalam format ini: Name, Address, Network, Note",
+            "headerColumnsNotFound": "Kami mendeteksi baris header, tetapi tidak dapat menemukan kolom 'Name' dan 'Address'. Silakan gunakan nama kolom ini, atau hapus baris header.",
+            "failedToParseCsv": "Gagal mengurai data CSV"
+        }
+    },
+    "payments": {
+        "validation": {
+            "recipientMin": "Penerima harus minimal 2 karakter",
+            "recipientMax": "Penerima harus kurang dari 128 karakter",
+            "amountPositive": "Jumlah harus lebih besar dari 0",
+            "recipientTokenSame": "Alamat penerima dan token tidak boleh sama"
+        },
+        "newPayment": "Pembayaran Baru",
+        "reviewYourPayment": "Tinjau Pembayaran Anda",
+        "reviewButton": "Tinjau Pembayaran",
+        "reviewButtonDisabled": "Masukkan jumlah dan alamat",
+        "comingSoon": "Segera hadir",
+        "bulkPayments": "Pembayaran Massal",
+        "summaryRecipients": "ke {count, plural, other {# penerima}}",
+        "networkFee": "Biaya Jaringan",
+        "networkFeeInfo": "Info biaya jaringan",
+        "commentPlaceholder": "Tambahkan komentar (opsional)...",
+        "preparingRoute": "Menyiapkan rute transfer 1Click...",
+        "confirmSubmit": "Konfirmasi dan Kirim Permintaan",
+        "useDifferentAddress": "Gunakan alamat berbeda",
+        "failed1ClickQuote": "Gagal membuat kuotasi transfer 1Click",
+        "paymentSubmitted": "Permintaan untuk mengirim pembayaran telah dikirim"
+    },
+    "bulkPayment": {
+        "comingSoonToast": "Pembayaran massal akan segera hadir!",
+        "submittingList": "Mengirim daftar pembayaran massal",
+        "submittingProposal": "Mengirim usulan",
+        "proposalSubmitted": "Usulan pembayaran massal telah dikirim",
+        "submitListFailed": "Gagal mengirim daftar pembayaran",
+        "submitFailed": "Gagal mengirim pembayaran massal",
+        "upload": {
+            "pleaseUploadCsv": "Silakan unggah file CSV",
+            "fileSizeLimit": "Ukuran file harus kurang dari 1.5 MB",
+            "headerTitle": "Permintaan Pembayaran Massal",
+            "headerSubtitle": "Bayar beberapa penerima dengan satu usulan.",
+            "creditsUsed": "Anda telah menggunakan semua kredit Anda",
+            "bulkPaymentsUsed": "Anda telah menggunakan semua pembayaran massal Anda",
+            "upgradeTrial": "Tingkatkan paket Anda untuk mendapatkan lebih banyak dan terus berlanjut",
+            "upgradePaid": "Tingkatkan paket Anda untuk akses lebih banyak, atau tunggu hingga batas Anda diatur ulang bulan depan.",
+            "selectAsset": "Pilih Aset",
+            "disableTokenMessage": "Pembayaran massal untuk token ini akan segera hadir.",
+            "providePaymentData": "Berikan Data Pembayaran",
+            "uploadFile": "Unggah File",
+            "provideData": "Berikan Data",
+            "chooseFile": "Pilih File",
+            "orDragDrop": "atau seret dan lepas",
+            "maxFileSize": "maks 1 file hingga 1.5 MB, hanya file CSV",
+            "noFilePrompt": "Tidak punya file untuk diunggah?",
+            "downloadTemplate": "Unduh templat",
+            "requirements": "Persyaratan Pembayaran Massal",
+            "maxTransactions": "Maks {max} transaksi per impor",
+            "singleTokenNetwork": "Token dan jaringan tunggal",
+            "limitsUsed": "Anda telah menggunakan semua batas Anda",
+            "selectAndProvide": "Pilih aset dan berikan data pembayaran",
+            "continueToReview": "Lanjutkan ke Tinjauan",
+            "selectTokenError": "Silakan pilih token",
+            "providePaymentDataError": "Silakan berikan data pembayaran"
+        },
+        "editStep": {
+            "title": "Ubah Pembayaran",
+            "saveChanges": "Simpan Perubahan"
+        },
+        "parsing": {
+            "rowPrefix": "Baris {row}: {message}",
+            "missingRecipientFirstColumn": "Alamat penerima hilang. Silakan tambahkan alamat di kolom pertama.",
+            "invalidNearAddress": "Alamat \"{address}\" bukan akun NEAR yang valid.",
+            "invalidChainAddress": "Alamat \"{address}\" bukan akun {chain} yang valid.",
+            "rowNeedsAmountRecipient": "Setiap baris memerlukan jumlah dan penerima yang dipisahkan dengan koma. Contoh: 100, alice.near",
+            "missingRecipientBeforeComma": "Alamat penerima hilang. Silakan tambahkan alamat sebelum koma.",
+            "missingAmountAfterComma": "Jumlah hilang. Silakan tambahkan angka setelah koma. Contoh: {recipient}, 100",
+            "invalidAmountNumber": "Jumlah \"{amountStr}\" bukan angka yang valid. Silakan gunakan hanya angka dan desimal (mis. 100 atau 100.50).",
+            "amountGreaterThanZero": "Jumlah harus lebih besar dari 0. Anda memasukkan \"{amountStr}\".",
+            "amountTooLarge": "Jumlah \"{amountStr}\" terlalu besar. Silakan gunakan angka yang lebih kecil.",
+            "invalidAmountFallback": "Jumlah tidak valid. Silakan gunakan hanya angka dan desimal (mis. 100 atau 100.50).",
+            "pleaseRemoveChars": "Silakan hapus karakter ini: {chars}. Hanya angka, koma, dan titik yang diperbolehkan.",
+            "amountCannotBeEmpty": "Jumlah tidak boleh kosong.",
+            "tokenMismatch": "Anda memasukkan \"{provided}\" tetapi {expected} dipilih di atas. Hapus simbol token atau pilih {suggested} dari menu drop-down.",
+            "multipleTokenSymbols": "Anda menggunakan beberapa simbol token ({symbols}). Silakan gunakan hanya satu jenis token di seluruh file Anda, atau hapus simbol token dan biarkan pilihan di atas yang menentukan token.",
+            "noPaymentDataFound": "Tidak ada data pembayaran ditemukan. Silakan tambahkan pembayaran Anda dalam format ini: recipient, amount",
+            "exceedsRecipientLimit": "Anda memiliki {count} penerima, tetapi batasnya adalah {limit} per batch. Silakan hapus {excess, plural, other {# penerima}} atau bagi menjadi beberapa batch.",
+            "noPaymentDataProvided": "Tidak ada data pembayaran yang diberikan. Silakan masukkan pembayaran Anda dalam format ini: recipient, amount",
+            "headerColumnsNotFound": "Kami mendeteksi baris header, tetapi tidak dapat menemukan kolom 'Recipient' dan 'Amount'. Silakan gunakan nama kolom ini, atau hapus baris header.",
+            "failedToParseCsv": "Gagal mengurai data CSV",
+            "failedToParsePaste": "Gagal mengurai data tempel",
+            "failedToValidateAccount": "Gagal memvalidasi akun",
+            "feeEstimationFailed": "Tidak dapat memperkirakan biaya jaringan untuk jumlah ini. Silakan verifikasi dan coba lagi.",
+            "feeEstimationFailedRow": "Baris {row} ({recipient}): Tidak dapat memperkirakan biaya jaringan untuk jumlah ini. Silakan verifikasi dan coba lagi."
+        },
+        "recipients": "Penerima",
+        "insufficientTokens": "Token tidak mencukupi. Anda dapat mengirim permintaan dan menambah saldo sebelum persetujuan.",
+        "removeRecipient": "Hapus Penerima",
+        "removeRecipientConfirm": "Apakah Anda yakin ingin menghapus pembayaran ke <strong>{recipient}</strong>? Tindakan ini tidak dapat dibatalkan.",
+        "remove": "Hapus",
+        "edit": "Ubah"
+    },
+    "bulkPaymentCredits": {
+        "title": "Pembayaran Massal",
+        "unlimited": "Tidak Terbatas",
+        "creditsPerPeriod": "{amount} / {period}",
+        "oneTimeTrial": "uji coba sekali",
+        "month": "bulan",
+        "moreFlexibility": "Mencari fleksibilitas lebih?",
+        "contactUs": "Hubungi Kami"
+    },
+    "exchange": {
+        "validation": {
+            "amountPositive": "Jumlah harus lebih besar dari 0"
+        },
+        "requestSubmitted": "Permintaan pertukaran telah dikirim",
+        "heading": "Tukar",
+        "sell": "Jual",
+        "receive": "Terima",
+        "slippageTolerance": "Toleransi Slippage",
+        "disabled": {
+            "differentTokens": "Token harus berbeda",
+            "enterAmount": "Masukkan jumlah untuk ditukar"
+        },
+        "review": "Tinjau Pertukaran",
+        "poweredBy": "Didukung oleh",
+        "info": {
+            "priceDifference": "Selisih Harga",
+            "priceDifferenceTooltip": "Selisih antara nilai tukar kuotasi dan nilai tukar pasar saat ini. Nilai positif menunjukkan nilai tukar yang lebih baik dari pasar.",
+            "estimatedTime": "Estimasi Waktu",
+            "estimatedTimeValue": "{seconds} detik",
+            "estimatedTimeTooltip": "Waktu perkiraan untuk menyelesaikan pertukaran.",
+            "minimumReceived": "Minimum Diterima",
+            "minimumReceivedTooltip": "Ini adalah jumlah minimum yang akan Anda terima dari pertukaran ini, berdasarkan batas slippage yang ditetapkan untuk permintaan.",
+            "depositAddress": "Alamat Deposit",
+            "depositAddressCopied": "Alamat deposit disalin",
+            "quoteExpires": "Kuotasi Berakhir",
+            "exchangeFee": "Biaya Pertukaran",
+            "exchangeFeeTooltip": "Biaya 0,70% yang dikenakan di sini menutupi biaya protokol NEAR Intents untuk memfasilitasi perdagangan Anda dan biaya widget Trezu. Jumlah ini secara otomatis dihitung ke dalam nilai tukar yang dikutip Anda."
+        },
+        "approveWithin24h": "Silakan setujui permintaan ini dalam 24 jam, jika tidak akan kedaluwarsa. Kami sarankan untuk mengonfirmasi sesegera mungkin.",
+        "confirmSubmit": "Konfirmasi dan Kirim Permintaan",
+        "refreshingIn": "Nilai tukar akan diperbarui dalam {seconds}d"
+    },
+    "vesting": {
+        "validation": {
+            "amountMin": "Jumlah harus lebih besar atau sama dengan 3.5",
+            "startBeforeEnd": "Tanggal mulai harus sebelum tanggal berakhir",
+            "cliffBetween": "Tanggal cliff harus antara"
+        },
+        "stepTitles": {
+            "details": "Detail",
+            "settings": "Pengaturan",
+            "review": "Tinjau"
+        },
+        "proposalTitle": "Buat jadwal vesting untuk {address}",
+        "scheduleSubmitted": "Permintaan untuk membuat jadwal vesting telah dikirim",
+        "heading": "Jadwal Vesting Baru",
+        "amount": "Jumlah",
+        "startDate": "Tanggal Mulai",
+        "endDate": "Tanggal Berakhir",
+        "noteOptional": "Catatan (opsional)",
+        "continue": "Lanjutkan",
+        "advancedSettings": "Pengaturan Lanjutan",
+        "allowCancellation": "Izinkan Pembatalan",
+        "allowCancellationDescription": "Memungkinkan NEAR Foundation untuk membatalkan lockup kapan saja. Lockup yang tidak dapat dibatalkan tidak kompatibel dengan tanggal cliff.",
+        "cliffDate": "Tanggal Cliff",
+        "allowEarn": "Izinkan Pendapatan",
+        "allowEarnDescription": "Memungkinkan pemilik lockup untuk mengstaking jumlah penuh token dalam lockup (bahkan sebelum tanggal cliff).",
+        "commentPlaceholder": "Tambahkan komentar untuk jadwal vesting ini (opsional)...",
+        "reviewRequest": "Tinjau Permintaan",
+        "reviewHeading": "Tinjau Jadwal Vesting Anda",
+        "confirmSubmit": "Konfirmasi dan Kirim Permintaan",
+        "review": {
+            "recipient": "Penerima",
+            "startDate": "Tanggal Mulai",
+            "endDate": "Tanggal Berakhir",
+            "cliffDate": "Tanggal Cliff",
+            "cancelable": "Dapat Dibatalkan",
+            "allowEarn": "Izinkan Pendapatan",
+            "na": "T/A"
+        }
+    },
+    "earn": {
+        "placeholder": "Jelajahi peluang pendapatan dan imbalan staking."
+    },
+    "createTreasury": {
+        "validation": {
+            "nameMin": "Nama treasury harus minimal 2 karakter",
+            "nameMax": "Nama treasury harus kurang dari 64 karakter",
+            "accountMin": "Nama akun harus minimal 2 karakter",
+            "accountMax": "Nama akun harus kurang dari 64 karakter",
+            "accountChars": "Nama akun hanya dapat berisi huruf Latin, angka, dan tanda hubung",
+            "accountTaken": "Nama akun ini sudah digunakan"
+        },
+        "votingNote": "Anda memerlukan lebih banyak anggota untuk memodifikasi pengaturan pemungutan suara. Tambahkan anggota lain untuk mengonfigurasi pemungutan suara.",
+        "minimumVoteNote": "Minimal satu suara persetujuan diperlukan.",
+        "heading": "Buat Treasury",
+        "addMembers": "Tambah Anggota",
+        "addMembersInfo": "Anda dapat menambahkan atau memperbarui anggota sekarang dan mengubahnya nanti kapan saja.",
+        "treasuryName": "Nama Treasury",
+        "treasuryNamePlaceholder": "Treasury Saya",
+        "accountName": "Nama Akun",
+        "accountNameInfo": "Ini adalah nama unik akun Anda. Akan digunakan dalam URL Treasury Anda dan ditampilkan dalam transaksi untuk mengidentifikasi siapa yang mengirim pembayaran. Pilih nama yang singkat dan mudah dikenali untuk akun Anda.",
+        "accountPlaceholder": "treasury-saya",
+        "continue": "Lanjutkan",
+        "votingThreshold": "Ambang Pemungutan Suara",
+        "thresholdDescription": "Atur berapa banyak suara yang diperlukan untuk menyetujui permintaan:",
+        "financial": "Finansial",
+        "financialDescription": "Menyetujui permintaan pembayaran & pertukaran.",
+        "governance": "Governance",
+        "governanceDescription": "Menyetujui pengaturan, anggota, dan konfigurasi pemungutan suara.",
+        "confidential": "Rahasia",
+        "public": "Publik",
+        "anyone": "Siapa Saja",
+        "teamOnly": "Hanya Tim",
+        "soon": "Segera",
+        "publicDescription": "Semua saldo, aktivitas, dan transaksi terlihat oleh siapa pun di blockchain. Opsi ini terbaik untuk organisasi transparan dan DAO publik.",
+        "balanceTransactions": "Saldo, Transaksi",
+        "membersVoting": "Anggota, Pemungutan Suara",
+        "allFeatures": "Semua fitur tersedia",
+        "confidentialDescription": "Semua saldo, aktivitas, dan transfer bersifat pribadi di blockchain. Hanya tim Anda yang dapat melihat informasi ini. Terbaik untuk perusahaan swasta, family office, atau tim yang menginginkan privasi finansial.",
+        "recentTransactionsExport": "Ekspor Transaksi Terbaru",
+        "bulkPayment": "Pembayaran Massal",
+        "treasuryType": "Tipe Treasury",
+        "treasuryTypeWarning": "Anda hanya dapat memilih satu kali per treasury dan tidak dapat mengubahnya nanti.",
+        "select": "Pilih",
+        "visibleOnChain": "Terlihat di rantai",
+        "featuresAvailable": "Fitur tersedia",
+        "mostFeaturesSupported": "Sebagian besar fitur didukung",
+        "reviewTreasury": "Tinjau Treasury",
+        "membersLabel": "Anggota",
+        "financialThreshold": "Ambang Finansial",
+        "governanceThreshold": "Ambang Governance",
+        "noDeploymentFee": "🎉 Tanpa biaya deployment",
+        "noDeploymentFeeDescription": "Untuk mendukung proyek baru, TREZU menanggung semua biaya deployment dan penyimpanan jaringan satu kali.",
+        "createButton": "Buat Treasury",
+        "connectWalletCreate": "Hubungkan Dompet Untuk Membuat Treasury",
+        "unexpectedError": "Terjadi kesalahan tak terduga",
+        "creationFailed": "Gagal membuat treasury. Silakan coba lagi.",
+        "stepTitles": {
+            "aboutYou": "Tentang Anda",
+            "details": "Detail",
+            "members": "Anggota",
+            "treasuryType": "Tipe Treasury",
+            "review": "Tinjau"
+        },
+        "steps": {
+            "creatingNear": "Membuat treasury Anda di NEAR",
+            "registeringKey": "Mendaftarkan kunci publik",
+            "settingUpConfidential": "Menyiapkan transaksi rahasia",
+            "configuringMembers": "Mengonfigurasi anggota treasury",
+            "finalizingSetup": "Menyelesaikan pengaturan"
+        }
+    },
+    "manageTreasuries": {
+        "warningOne": "Setidaknya satu treasury harus tetap tersedia",
+        "warningOnePeriod": "Setidaknya satu treasury harus tetap tersedia.",
+        "activeHeading": "Treasury Aktif",
+        "activeDescription": "Treasury yang saat ini terlihat di daftar akun Anda.",
+        "activeEmpty": "Tidak ada treasury aktif.",
+        "hiddenHeading": "Treasury Tersembunyi",
+        "hiddenDescription": "Treasury yang disembunyikan dari daftar akun Anda.",
+        "removeGuestTitle": "Hapus Treasury Tamu",
+        "removeDialog": "Anda akan menghapus <bold>{name}</bold>. Setelah dikonfirmasi, tindakan ini tidak dapat dibatalkan.",
+        "tooltips": {
+            "removeFromList": "Hapus dari daftar Anda",
+            "viewTreasury": "Lihat treasury",
+            "hideFromList": "Sembunyikan dari daftar Anda",
+            "showInList": "Tampilkan di daftar Anda"
+        }
+    },
+    "wallet": {
+        "proposal": {
+            "transfer": "Usulan dari dApp eksternal: Transfer NEAR ke {receiverId}",
+            "functionCall": "Usulan dari dApp eksternal: {methods} pada {receiverId}",
+            "unsupportedAction": "Tipe tindakan tidak didukung \"{type}\". Hanya tindakan Transfer dan FunctionCall yang dapat dikonversi menjadi usulan Trezu."
+        },
+        "loading": "Memuat...",
+        "connectPrompt": "Hubungkan dompet NEAR Anda untuk melanjutkan. Anda kemudian akan memilih treasury untuk bertindak atas nama.",
+        "connectWallet": "Hubungkan Dompet",
+        "cancel": "Batal",
+        "connectedAs": "Terhubung sebagai <strong>{account}</strong>",
+        "loadingTreasuries": "Memuat treasury...",
+        "selectSignIn": "Pilih treasury untuk masuk sebagai:",
+        "selectSignTx": "Pilih treasury untuk membuat usulan pada:",
+        "notMember": "Anda bukan anggota dari treasury mana pun.",
+        "actingAs": "Bertindak sebagai",
+        "signedBy": "Ditandatangani oleh {account}",
+        "createsNProposals": "Ini akan membuat {count, plural, other {# usulan Trezu}} untuk:",
+        "proposalDescriptionLabel": "Deskripsi usulan (opsional)",
+        "proposalDescriptionPlaceholder": "Jelaskan usulan ini...",
+        "createProposal": "Buat Usulan",
+        "creatingProposal": "Membuat usulan...",
+        "confirmInWallet": "Silakan konfirmasi di dompet Anda",
+        "proposalSubmitted": "Usulan Telah Dikirim",
+        "shareProposal": "Usulan Anda telah dibuat. Bagikan tautan di bawah dengan anggota treasury untuk memilih.",
+        "proposalLink": "{daoId} — Usulan #{id}",
+        "checking": "Memeriksa...",
+        "proposalApprovedProceed": "Usulan Disetujui. Lanjutkan",
+        "signedInSuccess": "Berhasil masuk",
+        "proposalCreatedSuccess": "Usulan berhasil dibuat",
+        "closeWindow": "Anda dapat menutup jendela ini.",
+        "errorGeneric": "Terjadi kesalahan",
+        "tryAgain": "Coba lagi",
+        "errors": {
+            "parseTx": "Gagal mengurai permintaan transaksi. Silakan coba lagi.",
+            "fetchTreasuries": "Gagal mengambil treasury Anda. Silakan coba lagi.",
+            "connectFailed": "Gagal menghubungkan dompet",
+            "createProposalFailed": "Gagal membuat usulan",
+            "stillPending": "Usulan masih menunggu persetujuan. Silakan tunggu anggota treasury memilih.",
+            "wasStatus": "Usulan #{id} adalah {status}",
+            "awaitIndex": "Usulan disetujui tetapi transaksi eksekusi belum terindeks. Silakan coba lagi sebentar lagi.",
+            "checkStatusFailed": "Gagal memeriksa status usulan",
+            "userCancelled": "Pengguna membatalkan",
+            "proposalWasStatus": "Usulan adalah {status}"
+        }
+    },
+    "telegram": {
+        "tagPill": "Telegram",
+        "invalidLinkTitle": "Tautan tidak valid",
+        "invalidLinkDescription": "Tautan koneksi Telegram ini tidak memiliki token. Klik kembali Connect Treasury di Telegram untuk membuat tautan baru.",
+        "successTitle": "Berhasil terhubung",
+        "successDescription": "Treasury telah ditautkan ke chat Telegram ini.",
+        "successToast": "Treasury berhasil terhubung",
+        "goToApp": "Ke Aplikasi",
+        "linkExpiredTitle": "Tautan kedaluwarsa",
+        "linkExpiredDescription": "Tautan ini telah kedaluwarsa atau telah digunakan. Di Telegram, ketik perintah di bawah untuk memulai ulang alur koneksi.",
+        "commandCopied": "Perintah disalin",
+        "copy": "Salin",
+        "unableToLoadTitle": "Tidak dapat memuat chat",
+        "unableToLoadDescription": "Detail chat tidak dapat dimuat saat ini. Silakan coba lagi dari Telegram.",
+        "signInTitle": "Masuk untuk melanjutkan",
+        "signInDescription": "Hubungkan dompet NEAR Anda terlebih dahulu, lalu pilih treasury mana yang akan ditautkan ke chat Telegram ini.",
+        "connectWallet": "Hubungkan Dompet",
+        "selectTreasuriesTitle": "Pilih Treasury",
+        "selectTreasuriesDescription": "Pilih treasury mana yang akan dihubungkan ke chat Telegram ini.",
+        "telegramChat": "Chat Telegram",
+        "chatIdFallback": "Chat #{id}",
+        "failedToConnect": "Gagal menghubungkan treasury. Silakan coba lagi.",
+        "relinking": "{count, plural, other {# treasury yang dipilih ditautkan ke chat Telegram lain. Menghubungkan akan menautkan ulang dan mengubah tautan ID chat-nya ke chat ini.}}",
+        "alreadyConnected": "Sudah terhubung ke chat ini",
+        "connectedToAnother": "Terhubung ke chat lain",
+        "notMember": "Anda bukan anggota kebijakan dari treasury mana pun.",
+        "connecting": "Menghubungkan…",
+        "connect": "Hubungkan"
+    },
+    "systemStatus": {
+        "underMaintenance": "Dalam Pemeliharaan",
+        "maintenanceMessage": "Kami sedang melakukan pemeliharaan. Beberapa fitur mungkin tidak tersedia sementara. Silakan periksa kembali sebentar lagi."
+    },
+    "creditsQuota": {
+        "available": "{count} Tersedia",
+        "used": "{count} Terpakai",
+        "resetOn": "Batas akan diatur ulang pada {date}"
+    },
+    "approvalInfo": {
+        "infoText": "Suara diperlukan untuk menyetujui permintaan terkait pembayaran. Dapat diubah di pengaturan Pemungutan Suara.",
+        "thresholdPill": "Ambang {required} dari {total}",
+        "alertBody": "Pembayaran ini akan memerlukan persetujuan dari <bold>{required}</bold> anggota treasury sebelum dieksekusi."
+    },
+    "guestBadge": {
+        "title": "Tamu",
+        "tooltip": "Anda adalah tamu treasury ini. Anda hanya dapat melihat data."
+    },
+    "exportButton": {
+        "confidentialTooltip": "Ekspor belum tersedia dalam mode rahasia. Fitur ini akan segera hadir!"
+    },
+    "sponsoredActions": {
+        "titleExhausted": "Tindakan Tersponsor Terpakai",
+        "titleAlmost": "Tim Anda hampir kehabisan tindakan tersponsor",
+        "closeNotice": "Tutup pemberitahuan",
+        "teamUsage": "Penggunaan tim: {total} tindakan per bulan",
+        "available": "{count} Tersedia",
+        "used": "{count} Terpakai",
+        "exhaustedBody": "Tim Anda telah mencapai tindakan tersponsor bulanan. Anda dapat melanjutkan setelah {date} atau hubungi kami",
+        "almostBody": "TREZU saat ini mensponsori biaya penyimpanan untuk semua tindakan tim, seperti membuat permintaan dan memilih atasnya. Tim Anda hampir mencapai batas tersponsor bulanan.",
+        "contactUs": "Hubungi Kami",
+        "nextMonthlyReset": "pengaturan ulang bulanan berikutnya",
+        "sidebarBody": "Tim Anda telah mencapai tindakan tersponsor bulanan. Anda dapat melanjutkan setelah {date} atau ⬇️"
+    },
+    "acceptTerms": {
+        "title": "Terima Ketentuan untuk Melanjutkan",
+        "privacyTitle": "Privasi Anda di Trezu",
+        "privacyBody": "Trezu adalah antarmuka non-kustodian. Kami memprioritaskan privasi Anda sambil memastikan platform tetap aman dan fungsional.",
+        "minimalTitle": "Data Minimal",
+        "minimalBody": "Kami mengumpulkan informasi terbatas, seperti alamat dompet publik, alamat IP, dan analitik penggunaan, untuk mengoperasikan dan meningkatkan Antarmuka.",
+        "noCustodyTitle": "Tanpa Kustodi",
+        "noCustodyBody": "Kami tidak pernah memiliki akses ke kunci pribadi, frasa pemulihan, atau aset digital Anda.",
+        "publicTitle": "Catatan Publik",
+        "publicBody": "Ingatlah bahwa semua transaksi blockchain pada dasarnya bersifat publik dan tidak dikendalikan oleh kami.",
+        "responsibilityTitle": "Tanggung Jawab Anda",
+        "responsibilityBody": "Anda sepenuhnya bertanggung jawab untuk memantau aktivitas dompet Anda dan mengamankan kredensial Anda.",
+        "futureTitle": "Pembaruan Mendatang",
+        "futureBody": "Jika Anda memilih untuk menerima notifikasi mendatang (seperti email atau Telegram), kami hanya akan menggunakan data tersebut untuk memberi tahu Anda.",
+        "agreement": "Saya telah membaca dan menyetujui <terms>Ketentuan Layanan</terms> dan <privacy>Kebijakan Privasi</privacy>",
+        "accepting": "Menerima...",
+        "continue": "Lanjutkan"
+    },
+    "confidentialBanner": {
+        "label": "Rahasia",
+        "description": "Saldo, aktivitas, dan transfer hanya terlihat oleh tim Anda — bukan blockchain publik."
+    },
+    "supportCenter": {
+        "title": "Pusat Dukungan",
+        "resources": "Sumber Daya",
+        "support": "Dukungan",
+        "websiteTitle": "Situs Web Trezu",
+        "websiteDescription": "Pelajari lebih lanjut tentang Trezu dan baca blog kami.",
+        "demo": "Demo Trezu",
+        "demoTitle": "Jelajahi Versi Publik",
+        "demoDescription": "Lihat akun publik langsung beraksi.",
+        "confidentialDemoTitle": "Jelajahi Versi Rahasia",
+        "confidentialDemoDescription": "Jelajahi akun rahasia langsung beraksi.",
+        "videoTitle": "Tonton Demo",
+        "videoDescription": "Tonton video singkat yang menunjukkan cara kerja Trezu.",
+        "xTitle": "Ikuti Kami di X",
+        "xDescription": "Tetap dapatkan informasi rilis dan wawasan terbaru kami.",
+        "statsTitle": "Statistik",
+        "statsDescription": "Lihat total aset di bawah pengelolaan di semua sputnik DAO.",
+        "docsTitle": "Dokumentasi",
+        "docsDescription": "Pelajari semua fitur di dokumen.",
+        "productSupportTitle": "Dukungan Produk",
+        "productSupportDescription": "Hubungi tim dukungan kami untuk bantuan."
+    },
+    "progressModal": {
+        "titleCreating": "Membuat Treasury...",
+        "titleDone": "Treasury Dibuat",
+        "titleFailed": "Pembuatan Treasury Gagal",
+        "viewTreasury": "Lihat Treasury"
+    },
+    "memberValidation": {
+        "noManagePermission": "Anda tidak memiliki izin untuk mengelola anggota",
+        "pendingRequest": "Anda tidak dapat mengelola anggota saat ada permintaan aktif",
+        "rolesAnd": "{first} dan {second}",
+        "rolesMany": "{list}, dan {last}",
+        "cannotRemoveMember": "Tidak dapat menghapus anggota ini. Mereka adalah satu-satunya orang yang ditugaskan ke {count, plural, other {peran}} {roles}.",
+        "cannotRemoveMemberGov": "Tidak dapat menghapus anggota ini. Mereka adalah satu-satunya orang yang ditugaskan ke {count, plural, other {peran}} {roles}, yang diperlukan untuk mengelola anggota tim dan mengonfigurasi pemungutan suara.",
+        "cannotBulkRemove": "Tidak dapat menghapus anggota ini. Ini akan membuat {count, plural, other {peran}} {roles} kosong.",
+        "cannotBulkRemoveGov": "Tidak dapat menghapus anggota ini. Ini akan membuat {count, plural, other {peran}} {roles} kosong, yang diperlukan untuk mengelola anggota tim dan mengonfigurasi pemungutan suara.",
+        "cannotRemoveRole": "Anda tidak dapat menghapus peran {role} dari anggota ini. Mereka adalah satu-satunya orang yang ditugaskan ke peran ini.",
+        "cannotRemoveRoleGov": "Anda tidak dapat menghapus peran {role} dari anggota ini. Mereka adalah satu-satunya anggota {role}, dan tanpa peran ini Anda tidak akan dapat mengelola anggota tim atau mengonfigurasi pemungutan suara."
+    },
+    "roleSelector": {
+        "setRole": "Atur Peran",
+        "allRoles": "Semua Peran",
+        "roles": {
+            "governance": {
+                "title": "Governance",
+                "description": "Governance dapat membuat dan memilih pengaturan treasury terkait tim, termasuk anggota, izin, dan tampilan treasury."
+            },
+            "requestor": {
+                "title": "Requestor",
+                "description": "Requestor dapat membuat permintaan transaksi terkait pembayaran, tanpa hak suara atau persetujuan."
+            },
+            "financial": {
+                "title": "Financial",
+                "description": "Financial dapat memilih pada permintaan transaksi terkait pembayaran tetapi tidak dapat membuatnya."
+            }
+        }
+    },
+    "memberInput": {
+        "creatorYou": "Pembuat (Anda)",
+        "memberAddress": "Alamat Anggota",
+        "addNewMember": "Tambah Anggota Baru",
+        "validation": {
+            "rolesRequired": "Setidaknya satu peran diperlukan",
+            "duplicateAddress": "Alamat sudah menjadi anggota"
+        }
+    },
+    "recipientInput": {
+        "title": "Ke",
+        "placeholder": "Alamat penerima"
+    },
+    "accountInput": {
+        "failedValidation": "Gagal memvalidasi alamat",
+        "invalidNearFormat": "Format akun NEAR tidak valid",
+        "invalidChainAddress": "Silakan masukkan alamat {chain} yang valid.",
+        "validating": "Memvalidasi alamat...",
+        "validAddress": "Alamat valid",
+        "placeholderWithExample": "Alamat penerima (mis.: {example})",
+        "placeholderNoExample": "Alamat penerima",
+        "nearExample": "alice.near, 0x..., atau hex 64 karakter",
+        "near": {
+            "required": "Alamat diperlukan",
+            "length": "Alamat harus antara 2 dan 64 karakter",
+            "missingTld": "Akun bernama harus berakhir dengan .near, .aurora, atau .tg",
+            "invalidChars": "Alamat hanya dapat berisi huruf kecil, angka, dan pemisah (., -, _)",
+            "accountMissing": "Akun tidak ada di blockchain NEAR",
+            "verifyFailed": "Gagal memverifikasi keberadaan akun"
+        }
+    },
+    "csvUpload": {
+        "uploadFile": "Unggah File",
+        "provideData": "Berikan Data",
+        "chooseFile": "Pilih File",
+        "orDragDrop": "atau seret dan lepas",
+        "maxFileSize": "maks 1 file hingga {maxSize} MB, hanya file CSV",
+        "noFilePrompt": "Tidak punya file untuk diunggah?",
+        "downloadTemplate": "Unduh templat"
+    },
+    "tokenSelect": {
+        "selectToken": "Pilih token",
+        "searchPlaceholder": "Cari token...",
+        "noTokensFound": "Tidak ada token ditemukan"
+    },
+    "filterOperations": {
+        "is": "Adalah",
+        "isNot": "Bukan",
+        "before": "Sebelum",
+        "after": "Setelah",
+        "between": "Antara",
+        "equal": "Sama",
+        "moreThan": "Lebih Dari",
+        "lessThan": "Kurang Dari",
+        "contains": "Mengandung"
+    },
+    "copyButton": {
+        "copied": "Disalin ke papan klip",
+        "failed": "Gagal menyalin"
+    },
+    "recipientForm": {
+        "validation": {
+            "nameRequired": "Nama diperlukan",
+            "nameMax": "Penerima harus kurang dari {max} karakter",
+            "addressRequired": "Alamat diperlukan",
+            "networksRequired": "Pilih setidaknya satu jaringan"
+        }
+    },
+    "paymentForm": {
+        "validation": {
+            "recipientMin": "Penerima harus minimal 2 karakter",
+            "recipientMax": "Penerima harus kurang dari 128 karakter",
+            "amountGreaterThanZero": "Jumlah harus lebih besar dari 0",
+            "recipientSameAsToken": "Alamat penerima dan token tidak boleh sama",
+            "selectToken": "Silakan pilih token",
+            "recipientMax64": "Penerima harus kurang dari 64 karakter",
+            "amountMinLockup": "Jumlah harus lebih besar atau sama dengan 3.5",
+            "startDateRequired": "Tanggal mulai diperlukan",
+            "endDateRequired": "Tanggal berakhir diperlukan",
+            "cliffDateRequired": "Tanggal cliff diperlukan",
+            "startBeforeEnd": "Tanggal mulai harus sebelum tanggal berakhir",
+            "cliffBetween": "Tanggal cliff harus antara {start} dan {end}"
+        }
+    },
+    "exportToasts": {
+        "downloadFailed": "Gagal mengunduh ekspor",
+        "invalidDateRange": "Rentang tanggal tidak valid",
+        "invalidDateRangeDescription": "Silakan pilih rentang tanggal yang valid untuk ekspor.",
+        "exportSuccess": "Ekspor berhasil!",
+        "exportSuccessDescription": "File {type} Anda telah diunduh. Periksa riwayat ekspor Anda untuk detail.",
+        "exportFailed": "Ekspor gagal",
+        "exportFailedFallback": "Gagal mengekspor data. Silakan coba lagi.",
+        "noDownloadPermission": "Anda tidak memiliki izin untuk mengunduh file.",
+        "noExportPermission": "Anda tidak memiliki izin untuk mengekspor",
+        "quotaUsed": "Anda telah menggunakan semua kuota Anda",
+        "exporting": "Mengekspor...",
+        "export": "Ekspor",
+        "columnSubmissionTime": "Waktu Pengiriman",
+        "columnDateRange": "Rentang Tanggal",
+        "columnGeneratedBy": "Dibuat Oleh",
+        "columnStatus": "Status",
+        "typeAll": "Semua Tipe",
+        "typeSent": "Terkirim",
+        "typeReceived": "Diterima",
+        "typeStakingRewards": "Imbalan Staking",
+        "allAssets": "Semua Aset",
+        "upgradeTrial": "Tingkatkan paket Anda untuk mendapatkan lebih banyak dan terus berlanjut",
+        "upgradePaid": "Tingkatkan paket Anda untuk akses lebih banyak, atau tunggu hingga batas Anda diatur ulang bulan depan.",
+        "selectDateRange": "Pilih rentang tanggal",
+        "noExportsTitle": "Belum ada ekspor",
+        "noExportsDescription": "File yang Anda ekspor dari bulan terakhir akan muncul di sini setelah dibuat.",
+        "quotaTitle": "Kuota Ekspor",
+        "unlimited": "Tidak Terbatas",
+        "creditsPerMonth": "{total} / bulan",
+        "requirementsTitle": "Persyaratan Ekspor",
+        "exportFromPeriod": "Anda dapat mengekspor data dari {period}.",
+        "availableFor48Hours": "File yang diekspor tersedia untuk diunduh selama 48 jam.",
+        "moreFlexibility": "Mencari fleksibilitas lebih?",
+        "contactUs": "Hubungi Kami",
+        "last1Year": "1 tahun terakhir",
+        "last2Years": "2 tahun terakhir",
+        "invalidEmail": "Silakan masukkan alamat email yang valid"
+    },
+    "proposalKinds": {
+        "Batch Payment Request": "Permintaan Pembayaran Batch",
+        "Payment Request": "Permintaan Pembayaran",
+        "Confidential Request": "Permintaan Rahasia",
+        "Exchange": "Tukar",
+        "Function Call": "Panggilan Fungsi",
+        "Change Policy": "Ubah Kebijakan",
+        "Update General Settings": "Perbarui Pengaturan Umum",
+        "Earn NEAR": "Dapatkan NEAR",
+        "Unstake NEAR": "Unstake NEAR",
+        "Vesting": "Vesting",
+        "Withdraw Earnings": "Tarik Pendapatan",
+        "Members": "Anggota",
+        "Upgrade": "Tingkatkan",
+        "Set Staking Contract": "Atur Kontrak Staking",
+        "Bounty": "Bounty",
+        "Vote": "Pilih",
+        "Factory Info Update": "Pembaruan Info Pabrik",
+        "Unsupported": "Tidak Didukung"
+    },
+    "paymentFormSection": {
+        "selectRecipient": "Pilih Penerima",
+        "searchByNameOrAddress": "Cari berdasarkan nama atau alamat",
+        "restrictedRecipientTitle": "Transaksi tidak diizinkan",
+        "restrictedRecipientMessage": "Alamat ini saat ini dibatasi karena pemeriksaan keamanan. Jika Anda yakin alamat ini harus diizinkan, Anda dapat <link>meminta untuk memasukkannya ke daftar putih</link>.",
+        "send": "Kirim",
+        "to": "Ke"
+    },
+    "recipientNetworkSelect": {
+        "label": "Jaringan Penerima",
+        "placeholder": "Pilih jaringan penerima",
+        "enterAddressFirst": "Masukkan alamat penerima terlebih dahulu",
+        "noCompatibleNetwork": "Tidak ada jaringan yang cocok dengan alamat ini",
+        "selectPlaceholder": "Pilih jaringan",
+        "title": "Pilih Jaringan",
+        "available": "Tersedia",
+        "fromAddressBook": "Dari Buku Alamat",
+        "otherAvailable": "Tersedia Lainnya",
+        "incompatible": "Tidak Kompatibel",
+        "comingSoon": "Segera Hadir",
+        "nearComName": "near.com",
+        "nearComDescription": "Jaringan Internal untuk near.com dan trezu"
+    },
+    "addressBookTable": {
+        "emptyTitle": "Belum ada penerima",
+        "emptyDescription": "Tambahkan penerima ke buku alamat ini untuk pembayaran lebih cepat.",
+        "selectAll": "Pilih semua penerima",
+        "selectEntry": "Pilih {name}",
+        "recipient": "Penerima",
+        "network": "Jaringan",
+        "addedBy": "Ditambahkan Oleh",
+        "note": "Catatan",
+        "added": "Ditambahkan",
+        "remove": "Hapus",
+        "send": "Kirim"
+    },
+    "publicDashboard": {
+        "updatesDaily": "Diperbarui setiap hari",
+        "noDataTitle": "Belum ada data",
+        "noDataDescription": "Statistik akan muncul setelah snapshot harian pertama dihitung.",
+        "assetsSecured": "Aset Diamankan Dengan Kontrak Sputnik DAO",
+        "acrossDaos": "Di <bold>{count, plural, other {# DAO}}</bold>",
+        "updatedOn": "Diperbarui {date}",
+        "topAssets": "20 Aset Teratas",
+        "noAssetsTitle": "Belum ada aset",
+        "noAssetsDescription": "Data token akan muncul setelah snapshot harian dihitung.",
+        "tableToken": "Token",
+        "tableTotalValue": "Nilai Total"
+    },
+    "telegramConnectInstructions": {
+        "title": "Hubungkan Telegram",
+        "subtitle": "Dapatkan notifikasi tentang usulan dan aktivitas di Telegram Anda.",
+        "step3": "Tekan Mulai dan ikuti instruksi.",
+        "success": "Anda sudah siap!",
+        "copyBotTooltip": "Salin handle bot",
+        "botCopiedToast": "Handle bot disalin",
+        "openInTelegram": "Buka {bot} di Telegram"
+    },
+    "transactionHashCell": {
+        "copyHash": "Salin hash",
+        "hashCopied": "Hash disalin",
+        "openInExplorer": "Buka di explorer"
+    },
+    "treasurySelector": {
+        "select": "Pilih treasury",
+        "connectWalletTooltip": "Hubungkan dompet untuk melihat treasury",
+        "manageTreasuries": "Kelola Treasury",
+        "createTreasury": "Buat Treasury",
+        "memberOf": "Anggota Dari",
+        "guestTreasuries": "Treasury Tamu"
+    },
+    "selectModal": {
+        "searchByName": "Cari berdasarkan nama",
+        "noResults": "Tidak ada hasil ditemukan"
+    },
+    "selectList": {
+        "noResults": "Tidak ada hasil ditemukan"
+    },
+    "datePicker": {
+        "pickDate": "Pilih tanggal",
+        "timezone": "Zona waktu"
+    },
+    "datePresets": {
+        "today": "Hari ini",
+        "yesterday": "Kemarin",
+        "last3Days": "3 hari terakhir",
+        "last7Days": "7 hari terakhir",
+        "last14Days": "14 hari terakhir",
+        "lastMonth": "Bulan lalu",
+        "last3Months": "3 bulan terakhir",
+        "last6Months": "6 bulan terakhir"
+    },
+    "input": {
+        "openSearch": "Buka pencarian"
+    },
+    "pagination": {
+        "previous": "Sebelumnya",
+        "next": "Berikutnya"
+    },
+    "confidentialState": {
+        "title": "Rahasia",
+        "description": "Hanya anggota treasury yang memiliki akses."
+    },
+    "exchangeRate": {
+        "rate": "Nilai Tukar",
+        "clickToReverse": "Klik untuk membalik nilai tukar"
+    },
+    "exchangeSettings": {
+        "title": "Pengaturan Pertukaran",
+        "slippageTolerance": "Toleransi Slippage",
+        "custom": "Kustom",
+        "customPlaceholder": "mis.: 2%",
+        "slippageRange": "Slippage harus antara 0,01% dan 100%",
+        "enterSlippage": "Silakan masukkan toleransi slippage",
+        "slippageHelp": "Jika harga berubah lebih dari persentase ini, transaksi akan dibatalkan untuk melindungi dana Anda.",
+        "save": "Simpan"
+    },
+    "assetsPage": {
+        "title": "Aset",
+        "noAssetsTitle": "Belum ada aset",
+        "noAssetsDescription": "Untuk memulai, tambahkan aset ke Treasury Anda dengan melakukan deposit."
+    },
+    "newBadge": {
+        "label": "Baru"
+    },
+    "numberBadge": {
+        "pendingRequests": "{count, plural, other {# permintaan tertunda}}"
+    },
+    "balanceWithGraph": {
+        "allTokens": "Semua Token",
+        "deposit": "Deposit",
+        "send": "Kirim",
+        "exchange": "Tukar",
+        "chartNow": "Sekarang",
+        "totalBalance": "Saldo Total",
+        "excludedTokens": "Token yang dikecualikan:",
+        "noPriceHistory": "Tidak ada riwayat harga. Pilih token untuk melihat perubahan saldonya.",
+        "bucketAvailable": "Tersedia",
+        "bucketLocked": "Terkunci",
+        "bucketEarning": "Pendapatan",
+        "period": {
+            "1W": "1Mg",
+            "1M": "1Bl",
+            "3M": "3Bl",
+            "1Y": "1Th"
+        }
+    },
+    "changePolicyExpanded": {
+        "proposalBond": "Bond Usulan",
+        "proposalPeriod": "Periode Usulan",
+        "bountyBond": "Bond Bounty",
+        "bountyForgivenessPeriod": "Periode Pengampunan Bounty",
+        "votesCount": "{count} Suara",
+        "weightKind": "Jenis Bobot",
+        "quorum": "Kuorum",
+        "threshold": "Ambang",
+        "defaultThreshold": "Ambang Default",
+        "roleThreshold": "Ambang {role}",
+        "member": "Anggota",
+        "members": "Anggota",
+        "permissions": "Izin",
+        "oldPermissions": "Izin Lama",
+        "newPermissions": "Izin Baru",
+        "category": "Kategori",
+        "transactionDetails": "Detail Transaksi",
+        "addNewMember": "Tambah Anggota Baru",
+        "addNewMembers": "Tambah Anggota Baru",
+        "removeMember": "Hapus Anggota",
+        "removeMembers": "Hapus Anggota",
+        "updateMemberPermissions": "Perbarui Izin Anggota",
+        "updateMembersPermissions": "Perbarui Izin Anggota",
+        "memberIndex": "Anggota {index}",
+        "membersCount": "{count} anggota",
+        "collapseAll": "Tutup semua",
+        "expandAll": "Buka semua",
+        "loadingHistorical": "Memuat kebijakan historis...",
+        "unableToDiff": "Tidak dapat menghitung perbedaan untuk usulan ini.",
+        "noChangesCurrent": "Tidak ada perubahan terdeteksi - kebijakan yang diusulkan identik dengan kebijakan saat ini.",
+        "noChangesHistorical": "Tidak ada perubahan terdeteksi - kebijakan yang diusulkan identik dengan kebijakan historis."
+    },
+    "balanceChart": {
+        "usdValue": "Nilai USD",
+        "tokenBalance": "Saldo Token",
+        "emptyTitle": "Belum ada apa-apa untuk ditampilkan",
+        "emptyDescription": "Tambahkan aset untuk mulai melacak portofolio Anda."
+    },
+    "user": {
+        "saveToAddressBook": "Simpan ke Buku alamat",
+        "walletCopiedToast": "Alamat dompet disalin ke papan klip",
+        "copyWalletAddress": "Salin Alamat Dompet"
+    },
+    "infoDisplay": {
+        "viewLess": "Lihat Lebih Sedikit",
+        "viewAllDetails": "Lihat Semua Detail"
+    },
+    "amountSummary": {
+        "defaultTitle": "Anda mengirim total"
+    },
+    "residency": {
+        "vestedToken": "Token Tervesting",
+        "staked": "Di-staking",
+        "fungibleToken": "Token Fungible",
+        "intentsToken": "Token Intents",
+        "nativeToken": "Token Native"
+    },
+    "exchangeErrors": {
+        "noRoute": "Tidak ada pertukaran ditemukan. Coba jumlah lebih kecil atau token berbeda.",
+        "amountTooLow": "Jumlah terlalu rendah untuk swap. Swap lintas-rantai memerlukan minimum lebih tinggi untuk menutupi biaya jaringan.",
+        "insufficientBalance": "Saldo tidak mencukupi untuk swap ini.",
+        "networkError": "Kesalahan jaringan. Silakan periksa koneksi Anda dan coba lagi.",
+        "fetchFailed": "Gagal mengambil kuotasi"
+    },
+    "tokenSelectDialog": {
+        "selectToken": "Pilih token",
+        "selectAsset": "Pilih Aset",
+        "selectNetworkFor": "Pilih jaringan untuk {asset}",
+        "searchByName": "Cari berdasarkan nama",
+        "noTokensWithBalance": "Tidak ada token dengan saldo ditemukan",
+        "noTokensFound": "Tidak ada token ditemukan",
+        "yourAssets": "Aset Anda",
+        "otherAssets": "Aset Lainnya",
+        "networksWithAssets": "Jaringan dengan aset",
+        "supportedNetworks": "Jaringan yang Didukung",
+        "comingSoon": "Segera hadir"
+    },
+    "intentsQuote": {
+        "initializing": "Layanan kuotasi masih diinisialisasi. Silakan coba lagi.",
+        "noRoute": "Tidak dapat menyiapkan rute pembayaran sekarang. Silakan coba lagi.",
+        "fetchFailed": "Tidak dapat menyiapkan rute pembayaran sekarang. Silakan coba lagi.",
+        "amountTooLow": "Jumlah terlalu rendah untuk menutupi biaya jaringan. Masukkan jumlah lebih tinggi dan coba lagi.",
+        "amountTooLowWithMin": "Jumlah terlalu rendah untuk menutupi biaya jaringan. Masukkan minimal {min} {token}.",
+        "networkFeeTooltip": "Biaya ini digunakan untuk memproses transaksi pada rantai yang dipilih."
+    },
+    "pageTours": {
+        "paymentsBulk": "Pembuatan massal sudah hadir! Buat beberapa permintaan hanya dalam beberapa langkah.",
+        "paymentsPending": "Lihat permintaan yang menunggu persetujuan di sini.",
+        "exchangeSettings": "Di sini Anda dapat mengatur seberapa banyak perubahan harga yang bersedia Anda terima.",
+        "membersPending": "Klik untuk melihat permintaan aktif yang menunggu persetujuan.",
+        "guestSaveIntro": "Anda adalah tamu treasury ini. Anda hanya dapat melihat data.",
+        "guestSaveAction": "Anda dapat menyimpan treasury tamu ini ke daftar treasury Anda.",
+        "newFeatureRich": "Baru! 🎉 Simpan alamat yang sering digunakan untuk pembayaran lebih cepat dan bebas kesalahan.<br></br> Kontak Anda tetap pribadi dan hanya terlihat oleh tim Anda.",
+        "newFeatureCta": "Coba Sekarang"
+    },
+    "statusDate": {
+        "expires": "Kedaluwarsa",
+        "created": "Dibuat",
+        "expired": "Kedaluwarsa",
+        "removed": "Dihapus"
+    },
+    "relativeTime": {
+        "justNow": "Baru saja",
+        "moments": "beberapa saat"
+    },
+    "amount": {
+        "network": "Jaringan: {network}"
+    },
+    "activityLabels": {
+        "exchangePending": "Pertukaran Tertunda",
+        "exchangeRequest": "Permintaan Pertukaran",
+        "exchangeFulfillment": "Pemenuhan Pertukaran",
+        "stakingRewards": "Imbalan Staking",
+        "proposalAction": "Tindakan Usulan",
+        "deposit": "Deposit {symbol}",
+        "paymentSent": "Pembayaran Terkirim",
+        "transaction": "Transaksi",
+        "fallbackToken": "Token",
+        "viaIntents": "via NEAR Intents",
+        "from": "dari {account}",
+        "to": "ke {account}",
+        "viewAll": "Lihat semua riwayat transaksi Anda",
+        "sentReceived": "Transaksi terkirim dan diterima ({duration})",
+        "unlimitedHistory": "riwayat tidak terbatas",
+        "oneYear": "1 tahun",
+        "yearsCount": "{count} tahun",
+        "monthsCount": "{count} bulan",
+        "lastDuration": "{duration} terakhir"
+    },
+    "nearStore": {
+        "connectAndAcceptTerms": "Silakan hubungkan dompet dan terima ketentuan untuk melanjutkan.",
+        "transactionNotApproved": "Transaksi tidak disetujui di dompet Anda.",
+        "failedSubmitVote": "Gagal mengirim suara",
+        "failedSubmitVotes": "Gagal mengirim suara",
+        "viewRequest": "Lihat Permintaan",
+        "proposalRemoved": "Usulan Anda telah dihapus",
+        "voteSubmitted": "Suara Anda telah dikirim",
+        "votesSubmitted": "Suara Anda telah dikirim"
+    },
+    "tokenInput": {
+        "max": "MAX",
+        "insufficientTokens": "Token tidak mencukupi. Anda dapat mengirim permintaan dan menambah saldo sebelum persetujuan.",
+        "balance": "Saldo: {amount} {symbol}"
+    },
+    "createRequestButton": {
+        "idle": "Buat Permintaan",
+        "noPermission": "Anda tidak memiliki izin untuk membuat permintaan"
+    },
+    "address": {
+        "copied": "Alamat disalin ke papan klip"
+    },
+    "memberAvatars": {
+        "membersWhoCanVote": "Anggota yang dapat memilih",
+        "moreMembers": "+{count, plural, other {# anggota}}"
+    },
+    "accountIdInput": {
+        "minLength": "ID Akun harus minimal 2 karakter",
+        "maxLength": "ID Akun harus kurang dari 64 karakter",
+        "charset": "ID Akun hanya boleh berisi huruf kecil, angka, titik, tanda hubung, dan garis bawah, tanpa pemisah di awal atau akhir",
+        "doesNotExist": "ID Akun tidak ada"
+    },
+    "addressBookMutations": {
+        "addedToast": "{count, plural, other {# penerima ditambahkan}}",
+        "addedSingleToast": "Penerima ditambahkan",
+        "addFailedToast": "Gagal menambahkan penerima",
+        "addSingleFailedToast": "Gagal menambahkan penerima",
+        "removedToast": "{count, plural, other {# penerima dihapus}}",
+        "removeFailedToast": "Gagal menghapus penerima",
+        "exportFailedToast": "Gagal mengekspor penerima"
+    },
+    "treasuryMutations": {
+        "savedToast": "Treasury disimpan ke daftar Anda",
+        "saveFailedToast": "Gagal menyimpan treasury",
+        "hiddenToast": "Treasury disembunyikan dari daftar",
+        "hideFailedToast": "Gagal menyembunyikan treasury",
+        "unhiddenToast": "Treasury terlihat kembali",
+        "unhideFailedToast": "Gagal menampilkan treasury",
+        "removedToast": "Treasury dihapus dari daftar yang disimpan",
+        "removeFailedToast": "Gagal menghapus treasury dari daftar yang disimpan"
+    },
+    "telegramSettings": {
+        "title": "Telegram",
+        "connectedTo": "Terhubung ke {chat}",
+        "chatNumber": "Chat #{id}",
+        "fallbackChat": "chat Telegram",
+        "disconnect": "Putuskan",
+        "connect": "Hubungkan",
+        "connectDescription": "Tautkan treasury Anda ke chat Telegram untuk menerima notifikasi.",
+        "noTreasuryDescription": "Tautkan treasury Anda ke chat Telegram.",
+        "openSettingsHint": "Buka pengaturan dari treasury untuk mengelola integrasi.",
+        "disconnectedToast": "Telegram terputus untuk treasury ini",
+        "disconnectFailedToast": "Tidak dapat memutuskan Telegram. Coba lagi."
+    },
+    "assetsTable": {
+        "noAssetsFound": "Tidak ada aset ditemukan.",
+        "assetDetails": "Detail Aset",
+        "coinPrice": "Harga Koin",
+        "weight": "Bobot",
+        "balance": "Saldo",
+        "lockedBalance": "Saldo Terkunci",
+        "totalBalance": "Saldo Total",
+        "source": "Sumber",
+        "balanceByInvestors": "Saldo berdasarkan {count, plural, other {Investor}}",
+        "investors": "{count, plural, other {Investor}}",
+        "poolBreakdown": "Rincian Pool",
+        "unlockedToken": "Token Tidak Terkunci",
+        "lockupStakingPool": "Pool staking lockup",
+        "exchange": "Tukar",
+        "send": "Kirim",
+        "details": "Detail",
+        "columnToken": "Token",
+        "columnLocked": "Terkunci",
+        "columnUnlocked": "Tidak Terkunci",
+        "columnTotalAllocated": "Total Dialokasikan",
+        "columnAvailableToWithdraw": "Tersedia Untuk Ditarik",
+        "viewAvailable": "Tersedia",
+        "viewLocked": "Terkunci",
+        "viewEarning": "Pendapatan",
+        "fullAllocatedBalance": "Saldo penuh yang dialokasikan",
+        "partAllocatedBalance": "Bagian dari saldo yang dialokasikan",
+        "currentlyEarning": "({amount} {symbol}) saat ini menghasilkan.",
+        "willAppearHere": " Akan muncul di sini setelah Anda berhenti menghasilkan.",
+        "seeInEarningTab": "Lihat di tab Pendapatan",
+        "seeInEarning": "Lihat di Pendapatan"
+    },
+    "earningDetails": {
+        "title": "Detail Pendapatan",
+        "totalStaked": "Total Di-staking",
+        "earningOverview": "Ringkasan Pendapatan",
+        "poolBreakdown": "Rincian Pool ({count, plural, other {# pool}})",
+        "almostReady": "Earn hampir siap!",
+        "finalizingFeature": "Kami sedang menyelesaikan fitur ini<br></br>agar Anda dapat segera mulai menghasilkan token.",
+        "comingSoon": "Segera hadir",
+        "goToEarn": "Ke Earn",
+        "readyToWithdraw": "Siap ditarik",
+        "unstaking": "Unstaking",
+        "overview": {
+            "staked": "Di-staking",
+            "stakedInfo": "Token saat ini didelegasikan ke validator yang menghasilkan imbalan.",
+            "pendingRelease": "Menunggu Rilis",
+            "pendingReleaseInfo": "Token yang telah di-unstake tetapi masih dalam periode unbonding (biasanya 2-3 hari).",
+            "availableForWithdraw": "Tersedia untuk Ditarik",
+            "availableForWithdrawInfo": "Token yang di-unstake yang telah menyelesaikan periode unbonding dan dapat ditarik."
+        }
+    },
+    "lockupDetails": {
+        "title": "Detail Lockup",
+        "balance": "Saldo",
+        "reservedForStorage": "Dicadangkan Untuk Penyimpanan",
+        "reservedForStorageInfo": "NEAR yang dicadangkan oleh akun lockup untuk membayar biaya penyimpanan.",
+        "tokenBreakdown": "Rincian Token",
+        "allocatedAmount": "Jumlah Dialokasikan",
+        "earned": "Diperoleh",
+        "progress": "Kemajuan",
+        "unlocked": "Tidak Terkunci",
+        "locked": "Terkunci",
+        "schedule": "Jadwal",
+        "startDate": "Tanggal Mulai",
+        "endDate": "Tanggal Berakhir",
+        "rounds": "Putaran",
+        "releaseInterval": "Interval Rilis",
+        "nextUnlockDate": "Tanggal Pembukaan Berikutnya",
+        "allEarning": "Semua {amount} {symbol} dari lockup Anda saat ini menghasilkan.",
+        "partEarning": "Bagian dari lockup Anda ({amount} {symbol}) saat ini menghasilkan.",
+        "stopEarningFirst": "Untuk menggunakan token yang tidak terkunci, hentikan pendapatan terlebih dahulu dan tarik.",
+        "howGrantWorks": "Cara kerja hibah Anda",
+        "ftStep1": "Anda menerima hibah untuk periode waktu tertentu. Alih-alih mendapatkan jumlah penuh sekaligus, aset menjadi tersedia secara bertahap dari waktu ke waktu.",
+        "ftStep2": "Ketika tanggal rilis berikutnya tiba, bagian token tersebut otomatis dibuka dan dipindahkan ke saldo treasury Anda.",
+        "ftStep3": "Setelah muncul di saldo Anda, Anda dapat segera menggunakannya untuk pembayaran, transfer, atau transaksi lainnya.",
+        "nearStep1": "Anda menerima hibah untuk periode waktu tertentu dengan tanggal mulai dan berakhir yang ditentukan.",
+        "nearStep2": "Saat token terbuka, mereka otomatis tersedia di saldo treasury Anda.",
+        "nearStep3": "Anda dapat menggunakan token yang terbuka segera untuk pembayaran, transfer, atau transaksi lainnya.",
+        "notAvailable": "T/A",
+        "everyMonth": "Setiap bulan",
+        "everyQuarter": "Setiap kuartal",
+        "everyUnit": "Setiap {unit}",
+        "everyMultiple": "Setiap {text}",
+        "completed": "Selesai",
+        "unit": {
+            "year": "{count, plural, other {# tahun}}",
+            "day": "{count, plural, other {# hari}}",
+            "hour": "{count, plural, other {# jam}}",
+            "minute": "{count, plural, other {# menit}}",
+            "second": "{count, plural, other {# detik}}"
+        }
+    },
+    "vestingDetails": {
+        "title": "Detail Vesting",
+        "availableToUse": "Tersedia Untuk Digunakan",
+        "vestingPeriod": "Periode Vesting",
+        "vestingPeriodDescription": "Token terbuka setiap hari selama periode ini.",
+        "startDate": "Tanggal Mulai",
+        "endDate": "Tanggal Berakhir",
+        "tokenBreakdown": "Rincian Token",
+        "originalVestedAmount": "Jumlah Tervesting Asli",
+        "reservedForStorage": "Dicadangkan Untuk Penyimpanan",
+        "reservedForStorageInfo": "Sejumlah kecil token yang diperlukan untuk menjaga vesting tetap aktif dan menutupi biaya penyimpanan.",
+        "percentVested": "{percent}% Tervesting",
+        "vestedOf": "{vested} dari {total} {symbol}",
+        "send": "Kirim"
+    },
+    "earningPoolDetails": {
+        "balance": "Saldo",
+        "apy": "APY",
+        "fee": "Biaya",
+        "notAvailable": "T/A",
+        "lockupStakingPool": "Pool staking lockup",
+        "lockupAssetsNote": "Semua aset dalam posisi ini berasal dari lockup Anda. Setelah Anda berhenti menghasilkan, beberapa token mungkin masih terkunci dan tidak tersedia - periksa jadwal lockup Anda untuk melihat kapan terbuka."
+    },
+    "onboardingQuestions": {
+        "stepTitle": "Beberapa pertanyaan singkat untuk memulai.",
+        "other": "Lainnya",
+        "placeholders": {
+            "describeRole": "Jelaskan peran Anda (opsional)",
+            "describeUseCase": "Jelaskan kasus penggunaan Anda (opsional)",
+            "networkName": "Masukkan nama jaringan (opsional)",
+            "currentChallenge": "Masukkan tantangan Anda saat ini (opsional)",
+            "describeOther": "Jelaskan lainnya (opsional)"
+        },
+        "questions": {
+            "role": "Mana yang paling menggambarkan peran Anda?",
+            "useCases": "Untuk apa Anda berencana menggunakan Trezu?",
+            "teamSize": "Berapa banyak orang yang akan mengelola treasury?",
+            "networks": "Jaringan mana yang paling sering Anda gunakan?",
+            "multisigExperience": "Apa pengalaman Anda dengan multisig?",
+            "currentTools": "Alat apa yang saat ini Anda gunakan untuk mengelola keuangan?",
+            "monthlyVolume": "Perkiraan volume transaksi bulanan?",
+            "biggestChallenges": "Apa tantangan terbesar Anda saat ini?"
+        },
+        "options": {
+            "role": {
+                "founder": "Pendiri",
+                "co-founder": "Pendiri Bersama",
+                "cfo-finance-lead": "CFO / Pemimpin Keuangan",
+                "operations-manager": "Manajer Operasi",
+                "treasury-manager": "Manajer Treasury",
+                "other": "Lainnya"
+            },
+            "useCases": {
+                "team-payroll-grants": "Penggajian tim & hibah",
+                "company-assets-management": "Pengelolaan aset perusahaan",
+                "dao-treasury-management": "Pengelolaan treasury DAO",
+                "investment-portfolio": "Portofolio investasi",
+                "operational-spending": "Pengeluaran operasional",
+                "other": "Lainnya"
+            },
+            "teamSize": {
+                "just-me": "Hanya saya",
+                "2-5-people": "2-5 orang",
+                "6-15-people": "6-15 orang",
+                "15-plus-people": "15+"
+            },
+            "networks": {
+                "near": "NEAR",
+                "bitcoin": "Bitcoin",
+                "ethereum": "Ethereum",
+                "solana": "Solana",
+                "arbitrum": "Arbitrum",
+                "base": "Base",
+                "optimism": "Optimism",
+                "polygon": "Polygon",
+                "gnosis": "Gnosis",
+                "avalanche": "Avalanche",
+                "bnb-chain": "BNB Chain",
+                "other": "Lainnya"
+            },
+            "multisigExperience": {
+                "never-heard-of-it": "Belum pernah mendengarnya",
+                "heard-about-it": "Pernah mendengar tentangnya",
+                "never-used-it": "Belum pernah menggunakannya",
+                "used-gnosis-safe-or-similar": "Pernah menggunakan Gnosis Safe atau sejenisnya",
+                "experienced": "Berpengalaman",
+                "looking-for-a-better-option": "Mencari opsi yang lebih baik"
+            },
+            "currentTools": {
+                "gnosis-safe": "Gnosis Safe",
+                "fireblocks": "Fireblocks",
+                "tholos": "Tholos",
+                "squads-multisig": "Squads Multisig",
+                "mpc-vault": "MPC Vault",
+                "other": "Lainnya"
+            },
+            "monthlyVolume": {
+                "under-10k": "Di bawah $10K",
+                "10k-100k": "$10K - $100K",
+                "100k-1m": "$100K - $1M",
+                "1m-plus": "$1M+"
+            },
+            "biggestChallenges": {
+                "slow-approvals-and-signing": "Persetujuan dan penandatanganan yang lambat",
+                "lack-of-transparency-in-the-team": "Kurangnya transparansi dalam tim",
+                "hard-to-track-spending-and-balances": "Sulit melacak pengeluaran dan saldo",
+                "security-and-access-control": "Keamanan dan kontrol akses",
+                "no-good-web3-tool-yet": "Belum ada alat Web3 yang baik",
+                "looking-for-crypto-earnings": "Saya mencari pendapatan kripto",
+                "other": "Lainnya"
+            }
+        }
+    },
+    "onboarding": {
+        "tour": {
+            "addAssets": "Tambah aset ke Treasury Anda dengan melakukan deposit.",
+            "makeRequests": "Buat permintaan pembayaran kapan pun Anda perlu mengirim aset.",
+            "exchangeAssets": "Di sini Anda dapat menukar aset Anda.",
+            "addMembers": "Tambah anggota ke Treasury Anda dan tetapkan peran mereka.",
+            "newTreasury": "Ingin menyiapkan Treasury baru? Anda dapat melakukannya di sini hanya dalam beberapa klik.",
+            "helpSupport": "Dapatkan bantuan dan dukungan kapan pun Anda butuhkan."
+        },
+        "tourCard": {
+            "close": "Tutup",
+            "stepProgress": "{current} dari {total}",
+            "gotIt": "Mengerti",
+            "done": "Selesai",
+            "next": "Berikutnya"
+        },
+        "progress": {
+            "title": "Ikuti Langkah Cepat untuk Menjelajahi Treasury",
+            "createTreasuryTitle": "Buat akun Treasury",
+            "createTreasuryDescription": "Anda telah berhasil menyiapkan akun Anda. Awal yang bagus!",
+            "addAssetsTitle": "Tambah Aset Anda",
+            "addAssetsDescription": "Mulailah dengan menambahkan aset untuk melihatnya beraksi.",
+            "deposit": "Deposit",
+            "createPaymentTitle": "Buat Permintaan Pembayaran",
+            "createPaymentDescription": "Buat permintaan pembayaran untuk menyelesaikan pengaturan Anda.",
+            "send": "Kirim"
+        },
+        "welcome": {
+            "heading": "🎉 Selamat datang!",
+            "subheading": "Tur singkat Treasury",
+            "body": "Hai! Trezu Anda siap - mulai bangun portofolio Anda dengan menambahkan aset dari jaringan yang didukung.",
+            "progress": "{current} dari {total}",
+            "next": "Berikutnya",
+            "body2": "Lihat cara melakukan deposit, membuat permintaan, dan menyiapkan akun baru.",
+            "noThanks": "Tidak, terima kasih",
+            "letsGo": "Ayo mulai"
+        },
+        "congrats": {
+            "heading": "🎉 Selamat!",
+            "body": "Anda telah menyelesaikan pengaturan Treasury Anda. Nikmati pengelolaan aset Anda dengan mudah.",
+            "letsGo": "Ayo mulai!"
+        },
+        "createBanner": {
+            "close": "Tutup",
+            "title": "Jelajahi Trezu",
+            "description": "Buat akun untuk membuka izin ke semua fitur dan manfaat Trezu.",
+            "cta": "Buat Treasury"
+        },
+        "questionnaire": {
+            "continue": "Lanjutkan",
+            "skip": "Lewati"
+        },
+        "createPrompt": {
+            "title": "Anda hampir siap",
+            "description": "Dompet Anda terhubung, tetapi Anda belum membuat treasury. Buat akun untuk mulai menggunakan Trezu, atau {suffix}",
+            "suffixDemo": "lihat demo.",
+            "suffixExploring": "terus menjelajah.",
+            "createCta": "Buat Treasury",
+            "viewDemo": "Lihat Demo",
+            "keepExploring": "Terus Menjelajah"
+        },
+        "infoBox": {
+            "title": "Dapatkan lebih banyak dari Trezu",
+            "close": "Tutup",
+            "description": "Temukan bagaimana orang lain menggunakan Treasury, coba demo, dan periksa dokumen untuk mempelajari fiturnya.",
+            "demoTitle": "Jelajahi Demo Trezu",
+            "demoDescription": "Lihat akun demo langsung beraksi.",
+            "docsTitle": "Dokumentasi",
+            "docsDescription": "Pelajari semua fitur di dokumen.",
+            "videoTitle": "Tonton Demo",
+            "videoDescription": "Tonton video singkat yang menunjukkan cara kerja Trezu."
+        }
+    }
+}

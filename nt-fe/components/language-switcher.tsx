@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Languages } from "lucide-react";
+import { Check, Globe } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useTransition } from "react";
@@ -19,6 +19,31 @@ const labelKeyByLocale: Record<Locale, string> = {
     es: "spanish",
     uk: "ukrainian",
     he: "hebrew",
+    de: "german",
+    fr: "french",
+    vi: "vietnamese",
+    zh: "chinese",
+    tr: "turkish",
+    id: "indonesian",
+    pt: "portuguese",
+    ja: "japanese",
+    ko: "korean",
+};
+
+const flagByLocale: Record<Locale, string> = {
+    en: "🇬🇧",
+    es: "🇪🇸",
+    uk: "🇺🇦",
+    he: "🇮🇱",
+    de: "🇩🇪",
+    fr: "🇫🇷",
+    vi: "🇻🇳",
+    zh: "🇨🇳",
+    tr: "🇹🇷",
+    id: "🇮🇩",
+    pt: "🇧🇷",
+    ja: "🇯🇵",
+    ko: "🇰🇷",
 };
 
 interface LanguageSwitcherProps {
@@ -64,7 +89,7 @@ export function LanguageSwitcher({
                         className,
                     )}
                 >
-                    <Languages className="h-5 w-5" />
+                    <Globe className="h-5 w-5" />
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align={align} className="min-w-[160px]">
@@ -74,7 +99,12 @@ export function LanguageSwitcher({
                         onSelect={() => handleSelect(code)}
                         className="flex items-center justify-between gap-2"
                     >
-                        <span>{t(labelKeyByLocale[code])}</span>
+                        <span className="flex items-center gap-2">
+                            <span aria-hidden="true" className="text-base">
+                                {flagByLocale[code]}
+                            </span>
+                            <span>{t(labelKeyByLocale[code])}</span>
+                        </span>
                         {code === locale && <Check className="h-4 w-4" />}
                     </DropdownMenuItem>
                 ))}

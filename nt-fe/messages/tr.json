@@ -1,0 +1,2101 @@
+{
+    "common": {
+        "loading": "Yükleniyor...",
+        "notAvailable": "Yok",
+        "connecting": "Bağlanıyor...",
+        "save": "Kaydet",
+        "cancel": "İptal",
+        "submit": "Gönder",
+        "close": "Kapat",
+        "back": "Geri",
+        "seeDemo": "Demo Trezu'yu Görüntüle",
+        "search": "Ara",
+        "filter": "Filtrele",
+        "filterActive": "Filtre (aktif)",
+        "export": "Dışa Aktar",
+        "exporting": "Dışa Aktarılıyor",
+        "import": "İçe Aktar",
+        "remove": "Kaldır",
+        "removing": "Kaldırılıyor...",
+        "edit": "Düzenle",
+        "continue": "Devam Et",
+        "select": "Seç",
+        "all": "Tümü",
+        "none": "Yok",
+        "retry": "Yeniden Dene",
+        "tryAgain": "Lütfen tekrar deneyin.",
+        "confirm": "Onayla",
+        "next": "İleri",
+        "previous": "Geri",
+        "yes": "Evet",
+        "no": "Hayır",
+        "approve": "Onayla",
+        "reject": "Reddet",
+        "copy": "Kopyala",
+        "copied": "Kopyalandı",
+        "viewAll": "Tümünü Görüntüle",
+        "viewDetails": "Ayrıntıları görüntüle",
+        "noResults": "Sonuç bulunamadı",
+        "add": "Ekle"
+    },
+    "languageSwitcher": {
+        "label": "Dil",
+        "select": "Dil seçin",
+        "english": "English",
+        "spanish": "Español",
+        "ukrainian": "Українська",
+        "hebrew": "עברית",
+        "german": "Deutsch",
+        "french": "Français",
+        "vietnamese": "Tiếng Việt",
+        "chinese": "中文",
+        "turkish": "Türkçe",
+        "indonesian": "Bahasa Indonesia",
+        "portuguese": "Português",
+        "japanese": "日本語",
+        "korean": "한국어"
+    },
+    "header": {
+        "toggleSidebar": "Kenar çubuğunu aç/kapat",
+        "toggleTheme": "Temayı değiştir"
+    },
+    "nav": {
+        "dashboard": "Panel",
+        "requests": "Talepler",
+        "payments": "Ödemeler",
+        "exchange": "Takas",
+        "addressBook": "Adres Defteri",
+        "members": "Üyeler",
+        "settings": "Ayarlar",
+        "helpSupport": "Yardım ve Destek",
+        "saveGuestTreasury": "Bu misafir hazinesini hazinelerinize kaydedin."
+    },
+    "signIn": {
+        "connect": "Bağlan",
+        "connectWallet": "Cüzdan Bağla",
+        "wallet": "Cüzdan",
+        "termsOfService": "Hizmet Şartları",
+        "privacyPolicy": "Gizlilik Politikası",
+        "disconnect": "Bağlantıyı Kes"
+    },
+    "auth": {
+        "noWallet": "Cüzdanınızı bağlayın",
+        "noPermission": "Bu işlemi gerçekleştirme izniniz yok",
+        "noVote": "Bu öneri için zaten oy kullandınız",
+        "noSponsoredTransactions": "Sponsorlu işlem kalmadı"
+    },
+    "landing": {
+        "welcome": "Trezu'ya Hoş Geldiniz",
+        "chooseOption": "Başlamak için aşağıdaki seçeneklerden birini seçin.",
+        "newUserTitle": "Trezu'da yeniyim",
+        "newUserDescription": "Trezu'yu duydum ama henüz bir hazinem yok.",
+        "existingUserTitle": "Trezu'yu zaten kullanıyorum",
+        "existingUserDescription": "Bir hesabım var ve bir hazineyi yönetiyorum.",
+        "gradientTagline": "Dijital varlıkların yönetimi için zincirler arası multisig güvenlik",
+        "waitlistTitle": "Trezu Bekleme Listesine Katılın",
+        "waitlistSubmittedTitle": "Listedesiniz 🎉",
+        "waitlistSubmittedDescription": "Teşekkürler! Hazine oluşturma kullanılabilir hale geldiğinde sizi haberdar edeceğiz.",
+        "waitlistDescription": "Bugünkü hazine limitine ulaştık. Endişelenmeyin - daha sonra tekrar deneyin veya bekleme listesine katılmak için iletişim bilgilerinizi bırakın. Bir yer açıldığında size bildireceğiz.",
+        "waitlistInputPlaceholder": "E-posta adresi veya Telegram (örn. @kullaniciadi)",
+        "waitlistPrivacyNote": "Bunu yalnızca size haber vermek için kullanacağız",
+        "waitlistSubmit": "Bekleme Listesine Katıl",
+        "waitlistSubmitFailed": "Gönderilemedi. Lütfen tekrar deneyin.",
+        "welcomeAlt": "hoş geldiniz"
+    },
+    "blocked": {
+        "title": "Hizmet ülkenizde kullanılamıyor",
+        "description": "Kısıtlamalar nedeniyle bu hizmet şu anda bölgenizde kullanılamamaktadır."
+    },
+    "notFound": {
+        "title": "Hay aksi, bu sayfa kaybolmuş...",
+        "description": "Görünüşe göre artık çalışmayan bir bağlantıyı takip ettiniz. Geri dönmeyi veya Panel'e dönmeyi deneyin.",
+        "backToDashboard": "Panel'e Dön"
+    },
+    "treasuryInfo": {
+        "logoAlt": "Hazine Logosu"
+    },
+    "dateInput": {
+        "placeholder": "gg.aa.yyyy"
+    },
+    "thresholdSlider": {
+        "warningSingleMember": "{memberCount} üyeden 1'lik bir eşik, herhangi bir üyenin tek başına işlem gerçekleştirebileceği anlamına gelir. Bu güvenliği azaltır.",
+        "infoBalanced": "{memberCount} üyeden {currentThreshold}'lik bir eşik, güvenlik ile operasyonel esneklik arasında iyi bir denge sağlar."
+    },
+    "intentsFee": {
+        "amountTooLowForFee": "{prefix}Miktar ağ ücreti için çok düşük ({fee} {symbol}). En az {addMore} {symbol} ekleyin."
+    },
+    "metadata": {
+        "treasuryTitle": "Panel | Trezu",
+        "landingTitle": "Trezu | Zincirler Arası Hazine Yönetimi",
+        "description": "Anahtarlarınızı asla teslim etmeden, tek bir panelden ekibinizin sermayesini dakikalar içinde yönetin.",
+        "ogTitle": "Trezu | Tek multisig. Her kripto. Tam kontrol."
+    },
+    "pages": {
+        "dashboard": {
+            "title": "Panel",
+            "description": "Hazine varlıklarınızın ve etkinliğinizin genel görünümü",
+            "descriptionLong": "Hazine varlıklarınızı yönetin ve etkinliği takip edin"
+        },
+        "activity": {
+            "title": "Son İşlemler",
+            "descriptionDetails": "Talep Ayrıntıları",
+            "descriptionList": "Tüm varlıklardaki son işlemler"
+        },
+        "requests": {
+            "title": "Talepler",
+            "description": "Tüm bekleyen multisig taleplerini görüntüleyin ve yönetin",
+            "detailDescription": "Talep Ayrıntıları",
+            "detailTitle": "Talep #{id}"
+        },
+        "members": {
+            "title": "Üyeler",
+            "description": "Ekip üyelerini ve izinleri yönetin"
+        },
+        "settings": {
+            "title": "Ayarlar",
+            "description": "Uygulama ayarlarınızı düzenleyin"
+        },
+        "addressBook": {
+            "title": "Adres Defteri",
+            "description": "Kayıtlı alıcılarınızı yönetin"
+        },
+        "payments": {
+            "title": "Ödemeler",
+            "description": "Güvenle para gönderin ve alın"
+        },
+        "exchange": {
+            "title": "Takas",
+            "description": "Tokenlerinizi güvenli ve verimli bir şekilde takas edin"
+        },
+        "vesting": {
+            "title": "Vesting",
+            "description": "Vesting planlarını hızlı ve zahmetsizce oluşturun"
+        },
+        "earn": {
+            "title": "Kazan",
+            "description": "Varlıklarınızdan ödüller kazanın",
+            "placeholder": "Kazanç fırsatlarını ve staking ödüllerini keşfedin."
+        },
+        "createTreasury": {
+            "title": "Hazine Oluştur",
+            "description": "Ekibiniz için yeni bir multisig hazine kurun"
+        },
+        "manageTreasuries": {
+            "title": "Hazineleri Yönet",
+            "description": "Hesabınızda hangi hazinelerin görüneceğini kontrol edin"
+        },
+        "stats": {
+            "title": "İstatistikler",
+            "description": "Tüm sputnik DAO hazineleri genelinde gerçek zamanlı yönetim altındaki varlıklar."
+        },
+        "telegram": {
+            "title": "Hazineyi Bağla",
+            "description": "Hazinelerinizi bir Telegram sohbetine bağlayın",
+            "metaTitle": "Trezu — Telegram Bağla",
+            "metaDescription": "Trezu hazinenizi bir Telegram sohbetine bağlayın"
+        },
+        "wallet": {
+            "title": "Trezu Cüzdan",
+            "description": "Trezu üzerinden hazine önerilerini imzalayın"
+        }
+    },
+    "depositModal": {
+        "validation": {
+            "selectAsset": "Lütfen bir varlık seçin",
+            "selectNetwork": "Lütfen bir ağ seçin"
+        },
+        "sections": {
+            "supportedNetworks": "Desteklenen Ağlar",
+            "networksWithAssets": "Varlıkları Olan Ağlar",
+            "yourAssets": "Varlıklarınız",
+            "otherAssets": "Diğer Varlıklar"
+        },
+        "errors": {
+            "addressUnavailable": "Seçili varlık ve ağ için para yatırma adresi alınamadı.",
+            "fetchFailed": "Para yatırma adresi alınamadı. Lütfen tekrar deneyin."
+        },
+        "title": "Para Yatır",
+        "subtitle": "Para yatırma adresini görmek için varlık ve ağ seçin",
+        "assetLabel": "Varlık",
+        "networkLabel": "Ağ",
+        "selectAsset": "Varlık Seç",
+        "selectNetwork": "Ağ Seç",
+        "otherAssetName": "Diğer",
+        "otherNetworkInfo": "Varlıklar arasında listelenmeyen herhangi bir token'ı yatırabilirsiniz, ancak yalnızca NEAR ağı üzerinden.",
+        "depositAddressHeading": "Para Yatırma Adresi",
+        "depositAddressSubtitle": "Para yatırma adresinizi her zaman iki kez kontrol edin.",
+        "addressLabel": "Adres",
+        "addressCopied": "Adres panoya kopyalandı",
+        "memoLabel": "Not",
+        "memoCopied": "Not panoya kopyalandı",
+        "memoWarning": "Bu adrese para gönderirken notu <bold>mutlaka</bold> eklemelisiniz. Not olmadan göndermek paranın kalıcı olarak kaybolmasına neden olabilir.",
+        "onlyDeposit": "Yalnızca <networkTag>{network}</networkTag> ağından <symbolTag>{symbol}</symbolTag> yatırın. Tüm tutarı göndermeden önce her şeyin doğru çalıştığından emin olmak için küçük bir test işlemiyle başlamanızı öneririz.",
+        "minimumDeposit": "Minimum para yatırma <amountTag>{amount} {symbol}</amountTag>",
+        "searchByName": "İsme göre ara"
+    },
+    "assetDetails": {
+        "coinPrice": "Coin Fiyatı",
+        "weight": "Ağırlık",
+        "source": "Kaynak",
+        "send": "Gönder",
+        "exchange": "Takas",
+        "comingSoon": "Yakında",
+        "vesting": "Vesting",
+        "vestedPercent": "%{percent} Hak Edildi",
+        "frozen": "Donduruldu",
+        "frozenTooltip": "Dondurulmuş tokenler kilitlidir ve kullanılamaz. Depolama, staking veya henüz hak edilmemiş olma nedeniyle kilitlenmiş olabilirler.",
+        "vested": "Hak Edildi"
+    },
+    "dashboard": {
+        "overview": "Hazine varlıklarınızın ve etkinliğinizin genel görünümü",
+        "assets": "Varlıklar",
+        "balance": "Bakiye",
+        "totalBalance": "Toplam Bakiye",
+        "deposit": "Para Yatır",
+        "addAssets": "Varlık ekle",
+        "hidden": "Gizli",
+        "confidentialHidden": "Gizli hazineler için bakiyeler gizlendi",
+        "recentActivity": "Son Etkinlik",
+        "viewAllTransactions": "Tüm işlemleri görüntüle"
+    },
+    "activity": {
+        "filters": {
+            "createdDate": "Oluşturma Tarihi",
+            "token": "Token",
+            "from": "Kimden",
+            "to": "Kime"
+        },
+        "tabs": {
+            "all": "Tümü",
+            "sent": "Gönderildi",
+            "received": "Alındı",
+            "stakingRewards": "Staking Ödülleri",
+            "exchange": "Takas"
+        },
+        "searchPlaceholder": "İşlem hash'i ile ara",
+        "searchPlaceholderShort": "İşlem hash'i",
+        "fromPool": "{pool} havuzundan",
+        "table": {
+            "type": "TÜR",
+            "transaction": "İŞLEM",
+            "from": "KİMDEN",
+            "to": "KİME",
+            "transactionHash": "İŞLEM HASH'İ",
+            "hashTooltip": "Bu işlemin benzersiz tanımlayıcısı (hash)"
+        },
+        "empty": {
+            "title": "İşlem bulunamadı",
+            "description": "İşlemleriniz gerçekleştiklerinde burada görünecek"
+        },
+        "emptyDashboard": {
+            "title": "Henüz gösterilecek bir şey yok",
+            "description": "İşlemleriniz ve eylemleriniz gerçekleştiklerinde burada görünecek"
+        },
+        "recentTitle": "Son İşlemler",
+        "details": {
+            "title": "İşlem Ayrıntıları",
+            "copyAddress": "Adresi Kopyala",
+            "addressCopied": "Adres panoya kopyalandı",
+            "sell": "Sat",
+            "receive": "Al",
+            "pending": "Beklemede",
+            "type": "Tür",
+            "date": "Tarih",
+            "from": "Kimden",
+            "to": "Kime",
+            "method": "Metot",
+            "contract": "Sözleşme",
+            "transaction": "İşlem"
+        }
+    },
+    "export": {
+        "types": {
+            "csv": ".CSV",
+            "json": ".JSON",
+            "xlsx": ".XLSX"
+        },
+        "transactionTypes": {
+            "all": "Tüm Türler",
+            "sent": "Gönderildi",
+            "received": "Alındı",
+            "stakingRewards": "Staking Ödülleri"
+        },
+        "validation": {
+            "invalidEmail": "Lütfen geçerli bir e-posta adresi girin"
+        },
+        "columns": {
+            "submissionTime": "Gönderim Zamanı",
+            "dateRange": "Tarih Aralığı",
+            "generatedBy": "Oluşturan",
+            "status": "Durum"
+        },
+        "status": {
+            "generating": "Oluşturuluyor",
+            "expired": "Süresi Doldu",
+            "failed": "Başarısız"
+        },
+        "noPermission": "Dosyayı indirme izniniz yok.",
+        "download": "İndir",
+        "heading": "Son İşlemleri Dışa Aktar",
+        "teamOnly": "Dışa aktarma oluşturma ve indirmeleri yalnızca ekip üyelerine açıktır.",
+        "creditsUsed": "Tüm kredilerinizi kullandınız",
+        "exportsUsed": "Tüm dışa aktarmalarınızı kullandınız",
+        "upgradePrompt": "Devam etmek için planınızı yükseltin",
+        "resetPrompt": "Daha fazla erişim için planınızı yükseltin veya limitleriniz gelecek ay sıfırlanana kadar bekleyin.",
+        "tabs": {
+            "generate": "Dışa Aktarma Oluştur",
+            "history": "Geçmiş"
+        },
+        "fields": {
+            "documentType": "Belge Türü",
+            "timeRange": "Zaman Aralığı",
+            "selectDateRange": "Tarih aralığı seçin",
+            "asset": "Varlık",
+            "allAssets": "Tüm Varlıklar",
+            "transactionType": "İşlem Türü"
+        },
+        "buttons": {
+            "noPermissionExport": "Dışa aktarma izniniz yok",
+            "quotaExhausted": "Tüm kotanızı kullandınız",
+            "exporting": "Dışa Aktarılıyor...",
+            "export": "Dışa Aktar"
+        },
+        "empty": {
+            "title": "Henüz dışa aktarma yok",
+            "description": "Son aydaki dışa aktarılmış dosyalarınız oluşturulduklarında burada görünecek."
+        },
+        "requirements": {
+            "heading": "Dışa Aktarma Gereksinimleri",
+            "canExportFrom": "Şu tarihten itibaren veri dışa aktarabilirsiniz:",
+            "availability": "Dışa aktarılan dosyalar 48 saat boyunca indirilebilir."
+        },
+        "quota": {
+            "heading": "Dışa Aktarma Kotası",
+            "unlimited": "Sınırsız",
+            "perMonth": "{count} / ay",
+            "flexibilityPrompt": "Daha fazla esneklik mi arıyorsunuz?",
+            "contactUs": "Bize Ulaşın"
+        }
+    },
+    "requests": {
+        "filters": {
+            "proposalTypes": {
+                "Payments": "Ödemeler",
+                "Exchange": "Takas",
+                "Earn": "Kazan",
+                "Vesting": "Vesting",
+                "Function Call": "Fonksiyon Çağrısı",
+                "Change Policy": "Politika Değişikliği",
+                "Settings": "Ayarlar",
+                "Confidential": "Gizli"
+            },
+            "voteStatus": {
+                "Approved": "Onaylandı",
+                "Rejected": "Reddedildi",
+                "No Voted": "Oy Verilmedi"
+            },
+            "requestsType": "Talep Türü",
+            "createdDate": "Oluşturma Tarihi",
+            "recipient": "Alıcı",
+            "token": "Token",
+            "requester": "Talep Eden",
+            "approver": "Onaylayan",
+            "myVoteStatus": "Oy Durumum",
+            "all": "TÜMÜ",
+            "amount": "Miktar",
+            "from": "Kimden",
+            "to": "Kime",
+            "min": "Min",
+            "max": "Maks",
+            "invalidDate": "Geçersiz tarih",
+            "operationIsNot": " değil",
+            "operationBefore": " öncesi",
+            "operationAfter": " sonrası",
+            "operationContains": " içeriyor",
+            "searchByAddress": "Adrese göre ara",
+            "loadingMembers": "Üyeler yükleniyor...",
+            "noMembersFound": "Üye bulunamadı. \"{query}\" eklemek için Enter tuşuna basın",
+            "noMembersAvailable": "Kullanılabilir üye yok",
+            "reset": "Sıfırla",
+            "clear": "Temizle",
+            "addFilter": "Filtre Ekle"
+        },
+        "tabs": {
+            "all": "Tümü",
+            "pending": "Beklemede",
+            "executed": "Yürütüldü",
+            "rejected": "Reddedildi",
+            "expired": "Süresi Doldu",
+            "failed": "Başarısız"
+        },
+        "searchPlaceholder": "Talebi ada veya kimliğe göre ara",
+        "searchPlaceholderShort": "Ad veya kimliğe göre ara",
+        "errorLoading": "Öneriler yüklenirken hata oluştu. Lütfen tekrar deneyin.",
+        "empty": {
+            "title": "İlk talebinizi oluşturun",
+            "description": "Ödeme, takas ve diğer eylemler için talepler oluşturulduktan sonra burada görünecek.",
+            "send": "Gönder",
+            "exchange": "Takas"
+        },
+        "actions": {
+            "approve": "Onayla",
+            "reject": "Reddet",
+            "deposit": "Para Yatır",
+            "viewRequest": "Talebi Görüntüle"
+        },
+        "table": {
+            "selectAll": "Tümünü seç",
+            "selectRow": "Satırı seç",
+            "request": "Talep",
+            "transaction": "İşlem",
+            "requester": "Talep Eden",
+            "voting": "Oylama",
+            "votingTooltip": "İlk sayı alınan onayları gösterir. İkinci sayı yürütme için gereken onayları gösterir.",
+            "status": "Durum",
+            "notPending": "Öneri beklemede değil.",
+            "noPermissionVote": "Bu talep için oy kullanma izniniz yok.",
+            "alreadyVoted": "Bu talep için zaten oy kullandınız.",
+            "noResults": "Filtrelerinize uyan talep bulunamadı.",
+            "allCaughtUp": "Hepsi tamam!",
+            "noPending": "Bekleyen talep yok.",
+            "send": "Gönder",
+            "exchange": "Takas",
+            "requestsSelected": "{count, plural, one {# Talep Seçildi} other {# Talep Seçildi}}",
+            "bulkApproveDisabled": "Bu talep onaylanamaz çünkü hazinenin bakiyesi yetersiz."
+        },
+        "pending": {
+            "title": "Bekleyen Talepler",
+            "viewAll": "Tümünü Görüntüle",
+            "emptyTitle": "Hepsi tamam!",
+            "emptyDescription": "Bekleyen talep yok."
+        }
+    },
+    "proposals": {
+        "status": {
+            "pending": "Beklemede",
+            "approved": "Onaylandı",
+            "rejected": "Reddedildi",
+            "executed": "Yürütüldü",
+            "expired": "Süresi Doldu",
+            "failed": "Başarısız",
+            "removed": "Kaldırıldı",
+            "inProgress": "Devam Ediyor"
+        },
+        "statusTooltip": {
+            "pending": "Bu talep hâlâ beklemede ve yürütme için gereken oy sayısına henüz ulaşmadı.",
+            "executed": "{required} üyeden {approved} tanesi talebi onayladıktan sonra yürütüldü.",
+            "rejected": "{required} üyeden {rejected} tanesi talebi reddetmek için oy kullandıktan sonra reddedildi.",
+            "expired": "Yürütülmek için yeterli oyu alamadığı için süresi doldu.",
+            "failed": "Talep tamamlanamadı. İşlem ayrıntılarını <link>buradan</link> kontrol edin.",
+            "failedPlain": "Talep tamamlanamadı. İşlem ayrıntılarını buradan kontrol edin."
+        },
+        "votes": {
+            "approved": "Onaylandı",
+            "rejected": "Reddedildi",
+            "pending": "Beklemede"
+        },
+        "voteModal": {
+            "confirmTitle": "Oyunuzu Onaylayın",
+            "removeTitle": "Talebi Kaldır",
+            "bulkBody": "Birden çok talebi {action} etmek üzeresiniz. Gönderildikten sonra bu karar değiştirilemez.",
+            "singleBody": "Bu talebi {action} etmek üzeresiniz. Onaylandığında bu işlem geri alınamaz.",
+            "actionApprove": "onaylama",
+            "actionReject": "reddetme",
+            "actionRemove": "kaldırma",
+            "insufficientBalance": "<highlight>{ids}</highlight> talepleri yetersiz bakiye nedeniyle onaylanamaz. Onayınız yalnızca kalan taleplere uygulanacak.",
+            "remove": "Kaldır",
+            "confirm": "Onayla"
+        },
+        "expanded": {
+            "recipient": "Alıcı",
+            "amount": "Miktar",
+            "networkFee": "Ağ Ücreti",
+            "notes": "Notlar",
+            "sent": "Gönderildi",
+            "received": "Alındı",
+            "priceDifference": "Fiyat Farkı",
+            "priceDifferenceTooltip": "Teklif oranı ile mevcut piyasa oranı arasındaki fark. Pozitif değerler piyasadan daha iyi bir oranı gösterir.",
+            "slippageTolerance": "Kayma Toleransı",
+            "estimatedTime": "Tahmini Süre",
+            "seconds": "{count} saniye",
+            "description": "Açıklama",
+            "methodName": "Metot Adı",
+            "args": "Argümanlar",
+            "deposit": "Para Yatır",
+            "gas": "Gas",
+            "totalDeposit": "Toplam Depozito",
+            "totalGas": "Toplam Gas",
+            "receiverId": "Alıcı Kimliği",
+            "contractId": "Sözleşme Kimliği",
+            "actionsCount": "{count, plural, one {# eylem} other {# eylem}}",
+            "functionCallsCount": "{count, plural, one {# fonksiyon çağrısı} other {# fonksiyon çağrısı}}",
+            "showLess": "Daha az göster",
+            "showMore": "Daha fazla göster",
+            "stakingPool": "Staking Havuzu",
+            "validator": "Doğrulayıcı",
+            "action": "Eylem",
+            "stake": "Stake Et",
+            "unstake": "Stake'i Kaldır",
+            "withdraw": "Çek",
+            "lockupOwner": "Lockup sahibi",
+            "lockupDuration": "Lockup süresi",
+            "cliff": "Cliff",
+            "releaseDuration": "Serbest bırakma süresi",
+            "vestingSchedule": "Vesting planı",
+            "cancellable": "İptal Edilebilir",
+            "allowEarn": "Staking'e izin ver",
+            "yes": "Evet",
+            "no": "Hayır",
+            "notSet": "Ayarlanmadı",
+            "from": "Kimden",
+            "to": "Kime",
+            "paymentsCount": "{count, plural, one {# ödeme} other {# ödeme}}",
+            "sourceWallet": "Kaynak Cüzdan",
+            "allNear": "Tüm NEAR",
+            "startDate": "Başlangıç Tarihi",
+            "endDate": "Bitiş Tarihi",
+            "cliffDate": "Cliff Tarihi",
+            "allowCancellation": "İptale İzin Ver",
+            "allowStaking": "Staking'e İzin Ver",
+            "loadingHistorical": "Geçmiş yapılandırma yükleniyor...",
+            "name": "Ad",
+            "purpose": "Amaç",
+            "logo": "Logo",
+            "logoAlt": "Logo",
+            "primaryColor": "Birincil Renk",
+            "noChangesCurrent": "Mevcut duruma kıyasla yapılandırmada değişiklik tespit edilmedi.",
+            "noChangesHistorical": "Geçmiş duruma kıyasla yapılandırmada değişiklik tespit edilmedi.",
+            "method": "Metot",
+            "arguments": "Argümanlar",
+            "contract": "Sözleşme",
+            "actionNumber": "Eylem {number}",
+            "actions": "Eylemler",
+            "collapseAll": "Tümünü daralt",
+            "expandAll": "Tümünü genişlet",
+            "send": "Gönder",
+            "receive": "Al",
+            "rate": "Oran",
+            "priceSlippageLimit": "Fiyat Kayması Limiti",
+            "slippageTooltip": "Bu, bu talep için tanımlanan kayma limitidir. Yürütme sırasında piyasa oranı bu eşiğin ötesinde değişirse, talep otomatik olarak başarısız olur.",
+            "estimatedTimeTooltip": "Depozito işlemi onaylandıktan sonra takasın yürütülmesi için tahmini süre.",
+            "minReceive": "Min. Alınacak",
+            "minimumReceived": "Alınacak Minimum",
+            "minReceiveTooltip": "Bu, talep için ayarlanan kayma limitine göre bu takastan alacağınız minimum miktardır.",
+            "depositAddress": "Depozito Adresi",
+            "depositAddressTooltip": "Zincirler arası takas yürütme için tokenlerin gönderileceği 1Click depozito adresi.",
+            "quoteSignature": "Teklif İmzası",
+            "quoteSignatureTooltip": "Bu teklifi doğrulayan 1Click API'sinden gelen kriptografik imza.",
+            "quoteDeadline": "1-Click Teklif Son Tarihi",
+            "quoteDeadlineTooltip": "Depozito adresinin pasif hale geldiği ve fonların kaybolabileceği zaman.",
+            "status": "Durum",
+            "transactionLink": "İşlem Bağlantısı",
+            "viewTransaction": "İşlemi Görüntüle",
+            "recipientNumber": "Alıcı {number}",
+            "oopsTitle": "Hay aksi! Bir şeyler ters gitti",
+            "oopsDescription": "Burada gösterilecek herhangi bir veri bulamadık.",
+            "totalAmount": "Toplam Miktar",
+            "recipients": "Alıcılar",
+            "recipientsCount": "{count, plural, one {# alıcı} other {# alıcı}}",
+            "unsupportedProposal": "Desteklenmeyen öneri türü",
+            "requestDetails": "Talep Ayrıntıları",
+            "linkCopied": "Bağlantı panoya kopyalandı",
+            "copyLink": "Bağlantıyı Kopyala",
+            "openRequestPage": "Talep Sayfasını Aç",
+            "deleteRequest": "Talebi Sil",
+            "unknownRecipients": "Bilinmeyen alıcılar",
+            "loadingConfig": "Yapılandırma yükleniyor...",
+            "historicalData": "Geçmiş veriler...",
+            "generalUpdate": "Genel Güncelleme",
+            "detailsUnavailable": "Ayrıntılar mevcut değil",
+            "changesCount": "{count, plural, one {# Değişiklik} other {# Değişiklik}}",
+            "policyUpdate": "Politika Güncellemesi",
+            "noChangesDetected": "Değişiklik tespit edilmedi",
+            "loadingPolicy": "Politika yükleniyor...",
+            "roleChanges": "Rol Değişiklikleri",
+            "policyParameters": "Politika Parametreleri",
+            "defaultVotePolicy": "Varsayılan Oylama Politikası",
+            "policyRoleChanges": "Politika ve Rol Değişiklikleri",
+            "membersAdded": "{count, plural, one {# üye eklendi} other {# üye eklendi}}",
+            "membersRemoved": "{count, plural, one {# üye kaldırıldı} other {# üye kaldırıldı}}",
+            "membersUpdated": "{count, plural, one {# üye güncellendi} other {# üye güncellendi}}",
+            "rolesModified": "{count, plural, one {# rol değiştirildi} other {# rol değiştirildi}}",
+            "parametersChanged": "{count, plural, one {# parametre değiştirildi} other {# parametre değiştirildi}}",
+            "defaultVotePolicyPart": "varsayılan oylama politikası",
+            "onReceiver": "{receiver} üzerinde",
+            "toPrefix": "Kime:",
+            "validatorPrefix": "Doğrulayıcı:",
+            "validatorSubtitle": "Doğrulayıcı: {address}",
+            "impactTitle": "Oylama Süresini Değiştirmenin Etkisi",
+            "impactBody": "Oylama süresini güncellemek üzeresiniz. Bu, aşağıdaki mevcut talepleri etkileyecek.",
+            "activeRequestsBullet": "{count, plural, one {# talep, bu değişiklikten sonra güncellenmiş son kullanma tarihleri ile oylama için aktif olacak.} other {# talep, bu değişiklikten sonra güncellenmiş son kullanma tarihleri ile oylama için aktif olacak.}}",
+            "expiringRequestsBullet": "{count, plural, one {# talep, yeni oylama süresi altında \"Süresi Doldu\" olarak işaretlenecek.} other {# talep, yeni oylama süresi altında \"Süresi Doldu\" olarak işaretlenecek.}}",
+            "remainActiveHeading": "Yeni son kullanma tarihiyle oylama için aktif kalacak talepler",
+            "willExpireHeading": "\"Süresi Dolacak\" olarak işaretlenecek talepler",
+            "tableRequest": "Talep",
+            "tableTransaction": "İşlem",
+            "tableNewExpiry": "Yeni Son Kullanma",
+            "expireInDays": "{count, plural, one {# günde sona erer} other {# günde sona erer}}",
+            "today": "Bugün",
+            "uponApproval": "Onay üzerine",
+            "yesContinue": "Evet, Devam Et",
+            "transactionCreated": "İşlem Oluşturuldu",
+            "voting": "Oylama",
+            "approvalsReceived": "{received}/{required} onay alındı",
+            "expiresAt": "Sona Erme",
+            "expiredAt": "Sona Erdi",
+            "exchangingTokens": "Token'lar Takas Ediliyor",
+            "exchangingTokensBody": "Bu talep ekip tarafından onaylandı. Token takası şu anda devam ediyor ve biraz zaman alabilir.",
+            "requestFailed": "Talep Başarısız",
+            "requestFailedBody": "Ekip bu talebi onayladı, ancak oran dalgalanmaları nedeniyle başarısız oldu. Lütfen yeni bir talep oluşturun ve tekrar deneyin.",
+            "votingPeriod24h": "Oylama süresi: 24 saat",
+            "votingPeriod24hBody": "Bu takas talebinin 24 saatlik oylama süresi vardır. Bu süre içinde talebi onaylayın, aksi takdirde talebin süresi dolar.",
+            "reject": "Reddet",
+            "approve": "Onayla"
+        },
+        "insufficientBalance": {
+            "noAsset": "Bu talep onaylanamaz çünkü gerekli token hazinede mevcut değil.",
+            "bond": "Bu talep onaylanamaz çünkü hazinenin <token>{symbol}</token> bakiyesi yetersiz. Öneri teminat maliyetlerini karşılamak için <token>{amount} {symbol}</token> ekleyin.",
+            "continue": "Bu talep onaylanamaz çünkü hazinenin <token>{symbol}</token> bakiyesi yetersiz. Devam etmek için <token>{amount} {symbol}</token> ekleyin.",
+            "modalTitle": "Yetersiz NEAR Bakiyesi",
+            "modalBodyVote": "Bu oyu kullanmak için cüzdanınızda yeterli NEAR token'ı yok. Oy kullanmak en az <amount>{required} NEAR</amount> bakiye gerektirir. Lütfen cüzdanınıza NEAR ekleyin ve tekrar deneyin.",
+            "modalBodyProposal": "Bu talebi oluşturmak için cüzdanınızda yeterli NEAR token'ı yok. Talep oluşturmak en az <amount>{required} NEAR</amount> bakiye gerektirir. Lütfen cüzdanınıza NEAR ekleyin ve tekrar deneyin.",
+            "gotIt": "Anladım"
+        }
+    },
+    "members": {
+        "title": "Üyeler",
+        "description": "Ekip üyelerini ve izinleri yönetin",
+        "permissions": "İzinler",
+        "member": "Üye",
+        "activeMembers": "Aktif Üyeler",
+        "noActiveMembers": "Aktif üye bulunamadı.",
+        "addNewMember": "Yeni Üye Ekle",
+        "membersSelected": "{count, plural, =0 {üye yok} one {# üye} other {# üye}} seçildi",
+        "remove": "Kaldır",
+        "edit": "Düzenle",
+        "requestorOnlyTooltip": "Bu üye için yalnızca Talep Eden rolünü ekleyebilirsiniz, çünkü NEARN'den ödeme talepleri oluşturmaktan sorumludurlar.",
+        "memberModal": {
+            "editRoles": "Rolleri Düzenle",
+            "addNewMember": "Yeni Üye Ekle",
+            "validatingAddresses": "Adresler doğrulanıyor...",
+            "creatingProposal": "Öneri oluşturuluyor...",
+            "reviewRequest": "Talebi İncele",
+            "noChanges": "Üye rollerinde herhangi bir değişiklik yapılmadı"
+        },
+        "previewModal": {
+            "title": "Talebinizi İnceleyin",
+            "youAreEditing": "Düzenliyorsunuz",
+            "youAreAdding": "Ekliyorsunuz",
+            "membersCount": "{count, plural, one {# üye} other {# üye}}",
+            "newMembersCount": "{count, plural, one {# yeni üye} other {# yeni üye}}",
+            "updatedMembers": "Güncellenmiş Üyeler",
+            "newMembers": "Yeni Üyeler",
+            "creatingProposal": "Öneri Oluşturuluyor...",
+            "confirmSubmit": "Onayla ve Talebi Gönder"
+        },
+        "removeDialog": {
+            "title": "Talebi Kaldır",
+            "nearnBody": "Onaylandıktan sonra, {account} hazineden kalıcı olarak kaldırılacak ve ilgili tüm izinler iptal edilecek. Kaldırıldıktan sonra, bu hesap NEARN'den artık talep oluşturamayacak.",
+            "genericBody": "Onaylandıktan sonra, bu işlem <bold>{accounts}</bold> üyesini hazineden kalıcı olarak kaldıracak ve atanan tüm izinleri iptal edecek.",
+            "creatingProposal": "Öneri Oluşturuluyor..."
+        },
+        "validation": {
+            "accountIdRequired": "Hesap kimliği gereklidir",
+            "invalidNearAddress": "Geçersiz NEAR adresi.",
+            "atLeastOneRole": "En az bir rol seçilmelidir",
+            "atLeastOneMember": "En az bir üye gereklidir",
+            "alreadyAdded": "Bu üye yukarıda zaten eklenmiş",
+            "alreadyInTreasury": "Bu üye zaten hazinede mevcut",
+            "cannotRemoveRoleAfter": "Bu üyeden {role} rolünü kaldıramazsınız. Tüm değişikliklerinizden sonra, bu role atanan tek kişi olacaklar.",
+            "cannotRemoveRoleAfterGov": "Bu üyeden {role} rolünü kaldıramazsınız. Tüm değişikliklerinizden sonra, tek {role} üyesi olacaklar ve bu rol olmadan ekip üyelerini yönetemez veya oylamayı yapılandıramazsınız."
+        },
+        "policy": {
+            "addMembers": "Politikayı Güncelle - Yeni Üyeler Ekle",
+            "addMembersSuccess": "Yeni üye talebi başarıyla oluşturuldu",
+            "editMember": "Politikayı Güncelle - Üye İzinlerini Düzenle",
+            "editMembers": "Politikayı Güncelle - Birden Çok Üyeyi Düzenle",
+            "editMemberSuccess": "Üye rolleri güncelleme talebi başarıyla oluşturuldu",
+            "editMembersSuccess": "Toplu üye rolleri güncelleme talebi başarıyla oluşturuldu",
+            "removeMember": "Politikayı Güncelle - Üye Kaldır",
+            "removeMembers": "Politikayı Güncelle - Üyeleri Kaldır",
+            "removeMemberSuccess": "Üye kaldırma talebi başarıyla oluşturuldu"
+        }
+    },
+    "settings": {
+        "tabs": {
+            "general": "Genel",
+            "voting": "Oylama",
+            "preferences": "Tercihler",
+            "integrations": "Entegrasyonlar"
+        },
+        "general": {
+            "validation": {
+                "displayNameRequired": "Görünen ad gereklidir",
+                "displayNameMax": "Görünen ad 100 karakterden az olmalıdır"
+            },
+            "proposalDescriptionTitle": "Yapılandırmayı Güncelle - Tema ve logo",
+            "proposalSubmitted": "Yapılandırmayı güncelleme talebi gönderildi",
+            "treasuryNotFound": "Hazine bulunamadı",
+            "treasuryName": "Hazine Adı",
+            "treasuryNameDescription": "Hazinenizin adı. Bu, uygulama genelinde görüntülenecek.",
+            "displayName": "Görünen Ad",
+            "displayNamePlaceholder": "Görünen adı girin",
+            "accountName": "Hesap Adı",
+            "logo": "Logo",
+            "logoDescription": "Hazineniz için bir logo yükleyin. Önerilen SVG, PNG veya JPG (256x256 px).",
+            "treasuryLogoAlt": "Hazine logosu",
+            "uploading": "Yükleniyor...",
+            "uploadLogo": "Logo Yükle",
+            "removeLogo": "Logoyu Kaldır",
+            "logoUploaded": "Logo başarıyla yüklendi",
+            "uploadError": "Resim yüklenirken hata oluştu, lütfen tekrar deneyin.",
+            "invalidLogo": "Geçersiz logo. Lütfen tam olarak 256x256 px boyutunda bir PNG, JPG veya SVG dosyası yükleyin",
+            "invalidImage": "Geçersiz resim dosyası. Lütfen geçerli bir resim yükleyin.",
+            "fileReadError": "Dosya okunurken hata oluştu. Lütfen tekrar deneyin.",
+            "primaryColor": "Birincil Renk",
+            "primaryColorDescription": "Hazinenizin arayüz öğeleri için birincil rengi ayarlayın. Bu renk hem açık hem de karanlık modlarda kullanılacak, bu nedenle nötr tonlar seçerken kontrastı göz önünde bulundurun.",
+            "selectColorLabel": "{color} rengini seç"
+        },
+        "voting": {
+            "validation": {
+                "required": "Oylama süresi gereklidir",
+                "validNumber": "Oylama süresi geçerli bir sayı olmalıdır",
+                "min": "Oylama süresi en az 1 gün olmalıdır",
+                "max": "Oylama süresi 1000 günden az olmalıdır",
+                "whole": "Oylama süresi tam gün olmalıdır"
+            },
+            "missingData": "Gerekli veri eksik",
+            "thresholdProposalTitle": "Politikayı Güncelle - Oylama Eşikleri",
+            "thresholdProposalSummary": "{account} oylama eşiğini {oldValue} yerine {newValue} olarak değiştirmeyi talep etti.",
+            "thresholdSubmitted": "Oylama eşiğini güncelleme talebi gönderildi",
+            "createProposalFailed": "Öneri oluşturulamadı",
+            "durationProposalTitle": "Politikayı Güncelle - Oylama Süresi",
+            "durationProposalSummary": "{account} oylama süresini {oldValue} yerine {newValue} olarak değiştirmeyi talep etti.",
+            "durationSubmitted": "Talep başarıyla oluşturuldu",
+            "pendingTitle": "Aktif Oylama Eşiği Talebi",
+            "pendingBody": "Çakışmaları önlemek için, devam etmeden önce mevcut bekleyen talepleri tamamlamanız veya çözmeniz gerekir. Bu talepler şu anda aktif ve önce onaylanmalı veya reddedilmelidir.",
+            "viewRequest": "Talebi Görüntüle",
+            "thresholdHeading": "Oylama Eşiği",
+            "thresholdDescriptionApprovers": "Ödeme ve ekiple ilgili taleplerin onaylanması için kaç oy gerektiğini tanımlayın. Onaylayanlar ve Yönetişim için eşikleri ayrı yapılandırın.",
+            "thresholdDescriptionGeneric": "Taleplerin onaylanması için kaç oy gerektiğini tanımlayın. Sorumluluklarına göre her rol için eşikleri yapılandırın.",
+            "membersWhoCanVote": "Oy kullanabilen üyeler",
+            "votesRequired": "Talepleri onaylamak için oy gereklidir",
+            "durationHeading": "Oylama Süresi",
+            "durationDescription": "Bir önerinin oylama için açık kalacağı süre (gün cinsinden). Bu süre içinde oylama tamamlanmazsa karar süresi dolar.",
+            "durationApprovers": " Bu süre hem Yönetişim hem de Onaylayan rolleri için eşit olarak geçerlidir.",
+            "durationGeneric": " Bu süre tüm hazine rolleri arasında tutarlıdır.",
+            "days": "Gün"
+        },
+        "preferences": {
+            "timeZone": "Saat Dilimi",
+            "timeZoneDescription": "Doğru tarih ve saat görüntüleme için yerel saat diliminizi ayarlayın.",
+            "timeFormat": "Saat Formatı",
+            "hour12": "12 saat (1:00 ÖS)",
+            "hour24": "24 saat (13:00)",
+            "autoTimezone": "Saat dilimini konumunuzu kullanarak otomatik ayarla",
+            "timezone": "Saat Dilimi",
+            "loadingTimezones": "Saat dilimleri yükleniyor...",
+            "selectTimezone": "Saat Dilimi Seç",
+            "searchTimezones": "Saat dilimlerini ara...",
+            "noTimezones": "Saat dilimi bulunamadı",
+            "save": "Kaydet",
+            "savedToast": "Tercihler başarıyla kaydedildi",
+            "saveFailed": "Tercihler kaydedilemedi",
+            "loadFailed": "Saat dilimleri yüklenemedi"
+        }
+    },
+    "addressBook": {
+        "emptyTitle": "İlk alıcınızı ekleyin",
+        "emptyDescription": "Daha hızlı, hatasız ödemeler için sık kullanılan adresleri kaydedin. Kişileriniz gizli kalır ve yalnızca ekibinize görünür.",
+        "import": "İçe Aktar",
+        "addRecipient": "Alıcı Ekle",
+        "recipientsHeading": "Alıcılar",
+        "recipientsSelected": "{count, plural, =0 {alıcı yok} one {# alıcı} other {# alıcı}} seçildi",
+        "sectionHeading": "Alıcılar",
+        "privacyNote": "Kayıtlı adresler gizlidir ve yalnızca ekibinize görünür.",
+        "searchPlaceholder": "Alıcıyı ada göre ara",
+        "searchPlaceholderShort": "Ara",
+        "review": {
+            "header": "Ayrıntıları İncele",
+            "youAreAdding": "Ekliyorsunuz",
+            "newRecipients": "{count, plural, one {# yeni alıcı} other {# yeni alıcı}}",
+            "onNetworks": "{count, plural, one {# ağda} other {# ağda}}",
+            "recipients": "Alıcılar",
+            "allDuplicates": "İçe aktarılan tüm alıcılar adres defterinizde zaten var. Farklı bir liste yüklemek için geri dönün veya bu incelemeden tekrarları kaldırın.",
+            "someDuplicates": "Toplam {total} alıcıdan {duplicates} tanesi tekrarlanmış. Yalnızca yeni alıcıları yüklemek için devam edin.",
+            "duplicated": "Tekrarlandı",
+            "notePlaceholder": "Bu alıcıyı tanımlamaya yardımcı olacak bir not ekleyin (örn. yüklenici ödemesi, vesting dağıtımı).",
+            "skipDuplicates": "Tekrarları atla ve yalnızca yenileri içe aktar.",
+            "allDuplicatesTooltip": "İçe aktarılan tüm alıcılar zaten adres defterinizde, bu nedenle içe aktarılacak yeni bir şey yok.",
+            "duplicateActionTooltip": "Devam etmek için tekrar atlamayı etkinleştirin veya tekrarlanan alıcıları kaldırın.",
+            "adding": "Ekleniyor…",
+            "nothingNew": "İçe Aktarılacak Yeni Bir Şey Yok",
+            "addRecipientsButton": "{count, plural, one {Alıcı Ekle} other {Alıcı Ekle}}"
+        },
+        "removeDialog": {
+            "title": "Alıcıyı Kaldır",
+            "bulk": "Bu, adres defterinizden <bold>{count, plural, one {# alıcıyı} other {# alıcıyı}}</bold> kaldıracak. Onları istediğiniz zaman tekrar ekleyebilirsiniz.",
+            "single": "Bu, adres defterinizden <bold>{name}</bold> kişisini kaldıracak. Bu alıcıyı istediğiniz zaman tekrar ekleyebilirsiniz."
+        },
+        "importFlow": {
+            "title": "Alıcıları İçe Aktar",
+            "description": "Adres defterinize alıcı adreslerinin bir listesini yükleyin.",
+            "foundSummary": "{networkCount, plural, one {# ağda} other {# ağda}} {count, plural, one {# alıcı} other {# alıcı}} bulundu",
+            "uploadPrompt": "Alıcı verilerini yükleyin veya yapıştırın",
+            "fixErrors": "Devam etmek için hataları düzeltin",
+            "continueReview": "İncelemeye Devam Et"
+        },
+        "form": {
+            "editRecipient": "Alıcıyı Düzenle",
+            "addRecipient": "Alıcı Ekle",
+            "import": "İçe Aktar",
+            "recipientName": "Alıcı Adı",
+            "namePlaceholder": "Alice",
+            "recipientAddress": "Alıcı Adresi",
+            "network": "Ağ",
+            "networkInfo": "Bu adresle uyumlu ağlar",
+            "enterAddressFirst": "Önce alıcı adresini girin",
+            "selectNetwork": "Ağ seçin",
+            "selectNetworksTitle": "Ağları Seçin",
+            "searchNetworksPlaceholder": "Ağları ara…",
+            "done": "Tamam",
+            "edit": "Düzenle",
+            "remove": "Kaldır",
+            "incomplete": "Tamamlanmadı",
+            "addAnother": "Başka Bir Alıcı Ekle",
+            "fillAllTooltip": "Bir alıcı eklemek için tüm alanları doldurmanız gerekir.",
+            "reviewDetails": "Ayrıntıları İncele",
+            "reviewTooltip": "İncelemeden önce tüm alıcılar tamamlanmalıdır.",
+            "invalidAddress": "Geçersiz adres",
+            "noCompatibleNetworks": "Bu adres için uyumlu ağ yok"
+        },
+        "parsing": {
+            "rowPrefix": "Satır {row}: {message}",
+            "missingName": "Alıcı adı eksik. Lütfen bir ad ekleyin.",
+            "missingAddress": "Alıcı adresi eksik. Lütfen bir cüzdan adresi ekleyin.",
+            "invalidAddressFormat": "\"{address}\" adresi desteklenen herhangi bir ağ için geçerli bir formatta değil.",
+            "unknownNetwork": "Bilinmeyen ağ \"{network}\". Desteklenen ağlar: {available}.",
+            "incompatibleNetwork": "\"{address}\" adresi {network} ile uyumlu değil. Uyumlu ağlar: {compatible}.",
+            "noDataFound": "Veri bulunamadı. Lütfen alıcıları şu formatta ekleyin: Ad, Adres, Ağ, Not",
+            "headerColumnsNotFound": "Başlık satırı tespit ettik, ancak 'Name' ve 'Address' sütunlarını bulamadık. Lütfen bu sütun adlarını kullanın veya başlık satırını kaldırın.",
+            "failedToParseCsv": "CSV verisi ayrıştırılamadı"
+        }
+    },
+    "payments": {
+        "validation": {
+            "recipientMin": "Alıcı en az 2 karakter olmalıdır",
+            "recipientMax": "Alıcı 128 karakterden az olmalıdır",
+            "amountPositive": "Miktar 0'dan büyük olmalıdır",
+            "recipientTokenSame": "Alıcı ve token adresi aynı olamaz"
+        },
+        "newPayment": "Yeni Ödeme",
+        "reviewYourPayment": "Ödemenizi İnceleyin",
+        "reviewButton": "Ödemeyi İncele",
+        "reviewButtonDisabled": "Miktar ve adres girin",
+        "comingSoon": "Yakında",
+        "bulkPayments": "Toplu Ödemeler",
+        "summaryRecipients": "{count, plural, one {# alıcıya} other {# alıcıya}}",
+        "networkFee": "Ağ Ücreti",
+        "networkFeeInfo": "Ağ ücreti bilgisi",
+        "commentPlaceholder": "Yorum ekleyin (isteğe bağlı)...",
+        "preparingRoute": "1Click transfer rotası hazırlanıyor...",
+        "confirmSubmit": "Onayla ve Talebi Gönder",
+        "useDifferentAddress": "Farklı bir adres kullan",
+        "failed1ClickQuote": "1Click transfer teklifi oluşturulamadı",
+        "paymentSubmitted": "Ödeme gönderme talebi gönderildi"
+    },
+    "bulkPayment": {
+        "comingSoonToast": "Toplu ödemeler yakında geliyor!",
+        "submittingList": "Toplu ödeme listesi gönderiliyor",
+        "submittingProposal": "Öneri gönderiliyor",
+        "proposalSubmitted": "Toplu ödeme önerisi gönderildi",
+        "submitListFailed": "Ödeme listesi gönderilemedi",
+        "submitFailed": "Toplu ödeme gönderilemedi",
+        "upload": {
+            "pleaseUploadCsv": "Lütfen bir CSV dosyası yükleyin",
+            "fileSizeLimit": "Dosya boyutu 1.5 MB'dan az olmalıdır",
+            "headerTitle": "Toplu Ödeme Talepleri",
+            "headerSubtitle": "Tek bir öneri ile birden çok alıcıya ödeme yapın.",
+            "creditsUsed": "Tüm kredilerinizi kullandınız",
+            "bulkPaymentsUsed": "Tüm toplu ödemelerinizi kullandınız",
+            "upgradeTrial": "Devam etmek için planınızı yükseltin",
+            "upgradePaid": "Daha fazla erişim için planınızı yükseltin veya limitleriniz gelecek ay sıfırlanana kadar bekleyin.",
+            "selectAsset": "Varlık Seç",
+            "disableTokenMessage": "Bu tokenler için toplu ödemeler yakında geliyor.",
+            "providePaymentData": "Ödeme Verilerini Sağla",
+            "uploadFile": "Dosya Yükle",
+            "provideData": "Veri Sağla",
+            "chooseFile": "Dosya Seç",
+            "orDragDrop": "veya sürükleyip bırakın",
+            "maxFileSize": "en fazla 1 dosya, 1.5 MB'a kadar, yalnızca CSV dosyası",
+            "noFilePrompt": "Yüklenecek dosyanız yok mu?",
+            "downloadTemplate": "Şablon indir",
+            "requirements": "Toplu Ödeme Gereksinimleri",
+            "maxTransactions": "İçe aktarma başına maksimum {max} işlem",
+            "singleTokenNetwork": "Tek token ve ağ",
+            "limitsUsed": "Tüm limitlerinizi kullandınız",
+            "selectAndProvide": "Varlık seçin ve ödeme verilerini sağlayın",
+            "continueToReview": "İncelemeye Devam Et",
+            "selectTokenError": "Lütfen bir token seçin",
+            "providePaymentDataError": "Lütfen ödeme verilerini sağlayın"
+        },
+        "editStep": {
+            "title": "Ödemeyi Düzenle",
+            "saveChanges": "Değişiklikleri Kaydet"
+        },
+        "parsing": {
+            "rowPrefix": "Satır {row}: {message}",
+            "missingRecipientFirstColumn": "Alıcı adresi eksik. Lütfen ilk sütuna bir adres ekleyin.",
+            "invalidNearAddress": "\"{address}\" adresi geçerli bir NEAR hesabı değil.",
+            "invalidChainAddress": "\"{address}\" adresi geçerli bir {chain} hesabı değil.",
+            "rowNeedsAmountRecipient": "Her satırın virgülle ayrılmış bir miktar ve alıcıya ihtiyacı vardır. Örnek: 100, alice.near",
+            "missingRecipientBeforeComma": "Alıcı adresi eksik. Lütfen virgülden önce bir adres ekleyin.",
+            "missingAmountAfterComma": "Miktar eksik. Lütfen virgülden sonra bir sayı ekleyin. Örnek: {recipient}, 100",
+            "invalidAmountNumber": "\"{amountStr}\" miktarı geçerli bir sayı değil. Lütfen yalnızca sayılar ve ondalıklar kullanın (örn. 100 veya 100.50).",
+            "amountGreaterThanZero": "Miktar 0'dan büyük olmalıdır. \"{amountStr}\" girdiniz.",
+            "amountTooLarge": "\"{amountStr}\" miktarı çok büyük. Lütfen daha küçük bir sayı kullanın.",
+            "invalidAmountFallback": "Geçersiz miktar. Lütfen yalnızca sayılar ve ondalıklar kullanın (örn. 100 veya 100.50).",
+            "pleaseRemoveChars": "Lütfen şu karakterleri kaldırın: {chars}. Yalnızca sayılar, virgüller ve noktalar kullanılabilir.",
+            "amountCannotBeEmpty": "Miktar boş olamaz.",
+            "tokenMismatch": "\"{provided}\" girdiniz ancak yukarıda {expected} seçili. Token sembolünü kaldırın veya açılır menüden {suggested} seçin.",
+            "multipleTokenSymbols": "Birden çok token sembolü kullanıyorsunuz ({symbols}). Lütfen dosyanız boyunca yalnızca bir token türü kullanın veya token sembollerini kaldırın ve token'ı yukarıdaki seçim belirlesin.",
+            "noPaymentDataFound": "Ödeme verisi bulunamadı. Lütfen ödemelerinizi şu formatta ekleyin: alıcı, miktar",
+            "exceedsRecipientLimit": "{count} alıcınız var, ancak limit batch başına {limit}'dir. Lütfen {excess, plural, one {# alıcıyı} other {# alıcıyı}} kaldırın veya birden çok batch'e bölün.",
+            "noPaymentDataProvided": "Ödeme verisi sağlanmadı. Lütfen ödemelerinizi şu formatta girin: alıcı, miktar",
+            "headerColumnsNotFound": "Başlık satırı tespit ettik, ancak 'Recipient' ve 'Amount' sütunlarını bulamadık. Lütfen bu sütun adlarını kullanın veya başlık satırını kaldırın.",
+            "failedToParseCsv": "CSV verisi ayrıştırılamadı",
+            "failedToParsePaste": "Yapıştırılan veri ayrıştırılamadı",
+            "failedToValidateAccount": "Hesap doğrulanamadı",
+            "feeEstimationFailed": "Bu miktar için ağ ücreti tahmin edilemedi. Lütfen doğrulayın ve tekrar deneyin.",
+            "feeEstimationFailedRow": "Satır {row} ({recipient}): Bu miktar için ağ ücreti tahmin edilemedi. Lütfen doğrulayın ve tekrar deneyin."
+        },
+        "recipients": "Alıcılar",
+        "insufficientTokens": "Yetersiz token. Talebi gönderebilir ve onaydan önce yükleyebilirsiniz.",
+        "removeRecipient": "Alıcıyı Kaldır",
+        "removeRecipientConfirm": "<strong>{recipient}</strong> kişisine yapılan ödemeyi kaldırmak istediğinizden emin misiniz? Bu işlem geri alınamaz.",
+        "remove": "Kaldır",
+        "edit": "Düzenle"
+    },
+    "bulkPaymentCredits": {
+        "title": "Toplu Ödemeler",
+        "unlimited": "Sınırsız",
+        "creditsPerPeriod": "{amount} / {period}",
+        "oneTimeTrial": "tek seferlik deneme",
+        "month": "ay",
+        "moreFlexibility": "Daha fazla esneklik mi arıyorsunuz?",
+        "contactUs": "Bize Ulaşın"
+    },
+    "exchange": {
+        "validation": {
+            "amountPositive": "Miktar 0'dan büyük olmalıdır"
+        },
+        "requestSubmitted": "Takas talebi gönderildi",
+        "heading": "Takas",
+        "sell": "Sat",
+        "receive": "Al",
+        "slippageTolerance": "Kayma Toleransı",
+        "disabled": {
+            "differentTokens": "Tokenler farklı olmalıdır",
+            "enterAmount": "Takas etmek için bir miktar girin"
+        },
+        "review": "Takası İncele",
+        "poweredBy": "Destekleyen",
+        "info": {
+            "priceDifference": "Fiyat Farkı",
+            "priceDifferenceTooltip": "Teklif oranı ile mevcut piyasa oranı arasındaki fark. Pozitif değerler piyasadan daha iyi bir oranı gösterir.",
+            "estimatedTime": "Tahmini Süre",
+            "estimatedTimeValue": "{seconds} saniye",
+            "estimatedTimeTooltip": "Takası tamamlamak için yaklaşık süre.",
+            "minimumReceived": "Alınacak Minimum",
+            "minimumReceivedTooltip": "Bu, talep için ayarlanan kayma limitine göre bu takastan alacağınız minimum miktardır.",
+            "depositAddress": "Depozito Adresi",
+            "depositAddressCopied": "Depozito adresi kopyalandı",
+            "quoteExpires": "Teklif Sona Erme",
+            "exchangeFee": "Takas Ücreti",
+            "exchangeFeeTooltip": "Burada uygulanan %0,70 ücret, işleminizi kolaylaştırmak için NEAR Intents protokol maliyetlerini ve Trezu widget ücretini karşılar. Bu miktar, teklif edilen oranınıza otomatik olarak hesaplanır."
+        },
+        "approveWithin24h": "Lütfen bu talebi 24 saat içinde onaylayın, aksi takdirde süresi dolacaktır. Mümkün olan en kısa sürede onaylamanızı öneririz.",
+        "confirmSubmit": "Onayla ve Talebi Gönder",
+        "refreshingIn": "Takas oranı {seconds}sn içinde yenilenecek"
+    },
+    "vesting": {
+        "validation": {
+            "amountMin": "Miktar 3.5'ten büyük veya eşit olmalıdır",
+            "startBeforeEnd": "Başlangıç tarihi bitiş tarihinden önce olmalıdır",
+            "cliffBetween": "Cliff tarihi şu aralıkta olmalıdır:"
+        },
+        "stepTitles": {
+            "details": "Ayrıntılar",
+            "settings": "Ayarlar",
+            "review": "İnceleme"
+        },
+        "proposalTitle": "{address} için vesting planı oluştur",
+        "scheduleSubmitted": "Vesting planı oluşturma talebi gönderildi",
+        "heading": "Yeni Vesting Planı",
+        "amount": "Miktar",
+        "startDate": "Başlangıç Tarihi",
+        "endDate": "Bitiş Tarihi",
+        "noteOptional": "Not (isteğe bağlı)",
+        "continue": "Devam Et",
+        "advancedSettings": "Gelişmiş Ayarlar",
+        "allowCancellation": "İptale İzin Ver",
+        "allowCancellationDescription": "NEAR Foundation'ın lockup'ı istediği zaman iptal etmesine izin verir. İptal edilemeyen lockup'lar cliff tarihleriyle uyumlu değildir.",
+        "cliffDate": "Cliff Tarihi",
+        "allowEarn": "Kazanca İzin Ver",
+        "allowEarnDescription": "Lockup sahibinin lockup'taki tokenlerin tamamını stake etmesine izin verir (cliff tarihinden önce bile).",
+        "commentPlaceholder": "Bu vesting planı için bir yorum ekleyin (isteğe bağlı)...",
+        "reviewRequest": "Talebi İncele",
+        "reviewHeading": "Vesting Planınızı İnceleyin",
+        "confirmSubmit": "Onayla ve Talebi Gönder",
+        "review": {
+            "recipient": "Alıcı",
+            "startDate": "Başlangıç Tarihi",
+            "endDate": "Bitiş Tarihi",
+            "cliffDate": "Cliff Tarihi",
+            "cancelable": "İptal Edilebilir",
+            "allowEarn": "Kazanca İzin Ver",
+            "na": "Yok"
+        }
+    },
+    "earn": {
+        "placeholder": "Kazanç fırsatlarını ve staking ödüllerini keşfedin."
+    },
+    "createTreasury": {
+        "validation": {
+            "nameMin": "Hazine adı en az 2 karakter olmalıdır",
+            "nameMax": "Hazine adı 64 karakterden az olmalıdır",
+            "accountMin": "Hesap adı en az 2 karakter olmalıdır",
+            "accountMax": "Hesap adı 64 karakterden az olmalıdır",
+            "accountChars": "Hesap adı yalnızca Latin harfleri, sayılar ve tireler içerebilir",
+            "accountTaken": "Bu hesap adı zaten alınmış"
+        },
+        "votingNote": "Oylama ayarlarını değiştirmek için daha fazla üyeye ihtiyacınız var. Oylamayı yapılandırmak için başka bir üye ekleyin.",
+        "minimumVoteNote": "En az bir onay oyu gereklidir.",
+        "heading": "Hazine Oluştur",
+        "addMembers": "Üye Ekle",
+        "addMembersInfo": "Şimdi üye ekleyebilir veya güncelleyebilir ve daha sonra istediğiniz zaman düzenleyebilirsiniz.",
+        "treasuryName": "Hazine Adı",
+        "treasuryNamePlaceholder": "Hazinem",
+        "accountName": "Hesap Adı",
+        "accountNameInfo": "Bu, hesabınızın benzersiz adıdır. Hazine URL'nizde kullanılacak ve ödemeyi kimin gönderdiğini tanımlamak için işlemlerde gösterilecek. Hesabınız için kısa, tanınabilir bir ad seçin.",
+        "accountPlaceholder": "hazinem",
+        "continue": "Devam Et",
+        "votingThreshold": "Oylama Eşiği",
+        "thresholdDescription": "Talepleri onaylamak için kaç oy gerektiğini ayarlayın:",
+        "financial": "Finansal",
+        "financialDescription": "Ödeme ve takas taleplerini onaylama.",
+        "governance": "Yönetişim",
+        "governanceDescription": "Ayarları, üyeleri ve oylama yapılandırmasını onaylama.",
+        "confidential": "Gizli",
+        "public": "Açık",
+        "anyone": "Herkes",
+        "teamOnly": "Yalnızca Ekip",
+        "soon": "Yakında",
+        "publicDescription": "Tüm bakiyeler, etkinlikler ve işlemler blok zincirinde herkese görünür. Bu seçenek şeffaf organizasyonlar ve genel DAO'lar için en uygunudur.",
+        "balanceTransactions": "Bakiye, İşlemler",
+        "membersVoting": "Üyeler, Oylama",
+        "allFeatures": "Tüm özellikler kullanılabilir",
+        "confidentialDescription": "Tüm bakiyeler, etkinlikler ve transferler blok zincirinde gizlidir. Yalnızca ekibiniz bu bilgileri görüntüleyebilir. Özel şirketler, aile ofisleri veya finansal gizlilik isteyen ekipler için en iyisidir.",
+        "recentTransactionsExport": "Son İşlemler Dışa Aktarma",
+        "bulkPayment": "Toplu Ödeme",
+        "treasuryType": "Hazine Türü",
+        "treasuryTypeWarning": "Hazine başına yalnızca bir kez seçim yapabilirsiniz ve daha sonra değiştiremezsiniz.",
+        "select": "Seç",
+        "visibleOnChain": "Zincirde görünür",
+        "featuresAvailable": "Kullanılabilir özellikler",
+        "mostFeaturesSupported": "Çoğu özellik destekleniyor",
+        "reviewTreasury": "Hazineyi İncele",
+        "membersLabel": "Üyeler",
+        "financialThreshold": "Finansal Eşik",
+        "governanceThreshold": "Yönetişim Eşiği",
+        "noDeploymentFee": "🎉 Dağıtım ücreti yok",
+        "noDeploymentFeeDescription": "Yeni projeleri desteklemek için TREZU, tüm tek seferlik dağıtım ve ağ depolama ücretlerini karşılar.",
+        "createButton": "Hazine Oluştur",
+        "connectWalletCreate": "Hazine Oluşturmak İçin Cüzdan Bağla",
+        "unexpectedError": "Beklenmedik bir hata oluştu",
+        "creationFailed": "Hazine oluşturulamadı. Lütfen tekrar deneyin.",
+        "stepTitles": {
+            "aboutYou": "Hakkınızda",
+            "details": "Ayrıntılar",
+            "members": "Üyeler",
+            "treasuryType": "Hazine Türü",
+            "review": "İnceleme"
+        },
+        "steps": {
+            "creatingNear": "Hazineniz NEAR üzerinde oluşturuluyor",
+            "registeringKey": "Genel anahtar kaydediliyor",
+            "settingUpConfidential": "Gizli işlemler ayarlanıyor",
+            "configuringMembers": "Hazine üyeleri yapılandırılıyor",
+            "finalizingSetup": "Kurulum tamamlanıyor"
+        }
+    },
+    "manageTreasuries": {
+        "warningOne": "En az bir hazine kullanılabilir kalmalıdır",
+        "warningOnePeriod": "En az bir hazine kullanılabilir kalmalıdır.",
+        "activeHeading": "Aktif Hazineler",
+        "activeDescription": "Hesaplar listenizde şu anda görünen hazineler.",
+        "activeEmpty": "Aktif hazine yok.",
+        "hiddenHeading": "Gizli Hazineler",
+        "hiddenDescription": "Hesaplar listenizden gizlenmiş hazineler.",
+        "removeGuestTitle": "Misafir Hazineyi Kaldır",
+        "removeDialog": "<bold>{name}</bold> hazinesini kaldırmak üzeresiniz. Onaylandıktan sonra bu işlem geri alınamaz.",
+        "tooltips": {
+            "removeFromList": "Listenizden kaldır",
+            "viewTreasury": "Hazineyi görüntüle",
+            "hideFromList": "Listenizden gizle",
+            "showInList": "Listenizde göster"
+        }
+    },
+    "wallet": {
+        "proposal": {
+            "transfer": "Harici dApp'tan öneri: {receiverId} adresine NEAR transferi",
+            "functionCall": "Harici dApp'tan öneri: {receiverId} üzerinde {methods}",
+            "unsupportedAction": "Desteklenmeyen eylem türü \"{type}\". Yalnızca Transfer ve FunctionCall eylemleri Trezu önerilerine dönüştürülebilir."
+        },
+        "loading": "Yükleniyor...",
+        "connectPrompt": "Devam etmek için NEAR cüzdanınızı bağlayın. Ardından adına hareket edeceğiniz bir hazine seçeceksiniz.",
+        "connectWallet": "Cüzdan Bağla",
+        "cancel": "İptal",
+        "connectedAs": "<strong>{account}</strong> olarak bağlanıldı",
+        "loadingTreasuries": "Hazineler yükleniyor...",
+        "selectSignIn": "Olarak oturum açmak için bir hazine seçin:",
+        "selectSignTx": "Üzerinde öneri oluşturmak için bir hazine seçin:",
+        "notMember": "Hiçbir hazinenin üyesi değilsiniz.",
+        "actingAs": "Olarak hareket ediyor",
+        "signedBy": "{account} tarafından imzalandı",
+        "createsNProposals": "Bu, şunun için {count, plural, one {bir Trezu önerisi} other {# Trezu önerisi}} oluşturacak:",
+        "proposalDescriptionLabel": "Öneri açıklaması (isteğe bağlı)",
+        "proposalDescriptionPlaceholder": "Bu öneriyi açıklayın...",
+        "createProposal": "Öneri Oluştur",
+        "creatingProposal": "Öneri oluşturuluyor...",
+        "confirmInWallet": "Lütfen cüzdanınızda onaylayın",
+        "proposalSubmitted": "Öneri Gönderildi",
+        "shareProposal": "Öneriniz oluşturuldu. Oy kullanmak için aşağıdaki bağlantıyı hazine üyeleriyle paylaşın.",
+        "proposalLink": "{daoId} — Öneri #{id}",
+        "checking": "Kontrol ediliyor...",
+        "proposalApprovedProceed": "Öneri Onaylandı. Devam Et",
+        "signedInSuccess": "Başarıyla oturum açıldı",
+        "proposalCreatedSuccess": "Öneri başarıyla oluşturuldu",
+        "closeWindow": "Bu pencereyi kapatabilirsiniz.",
+        "errorGeneric": "Bir hata oluştu",
+        "tryAgain": "Tekrar dene",
+        "errors": {
+            "parseTx": "İşlem talebi ayrıştırılamadı. Lütfen tekrar deneyin.",
+            "fetchTreasuries": "Hazineleriniz alınamadı. Lütfen tekrar deneyin.",
+            "connectFailed": "Cüzdan bağlanamadı",
+            "createProposalFailed": "Öneri oluşturulamadı",
+            "stillPending": "Öneri hâlâ onay bekliyor. Lütfen hazine üyelerinin oy kullanmasını bekleyin.",
+            "wasStatus": "Öneri #{id} {status}",
+            "awaitIndex": "Öneri onaylandı ancak yürütme işlemi henüz indekslenmedi. Lütfen bir an sonra tekrar deneyin.",
+            "checkStatusFailed": "Öneri durumu kontrol edilemedi",
+            "userCancelled": "Kullanıcı iptal etti",
+            "proposalWasStatus": "Öneri {status}"
+        }
+    },
+    "telegram": {
+        "tagPill": "Telegram",
+        "invalidLinkTitle": "Geçersiz bağlantı",
+        "invalidLinkDescription": "Bu Telegram bağlantı linkinde token eksik. Yeni bir bağlantı oluşturmak için Telegram'da Connect Treasury'ye tekrar tıklayın.",
+        "successTitle": "Başarıyla bağlandı",
+        "successDescription": "Hazineler bu Telegram sohbetine bağlandı.",
+        "successToast": "Hazineler başarıyla bağlandı",
+        "goToApp": "Uygulamaya Git",
+        "linkExpiredTitle": "Bağlantı süresi doldu",
+        "linkExpiredDescription": "Bu bağlantının süresi dolmuş veya zaten kullanılmış. Telegram'da, bağlantı akışını yeniden başlatmak için aşağıdaki komutu yazın.",
+        "commandCopied": "Komut kopyalandı",
+        "copy": "Kopyala",
+        "unableToLoadTitle": "Sohbet yüklenemedi",
+        "unableToLoadDescription": "Sohbet ayrıntıları şu anda yüklenemedi. Lütfen Telegram'dan tekrar deneyin.",
+        "signInTitle": "Devam etmek için oturum açın",
+        "signInDescription": "Önce NEAR cüzdanınızı bağlayın, ardından bu Telegram sohbetine hangi hazinelerin bağlanacağını seçin.",
+        "connectWallet": "Cüzdan Bağla",
+        "selectTreasuriesTitle": "Hazineleri Seç",
+        "selectTreasuriesDescription": "Bu Telegram sohbetine bağlanacak hazineleri seçin.",
+        "telegramChat": "Telegram sohbeti",
+        "chatIdFallback": "Sohbet #{id}",
+        "failedToConnect": "Hazineler bağlanamadı. Lütfen tekrar deneyin.",
+        "relinking": "{count, plural, one {# seçili hazine başka bir Telegram sohbetine bağlı. Bağlanmak yeniden bağlayacak ve sohbet kimliği bağlantısını bu sohbete değiştirecek.} other {# seçili hazine başka Telegram sohbetlerine bağlı. Bağlanmak yeniden bağlayacak ve sohbet kimliği bağlantılarını bu sohbete değiştirecek.}}",
+        "alreadyConnected": "Bu sohbete zaten bağlı",
+        "connectedToAnother": "Başka bir sohbete bağlı",
+        "notMember": "Hiçbir hazinenin politika üyesi değilsiniz.",
+        "connecting": "Bağlanıyor…",
+        "connect": "Bağlan"
+    },
+    "systemStatus": {
+        "underMaintenance": "Bakım Altında",
+        "maintenanceMessage": "Şu anda bakım gerçekleştiriyoruz. Bazı özellikler geçici olarak kullanılamayabilir. Lütfen kısa süre sonra tekrar kontrol edin."
+    },
+    "creditsQuota": {
+        "available": "{count} Kullanılabilir",
+        "used": "{count} Kullanıldı",
+        "resetOn": "Limit {date} tarihinde sıfırlanacak"
+    },
+    "approvalInfo": {
+        "infoText": "Ödemeyle ilgili talepleri onaylamak için gereken oylar. Oylama ayarlarında düzenlenebilir.",
+        "thresholdPill": "{total}'dan {required} eşiği",
+        "alertBody": "Bu ödeme yürütülmeden önce <bold>{required}</bold> hazine üyesinin onayını gerektirecek."
+    },
+    "guestBadge": {
+        "title": "Misafir",
+        "tooltip": "Bu hazinenin misafirisiniz. Yalnızca verileri görüntüleyebilirsiniz."
+    },
+    "exportButton": {
+        "confidentialTooltip": "Dışa aktarma henüz gizli modda kullanılamıyor. Bu özellik yakında geliyor!"
+    },
+    "sponsoredActions": {
+        "titleExhausted": "Sponsorlu Eylemler Kullanıldı",
+        "titleAlmost": "Ekibinizin sponsorlu eylemleri neredeyse bitti",
+        "closeNotice": "Bildirimi kapat",
+        "teamUsage": "Ekip kullanımı: ayda {total} eylem",
+        "available": "{count} Kullanılabilir",
+        "used": "{count} Kullanıldı",
+        "exhaustedBody": "Ekibiniz aylık sponsorlu eylemlere ulaştı. {date} tarihinden sonra devam edebilir veya bizimle iletişime geçebilirsiniz",
+        "almostBody": "TREZU şu anda talep oluşturma ve oy kullanma gibi tüm ekip eylemleri için depolama maliyetlerini sponsor oluyor. Ekibiniz aylık sponsorlu limite ulaşmaya yakın.",
+        "contactUs": "Bize Ulaşın",
+        "nextMonthlyReset": "bir sonraki aylık sıfırlamanız",
+        "sidebarBody": "Ekibiniz aylık sponsorlu eylemlere ulaştı. {date} tarihinden sonra devam edebilirsiniz veya ⬇️"
+    },
+    "acceptTerms": {
+        "title": "Devam Etmek İçin Şartları Kabul Edin",
+        "privacyTitle": "Trezu'da Gizliliğiniz",
+        "privacyBody": "Trezu, saklamaya dayalı olmayan bir arayüzdür. Platformun güvenli ve işlevsel kalmasını sağlarken gizliliğinize öncelik veriyoruz.",
+        "minimalTitle": "Minimum Veri",
+        "minimalBody": "Arayüzü işletmek ve geliştirmek için genel cüzdan adresleri, IP adresleri ve kullanım analizleri gibi sınırlı bilgiler topluyoruz.",
+        "noCustodyTitle": "Saklama Yok",
+        "noCustodyBody": "Özel anahtarlarınıza, kurtarma ifadelerinize veya dijital varlıklarınıza asla erişmiyoruz.",
+        "publicTitle": "Genel Kayıtlar",
+        "publicBody": "Tüm blok zinciri işlemlerinin doğal olarak genel olduğunu ve tarafımızdan kontrol edilmediğini unutmayın.",
+        "responsibilityTitle": "Sorumluluğunuz",
+        "responsibilityBody": "Cüzdan etkinliğinizi izlemekten ve kimlik bilgilerinizi güvende tutmaktan yalnızca siz sorumlusunuz.",
+        "futureTitle": "Gelecekteki Güncellemeler",
+        "futureBody": "Gelecekteki bildirimlere (e-posta veya Telegram gibi) abone olursanız, bu verileri yalnızca sizi bilgilendirmek için kullanacağız.",
+        "agreement": "<terms>Hizmet Şartları</terms> ve <privacy>Gizlilik Politikası</privacy>'nı okudum ve kabul ediyorum",
+        "accepting": "Kabul ediliyor...",
+        "continue": "Devam Et"
+    },
+    "confidentialBanner": {
+        "label": "Gizli",
+        "description": "Bakiyeler, etkinlik ve transferler yalnızca ekibinize görünür — genel blok zincirine değil."
+    },
+    "supportCenter": {
+        "title": "Destek Merkezi",
+        "resources": "Kaynaklar",
+        "support": "Destek",
+        "websiteTitle": "Trezu Web Sitesi",
+        "websiteDescription": "Trezu hakkında daha fazla bilgi edinin ve blogumuzu okuyun.",
+        "demo": "Trezu Demo",
+        "demoTitle": "Açık Sürümü Keşfedin",
+        "demoDescription": "Canlı bir açık hesabı işlerken görün.",
+        "confidentialDemoTitle": "Gizli Sürümü Keşfedin",
+        "confidentialDemoDescription": "Canlı bir gizli hesabı işlerken keşfedin.",
+        "videoTitle": "Demoyu İzleyin",
+        "videoDescription": "Trezu'nun nasıl çalıştığını gösteren kısa bir video izleyin.",
+        "xTitle": "Bizi X'te Takip Edin",
+        "xDescription": "En son sürümlerimiz ve bilgilerimizden haberdar olun.",
+        "statsTitle": "İstatistikler",
+        "statsDescription": "Tüm sputnik DAO'lar genelinde yönetim altındaki toplam varlıkları görüntüleyin.",
+        "docsTitle": "Belgeler",
+        "docsDescription": "Tüm özellikler hakkında belgelerden bilgi edinin.",
+        "productSupportTitle": "Ürün Desteği",
+        "productSupportDescription": "Yardım için destek ekibimizle iletişime geçin."
+    },
+    "progressModal": {
+        "titleCreating": "Hazine Oluşturuluyor...",
+        "titleDone": "Hazine Oluşturuldu",
+        "titleFailed": "Hazine Oluşturulamadı",
+        "viewTreasury": "Hazineyi Görüntüle"
+    },
+    "memberValidation": {
+        "noManagePermission": "Üyeleri yönetme izniniz yok",
+        "pendingRequest": "Aktif bir talep varken üyeleri yönetemezsiniz",
+        "rolesAnd": "{first} ve {second}",
+        "rolesMany": "{list} ve {last}",
+        "cannotRemoveMember": "Bu üye kaldırılamaz. {roles} {count, plural, one {rolüne} other {rollerine}} atanan tek kişiler.",
+        "cannotRemoveMemberGov": "Bu üye kaldırılamaz. {roles} {count, plural, one {rolüne, ki bu rol} other {rollerine, ki bu roller}} atanan tek kişiler ve ekip üyelerini yönetmek ve oylamayı yapılandırmak için gereklidir.",
+        "cannotBulkRemove": "Bu üyeler kaldırılamaz. Bu, {roles} {count, plural, one {rolünü} other {rollerini}} boş bırakacaktır.",
+        "cannotBulkRemoveGov": "Bu üyeler kaldırılamaz. Bu, ekip üyelerini yönetmek ve oylamayı yapılandırmak için gereken {roles} {count, plural, one {rolünü} other {rollerini}} boş bırakacaktır.",
+        "cannotRemoveRole": "Bu üyeden {role} rolünü kaldıramazsınız. Bu role atanan tek kişiler.",
+        "cannotRemoveRoleGov": "Bu üyeden {role} rolünü kaldıramazsınız. Tek {role} üyesi olacaklar ve bu rol olmadan ekip üyelerini yönetemez veya oylamayı yapılandıramazsınız."
+    },
+    "roleSelector": {
+        "setRole": "Rol Ayarla",
+        "allRoles": "Tüm Roller",
+        "roles": {
+            "governance": {
+                "title": "Yönetişim",
+                "description": "Yönetişim, üyeler, izinler ve hazine görünümü dahil ekiple ilgili hazine ayarları üzerinde oluşturma ve oylama yapabilir."
+            },
+            "requestor": {
+                "title": "Talep Eden",
+                "description": "Talep Eden, oylama veya onay hakları olmadan ödemeyle ilgili işlem talepleri oluşturabilir."
+            },
+            "financial": {
+                "title": "Finansal",
+                "description": "Finansal, ödemeyle ilgili işlem talepleri üzerinde oy kullanabilir ancak bunları oluşturamaz."
+            }
+        }
+    },
+    "memberInput": {
+        "creatorYou": "Oluşturan (siz)",
+        "memberAddress": "Üye Adresi",
+        "addNewMember": "Yeni Üye Ekle",
+        "validation": {
+            "rolesRequired": "En az bir rol gereklidir",
+            "duplicateAddress": "Adres zaten bir üye"
+        }
+    },
+    "recipientInput": {
+        "title": "Kime",
+        "placeholder": "Alıcı adresi"
+    },
+    "accountInput": {
+        "failedValidation": "Adres doğrulanamadı",
+        "invalidNearFormat": "Geçersiz NEAR hesap formatı",
+        "invalidChainAddress": "Lütfen geçerli bir {chain} adresi girin.",
+        "validating": "Adres doğrulanıyor...",
+        "validAddress": "Geçerli adres",
+        "placeholderWithExample": "Alıcı adresi (örn.: {example})",
+        "placeholderNoExample": "Alıcı adresi",
+        "nearExample": "alice.near, 0x... veya 64 karakterli hex",
+        "near": {
+            "required": "Adres gereklidir",
+            "length": "Adres 2 ile 64 karakter arasında olmalıdır",
+            "missingTld": "Adlandırılmış hesaplar .near, .aurora veya .tg ile bitmelidir",
+            "invalidChars": "Adres yalnızca küçük harfler, rakamlar ve ayırıcılar (., -, _) içerebilir",
+            "accountMissing": "Hesap NEAR blok zincirinde mevcut değil",
+            "verifyFailed": "Hesap varlığı doğrulanamadı"
+        }
+    },
+    "csvUpload": {
+        "uploadFile": "Dosya Yükle",
+        "provideData": "Veri Sağla",
+        "chooseFile": "Dosya Seç",
+        "orDragDrop": "veya sürükleyip bırakın",
+        "maxFileSize": "en fazla 1 dosya, {maxSize} MB'a kadar, yalnızca CSV dosyası",
+        "noFilePrompt": "Yüklenecek dosyanız yok mu?",
+        "downloadTemplate": "Şablon indir"
+    },
+    "tokenSelect": {
+        "selectToken": "Token seç",
+        "searchPlaceholder": "Tokenleri ara...",
+        "noTokensFound": "Token bulunamadı"
+    },
+    "filterOperations": {
+        "is": "Şudur",
+        "isNot": "Şu Değildir",
+        "before": "Öncesi",
+        "after": "Sonrası",
+        "between": "Arasında",
+        "equal": "Eşit",
+        "moreThan": "Daha Fazla",
+        "lessThan": "Daha Az",
+        "contains": "İçeriyor"
+    },
+    "copyButton": {
+        "copied": "Panoya kopyalandı",
+        "failed": "Kopyalanamadı"
+    },
+    "recipientForm": {
+        "validation": {
+            "nameRequired": "Ad gereklidir",
+            "nameMax": "Alıcı {max} karakterden az olmalıdır",
+            "addressRequired": "Adres gereklidir",
+            "networksRequired": "En az bir ağ seçin"
+        }
+    },
+    "paymentForm": {
+        "validation": {
+            "recipientMin": "Alıcı en az 2 karakter olmalıdır",
+            "recipientMax": "Alıcı 128 karakterden az olmalıdır",
+            "amountGreaterThanZero": "Miktar 0'dan büyük olmalıdır",
+            "recipientSameAsToken": "Alıcı ve token adresi aynı olamaz",
+            "selectToken": "Lütfen bir token seçin",
+            "recipientMax64": "Alıcı 64 karakterden az olmalıdır",
+            "amountMinLockup": "Miktar 3.5'ten büyük veya eşit olmalıdır",
+            "startDateRequired": "Başlangıç tarihi gereklidir",
+            "endDateRequired": "Bitiş tarihi gereklidir",
+            "cliffDateRequired": "Cliff tarihi gereklidir",
+            "startBeforeEnd": "Başlangıç tarihi bitiş tarihinden önce olmalıdır",
+            "cliffBetween": "Cliff tarihi {start} ile {end} arasında olmalıdır"
+        }
+    },
+    "exportToasts": {
+        "downloadFailed": "Dışa aktarma indirilemedi",
+        "invalidDateRange": "Geçersiz tarih aralığı",
+        "invalidDateRangeDescription": "Lütfen dışa aktarma için geçerli bir tarih aralığı seçin.",
+        "exportSuccess": "Dışa aktarma başarılı!",
+        "exportSuccessDescription": "{type} dosyanız indirildi. Ayrıntılar için dışa aktarma geçmişinizi kontrol edin.",
+        "exportFailed": "Dışa aktarma başarısız",
+        "exportFailedFallback": "Veri dışa aktarılamadı. Lütfen tekrar deneyin.",
+        "noDownloadPermission": "Dosyayı indirme izniniz yok.",
+        "noExportPermission": "Dışa aktarma izniniz yok",
+        "quotaUsed": "Tüm kotanızı kullandınız",
+        "exporting": "Dışa Aktarılıyor...",
+        "export": "Dışa Aktar",
+        "columnSubmissionTime": "Gönderim Zamanı",
+        "columnDateRange": "Tarih Aralığı",
+        "columnGeneratedBy": "Oluşturan",
+        "columnStatus": "Durum",
+        "typeAll": "Tüm Türler",
+        "typeSent": "Gönderildi",
+        "typeReceived": "Alındı",
+        "typeStakingRewards": "Staking Ödülleri",
+        "allAssets": "Tüm Varlıklar",
+        "upgradeTrial": "Devam etmek için planınızı yükseltin",
+        "upgradePaid": "Daha fazla erişim için planınızı yükseltin veya limitleriniz gelecek ay sıfırlanana kadar bekleyin.",
+        "selectDateRange": "Tarih aralığı seçin",
+        "noExportsTitle": "Henüz dışa aktarma yok",
+        "noExportsDescription": "Son aydaki dışa aktarılmış dosyalarınız oluşturulduklarında burada görünecek.",
+        "quotaTitle": "Dışa Aktarma Kotası",
+        "unlimited": "Sınırsız",
+        "creditsPerMonth": "{total} / ay",
+        "requirementsTitle": "Dışa Aktarma Gereksinimleri",
+        "exportFromPeriod": "{period} dönemindeki verileri dışa aktarabilirsiniz.",
+        "availableFor48Hours": "Dışa aktarılan dosyalar 48 saat boyunca indirilebilir.",
+        "moreFlexibility": "Daha fazla esneklik mi arıyorsunuz?",
+        "contactUs": "Bize Ulaşın",
+        "last1Year": "Son 1 yıl",
+        "last2Years": "Son 2 yıl",
+        "invalidEmail": "Lütfen geçerli bir e-posta adresi girin"
+    },
+    "proposalKinds": {
+        "Batch Payment Request": "Toplu Ödeme Talebi",
+        "Payment Request": "Ödeme Talebi",
+        "Confidential Request": "Gizli Talep",
+        "Exchange": "Takas",
+        "Function Call": "Fonksiyon Çağrısı",
+        "Change Policy": "Politika Değişikliği",
+        "Update General Settings": "Genel Ayarları Güncelle",
+        "Earn NEAR": "NEAR Kazan",
+        "Unstake NEAR": "NEAR Stake'ini Kaldır",
+        "Vesting": "Vesting",
+        "Withdraw Earnings": "Kazançları Çek",
+        "Members": "Üyeler",
+        "Upgrade": "Yükseltme",
+        "Set Staking Contract": "Staking Sözleşmesini Ayarla",
+        "Bounty": "Ödül",
+        "Vote": "Oy",
+        "Factory Info Update": "Fabrika Bilgisi Güncellemesi",
+        "Unsupported": "Desteklenmiyor"
+    },
+    "paymentFormSection": {
+        "selectRecipient": "Alıcı Seç",
+        "searchByNameOrAddress": "Ad veya adrese göre ara",
+        "restrictedRecipientTitle": "İşleme izin verilmiyor",
+        "restrictedRecipientMessage": "Bu adres güvenlik kontrolleri nedeniyle şu anda kısıtlanmış. Bu adrese izin verilmesi gerektiğine inanıyorsanız, <link>beyaz listeye eklenmesini talep edebilirsiniz</link>.",
+        "send": "Gönder",
+        "to": "Kime"
+    },
+    "recipientNetworkSelect": {
+        "label": "Alıcı Ağı",
+        "placeholder": "Alıcı ağını seçin",
+        "enterAddressFirst": "Önce alıcı adresini girin",
+        "noCompatibleNetwork": "Bu adresle eşleşen ağ yok",
+        "selectPlaceholder": "Ağ seçin",
+        "title": "Ağ Seç",
+        "available": "Kullanılabilir",
+        "fromAddressBook": "Adres Defterinden",
+        "otherAvailable": "Diğer Kullanılabilir",
+        "incompatible": "Uyumsuz",
+        "comingSoon": "Yakında",
+        "nearComName": "near.com",
+        "nearComDescription": "near.com ve trezu için Dahili Ağ"
+    },
+    "addressBookTable": {
+        "emptyTitle": "Henüz alıcı yok",
+        "emptyDescription": "Daha hızlı ödemeler için bu adres defterine alıcılar ekleyin.",
+        "selectAll": "Tüm alıcıları seç",
+        "selectEntry": "{name} kişisini seç",
+        "recipient": "Alıcı",
+        "network": "Ağ",
+        "addedBy": "Ekleyen",
+        "note": "Not",
+        "added": "Eklendi",
+        "remove": "Kaldır",
+        "send": "Gönder"
+    },
+    "publicDashboard": {
+        "updatesDaily": "Günlük güncellenir",
+        "noDataTitle": "Henüz veri yok",
+        "noDataDescription": "İstatistikler ilk günlük anlık görüntü hesaplandıktan sonra görünecek.",
+        "assetsSecured": "Sputnik DAO Sözleşmesi ile Güvence Altına Alınan Varlıklar",
+        "acrossDaos": "<bold>{count, plural, one {# DAO} other {# DAO}}</bold> genelinde",
+        "updatedOn": "{date} tarihinde güncellendi",
+        "topAssets": "En İyi 20 Varlık",
+        "noAssetsTitle": "Henüz varlık yok",
+        "noAssetsDescription": "Token verileri günlük anlık görüntü hesaplandığında görünecek.",
+        "tableToken": "Token",
+        "tableTotalValue": "Toplam Değer"
+    },
+    "telegramConnectInstructions": {
+        "title": "Telegram Bağla",
+        "subtitle": "Önerileriniz ve etkinliğiniz hakkında Telegram'da bildirim alın.",
+        "step3": "Start'a basın ve talimatları izleyin.",
+        "success": "Hepsi tamam!",
+        "copyBotTooltip": "Bot tanıtıcısını kopyala",
+        "botCopiedToast": "Bot tanıtıcısı kopyalandı",
+        "openInTelegram": "{bot} Telegram'da aç"
+    },
+    "transactionHashCell": {
+        "copyHash": "Hash'i kopyala",
+        "hashCopied": "Hash kopyalandı",
+        "openInExplorer": "Gezginde aç"
+    },
+    "treasurySelector": {
+        "select": "Hazine seç",
+        "connectWalletTooltip": "Hazineleri görüntülemek için cüzdan bağla",
+        "manageTreasuries": "Hazineleri Yönet",
+        "createTreasury": "Hazine Oluştur",
+        "memberOf": "Üyesi Olduğunuz",
+        "guestTreasuries": "Misafir Hazineler"
+    },
+    "selectModal": {
+        "searchByName": "İsme göre ara",
+        "noResults": "Sonuç bulunamadı"
+    },
+    "selectList": {
+        "noResults": "Sonuç bulunamadı"
+    },
+    "datePicker": {
+        "pickDate": "Tarih seçin",
+        "timezone": "Saat Dilimi"
+    },
+    "datePresets": {
+        "today": "Bugün",
+        "yesterday": "Dün",
+        "last3Days": "Son 3 gün",
+        "last7Days": "Son 7 gün",
+        "last14Days": "Son 14 gün",
+        "lastMonth": "Geçen ay",
+        "last3Months": "Son 3 ay",
+        "last6Months": "Son 6 ay"
+    },
+    "input": {
+        "openSearch": "Aramayı aç"
+    },
+    "pagination": {
+        "previous": "Geri",
+        "next": "İleri"
+    },
+    "confidentialState": {
+        "title": "Gizli",
+        "description": "Yalnızca hazine üyelerinin erişimi var."
+    },
+    "exchangeRate": {
+        "rate": "Oran",
+        "clickToReverse": "Oranı tersine çevirmek için tıklayın"
+    },
+    "exchangeSettings": {
+        "title": "Takas Ayarları",
+        "slippageTolerance": "Kayma Toleransı",
+        "custom": "Özel",
+        "customPlaceholder": "örn: %2",
+        "slippageRange": "Kayma %0,01 ile %100 arasında olmalıdır",
+        "enterSlippage": "Lütfen bir kayma toleransı girin",
+        "slippageHelp": "Fiyat bu yüzdeden fazla değişirse, fonlarınızı korumak için işlem iptal edilecektir.",
+        "save": "Kaydet"
+    },
+    "assetsPage": {
+        "title": "Varlıklar",
+        "noAssetsTitle": "Henüz varlık yok",
+        "noAssetsDescription": "Başlamak için para yatırarak Hazinenize varlıklar ekleyin."
+    },
+    "newBadge": {
+        "label": "Yeni"
+    },
+    "numberBadge": {
+        "pendingRequests": "{count, plural, one {# bekleyen talep} other {# bekleyen talep}}"
+    },
+    "balanceWithGraph": {
+        "allTokens": "Tüm Tokenler",
+        "deposit": "Para Yatır",
+        "send": "Gönder",
+        "exchange": "Takas",
+        "chartNow": "Şimdi",
+        "totalBalance": "Toplam Bakiye",
+        "excludedTokens": "Hariç tutulan tokenler:",
+        "noPriceHistory": "Fiyat geçmişi yok. Bakiye değişikliklerini görmek için bir token seçin.",
+        "bucketAvailable": "Kullanılabilir",
+        "bucketLocked": "Kilitli",
+        "bucketEarning": "Kazanç",
+        "period": {
+            "1W": "1H",
+            "1M": "1A",
+            "3M": "3A",
+            "1Y": "1Y"
+        }
+    },
+    "changePolicyExpanded": {
+        "proposalBond": "Öneri Teminatı",
+        "proposalPeriod": "Öneri Dönemi",
+        "bountyBond": "Ödül Teminatı",
+        "bountyForgivenessPeriod": "Ödül Affetme Dönemi",
+        "votesCount": "{count} Oy",
+        "weightKind": "Ağırlık Türü",
+        "quorum": "Yeter Sayı",
+        "threshold": "Eşik",
+        "defaultThreshold": "Varsayılan Eşik",
+        "roleThreshold": "{role} Eşiği",
+        "member": "Üye",
+        "members": "Üyeler",
+        "permissions": "İzinler",
+        "oldPermissions": "Eski İzinler",
+        "newPermissions": "Yeni İzinler",
+        "category": "Kategori",
+        "transactionDetails": "İşlem Ayrıntıları",
+        "addNewMember": "Yeni Üye Ekle",
+        "addNewMembers": "Yeni Üyeler Ekle",
+        "removeMember": "Üyeyi Kaldır",
+        "removeMembers": "Üyeleri Kaldır",
+        "updateMemberPermissions": "Üye İzinlerini Güncelle",
+        "updateMembersPermissions": "Üyelerin İzinlerini Güncelle",
+        "memberIndex": "Üye {index}",
+        "membersCount": "{count} üye",
+        "collapseAll": "Tümünü daralt",
+        "expandAll": "Tümünü genişlet",
+        "loadingHistorical": "Geçmiş politika yükleniyor...",
+        "unableToDiff": "Bu öneri için farklılıklar hesaplanamıyor.",
+        "noChangesCurrent": "Değişiklik tespit edilmedi - önerilen politika mevcut politikayla aynı.",
+        "noChangesHistorical": "Değişiklik tespit edilmedi - önerilen politika geçmiş politikayla aynı."
+    },
+    "balanceChart": {
+        "usdValue": "USD Değeri",
+        "tokenBalance": "Token Bakiyesi",
+        "emptyTitle": "Henüz gösterilecek bir şey yok",
+        "emptyDescription": "Portföyünüzü takip etmeye başlamak için varlıklar ekleyin."
+    },
+    "user": {
+        "saveToAddressBook": "Adres defterine kaydet",
+        "walletCopiedToast": "Cüzdan adresi panoya kopyalandı",
+        "copyWalletAddress": "Cüzdan Adresini Kopyala"
+    },
+    "infoDisplay": {
+        "viewLess": "Daha Az Görüntüle",
+        "viewAllDetails": "Tüm Ayrıntıları Görüntüle"
+    },
+    "amountSummary": {
+        "defaultTitle": "Toplam göndereceğiniz miktar"
+    },
+    "residency": {
+        "vestedToken": "Vested Token",
+        "staked": "Stake Edildi",
+        "fungibleToken": "Fungible Token",
+        "intentsToken": "Intents Token",
+        "nativeToken": "Native Token"
+    },
+    "exchangeErrors": {
+        "noRoute": "Takas bulunamadı. Daha küçük bir miktar veya farklı bir token deneyin.",
+        "amountTooLow": "Takas için miktar çok düşük. Zincirler arası takaslar ağ ücretlerini karşılamak için daha yüksek bir minimum gerektirir.",
+        "insufficientBalance": "Bu takas için yetersiz bakiye.",
+        "networkError": "Ağ hatası. Lütfen bağlantınızı kontrol edin ve tekrar deneyin.",
+        "fetchFailed": "Teklif alınamadı"
+    },
+    "tokenSelectDialog": {
+        "selectToken": "Token seç",
+        "selectAsset": "Varlık Seç",
+        "selectNetworkFor": "{asset} için ağ seçin",
+        "searchByName": "İsme göre ara",
+        "noTokensWithBalance": "Bakiyesi olan token bulunamadı",
+        "noTokensFound": "Token bulunamadı",
+        "yourAssets": "Varlıklarınız",
+        "otherAssets": "Diğer Varlıklar",
+        "networksWithAssets": "Varlıkları olan ağlar",
+        "supportedNetworks": "Desteklenen Ağlar",
+        "comingSoon": "Yakında"
+    },
+    "intentsQuote": {
+        "initializing": "Teklif servisi hâlâ başlatılıyor. Lütfen tekrar deneyin.",
+        "noRoute": "Şu anda bir ödeme rotası hazırlanamıyor. Lütfen tekrar deneyin.",
+        "fetchFailed": "Şu anda bir ödeme rotası hazırlanamıyor. Lütfen tekrar deneyin.",
+        "amountTooLow": "Miktar ağ ücretlerini karşılamak için çok düşük. Daha yüksek bir miktar girin ve tekrar deneyin.",
+        "amountTooLowWithMin": "Miktar ağ ücretlerini karşılamak için çok düşük. En az {min} {token} girin.",
+        "networkFeeTooltip": "Bu ücret, seçili zincirde işlemi gerçekleştirmek için kullanılır."
+    },
+    "pageTours": {
+        "paymentsBulk": "Toplu oluşturma burada! Birkaç adımda birden çok talep oluşturun.",
+        "paymentsPending": "Onay bekleyen talepleri burada görüntüleyin.",
+        "exchangeSettings": "Burada kabul etmeye hazır olduğunuz fiyat değişikliğini ayarlayabilirsiniz.",
+        "membersPending": "Onay bekleyen aktif talepleri görmek için tıklayın.",
+        "guestSaveIntro": "Bu hazinenin misafirisiniz. Yalnızca verileri görüntüleyebilirsiniz.",
+        "guestSaveAction": "Bu misafir hazineyi hazinelerinize kaydedebilirsiniz.",
+        "newFeatureRich": "Yeni! 🎉 Daha hızlı, hatasız ödemeler için sık kullanılan adresleri kaydedin.<br></br> Kişileriniz gizli kalır ve yalnızca ekibinize görünür.",
+        "newFeatureCta": "Deneyin"
+    },
+    "statusDate": {
+        "expires": "Sona Erer",
+        "created": "Oluşturuldu",
+        "expired": "Süresi Doldu",
+        "removed": "Kaldırıldı"
+    },
+    "relativeTime": {
+        "justNow": "Az önce",
+        "moments": "anlar"
+    },
+    "amount": {
+        "network": "Ağ: {network}"
+    },
+    "activityLabels": {
+        "exchangePending": "Takas Beklemede",
+        "exchangeRequest": "Takas Talebi",
+        "exchangeFulfillment": "Takas Gerçekleştirme",
+        "stakingRewards": "Staking Ödülleri",
+        "proposalAction": "Öneri Eylemi",
+        "deposit": "{symbol} Yatırma",
+        "paymentSent": "Ödeme Gönderildi",
+        "transaction": "İşlem",
+        "fallbackToken": "Token",
+        "viaIntents": "NEAR Intents üzerinden",
+        "from": "{account} hesabından",
+        "to": "{account} hesabına",
+        "viewAll": "Tüm işlem geçmişinizi görüntüleyin",
+        "sentReceived": "Gönderilen ve alınan işlemler ({duration})",
+        "unlimitedHistory": "sınırsız geçmiş",
+        "oneYear": "1 yıl",
+        "yearsCount": "{count} yıl",
+        "monthsCount": "{count} ay",
+        "lastDuration": "son {duration}"
+    },
+    "nearStore": {
+        "connectAndAcceptTerms": "Devam etmek için lütfen cüzdanı bağlayın ve şartları kabul edin.",
+        "transactionNotApproved": "İşlem cüzdanınızda onaylanmadı.",
+        "failedSubmitVote": "Oy gönderilemedi",
+        "failedSubmitVotes": "Oylar gönderilemedi",
+        "viewRequest": "Talebi Görüntüle",
+        "proposalRemoved": "Öneriniz kaldırıldı",
+        "voteSubmitted": "Oyunuz gönderildi",
+        "votesSubmitted": "Oylarınız gönderildi"
+    },
+    "tokenInput": {
+        "max": "MAX",
+        "insufficientTokens": "Yetersiz token. Talebi gönderebilir ve onaydan önce yükleyebilirsiniz.",
+        "balance": "Bakiye: {amount} {symbol}"
+    },
+    "createRequestButton": {
+        "idle": "Talep Oluştur",
+        "noPermission": "Talep oluşturma izniniz yok"
+    },
+    "address": {
+        "copied": "Adres panoya kopyalandı"
+    },
+    "memberAvatars": {
+        "membersWhoCanVote": "Oy kullanabilen üyeler",
+        "moreMembers": "+{count, plural, one {# üye} other {# üye}}"
+    },
+    "accountIdInput": {
+        "minLength": "Hesap kimliği en az 2 karakter olmalıdır",
+        "maxLength": "Hesap kimliği 64 karakterden az olmalıdır",
+        "charset": "Hesap kimliği yalnızca küçük harfler, rakamlar, noktalar, tireler ve alt çizgiler içermelidir, başında veya sonunda ayırıcı bulunmamalıdır",
+        "doesNotExist": "Hesap kimliği mevcut değil"
+    },
+    "addressBookMutations": {
+        "addedToast": "{count, plural, one {Alıcı eklendi} other {# alıcı eklendi}}",
+        "addedSingleToast": "Alıcı eklendi",
+        "addFailedToast": "Alıcılar eklenemedi",
+        "addSingleFailedToast": "Alıcı eklenemedi",
+        "removedToast": "{count, plural, one {Alıcı kaldırıldı} other {# alıcı kaldırıldı}}",
+        "removeFailedToast": "Alıcılar kaldırılamadı",
+        "exportFailedToast": "Alıcılar dışa aktarılamadı"
+    },
+    "treasuryMutations": {
+        "savedToast": "Hazine listenize kaydedildi",
+        "saveFailedToast": "Hazine kaydedilemedi",
+        "hiddenToast": "Hazine listeden gizlendi",
+        "hideFailedToast": "Hazine gizlenemedi",
+        "unhiddenToast": "Hazine tekrar görünür",
+        "unhideFailedToast": "Hazine gösterilemedi",
+        "removedToast": "Hazine kaydedilen listeden kaldırıldı",
+        "removeFailedToast": "Hazine kaydedilen listeden kaldırılamadı"
+    },
+    "telegramSettings": {
+        "title": "Telegram",
+        "connectedTo": "{chat} sohbetine bağlı",
+        "chatNumber": "Sohbet #{id}",
+        "fallbackChat": "bir Telegram sohbeti",
+        "disconnect": "Bağlantıyı Kes",
+        "connect": "Bağlan",
+        "connectDescription": "Bildirim almak için hazinenizi bir Telegram sohbetine bağlayın.",
+        "noTreasuryDescription": "Hazinelerinizi bir Telegram sohbetine bağlayın.",
+        "openSettingsHint": "Entegrasyonları yönetmek için bir hazineden ayarları açın.",
+        "disconnectedToast": "Bu hazine için Telegram bağlantısı kesildi",
+        "disconnectFailedToast": "Telegram bağlantısı kesilemedi. Tekrar deneyin."
+    },
+    "assetsTable": {
+        "noAssetsFound": "Varlık bulunamadı.",
+        "assetDetails": "Varlık Ayrıntıları",
+        "coinPrice": "Coin Fiyatı",
+        "weight": "Ağırlık",
+        "balance": "Bakiye",
+        "lockedBalance": "Kilitli Bakiye",
+        "totalBalance": "Toplam Bakiye",
+        "source": "Kaynak",
+        "balanceByInvestors": "{count, plural, one {Yatırımcıya} other {Yatırımcılara}} Göre Bakiye",
+        "investors": "{count, plural, one {Yatırımcı} other {Yatırımcılar}}",
+        "poolBreakdown": "Havuz Dökümü",
+        "unlockedToken": "Kilitsiz Token",
+        "lockupStakingPool": "Lockup staking havuzu",
+        "exchange": "Takas",
+        "send": "Gönder",
+        "details": "Ayrıntılar",
+        "columnToken": "Token",
+        "columnLocked": "Kilitli",
+        "columnUnlocked": "Kilitsiz",
+        "columnTotalAllocated": "Toplam Tahsis Edilen",
+        "columnAvailableToWithdraw": "Çekilebilir",
+        "viewAvailable": "Kullanılabilir",
+        "viewLocked": "Kilitli",
+        "viewEarning": "Kazanç",
+        "fullAllocatedBalance": "Tahsis edilen tam bakiyeniz",
+        "partAllocatedBalance": "Tahsis edilen bakiyenizin bir kısmı",
+        "currentlyEarning": "({amount} {symbol}) şu anda kazanıyor.",
+        "willAppearHere": " Kazanmayı durdurduğunuzda burada görünecek.",
+        "seeInEarningTab": "Kazanç sekmesinde gör",
+        "seeInEarning": "Kazanç'ta gör"
+    },
+    "earningDetails": {
+        "title": "Kazanç Ayrıntıları",
+        "totalStaked": "Toplam Stake Edilen",
+        "earningOverview": "Kazanç Genel Görünümü",
+        "poolBreakdown": "Havuz Dökümü ({count, plural, one {# havuz} other {# havuz}})",
+        "almostReady": "Kazan neredeyse hazır!",
+        "finalizingFeature": "Bu özelliği tamamlıyoruz<br></br>böylece kısa süre içinde token kazanmaya başlayabilirsiniz.",
+        "comingSoon": "Yakında",
+        "goToEarn": "Kazanca Git",
+        "readyToWithdraw": "Çekmeye hazır",
+        "unstaking": "Stake'i kaldırma",
+        "overview": {
+            "staked": "Stake Edildi",
+            "stakedInfo": "Şu anda doğrulayıcılara delege edilmiş ve ödül kazanan tokenler.",
+            "pendingRelease": "Bekleyen Serbest Bırakma",
+            "pendingReleaseInfo": "Stake'i kaldırılmış ancak hâlâ kilit açma süresinde olan tokenler (genellikle 2-3 gün).",
+            "availableForWithdraw": "Çekilebilir",
+            "availableForWithdrawInfo": "Kilit açma süresini tamamlamış ve çekilebilen stake'i kaldırılmış tokenler."
+        }
+    },
+    "lockupDetails": {
+        "title": "Lockup Ayrıntıları",
+        "balance": "Bakiye",
+        "reservedForStorage": "Depolama İçin Ayrılmış",
+        "reservedForStorageInfo": "Lockup hesabı tarafından depolama maliyetlerini ödemek için ayrılan NEAR.",
+        "tokenBreakdown": "Token Dökümü",
+        "allocatedAmount": "Tahsis Edilen Miktar",
+        "earned": "Kazanılan",
+        "progress": "İlerleme",
+        "unlocked": "Kilidi Açıldı",
+        "locked": "Kilitli",
+        "schedule": "Plan",
+        "startDate": "Başlangıç Tarihi",
+        "endDate": "Bitiş Tarihi",
+        "rounds": "Turlar",
+        "releaseInterval": "Serbest Bırakma Aralığı",
+        "nextUnlockDate": "Sonraki Kilit Açma Tarihi",
+        "allEarning": "Lockup'ınızdan tüm {amount} {symbol} şu anda kazanıyor.",
+        "partEarning": "Lockup'ınızın bir kısmı ({amount} {symbol}) şu anda kazanıyor.",
+        "stopEarningFirst": "Kilidi açılmış tokenleri kullanmak için önce kazanmayı durdurun ve onları çekin.",
+        "howGrantWorks": "Hibeniz nasıl çalışır",
+        "ftStep1": "Belirli bir süre için bir hibe alırsınız. Tüm miktarı bir kerede almak yerine, varlıklar zaman içinde parçalar halinde kullanılabilir hale gelir.",
+        "ftStep2": "Bir sonraki serbest bırakma tarihi geldiğinde, bu token bölümü otomatik olarak kilidi açılır ve hazine bakiyenize taşınır.",
+        "ftStep3": "Bakiyenizde göründüklerinde, ödemeler, transferler veya diğer işlemler için hemen kullanabilirsiniz.",
+        "nearStep1": "Tanımlanmış bir başlangıç ve bitiş tarihi olan belirli bir süre için bir hibe alırsınız.",
+        "nearStep2": "Tokenlerin kilidi açıldıkça, otomatik olarak hazine bakiyenizde kullanılabilir hale gelirler.",
+        "nearStep3": "Kilidi açılmış tokenleri ödemeler, transferler veya diğer işlemler için hemen kullanabilirsiniz.",
+        "notAvailable": "Yok",
+        "everyMonth": "Her ay",
+        "everyQuarter": "Her çeyrek",
+        "everyUnit": "Her {unit}",
+        "everyMultiple": "Her {text}",
+        "completed": "Tamamlandı",
+        "unit": {
+            "year": "{count, plural, one {# yıl} other {# yıl}}",
+            "day": "{count, plural, one {# gün} other {# gün}}",
+            "hour": "{count, plural, one {# saat} other {# saat}}",
+            "minute": "{count, plural, one {# dakika} other {# dakika}}",
+            "second": "{count, plural, one {# saniye} other {# saniye}}"
+        }
+    },
+    "vestingDetails": {
+        "title": "Vesting Ayrıntıları",
+        "availableToUse": "Kullanılabilir",
+        "vestingPeriod": "Vesting Dönemi",
+        "vestingPeriodDescription": "Tokenler bu dönem boyunca günlük olarak kilidi açılır.",
+        "startDate": "Başlangıç Tarihi",
+        "endDate": "Bitiş Tarihi",
+        "tokenBreakdown": "Token Dökümü",
+        "originalVestedAmount": "Orijinal Vested Miktar",
+        "reservedForStorage": "Depolama İçin Ayrılmış",
+        "reservedForStorageInfo": "Vesting'i aktif tutmak ve depolama maliyetlerini karşılamak için gereken küçük miktarda token.",
+        "percentVested": "%{percent} Hak Edildi",
+        "vestedOf": "{total} {symbol}'den {vested}",
+        "send": "Gönder"
+    },
+    "earningPoolDetails": {
+        "balance": "Bakiye",
+        "apy": "APY",
+        "fee": "Ücret",
+        "notAvailable": "Yok",
+        "lockupStakingPool": "Lockup staking havuzu",
+        "lockupAssetsNote": "Bu pozisyondaki tüm varlıklar lockup'ınızdan gelir. Kazanmayı durdurduktan sonra, bazı tokenler hâlâ kilitli ve kullanılamaz olabilir - ne zaman kilidi açılacağını görmek için lockup planınızı kontrol edin."
+    },
+    "onboardingQuestions": {
+        "stepTitle": "Başlamak için birkaç hızlı soru.",
+        "other": "Diğer",
+        "placeholders": {
+            "describeRole": "Rolünüzü tanımlayın (isteğe bağlı)",
+            "describeUseCase": "Kullanım durumunuzu tanımlayın (isteğe bağlı)",
+            "networkName": "Ağ adını girin (isteğe bağlı)",
+            "currentChallenge": "Mevcut zorluğunuzu girin (isteğe bağlı)",
+            "describeOther": "Diğer'i tanımlayın (isteğe bağlı)"
+        },
+        "questions": {
+            "role": "Rolünüzü en iyi ne tanımlar?",
+            "useCases": "Trezu'yu ne için kullanmayı planlıyorsunuz?",
+            "teamSize": "Hazineyi kaç kişi yönetecek?",
+            "networks": "En sık hangi ağları kullanıyorsunuz?",
+            "multisigExperience": "Multisig konusundaki deneyiminiz nedir?",
+            "currentTools": "Şu anda finansları yönetmek için hangi araçları kullanıyorsunuz?",
+            "monthlyVolume": "Yaklaşık aylık işlem hacmi?",
+            "biggestChallenges": "Şu anda en büyük zorluğunuz nedir?"
+        },
+        "options": {
+            "role": {
+                "founder": "Kurucu",
+                "co-founder": "Eş Kurucu",
+                "cfo-finance-lead": "CFO / Finans Lideri",
+                "operations-manager": "Operasyon Yöneticisi",
+                "treasury-manager": "Hazine Yöneticisi",
+                "other": "Diğer"
+            },
+            "useCases": {
+                "team-payroll-grants": "Ekip bordro ve hibeleri",
+                "company-assets-management": "Şirket varlık yönetimi",
+                "dao-treasury-management": "DAO hazine yönetimi",
+                "investment-portfolio": "Yatırım portföyü",
+                "operational-spending": "Operasyonel harcama",
+                "other": "Diğer"
+            },
+            "teamSize": {
+                "just-me": "Sadece ben",
+                "2-5-people": "2-5 kişi",
+                "6-15-people": "6-15 kişi",
+                "15-plus-people": "15+"
+            },
+            "networks": {
+                "near": "NEAR",
+                "bitcoin": "Bitcoin",
+                "ethereum": "Ethereum",
+                "solana": "Solana",
+                "arbitrum": "Arbitrum",
+                "base": "Base",
+                "optimism": "Optimism",
+                "polygon": "Polygon",
+                "gnosis": "Gnosis",
+                "avalanche": "Avalanche",
+                "bnb-chain": "BNB Chain",
+                "other": "Diğer"
+            },
+            "multisigExperience": {
+                "never-heard-of-it": "Hiç duymadım",
+                "heard-about-it": "Duydum",
+                "never-used-it": "Hiç kullanmadım",
+                "used-gnosis-safe-or-similar": "Gnosis Safe veya benzerini kullandım",
+                "experienced": "Deneyimli",
+                "looking-for-a-better-option": "Daha iyi bir seçenek arıyorum"
+            },
+            "currentTools": {
+                "gnosis-safe": "Gnosis Safe",
+                "fireblocks": "Fireblocks",
+                "tholos": "Tholos",
+                "squads-multisig": "Squads Multisig",
+                "mpc-vault": "MPC Vault",
+                "other": "Diğer"
+            },
+            "monthlyVolume": {
+                "under-10k": "10.000 $ altı",
+                "10k-100k": "10.000 $ - 100.000 $",
+                "100k-1m": "100.000 $ - 1 M $",
+                "1m-plus": "1 M $+"
+            },
+            "biggestChallenges": {
+                "slow-approvals-and-signing": "Yavaş onaylar ve imzalama",
+                "lack-of-transparency-in-the-team": "Ekipte şeffaflık eksikliği",
+                "hard-to-track-spending-and-balances": "Harcamaları ve bakiyeleri takip etmek zor",
+                "security-and-access-control": "Güvenlik ve erişim kontrolü",
+                "no-good-web3-tool-yet": "Henüz iyi bir Web3 aracı yok",
+                "looking-for-crypto-earnings": "Kripto kazançları arıyorum",
+                "other": "Diğer"
+            }
+        }
+    },
+    "onboarding": {
+        "tour": {
+            "addAssets": "Para yatırarak Hazinenize varlıklar ekleyin.",
+            "makeRequests": "Varlık göndermeniz gerektiğinde ödeme talepleri oluşturun.",
+            "exchangeAssets": "Burada varlıklarınızı takas edebilirsiniz.",
+            "addMembers": "Hazinenize üyeler ekleyin ve onlara roller atayın.",
+            "newTreasury": "Yeni bir Hazine kurmak ister misiniz? Birkaç tıklamayla burada yapabilirsiniz.",
+            "helpSupport": "İhtiyacınız olduğunda yardım ve destek alın."
+        },
+        "tourCard": {
+            "close": "Kapat",
+            "stepProgress": "{total} adımdan {current}",
+            "gotIt": "Anladım",
+            "done": "Tamam",
+            "next": "İleri"
+        },
+        "progress": {
+            "title": "Hazineyi Keşfetmek İçin Hızlı Adımları İzleyin",
+            "createTreasuryTitle": "Hazine hesabı oluştur",
+            "createTreasuryDescription": "Hesabınızı başarıyla kurdunuz. Harika bir başlangıç!",
+            "addAssetsTitle": "Varlıklarınızı Ekleyin",
+            "addAssetsDescription": "Onları iş başında görmek için varlıklar ekleyerek başlayın.",
+            "deposit": "Para Yatır",
+            "createPaymentTitle": "Ödeme Talebi Oluşturun",
+            "createPaymentDescription": "Kurulumunuzu tamamlamak için bir ödeme talebi oluşturun.",
+            "send": "Gönder"
+        },
+        "welcome": {
+            "heading": "🎉 Hoş Geldiniz!",
+            "subheading": "Hazinenin kısa bir turuna katılın",
+            "body": "Merhaba! Trezu'nuz hazır - desteklenen ağlardan varlıklar ekleyerek portföyünüzü oluşturmaya başlayın.",
+            "progress": "{total} adımdan {current}",
+            "next": "İleri",
+            "body2": "Nasıl para yatıracağınızı, talep oluşturacağınızı ve yeni bir hesap kuracağınızı görün.",
+            "noThanks": "Hayır, teşekkürler",
+            "letsGo": "Hadi başlayalım"
+        },
+        "congrats": {
+            "heading": "🎉 Tebrikler!",
+            "body": "Hazine kurulumunuzu tamamladınız. Varlıklarınızı kolayca yönetmenin tadını çıkarın.",
+            "letsGo": "Hadi başlayalım!"
+        },
+        "createBanner": {
+            "close": "Kapat",
+            "title": "Trezu'yu Keşfet",
+            "description": "Trezu'nun tüm özelliklerine ve avantajlarına izin almak için bir hesap oluşturun.",
+            "cta": "Hazine Oluştur"
+        },
+        "questionnaire": {
+            "continue": "Devam Et",
+            "skip": "Atla"
+        },
+        "createPrompt": {
+            "title": "Neredeyse hazırsınız",
+            "description": "Cüzdanınız bağlı, ancak henüz bir hazine oluşturmadınız. Trezu'yu kullanmaya başlamak için bir hesap oluşturun veya {suffix}",
+            "suffixDemo": "demoyu inceleyin.",
+            "suffixExploring": "keşfetmeye devam edin.",
+            "createCta": "Hazine Oluştur",
+            "viewDemo": "Demoyu Görüntüle",
+            "keepExploring": "Keşfetmeye Devam Et"
+        },
+        "infoBox": {
+            "title": "Trezu'dan daha fazlasını alın",
+            "close": "Kapat",
+            "description": "Diğerlerinin Hazineyi nasıl kullandığını keşfedin, demoyu deneyin ve özellikleri öğrenmek için belgeleri kontrol edin.",
+            "demoTitle": "Trezu Demosunu Keşfet",
+            "demoDescription": "Canlı bir demo hesabını işlerken görün.",
+            "docsTitle": "Belgeler",
+            "docsDescription": "Tüm özellikler hakkında belgelerden bilgi edinin.",
+            "videoTitle": "Demoyu İzleyin",
+            "videoDescription": "Trezu'nun nasıl çalıştığını gösteren kısa bir video izleyin."
+        }
+    }
+}
