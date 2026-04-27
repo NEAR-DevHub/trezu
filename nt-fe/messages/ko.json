@@ -1219,7 +1219,37 @@
         "connectedToAnother": "다른 채팅에 연결됨",
         "notMember": "어떤 트레저리의 정책 멤버도 아닙니다.",
         "connecting": "연결 중…",
-        "connect": "연결"
+        "connect": "연결",
+        "settings": {
+            "title": "Telegram",
+            "connectedTo": "{chat}에 연결됨",
+            "chatNumber": "채팅 #{id}",
+            "fallbackChat": "Telegram 채팅",
+            "disconnect": "연결 해제",
+            "connect": "연결",
+            "connectHeadline": "텔레그램을 트레저리에 연결",
+            "connectDescription": "새 요청, 트레저리 입금 자산 등 알림을 받습니다.",
+            "noTreasuryDescription": "트레저리를 Telegram 채팅에 연결하세요.",
+            "openSettingsHint": "통합을 관리하려면 트레저리에서 설정을 여세요.",
+            "disconnectedToast": "이 트레저리에 대한 Telegram 연결이 해제되었습니다",
+            "disconnectFailedToast": "Telegram 연결을 해제하지 못했습니다. 다시 시도해 주세요.",
+            "telegramDisconnect": {
+                "title": "텔레그램 봇 연결 해제",
+                "body": "연결을 해제하면 이 트레저리에 대한 알림을 더 이상 봇에서 받을 수 없습니다. 언제든지 다시 연결할 수 있습니다.",
+                "action": "연결 해제"
+            }
+        },
+        "connectInstructions": {
+            "title": "Telegram 계정을 Trezu에 연결",
+            "subtitle": "이 트레저리의 알림을 Telegram에서 받으려면 다음 단계를 따르세요.",
+            "step1": "{bot}을 Telegram 그룹 또는 채널에 추가하세요.",
+            "step2": "Telegram에서 \"트레저리 연결\"을 탭하세요(또는 안내되면 봇 연결 흐름을 사용하세요).",
+            "step3": "웹에 로그인한 뒤 승인하고, 이 채팅에 연결할 트레저리(현재 트레저리 포함)를 선택하세요.",
+            "doneHint": "브라우저에 트레저리가 성공적으로 연결되었다고 표시되면 완료입니다.",
+            "copyBotTooltip": "봇 핸들 복사",
+            "botCopiedToast": "봇 핸들을 복사했습니다",
+            "openInTelegram": "Telegram에서 {bot} 열기"
+        }
     },
     "systemStatus": {
         "underMaintenance": "유지 보수 중",
@@ -1527,15 +1557,6 @@
         "tableToken": "토큰",
         "tableTotalValue": "총 가치"
     },
-    "telegramConnectInstructions": {
-        "title": "Telegram 연결",
-        "subtitle": "Telegram에서 제안 및 활동에 대한 알림을 받으세요.",
-        "step3": "시작을 누르고 지침을 따르세요.",
-        "success": "모두 준비되었습니다!",
-        "copyBotTooltip": "봇 핸들 복사",
-        "botCopiedToast": "봇 핸들이 복사되었습니다",
-        "openInTelegram": "Telegram에서 {bot} 열기"
-    },
     "transactionHashCell": {
         "copyHash": "해시 복사",
         "hashCopied": "해시가 복사되었습니다",
@@ -1805,19 +1826,6 @@
         "unhideFailedToast": "트레저리 표시에 실패했습니다",
         "removedToast": "트레저리가 저장된 목록에서 제거되었습니다",
         "removeFailedToast": "저장된 목록에서 트레저리 제거에 실패했습니다"
-    },
-    "telegramSettings": {
-        "title": "Telegram",
-        "connectedTo": "{chat}에 연결됨",
-        "chatNumber": "채팅 #{id}",
-        "fallbackChat": "Telegram 채팅",
-        "disconnect": "연결 해제",
-        "connect": "연결",
-        "connectDescription": "알림을 받으려면 트레저리를 Telegram 채팅에 연결하세요.",
-        "noTreasuryDescription": "트레저리를 Telegram 채팅에 연결하세요.",
-        "openSettingsHint": "통합을 관리하려면 트레저리에서 설정을 여세요.",
-        "disconnectedToast": "이 트레저리에 대한 Telegram 연결이 해제되었습니다",
-        "disconnectFailedToast": "Telegram 연결을 해제하지 못했습니다. 다시 시도해 주세요."
     },
     "assetsTable": {
         "noAssetsFound": "자산을 찾을 수 없습니다.",

@@ -1195,7 +1195,7 @@
     "telegram": {
         "tagPill": "Telegram",
         "invalidLinkTitle": "קישור לא תקין",
-        "invalidLinkDescription": "בקישור החיבור ל-Telegram חסר טוקן. לחץ שוב על Connect Treasury ב-Telegram כדי ליצור קישור חדש.",
+        "invalidLinkDescription": "בקישור החיבור ל-Telegram חסר טוקן. לחץ שוב על \"חבר אוצר\" ב-Telegram כדי ליצור קישור חדש.",
         "successTitle": "חובר בהצלחה",
         "successDescription": "האוצרות קושרו לצ'אט Telegram זה.",
         "successToast": "האוצרות חוברו בהצלחה",
@@ -1219,7 +1219,37 @@
         "connectedToAnother": "מחובר לצ'אט אחר",
         "notMember": "אינך חבר מדיניות באף אוצר.",
         "connecting": "מתחבר…",
-        "connect": "חיבור"
+        "connect": "חיבור",
+        "settings": {
+            "title": "Telegram",
+            "connectedTo": "מחובר ל-{chat}",
+            "chatNumber": "צ'אט #{id}",
+            "fallbackChat": "צ'אט Telegram",
+            "disconnect": "התנתקות",
+            "connect": "חיבור",
+            "connectHeadline": "חבר את Telegram לאוצר",
+            "connectDescription": "קבל התראות על בקשות חדשות, נכסים שנכנסו לאוצר ועוד.",
+            "noTreasuryDescription": "קשר את האוצרות שלך לצ'אט Telegram.",
+            "openSettingsHint": "פתח הגדרות מאוצר כדי לנהל אינטגרציות.",
+            "disconnectedToast": "Telegram נותק עבור אוצר זה",
+            "disconnectFailedToast": "לא ניתן היה לנתק את Telegram. נסה שוב.",
+            "telegramDisconnect": {
+                "title": "לנתק את בוט הטלגרם",
+                "body": "אם תנתק/י את החיבור, לא תקבל/י יותר התראות בבוט עבור אוצר זה. אפשר לחבר מחדש בכל עת.",
+                "action": "לנתק"
+            }
+        },
+        "connectInstructions": {
+            "title": "חברו את חשבון ה-Telegram שלכם ל-Trezu",
+            "subtitle": "בצעו את השלבים הבאים כדי להפעיל התראות עבור האוצר הזה ב-Telegram.",
+            "step1": "הוסיפו את {bot} לקבוצה או לערוץ שלכם ב-Telegram.",
+            "step2": "ב-Telegram לחצו על \"חבר אוצר\" (או השתמשו בתהליך החיבור של הבוט כאשר תתבקשו).",
+            "step3": "התחברו באתר, אשרו ובחרו אילו אוצרות לחבר לצ'אט הזה, כולל האוצר הזה.",
+            "doneHint": "סיימתם כאשר הדפדפן מציג שהאוצרות שלכם קושרו בהצלחה.",
+            "copyBotTooltip": "העתקת שם הבוט",
+            "botCopiedToast": "שם הבוט הועתק",
+            "openInTelegram": "פתחו את {bot} ב-Telegram"
+        }
     },
     "systemStatus": {
         "underMaintenance": "בתחזוקה",
@@ -1527,15 +1557,6 @@
         "tableToken": "טוקן",
         "tableTotalValue": "ערך כולל"
     },
-    "telegramConnectInstructions": {
-        "title": "חיבור Telegram",
-        "subtitle": "קבל התראות על הצעות ופעילות ב-Telegram שלך.",
-        "step3": "לחץ על Start ועקוב אחר ההוראות.",
-        "success": "הכל מוכן!",
-        "copyBotTooltip": "העתק שם בוט",
-        "botCopiedToast": "שם הבוט הועתק",
-        "openInTelegram": "פתח את {bot} ב-Telegram"
-    },
     "transactionHashCell": {
         "copyHash": "העתק גיבוב",
         "hashCopied": "הגיבוב הועתק",
@@ -1805,19 +1826,6 @@
         "unhideFailedToast": "ביטול הסתרת האוצר נכשל",
         "removedToast": "האוצר הוסר מהרשימה השמורה",
         "removeFailedToast": "הסרת האוצר מהרשימה השמורה נכשלה"
-    },
-    "telegramSettings": {
-        "title": "Telegram",
-        "connectedTo": "מחובר ל-{chat}",
-        "chatNumber": "צ'אט #{id}",
-        "fallbackChat": "צ'אט Telegram",
-        "disconnect": "התנתקות",
-        "connect": "חיבור",
-        "connectDescription": "קשר את האוצר שלך לצ'אט Telegram כדי לקבל התראות.",
-        "noTreasuryDescription": "קשר את האוצרות שלך לצ'אט Telegram.",
-        "openSettingsHint": "פתח הגדרות מאוצר כדי לנהל אינטגרציות.",
-        "disconnectedToast": "Telegram נותק עבור אוצר זה",
-        "disconnectFailedToast": "לא ניתן היה לנתק את Telegram. נסה שוב."
     },
     "assetsTable": {
         "noAssetsFound": "לא נמצאו נכסים.",

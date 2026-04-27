@@ -9,11 +9,14 @@ import { useTranslations } from "next-intl";
 import { useNextStep } from "nextstepjs";
 import type { Tour } from "nextstepjs";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useNear } from "@/stores/near-store";
 import { useAssets } from "@/hooks/use-assets";
 import { useProposals } from "@/hooks/use-proposals";
+import { useTelegramStatuses } from "@/hooks/use-telegram";
 import { availableBalance } from "@/lib/balance";
 import { useUiStore } from "@/stores/ui-store";
+import { features } from "@/constants/features";
 
 // Tour names
 export const TOUR_NAMES = {
@@ -26,6 +29,7 @@ export const LOCAL_STORAGE_KEYS = {
     WELCOME_DISMISSED: "welcome-dismissed",
     DASHBOARD_TOUR_COMPLETED: "dashboard-tour-completed",
     INFO_BOX_TOUR_DISMISSED: "info-box-tour-dismissed",
+    NOTIFICATIONS_DISMISSED: "notifications-dismissed",
 } as const;
 
 // Selector IDs
@@ -376,6 +380,127 @@ export function CongratsTooltip() {
                     onClick={handleDismiss}
                 >
                     {tC("letsGo")}
+                </Button>
+            </div>
+        </div>
+    );
+}
+
+export function NotificationsTooltip() {
+    const tN = useTranslations("onboarding.notifications");
+    const router = useRouter();
+    const [isVisible, setIsVisible] = useState(false);
+    const { isGuestTreasury, isLoading, treasuryId } = useTreasury();
+    const { accountId } = useNear();
+    const isMobile = useMediaQuery("(max-width: 768px)");
+    const isSidebarOpen = useSidebarStore((state) => state.isSidebarOpen);
+    const { currentTour } = useNextStep();
+    const isTourActive = !!currentTour;
+    const pushOverlay = useUiStore((s) => s.pushOverlay);
+    const popOverlay = useUiStore((s) => s.popOverlay);
+
+    const statusQueries = useTelegramStatuses(treasuryId ? [treasuryId] : []);
+    const statusResult =
+        treasuryId && statusQueries.length > 0 ? statusQueries[0] : undefined;
+    const telegramConnected = Boolean(statusResult?.data?.connected);
+    const isLoadingTelegram =
+        !!treasuryId && !!(statusResult?.isLoading || statusResult?.isPending);
+
+    const hidden = isMobile && isSidebarOpen;
+
+    useEffect(() => {
+        if (isVisible) {
+            pushOverlay();
+            return () => popOverlay();
+        }
+    }, [isVisible]);
+
+    useEffect(() => {
+        if (
+            !features.integrations ||
+            isGuestTreasury ||
+            isLoading ||
+            !treasuryId
+        ) {
+            return;
+        }
+
+        if (
+            localStorage.getItem(LOCAL_STORAGE_KEYS.WELCOME_DISMISSED) !==
+            "true"
+        ) {
+            return;
+        }
+
+        if (
+            localStorage.getItem(LOCAL_STORAGE_KEYS.NOTIFICATIONS_DISMISSED) ===
+            "true"
+        ) {
+            return;
+        }
+
+        if (isLoadingTelegram || telegramConnected) {
+            return;
+        }
+
+        setIsVisible(true);
+    }, [
+        isGuestTreasury,
+        isLoading,
+        treasuryId,
+        isLoadingTelegram,
+        telegramConnected,
+    ]);
+
+    useEffect(() => {
+        if (telegramConnected) {
+            setIsVisible(false);
+        }
+    }, [telegramConnected]);
+
+    const handleDismiss = () => {
+        setIsVisible(false);
+        localStorage.setItem(
+            LOCAL_STORAGE_KEYS.NOTIFICATIONS_DISMISSED,
+            "true",
+        );
+    };
+
+    const handleTryIt = () => {
+        handleDismiss();
+        router.push(`/${treasuryId}/settings?tab=integrations`);
+    };
+
+    if (
+        !isVisible ||
+        !features.integrations ||
+        isGuestTreasury ||
+        isLoading ||
+        hidden ||
+        !accountId ||
+        isTourActive
+    ) {
+        return null;
+    }
+
+    return (
+        <div className="fixed max-w-72 flex flex-col gap-0 bottom-8 right-8 z-50 p-3 bg-popover-foreground text-popover rounded-[8px]">
+            <div className="flex items-center justify-between pt-0.5 pb-2.5">
+                <h1 className="text-sm font-semibold">🎉 {tN("title")}</h1>
+                <XIcon
+                    className="size-4 cursor-pointer"
+                    onClick={handleDismiss}
+                />
+            </div>
+            <p className="py-2 text-xs">{tN("body")}</p>
+            <div className="pt-2 flex justify-end gap-1.5">
+                <Button
+                    variant="default"
+                    size="sm"
+                    className="bg-popover text-popover-foreground hover:bg-popover/90 hover:text-popover-foreground/90"
+                    onClick={handleTryIt}
+                >
+                    {tN("tryIt")}
                 </Button>
             </div>
         </div>
