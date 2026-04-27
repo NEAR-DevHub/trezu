@@ -274,6 +274,15 @@ impl Contract {
             match existing.status {
                 ActivationStatus::Ready { .. } | ActivationStatus::Done => {
                     env::log_str("activate: already loaded");
+                    // Refund the full attached deposit — the activation is
+                    // already paid for, so any NEAR forwarded by the caller
+                    // would otherwise be silently absorbed by `#[payable]`.
+                    let attached = env::attached_deposit();
+                    if attached.as_yoctonear() > 0 {
+                        return Some(
+                            Promise::new(env::predecessor_account_id()).transfer(attached),
+                        );
+                    }
                     return None;
                 }
                 ActivationStatus::Loading => {
@@ -520,11 +529,10 @@ impl Contract {
             dispatched += 1;
         }
 
-        activation.status = if cursor == total {
-            ActivationStatus::Done
-        } else {
-            ActivationStatus::Ready { cursor }
-        };
+        // Terminal `Done` is set by `on_sign` once no entries remain in
+        // `Pending`/`Signing`. `ping` only advances the cursor — even when
+        // `cursor == total`, in-flight `Signing` entries may still resolve.
+        activation.status = ActivationStatus::Ready { cursor };
 
         dispatched
     }
@@ -541,22 +549,35 @@ impl Contract {
         let Some(activation) = self.activations.get_mut(&pid) else {
             return;
         };
-        let Some(entry) = activation.hashes.get_mut(index as usize) else {
-            return;
-        };
+        {
+            let Some(entry) = activation.hashes.get_mut(index as usize) else {
+                return;
+            };
 
-        // Only flip if we're still in Signing — guards against double-callbacks
-        // or manual state surgery.
-        if entry.status != HashStatus::Signing {
-            return;
+            // Only flip if we're still in Signing — guards against double-callbacks
+            // or manual state surgery.
+            if entry.status != HashStatus::Signing {
+                return;
+            }
+
+            entry.status = match result {
+                Ok(MpcSignResponse::Ed25519 { signature }) => HashStatus::Signed { signature },
+                _ => HashStatus::SignFailed {
+                    reason: SignFailureReason::SignerCallFailed,
+                },
+            };
         }
 
-        entry.status = match result {
-            Ok(MpcSignResponse::Ed25519 { signature }) => HashStatus::Signed { signature },
-            _ => HashStatus::SignFailed {
-                reason: SignFailureReason::SignerCallFailed,
-            },
-        };
+        // Promote to `Done` once no entry is still in-flight or awaiting
+        // dispatch. `ping` no longer sets `Done` itself, so the last-arriving
+        // callback is responsible for closing out the activation.
+        let all_resolved = activation
+            .hashes
+            .iter()
+            .all(|h| !matches!(h.status, HashStatus::Pending | HashStatus::Signing));
+        if all_resolved {
+            activation.status = ActivationStatus::Done;
+        }
     }
 
     /// Reset `SignFailed` entries back to `Pending` so a future `ping` will

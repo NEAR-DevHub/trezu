@@ -293,7 +293,7 @@ async fn activate(ctx: &Ctx, proposal_id: u64) -> testresult::TestResult<Executi
     Ok(res)
 }
 
-async fn ping(ctx: &Ctx, proposal_id: u64) -> testresult::TestResult<(u32, ExecutionSuccess)> {
+async fn ping(ctx: &Ctx, proposal_id: u64) -> testresult::TestResult<u32> {
     let res = near_api::Contract(ctx.contract_id.clone())
         .call_function("ping", json!({ "proposal_id": proposal_id.to_string() }))
         .transaction()
@@ -302,8 +302,7 @@ async fn ping(ctx: &Ctx, proposal_id: u64) -> testresult::TestResult<(u32, Execu
         .send_to(&ctx.network)
         .await?
         .into_result()?;
-    let dispatched: u32 = res.json()?;
-    Ok((dispatched, res))
+    Ok(res.json()?)
 }
 
 async fn activate_with_deposit(
@@ -582,6 +581,61 @@ async fn test_malformed_hashes_are_skipped() -> testresult::TestResult {
         assert!(
             hashes[i]["status"]["Invalid"]["reason"] == "MalformedHex",
             "Invalid status should persist through ping for hash[{i}]"
+        );
+    }
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_100_hash_multi_ping_completes() -> testresult::TestResult {
+    let ctx = setup().await?;
+    bootstrap(&ctx).await?;
+
+    // 100 distinct valid hex hashes — too many for a single activate's
+    // forwarded auto-ping budget, so the test must drive ping() in a loop
+    // until the activation reaches Done.
+    const N: u64 = 100;
+    let csv: String = (0..N)
+        .map(|i| format!("{:0>64x}", i + 1))
+        .collect::<Vec<_>>()
+        .join(",");
+    let proposal_id = add_and_approve_proposal(&ctx, &csv).await?;
+
+    activate(&ctx, proposal_id).await?;
+    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+
+    // Drive ping in a loop. With ~22 dispatches per 300 TGas, ~5 pings should
+    // finish; cap at 15 for slack against gas-budget jitter.
+    let mut iterations = 0;
+    loop {
+        let activation = read_activation(&ctx, proposal_id).await;
+        let status = &activation["status"];
+        println!(
+            "  iter {iterations}: status={status} cursor={:?}",
+            status.get("Ready").and_then(|r| r.get("cursor"))
+        );
+        if status == "Done" {
+            break;
+        }
+        assert!(
+            iterations < 15,
+            "activation did not reach Done after 15 pings; last status: {status}"
+        );
+
+        let dispatched = ping(&ctx, proposal_id).await?;
+        println!("  iter {iterations}: ping dispatched {dispatched}");
+        iterations += 1;
+    }
+
+    let activation = read_activation(&ctx, proposal_id).await;
+    let hashes = activation["hashes"].as_array().unwrap();
+    assert_eq!(hashes.len(), N as usize);
+    for (i, h) in hashes.iter().enumerate() {
+        assert!(
+            h["status"].get("Signed").is_some(),
+            "hash[{i}] not Signed: {}",
+            h["status"]
         );
     }
 
