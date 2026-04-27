@@ -102,3 +102,11 @@ export NEXT_PUBLIC_BACKEND_API_BASE=http://127.0.0.1:3002
 ```
 
 Then start the backend and frontend as usual. Add the bot to a Telegram group — it should respond with a "Connect Treasury" button linking to your local frontend.
+
+## 💰 Bounty Contribution
+
+- **Task:** [Task] Improve amount formatting in Trezu app
+- **Reward:** $500
+- **Source:** GitHub-Paid
+- **Date:** 2026-04-28
+
