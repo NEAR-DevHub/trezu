@@ -29,32 +29,30 @@ use crate::sputnik::{FCAction, FCKind};
 const V1_SIGNER: &str = "v1.signer";
 const INTENTS: &str = "intents.near";
 
-const SIGN_GAS: Gas = Gas::from_tgas(8);
-const SIGN_CALLBACK_GAS: Gas = Gas::from_tgas(5);
-const SIGN_RESERVE_GAS: Gas = Gas::from_tgas(15);
-const FETCH_PROPOSAL_GAS: Gas = Gas::from_tgas(20);
-const ACTIVATE_CALLBACK_GAS: Gas = Gas::from_tgas(30);
-const DERIVE_PUBKEY_GAS: Gas = Gas::from_tgas(10);
-const ADD_PUBKEY_GAS: Gas = Gas::from_tgas(5);
-const BOOTSTRAP_CALLBACK_GAS: Gas = Gas::from_tgas(10);
+pub const SIGN_GAS: Gas = Gas::from_tgas(8);
+pub const SIGN_CALLBACK_GAS: Gas = Gas::from_tgas(5);
+pub const SIGN_RESERVE_GAS: Gas = Gas::from_tgas(5);
+pub const FETCH_PROPOSAL_GAS: Gas = Gas::from_tgas(5);
+pub const ACTIVATE_CALLBACK_GAS: Gas = Gas::from_tgas(8);
+pub const DERIVE_PUBKEY_GAS: Gas = Gas::from_tgas(5);
+pub const ADD_PUBKEY_GAS: Gas = Gas::from_tgas(5);
+pub const BOOTSTRAP_CALLBACK_GAS: Gas = Gas::from_tgas(5);
+/// Gas reserved for the tail of `on_get_proposal` after the chained ping is
+/// scheduled — covers the ping promise's own scheduling cost, the refund
+/// Promise's scheduling cost, and finishing the fn.
+pub const ON_GET_PROPOSAL_TAIL_GAS: Gas = Gas::from_tgas(10);
 
-const SPUTNIK_SUFFIX: &str = ".sputnik-dao.near";
-
-const MAX_HASHES_PER_ACTIVATION: usize = 200;
+pub const MAX_HASHES_PER_ACTIVATION: usize = 200;
 const HASH_HEX_LEN: usize = 64;
 
-/// Worst-case bytes per `HashEntry` borsh-encoded:
-/// - payload_hash String: 4 (len) + 64 = 68
-/// - status enum tag + Signed { signature: [u8; 64] }: 1 + 64 = 65
-/// - IterableMap/Vec overhead per element: ~67
-const BYTES_PER_HASH: u64 = 200;
+/// Worst-case bytes per `HashEntry` borsh-encoded, calibrated against
+/// integration-test measurements (see `test_gas_and_storage_metrics`).
+/// Measured ~135 bytes/hash with `Signed { signature: [u8; 64] }`; ~10% headroom.
+pub const BYTES_PER_HASH: u64 = 150;
 
-/// Worst-case bytes per `Activation` minus its `hashes` Vec:
-/// - status enum: 1 + 4 = 5
-/// - hashes Vec header: 4
-/// - IterableMap entry overhead (key u64 + index): ~50
-/// - payer AccountId (max 64 chars + len): 68
-const BYTES_PER_ACTIVATION: u64 = 130;
+/// Worst-case bytes per `Activation` minus its `hashes` Vec.
+/// Measured ~150 bytes; small safety bump.
+pub const BYTES_PER_ACTIVATION: u64 = 160;
 
 #[near(serializers = [json, borsh])]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -138,13 +136,6 @@ impl HashEntry {
 pub struct Activation {
     pub status: ActivationStatus,
     pub hashes: Vec<HashEntry>,
-    /// Caller of `activate` — receives the unused-storage refund and funded
-    /// the per-hash 1-yocto deposits attached to each `sign` call.
-    pub payer: AccountId,
-    /// Yocto attached to `activate`. Held in contract balance to back the
-    /// activation's storage and `sign` deposits; the unused portion is
-    /// refunded to `payer` once the actual hash count is known.
-    pub deposit: NearToken,
 }
 
 #[near(contract_state)]
@@ -158,23 +149,14 @@ pub struct Contract {
 #[near]
 impl Contract {
     /// Initialize the subaccount. Called once by the factory.
-    /// Asserts the naming binding: `current_account_id == "<prefix>.<factory>"`
-    /// and `owner_dao == "<prefix>.sputnik-dao.<network>"`.
+    ///
+    /// The naming binding (`current_account_id == "<prefix>.<factory>"` and
+    /// `owner_dao == "<prefix>.sputnik-dao.<network>"`) is enforced by the
+    /// factory in `create_confidential_subaccount`. This `init` itself accepts
+    /// any `owner_dao` so that a contract can be deployed manually (e.g. for
+    /// dev/testing) and pointed at an arbitrary DAO.
     #[init]
     pub fn init(owner_dao: AccountId) -> Self {
-        let current = env::current_account_id();
-        let current_str = current.as_str();
-
-        let (prefix_self, _factory) = current_str
-            .split_once('.')
-            .unwrap_or_else(|| env::panic_str("current_account_id must be a subaccount"));
-
-        let expected_owner = format!("{prefix_self}{SPUTNIK_SUFFIX}");
-        require!(
-            owner_dao.as_str() == expected_owner,
-            "owner_dao does not match expected naming binding"
-        );
-
         Self {
             owner_dao,
             bootstrap: BootstrapStatus::Pending,
@@ -316,11 +298,13 @@ impl Contract {
             Activation {
                 status: ActivationStatus::Loading,
                 hashes: vec![],
-                payer: env::predecessor_account_id(),
-                deposit: attached,
             },
         );
 
+        // Forward the predecessor + attached deposit through to the callback
+        // so we can refund the unused portion without storing per-activation
+        // refund metadata on chain.
+        let payer = env::predecessor_account_id();
         Some(
             ext_sputnik::ext(self.owner_dao.clone())
                 .with_static_gas(FETCH_PROPOSAL_GAS)
@@ -328,7 +312,7 @@ impl Contract {
                 .then(
                     Self::ext(env::current_account_id())
                         .with_static_gas(ACTIVATE_CALLBACK_GAS)
-                        .on_get_proposal(proposal_id),
+                        .on_get_proposal(proposal_id, payer, attached),
                 ),
         )
     }
@@ -337,76 +321,141 @@ impl Contract {
     pub fn on_get_proposal(
         &mut self,
         proposal_id: U64,
+        payer: AccountId,
+        attached: NearToken,
         #[callback_result] result: Result<SputnikProposal, PromiseError>,
     ) -> Option<Promise> {
         let pid: u64 = proposal_id.into();
         let proposal = match result {
             Ok(p) => p,
-            Err(_) => return self.abort_loading(pid, "on_get_proposal: fetch failed"),
+            Err(_) => {
+                return self.abort_loading(pid, &payer, attached, "on_get_proposal: fetch failed")
+            }
         };
 
         if proposal.status != "Approved" {
-            return self.abort_loading(pid, "on_get_proposal: proposal not Approved");
+            return self.abort_loading(
+                pid,
+                &payer,
+                attached,
+                "on_get_proposal: proposal not Approved",
+            );
         }
 
         let fc = match &proposal.kind {
             ProposalKind::FunctionCall(fc) => fc,
             ProposalKind::Other => {
-                return self.abort_loading(pid, "on_get_proposal: not a FunctionCall proposal");
+                return self.abort_loading(
+                    pid,
+                    &payer,
+                    attached,
+                    "on_get_proposal: not a FunctionCall proposal",
+                );
             }
         };
 
         if fc.receiver_id.as_str() != V1_SIGNER {
-            return self.abort_loading(pid, "on_get_proposal: receiver is not v1.signer");
+            return self.abort_loading(
+                pid,
+                &payer,
+                attached,
+                "on_get_proposal: receiver is not v1.signer",
+            );
         }
 
         let header_action = match fc.actions.first() {
             Some(a) => a,
-            None => return self.abort_loading(pid, "on_get_proposal: no actions"),
+            None => {
+                return self.abort_loading(pid, &payer, attached, "on_get_proposal: no actions")
+            }
         };
         if header_action.method_name != "sign" {
-            return self.abort_loading(pid, "on_get_proposal: header action is not sign");
+            return self.abort_loading(
+                pid,
+                &payer,
+                attached,
+                "on_get_proposal: header action is not sign",
+            );
         }
 
         let csv = match proposal.description_field("payload_hashes") {
             Some(v) => v,
-            None => return self.abort_loading(pid, "on_get_proposal: payload_hashes missing"),
+            None => {
+                return self.abort_loading(
+                    pid,
+                    &payer,
+                    attached,
+                    "on_get_proposal: payload_hashes missing",
+                );
+            }
         };
 
         let hashes: Vec<HashEntry> = csv.split(',').map(HashEntry::from_raw).collect();
 
         if hashes.is_empty() || hashes.len() > MAX_HASHES_PER_ACTIVATION {
-            return self.abort_loading(pid, "on_get_proposal: hash count out of range");
+            return self.abort_loading(
+                pid,
+                &payer,
+                attached,
+                "on_get_proposal: hash count out of range",
+            );
         }
 
-        // Compute actual cost and refund the difference back to the payer.
+        let actual_cost = Self::cost_for_hashes(hashes.len() as u64);
+        // Defensive: `activate` already requires `attached >= cost_for_hashes(MAX)`,
+        // so any N ≤ MAX should satisfy `actual_cost <= attached`. If a future
+        // change to `cost_for_hashes` breaks that invariant, abort + refund
+        // rather than silently underfunding the activation's storage.
+        if actual_cost > attached {
+            return self.abort_loading(
+                pid,
+                &payer,
+                attached,
+                "on_get_proposal: actual cost exceeds attached deposit",
+            );
+        }
+        let refund = attached.saturating_sub(actual_cost);
+
         let activation = self
             .activations
             .get_mut(&pid)
             .unwrap_or_else(|| env::panic_str("activation not found"));
-        let actual_cost = Self::cost_for_hashes(hashes.len() as u64);
-        let refund = activation.deposit.saturating_sub(actual_cost);
-        let payer = activation.payer.clone();
-
         activation.status = ActivationStatus::Ready { cursor: 0 };
         activation.hashes = hashes;
-        activation.deposit = actual_cost;
 
+        // Refund excess deposit as a detached side promise (scheduled via
+        // `promise_create`) so we can return the chained ping Promise as the
+        // function's primary result. Returning a joint `refund.and(ping)` is
+        // prohibited by the runtime.
         if refund.as_yoctonear() > 0 {
-            Some(Promise::new(payer).transfer(refund))
-        } else {
-            None
+            Promise::new(payer).transfer(refund).detach();
         }
+
+        // Chain the first ping so callers don't need a follow-up tx for the
+        // happy path. Forward all leftover prepaid gas (minus a small reserve
+        // for finishing this receipt) so a worker can size the dispatch batch
+        // by setting the `activate` tx gas.
+        let remaining = env::prepaid_gas().saturating_sub(env::used_gas());
+        let ping_gas = remaining.saturating_sub(ON_GET_PROPOSAL_TAIL_GAS);
+        Some(
+            Self::ext(env::current_account_id())
+                .with_static_gas(ping_gas)
+                .ping(proposal_id),
+        )
     }
 
-    /// Drop a Loading activation and refund its full deposit to the payer.
-    fn abort_loading(&mut self, pid: u64, reason: &str) -> Option<Promise> {
+    /// Drop a Loading activation and refund the full attached deposit.
+    fn abort_loading(
+        &mut self,
+        pid: u64,
+        payer: &AccountId,
+        attached: NearToken,
+        reason: &str,
+    ) -> Option<Promise> {
         env::log_str(reason);
-        let Some(act) = self.activations.remove(&pid) else {
-            return None;
-        };
-        if act.deposit.as_yoctonear() > 0 {
-            Some(Promise::new(act.payer).transfer(act.deposit))
+        self.activations.remove(&pid);
+        if attached.as_yoctonear() > 0 {
+            Some(Promise::new(payer.clone()).transfer(attached))
         } else {
             None
         }
@@ -553,23 +602,22 @@ mod tests {
         let mut b = VMContextBuilder::new();
         b.current_account_id(current.parse().unwrap())
             .predecessor_account_id(predecessor.parse().unwrap())
-            .signer_account_id(predecessor.parse().unwrap());
+            .signer_account_id(predecessor.parse().unwrap())
+            .prepaid_gas(Gas::from_tgas(300));
         b
     }
 
     #[test]
-    fn init_accepts_matching_dao() {
+    fn init_accepts_any_dao() {
+        // Naming binding is enforced by the factory; init itself is permissive.
         testing_env!(ctx("mydao.bulk-payment.near", "factory.near").build());
         let c = Contract::init("mydao.sputnik-dao.near".parse().unwrap());
         assert_eq!(c.owner_dao.as_str(), "mydao.sputnik-dao.near");
         assert!(matches!(c.bootstrap, BootstrapStatus::Pending));
-    }
 
-    #[test]
-    #[should_panic(expected = "owner_dao does not match expected naming binding")]
-    fn init_rejects_wrong_dao_prefix() {
-        testing_env!(ctx("mydao.bulk-payment.near", "factory.near").build());
-        Contract::init("otherdao.sputnik-dao.near".parse().unwrap());
+        testing_env!(ctx("dev.example.near", "alice.near").build());
+        let c2 = Contract::init("any-dao.sputnik-dao.near".parse().unwrap());
+        assert_eq!(c2.owner_dao.as_str(), "any-dao.sputnik-dao.near");
     }
 
     fn proposal_with_desc(desc: &str) -> SputnikProposal {
@@ -643,8 +691,6 @@ mod tests {
             Activation {
                 status: ActivationStatus::Loading,
                 hashes: vec![],
-                payer: "payer.near".parse().unwrap(),
-                deposit: NearToken::from_yoctonear(0),
             },
         );
         let h1 = "a".repeat(64);
@@ -669,8 +715,6 @@ mod tests {
             Activation {
                 status: ActivationStatus::Loading,
                 hashes: vec![],
-                payer: "payer.near".parse().unwrap(),
-                deposit: NearToken::from_yoctonear(0),
             },
         );
         // Simulate callback path manually.
@@ -699,8 +743,6 @@ mod tests {
             Activation {
                 status: ActivationStatus::Loading,
                 hashes: vec![],
-                payer: "payer.near".parse().unwrap(),
-                deposit: NearToken::from_yoctonear(0),
             },
         );
         let proposal = SputnikProposal {
@@ -714,7 +756,12 @@ mod tests {
             description: format!("* payload_hashes: {}", "a".repeat(64)),
             status: "InProgress".into(),
         };
-        c.on_get_proposal(U64::from(7), Ok(proposal));
+        c.on_get_proposal(
+            U64::from(7),
+            "payer.near".parse().unwrap(),
+            NearToken::from_yoctonear(0),
+            Ok(proposal),
+        );
         assert!(c.activations.get(&7).is_none());
     }
 
@@ -726,8 +773,6 @@ mod tests {
             Activation {
                 status: ActivationStatus::Loading,
                 hashes: vec![],
-                payer: "payer.near".parse().unwrap(),
-                deposit: NearToken::from_yoctonear(0),
             },
         );
         let proposal = SputnikProposal {
@@ -741,7 +786,12 @@ mod tests {
             description: format!("* payload_hashes: {}", "a".repeat(64)),
             status: "Approved".into(),
         };
-        c.on_get_proposal(U64::from(8), Ok(proposal));
+        c.on_get_proposal(
+            U64::from(8),
+            "payer.near".parse().unwrap(),
+            NearToken::from_yoctonear(0),
+            Ok(proposal),
+        );
         assert!(c.activations.get(&8).is_none());
     }
 
@@ -753,8 +803,6 @@ mod tests {
             Activation {
                 status: ActivationStatus::Loading,
                 hashes: vec![],
-                payer: "payer.near".parse().unwrap(),
-                deposit: NearToken::from_yoctonear(0),
             },
         );
         let h1 = "a".repeat(64);
@@ -770,7 +818,14 @@ mod tests {
             description: format!("* payload_hashes: {h1},{h2}"),
             status: "Approved".into(),
         };
-        c.on_get_proposal(U64::from(9), Ok(proposal));
+        // Pass enough deposit to cover the actual cost so on_get_proposal
+        // doesn't take the abort-on-underfunded path.
+        c.on_get_proposal(
+            U64::from(9),
+            "payer.near".parse().unwrap(),
+            NearToken::from_near(1),
+            Ok(proposal),
+        );
         let act = c.activations.get(&9).unwrap();
         assert_eq!(act.hashes.len(), 2);
         assert_eq!(act.status, ActivationStatus::Ready { cursor: 0 });

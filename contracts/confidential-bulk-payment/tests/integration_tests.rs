@@ -14,7 +14,14 @@
 use std::sync::OnceLock;
 
 use base64::Engine;
-use near_api::{AccountId, NearToken};
+use confidential_bulk_payment::{
+    ADD_PUBKEY_GAS, BOOTSTRAP_CALLBACK_GAS, BYTES_PER_ACTIVATION, BYTES_PER_HASH,
+    FETCH_PROPOSAL_GAS,
+};
+use near_api::{
+    types::transaction::result::{ExecutionOutcome, ExecutionSuccess},
+    AccountId, NearGas, NearToken, Tokens,
+};
 use near_sandbox::{
     config::{DEFAULT_GENESIS_ACCOUNT, DEFAULT_GENESIS_ACCOUNT_PRIVATE_KEY},
     Sandbox,
@@ -155,19 +162,6 @@ async fn setup() -> testresult::TestResult<Ctx> {
 
 // ── DAO helpers ────────────────────────────────────────────────────────────
 
-/// Round-trip the proposal kind through the DAO so `act_proposal`'s strict
-/// kind-equality check sees the exact same encoding the contract stored.
-async fn fetch_proposal_kind(ctx: &Ctx, proposal_id: u64) -> serde_json::Value {
-    let proposal: serde_json::Value = near_api::Contract(ctx.dao_id.clone())
-        .call_function("get_proposal", json!({ "id": proposal_id }))
-        .read_only()
-        .fetch_from(&ctx.network)
-        .await
-        .unwrap()
-        .data;
-    proposal["proposal"]["kind"].clone()
-}
-
 /// Add a FunctionCall proposal carrying `payload_hashes` in the description and
 /// vote it through. Returns the assigned proposal id.
 async fn add_and_approve_proposal(
@@ -261,7 +255,7 @@ async fn read_activation(ctx: &Ctx, proposal_id: u64) -> serde_json::Value {
         .data
 }
 
-async fn bootstrap(ctx: &Ctx) -> testresult::TestResult<()> {
+async fn bootstrap(ctx: &Ctx) -> testresult::TestResult<ExecutionSuccess> {
     let res = near_api::Contract(ctx.contract_id.clone())
         .call_function("bootstrap", ())
         .transaction()
@@ -273,10 +267,10 @@ async fn bootstrap(ctx: &Ctx) -> testresult::TestResult<()> {
     for log in res.logs() {
         println!("  bootstrap log: {log}");
     }
-    Ok(())
+    Ok(res)
 }
 
-async fn activate(ctx: &Ctx, proposal_id: u64) -> testresult::TestResult<()> {
+async fn activate(ctx: &Ctx, proposal_id: u64) -> testresult::TestResult<ExecutionSuccess> {
     let required: NearToken = near_api::Contract(ctx.contract_id.clone())
         .call_function("activate_required_deposit", ())
         .read_only()
@@ -287,7 +281,8 @@ async fn activate(ctx: &Ctx, proposal_id: u64) -> testresult::TestResult<()> {
         .call_function("activate", json!({ "proposal_id": proposal_id.to_string() }))
         .transaction()
         .deposit(required)
-        .gas(near_sdk::Gas::from_tgas(100))
+        // Budget covers the activation callback + the chained auto-ping.
+        .gas(near_sdk::Gas::from_tgas(300))
         .with_signer(ctx.caller(), ctx.signer())
         .send_to(&ctx.network)
         .await?
@@ -295,19 +290,104 @@ async fn activate(ctx: &Ctx, proposal_id: u64) -> testresult::TestResult<()> {
     for log in res.logs() {
         println!("  activate log: {log}");
     }
-    Ok(())
+    Ok(res)
 }
 
-async fn ping(ctx: &Ctx, proposal_id: u64) -> testresult::TestResult<u32> {
-    Ok(near_api::Contract(ctx.contract_id.clone())
+async fn ping(ctx: &Ctx, proposal_id: u64) -> testresult::TestResult<(u32, ExecutionSuccess)> {
+    let res = near_api::Contract(ctx.contract_id.clone())
         .call_function("ping", json!({ "proposal_id": proposal_id.to_string() }))
         .transaction()
         .gas(near_sdk::Gas::from_tgas(300))
         .with_signer(ctx.caller(), ctx.signer())
         .send_to(&ctx.network)
         .await?
-        .into_result()?
-        .json()?)
+        .into_result()?;
+    let dispatched: u32 = res.json()?;
+    Ok((dispatched, res))
+}
+
+async fn activate_with_deposit(
+    ctx: &Ctx,
+    proposal_id: u64,
+    deposit: NearToken,
+) -> testresult::TestResult<ExecutionSuccess> {
+    let res = near_api::Contract(ctx.contract_id.clone())
+        .call_function("activate", json!({ "proposal_id": proposal_id.to_string() }))
+        .transaction()
+        .deposit(deposit)
+        .gas(near_sdk::Gas::from_tgas(300))
+        .with_signer(ctx.caller(), ctx.signer())
+        .send_to(&ctx.network)
+        .await?
+        .into_result()?;
+    Ok(res)
+}
+
+// ── Gas / storage measurement helpers ──────────────────────────────────────
+
+async fn near_balance(ctx: &Ctx, account: &AccountId) -> testresult::TestResult<NearToken> {
+    Ok(Tokens::account(account.clone())
+        .near_balance()
+        .fetch_from(&ctx.network)
+        .await?
+        .total)
+}
+
+async fn storage_usage(ctx: &Ctx, account: &AccountId) -> testresult::TestResult<u64> {
+    Ok(Tokens::account(account.clone())
+        .near_balance()
+        .fetch_from(&ctx.network)
+        .await?
+        .storage_usage)
+}
+
+/// Group receipt outcomes by `executor_id` and print TGas burnt by each.
+/// Returns the maximum gas burnt by any single receipt executed on `internal`
+/// (the contract under test) — the tightest constraint for sizing
+/// `*_CALLBACK_GAS` constants.
+fn report_gas(label: &str, res: &ExecutionSuccess, internal: &AccountId) -> u64 {
+    println!("\n── gas breakdown: {label} ──");
+    println!("  total burnt: {} TGas", res.total_gas_burnt.as_tgas());
+
+    let mut by_executor: std::collections::BTreeMap<String, (u64, u64)> =
+        std::collections::BTreeMap::new();
+    let mut max_internal: u64 = 0;
+    let mut max_internal_receipt: Option<&ExecutionOutcome> = None;
+
+    for o in res.receipt_outcomes() {
+        let entry = by_executor
+            .entry(o.executor_id.to_string())
+            .or_insert((0, 0));
+        entry.0 += o.gas_burnt.as_gas();
+        entry.1 += 1;
+
+        if &o.executor_id == internal && o.gas_burnt.as_gas() > max_internal {
+            max_internal = o.gas_burnt.as_gas();
+            max_internal_receipt = Some(o);
+        }
+    }
+
+    for (executor, (gas, count)) in &by_executor {
+        println!(
+            "  {executor:30} {} receipts  {:>6} TGas",
+            count,
+            NearGas::from_gas(*gas).as_tgas()
+        );
+    }
+
+    if let Some(o) = max_internal_receipt {
+        let logs_preview = if o.logs.is_empty() {
+            String::new()
+        } else {
+            format!(" logs={:?}", o.logs)
+        };
+        println!(
+            "  hottest internal receipt: {} TGas{logs_preview}",
+            NearGas::from_gas(max_internal).as_tgas()
+        );
+    }
+
+    max_internal
 }
 
 // ── Tests ──────────────────────────────────────────────────────────────────
@@ -363,27 +443,16 @@ async fn test_full_flow() -> testresult::TestResult {
         .data;
     println!("proposal status (DAO view): {}", proposal["proposal"]["status"]);
 
-    println!("\n══════════ STAGE 3: activate ══════════");
+    println!("\n══════════ STAGE 3: activate (auto-ping fires inline) ══════════");
     activate(&ctx, proposal_id).await?;
-    let activation = read_activation(&ctx, proposal_id).await;
-    println!("activation (after activate):\n{activation:#}");
-    assert_eq!(activation["hashes"].as_array().unwrap().len(), 2);
-    assert!(
-        activation["status"]["Ready"].is_object(),
-        "status: {}",
-        activation["status"]
-    );
-
-    println!("\n══════════ STAGE 4: ping (dispatch sign) ══════════");
-    let dispatched = ping(&ctx, proposal_id).await?;
-    println!("ping dispatched: {dispatched}");
-    assert_eq!(dispatched, 2);
-
     tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-
     let activation = read_activation(&ctx, proposal_id).await;
-    println!("activation (after ping + callbacks):\n{activation:#}");
-    assert_eq!(activation["status"], "Done");
+    println!("activation (after activate + auto-ping):\n{activation:#}");
+    assert_eq!(activation["hashes"].as_array().unwrap().len(), 2);
+    assert_eq!(
+        activation["status"], "Done",
+        "auto-ping should sign the 2 hashes within the activate gas budget"
+    );
     for entry in activation["hashes"].as_array().unwrap() {
         assert!(
             entry["status"].get("Signed").is_some(),
@@ -391,6 +460,7 @@ async fn test_full_flow() -> testresult::TestResult {
             entry["status"]
         );
     }
+
 
     println!("\n══════════ STAGE 5: retry_failed (no-op) ══════════");
     let retried: u32 = near_api::Contract(ctx.contract_id.clone())
@@ -493,37 +563,19 @@ async fn test_malformed_hashes_are_skipped() -> testresult::TestResult {
     let proposal_id = add_and_approve_proposal(&ctx, &csv).await?;
     activate(&ctx, proposal_id).await?;
 
-    let activation = read_activation(&ctx, proposal_id).await;
-    println!("activation (mixed valid/invalid):\n{activation:#}");
-
-    let hashes = activation["hashes"].as_array().unwrap();
-    assert_eq!(hashes.len(), 5);
-
-    let statuses: Vec<&serde_json::Value> = hashes.iter().map(|h| &h["status"]).collect();
-    assert_eq!(statuses[0], "Pending", "hash[0] (good1) should be Pending");
-    assert_eq!(statuses[3], "Pending", "hash[3] (good2) should be Pending");
-    for i in [1, 2, 4] {
-        assert!(
-            statuses[i]["Invalid"]["reason"] == "MalformedHex",
-            "hash[{i}] expected Invalid::MalformedHex, got {}",
-            statuses[i]
-        );
-    }
-
-    let dispatched = ping(&ctx, proposal_id).await?;
-    assert_eq!(dispatched, 2, "expected 2 valid hashes signed");
-
+    // Wait for the chained auto-ping + sign callbacks to settle.
     tokio::time::sleep(std::time::Duration::from_secs(2)).await;
 
     let activation = read_activation(&ctx, proposal_id).await;
-    println!("activation (after ping):\n{activation:#}");
+    println!("activation (after activate + auto-ping):\n{activation:#}");
+
+    let hashes = activation["hashes"].as_array().unwrap();
+    assert_eq!(hashes.len(), 5);
 
     assert_eq!(
         activation["status"], "Done",
         "cursor should walk past all entries, including Invalid ones"
     );
-
-    let hashes = activation["hashes"].as_array().unwrap();
     assert!(hashes[0]["status"].get("Signed").is_some());
     assert!(hashes[3]["status"].get("Signed").is_some());
     for i in [1, 2, 4] {
@@ -532,6 +584,192 @@ async fn test_malformed_hashes_are_skipped() -> testresult::TestResult {
             "Invalid status should persist through ping for hash[{i}]"
         );
     }
+
+    Ok(())
+}
+
+// ── Gas / storage tuning ────────────────────────────────────────────────────
+//
+// Drive the full flow with a known-size hash list and compare measured cost
+// against the constants in `src/lib.rs`. Asserts:
+//
+//   - per-receipt gas burnt on accounts under our control (the contract +
+//     the sputnik-dao instance) stays under the corresponding `*_GAS`
+//     constant, with margin. External signer/intents calls are reported
+//     but not asserted.
+//   - storage bytes per `Activation` (post-ping, when entries carry the
+//     full 64-byte signature) stays under `BYTES_PER_HASH * N
+//     + BYTES_PER_ACTIVATION`.
+
+/// Tuned to the largest batch a single `activate` tx (capped at 300 TGas)
+/// can finish within its forwarded auto-ping budget. With SIGN_GAS=8 +
+/// SIGN_CALLBACK_GAS=5 + SIGN_RESERVE_GAS=5 ≈ 13 TGas per dispatch and
+/// ~150 TGas left after sputnik+on_get_proposal+scheduling, ~9 fits.
+const HASH_COUNT_FOR_METRICS: u64 = 9;
+
+#[tokio::test]
+async fn test_gas_and_storage_metrics() -> testresult::TestResult {
+    let ctx = setup().await?;
+
+    // ── Bootstrap ──────────────────────────────────────────────────────
+    let bootstrap_storage_pre = storage_usage(&ctx, &ctx.contract_id).await?;
+    let bootstrap_res = bootstrap(&ctx).await?;
+    let bootstrap_max_internal = report_gas("bootstrap", &bootstrap_res, &ctx.contract_id);
+    let bootstrap_storage_post = storage_usage(&ctx, &ctx.contract_id).await?;
+    println!(
+        "  storage delta (bootstrap): {} bytes",
+        bootstrap_storage_post - bootstrap_storage_pre
+    );
+    // Bootstrap callbacks are `on_derived_public_key` (5+5+10 = 20 TGas budget)
+    // and `on_add_public_key` (10 TGas budget). The hottest internal receipt
+    // should fit comfortably below the larger of the two.
+    let bootstrap_budget = BOOTSTRAP_CALLBACK_GAS
+        .saturating_add(ADD_PUBKEY_GAS)
+        .saturating_add(BOOTSTRAP_CALLBACK_GAS);
+    assert!(
+        bootstrap_max_internal < bootstrap_budget.as_gas(),
+        "bootstrap callback burnt {} TGas, exceeds budget {} TGas",
+        NearGas::from_gas(bootstrap_max_internal).as_tgas(),
+        bootstrap_budget.as_tgas()
+    );
+
+    // ── Build approval + activate ──────────────────────────────────────
+    let csv: String = (0..HASH_COUNT_FOR_METRICS)
+        .map(|i| format!("{:0>64x}", i + 1))
+        .collect::<Vec<_>>()
+        .join(",");
+    let proposal_id = add_and_approve_proposal(&ctx, &csv).await?;
+
+    let storage_pre_activate = storage_usage(&ctx, &ctx.contract_id).await?;
+    let activate_res = activate(&ctx, proposal_id).await?;
+    let _ = report_gas("activate (with auto-ping)", &activate_res, &ctx.contract_id);
+
+    // `activate` now chains: on_get_proposal → ping → N×on_sign. The chained
+    // ping receives whatever prepaid gas is left after the callback's tail
+    // reserve, so its receipt size scales with the caller's tx budget.
+    // Soundness asserts (sputnik bound + on_sign bound + Done state) live
+    // below — we don't try to gate the ping receipt itself here.
+
+    // Sputnik `get_proposal` is a view-style call we treat as internal-ish for
+    // sizing FETCH_PROPOSAL_GAS. Spot-check it stayed under budget.
+    let sputnik_max = activate_res
+        .receipt_outcomes()
+        .iter()
+        .filter(|o| o.executor_id == ctx.dao_id)
+        .map(|o| o.gas_burnt.as_gas())
+        .max()
+        .unwrap_or(0);
+    println!(
+        "  sputnik get_proposal burnt: {} TGas (budget {} TGas)",
+        NearGas::from_gas(sputnik_max).as_tgas(),
+        FETCH_PROPOSAL_GAS.as_tgas()
+    );
+    assert!(
+        sputnik_max < FETCH_PROPOSAL_GAS.as_gas(),
+        "sputnik get_proposal burnt {} TGas, exceeds FETCH_PROPOSAL_GAS {} TGas",
+        NearGas::from_gas(sputnik_max).as_tgas(),
+        FETCH_PROPOSAL_GAS.as_tgas()
+    );
+
+    // Wait for chained sign callbacks to settle, confirm activation is Done.
+    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+    let activation = read_activation(&ctx, proposal_id).await;
+    assert_eq!(
+        activation["status"], "Done",
+        "auto-ping should have signed all {} hashes within the forwarded gas budget",
+        HASH_COUNT_FOR_METRICS
+    );
+
+    // We don't try to single out the `on_sign` receipt here — it can't be
+    // reliably distinguished from the auto-ping dispatch receipt by gas
+    // alone. If the SIGN_CALLBACK_GAS budget were too tight, the activation
+    // wouldn't reach `Done` (asserted below), so this is covered indirectly.
+
+    // ── Storage after auto-ping (Signed entries with 64-byte sig) ──────
+    let storage_post_ping = storage_usage(&ctx, &ctx.contract_id).await?;
+    let activation_full_delta = storage_post_ping - storage_pre_activate;
+    let estimated = BYTES_PER_HASH * HASH_COUNT_FOR_METRICS + BYTES_PER_ACTIVATION;
+    println!(
+        "\n── storage tuning ──\n  measured (post-ping, {n} hashes Signed): {measured} bytes\n  \
+         estimate (BYTES_PER_HASH*{n} + BYTES_PER_ACTIVATION): {est} bytes\n  \
+         per-hash measured: {per_hash} bytes\n  \
+         headroom: {headroom} bytes",
+        n = HASH_COUNT_FOR_METRICS,
+        measured = activation_full_delta,
+        est = estimated,
+        per_hash = (activation_full_delta.saturating_sub(BYTES_PER_ACTIVATION)) as f64
+            / HASH_COUNT_FOR_METRICS as f64,
+        headroom = estimated as i64 - activation_full_delta as i64,
+    );
+
+    // The estimate is what we charge the payer up front. If actual exceeds
+    // estimate the contract under-charges and the activation runs out of
+    // funded storage — hard correctness bug.
+    assert!(
+        activation_full_delta <= estimated,
+        "storage estimate too tight: measured {activation_full_delta} bytes vs estimated {estimated} bytes \
+         (BYTES_PER_HASH={BYTES_PER_HASH}, BYTES_PER_ACTIVATION={BYTES_PER_ACTIVATION})"
+    );
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_activate_refunds_excess_deposit() -> testresult::TestResult {
+    let ctx = setup().await?;
+    bootstrap(&ctx).await?;
+
+    // Approve a tiny 2-hash proposal — actual cost will be a fraction of 1 NEAR.
+    let h1 = "a".repeat(64);
+    let h2 = "b".repeat(64);
+    let csv = format!("{h1},{h2}");
+    let proposal_id = add_and_approve_proposal(&ctx, &csv).await?;
+
+    // Activate with a deliberately excessive 20 NEAR deposit. The contract
+    // should refund (20 NEAR − cost_for_hashes(2)) back to the caller.
+    let huge_deposit = NearToken::from_near(20);
+    let payer = ctx.caller();
+
+    let balance_before = near_balance(&ctx, &payer).await?;
+    let activate_res = activate_with_deposit(&ctx, proposal_id, huge_deposit).await?;
+    for log in activate_res.logs() {
+        println!("  activate log: {log}");
+    }
+
+    // Wait for the chained refund + auto-ping receipts to settle so the
+    // payer's balance reflects both the refund credit and any tx fees.
+    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+    let balance_after = near_balance(&ctx, &payer).await?;
+
+    // Net debit = balance_before - balance_after
+    //           = huge_deposit + tx_fees - refund
+    //           = actual_cost + tx_fees
+    // → tx_fees = net_debit - actual_cost. We don't know actual_cost in
+    // yocto exactly without re-deriving cost_for_hashes here, so we just
+    // assert the net debit is small (well under 1 NEAR), proving the
+    // refund actually came back.
+    let net_debit = balance_before.saturating_sub(balance_after);
+    println!(
+        "  payer balance before: {} NEAR\n  payer balance after:  {} NEAR\n  net debit:            {} NEAR",
+        balance_before.exact_amount_display(),
+        balance_after.exact_amount_display(),
+        net_debit.exact_amount_display(),
+    );
+    assert!(
+        net_debit < NearToken::from_near(1),
+        "expected refund to bring net debit under 1 NEAR; got {} NEAR \
+         — the 20 NEAR deposit does not appear to have been refunded",
+        net_debit.exact_amount_display()
+    );
+
+    // Sanity check: activation reached Ready/Done — the refund path runs
+    // only on the success branch of on_get_proposal.
+    let activation = read_activation(&ctx, proposal_id).await;
+    let status = &activation["status"];
+    assert!(
+        status == "Done" || status["Ready"].is_object(),
+        "activation should have loaded; got {status}"
+    );
 
     Ok(())
 }
