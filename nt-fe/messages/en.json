@@ -1219,7 +1219,37 @@
         "connectedToAnother": "Connected to another chat",
         "notMember": "You are not a policy member of any treasuries.",
         "connecting": "Connecting…",
-        "connect": "Connect"
+        "connect": "Connect",
+        "settings": {
+            "title": "Telegram",
+            "connectedTo": "Connected to {chat}",
+            "chatNumber": "Chat #{id}",
+            "fallbackChat": "a Telegram chat",
+            "disconnect": "Disconnect",
+            "connect": "Connect",
+            "connectHeadline": "Connect Telegram to treasury",
+            "connectDescription": "Get notified about new requests, assets received in the treasury, and more.",
+            "noTreasuryDescription": "Link your treasuries to a Telegram chat.",
+            "openSettingsHint": "Open settings from a treasury to manage integrations.",
+            "disconnectedToast": "Telegram disconnected for this treasury",
+            "disconnectFailedToast": "Could not disconnect Telegram. Try again.",
+            "telegramDisconnect": {
+                "title": "Disconnect Telegram Bot",
+                "body": "If you disconnect, you will no longer receive notifications in the bot for this treasury. You can reconnect at any time.",
+                "action": "Disconnect"
+            }
+        },
+        "connectInstructions": {
+            "title": "Connect your Telegram account to Trezu",
+            "subtitle": "Follow the steps to enable notifications for this treasury in Telegram.",
+            "step1": "Add {bot} to your Telegram group or channel.",
+            "step2": "In Telegram, tap Connect Treasury (or use the bot's connect flow when prompted).",
+            "step3": "Sign in on the web, then authorize and select which treasuries to connect to this chat — including this one.",
+            "doneHint": "You're done when the browser shows your treasuries linked successfully.",
+            "copyBotTooltip": "Copy bot handle",
+            "botCopiedToast": "Bot handle copied",
+            "openInTelegram": "Open {bot} in Telegram"
+        }
     },
     "systemStatus": {
         "underMaintenance": "Under Maintenance",
@@ -1527,15 +1557,6 @@
         "tableToken": "Token",
         "tableTotalValue": "Total Value"
     },
-    "telegramConnectInstructions": {
-        "title": "Connect Telegram",
-        "subtitle": "Get notifications about proposals and activity in your Telegram.",
-        "step3": "Press Start and follow instructions.",
-        "success": "You're all set!",
-        "copyBotTooltip": "Copy bot handle",
-        "botCopiedToast": "Bot handle copied",
-        "openInTelegram": "Open {bot} in Telegram"
-    },
     "transactionHashCell": {
         "copyHash": "Copy hash",
         "hashCopied": "Hash copied",
@@ -1806,19 +1827,6 @@
         "removedToast": "Treasury removed from saved list",
         "removeFailedToast": "Failed to remove treasury from saved list"
     },
-    "telegramSettings": {
-        "title": "Telegram",
-        "connectedTo": "Connected to {chat}",
-        "chatNumber": "Chat #{id}",
-        "fallbackChat": "a Telegram chat",
-        "disconnect": "Disconnect",
-        "connect": "Connect",
-        "connectDescription": "Link your treasury to a Telegram chat to receive notifications.",
-        "noTreasuryDescription": "Link your treasuries to a Telegram chat.",
-        "openSettingsHint": "Open settings from a treasury to manage integrations.",
-        "disconnectedToast": "Telegram disconnected for this treasury",
-        "disconnectFailedToast": "Could not disconnect Telegram. Try again."
-    },
     "assetsTable": {
         "noAssetsFound": "No assets found.",
         "assetDetails": "Asset Details",
@@ -2066,6 +2074,12 @@
             "heading": "🎉 Congrats!",
             "body": "You've completed your Treasury setup. Enjoy easy management of your assets.",
             "letsGo": "Let's go!"
+        },
+        "notifications": {
+            "title": "New - Notifications",
+            "body": "Stay informed on new requests, pending votes, and incoming treasury assets - just connect Telegram bot.",
+            "tryIt": "Try It",
+            "dismissAria": "Dismiss"
         },
         "createBanner": {
             "close": "Close",

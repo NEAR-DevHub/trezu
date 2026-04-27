@@ -6,7 +6,13 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/button";
 import { PageCard } from "@/components/card";
-import { StepperHeader } from "@/components/step-wizard";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/modal";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
     useDisconnectTelegramTreasury,
@@ -15,10 +21,41 @@ import {
 import { useTreasury } from "@/hooks/use-treasury";
 import { TelegramConnectInstructionsModal } from "./telegram-connect-instructions-modal";
 
+function TelegramInfoBlock({
+    title,
+    description,
+}: {
+    title: string;
+    description: string;
+}) {
+    return (
+        <div className="flex items-start gap-4 min-w-0 flex-1">
+            <img
+                src="/icons/telegram.svg"
+                alt=""
+                width={40}
+                height={40}
+                className="size-10 shrink-0 rounded-lg object-contain"
+                aria-hidden
+                draggable={false}
+            />
+            <div className="min-w-0">
+                <div className="text-lg font-semibold text-foreground">
+                    {title}
+                </div>
+                <div className="text-xs leading-snug text-muted-foreground">
+                    {description}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export function TelegramSettingsIntegration() {
-    const t = useTranslations("telegramSettings");
+    const t = useTranslations("telegram.settings");
     const { treasuryId } = useTreasury();
     const [connectModalOpen, setConnectModalOpen] = useState(false);
+    const [disconnectModalOpen, setDisconnectModalOpen] = useState(false);
     const disconnectMutation = useDisconnectTelegramTreasury();
 
     const statusQueries = useTelegramStatuses(treasuryId ? [treasuryId] : []);
@@ -39,6 +76,7 @@ export function TelegramSettingsIntegration() {
         if (!treasuryId) return;
         disconnectMutation.mutate(treasuryId, {
             onSuccess: () => {
+                setDisconnectModalOpen(false);
                 toast.success(t("disconnectedToast"));
             },
             onError: () => {
@@ -51,21 +89,19 @@ export function TelegramSettingsIntegration() {
         <>
             <PageCard>
                 {telegramStatus?.connected && treasuryId && !isLoadingStatus ? (
-                    <div className="flex justify-between items-center gap-4 w-full">
-                        <div className="min-w-0">
-                            <StepperHeader
-                                title={t("title")}
-                                description={t("connectedTo", {
-                                    chat: connectedChatDisplay,
-                                })}
-                            />
-                        </div>
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <TelegramInfoBlock
+                            title={t("title")}
+                            description={t("connectedTo", {
+                                chat: connectedChatDisplay,
+                            })}
+                        />
                         <Button
                             type="button"
                             variant="outline"
-                            className="shrink-0 self-center"
+                            className="w-full shrink-0 rounded-lg sm:w-auto"
                             disabled={disconnectMutation.isPending}
-                            onClick={handleDisconnect}
+                            onClick={() => setDisconnectModalOpen(true)}
                         >
                             {disconnectMutation.isPending && (
                                 <Loader2 className="size-4 animate-spin" />
@@ -76,32 +112,40 @@ export function TelegramSettingsIntegration() {
                 ) : (
                     <div className="flex flex-col gap-4 w-full">
                         {!treasuryId ? (
-                            <>
-                                <StepperHeader
-                                    title={t("title")}
-                                    description={t("noTreasuryDescription")}
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                <TelegramInfoBlock
+                                    title={t("connectHeadline")}
+                                    description={t("openSettingsHint")}
                                 />
-                                <p className="text-sm text-muted-foreground">
-                                    {t("openSettingsHint")}
-                                </p>
-                            </>
-                        ) : isLoadingStatus ? (
-                            <div className="flex flex-col gap-2">
-                                <Skeleton className="h-4 w-full max-w-md" />
-                                <Skeleton className="h-9 w-32" />
-                            </div>
-                        ) : (
-                            <div className="flex justify-between items-center gap-4 w-full">
-                                <div className="min-w-0">
-                                    <StepperHeader
-                                        title={t("title")}
-                                        description={t("connectDescription")}
-                                    />
-                                </div>
                                 <Button
                                     type="button"
-                                    className="shrink-0 self-center"
+                                    disabled
+                                    className="w-full shrink-0 rounded-lg bg-black text-white hover:bg-black/90 sm:w-auto dark:bg-black dark:text-white dark:hover:bg-black/90"
+                                >
+                                    {t("connect")}
+                                </Button>
+                            </div>
+                        ) : isLoadingStatus ? (
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                                <div className="flex items-start gap-4 flex-1">
+                                    <Skeleton className="size-10 shrink-0 rounded-lg" />
+                                    <div className="flex flex-col gap-2 flex-1 pt-1">
+                                        <Skeleton className="h-5 w-48 max-w-full" />
+                                        <Skeleton className="h-4 w-full max-w-lg" />
+                                    </div>
+                                </div>
+                                <Skeleton className="h-10 w-24 shrink-0 rounded-lg self-center" />
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                <TelegramInfoBlock
+                                    title={t("connectHeadline")}
+                                    description={t("connectDescription")}
+                                />
+                                <Button
+                                    type="button"
                                     onClick={() => setConnectModalOpen(true)}
+                                    className="w-full shrink-0 rounded-lg bg-black text-white hover:bg-black/90 sm:w-auto dark:bg-black dark:text-white dark:hover:bg-black/90"
                                 >
                                     {t("connect")}
                                 </Button>
@@ -115,6 +159,36 @@ export function TelegramSettingsIntegration() {
                 open={connectModalOpen}
                 onOpenChange={setConnectModalOpen}
             />
+
+            <Dialog
+                open={disconnectModalOpen}
+                onOpenChange={setDisconnectModalOpen}
+            >
+                <DialogContent className="max-w-md gap-4">
+                    <DialogHeader>
+                        <DialogTitle className="text-left">
+                            {t("telegramDisconnect.title")}
+                        </DialogTitle>
+                    </DialogHeader>
+                    <DialogDescription>
+                        <div className="flex flex-col gap-4">
+                            {t("telegramDisconnect.body")}
+
+                            <Button
+                                type="button"
+                                onClick={handleDisconnect}
+                                disabled={disconnectMutation.isPending}
+                                className="w-full rounded-[10px] bg-[#1A1617] text-white hover:bg-[#1A1617]/90"
+                            >
+                                {disconnectMutation.isPending && (
+                                    <Loader2 className="size-4 animate-spin" />
+                                )}
+                                {t("telegramDisconnect.action")}
+                            </Button>
+                        </div>
+                    </DialogDescription>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }

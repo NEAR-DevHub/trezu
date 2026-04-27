@@ -1195,7 +1195,7 @@
     "telegram": {
         "tagPill": "Telegram",
         "invalidLinkTitle": "Geçersiz bağlantı",
-        "invalidLinkDescription": "Bu Telegram bağlantı linkinde token eksik. Yeni bir bağlantı oluşturmak için Telegram'da Connect Treasury'ye tekrar tıklayın.",
+        "invalidLinkDescription": "Bu Telegram bağlantı linkinde token eksik. Yeni bir bağlantı oluşturmak için Telegram'da tekrar \"Hazineyi bağla\"ya tıklayın.",
         "successTitle": "Başarıyla bağlandı",
         "successDescription": "Hazineler bu Telegram sohbetine bağlandı.",
         "successToast": "Hazineler başarıyla bağlandı",
@@ -1219,7 +1219,37 @@
         "connectedToAnother": "Başka bir sohbete bağlı",
         "notMember": "Hiçbir hazinenin politika üyesi değilsiniz.",
         "connecting": "Bağlanıyor…",
-        "connect": "Bağlan"
+        "connect": "Bağlan",
+        "settings": {
+            "title": "Telegram",
+            "connectedTo": "{chat} sohbetine bağlı",
+            "chatNumber": "Sohbet #{id}",
+            "fallbackChat": "bir Telegram sohbeti",
+            "disconnect": "Bağlantıyı Kes",
+            "connect": "Bağlan",
+            "connectHeadline": "Telegram'ı hazinaya bağlayın",
+            "connectDescription": "Yeni talepler, hazinaya gelen varlıklar ve daha fazlası için bildirim alın.",
+            "noTreasuryDescription": "Hazinelerinizi bir Telegram sohbetine bağlayın.",
+            "openSettingsHint": "Entegrasyonları yönetmek için bir hazineden ayarları açın.",
+            "disconnectedToast": "Bu hazine için Telegram bağlantısı kesildi",
+            "disconnectFailedToast": "Telegram bağlantısı kesilemedi. Tekrar deneyin.",
+            "telegramDisconnect": {
+                "title": "Telegram botunun bağlantısını kes",
+                "body": "Bağlantıyı keserseniz bu hazine için bottan artık bildirim alamazsınız. İstediğiniz zaman yeniden bağlayabilirsiniz.",
+                "action": "Bağlantıyı kes"
+            }
+        },
+        "connectInstructions": {
+            "title": "Telegram hesabınızı Trezu'ya bağlayın",
+            "subtitle": "Bu hazine için Telegram bildirimlerini etkinleştirmek üzere adımları izleyin.",
+            "step1": "{bot} hesabını Telegram grubunuza veya kanalınıza ekleyin.",
+            "step2": "Telegram'da \"Hazineyi bağla\"ya dokunun (veya istendiğinde botun bağlantı akışını kullanın).",
+            "step3": "Web'de oturum açın, yetkilendirin ve bu sohbetle bağlanacak hazineleri (bu hazine dahil) seçin.",
+            "doneHint": "Tarayıcı hazinelerinizin başarıyla bağlandığını gösterdiğinde işlem tamamdır.",
+            "copyBotTooltip": "Bot kullanıcı adını kopyala",
+            "botCopiedToast": "Bot kullanıcı adı kopyalandı",
+            "openInTelegram": "{bot} Telegram'da aç"
+        }
     },
     "systemStatus": {
         "underMaintenance": "Bakım Altında",
@@ -1527,15 +1557,6 @@
         "tableToken": "Token",
         "tableTotalValue": "Toplam Değer"
     },
-    "telegramConnectInstructions": {
-        "title": "Telegram Bağla",
-        "subtitle": "Önerileriniz ve etkinliğiniz hakkında Telegram'da bildirim alın.",
-        "step3": "Start'a basın ve talimatları izleyin.",
-        "success": "Hepsi tamam!",
-        "copyBotTooltip": "Bot tanıtıcısını kopyala",
-        "botCopiedToast": "Bot tanıtıcısı kopyalandı",
-        "openInTelegram": "{bot} Telegram'da aç"
-    },
     "transactionHashCell": {
         "copyHash": "Hash'i kopyala",
         "hashCopied": "Hash kopyalandı",
@@ -1805,19 +1826,6 @@
         "unhideFailedToast": "Hazine gösterilemedi",
         "removedToast": "Hazine kaydedilen listeden kaldırıldı",
         "removeFailedToast": "Hazine kaydedilen listeden kaldırılamadı"
-    },
-    "telegramSettings": {
-        "title": "Telegram",
-        "connectedTo": "{chat} sohbetine bağlı",
-        "chatNumber": "Sohbet #{id}",
-        "fallbackChat": "bir Telegram sohbeti",
-        "disconnect": "Bağlantıyı Kes",
-        "connect": "Bağlan",
-        "connectDescription": "Bildirim almak için hazinenizi bir Telegram sohbetine bağlayın.",
-        "noTreasuryDescription": "Hazinelerinizi bir Telegram sohbetine bağlayın.",
-        "openSettingsHint": "Entegrasyonları yönetmek için bir hazineden ayarları açın.",
-        "disconnectedToast": "Bu hazine için Telegram bağlantısı kesildi",
-        "disconnectFailedToast": "Telegram bağlantısı kesilemedi. Tekrar deneyin."
     },
     "assetsTable": {
         "noAssetsFound": "Varlık bulunamadı.",

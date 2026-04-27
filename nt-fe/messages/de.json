@@ -1219,7 +1219,37 @@
         "connectedToAnother": "Mit einem anderen Chat verbunden",
         "notMember": "Sie sind kein Richtlinienmitglied einer Treasury.",
         "connecting": "Wird verbunden…",
-        "connect": "Verbinden"
+        "connect": "Verbinden",
+        "settings": {
+            "title": "Telegram",
+            "connectedTo": "Verbunden mit {chat}",
+            "chatNumber": "Chat #{id}",
+            "fallbackChat": "einem Telegram-Chat",
+            "disconnect": "Trennen",
+            "connect": "Verbinden",
+            "connectHeadline": "Telegram mit Treasury verbinden",
+            "connectDescription": "Lassen Sie sich über neue Anfragen, in der Treasury eingehende Vermögenswerte und mehr benachrichtigen.",
+            "noTreasuryDescription": "Verknüpfen Sie Ihre Treasuries mit einem Telegram-Chat.",
+            "openSettingsHint": "Öffnen Sie die Einstellungen aus einer Treasury, um Integrationen zu verwalten.",
+            "disconnectedToast": "Telegram für diese Treasury getrennt",
+            "disconnectFailedToast": "Telegram konnte nicht getrennt werden. Bitte erneut versuchen.",
+            "telegramDisconnect": {
+                "title": "Telegram-Bot trennen",
+                "body": "Wenn Sie die Verbindung trennen, erhalten Sie für diese Treasury keine Benachrichtigungen mehr über den Bot. Sie können die Verbindung jederzeit wiederherstellen.",
+                "action": "Trennen"
+            }
+        },
+        "connectInstructions": {
+            "title": "Verbinden Sie Ihr Telegram-Konto mit Trezu",
+            "subtitle": "Folgen Sie diesen Schritten, um Benachrichtigungen für diese Treasury in Telegram zu aktivieren.",
+            "step1": "Fügen Sie {bot} zu Ihrer Telegram-Gruppe oder Ihrem Kanal hinzu.",
+            "step2": "Tippen Sie in Telegram auf „Treasury verbinden“ (oder verwenden Sie den Verbindungsablauf des Bots, wenn Sie dazu aufgefordert werden).",
+            "step3": "Melden Sie sich im Web an, autorisieren Sie und wählen Sie aus, welche Treasuries mit diesem Chat verbunden werden sollen — einschließlich dieser.",
+            "doneHint": "Fertig sind Sie, wenn der Browser anzeigt, dass Ihre Treasuries erfolgreich verknüpft wurden.",
+            "copyBotTooltip": "Bot-Handle kopieren",
+            "botCopiedToast": "Bot-Handle kopiert",
+            "openInTelegram": "{bot} in Telegram öffnen"
+        }
     },
     "systemStatus": {
         "underMaintenance": "Wartungsarbeiten",
@@ -1527,15 +1557,6 @@
         "tableToken": "Token",
         "tableTotalValue": "Gesamtwert"
     },
-    "telegramConnectInstructions": {
-        "title": "Telegram verbinden",
-        "subtitle": "Erhalten Sie Benachrichtigungen über Vorschläge und Aktivitäten in Ihrem Telegram.",
-        "step3": "Drücken Sie Start und folgen Sie den Anweisungen.",
-        "success": "Sie sind bereit!",
-        "copyBotTooltip": "Bot-Handle kopieren",
-        "botCopiedToast": "Bot-Handle kopiert",
-        "openInTelegram": "{bot} in Telegram öffnen"
-    },
     "transactionHashCell": {
         "copyHash": "Hash kopieren",
         "hashCopied": "Hash kopiert",
@@ -1805,19 +1826,6 @@
         "unhideFailedToast": "Einblenden der Treasury fehlgeschlagen",
         "removedToast": "Treasury aus der gespeicherten Liste entfernt",
         "removeFailedToast": "Entfernen der Treasury aus der gespeicherten Liste fehlgeschlagen"
-    },
-    "telegramSettings": {
-        "title": "Telegram",
-        "connectedTo": "Verbunden mit {chat}",
-        "chatNumber": "Chat #{id}",
-        "fallbackChat": "einem Telegram-Chat",
-        "disconnect": "Trennen",
-        "connect": "Verbinden",
-        "connectDescription": "Verknüpfen Sie Ihre Treasury mit einem Telegram-Chat, um Benachrichtigungen zu erhalten.",
-        "noTreasuryDescription": "Verknüpfen Sie Ihre Treasuries mit einem Telegram-Chat.",
-        "openSettingsHint": "Öffnen Sie die Einstellungen aus einer Treasury, um Integrationen zu verwalten.",
-        "disconnectedToast": "Telegram für diese Treasury getrennt",
-        "disconnectFailedToast": "Telegram konnte nicht getrennt werden. Bitte erneut versuchen."
     },
     "assetsTable": {
         "noAssetsFound": "Keine Vermögenswerte gefunden.",
