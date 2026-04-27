@@ -506,10 +506,13 @@ dependencies = [
 name = "confidential-bulk-payment"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
+ "camino",
  "cargo-near-build",
  "near-api",
  "near-sandbox",
  "near-sdk",
+ "serde_json",
  "testresult",
  "tokio",
 ]
