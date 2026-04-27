@@ -11,7 +11,16 @@ impl Contract {
 
     pub fn get_public_key(&self) -> Option<String> {
         match &self.bootstrap {
-            BootstrapStatus::Ready { mpc_public_key } => Some(mpc_public_key.clone()),
+            BootstrapStatus::Ready { mpc_public_key, .. } => Some(mpc_public_key.clone()),
+            _ => None,
+        }
+    }
+
+    pub fn get_dao_public_key(&self) -> Option<String> {
+        match &self.bootstrap {
+            BootstrapStatus::Ready {
+                dao_mpc_public_key, ..
+            } => Some(dao_mpc_public_key.clone()),
             _ => None,
         }
     }

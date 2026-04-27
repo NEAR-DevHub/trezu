@@ -52,7 +52,7 @@ pub const BYTES_PER_HASH: u64 = 150;
 
 /// Worst-case bytes per `Activation` minus its `hashes` Vec.
 /// Measured ~150 bytes; small safety bump.
-pub const BYTES_PER_ACTIVATION: u64 = 160;
+pub const BYTES_PER_ACTIVATION: u64 = 170;
 
 #[near(serializers = [json, borsh])]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -66,8 +66,13 @@ pub enum BootstrapFailureReason {
 pub enum BootstrapStatus {
     Pending,
     InProgress,
-    Ready { mpc_public_key: String },
-    Failed { reason: BootstrapFailureReason },
+    Ready {
+        mpc_public_key: String,
+        dao_mpc_public_key: String,
+    },
+    Failed {
+        reason: BootstrapFailureReason,
+    },
 }
 
 #[near(serializers = [json, borsh])]
@@ -136,6 +141,10 @@ impl HashEntry {
 pub struct Activation {
     pub status: ActivationStatus,
     pub hashes: Vec<HashEntry>,
+    /// Count of entries still in `Pending` or `Signing` (i.e. not in a
+    /// terminal state). Lets `on_sign` decide whether to flip to `Done`
+    /// without scanning the full hash list each callback.
+    pub unresolved: u32,
 }
 
 #[near(contract_state)]
@@ -168,6 +177,11 @@ impl Contract {
 
     /// Fetch MPC pubkey from v1.signer and register it on intents.near.
     /// Permissionless. Idempotent in `Pending`/`Failed` states.
+    /// Derive both the contract's and the DAO's MPC pubkeys in parallel,
+    /// then register both on intents.near in parallel. Registering the DAO's
+    /// key under this contract's intents account lets the DAO sign intents
+    /// that draw from this contract's intents balance (e.g. for recovery).
+    /// Permissionless. Idempotent in `Pending`/`Failed` states.
     pub fn bootstrap(&mut self) -> Promise {
         require!(
             matches!(
@@ -178,28 +192,35 @@ impl Contract {
         );
         self.bootstrap = BootstrapStatus::InProgress;
 
-        ext_v1_signer::ext(V1_SIGNER.parse().unwrap())
+        let signer: AccountId = V1_SIGNER.parse().unwrap();
+        let derive_self = ext_v1_signer::ext(signer.clone())
             .with_static_gas(DERIVE_PUBKEY_GAS)
-            .derived_public_key(String::new(), env::current_account_id(), 1)
-            .then(
-                Self::ext(env::current_account_id())
-                    .with_static_gas(
-                        BOOTSTRAP_CALLBACK_GAS
-                            .saturating_add(ADD_PUBKEY_GAS)
-                            .saturating_add(BOOTSTRAP_CALLBACK_GAS),
-                    )
-                    .on_derived_public_key(),
-            )
+            .derived_public_key(String::new(), env::current_account_id(), 1);
+        let derive_dao = ext_v1_signer::ext(signer)
+            .with_static_gas(DERIVE_PUBKEY_GAS)
+            .derived_public_key(String::new(), self.owner_dao.clone(), 1);
+
+        // Tail after the join: on_both_derived + 2× add_public_key + on_both_added.
+        let tail_gas = BOOTSTRAP_CALLBACK_GAS
+            .saturating_add(ADD_PUBKEY_GAS.saturating_mul(2))
+            .saturating_add(BOOTSTRAP_CALLBACK_GAS);
+
+        derive_self.and(derive_dao).then(
+            Self::ext(env::current_account_id())
+                .with_static_gas(tail_gas)
+                .on_both_derived(),
+        )
     }
 
     #[private]
-    pub fn on_derived_public_key(
+    pub fn on_both_derived(
         &mut self,
-        #[callback_result] result: Result<String, PromiseError>,
+        #[callback_result] self_pk: Result<String, PromiseError>,
+        #[callback_result] dao_pk: Result<String, PromiseError>,
     ) -> Option<Promise> {
-        let pk = match result {
-            Ok(pk) => pk,
-            Err(_) => {
+        let (self_pk, dao_pk) = match (self_pk, dao_pk) {
+            (Ok(s), Ok(d)) => (s, d),
+            _ => {
                 self.bootstrap = BootstrapStatus::Failed {
                     reason: BootstrapFailureReason::DerivedPublicKeyCallFailed,
                 };
@@ -207,30 +228,41 @@ impl Contract {
             }
         };
 
+        let intents: AccountId = INTENTS.parse().unwrap();
+        let add_self = ext_intents::ext(intents.clone())
+            .with_static_gas(ADD_PUBKEY_GAS)
+            .with_attached_deposit(NearToken::from_yoctonear(1))
+            .add_public_key(self_pk.clone());
+        let add_dao = ext_intents::ext(intents)
+            .with_static_gas(ADD_PUBKEY_GAS)
+            .with_attached_deposit(NearToken::from_yoctonear(1))
+            .add_public_key(dao_pk.clone());
+
         Some(
-            ext_intents::ext(INTENTS.parse().unwrap())
-                .with_static_gas(ADD_PUBKEY_GAS)
-                .with_attached_deposit(NearToken::from_yoctonear(1))
-                .add_public_key(pk.clone())
-                .then(
-                    Self::ext(env::current_account_id())
-                        .with_static_gas(BOOTSTRAP_CALLBACK_GAS)
-                        .on_add_public_key(pk),
-                ),
+            add_self.and(add_dao).then(
+                Self::ext(env::current_account_id())
+                    .with_static_gas(BOOTSTRAP_CALLBACK_GAS)
+                    .on_both_added(self_pk, dao_pk),
+            ),
         )
     }
 
     #[private]
-    pub fn on_add_public_key(
+    pub fn on_both_added(
         &mut self,
         mpc_public_key: String,
-        #[callback_result] result: Result<(), PromiseError>,
+        dao_mpc_public_key: String,
+        #[callback_result] self_res: Result<(), PromiseError>,
+        #[callback_result] dao_res: Result<(), PromiseError>,
     ) {
-        match result {
-            Ok(_) => {
-                self.bootstrap = BootstrapStatus::Ready { mpc_public_key };
+        match (self_res, dao_res) {
+            (Ok(_), Ok(_)) => {
+                self.bootstrap = BootstrapStatus::Ready {
+                    mpc_public_key,
+                    dao_mpc_public_key,
+                };
             }
-            Err(_) => {
+            _ => {
                 self.bootstrap = BootstrapStatus::Failed {
                     reason: BootstrapFailureReason::AddPublicKeyCallFailed,
                 };
@@ -307,6 +339,7 @@ impl Contract {
             Activation {
                 status: ActivationStatus::Loading,
                 hashes: vec![],
+                unresolved: 0,
             },
         );
 
@@ -429,8 +462,17 @@ impl Contract {
             .activations
             .get_mut(&pid)
             .unwrap_or_else(|| env::panic_str("activation not found"));
+        activation.unresolved = hashes
+            .iter()
+            .filter(|h| matches!(h.status, HashStatus::Pending))
+            .count() as u32;
         activation.status = ActivationStatus::Ready { cursor: 0 };
         activation.hashes = hashes;
+
+        // All hashes malformed → no work to do, mark Done immediately.
+        if activation.unresolved == 0 {
+            activation.status = ActivationStatus::Done;
+        }
 
         // Refund excess deposit as a detached side promise (scheduled via
         // `promise_create`) so we can return the chained ping Promise as the
@@ -568,14 +610,11 @@ impl Contract {
             };
         }
 
-        // Promote to `Done` once no entry is still in-flight or awaiting
-        // dispatch. `ping` no longer sets `Done` itself, so the last-arriving
-        // callback is responsible for closing out the activation.
-        let all_resolved = activation
-            .hashes
-            .iter()
-            .all(|h| !matches!(h.status, HashStatus::Pending | HashStatus::Signing));
-        if all_resolved {
+        // Promote to `Done` once the unresolved counter hits zero. `ping`
+        // does not set `Done` itself, so the last-arriving callback is
+        // responsible for closing out the activation.
+        activation.unresolved = activation.unresolved.saturating_sub(1);
+        if activation.unresolved == 0 {
             activation.status = ActivationStatus::Done;
         }
     }
@@ -603,6 +642,7 @@ impl Contract {
         }
 
         if reset > 0 {
+            activation.unresolved = activation.unresolved.saturating_add(reset);
             activation.status = ActivationStatus::Ready {
                 cursor: first_failed.unwrap_or(0),
             };
@@ -692,6 +732,7 @@ mod tests {
         let mut c = Contract::init("mydao.sputnik-dao.near".parse().unwrap());
         c.bootstrap = BootstrapStatus::Ready {
             mpc_public_key: "ed25519:fake".into(),
+            dao_mpc_public_key: "ed25519:dao_fake".into(),
         };
         c
     }
@@ -712,6 +753,7 @@ mod tests {
             Activation {
                 status: ActivationStatus::Loading,
                 hashes: vec![],
+                unresolved: 0,
             },
         );
         let h1 = "a".repeat(64);
@@ -736,6 +778,7 @@ mod tests {
             Activation {
                 status: ActivationStatus::Loading,
                 hashes: vec![],
+                unresolved: 0,
             },
         );
         // Simulate callback path manually.
@@ -764,6 +807,7 @@ mod tests {
             Activation {
                 status: ActivationStatus::Loading,
                 hashes: vec![],
+                unresolved: 0,
             },
         );
         let proposal = SputnikProposal {
@@ -794,6 +838,7 @@ mod tests {
             Activation {
                 status: ActivationStatus::Loading,
                 hashes: vec![],
+                unresolved: 0,
             },
         );
         let proposal = SputnikProposal {
@@ -824,6 +869,7 @@ mod tests {
             Activation {
                 status: ActivationStatus::Loading,
                 hashes: vec![],
+                unresolved: 0,
             },
         );
         let h1 = "a".repeat(64);
