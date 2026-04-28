@@ -173,8 +173,32 @@
         },
         "earn": {
             "title": "수익",
-            "description": "자산으로 보상을 얻으세요",
-            "placeholder": "수익 기회와 스테이킹 보상을 살펴보세요."
+            "description": "Trezu 트레저리를 즐겨 쓰는 Web3 앱에 연결하세요.",
+            "howItWorks": "이용 방법",
+            "navTooltip": {
+                "rich": "신규! 🥳 수익으로 자산을 스테이킹하고 보상을 받기 시작하세요. 자금을 손쉽게 불려 보세요.",
+                "tryIt": "사용해 보기"
+            },
+            "apps": {
+                "rhea": {
+                    "name": "Rhea",
+                    "description": "트레저리를 Rhea에 연결해 보유 자산 그대로 수익을 올리세요. 이체 없이, 마찰 없이, 이미 보유한 자산에 매끄러운 보상이 이어집니다.",
+                    "goTo": "Rhea로 이동",
+                    "logoAlt": "Rhea 로고"
+                },
+                "intear": {
+                    "name": "IntearDEX",
+                    "description": "브릿징 없이, 자금 이동 없이, 추가 단계 없이—트레저리 자산만으로 플랫폼에서 바로 수익을 시작하세요.",
+                    "goTo": "IntearDEX로 이동",
+                    "logoAlt": "IntearDEX 로고"
+                },
+                "nearStaking": {
+                    "name": "NEAR Staking",
+                    "description": "트레저리에서 NEAR를 스테이킹해 네트워크 보안에 기여하고 스테이킹 보상을 받으세요.",
+                    "goTo": "NEAR Staking으로 이동",
+                    "logoAlt": "NEAR"
+                }
+            }
         },
         "createTreasury": {
             "title": "트레저리 생성",

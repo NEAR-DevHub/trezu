@@ -173,8 +173,32 @@
         },
         "earn": {
             "title": "Erträge",
-            "description": "Erträge auf Ihre Vermögenswerte erzielen",
-            "placeholder": "Erkunden Sie Ertragsmöglichkeiten und Staking-Belohnungen."
+            "description": "Verbinden Sie Ihre Trezu-Treasury mit Ihren bevorzugten Web3-Anwendungen.",
+            "howItWorks": "So funktioniert's",
+            "navTooltip": {
+                "rich": "Neu! 🥳 Nutzen Sie Erträge, um Ihre Assets zu staken und Belohnungen zu erhalten. Lassen Sie Ihr Kapital mühelos für sich arbeiten.",
+                "tryIt": "Ausprobieren"
+            },
+            "apps": {
+                "rhea": {
+                    "name": "Rhea",
+                    "description": "Verbinden Sie Ihre Treasury mit Rhea und erzielen Sie Erträge auf bestehende Vermögenswerte – ohne Transfers, ohne Reibung, nahtlose Belohnungen für das, was Sie bereits halten.",
+                    "goTo": "Zu Rhea",
+                    "logoAlt": "Rhea-Logo"
+                },
+                "intear": {
+                    "name": "IntearDEX",
+                    "description": "Kein Bridging, kein Verlegen von Mitteln, keine Extra-Schritte – nutzen Sie einfach Ihre vorhandenen Treasury-Vermögenswerte und erzielen Sie Erträge direkt auf der Plattform.",
+                    "goTo": "Zu IntearDEX",
+                    "logoAlt": "IntearDEX-Logo"
+                },
+                "nearStaking": {
+                    "name": "NEAR Staking",
+                    "description": "Staken Sie NEAR aus Ihrer Treasury, um das Netzwerk zu sichern und Staking-Belohnungen zu erhalten.",
+                    "goTo": "Zu NEAR Staking",
+                    "logoAlt": "NEAR"
+                }
+            }
         },
         "createTreasury": {
             "title": "Treasury erstellen",
@@ -1718,7 +1742,7 @@
         "membersPending": "Klicken Sie, um aktive Anfragen zu sehen, die auf Genehmigung warten.",
         "guestSaveIntro": "Sie sind Gast dieser Treasury. Sie können nur die Daten einsehen.",
         "guestSaveAction": "Sie können diese Gast-Treasury in Ihrer Treasury-Liste speichern.",
-        "newFeatureRich": "Neu! 🎉 Speichern Sie häufig verwendete Adressen für schnellere, fehlerfreie Auszahlungen.<br></br> Ihre Kontakte bleiben privat und sind nur für Ihr Team sichtbar.",
+        "newFeatureRich": "Neu! 🎉 Staken Sie Ihre Assets mit Earn und verdienen Sie Belohnungen.<br></br> Lassen Sie Ihr Kapital muehelos fuer sich arbeiten.",
         "newFeatureCta": "Ausprobieren"
     },
     "statusDate": {

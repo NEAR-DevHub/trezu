@@ -173,8 +173,32 @@
         },
         "earn": {
             "title": "Earn",
-            "description": "Earn rewards on your assets",
-            "placeholder": "Explore earning opportunities and staking rewards."
+            "description": "Connect your Trezu treasury to your favourite Web3 applications.",
+            "howItWorks": "How It Works",
+            "navTooltip": {
+                "rich": "New! 🥳 Stake your assets with Earn and start earning rewards. Put your funds to work effortlessly.",
+                "tryIt": "Try It"
+            },
+            "apps": {
+                "rhea": {
+                    "name": "Rhea",
+                    "description": "Connect your Treasury to Rhea and start earning on your existing assets - no transfers, no friction, just seamless rewards on what you already hold.",
+                    "goTo": "Go to Rhea",
+                    "logoAlt": "Rhea logo"
+                },
+                "intear": {
+                    "name": "IntearDEX",
+                    "description": "No bridging, no moving funds, no extra steps - simply use your existing Treasury assets to start earning directly on the platform.",
+                    "goTo": "Go to IntearDEX",
+                    "logoAlt": "IntearDEX logo"
+                },
+                "nearStaking": {
+                    "name": "NEAR Staking",
+                    "description": "Stake NEAR from your Treasury to help secure the network and earn staking rewards.",
+                    "goTo": "Go to NEAR Staking",
+                    "logoAlt": "NEAR"
+                }
+            }
         },
         "createTreasury": {
             "title": "Create Treasury",
@@ -1718,7 +1742,7 @@
         "membersPending": "Click to see active requests waiting for approval.",
         "guestSaveIntro": "You are a guest of this treasury. You can only view the data.",
         "guestSaveAction": "You can save this guest treasury to your treasuries list.",
-        "newFeatureRich": "New! 🎉 Save frequently used addresses for faster, error-free payouts.<br></br> Your contacts stay private and visible only to your team.",
+        "newFeatureRich": "New! 🎉 Stake your assets with Earn and start earning rewards.<br></br> Put your funds to work effortlessly.",
         "newFeatureCta": "Try It"
     },
     "statusDate": {

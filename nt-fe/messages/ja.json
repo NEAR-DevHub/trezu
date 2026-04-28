@@ -173,8 +173,32 @@
         },
         "earn": {
             "title": "収益",
-            "description": "資産から報酬を得る",
-            "placeholder": "収益機会とステーキング報酬を確認できます。"
+            "description": "Trezuのトレジャリーを、よく使うWeb3アプリに接続できます。",
+            "howItWorks": "仕組み",
+            "navTooltip": {
+                "rich": "新機能！🥳 「収益」で資産をステークして、報酬の獲得を始めましょう。手間なく資金を活用できます。",
+                "tryIt": "試してみる"
+            },
+            "apps": {
+                "rhea": {
+                    "name": "Rhea",
+                    "description": "トレジャリーをRheaに接続し、既存資産のまま収益化—送金不要、手間なく、保有資産にシームレスなリワード。",
+                    "goTo": "Rheaへ",
+                    "logoAlt": "Rheaのロゴ"
+                },
+                "intear": {
+                    "name": "IntearDEX",
+                    "description": "ブリッジ不要、資金移動不要、余計な手順なし—トレジャリーの資産をそのまま使い、プラットフォーム上で直接収益を始められます。",
+                    "goTo": "IntearDEXへ",
+                    "logoAlt": "IntearDEXのロゴ"
+                },
+                "nearStaking": {
+                    "name": "NEAR Staking",
+                    "description": "トレジャリーからNEARをステークし、ネットワークのセキュリティに貢献しながらステーキング報酬を得られます。",
+                    "goTo": "NEAR Stakingへ",
+                    "logoAlt": "NEAR"
+                }
+            }
         },
         "createTreasury": {
             "title": "トレジャリーを作成",
