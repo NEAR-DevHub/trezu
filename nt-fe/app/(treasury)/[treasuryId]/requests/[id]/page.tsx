@@ -1,8 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
-import { redirect, useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { trackEvent } from "@/lib/analytics";
 import { use, useEffect, useMemo, useState } from "react";
@@ -45,7 +44,6 @@ export default function RequestPage({ params }: RequestPageProps) {
     const t = useTranslations("pages.requests");
     const { id } = use(params);
     const { treasuryId } = useTreasury();
-    const router = useRouter();
     const queryClient = useQueryClient();
     const cachedSubmissionTime = useMemo(() => {
         const cachedQueries = queryClient.getQueriesData({
