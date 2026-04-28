@@ -72,7 +72,6 @@
     },
     "signIn": {
         "connect": "Hubungkan",
-        "connectWallet": "Hubungkan Dompet",
         "wallet": "Dompet",
         "termsOfService": "Ketentuan Layanan",
         "privacyPolicy": "Kebijakan Privasi",
@@ -269,18 +268,6 @@
         "frozen": "Dibekukan",
         "frozenTooltip": "Token yang dibekukan terkunci dan tidak dapat digunakan. Mereka mungkin terkunci karena digunakan untuk penyimpanan, di-staking, atau belum tervesting.",
         "vested": "Tervesting"
-    },
-    "dashboard": {
-        "overview": "Ringkasan aset dan aktivitas treasury Anda",
-        "assets": "Aset",
-        "balance": "Saldo",
-        "totalBalance": "Saldo Total",
-        "deposit": "Deposit",
-        "addAssets": "Tambah aset",
-        "hidden": "Tersembunyi",
-        "confidentialHidden": "Saldo disembunyikan untuk treasury rahasia",
-        "recentActivity": "Aktivitas Terbaru",
-        "viewAllTransactions": "Lihat semua transaksi"
     },
     "activity": {
         "filters": {
@@ -512,11 +499,6 @@
             "expired": "Kedaluwarsa karena tidak menerima cukup suara untuk dieksekusi.",
             "failed": "Permintaan gagal diselesaikan. Periksa detail transaksi <link>di sini</link>.",
             "failedPlain": "Permintaan gagal diselesaikan. Periksa detail transaksi di sini."
-        },
-        "votes": {
-            "approved": "Disetujui",
-            "rejected": "Ditolak",
-            "pending": "Tertunda"
         },
         "voteModal": {
             "confirmTitle": "Konfirmasi Suara Anda",
@@ -1080,9 +1062,6 @@
             "allowEarn": "Izinkan Pendapatan",
             "na": "T/A"
         }
-    },
-    "earn": {
-        "placeholder": "Jelajahi peluang pendapatan dan imbalan staking."
     },
     "createTreasury": {
         "validation": {
@@ -2098,6 +2077,12 @@
             "heading": "🎉 Selamat!",
             "body": "Anda telah menyelesaikan pengaturan Treasury Anda. Nikmati pengelolaan aset Anda dengan mudah.",
             "letsGo": "Ayo mulai!"
+        },
+        "notifications": {
+            "title": "Baru — Notifikasi",
+            "body": "Tetap terinformasi tentang permintaan baru, suara tertunda, dan aset masuk ke perbendaharaan — cukup hubungkan bot Telegram.",
+            "tryIt": "Coba",
+            "dismissAria": "Tutup"
         },
         "createBanner": {
             "close": "Tutup",

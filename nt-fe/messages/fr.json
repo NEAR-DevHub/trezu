@@ -72,7 +72,6 @@
     },
     "signIn": {
         "connect": "Connecter",
-        "connectWallet": "Connecter le portefeuille",
         "wallet": "Portefeuille",
         "termsOfService": "Conditions d'utilisation",
         "privacyPolicy": "Politique de confidentialité",
@@ -269,18 +268,6 @@
         "frozen": "Gelé",
         "frozenTooltip": "Les tokens gelés sont verrouillés et ne peuvent pas être utilisés. Ils peuvent être verrouillés parce qu'ils sont utilisés pour le stockage, mis en staking ou non encore acquis.",
         "vested": "Acquis"
-    },
-    "dashboard": {
-        "overview": "Aperçu des actifs et de l'activité de votre trésorerie",
-        "assets": "Actifs",
-        "balance": "Solde",
-        "totalBalance": "Solde total",
-        "deposit": "Dépôt",
-        "addAssets": "Ajouter des actifs",
-        "hidden": "Masqué",
-        "confidentialHidden": "Soldes masqués pour les trésoreries confidentielles",
-        "recentActivity": "Activité récente",
-        "viewAllTransactions": "Voir toutes les transactions"
     },
     "activity": {
         "filters": {
@@ -512,11 +499,6 @@
             "expired": "Expirée car elle n'a pas reçu suffisamment de votes pour être exécutée.",
             "failed": "La demande n'a pas pu aboutir. Consultez les détails de la transaction <link>ici</link>.",
             "failedPlain": "La demande n'a pas pu aboutir. Consultez les détails de la transaction ici."
-        },
-        "votes": {
-            "approved": "Approuvée",
-            "rejected": "Rejetée",
-            "pending": "En attente"
         },
         "voteModal": {
             "confirmTitle": "Confirmer votre vote",
@@ -1080,9 +1062,6 @@
             "allowEarn": "Autoriser les gains",
             "na": "N/D"
         }
-    },
-    "earn": {
-        "placeholder": "Explorez les opportunités de gains et les récompenses de staking."
     },
     "createTreasury": {
         "validation": {
@@ -2100,10 +2079,10 @@
             "letsGo": "C'est parti !"
         },
         "notifications": {
-            "title": "Nouveau — Notifications",
-            "body": "Restez informé des nouvelles demandes, des votes en attente et des actifs entrants — connectez simplement le bot Telegram.",
+            "title": "Nouveau – Notifications",
+            "body": "Restez informé des nouvelles demandes, des votes en attente et des actifs entrants dans la trésorerie – connectez simplement le bot Telegram.",
             "tryIt": "Essayer",
-            "dismissAria": "Fermer"
+            "dismissAria": "Ignorer"
         },
         "createBanner": {
             "close": "Fermer",

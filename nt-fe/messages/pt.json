@@ -72,7 +72,6 @@
     },
     "signIn": {
         "connect": "Conectar",
-        "connectWallet": "Conectar carteira",
         "wallet": "Carteira",
         "termsOfService": "Termos de Serviço",
         "privacyPolicy": "Política de Privacidade",
@@ -269,18 +268,6 @@
         "frozen": "Congelado",
         "frozenTooltip": "Tokens congelados estão bloqueados e não podem ser usados. Eles podem estar bloqueados por serem usados para armazenamento, staking ou ainda não terem sido liberados.",
         "vested": "Liberado"
-    },
-    "dashboard": {
-        "overview": "Visão geral dos ativos e da atividade da sua tesouraria",
-        "assets": "Ativos",
-        "balance": "Saldo",
-        "totalBalance": "Saldo total",
-        "deposit": "Depositar",
-        "addAssets": "Adicionar ativos",
-        "hidden": "Ocultos",
-        "confidentialHidden": "Saldos ocultos para tesourarias confidenciais",
-        "recentActivity": "Atividade recente",
-        "viewAllTransactions": "Ver todas as transações"
     },
     "activity": {
         "filters": {
@@ -512,11 +499,6 @@
             "expired": "Expirada por não receber votos suficientes para ser executada.",
             "failed": "A solicitação falhou ao ser concluída. Confira os detalhes da transação <link>aqui</link>.",
             "failedPlain": "A solicitação falhou ao ser concluída. Confira os detalhes da transação aqui."
-        },
-        "votes": {
-            "approved": "Aprovado",
-            "rejected": "Rejeitado",
-            "pending": "Pendente"
         },
         "voteModal": {
             "confirmTitle": "Confirme seu voto",
@@ -1080,9 +1062,6 @@
             "allowEarn": "Permitir ganhos",
             "na": "N/D"
         }
-    },
-    "earn": {
-        "placeholder": "Explore oportunidades de ganhos e recompensas de staking."
     },
     "createTreasury": {
         "validation": {
@@ -2098,6 +2077,12 @@
             "heading": "🎉 Parabéns!",
             "body": "Você concluiu a configuração da sua tesouraria. Aproveite a gestão fácil dos seus ativos.",
             "letsGo": "Vamos lá!"
+        },
+        "notifications": {
+            "title": "Novo — Notificações",
+            "body": "Mantenha-se informado sobre novas solicitações, votos pendentes e ativos recebidos na tesouraria — basta conectar o bot do Telegram.",
+            "tryIt": "Experimentar",
+            "dismissAria": "Dispensar"
         },
         "createBanner": {
             "close": "Fechar",

@@ -72,7 +72,6 @@
     },
     "signIn": {
         "connect": "Kết nối",
-        "connectWallet": "Kết nối ví",
         "wallet": "Ví",
         "termsOfService": "Điều khoản dịch vụ",
         "privacyPolicy": "Chính sách bảo mật",
@@ -269,18 +268,6 @@
         "frozen": "Đã đóng băng",
         "frozenTooltip": "Token bị đóng băng đã bị khóa và không thể sử dụng. Chúng có thể bị khóa do được dùng cho lưu trữ, staking, hoặc chưa được vesting.",
         "vested": "Đã vesting"
-    },
-    "dashboard": {
-        "overview": "Tổng quan về tài sản và hoạt động ngân quỹ của bạn",
-        "assets": "Tài sản",
-        "balance": "Số dư",
-        "totalBalance": "Tổng số dư",
-        "deposit": "Nạp tiền",
-        "addAssets": "Thêm tài sản",
-        "hidden": "Đã ẩn",
-        "confidentialHidden": "Số dư bị ẩn đối với ngân quỹ bảo mật",
-        "recentActivity": "Hoạt động gần đây",
-        "viewAllTransactions": "Xem tất cả giao dịch"
     },
     "activity": {
         "filters": {
@@ -512,11 +499,6 @@
             "expired": "Đã hết hạn vì không nhận đủ số phiếu để thực thi.",
             "failed": "Yêu cầu không thể hoàn tất. Kiểm tra chi tiết giao dịch <link>tại đây</link>.",
             "failedPlain": "Yêu cầu không thể hoàn tất. Kiểm tra chi tiết giao dịch tại đây."
-        },
-        "votes": {
-            "approved": "Đã phê duyệt",
-            "rejected": "Đã từ chối",
-            "pending": "Đang chờ"
         },
         "voteModal": {
             "confirmTitle": "Xác nhận phiếu của bạn",
@@ -1080,9 +1062,6 @@
             "allowEarn": "Cho phép thu nhập",
             "na": "N/A"
         }
-    },
-    "earn": {
-        "placeholder": "Khám phá cơ hội thu nhập và phần thưởng staking."
     },
     "createTreasury": {
         "validation": {
@@ -2098,6 +2077,12 @@
             "heading": "🎉 Chúc mừng!",
             "body": "Bạn đã hoàn tất thiết lập Ngân quỹ. Tận hưởng việc quản lý tài sản dễ dàng.",
             "letsGo": "Bắt đầu thôi!"
+        },
+        "notifications": {
+            "title": "Mới — Thông báo",
+            "body": "Cập nhật thông tin về các yêu cầu mới, phiếu bầu đang chờ và tài sản đến ngân quỹ — chỉ cần kết nối bot Telegram.",
+            "tryIt": "Thử ngay",
+            "dismissAria": "Bỏ qua"
         },
         "createBanner": {
             "close": "Đóng",

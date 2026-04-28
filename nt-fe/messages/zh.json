@@ -72,7 +72,6 @@
     },
     "signIn": {
         "connect": "连接",
-        "connectWallet": "连接钱包",
         "wallet": "钱包",
         "termsOfService": "服务条款",
         "privacyPolicy": "隐私政策",
@@ -269,18 +268,6 @@
         "frozen": "已冻结",
         "frozenTooltip": "已冻结的代币已锁定,无法使用。它们可能因用于存储、质押或尚未归属而被锁定。",
         "vested": "已归属"
-    },
-    "dashboard": {
-        "overview": "金库资产与活动概览",
-        "assets": "资产",
-        "balance": "余额",
-        "totalBalance": "总余额",
-        "deposit": "存款",
-        "addAssets": "添加资产",
-        "hidden": "已隐藏",
-        "confidentialHidden": "机密金库的余额已隐藏",
-        "recentActivity": "近期活动",
-        "viewAllTransactions": "查看所有交易"
     },
     "activity": {
         "filters": {
@@ -512,11 +499,6 @@
             "expired": "由于未获得足够的投票而过期。",
             "failed": "请求未能完成。请在<link>此处</link>查看交易详情。",
             "failedPlain": "请求未能完成。请在此处查看交易详情。"
-        },
-        "votes": {
-            "approved": "已批准",
-            "rejected": "已拒绝",
-            "pending": "待处理"
         },
         "voteModal": {
             "confirmTitle": "确认您的投票",
@@ -1080,9 +1062,6 @@
             "allowEarn": "允许赚取收益",
             "na": "不适用"
         }
-    },
-    "earn": {
-        "placeholder": "探索收益机会与质押奖励。"
     },
     "createTreasury": {
         "validation": {
@@ -2098,6 +2077,12 @@
             "heading": "🎉 恭喜!",
             "body": "您已完成金库设置。享受轻松的资产管理。",
             "letsGo": "开始吧!"
+        },
+        "notifications": {
+            "title": "新功能 — 通知",
+            "body": "及时了解新请求、待处理的投票以及金库的资产到账情况 — 只需连接 Telegram 机器人。",
+            "tryIt": "试一试",
+            "dismissAria": "关闭"
         },
         "createBanner": {
             "close": "关闭",

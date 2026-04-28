@@ -72,7 +72,6 @@
     },
     "signIn": {
         "connect": "Bağlan",
-        "connectWallet": "Cüzdan Bağla",
         "wallet": "Cüzdan",
         "termsOfService": "Hizmet Şartları",
         "privacyPolicy": "Gizlilik Politikası",
@@ -269,18 +268,6 @@
         "frozen": "Donduruldu",
         "frozenTooltip": "Dondurulmuş tokenler kilitlidir ve kullanılamaz. Depolama, staking veya henüz hak edilmemiş olma nedeniyle kilitlenmiş olabilirler.",
         "vested": "Hak Edildi"
-    },
-    "dashboard": {
-        "overview": "Hazine varlıklarınızın ve etkinliğinizin genel görünümü",
-        "assets": "Varlıklar",
-        "balance": "Bakiye",
-        "totalBalance": "Toplam Bakiye",
-        "deposit": "Para Yatır",
-        "addAssets": "Varlık ekle",
-        "hidden": "Gizli",
-        "confidentialHidden": "Gizli hazineler için bakiyeler gizlendi",
-        "recentActivity": "Son Etkinlik",
-        "viewAllTransactions": "Tüm işlemleri görüntüle"
     },
     "activity": {
         "filters": {
@@ -512,11 +499,6 @@
             "expired": "Yürütülmek için yeterli oyu alamadığı için süresi doldu.",
             "failed": "Talep tamamlanamadı. İşlem ayrıntılarını <link>buradan</link> kontrol edin.",
             "failedPlain": "Talep tamamlanamadı. İşlem ayrıntılarını buradan kontrol edin."
-        },
-        "votes": {
-            "approved": "Onaylandı",
-            "rejected": "Reddedildi",
-            "pending": "Beklemede"
         },
         "voteModal": {
             "confirmTitle": "Oyunuzu Onaylayın",
@@ -1080,9 +1062,6 @@
             "allowEarn": "Kazanca İzin Ver",
             "na": "Yok"
         }
-    },
-    "earn": {
-        "placeholder": "Kazanç fırsatlarını ve staking ödüllerini keşfedin."
     },
     "createTreasury": {
         "validation": {
@@ -2098,6 +2077,12 @@
             "heading": "🎉 Tebrikler!",
             "body": "Hazine kurulumunuzu tamamladınız. Varlıklarınızı kolayca yönetmenin tadını çıkarın.",
             "letsGo": "Hadi başlayalım!"
+        },
+        "notifications": {
+            "title": "Yeni — Bildirimler",
+            "body": "Yeni istekler, bekleyen oylar ve hazineye gelen varlıklar hakkında bilgi sahibi olun — sadece Telegram botunu bağlayın.",
+            "tryIt": "Dene",
+            "dismissAria": "Kapat"
         },
         "createBanner": {
             "close": "Kapat",

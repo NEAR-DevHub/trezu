@@ -72,7 +72,6 @@
     },
     "signIn": {
         "connect": "연결",
-        "connectWallet": "지갑 연결",
         "wallet": "지갑",
         "termsOfService": "이용약관",
         "privacyPolicy": "개인정보 처리방침",
@@ -269,18 +268,6 @@
         "frozen": "동결됨",
         "frozenTooltip": "동결된 토큰은 잠겨 있어 사용할 수 없습니다. 저장소에 사용 중이거나, 스테이킹 중이거나, 아직 베스팅되지 않아 잠겨 있을 수 있습니다.",
         "vested": "베스팅됨"
-    },
-    "dashboard": {
-        "overview": "트레저리 자산 및 활동 개요",
-        "assets": "자산",
-        "balance": "잔액",
-        "totalBalance": "총 잔액",
-        "deposit": "입금",
-        "addAssets": "자산 추가",
-        "hidden": "숨김",
-        "confidentialHidden": "비공개 트레저리의 잔액 숨김",
-        "recentActivity": "최근 활동",
-        "viewAllTransactions": "모든 트랜잭션 보기"
     },
     "activity": {
         "filters": {
@@ -512,11 +499,6 @@
             "expired": "실행에 필요한 충분한 표를 받지 못해 만료되었습니다.",
             "failed": "요청을 완료하지 못했습니다. 트랜잭션 세부정보는 <link>여기</link>에서 확인하세요.",
             "failedPlain": "요청을 완료하지 못했습니다. 여기에서 트랜잭션 세부정보를 확인하세요."
-        },
-        "votes": {
-            "approved": "승인됨",
-            "rejected": "거부됨",
-            "pending": "대기 중"
         },
         "voteModal": {
             "confirmTitle": "투표 확인",
@@ -1080,9 +1062,6 @@
             "allowEarn": "수익 허용",
             "na": "해당 없음"
         }
-    },
-    "earn": {
-        "placeholder": "수익 기회와 스테이킹 보상을 살펴보세요."
     },
     "createTreasury": {
         "validation": {
@@ -2098,6 +2077,12 @@
             "heading": "🎉 축하합니다!",
             "body": "트레저리 설정을 완료했습니다. 자산의 손쉬운 관리를 즐기세요.",
             "letsGo": "시작하기!"
+        },
+        "notifications": {
+            "title": "새 기능 - 알림",
+            "body": "새로운 요청, 대기 중인 투표, 트레저리로 들어오는 자산에 대한 정보를 받으세요 — Telegram 봇을 연결하기만 하면 됩니다.",
+            "tryIt": "시도해보기",
+            "dismissAria": "닫기"
         },
         "createBanner": {
             "close": "닫기",
