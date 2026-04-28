@@ -36,7 +36,7 @@ import { useToken, useTreasuryPolicy } from "@/hooks/use-treasury-queries";
 import type { IntentsQuoteResponse } from "@/lib/api";
 import { generateIntent } from "@/lib/api";
 import { parseTokenQueryParam } from "@/lib/token-query-param";
-import { formatBalance, formatSmartAmount } from "@/lib/utils";
+import { formatBalance, formatTokenDisplayAmount } from "@/lib/utils";
 import { buildConfidentialProposal } from "../../../../features/confidential/utils/proposal-builder";
 import { useNear } from "@/stores/near-store";
 import { useThemeStore } from "@/stores/theme-store";
@@ -559,10 +559,12 @@ function Step2({ handleBack }: StepProps) {
                                     },
                                     {
                                         label: tEx("info.minimumReceived"),
-                                        value: `${formatBalance(
-                                            localLiveQuoteData.quote
-                                                .minAmountOut,
-                                            receiveToken.decimals,
+                                        value: `${formatTokenDisplayAmount(
+                                            formatBalance(
+                                                localLiveQuoteData.quote
+                                                    .minAmountOut,
+                                                receiveToken.decimals,
+                                            ),
                                         )} ${receiveToken.symbol}`,
                                         info: tEx(
                                             "info.minimumReceivedTooltip",
@@ -629,7 +631,9 @@ function Step2({ handleBack }: StepProps) {
                                                           amountIn *
                                                           (feePercentage / 100);
 
-                                                      return `${feePercentage}% / ${formatSmartAmount(feeAmount)} ${sellToken.symbol}`;
+                                                      return `${feePercentage}% / ${formatTokenDisplayAmount(
+                                                          feeAmount,
+                                                      )} ${sellToken.symbol}`;
                                                   })(),
                                                   info: tEx(
                                                       "info.exchangeFeeTooltip",

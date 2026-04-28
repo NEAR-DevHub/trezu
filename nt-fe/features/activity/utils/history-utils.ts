@@ -186,6 +186,27 @@ export function getActivitySubLabel(
     return to && to !== "UNKNOWN" ? labels.to(to) : "";
 }
 
+function normalizeAccountValue(
+    value: string | null | undefined,
+): string | null {
+    if (!value) return null;
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    if (trimmed.toUpperCase() === "UNKNOWN") return null;
+    return trimmed;
+}
+
+function resolveAccountDisplay(
+    values: Array<string | null | undefined>,
+    isConfidentialTreasury: boolean,
+): string {
+    for (const value of values) {
+        const normalized = normalizeAccountValue(value);
+        if (normalized) return normalized;
+    }
+    return isConfidentialTreasury ? "Confidential" : "N/A";
+}
+
 /**
  * Determines the sender of a transaction
  * For swaps: show "via NEAR Intents"
@@ -197,16 +218,16 @@ export function getFromAccount(
     isReceived: boolean,
     treasuryId: string | null | undefined,
     viaIntentsLabel: string,
+    isConfidentialTreasury: boolean = false,
 ): string {
     if (activity.swap) return viaIntentsLabel;
-    const knownCounterparty =
-        activity.counterparty && activity.counterparty !== "UNKNOWN"
-            ? activity.counterparty
-            : null;
     if (isReceived) {
-        return knownCounterparty || activity.signerId || "—";
+        return resolveAccountDisplay(
+            [activity.counterparty, activity.signerId],
+            isConfidentialTreasury,
+        );
     }
-    return treasuryId || "—";
+    return resolveAccountDisplay([treasuryId], isConfidentialTreasury);
 }
 
 /**
@@ -219,13 +240,15 @@ export function getToAccount(
     activity: ActivityAccount,
     isReceived: boolean,
     treasuryId: string | null | undefined,
+    isConfidentialTreasury: boolean = false,
 ): string {
-    if (isReceived) return treasuryId || "—";
-    const knownCounterparty =
-        activity.counterparty && activity.counterparty !== "UNKNOWN"
-            ? activity.counterparty
-            : null;
-    return knownCounterparty || activity.receiverId || "—";
+    if (isReceived) {
+        return resolveAccountDisplay([treasuryId], isConfidentialTreasury);
+    }
+    return resolveAccountDisplay(
+        [activity.counterparty, activity.receiverId],
+        isConfidentialTreasury,
+    );
 }
 
 function buildHistoryDescriptionLabels(
@@ -303,5 +326,13 @@ export function useGetFromAccount() {
         activity: ActivityAccount,
         isReceived: boolean,
         treasuryId: string | null | undefined,
-    ) => getFromAccount(activity, isReceived, treasuryId, t("viaIntents"));
+        isConfidentialTreasury: boolean = false,
+    ) =>
+        getFromAccount(
+            activity,
+            isReceived,
+            treasuryId,
+            t("viaIntents"),
+            isConfidentialTreasury,
+        );
 }

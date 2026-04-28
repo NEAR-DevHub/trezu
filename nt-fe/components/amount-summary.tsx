@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import Big from "@/lib/big";
 import { Token } from "./token-input";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatTokenDisplayAmount } from "@/lib/utils";
 import { TokenDisplay } from "./token-display-with-network";
 import { SummaryBlock } from "./summary-block";
 
@@ -23,6 +23,12 @@ interface AmountSummaryProps {
      * Default: false
      */
     showNetworkIcon?: boolean;
+    /**
+     * When true, renders `total` as-is without applying amount formatter.
+     * Useful when caller already provides a fully formatted value.
+     * Default: false
+     */
+    preserveFormattedTotal?: boolean;
 }
 
 export function AmountSummary({
@@ -33,9 +39,12 @@ export function AmountSummary({
     children,
     useInputBlock = true,
     showNetworkIcon = false,
+    preserveFormattedTotal = false,
 }: AmountSummaryProps) {
     const t = useTranslations("amountSummary");
-    const totalString = total.toString();
+    const totalString = preserveFormattedTotal
+        ? total.toString()
+        : formatTokenDisplayAmount(total.toString());
 
     return (
         <SummaryBlock

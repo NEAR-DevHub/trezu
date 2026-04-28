@@ -21,7 +21,7 @@ import {
 } from "@/components/modal";
 import { NumberBadge } from "@/components/number-badge";
 import type { BulkPaymentFormValues, BulkPaymentData } from "../schemas";
-import { cn, formatBalance, formatSmartAmount } from "@/lib/utils";
+import { cn, formatBalance, formatTokenDisplayAmount } from "@/lib/utils";
 import { validateAccountsAndStorage } from "../utils";
 import { useBulkParsingLabels } from "../utils/use-parsing-labels";
 import { useToken, useTokenBalance } from "@/hooks/use-treasury-queries";
@@ -168,7 +168,7 @@ export function ReviewPaymentsStep({
             >
                 {/* Total Summary */}
                 <AmountSummary
-                    total={formatSmartAmount(totalAmount)}
+                    total={totalAmount}
                     totalUSD={totalUSDValue.toNumber()}
                     token={selectedToken}
                     showNetworkIcon={true}
@@ -330,7 +330,7 @@ export function ReviewPaymentsStep({
                                                                 />
                                                                 <div className="text-right">
                                                                     <div className="text-sm font-semibold whitespace-nowrap">
-                                                                        {formatSmartAmount(
+                                                                        {formatTokenDisplayAmount(
                                                                             payment.amount,
                                                                         )}{" "}
                                                                         {
@@ -405,7 +405,8 @@ export function ReviewPaymentsStep({
                             </Tooltip>
                         </div>
                         <p>
-                            {totalNetworkFee.toString()} {selectedToken.symbol}
+                            {formatTokenDisplayAmount(totalNetworkFee)}{" "}
+                            {selectedToken.symbol}
                         </p>
                     </div>
                 )}
