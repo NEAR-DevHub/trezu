@@ -101,6 +101,7 @@ type NavTranslationKey =
     | "requests"
     | "payments"
     | "exchange"
+    | "earn"
     | "addressBook"
     | "members"
     | "settings";
@@ -128,6 +129,12 @@ const topNavLinks: {
         ),
         roleRequired: true,
     },
+    {
+        path: "earn",
+        labelKey: "earn",
+        icon: (props) => <ChartColumn {...props} animation="increasing" />,
+        id: "earn-new",
+    },
 ];
 
 const bottomNavLinks: {
@@ -143,7 +150,6 @@ const bottomNavLinks: {
         labelKey: "addressBook",
         icon: ContactRound,
         id: "address-book-link",
-        showNewPill: true,
         memberRequired: true,
     },
     {
@@ -168,6 +174,7 @@ export function Sidebar({ onClose }: SidebarProps) {
     const [supportModalOpen, setSupportModalOpen] = useState(false);
     const { accountId } = useNear();
     const tNav = useTranslations("nav");
+    const tPages = useTranslations("pages");
     const tCommon = useTranslations("common");
 
     const {
@@ -308,13 +315,23 @@ export function Sidebar({ onClose }: SidebarProps) {
 
                         return (
                             <NavLink
+                                id={link.id}
                                 key={link.path}
                                 isActive={isActive}
                                 icon={link.icon}
-                                label={tNav(link.labelKey)}
+                                label={
+                                    link.labelKey === "earn"
+                                        ? tPages("earn.title")
+                                        : tNav(link.labelKey)
+                                }
                                 showBadge={showBadge}
                                 badgeCount={proposals?.total ?? 0}
                                 showLabels={showLabels}
+                                endAdornment={
+                                    link.path === "earn" ? (
+                                        <NEW enabled={!isReduced} />
+                                    ) : undefined
+                                }
                                 onClick={() => {
                                     router.push(href);
                                     if (isMobile) onClose();

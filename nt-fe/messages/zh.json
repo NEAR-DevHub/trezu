@@ -173,8 +173,32 @@
         },
         "earn": {
             "title": "收益",
-            "description": "通过您的资产赚取奖励",
-            "placeholder": "探索收益机会与质押奖励。"
+            "description": "将您的 Trezu 金库连接到您常用的 Web3 应用。",
+            "howItWorks": "运作方式",
+            "navTooltip": {
+                "rich": "新功能！🥳 通过「收益」质押资产，开始获取奖励。轻松让资金为您增值。",
+                "tryIt": "试用一下"
+            },
+            "apps": {
+                "rhea": {
+                    "name": "Rhea",
+                    "description": "将金库接入 Rhea，在现有资产上开始收益—无需划转、无额外摩擦，为您已持有的资产提供顺畅奖励。",
+                    "goTo": "前往 Rhea",
+                    "logoAlt": "Rhea 标志"
+                },
+                "intear": {
+                    "name": "IntearDEX",
+                    "description": "无需跨链桥、无需挪动资金、无多余步骤—直接使用金库资产在平台上开始收益。",
+                    "goTo": "前往 IntearDEX",
+                    "logoAlt": "IntearDEX 标志"
+                },
+                "nearStaking": {
+                    "name": "NEAR Staking",
+                    "description": "从金库质押 NEAR，助力网络安全并获得质押奖励。",
+                    "goTo": "前往 NEAR Staking",
+                    "logoAlt": "NEAR"
+                }
+            }
         },
         "createTreasury": {
             "title": "创建金库",

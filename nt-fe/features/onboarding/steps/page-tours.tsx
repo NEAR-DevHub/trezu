@@ -7,7 +7,6 @@ import { useEffect, useCallback, useRef } from "react";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useNear } from "@/stores/near-store";
 import { useResponsiveSidebar } from "@/stores/sidebar-store";
-import { useAddressBook } from "@/features/address-book";
 
 type PageTourKey =
     | "paymentsBulk"
@@ -15,8 +14,7 @@ type PageTourKey =
     | "exchangeSettings"
     | "membersPending"
     | "guestSaveIntro"
-    | "guestSaveAction"
-    | "newFeature";
+    | "guestSaveAction";
 
 function PageTourContent({ k }: { k: PageTourKey }) {
     const t = useTranslations("pageTours");
@@ -34,7 +32,7 @@ function PageTourContentRich({ k }: { k: "newFeature" }) {
     );
 }
 
-export const FEATURE_VERSION = 1 as const;
+export const FEATURE_VERSION = 2 as const;
 export const NEW_FEATURE_TOUR_NAME = `NEW_FEATURE_${FEATURE_VERSION}` as const;
 export const NEW_FEATURE_STORAGE_KEY = "new-feature-tour-shown" as const;
 
@@ -66,17 +64,17 @@ export const PAGE_TOUR_SELECTORS = {
     MEMBERS_PENDING_BTN: "#members-pending-btn",
     GUEST_BADGE: "#guest-badge",
     GUEST_SAVE_BTN: "#guest-save-btn",
-    ADDRESS_BOOK_NEW: "#address-book-new",
+    EARN_NEW: "#earn-new",
 } as const;
 
 export const NEW_FEATURE_ANNOUNCEMENT = {
     version: FEATURE_VERSION,
     tourName: NEW_FEATURE_TOUR_NAME,
     storageKey: NEW_FEATURE_STORAGE_KEY,
-    selector: PAGE_TOUR_SELECTORS.ADDRESS_BOOK_NEW,
+    selector: PAGE_TOUR_SELECTORS.EARN_NEW,
     ctaLabelKey: "newFeatureCta" as const,
     href: (treasuryId?: string | null) =>
-        treasuryId ? `/${treasuryId}/address-book` : "/address-book",
+        treasuryId ? `/${treasuryId}/earn` : "/earn",
     content: <PageTourContentRich k="newFeature" />,
 } as const;
 
@@ -284,7 +282,6 @@ export function usePageTour(
 
 export function useNewFeatureTour(enabled = true) {
     const { accountId } = useNear();
-    const { data: addressBook } = useAddressBook();
 
     const welcomeDismissed =
         typeof window !== "undefined" &&
@@ -295,11 +292,7 @@ export function useNewFeatureTour(enabled = true) {
         `${NEW_FEATURE_ANNOUNCEMENT.storageKey}:${accountId ?? "anonymous"}`,
         {
             version: NEW_FEATURE_ANNOUNCEMENT.version,
-            enabled:
-                enabled &&
-                welcomeDismissed &&
-                addressBook &&
-                addressBook.length === 0,
+            enabled: enabled && welcomeDismissed,
         },
     );
 }

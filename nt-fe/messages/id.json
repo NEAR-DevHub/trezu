@@ -173,8 +173,32 @@
         },
         "earn": {
             "title": "Pendapatan",
-            "description": "Dapatkan imbalan atas aset Anda",
-            "placeholder": "Jelajahi peluang pendapatan dan imbalan staking."
+            "description": "Hubungkan treasury Trezu Anda ke aplikasi Web3 favorit Anda.",
+            "howItWorks": "Cara kerja",
+            "navTooltip": {
+                "rich": "Baru! 🥳 Staking aset Anda lewat Pendapatan dan mulailah mendapat imbalan. Biarkan dana Anda bekerja tanpa ribet.",
+                "tryIt": "Coba Sekarang"
+            },
+            "apps": {
+                "rhea": {
+                    "name": "Rhea",
+                    "description": "Hubungkan treasury Anda ke Rhea dan mulai dapatkan imbalan pada aset yang sudah Anda miliki—tanpa transfer, tanpa hambatan, hadiah mulus untuk apa yang sudah Anda pegang.",
+                    "goTo": "Buka Rhea",
+                    "logoAlt": "Logo Rhea"
+                },
+                "intear": {
+                    "name": "IntearDEX",
+                    "description": "Tanpa bridging, tanpa memindahkan dana, tanpa langkah ekstra—cukup gunakan aset treasury Anda untuk mulai menghasilkan langsung di platform.",
+                    "goTo": "Buka IntearDEX",
+                    "logoAlt": "Logo IntearDEX"
+                },
+                "nearStaking": {
+                    "name": "NEAR Staking",
+                    "description": "Stake NEAR dari treasury Anda untuk membantu mengamankan jaringan dan mendapat imbalan staking.",
+                    "goTo": "Buka NEAR Staking",
+                    "logoAlt": "NEAR"
+                }
+            }
         },
         "createTreasury": {
             "title": "Buat Treasury",

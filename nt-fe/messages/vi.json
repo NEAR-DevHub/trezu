@@ -173,8 +173,32 @@
         },
         "earn": {
             "title": "Thu nhập",
-            "description": "Kiếm phần thưởng từ tài sản của bạn",
-            "placeholder": "Khám phá cơ hội thu nhập và phần thưởng staking."
+            "description": "Kết nối ngân quỹ Trezu của bạn với các ứng dụng Web3 yêu thích.",
+            "howItWorks": "Cách hoạt động",
+            "navTooltip": {
+                "rich": "Mới! 🥳 Hãy stake tài sản trong mục Thu nhập và bắt đầu nhận phần thưởng. Để tiền sinh lời một cách nhẹ nhàng.",
+                "tryIt": "Hãy thử"
+            },
+            "apps": {
+                "rhea": {
+                    "name": "Rhea",
+                    "description": "Kết nối ngân quỹ với Rhea và bắt đầu kiếm lợi trên tài sản hiện có—không cần chuyển khoản, không rườm rà, phần thưởng liền mạch cho những gì bạn đang nắm giữ.",
+                    "goTo": "Đến Rhea",
+                    "logoAlt": "Logo Rhea"
+                },
+                "intear": {
+                    "name": "IntearDEX",
+                    "description": "Không cầu nối, không di chuyển vốn, không bước thừa—chỉ dùng tài sản ngân quỹ để bắt đầu kiếm lợi trực tiếp trên nền tảng.",
+                    "goTo": "Đến IntearDEX",
+                    "logoAlt": "Logo IntearDEX"
+                },
+                "nearStaking": {
+                    "name": "NEAR Staking",
+                    "description": "Stake NEAR từ ngân quỹ để giúp bảo mật mạng lưới và nhận phần thưởng staking.",
+                    "goTo": "Đến NEAR Staking",
+                    "logoAlt": "NEAR"
+                }
+            }
         },
         "createTreasury": {
             "title": "Tạo Ngân quỹ",

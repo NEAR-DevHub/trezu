@@ -173,8 +173,32 @@
         },
         "earn": {
             "title": "Kazan",
-            "description": "Varlıklarınızdan ödüller kazanın",
-            "placeholder": "Kazanç fırsatlarını ve staking ödüllerini keşfedin."
+            "description": "Trezu hazinenizi en sevdiğiniz Web3 uygulamalarına bağlayın.",
+            "howItWorks": "Nasıl çalışır",
+            "navTooltip": {
+                "rich": "Yeni! 🥳 Kazan ile varlıklarınızı stake edin ve ödüller kazanmaya başlayın. Fonlarınızı zahmetsizce çalıştırın.",
+                "tryIt": "Deneyin"
+            },
+            "apps": {
+                "rhea": {
+                    "name": "Rhea",
+                    "description": "Hazinenizi Rhea'ya bağlayın ve mevcut varlıklarınız üzerinden kazanmaya başlayın—transfer yok, sürtünme yok, elinizdekilere sorunsuz ödüller.",
+                    "goTo": "Rhea'ya git",
+                    "logoAlt": "Rhea logosu"
+                },
+                "intear": {
+                    "name": "IntearDEX",
+                    "description": "Köprü yok, fon taşıma yok, ekstra adım yok—hazine varlıklarınızı kullanarak doğrudan platformda kazanmaya başlayın.",
+                    "goTo": "IntearDEX'e git",
+                    "logoAlt": "IntearDEX logosu"
+                },
+                "nearStaking": {
+                    "name": "NEAR Staking",
+                    "description": "Hazinenizden NEAR stake ederek ağın güvenliğine katkıda bulunun ve staking ödülleri kazanın.",
+                    "goTo": "NEAR Staking'e git",
+                    "logoAlt": "NEAR"
+                }
+            }
         },
         "createTreasury": {
             "title": "Hazine Oluştur",

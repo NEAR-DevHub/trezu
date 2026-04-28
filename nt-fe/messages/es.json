@@ -173,8 +173,32 @@
         },
         "earn": {
             "title": "Ganar",
-            "description": "Genera recompensas con tus activos",
-            "placeholder": "Explora oportunidades de ingresos y recompensas por staking."
+            "description": "Conecta tu tesorería Trezu con tus aplicaciones Web3 favoritas.",
+            "howItWorks": "Cómo funciona",
+            "navTooltip": {
+                "rich": "¡Nuevo! 🥳 Haz staking con tus activos desde Ganar y empieza a obtener recompensas. Pon tus fondos a trabajar sin esfuerzo.",
+                "tryIt": "Pruébalo"
+            },
+            "apps": {
+                "rhea": {
+                    "name": "Rhea",
+                    "description": "Conecta tu tesorería a Rhea y empieza a generar rendimiento sobre los activos que ya tienes: sin transferencias, sin fricción, recompensas fluidas sobre lo que ya posees.",
+                    "goTo": "Ir a Rhea",
+                    "logoAlt": "Logotipo de Rhea"
+                },
+                "intear": {
+                    "name": "IntearDEX",
+                    "description": "Sin puentes, sin mover fondos, sin pasos extra: usa los activos de tu tesorería y empieza a generar rendimiento directamente en la plataforma.",
+                    "goTo": "Ir a IntearDEX",
+                    "logoAlt": "Logotipo de IntearDEX"
+                },
+                "nearStaking": {
+                    "name": "NEAR Staking",
+                    "description": "Haz staking de NEAR desde tu tesorería para ayudar a asegurar la red y obtener recompensas de staking.",
+                    "goTo": "Ir a NEAR Staking",
+                    "logoAlt": "NEAR"
+                }
+            }
         },
         "createTreasury": {
             "title": "Crear tesorería",
