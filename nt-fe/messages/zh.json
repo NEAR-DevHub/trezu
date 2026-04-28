@@ -1195,7 +1195,7 @@
     "telegram": {
         "tagPill": "Telegram",
         "invalidLinkTitle": "链接无效",
-        "invalidLinkDescription": "此 Telegram 连接链接缺少令牌。请在 Telegram 中重新点击 Connect Treasury 以生成新的链接。",
+        "invalidLinkDescription": "此 Telegram 连接链接缺少令牌。请在 Telegram 中重新点击“连接金库”以生成新的链接。",
         "successTitle": "连接成功",
         "successDescription": "金库已链接到此 Telegram 聊天。",
         "successToast": "金库连接成功",
@@ -1219,7 +1219,37 @@
         "connectedToAnother": "已连接到其他聊天",
         "notMember": "您不是任何金库的策略成员。",
         "connecting": "连接中…",
-        "connect": "连接"
+        "connect": "连接",
+        "settings": {
+            "title": "Telegram",
+            "connectedTo": "已连接到 {chat}",
+            "chatNumber": "聊天 #{id}",
+            "fallbackChat": "一个 Telegram 聊天",
+            "disconnect": "断开连接",
+            "connect": "连接",
+            "connectHeadline": "将 Telegram 连接到金库",
+            "connectDescription": "获取有关新请求、金库入账资产等的通知。",
+            "noTreasuryDescription": "将您的金库链接到 Telegram 聊天。",
+            "openSettingsHint": "从某个金库打开设置以管理集成。",
+            "disconnectedToast": "已为此金库断开 Telegram 连接",
+            "disconnectFailedToast": "无法断开 Telegram 连接。请再试一次。",
+            "telegramDisconnect": {
+                "title": "断开 Telegram 机器人",
+                "body": "断开后，你将不再通过该机器人接收此金库的通知。你可以随时重新连接。",
+                "action": "断开连接"
+            }
+        },
+        "connectInstructions": {
+            "title": "将您的 Telegram 账号连接到 Trezu",
+            "subtitle": "按照以下步骤在 Telegram 中为此金库启用通知。",
+            "step1": "将 {bot} 添加到您的 Telegram 群组或频道。",
+            "step2": "在 Telegram 中点击“连接金库”（或在提示时使用机器人的连接流程）。",
+            "step3": "在网页端登录并授权，然后选择要连接到此聊天的金库（包括当前这个）。",
+            "doneHint": "当浏览器显示您的金库已成功关联时，即表示完成。",
+            "copyBotTooltip": "复制机器人账号",
+            "botCopiedToast": "机器人账号已复制",
+            "openInTelegram": "在 Telegram 中打开 {bot}"
+        }
     },
     "systemStatus": {
         "underMaintenance": "维护中",
@@ -1527,15 +1557,6 @@
         "tableToken": "代币",
         "tableTotalValue": "总价值"
     },
-    "telegramConnectInstructions": {
-        "title": "连接 Telegram",
-        "subtitle": "在您的 Telegram 中接收提案与活动通知。",
-        "step3": "按下 Start 并按照说明操作。",
-        "success": "全部就绪!",
-        "copyBotTooltip": "复制机器人账号",
-        "botCopiedToast": "机器人账号已复制",
-        "openInTelegram": "在 Telegram 中打开 {bot}"
-    },
     "transactionHashCell": {
         "copyHash": "复制哈希",
         "hashCopied": "哈希已复制",
@@ -1805,19 +1826,6 @@
         "unhideFailedToast": "取消隐藏金库失败",
         "removedToast": "金库已从已保存列表中移除",
         "removeFailedToast": "从已保存列表中移除金库失败"
-    },
-    "telegramSettings": {
-        "title": "Telegram",
-        "connectedTo": "已连接到 {chat}",
-        "chatNumber": "聊天 #{id}",
-        "fallbackChat": "一个 Telegram 聊天",
-        "disconnect": "断开连接",
-        "connect": "连接",
-        "connectDescription": "将您的金库链接到 Telegram 聊天以接收通知。",
-        "noTreasuryDescription": "将您的金库链接到 Telegram 聊天。",
-        "openSettingsHint": "从某个金库打开设置以管理集成。",
-        "disconnectedToast": "已为此金库断开 Telegram 连接",
-        "disconnectFailedToast": "无法断开 Telegram 连接。请再试一次。"
     },
     "assetsTable": {
         "noAssetsFound": "未找到资产。",

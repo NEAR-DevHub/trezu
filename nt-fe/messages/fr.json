@@ -1219,7 +1219,37 @@
         "connectedToAnother": "Connecté à un autre chat",
         "notMember": "Vous n'êtes membre de la politique d'aucune trésorerie.",
         "connecting": "Connexion…",
-        "connect": "Connecter"
+        "connect": "Connecter",
+        "settings": {
+            "title": "Telegram",
+            "connectedTo": "Connecté à {chat}",
+            "chatNumber": "Chat #{id}",
+            "fallbackChat": "un chat Telegram",
+            "disconnect": "Déconnecter",
+            "connect": "Connecter",
+            "connectHeadline": "Connecter Telegram à la trésorerie",
+            "connectDescription": "Recevez des alertes pour les nouvelles demandes, les actifs reçus dans la trésorerie, et plus encore.",
+            "noTreasuryDescription": "Liez vos trésoreries à un chat Telegram.",
+            "openSettingsHint": "Ouvrez les paramètres depuis une trésorerie pour gérer les intégrations.",
+            "disconnectedToast": "Telegram déconnecté pour cette trésorerie",
+            "disconnectFailedToast": "Impossible de déconnecter Telegram. Réessayez.",
+            "telegramDisconnect": {
+                "title": "Déconnecter le bot Telegram",
+                "body": "Si vous le déconnectez, vous ne recevrez plus de notifications dans le bot pour cette trésorerie. Vous pourrez le reconnecter à tout moment.",
+                "action": "Déconnecter"
+            }
+        },
+        "connectInstructions": {
+            "title": "Connectez votre compte Telegram à Trezu",
+            "subtitle": "Suivez ces étapes pour activer les notifications pour cette trésorerie dans Telegram.",
+            "step1": "Ajoutez {bot} à votre groupe ou canal Telegram.",
+            "step2": "Dans Telegram, appuyez sur «Connecter la trésorerie» (ou suivez le parcours de connexion du bot lorsque c'est proposé).",
+            "step3": "Connectez-vous sur le web, puis autorisez et choisissez les trésoreries à associer à ce chat — dont celle-ci.",
+            "doneHint": "C'est terminé lorsque le navigateur indique que vos trésoreries sont bien liées.",
+            "copyBotTooltip": "Copier le pseudo du bot",
+            "botCopiedToast": "Pseudo du bot copié",
+            "openInTelegram": "Ouvrir {bot} dans Telegram"
+        }
     },
     "systemStatus": {
         "underMaintenance": "En maintenance",
@@ -1527,15 +1557,6 @@
         "tableToken": "Token",
         "tableTotalValue": "Valeur totale"
     },
-    "telegramConnectInstructions": {
-        "title": "Connecter Telegram",
-        "subtitle": "Recevez des notifications sur les propositions et l'activité dans votre Telegram.",
-        "step3": "Appuyez sur Démarrer et suivez les instructions.",
-        "success": "Tout est prêt !",
-        "copyBotTooltip": "Copier le pseudo du bot",
-        "botCopiedToast": "Pseudo du bot copié",
-        "openInTelegram": "Ouvrir {bot} dans Telegram"
-    },
     "transactionHashCell": {
         "copyHash": "Copier le hash",
         "hashCopied": "Hash copié",
@@ -1806,19 +1827,6 @@
         "removedToast": "Trésorerie supprimée de la liste enregistrée",
         "removeFailedToast": "Échec de la suppression de la trésorerie de la liste enregistrée"
     },
-    "telegramSettings": {
-        "title": "Telegram",
-        "connectedTo": "Connecté à {chat}",
-        "chatNumber": "Chat #{id}",
-        "fallbackChat": "un chat Telegram",
-        "disconnect": "Déconnecter",
-        "connect": "Connecter",
-        "connectDescription": "Liez votre trésorerie à un chat Telegram pour recevoir des notifications.",
-        "noTreasuryDescription": "Liez vos trésoreries à un chat Telegram.",
-        "openSettingsHint": "Ouvrez les paramètres depuis une trésorerie pour gérer les intégrations.",
-        "disconnectedToast": "Telegram déconnecté pour cette trésorerie",
-        "disconnectFailedToast": "Impossible de déconnecter Telegram. Réessayez."
-    },
     "assetsTable": {
         "noAssetsFound": "Aucun actif trouvé.",
         "assetDetails": "Détails de l'actif",
@@ -2066,6 +2074,12 @@
             "heading": "🎉 Félicitations !",
             "body": "Vous avez terminé la configuration de votre trésorerie. Profitez d'une gestion facile de vos actifs.",
             "letsGo": "C'est parti !"
+        },
+        "notifications": {
+            "title": "Nouveau — Notifications",
+            "body": "Restez informé des nouvelles demandes, des votes en attente et des actifs entrants — connectez simplement le bot Telegram.",
+            "tryIt": "Essayer",
+            "dismissAria": "Fermer"
         },
         "createBanner": {
             "close": "Fermer",

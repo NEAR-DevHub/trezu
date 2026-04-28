@@ -1195,7 +1195,7 @@
     "telegram": {
         "tagPill": "Telegram",
         "invalidLinkTitle": "Tautan tidak valid",
-        "invalidLinkDescription": "Tautan koneksi Telegram ini tidak memiliki token. Klik kembali Connect Treasury di Telegram untuk membuat tautan baru.",
+        "invalidLinkDescription": "Tautan koneksi Telegram ini tidak memiliki token. Klik kembali \"Hubungkan treasury\" di Telegram untuk membuat tautan baru.",
         "successTitle": "Berhasil terhubung",
         "successDescription": "Treasury telah ditautkan ke chat Telegram ini.",
         "successToast": "Treasury berhasil terhubung",
@@ -1219,7 +1219,37 @@
         "connectedToAnother": "Terhubung ke chat lain",
         "notMember": "Anda bukan anggota kebijakan dari treasury mana pun.",
         "connecting": "Menghubungkan…",
-        "connect": "Hubungkan"
+        "connect": "Hubungkan",
+        "settings": {
+            "title": "Telegram",
+            "connectedTo": "Terhubung ke {chat}",
+            "chatNumber": "Chat #{id}",
+            "fallbackChat": "chat Telegram",
+            "disconnect": "Putuskan",
+            "connect": "Hubungkan",
+            "connectHeadline": "Hubungkan Telegram ke treasury",
+            "connectDescription": "Dapatkan notifikasi tentang permintaan baru, aset yang masuk ke treasury, dan lainnya.",
+            "noTreasuryDescription": "Tautkan treasury Anda ke chat Telegram.",
+            "openSettingsHint": "Buka pengaturan dari treasury untuk mengelola integrasi.",
+            "disconnectedToast": "Telegram terputus untuk treasury ini",
+            "disconnectFailedToast": "Tidak dapat memutuskan Telegram. Coba lagi.",
+            "telegramDisconnect": {
+                "title": "Putuskan sambungan bot Telegram",
+                "body": "Jika Anda memutuskan sambungannya, Anda tidak akan lagi menerima notifikasi di bot untuk treasury ini. Anda dapat menyambungkannya kembali kapan saja.",
+                "action": "Putuskan sambungan"
+            }
+        },
+        "connectInstructions": {
+            "title": "Hubungkan akun Telegram Anda ke Trezu",
+            "subtitle": "Ikuti langkah-langkah berikut untuk mengaktifkan notifikasi treasury ini di Telegram.",
+            "step1": "Tambahkan {bot} ke grup atau channel Telegram Anda.",
+            "step2": "Di Telegram, ketuk \"Hubungkan treasury\" (atau gunakan alur koneksi bot saat diminta).",
+            "step3": "Masuk di web, beri otorisasi, lalu pilih treasury mana saja yang akan dihubungkan ke chat ini, termasuk treasury ini.",
+            "doneHint": "Selesai saat browser menampilkan bahwa treasury Anda berhasil ditautkan.",
+            "copyBotTooltip": "Salin handle bot",
+            "botCopiedToast": "Handle bot disalin",
+            "openInTelegram": "Buka {bot} di Telegram"
+        }
     },
     "systemStatus": {
         "underMaintenance": "Dalam Pemeliharaan",
@@ -1527,15 +1557,6 @@
         "tableToken": "Token",
         "tableTotalValue": "Nilai Total"
     },
-    "telegramConnectInstructions": {
-        "title": "Hubungkan Telegram",
-        "subtitle": "Dapatkan notifikasi tentang usulan dan aktivitas di Telegram Anda.",
-        "step3": "Tekan Mulai dan ikuti instruksi.",
-        "success": "Anda sudah siap!",
-        "copyBotTooltip": "Salin handle bot",
-        "botCopiedToast": "Handle bot disalin",
-        "openInTelegram": "Buka {bot} di Telegram"
-    },
     "transactionHashCell": {
         "copyHash": "Salin hash",
         "hashCopied": "Hash disalin",
@@ -1805,19 +1826,6 @@
         "unhideFailedToast": "Gagal menampilkan treasury",
         "removedToast": "Treasury dihapus dari daftar yang disimpan",
         "removeFailedToast": "Gagal menghapus treasury dari daftar yang disimpan"
-    },
-    "telegramSettings": {
-        "title": "Telegram",
-        "connectedTo": "Terhubung ke {chat}",
-        "chatNumber": "Chat #{id}",
-        "fallbackChat": "chat Telegram",
-        "disconnect": "Putuskan",
-        "connect": "Hubungkan",
-        "connectDescription": "Tautkan treasury Anda ke chat Telegram untuk menerima notifikasi.",
-        "noTreasuryDescription": "Tautkan treasury Anda ke chat Telegram.",
-        "openSettingsHint": "Buka pengaturan dari treasury untuk mengelola integrasi.",
-        "disconnectedToast": "Telegram terputus untuk treasury ini",
-        "disconnectFailedToast": "Tidak dapat memutuskan Telegram. Coba lagi."
     },
     "assetsTable": {
         "noAssetsFound": "Tidak ada aset ditemukan.",

@@ -1195,7 +1195,7 @@
     "telegram": {
         "tagPill": "Telegram",
         "invalidLinkTitle": "Liên kết không hợp lệ",
-        "invalidLinkDescription": "Liên kết kết nối Telegram này thiếu một token. Hãy nhấp lại Connect Treasury trong Telegram để tạo một liên kết mới.",
+        "invalidLinkDescription": "Liên kết kết nối Telegram này thiếu một token. Hãy nhấp lại \"Kết nối quỹ\" trong Telegram để tạo một liên kết mới.",
         "successTitle": "Đã kết nối thành công",
         "successDescription": "Các ngân quỹ đã được liên kết với cuộc trò chuyện Telegram này.",
         "successToast": "Đã kết nối các ngân quỹ thành công",
@@ -1219,7 +1219,37 @@
         "connectedToAnother": "Đã kết nối với một cuộc trò chuyện khác",
         "notMember": "Bạn không phải là thành viên chính sách của bất kỳ ngân quỹ nào.",
         "connecting": "Đang kết nối…",
-        "connect": "Kết nối"
+        "connect": "Kết nối",
+        "settings": {
+            "title": "Telegram",
+            "connectedTo": "Đã kết nối với {chat}",
+            "chatNumber": "Trò chuyện #{id}",
+            "fallbackChat": "một cuộc trò chuyện Telegram",
+            "disconnect": "Ngắt kết nối",
+            "connect": "Kết nối",
+            "connectHeadline": "Kết nối Telegram với quỹ",
+            "connectDescription": "Nhận thông báo về yêu cầu mới, tài sản vào quỹ và hơn thế nữa.",
+            "noTreasuryDescription": "Liên kết các ngân quỹ của bạn với một cuộc trò chuyện Telegram.",
+            "openSettingsHint": "Mở cài đặt từ một ngân quỹ để quản lý tích hợp.",
+            "disconnectedToast": "Đã ngắt kết nối Telegram cho ngân quỹ này",
+            "disconnectFailedToast": "Không thể ngắt kết nối Telegram. Hãy thử lại.",
+            "telegramDisconnect": {
+                "title": "Ngắt kết nối bot Telegram",
+                "body": "Nếu bạn ngắt kết nối, bạn sẽ không còn nhận thông báo trong bot cho quỹ này nữa. Bạn có thể kết nối lại bất cứ lúc nào.",
+                "action": "Ngắt kết nối"
+            }
+        },
+        "connectInstructions": {
+            "title": "Kết nối tài khoản Telegram của bạn với Trezu",
+            "subtitle": "Làm theo các bước sau để bật thông báo cho kho quỹ này trên Telegram.",
+            "step1": "Thêm {bot} vào nhóm hoặc kênh Telegram của bạn.",
+            "step2": "Trong Telegram, nhấn \"Kết nối quỹ\" (hoặc dùng luồng kết nối của bot khi được nhắc).",
+            "step3": "Đăng nhập trên web, cấp quyền và chọn những kho quỹ sẽ kết nối với cuộc trò chuyện này, bao gồm cả kho quỹ này.",
+            "doneHint": "Hoàn tất khi trình duyệt hiển thị rằng các kho quỹ của bạn đã được liên kết thành công.",
+            "copyBotTooltip": "Sao chép tên bot",
+            "botCopiedToast": "Đã sao chép tên bot",
+            "openInTelegram": "Mở {bot} trong Telegram"
+        }
     },
     "systemStatus": {
         "underMaintenance": "Đang bảo trì",
@@ -1527,15 +1557,6 @@
         "tableToken": "Token",
         "tableTotalValue": "Tổng giá trị"
     },
-    "telegramConnectInstructions": {
-        "title": "Kết nối Telegram",
-        "subtitle": "Nhận thông báo về đề xuất và hoạt động trong Telegram của bạn.",
-        "step3": "Nhấn Start và làm theo hướng dẫn.",
-        "success": "Bạn đã sẵn sàng!",
-        "copyBotTooltip": "Sao chép tên bot",
-        "botCopiedToast": "Đã sao chép tên bot",
-        "openInTelegram": "Mở {bot} trong Telegram"
-    },
     "transactionHashCell": {
         "copyHash": "Sao chép hash",
         "hashCopied": "Đã sao chép hash",
@@ -1805,19 +1826,6 @@
         "unhideFailedToast": "Không thể bỏ ẩn ngân quỹ",
         "removedToast": "Đã xóa ngân quỹ khỏi danh sách đã lưu",
         "removeFailedToast": "Không thể xóa ngân quỹ khỏi danh sách đã lưu"
-    },
-    "telegramSettings": {
-        "title": "Telegram",
-        "connectedTo": "Đã kết nối với {chat}",
-        "chatNumber": "Trò chuyện #{id}",
-        "fallbackChat": "một cuộc trò chuyện Telegram",
-        "disconnect": "Ngắt kết nối",
-        "connect": "Kết nối",
-        "connectDescription": "Liên kết ngân quỹ của bạn với một cuộc trò chuyện Telegram để nhận thông báo.",
-        "noTreasuryDescription": "Liên kết các ngân quỹ của bạn với một cuộc trò chuyện Telegram.",
-        "openSettingsHint": "Mở cài đặt từ một ngân quỹ để quản lý tích hợp.",
-        "disconnectedToast": "Đã ngắt kết nối Telegram cho ngân quỹ này",
-        "disconnectFailedToast": "Không thể ngắt kết nối Telegram. Hãy thử lại."
     },
     "assetsTable": {
         "noAssetsFound": "Không tìm thấy tài sản nào.",

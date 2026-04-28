@@ -1,11 +1,15 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Pill } from "@/components/pill";
 
 interface Tab {
     value: string;
     label: string;
     count?: number;
+    /** Renders the same “New” info pill as sidebar nav (e.g. address book). */
+    showNewPill?: boolean;
 }
 
 interface TabGroupProps {
@@ -15,9 +19,11 @@ interface TabGroupProps {
 }
 
 const toggleGroupItemStyle =
-    "h-8 !rounded-lg px-3 text-sm font-medium transition-all data-[state=off]:bg-transparent data-[state=off]:text-foreground data-[state=off]:hover:text-foreground/80 data-[state=off]:hover:bg-muted data-[state=on]:!bg-primary data-[state=on]:!text-primary-foreground data-[state=on]:shadow-none data-[state=on]:!rounded-lg";
+    "min-h-8 h-auto py-1 !rounded-lg px-3 text-sm font-medium transition-all data-[state=off]:bg-transparent data-[state=off]:text-foreground data-[state=off]:hover:text-foreground/80 data-[state=off]:hover:bg-muted data-[state=on]:!bg-primary data-[state=on]:!text-primary-foreground data-[state=on]:shadow-none data-[state=on]:!rounded-lg";
 
 export function TabGroup({ tabs, activeTab, onTabChange }: TabGroupProps) {
+    const tNew = useTranslations("newBadge");
+
     return (
         <div className="inline-flex items-center gap-1 rounded-lg bg-card border shadow-sm p-1">
             <ToggleGroup
@@ -32,7 +38,16 @@ export function TabGroup({ tabs, activeTab, onTabChange }: TabGroupProps) {
                         value={tab.value}
                         className={toggleGroupItemStyle}
                     >
-                        {tab.label}
+                        <span className="inline-flex items-center gap-1.5">
+                            <span>{tab.label}</span>
+                            {tab.showNewPill && (
+                                <Pill
+                                    variant="info"
+                                    title={tNew("label")}
+                                    className="px-1.5 py-0.5 text-xs shrink-0 pointer-events-none"
+                                />
+                            )}
+                        </span>
                         {tab.count !== undefined && (
                             <>
                                 {" "}

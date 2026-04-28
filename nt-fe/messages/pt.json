@@ -1219,7 +1219,37 @@
         "connectedToAnother": "Conectada a outro chat",
         "notMember": "Você não é membro de nenhuma tesouraria.",
         "connecting": "Conectando…",
-        "connect": "Conectar"
+        "connect": "Conectar",
+        "settings": {
+            "title": "Telegram",
+            "connectedTo": "Conectado a {chat}",
+            "chatNumber": "Chat nº {id}",
+            "fallbackChat": "um chat do Telegram",
+            "disconnect": "Desconectar",
+            "connect": "Conectar",
+            "connectHeadline": "Conectar Telegram à tesouraria",
+            "connectDescription": "Receba avisos sobre novas solicitações, ativos recebidos na tesouraria e mais.",
+            "noTreasuryDescription": "Vincule suas tesourarias a um chat do Telegram.",
+            "openSettingsHint": "Abra as configurações em uma tesouraria para gerenciar integrações.",
+            "disconnectedToast": "Telegram desconectado para esta tesouraria",
+            "disconnectFailedToast": "Não foi possível desconectar o Telegram. Tente novamente.",
+            "telegramDisconnect": {
+                "title": "Desconectar bot do Telegram",
+                "body": "Se você desconectar, não receberá mais notificações no bot para esta tesouraria. Você pode reconectar a qualquer momento.",
+                "action": "Desconectar"
+            }
+        },
+        "connectInstructions": {
+            "title": "Conecte sua conta do Telegram ao Trezu",
+            "subtitle": "Siga estas etapas para ativar notificações desta tesouraria no Telegram.",
+            "step1": "Adicione {bot} ao seu grupo ou canal do Telegram.",
+            "step2": "No Telegram, toque em \"Conectar Tesouraria\" (ou use o fluxo de conexão do bot quando for solicitado).",
+            "step3": "Entre na web, autorize e selecione quais tesourarias conectar a este chat, incluindo esta.",
+            "doneHint": "Você termina quando o navegador mostrar que suas tesourarias foram vinculadas com sucesso.",
+            "copyBotTooltip": "Copiar usuário do bot",
+            "botCopiedToast": "Usuário do bot copiado",
+            "openInTelegram": "Abrir {bot} no Telegram"
+        }
     },
     "systemStatus": {
         "underMaintenance": "Em manutenção",
@@ -1527,15 +1557,6 @@
         "tableToken": "Token",
         "tableTotalValue": "Valor total"
     },
-    "telegramConnectInstructions": {
-        "title": "Conectar Telegram",
-        "subtitle": "Receba notificações sobre propostas e atividades no seu Telegram.",
-        "step3": "Pressione Iniciar e siga as instruções.",
-        "success": "Tudo pronto!",
-        "copyBotTooltip": "Copiar handle do bot",
-        "botCopiedToast": "Handle do bot copiado",
-        "openInTelegram": "Abrir {bot} no Telegram"
-    },
     "transactionHashCell": {
         "copyHash": "Copiar hash",
         "hashCopied": "Hash copiado",
@@ -1805,19 +1826,6 @@
         "unhideFailedToast": "Falha ao reexibir tesouraria",
         "removedToast": "Tesouraria removida da lista de salvas",
         "removeFailedToast": "Falha ao remover tesouraria da lista de salvas"
-    },
-    "telegramSettings": {
-        "title": "Telegram",
-        "connectedTo": "Conectado a {chat}",
-        "chatNumber": "Chat nº {id}",
-        "fallbackChat": "um chat do Telegram",
-        "disconnect": "Desconectar",
-        "connect": "Conectar",
-        "connectDescription": "Vincule sua tesouraria a um chat do Telegram para receber notificações.",
-        "noTreasuryDescription": "Vincule suas tesourarias a um chat do Telegram.",
-        "openSettingsHint": "Abra as configurações em uma tesouraria para gerenciar integrações.",
-        "disconnectedToast": "Telegram desconectado para esta tesouraria",
-        "disconnectFailedToast": "Não foi possível desconectar o Telegram. Tente novamente."
     },
     "assetsTable": {
         "noAssetsFound": "Nenhum ativo encontrado.",

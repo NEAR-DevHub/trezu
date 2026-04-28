@@ -1219,7 +1219,37 @@
         "connectedToAnother": "別のチャットに接続されています",
         "notMember": "あなたはどのトレジャリーのポリシーメンバーでもありません。",
         "connecting": "接続中…",
-        "connect": "接続"
+        "connect": "接続",
+        "settings": {
+            "title": "Telegram",
+            "connectedTo": "{chat}に接続中",
+            "chatNumber": "チャット #{id}",
+            "fallbackChat": "Telegramチャット",
+            "disconnect": "切断",
+            "connect": "接続",
+            "connectHeadline": "Telegramをトレジャリーに接続",
+            "connectDescription": "新規リクエスト、トレジャリーへの入金などの通知を受け取ります。",
+            "noTreasuryDescription": "トレジャリーをTelegramチャットにリンクします。",
+            "openSettingsHint": "連携を管理するにはトレジャリーから設定を開いてください。",
+            "disconnectedToast": "このトレジャリーのTelegram接続を切断しました",
+            "disconnectFailedToast": "Telegramの切断に失敗しました。もう一度お試しください。",
+            "telegramDisconnect": {
+                "title": "Telegramボットを切断",
+                "body": "切断すると、このトレジャリーの通知はボットで受け取れなくなります。いつでも再接続できます。",
+                "action": "切断"
+            }
+        },
+        "connectInstructions": {
+            "title": "TelegramアカウントをTrezuに接続",
+            "subtitle": "このトレジャリーの通知をTelegramで有効にするには、次の手順に従ってください。",
+            "step1": "{bot} をTelegramのグループまたはチャンネルに追加します。",
+            "step2": "Telegramで「トレジャリーを接続」をタップします（または案内に従ってボットの接続フローを使用します）。",
+            "step3": "Webでサインインし、認可して、このチャットに接続するトレジャリー（このトレジャリーを含む）を選択します。",
+            "doneHint": "ブラウザにトレジャリーが正常にリンクされたと表示されたら完了です。",
+            "copyBotTooltip": "ボットのハンドルをコピー",
+            "botCopiedToast": "ボットのハンドルをコピーしました",
+            "openInTelegram": "Telegramで{bot}を開く"
+        }
     },
     "systemStatus": {
         "underMaintenance": "メンテナンス中",
@@ -1527,15 +1557,6 @@
         "tableToken": "トークン",
         "tableTotalValue": "合計価値"
     },
-    "telegramConnectInstructions": {
-        "title": "Telegramを接続",
-        "subtitle": "Telegramで提案やアクティビティの通知を受け取ります。",
-        "step3": "「開始」を押して指示に従ってください。",
-        "success": "準備完了です!",
-        "copyBotTooltip": "ボットハンドルをコピー",
-        "botCopiedToast": "ボットハンドルをコピーしました",
-        "openInTelegram": "Telegramで{bot}を開く"
-    },
     "transactionHashCell": {
         "copyHash": "ハッシュをコピー",
         "hashCopied": "ハッシュをコピーしました",
@@ -1805,19 +1826,6 @@
         "unhideFailedToast": "トレジャリーの再表示に失敗しました",
         "removedToast": "保存済み一覧からトレジャリーを削除しました",
         "removeFailedToast": "保存済み一覧からトレジャリーの削除に失敗しました"
-    },
-    "telegramSettings": {
-        "title": "Telegram",
-        "connectedTo": "{chat}に接続中",
-        "chatNumber": "チャット #{id}",
-        "fallbackChat": "Telegramチャット",
-        "disconnect": "切断",
-        "connect": "接続",
-        "connectDescription": "通知を受け取るためにトレジャリーをTelegramチャットにリンクします。",
-        "noTreasuryDescription": "トレジャリーをTelegramチャットにリンクします。",
-        "openSettingsHint": "連携を管理するにはトレジャリーから設定を開いてください。",
-        "disconnectedToast": "このトレジャリーのTelegram接続を切断しました",
-        "disconnectFailedToast": "Telegramの切断に失敗しました。もう一度お試しください。"
     },
     "assetsTable": {
         "noAssetsFound": "資産が見つかりません。",
