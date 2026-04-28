@@ -20,8 +20,9 @@ import {
     getToAccount,
 } from "../utils/history-utils";
 import { ExchangeSummaryCard } from "@/app/(treasury)/[treasuryId]/exchange/components/exchange-summary-card";
-import { formatSmartAmount } from "@/lib/utils";
+import { formatActivityAmount, formatSmartAmount } from "@/lib/utils";
 import { TransactionHashCell } from "./transaction-hash-cell";
+import { useTreasury } from "@/hooks/use-treasury";
 
 interface TransactionDetailsModalProps {
     activity: RecentActivity | null;
@@ -43,7 +44,8 @@ function AccountValue({
     const canRenderUser =
         useAddressBook &&
         value !== "via NEAR Intents" &&
-        value !== "—" &&
+        value !== "N/A" &&
+        value !== "Confidential" &&
         value !== "unknown" &&
         value !== "UNKNOWN" &&
         !value.includes(" ");
@@ -55,7 +57,7 @@ function AccountValue({
     return (
         <div className="flex items-center gap-1">
             <span className="max-w-[300px] truncate">{value}</span>
-            {showCopy && value !== "—" ? (
+            {showCopy && value !== "N/A" && value !== "Confidential" ? (
                 <CopyButton
                     text={value}
                     variant="ghost"
@@ -77,6 +79,7 @@ export function TransactionDetailsModal({
     const t = useTranslations("activity.details");
     const getActivityLabel = useGetActivityLabel();
     const getFromAccount = useGetFromAccount();
+    const { isConfidential } = useTreasury();
     if (!activity) return null;
 
     const isReceived = parseFloat(activity.amount) > 0;
@@ -87,15 +90,18 @@ export function TransactionDetailsModal({
         tokenSymbol: activity.tokenMetadata?.symbol,
     });
 
-    const fromAccount = getFromAccount(activity, isReceived, treasuryId);
-    const toAccount = getToAccount(activity, isReceived, treasuryId);
-
-    const formatAmount = (amount: string, decimals?: number) => {
-        const num = parseFloat(amount);
-        const sign = num >= 0 ? "+" : "-";
-        const formatted = formatSmartAmount(Math.abs(num));
-        return `${sign}${formatted}`;
-    };
+    const fromAccount = getFromAccount(
+        activity,
+        isReceived,
+        treasuryId,
+        isConfidential,
+    );
+    const toAccount = getToAccount(
+        activity,
+        isReceived,
+        treasuryId,
+        isConfidential,
+    );
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -183,7 +189,8 @@ export function TransactionDetailsModal({
                     ) : (
                         <AmountSummary
                             title={transactionType}
-                            total={formatAmount(activity.amount)}
+                            total={formatActivityAmount(activity.amount)}
+                            preserveFormattedTotal
                             showNetworkIcon
                             token={{
                                 address: activity.tokenMetadata.tokenId,
@@ -250,7 +257,7 @@ export function TransactionDetailsModal({
                                                     value={
                                                         activity.receiverId ||
                                                         activity.counterparty ||
-                                                        "unknown"
+                                                        "N/A"
                                                     }
                                                     useAddressBook
                                                 />

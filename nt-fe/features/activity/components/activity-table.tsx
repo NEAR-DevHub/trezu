@@ -54,7 +54,7 @@ export function ActivityTable({
     const t = useTranslations("activity");
     const getActivityLabel = useGetActivityLabel();
     const getFromAccount = useGetFromAccount();
-    const { treasuryId } = useTreasury();
+    const { treasuryId, isConfidential } = useTreasury();
 
     const totalPages = Math.ceil(total / pageSize);
 
@@ -338,6 +338,7 @@ export function ActivityTable({
                                                     activity,
                                                     isReceived,
                                                     treasuryId,
+                                                    isConfidential,
                                                 )}
                                             </span>
                                         </TableCell>
@@ -347,6 +348,7 @@ export function ActivityTable({
                                                     activity,
                                                     isReceived,
                                                     treasuryId,
+                                                    isConfidential,
                                                 )}
                                             </span>
                                         </TableCell>
