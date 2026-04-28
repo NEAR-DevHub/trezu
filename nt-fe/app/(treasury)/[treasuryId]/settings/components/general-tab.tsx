@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { Database, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { trackEvent } from "@/lib/analytics";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -13,6 +13,7 @@ import { Button } from "@/components/button";
 import { PageCard } from "@/components/card";
 import { CreateRequestButton } from "@/components/create-request-button";
 import { Input } from "@/components/input";
+import { TreasuryLogo } from "@/components/treasury-info";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { useTreasury } from "@/hooks/use-treasury";
@@ -306,17 +307,13 @@ export function GeneralTab() {
                             <FormItem>
                                 <div className="flex items-center gap-4">
                                     <div className="flex h-16 w-16 items-center justify-center rounded-lg">
-                                        {field.value ? (
-                                            <img
-                                                src={field.value}
-                                                alt={t("treasuryLogoAlt")}
-                                                className="h-full w-full rounded-lg object-cover"
-                                            />
-                                        ) : (
-                                            <div className="bg-muted rounded-full p-2.5">
-                                                <Database className="h-8 w-8 shrink-0 text-muted-foreground " />
-                                            </div>
-                                        )}
+                                        <TreasuryLogo
+                                            logo={field.value}
+                                            alt={t("treasuryLogoAlt")}
+                                            imageClassName="h-full w-full rounded-lg"
+                                            fallbackClassName="bg-muted rounded-full size-auto p-2.5"
+                                            fallbackIconClassName="h-8 w-8 shrink-0 text-muted-foreground"
+                                        />
                                     </div>
                                     <input
                                         ref={fileInputRef}
