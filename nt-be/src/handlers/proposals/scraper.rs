@@ -384,6 +384,15 @@ fn is_short_expiry_exchange(proposal: &Proposal) -> bool {
     true
 }
 
+fn get_effective_expiration_period_ns(proposal: &Proposal, period: u64) -> u64 {
+    if !is_short_expiry_exchange(proposal) {
+        return period;
+    }
+
+    // Exchange custom deadline is 24h, capped by proposal period.
+    std::cmp::min(period, 24 * 60 * 60 * 1_000_000_000)
+}
+
 pub fn get_status_display(
     status: &ProposalStatus,
     submission_time: u64,
@@ -395,14 +404,9 @@ pub fn get_status_display(
         ProposalStatus::InProgress => {
             let current_time = get_current_time_nanos().0;
 
-            // Exchange proposals use short expiration, except pure wrap/unwrap.
+            // Exchange proposals use custom 24h expiration, capped by proposal period.
             let expiration_period = if let Some(p) = proposal {
-                if is_short_expiry_exchange(p) {
-                    // 1 hour in nanoseconds
-                    60 * 60 * 1_000_000_000
-                } else {
-                    period
-                }
+                get_effective_expiration_period_ns(p, period)
             } else {
                 period
             };

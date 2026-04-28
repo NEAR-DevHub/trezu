@@ -10,15 +10,13 @@ import {
     SwapRequestData,
     VestingData,
 } from "../types/index";
-import { decodeArgs, decodeProposalDescription } from "@/lib/utils";
+import { decodeArgs, decodeProposalDescription, nanosToMs } from "@/lib/utils";
 import { extractProposalData } from "./proposal-extractors";
 
-// Short-expiry exchange proposal constants.
+// Exchange custom deadline (capped by proposal_period).
 // Pure wrap/unwrap (single wrap.near near_deposit/near_withdraw) uses normal proposal period.
-export const EXCHANGE_EXPIRY_HOURS = 1;
-export const EXCHANGE_EXPIRY_NS =
-    EXCHANGE_EXPIRY_HOURS * 60 * 60 * 1_000_000_000; // 1 hour in nanoseconds
-export const EXCHANGE_EXPIRY_MS = EXCHANGE_EXPIRY_HOURS * 60 * 60 * 1000; // 1 hour in milliseconds
+export const EXCHANGE_EXPIRY_HOURS = 24;
+export const EXCHANGE_EXPIRY_MS = EXCHANGE_EXPIRY_HOURS * 60 * 60 * 1000; // 24 hours in milliseconds
 
 const BULK_PAYMENT_CONTRACT_ID =
     process.env.NEXT_PUBLIC_BULK_PAYMENT_CONTRACT_ID || "bulkpayment.near";
@@ -317,12 +315,20 @@ export function isShortExpiryExchangeProposal(proposal: Proposal): boolean {
     return isExchangeProposal && !isNormalPeriodWrapProposal(proposal);
 }
 
+function getEffectiveExpiryPeriodMs(
+    proposal: Proposal,
+    policy: Policy,
+): number {
+    const proposalPeriodMs = nanosToMs(policy.proposal_period);
+    if (!isShortExpiryExchangeProposal(proposal)) return proposalPeriodMs;
+    return Math.min(proposalPeriodMs, EXCHANGE_EXPIRY_MS);
+}
+
 export function getProposalStatus(
     proposal: Proposal,
     policy: Policy,
 ): UIProposalStatus {
-    const proposalPeriod = parseInt(policy.proposal_period);
-    const submissionTime = parseInt(proposal.submission_time);
+    const submissionTimeMs = nanosToMs(proposal.submission_time);
 
     switch (proposal.status) {
         case "Approved":
@@ -332,18 +338,11 @@ export function getProposalStatus(
         case "Failed":
             return "Failed";
         case "InProgress":
-            // Exchange proposals use short expiry, except pure wrap/unwrap.
-            if (isShortExpiryExchangeProposal(proposal)) {
-                if (
-                    (submissionTime + EXCHANGE_EXPIRY_NS) / 1_000_000 <
-                    Date.now()
-                ) {
-                    return "Expired";
-                }
-            }
-
-            // Check if proposal has expired based on policy period
-            if ((submissionTime + proposalPeriod) / 1_000_000 < Date.now()) {
+            if (
+                submissionTimeMs +
+                    getEffectiveExpiryPeriodMs(proposal, policy) <
+                Date.now()
+            ) {
                 return "Expired";
             }
 
@@ -366,23 +365,19 @@ export function getProposalStatusDateInfo(
     proposal: Proposal,
     policy: Policy,
 ): { date: Date; isFuture: boolean; labelKey: StatusDateLabelKey | null } {
-    const submissionTime = parseInt(proposal.submission_time);
+    const submissionTimeMs = nanosToMs(proposal.submission_time);
     const uiStatus = getProposalStatus(proposal, policy);
 
     if (uiStatus === "Pending") {
-        // Expiry = submission_time + proposal_period (nanoseconds → ms)
-        const proposalPeriod = parseInt(policy.proposal_period);
-        // Exchange proposals use short expiry, except pure wrap/unwrap.
-        const expiryNs = isShortExpiryExchangeProposal(proposal)
-            ? submissionTime + EXCHANGE_EXPIRY_NS
-            : submissionTime + proposalPeriod;
-        const expiryDate = new Date(expiryNs / 1_000_000);
+        const expiryDate = new Date(
+            submissionTimeMs + getEffectiveExpiryPeriodMs(proposal, policy),
+        );
         return { date: expiryDate, isFuture: true, labelKey: "expires" };
     }
 
     // For all resolved statuses, use submission_time as a fallback since
     // the API doesn't provide a separate execution timestamp.
-    const submissionDate = new Date(submissionTime / 1_000_000);
+    const submissionDate = new Date(submissionTimeMs);
 
     switch (uiStatus) {
         case "Executed":
@@ -404,13 +399,9 @@ export function getProposalStatusDateInfo(
                 labelKey: "created",
             };
         case "Expired": {
-            // Exchange proposals expire after short period, except pure wrap/unwrap.
-            const expiredDate = isShortExpiryExchangeProposal(proposal)
-                ? new Date(submissionTime / 1_000_000 + EXCHANGE_EXPIRY_MS)
-                : new Date(
-                      (submissionTime + parseInt(policy.proposal_period)) /
-                          1_000_000,
-                  );
+            const expiredDate = new Date(
+                submissionTimeMs + getEffectiveExpiryPeriodMs(proposal, policy),
+            );
             return {
                 date: expiredDate,
                 isFuture: false,

@@ -80,12 +80,14 @@ export function VotingDurationImpactModal({
                 // voting-duration policy changes.
                 const oldExpiryDate = new Date(
                     isShortExpiryExchange
-                        ? submissionTimeMs + EXCHANGE_EXPIRY_MS
+                        ? submissionTimeMs +
+                              Math.min(currentDurationMs, EXCHANGE_EXPIRY_MS)
                         : submissionTimeMs + currentDurationMs,
                 );
                 const newExpiryDate = new Date(
                     isShortExpiryExchange
-                        ? submissionTimeMs + EXCHANGE_EXPIRY_MS
+                        ? submissionTimeMs +
+                              Math.min(newDurationMs, EXCHANGE_EXPIRY_MS)
                         : submissionTimeMs + newDurationMs,
                 );
 

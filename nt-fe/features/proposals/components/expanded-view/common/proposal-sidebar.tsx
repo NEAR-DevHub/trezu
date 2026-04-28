@@ -8,6 +8,7 @@ import { getApproversAndThreshold } from "@/lib/config-utils";
 import { useNear } from "@/stores/near-store";
 import { useTreasury } from "@/hooks/use-treasury";
 import {
+    EXCHANGE_EXPIRY_MS,
     getProposalStatus,
     UIProposalStatus,
     getProposalUIKind,
@@ -353,7 +354,9 @@ export function ProposalSidebar({
         ),
     );
     const statusDateInfo = getProposalStatusDateInfo(proposal, policy);
-    const shortExpiryExchange = isShortExpiryExchangeProposal(proposal);
+    const shortExpiryExchange =
+        isShortExpiryExchangeProposal(proposal) &&
+        nanosToMs(policy.proposal_period) > EXCHANGE_EXPIRY_MS;
 
     let timestamp;
     switch (status) {
