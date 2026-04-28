@@ -11,7 +11,8 @@ import {
     getProposalStatus,
     UIProposalStatus,
     getProposalUIKind,
-    EXCHANGE_EXPIRY_MS,
+    getProposalStatusDateInfo,
+    isShortExpiryExchangeProposal,
 } from "@/features/proposals/utils/proposal-utils";
 import { useProposalInsufficientBalance } from "@/features/proposals/hooks/use-proposal-insufficient-balance";
 import { UserVote } from "../../user-vote";
@@ -351,21 +352,14 @@ export function ProposalSidebar({
                 .toFixed(0),
         ),
     );
-
-    // For exchange proposals, calculate 24-hour expiration
-    const exchange24HourExpiry = isExchangeProposal
-        ? new Date(nanosToMs(proposal.submission_time) + EXCHANGE_EXPIRY_MS)
-        : null;
+    const statusDateInfo = getProposalStatusDateInfo(proposal, policy);
+    const shortExpiryExchange = isShortExpiryExchangeProposal(proposal);
 
     let timestamp;
     switch (status) {
         case "Expired":
         case "Pending":
-            // Use 24-hour expiry for exchange proposals, otherwise use policy period
-            timestamp =
-                isExchangeProposal && exchange24HourExpiry
-                    ? exchange24HourExpiry
-                    : expiresAt;
+            timestamp = statusDateInfo.date;
             break;
 
         default:
@@ -525,8 +519,8 @@ export function ProposalSidebar({
                 </>
             )}
 
-            {/* Exchange Proposal 24-Hour Warning */}
-            {isPending && isExchangeProposal && exchange24HourExpiry && (
+            {/* Exchange Proposal Short-Expiry Warning */}
+            {isPending && shortExpiryExchange && (
                 <InfoAlert
                     className="inline-flex"
                     message={

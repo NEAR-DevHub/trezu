@@ -20,6 +20,7 @@ import { TransactionCell } from "@/features/proposals/components/transaction-cel
 import {
     EXCHANGE_EXPIRY_MS,
     getProposalUIKind,
+    isShortExpiryExchangeProposal,
 } from "@/features/proposals/utils/proposal-utils";
 import { useProposalKindLabel } from "@/features/proposals/hooks/use-proposal-kind-label";
 import { FormattedDate } from "@/components/formatted-date";
@@ -72,18 +73,18 @@ export function VotingDurationImpactModal({
         return activeProposals
             .map((proposal): ProposalImpact => {
                 const submissionTimeMs = nanosToMs(proposal.submission_time);
-                const proposalType = getProposalUIKind(proposal);
-                const isExchangeProposal = proposalType === "Exchange";
+                const isShortExpiryExchange =
+                    isShortExpiryExchangeProposal(proposal);
 
-                // Exchange requests always expire in 24h and are unaffected by
+                // Short-expiry exchanges are unaffected by
                 // voting-duration policy changes.
                 const oldExpiryDate = new Date(
-                    isExchangeProposal
+                    isShortExpiryExchange
                         ? submissionTimeMs + EXCHANGE_EXPIRY_MS
                         : submissionTimeMs + currentDurationMs,
                 );
                 const newExpiryDate = new Date(
-                    isExchangeProposal
+                    isShortExpiryExchange
                         ? submissionTimeMs + EXCHANGE_EXPIRY_MS
                         : submissionTimeMs + newDurationMs,
                 );

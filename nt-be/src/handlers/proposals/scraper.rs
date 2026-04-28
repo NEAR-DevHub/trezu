@@ -349,6 +349,41 @@ fn get_current_time_nanos() -> U64 {
     U64::from(nanos as u64)
 }
 
+fn is_short_expiry_exchange(proposal: &Proposal) -> bool {
+    // First, gate short-expiry logic to exchange proposals only.
+    if AssetExchangeInfo::from_proposal(proposal).is_none() {
+        return false;
+    }
+
+    let Some(function_call) = proposal.kind.get("FunctionCall") else {
+        return false;
+    };
+
+    let receiver_id = function_call
+        .get("receiver_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let actions = function_call
+        .get("actions")
+        .and_then(|a| a.as_array())
+        .map(|a| a.as_slice())
+        .unwrap_or(&[]);
+
+    // Pure wrap/unwrap (single near_deposit/near_withdraw on wrap.near)
+    // follows normal proposal period, not short expiry.
+    if receiver_id == "wrap.near" && actions.len() == 1 {
+        let method_name = actions[0]
+            .get("method_name")
+            .and_then(|m| m.as_str())
+            .unwrap_or("");
+        if method_name == "near_deposit" || method_name == "near_withdraw" {
+            return false;
+        }
+    }
+
+    true
+}
+
 pub fn get_status_display(
     status: &ProposalStatus,
     submission_time: u64,
@@ -360,13 +395,11 @@ pub fn get_status_display(
         ProposalStatus::InProgress => {
             let current_time = get_current_time_nanos().0;
 
-            // For exchange proposals, use 24-hour expiration instead of policy period
+            // Exchange proposals use short expiration, except pure wrap/unwrap.
             let expiration_period = if let Some(p) = proposal {
-                if extract_from_description(&p.description, "proposalaction")
-                    == Some("asset-exchange".to_string())
-                {
-                    // 24 hours in nanoseconds
-                    24 * 60 * 60 * 1_000_000_000
+                if is_short_expiry_exchange(p) {
+                    // 1 hour in nanoseconds
+                    60 * 60 * 1_000_000_000
                 } else {
                     period
                 }
@@ -995,9 +1028,6 @@ impl ProposalType for AssetExchangeInfo {
                             .unwrap_or(""),
                     )
                     .to_string();
-                if proposal.id == 457 {
-                    println!("token_in_address: {:?}", token_in_address);
-                }
 
                 // Extract amount_in from args or description
                 let amount_in = json_args
@@ -1008,9 +1038,6 @@ impl ProposalType for AssetExchangeInfo {
                             .map(|s| s.parse::<u128>().unwrap_or(0))
                     })
                     .unwrap_or(0);
-                if proposal.id == 457 {
-                    println!("amount_in: {:?}", amount_in);
-                }
 
                 // Extract token_out from description
                 // Try both old format ("tokenOut") and new 1Click format ("Token Out Address")
@@ -1025,23 +1052,12 @@ impl ProposalType for AssetExchangeInfo {
                 let amount_out = extract_from_description(&proposal.description, "amountOut")
                     .or_else(|| extract_from_description(&proposal.description, "Amount Out"))
                     .unwrap_or_else(|| "0".to_string());
-                if proposal.id == 457 {
-                    println!("json_args: {:?}", json_args);
-                }
 
                 // Extract deposit_address from args
                 let deposit_address = json_args
                     .get("receiver_id")
                     .and_then(|v| v.as_str())
                     .map(|s| s.to_string());
-                if proposal.id == 457 {
-                    println!("proposal id: {}", proposal.id);
-                    println!("token_in_address: {:?}", token_in_address);
-                    println!("amount_in: {:?}", amount_in);
-                    println!("token_out_symbol: {:?}", token_out_symbol);
-                    println!("amount_out: {:?}", amount_out);
-                    println!("deposit_address: {:?}", deposit_address);
-                }
 
                 return Some(AssetExchangeInfo {
                     token_in_address,

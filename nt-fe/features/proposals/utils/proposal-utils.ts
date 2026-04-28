@@ -13,11 +13,12 @@ import {
 import { decodeArgs, decodeProposalDescription } from "@/lib/utils";
 import { extractProposalData } from "./proposal-extractors";
 
-// Exchange proposal expiration constants
-export const EXCHANGE_EXPIRY_HOURS = 24;
+// Short-expiry exchange proposal constants.
+// Pure wrap/unwrap (single wrap.near near_deposit/near_withdraw) uses normal proposal period.
+export const EXCHANGE_EXPIRY_HOURS = 1;
 export const EXCHANGE_EXPIRY_NS =
-    EXCHANGE_EXPIRY_HOURS * 60 * 60 * 1_000_000_000; // 24 hours in nanoseconds
-export const EXCHANGE_EXPIRY_MS = EXCHANGE_EXPIRY_HOURS * 60 * 60 * 1000; // 24 hours in milliseconds
+    EXCHANGE_EXPIRY_HOURS * 60 * 60 * 1_000_000_000; // 1 hour in nanoseconds
+export const EXCHANGE_EXPIRY_MS = EXCHANGE_EXPIRY_HOURS * 60 * 60 * 1000; // 1 hour in milliseconds
 
 const BULK_PAYMENT_CONTRACT_ID =
     process.env.NEXT_PUBLIC_BULK_PAYMENT_CONTRACT_ID || "bulkpayment.near";
@@ -297,6 +298,25 @@ export type UIProposalStatus =
     | "Removed"
     | "Moved";
 
+function isNormalPeriodWrapProposal(proposal: Proposal): boolean {
+    if (!("FunctionCall" in proposal.kind)) return false;
+
+    const functionCall = proposal.kind.FunctionCall;
+    const actions = functionCall.actions ?? [];
+
+    if (functionCall.receiver_id !== "wrap.near" || actions.length !== 1) {
+        return false;
+    }
+
+    const methodName = actions[0]?.method_name;
+    return methodName === "near_deposit" || methodName === "near_withdraw";
+}
+
+export function isShortExpiryExchangeProposal(proposal: Proposal): boolean {
+    const isExchangeProposal = getProposalUIKind(proposal) === "Exchange";
+    return isExchangeProposal && !isNormalPeriodWrapProposal(proposal);
+}
+
 export function getProposalStatus(
     proposal: Proposal,
     policy: Policy,
@@ -312,9 +332,8 @@ export function getProposalStatus(
         case "Failed":
             return "Failed";
         case "InProgress":
-            // For exchange proposals, check if 24 hours have passed
-            const proposalType = getProposalUIKind(proposal);
-            if (proposalType === "Exchange") {
+            // Exchange proposals use short expiry, except pure wrap/unwrap.
+            if (isShortExpiryExchangeProposal(proposal)) {
                 if (
                     (submissionTime + EXCHANGE_EXPIRY_NS) / 1_000_000 <
                     Date.now()
@@ -353,12 +372,10 @@ export function getProposalStatusDateInfo(
     if (uiStatus === "Pending") {
         // Expiry = submission_time + proposal_period (nanoseconds → ms)
         const proposalPeriod = parseInt(policy.proposal_period);
-        // For exchange proposals, use the shorter 24h expiry
-        const proposalType = getProposalUIKind(proposal);
-        const expiryNs =
-            proposalType === "Exchange"
-                ? submissionTime + EXCHANGE_EXPIRY_NS
-                : submissionTime + proposalPeriod;
+        // Exchange proposals use short expiry, except pure wrap/unwrap.
+        const expiryNs = isShortExpiryExchangeProposal(proposal)
+            ? submissionTime + EXCHANGE_EXPIRY_NS
+            : submissionTime + proposalPeriod;
         const expiryDate = new Date(expiryNs / 1_000_000);
         return { date: expiryDate, isFuture: true, labelKey: "expires" };
     }
@@ -387,15 +404,13 @@ export function getProposalStatusDateInfo(
                 labelKey: "created",
             };
         case "Expired": {
-            // Exchange proposals expire after 24h, others after proposal_period
-            const proposalType = getProposalUIKind(proposal);
-            const expiredDate =
-                proposalType === "Exchange"
-                    ? new Date(submissionTime / 1_000_000 + EXCHANGE_EXPIRY_MS)
-                    : new Date(
-                          (submissionTime + parseInt(policy.proposal_period)) /
-                              1_000_000,
-                      );
+            // Exchange proposals expire after short period, except pure wrap/unwrap.
+            const expiredDate = isShortExpiryExchangeProposal(proposal)
+                ? new Date(submissionTime / 1_000_000 + EXCHANGE_EXPIRY_MS)
+                : new Date(
+                      (submissionTime + parseInt(policy.proposal_period)) /
+                          1_000_000,
+                  );
             return {
                 date: expiredDate,
                 isFuture: false,
