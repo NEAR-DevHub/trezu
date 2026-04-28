@@ -17,7 +17,16 @@ function normalizeFlagLogoUrl(
 
     if (/^https?:\/\//i.test(trimmedLogo)) return trimmedLogo;
 
-    return `https://ipfs.near.social/ipfs/${trimmedLogo.replace(/^\/+/, "")}`;
+    const normalized = trimmedLogo
+        .replace(/^ipfs:\/\//i, "")
+        .replace(/^\/?ipfs\//i, "")
+        .replace(/^\/+/, "");
+
+    const isCidV0 = /^Qm[1-9A-HJ-NP-Za-km-z]{44}$/.test(normalized);
+    const isCidV1 = /^bafy[a-z2-7]{55,}$/.test(normalized);
+    if (!isCidV0 && !isCidV1) return undefined;
+
+    return `https://ipfs.near.social/ipfs/${normalized}`;
 }
 
 export function TreasuryLogo({
