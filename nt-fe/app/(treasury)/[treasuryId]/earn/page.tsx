@@ -29,7 +29,7 @@ const earnAppConfigs: {
     },
     {
         id: "nearStaking",
-        goToHref: "https://near.org/staking/",
+        goToHref: "https://near-staking.trezu.org/",
     },
 ];
 
