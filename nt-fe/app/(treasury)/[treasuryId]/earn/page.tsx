@@ -3,12 +3,8 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Button } from "@/components/button";
 import { PageComponentLayout } from "@/components/page-component-layout";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardTitle,
-} from "@/components/ui/card";
+import { CardDescription, CardTitle } from "@/components/ui/card";
+import { PageCard } from "@/components/card";
 
 type EarnAppId = "rhea" | "intear" | "nearStaking";
 
@@ -66,8 +62,8 @@ export default async function EarnPage() {
                 {earnAppConfigs.map((app) => {
                     const media = earnAppMedia[app.id];
                     return (
-                        <Card key={app.id}>
-                            <CardContent className="flex items-start gap-4">
+                        <PageCard key={app.id} className="p-5">
+                            <div className="flex items-start gap-4">
                                 <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-black text-sm font-semibold text-white">
                                     <img
                                         src={media.src}
@@ -79,7 +75,7 @@ export default async function EarnPage() {
                                 </div>
                                 <div className="min-w-0 flex-1 space-y-4">
                                     <div>
-                                        <CardTitle className="text-lg">
+                                        <CardTitle className="text-md">
                                             {t(`apps.${app.id}.name`)}
                                         </CardTitle>
                                         <CardDescription>
@@ -111,8 +107,8 @@ export default async function EarnPage() {
                                         ) : null}
                                     </div>
                                 </div>
-                            </CardContent>
-                        </Card>
+                            </div>
+                        </PageCard>
                     );
                 })}
             </div>
