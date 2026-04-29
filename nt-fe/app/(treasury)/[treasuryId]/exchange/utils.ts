@@ -108,6 +108,7 @@ export function calculateMarketPriceDifference(
     amountOutUsd: string,
 ): {
     percentDifference: string;
+    usdDifference: string;
     isFavorable: boolean;
     hasMarketData: boolean;
 } {
@@ -118,12 +119,14 @@ export function calculateMarketPriceDifference(
         if (inputUsd.lte(0)) {
             return {
                 percentDifference: "N/A",
+                usdDifference: "N/A",
                 isFavorable: false,
                 hasMarketData: false,
             };
         }
 
         // Compare actual quote outcome directly: output value relative to input value.
+        const usdDifference = outputUsd.minus(inputUsd);
         const percentDifference = outputUsd
             .minus(inputUsd)
             .div(inputUsd)
@@ -131,6 +134,7 @@ export function calculateMarketPriceDifference(
 
         return {
             percentDifference: percentDifference.toFixed(4),
+            usdDifference: usdDifference.toFixed(2),
             isFavorable: percentDifference.gte(0),
             hasMarketData: true,
         };
@@ -138,6 +142,7 @@ export function calculateMarketPriceDifference(
         console.error("Error calculating market price difference:", error);
         return {
             percentDifference: "N/A",
+            usdDifference: "N/A",
             isFavorable: false,
             hasMarketData: false,
         };
