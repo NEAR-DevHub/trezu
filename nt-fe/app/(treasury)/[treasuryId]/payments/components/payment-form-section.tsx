@@ -18,7 +18,6 @@ import AccountInput from "@/components/account-input";
 import { CreateRequestButton } from "@/components/create-request-button";
 import { InfoAlert } from "@/components/info-alert";
 import { getBlockchainType } from "@/lib/blockchain-utils";
-import { useTreasury } from "@/hooks/use-treasury";
 import { useAddressBook, AddressBookEntry } from "@/features/address-book";
 import { SelectModal } from "@/app/(treasury)/[treasuryId]/dashboard/components/select-modal";
 import { useChains, ChainInfo } from "@/features/address-book/chains";
@@ -28,7 +27,6 @@ import { UserWithData } from "@/components/user";
 import { FormField } from "@/components/ui/form";
 import { type SectionRule } from "@/lib/section-rules";
 import {
-    NEAR_COM_NETWORK_ID,
     RecipientNetworkSelect,
     type RecipientNetworkRuleOption,
 } from "./recipient-network-select";
@@ -121,6 +119,10 @@ export function PaymentFormSection<
     const token = watched[0];
     const recipient = (watched[1] ?? "") as string;
     const selectedNetworkName = (watched[2] ?? "") as string;
+    const amountValue = useWatch({
+        control,
+        name: amountName,
+    }) as unknown as string | number | undefined;
     const setRecipientValue = useCallback(
         (value: PathValue<TFieldValues, Path<TFieldValues>>) => {
             setValue(recipientName, value, {
@@ -132,25 +134,9 @@ export function PaymentFormSection<
         [recipientName, setValue],
     );
 
-    const { isConfidential, isGuestTreasury } = useTreasury();
-
     const networkSectionRules = useMemo<
         SectionRule<RecipientNetworkRuleOption>[]
     >(() => {
-        if (isConfidential && isGuestTreasury) {
-            return [
-                {
-                    title: tRecipientNetwork("available"),
-                    filter: (option) => option.id === NEAR_COM_NETWORK_ID,
-                },
-                {
-                    title: tRecipientNetwork("forMembersOnly"),
-                    filter: () => true,
-                    disabled: true,
-                },
-            ];
-        }
-
         const contactSet = new Set(selectedContact?.networks ?? []);
         if (contactSet.size > 0) {
             return [
@@ -185,7 +171,7 @@ export function PaymentFormSection<
                 disabled: true,
             },
         ];
-    }, [isConfidential, isGuestTreasury, selectedContact, tRecipientNetwork]);
+    }, [selectedContact, tRecipientNetwork]);
 
     // For bulk (hideRecipientNetwork=true) we still validate against token's
     // chain. When the network selector is shown, the recipient input runs in
@@ -198,6 +184,11 @@ export function PaymentFormSection<
     }, [hideRecipientNetwork, selectedNetworkName]);
 
     const hasSelectedNetwork = !!selectedNetworkName;
+    const hasValidAmount = useMemo(() => {
+        if (amountValue === null || amountValue === undefined) return false;
+        const parsed = Number(amountValue);
+        return Number.isFinite(parsed) && parsed > 0;
+    }, [amountValue]);
 
     // Sync fee coverage error into the amount field.
     useEffect(() => {
@@ -291,6 +282,7 @@ export function PaymentFormSection<
     );
 
     const isSaveDisabled =
+        !hasValidAmount ||
         !recipient ||
         (hideRecipientNetwork && !isRecipientValid) ||
         (!hideRecipientNetwork && !hasSelectedNetwork) ||
