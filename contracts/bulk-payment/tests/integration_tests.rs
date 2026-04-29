@@ -12,11 +12,11 @@ fn test_list_id(suffix: &str) -> String {
 }
 
 fn get_genesis_signer() -> std::sync::Arc<near_api::Signer> {
-    near_api::Signer::new(near_api::Signer::from_secret_key(
+    near_api::Signer::from_secret_key(
         near_sandbox::config::DEFAULT_GENESIS_ACCOUNT_PRIVATE_KEY
             .parse()
             .unwrap(),
-    ))
+    )
     .unwrap()
 }
 
@@ -30,12 +30,11 @@ async fn create_account(
             new_account_id.get_parent_account_id().unwrap().to_owned(),
             balance,
         )
-        .public_key(
+        .with_public_key(
             near_sandbox::config::DEFAULT_GENESIS_ACCOUNT_PUBLIC_KEY
                 .parse::<near_api::PublicKey>()
                 .unwrap(),
         )
-        .unwrap()
         .with_signer(get_genesis_signer())
         .send_to(network_config)
         .await
@@ -193,7 +192,6 @@ async fn test_storage_purchase() -> Result<(), Box<dyn std::error::Error>> {
     // Buy storage
     near_api::Contract(contract_id.clone())
         .call_function("buy_storage", json!({ "num_records": num_records }))
-        .unwrap()
         .transaction()
         .deposit(storage_cost)
         .with_signer(user_id.clone(), user_signer.clone())
@@ -219,7 +217,6 @@ async fn test_storage_purchase() -> Result<(), Box<dyn std::error::Error>> {
     // Verify storage credits
     let credits: NearToken = near_api::Contract(contract_id.clone())
         .call_function("view_storage_credits", json!({ "account_id": user_id }))
-        .unwrap()
         .read_only()
         .fetch_from(&network_config)
         .await
@@ -263,7 +260,6 @@ async fn test_submit_and_approve_list() -> Result<(), Box<dyn std::error::Error>
 
     near_api::Contract(contract_id.clone())
         .call_function("buy_storage", json!({ "num_records": num_records }))
-        .unwrap()
         .transaction()
         .deposit(storage_cost)
         .with_signer(user_id.clone(), user_signer.clone())
@@ -294,7 +290,6 @@ async fn test_submit_and_approve_list() -> Result<(), Box<dyn std::error::Error>
                 "payments": payments
             }),
         )
-        .unwrap()
         .transaction()
         .with_signer(user_id.clone(), user_signer.clone())
         .send_to(&network_config)
@@ -306,7 +301,6 @@ async fn test_submit_and_approve_list() -> Result<(), Box<dyn std::error::Error>
     // Verify storage credits were deducted
     let credits: NearToken = near_api::Contract(contract_id.clone())
         .call_function("view_storage_credits", json!({ "account_id": user_id }))
-        .unwrap()
         .read_only()
         .fetch_from(&network_config)
         .await
@@ -323,7 +317,6 @@ async fn test_submit_and_approve_list() -> Result<(), Box<dyn std::error::Error>
     let total_amount = NearToken::from_yoctonear(3_000_000_000_000_000_000_000_000); // 3 NEAR
     near_api::Contract(contract_id.clone())
         .call_function("approve_list", json!({ "list_id": list_id }))
-        .unwrap()
         .transaction()
         .deposit(total_amount)
         .with_signer(user_id.clone(), user_signer.clone())
@@ -335,7 +328,6 @@ async fn test_submit_and_approve_list() -> Result<(), Box<dyn std::error::Error>
     // View the list to verify status
     let list: serde_json::Value = near_api::Contract(contract_id.clone())
         .call_function("view_list", json!({ "list_id": list_id }))
-        .unwrap()
         .read_only()
         .fetch_from(&network_config)
         .await
@@ -363,7 +355,6 @@ async fn test_batch_processing() -> Result<(), Box<dyn std::error::Error>> {
 
     near_api::Contract(contract_id.clone())
         .call_function("buy_storage", json!({ "num_records": num_records }))
-        .unwrap()
         .transaction()
         .deposit(storage_cost)
         .with_signer(user_id.clone(), user_signer.clone())
@@ -419,7 +410,6 @@ async fn test_batch_processing() -> Result<(), Box<dyn std::error::Error>> {
                 "payments": payments
             }),
         )
-        .unwrap()
         .transaction()
         .with_signer(user_id.clone(), user_signer.clone())
         .send_to(&network_config)
@@ -442,7 +432,6 @@ async fn test_batch_processing() -> Result<(), Box<dyn std::error::Error>> {
 
     near_api::Contract(contract_id.clone())
         .call_function("approve_list", json!({ "list_id": list_id }))
-        .unwrap()
         .transaction()
         .deposit(total_amount)
         .with_signer(user_id.clone(), user_signer.clone())
@@ -457,7 +446,6 @@ async fn test_batch_processing() -> Result<(), Box<dyn std::error::Error>> {
     loop {
         let result = near_api::Contract(contract_id.clone())
             .call_function("payout_batch", json!({ "list_id": list_id }))
-            .unwrap()
             .transaction()
             .gas(near_sdk::Gas::from_tgas(300))
             .with_signer(user_id.clone(), user_signer.clone())
@@ -528,7 +516,6 @@ async fn test_batch_processing() -> Result<(), Box<dyn std::error::Error>> {
     // Verify all payments are marked as Paid
     let list: serde_json::Value = near_api::Contract(contract_id.clone())
         .call_function("view_list", json!({ "list_id": list_id }))
-        .unwrap()
         .read_only()
         .fetch_from(&network_config)
         .await
@@ -594,7 +581,6 @@ async fn test_fungible_token_payment() -> Result<(), Box<dyn std::error::Error>>
                 "registration_only": true
             }),
         )
-        .unwrap()
         .transaction()
         .deposit(NearToken::from_yoctonear(1_250_000_000_000_000_000_000))
         .with_signer(user_id.clone(), user_signer.clone())
@@ -606,7 +592,6 @@ async fn test_fungible_token_payment() -> Result<(), Box<dyn std::error::Error>>
     // Deposit NEAR to get wNEAR (150 NEAR for 100 recipients at 1 wNEAR each, plus overhead)
     near_api::Contract(wrap_near_id.clone())
         .call_function("near_deposit", json!({}))
-        .unwrap()
         .transaction()
         .deposit(NearToken::from_near(150))
         .with_signer(user_id.clone(), user_signer.clone())
@@ -649,7 +634,6 @@ async fn test_fungible_token_payment() -> Result<(), Box<dyn std::error::Error>>
             "calculate_storage_cost",
             json!({ "num_records": num_records }),
         )
-        .unwrap()
         .read_only()
         .fetch_from(&network_config)
         .await
@@ -658,7 +642,6 @@ async fn test_fungible_token_payment() -> Result<(), Box<dyn std::error::Error>>
 
     near_api::Contract(contract_id.clone())
         .call_function("buy_storage", json!({ "num_records": num_records }))
-        .unwrap()
         .transaction()
         .deposit(storage_cost)
         .with_signer(user_id.clone(), user_signer.clone())
@@ -688,7 +671,6 @@ async fn test_fungible_token_payment() -> Result<(), Box<dyn std::error::Error>>
                     "registration_only": true
                 }),
             )
-            .unwrap()
             .transaction()
             .deposit(NearToken::from_yoctonear(1_250_000_000_000_000_000_000))
             .with_signer(user_id.clone(), user_signer.clone())
@@ -732,7 +714,6 @@ async fn test_fungible_token_payment() -> Result<(), Box<dyn std::error::Error>>
                 "payments": payments
             }),
         )
-        .unwrap()
         .transaction()
         .with_signer(user_id.clone(), user_signer.clone())
         .send_to(&network_config)
@@ -750,7 +731,6 @@ async fn test_fungible_token_payment() -> Result<(), Box<dyn std::error::Error>>
                 "registration_only": true
             }),
         )
-        .unwrap()
         .transaction()
         .deposit(NearToken::from_yoctonear(1_250_000_000_000_000_000_000))
         .with_signer(user_id.clone(), user_signer.clone())
@@ -771,7 +751,6 @@ async fn test_fungible_token_payment() -> Result<(), Box<dyn std::error::Error>>
                 "msg": list_id.clone()
             }),
         )
-        .unwrap()
         .transaction()
         .deposit(NearToken::from_yoctonear(1))
         .gas(near_sdk::Gas::from_tgas(100))
@@ -784,7 +763,6 @@ async fn test_fungible_token_payment() -> Result<(), Box<dyn std::error::Error>>
     // Verify list is approved
     let list: serde_json::Value = near_api::Contract(contract_id.clone())
         .call_function("view_list", json!({ "list_id": list_id }))
-        .unwrap()
         .read_only()
         .fetch_from(&network_config)
         .await
@@ -806,7 +784,6 @@ async fn test_fungible_token_payment() -> Result<(), Box<dyn std::error::Error>>
         batch += 1;
         let result = near_api::Contract(contract_id.clone())
             .call_function("payout_batch", json!({ "list_id": list_id }))
-            .unwrap()
             .transaction()
             .gas(near_sdk::Gas::from_tgas(300))
             .with_signer(contract_id.clone(), contract_signer.clone())
@@ -848,7 +825,6 @@ async fn test_fungible_token_payment() -> Result<(), Box<dyn std::error::Error>>
                 "ft_balance_of",
                 json!({ "account_id": recipient.to_string() }),
             )
-            .unwrap()
             .read_only()
             .fetch_from(&network_config)
             .await
@@ -866,7 +842,6 @@ async fn test_fungible_token_payment() -> Result<(), Box<dyn std::error::Error>>
     // Verify all payments are marked as Paid
     let list: serde_json::Value = near_api::Contract(contract_id.clone())
         .call_function("view_list", json!({ "list_id": list_id }))
-        .unwrap()
         .read_only()
         .fetch_from(&network_config)
         .await
@@ -966,7 +941,6 @@ async fn test_reject_pending_list() -> Result<(), Box<dyn std::error::Error>> {
     let storage_cost = NearToken::from_yoctonear(11_880_000_000_000_000_000_000);
     near_api::Contract(contract_id.clone())
         .call_function("buy_storage", json!({ "num_records": 5 }))
-        .unwrap()
         .transaction()
         .deposit(storage_cost)
         .with_signer(user_id.clone(), user_signer.clone())
@@ -991,7 +965,6 @@ async fn test_reject_pending_list() -> Result<(), Box<dyn std::error::Error>> {
                 "payments": payments
             }),
         )
-        .unwrap()
         .transaction()
         .with_signer(user_id.clone(), user_signer.clone())
         .send_to(&network_config)
@@ -1002,7 +975,6 @@ async fn test_reject_pending_list() -> Result<(), Box<dyn std::error::Error>> {
     // Reject the pending list
     near_api::Contract(contract_id.clone())
         .call_function("reject_list", json!({ "list_id": list_id }))
-        .unwrap()
         .transaction()
         .with_signer(user_id.clone(), user_signer.clone())
         .send_to(&network_config)
@@ -1013,7 +985,6 @@ async fn test_reject_pending_list() -> Result<(), Box<dyn std::error::Error>> {
     // Verify list is rejected
     let list: serde_json::Value = near_api::Contract(contract_id.clone())
         .call_function("view_list", json!({ "list_id": list_id }))
-        .unwrap()
         .read_only()
         .fetch_from(&network_config)
         .await
@@ -1063,7 +1034,6 @@ async fn test_revenue_generation() -> Result<(), Box<dyn std::error::Error>> {
     ] {
         near_api::Contract(contract_id.clone())
             .call_function("buy_storage", json!({ "num_records": 10 }))
-            .unwrap()
             .transaction()
             .deposit(storage_cost)
             .with_signer(user, signer)
@@ -1117,7 +1087,6 @@ async fn test_exact_deposit_validation() -> Result<(), Box<dyn std::error::Error
     let wrong_deposit = NearToken::from_yoctonear(1_000_000_000_000_000_000_000_000);
     let result = near_api::Contract(contract_id.clone())
         .call_function("buy_storage", json!({ "num_records": 10 }))
-        .unwrap()
         .transaction()
         .deposit(wrong_deposit)
         .with_signer(user_id.clone(), user_signer.clone())
@@ -1159,7 +1128,6 @@ async fn test_unauthorized_operations() -> Result<(), Box<dyn std::error::Error>
     let storage_cost = NearToken::from_yoctonear(23_760_000_000_000_000_000_000);
     near_api::Contract(contract_id.clone())
         .call_function("buy_storage", json!({ "num_records": 10 }))
-        .unwrap()
         .transaction()
         .deposit(storage_cost)
         .with_signer(user_id.clone(), user_signer.clone())
@@ -1183,7 +1151,6 @@ async fn test_unauthorized_operations() -> Result<(), Box<dyn std::error::Error>
                 "payments": payments
             }),
         )
-        .unwrap()
         .transaction()
         .with_signer(user_id.clone(), user_signer.clone())
         .send_to(&network_config)
@@ -1196,7 +1163,6 @@ async fn test_unauthorized_operations() -> Result<(), Box<dyn std::error::Error>
     let total_amount = NearToken::from_yoctonear(1_000_000_000_000_000_000_000_000);
     let result = near_api::Contract(contract_id.clone())
         .call_function("approve_list", json!({ "list_id": list_id }))
-        .unwrap()
         .transaction()
         .deposit(total_amount)
         .with_signer(attacker.clone(), attacker_signer.clone())
@@ -1348,7 +1314,7 @@ async fn test_bulk_btc_intents_payment() -> Result<(), Box<dyn std::error::Error
                     "TokenDepositer": [omft_id.to_string()]
                 }
             }),
-        )?
+        )
         .transaction()
         .gas(near_sdk::Gas::from_tgas(300))
         .with_signer(omft_id.clone(), get_genesis_signer())
@@ -1401,7 +1367,7 @@ async fn test_bulk_btc_intents_payment() -> Result<(), Box<dyn std::error::Error
                     }
                 }
             }),
-        )?
+        )
         .transaction()
         .gas(near_sdk::Gas::from_tgas(300))
         .with_signer(intents_id.clone(), get_genesis_signer())
@@ -1417,7 +1383,7 @@ async fn test_bulk_btc_intents_payment() -> Result<(), Box<dyn std::error::Error
     // Fetch BTC token metadata from mainnet (btc.omft.near)
     let mainnet_config = near_api::NetworkConfig::mainnet();
     let btc_metadata: serde_json::Value = near_api::Contract("btc.omft.near".parse().unwrap())
-        .call_function("ft_metadata", json!({}))?
+        .call_function("ft_metadata", json!({}))
         .read_only()
         .fetch_from(&mainnet_config)
         .await?
@@ -1430,7 +1396,7 @@ async fn test_bulk_btc_intents_payment() -> Result<(), Box<dyn std::error::Error
                 "token": "btc",
                 "metadata": btc_metadata
             }),
-        )?
+        )
         .transaction()
         .gas(near_sdk::Gas::from_tgas(300))
         .deposit(NearToken::from_near(3))
@@ -1448,7 +1414,7 @@ async fn test_bulk_btc_intents_payment() -> Result<(), Box<dyn std::error::Error
                 "account_id": intents_id.to_string(),
                 "registration_only": true
             }),
-        )?
+        )
         .transaction()
         .gas(near_sdk::Gas::from_tgas(30))
         .deposit(NearToken::from_yoctonear(1_500_000_000_000_000_000_000))
@@ -1527,14 +1493,14 @@ async fn test_bulk_btc_intents_payment() -> Result<(), Box<dyn std::error::Error
         .call_function(
             "calculate_storage_cost",
             json!({ "num_records": num_records }),
-        )?
+        )
         .read_only()
         .fetch_from(&network_config)
         .await?
         .data;
 
     near_api::Contract(contract_id.clone())
-        .call_function("buy_storage", json!({ "num_records": num_records }))?
+        .call_function("buy_storage", json!({ "num_records": num_records }))
         .transaction()
         .deposit(storage_cost)
         .with_signer(submitter_id.clone(), submitter_signer.clone())
@@ -1600,7 +1566,7 @@ async fn test_bulk_btc_intents_payment() -> Result<(), Box<dyn std::error::Error
                     "txHash": "0xc6b7ecd5c7517a8f56ac7ec9befed7d26a459fc97c7d5cd7598d4e19b5a806b7"
                 }))?)
             }),
-        )?
+        )
         .transaction()
         .gas(near_sdk::Gas::from_tgas(300))
         .deposit(NearToken::from_yoctonear(1_250_000_000_000_000_000_000))
@@ -1622,7 +1588,7 @@ async fn test_bulk_btc_intents_payment() -> Result<(), Box<dyn std::error::Error
                 "account_id": dao_id.to_string(),
                 "token_id": "nep141:btc.omft.near"
             }),
-        )?
+        )
         .read_only()
         .fetch_from(&network_config)
         .await?
@@ -1656,7 +1622,7 @@ async fn test_bulk_btc_intents_payment() -> Result<(), Box<dyn std::error::Error
                 "token_id": token_id,
                 "payments": payments
             }),
-        )?
+        )
         .transaction()
         .with_signer(submitter_id.clone(), submitter_signer.clone())
         .send_to(&network_config)
@@ -1686,7 +1652,7 @@ async fn test_bulk_btc_intents_payment() -> Result<(), Box<dyn std::error::Error
                 "amount": insufficient_amount.to_string(),
                 "msg": list_id.to_string()
             }),
-        )?
+        )
         .transaction()
         .deposit(NearToken::from_yoctonear(1))
         .gas(near_sdk::Gas::from_tgas(150))
@@ -1708,7 +1674,7 @@ async fn test_bulk_btc_intents_payment() -> Result<(), Box<dyn std::error::Error
 
     // Verify list is still Pending
     let list: serde_json::Value = near_api::Contract(contract_id.clone())
-        .call_function("view_list", json!({ "list_id": list_id }))?
+        .call_function("view_list", json!({ "list_id": list_id }))
         .read_only()
         .fetch_from(&network_config)
         .await?
@@ -1734,7 +1700,7 @@ async fn test_bulk_btc_intents_payment() -> Result<(), Box<dyn std::error::Error
                 "amount": correct_amount.to_string(),
                 "msg": list_id.to_string()
             }),
-        )?
+        )
         .transaction()
         .deposit(NearToken::from_yoctonear(1))
         .gas(near_sdk::Gas::from_tgas(300))
@@ -1754,7 +1720,7 @@ async fn test_bulk_btc_intents_payment() -> Result<(), Box<dyn std::error::Error
 
     // Verify list is Approved
     let list: serde_json::Value = near_api::Contract(contract_id.clone())
-        .call_function("view_list", json!({ "list_id": list_id }))?
+        .call_function("view_list", json!({ "list_id": list_id }))
         .read_only()
         .fetch_from(&network_config)
         .await?
@@ -1785,7 +1751,7 @@ async fn test_bulk_btc_intents_payment() -> Result<(), Box<dyn std::error::Error
                 "account_id": dao_id.to_string(),
                 "token_id": "nep141:btc.omft.near"
             }),
-        )?
+        )
         .read_only()
         .fetch_from(&network_config)
         .await?
@@ -1826,7 +1792,7 @@ async fn test_bulk_btc_intents_payment() -> Result<(), Box<dyn std::error::Error
     loop {
         batch_num += 1;
         let result = near_api::Contract(contract_id.clone())
-            .call_function("payout_batch", json!({ "list_id": list_id }))?
+            .call_function("payout_batch", json!({ "list_id": list_id }))
             .transaction()
             .gas(near_sdk::Gas::from_tgas(300))
             .with_signer(contract_id.clone(), contract_signer.clone())
@@ -1894,7 +1860,7 @@ async fn test_bulk_btc_intents_payment() -> Result<(), Box<dyn std::error::Error
                 "account_id": contract_id.to_string(),
                 "token_id": "nep141:btc.omft.near"
             }),
-        )?
+        )
         .read_only()
         .fetch_from(&network_config)
         .await?
@@ -1914,7 +1880,7 @@ async fn test_bulk_btc_intents_payment() -> Result<(), Box<dyn std::error::Error
     println!("\n--- VERIFYING: Payment records and BTC addresses ---");
 
     let list: serde_json::Value = near_api::Contract(contract_id.clone())
-        .call_function("view_list", json!({ "list_id": list_id }))?
+        .call_function("view_list", json!({ "list_id": list_id }))
         .read_only()
         .fetch_from(&network_config)
         .await?
@@ -2074,7 +2040,7 @@ async fn setup_omft_intents_env(
                     "TokenDepositer": [omft_id.to_string()]
                 }
             }),
-        )?
+        )
         .transaction()
         .gas(near_sdk::Gas::from_tgas(300))
         .with_signer(omft_id.clone(), get_genesis_signer())
@@ -2098,7 +2064,7 @@ async fn setup_omft_intents_env(
                     }
                 }
             }),
-        )?
+        )
         .transaction()
         .gas(near_sdk::Gas::from_tgas(300))
         .with_signer(intents_id.clone(), get_genesis_signer())
@@ -2137,13 +2103,13 @@ async fn setup_omft_intents_env(
         .call_function(
             "calculate_storage_cost",
             json!({ "num_records": num_records }),
-        )?
+        )
         .read_only()
         .fetch_from(&network_config)
         .await?
         .data;
     near_api::Contract(contract_id.clone())
-        .call_function("buy_storage", json!({ "num_records": num_records }))?
+        .call_function("buy_storage", json!({ "num_records": num_records }))
         .transaction()
         .deposit(storage_cost)
         .with_signer(submitter_id.clone(), submitter_signer.clone())
@@ -2183,7 +2149,7 @@ async fn approve_and_verify(
                 "amount": total_amount.to_string(),
                 "msg": list_id
             }),
-        )?
+        )
         .transaction()
         .deposit(NearToken::from_yoctonear(1))
         .gas(near_sdk::Gas::from_tgas(300))
@@ -2195,7 +2161,7 @@ async fn approve_and_verify(
     tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
 
     let list: serde_json::Value = near_api::Contract(env.contract_id.clone())
-        .call_function("view_list", json!({ "list_id": list_id }))?
+        .call_function("view_list", json!({ "list_id": list_id }))
         .read_only()
         .fetch_from(&env.network_config)
         .await?
@@ -2206,7 +2172,7 @@ async fn approve_and_verify(
     // Payout loop
     loop {
         let result = near_api::Contract(env.contract_id.clone())
-            .call_function("payout_batch", json!({ "list_id": list_id }))?
+            .call_function("payout_batch", json!({ "list_id": list_id }))
             .transaction()
             .gas(near_sdk::Gas::from_tgas(300))
             .with_signer(env.contract_id.clone(), env.contract_signer.clone())
@@ -2228,7 +2194,7 @@ async fn approve_and_verify(
 
     // Verify recipients are preserved exactly (key assertion for this fix)
     let list: serde_json::Value = near_api::Contract(env.contract_id.clone())
-        .call_function("view_list", json!({ "list_id": list_id }))?
+        .call_function("view_list", json!({ "list_id": list_id }))
         .read_only()
         .fetch_from(&env.network_config)
         .await?
@@ -2286,7 +2252,7 @@ async fn test_bulk_eth_intents_payment() -> Result<(), Box<dyn std::error::Error
 
     let mainnet_config = near_api::NetworkConfig::mainnet();
     let eth_metadata: serde_json::Value = near_api::Contract("eth.omft.near".parse().unwrap())
-        .call_function("ft_metadata", json!({}))?
+        .call_function("ft_metadata", json!({}))
         .read_only()
         .fetch_from(&mainnet_config)
         .await?
@@ -2296,7 +2262,7 @@ async fn test_bulk_eth_intents_payment() -> Result<(), Box<dyn std::error::Error
         .call_function(
             "deploy_token",
             json!({ "token": "eth", "metadata": eth_metadata }),
-        )?
+        )
         .transaction()
         .gas(near_sdk::Gas::from_tgas(300))
         .deposit(NearToken::from_near(3))
@@ -2310,7 +2276,7 @@ async fn test_bulk_eth_intents_payment() -> Result<(), Box<dyn std::error::Error
         .call_function(
             "storage_deposit",
             json!({ "account_id": env.intents_id.to_string(), "registration_only": true }),
-        )?
+        )
         .transaction()
         .gas(near_sdk::Gas::from_tgas(30))
         .deposit(NearToken::from_yoctonear(1_500_000_000_000_000_000_000))
@@ -2333,7 +2299,7 @@ async fn test_bulk_eth_intents_payment() -> Result<(), Box<dyn std::error::Error
                     "txHash": "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
                 }))?)
             }),
-        )?
+        )
         .transaction()
         .gas(near_sdk::Gas::from_tgas(300))
         .deposit(NearToken::from_yoctonear(1_250_000_000_000_000_000_000))
@@ -2359,7 +2325,7 @@ async fn test_bulk_eth_intents_payment() -> Result<(), Box<dyn std::error::Error
                 "token_id": token_id,
                 "payments": payments
             }),
-        )?
+        )
         .transaction()
         .with_signer(env.submitter_id.clone(), env.submitter_signer.clone())
         .send_to(&env.network_config)
@@ -2369,7 +2335,7 @@ async fn test_bulk_eth_intents_payment() -> Result<(), Box<dyn std::error::Error
 
     // view_list — previously failed with the same "invalid character" error
     let list: serde_json::Value = near_api::Contract(env.contract_id.clone())
-        .call_function("view_list", json!({ "list_id": list_id }))?
+        .call_function("view_list", json!({ "list_id": list_id }))
         .read_only()
         .fetch_from(&env.network_config)
         .await?
@@ -2417,7 +2383,7 @@ async fn test_bulk_sol_intents_payment() -> Result<(), Box<dyn std::error::Error
 
     let mainnet_config = near_api::NetworkConfig::mainnet();
     let sol_metadata: serde_json::Value = near_api::Contract("sol.omft.near".parse().unwrap())
-        .call_function("ft_metadata", json!({}))?
+        .call_function("ft_metadata", json!({}))
         .read_only()
         .fetch_from(&mainnet_config)
         .await?
@@ -2427,7 +2393,7 @@ async fn test_bulk_sol_intents_payment() -> Result<(), Box<dyn std::error::Error
         .call_function(
             "deploy_token",
             json!({ "token": "sol", "metadata": sol_metadata }),
-        )?
+        )
         .transaction()
         .gas(near_sdk::Gas::from_tgas(300))
         .deposit(NearToken::from_near(3))
@@ -2441,7 +2407,7 @@ async fn test_bulk_sol_intents_payment() -> Result<(), Box<dyn std::error::Error
         .call_function(
             "storage_deposit",
             json!({ "account_id": env.intents_id.to_string(), "registration_only": true }),
-        )?
+        )
         .transaction()
         .gas(near_sdk::Gas::from_tgas(30))
         .deposit(NearToken::from_yoctonear(1_500_000_000_000_000_000_000))
@@ -2464,7 +2430,7 @@ async fn test_bulk_sol_intents_payment() -> Result<(), Box<dyn std::error::Error
                     "txHash": "5j7s6y3ghUiSGf1bKaqaFVYPNqFPFNn9KTDxvVmutbMX"
                 }))?)
             }),
-        )?
+        )
         .transaction()
         .gas(near_sdk::Gas::from_tgas(300))
         .deposit(NearToken::from_yoctonear(1_250_000_000_000_000_000_000))
@@ -2493,7 +2459,7 @@ async fn test_bulk_sol_intents_payment() -> Result<(), Box<dyn std::error::Error
                 "token_id": token_id,
                 "payments": payments
             }),
-        )?
+        )
         .transaction()
         .with_signer(env.submitter_id.clone(), env.submitter_signer.clone())
         .send_to(&env.network_config)
@@ -2503,7 +2469,7 @@ async fn test_bulk_sol_intents_payment() -> Result<(), Box<dyn std::error::Error
 
     // view_list — previously failed with the same "invalid character" error
     let list: serde_json::Value = near_api::Contract(env.contract_id.clone())
-        .call_function("view_list", json!({ "list_id": list_id }))?
+        .call_function("view_list", json!({ "list_id": list_id }))
         .read_only()
         .fetch_from(&env.network_config)
         .await?
