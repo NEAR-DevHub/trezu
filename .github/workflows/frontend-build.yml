@@ -39,6 +39,10 @@ jobs:
       working-directory: nt-fe
       run: bun run format:check
 
+    - name: Check i18n (parity + dead keys)
+      working-directory: nt-fe
+      run: bun run check:i18n
+
     - name: Build
       working-directory: nt-fe
       run: bun run build
