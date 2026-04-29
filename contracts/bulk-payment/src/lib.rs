@@ -14,8 +14,8 @@ use near_sdk::json_types::{Base58CryptoHash, U128};
 use near_sdk::serde_json::json;
 use near_sdk::store::IterableMap;
 use near_sdk::{
-    env, log, near, require, AccountId, CryptoHash, Gas, GlobalContractIdentifier, NearToken,
-    Promise, PromiseError, PromiseOrValue,
+    env, log, near, require, AccountId, CryptoHash, Gas, NearToken, Promise, PromiseError,
+    PromiseOrValue,
 };
 
 /// List ID is a hex-encoded SHA-256 hash (64 characters)
@@ -728,7 +728,7 @@ impl BulkPaymentContract {
         let create = Promise::new(sub.clone())
             .create_account()
             .transfer(attached)
-            .use_global_contract(GlobalContractIdentifier::CodeHash(code_hash))
+            .use_global_contract(code_hash)
             .function_call(
                 "init".to_string(),
                 init_args,
