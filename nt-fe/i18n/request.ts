@@ -2,7 +2,7 @@ import { cookies, headers } from "next/headers";
 import { getRequestConfig } from "next-intl/server";
 import {
     defaultLocale,
-    isLocale,
+    isEnabledLocale,
     LOCALE_COOKIE,
     pickLocaleFromAcceptLanguage,
 } from "./config";
@@ -11,7 +11,9 @@ export default getRequestConfig(async () => {
     const cookieStore = await cookies();
     const cookieLocale = cookieStore.get(LOCALE_COOKIE)?.value;
 
-    let locale = isLocale(cookieLocale) ? cookieLocale : undefined;
+    // Reject cookies pinning a locale that's gated off in this environment so
+    // production users can't end up stuck on a feature-flagged language.
+    let locale = isEnabledLocale(cookieLocale) ? cookieLocale : undefined;
 
     if (!locale) {
         const hdrs = await headers();

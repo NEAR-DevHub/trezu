@@ -1,3 +1,5 @@
+import { features } from "@/constants/features";
+
 export const locales = [
     "en",
     "es",
@@ -14,6 +16,24 @@ export const locales = [
     "ko",
 ] as const;
 export type Locale = (typeof locales)[number];
+
+/** Locales always exposed to end users in production. */
+const corePublicLocales: readonly Locale[] = ["en", "es", "uk"];
+
+/**
+ * Locales that are visible to end users at runtime.
+ *
+ * In production this is gated to en/es/uk via features.extraLocales;
+ * staging and development show every locale we ship messages for so QA
+ * and translators can preview them.
+ */
+export const enabledLocales: readonly Locale[] = features.extraLocales
+    ? locales
+    : corePublicLocales;
+
+export function isEnabledLocale(value: string | undefined | null): value is Locale {
+    return !!value && enabledLocales.includes(value as Locale);
+}
 
 export const defaultLocale: Locale = "en";
 
@@ -65,7 +85,7 @@ export function pickLocaleFromAcceptLanguage(header: string | null): Locale {
 
     for (const { tag } of parts) {
         const base = tag.split("-")[0];
-        if (isLocale(base)) return base;
+        if (isEnabledLocale(base)) return base;
     }
     return defaultLocale;
 }
