@@ -175,10 +175,6 @@
             "title": "Ganhar",
             "description": "Conecte sua tesouraria Trezu aos seus aplicativos Web3 favoritos.",
             "howItWorks": "Como funciona",
-            "navTooltip": {
-                "rich": "Novo! 🥳 Faça stake dos seus ativos em Ganhar e comece a receber recompensas. Coloque seu capital para trabalhar a seu favor, sem esforço.",
-                "tryIt": "Experimente"
-            },
             "apps": {
                 "rhea": {
                     "name": "Rhea",
@@ -1763,7 +1759,7 @@
         "membersPending": "Clique para ver solicitações ativas aguardando aprovação.",
         "guestSaveIntro": "Você é um convidado desta tesouraria. Você só pode ver os dados.",
         "guestSaveAction": "Você pode salvar esta tesouraria de convidado na sua lista de tesourarias.",
-        "newFeatureRich": "Novo! 🎉 Salve endereços usados com frequência para pagamentos mais rápidos e sem erros.<br></br> Seus contatos permanecem privados e visíveis apenas para sua equipe.",
+        "newFeatureRich": "Novo! 🎉 Salve endereços usados com frequência para pagamentos mais rápidos e sem erros. Seus contatos permanecem privados e visíveis apenas para sua equipe.",
         "newFeatureCta": "Experimente"
     },
     "statusDate": {

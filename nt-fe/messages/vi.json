@@ -175,10 +175,6 @@
             "title": "Thu nhập",
             "description": "Kết nối ngân quỹ Trezu của bạn với các ứng dụng Web3 yêu thích.",
             "howItWorks": "Cách hoạt động",
-            "navTooltip": {
-                "rich": "Mới! 🥳 Hãy stake tài sản trong mục Thu nhập và bắt đầu nhận phần thưởng. Để tiền sinh lời một cách nhẹ nhàng.",
-                "tryIt": "Hãy thử"
-            },
             "apps": {
                 "rhea": {
                     "name": "Rhea",
@@ -1763,7 +1759,7 @@
         "membersPending": "Nhấp để xem các yêu cầu đang chờ phê duyệt.",
         "guestSaveIntro": "Bạn là khách của ngân quỹ này. Bạn chỉ có thể xem dữ liệu.",
         "guestSaveAction": "Bạn có thể lưu ngân quỹ khách này vào danh sách ngân quỹ của bạn.",
-        "newFeatureRich": "Mới! 🎉 Lưu các địa chỉ thường dùng để chi trả nhanh hơn và không có lỗi.<br></br> Liên hệ của bạn được giữ riêng tư và chỉ đội của bạn nhìn thấy.",
+        "newFeatureRich": "Mới! 🎉 Lưu các địa chỉ thường dùng để chi trả nhanh hơn và không có lỗi. Liên hệ của bạn được giữ riêng tư và chỉ đội của bạn nhìn thấy.",
         "newFeatureCta": "Hãy thử"
     },
     "statusDate": {

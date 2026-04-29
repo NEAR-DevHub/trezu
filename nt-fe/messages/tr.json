@@ -175,10 +175,6 @@
             "title": "Kazan",
             "description": "Trezu hazinenizi en sevdiğiniz Web3 uygulamalarına bağlayın.",
             "howItWorks": "Nasıl çalışır",
-            "navTooltip": {
-                "rich": "Yeni! 🥳 Kazan ile varlıklarınızı stake edin ve ödüller kazanmaya başlayın. Fonlarınızı zahmetsizce çalıştırın.",
-                "tryIt": "Deneyin"
-            },
             "apps": {
                 "rhea": {
                     "name": "Rhea",
@@ -1763,7 +1759,7 @@
         "membersPending": "Onay bekleyen aktif talepleri görmek için tıklayın.",
         "guestSaveIntro": "Bu hazinenin misafirisiniz. Yalnızca verileri görüntüleyebilirsiniz.",
         "guestSaveAction": "Bu misafir hazineyi hazinelerinize kaydedebilirsiniz.",
-        "newFeatureRich": "Yeni! 🎉 Daha hızlı, hatasız ödemeler için sık kullanılan adresleri kaydedin.<br></br> Kişileriniz gizli kalır ve yalnızca ekibinize görünür.",
+        "newFeatureRich": "Yeni! 🎉 Daha hızlı, hatasız ödemeler için sık kullanılan adresleri kaydedin. Kişileriniz gizli kalır ve yalnızca ekibinize görünür.",
         "newFeatureCta": "Deneyin"
     },
     "statusDate": {

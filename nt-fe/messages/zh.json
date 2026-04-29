@@ -175,10 +175,6 @@
             "title": "收益",
             "description": "将您的 Trezu 金库连接到您常用的 Web3 应用。",
             "howItWorks": "运作方式",
-            "navTooltip": {
-                "rich": "新功能！🥳 通过「收益」质押资产，开始获取奖励。轻松让资金为您增值。",
-                "tryIt": "试用一下"
-            },
             "apps": {
                 "rhea": {
                     "name": "Rhea",
@@ -1763,7 +1759,7 @@
         "membersPending": "点击查看等待批准的活动请求。",
         "guestSaveIntro": "您是此金库的访客。您只能查看数据。",
         "guestSaveAction": "您可以将此访客金库保存到您的金库列表。",
-        "newFeatureRich": "新功能!🎉 保存常用地址,实现更快、零错误的付款。<br></br> 您的联系人保持私密,仅对您的团队可见。",
+        "newFeatureRich": "新功能!🎉 保存常用地址,实现更快、零错误的付款。 您的联系人保持私密,仅对您的团队可见。",
         "newFeatureCta": "试用一下"
     },
     "statusDate": {

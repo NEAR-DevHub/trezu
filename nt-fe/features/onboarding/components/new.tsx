@@ -4,10 +4,7 @@ import { useTranslations } from "next-intl";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 import { Pill } from "@/components/pill";
-import {
-    NEW_FEATURE_ANNOUNCEMENT,
-    useNewFeatureTour,
-} from "../steps/page-tours";
+import { EARN_ANNOUNCEMENT, useNewFeatureTour } from "../steps/page-tours";
 
 interface NEWProps {
     id?: string;
@@ -18,7 +15,7 @@ interface NEWProps {
 }
 
 export function NEW({
-    id = NEW_FEATURE_ANNOUNCEMENT.selector.slice(1),
+    id = EARN_ANNOUNCEMENT.selector.slice(1),
     enabled = true,
     pillLabel,
     side,
