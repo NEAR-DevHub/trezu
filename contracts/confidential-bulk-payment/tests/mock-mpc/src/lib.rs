@@ -5,20 +5,29 @@
 // - v1.signer: sign(request) -> { scheme: "Ed25519", signature: <base64> }
 // - intents.near: add_public_key(public_key)
 
-use near_sdk::json_types::Base64VecU8;
+use near_sdk::serde_json;
 use near_sdk::{env, near, require, AccountId, NearToken, PanicOnDefault};
 
-#[near(serializers = [json])]
 #[derive(Debug)]
+#[near(serializers = [json])]
 pub enum PayloadV2 {
     Eddsa(String),
 }
 
+#[derive(Debug)]
 #[near(serializers = [json])]
 pub struct SignRequest {
     pub path: String,
     pub payload_v2: PayloadV2,
     pub domain_id: u32,
+}
+
+#[derive(Debug)]
+#[near(serializers = [json])]
+#[serde(tag = "scheme")]
+pub enum SignatureResponse {
+    Secp256k1(serde_json::Value),
+    Ed25519 { signature: Vec<u8> },
 }
 
 #[near(contract_state)]
@@ -43,7 +52,7 @@ impl MockMpc {
     }
 
     #[payable]
-    pub fn sign(&mut self, request: SignRequest) -> Base64VecU8 {
+    pub fn sign(&mut self, request: SignRequest) -> SignatureResponse {
         require!(
             env::attached_deposit() == NearToken::from_yoctonear(1),
             "mock v1.signer.sign: must attach exactly 1 yoctoNEAR"
@@ -55,7 +64,9 @@ impl MockMpc {
         for (i, b) in payload.bytes().take(64).enumerate() {
             sig[i] = b;
         }
-        Base64VecU8(sig.to_vec())
+        SignatureResponse::Ed25519 {
+            signature: sig.to_vec(),
+        }
     }
 
     #[payable]

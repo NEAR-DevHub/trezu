@@ -366,9 +366,8 @@ async fn submit_done_activation(
         r#"
         SELECT payload_hash, intent_payload
         FROM confidential_intents
-        WHERE dao_id = $1 AND payload_hash = ANY($2) AND status = 'pending'
+        WHERE payload_hash = ANY($1) AND status = 'pending'
         "#,
-        sub_id.as_str(),
         recipient_hashes,
     )
     .fetch_all(&state.db_pool)
@@ -415,9 +414,8 @@ async fn submit_done_activation(
                     SET status = 'failed',
                         submit_result = '"no signature on chain"'::jsonb,
                         updated_at = NOW()
-                    WHERE dao_id = $1 AND payload_hash = $2
+                    WHERE payload_hash = $1
                     "#,
-                    sub_id.as_str(),
                     hash,
                 )
                 .execute(&state.db_pool)
@@ -446,8 +444,7 @@ async fn submit_done_activation(
         match res {
             Ok(body) => {
                 let _ = sqlx::query!(
-                    "UPDATE confidential_intents SET status = 'submitted', submit_result = $3, updated_at = NOW() WHERE dao_id = $1 AND payload_hash = $2",
-                    sub_id,
+                    "UPDATE confidential_intents SET status = 'submitted', submit_result = $2, updated_at = NOW() WHERE payload_hash = $1",
                     hash,
                     body,
                 )
@@ -462,8 +459,7 @@ async fn submit_done_activation(
                     err
                 );
                 let _ = sqlx::query!(
-                    "UPDATE confidential_intents SET status = 'failed', submit_result = $3, updated_at = NOW() WHERE dao_id = $1 AND payload_hash = $2",
-                    sub_id,
+                    "UPDATE confidential_intents SET status = 'failed', submit_result = $2, updated_at = NOW() WHERE payload_hash = $1",
                     hash,
                     json!({ "error": err }),
                 )

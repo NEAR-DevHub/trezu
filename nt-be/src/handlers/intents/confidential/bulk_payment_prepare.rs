@@ -102,7 +102,7 @@ fn build_recipient_quote_body(
 
     let mut body = json!({
         "dry": false,
-        "swapType": "EXACT_OUTPUT",
+        "swapType": "EXACT_INPUT",
         "slippageTolerance": slippage,
         "originAsset": origin_asset,
         "depositType": "CONFIDENTIAL_INTENTS",
@@ -378,7 +378,7 @@ pub async fn bulk_payment_prepare(
 
         recipient_hashes.push(hash.clone());
         batch.push(
-            sub_id_str.clone(),
+            dao_account_id.to_string(),
             hash,
             payload,
             quote_response,

@@ -21,7 +21,7 @@ use near_sdk::{
 };
 
 use crate::intents::ext_intents;
-use crate::mpc::{PayloadV2, SignRequest, ext_v1_signer};
+use crate::mpc::{PayloadV2, SignRequest, SignatureResponse, ext_v1_signer};
 #[cfg(test)]
 use crate::sputnik::{FCAction, FCKind};
 use crate::sputnik::{ProposalKind, SputnikProposal, ext_sputnik};
@@ -585,7 +585,7 @@ impl Contract {
         &mut self,
         proposal_id: U64,
         index: u32,
-        #[callback_result] result: Result<Base64VecU8, PromiseError>,
+        #[callback_result] result: Result<SignatureResponse, PromiseError>,
     ) {
         let pid: u64 = proposal_id.into();
         let Some(activation) = self.activations.get_mut(&pid) else {
@@ -603,7 +603,11 @@ impl Contract {
             }
 
             entry.status = match result {
-                Ok(signature) => HashStatus::Signed { signature },
+                Ok(SignatureResponse::Ed25519 { signature }) if signature.len() == 64 => {
+                    HashStatus::Signed {
+                        signature: signature.into(),
+                    }
+                }
                 _ => HashStatus::SignFailed {
                     reason: SignFailureReason::SignerCallFailed,
                 },
