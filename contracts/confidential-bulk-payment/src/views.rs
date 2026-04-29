@@ -1,5 +1,5 @@
 use near_sdk::json_types::U64;
-use near_sdk::{near, AccountId};
+use near_sdk::{AccountId, near};
 
 use crate::{Activation, BootstrapStatus, Contract, ContractExt};
 

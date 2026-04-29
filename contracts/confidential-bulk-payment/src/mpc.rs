@@ -2,7 +2,7 @@
 
 use near_sdk::json_types::Base64VecU8;
 use near_sdk::serde::Serialize;
-use near_sdk::{ext_contract, AccountId};
+use near_sdk::{AccountId, ext_contract};
 
 #[derive(Serialize, Debug)]
 #[serde(crate = "near_sdk::serde")]

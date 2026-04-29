@@ -19,20 +19,19 @@ use confidential_bulk_payment::{
     FETCH_PROPOSAL_GAS,
 };
 use near_api::{
-    types::transaction::result::{ExecutionOutcome, ExecutionSuccess},
     AccountId, NearGas, NearToken, Tokens,
+    types::transaction::result::{ExecutionOutcome, ExecutionSuccess},
 };
 use near_sandbox::{
-    config::{DEFAULT_GENESIS_ACCOUNT, DEFAULT_GENESIS_ACCOUNT_PRIVATE_KEY},
     Sandbox,
+    config::{DEFAULT_GENESIS_ACCOUNT, DEFAULT_GENESIS_ACCOUNT_PRIVATE_KEY},
 };
 use near_sdk::serde_json::{self, json};
 
 const SPUTNIK_WASM_REL: &str = "../../nt-fe/public/sputnik_dao_v2.wasm";
 
 fn genesis_signer() -> std::sync::Arc<near_api::Signer> {
-    near_api::Signer::from_secret_key(DEFAULT_GENESIS_ACCOUNT_PRIVATE_KEY.parse().unwrap())
-        .unwrap()
+    near_api::Signer::from_secret_key(DEFAULT_GENESIS_ACCOUNT_PRIVATE_KEY.parse().unwrap()).unwrap()
 }
 
 fn genesis_id() -> AccountId {
@@ -99,8 +98,7 @@ impl Ctx {
 async fn setup() -> testresult::TestResult<Ctx> {
     let prefix = "mydao";
     let sandbox = Sandbox::start_sandbox().await?;
-    let network =
-        near_api::NetworkConfig::from_rpc_url("sandbox", sandbox.rpc_addr.parse()?);
+    let network = near_api::NetworkConfig::from_rpc_url("sandbox", sandbox.rpc_addr.parse()?);
 
     let signer_id: AccountId = "v1.signer".parse().unwrap();
     let intents_id: AccountId = "intents.near".parse().unwrap();
@@ -278,7 +276,10 @@ async fn activate(ctx: &Ctx, proposal_id: u64) -> testresult::TestResult<Executi
         .await?
         .data;
     let res = near_api::Contract(ctx.contract_id.clone())
-        .call_function("activate", json!({ "proposal_id": proposal_id.to_string() }))
+        .call_function(
+            "activate",
+            json!({ "proposal_id": proposal_id.to_string() }),
+        )
         .transaction()
         .deposit(required)
         // Budget covers the activation callback + the chained auto-ping.
@@ -311,7 +312,10 @@ async fn activate_with_deposit(
     deposit: NearToken,
 ) -> testresult::TestResult<ExecutionSuccess> {
     let res = near_api::Contract(ctx.contract_id.clone())
-        .call_function("activate", json!({ "proposal_id": proposal_id.to_string() }))
+        .call_function(
+            "activate",
+            json!({ "proposal_id": proposal_id.to_string() }),
+        )
         .transaction()
         .deposit(deposit)
         .gas(near_sdk::Gas::from_tgas(300))
@@ -440,7 +444,10 @@ async fn test_full_flow() -> testresult::TestResult {
         .fetch_from(&ctx.network)
         .await?
         .data;
-    println!("proposal status (DAO view): {}", proposal["proposal"]["status"]);
+    println!(
+        "proposal status (DAO view): {}",
+        proposal["proposal"]["status"]
+    );
 
     println!("\n══════════ STAGE 3: activate (auto-ping fires inline) ══════════");
     activate(&ctx, proposal_id).await?;
@@ -459,7 +466,6 @@ async fn test_full_flow() -> testresult::TestResult {
             entry["status"]
         );
     }
-
 
     println!("\n══════════ STAGE 5: retry_failed (no-op) ══════════");
     let retried: u32 = near_api::Contract(ctx.contract_id.clone())

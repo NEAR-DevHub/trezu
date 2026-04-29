@@ -2,7 +2,7 @@
 //! confidential-bulk-payment subaccount needs to consume from `get_proposal`.
 
 use near_sdk::serde_json;
-use near_sdk::{ext_contract, near, AccountId};
+use near_sdk::{AccountId, ext_contract, near};
 
 /// Typed proxy for sputnik-dao `get_proposal`.
 #[ext_contract(ext_sputnik)]

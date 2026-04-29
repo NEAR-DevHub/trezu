@@ -17,14 +17,14 @@ mod views;
 use near_sdk::json_types::{Base64VecU8, U64};
 use near_sdk::store::IterableMap;
 use near_sdk::{
-    env, near, require, AccountId, Gas, NearToken, PanicOnDefault, Promise, PromiseError,
+    AccountId, Gas, NearToken, PanicOnDefault, Promise, PromiseError, env, near, require,
 };
 
 use crate::intents::ext_intents;
-use crate::mpc::{ext_v1_signer, PayloadV2, SignRequest};
-use crate::sputnik::{ext_sputnik, ProposalKind, SputnikProposal};
+use crate::mpc::{PayloadV2, SignRequest, ext_v1_signer};
 #[cfg(test)]
 use crate::sputnik::{FCAction, FCKind};
+use crate::sputnik::{ProposalKind, SputnikProposal, ext_sputnik};
 
 const V1_SIGNER: &str = "v1.signer";
 const INTENTS: &str = "intents.near";
@@ -371,7 +371,7 @@ impl Contract {
         let proposal = match result {
             Ok(p) => p,
             Err(_) => {
-                return self.abort_loading(pid, &payer, attached, "on_get_proposal: fetch failed")
+                return self.abort_loading(pid, &payer, attached, "on_get_proposal: fetch failed");
             }
         };
 
@@ -408,7 +408,7 @@ impl Contract {
         let header_action = match fc.actions.first() {
             Some(a) => a,
             None => {
-                return self.abort_loading(pid, &payer, attached, "on_get_proposal: no actions")
+                return self.abort_loading(pid, &payer, attached, "on_get_proposal: no actions");
             }
         };
         if header_action.method_name != "sign" {
