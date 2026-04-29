@@ -241,7 +241,7 @@ export function RecipientNetworkSelect({
                     variant="ghost"
                     onClick={() => setOpen(true)}
                     disabled={isDisabled}
-                    className="w-full h-12 justify-between px-0! hover:bg-transparent disabled:opacity-100"
+                    className="w-full h-12 justify-between px-0! hover:bg-transparent dark:hover:bg-transparent focus-visible:bg-transparent dark:focus-visible:bg-transparent disabled:opacity-100"
                 >
                     {selectedOption && !isDisabled ? (
                         <NetworkRow option={selectedOption} />
