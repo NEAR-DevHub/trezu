@@ -518,7 +518,7 @@
             "sent": "Gönderildi",
             "received": "Alındı",
             "priceDifference": "Fiyat Farkı",
-            "priceDifferenceTooltip": "Teklif oranı ile mevcut piyasa oranı arasındaki fark. Pozitif değerler piyasadan daha iyi bir oranı gösterir.",
+            "priceDifferenceTooltip": "Aldığınız USD değerinin, gönderdiğiniz USD değeriyle nasıl karşılaştırıldığını gösterir.",
             "slippageTolerance": "Kayma Toleransı",
             "estimatedTime": "Tahmini Süre",
             "seconds": "{count} saniye",
@@ -1006,7 +1006,7 @@
         "poweredBy": "Destekleyen",
         "info": {
             "priceDifference": "Fiyat Farkı",
-            "priceDifferenceTooltip": "Teklif oranı ile mevcut piyasa oranı arasındaki fark. Pozitif değerler piyasadan daha iyi bir oranı gösterir.",
+            "priceDifferenceTooltip": "Aldığınız USD değerinin, gönderdiğiniz USD değeriyle nasıl karşılaştırıldığını gösterir.",
             "estimatedTime": "Tahmini Süre",
             "estimatedTimeValue": "{seconds} saniye",
             "estimatedTimeTooltip": "Takası tamamlamak için yaklaşık süre.",

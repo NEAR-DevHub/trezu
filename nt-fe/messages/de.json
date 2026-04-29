@@ -518,7 +518,7 @@
             "sent": "Gesendet",
             "received": "Empfangen",
             "priceDifference": "Preisunterschied",
-            "priceDifferenceTooltip": "Unterschied zwischen dem Angebotskurs und dem aktuellen Marktkurs. Positive Werte bedeuten einen besseren Kurs als der Markt.",
+            "priceDifferenceTooltip": "Zeigt, wie der USD-Wert, den Sie erhalten, im Vergleich zum USD-Wert steht, den Sie senden.",
             "slippageTolerance": "Slippage-Toleranz",
             "estimatedTime": "Geschätzte Zeit",
             "seconds": "{count} Sekunden",
@@ -1006,7 +1006,7 @@
         "poweredBy": "Bereitgestellt von",
         "info": {
             "priceDifference": "Preisunterschied",
-            "priceDifferenceTooltip": "Unterschied zwischen dem Angebotskurs und dem aktuellen Marktkurs. Positive Werte bedeuten einen besseren Kurs als der Markt.",
+            "priceDifferenceTooltip": "Zeigt, wie der USD-Wert, den Sie erhalten, im Vergleich zum USD-Wert steht, den Sie senden.",
             "estimatedTime": "Geschätzte Zeit",
             "estimatedTimeValue": "{seconds} Sekunden",
             "estimatedTimeTooltip": "Ungefähre Zeit zum Abschluss des Tauschs.",

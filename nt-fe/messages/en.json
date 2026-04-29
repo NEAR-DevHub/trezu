@@ -518,7 +518,7 @@
             "sent": "Sent",
             "received": "Received",
             "priceDifference": "Price Difference",
-            "priceDifferenceTooltip": "Difference between the quote rate and the current market rate. Positive values indicate a better rate than market.",
+            "priceDifferenceTooltip": "Show how the USD value you receive compares to the USD value you send.",
             "slippageTolerance": "Slippage Tolerance",
             "estimatedTime": "Estimated Time",
             "seconds": "{count} seconds",
@@ -1006,7 +1006,7 @@
         "poweredBy": "Powered by",
         "info": {
             "priceDifference": "Price Difference",
-            "priceDifferenceTooltip": "Difference between the quote rate and the current market rate. Positive values indicate a better rate than market.",
+            "priceDifferenceTooltip": "Show how the USD value you receive compares to the USD value you send.",
             "estimatedTime": "Estimated Time",
             "estimatedTimeValue": "{seconds} seconds",
             "estimatedTimeTooltip": "Approximate time to complete the exchange.",

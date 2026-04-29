@@ -97,63 +97,44 @@ export function getRecipientType(
 }
 
 /**
- * Calculates the price difference between expected market rate and quote rate
- * Compares the USD values to determine if the rate is favorable or not
+ * Calculates quote outcome difference as output USD vs input USD.
+ * Positive means favorable (more USD out than in), negative means unfavorable.
  * @param amountInUsd - USD value of input amount from quote
  * @param amountOutUsd - USD value of output amount from quote
- * @param amountIn - Raw amount in (smallest units)
- * @param amountOut - Raw amount out (smallest units)
- * @param sellTokenDecimals - Decimals for sell token
- * @param receiveTokenDecimals - Decimals for receive token
- * @param sellTokenPrice - Market price per token (from metadata/price feed)
- * @param receiveTokenPrice - Market price per token (from metadata/price feed)
  * @returns Object with percentage difference and whether it's favorable
  */
 export function calculateMarketPriceDifference(
     amountInUsd: string,
     amountOutUsd: string,
-    amountIn: string,
-    amountOut: string,
-    sellTokenDecimals: number,
-    receiveTokenDecimals: number,
-    sellTokenPrice?: number,
-    receiveTokenPrice?: number,
 ): {
     percentDifference: string;
+    usdDifference: string;
     isFavorable: boolean;
     hasMarketData: boolean;
 } {
-    // If we don't have market prices, we can't calculate market difference
-    if (!sellTokenPrice || !receiveTokenPrice) {
-        return {
-            percentDifference: "N/A",
-            isFavorable: false,
-            hasMarketData: false,
-        };
-    }
-
     try {
-        // Calculate actual token amounts
-        const receiveAmount = Big(amountOut).div(
-            Big(10).pow(receiveTokenDecimals),
-        );
+        const inputUsd = Big(amountInUsd);
+        const outputUsd = Big(amountOutUsd);
 
-        // Calculate expected USD value based on market prices
-        const expectedReceiveUSD = receiveAmount.mul(receiveTokenPrice);
+        if (inputUsd.lte(0)) {
+            return {
+                percentDifference: "N/A",
+                usdDifference: "N/A",
+                isFavorable: false,
+                hasMarketData: false,
+            };
+        }
 
-        // Get actual USD values from quote
-        const actualReceiveUSD = Big(amountOutUsd);
-
-        // Calculate the rate difference
-        // Positive means you're getting more USD value than expected (favorable)
-        // Negative means you're getting less USD value than expected (unfavorable)
-        const usdValueDifference = actualReceiveUSD.minus(expectedReceiveUSD);
-        const percentDifference = usdValueDifference
-            .div(expectedReceiveUSD)
+        // Compare actual quote outcome directly: output value relative to input value.
+        const usdDifference = outputUsd.minus(inputUsd);
+        const percentDifference = outputUsd
+            .minus(inputUsd)
+            .div(inputUsd)
             .mul(100);
 
         return {
             percentDifference: percentDifference.toFixed(4),
+            usdDifference: usdDifference.toFixed(2),
             isFavorable: percentDifference.gte(0),
             hasMarketData: true,
         };
@@ -161,6 +142,7 @@ export function calculateMarketPriceDifference(
         console.error("Error calculating market price difference:", error);
         return {
             percentDifference: "N/A",
+            usdDifference: "N/A",
             isFavorable: false,
             hasMarketData: false,
         };

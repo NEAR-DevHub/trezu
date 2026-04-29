@@ -518,7 +518,7 @@
             "sent": "Đã gửi",
             "received": "Đã nhận",
             "priceDifference": "Chênh lệch giá",
-            "priceDifferenceTooltip": "Chênh lệch giữa tỷ giá báo và tỷ giá thị trường hiện tại. Giá trị dương cho biết tỷ giá tốt hơn thị trường.",
+            "priceDifferenceTooltip": "Hiển thị giá trị USD bạn nhận được so với giá trị USD bạn gửi đi.",
             "slippageTolerance": "Dung sai trượt giá",
             "estimatedTime": "Thời gian ước tính",
             "seconds": "{count} giây",
@@ -1006,7 +1006,7 @@
         "poweredBy": "Cung cấp bởi",
         "info": {
             "priceDifference": "Chênh lệch giá",
-            "priceDifferenceTooltip": "Chênh lệch giữa tỷ giá báo và tỷ giá thị trường hiện tại. Giá trị dương cho biết tỷ giá tốt hơn thị trường.",
+            "priceDifferenceTooltip": "Hiển thị giá trị USD bạn nhận được so với giá trị USD bạn gửi đi.",
             "estimatedTime": "Thời gian ước tính",
             "estimatedTimeValue": "{seconds} giây",
             "estimatedTimeTooltip": "Thời gian xấp xỉ để hoàn tất giao dịch trao đổi.",

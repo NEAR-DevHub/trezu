@@ -518,7 +518,7 @@
             "sent": "Terkirim",
             "received": "Diterima",
             "priceDifference": "Selisih Harga",
-            "priceDifferenceTooltip": "Selisih antara nilai tukar kuotasi dan nilai tukar pasar saat ini. Nilai positif menunjukkan nilai tukar yang lebih baik dari pasar.",
+            "priceDifferenceTooltip": "Menunjukkan bagaimana nilai USD yang Anda terima dibandingkan dengan nilai USD yang Anda kirim.",
             "slippageTolerance": "Toleransi Slippage",
             "estimatedTime": "Estimasi Waktu",
             "seconds": "{count} detik",
@@ -1006,7 +1006,7 @@
         "poweredBy": "Didukung oleh",
         "info": {
             "priceDifference": "Selisih Harga",
-            "priceDifferenceTooltip": "Selisih antara nilai tukar kuotasi dan nilai tukar pasar saat ini. Nilai positif menunjukkan nilai tukar yang lebih baik dari pasar.",
+            "priceDifferenceTooltip": "Menunjukkan bagaimana nilai USD yang Anda terima dibandingkan dengan nilai USD yang Anda kirim.",
             "estimatedTime": "Estimasi Waktu",
             "estimatedTimeValue": "{seconds} detik",
             "estimatedTimeTooltip": "Waktu perkiraan untuk menyelesaikan pertukaran.",
