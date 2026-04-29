@@ -2,7 +2,7 @@
 // Uses near-sandbox and near-api instead of near-workspaces
 
 use base64::Engine;
-use near_sdk::{serde_json::json, AccountId, NearToken};
+use near_sdk::{AccountId, NearToken, serde_json::json};
 
 /// Generate a valid list_id (64-character hex string) for testing
 /// Uses a simple deterministic approach: pads the suffix with 'a' characters
@@ -115,9 +115,8 @@ async fn import_contract(
     Ok(account_signer)
 }
 
-async fn setup_contract(
-) -> Result<(near_sandbox::Sandbox, near_api::NetworkConfig, AccountId), Box<dyn std::error::Error>>
-{
+async fn setup_contract()
+-> Result<(near_sandbox::Sandbox, near_api::NetworkConfig, AccountId), Box<dyn std::error::Error>> {
     // Create sandbox with pre-configured accounts including wrap.near for FT tests
     let wrap_near_account = near_sandbox::GenesisAccount {
         account_id: "wrap.near".parse().unwrap(),

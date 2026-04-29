@@ -14,8 +14,8 @@ use near_sdk::json_types::{Base58CryptoHash, U128};
 use near_sdk::serde_json::json;
 use near_sdk::store::IterableMap;
 use near_sdk::{
-    env, log, near, require, AccountId, CryptoHash, Gas, NearToken, Promise, PromiseError,
-    PromiseOrValue,
+    AccountId, CryptoHash, Gas, NearToken, Promise, PromiseError, PromiseOrValue, env, log, near,
+    require,
 };
 
 /// List ID is a hex-encoded SHA-256 hash (64 characters)
@@ -892,7 +892,7 @@ impl MultiTokenReceiver for BulkPaymentContract {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use near_sdk::test_utils::{accounts, VMContextBuilder};
+    use near_sdk::test_utils::{VMContextBuilder, accounts};
     use near_sdk::testing_env;
 
     fn get_context(predecessor: AccountId) -> VMContextBuilder {
