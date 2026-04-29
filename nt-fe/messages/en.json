@@ -174,10 +174,6 @@
             "title": "Earn",
             "description": "Connect your Trezu treasury to your favourite Web3 applications.",
             "howItWorks": "How It Works",
-            "navTooltip": {
-                "rich": "New! 🥳 Stake your assets with Earn and start earning rewards. Put your funds to work effortlessly.",
-                "tryIt": "Try It"
-            },
             "apps": {
                 "rhea": {
                     "name": "Rhea",
@@ -1742,7 +1738,7 @@
         "membersPending": "Click to see active requests waiting for approval.",
         "guestSaveIntro": "You are a guest of this treasury. You can only view the data.",
         "guestSaveAction": "You can save this guest treasury to your treasuries list.",
-        "newFeatureRich": "New! 🎉 Stake your assets with Earn and start earning rewards.<br></br> Put your funds to work effortlessly.",
+        "newFeatureRich": "New! 🎉 Stake your assets with Earn and start earning rewards. Put your funds to work effortlessly.",
         "newFeatureCta": "Try It"
     },
     "statusDate": {

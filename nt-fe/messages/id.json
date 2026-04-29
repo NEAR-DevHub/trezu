@@ -174,10 +174,6 @@
             "title": "Pendapatan",
             "description": "Hubungkan treasury Trezu Anda ke aplikasi Web3 favorit Anda.",
             "howItWorks": "Cara kerja",
-            "navTooltip": {
-                "rich": "Baru! 🥳 Staking aset Anda lewat Pendapatan dan mulailah mendapat imbalan. Biarkan dana Anda bekerja tanpa ribet.",
-                "tryIt": "Coba Sekarang"
-            },
             "apps": {
                 "rhea": {
                     "name": "Rhea",
@@ -1742,7 +1738,7 @@
         "membersPending": "Klik untuk melihat permintaan aktif yang menunggu persetujuan.",
         "guestSaveIntro": "Anda adalah tamu treasury ini. Anda hanya dapat melihat data.",
         "guestSaveAction": "Anda dapat menyimpan treasury tamu ini ke daftar treasury Anda.",
-        "newFeatureRich": "Baru! 🎉 Simpan alamat yang sering digunakan untuk pembayaran lebih cepat dan bebas kesalahan.<br></br> Kontak Anda tetap pribadi dan hanya terlihat oleh tim Anda.",
+        "newFeatureRich": "Baru! 🎉 Simpan alamat yang sering digunakan untuk pembayaran lebih cepat dan bebas kesalahan. Kontak Anda tetap pribadi dan hanya terlihat oleh tim Anda.",
         "newFeatureCta": "Coba Sekarang"
     },
     "statusDate": {

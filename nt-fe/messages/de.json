@@ -174,10 +174,6 @@
             "title": "Erträge",
             "description": "Verbinden Sie Ihre Trezu-Treasury mit Ihren bevorzugten Web3-Anwendungen.",
             "howItWorks": "So funktioniert's",
-            "navTooltip": {
-                "rich": "Neu! 🥳 Nutzen Sie Erträge, um Ihre Assets zu staken und Belohnungen zu erhalten. Lassen Sie Ihr Kapital mühelos für sich arbeiten.",
-                "tryIt": "Ausprobieren"
-            },
             "apps": {
                 "rhea": {
                     "name": "Rhea",
@@ -1742,7 +1738,7 @@
         "membersPending": "Klicken Sie, um aktive Anfragen zu sehen, die auf Genehmigung warten.",
         "guestSaveIntro": "Sie sind Gast dieser Treasury. Sie können nur die Daten einsehen.",
         "guestSaveAction": "Sie können diese Gast-Treasury in Ihrer Treasury-Liste speichern.",
-        "newFeatureRich": "Neu! 🎉 Staken Sie Ihre Assets mit Earn und verdienen Sie Belohnungen.<br></br> Lassen Sie Ihr Kapital muehelos fuer sich arbeiten.",
+        "newFeatureRich": "Neu! 🎉 Staken Sie Ihre Assets mit Earn und verdienen Sie Belohnungen. Lassen Sie Ihr Kapital muehelos fuer sich arbeiten.",
         "newFeatureCta": "Ausprobieren"
     },
     "statusDate": {

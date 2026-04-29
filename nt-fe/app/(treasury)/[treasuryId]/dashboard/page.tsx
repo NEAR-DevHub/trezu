@@ -74,7 +74,8 @@ export default function AppPage() {
             />
             <WelcomeTooltip />
             <CongratsTooltip />
-            <NotificationsTooltip />
+            {/* NOTE: comment when notifications feature is released */}
+            {/* <NotificationsTooltip /> */}
         </PageComponentLayout>
     );
 }

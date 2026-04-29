@@ -17,6 +17,13 @@ import { useTelegramStatuses } from "@/hooks/use-telegram";
 import { availableBalance } from "@/lib/balance";
 import { useUiStore } from "@/stores/ui-store";
 import { features } from "@/constants/features";
+import {
+    hasSeenFeature,
+    markFeatureSeen,
+    refreshFeatureAnnouncements,
+    useFeatureAnnouncementQueueSlot,
+    useFeatureAnnouncementsUnlocked,
+} from "@/features/onboarding/feature-announcement-queue";
 
 // Tour names
 export const TOUR_NAMES = {
@@ -29,7 +36,6 @@ export const LOCAL_STORAGE_KEYS = {
     WELCOME_DISMISSED: "welcome-dismissed",
     DASHBOARD_TOUR_COMPLETED: "dashboard-tour-completed",
     INFO_BOX_TOUR_DISMISSED: "info-box-tour-dismissed",
-    NOTIFICATIONS_DISMISSED: "notifications-dismissed",
 } as const;
 
 // Selector IDs
@@ -176,6 +182,7 @@ export function WelcomeTooltip() {
 
     const handleDismiss = () => {
         localStorage.setItem(LOCAL_STORAGE_KEYS.WELCOME_DISMISSED, "true");
+        refreshFeatureAnnouncements(2000);
         setIsWelcomeDismissed(true);
     };
 
@@ -345,6 +352,7 @@ export function CongratsTooltip() {
                 LOCAL_STORAGE_KEYS.DASHBOARD_TOUR_COMPLETED,
                 "true",
             );
+            refreshFeatureAnnouncements(2000);
         }
     }, [isGuestTreasury, isLoading, tokens, proposals]);
 
@@ -396,6 +404,7 @@ export function NotificationsTooltip() {
     const isSidebarOpen = useSidebarStore((state) => state.isSidebarOpen);
     const { currentTour } = useNextStep();
     const isTourActive = !!currentTour;
+    const featuresUnlocked = useFeatureAnnouncementsUnlocked();
     const pushOverlay = useUiStore((s) => s.pushOverlay);
     const popOverlay = useUiStore((s) => s.popOverlay);
 
@@ -407,6 +416,26 @@ export function NotificationsTooltip() {
         !!treasuryId && !!(statusResult?.isLoading || statusResult?.isPending);
 
     const hidden = isMobile && isSidebarOpen;
+    const hasSeenEarnFeature = hasSeenFeature("earn");
+    const notificationsShown = hasSeenFeature("notifications");
+
+    const isNotificationsFeatureEligible =
+        features.integrations &&
+        !isGuestTreasury &&
+        !isLoading &&
+        !!treasuryId &&
+        !!accountId &&
+        featuresUnlocked &&
+        hasSeenEarnFeature &&
+        !notificationsShown &&
+        !isLoadingTelegram &&
+        !telegramConnected;
+
+    const notificationsQueueSlot = useFeatureAnnouncementQueueSlot({
+        id: "feature-announcement-notifications",
+        priority: 2,
+        eligible: isNotificationsFeatureEligible,
+    });
 
     useEffect(() => {
         if (isVisible) {
@@ -417,40 +446,14 @@ export function NotificationsTooltip() {
 
     useEffect(() => {
         if (
-            !features.integrations ||
-            isGuestTreasury ||
-            isLoading ||
-            !treasuryId
+            !isNotificationsFeatureEligible ||
+            !notificationsQueueSlot.isActive
         ) {
-            return;
-        }
-
-        if (
-            localStorage.getItem(LOCAL_STORAGE_KEYS.WELCOME_DISMISSED) !==
-            "true"
-        ) {
-            return;
-        }
-
-        if (
-            localStorage.getItem(LOCAL_STORAGE_KEYS.NOTIFICATIONS_DISMISSED) ===
-            "true"
-        ) {
-            return;
-        }
-
-        if (isLoadingTelegram || telegramConnected) {
             return;
         }
 
         setIsVisible(true);
-    }, [
-        isGuestTreasury,
-        isLoading,
-        treasuryId,
-        isLoadingTelegram,
-        telegramConnected,
-    ]);
+    }, [isNotificationsFeatureEligible, notificationsQueueSlot.isActive]);
 
     useEffect(() => {
         if (telegramConnected) {
@@ -460,10 +463,8 @@ export function NotificationsTooltip() {
 
     const handleDismiss = () => {
         setIsVisible(false);
-        localStorage.setItem(
-            LOCAL_STORAGE_KEYS.NOTIFICATIONS_DISMISSED,
-            "true",
-        );
+        notificationsQueueSlot.release(400);
+        markFeatureSeen("notifications");
     };
 
     const handleTryIt = () => {
@@ -471,15 +472,7 @@ export function NotificationsTooltip() {
         router.push(`/${treasuryId}/settings?tab=integrations`);
     };
 
-    if (
-        !isVisible ||
-        !features.integrations ||
-        isGuestTreasury ||
-        isLoading ||
-        hidden ||
-        !accountId ||
-        isTourActive
-    ) {
+    if (!isVisible || hidden || isTourActive) {
         return null;
     }
 

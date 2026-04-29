@@ -2,11 +2,13 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useNextStep } from "nextstepjs";
 import { useEffect, useState } from "react";
 import { SystemStatusBanner } from "@/components/system-status-banner";
 import { ConfidentialBanner } from "@/features/confidential/components/confidential-banner";
 import { CreateBanner } from "@/features/onboarding/components/create-banner";
 import { NEW } from "@/features/onboarding/components/new";
+import { TOUR_NAMES } from "@/features/onboarding/steps/dashboard";
 import {
     PAGE_TOUR_SELECTORS,
     useGuestSaveTour,
@@ -176,6 +178,7 @@ export function Sidebar({ onClose }: SidebarProps) {
     const tNav = useTranslations("nav");
     const tPages = useTranslations("pages");
     const tCommon = useTranslations("common");
+    const { currentTour } = useNextStep();
 
     const {
         isGuestTreasury,
@@ -196,6 +199,14 @@ export function Sidebar({ onClose }: SidebarProps) {
     const isReduced = !isMobile && !isOpen;
     const saveTreasuryMutation = useSaveTreasuryMutation(accountId, treasuryId);
     useGuestSaveTour(accountId ?? undefined, isSaved ?? false);
+
+    // Dashboard tour step 5 opens treasury selector; close it once that tour ends
+    // so follow-up tours (e.g. Earn announcement) are not hidden behind dropdown.
+    useEffect(() => {
+        if (currentTour !== TOUR_NAMES.DASHBOARD) {
+            setDropdownOpen(false);
+        }
+    }, [currentTour]);
 
     // Mark as initialized after first render with mounted state
     useEffect(() => {

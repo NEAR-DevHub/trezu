@@ -174,10 +174,6 @@
             "title": "수익",
             "description": "Trezu 트레저리를 즐겨 쓰는 Web3 앱에 연결하세요.",
             "howItWorks": "이용 방법",
-            "navTooltip": {
-                "rich": "신규! 🥳 수익으로 자산을 스테이킹하고 보상을 받기 시작하세요. 자금을 손쉽게 불려 보세요.",
-                "tryIt": "사용해 보기"
-            },
             "apps": {
                 "rhea": {
                     "name": "Rhea",
@@ -1742,7 +1738,7 @@
         "membersPending": "승인 대기 중인 활성 요청을 보려면 클릭하세요.",
         "guestSaveIntro": "이 트레저리의 게스트입니다. 데이터 보기만 가능합니다.",
         "guestSaveAction": "이 게스트 트레저리를 트레저리 목록에 저장할 수 있습니다.",
-        "newFeatureRich": "신규! 🎉 자주 사용하는 주소를 저장하여 더 빠르고 오류 없는 지급을 하세요.<br></br> 연락처는 비공개로 유지되며 팀에게만 표시됩니다.",
+        "newFeatureRich": "신규! 🎉 자주 사용하는 주소를 저장하여 더 빠르고 오류 없는 지급을 하세요. 연락처는 비공개로 유지되며 팀에게만 표시됩니다.",
         "newFeatureCta": "사용해 보기"
     },
     "statusDate": {
