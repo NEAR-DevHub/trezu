@@ -11,8 +11,6 @@ export default getRequestConfig(async () => {
     const cookieStore = await cookies();
     const cookieLocale = cookieStore.get(LOCALE_COOKIE)?.value;
 
-    // Reject cookies pinning a locale that's gated off in this environment so
-    // production users can't end up stuck on a feature-flagged language.
     let locale = isEnabledLocale(cookieLocale) ? cookieLocale : undefined;
 
     if (!locale) {

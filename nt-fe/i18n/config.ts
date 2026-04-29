@@ -31,7 +31,9 @@ export const enabledLocales: readonly Locale[] = features.extraLocales
     ? locales
     : corePublicLocales;
 
-export function isEnabledLocale(value: string | undefined | null): value is Locale {
+export function isEnabledLocale(
+    value: string | undefined | null,
+): value is Locale {
     return !!value && enabledLocales.includes(value as Locale);
 }
 
@@ -56,15 +58,16 @@ export const localeNames: Record<Locale, string> = {
 /** Right-to-left locales. */
 export const rtlLocales: readonly Locale[] = ["he"];
 
-export function getLocaleDirection(locale: Locale): "ltr" | "rtl" {
+export function getLocaleDirection(
+    locale: Locale | string | undefined | null,
+): "ltr" | "rtl" {
+    if (!isEnabledLocale(locale)) {
+        return "ltr";
+    }
     return rtlLocales.includes(locale) ? "rtl" : "ltr";
 }
 
 export const LOCALE_COOKIE = "NEXT_LOCALE";
-
-export function isLocale(value: string | undefined | null): value is Locale {
-    return !!value && (locales as readonly string[]).includes(value);
-}
 
 export function pickLocaleFromAcceptLanguage(header: string | null): Locale {
     if (!header) return defaultLocale;
