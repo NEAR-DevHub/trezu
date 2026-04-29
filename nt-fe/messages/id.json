@@ -227,7 +227,9 @@
             "supportedNetworks": "Jaringan yang Didukung",
             "networksWithAssets": "Jaringan dengan Aset",
             "yourAssets": "Aset Anda",
-            "otherAssets": "Aset Lainnya"
+            "otherAssets": "Aset Lainnya",
+            "available": "Tersedia",
+            "forMembersOnly": "Hanya untuk anggota"
         },
         "errors": {
             "addressUnavailable": "Tidak dapat mengambil alamat deposit untuk aset dan jaringan yang dipilih.",
@@ -1527,6 +1529,7 @@
         "otherAvailable": "Tersedia Lainnya",
         "incompatible": "Tidak Kompatibel",
         "comingSoon": "Segera Hadir",
+        "forMembersOnly": "Hanya untuk anggota",
         "nearComName": "near.com",
         "nearComDescription": "Jaringan Internal untuk near.com dan trezu"
     },

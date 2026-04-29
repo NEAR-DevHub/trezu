@@ -18,7 +18,6 @@ import AccountInput from "@/components/account-input";
 import { CreateRequestButton } from "@/components/create-request-button";
 import { InfoAlert } from "@/components/info-alert";
 import { getBlockchainType } from "@/lib/blockchain-utils";
-import { useTreasury } from "@/hooks/use-treasury";
 import { useAddressBook, AddressBookEntry } from "@/features/address-book";
 import { SelectModal } from "@/app/(treasury)/[treasuryId]/dashboard/components/select-modal";
 import { useChains, ChainInfo } from "@/features/address-book/chains";
@@ -26,7 +25,11 @@ import { NetworkList } from "@/components/network-list";
 import { Button } from "@/components/button";
 import { UserWithData } from "@/components/user";
 import { FormField } from "@/components/ui/form";
-import { RecipientNetworkSelect } from "./recipient-network-select";
+import { type SectionRule } from "@/lib/section-rules";
+import {
+    RecipientNetworkSelect,
+    type RecipientNetworkRuleOption,
+} from "./recipient-network-select";
 import { cn } from "@/lib/utils";
 
 interface PaymentFormSectionProps<
@@ -86,6 +89,7 @@ export function PaymentFormSection<
     hideRecipientNetwork = false,
 }: PaymentFormSectionProps<TFieldValues, TTokenPath>) {
     const t = useTranslations("paymentFormSection");
+    const tRecipientNetwork = useTranslations("recipientNetworkSelect");
     const { setValue, setError, clearErrors } = useFormContext<TFieldValues>();
     const [isRecipientValid, setIsRecipientValid] = useState(false);
     const [isValidatingRecipient, setIsValidatingRecipient] = useState(false);
@@ -115,6 +119,10 @@ export function PaymentFormSection<
     const token = watched[0];
     const recipient = (watched[1] ?? "") as string;
     const selectedNetworkName = (watched[2] ?? "") as string;
+    const amountValue = useWatch({
+        control,
+        name: amountName,
+    }) as unknown as string | number | undefined;
     const setRecipientValue = useCallback(
         (value: PathValue<TFieldValues, Path<TFieldValues>>) => {
             setValue(recipientName, value, {
@@ -126,7 +134,44 @@ export function PaymentFormSection<
         [recipientName, setValue],
     );
 
-    const { isConfidential } = useTreasury();
+    const networkSectionRules = useMemo<
+        SectionRule<RecipientNetworkRuleOption>[]
+    >(() => {
+        const contactSet = new Set(selectedContact?.networks ?? []);
+        if (contactSet.size > 0) {
+            return [
+                {
+                    title: tRecipientNetwork("fromAddressBook"),
+                    filter: (option) =>
+                        option.isCompatible &&
+                        contactSet.has(option.networkName),
+                },
+                {
+                    title: tRecipientNetwork("otherAvailable"),
+                    filter: (option) =>
+                        option.isCompatible &&
+                        !contactSet.has(option.networkName),
+                },
+                {
+                    title: tRecipientNetwork("incompatible"),
+                    filter: (option) => !option.isCompatible,
+                    disabled: true,
+                },
+            ];
+        }
+
+        return [
+            {
+                title: tRecipientNetwork("available"),
+                filter: (option) => option.isCompatible,
+            },
+            {
+                title: tRecipientNetwork("incompatible"),
+                filter: (option) => !option.isCompatible,
+                disabled: true,
+            },
+        ];
+    }, [selectedContact, tRecipientNetwork]);
 
     // For bulk (hideRecipientNetwork=true) we still validate against token's
     // chain. When the network selector is shown, the recipient input runs in
@@ -139,6 +184,11 @@ export function PaymentFormSection<
     }, [hideRecipientNetwork, selectedNetworkName]);
 
     const hasSelectedNetwork = !!selectedNetworkName;
+    const hasValidAmount = useMemo(() => {
+        if (amountValue === null || amountValue === undefined) return false;
+        const parsed = Number(amountValue);
+        return Number.isFinite(parsed) && parsed > 0;
+    }, [amountValue]);
 
     // Sync fee coverage error into the amount field.
     useEffect(() => {
@@ -232,6 +282,7 @@ export function PaymentFormSection<
     );
 
     const isSaveDisabled =
+        !hasValidAmount ||
         !recipient ||
         (hideRecipientNetwork && !isRecipientValid) ||
         (!hideRecipientNetwork && !hasSelectedNetwork) ||
@@ -363,7 +414,7 @@ export function PaymentFormSection<
                         <RecipientNetworkSelect
                             value={(field.value as string | undefined) ?? ""}
                             recipient={recipient}
-                            contactNetworks={selectedContact?.networks}
+                            sectionRules={networkSectionRules}
                             onChange={(id) => {
                                 field.onChange(id);
                             }}
@@ -379,7 +430,6 @@ export function PaymentFormSection<
                                     );
                                 }
                             }}
-                            isConfidential={isConfidential}
                             token={token}
                         />
                     )}

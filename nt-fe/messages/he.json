@@ -227,7 +227,9 @@
             "supportedNetworks": "רשתות נתמכות",
             "networksWithAssets": "רשתות עם נכסים",
             "yourAssets": "הנכסים שלך",
-            "otherAssets": "נכסים אחרים"
+            "otherAssets": "נכסים אחרים",
+            "available": "זמין",
+            "forMembersOnly": "לחברים בלבד"
         },
         "errors": {
             "addressUnavailable": "לא ניתן היה לאחזר כתובת הפקדה עבור הנכס והרשת שנבחרו.",
@@ -1527,6 +1529,7 @@
         "otherAvailable": "זמינים אחרים",
         "incompatible": "לא תואם",
         "comingSoon": "בקרוב",
+        "forMembersOnly": "לחברים בלבד",
         "nearComName": "near.com",
         "nearComDescription": "רשת פנימית עבור near.com ו-Trezu"
     },

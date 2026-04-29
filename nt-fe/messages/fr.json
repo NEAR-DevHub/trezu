@@ -227,7 +227,9 @@
             "supportedNetworks": "Réseaux pris en charge",
             "networksWithAssets": "Réseaux avec actifs",
             "yourAssets": "Vos actifs",
-            "otherAssets": "Autres actifs"
+            "otherAssets": "Autres actifs",
+            "available": "Disponible",
+            "forMembersOnly": "Réservé aux membres"
         },
         "errors": {
             "addressUnavailable": "Impossible de récupérer l'adresse de dépôt pour l'actif et le réseau sélectionnés.",
@@ -1527,6 +1529,7 @@
         "otherAvailable": "Autres disponibles",
         "incompatible": "Incompatible",
         "comingSoon": "Bientôt disponible",
+        "forMembersOnly": "Réservé aux membres",
         "nearComName": "near.com",
         "nearComDescription": "Réseau interne pour near.com et trezu"
     },

@@ -227,7 +227,9 @@
             "supportedNetworks": "Unterstützte Netzwerke",
             "networksWithAssets": "Netzwerke mit Vermögenswerten",
             "yourAssets": "Ihre Vermögenswerte",
-            "otherAssets": "Andere Vermögenswerte"
+            "otherAssets": "Andere Vermögenswerte",
+            "available": "Verfügbar",
+            "forMembersOnly": "Nur für Mitglieder"
         },
         "errors": {
             "addressUnavailable": "Einzahlungsadresse für den ausgewählten Vermögenswert und das Netzwerk konnte nicht abgerufen werden.",
@@ -1527,6 +1529,7 @@
         "otherAvailable": "Andere verfügbar",
         "incompatible": "Inkompatibel",
         "comingSoon": "Demnächst verfügbar",
+        "forMembersOnly": "Nur für Mitglieder",
         "nearComName": "near.com",
         "nearComDescription": "Internes Netzwerk für near.com und Trezu"
     },

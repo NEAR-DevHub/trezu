@@ -227,7 +227,9 @@
             "supportedNetworks": "Redes compatibles",
             "networksWithAssets": "Redes con activos",
             "yourAssets": "Tus activos",
-            "otherAssets": "Otros activos"
+            "otherAssets": "Otros activos",
+            "available": "Disponible",
+            "forMembersOnly": "Solo para miembros"
         },
         "errors": {
             "addressUnavailable": "No se pudo obtener la dirección de depósito para el activo y la red seleccionados.",
@@ -1527,6 +1529,7 @@
         "otherAvailable": "Otras disponibles",
         "incompatible": "Incompatible",
         "comingSoon": "Próximamente",
+        "forMembersOnly": "Solo para miembros",
         "nearComName": "near.com",
         "nearComDescription": "Red interna para near.com y trezu"
     },

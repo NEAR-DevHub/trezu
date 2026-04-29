@@ -227,7 +227,9 @@
             "supportedNetworks": "対応ネットワーク",
             "networksWithAssets": "資産のあるネットワーク",
             "yourAssets": "あなたの資産",
-            "otherAssets": "その他の資産"
+            "otherAssets": "その他の資産",
+            "available": "利用可能",
+            "forMembersOnly": "メンバー限定"
         },
         "errors": {
             "addressUnavailable": "選択した資産とネットワークの入金アドレスを取得できませんでした。",
@@ -1527,6 +1529,7 @@
         "otherAvailable": "その他の利用可能",
         "incompatible": "非互換",
         "comingSoon": "近日公開",
+        "forMembersOnly": "メンバー限定",
         "nearComName": "near.com",
         "nearComDescription": "near.comとtrezuの内部ネットワーク"
     },
