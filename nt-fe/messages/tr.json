@@ -232,7 +232,9 @@
             "supportedNetworks": "Desteklenen Ağlar",
             "networksWithAssets": "Varlıkları Olan Ağlar",
             "yourAssets": "Varlıklarınız",
-            "otherAssets": "Diğer Varlıklar"
+            "otherAssets": "Diğer Varlıklar",
+            "available": "Mevcut",
+            "forMembersOnly": "Yalnızca Üyelere Özel"
         },
         "errors": {
             "addressUnavailable": "Seçili varlık ve ağ için para yatırma adresi alınamadı.",
@@ -1552,6 +1554,7 @@
         "otherAvailable": "Diğer Kullanılabilir",
         "incompatible": "Uyumsuz",
         "comingSoon": "Yakında",
+        "forMembersOnly": "Yalnızca Üyelere Özel",
         "nearComName": "near.com",
         "nearComDescription": "near.com ve trezu için Dahili Ağ"
     },

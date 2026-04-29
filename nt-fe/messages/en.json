@@ -232,7 +232,9 @@
             "supportedNetworks": "Supported Networks",
             "networksWithAssets": "Networks with Assets",
             "yourAssets": "Your Assets",
-            "otherAssets": "Other Assets"
+            "otherAssets": "Other Assets",
+            "available": "Available",
+            "forMembersOnly": "For Members Only"
         },
         "errors": {
             "addressUnavailable": "Could not retrieve deposit address for the selected asset and network.",
@@ -1552,6 +1554,7 @@
         "otherAvailable": "Other Available",
         "incompatible": "Incompatible",
         "comingSoon": "Coming Soon",
+        "forMembersOnly": "For Members Only",
         "nearComName": "near.com",
         "nearComDescription": "Internal Network for near.com and trezu"
     },

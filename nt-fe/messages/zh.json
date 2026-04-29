@@ -232,7 +232,9 @@
             "supportedNetworks": "支持的网络",
             "networksWithAssets": "包含资产的网络",
             "yourAssets": "您的资产",
-            "otherAssets": "其他资产"
+            "otherAssets": "其他资产",
+            "available": "可用",
+            "forMembersOnly": "仅限成员"
         },
         "errors": {
             "addressUnavailable": "无法获取所选资产和网络的存款地址。",
@@ -1552,6 +1554,7 @@
         "otherAvailable": "其他可用",
         "incompatible": "不兼容",
         "comingSoon": "即将推出",
+        "forMembersOnly": "仅限成员",
         "nearComName": "near.com",
         "nearComDescription": "near.com 与 trezu 的内部网络"
     },

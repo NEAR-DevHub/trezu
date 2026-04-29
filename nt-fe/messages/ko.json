@@ -232,7 +232,9 @@
             "supportedNetworks": "지원 네트워크",
             "networksWithAssets": "자산이 있는 네트워크",
             "yourAssets": "내 자산",
-            "otherAssets": "기타 자산"
+            "otherAssets": "기타 자산",
+            "available": "사용 가능",
+            "forMembersOnly": "회원 전용"
         },
         "errors": {
             "addressUnavailable": "선택한 자산과 네트워크에 대한 입금 주소를 가져올 수 없습니다.",
@@ -1552,6 +1554,7 @@
         "otherAvailable": "기타 사용 가능",
         "incompatible": "호환되지 않음",
         "comingSoon": "곧 제공",
+        "forMembersOnly": "회원 전용",
         "nearComName": "near.com",
         "nearComDescription": "near.com 및 trezu용 내부 네트워크"
     },

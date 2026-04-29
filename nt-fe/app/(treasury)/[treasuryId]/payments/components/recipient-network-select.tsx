@@ -13,6 +13,7 @@ import { useBridgeTokens } from "@/hooks/use-bridge-tokens";
 import { isValidAddress } from "@/lib/address-validation";
 import { getBlockchainType } from "@/lib/blockchain-utils";
 import { isValidNearAddressFormat } from "@/lib/near-validation";
+import { buildSectionedOptions, type SectionRule } from "@/lib/section-rules";
 import { cn } from "@/lib/utils";
 import { useThemeStore } from "@/stores/theme-store";
 
@@ -30,7 +31,6 @@ export interface RecipientNetworkOption {
 interface RecipientNetworkSelectProps {
     value: string;
     onChange: (networkId: string) => void;
-    isConfidential: boolean;
     token: Token | null;
     /**
      * Recipient address entered by the user. Drives compatibility split in
@@ -38,26 +38,17 @@ interface RecipientNetworkSelectProps {
      * in a separate "Incompatible" section and disabled.
      */
     recipient: string;
-    /**
-     * Chain keys attached to the selected address-book contact. When present
-     * and non-empty, compatible options are split into "Available" (keys
-     * matching the contact) and "Other Available" (remaining compatible).
-     */
-    contactNetworks?: string[];
+    sectionRules: SectionRule<RecipientNetworkRuleOption>[];
     /**
      * Fires when the user picks a network. Carries the raw network name so
      * callers can derive blockchain type (for downstream address validation).
      */
     onNetworkChange?: (option: RecipientNetworkOption) => void;
-    /**
-     * Returns the list of coming-soon networks. Receives the available
-     * networks so the consumer can filter its own pool against them.
-     * Reserved for future bulk-payment use.
-     */
-    comingSoonFilter?: (
-        available: RecipientNetworkOption[],
-    ) => RecipientNetworkOption[];
 }
+
+export type RecipientNetworkRuleOption = RecipientNetworkOption & {
+    isCompatible: boolean;
+};
 
 function isAddressCompatibleWithNetwork(
     address: string,
@@ -118,9 +109,8 @@ export function RecipientNetworkSelect({
     onChange,
     token,
     recipient,
-    contactNetworks,
+    sectionRules,
     onNetworkChange,
-    comingSoonFilter,
 }: RecipientNetworkSelectProps) {
     const t = useTranslations("recipientNetworkSelect");
     const { theme } = useThemeStore();
@@ -169,116 +159,45 @@ export function RecipientNetworkSelect({
         [nearComOption, tokenNetworkOptions],
     );
 
-    const comingSoonOptions = useMemo(
-        () => comingSoonFilter?.(availableOptions) ?? [],
-        [availableOptions, comingSoonFilter],
-    );
-
     const selectedOption = useMemo(() => {
         if (!value) return null;
         if (value === NEAR_COM_NETWORK_ID) return nearComOption;
         return availableOptions.find((o) => o.id === value) ?? null;
     }, [availableOptions, nearComOption, value]);
 
-    const { compatibleOptions, incompatibleOptions } = useMemo(() => {
-        const compatible: RecipientNetworkOption[] = [];
-        const incompatible: RecipientNetworkOption[] = [];
-        for (const o of availableOptions) {
-            if (isAddressCompatibleWithNetwork(recipient, o.networkName)) {
-                compatible.push(o);
-            } else {
-                incompatible.push(o);
-            }
-        }
-        return {
-            compatibleOptions: compatible,
-            incompatibleOptions: incompatible,
-        };
+    const enrichedOptions = useMemo(() => {
+        return availableOptions.map((option) => ({
+            ...option,
+            isCompatible: isAddressCompatibleWithNetwork(
+                recipient,
+                option.networkName,
+            ),
+        }));
     }, [availableOptions, recipient]);
 
+    const compatibleOptions = useMemo(
+        () => enrichedOptions.filter((option) => option.isCompatible),
+        [enrichedOptions],
+    );
+
     const sections = useMemo(() => {
-        const out: {
-            title: string;
-            options: {
-                id: string;
-                name: string;
-                icon: string;
-                disabled?: boolean;
-                _option: RecipientNetworkOption;
-                _disabled?: boolean;
-            }[];
-        }[] = [];
-
-        const compatible = compatibleOptions;
-        const incompatible = incompatibleOptions;
-
-        const hasContactSplit = !!contactNetworks && contactNetworks.length > 0;
-        const contactSet = new Set(contactNetworks ?? []);
-        const inContact = (o: RecipientNetworkOption) =>
-            contactSet.has(o.networkName);
-
-        const mapOption = (o: RecipientNetworkOption) => ({
-            id: o.id,
-            name: o.name,
-            icon: "",
-            _option: o,
-        });
-
-        if (hasContactSplit) {
-            const primary = compatible.filter(inContact);
-            const other = compatible.filter((o) => !inContact(o));
-            if (primary.length > 0) {
-                out.push({
-                    title: t("fromAddressBook"),
-                    options: primary.map(mapOption),
-                });
-            }
-            if (other.length > 0) {
-                out.push({
-                    title: t("otherAvailable"),
-                    options: other.map(mapOption),
-                });
-            }
-        } else if (compatible.length > 0) {
-            out.push({
-                title: t("available"),
-                options: compatible.map(mapOption),
-            });
-        }
-        if (incompatible.length > 0) {
-            out.push({
-                title: t("incompatible"),
-                options: incompatible.map((o) => ({
-                    id: o.id,
-                    name: o.name,
-                    icon: "",
-                    disabled: true,
-                    _option: o,
-                    _disabled: true,
-                })),
-            });
-        }
-        if (comingSoonOptions.length > 0) {
-            out.push({
-                title: t("comingSoon"),
-                options: comingSoonOptions.map((o) => ({
-                    id: o.id,
-                    name: o.name,
-                    icon: "",
-                    disabled: true,
-                    _option: o,
-                    _disabled: true,
-                })),
-            });
-        }
-        return out;
-    }, [
-        compatibleOptions,
-        incompatibleOptions,
-        comingSoonOptions,
-        contactNetworks,
-        t,
-    ]);
+        return buildSectionedOptions(enrichedOptions, sectionRules).map(
+            (section) => ({
+                title: section.title,
+                options: section.options.map((option) => {
+                    const { isCompatible: _ignored, ...rawOption } = option;
+                    return {
+                        id: option.id,
+                        name: option.name,
+                        icon: "",
+                        disabled: option.disabled,
+                        _option: rawOption,
+                        _disabled: option.disabled,
+                    };
+                }),
+            }),
+        );
+    }, [enrichedOptions, sectionRules]);
 
     const hasCompatibleNetwork = compatibleOptions.length > 0;
     const isDisabled = !recipient || !hasCompatibleNetwork;

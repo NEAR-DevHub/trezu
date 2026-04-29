@@ -232,7 +232,9 @@
             "supportedNetworks": "Підтримувані мережі",
             "networksWithAssets": "Мережі з активами",
             "yourAssets": "Ваші активи",
-            "otherAssets": "Інші активи"
+            "otherAssets": "Інші активи",
+            "available": "Доступно",
+            "forMembersOnly": "Лише для учасників"
         },
         "errors": {
             "addressUnavailable": "Не вдалось отримати адресу депозиту для обраного активу та мережі.",
@@ -1552,6 +1554,7 @@
         "otherAvailable": "Інші доступні",
         "incompatible": "Несумісні",
         "comingSoon": "Скоро",
+        "forMembersOnly": "Лише для учасників",
         "nearComName": "near.com",
         "nearComDescription": "Внутрішня мережа для near.com і trezu"
     },
