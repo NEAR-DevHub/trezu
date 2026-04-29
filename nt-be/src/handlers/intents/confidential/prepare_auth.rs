@@ -70,14 +70,28 @@ pub(crate) fn build_nonce(salt: &[u8; 4], deadline: &chrono::DateTime<chrono::Ut
     nonce
 }
 
-/// Build the auth proposal JSON and NEP-413 auth payload for a DAO.
+/// Build the auth proposal JSON and NEP-413 auth payload.
+///
+/// `signer_id` is the account 1Click will issue the JWT for (recorded in the
+/// NEP-413 message). `signing_path` is the v1.signer derivation path used to
+/// produce the signature — together with the proposal's predecessor
+/// (`predecessor_account_id`, i.e. the DAO submitting the proposal) it
+/// determines which MPC key signs.
+///
+/// For DAO self-auth: `signer_id == signing_path == dao_id`.
+/// For bulk-payment-subaccount auth: `signer_id == sub`, `signing_path == dao_id`
+/// — the DAO's MPC key signs but the JWT is issued for the subaccount,
+/// which works because the DAO's pubkey is registered under the sub on
+/// intents.near (via the contract's `bootstrap()` call).
 ///
 /// Returns `(proposal, auth_payload_json)` — the proposal is ready to pass to
 /// `add_proposal`, and the auth payload is used later when authenticating with
 /// the 1Click API.
-pub(crate) async fn build_auth_proposal(
+pub(crate) async fn build_auth_proposal_with_signer(
     state: &Arc<AppState>,
-    dao_id: &str,
+    signer_id: &str,
+    signing_path: &str,
+    description: &str,
 ) -> Result<(serde_json::Value, serde_json::Value), (StatusCode, String)> {
     let expires_days = state.env_vars.confidential_auth_expires_days;
     let deadline = chrono::Utc::now() + chrono::Duration::days(expires_days);
@@ -88,7 +102,7 @@ pub(crate) async fn build_auth_proposal(
     let auth_message = json!({
         "deadline": deadline_str,
         "intents": [],
-        "signer_id": dao_id,
+        "signer_id": signer_id,
         "external_app_data": {
             "configs": [{
                 "type": "auth",
@@ -123,7 +137,7 @@ pub(crate) async fn build_auth_proposal(
 
     let sign_args = json!({
         "request": {
-            "path": dao_id,
+            "path": signing_path,
             "payload_v2": { "Eddsa": hash_hex },
             "domain_id": 1,
         }
@@ -132,7 +146,7 @@ pub(crate) async fn build_auth_proposal(
 
     let proposal = json!({
         "proposal": {
-            "description": "Authenticate DAO for confidential intents",
+            "description": description,
             "kind": {
                 "FunctionCall": {
                         "receiver_id": V1_SIGNER_CONTRACT_ID,
@@ -154,4 +168,33 @@ pub(crate) async fn build_auth_proposal(
     });
 
     Ok((proposal, auth_payload))
+}
+
+/// Thin wrapper: build a DAO-self-auth proposal (signer = path = dao_id).
+pub(crate) async fn build_auth_proposal(
+    state: &Arc<AppState>,
+    dao_id: &str,
+) -> Result<(serde_json::Value, serde_json::Value), (StatusCode, String)> {
+    build_auth_proposal_with_signer(
+        state,
+        dao_id,
+        dao_id,
+        "Authenticate DAO for confidential intents",
+    )
+    .await
+}
+
+/// Thin wrapper: build an auth proposal for the DAO's bulk-payment subaccount.
+/// DAO signs (path = dao_id) but the JWT is issued for the sub.
+pub(crate) async fn build_bulk_payment_auth_proposal(
+    state: &Arc<AppState>,
+    bulk_sub_id: &str,
+) -> Result<(serde_json::Value, serde_json::Value), (StatusCode, String)> {
+    build_auth_proposal_with_signer(
+        state,
+        bulk_sub_id,
+        "",
+        "Authenticate bulk-payment subaccount for confidential intents",
+    )
+    .await
 }
