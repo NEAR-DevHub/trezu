@@ -2,20 +2,7 @@
 
 use near_sdk::json_types::Base64VecU8;
 use near_sdk::serde::Serialize;
-use near_sdk::{ext_contract, near, AccountId};
-
-/// Subset of v1.signer's `SignatureResponse`. Only the Ed25519 variant is
-/// relevant — confidential bulk payments always use EdDSA signing.
-#[near(serializers = [json])]
-#[derive(Debug)]
-#[serde(tag = "scheme")]
-pub enum MpcSignResponse {
-    Ed25519 {
-        signature: Base64VecU8,
-    },
-    #[serde(other)]
-    Other,
-}
+use near_sdk::{ext_contract, AccountId};
 
 #[derive(Serialize, Debug)]
 #[serde(crate = "near_sdk::serde")]
@@ -34,5 +21,5 @@ pub enum PayloadV2 {
 #[ext_contract(ext_v1_signer)]
 pub trait V1Signer {
     fn derived_public_key(&self, path: String, predecessor: AccountId, domain_id: u32) -> String;
-    fn sign(&self, request: SignRequest) -> MpcSignResponse;
+    fn sign(&self, request: SignRequest) -> Base64VecU8;
 }

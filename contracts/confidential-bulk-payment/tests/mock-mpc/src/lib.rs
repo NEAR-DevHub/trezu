@@ -21,12 +21,6 @@ pub struct SignRequest {
     pub domain_id: u32,
 }
 
-#[near(serializers = [json])]
-#[serde(tag = "scheme")]
-pub enum MpcSignResponse {
-    Ed25519 { signature: Base64VecU8 },
-}
-
 #[near(contract_state)]
 #[derive(PanicOnDefault)]
 pub struct MockMpc {}
@@ -49,7 +43,7 @@ impl MockMpc {
     }
 
     #[payable]
-    pub fn sign(&mut self, request: SignRequest) -> MpcSignResponse {
+    pub fn sign(&mut self, request: SignRequest) -> Base64VecU8 {
         require!(
             env::attached_deposit() == NearToken::from_yoctonear(1),
             "mock v1.signer.sign: must attach exactly 1 yoctoNEAR"
@@ -61,9 +55,7 @@ impl MockMpc {
         for (i, b) in payload.bytes().take(64).enumerate() {
             sig[i] = b;
         }
-        MpcSignResponse::Ed25519 {
-            signature: Base64VecU8(sig.to_vec()),
-        }
+        Base64VecU8(sig.to_vec())
     }
 
     #[payable]
