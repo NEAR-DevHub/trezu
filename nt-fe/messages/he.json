@@ -516,7 +516,7 @@
             "sent": "נשלח",
             "received": "התקבל",
             "priceDifference": "הפרש מחיר",
-            "priceDifferenceTooltip": "הפרש בין שער הציטוט לשער השוק הנוכחי. ערכים חיוביים מציינים שער טוב יותר מהשוק.",
+            "priceDifferenceTooltip": "מציג כיצד ערך ה-USD שאתה מקבל משתווה לערך ה-USD שאתה שולח.",
             "slippageTolerance": "סבילות החלקה",
             "estimatedTime": "זמן משוער",
             "seconds": "{count} שניות",
@@ -1004,7 +1004,7 @@
         "poweredBy": "מופעל על ידי",
         "info": {
             "priceDifference": "הפרש מחיר",
-            "priceDifferenceTooltip": "הפרש בין שער הציטוט לשער השוק הנוכחי. ערכים חיוביים מציינים שער טוב יותר מהשוק.",
+            "priceDifferenceTooltip": "מציג כיצד ערך ה-USD שאתה מקבל משתווה לערך ה-USD שאתה שולח.",
             "estimatedTime": "זמן משוער",
             "estimatedTimeValue": "{seconds} שניות",
             "estimatedTimeTooltip": "זמן משוער להשלמת ההחלפה.",

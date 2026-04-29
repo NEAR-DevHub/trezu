@@ -516,7 +516,7 @@
             "sent": "Envoyé",
             "received": "Reçu",
             "priceDifference": "Différence de prix",
-            "priceDifferenceTooltip": "Différence entre le taux du devis et le taux actuel du marché. Les valeurs positives indiquent un meilleur taux que le marché.",
+            "priceDifferenceTooltip": "Montre comment la valeur en USD que vous recevez se compare à la valeur en USD que vous envoyez.",
             "slippageTolerance": "Tolérance au glissement",
             "estimatedTime": "Temps estimé",
             "seconds": "{count} secondes",
@@ -1004,7 +1004,7 @@
         "poweredBy": "Propulsé par",
         "info": {
             "priceDifference": "Différence de prix",
-            "priceDifferenceTooltip": "Différence entre le taux du devis et le taux actuel du marché. Les valeurs positives indiquent un meilleur taux que le marché.",
+            "priceDifferenceTooltip": "Montre comment la valeur en USD que vous recevez se compare à la valeur en USD que vous envoyez.",
             "estimatedTime": "Temps estimé",
             "estimatedTimeValue": "{seconds} secondes",
             "estimatedTimeTooltip": "Temps approximatif pour terminer l'échange.",

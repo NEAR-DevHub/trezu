@@ -429,9 +429,9 @@ export function formatSmartAmount(value: number | string | Big): string {
 
     let formatted: string;
 
-    // For numbers >= 1, show up to 4 decimals
+    // For numbers >= 1, show up to 4 decimals (min 2)
     if (absNum >= 1) {
-        formatted = absBig.toFixed(4).replace(/\.?0+$/, "");
+        formatted = absBig.toFixed(4).replace(/(\.\d{2,}?)0+$/, "$1");
     } else {
         // For small numbers, find first significant digit and show up to 8 significant figures
         const str = absNum.toExponential();
@@ -440,7 +440,9 @@ export function formatSmartAmount(value: number | string | Big): string {
 
         // Show enough decimals to display ~6-8 significant figures
         const decimalPlaces = Math.min(exp + 6, 30);
-        formatted = absBig.toFixed(decimalPlaces).replace(/\.?0+$/, "");
+        formatted = absBig
+            .toFixed(decimalPlaces)
+            .replace(/(\.\d{2,}?)0+$/, "$1");
     }
 
     // Add thousands separator using locale formatting

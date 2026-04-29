@@ -87,6 +87,7 @@ interface TokenInputProps<
     dynamicFontSize?: boolean;
     onAmountInput?: () => void;
     onMaxSet?: (maxAmount: string) => void;
+    usdValueOverride?: number | null;
 }
 
 export function TokenInput<
@@ -106,6 +107,7 @@ export function TokenInput<
     dynamicFontSize = false,
     onAmountInput,
     onMaxSet,
+    usdValueOverride,
 }: TokenInputProps<TFieldValues, TTokenPath>) {
     const t = useTranslations("tokenInput");
     const { treasuryId } = useTreasury();
@@ -148,11 +150,14 @@ export function TokenInput<
     }, [showInsufficientBalance, tokenBalance, amount, tokenDecimals]);
 
     const estimatedUSDValue = useMemo(() => {
+        if (usdValueOverride !== undefined && usdValueOverride !== null) {
+            return usdValueOverride;
+        }
         if (!tokenPrice || !amount || isNaN(amount) || amount <= 0) {
             return null;
         }
         return amount * tokenPrice;
-    }, [amount, tokenPrice]);
+    }, [amount, tokenPrice, usdValueOverride]);
 
     return (
         <FormField

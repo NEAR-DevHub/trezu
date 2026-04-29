@@ -516,7 +516,7 @@
             "sent": "已发送",
             "received": "已接收",
             "priceDifference": "价差",
-            "priceDifferenceTooltip": "报价汇率与当前市场汇率之间的差额。正值表示汇率优于市场价。",
+            "priceDifferenceTooltip": "显示你收到的 USD 价值与发送的 USD 价值如何比较。",
             "slippageTolerance": "滑点容忍度",
             "estimatedTime": "预计时间",
             "seconds": "{count} 秒",
@@ -1004,7 +1004,7 @@
         "poweredBy": "技术支持:",
         "info": {
             "priceDifference": "价差",
-            "priceDifferenceTooltip": "报价汇率与当前市场汇率之间的差额。正值表示汇率优于市场价。",
+            "priceDifferenceTooltip": "显示你收到的 USD 价值与发送的 USD 价值如何比较。",
             "estimatedTime": "预计时间",
             "estimatedTimeValue": "{seconds} 秒",
             "estimatedTimeTooltip": "完成兑换的大致时间。",

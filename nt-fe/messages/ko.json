@@ -516,7 +516,7 @@
             "sent": "송금됨",
             "received": "수신됨",
             "priceDifference": "가격 차이",
-            "priceDifferenceTooltip": "견적 환율과 현재 시장 환율 간의 차이입니다. 양수 값은 시장보다 더 나은 환율을 나타냅니다.",
+            "priceDifferenceTooltip": "받는 USD 가치가 보내는 USD 가치와 어떻게 비교되는지 보여줍니다.",
             "slippageTolerance": "슬리피지 허용치",
             "estimatedTime": "예상 시간",
             "seconds": "{count}초",
@@ -1004,7 +1004,7 @@
         "poweredBy": "제공",
         "info": {
             "priceDifference": "가격 차이",
-            "priceDifferenceTooltip": "견적 환율과 현재 시장 환율 간의 차이입니다. 양수 값은 시장보다 더 나은 환율을 나타냅니다.",
+            "priceDifferenceTooltip": "받는 USD 가치가 보내는 USD 가치와 어떻게 비교되는지 보여줍니다.",
             "estimatedTime": "예상 시간",
             "estimatedTimeValue": "{seconds}초",
             "estimatedTimeTooltip": "교환 완료에 걸리는 대략적인 시간입니다.",

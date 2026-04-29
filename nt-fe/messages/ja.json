@@ -516,7 +516,7 @@
             "sent": "送信済み",
             "received": "受信済み",
             "priceDifference": "価格差",
-            "priceDifferenceTooltip": "見積りレートと現在の市場レートの差です。プラスの値は市場よりも有利なレートを示します。",
+            "priceDifferenceTooltip": "受け取るUSD価値が、送るUSD価値と比べてどうかを示します。",
             "slippageTolerance": "スリッページ許容範囲",
             "estimatedTime": "予想時間",
             "seconds": "{count}秒",
@@ -1004,7 +1004,7 @@
         "poweredBy": "提供:",
         "info": {
             "priceDifference": "価格差",
-            "priceDifferenceTooltip": "見積りレートと現在の市場レートの差です。プラスの値は市場よりも有利なレートを示します。",
+            "priceDifferenceTooltip": "受け取るUSD価値が、送るUSD価値と比べてどうかを示します。",
             "estimatedTime": "予想時間",
             "estimatedTimeValue": "{seconds}秒",
             "estimatedTimeTooltip": "交換完了までのおおよその時間です。",
