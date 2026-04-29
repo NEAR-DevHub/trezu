@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
-import { getLocaleDirection, isLocale } from "@/i18n/config";
+import { getLocaleDirection } from "@/i18n/config";
 import "../globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -20,7 +20,7 @@ export default async function BlockedLayout({
 }>) {
     const locale = await getLocale();
     const messages = await getMessages();
-    const dir = isLocale(locale) ? getLocaleDirection(locale) : "ltr";
+    const dir = getLocaleDirection(locale);
 
     return (
         <html lang={locale} dir={dir}>

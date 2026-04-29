@@ -11,7 +11,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LOCALE_COOKIE, type Locale, locales } from "@/i18n/config";
+import { enabledLocales, LOCALE_COOKIE, type Locale } from "@/i18n/config";
 import { cn } from "@/lib/utils";
 
 const labelKeyByLocale: Record<Locale, string> = {
@@ -93,7 +93,7 @@ export function LanguageSwitcher({
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align={align} className="min-w-[160px]">
-                {locales.map((code) => (
+                {enabledLocales.map((code) => (
                     <DropdownMenuItem
                         key={code}
                         onSelect={() => handleSelect(code)}

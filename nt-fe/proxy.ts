@@ -6,7 +6,7 @@ import {
 } from "@/constants/sanctioned-countries";
 import {
     LOCALE_COOKIE,
-    isLocale,
+    isEnabledLocale,
     pickLocaleFromAcceptLanguage,
 } from "@/i18n/config";
 
@@ -87,7 +87,7 @@ export function proxy(request: NextRequest) {
 
     const response = NextResponse.next();
     const existingLocale = request.cookies.get(LOCALE_COOKIE)?.value;
-    if (!isLocale(existingLocale)) {
+    if (!isEnabledLocale(existingLocale)) {
         const detected = pickLocaleFromAcceptLanguage(
             request.headers.get("accept-language"),
         );
