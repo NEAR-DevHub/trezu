@@ -72,7 +72,6 @@
     },
     "signIn": {
         "connect": "Verbinden",
-        "connectWallet": "Wallet verbinden",
         "wallet": "Wallet",
         "termsOfService": "Nutzungsbedingungen",
         "privacyPolicy": "Datenschutzerklärung",
@@ -269,18 +268,6 @@
         "frozen": "Eingefroren",
         "frozenTooltip": "Eingefrorene Token sind gesperrt und können nicht verwendet werden. Sie könnten gesperrt sein, weil sie für Speicher verwendet werden, gestaked sind oder noch nicht gevestet wurden.",
         "vested": "Gevestet"
-    },
-    "dashboard": {
-        "overview": "Übersicht über Ihre Treasury-Vermögenswerte und -Aktivitäten",
-        "assets": "Vermögenswerte",
-        "balance": "Guthaben",
-        "totalBalance": "Gesamtguthaben",
-        "deposit": "Einzahlen",
-        "addAssets": "Vermögenswerte hinzufügen",
-        "hidden": "Ausgeblendet",
-        "confidentialHidden": "Guthaben für vertrauliche Treasuries ausgeblendet",
-        "recentActivity": "Letzte Aktivität",
-        "viewAllTransactions": "Alle Transaktionen anzeigen"
     },
     "activity": {
         "filters": {
@@ -512,11 +499,6 @@
             "expired": "Abgelaufen, da nicht genügend Stimmen zur Ausführung erhalten wurden.",
             "failed": "Die Anfrage konnte nicht abgeschlossen werden. Transaktionsdetails finden Sie <link>hier</link>.",
             "failedPlain": "Die Anfrage konnte nicht abgeschlossen werden. Transaktionsdetails finden Sie hier."
-        },
-        "votes": {
-            "approved": "Genehmigt",
-            "rejected": "Abgelehnt",
-            "pending": "Ausstehend"
         },
         "voteModal": {
             "confirmTitle": "Bestätigen Sie Ihre Abstimmung",
@@ -1080,9 +1062,6 @@
             "allowEarn": "Erträge erlauben",
             "na": "k. A."
         }
-    },
-    "earn": {
-        "placeholder": "Erkunden Sie Ertragsmöglichkeiten und Staking-Belohnungen."
     },
     "createTreasury": {
         "validation": {
@@ -2098,6 +2077,12 @@
             "heading": "🎉 Glückwunsch!",
             "body": "Sie haben Ihre Treasury-Einrichtung abgeschlossen. Genießen Sie die einfache Verwaltung Ihrer Vermögenswerte.",
             "letsGo": "Los geht's!"
+        },
+        "notifications": {
+            "title": "Neu – Benachrichtigungen",
+            "body": "Bleiben Sie informiert über neue Anfragen, ausstehende Abstimmungen und eingehende Treasury-Assets – verbinden Sie einfach den Telegram-Bot.",
+            "tryIt": "Ausprobieren",
+            "dismissAria": "Schließen"
         },
         "createBanner": {
             "close": "Schließen",

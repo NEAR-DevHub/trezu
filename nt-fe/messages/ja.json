@@ -72,7 +72,6 @@
     },
     "signIn": {
         "connect": "接続",
-        "connectWallet": "ウォレットを接続",
         "wallet": "ウォレット",
         "termsOfService": "利用規約",
         "privacyPolicy": "プライバシーポリシー",
@@ -269,18 +268,6 @@
         "frozen": "凍結",
         "frozenTooltip": "凍結されたトークンはロックされており使用できません。ストレージ用、ステーキング中、またはまだベスト前である可能性があります。",
         "vested": "ベスト済み"
-    },
-    "dashboard": {
-        "overview": "トレジャリー資産とアクティビティの概要",
-        "assets": "資産",
-        "balance": "残高",
-        "totalBalance": "総残高",
-        "deposit": "入金",
-        "addAssets": "資産を追加",
-        "hidden": "非表示",
-        "confidentialHidden": "機密トレジャリーの残高は非表示です",
-        "recentActivity": "最近のアクティビティ",
-        "viewAllTransactions": "すべてのトランザクションを表示"
     },
     "activity": {
         "filters": {
@@ -512,11 +499,6 @@
             "expired": "実行に必要な投票数を獲得できなかったため期限切れとなりました。",
             "failed": "リクエストの完了に失敗しました。トランザクションの詳細は<link>こちら</link>で確認してください。",
             "failedPlain": "リクエストの完了に失敗しました。トランザクションの詳細はこちらで確認してください。"
-        },
-        "votes": {
-            "approved": "承認済み",
-            "rejected": "却下済み",
-            "pending": "保留中"
         },
         "voteModal": {
             "confirmTitle": "投票を確認",
@@ -1080,9 +1062,6 @@
             "allowEarn": "収益を許可",
             "na": "該当なし"
         }
-    },
-    "earn": {
-        "placeholder": "収益機会とステーキング報酬を確認できます。"
     },
     "createTreasury": {
         "validation": {
@@ -2098,6 +2077,12 @@
             "heading": "🎉 おめでとうございます!",
             "body": "トレジャリーのセットアップが完了しました。資産の簡単な管理をお楽しみください。",
             "letsGo": "始めましょう!"
+        },
+        "notifications": {
+            "title": "新機能 — 通知",
+            "body": "新しいリクエスト、保留中の投票、トレジャリーへの入金について最新の情報を入手 — Telegram ボットを接続するだけです。",
+            "tryIt": "試す",
+            "dismissAria": "閉じる"
         },
         "createBanner": {
             "close": "閉じる",

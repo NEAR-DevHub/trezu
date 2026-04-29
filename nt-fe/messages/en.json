@@ -72,7 +72,6 @@
     },
     "signIn": {
         "connect": "Connect",
-        "connectWallet": "Connect Wallet",
         "wallet": "Wallet",
         "termsOfService": "Terms of Service",
         "privacyPolicy": "Privacy Policy",
@@ -269,18 +268,6 @@
         "frozen": "Frozen",
         "frozenTooltip": "Frozen tokens are locked and cannot be used. They might be locked due to being used for storage, staked, or not yet vested.",
         "vested": "Vested"
-    },
-    "dashboard": {
-        "overview": "Overview of your treasury assets and activity",
-        "assets": "Assets",
-        "balance": "Balance",
-        "totalBalance": "Total Balance",
-        "deposit": "Deposit",
-        "addAssets": "Add assets",
-        "hidden": "Hidden",
-        "confidentialHidden": "Balances hidden for confidential treasuries",
-        "recentActivity": "Recent Activity",
-        "viewAllTransactions": "View all transactions"
     },
     "activity": {
         "filters": {
@@ -512,11 +499,6 @@
             "expired": "Expired as it did not receive enough votes to execute.",
             "failed": "The request failed to complete. Check the transaction details <link>here</link>.",
             "failedPlain": "The request failed to complete. Check the transaction details here."
-        },
-        "votes": {
-            "approved": "Approved",
-            "rejected": "Rejected",
-            "pending": "Pending"
         },
         "voteModal": {
             "confirmTitle": "Confirm Your Vote",
@@ -1080,9 +1062,6 @@
             "allowEarn": "Allow Earn",
             "na": "N/A"
         }
-    },
-    "earn": {
-        "placeholder": "Explore earning opportunities and staking rewards."
     },
     "createTreasury": {
         "validation": {
