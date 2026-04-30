@@ -28,7 +28,9 @@ import { useNear } from "@/stores/near-store";
 import {
     NEAR_COM_NETWORK_ID,
     RecipientNetworkSelect,
+    type RecipientNetworkRuleOption,
 } from "../components/recipient-network-select";
+import type { SectionRule } from "@/lib/section-rules";
 import { buildConfidentialBulkProposal } from "@/features/confidential/utils/bulk-proposal-builder";
 import { BulkPaymentToast } from "../components/bulk-payment-toast";
 import {
@@ -49,6 +51,7 @@ export default function BulkPaymentPage() {
     const tBulk = useTranslations("bulkPayment");
     const tReq = useTranslations("requests.actions");
     const tPaymentValidation = useTranslations("paymentForm.validation");
+    const tRecipientNetwork = useTranslations("recipientNetworkSelect");
     const bulkPaymentFormSchema = useMemo(
         () =>
             buildBulkPaymentFormSchema({
@@ -110,6 +113,23 @@ export default function BulkPaymentPage() {
         // Format: `address,amount[,memo]`. First column is the address.
         return firstLine.split(",")[0]?.trim() ?? "";
     }, [activeTab, csvDataWatch, pasteDataWatch]);
+
+    const networkSectionRules = useMemo<
+        SectionRule<RecipientNetworkRuleOption>[]
+    >(
+        () => [
+            {
+                title: tRecipientNetwork("available"),
+                filter: (option) => option.isCompatible,
+            },
+            {
+                title: tRecipientNetwork("incompatible"),
+                filter: (option) => !option.isCompatible,
+                disabled: true,
+            },
+        ],
+        [tRecipientNetwork],
+    );
 
     const [paymentData, setPaymentData] = useState<BulkPaymentData[]>([]);
     const [networkFeePerRecipient, setNetworkFeePerRecipient] = useState<
@@ -587,7 +607,7 @@ export default function BulkPaymentPage() {
                                             >[0]["token"]
                                         }
                                         recipient={firstRecipient}
-                                        isConfidential
+                                        sectionRules={networkSectionRules}
                                         onNetworkChange={(opt) => {
                                             setDestinationAssetId(
                                                 opt.id === NEAR_COM_NETWORK_ID
