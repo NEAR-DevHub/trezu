@@ -9,8 +9,9 @@ import { Button } from "@/components/button";
 import { useTreasury } from "@/hooks/use-treasury";
 import { cn } from "@/lib/utils";
 import { useSidebarStore } from "@/stores/sidebar-store";
+import { suppressFeatureAnnouncements } from "@/features/onboarding/feature-announcement-queue";
 import { TOUR_NAMES, SELECTOR_IDS } from "../steps/dashboard";
-import { NEW_FEATURE_ANNOUNCEMENT } from "../steps/page-tours";
+import { EARN_ANNOUNCEMENT } from "../steps/page-tours";
 
 // Steps that require the sidebar to be open (0-indexed) for different tours
 const SIDEBAR_STEPS_MAP: Record<string, readonly number[]> = {
@@ -24,10 +25,10 @@ const TREASURY_SELECTOR_MAP: Record<string, readonly number[]> = {
 };
 
 const TOUR_ACTIONS = {
-    [NEW_FEATURE_ANNOUNCEMENT.tourName]: {
+    [EARN_ANNOUNCEMENT.tourName]: {
         getHref: (treasuryId?: string | null) =>
-            NEW_FEATURE_ANNOUNCEMENT.href(treasuryId),
-        ctaKey: NEW_FEATURE_ANNOUNCEMENT.ctaLabelKey,
+            EARN_ANNOUNCEMENT.href(treasuryId),
+        ctaKey: EARN_ANNOUNCEMENT.ctaLabelKey,
     },
 } as const;
 
@@ -92,6 +93,7 @@ export function TourCard({
 
     const handlePrimaryAction = () => {
         if (isLastStep && tourAction) {
+            suppressFeatureAnnouncements(2000);
             handleSkip();
             router.push(tourAction.getHref(treasuryId));
             return;

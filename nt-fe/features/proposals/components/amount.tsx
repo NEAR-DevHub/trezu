@@ -5,9 +5,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { TokenDisplay } from "@/components/token-display-with-network";
 import { useToken } from "@/hooks/use-treasury-queries";
 import {
-    cn,
     formatBalance,
     formatCurrency,
+    formatTokenDisplayAmount,
     getNearTokenTypeLabel,
 } from "@/lib/utils";
 import { useMemo } from "react";
@@ -36,18 +36,20 @@ export function Amount({
     const tCommon = useTranslations("common");
     const tAmount = useTranslations("amount");
     const { data: tokenData, isLoading } = useToken(tokenId);
-    const amountValue = amount
+    const rawAmountValue = amount
         ? formatBalance(amount, tokenData?.decimals || 24)
-        : Number(amountWithDecimals).toFixed(6);
+        : amountWithDecimals || "0";
+    const amountValue = formatTokenDisplayAmount(rawAmountValue);
     const estimatedUSDValue = useMemo(() => {
         const isPriceAvailable = tokenData?.price;
-        if (!isPriceAvailable || !amountValue || isNaN(Number(amountValue))) {
+        const parsedAmount = Number(rawAmountValue);
+        if (!isPriceAvailable || !rawAmountValue || isNaN(parsedAmount)) {
             return tCommon("notAvailable");
         }
 
         const price = tokenData?.price;
-        return `≈ ${formatCurrency(Number(amountValue) * price!)}`;
-    }, [tokenData, amountValue, tCommon]);
+        return `≈ ${formatCurrency(parsedAmount * price!)}`;
+    }, [tokenData, rawAmountValue, tCommon]);
 
     if (isLoading) {
         if (textOnly) {
@@ -117,4 +119,3 @@ export function Amount({
         </div>
     );
 }
-``;

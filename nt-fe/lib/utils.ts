@@ -429,9 +429,9 @@ export function formatSmartAmount(value: number | string | Big): string {
 
     let formatted: string;
 
-    // For numbers >= 1, show up to 4 decimals
+    // For numbers >= 1, show up to 4 decimals (min 2)
     if (absNum >= 1) {
-        formatted = absBig.toFixed(4).replace(/\.?0+$/, "");
+        formatted = absBig.toFixed(4).replace(/(\.\d{2,}?)0+$/, "$1");
     } else {
         // For small numbers, find first significant digit and show up to 8 significant figures
         const str = absNum.toExponential();
@@ -440,13 +440,40 @@ export function formatSmartAmount(value: number | string | Big): string {
 
         // Show enough decimals to display ~6-8 significant figures
         const decimalPlaces = Math.min(exp + 6, 30);
-        formatted = absBig.toFixed(decimalPlaces).replace(/\.?0+$/, "");
+        formatted = absBig
+            .toFixed(decimalPlaces)
+            .replace(/(\.\d{2,}?)0+$/, "$1");
     }
 
     // Add thousands separator using locale formatting
     const parts = formatted.split(".");
     const integerPart = parseInt(parts[0]).toLocaleString();
     return parts[1] ? `${integerPart}.${parts[1]}` : integerPart;
+}
+
+/**
+ * Format token amounts with smart fractional precision and grouped integer part.
+ * Uses formatSmartAmount for decimal precision strategy.
+ */
+export function formatTokenDisplayAmount(value: number | string | Big): string {
+    let normalized = "";
+
+    try {
+        if (typeof value === "string") {
+            const trimmed = value.trim();
+            normalized = trimmed.replace(/,/g, "").replace(/^\+/, "");
+        } else {
+            normalized = value.toString();
+        }
+
+        const parsed = Big(normalized || "0");
+        const absFormatted = formatSmartAmount(parsed.abs());
+
+        if (parsed.lt(0)) return `-${absFormatted}`;
+        return absFormatted;
+    } catch {
+        return "0";
+    }
 }
 
 /**
@@ -458,15 +485,14 @@ export function formatSmartAmount(value: number | string | Big): string {
  * @returns Formatted amount with sign and smart precision, e.g., "+1,234.5678" or "-0.000123"
  */
 export function formatActivityAmount(amount: string): string {
-    const num = parseFloat(amount);
-
-    // Handle zero
-    if (num === 0) return "+0";
-
-    const sign = num >= 0 ? "+" : "-";
-    const formatted = formatSmartAmount(Math.abs(num));
-
-    return `${sign}${formatted}`;
+    try {
+        const parsed = Big(amount);
+        if (parsed.eq(0)) return "+0";
+        const absFormatted = formatTokenDisplayAmount(parsed.abs());
+        return parsed.gt(0) ? `+${absFormatted}` : `-${absFormatted}`;
+    } catch {
+        return "+0";
+    }
 }
 
 /**

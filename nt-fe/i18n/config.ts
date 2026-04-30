@@ -1,5 +1,41 @@
-export const locales = ["en", "es", "uk"] as const;
+import { features } from "@/constants/features";
+
+export const locales = [
+    "en",
+    "es",
+    "uk",
+    "he",
+    "de",
+    "fr",
+    "vi",
+    "zh",
+    "tr",
+    "id",
+    "pt",
+    "ja",
+    "ko",
+] as const;
 export type Locale = (typeof locales)[number];
+
+/** Locales always exposed to end users in production. */
+const corePublicLocales: readonly Locale[] = ["en", "es", "uk"];
+
+/**
+ * Locales that are visible to end users at runtime.
+ *
+ * In production this is gated to en/es/uk via features.extraLocales;
+ * staging and development show every locale we ship messages for so QA
+ * and translators can preview them.
+ */
+export const enabledLocales: readonly Locale[] = features.extraLocales
+    ? locales
+    : corePublicLocales;
+
+export function isEnabledLocale(
+    value: string | undefined | null,
+): value is Locale {
+    return !!value && enabledLocales.includes(value as Locale);
+}
 
 export const defaultLocale: Locale = "en";
 
@@ -7,13 +43,31 @@ export const localeNames: Record<Locale, string> = {
     en: "English",
     es: "Español",
     uk: "Українська",
+    he: "עברית",
+    de: "Deutsch",
+    fr: "Français",
+    vi: "Tiếng Việt",
+    zh: "中文",
+    tr: "Türkçe",
+    id: "Bahasa Indonesia",
+    pt: "Português",
+    ja: "日本語",
+    ko: "한국어",
 };
 
-export const LOCALE_COOKIE = "NEXT_LOCALE";
+/** Right-to-left locales. */
+export const rtlLocales: readonly Locale[] = ["he"];
 
-export function isLocale(value: string | undefined | null): value is Locale {
-    return !!value && (locales as readonly string[]).includes(value);
+export function getLocaleDirection(
+    locale: Locale | string | undefined | null,
+): "ltr" | "rtl" {
+    if (!isEnabledLocale(locale)) {
+        return "ltr";
+    }
+    return rtlLocales.includes(locale) ? "rtl" : "ltr";
 }
+
+export const LOCALE_COOKIE = "NEXT_LOCALE";
 
 export function pickLocaleFromAcceptLanguage(header: string | null): Locale {
     if (!header) return defaultLocale;
@@ -34,7 +88,7 @@ export function pickLocaleFromAcceptLanguage(header: string | null): Locale {
 
     for (const { tag } of parts) {
         const base = tag.split("-")[0];
-        if (isLocale(base)) return base;
+        if (isEnabledLocale(base)) return base;
     }
     return defaultLocale;
 }

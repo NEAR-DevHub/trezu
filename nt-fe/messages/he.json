@@ -1,0 +1,2117 @@
+{
+    "common": {
+        "loading": "טוען...",
+        "notAvailable": "לא זמין",
+        "connecting": "מתחבר...",
+        "save": "שמירה",
+        "cancel": "ביטול",
+        "submit": "שליחה",
+        "close": "סגירה",
+        "back": "חזרה",
+        "seeDemo": "צפה ב-Trezu לדוגמה",
+        "search": "חיפוש",
+        "filter": "סינון",
+        "filterActive": "סינון (פעיל)",
+        "export": "ייצוא",
+        "exporting": "מייצא",
+        "import": "ייבוא",
+        "remove": "הסרה",
+        "removing": "מסיר...",
+        "edit": "עריכה",
+        "continue": "המשך",
+        "select": "בחירה",
+        "all": "הכל",
+        "none": "ללא",
+        "retry": "נסה שוב",
+        "tryAgain": "אנא נסה שוב.",
+        "confirm": "אישור",
+        "next": "הבא",
+        "previous": "הקודם",
+        "yes": "כן",
+        "no": "לא",
+        "approve": "אישור",
+        "reject": "דחייה",
+        "copy": "העתקה",
+        "copied": "הועתק",
+        "viewAll": "הצג הכל",
+        "viewDetails": "הצג פרטים",
+        "noResults": "לא נמצאו תוצאות",
+        "add": "הוספה"
+    },
+    "languageSwitcher": {
+        "label": "שפה",
+        "select": "בחר שפה",
+        "english": "English",
+        "spanish": "Español",
+        "ukrainian": "Українська",
+        "hebrew": "עברית",
+        "german": "Deutsch",
+        "french": "Français",
+        "vietnamese": "Tiếng Việt",
+        "chinese": "中文",
+        "turkish": "Türkçe",
+        "indonesian": "Bahasa Indonesia",
+        "portuguese": "Português",
+        "japanese": "日本語",
+        "korean": "한국어"
+    },
+    "header": {
+        "toggleSidebar": "הצג/הסתר סרגל צד",
+        "toggleTheme": "החלף ערכת נושא"
+    },
+    "nav": {
+        "dashboard": "לוח בקרה",
+        "requests": "בקשות",
+        "payments": "תשלומים",
+        "exchange": "החלפה",
+        "addressBook": "ספר כתובות",
+        "members": "חברים",
+        "settings": "הגדרות",
+        "helpSupport": "עזרה ותמיכה",
+        "saveGuestTreasury": "שמור את האוצר האורח הזה לרשימת האוצרות שלך."
+    },
+    "signIn": {
+        "connect": "התחברות",
+        "wallet": "ארנק",
+        "termsOfService": "תנאי שימוש",
+        "privacyPolicy": "מדיניות פרטיות",
+        "disconnect": "התנתקות"
+    },
+    "auth": {
+        "noWallet": "חבר את הארנק שלך",
+        "noPermission": "אין לך הרשאה לבצע פעולה זו",
+        "noVote": "כבר הצבעת על הצעה זו",
+        "noSponsoredTransactions": "לא נותרו עסקאות במימון"
+    },
+    "landing": {
+        "welcome": "ברוכים הבאים ל-Trezu",
+        "chooseOption": "בחר אפשרות למטה כדי להתחיל.",
+        "newUserTitle": "אני חדש ב-Trezu",
+        "newUserDescription": "שמעתי על Trezu אבל עדיין אין לי אוצר.",
+        "existingUserTitle": "אני כבר משתמש ב-Trezu",
+        "existingUserDescription": "יש לי חשבון ואני מנהל אוצר.",
+        "gradientTagline": "אבטחת מולטיסיג חוצת-רשתות לניהול נכסים דיגיטליים",
+        "waitlistTitle": "הצטרף לרשימת ההמתנה של Trezu",
+        "waitlistSubmittedTitle": "אתה ברשימה 🎉",
+        "waitlistSubmittedDescription": "תודה! נודיע לך ברגע שיצירת אוצר תהפוך לזמינה.",
+        "waitlistDescription": "הגענו למכסת האוצרות היומית. אל דאגה - נסה שוב מאוחר יותר או השאר פרטי קשר להצטרפות לרשימת ההמתנה. נעדכן אותך כשיתפנה מקום.",
+        "waitlistInputPlaceholder": "כתובת אימייל או Telegram (למשל @username)",
+        "waitlistPrivacyNote": "נשתמש בזה רק כדי להודיע לך",
+        "waitlistSubmit": "הצטרף לרשימת ההמתנה",
+        "waitlistSubmitFailed": "השליחה נכשלה. אנא נסה שוב.",
+        "welcomeAlt": "ברוכים הבאים"
+    },
+    "blocked": {
+        "title": "השירות אינו זמין במדינתך",
+        "description": "עקב הגבלות, השירות אינו זמין כעת באזורך."
+    },
+    "notFound": {
+        "title": "אופס, העמוד הזה נעלם...",
+        "description": "נראה שלחצת על קישור שכבר לא פועל. נסה לחזור או לעבור ללוח הבקרה.",
+        "backToDashboard": "חזרה ללוח הבקרה"
+    },
+    "treasuryInfo": {
+        "logoAlt": "לוגו האוצר"
+    },
+    "dateInput": {
+        "placeholder": "dd/mm/yyyy"
+    },
+    "thresholdSlider": {
+        "warningSingleMember": "סף של 1 מתוך {memberCount} משמעו שכל חבר יחיד יכול לבצע עסקאות. זה מפחית את האבטחה.",
+        "infoBalanced": "סף של {currentThreshold} מתוך {memberCount} מספק איזון טוב בין אבטחה לגמישות תפעולית."
+    },
+    "intentsFee": {
+        "amountTooLowForFee": "{prefix}הסכום נמוך מדי עבור עמלת רשת ({fee} {symbol}). הוסף לפחות {addMore} {symbol}."
+    },
+    "metadata": {
+        "treasuryTitle": "לוח בקרה | Trezu",
+        "landingTitle": "Trezu | ניהול אוצר חוצה-רשתות",
+        "description": "נהל את ההון של הצוות שלך בתוך דקות מלוח בקרה אחד מבלי לוותר על המפתחות.",
+        "ogTitle": "Trezu | מולטיסיג אחד. כל קריפטו. שליטה מלאה."
+    },
+    "pages": {
+        "dashboard": {
+            "title": "לוח בקרה",
+            "description": "סקירה של נכסי האוצר והפעילות שלך",
+            "descriptionLong": "נהל את נכסי האוצר ועקוב אחר הפעילות"
+        },
+        "activity": {
+            "title": "עסקאות אחרונות",
+            "descriptionDetails": "פרטי בקשה",
+            "descriptionList": "עסקאות אחרונות בכל הנכסים"
+        },
+        "requests": {
+            "title": "בקשות",
+            "description": "הצג ונהל את כל בקשות המולטיסיג הממתינות",
+            "detailDescription": "פרטי בקשה",
+            "detailTitle": "בקשה #{id}"
+        },
+        "members": {
+            "title": "חברים",
+            "description": "נהל חברי צוות והרשאות"
+        },
+        "settings": {
+            "title": "הגדרות",
+            "description": "התאם את הגדרות היישום שלך"
+        },
+        "addressBook": {
+            "title": "ספר כתובות",
+            "description": "נהל את הנמענים השמורים שלך"
+        },
+        "payments": {
+            "title": "תשלומים",
+            "description": "שלח וקבל כספים באופן מאובטח"
+        },
+        "exchange": {
+            "title": "החלפה",
+            "description": "החלף את הטוקנים שלך באופן מאובטח ויעיל"
+        },
+        "vesting": {
+            "title": "הבשלה",
+            "description": "צור לוחות זמנים להבשלה במהירות ובקלות"
+        },
+        "earn": {
+            "title": "רווחים",
+            "description": "חבר את האוצר Trezu שלך לאפליקציות Web3 המועדפות עליך.",
+            "howItWorks": "איך זה עובד",
+            "apps": {
+                "rhea": {
+                    "name": "Rhea",
+                    "description": "חברו את האוצר ל-Rhea והתחילו להרוויח על הנכסים הקיימים שלכם—בלי העברות, בלי חיכוך, תגמולים חלקים על מה שכבר אתם מחזיקים.",
+                    "goTo": "מעבר ל-Rhea",
+                    "logoAlt": "לוגו Rhea"
+                },
+                "intear": {
+                    "name": "IntearDEX",
+                    "description": "בלי גשרים, בלי להזיז כספים, בלי שלבים מיותרים—פשוט השתמשו בנכסי האוצר והתחילו להרוויח ישירות בפלטפורמה.",
+                    "goTo": "מעבר ל-IntearDEX",
+                    "logoAlt": "לוגו IntearDEX"
+                },
+                "nearStaking": {
+                    "name": "NEAR Staking",
+                    "description": "סטקו NEAR מהאוצר כדי לסייע לאבטחת הרשת ולקבל תגמולי סטייקינג.",
+                    "goTo": "מעבר ל-NEAR Staking",
+                    "logoAlt": "NEAR"
+                }
+            }
+        },
+        "createTreasury": {
+            "title": "יצירת אוצר",
+            "description": "הקם אוצר מולטיסיג חדש עבור הצוות שלך"
+        },
+        "manageTreasuries": {
+            "title": "ניהול אוצרות",
+            "description": "שלוט אילו אוצרות מופיעים בחשבונך"
+        },
+        "stats": {
+            "title": "סטטיסטיקה",
+            "description": "נכסים תחת ניהול בזמן אמת בכל אוצרות sputnik DAOs."
+        },
+        "telegram": {
+            "title": "חיבור אוצר",
+            "description": "קשר את האוצרות שלך לצ'אט Telegram",
+            "metaTitle": "Trezu — חיבור Telegram",
+            "metaDescription": "חבר את אוצר Trezu שלך לצ'אט Telegram"
+        },
+        "wallet": {
+            "title": "ארנק Trezu",
+            "description": "חתום על הצעות אוצר באמצעות Trezu"
+        }
+    },
+    "depositModal": {
+        "validation": {
+            "selectAsset": "אנא בחר נכס",
+            "selectNetwork": "אנא בחר רשת"
+        },
+        "sections": {
+            "supportedNetworks": "רשתות נתמכות",
+            "networksWithAssets": "רשתות עם נכסים",
+            "yourAssets": "הנכסים שלך",
+            "otherAssets": "נכסים אחרים",
+            "available": "זמין",
+            "forMembersOnly": "לחברים בלבד"
+        },
+        "errors": {
+            "addressUnavailable": "לא ניתן היה לאחזר כתובת הפקדה עבור הנכס והרשת שנבחרו.",
+            "fetchFailed": "אחזור כתובת ההפקדה נכשל. אנא נסה שוב."
+        },
+        "title": "הפקדה",
+        "subtitle": "בחר נכס ורשת כדי לראות כתובת הפקדה",
+        "assetLabel": "נכס",
+        "networkLabel": "רשת",
+        "selectAsset": "בחר נכס",
+        "selectNetwork": "בחר רשת",
+        "otherAssetName": "אחר",
+        "otherNetworkInfo": "ניתן להפקיד כל טוקן שאינו ברשימת הנכסים, אך רק דרך רשת NEAR.",
+        "depositAddressHeading": "כתובת הפקדה",
+        "depositAddressSubtitle": "תמיד בדוק שוב את כתובת ההפקדה שלך.",
+        "addressLabel": "כתובת",
+        "addressCopied": "הכתובת הועתקה ללוח",
+        "memoLabel": "הערה",
+        "memoCopied": "ההערה הועתקה ללוח",
+        "memoWarning": "אתה <bold>חייב</bold> לכלול את ההערה בעת שליחת כספים לכתובת זו. שליחה ללא ההערה עלולה לגרום לאובדן קבוע של כספים.",
+        "onlyDeposit": "הפקד רק <symbolTag>{symbol}</symbolTag> מרשת <networkTag>{network}</networkTag>. אנו ממליצים להתחיל בעסקת בדיקה קטנה כדי לוודא שהכל עובד כראוי לפני שליחת הסכום המלא.",
+        "minimumDeposit": "הפקדה מינימלית היא <amountTag>{amount} {symbol}</amountTag>",
+        "searchByName": "חיפוש לפי שם"
+    },
+    "assetDetails": {
+        "coinPrice": "מחיר מטבע",
+        "weight": "משקל",
+        "source": "מקור",
+        "send": "שליחה",
+        "exchange": "החלפה",
+        "comingSoon": "בקרוב",
+        "vesting": "הבשלה",
+        "vestedPercent": "{percent}% הובשלו",
+        "frozen": "מוקפא",
+        "frozenTooltip": "טוקנים מוקפאים נעולים ואינם ניתנים לשימוש. ייתכן שהם נעולים עקב שימוש לאחסון, סטייקינג, או שטרם הובשלו.",
+        "vested": "הובשל"
+    },
+    "activity": {
+        "filters": {
+            "createdDate": "תאריך יצירה",
+            "token": "טוקן",
+            "from": "מאת",
+            "to": "אל"
+        },
+        "tabs": {
+            "all": "הכל",
+            "sent": "נשלחו",
+            "received": "התקבלו",
+            "stakingRewards": "תגמולי סטייקינג",
+            "exchange": "החלפה"
+        },
+        "searchPlaceholder": "חיפוש לפי גיבוב עסקה",
+        "searchPlaceholderShort": "גיבוב עסקה",
+        "fromPool": "מ-{pool}",
+        "table": {
+            "type": "סוג",
+            "transaction": "עסקה",
+            "from": "מאת",
+            "to": "אל",
+            "transactionHash": "גיבוב עסקה",
+            "hashTooltip": "מזהה ייחודי (גיבוב) של עסקה זו"
+        },
+        "empty": {
+            "title": "לא נמצאו עסקאות",
+            "description": "העסקאות שלך יופיעו כאן לאחר שיתרחשו"
+        },
+        "emptyDashboard": {
+            "title": "אין מה להציג עדיין",
+            "description": "העסקאות והפעולות שלך יופיעו כאן לאחר שיתרחשו"
+        },
+        "recentTitle": "עסקאות אחרונות",
+        "details": {
+            "title": "פרטי עסקה",
+            "copyAddress": "העתק כתובת",
+            "addressCopied": "הכתובת הועתקה ללוח",
+            "sell": "מכירה",
+            "receive": "קבלה",
+            "pending": "ממתין",
+            "type": "סוג",
+            "date": "תאריך",
+            "from": "מאת",
+            "to": "אל",
+            "method": "שיטה",
+            "contract": "חוזה",
+            "transaction": "עסקה"
+        }
+    },
+    "export": {
+        "types": {
+            "csv": ".CSV",
+            "json": ".JSON",
+            "xlsx": ".XLSX"
+        },
+        "transactionTypes": {
+            "all": "כל הסוגים",
+            "sent": "נשלחו",
+            "received": "התקבלו",
+            "stakingRewards": "תגמולי סטייקינג"
+        },
+        "validation": {
+            "invalidEmail": "אנא הזן כתובת אימייל תקינה"
+        },
+        "columns": {
+            "submissionTime": "שעת שליחה",
+            "dateRange": "טווח תאריכים",
+            "generatedBy": "נוצר על ידי",
+            "status": "סטטוס"
+        },
+        "status": {
+            "generating": "מייצר",
+            "expired": "פג תוקף",
+            "failed": "נכשל"
+        },
+        "noPermission": "אין לך הרשאה להוריד את הקובץ.",
+        "download": "הורדה",
+        "heading": "ייצוא עסקאות אחרונות",
+        "teamOnly": "יצירת ייצוא והורדות זמינים רק לחברי הצוות.",
+        "creditsUsed": "ניצלת את כל הקרדיטים שלך",
+        "exportsUsed": "ניצלת את כל הייצואים שלך",
+        "upgradePrompt": "שדרג את התוכנית שלך כדי לקבל יותר ולהמשיך",
+        "resetPrompt": "שדרג את התוכנית שלך לגישה רבה יותר, או המתן עד שהמגבלות יתאפסו בחודש הבא.",
+        "tabs": {
+            "generate": "יצירת ייצוא",
+            "history": "היסטוריה"
+        },
+        "fields": {
+            "documentType": "סוג מסמך",
+            "timeRange": "טווח זמן",
+            "selectDateRange": "בחר טווח תאריכים",
+            "asset": "נכס",
+            "allAssets": "כל הנכסים",
+            "transactionType": "סוג עסקה"
+        },
+        "buttons": {
+            "noPermissionExport": "אין לך הרשאה לייצא",
+            "quotaExhausted": "ניצלת את כל המכסה שלך",
+            "exporting": "מייצא...",
+            "export": "ייצוא"
+        },
+        "empty": {
+            "title": "אין ייצואים עדיין",
+            "description": "הקבצים שיוצאו מהחודש האחרון יופיעו כאן לאחר יצירתם."
+        },
+        "requirements": {
+            "heading": "דרישות ייצוא",
+            "canExportFrom": "ניתן לייצא נתונים מ-",
+            "availability": "הקבצים המיוצאים זמינים להורדה למשך 48 שעות."
+        },
+        "quota": {
+            "heading": "מכסת ייצוא",
+            "unlimited": "ללא הגבלה",
+            "perMonth": "{count} / לחודש",
+            "flexibilityPrompt": "מחפש גמישות רבה יותר?",
+            "contactUs": "צור קשר"
+        }
+    },
+    "requests": {
+        "filters": {
+            "proposalTypes": {
+                "Payments": "תשלומים",
+                "Exchange": "החלפה",
+                "Earn": "רווחים",
+                "Vesting": "הבשלה",
+                "Function Call": "קריאת פונקציה",
+                "Change Policy": "שינוי מדיניות",
+                "Settings": "הגדרות",
+                "Confidential": "חסוי"
+            },
+            "voteStatus": {
+                "Approved": "אושר",
+                "Rejected": "נדחה",
+                "No Voted": "לא הוצבע"
+            },
+            "requestsType": "סוג בקשה",
+            "createdDate": "תאריך יצירה",
+            "recipient": "נמען",
+            "token": "טוקן",
+            "requester": "מבקש",
+            "approver": "מאשר",
+            "myVoteStatus": "סטטוס ההצבעה שלי",
+            "all": "הכל",
+            "amount": "סכום",
+            "from": "מאת",
+            "to": "אל",
+            "min": "מינימום",
+            "max": "מקסימום",
+            "invalidDate": "תאריך לא תקין",
+            "operationIsNot": " אינו",
+            "operationBefore": " לפני",
+            "operationAfter": " אחרי",
+            "operationContains": " מכיל",
+            "searchByAddress": "חיפוש לפי כתובת",
+            "loadingMembers": "טוען חברים...",
+            "noMembersFound": "לא נמצאו חברים. לחץ Enter כדי להוסיף \"{query}\"",
+            "noMembersAvailable": "אין חברים זמינים",
+            "reset": "איפוס",
+            "clear": "נקה",
+            "addFilter": "הוסף מסנן"
+        },
+        "tabs": {
+            "all": "הכל",
+            "pending": "ממתין",
+            "executed": "בוצע",
+            "rejected": "נדחה",
+            "expired": "פג תוקף",
+            "failed": "נכשל"
+        },
+        "searchPlaceholder": "חיפוש בקשה לפי שם או מזהה",
+        "searchPlaceholderShort": "חיפוש לפי שם או מזהה",
+        "errorLoading": "שגיאה בטעינת ההצעות. אנא נסה שוב.",
+        "empty": {
+            "title": "צור את הבקשה הראשונה שלך",
+            "description": "בקשות לתשלומים, החלפות ופעולות אחרות יופיעו כאן לאחר יצירתן.",
+            "send": "שליחה",
+            "exchange": "החלפה"
+        },
+        "actions": {
+            "approve": "אישור",
+            "reject": "דחייה",
+            "deposit": "הפקדה",
+            "viewRequest": "הצג בקשה"
+        },
+        "table": {
+            "selectAll": "בחר הכל",
+            "selectRow": "בחר שורה",
+            "request": "בקשה",
+            "transaction": "עסקה",
+            "requester": "מבקש",
+            "voting": "הצבעה",
+            "votingTooltip": "המספר הראשון מציג אישורים שהתקבלו. המספר השני מציג אישורים הנדרשים לביצוע.",
+            "status": "סטטוס",
+            "notPending": "ההצעה אינה ממתינה.",
+            "noPermissionVote": "אין לך הרשאה להצביע על בקשה זו.",
+            "alreadyVoted": "כבר הצבעת על בקשה זו.",
+            "noResults": "לא נמצאו בקשות התואמות את המסננים שלך.",
+            "allCaughtUp": "הכל מעודכן!",
+            "noPending": "אין בקשות ממתינות.",
+            "send": "שליחה",
+            "exchange": "החלפה",
+            "requestsSelected": "{count, plural, one {# בקשה נבחרה} two {# בקשות נבחרו} many {# בקשות נבחרו} other {# בקשות נבחרו}}",
+            "bulkApproveDisabled": "לא ניתן לאשר בקשה זו מכיוון שלאוצר יש יתרה לא מספקת."
+        },
+        "pending": {
+            "title": "בקשות ממתינות",
+            "viewAll": "הצג הכל",
+            "emptyTitle": "הכל מעודכן!",
+            "emptyDescription": "אין בקשות ממתינות."
+        }
+    },
+    "proposals": {
+        "status": {
+            "pending": "ממתין",
+            "approved": "אושר",
+            "rejected": "נדחה",
+            "executed": "בוצע",
+            "expired": "פג תוקף",
+            "failed": "נכשל",
+            "removed": "הוסר",
+            "inProgress": "בתהליך"
+        },
+        "statusTooltip": {
+            "pending": "בקשה זו עדיין ממתינה ולא הגיעה למספר ההצבעות הנדרש לביצוע.",
+            "executed": "בוצעה לאחר ש-{approved} מתוך {required} חברים אישרו את הבקשה.",
+            "rejected": "נדחתה לאחר ש-{rejected} מתוך {required} חברים הצביעו לדחיית הבקשה.",
+            "expired": "פג תוקף מכיוון שלא התקבלו מספיק הצבעות לביצוע.",
+            "failed": "הבקשה נכשלה בהשלמה. בדוק את פרטי העסקה <link>כאן</link>.",
+            "failedPlain": "הבקשה נכשלה בהשלמה. בדוק את פרטי העסקה כאן."
+        },
+        "voteModal": {
+            "confirmTitle": "אשר את הצבעתך",
+            "removeTitle": "הסר בקשה",
+            "bulkBody": "אתה עומד {action} מספר בקשות. לאחר השליחה, לא ניתן לשנות החלטה זו.",
+            "singleBody": "אתה עומד {action} בקשה זו. לאחר האישור, לא ניתן לבטל פעולה זו.",
+            "actionApprove": "לאשר",
+            "actionReject": "לדחות",
+            "actionRemove": "להסיר",
+            "insufficientBalance": "לא ניתן לאשר את הבקשות <highlight>{ids}</highlight> עקב יתרה לא מספקת. האישור שלך יחול רק על הבקשות הנותרות.",
+            "remove": "הסרה",
+            "confirm": "אישור"
+        },
+        "expanded": {
+            "recipient": "נמען",
+            "amount": "סכום",
+            "networkFee": "עמלת רשת",
+            "notes": "הערות",
+            "sent": "נשלח",
+            "received": "התקבל",
+            "priceDifference": "הפרש מחיר",
+            "priceDifferenceTooltip": "מציג כיצד ערך ה-USD שאתה מקבל משתווה לערך ה-USD שאתה שולח.",
+            "slippageTolerance": "סבילות החלקה",
+            "estimatedTime": "זמן משוער",
+            "seconds": "{count} שניות",
+            "description": "תיאור",
+            "methodName": "שם שיטה",
+            "args": "ארגומנטים",
+            "deposit": "הפקדה",
+            "gas": "גז",
+            "totalDeposit": "סה\"כ הפקדה",
+            "totalGas": "סה\"כ גז",
+            "receiverId": "מזהה מקבל",
+            "contractId": "מזהה חוזה",
+            "actionsCount": "{count, plural, one {# פעולה} two {# פעולות} many {# פעולות} other {# פעולות}}",
+            "functionCallsCount": "{count, plural, one {# קריאת פונקציה} two {# קריאות פונקציה} many {# קריאות פונקציה} other {# קריאות פונקציה}}",
+            "showLess": "הצג פחות",
+            "showMore": "הצג עוד",
+            "stakingPool": "מאגר סטייקינג",
+            "validator": "מאמת",
+            "action": "פעולה",
+            "stake": "סטייק",
+            "unstake": "בטל סטייק",
+            "withdraw": "משיכה",
+            "lockupOwner": "בעלים של הנעילה",
+            "lockupDuration": "משך הנעילה",
+            "cliff": "צוק",
+            "releaseDuration": "משך השחרור",
+            "vestingSchedule": "לוח זמנים להבשלה",
+            "cancellable": "ניתן לביטול",
+            "allowEarn": "אפשר סטייקינג",
+            "yes": "כן",
+            "no": "לא",
+            "notSet": "לא נקבע",
+            "from": "מאת",
+            "to": "אל",
+            "paymentsCount": "{count, plural, one {# תשלום} two {# תשלומים} many {# תשלומים} other {# תשלומים}}",
+            "sourceWallet": "ארנק מקור",
+            "allNear": "כל ה-NEAR",
+            "startDate": "תאריך התחלה",
+            "endDate": "תאריך סיום",
+            "cliffDate": "תאריך הצוק",
+            "allowCancellation": "אפשר ביטול",
+            "allowStaking": "אפשר סטייקינג",
+            "loadingHistorical": "טוען תצורה היסטורית...",
+            "name": "שם",
+            "purpose": "מטרה",
+            "logo": "לוגו",
+            "logoAlt": "לוגו",
+            "primaryColor": "צבע ראשי",
+            "noChangesCurrent": "לא זוהו שינויים בתצורה בהשוואה למצב הנוכחי.",
+            "noChangesHistorical": "לא זוהו שינויים בתצורה בהשוואה למצב ההיסטורי.",
+            "method": "שיטה",
+            "arguments": "ארגומנטים",
+            "contract": "חוזה",
+            "actionNumber": "פעולה {number}",
+            "actions": "פעולות",
+            "collapseAll": "כווץ הכל",
+            "expandAll": "הרחב הכל",
+            "send": "שליחה",
+            "receive": "קבלה",
+            "rate": "שער",
+            "priceSlippageLimit": "מגבלת החלקת מחיר",
+            "slippageTooltip": "זוהי מגבלת ההחלקה שנקבעה לבקשה זו. אם שער השוק ישתנה מעבר לסף הזה במהלך הביצוע, הבקשה תיכשל אוטומטית.",
+            "estimatedTimeTooltip": "זמן משוער לביצוע ההחלפה לאחר אישור עסקת ההפקדה.",
+            "minReceive": "קבלה מינימלית",
+            "minimumReceived": "קבלה מינימלית",
+            "minReceiveTooltip": "זהו הסכום המינימלי שתקבל מהחלפה זו, בהתבסס על מגבלת ההחלקה שנקבעה עבור הבקשה.",
+            "depositAddress": "כתובת הפקדה",
+            "depositAddressTooltip": "כתובת ההפקדה של 1Click שאליה יישלחו הטוקנים עבור ביצוע ההחלפה החוצה-רשתית.",
+            "quoteSignature": "חתימת ציטוט",
+            "quoteSignatureTooltip": "החתימה הקריפטוגרפית מ-1Click API שמאמתת ציטוט זה.",
+            "quoteDeadline": "תוקף ציטוט 1-Click",
+            "quoteDeadlineTooltip": "הזמן שבו כתובת ההפקדה הופכת ללא פעילה והכספים עלולים לאבד.",
+            "status": "סטטוס",
+            "transactionLink": "קישור עסקה",
+            "viewTransaction": "הצג עסקה",
+            "recipientNumber": "נמען {number}",
+            "oopsTitle": "אופס! משהו השתבש",
+            "oopsDescription": "לא יכולנו למצוא נתונים להצגה כאן.",
+            "totalAmount": "סכום כולל",
+            "recipients": "נמענים",
+            "recipientsCount": "{count, plural, one {# נמען} two {# נמענים} many {# נמענים} other {# נמענים}}",
+            "unsupportedProposal": "סוג הצעה לא נתמך",
+            "requestDetails": "פרטי בקשה",
+            "linkCopied": "הקישור הועתק ללוח",
+            "copyLink": "העתק קישור",
+            "openRequestPage": "פתח דף בקשה",
+            "deleteRequest": "מחק בקשה",
+            "unknownRecipients": "נמענים לא ידועים",
+            "loadingConfig": "טוען תצורה...",
+            "historicalData": "נתונים היסטוריים...",
+            "generalUpdate": "עדכון כללי",
+            "detailsUnavailable": "הפרטים אינם זמינים",
+            "changesCount": "{count, plural, one {# שינוי} two {# שינויים} many {# שינויים} other {# שינויים}}",
+            "policyUpdate": "עדכון מדיניות",
+            "noChangesDetected": "לא זוהו שינויים",
+            "loadingPolicy": "טוען מדיניות...",
+            "roleChanges": "שינויי תפקיד",
+            "policyParameters": "פרמטרי מדיניות",
+            "defaultVotePolicy": "מדיניות הצבעה ברירת מחדל",
+            "policyRoleChanges": "שינויי מדיניות ותפקידים",
+            "membersAdded": "{count, plural, one {# חבר נוסף} two {# חברים נוספו} many {# חברים נוספו} other {# חברים נוספו}}",
+            "membersRemoved": "{count, plural, one {# חבר הוסר} two {# חברים הוסרו} many {# חברים הוסרו} other {# חברים הוסרו}}",
+            "membersUpdated": "{count, plural, one {# חבר עודכן} two {# חברים עודכנו} many {# חברים עודכנו} other {# חברים עודכנו}}",
+            "rolesModified": "{count, plural, one {# תפקיד שונה} two {# תפקידים שונו} many {# תפקידים שונו} other {# תפקידים שונו}}",
+            "parametersChanged": "{count, plural, one {# פרמטר שונה} two {# פרמטרים שונו} many {# פרמטרים שונו} other {# פרמטרים שונו}}",
+            "defaultVotePolicyPart": "מדיניות הצבעה ברירת מחדל",
+            "onReceiver": "ב-{receiver}",
+            "toPrefix": "אל:",
+            "validatorPrefix": "מאמת:",
+            "validatorSubtitle": "מאמת: {address}",
+            "impactTitle": "השפעה של שינוי משך ההצבעה",
+            "impactBody": "אתה עומד לעדכן את משך ההצבעה. זה ישפיע על הבקשות הקיימות הבאות.",
+            "activeRequestsBullet": "{count, plural, one {# בקשה תהיה פעילה להצבעה לאחר שינוי זה, עם תאריכי תפוגה מעודכנים.} two {# בקשות יהיו פעילות להצבעה לאחר שינוי זה, עם תאריכי תפוגה מעודכנים.} many {# בקשות יהיו פעילות להצבעה לאחר שינוי זה, עם תאריכי תפוגה מעודכנים.} other {# בקשות יהיו פעילות להצבעה לאחר שינוי זה, עם תאריכי תפוגה מעודכנים.}}",
+            "expiringRequestsBullet": "{count, plural, one {# בקשה תסומן כ\"פג תוקף\" תחת משך ההצבעה החדש.} two {# בקשות יסומנו כ\"פג תוקף\" תחת משך ההצבעה החדש.} many {# בקשות יסומנו כ\"פג תוקף\" תחת משך ההצבעה החדש.} other {# בקשות יסומנו כ\"פג תוקף\" תחת משך ההצבעה החדש.}}",
+            "remainActiveHeading": "בקשות שיישארו פעילות להצבעה עם תאריך תפוגה חדש",
+            "willExpireHeading": "בקשות שיסומנו כ\"פג תוקף\"",
+            "tableRequest": "בקשה",
+            "tableTransaction": "עסקה",
+            "tableNewExpiry": "תפוגה חדשה",
+            "expireInDays": "{count, plural, one {פג תוקף בעוד # יום} two {פג תוקף בעוד # ימים} many {פג תוקף בעוד # ימים} other {פג תוקף בעוד # ימים}}",
+            "today": "היום",
+            "uponApproval": "עם האישור",
+            "yesContinue": "כן, המשך",
+            "transactionCreated": "העסקה נוצרה",
+            "voting": "הצבעה",
+            "approvalsReceived": "{received}/{required} אישורים התקבלו",
+            "expiresAt": "פג תוקף ב-",
+            "expiredAt": "פג תוקף ב-",
+            "exchangingTokens": "מחליף טוקנים",
+            "exchangingTokensBody": "בקשה זו אושרה על ידי הצוות. החלפת הטוקנים מתבצעת כעת ועשויה לקחת זמן מה.",
+            "requestFailed": "הבקשה נכשלה",
+            "requestFailedBody": "הצוות אישר את הבקשה, אך היא נכשלה עקב תנודות בשער. אנא צור בקשה חדשה ונסה שוב.",
+            "votingPeriod24h": "תקופת הצבעה: 24 שעות",
+            "votingPeriod24hBody": "לבקשת החלפה זו יש משך הצבעה של 24 שעות. אשר בקשה זו בתוך זמן זה, אחרת הבקשה תפוג.",
+            "reject": "דחייה",
+            "approve": "אישור"
+        },
+        "insufficientBalance": {
+            "noAsset": "לא ניתן לאשר בקשה זו מכיוון שהטוקן הנדרש אינו זמין באוצר.",
+            "bond": "לא ניתן לאשר בקשה זו מכיוון שלאוצר יש יתרת <token>{symbol}</token> לא מספקת. הוסף <token>{amount} {symbol}</token> כדי לכסות את עלויות הערבון להצעה.",
+            "continue": "לא ניתן לאשר בקשה זו מכיוון שלאוצר יש יתרת <token>{symbol}</token> לא מספקת. הוסף <token>{amount} {symbol}</token> כדי להמשיך.",
+            "modalTitle": "יתרת NEAR לא מספקת",
+            "modalBodyVote": "אין לך מספיק טוקני NEAR בארנק שלך כדי להצביע. הצבעה דורשת יתרה מינימלית של <amount>{required} NEAR</amount>. אנא הוסף NEAR לארנק שלך ונסה שוב.",
+            "modalBodyProposal": "אין לך מספיק טוקני NEAR בארנק שלך כדי ליצור בקשה זו. יצירת בקשה דורשת יתרה מינימלית של <amount>{required} NEAR</amount>. אנא הוסף NEAR לארנק שלך ונסה שוב.",
+            "gotIt": "הבנתי"
+        }
+    },
+    "members": {
+        "title": "חברים",
+        "description": "נהל חברי צוות והרשאות",
+        "permissions": "הרשאות",
+        "member": "חבר",
+        "activeMembers": "חברים פעילים",
+        "noActiveMembers": "לא נמצאו חברים פעילים.",
+        "addNewMember": "הוסף חבר חדש",
+        "membersSelected": "{count, plural, =0 {אין חברים} one {# חבר} two {# חברים} many {# חברים} other {# חברים}} נבחרו",
+        "remove": "הסרה",
+        "edit": "עריכה",
+        "requestorOnlyTooltip": "ניתן להוסיף רק את התפקיד מבקש עבור חבר זה, מכיוון שהוא אחראי ליצירת בקשות תשלום מ-NEARN.",
+        "memberModal": {
+            "editRoles": "ערוך תפקידים",
+            "addNewMember": "הוסף חבר חדש",
+            "validatingAddresses": "מאמת כתובות...",
+            "creatingProposal": "יוצר הצעה...",
+            "reviewRequest": "סקור בקשה",
+            "noChanges": "לא בוצעו שינויים בתפקידי החברים"
+        },
+        "previewModal": {
+            "title": "סקור את הבקשה שלך",
+            "youAreEditing": "אתה עורך",
+            "youAreAdding": "אתה מוסיף",
+            "membersCount": "{count, plural, one {# חבר} two {# חברים} many {# חברים} other {# חברים}}",
+            "newMembersCount": "{count, plural, one {# חבר חדש} two {# חברים חדשים} many {# חברים חדשים} other {# חברים חדשים}}",
+            "updatedMembers": "חברים מעודכנים",
+            "newMembers": "חברים חדשים",
+            "creatingProposal": "יוצר הצעה...",
+            "confirmSubmit": "אשר ושלח בקשה"
+        },
+        "removeDialog": {
+            "title": "הסר בקשה",
+            "nearnBody": "לאחר האישור, {account} יוסר לצמיתות מהאוצר וכל ההרשאות הקשורות יבוטלו. לאחר ההסרה, חשבון זה לא יוכל עוד ליצור בקשות מ-NEARN.",
+            "genericBody": "לאחר האישור, פעולה זו תסיר לצמיתות את <bold>{accounts}</bold> מהאוצר ותבטל את כל ההרשאות שהוקצו.",
+            "creatingProposal": "יוצר הצעה..."
+        },
+        "validation": {
+            "accountIdRequired": "מזהה חשבון נדרש",
+            "invalidNearAddress": "כתובת NEAR לא תקינה.",
+            "atLeastOneRole": "יש לבחור לפחות תפקיד אחד",
+            "atLeastOneMember": "יש צורך בלפחות חבר אחד",
+            "alreadyAdded": "חבר זה כבר נוסף למעלה",
+            "alreadyInTreasury": "חבר זה כבר קיים באוצר",
+            "cannotRemoveRoleAfter": "אינך יכול להסיר את תפקיד {role} מחבר זה. לאחר כל השינויים שלך, הוא יהיה היחיד המוקצה לתפקיד זה.",
+            "cannotRemoveRoleAfterGov": "אינך יכול להסיר את תפקיד {role} מחבר זה. לאחר כל השינויים שלך, הוא יהיה החבר היחיד עם {role}, ובלי תפקיד זה לא תוכל לנהל חברי צוות או להגדיר הצבעות."
+        },
+        "policy": {
+            "addMembers": "עדכון מדיניות - הוספת חברים חדשים",
+            "addMembersSuccess": "בקשת חבר חדש נוצרה בהצלחה",
+            "editMember": "עדכון מדיניות - עריכת הרשאות חבר",
+            "editMembers": "עדכון מדיניות - עריכת חברים מרובים",
+            "editMemberSuccess": "בקשת עדכון תפקידי חבר נוצרה בהצלחה",
+            "editMembersSuccess": "בקשת עדכון תפקידי חברים בכמויות נוצרה בהצלחה",
+            "removeMember": "עדכון מדיניות - הסרת חבר",
+            "removeMembers": "עדכון מדיניות - הסרת חברים",
+            "removeMemberSuccess": "בקשת הסרת חבר נוצרה בהצלחה"
+        }
+    },
+    "settings": {
+        "tabs": {
+            "general": "כללי",
+            "voting": "הצבעה",
+            "preferences": "העדפות",
+            "integrations": "אינטגרציות"
+        },
+        "general": {
+            "validation": {
+                "displayNameRequired": "שם תצוגה נדרש",
+                "displayNameMax": "שם תצוגה חייב להיות פחות מ-100 תווים"
+            },
+            "proposalDescriptionTitle": "עדכון תצורה - ערכת נושא ולוגו",
+            "proposalSubmitted": "בקשה לעדכון תצורה נשלחה",
+            "treasuryNotFound": "האוצר לא נמצא",
+            "treasuryName": "שם האוצר",
+            "treasuryNameDescription": "שם האוצר שלך. זה יוצג בכל האפליקציה.",
+            "displayName": "שם תצוגה",
+            "displayNamePlaceholder": "הזן שם תצוגה",
+            "accountName": "שם חשבון",
+            "logo": "לוגו",
+            "logoDescription": "העלה לוגו עבור האוצר שלך. מומלץ SVG, PNG או JPG (256x256 פיקסלים).",
+            "treasuryLogoAlt": "לוגו האוצר",
+            "uploading": "מעלה...",
+            "uploadLogo": "העלה לוגו",
+            "removeLogo": "הסר לוגו",
+            "logoUploaded": "הלוגו הועלה בהצלחה",
+            "uploadError": "אירעה שגיאה בעת העלאת התמונה, אנא נסה שוב.",
+            "invalidLogo": "לוגו לא תקין. אנא העלה קובץ PNG, JPG או SVG שהוא בדיוק 256x256 פיקסלים",
+            "invalidImage": "קובץ תמונה לא תקין. אנא העלה תמונה תקינה.",
+            "fileReadError": "שגיאה בקריאת הקובץ. אנא נסה שוב.",
+            "primaryColor": "צבע ראשי",
+            "primaryColorDescription": "הגדר את הצבע הראשי עבור רכיבי הממשק של האוצר שלך. צבע זה ישמש במצבים בהירים וכהים כאחד, אז שמור על ניגודיות בחירה בגוונים ניטרליים.",
+            "selectColorLabel": "בחר צבע {color}"
+        },
+        "voting": {
+            "validation": {
+                "required": "משך ההצבעה נדרש",
+                "validNumber": "משך ההצבעה חייב להיות מספר תקין",
+                "min": "משך ההצבעה חייב להיות לפחות יום 1",
+                "max": "משך ההצבעה חייב להיות פחות מ-1000 ימים",
+                "whole": "משך ההצבעה חייב להיות יום שלם"
+            },
+            "missingData": "חסרים נתונים נדרשים",
+            "thresholdProposalTitle": "עדכון מדיניות - ספי הצבעה",
+            "thresholdProposalSummary": "{account} ביקש לשנות את סף ההצבעה מ-{oldValue} ל-{newValue}.",
+            "thresholdSubmitted": "בקשה לעדכון סף הצבעה נשלחה",
+            "createProposalFailed": "יצירת ההצעה נכשלה",
+            "durationProposalTitle": "עדכון מדיניות - משך הצבעה",
+            "durationProposalSummary": "{account} ביקש לשנות את משך ההצבעה מ-{oldValue} ל-{newValue}.",
+            "durationSubmitted": "הבקשה נוצרה בהצלחה",
+            "pendingTitle": "בקשת סף הצבעה פעילה",
+            "pendingBody": "כדי להימנע מהתנגשויות, עליך להשלים או לפתור את הבקשות הממתינות הקיימות לפני שתמשיך. בקשות אלו פעילות כעת ויש לאשר או לדחות אותן תחילה.",
+            "viewRequest": "הצג בקשה",
+            "thresholdHeading": "סף הצבעה",
+            "thresholdDescriptionApprovers": "הגדר כמה הצבעות נדרשות כדי לאשר בקשות תשלום ובקשות הקשורות לצוות. הגדר ספים בנפרד עבור מאשרים וממשל.",
+            "thresholdDescriptionGeneric": "הגדר כמה הצבעות נדרשות כדי לאשר בקשות. הגדר ספים עבור כל תפקיד בהתאם לאחריותם.",
+            "membersWhoCanVote": "חברים שיכולים להצביע",
+            "votesRequired": "הצבעות נדרשות כדי לאשר בקשות",
+            "durationHeading": "משך הצבעה",
+            "durationDescription": "פרק הזמן (בימים) שבו הצעה תישאר פתוחה להצבעה. אם ההצבעה לא תושלם בפרק זמן זה, ההחלטה תפוג.",
+            "durationApprovers": " משך זה חל באופן שווה על תפקידי ממשל ומאשרים כאחד.",
+            "durationGeneric": " משך זה אחיד בכל תפקידי האוצר.",
+            "days": "ימים"
+        },
+        "preferences": {
+            "timeZone": "אזור זמן",
+            "timeZoneDescription": "הגדר את אזור הזמן המקומי שלך לתצוגת תאריך וזמן מדויקים.",
+            "timeFormat": "פורמט זמן",
+            "hour12": "12 שעות (1:00 PM)",
+            "hour24": "24 שעות (13:00)",
+            "autoTimezone": "הגדר אזור זמן אוטומטית באמצעות מיקומך",
+            "timezone": "אזור זמן",
+            "loadingTimezones": "טוען אזורי זמן...",
+            "selectTimezone": "בחר אזור זמן",
+            "searchTimezones": "חיפוש אזורי זמן...",
+            "noTimezones": "לא נמצאו אזורי זמן",
+            "save": "שמירה",
+            "savedToast": "ההעדפות נשמרו בהצלחה",
+            "saveFailed": "שמירת ההעדפות נכשלה",
+            "loadFailed": "טעינת אזורי הזמן נכשלה"
+        }
+    },
+    "addressBook": {
+        "emptyTitle": "הוסף את הנמען הראשון שלך",
+        "emptyDescription": "שמור כתובות בשימוש תדיר לתשלומים מהירים יותר וללא שגיאות. אנשי הקשר שלך נשארים פרטיים וגלויים רק לצוות שלך.",
+        "import": "ייבוא",
+        "addRecipient": "הוסף נמען",
+        "recipientsHeading": "נמענים",
+        "recipientsSelected": "{count, plural, =0 {אין נמענים} one {# נמען} two {# נמענים} many {# נמענים} other {# נמענים}} נבחרו",
+        "sectionHeading": "נמענים",
+        "privacyNote": "כתובות שמורות הן פרטיות וגלויות רק לצוות שלך.",
+        "searchPlaceholder": "חפש נמען לפי שם",
+        "searchPlaceholderShort": "חיפוש",
+        "review": {
+            "header": "סקירת פרטים",
+            "youAreAdding": "אתה מוסיף",
+            "newRecipients": "{count, plural, one {# נמען חדש} two {# נמענים חדשים} many {# נמענים חדשים} other {# נמענים חדשים}}",
+            "onNetworks": "ב-{count, plural, one {# רשת} two {# רשתות} many {# רשתות} other {# רשתות}}",
+            "recipients": "נמענים",
+            "allDuplicates": "כל הנמענים המיובאים כבר קיימים בספר הכתובות שלך. חזור כדי להעלות רשימה אחרת או הסר כפילויות מסקירה זו.",
+            "someDuplicates": "{duplicates} נמענים כפולים מתוך {total} נמענים סה\"כ. המשך לייבוא רק של הנמענים החדשים.",
+            "duplicated": "כפול",
+            "notePlaceholder": "הוסף הערה כדי לזהות את הנמען הזה (למשל תשלום לקבלן, חלוקת הבשלה).",
+            "skipDuplicates": "דלג על כפילויות וייבא רק חדשים.",
+            "allDuplicatesTooltip": "כל הנמענים המיובאים כבר בספר הכתובות שלך, אז אין מה לייבא חדש.",
+            "duplicateActionTooltip": "הפעל דילוג על כפילויות או הסר נמענים כפולים כדי להמשיך.",
+            "adding": "מוסיף…",
+            "nothingNew": "אין חדש לייבא",
+            "addRecipientsButton": "{count, plural, one {הוסף נמען} two {הוסף נמענים} many {הוסף נמענים} other {הוסף נמענים}}"
+        },
+        "removeDialog": {
+            "title": "הסר נמען",
+            "bulk": "זה יסיר <bold>{count, plural, one {# נמען} two {# נמענים} many {# נמענים} other {# נמענים}}</bold> מספר הכתובות שלך. תוכל להוסיף אותם שוב בכל עת.",
+            "single": "זה יסיר את <bold>{name}</bold> מספר הכתובות שלך. תוכל להוסיף נמען זה שוב בכל עת."
+        },
+        "importFlow": {
+            "title": "ייבוא נמענים",
+            "description": "העלה רשימה של כתובות נמענים לספר הכתובות שלך.",
+            "foundSummary": "נמצאו {count, plural, one {# נמען} two {# נמענים} many {# נמענים} other {# נמענים}} ב-{networkCount, plural, one {# רשת} two {# רשתות} many {# רשתות} other {# רשתות}}",
+            "uploadPrompt": "העלה או הדבק נתוני נמענים",
+            "fixErrors": "תקן שגיאות כדי להמשיך",
+            "continueReview": "המשך לסקירה"
+        },
+        "form": {
+            "editRecipient": "ערוך נמען",
+            "addRecipient": "הוסף נמען",
+            "import": "ייבוא",
+            "recipientName": "שם נמען",
+            "namePlaceholder": "Alice",
+            "recipientAddress": "כתובת נמען",
+            "network": "רשת",
+            "networkInfo": "רשתות תואמות עם כתובת זו",
+            "enterAddressFirst": "הזן תחילה כתובת נמען",
+            "selectNetwork": "בחר רשת",
+            "selectNetworksTitle": "בחר רשתות",
+            "searchNetworksPlaceholder": "חיפוש רשתות…",
+            "done": "סיום",
+            "edit": "עריכה",
+            "remove": "הסרה",
+            "incomplete": "לא הושלם",
+            "addAnother": "הוסף נמען נוסף",
+            "fillAllTooltip": "עליך למלא את כל השדות כדי להוסיף נמען.",
+            "reviewDetails": "סקירת פרטים",
+            "reviewTooltip": "כל הנמענים חייבים להיות מלאים לפני הסקירה.",
+            "invalidAddress": "כתובת לא תקינה",
+            "noCompatibleNetworks": "אין רשתות תואמות עבור כתובת זו"
+        },
+        "parsing": {
+            "rowPrefix": "שורה {row}: {message}",
+            "missingName": "חסר שם נמען. אנא הוסף שם.",
+            "missingAddress": "חסרה כתובת נמען. אנא הוסף כתובת ארנק.",
+            "invalidAddressFormat": "הכתובת \"{address}\" אינה בפורמט תקין עבור אף רשת נתמכת.",
+            "unknownNetwork": "רשת לא ידועה \"{network}\". רשתות נתמכות כוללות: {available}.",
+            "incompatibleNetwork": "הכתובת \"{address}\" אינה תואמת ל-{network}. רשתות תואמות: {compatible}.",
+            "noDataFound": "לא נמצאו נתונים. אנא הוסף נמענים בפורמט זה: Name, Address, Network, Note",
+            "headerColumnsNotFound": "זיהינו שורת כותרת, אך לא יכולנו למצוא את העמודות 'Name' ו-'Address'. אנא השתמש בשמות עמודות אלה, או הסר את שורת הכותרת.",
+            "failedToParseCsv": "ניתוח נתוני CSV נכשל"
+        }
+    },
+    "payments": {
+        "validation": {
+            "recipientMin": "הנמען צריך להיות לפחות 2 תווים",
+            "recipientMax": "הנמען חייב להיות פחות מ-128 תווים",
+            "amountPositive": "הסכום חייב להיות גדול מ-0",
+            "recipientTokenSame": "כתובת הנמען והטוקן אינן יכולות להיות זהות"
+        },
+        "newPayment": "תשלום חדש",
+        "reviewYourPayment": "סקור את התשלום שלך",
+        "reviewButton": "סקור תשלום",
+        "reviewButtonDisabled": "הזן סכום וכתובת",
+        "comingSoon": "בקרוב",
+        "bulkPayments": "תשלומים בכמויות",
+        "summaryRecipients": "ל-{count, plural, one {# נמען} two {# נמענים} many {# נמענים} other {# נמענים}}",
+        "networkFee": "עמלת רשת",
+        "networkFeeInfo": "מידע על עמלת רשת",
+        "commentPlaceholder": "הוסף הערה (אופציונלי)...",
+        "preparingRoute": "מכין מסלול העברה של 1Click...",
+        "confirmSubmit": "אשר ושלח בקשה",
+        "useDifferentAddress": "השתמש בכתובת אחרת",
+        "failed1ClickQuote": "יצירת ציטוט העברה של 1Click נכשלה",
+        "paymentSubmitted": "בקשה לשליחת תשלום נשלחה"
+    },
+    "bulkPayment": {
+        "comingSoonToast": "תשלומים בכמויות יגיעו בקרוב!",
+        "submittingList": "שולח רשימת תשלומים בכמויות",
+        "submittingProposal": "שולח הצעה",
+        "proposalSubmitted": "הצעת תשלום בכמויות נשלחה",
+        "submitListFailed": "שליחת רשימת התשלומים נכשלה",
+        "submitFailed": "שליחת תשלום בכמויות נכשלה",
+        "upload": {
+            "pleaseUploadCsv": "אנא העלה קובץ CSV",
+            "fileSizeLimit": "גודל הקובץ חייב להיות פחות מ-1.5 MB",
+            "headerTitle": "בקשות תשלום בכמויות",
+            "headerSubtitle": "שלם לנמענים מרובים בהצעה אחת.",
+            "creditsUsed": "ניצלת את כל הקרדיטים שלך",
+            "bulkPaymentsUsed": "ניצלת את כל תשלומי הכמויות שלך",
+            "upgradeTrial": "שדרג את התוכנית שלך כדי לקבל יותר ולהמשיך",
+            "upgradePaid": "שדרג את התוכנית שלך לגישה רבה יותר, או המתן עד שהמגבלות יתאפסו בחודש הבא.",
+            "selectAsset": "בחר נכס",
+            "disableTokenMessage": "תשלומים בכמויות עבור טוקנים אלה יגיעו בקרוב.",
+            "providePaymentData": "ספק נתוני תשלום",
+            "uploadFile": "העלה קובץ",
+            "provideData": "ספק נתונים",
+            "chooseFile": "בחר קובץ",
+            "orDragDrop": "או גרור ושחרר",
+            "maxFileSize": "מקסימום קובץ אחד עד 1.5 MB, קובץ CSV בלבד",
+            "noFilePrompt": "אין לך קובץ להעלות?",
+            "downloadTemplate": "הורד תבנית",
+            "requirements": "דרישות תשלום בכמויות",
+            "maxTransactions": "מקסימום {max} עסקאות לייבוא",
+            "singleTokenNetwork": "טוקן ורשת יחידים",
+            "limitsUsed": "ניצלת את כל המגבלות שלך",
+            "selectAndProvide": "בחר נכס וספק נתוני תשלום",
+            "continueToReview": "המשך לסקירה",
+            "selectTokenError": "אנא בחר טוקן",
+            "providePaymentDataError": "אנא ספק נתוני תשלום"
+        },
+        "editStep": {
+            "title": "ערוך תשלום",
+            "saveChanges": "שמור שינויים"
+        },
+        "parsing": {
+            "rowPrefix": "שורה {row}: {message}",
+            "missingRecipientFirstColumn": "חסרה כתובת נמען. אנא הוסף כתובת בעמודה הראשונה.",
+            "invalidNearAddress": "הכתובת \"{address}\" אינה חשבון NEAR תקין.",
+            "invalidChainAddress": "הכתובת \"{address}\" אינה חשבון {chain} תקין.",
+            "rowNeedsAmountRecipient": "כל שורה זקוקה לסכום ונמען המופרדים בפסיק. דוגמה: 100, alice.near",
+            "missingRecipientBeforeComma": "חסרה כתובת נמען. אנא הוסף כתובת לפני הפסיק.",
+            "missingAmountAfterComma": "חסר סכום. אנא הוסף מספר אחרי הפסיק. דוגמה: {recipient}, 100",
+            "invalidAmountNumber": "הסכום \"{amountStr}\" אינו מספר תקין. אנא השתמש במספרים ועשרוניים בלבד (למשל, 100 או 100.50).",
+            "amountGreaterThanZero": "הסכום חייב להיות גדול מ-0. הזנת \"{amountStr}\".",
+            "amountTooLarge": "הסכום \"{amountStr}\" גדול מדי. אנא השתמש במספר קטן יותר.",
+            "invalidAmountFallback": "סכום לא תקין. אנא השתמש במספרים ועשרוניים בלבד (למשל, 100 או 100.50).",
+            "pleaseRemoveChars": "אנא הסר את התווים האלה: {chars}. רק מספרים, פסיקים ונקודות מותרים.",
+            "amountCannotBeEmpty": "הסכום לא יכול להיות ריק.",
+            "tokenMismatch": "הזנת \"{provided}\" אך {expected} נבחר למעלה. או הסר את סמל הטוקן או בחר {suggested} מהרשימה הנפתחת.",
+            "multipleTokenSymbols": "אתה משתמש בסמלי טוקן מרובים ({symbols}). אנא השתמש רק בסוג טוקן אחד לאורך הקובץ שלך, או הסר את סמלי הטוקן ותן לבחירה שלמעלה לקבוע את הטוקן.",
+            "noPaymentDataFound": "לא נמצאו נתוני תשלום. אנא הוסף את התשלומים שלך בפורמט זה: recipient, amount",
+            "exceedsRecipientLimit": "יש לך {count} נמענים, אך המגבלה היא {limit} לאצווה. אנא הסר {excess, plural, one {# נמען} two {# נמענים} many {# נמענים} other {# נמענים}} או פצל למספר אצוות.",
+            "noPaymentDataProvided": "לא סופקו נתוני תשלום. אנא הזן את התשלומים שלך בפורמט זה: recipient, amount",
+            "headerColumnsNotFound": "זיהינו שורת כותרת, אך לא יכולנו למצוא את העמודות 'Recipient' ו-'Amount'. אנא השתמש בשמות עמודות אלה, או הסר את שורת הכותרת.",
+            "failedToParseCsv": "ניתוח נתוני CSV נכשל",
+            "failedToParsePaste": "ניתוח נתונים שהודבקו נכשל",
+            "failedToValidateAccount": "אימות החשבון נכשל",
+            "feeEstimationFailed": "לא ניתן היה להעריך עמלת רשת עבור סכום זה. אנא אמת ונסה שוב.",
+            "feeEstimationFailedRow": "שורה {row} ({recipient}): לא ניתן היה להעריך עמלת רשת עבור סכום זה. אנא אמת ונסה שוב."
+        },
+        "recipients": "נמענים",
+        "insufficientTokens": "טוקנים לא מספקים. ניתן לשלוח את הבקשה ולהטעין לפני האישור.",
+        "removeRecipient": "הסר נמען",
+        "removeRecipientConfirm": "האם אתה בטוח שברצונך להסיר את התשלום ל-<strong>{recipient}</strong>? לא ניתן לבטל פעולה זו.",
+        "remove": "הסרה",
+        "edit": "עריכה"
+    },
+    "bulkPaymentCredits": {
+        "title": "תשלומים בכמויות",
+        "unlimited": "ללא הגבלה",
+        "creditsPerPeriod": "{amount} / {period}",
+        "oneTimeTrial": "ניסיון חד פעמי",
+        "month": "חודש",
+        "moreFlexibility": "מחפש גמישות רבה יותר?",
+        "contactUs": "צור קשר"
+    },
+    "exchange": {
+        "validation": {
+            "amountPositive": "הסכום חייב להיות גדול מ-0"
+        },
+        "requestSubmitted": "בקשת החלפה נשלחה",
+        "heading": "החלפה",
+        "sell": "מכירה",
+        "receive": "קבלה",
+        "slippageTolerance": "סבילות החלקה",
+        "disabled": {
+            "differentTokens": "הטוקנים חייבים להיות שונים",
+            "enterAmount": "הזן סכום להחלפה"
+        },
+        "review": "סקור החלפה",
+        "poweredBy": "מופעל על ידי",
+        "info": {
+            "priceDifference": "הפרש מחיר",
+            "priceDifferenceTooltip": "מציג כיצד ערך ה-USD שאתה מקבל משתווה לערך ה-USD שאתה שולח.",
+            "estimatedTime": "זמן משוער",
+            "estimatedTimeValue": "{seconds} שניות",
+            "estimatedTimeTooltip": "זמן משוער להשלמת ההחלפה.",
+            "minimumReceived": "קבלה מינימלית",
+            "minimumReceivedTooltip": "זהו הסכום המינימלי שתקבל מהחלפה זו, בהתבסס על מגבלת ההחלקה שנקבעה עבור הבקשה.",
+            "depositAddress": "כתובת הפקדה",
+            "depositAddressCopied": "כתובת ההפקדה הועתקה",
+            "quoteExpires": "הציטוט פג ב-",
+            "exchangeFee": "עמלת החלפה",
+            "exchangeFeeTooltip": "עמלת 0.70% הנגבית כאן מכסה את עלויות פרוטוקול NEAR Intents כדי לאפשר את המסחר שלך ואת עמלת הווידג'ט של Trezu. סכום זה מחושב אוטומטית בתוך השער המצוטט שלך."
+        },
+        "approveWithin24h": "אנא אשר בקשה זו בתוך 24 שעות, אחרת היא תפוג. אנו ממליצים לאשר בהקדם האפשרי.",
+        "confirmSubmit": "אשר ושלח בקשה",
+        "refreshingIn": "שער ההחלפה יתרענן בעוד {seconds} שניות"
+    },
+    "vesting": {
+        "validation": {
+            "amountMin": "הסכום חייב להיות גדול או שווה ל-3.5",
+            "startBeforeEnd": "תאריך ההתחלה חייב להיות לפני תאריך הסיום",
+            "cliffBetween": "תאריך הצוק חייב להיות בין"
+        },
+        "stepTitles": {
+            "details": "פרטים",
+            "settings": "הגדרות",
+            "review": "סקירה"
+        },
+        "proposalTitle": "צור לוח זמנים להבשלה עבור {address}",
+        "scheduleSubmitted": "בקשה ליצירת לוח זמנים להבשלה נשלחה",
+        "heading": "לוח זמנים חדש להבשלה",
+        "amount": "סכום",
+        "startDate": "תאריך התחלה",
+        "endDate": "תאריך סיום",
+        "noteOptional": "הערה (אופציונלי)",
+        "continue": "המשך",
+        "advancedSettings": "הגדרות מתקדמות",
+        "allowCancellation": "אפשר ביטול",
+        "allowCancellationDescription": "מאפשר ל-NEAR Foundation לבטל את הנעילה בכל עת. נעילות שאינן ניתנות לביטול אינן תואמות עם תאריכי צוק.",
+        "cliffDate": "תאריך הצוק",
+        "allowEarn": "אפשר רווחים",
+        "allowEarnDescription": "מאפשר לבעלים של הנעילה לעשות סטייקינג לסכום המלא של הטוקנים בנעילה (גם לפני תאריך הצוק).",
+        "commentPlaceholder": "הוסף הערה עבור לוח זמנים זה להבשלה (אופציונלי)...",
+        "reviewRequest": "סקור בקשה",
+        "reviewHeading": "סקור את לוח הזמנים להבשלה שלך",
+        "confirmSubmit": "אשר ושלח בקשה",
+        "review": {
+            "recipient": "נמען",
+            "startDate": "תאריך התחלה",
+            "endDate": "תאריך סיום",
+            "cliffDate": "תאריך הצוק",
+            "cancelable": "ניתן לביטול",
+            "allowEarn": "אפשר רווחים",
+            "na": "לא זמין"
+        }
+    },
+    "createTreasury": {
+        "validation": {
+            "nameMin": "שם האוצר צריך להיות לפחות 2 תווים",
+            "nameMax": "שם האוצר חייב להיות פחות מ-64 תווים",
+            "accountMin": "שם החשבון צריך להיות לפחות 2 תווים",
+            "accountMax": "שם החשבון חייב להיות פחות מ-64 תווים",
+            "accountChars": "שם החשבון יכול להכיל רק אותיות לטיניות, מספרים ומקפים",
+            "accountTaken": "שם חשבון זה כבר תפוס"
+        },
+        "votingNote": "אתה צריך יותר חברים כדי לשנות הגדרות הצבעה. הוסף חבר נוסף כדי להגדיר הצבעה.",
+        "minimumVoteNote": "נדרש לפחות אישור הצבעה אחד.",
+        "heading": "יצירת אוצר",
+        "addMembers": "הוסף חברים",
+        "addMembersInfo": "ניתן להוסיף או לעדכן חברים עכשיו ולערוך זאת מאוחר יותר בכל עת.",
+        "treasuryName": "שם האוצר",
+        "treasuryNamePlaceholder": "האוצר שלי",
+        "accountName": "שם חשבון",
+        "accountNameInfo": "זהו שם ייחודי של החשבון שלך. הוא ישמש בכתובת ה-URL של האוצר שלך ויוצג בעסקאות כדי לזהות מי שלח את התשלום. בחר שם קצר ומוכר עבור החשבון שלך.",
+        "accountPlaceholder": "my-treasury",
+        "continue": "המשך",
+        "votingThreshold": "סף הצבעה",
+        "thresholdDescription": "הגדר כמה הצבעות נדרשות כדי לאשר בקשות:",
+        "financial": "פיננסי",
+        "financialDescription": "אישור בקשות תשלום והחלפה.",
+        "governance": "ממשל",
+        "governanceDescription": "אישור הגדרות, חברים ותצורת הצבעה.",
+        "confidential": "חסוי",
+        "public": "ציבורי",
+        "anyone": "כל אחד",
+        "teamOnly": "צוות בלבד",
+        "soon": "בקרוב",
+        "publicDescription": "כל היתרות, הפעילויות והעסקאות גלויות לכל אחד בבלוקצ'יין. אפשרות זו היא הטובה ביותר לארגונים שקופים ו-DAOs ציבוריים.",
+        "balanceTransactions": "יתרה, עסקאות",
+        "membersVoting": "חברים, הצבעה",
+        "allFeatures": "כל התכונות זמינות",
+        "confidentialDescription": "כל היתרות, הפעילויות וההעברות פרטיות בבלוקצ'יין. רק הצוות שלך יכול לראות מידע זה. הטוב ביותר עבור חברות פרטיות, משרדים משפחתיים או צוותים שרוצים פרטיות פיננסית.",
+        "recentTransactionsExport": "ייצוא עסקאות אחרונות",
+        "bulkPayment": "תשלום בכמויות",
+        "treasuryType": "סוג אוצר",
+        "treasuryTypeWarning": "ניתן לבחור רק פעם אחת לכל אוצר ולא ניתן לשנות זאת מאוחר יותר.",
+        "select": "בחר",
+        "visibleOnChain": "גלוי בשרשרת",
+        "featuresAvailable": "תכונות זמינות",
+        "mostFeaturesSupported": "רוב התכונות נתמכות",
+        "reviewTreasury": "סקור אוצר",
+        "membersLabel": "חברים",
+        "financialThreshold": "סף פיננסי",
+        "governanceThreshold": "סף ממשל",
+        "noDeploymentFee": "🎉 ללא עמלת פריסה",
+        "noDeploymentFeeDescription": "כדי לתמוך בפרויקטים חדשים, TREZU מכסה את כל עמלות הפריסה החד-פעמיות ואחסון הרשת.",
+        "createButton": "צור אוצר",
+        "connectWalletCreate": "התחבר לארנק כדי ליצור אוצר",
+        "unexpectedError": "אירעה שגיאה בלתי צפויה",
+        "creationFailed": "יצירת האוצר נכשלה. אנא נסה שוב.",
+        "stepTitles": {
+            "aboutYou": "אודותיך",
+            "details": "פרטים",
+            "members": "חברים",
+            "treasuryType": "סוג אוצר",
+            "review": "סקירה"
+        },
+        "steps": {
+            "creatingNear": "יוצר את האוצר שלך ב-NEAR",
+            "registeringKey": "רושם מפתח ציבורי",
+            "settingUpConfidential": "מגדיר עסקאות חסויות",
+            "configuringMembers": "מגדיר את חברי האוצר",
+            "finalizingSetup": "משלים הגדרה"
+        }
+    },
+    "manageTreasuries": {
+        "warningOne": "לפחות אוצר אחד צריך להישאר זמין",
+        "warningOnePeriod": "לפחות אוצר אחד צריך להישאר זמין.",
+        "activeHeading": "אוצרות פעילים",
+        "activeDescription": "אוצרות הגלויים כעת ברשימת החשבונות שלך.",
+        "activeEmpty": "אין אוצרות פעילים.",
+        "hiddenHeading": "אוצרות מוסתרים",
+        "hiddenDescription": "אוצרות מוסתרים מרשימת החשבונות שלך.",
+        "removeGuestTitle": "הסר אוצר אורח",
+        "removeDialog": "אתה עומד להסיר את <bold>{name}</bold>. לאחר האישור, לא ניתן לבטל פעולה זו.",
+        "tooltips": {
+            "removeFromList": "הסר מהרשימה שלך",
+            "viewTreasury": "הצג אוצר",
+            "hideFromList": "הסתר מהרשימה שלך",
+            "showInList": "הצג ברשימה שלך"
+        }
+    },
+    "wallet": {
+        "proposal": {
+            "transfer": "הצעה מ-dApp חיצוני: העבר NEAR ל-{receiverId}",
+            "functionCall": "הצעה מ-dApp חיצוני: {methods} על {receiverId}",
+            "unsupportedAction": "סוג פעולה לא נתמך \"{type}\". רק פעולות Transfer ו-FunctionCall יכולות להמיר להצעות Trezu."
+        },
+        "loading": "טוען...",
+        "connectPrompt": "חבר את ארנק NEAR שלך כדי להמשיך. לאחר מכן תבחר אוצר לפעול בשמו.",
+        "connectWallet": "חבר ארנק",
+        "cancel": "ביטול",
+        "connectedAs": "מחובר כ-<strong>{account}</strong>",
+        "loadingTreasuries": "טוען אוצרות...",
+        "selectSignIn": "בחר אוצר להיכנס בשמו:",
+        "selectSignTx": "בחר אוצר ליצור בו הצעה:",
+        "notMember": "אינך חבר באף אוצר.",
+        "actingAs": "פועל בשם",
+        "signedBy": "נחתם על ידי {account}",
+        "createsNProposals": "זה ייצור {count, plural, one {הצעת Trezu} two {# הצעות Trezu} many {# הצעות Trezu} other {# הצעות Trezu}} עבור:",
+        "proposalDescriptionLabel": "תיאור הצעה (אופציונלי)",
+        "proposalDescriptionPlaceholder": "תאר הצעה זו...",
+        "createProposal": "צור הצעה",
+        "creatingProposal": "יוצר הצעה...",
+        "confirmInWallet": "אנא אשר בארנק שלך",
+        "proposalSubmitted": "ההצעה נשלחה",
+        "shareProposal": "ההצעה שלך נוצרה. שתף את הקישור למטה עם חברי האוצר כדי להצביע.",
+        "proposalLink": "{daoId} — הצעה #{id}",
+        "checking": "בודק...",
+        "proposalApprovedProceed": "ההצעה אושרה. המשך",
+        "signedInSuccess": "נכנסת בהצלחה",
+        "proposalCreatedSuccess": "ההצעה נוצרה בהצלחה",
+        "closeWindow": "ניתן לסגור את החלון הזה.",
+        "errorGeneric": "אירעה שגיאה",
+        "tryAgain": "נסה שוב",
+        "errors": {
+            "parseTx": "ניתוח בקשת העסקה נכשל. אנא נסה שוב.",
+            "fetchTreasuries": "אחזור האוצרות שלך נכשל. אנא נסה שוב.",
+            "connectFailed": "חיבור הארנק נכשל",
+            "createProposalFailed": "יצירת ההצעה נכשלה",
+            "stillPending": "ההצעה עדיין ממתינה לאישור. אנא המתן עד שחברי האוצר יצביעו.",
+            "wasStatus": "הצעה #{id} הייתה {status}",
+            "awaitIndex": "ההצעה אושרה אך עסקת הביצוע עדיין לא מאונדקסת. אנא נסה שוב בעוד רגע.",
+            "checkStatusFailed": "בדיקת סטטוס ההצעה נכשלה",
+            "userCancelled": "המשתמש ביטל",
+            "proposalWasStatus": "ההצעה הייתה {status}"
+        }
+    },
+    "telegram": {
+        "tagPill": "Telegram",
+        "invalidLinkTitle": "קישור לא תקין",
+        "invalidLinkDescription": "בקישור החיבור ל-Telegram חסר טוקן. לחץ שוב על \"חבר אוצר\" ב-Telegram כדי ליצור קישור חדש.",
+        "successTitle": "חובר בהצלחה",
+        "successDescription": "האוצרות קושרו לצ'אט Telegram זה.",
+        "successToast": "האוצרות חוברו בהצלחה",
+        "goToApp": "עבור לאפליקציה",
+        "linkExpiredTitle": "הקישור פג תוקף",
+        "linkExpiredDescription": "קישור זה פג תוקף או כבר נוצל. ב-Telegram, הקלד את הפקודה למטה כדי להפעיל מחדש את תהליך החיבור.",
+        "commandCopied": "הפקודה הועתקה",
+        "copy": "העתקה",
+        "unableToLoadTitle": "לא ניתן לטעון את הצ'אט",
+        "unableToLoadDescription": "פרטי הצ'אט לא ניתנים לטעינה כעת. אנא נסה שוב מ-Telegram.",
+        "signInTitle": "היכנס כדי להמשיך",
+        "signInDescription": "חבר תחילה את ארנק NEAR שלך, ואז בחר אילו אוצרות לקשר לצ'אט Telegram זה.",
+        "connectWallet": "חבר ארנק",
+        "selectTreasuriesTitle": "בחר אוצרות",
+        "selectTreasuriesDescription": "בחר אילו אוצרות לחבר לצ'אט Telegram זה.",
+        "telegramChat": "צ'אט Telegram",
+        "chatIdFallback": "צ'אט #{id}",
+        "failedToConnect": "חיבור האוצרות נכשל. אנא נסה שוב.",
+        "relinking": "{count, plural, one {# אוצר נבחר מקושר לצ'אט Telegram אחר. חיבור יחבר אותו מחדש וישנה את הקישור לצ'אט זה.} two {# אוצרות נבחרים מקושרים לצ'אטים אחרים של Telegram. חיבור יחבר אותם מחדש וישנה את הקישורים לצ'אט זה.} many {# אוצרות נבחרים מקושרים לצ'אטים אחרים של Telegram. חיבור יחבר אותם מחדש וישנה את הקישורים לצ'אט זה.} other {# אוצרות נבחרים מקושרים לצ'אטים אחרים של Telegram. חיבור יחבר אותם מחדש וישנה את הקישורים לצ'אט זה.}}",
+        "alreadyConnected": "כבר מחובר לצ'אט זה",
+        "connectedToAnother": "מחובר לצ'אט אחר",
+        "notMember": "אינך חבר מדיניות באף אוצר.",
+        "connecting": "מתחבר…",
+        "connect": "חיבור",
+        "settings": {
+            "title": "Telegram",
+            "connectedTo": "מחובר ל-{chat}",
+            "chatNumber": "צ'אט #{id}",
+            "fallbackChat": "צ'אט Telegram",
+            "disconnect": "התנתקות",
+            "connect": "חיבור",
+            "connectHeadline": "חבר את Telegram לאוצר",
+            "connectDescription": "קבל התראות על בקשות חדשות, נכסים שנכנסו לאוצר ועוד.",
+            "noTreasuryDescription": "קשר את האוצרות שלך לצ'אט Telegram.",
+            "openSettingsHint": "פתח הגדרות מאוצר כדי לנהל אינטגרציות.",
+            "disconnectedToast": "Telegram נותק עבור אוצר זה",
+            "disconnectFailedToast": "לא ניתן היה לנתק את Telegram. נסה שוב.",
+            "telegramDisconnect": {
+                "title": "לנתק את בוט הטלגרם",
+                "body": "אם תנתק/י את החיבור, לא תקבל/י יותר התראות בבוט עבור אוצר זה. אפשר לחבר מחדש בכל עת.",
+                "action": "לנתק"
+            }
+        },
+        "connectInstructions": {
+            "title": "חברו את חשבון ה-Telegram שלכם ל-Trezu",
+            "subtitle": "בצעו את השלבים הבאים כדי להפעיל התראות עבור האוצר הזה ב-Telegram.",
+            "step1": "הוסיפו את {bot} לקבוצה או לערוץ שלכם ב-Telegram.",
+            "step2": "ב-Telegram לחצו על \"חבר אוצר\" (או השתמשו בתהליך החיבור של הבוט כאשר תתבקשו).",
+            "step3": "התחברו באתר, אשרו ובחרו אילו אוצרות לחבר לצ'אט הזה, כולל האוצר הזה.",
+            "doneHint": "סיימתם כאשר הדפדפן מציג שהאוצרות שלכם קושרו בהצלחה.",
+            "copyBotTooltip": "העתקת שם הבוט",
+            "botCopiedToast": "שם הבוט הועתק",
+            "openInTelegram": "פתחו את {bot} ב-Telegram"
+        }
+    },
+    "systemStatus": {
+        "underMaintenance": "בתחזוקה",
+        "maintenanceMessage": "אנו מבצעים כעת תחזוקה. ייתכן שחלק מהתכונות לא יהיו זמינות באופן זמני. אנא בדוק שוב בקרוב."
+    },
+    "creditsQuota": {
+        "available": "{count} זמינים",
+        "used": "{count} בשימוש",
+        "resetOn": "המגבלה תתאפס ב-{date}"
+    },
+    "approvalInfo": {
+        "infoText": "הצבעות הנדרשות לאישור בקשות הקשורות לתשלום. ניתן לעריכה בהגדרות ההצבעה.",
+        "thresholdPill": "סף {required} מתוך {total}",
+        "alertBody": "תשלום זה ידרוש אישור מ-<bold>{required}</bold> חברי אוצר לפני הביצוע."
+    },
+    "guestBadge": {
+        "title": "אורח",
+        "tooltip": "אתה אורח של אוצר זה. אתה יכול לראות רק את הנתונים."
+    },
+    "exportButton": {
+        "confidentialTooltip": "ייצוא אינו זמין עדיין במצב חסוי. תכונה זו תגיע בקרוב!"
+    },
+    "sponsoredActions": {
+        "titleExhausted": "הפעולות הממומנות נוצלו",
+        "titleAlmost": "הצוות שלך כמעט ללא פעולות ממומנות",
+        "closeNotice": "סגור הודעה",
+        "teamUsage": "שימוש הצוות: {total} פעולות לחודש",
+        "available": "{count} זמינים",
+        "used": "{count} בשימוש",
+        "exhaustedBody": "הצוות שלך הגיע למגבלת הפעולות הממומנות החודשיות. ניתן להמשיך לאחר {date} או צור קשר",
+        "almostBody": "TREZU מממנת כעת את עלויות האחסון עבור כל פעולות הצוות, כמו יצירת בקשות והצבעה עליהן. הצוות שלך קרוב להגיע למגבלה החודשית הממומנת.",
+        "contactUs": "צור קשר",
+        "nextMonthlyReset": "האיפוס החודשי הבא שלך",
+        "sidebarBody": "הצוות שלך הגיע למגבלת הפעולות הממומנות החודשיות. ניתן להמשיך לאחר {date} או ⬇️"
+    },
+    "acceptTerms": {
+        "title": "קבל תנאים כדי להמשיך",
+        "privacyTitle": "הפרטיות שלך ב-Trezu",
+        "privacyBody": "Trezu היא ממשק לא-משמורתי. אנו נותנים עדיפות לפרטיות שלך תוך הבטחה שהפלטפורמה תישאר מאובטחת ופונקציונלית.",
+        "minimalTitle": "נתונים מינימליים",
+        "minimalBody": "אנו אוספים מידע מוגבל, כגון כתובות ארנק ציבוריות, כתובות IP ואנליטיקת שימוש, כדי להפעיל ולשפר את הממשק.",
+        "noCustodyTitle": "ללא משמורת",
+        "noCustodyBody": "אין לנו גישה למפתחות הפרטיים, ביטויי השחזור או הנכסים הדיגיטליים שלך.",
+        "publicTitle": "רשומות ציבוריות",
+        "publicBody": "זכור שכל עסקאות הבלוקצ'יין הן מטבען ציבוריות ואינן נשלטות על ידינו.",
+        "responsibilityTitle": "האחריות שלך",
+        "responsibilityBody": "אתה אחראי בלעדית לניטור פעילות הארנק שלך ולאבטחת האישורים שלך.",
+        "futureTitle": "עדכונים עתידיים",
+        "futureBody": "אם תסכים להתראות עתידיות (כמו אימייל או Telegram), נשתמש בנתונים אלה רק כדי לעדכן אותך.",
+        "agreement": "קראתי ואני מסכים ל-<terms>תנאי השימוש</terms> ול-<privacy>מדיניות הפרטיות</privacy>",
+        "accepting": "מקבל...",
+        "continue": "המשך"
+    },
+    "confidentialBanner": {
+        "label": "חסוי",
+        "description": "יתרות, פעילות והעברות גלויות רק לצוות שלך — לא לבלוקצ'יין הציבורי."
+    },
+    "supportCenter": {
+        "title": "מרכז תמיכה",
+        "resources": "משאבים",
+        "support": "תמיכה",
+        "websiteTitle": "אתר Trezu",
+        "websiteDescription": "למד עוד על Trezu וקרא את הבלוג שלנו.",
+        "demo": "Trezu דמו",
+        "demoTitle": "גלה את הגרסה הציבורית",
+        "demoDescription": "צפה בחשבון ציבורי חי בפעולה.",
+        "confidentialDemoTitle": "גלה את הגרסה החסויה",
+        "confidentialDemoDescription": "גלה חשבון חסוי חי בפעולה.",
+        "videoTitle": "צפה בדמו",
+        "videoDescription": "צפה בסרטון קצר המראה איך Trezu עובד.",
+        "xTitle": "עקוב אחרינו ב-X",
+        "xDescription": "הישאר מעודכן עם המהדורות והתובנות האחרונות שלנו.",
+        "statsTitle": "סטטיסטיקה",
+        "statsDescription": "צפה בסך הנכסים תחת ניהול בכל sputnik DAOs.",
+        "docsTitle": "תיעוד",
+        "docsDescription": "למד על כל התכונות בתיעוד.",
+        "productSupportTitle": "תמיכת מוצר",
+        "productSupportDescription": "צור קשר עם צוות התמיכה שלנו לעזרה."
+    },
+    "progressModal": {
+        "titleCreating": "יוצר אוצר...",
+        "titleDone": "האוצר נוצר",
+        "titleFailed": "יצירת האוצר נכשלה",
+        "viewTreasury": "הצג אוצר"
+    },
+    "memberValidation": {
+        "noManagePermission": "אין לך הרשאה לנהל חברים",
+        "pendingRequest": "אינך יכול לנהל חברים כאשר יש בקשה פעילה",
+        "rolesAnd": "{first} ו-{second}",
+        "rolesMany": "{list}, ו-{last}",
+        "cannotRemoveMember": "לא ניתן להסיר חבר זה. הוא היחיד שמוקצה ל{count, plural, one {תפקיד} two {תפקידים} many {תפקידים} other {תפקידים}} {roles}.",
+        "cannotRemoveMemberGov": "לא ניתן להסיר חבר זה. הוא היחיד שמוקצה ל{count, plural, one {תפקיד, שנדרש} two {תפקידים, שנדרשים} many {תפקידים, שנדרשים} other {תפקידים, שנדרשים}} {roles} לניהול חברי צוות ולהגדרת הצבעה.",
+        "cannotBulkRemove": "לא ניתן להסיר חברים אלה. זה ישאיר את {count, plural, one {תפקיד} two {תפקידי} many {תפקידי} other {תפקידי}} {roles} ריק.",
+        "cannotBulkRemoveGov": "לא ניתן להסיר חברים אלה. זה ישאיר את {count, plural, one {תפקיד, שנדרש} two {תפקידי, שנדרשים} many {תפקידי, שנדרשים} other {תפקידי, שנדרשים}} {roles} ריק, הנדרש לניהול חברי צוות ולהגדרת הצבעה.",
+        "cannotRemoveRole": "אינך יכול להסיר את תפקיד {role} מחבר זה. הוא היחיד שמוקצה לתפקיד זה.",
+        "cannotRemoveRoleGov": "אינך יכול להסיר את תפקיד {role} מחבר זה. הוא החבר היחיד עם {role}, ובלי תפקיד זה לא תוכל לנהל חברי צוות או להגדיר הצבעה."
+    },
+    "roleSelector": {
+        "setRole": "הגדר תפקיד",
+        "allRoles": "כל התפקידים",
+        "roles": {
+            "governance": {
+                "title": "ממשל",
+                "description": "ממשל יכול ליצור ולהצביע על הגדרות אוצר הקשורות לצוות, כולל חברים, הרשאות ומראה האוצר."
+            },
+            "requestor": {
+                "title": "מבקש",
+                "description": "מבקש יכול ליצור בקשות עסקה הקשורות לתשלום, ללא זכויות הצבעה או אישור."
+            },
+            "financial": {
+                "title": "פיננסי",
+                "description": "פיננסי יכול להצביע על בקשות עסקה הקשורות לתשלום אך לא יכול ליצור אותן."
+            }
+        }
+    },
+    "memberInput": {
+        "creatorYou": "יוצר (אתה)",
+        "memberAddress": "כתובת החבר",
+        "addNewMember": "הוסף חבר חדש",
+        "validation": {
+            "rolesRequired": "לפחות תפקיד אחד נדרש",
+            "duplicateAddress": "הכתובת כבר חברה"
+        }
+    },
+    "recipientInput": {
+        "title": "אל",
+        "placeholder": "כתובת נמען"
+    },
+    "accountInput": {
+        "failedValidation": "אימות הכתובת נכשל",
+        "invalidNearFormat": "פורמט חשבון NEAR לא תקין",
+        "invalidChainAddress": "אנא הזן כתובת {chain} תקינה.",
+        "validating": "מאמת כתובת...",
+        "validAddress": "כתובת תקינה",
+        "placeholderWithExample": "כתובת נמען (למשל: {example})",
+        "placeholderNoExample": "כתובת נמען",
+        "nearExample": "alice.near, 0x..., או hex באורך 64 תווים",
+        "near": {
+            "required": "כתובת נדרשת",
+            "length": "הכתובת חייבת להיות בין 2 ל-64 תווים",
+            "missingTld": "חשבונות עם שם חייבים להסתיים ב-.near, .aurora או .tg",
+            "invalidChars": "הכתובת יכולה להכיל רק אותיות קטנות, ספרות ומפרידים (., -, _)",
+            "accountMissing": "החשבון אינו קיים בבלוקצ'יין NEAR",
+            "verifyFailed": "אימות קיום החשבון נכשל"
+        }
+    },
+    "csvUpload": {
+        "uploadFile": "העלה קובץ",
+        "provideData": "ספק נתונים",
+        "chooseFile": "בחר קובץ",
+        "orDragDrop": "או גרור ושחרר",
+        "maxFileSize": "מקסימום קובץ אחד עד {maxSize} MB, קובץ CSV בלבד",
+        "noFilePrompt": "אין לך קובץ להעלות?",
+        "downloadTemplate": "הורד תבנית"
+    },
+    "tokenSelect": {
+        "selectToken": "בחר טוקן",
+        "searchPlaceholder": "חיפוש טוקנים...",
+        "noTokensFound": "לא נמצאו טוקנים"
+    },
+    "filterOperations": {
+        "is": "הוא",
+        "isNot": "אינו",
+        "before": "לפני",
+        "after": "אחרי",
+        "between": "בין",
+        "equal": "שווה",
+        "moreThan": "יותר מ-",
+        "lessThan": "פחות מ-",
+        "contains": "מכיל"
+    },
+    "copyButton": {
+        "copied": "הועתק ללוח",
+        "failed": "ההעתקה נכשלה"
+    },
+    "recipientForm": {
+        "validation": {
+            "nameRequired": "שם נדרש",
+            "nameMax": "הנמען חייב להיות פחות מ-{max} תווים",
+            "addressRequired": "כתובת נדרשת",
+            "networksRequired": "בחר לפחות רשת אחת"
+        }
+    },
+    "paymentForm": {
+        "validation": {
+            "recipientMin": "הנמען צריך להיות לפחות 2 תווים",
+            "recipientMax": "הנמען חייב להיות פחות מ-128 תווים",
+            "amountGreaterThanZero": "הסכום חייב להיות גדול מ-0",
+            "recipientSameAsToken": "כתובת הנמען והטוקן אינן יכולות להיות זהות",
+            "selectToken": "אנא בחר טוקן",
+            "recipientMax64": "הנמען חייב להיות פחות מ-64 תווים",
+            "amountMinLockup": "הסכום חייב להיות גדול או שווה ל-3.5",
+            "startDateRequired": "תאריך התחלה נדרש",
+            "endDateRequired": "תאריך סיום נדרש",
+            "cliffDateRequired": "תאריך הצוק נדרש",
+            "startBeforeEnd": "תאריך ההתחלה חייב להיות לפני תאריך הסיום",
+            "cliffBetween": "תאריך הצוק חייב להיות בין {start} ל-{end}"
+        }
+    },
+    "exportToasts": {
+        "downloadFailed": "הורדת הייצוא נכשלה",
+        "invalidDateRange": "טווח תאריכים לא תקין",
+        "invalidDateRangeDescription": "אנא בחר טווח תאריכים תקין לייצוא.",
+        "exportSuccess": "הייצוא הצליח!",
+        "exportSuccessDescription": "קובץ ה-{type} שלך הורד. בדוק את היסטוריית הייצוא שלך לפרטים.",
+        "exportFailed": "הייצוא נכשל",
+        "exportFailedFallback": "ייצוא הנתונים נכשל. אנא נסה שוב.",
+        "noDownloadPermission": "אין לך הרשאה להוריד את הקובץ.",
+        "noExportPermission": "אין לך הרשאה לייצא",
+        "quotaUsed": "ניצלת את כל המכסה שלך",
+        "exporting": "מייצא...",
+        "export": "ייצוא",
+        "columnSubmissionTime": "שעת שליחה",
+        "columnDateRange": "טווח תאריכים",
+        "columnGeneratedBy": "נוצר על ידי",
+        "columnStatus": "סטטוס",
+        "typeAll": "כל הסוגים",
+        "typeSent": "נשלחו",
+        "typeReceived": "התקבלו",
+        "typeStakingRewards": "תגמולי סטייקינג",
+        "allAssets": "כל הנכסים",
+        "upgradeTrial": "שדרג את התוכנית שלך כדי לקבל יותר ולהמשיך",
+        "upgradePaid": "שדרג את התוכנית שלך לגישה רבה יותר, או המתן עד שהמגבלות יתאפסו בחודש הבא.",
+        "selectDateRange": "בחר טווח תאריכים",
+        "noExportsTitle": "אין ייצואים עדיין",
+        "noExportsDescription": "הקבצים שיוצאו מהחודש האחרון יופיעו כאן לאחר יצירתם.",
+        "quotaTitle": "מכסת ייצוא",
+        "unlimited": "ללא הגבלה",
+        "creditsPerMonth": "{total} / לחודש",
+        "requirementsTitle": "דרישות ייצוא",
+        "exportFromPeriod": "ניתן לייצא נתונים מ-{period}.",
+        "availableFor48Hours": "הקבצים המיוצאים זמינים להורדה למשך 48 שעות.",
+        "moreFlexibility": "מחפש גמישות רבה יותר?",
+        "contactUs": "צור קשר",
+        "last1Year": "שנה אחרונה",
+        "last2Years": "שנתיים אחרונות",
+        "invalidEmail": "אנא הזן כתובת אימייל תקינה"
+    },
+    "proposalKinds": {
+        "Batch Payment Request": "בקשת תשלום באצווה",
+        "Payment Request": "בקשת תשלום",
+        "Confidential Request": "בקשה חסויה",
+        "Exchange": "החלפה",
+        "Function Call": "קריאת פונקציה",
+        "Change Policy": "שינוי מדיניות",
+        "Update General Settings": "עדכון הגדרות כלליות",
+        "Earn NEAR": "הרווח NEAR",
+        "Unstake NEAR": "בטל סטייק NEAR",
+        "Vesting": "הבשלה",
+        "Withdraw Earnings": "משוך רווחים",
+        "Members": "חברים",
+        "Upgrade": "שדרוג",
+        "Set Staking Contract": "הגדר חוזה סטייקינג",
+        "Bounty": "פרס",
+        "Vote": "הצבעה",
+        "Factory Info Update": "עדכון מידע מפעל",
+        "Unsupported": "לא נתמך"
+    },
+    "paymentFormSection": {
+        "selectRecipient": "בחר נמען",
+        "searchByNameOrAddress": "חיפוש לפי שם או כתובת",
+        "restrictedRecipientTitle": "עסקה אסורה",
+        "restrictedRecipientMessage": "כתובת זו מוגבלת כעת עקב בדיקות אבטחה. אם אתה מאמין שכתובת זו צריכה להיות מותרת, תוכל <link>לבקש להוסיפה לרשימה הלבנה</link>.",
+        "send": "שליחה",
+        "to": "אל"
+    },
+    "recipientNetworkSelect": {
+        "label": "רשת נמען",
+        "placeholder": "בחר רשת נמען",
+        "enterAddressFirst": "הזן תחילה כתובת נמען",
+        "noCompatibleNetwork": "אין רשת התואמת לכתובת זו",
+        "selectPlaceholder": "בחר רשת",
+        "title": "בחר רשת",
+        "available": "זמין",
+        "fromAddressBook": "מספר הכתובות",
+        "otherAvailable": "זמינים אחרים",
+        "incompatible": "לא תואם",
+        "comingSoon": "בקרוב",
+        "forMembersOnly": "לחברים בלבד",
+        "nearComName": "near.com",
+        "nearComDescription": "רשת פנימית עבור near.com ו-Trezu"
+    },
+    "addressBookTable": {
+        "emptyTitle": "אין נמענים עדיין",
+        "emptyDescription": "הוסף נמענים לספר כתובות זה לתשלומים מהירים יותר.",
+        "selectAll": "בחר את כל הנמענים",
+        "selectEntry": "בחר {name}",
+        "recipient": "נמען",
+        "network": "רשת",
+        "addedBy": "נוסף על ידי",
+        "note": "הערה",
+        "added": "נוסף",
+        "remove": "הסרה",
+        "send": "שליחה"
+    },
+    "publicDashboard": {
+        "updatesDaily": "מתעדכן מדי יום",
+        "noDataTitle": "אין נתונים עדיין",
+        "noDataDescription": "הסטטיסטיקה תופיע לאחר שחושבה תמונת המצב היומית הראשונה.",
+        "assetsSecured": "נכסים מאובטחים עם חוזה Sputnik DAO",
+        "acrossDaos": "ב-<bold>{count, plural, one {# DAO} two {# DAOs} many {# DAOs} other {# DAOs}}</bold>",
+        "updatedOn": "עודכן {date}",
+        "topAssets": "20 הנכסים המובילים",
+        "noAssetsTitle": "אין נכסים עדיין",
+        "noAssetsDescription": "נתוני הטוקן יופיעו לאחר חישוב תמונת המצב היומית.",
+        "tableToken": "טוקן",
+        "tableTotalValue": "ערך כולל"
+    },
+    "transactionHashCell": {
+        "copyHash": "העתק גיבוב",
+        "hashCopied": "הגיבוב הועתק",
+        "openInExplorer": "פתח בסייר"
+    },
+    "treasurySelector": {
+        "select": "בחר אוצר",
+        "connectWalletTooltip": "חבר ארנק כדי לראות אוצרות",
+        "manageTreasuries": "ניהול אוצרות",
+        "createTreasury": "יצירת אוצר",
+        "memberOf": "חבר ב-",
+        "guestTreasuries": "אוצרות אורח"
+    },
+    "selectModal": {
+        "searchByName": "חיפוש לפי שם",
+        "noResults": "לא נמצאו תוצאות"
+    },
+    "selectList": {
+        "noResults": "לא נמצאו תוצאות"
+    },
+    "datePicker": {
+        "pickDate": "בחר תאריך",
+        "timezone": "אזור זמן"
+    },
+    "datePresets": {
+        "today": "היום",
+        "yesterday": "אתמול",
+        "last3Days": "3 ימים אחרונים",
+        "last7Days": "7 ימים אחרונים",
+        "last14Days": "14 ימים אחרונים",
+        "lastMonth": "חודש אחרון",
+        "last3Months": "3 חודשים אחרונים",
+        "last6Months": "6 חודשים אחרונים"
+    },
+    "input": {
+        "openSearch": "פתח חיפוש"
+    },
+    "pagination": {
+        "previous": "הקודם",
+        "next": "הבא"
+    },
+    "confidentialState": {
+        "title": "חסוי",
+        "description": "רק לחברי האוצר יש גישה."
+    },
+    "exchangeRate": {
+        "rate": "שער",
+        "clickToReverse": "לחץ להפוך את השער"
+    },
+    "exchangeSettings": {
+        "title": "הגדרות החלפה",
+        "slippageTolerance": "סבילות החלקה",
+        "custom": "מותאם אישית",
+        "customPlaceholder": "למשל: 2%",
+        "slippageRange": "ההחלקה חייבת להיות בין 0.01% ל-100%",
+        "enterSlippage": "אנא הזן סבילות החלקה",
+        "slippageHelp": "אם המחיר ישתנה ביותר מאחוז זה, העסקה תבוטל כדי להגן על הכספים שלך.",
+        "save": "שמירה"
+    },
+    "assetsPage": {
+        "title": "נכסים",
+        "noAssetsTitle": "אין נכסים עדיין",
+        "noAssetsDescription": "כדי להתחיל, הוסף נכסים לאוצר שלך על ידי ביצוע הפקדה."
+    },
+    "newBadge": {
+        "label": "חדש"
+    },
+    "numberBadge": {
+        "pendingRequests": "{count, plural, one {# בקשה ממתינה} two {# בקשות ממתינות} many {# בקשות ממתינות} other {# בקשות ממתינות}}"
+    },
+    "balanceWithGraph": {
+        "allTokens": "כל הטוקנים",
+        "deposit": "הפקדה",
+        "send": "שליחה",
+        "exchange": "החלפה",
+        "chartNow": "עכשיו",
+        "totalBalance": "יתרה כוללת",
+        "excludedTokens": "טוקנים לא נכללים:",
+        "noPriceHistory": "אין היסטוריית מחירים. בחר טוקן כדי לראות את שינויי היתרה שלו.",
+        "bucketAvailable": "זמין",
+        "bucketLocked": "נעול",
+        "bucketEarning": "מרוויח",
+        "period": {
+            "1W": "שבוע",
+            "1M": "חודש",
+            "3M": "3 ח'",
+            "1Y": "שנה"
+        }
+    },
+    "changePolicyExpanded": {
+        "proposalBond": "ערבון הצעה",
+        "proposalPeriod": "תקופת הצעה",
+        "bountyBond": "ערבון פרס",
+        "bountyForgivenessPeriod": "תקופת מחילת פרס",
+        "votesCount": "{count} הצבעות",
+        "weightKind": "סוג משקל",
+        "quorum": "מניין",
+        "threshold": "סף",
+        "defaultThreshold": "סף ברירת מחדל",
+        "roleThreshold": "סף {role}",
+        "member": "חבר",
+        "members": "חברים",
+        "permissions": "הרשאות",
+        "oldPermissions": "הרשאות ישנות",
+        "newPermissions": "הרשאות חדשות",
+        "category": "קטגוריה",
+        "transactionDetails": "פרטי עסקה",
+        "addNewMember": "הוסף חבר חדש",
+        "addNewMembers": "הוסף חברים חדשים",
+        "removeMember": "הסר חבר",
+        "removeMembers": "הסר חברים",
+        "updateMemberPermissions": "עדכן הרשאות חבר",
+        "updateMembersPermissions": "עדכן הרשאות חברים",
+        "memberIndex": "חבר {index}",
+        "membersCount": "{count} חברים",
+        "collapseAll": "כווץ הכל",
+        "expandAll": "הרחב הכל",
+        "loadingHistorical": "טוען מדיניות היסטורית...",
+        "unableToDiff": "לא ניתן לחשב הבדלים עבור הצעה זו.",
+        "noChangesCurrent": "לא זוהו שינויים - המדיניות המוצעת זהה למדיניות הנוכחית.",
+        "noChangesHistorical": "לא זוהו שינויים - המדיניות המוצעת זהה למדיניות ההיסטורית."
+    },
+    "balanceChart": {
+        "usdValue": "ערך USD",
+        "tokenBalance": "יתרת טוקן",
+        "emptyTitle": "אין מה להציג עדיין",
+        "emptyDescription": "הוסף נכסים כדי להתחיל לעקוב אחר התיק שלך."
+    },
+    "user": {
+        "saveToAddressBook": "שמור בספר הכתובות",
+        "walletCopiedToast": "כתובת הארנק הועתקה ללוח",
+        "copyWalletAddress": "העתק כתובת ארנק"
+    },
+    "infoDisplay": {
+        "viewLess": "הצג פחות",
+        "viewAllDetails": "הצג את כל הפרטים"
+    },
+    "amountSummary": {
+        "defaultTitle": "אתה שולח סכום כולל של"
+    },
+    "residency": {
+        "vestedToken": "טוקן שהובשל",
+        "staked": "בסטייקינג",
+        "fungibleToken": "טוקן סחיר",
+        "intentsToken": "טוקן Intents",
+        "nativeToken": "טוקן מקורי"
+    },
+    "exchangeErrors": {
+        "noRoute": "לא נמצאה החלפה. נסה סכום קטן יותר או טוקן אחר.",
+        "amountTooLow": "הסכום נמוך מדי להחלפה. החלפות חוצות-רשתות דורשות מינימום גבוה יותר כדי לכסות את עמלות הרשת.",
+        "insufficientBalance": "יתרה לא מספקת להחלפה זו.",
+        "networkError": "שגיאת רשת. אנא בדוק את החיבור שלך ונסה שוב.",
+        "fetchFailed": "אחזור הציטוט נכשל"
+    },
+    "tokenSelectDialog": {
+        "selectToken": "בחר טוקן",
+        "selectAsset": "בחר נכס",
+        "selectNetworkFor": "בחר רשת עבור {asset}",
+        "searchByName": "חיפוש לפי שם",
+        "noTokensWithBalance": "לא נמצאו טוקנים עם יתרה",
+        "noTokensFound": "לא נמצאו טוקנים",
+        "yourAssets": "הנכסים שלך",
+        "otherAssets": "נכסים אחרים",
+        "networksWithAssets": "רשתות עם נכסים",
+        "supportedNetworks": "רשתות נתמכות",
+        "comingSoon": "בקרוב"
+    },
+    "intentsQuote": {
+        "initializing": "שירות הציטוטים עדיין מאותחל. אנא נסה שוב.",
+        "noRoute": "לא ניתן היה להכין מסלול תשלום כעת. אנא נסה שוב.",
+        "fetchFailed": "לא ניתן היה להכין מסלול תשלום כעת. אנא נסה שוב.",
+        "amountTooLow": "הסכום נמוך מדי לכיסוי עמלות רשת. הזן סכום גבוה יותר ונסה שוב.",
+        "amountTooLowWithMin": "הסכום נמוך מדי לכיסוי עמלות רשת. הזן לפחות {min} {token}.",
+        "networkFeeTooltip": "עמלה זו משמשת לעיבוד העסקה ברשת שנבחרה."
+    },
+    "pageTours": {
+        "paymentsBulk": "יצירה באצווה הגיעה! צור מספר בקשות בכמה שלבים בלבד.",
+        "paymentsPending": "הצג כאן בקשות הממתינות לאישור.",
+        "exchangeSettings": "כאן ניתן להגדיר כמה שינוי מחיר אתה מוכן לקבל.",
+        "membersPending": "לחץ כדי לראות בקשות פעילות הממתינות לאישור.",
+        "guestSaveIntro": "אתה אורח של אוצר זה. אתה יכול לראות רק את הנתונים.",
+        "guestSaveAction": "ניתן לשמור את האוצר האורח הזה לרשימת האוצרות שלך.",
+        "newFeatureRich": "חדש! 🎉 שמור כתובות בשימוש תדיר לתשלומים מהירים יותר וללא שגיאות. אנשי הקשר שלך נשארים פרטיים וגלויים רק לצוות שלך.",
+        "newFeatureCta": "נסה זאת"
+    },
+    "statusDate": {
+        "expires": "פג תוקף",
+        "created": "נוצר",
+        "expired": "פג תוקף",
+        "removed": "הוסר"
+    },
+    "relativeTime": {
+        "justNow": "כרגע",
+        "moments": "רגעים"
+    },
+    "amount": {
+        "network": "רשת: {network}"
+    },
+    "activityLabels": {
+        "exchangePending": "החלפה ממתינה",
+        "exchangeRequest": "בקשת החלפה",
+        "exchangeFulfillment": "מילוי החלפה",
+        "stakingRewards": "תגמולי סטייקינג",
+        "proposalAction": "פעולת הצעה",
+        "deposit": "הפקדת {symbol}",
+        "paymentSent": "תשלום נשלח",
+        "transaction": "עסקה",
+        "fallbackToken": "טוקן",
+        "viaIntents": "דרך NEAR Intents",
+        "from": "מאת {account}",
+        "to": "אל {account}",
+        "viewAll": "הצג את כל היסטוריית העסקאות שלך",
+        "sentReceived": "עסקאות שנשלחו והתקבלו ({duration})",
+        "unlimitedHistory": "היסטוריה ללא הגבלה",
+        "oneYear": "שנה 1",
+        "yearsCount": "{count} שנים",
+        "monthsCount": "{count} חודשים",
+        "lastDuration": "{duration} אחרונים"
+    },
+    "nearStore": {
+        "connectAndAcceptTerms": "אנא חבר את הארנק וקבל את התנאים כדי להמשיך.",
+        "transactionNotApproved": "העסקה לא אושרה בארנק שלך.",
+        "failedSubmitVote": "שליחת ההצבעה נכשלה",
+        "failedSubmitVotes": "שליחת ההצבעות נכשלה",
+        "viewRequest": "הצג בקשה",
+        "proposalRemoved": "ההצעה שלך הוסרה",
+        "voteSubmitted": "ההצבעה שלך נשלחה",
+        "votesSubmitted": "ההצבעות שלך נשלחו"
+    },
+    "tokenInput": {
+        "max": "MAX",
+        "insufficientTokens": "טוקנים לא מספקים. ניתן לשלוח את הבקשה ולהטעין לפני האישור.",
+        "balance": "יתרה: {amount} {symbol}"
+    },
+    "createRequestButton": {
+        "idle": "צור בקשה",
+        "noPermission": "אין לך הרשאה ליצור בקשה"
+    },
+    "address": {
+        "copied": "הכתובת הועתקה ללוח"
+    },
+    "memberAvatars": {
+        "membersWhoCanVote": "חברים שיכולים להצביע",
+        "moreMembers": "+{count, plural, one {# חבר} two {# חברים} many {# חברים} other {# חברים}}"
+    },
+    "accountIdInput": {
+        "minLength": "מזהה חשבון צריך להיות לפחות 2 תווים",
+        "maxLength": "מזהה חשבון חייב להיות פחות מ-64 תווים",
+        "charset": "מזהה חשבון חייב להכיל רק אותיות קטנות, ספרות, נקודות, מקפים וקווים תחתונים, ללא מפרידים בתחילה או בסוף",
+        "doesNotExist": "מזהה החשבון לא קיים"
+    },
+    "addressBookMutations": {
+        "addedToast": "{count, plural, one {נמען נוסף} two {# נמענים נוספו} many {# נמענים נוספו} other {# נמענים נוספו}}",
+        "addedSingleToast": "נמען נוסף",
+        "addFailedToast": "הוספת הנמענים נכשלה",
+        "addSingleFailedToast": "הוספת הנמען נכשלה",
+        "removedToast": "{count, plural, one {נמען הוסר} two {# נמענים הוסרו} many {# נמענים הוסרו} other {# נמענים הוסרו}}",
+        "removeFailedToast": "הסרת הנמענים נכשלה",
+        "exportFailedToast": "ייצוא הנמענים נכשל"
+    },
+    "treasuryMutations": {
+        "savedToast": "האוצר נשמר לרשימה שלך",
+        "saveFailedToast": "שמירת האוצר נכשלה",
+        "hiddenToast": "האוצר הוסתר מהרשימה",
+        "hideFailedToast": "הסתרת האוצר נכשלה",
+        "unhiddenToast": "האוצר גלוי שוב",
+        "unhideFailedToast": "ביטול הסתרת האוצר נכשל",
+        "removedToast": "האוצר הוסר מהרשימה השמורה",
+        "removeFailedToast": "הסרת האוצר מהרשימה השמורה נכשלה"
+    },
+    "assetsTable": {
+        "noAssetsFound": "לא נמצאו נכסים.",
+        "assetDetails": "פרטי נכס",
+        "coinPrice": "מחיר מטבע",
+        "weight": "משקל",
+        "balance": "יתרה",
+        "lockedBalance": "יתרה נעולה",
+        "totalBalance": "יתרה כוללת",
+        "source": "מקור",
+        "balanceByInvestors": "יתרה לפי {count, plural, one {משקיע} two {משקיעים} many {משקיעים} other {משקיעים}}",
+        "investors": "{count, plural, one {משקיע} two {משקיעים} many {משקיעים} other {משקיעים}}",
+        "poolBreakdown": "פירוט מאגר",
+        "unlockedToken": "טוקן לא נעול",
+        "lockupStakingPool": "מאגר סטייקינג של נעילה",
+        "exchange": "החלפה",
+        "send": "שליחה",
+        "details": "פרטים",
+        "columnToken": "טוקן",
+        "columnLocked": "נעול",
+        "columnUnlocked": "לא נעול",
+        "columnTotalAllocated": "סך מוקצה",
+        "columnAvailableToWithdraw": "זמין למשיכה",
+        "viewAvailable": "זמין",
+        "viewLocked": "נעול",
+        "viewEarning": "מרוויח",
+        "fullAllocatedBalance": "היתרה המוקצית המלאה שלך",
+        "partAllocatedBalance": "חלק מהיתרה המוקצית שלך",
+        "currentlyEarning": "({amount} {symbol}) מרוויח כעת.",
+        "willAppearHere": " הוא יופיע כאן ברגע שתפסיק להרוויח.",
+        "seeInEarningTab": "ראה בלשונית רווחים",
+        "seeInEarning": "ראה ברווחים"
+    },
+    "earningDetails": {
+        "title": "פרטי רווחים",
+        "totalStaked": "סך הסטייקינג",
+        "earningOverview": "סקירת רווחים",
+        "poolBreakdown": "פירוט מאגר ({count, plural, one {# מאגר} two {# מאגרים} many {# מאגרים} other {# מאגרים}})",
+        "almostReady": "רווחים כמעט מוכנים!",
+        "finalizingFeature": "אנחנו משלימים את התכונה<br></br>כדי שתוכל להתחיל להרוויח טוקנים בקרוב.",
+        "comingSoon": "בקרוב",
+        "goToEarn": "עבור לרווחים",
+        "readyToWithdraw": "מוכן למשיכה",
+        "unstaking": "מבטל סטייקינג",
+        "overview": {
+            "staked": "בסטייקינג",
+            "stakedInfo": "טוקנים שמוקצים כעת למאמתים ומרוויחים תגמולים.",
+            "pendingRelease": "ממתין לשחרור",
+            "pendingReleaseInfo": "טוקנים שבוטל להם הסטייקינג אך עדיין בתקופת הפירוק (בדרך כלל 2-3 ימים).",
+            "availableForWithdraw": "זמין למשיכה",
+            "availableForWithdrawInfo": "טוקנים שבוטל להם הסטייקינג והשלימו את תקופת הפירוק וניתן למשוך אותם."
+        }
+    },
+    "lockupDetails": {
+        "title": "פרטי נעילה",
+        "balance": "יתרה",
+        "reservedForStorage": "שמור לאחסון",
+        "reservedForStorageInfo": "NEAR שמור על ידי חשבון הנעילה כדי לשלם עלויות אחסון.",
+        "tokenBreakdown": "פירוט טוקן",
+        "allocatedAmount": "סכום מוקצה",
+        "earned": "הורווח",
+        "progress": "התקדמות",
+        "unlocked": "לא נעול",
+        "locked": "נעול",
+        "schedule": "לוח זמנים",
+        "startDate": "תאריך התחלה",
+        "endDate": "תאריך סיום",
+        "rounds": "סבבים",
+        "releaseInterval": "מרווח שחרור",
+        "nextUnlockDate": "תאריך שחרור הבא",
+        "allEarning": "כל ה-{amount} {symbol} מהנעילה שלך מרוויחים כעת.",
+        "partEarning": "חלק מהנעילה שלך ({amount} {symbol}) מרוויח כעת.",
+        "stopEarningFirst": "כדי להשתמש בטוקנים לא נעולים, הפסק להרוויח תחילה ומשוך אותם.",
+        "howGrantWorks": "איך המענק שלך עובד",
+        "ftStep1": "אתה מקבל מענק לתקופה מסוימת של זמן. במקום לקבל את הסכום המלא בבת אחת, הנכסים הופכים לזמינים בחלקים לאורך זמן.",
+        "ftStep2": "כאשר התאריך לשחרור הבא מגיע, חלק זה של טוקנים משוחרר אוטומטית ומועבר ליתרת האוצר שלך.",
+        "ftStep3": "ברגע שהם מופיעים ביתרה שלך, ניתן להשתמש בהם מיד לתשלומים, העברות או עסקאות אחרות.",
+        "nearStep1": "אתה מקבל מענק לתקופת זמן מוגדרת עם תאריך התחלה וסיום מוגדרים.",
+        "nearStep2": "ככל שהטוקנים משתחררים, הם הופכים זמינים אוטומטית ביתרת האוצר שלך.",
+        "nearStep3": "ניתן להשתמש בטוקנים המשוחררים מיד לתשלומים, העברות או עסקאות אחרות.",
+        "notAvailable": "לא זמין",
+        "everyMonth": "כל חודש",
+        "everyQuarter": "כל רבעון",
+        "everyUnit": "כל {unit}",
+        "everyMultiple": "כל {text}",
+        "completed": "הושלם",
+        "unit": {
+            "year": "{count, plural, one {# שנה} two {# שנים} many {# שנים} other {# שנים}}",
+            "day": "{count, plural, one {# יום} two {# ימים} many {# ימים} other {# ימים}}",
+            "hour": "{count, plural, one {# שעה} two {# שעות} many {# שעות} other {# שעות}}",
+            "minute": "{count, plural, one {# דקה} two {# דקות} many {# דקות} other {# דקות}}",
+            "second": "{count, plural, one {# שנייה} two {# שניות} many {# שניות} other {# שניות}}"
+        }
+    },
+    "vestingDetails": {
+        "title": "פרטי הבשלה",
+        "availableToUse": "זמין לשימוש",
+        "vestingPeriod": "תקופת הבשלה",
+        "vestingPeriodDescription": "טוקנים משוחררים מדי יום בתקופה זו.",
+        "startDate": "תאריך התחלה",
+        "endDate": "תאריך סיום",
+        "tokenBreakdown": "פירוט טוקן",
+        "originalVestedAmount": "סכום הבשלה מקורי",
+        "reservedForStorage": "שמור לאחסון",
+        "reservedForStorageInfo": "כמות קטנה של טוקנים הנדרשים כדי לשמור על ההבשלה פעילה ולכסות עלויות אחסון.",
+        "percentVested": "{percent}% הובשלו",
+        "vestedOf": "{vested} מתוך {total} {symbol}",
+        "send": "שליחה"
+    },
+    "earningPoolDetails": {
+        "balance": "יתרה",
+        "apy": "APY",
+        "fee": "עמלה",
+        "notAvailable": "לא זמין",
+        "lockupStakingPool": "מאגר סטייקינג של נעילה",
+        "lockupAssetsNote": "כל הנכסים בעמדה זו הם מהנעילה שלך. לאחר שתפסיק להרוויח, חלק מהטוקנים עשויים עדיין להיות נעולים ולא זמינים - בדוק את לוח הזמנים של הנעילה שלך כדי לראות מתי הם משתחררים."
+    },
+    "onboardingQuestions": {
+        "stepTitle": "כמה שאלות מהירות כדי להתחיל.",
+        "other": "אחר",
+        "placeholders": {
+            "describeRole": "תאר את התפקיד שלך (אופציונלי)",
+            "describeUseCase": "תאר את מקרה השימוש שלך (אופציונלי)",
+            "networkName": "הזן שם רשת (אופציונלי)",
+            "currentChallenge": "הזן את האתגר הנוכחי שלך (אופציונלי)",
+            "describeOther": "תאר אחר (אופציונלי)"
+        },
+        "questions": {
+            "role": "מה מתאר הכי טוב את התפקיד שלך?",
+            "useCases": "למה אתה מתכנן להשתמש ב-Trezu?",
+            "teamSize": "כמה אנשים ינהלו את האוצר?",
+            "networks": "באילו רשתות אתה משתמש הכי הרבה?",
+            "multisigExperience": "מה הניסיון שלך עם מולטיסיג?",
+            "currentTools": "באילו כלים אתה משתמש כיום לניהול כספים?",
+            "monthlyVolume": "נפח עסקאות חודשי משוער?",
+            "biggestChallenges": "מה האתגר הכי גדול שלך כרגע?"
+        },
+        "options": {
+            "role": {
+                "founder": "מייסד",
+                "co-founder": "מייסד-שותף",
+                "cfo-finance-lead": "CFO / ראש פיננסים",
+                "operations-manager": "מנהל תפעול",
+                "treasury-manager": "מנהל אוצר",
+                "other": "אחר"
+            },
+            "useCases": {
+                "team-payroll-grants": "משכורות ומענקים לצוות",
+                "company-assets-management": "ניהול נכסי חברה",
+                "dao-treasury-management": "ניהול אוצר DAO",
+                "investment-portfolio": "תיק השקעות",
+                "operational-spending": "הוצאות תפעוליות",
+                "other": "אחר"
+            },
+            "teamSize": {
+                "just-me": "רק אני",
+                "2-5-people": "2-5 אנשים",
+                "6-15-people": "6-15 אנשים",
+                "15-plus-people": "15+"
+            },
+            "networks": {
+                "near": "NEAR",
+                "bitcoin": "Bitcoin",
+                "ethereum": "Ethereum",
+                "solana": "Solana",
+                "arbitrum": "Arbitrum",
+                "base": "Base",
+                "optimism": "Optimism",
+                "polygon": "Polygon",
+                "gnosis": "Gnosis",
+                "avalanche": "Avalanche",
+                "bnb-chain": "BNB Chain",
+                "other": "אחר"
+            },
+            "multisigExperience": {
+                "never-heard-of-it": "לא שמעתי על זה",
+                "heard-about-it": "שמעתי על זה",
+                "never-used-it": "מעולם לא השתמשתי",
+                "used-gnosis-safe-or-similar": "השתמשתי ב-Gnosis Safe או דומה",
+                "experienced": "מנוסה",
+                "looking-for-a-better-option": "מחפש אפשרות טובה יותר"
+            },
+            "currentTools": {
+                "gnosis-safe": "Gnosis Safe",
+                "fireblocks": "Fireblocks",
+                "tholos": "Tholos",
+                "squads-multisig": "Squads Multisig",
+                "mpc-vault": "MPC Vault",
+                "other": "אחר"
+            },
+            "monthlyVolume": {
+                "under-10k": "מתחת ל-$10K",
+                "10k-100k": "$10K - $100K",
+                "100k-1m": "$100K - $1M",
+                "1m-plus": "$1M+"
+            },
+            "biggestChallenges": {
+                "slow-approvals-and-signing": "אישורים וחתימות איטיים",
+                "lack-of-transparency-in-the-team": "חוסר שקיפות בצוות",
+                "hard-to-track-spending-and-balances": "קשה לעקוב אחר הוצאות ויתרות",
+                "security-and-access-control": "אבטחה ובקרת גישה",
+                "no-good-web3-tool-yet": "אין עדיין כלי Web3 טוב",
+                "looking-for-crypto-earnings": "אני מחפש רווחים מקריפטו",
+                "other": "אחר"
+            }
+        }
+    },
+    "onboarding": {
+        "tour": {
+            "addAssets": "הוסף נכסים לאוצר שלך על ידי ביצוע הפקדה.",
+            "makeRequests": "בצע בקשות תשלום בכל פעם שאתה צריך לשלוח נכסים.",
+            "exchangeAssets": "כאן ניתן להחליף את הנכסים שלך.",
+            "addMembers": "הוסף חברים לאוצר שלך והקצה להם תפקידים.",
+            "newTreasury": "רוצה להקים אוצר חדש? ניתן לעשות זאת כאן בכמה לחיצות בלבד.",
+            "helpSupport": "קבל עזרה ותמיכה בכל פעם שאתה צריך."
+        },
+        "tourCard": {
+            "close": "סגירה",
+            "stepProgress": "{current} מתוך {total}",
+            "gotIt": "הבנתי",
+            "done": "סיום",
+            "next": "הבא"
+        },
+        "progress": {
+            "title": "עקוב אחר שלבים מהירים כדי לחקור את האוצר",
+            "createTreasuryTitle": "צור חשבון אוצר",
+            "createTreasuryDescription": "הגדרת את החשבון שלך בהצלחה. התחלה מצוינת!",
+            "addAssetsTitle": "הוסף את הנכסים שלך",
+            "addAssetsDescription": "התחל בהוספת נכסים כדי לראות אותם בפעולה.",
+            "deposit": "הפקדה",
+            "createPaymentTitle": "צור בקשת תשלום",
+            "createPaymentDescription": "צור בקשת תשלום להשלמת ההגדרה שלך.",
+            "send": "שליחה"
+        },
+        "welcome": {
+            "heading": "🎉 ברוכים הבאים!",
+            "subheading": "עשה סיור מהיר באוצר",
+            "body": "שלום! ה-Trezu שלך מוכן - התחל לבנות את התיק שלך על ידי הוספת נכסים מרשתות נתמכות.",
+            "progress": "{current} מתוך {total}",
+            "next": "הבא",
+            "body2": "ראה כיצד לבצע הפקדה, ליצור בקשה ולהקים חשבון חדש.",
+            "noThanks": "לא, תודה",
+            "letsGo": "בוא נתחיל"
+        },
+        "congrats": {
+            "heading": "🎉 כל הכבוד!",
+            "body": "השלמת את הגדרת האוצר שלך. תיהנה מניהול קל של הנכסים שלך.",
+            "letsGo": "בוא נתחיל!"
+        },
+        "notifications": {
+            "title": "חדש - התראות",
+            "body": "הישארו מעודכנים לגבי בקשות חדשות, הצבעות ממתינות ונכסים נכנסים לקופה - פשוט חברו את בוט הטלגרם.",
+            "tryIt": "נסה",
+            "dismissAria": "סגור"
+        },
+        "createBanner": {
+            "close": "סגירה",
+            "title": "גלה את Trezu",
+            "description": "צור חשבון כדי לפתוח הרשאות לכל התכונות והיתרונות של Trezu.",
+            "cta": "יצירת אוצר"
+        },
+        "questionnaire": {
+            "continue": "המשך",
+            "skip": "דלג"
+        },
+        "createPrompt": {
+            "title": "אתה כמעט מוכן",
+            "description": "הארנק שלך מחובר, אך עדיין לא יצרת אוצר. צור חשבון כדי להתחיל להשתמש ב-Trezu, או {suffix}",
+            "suffixDemo": "בדוק את הדמו.",
+            "suffixExploring": "המשך לחקור.",
+            "createCta": "צור אוצר",
+            "viewDemo": "הצג דמו",
+            "keepExploring": "המשך לחקור"
+        },
+        "infoBox": {
+            "title": "קבל יותר מ-Trezu",
+            "close": "סגירה",
+            "description": "גלה כיצד אחרים משתמשים באוצר, נסה את הדמו ובדוק את התיעוד כדי ללמוד את התכונות.",
+            "demoTitle": "גלה את דמו Trezu",
+            "demoDescription": "צפה בחשבון דמו חי בפעולה.",
+            "docsTitle": "תיעוד",
+            "docsDescription": "למד על כל התכונות בתיעוד.",
+            "videoTitle": "צפה בדמו",
+            "videoDescription": "צפה בסרטון קצר המראה איך Trezu עובד."
+        }
+    }
+}

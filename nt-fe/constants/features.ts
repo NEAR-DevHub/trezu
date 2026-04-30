@@ -15,7 +15,10 @@ const staging =
 export const features = staging
     ? {
           integrations: true,
+          extraLocales: true,
       }
     : {
           integrations: false,
+          // In production only en/es/uk are exposed in the language switcher.
+          extraLocales: false,
       };

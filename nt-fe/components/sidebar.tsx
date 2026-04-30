@@ -2,11 +2,13 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useNextStep } from "nextstepjs";
 import { useEffect, useState } from "react";
 import { SystemStatusBanner } from "@/components/system-status-banner";
 import { ConfidentialBanner } from "@/features/confidential/components/confidential-banner";
 import { CreateBanner } from "@/features/onboarding/components/create-banner";
 import { NEW } from "@/features/onboarding/components/new";
+import { TOUR_NAMES } from "@/features/onboarding/steps/dashboard";
 import {
     PAGE_TOUR_SELECTORS,
     useGuestSaveTour,
@@ -101,6 +103,7 @@ type NavTranslationKey =
     | "requests"
     | "payments"
     | "exchange"
+    | "earn"
     | "addressBook"
     | "members"
     | "settings";
@@ -128,6 +131,12 @@ const topNavLinks: {
         ),
         roleRequired: true,
     },
+    {
+        path: "earn",
+        labelKey: "earn",
+        icon: (props) => <ChartColumn {...props} animation="increasing" />,
+        id: "earn-new",
+    },
 ];
 
 const bottomNavLinks: {
@@ -143,7 +152,6 @@ const bottomNavLinks: {
         labelKey: "addressBook",
         icon: ContactRound,
         id: "address-book-link",
-        showNewPill: true,
         memberRequired: true,
     },
     {
@@ -168,7 +176,9 @@ export function Sidebar({ onClose }: SidebarProps) {
     const [supportModalOpen, setSupportModalOpen] = useState(false);
     const { accountId } = useNear();
     const tNav = useTranslations("nav");
+    const tPages = useTranslations("pages");
     const tCommon = useTranslations("common");
+    const { currentTour } = useNextStep();
 
     const {
         isGuestTreasury,
@@ -189,6 +199,14 @@ export function Sidebar({ onClose }: SidebarProps) {
     const isReduced = !isMobile && !isOpen;
     const saveTreasuryMutation = useSaveTreasuryMutation(accountId, treasuryId);
     useGuestSaveTour(accountId ?? undefined, isSaved ?? false);
+
+    // Dashboard tour step 5 opens treasury selector; close it once that tour ends
+    // so follow-up tours (e.g. Earn announcement) are not hidden behind dropdown.
+    useEffect(() => {
+        if (currentTour !== TOUR_NAMES.DASHBOARD) {
+            setDropdownOpen(false);
+        }
+    }, [currentTour]);
 
     // Mark as initialized after first render with mounted state
     useEffect(() => {
@@ -308,13 +326,23 @@ export function Sidebar({ onClose }: SidebarProps) {
 
                         return (
                             <NavLink
+                                id={link.id}
                                 key={link.path}
                                 isActive={isActive}
                                 icon={link.icon}
-                                label={tNav(link.labelKey)}
+                                label={
+                                    link.labelKey === "earn"
+                                        ? tPages("earn.title")
+                                        : tNav(link.labelKey)
+                                }
                                 showBadge={showBadge}
                                 badgeCount={proposals?.total ?? 0}
                                 showLabels={showLabels}
+                                endAdornment={
+                                    link.path === "earn" ? (
+                                        <NEW enabled={!isReduced} />
+                                    ) : undefined
+                                }
                                 onClick={() => {
                                     router.push(href);
                                     if (isMobile) onClose();

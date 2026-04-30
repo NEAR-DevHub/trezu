@@ -1,44 +1,87 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Database, Shield } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useAssets } from "@/hooks/use-assets";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Skeleton } from "./ui/skeleton";
 
+function normalizeFlagLogoUrl(
+    logo: string | null | undefined,
+): string | undefined {
+    if (!logo) return undefined;
+
+    const trimmedLogo = logo.trim();
+    if (!trimmedLogo) return undefined;
+
+    if (/^https?:\/\//i.test(trimmedLogo)) return trimmedLogo;
+
+    const normalized = trimmedLogo
+        .replace(/^ipfs:\/\//i, "")
+        .replace(/^\/?ipfs\//i, "")
+        .replace(/^\/+/, "");
+
+    const isCidV0 = /^Qm[1-9A-HJ-NP-Za-km-z]{44}$/.test(normalized);
+    const isCidV1 = /^bafy[a-z2-7]{55,}$/.test(normalized);
+    if (!isCidV0 && !isCidV1) return undefined;
+
+    return `https://ipfs.near.social/ipfs/${normalized}`;
+}
+
 export function TreasuryLogo({
     logo,
     isConfidential,
+    alt,
+    imageClassName,
+    fallbackClassName,
+    fallbackIconClassName,
 }: {
-    logo?: string;
+    logo?: string | null;
     isConfidential?: boolean;
+    alt?: string;
+    imageClassName?: string;
+    fallbackClassName?: string;
+    fallbackIconClassName?: string;
 }) {
     const t = useTranslations("treasuryInfo");
     const [hasImageError, setHasImageError] = useState(false);
+    const normalizedLogoUrl = useMemo(() => normalizeFlagLogoUrl(logo), [logo]);
 
     useEffect(() => {
         setHasImageError(false);
-    }, [logo]);
+    }, [normalizedLogoUrl]);
 
-    const shouldShowImage = !!logo && !hasImageError;
-
-    const item = shouldShowImage ? (
-        <img
-            src={logo}
-            alt={t("logoAlt")}
-            className="rounded-md size-7 shrink-0 object-cover"
-            onError={() => setHasImageError(true)}
-        />
-    ) : (
-        <div className="flex items-center justify-center size-7 rounded bg-muted shrink-0">
-            <Database className="size-5 text-muted-foreground" />
-        </div>
-    );
+    const shouldShowImage = !!normalizedLogoUrl && !hasImageError;
+    const logoAlt = alt ?? t("logoAlt");
 
     return (
         <div className="relative">
-            {item}
+            {shouldShowImage ? (
+                <img
+                    src={normalizedLogoUrl}
+                    alt={logoAlt}
+                    className={cn(
+                        "rounded-md size-7 shrink-0 object-cover",
+                        imageClassName,
+                    )}
+                    onError={() => setHasImageError(true)}
+                />
+            ) : (
+                <div
+                    className={cn(
+                        "flex items-center justify-center size-7 rounded bg-muted shrink-0",
+                        fallbackClassName,
+                    )}
+                >
+                    <Database
+                        className={cn(
+                            "size-5 text-muted-foreground",
+                            fallbackIconClassName,
+                        )}
+                    />
+                </div>
+            )}
             {isConfidential && (
                 <div className="absolute right-0 bottom-0">
                     <Shield className="size-4 fill-foreground text-background" />

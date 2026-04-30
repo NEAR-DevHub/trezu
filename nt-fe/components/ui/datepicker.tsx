@@ -36,12 +36,32 @@ import {
 import { enUS } from "date-fns/locale/en-US";
 import { es } from "date-fns/locale/es";
 import { uk } from "date-fns/locale/uk";
+import { he } from "date-fns/locale/he";
+import { de } from "date-fns/locale/de";
+import { fr } from "date-fns/locale/fr";
+import { vi } from "date-fns/locale/vi";
+import { zhCN } from "date-fns/locale/zh-CN";
+import { tr } from "date-fns/locale/tr";
+import { id } from "date-fns/locale/id";
+import { pt } from "date-fns/locale/pt";
+import { ja } from "date-fns/locale/ja";
+import { ko } from "date-fns/locale/ko";
 import type { Locale } from "date-fns";
 
 const DATE_FNS_LOCALES: Record<string, Locale> = {
     en: enUS,
     es,
     uk,
+    he,
+    de,
+    fr,
+    vi,
+    zh: zhCN,
+    tr,
+    id,
+    pt,
+    ja,
+    ko,
 };
 
 import { Button, buttonVariants } from "@/components/ui/button";

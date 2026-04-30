@@ -43,7 +43,17 @@
         "select": "Select language",
         "english": "English",
         "spanish": "Español",
-        "ukrainian": "Українська"
+        "ukrainian": "Українська",
+        "hebrew": "עברית",
+        "german": "Deutsch",
+        "french": "Français",
+        "vietnamese": "Tiếng Việt",
+        "chinese": "中文",
+        "turkish": "Türkçe",
+        "indonesian": "Bahasa Indonesia",
+        "portuguese": "Português",
+        "japanese": "日本語",
+        "korean": "한국어"
     },
     "header": {
         "toggleSidebar": "Toggle sidebar",
@@ -62,7 +72,6 @@
     },
     "signIn": {
         "connect": "Connect",
-        "connectWallet": "Connect Wallet",
         "wallet": "Wallet",
         "termsOfService": "Terms of Service",
         "privacyPolicy": "Privacy Policy",
@@ -163,8 +172,28 @@
         },
         "earn": {
             "title": "Earn",
-            "description": "Earn rewards on your assets",
-            "placeholder": "Explore earning opportunities and staking rewards."
+            "description": "Connect your Trezu treasury to your favourite Web3 applications.",
+            "howItWorks": "How It Works",
+            "apps": {
+                "rhea": {
+                    "name": "Rhea",
+                    "description": "Connect your Treasury to Rhea and start earning on your existing assets - no transfers, no friction, just seamless rewards on what you already hold.",
+                    "goTo": "Go to Rhea",
+                    "logoAlt": "Rhea logo"
+                },
+                "intear": {
+                    "name": "IntearDEX",
+                    "description": "No bridging, no moving funds, no extra steps - simply use your existing Treasury assets to start earning directly on the platform.",
+                    "goTo": "Go to IntearDEX",
+                    "logoAlt": "IntearDEX logo"
+                },
+                "nearStaking": {
+                    "name": "NEAR Staking",
+                    "description": "Stake NEAR from your Treasury to help secure the network and earn staking rewards.",
+                    "goTo": "Go to NEAR Staking",
+                    "logoAlt": "NEAR"
+                }
+            }
         },
         "createTreasury": {
             "title": "Create Treasury",
@@ -198,7 +227,9 @@
             "supportedNetworks": "Supported Networks",
             "networksWithAssets": "Networks with Assets",
             "yourAssets": "Your Assets",
-            "otherAssets": "Other Assets"
+            "otherAssets": "Other Assets",
+            "available": "Available",
+            "forMembersOnly": "For Members Only"
         },
         "errors": {
             "addressUnavailable": "Could not retrieve deposit address for the selected asset and network.",
@@ -235,18 +266,6 @@
         "frozen": "Frozen",
         "frozenTooltip": "Frozen tokens are locked and cannot be used. They might be locked due to being used for storage, staked, or not yet vested.",
         "vested": "Vested"
-    },
-    "dashboard": {
-        "overview": "Overview of your treasury assets and activity",
-        "assets": "Assets",
-        "balance": "Balance",
-        "totalBalance": "Total Balance",
-        "deposit": "Deposit",
-        "addAssets": "Add assets",
-        "hidden": "Hidden",
-        "confidentialHidden": "Balances hidden for confidential treasuries",
-        "recentActivity": "Recent Activity",
-        "viewAllTransactions": "View all transactions"
     },
     "activity": {
         "filters": {
@@ -479,11 +498,6 @@
             "failed": "The request failed to complete. Check the transaction details <link>here</link>.",
             "failedPlain": "The request failed to complete. Check the transaction details here."
         },
-        "votes": {
-            "approved": "Approved",
-            "rejected": "Rejected",
-            "pending": "Pending"
-        },
         "voteModal": {
             "confirmTitle": "Confirm Your Vote",
             "removeTitle": "Remove Request",
@@ -504,7 +518,7 @@
             "sent": "Sent",
             "received": "Received",
             "priceDifference": "Price Difference",
-            "priceDifferenceTooltip": "Difference between the quote rate and the current market rate. Positive values indicate a better rate than market.",
+            "priceDifferenceTooltip": "Show how the USD value you receive compares to the USD value you send.",
             "slippageTolerance": "Slippage Tolerance",
             "estimatedTime": "Estimated Time",
             "seconds": "{count} seconds",
@@ -633,7 +647,6 @@
             "approvalsReceived": "{received}/{required} approvals received",
             "expiresAt": "Expires At",
             "expiredAt": "Expired At",
-            "viewTransaction": "View Transaction",
             "exchangingTokens": "Exchanging Tokens",
             "exchangingTokensBody": "This request has been approved by the team. Token exchange is now in progress and may take some time.",
             "requestFailed": "Request Failed",
@@ -641,7 +654,6 @@
             "votingPeriod24h": "Voting period: 24 hours",
             "votingPeriod24hBody": "This exchange request has a 24-hour voting duration. Approve this request within this time, or the request will expire.",
             "reject": "Reject",
-            "deposit": "Deposit",
             "approve": "Approve"
         },
         "insufficientBalance": {
@@ -995,7 +1007,7 @@
         "poweredBy": "Powered by",
         "info": {
             "priceDifference": "Price Difference",
-            "priceDifferenceTooltip": "Difference between the quote rate and the current market rate. Positive values indicate a better rate than market.",
+            "priceDifferenceTooltip": "Show how the USD value you receive compares to the USD value you send.",
             "estimatedTime": "Estimated Time",
             "estimatedTimeValue": "{seconds} seconds",
             "estimatedTimeTooltip": "Approximate time to complete the exchange.",
@@ -1049,9 +1061,6 @@
             "allowEarn": "Allow Earn",
             "na": "N/A"
         }
-    },
-    "earn": {
-        "placeholder": "Explore earning opportunities and staking rewards."
     },
     "createTreasury": {
         "validation": {
@@ -1213,7 +1222,37 @@
         "connectedToAnother": "Connected to another chat",
         "notMember": "You are not a policy member of any treasuries.",
         "connecting": "Connecting…",
-        "connect": "Connect"
+        "connect": "Connect",
+        "settings": {
+            "title": "Telegram",
+            "connectedTo": "Connected to {chat}",
+            "chatNumber": "Chat #{id}",
+            "fallbackChat": "a Telegram chat",
+            "disconnect": "Disconnect",
+            "connect": "Connect",
+            "connectHeadline": "Connect Telegram to treasury",
+            "connectDescription": "Get notified about new requests, assets received in the treasury, and more.",
+            "noTreasuryDescription": "Link your treasuries to a Telegram chat.",
+            "openSettingsHint": "Open settings from a treasury to manage integrations.",
+            "disconnectedToast": "Telegram disconnected for this treasury",
+            "disconnectFailedToast": "Could not disconnect Telegram. Try again.",
+            "telegramDisconnect": {
+                "title": "Disconnect Telegram Bot",
+                "body": "If you disconnect, you will no longer receive notifications in the bot for this treasury. You can reconnect at any time.",
+                "action": "Disconnect"
+            }
+        },
+        "connectInstructions": {
+            "title": "Connect your Telegram account to Trezu",
+            "subtitle": "Follow the steps to enable notifications for this treasury in Telegram.",
+            "step1": "Add {bot} to your Telegram group or channel.",
+            "step2": "In Telegram, tap Connect Treasury (or use the bot's connect flow when prompted).",
+            "step3": "Sign in on the web, then authorize and select which treasuries to connect to this chat — including this one.",
+            "doneHint": "You're done when the browser shows your treasuries linked successfully.",
+            "copyBotTooltip": "Copy bot handle",
+            "botCopiedToast": "Bot handle copied",
+            "openInTelegram": "Open {bot} in Telegram"
+        }
     },
     "systemStatus": {
         "underMaintenance": "Under Maintenance",
@@ -1492,6 +1531,7 @@
         "otherAvailable": "Other Available",
         "incompatible": "Incompatible",
         "comingSoon": "Coming Soon",
+        "forMembersOnly": "For Members Only",
         "nearComName": "near.com",
         "nearComDescription": "Internal Network for near.com and trezu"
     },
@@ -1520,15 +1560,6 @@
         "noAssetsDescription": "Token data will appear once the daily snapshot is computed.",
         "tableToken": "Token",
         "tableTotalValue": "Total Value"
-    },
-    "telegramConnectInstructions": {
-        "title": "Connect Telegram",
-        "subtitle": "Get notifications about proposals and activity in your Telegram.",
-        "step3": "Press Start and follow instructions.",
-        "success": "You're all set!",
-        "copyBotTooltip": "Copy bot handle",
-        "botCopiedToast": "Bot handle copied",
-        "openInTelegram": "Open {bot} in Telegram"
     },
     "transactionHashCell": {
         "copyHash": "Copy hash",
@@ -1712,7 +1743,7 @@
         "membersPending": "Click to see active requests waiting for approval.",
         "guestSaveIntro": "You are a guest of this treasury. You can only view the data.",
         "guestSaveAction": "You can save this guest treasury to your treasuries list.",
-        "newFeatureRich": "New! 🎉 Save frequently used addresses for faster, error-free payouts.<br></br> Your contacts stay private and visible only to your team.",
+        "newFeatureRich": "New! 🎉 Stake your assets with Earn and start earning rewards. Put your funds to work effortlessly.",
         "newFeatureCta": "Try It"
     },
     "statusDate": {
@@ -1799,19 +1830,6 @@
         "unhideFailedToast": "Failed to unhide treasury",
         "removedToast": "Treasury removed from saved list",
         "removeFailedToast": "Failed to remove treasury from saved list"
-    },
-    "telegramSettings": {
-        "title": "Telegram",
-        "connectedTo": "Connected to {chat}",
-        "chatNumber": "Chat #{id}",
-        "fallbackChat": "a Telegram chat",
-        "disconnect": "Disconnect",
-        "connect": "Connect",
-        "connectDescription": "Link your treasury to a Telegram chat to receive notifications.",
-        "noTreasuryDescription": "Link your treasuries to a Telegram chat.",
-        "openSettingsHint": "Open settings from a treasury to manage integrations.",
-        "disconnectedToast": "Telegram disconnected for this treasury",
-        "disconnectFailedToast": "Could not disconnect Telegram. Try again."
     },
     "assetsTable": {
         "noAssetsFound": "No assets found.",
@@ -2060,6 +2078,12 @@
             "heading": "🎉 Congrats!",
             "body": "You've completed your Treasury setup. Enjoy easy management of your assets.",
             "letsGo": "Let's go!"
+        },
+        "notifications": {
+            "title": "New - Notifications",
+            "body": "Stay informed on new requests, pending votes, and incoming treasury assets - just connect Telegram bot.",
+            "tryIt": "Try It",
+            "dismissAria": "Dismiss"
         },
         "createBanner": {
             "close": "Close",

@@ -43,7 +43,17 @@
         "select": "Seleccionar idioma",
         "english": "English",
         "spanish": "Español",
-        "ukrainian": "Українська"
+        "ukrainian": "Українська",
+        "hebrew": "עברית",
+        "german": "Deutsch",
+        "french": "Français",
+        "vietnamese": "Tiếng Việt",
+        "chinese": "中文",
+        "turkish": "Türkçe",
+        "indonesian": "Bahasa Indonesia",
+        "portuguese": "Português",
+        "japanese": "日本語",
+        "korean": "한국어"
     },
     "header": {
         "toggleSidebar": "Alternar barra lateral",
@@ -62,7 +72,6 @@
     },
     "signIn": {
         "connect": "Conectar",
-        "connectWallet": "Conectar cartera",
         "wallet": "Cartera",
         "termsOfService": "Términos del servicio",
         "privacyPolicy": "Política de privacidad",
@@ -163,8 +172,28 @@
         },
         "earn": {
             "title": "Ganar",
-            "description": "Genera recompensas con tus activos",
-            "placeholder": "Explora oportunidades de ingresos y recompensas por staking."
+            "description": "Conecta tu tesorería Trezu con tus aplicaciones Web3 favoritas.",
+            "howItWorks": "Cómo funciona",
+            "apps": {
+                "rhea": {
+                    "name": "Rhea",
+                    "description": "Conecta tu tesorería a Rhea y empieza a generar rendimiento sobre los activos que ya tienes: sin transferencias, sin fricción, recompensas fluidas sobre lo que ya posees.",
+                    "goTo": "Ir a Rhea",
+                    "logoAlt": "Logotipo de Rhea"
+                },
+                "intear": {
+                    "name": "IntearDEX",
+                    "description": "Sin puentes, sin mover fondos, sin pasos extra: usa los activos de tu tesorería y empieza a generar rendimiento directamente en la plataforma.",
+                    "goTo": "Ir a IntearDEX",
+                    "logoAlt": "Logotipo de IntearDEX"
+                },
+                "nearStaking": {
+                    "name": "NEAR Staking",
+                    "description": "Haz staking de NEAR desde tu tesorería para ayudar a asegurar la red y obtener recompensas de staking.",
+                    "goTo": "Ir a NEAR Staking",
+                    "logoAlt": "NEAR"
+                }
+            }
         },
         "createTreasury": {
             "title": "Crear tesorería",
@@ -198,7 +227,9 @@
             "supportedNetworks": "Redes compatibles",
             "networksWithAssets": "Redes con activos",
             "yourAssets": "Tus activos",
-            "otherAssets": "Otros activos"
+            "otherAssets": "Otros activos",
+            "available": "Disponible",
+            "forMembersOnly": "Solo para miembros"
         },
         "errors": {
             "addressUnavailable": "No se pudo obtener la dirección de depósito para el activo y la red seleccionados.",
@@ -235,18 +266,6 @@
         "frozen": "Congelado",
         "frozenTooltip": "Los tokens congelados están bloqueados y no se pueden usar. Pueden estar bloqueados por almacenamiento, staking o no haber vestido aún.",
         "vested": "Adquirido"
-    },
-    "dashboard": {
-        "overview": "Resumen de los activos y la actividad de tu tesorería",
-        "assets": "Activos",
-        "balance": "Saldo",
-        "totalBalance": "Saldo total",
-        "deposit": "Depositar",
-        "addAssets": "Añadir activos",
-        "hidden": "Oculto",
-        "confidentialHidden": "Saldos ocultos para tesorerías confidenciales",
-        "recentActivity": "Actividad reciente",
-        "viewAllTransactions": "Ver todas las transacciones"
     },
     "activity": {
         "filters": {
@@ -479,11 +498,6 @@
             "failed": "La solicitud no se pudo completar. Revisa los detalles de la transacción <link>aquí</link>.",
             "failedPlain": "La solicitud no se pudo completar. Revisa los detalles de la transacción aquí."
         },
-        "votes": {
-            "approved": "Aprobado",
-            "rejected": "Rechazado",
-            "pending": "Pendiente"
-        },
         "voteModal": {
             "confirmTitle": "Confirma tu voto",
             "removeTitle": "Eliminar solicitud",
@@ -504,14 +518,14 @@
             "sent": "Enviado",
             "received": "Recibido",
             "priceDifference": "Diferencia de precio",
-            "priceDifferenceTooltip": "Diferencia entre la tasa de cotización y la tasa de mercado actual. Los valores positivos indican una tasa mejor que la del mercado.",
+            "priceDifferenceTooltip": "Muestra cómo se compara el valor en USD que recibes con el valor en USD que envías.",
             "slippageTolerance": "Tolerancia de deslizamiento",
             "estimatedTime": "Tiempo estimado",
             "seconds": "{count} segundos",
             "description": "Descripción",
             "methodName": "Nombre del método",
             "args": "Argumentos",
-            "deposit": "Depósito",
+            "deposit": "Depositar",
             "gas": "Gas",
             "totalDeposit": "Depósito total",
             "totalGas": "Gas total",
@@ -633,7 +647,6 @@
             "approvalsReceived": "{received}/{required} aprobaciones recibidas",
             "expiresAt": "Caduca el",
             "expiredAt": "Caducó el",
-            "viewTransaction": "Ver transacción",
             "exchangingTokens": "Intercambiando tokens",
             "exchangingTokensBody": "Esta solicitud ha sido aprobada por el equipo. El intercambio de tokens está en progreso y puede tardar un tiempo.",
             "requestFailed": "Solicitud fallida",
@@ -641,7 +654,6 @@
             "votingPeriod24h": "Periodo de votación: 24 horas",
             "votingPeriod24hBody": "Esta solicitud de intercambio tiene una duración de votación de 24 horas. Aprueba esta solicitud en ese plazo o caducará.",
             "reject": "Rechazar",
-            "deposit": "Depositar",
             "approve": "Aprobar"
         },
         "insufficientBalance": {
@@ -995,7 +1007,7 @@
         "poweredBy": "Impulsado por",
         "info": {
             "priceDifference": "Diferencia de precio",
-            "priceDifferenceTooltip": "Diferencia entre la tasa de cotización y la tasa de mercado actual. Los valores positivos indican una tasa mejor que la del mercado.",
+            "priceDifferenceTooltip": "Muestra cómo se compara el valor en USD que recibes con el valor en USD que envías.",
             "estimatedTime": "Tiempo estimado",
             "estimatedTimeValue": "{seconds} segundos",
             "estimatedTimeTooltip": "Tiempo aproximado para completar el intercambio.",
@@ -1049,9 +1061,6 @@
             "allowEarn": "Permite staking",
             "na": "N/D"
         }
-    },
-    "earn": {
-        "placeholder": "Explora oportunidades de ingresos y recompensas por staking."
     },
     "createTreasury": {
         "validation": {
@@ -1213,7 +1222,37 @@
         "connectedToAnother": "Conectada a otro chat",
         "notMember": "No eres miembro de la política de ninguna tesorería.",
         "connecting": "Conectando…",
-        "connect": "Conectar"
+        "connect": "Conectar",
+        "settings": {
+            "title": "Telegram",
+            "connectedTo": "Conectado a {chat}",
+            "chatNumber": "Chat n.º {id}",
+            "fallbackChat": "un chat de Telegram",
+            "disconnect": "Desconectar",
+            "connect": "Conectar",
+            "connectHeadline": "Conectar Telegram a la tesorería",
+            "connectDescription": "Recibe avisos sobre nuevas solicitudes, activos recibidos en la tesorería y más.",
+            "noTreasuryDescription": "Vincula tus tesorerías a un chat de Telegram.",
+            "openSettingsHint": "Abre la configuración desde una tesorería para gestionar integraciones.",
+            "disconnectedToast": "Telegram desconectado de esta tesorería",
+            "disconnectFailedToast": "No se pudo desconectar Telegram. Inténtalo de nuevo.",
+            "telegramDisconnect": {
+                "title": "Desconectar bot de Telegram",
+                "body": "Si lo desconectas, dejarás de recibir notificaciones en el bot para esta tesorería. Puedes volver a conectarlo en cualquier momento.",
+                "action": "Desconectar"
+            }
+        },
+        "connectInstructions": {
+            "title": "Conecta tu cuenta de Telegram a Trezu",
+            "subtitle": "Sigue estos pasos para activar notificaciones de esta tesorería en Telegram.",
+            "step1": "Añade {bot} a tu grupo o canal de Telegram.",
+            "step2": "En Telegram, pulsa «Conectar tesorería» (o usa el flujo de conexión del bot cuando se te indique).",
+            "step3": "Inicia sesión en la web, autoriza y elige qué tesorerías conectar a este chat, incluida esta.",
+            "doneHint": "Habrá terminado cuando el navegador muestre que tus tesorerías se vincularon correctamente.",
+            "copyBotTooltip": "Copiar usuario del bot",
+            "botCopiedToast": "Usuario del bot copiado",
+            "openInTelegram": "Abrir {bot} en Telegram"
+        }
     },
     "systemStatus": {
         "underMaintenance": "En mantenimiento",
@@ -1492,6 +1531,7 @@
         "otherAvailable": "Otras disponibles",
         "incompatible": "Incompatible",
         "comingSoon": "Próximamente",
+        "forMembersOnly": "Solo para miembros",
         "nearComName": "near.com",
         "nearComDescription": "Red interna para near.com y trezu"
     },
@@ -1520,15 +1560,6 @@
         "noAssetsDescription": "Los datos de tokens aparecerán cuando se calcule la instantánea diaria.",
         "tableToken": "Token",
         "tableTotalValue": "Valor total"
-    },
-    "telegramConnectInstructions": {
-        "title": "Conectar Telegram",
-        "subtitle": "Recibe notificaciones sobre propuestas y actividad en tu Telegram.",
-        "step3": "Pulsa Empezar y sigue las instrucciones.",
-        "success": "¡Todo listo!",
-        "copyBotTooltip": "Copiar nombre del bot",
-        "botCopiedToast": "Nombre del bot copiado",
-        "openInTelegram": "Abrir {bot} en Telegram"
     },
     "transactionHashCell": {
         "copyHash": "Copiar hash",
@@ -1712,7 +1743,7 @@
         "membersPending": "Haz clic para ver las solicitudes activas que esperan aprobación.",
         "guestSaveIntro": "Eres invitado de esta tesorería. Solo puedes ver los datos.",
         "guestSaveAction": "Puedes guardar esta tesorería de invitado en tu lista de tesorerías.",
-        "newFeatureRich": "¡Nuevo! 🎉 Guarda direcciones usadas con frecuencia para pagos más rápidos y sin errores.<br></br> Tus contactos quedan privados y visibles solo para tu equipo.",
+        "newFeatureRich": "¡Nuevo! 🎉 Guarda direcciones usadas con frecuencia para pagos más rápidos y sin errores. Tus contactos quedan privados y visibles solo para tu equipo.",
         "newFeatureCta": "Pruébalo"
     },
     "statusDate": {
@@ -1799,19 +1830,6 @@
         "unhideFailedToast": "No se pudo mostrar la tesorería",
         "removedToast": "Tesorería eliminada de la lista guardada",
         "removeFailedToast": "No se pudo eliminar la tesorería de la lista guardada"
-    },
-    "telegramSettings": {
-        "title": "Telegram",
-        "connectedTo": "Conectado a {chat}",
-        "chatNumber": "Chat n.º {id}",
-        "fallbackChat": "un chat de Telegram",
-        "disconnect": "Desconectar",
-        "connect": "Conectar",
-        "connectDescription": "Vincula tu tesorería a un chat de Telegram para recibir notificaciones.",
-        "noTreasuryDescription": "Vincula tus tesorerías a un chat de Telegram.",
-        "openSettingsHint": "Abre la configuración desde una tesorería para gestionar integraciones.",
-        "disconnectedToast": "Telegram desconectado de esta tesorería",
-        "disconnectFailedToast": "No se pudo desconectar Telegram. Inténtalo de nuevo."
     },
     "assetsTable": {
         "noAssetsFound": "No se encontraron activos.",
@@ -2060,6 +2078,12 @@
             "heading": "🎉 ¡Felicidades!",
             "body": "Has completado la configuración de tu tesorería. Disfruta de una gestión sencilla de tus activos.",
             "letsGo": "¡Vamos!"
+        },
+        "notifications": {
+            "title": "Novedad: Notificaciones",
+            "body": "Mantente informado sobre nuevas solicitudes, votos pendientes y activos entrantes en la tesorería: solo conecta el bot de Telegram.",
+            "tryIt": "Probar",
+            "dismissAria": "Descartar"
         },
         "createBanner": {
             "close": "Cerrar",

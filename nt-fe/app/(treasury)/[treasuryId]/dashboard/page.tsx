@@ -15,6 +15,7 @@ import { InfoBox } from "@/features/onboarding/components/info-box";
 import {
     WelcomeTooltip,
     CongratsTooltip,
+    NotificationsTooltip,
 } from "@/features/onboarding/steps/dashboard";
 import { useTreasury } from "@/hooks/use-treasury";
 import { CreateBanner } from "@/features/onboarding/components/create-banner";
@@ -73,6 +74,8 @@ export default function AppPage() {
             />
             <WelcomeTooltip />
             <CongratsTooltip />
+            {/* NOTE: comment when notifications feature is released */}
+            {/* <NotificationsTooltip /> */}
         </PageComponentLayout>
     );
 }

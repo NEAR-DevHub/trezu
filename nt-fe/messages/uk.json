@@ -43,14 +43,24 @@
         "select": "Обрати мову",
         "english": "English",
         "spanish": "Español",
-        "ukrainian": "Українська"
+        "ukrainian": "Українська",
+        "hebrew": "עברית",
+        "german": "Deutsch",
+        "french": "Français",
+        "vietnamese": "Tiếng Việt",
+        "chinese": "中文",
+        "turkish": "Türkçe",
+        "indonesian": "Bahasa Indonesia",
+        "portuguese": "Português",
+        "japanese": "日本語",
+        "korean": "한국어"
     },
     "header": {
         "toggleSidebar": "Перемкнути бічну панель",
         "toggleTheme": "Перемкнути тему"
     },
     "nav": {
-        "dashboard": "Панель",
+        "dashboard": "Огляд",
         "requests": "Запити",
         "payments": "Платежі",
         "exchange": "Обмін",
@@ -62,7 +72,6 @@
     },
     "signIn": {
         "connect": "Підключити",
-        "connectWallet": "Підключити гаманець",
         "wallet": "Гаманець",
         "termsOfService": "Умови використання",
         "privacyPolicy": "Політика конфіденційності",
@@ -98,8 +107,8 @@
     },
     "notFound": {
         "title": "Упс, цієї сторінки більше немає...",
-        "description": "Схоже, ви перейшли за посиланням, яке більше не працює. Спробуйте повернутися назад або перейти на Панель.",
-        "backToDashboard": "Повернутися на Панель"
+        "description": "Схоже, ви перейшли за посиланням, яке більше не працює. Спробуйте повернутися назад або перейти на головну сторінку.",
+        "backToDashboard": "Повернутися на головну сторінку"
     },
     "treasuryInfo": {
         "logoAlt": "Логотип скарбниці"
@@ -115,14 +124,14 @@
         "amountTooLowForFee": "{prefix}Сума замала для комісії мережі ({fee} {symbol}). Додайте щонайменше {addMore} {symbol}."
     },
     "metadata": {
-        "treasuryTitle": "Панель | Trezu",
+        "treasuryTitle": "Огляд | Trezu",
         "landingTitle": "Trezu | Керування скарбницею між блокчейнами",
         "description": "Керуйте капіталом команди за хвилини з єдиної панелі, не передаючи свої ключі.",
         "ogTitle": "Trezu | Один мультипідпис. Будь-яка крипта. Повний контроль."
     },
     "pages": {
         "dashboard": {
-            "title": "Панель",
+            "title": "Огляд",
             "description": "Огляд активів і активності вашої скарбниці",
             "descriptionLong": "Керуйте активами скарбниці та відстежуйте активність"
         },
@@ -163,8 +172,28 @@
         },
         "earn": {
             "title": "Заробляти",
-            "description": "Отримуйте винагороди за свої активи",
-            "placeholder": "Знайомтесь із можливостями заробітку та винагородами за стейкінг."
+            "description": "Підключіть свою скарбницю Trezu до улюблених Web3-додатків.",
+            "howItWorks": "Як це працює",
+            "apps": {
+                "rhea": {
+                    "name": "Rhea",
+                    "description": "Підключіть скарбницю до Rhea й заробляйте на вже наявних активах — без переказів, без зайвих кроків, зручні винагороди на те, що ви вже тримаєте.",
+                    "goTo": "Перейти до Rhea",
+                    "logoAlt": "Логотип Rhea"
+                },
+                "intear": {
+                    "name": "IntearDEX",
+                    "description": "Без бріджів, без переміщення коштів, без зайвих кроків — просто використовуйте активи скарбниці й заробляйте безпосередньо на платформі.",
+                    "goTo": "Перейти до IntearDEX",
+                    "logoAlt": "Логотип IntearDEX"
+                },
+                "nearStaking": {
+                    "name": "NEAR Staking",
+                    "description": "Стейкайте NEAR зі своєї скарбниці, щоб допомагати захищати мережу та отримувати винагороди за стейкінг.",
+                    "goTo": "Перейти до NEAR Staking",
+                    "logoAlt": "NEAR"
+                }
+            }
         },
         "createTreasury": {
             "title": "Створити скарбницю",
@@ -198,7 +227,9 @@
             "supportedNetworks": "Підтримувані мережі",
             "networksWithAssets": "Мережі з активами",
             "yourAssets": "Ваші активи",
-            "otherAssets": "Інші активи"
+            "otherAssets": "Інші активи",
+            "available": "Доступно",
+            "forMembersOnly": "Лише для учасників"
         },
         "errors": {
             "addressUnavailable": "Не вдалось отримати адресу депозиту для обраного активу та мережі.",
@@ -235,18 +266,6 @@
         "frozen": "Заморожено",
         "frozenTooltip": "Заморожені токени заблоковано й не можна використовувати. Їх може бути заблоковано через сховище, стейкінг або ще не вестований стан.",
         "vested": "Вестовано"
-    },
-    "dashboard": {
-        "overview": "Огляд активів і активності вашої скарбниці",
-        "assets": "Активи",
-        "balance": "Баланс",
-        "totalBalance": "Загальний баланс",
-        "deposit": "Поповнити",
-        "addAssets": "Додати активи",
-        "hidden": "Приховано",
-        "confidentialHidden": "Баланси приховано для конфіденційних скарбниць",
-        "recentActivity": "Остання активність",
-        "viewAllTransactions": "Переглянути всі транзакції"
     },
     "activity": {
         "filters": {
@@ -479,11 +498,6 @@
             "failed": "Запит не вдалося виконати. Перегляньте деталі транзакції <link>тут</link>.",
             "failedPlain": "Запит не вдалося виконати. Перегляньте деталі транзакції тут."
         },
-        "votes": {
-            "approved": "Схвалено",
-            "rejected": "Відхилено",
-            "pending": "Очікує"
-        },
         "voteModal": {
             "confirmTitle": "Підтвердьте свій голос",
             "removeTitle": "Видалити запит",
@@ -504,14 +518,14 @@
             "sent": "Надіслано",
             "received": "Отримано",
             "priceDifference": "Різниця в ціні",
-            "priceDifferenceTooltip": "Різниця між котируванням і поточною ринковою ціною. Позитивні значення означають кращу ціну, ніж ринкова.",
+            "priceDifferenceTooltip": "Показує, як USD-вартість, яку ви отримуєте, порівнюється з USD-вартістю, яку ви надсилаєте.",
             "slippageTolerance": "Допустиме прослизання",
             "estimatedTime": "Оцінний час",
             "seconds": "{count} секунд",
             "description": "Опис",
             "methodName": "Назва методу",
             "args": "Аргументи",
-            "deposit": "Депозит",
+            "deposit": "Поповнити",
             "gas": "Газ",
             "totalDeposit": "Загальний депозит",
             "totalGas": "Загальний газ",
@@ -633,7 +647,6 @@
             "approvalsReceived": "{received}/{required} отримано схвалень",
             "expiresAt": "Спливає",
             "expiredAt": "Спливло",
-            "viewTransaction": "Переглянути транзакцію",
             "exchangingTokens": "Обмін токенів",
             "exchangingTokensBody": "Цей запит схвалила команда. Обмін токенів триває і може зайняти деякий час.",
             "requestFailed": "Запит не виконано",
@@ -641,7 +654,6 @@
             "votingPeriod24h": "Період голосування: 24 години",
             "votingPeriod24hBody": "Цей запит на обмін має 24-годинний період голосування. Схваліть його за цей час, інакше запит спливе.",
             "reject": "Відхилити",
-            "deposit": "Поповнити",
             "approve": "Схвалити"
         },
         "insufficientBalance": {
@@ -995,7 +1007,7 @@
         "poweredBy": "Працює на",
         "info": {
             "priceDifference": "Різниця в ціні",
-            "priceDifferenceTooltip": "Різниця між котируванням і поточною ринковою ціною. Позитивні значення означають кращу ціну, ніж ринкова.",
+            "priceDifferenceTooltip": "Показує, як USD-вартість, яку ви отримуєте, порівнюється з USD-вартістю, яку ви надсилаєте.",
             "estimatedTime": "Оцінний час",
             "estimatedTimeValue": "{seconds} с",
             "estimatedTimeTooltip": "Приблизний час до завершення обміну.",
@@ -1049,9 +1061,6 @@
             "allowEarn": "Дозволяє стейкати",
             "na": "Н/Д"
         }
-    },
-    "earn": {
-        "placeholder": "Знайомтесь із можливостями заробітку та винагородами за стейкінг."
     },
     "createTreasury": {
         "validation": {
@@ -1213,7 +1222,37 @@
         "connectedToAnother": "Підключено до іншого чату",
         "notMember": "Ви не є учасником політики жодної скарбниці.",
         "connecting": "Підключення…",
-        "connect": "Підключити"
+        "connect": "Підключити",
+        "settings": {
+            "title": "Telegram",
+            "connectedTo": "Підключено до {chat}",
+            "chatNumber": "Чат №{id}",
+            "fallbackChat": "чат у Telegram",
+            "disconnect": "Відключити",
+            "connect": "Підключити",
+            "connectHeadline": "Підключіть Telegram до скарбниці",
+            "connectDescription": "Отримуйте сповіщення про нові запити, надходження активів у скарбницю тощо.",
+            "noTreasuryDescription": "Прив'яжіть свої скарбниці до чату в Telegram.",
+            "openSettingsHint": "Відкрийте налаштування зі скарбниці, щоб керувати інтеграціями.",
+            "disconnectedToast": "Telegram відключено від цієї скарбниці",
+            "disconnectFailedToast": "Не вдалось відключити Telegram. Спробуйте ще раз.",
+            "telegramDisconnect": {
+                "title": "Відключити Telegram-бот",
+                "body": "Якщо ви відключите бота, ви більше не отримуватимете сповіщення для цієї скарбниці. Ви можете підключити його знову будь-коли.",
+                "action": "Відключити"
+            }
+        },
+        "connectInstructions": {
+            "title": "Підключіть свій акаунт Telegram до Trezu",
+            "subtitle": "Виконайте ці кроки, щоб увімкнути сповіщення для цієї скарбниці в Telegram.",
+            "step1": "Додайте {bot} до своєї групи або каналу в Telegram.",
+            "step2": "У Telegram натисніть «Підключити скарбницю» (або скористайтеся потоком підключення бота, коли з'явиться запит).",
+            "step3": "Увійдіть у вебверсії, надайте дозвіл і виберіть, які скарбниці підключити до цього чату, включно з цією.",
+            "doneHint": "Готово, коли браузер покаже, що ваші скарбниці успішно пов'язані.",
+            "copyBotTooltip": "Скопіювати хендл бота",
+            "botCopiedToast": "Хендл бота скопійовано",
+            "openInTelegram": "Відкрити {bot} у Telegram"
+        }
     },
     "systemStatus": {
         "underMaintenance": "Технічні роботи",
@@ -1492,6 +1531,7 @@
         "otherAvailable": "Інші доступні",
         "incompatible": "Несумісні",
         "comingSoon": "Скоро",
+        "forMembersOnly": "Лише для учасників",
         "nearComName": "near.com",
         "nearComDescription": "Внутрішня мережа для near.com і trezu"
     },
@@ -1520,15 +1560,6 @@
         "noAssetsDescription": "Дані про токени з'являться після створення щоденного знімка.",
         "tableToken": "Токен",
         "tableTotalValue": "Загальна вартість"
-    },
-    "telegramConnectInstructions": {
-        "title": "Підключити Telegram",
-        "subtitle": "Отримуйте сповіщення про пропозиції та активність у Telegram.",
-        "step3": "Натисніть Start і виконайте інструкції.",
-        "success": "Готово!",
-        "copyBotTooltip": "Скопіювати назву бота",
-        "botCopiedToast": "Назву бота скопійовано",
-        "openInTelegram": "Відкрити {bot} у Telegram"
     },
     "transactionHashCell": {
         "copyHash": "Скопіювати хеш",
@@ -1712,7 +1743,7 @@
         "membersPending": "Натисніть, щоб побачити активні запити, які чекають на затвердження.",
         "guestSaveIntro": "Ви — гість цієї скарбниці. Можете лише переглядати дані.",
         "guestSaveAction": "Цю гостьову скарбницю можна зберегти у ваш список.",
-        "newFeatureRich": "Нове! 🎉 Зберігайте часто використовувані адреси для швидших і безпомилкових виплат.<br></br> Ваші контакти лишаються приватними та видимими лише вашій команді.",
+        "newFeatureRich": "Нове! 🎉 Зберігайте часто використовувані адреси для швидших і безпомилкових виплат. Ваші контакти лишаються приватними та видимими лише вашій команді.",
         "newFeatureCta": "Спробувати"
     },
     "statusDate": {
@@ -1799,19 +1830,6 @@
         "unhideFailedToast": "Не вдалось показати скарбницю",
         "removedToast": "Скарбницю вилучено зі збережених",
         "removeFailedToast": "Не вдалось вилучити скарбницю зі збережених"
-    },
-    "telegramSettings": {
-        "title": "Telegram",
-        "connectedTo": "Підключено до {chat}",
-        "chatNumber": "Чат №{id}",
-        "fallbackChat": "чат у Telegram",
-        "disconnect": "Відключити",
-        "connect": "Підключити",
-        "connectDescription": "Прив'яжіть скарбницю до чату в Telegram, щоб отримувати сповіщення.",
-        "noTreasuryDescription": "Прив'яжіть свої скарбниці до чату в Telegram.",
-        "openSettingsHint": "Відкрийте налаштування зі скарбниці, щоб керувати інтеграціями.",
-        "disconnectedToast": "Telegram відключено від цієї скарбниці",
-        "disconnectFailedToast": "Не вдалось відключити Telegram. Спробуйте ще раз."
     },
     "assetsTable": {
         "noAssetsFound": "Активи не знайдено.",
@@ -2060,6 +2078,12 @@
             "heading": "🎉 Вітаємо!",
             "body": "Ви завершили налаштування скарбниці. Тепер легко керуйте своїми активами.",
             "letsGo": "Вперед!"
+        },
+        "notifications": {
+            "title": "Нове — Сповіщення",
+            "body": "Залишайтесь у курсі нових запитів, очікуваних голосувань та надходжень активів — просто підключіть Telegram-бот.",
+            "tryIt": "Спробувати",
+            "dismissAria": "Закрити"
         },
         "createBanner": {
             "close": "Закрити",

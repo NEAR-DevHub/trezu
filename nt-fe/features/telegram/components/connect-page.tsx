@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Link2Off, MessageCircle, Wallet } from "lucide-react";
+import { CheckCircle2, Link2Off, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/button";
 import { PageCard } from "@/components/card";
@@ -36,7 +36,6 @@ function TelegramConnectShell({ children }: { children: React.ReactNode }) {
             title={tPage("title")}
             description={tPage("description")}
             hideCollapseButton
-            hideLogin
             logo={
                 <div className="flex items-center gap-2.5">
                     <Link href="/">
@@ -320,8 +319,14 @@ function ConnectPageInner() {
                         description={tTg("selectTreasuriesDescription")}
                     />
                     {chatInfo && (
-                        <div className="mt-1 flex items-center gap-2 rounded-md bg-general-tertiary px-3 py-2">
-                            <MessageCircle className="size-4 text-muted-foreground shrink-0" />
+                        <div className="mt-2 flex items-center gap-2">
+                            <img
+                                src="/icons/telegram.svg"
+                                alt=""
+                                className="size-9 shrink-0 rounded-sm object-contain"
+                                aria-hidden
+                                draggable={false}
+                            />
                             <div className="min-w-0">
                                 <p className="text-xs text-muted-foreground">
                                     {tTg("telegramChat")}
@@ -352,7 +357,7 @@ function ConnectPageInner() {
                     />
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="flex flex-col gap-2">
                     {visibleTreasuries.map((treasury: Treasury) => {
                         const alreadyHere = connectedSet.has(treasury.daoId);
                         const elsewhereStatus = statusMap[treasury.daoId];
@@ -361,7 +366,7 @@ function ConnectPageInner() {
                         return (
                             <div
                                 key={treasury.daoId}
-                                className="grid grid-cols-[auto_1fr] gap-3 items-center rounded-md bg-general-tertiary px-3 py-2"
+                                className="grid grid-cols-[auto_1fr_auto] gap-3 items-center rounded-md bg-general-tertiary px-3 py-2"
                             >
                                 <Checkbox
                                     id={treasury.daoId}
@@ -389,18 +394,18 @@ function ConnectPageInner() {
                                         <span className="block text-xs text-muted-foreground truncate">
                                             {treasury.daoId}
                                         </span>
-                                        {alreadyHere && (
-                                            <span className="inline-block text-xs text-green-600 dark:text-green-400">
-                                                {tTg("alreadyConnected")}
-                                            </span>
-                                        )}
-                                        {!alreadyHere && elsewhereStatus && (
-                                            <span className="inline-block rounded bg-yellow-100 px-1.5 py-0.5 text-xs text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
-                                                {tTg("connectedToAnother")}
-                                            </span>
-                                        )}
                                     </span>
                                 </label>
+                                {alreadyHere && (
+                                    <span className="inline-flex shrink-0 whitespace-nowrap rounded-full bg-general-success-background-faded px-2.5 py-0.5 text-xs font-medium text-general-success-foreground">
+                                        {tTg("alreadyConnected")}
+                                    </span>
+                                )}
+                                {!alreadyHere && elsewhereStatus && (
+                                    <span className="inline-flex shrink-0 whitespace-nowrap rounded-full bg-general-orange-background-faded px-2.5 py-0.5 text-xs font-medium text-general-orange-foreground">
+                                        {tTg("connectedToAnother")}
+                                    </span>
+                                )}
                             </div>
                         );
                     })}

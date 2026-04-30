@@ -32,11 +32,15 @@ import {
     usePageTour,
 } from "@/features/onboarding/steps/page-tours";
 import { useTreasury } from "@/hooks/use-treasury";
-import { useToken, useTreasuryPolicy } from "@/hooks/use-treasury-queries";
+import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
 import type { IntentsQuoteResponse } from "@/lib/api";
 import { generateIntent } from "@/lib/api";
 import { parseTokenQueryParam } from "@/lib/token-query-param";
-import { formatBalance, formatSmartAmount } from "@/lib/utils";
+import {
+    formatBalance,
+    formatCurrency,
+    formatTokenDisplayAmount,
+} from "@/lib/utils";
 import { buildConfidentialProposal } from "../../../../features/confidential/utils/proposal-builder";
 import { useNear } from "@/stores/near-store";
 import { useThemeStore } from "@/stores/theme-store";
@@ -277,6 +281,11 @@ function Step1({ handleNext }: StepProps) {
                     tokenSelect={{
                         filterTokens: filterSellTokens,
                     }}
+                    usdValueOverride={
+                        quoteData?.quote
+                            ? Number(quoteData.quote.amountInUsd) || 0
+                            : null
+                    }
                 />
                 {/* Swap Arrow */}
                 <div className="flex justify-center absolute bottom-[-25px] left-1/2 -translate-x-1/2">
@@ -308,6 +317,11 @@ function Step1({ handleNext }: StepProps) {
                 tokenSelect={{
                     filterTokens: filterReceiveTokens,
                 }}
+                usdValueOverride={
+                    quoteData?.quote
+                        ? Number(quoteData.quote.amountOutUsd) || 0
+                        : null
+                }
             />
 
             {/* Rate and Slippage */}
@@ -371,8 +385,6 @@ function Step2({ handleBack }: StepProps) {
     const receiveToken = form.watch("receiveToken");
     const sellAmount = form.watch("sellAmount");
     const slippageTolerance = form.watch("slippageTolerance") || 0.5;
-    const { data: sellTokenData } = useToken(sellToken.address);
-    const { data: receiveTokenData } = useToken(receiveToken.address);
     const formatDate = useFormatDate();
 
     const {
@@ -410,38 +422,20 @@ function Step2({ handleBack }: StepProps) {
             : null,
     );
 
-    const sellTotal = useMemo(() => {
-        if (!localLiveQuoteData) return 0;
-        return Number(localLiveQuoteData.quote.amountInFormatted) || 0;
-    }, [localLiveQuoteData]);
-
-    const receiveTotal = useMemo(() => {
-        if (!localLiveQuoteData || !formattedReceiveAmount) return 0;
-        return Number(formattedReceiveAmount) || 0;
-    }, [localLiveQuoteData, formattedReceiveAmount]);
-
-    const estimatedSellUSDValue = sellTokenData?.price
-        ? sellTotal * sellTokenData.price
-        : 0;
-    const estimatedReceiveUSDValue = receiveTokenData?.price
-        ? receiveTotal * receiveTokenData.price
-        : 0;
-
     // Check if this is a NEAR ↔ wrap.near conversion (1:1, no price difference)
     const isWrapConversion = isNEARWrapConversion(sellToken, receiveToken);
 
     const marketPriceDifference = localLiveQuoteData
         ? isWrapConversion
-            ? { percentDifference: "0", isFavorable: true, hasMarketData: true }
+            ? {
+                  percentDifference: "0",
+                  usdDifference: "0",
+                  isFavorable: true,
+                  hasMarketData: true,
+              }
             : calculateMarketPriceDifference(
                   localLiveQuoteData.quote.amountInUsd,
                   localLiveQuoteData.quote.amountOutUsd,
-                  localLiveQuoteData.quote.amountIn,
-                  localLiveQuoteData.quote.amountOut,
-                  sellToken.decimals,
-                  receiveToken.decimals,
-                  sellTokenData?.price,
-                  receiveTokenData?.price,
               )
         : null;
 
@@ -492,7 +486,11 @@ function Step2({ handleBack }: StepProps) {
                                 amount={
                                     localLiveQuoteData.quote.amountInFormatted
                                 }
-                                usdValue={estimatedSellUSDValue}
+                                usdValue={
+                                    Number(
+                                        localLiveQuoteData.quote.amountInUsd,
+                                    ) || 0
+                                }
                             />
 
                             {/* Arrow - absolutely positioned */}
@@ -506,7 +504,11 @@ function Step2({ handleBack }: StepProps) {
                                 title={tEx("receive")}
                                 token={receiveToken}
                                 amount={formattedReceiveAmount}
-                                usdValue={estimatedReceiveUSDValue}
+                                usdValue={
+                                    Number(
+                                        localLiveQuoteData.quote.amountOutUsd,
+                                    ) || 0
+                                }
                             />
                         </div>
 
@@ -539,7 +541,18 @@ function Step2({ handleBack }: StepProps) {
                                                           {
                                                               marketPriceDifference.percentDifference
                                                           }
-                                                          %
+                                                          % (
+                                                          {marketPriceDifference.isFavorable
+                                                              ? "+"
+                                                              : "-"}
+                                                          {formatCurrency(
+                                                              Math.abs(
+                                                                  Number(
+                                                                      marketPriceDifference.usdDifference,
+                                                                  ),
+                                                              ),
+                                                          )}
+                                                          )
                                                       </span>
                                                   ),
                                                   info: tEx(
@@ -559,10 +572,12 @@ function Step2({ handleBack }: StepProps) {
                                     },
                                     {
                                         label: tEx("info.minimumReceived"),
-                                        value: `${formatBalance(
-                                            localLiveQuoteData.quote
-                                                .minAmountOut,
-                                            receiveToken.decimals,
+                                        value: `${formatTokenDisplayAmount(
+                                            formatBalance(
+                                                localLiveQuoteData.quote
+                                                    .minAmountOut,
+                                                receiveToken.decimals,
+                                            ),
                                         )} ${receiveToken.symbol}`,
                                         info: tEx(
                                             "info.minimumReceivedTooltip",
@@ -629,7 +644,9 @@ function Step2({ handleBack }: StepProps) {
                                                           amountIn *
                                                           (feePercentage / 100);
 
-                                                      return `${feePercentage}% / ${formatSmartAmount(feeAmount)} ${sellToken.symbol}`;
+                                                      return `${feePercentage}% / ${formatTokenDisplayAmount(
+                                                          feeAmount,
+                                                      )} ${sellToken.symbol}`;
                                                   })(),
                                                   info: tEx(
                                                       "info.exchangeFeeTooltip",

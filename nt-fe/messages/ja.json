@@ -1,0 +1,2117 @@
+{
+    "common": {
+        "loading": "読み込み中...",
+        "notAvailable": "該当なし",
+        "connecting": "接続中...",
+        "save": "保存",
+        "cancel": "キャンセル",
+        "submit": "送信",
+        "close": "閉じる",
+        "back": "戻る",
+        "seeDemo": "Trezuのデモを見る",
+        "search": "検索",
+        "filter": "フィルター",
+        "filterActive": "フィルター(有効)",
+        "export": "エクスポート",
+        "exporting": "エクスポート中",
+        "import": "インポート",
+        "remove": "削除",
+        "removing": "削除中...",
+        "edit": "編集",
+        "continue": "続ける",
+        "select": "選択",
+        "all": "すべて",
+        "none": "なし",
+        "retry": "再試行",
+        "tryAgain": "もう一度お試しください。",
+        "confirm": "確認",
+        "next": "次へ",
+        "previous": "前へ",
+        "yes": "はい",
+        "no": "いいえ",
+        "approve": "承認",
+        "reject": "却下",
+        "copy": "コピー",
+        "copied": "コピーしました",
+        "viewAll": "すべて表示",
+        "viewDetails": "詳細を表示",
+        "noResults": "結果が見つかりませんでした",
+        "add": "追加"
+    },
+    "languageSwitcher": {
+        "label": "言語",
+        "select": "言語を選択",
+        "english": "English",
+        "spanish": "Español",
+        "ukrainian": "Українська",
+        "hebrew": "עברית",
+        "german": "Deutsch",
+        "french": "Français",
+        "vietnamese": "Tiếng Việt",
+        "chinese": "中文",
+        "turkish": "Türkçe",
+        "indonesian": "Bahasa Indonesia",
+        "portuguese": "Português",
+        "japanese": "日本語",
+        "korean": "한국어"
+    },
+    "header": {
+        "toggleSidebar": "サイドバーを切り替え",
+        "toggleTheme": "テーマを切り替え"
+    },
+    "nav": {
+        "dashboard": "ダッシュボード",
+        "requests": "リクエスト",
+        "payments": "支払い",
+        "exchange": "交換",
+        "addressBook": "アドレス帳",
+        "members": "メンバー",
+        "settings": "設定",
+        "helpSupport": "ヘルプとサポート",
+        "saveGuestTreasury": "このゲストトレジャリーをトレジャリー一覧に保存します。"
+    },
+    "signIn": {
+        "connect": "接続",
+        "wallet": "ウォレット",
+        "termsOfService": "利用規約",
+        "privacyPolicy": "プライバシーポリシー",
+        "disconnect": "切断"
+    },
+    "auth": {
+        "noWallet": "ウォレットを接続してください",
+        "noPermission": "このアクションを実行する権限がありません",
+        "noVote": "この提案にはすでに投票済みです",
+        "noSponsoredTransactions": "スポンサー付きトランザクションの残数がありません"
+    },
+    "landing": {
+        "welcome": "Trezuへようこそ",
+        "chooseOption": "下のオプションを選んで開始してください。",
+        "newUserTitle": "Trezuは初めてです",
+        "newUserDescription": "Trezuのことは聞いたことがありますが、まだトレジャリーは持っていません。",
+        "existingUserTitle": "すでにTrezuを利用しています",
+        "existingUserDescription": "アカウントを持っていてトレジャリーを管理しています。",
+        "gradientTagline": "デジタル資産を管理するためのクロスチェーンマルチシグセキュリティ",
+        "waitlistTitle": "Trezuのウェイトリストに参加",
+        "waitlistSubmittedTitle": "登録が完了しました 🎉",
+        "waitlistSubmittedDescription": "ありがとうございます!トレジャリー作成が利用可能になり次第、お知らせします。",
+        "waitlistDescription": "本日のトレジャリー作成上限に達しました。後ほど再度お試しいただくか、連絡先を残してウェイトリストに参加してください。空きが出次第ご連絡します。",
+        "waitlistInputPlaceholder": "メールアドレスまたはTelegram(例: @username)",
+        "waitlistPrivacyNote": "通知のためだけに使用します",
+        "waitlistSubmit": "ウェイトリストに参加",
+        "waitlistSubmitFailed": "送信に失敗しました。もう一度お試しください。",
+        "welcomeAlt": "ようこそ"
+    },
+    "blocked": {
+        "title": "お住まいの国ではご利用いただけません",
+        "description": "規制により、現在お住まいの地域ではこのサービスをご利用いただけません。"
+    },
+    "notFound": {
+        "title": "おっと、このページは存在しません...",
+        "description": "リンクが無効になっているようです。前のページに戻るか、ダッシュボードへお戻りください。",
+        "backToDashboard": "ダッシュボードに戻る"
+    },
+    "treasuryInfo": {
+        "logoAlt": "トレジャリーロゴ"
+    },
+    "dateInput": {
+        "placeholder": "yyyy/mm/dd"
+    },
+    "thresholdSlider": {
+        "warningSingleMember": "1/{memberCount}のしきい値では、メンバーの誰か一人でもトランザクションを実行できます。これはセキュリティを低下させます。",
+        "infoBalanced": "{currentThreshold}/{memberCount}のしきい値は、セキュリティと運用上の柔軟性のバランスが取れています。"
+    },
+    "intentsFee": {
+        "amountTooLowForFee": "{prefix}金額がネットワーク手数料({fee} {symbol})より低すぎます。少なくとも{addMore} {symbol}追加してください。"
+    },
+    "metadata": {
+        "treasuryTitle": "ダッシュボード | Trezu",
+        "landingTitle": "Trezu | クロスチェーン・トレジャリー管理",
+        "description": "鍵を手放すことなく、単一のダッシュボードからチームの資金を数分で管理できます。",
+        "ogTitle": "Trezu | 一つのマルチシグ。あらゆる暗号資産。完全なコントロール。"
+    },
+    "pages": {
+        "dashboard": {
+            "title": "ダッシュボード",
+            "description": "トレジャリー資産とアクティビティの概要",
+            "descriptionLong": "トレジャリー資産を管理し、アクティビティを追跡"
+        },
+        "activity": {
+            "title": "最近のトランザクション",
+            "descriptionDetails": "リクエストの詳細",
+            "descriptionList": "すべての資産にわたる最近のトランザクション"
+        },
+        "requests": {
+            "title": "リクエスト",
+            "description": "保留中のすべてのマルチシグリクエストを表示・管理",
+            "detailDescription": "リクエストの詳細",
+            "detailTitle": "リクエスト #{id}"
+        },
+        "members": {
+            "title": "メンバー",
+            "description": "チームメンバーと権限を管理"
+        },
+        "settings": {
+            "title": "設定",
+            "description": "アプリケーションの設定を調整"
+        },
+        "addressBook": {
+            "title": "アドレス帳",
+            "description": "保存した受取人を管理"
+        },
+        "payments": {
+            "title": "支払い",
+            "description": "資金を安全に送受信"
+        },
+        "exchange": {
+            "title": "交換",
+            "description": "トークンを安全かつ効率的に交換"
+        },
+        "vesting": {
+            "title": "ベスティング",
+            "description": "ベスティングスケジュールを素早く簡単に作成"
+        },
+        "earn": {
+            "title": "収益",
+            "description": "Trezuのトレジャリーを、よく使うWeb3アプリに接続できます。",
+            "howItWorks": "仕組み",
+            "apps": {
+                "rhea": {
+                    "name": "Rhea",
+                    "description": "トレジャリーをRheaに接続し、既存資産のまま収益化—送金不要、手間なく、保有資産にシームレスなリワード。",
+                    "goTo": "Rheaへ",
+                    "logoAlt": "Rheaのロゴ"
+                },
+                "intear": {
+                    "name": "IntearDEX",
+                    "description": "ブリッジ不要、資金移動不要、余計な手順なし—トレジャリーの資産をそのまま使い、プラットフォーム上で直接収益を始められます。",
+                    "goTo": "IntearDEXへ",
+                    "logoAlt": "IntearDEXのロゴ"
+                },
+                "nearStaking": {
+                    "name": "NEAR Staking",
+                    "description": "トレジャリーからNEARをステークし、ネットワークのセキュリティに貢献しながらステーキング報酬を得られます。",
+                    "goTo": "NEAR Stakingへ",
+                    "logoAlt": "NEAR"
+                }
+            }
+        },
+        "createTreasury": {
+            "title": "トレジャリーを作成",
+            "description": "チーム用の新しいマルチシグトレジャリーをセットアップ"
+        },
+        "manageTreasuries": {
+            "title": "トレジャリーの管理",
+            "description": "アカウントに表示するトレジャリーを管理"
+        },
+        "stats": {
+            "title": "統計",
+            "description": "すべてのSputnik DAOトレジャリーで管理されている資産のリアルタイム表示。"
+        },
+        "telegram": {
+            "title": "トレジャリーを接続",
+            "description": "トレジャリーをTelegramチャットにリンク",
+            "metaTitle": "Trezu — Telegramを接続",
+            "metaDescription": "TrezuトレジャリーをTelegramチャットに接続"
+        },
+        "wallet": {
+            "title": "Trezuウォレット",
+            "description": "Trezu経由でトレジャリー提案に署名"
+        }
+    },
+    "depositModal": {
+        "validation": {
+            "selectAsset": "資産を選択してください",
+            "selectNetwork": "ネットワークを選択してください"
+        },
+        "sections": {
+            "supportedNetworks": "対応ネットワーク",
+            "networksWithAssets": "資産のあるネットワーク",
+            "yourAssets": "あなたの資産",
+            "otherAssets": "その他の資産",
+            "available": "利用可能",
+            "forMembersOnly": "メンバー限定"
+        },
+        "errors": {
+            "addressUnavailable": "選択した資産とネットワークの入金アドレスを取得できませんでした。",
+            "fetchFailed": "入金アドレスの取得に失敗しました。もう一度お試しください。"
+        },
+        "title": "入金",
+        "subtitle": "資産とネットワークを選択して入金アドレスを表示",
+        "assetLabel": "資産",
+        "networkLabel": "ネットワーク",
+        "selectAsset": "資産を選択",
+        "selectNetwork": "ネットワークを選択",
+        "otherAssetName": "その他",
+        "otherNetworkInfo": "資産一覧にないトークンも入金できますが、NEARネットワーク経由のみとなります。",
+        "depositAddressHeading": "入金アドレス",
+        "depositAddressSubtitle": "入金アドレスは必ず再確認してください。",
+        "addressLabel": "アドレス",
+        "addressCopied": "アドレスをクリップボードにコピーしました",
+        "memoLabel": "メモ",
+        "memoCopied": "メモをクリップボードにコピーしました",
+        "memoWarning": "このアドレスに資金を送る際は<bold>必ず</bold>メモを含めてください。メモなしで送信すると資金が永久に失われる可能性があります。",
+        "onlyDeposit": "<networkTag>{network}</networkTag>ネットワークから<symbolTag>{symbol}</symbolTag>のみを入金してください。全額を送る前に、まず少額のテストトランザクションで動作を確認することをおすすめします。",
+        "minimumDeposit": "最小入金額は<amountTag>{amount} {symbol}</amountTag>です",
+        "searchByName": "名前で検索"
+    },
+    "assetDetails": {
+        "coinPrice": "コイン価格",
+        "weight": "ウェイト",
+        "source": "ソース",
+        "send": "送金",
+        "exchange": "交換",
+        "comingSoon": "近日公開",
+        "vesting": "ベスティング",
+        "vestedPercent": "{percent}% ベスト済み",
+        "frozen": "凍結",
+        "frozenTooltip": "凍結されたトークンはロックされており使用できません。ストレージ用、ステーキング中、またはまだベスト前である可能性があります。",
+        "vested": "ベスト済み"
+    },
+    "activity": {
+        "filters": {
+            "createdDate": "作成日",
+            "token": "トークン",
+            "from": "送信元",
+            "to": "送信先"
+        },
+        "tabs": {
+            "all": "すべて",
+            "sent": "送信済み",
+            "received": "受信済み",
+            "stakingRewards": "ステーキング報酬",
+            "exchange": "交換"
+        },
+        "searchPlaceholder": "トランザクションハッシュで検索",
+        "searchPlaceholderShort": "トランザクションハッシュ",
+        "fromPool": "{pool}より",
+        "table": {
+            "type": "タイプ",
+            "transaction": "トランザクション",
+            "from": "送信元",
+            "to": "送信先",
+            "transactionHash": "トランザクションハッシュ",
+            "hashTooltip": "このトランザクションの一意な識別子(ハッシュ)"
+        },
+        "empty": {
+            "title": "トランザクションが見つかりません",
+            "description": "トランザクションが発生するとここに表示されます"
+        },
+        "emptyDashboard": {
+            "title": "まだ表示するものはありません",
+            "description": "トランザクションやアクションが発生するとここに表示されます"
+        },
+        "recentTitle": "最近のトランザクション",
+        "details": {
+            "title": "トランザクションの詳細",
+            "copyAddress": "アドレスをコピー",
+            "addressCopied": "アドレスをクリップボードにコピーしました",
+            "sell": "売却",
+            "receive": "受取",
+            "pending": "保留中",
+            "type": "タイプ",
+            "date": "日付",
+            "from": "送信元",
+            "to": "送信先",
+            "method": "メソッド",
+            "contract": "コントラクト",
+            "transaction": "トランザクション"
+        }
+    },
+    "export": {
+        "types": {
+            "csv": ".CSV",
+            "json": ".JSON",
+            "xlsx": ".XLSX"
+        },
+        "transactionTypes": {
+            "all": "すべてのタイプ",
+            "sent": "送信済み",
+            "received": "受信済み",
+            "stakingRewards": "ステーキング報酬"
+        },
+        "validation": {
+            "invalidEmail": "有効なメールアドレスを入力してください"
+        },
+        "columns": {
+            "submissionTime": "送信時刻",
+            "dateRange": "期間",
+            "generatedBy": "生成者",
+            "status": "ステータス"
+        },
+        "status": {
+            "generating": "生成中",
+            "expired": "期限切れ",
+            "failed": "失敗"
+        },
+        "noPermission": "ファイルをダウンロードする権限がありません。",
+        "download": "ダウンロード",
+        "heading": "最近のトランザクションをエクスポート",
+        "teamOnly": "エクスポートの生成とダウンロードはチームメンバーのみ利用できます。",
+        "creditsUsed": "クレジットをすべて使い切りました",
+        "exportsUsed": "エクスポート枠をすべて使い切りました",
+        "upgradePrompt": "プランをアップグレードして利用を続けてください",
+        "resetPrompt": "プランをアップグレードしてさらにアクセスを得るか、来月の上限リセットをお待ちください。",
+        "tabs": {
+            "generate": "エクスポートを生成",
+            "history": "履歴"
+        },
+        "fields": {
+            "documentType": "ドキュメントタイプ",
+            "timeRange": "期間",
+            "selectDateRange": "期間を選択",
+            "asset": "資産",
+            "allAssets": "すべての資産",
+            "transactionType": "トランザクションタイプ"
+        },
+        "buttons": {
+            "noPermissionExport": "エクスポートする権限がありません",
+            "quotaExhausted": "上限をすべて使い切りました",
+            "exporting": "エクスポート中...",
+            "export": "エクスポート"
+        },
+        "empty": {
+            "title": "エクスポートはまだありません",
+            "description": "過去1ヶ月間のエクスポートファイルが生成されるとここに表示されます。"
+        },
+        "requirements": {
+            "heading": "エクスポートの要件",
+            "canExportFrom": "次の期間のデータをエクスポートできます:",
+            "availability": "エクスポートしたファイルは48時間ダウンロード可能です。"
+        },
+        "quota": {
+            "heading": "エクスポート上限",
+            "unlimited": "無制限",
+            "perMonth": "{count} / 月",
+            "flexibilityPrompt": "もっと柔軟な利用をお探しですか?",
+            "contactUs": "お問い合わせ"
+        }
+    },
+    "requests": {
+        "filters": {
+            "proposalTypes": {
+                "Payments": "支払い",
+                "Exchange": "交換",
+                "Earn": "収益",
+                "Vesting": "ベスティング",
+                "Function Call": "関数呼び出し",
+                "Change Policy": "ポリシー変更",
+                "Settings": "設定",
+                "Confidential": "機密"
+            },
+            "voteStatus": {
+                "Approved": "承認済み",
+                "Rejected": "却下済み",
+                "No Voted": "未投票"
+            },
+            "requestsType": "リクエストタイプ",
+            "createdDate": "作成日",
+            "recipient": "受取人",
+            "token": "トークン",
+            "requester": "依頼者",
+            "approver": "承認者",
+            "myVoteStatus": "自分の投票状況",
+            "all": "すべて",
+            "amount": "金額",
+            "from": "送信元",
+            "to": "送信先",
+            "min": "最小",
+            "max": "最大",
+            "invalidDate": "無効な日付",
+            "operationIsNot": " ではない",
+            "operationBefore": " より前",
+            "operationAfter": " より後",
+            "operationContains": " を含む",
+            "searchByAddress": "アドレスで検索",
+            "loadingMembers": "メンバーを読み込み中...",
+            "noMembersFound": "メンバーが見つかりません。Enterキーで「{query}」を追加します",
+            "noMembersAvailable": "利用可能なメンバーはいません",
+            "reset": "リセット",
+            "clear": "クリア",
+            "addFilter": "フィルターを追加"
+        },
+        "tabs": {
+            "all": "すべて",
+            "pending": "保留中",
+            "executed": "実行済み",
+            "rejected": "却下済み",
+            "expired": "期限切れ",
+            "failed": "失敗"
+        },
+        "searchPlaceholder": "名前またはIDでリクエストを検索",
+        "searchPlaceholderShort": "名前またはIDで検索",
+        "errorLoading": "提案の読み込みに失敗しました。もう一度お試しください。",
+        "empty": {
+            "title": "最初のリクエストを作成しましょう",
+            "description": "支払い、交換などのリクエストは作成されるとここに表示されます。",
+            "send": "送金",
+            "exchange": "交換"
+        },
+        "actions": {
+            "approve": "承認",
+            "reject": "却下",
+            "deposit": "入金",
+            "viewRequest": "リクエストを表示"
+        },
+        "table": {
+            "selectAll": "すべて選択",
+            "selectRow": "行を選択",
+            "request": "リクエスト",
+            "transaction": "トランザクション",
+            "requester": "依頼者",
+            "voting": "投票",
+            "votingTooltip": "最初の数字は受け取った承認数を示し、2つ目の数字は実行に必要な承認数を示します。",
+            "status": "ステータス",
+            "notPending": "提案は保留中ではありません。",
+            "noPermissionVote": "このリクエストに投票する権限がありません。",
+            "alreadyVoted": "このリクエストにはすでに投票済みです。",
+            "noResults": "フィルターに一致するリクエストが見つかりません。",
+            "allCaughtUp": "すべて対応済みです!",
+            "noPending": "保留中のリクエストはありません。",
+            "send": "送金",
+            "exchange": "交換",
+            "requestsSelected": "{count, plural, other {# 件のリクエストを選択}}",
+            "bulkApproveDisabled": "トレジャリーの残高が不足しているため、このリクエストは承認できません。"
+        },
+        "pending": {
+            "title": "保留中のリクエスト",
+            "viewAll": "すべて表示",
+            "emptyTitle": "すべて対応済みです!",
+            "emptyDescription": "保留中のリクエストはありません。"
+        }
+    },
+    "proposals": {
+        "status": {
+            "pending": "保留中",
+            "approved": "承認済み",
+            "rejected": "却下済み",
+            "executed": "実行済み",
+            "expired": "期限切れ",
+            "failed": "失敗",
+            "removed": "削除済み",
+            "inProgress": "進行中"
+        },
+        "statusTooltip": {
+            "pending": "このリクエストはまだ保留中で、実行に必要な投票数に達していません。",
+            "executed": "{required}人中{approved}人のメンバーがリクエストを承認したため実行されました。",
+            "rejected": "{required}人中{rejected}人のメンバーがリクエストを却下したため拒否されました。",
+            "expired": "実行に必要な投票数を獲得できなかったため期限切れとなりました。",
+            "failed": "リクエストの完了に失敗しました。トランザクションの詳細は<link>こちら</link>で確認してください。",
+            "failedPlain": "リクエストの完了に失敗しました。トランザクションの詳細はこちらで確認してください。"
+        },
+        "voteModal": {
+            "confirmTitle": "投票を確認",
+            "removeTitle": "リクエストを削除",
+            "bulkBody": "複数のリクエストを{action}しようとしています。一度送信すると、この決定は変更できません。",
+            "singleBody": "このリクエストを{action}しようとしています。一度確認すると、このアクションは取り消せません。",
+            "actionApprove": "承認",
+            "actionReject": "却下",
+            "actionRemove": "削除",
+            "insufficientBalance": "残高不足のため、リクエスト<highlight>{ids}</highlight>は承認できません。承認は残りのリクエストにのみ適用されます。",
+            "remove": "削除",
+            "confirm": "確認"
+        },
+        "expanded": {
+            "recipient": "受取人",
+            "amount": "金額",
+            "networkFee": "ネットワーク手数料",
+            "notes": "メモ",
+            "sent": "送信済み",
+            "received": "受信済み",
+            "priceDifference": "価格差",
+            "priceDifferenceTooltip": "受け取るUSD価値が、送るUSD価値と比べてどうかを示します。",
+            "slippageTolerance": "スリッページ許容範囲",
+            "estimatedTime": "予想時間",
+            "seconds": "{count}秒",
+            "description": "説明",
+            "methodName": "メソッド名",
+            "args": "引数",
+            "deposit": "デポジット",
+            "gas": "ガス",
+            "totalDeposit": "合計デポジット",
+            "totalGas": "合計ガス",
+            "receiverId": "受信者ID",
+            "contractId": "コントラクトID",
+            "actionsCount": "{count, plural, other {# 件のアクション}}",
+            "functionCallsCount": "{count, plural, other {# 件の関数呼び出し}}",
+            "showLess": "表示を減らす",
+            "showMore": "もっと表示",
+            "stakingPool": "ステーキングプール",
+            "validator": "バリデータ",
+            "action": "アクション",
+            "stake": "ステーク",
+            "unstake": "アンステーク",
+            "withdraw": "出金",
+            "lockupOwner": "ロックアップ所有者",
+            "lockupDuration": "ロックアップ期間",
+            "cliff": "クリフ",
+            "releaseDuration": "リリース期間",
+            "vestingSchedule": "ベスティングスケジュール",
+            "cancellable": "キャンセル可能",
+            "allowEarn": "ステーキングを許可",
+            "yes": "はい",
+            "no": "いいえ",
+            "notSet": "未設定",
+            "from": "送信元",
+            "to": "送信先",
+            "paymentsCount": "{count, plural, other {# 件の支払い}}",
+            "sourceWallet": "送信元ウォレット",
+            "allNear": "すべてのNEAR",
+            "startDate": "開始日",
+            "endDate": "終了日",
+            "cliffDate": "クリフ日",
+            "allowCancellation": "キャンセルを許可",
+            "allowStaking": "ステーキングを許可",
+            "loadingHistorical": "過去の設定を読み込み中...",
+            "name": "名前",
+            "purpose": "目的",
+            "logo": "ロゴ",
+            "logoAlt": "ロゴ",
+            "primaryColor": "メインカラー",
+            "noChangesCurrent": "現在の状態と比較して設定に変更は検出されませんでした。",
+            "noChangesHistorical": "過去の状態と比較して設定に変更は検出されませんでした。",
+            "method": "メソッド",
+            "arguments": "引数",
+            "contract": "コントラクト",
+            "actionNumber": "アクション {number}",
+            "actions": "アクション",
+            "collapseAll": "すべて折りたたむ",
+            "expandAll": "すべて展開",
+            "send": "送金",
+            "receive": "受取",
+            "rate": "レート",
+            "priceSlippageLimit": "価格スリッページ上限",
+            "slippageTooltip": "このリクエストに設定されたスリッページ上限です。実行中に市場レートがこの閾値を超えて変動した場合、リクエストは自動的に失敗します。",
+            "estimatedTimeTooltip": "入金トランザクションが確認された後、スワップが実行されるまでの予想時間です。",
+            "minReceive": "最小受取額",
+            "minimumReceived": "最小受取額",
+            "minReceiveTooltip": "リクエストに設定されたスリッページ上限に基づき、この交換で受け取る最小額です。",
+            "depositAddress": "入金アドレス",
+            "depositAddressTooltip": "クロスチェーンスワップ実行のためにトークンが送られる1Click入金アドレスです。",
+            "quoteSignature": "見積り署名",
+            "quoteSignatureTooltip": "この見積りを検証する1Click APIからの暗号署名です。",
+            "quoteDeadline": "1-Click見積り期限",
+            "quoteDeadlineTooltip": "入金アドレスが無効になり、資金が失われる可能性のある時刻です。",
+            "status": "ステータス",
+            "transactionLink": "トランザクションリンク",
+            "viewTransaction": "トランザクションを表示",
+            "recipientNumber": "受取人 {number}",
+            "oopsTitle": "おっと、問題が発生しました",
+            "oopsDescription": "ここに表示するデータが見つかりませんでした。",
+            "totalAmount": "合計金額",
+            "recipients": "受取人",
+            "recipientsCount": "{count, plural, other {# 人の受取人}}",
+            "unsupportedProposal": "未対応の提案タイプ",
+            "requestDetails": "リクエストの詳細",
+            "linkCopied": "リンクをクリップボードにコピーしました",
+            "copyLink": "リンクをコピー",
+            "openRequestPage": "リクエストページを開く",
+            "deleteRequest": "リクエストを削除",
+            "unknownRecipients": "不明な受取人",
+            "loadingConfig": "設定を読み込み中...",
+            "historicalData": "過去のデータ...",
+            "generalUpdate": "一般更新",
+            "detailsUnavailable": "詳細は利用できません",
+            "changesCount": "{count, plural, other {# 件の変更}}",
+            "policyUpdate": "ポリシー更新",
+            "noChangesDetected": "変更は検出されませんでした",
+            "loadingPolicy": "ポリシーを読み込み中...",
+            "roleChanges": "ロールの変更",
+            "policyParameters": "ポリシーパラメータ",
+            "defaultVotePolicy": "デフォルト投票ポリシー",
+            "policyRoleChanges": "ポリシーとロールの変更",
+            "membersAdded": "{count, plural, other {# 名のメンバーを追加}}",
+            "membersRemoved": "{count, plural, other {# 名のメンバーを削除}}",
+            "membersUpdated": "{count, plural, other {# 名のメンバーを更新}}",
+            "rolesModified": "{count, plural, other {# 件のロールを変更}}",
+            "parametersChanged": "{count, plural, other {# 件のパラメータを変更}}",
+            "defaultVotePolicyPart": "デフォルト投票ポリシー",
+            "onReceiver": "{receiver}に対して",
+            "toPrefix": "宛先:",
+            "validatorPrefix": "バリデータ:",
+            "validatorSubtitle": "バリデータ: {address}",
+            "impactTitle": "投票期間変更の影響",
+            "impactBody": "投票期間を更新しようとしています。これは以下の既存リクエストに影響します。",
+            "activeRequestsBullet": "{count, plural, other {# 件のリクエストはこの変更後も投票可能で、有効期限が更新されます。}}",
+            "expiringRequestsBullet": "{count, plural, other {# 件のリクエストは新しい投票期間の下で「期限切れ」と見なされます。}}",
+            "remainActiveHeading": "新しい有効期限で投票可能なリクエスト",
+            "willExpireHeading": "「期限切れ」となるリクエスト",
+            "tableRequest": "リクエスト",
+            "tableTransaction": "トランザクション",
+            "tableNewExpiry": "新しい有効期限",
+            "expireInDays": "{count, plural, other {あと # 日で期限切れ}}",
+            "today": "今日",
+            "uponApproval": "承認時",
+            "yesContinue": "はい、続行します",
+            "transactionCreated": "トランザクションを作成しました",
+            "voting": "投票",
+            "approvalsReceived": "{received}/{required}件の承認を受領",
+            "expiresAt": "有効期限",
+            "expiredAt": "失効日時",
+            "exchangingTokens": "トークンを交換中",
+            "exchangingTokensBody": "このリクエストはチームに承認されました。トークン交換が進行中で、しばらく時間がかかる場合があります。",
+            "requestFailed": "リクエストが失敗しました",
+            "requestFailedBody": "チームはこのリクエストを承認しましたが、レート変動により失敗しました。新しいリクエストを作成して、もう一度お試しください。",
+            "votingPeriod24h": "投票期間: 24時間",
+            "votingPeriod24hBody": "この交換リクエストの投票期間は24時間です。この時間内に承認しないと、リクエストは期限切れとなります。",
+            "reject": "却下",
+            "approve": "承認"
+        },
+        "insufficientBalance": {
+            "noAsset": "必要なトークンがトレジャリーにないため、このリクエストは承認できません。",
+            "bond": "トレジャリーの<token>{symbol}</token>残高が不足しているため、このリクエストは承認できません。提案ボンドを賄うために<token>{amount} {symbol}</token>を追加してください。",
+            "continue": "トレジャリーの<token>{symbol}</token>残高が不足しているため、このリクエストは承認できません。続行するには<token>{amount} {symbol}</token>を追加してください。",
+            "modalTitle": "NEAR残高が不足しています",
+            "modalBodyVote": "ウォレットにこの投票を行うのに十分なNEARがありません。投票には最低<amount>{required} NEAR</amount>の残高が必要です。ウォレットにNEARを追加してから、もう一度お試しください。",
+            "modalBodyProposal": "ウォレットにこのリクエストを作成するのに十分なNEARがありません。リクエスト作成には最低<amount>{required} NEAR</amount>の残高が必要です。ウォレットにNEARを追加してから、もう一度お試しください。",
+            "gotIt": "了解"
+        }
+    },
+    "members": {
+        "title": "メンバー",
+        "description": "チームメンバーと権限を管理",
+        "permissions": "権限",
+        "member": "メンバー",
+        "activeMembers": "アクティブなメンバー",
+        "noActiveMembers": "アクティブなメンバーは見つかりませんでした。",
+        "addNewMember": "新しいメンバーを追加",
+        "membersSelected": "{count, plural, =0 {メンバーが選択されていません} other {# 名のメンバーを選択中}}",
+        "remove": "削除",
+        "edit": "編集",
+        "requestorOnlyTooltip": "このメンバーはNEARNからの支払いリクエスト作成を担当するため、Requestorロールのみ追加できます。",
+        "memberModal": {
+            "editRoles": "ロールを編集",
+            "addNewMember": "新しいメンバーを追加",
+            "validatingAddresses": "アドレスを検証中...",
+            "creatingProposal": "提案を作成中...",
+            "reviewRequest": "リクエストを確認",
+            "noChanges": "メンバーロールに変更はありません"
+        },
+        "previewModal": {
+            "title": "リクエストを確認",
+            "youAreEditing": "編集対象:",
+            "youAreAdding": "追加対象:",
+            "membersCount": "{count, plural, other {# 名のメンバー}}",
+            "newMembersCount": "{count, plural, other {# 名の新しいメンバー}}",
+            "updatedMembers": "更新されたメンバー",
+            "newMembers": "新しいメンバー",
+            "creatingProposal": "提案を作成中...",
+            "confirmSubmit": "確認してリクエストを送信"
+        },
+        "removeDialog": {
+            "title": "リクエストを削除",
+            "nearnBody": "承認されると、{account}はトレジャリーから永久に削除され、関連するすべての権限が取り消されます。削除後、このアカウントはNEARNからリクエストを作成できなくなります。",
+            "genericBody": "承認されると、このアクションにより<bold>{accounts}</bold>がトレジャリーから永久に削除され、割り当てられたすべての権限が取り消されます。",
+            "creatingProposal": "提案を作成中..."
+        },
+        "validation": {
+            "accountIdRequired": "アカウントIDは必須です",
+            "invalidNearAddress": "無効なNEARアドレスです。",
+            "atLeastOneRole": "少なくとも1つのロールを選択する必要があります",
+            "atLeastOneMember": "少なくとも1名のメンバーが必要です",
+            "alreadyAdded": "このメンバーはすでに上記に追加されています",
+            "alreadyInTreasury": "このメンバーはすでにトレジャリーに存在します",
+            "cannotRemoveRoleAfter": "このメンバーから{role}ロールを削除できません。すべての変更後、このロールに割り当てられる唯一の人物となります。",
+            "cannotRemoveRoleAfterGov": "このメンバーから{role}ロールを削除できません。すべての変更後、唯一の{role}メンバーとなり、このロールがないとチームメンバーの管理や投票設定ができなくなります。"
+        },
+        "policy": {
+            "addMembers": "ポリシー更新 - 新しいメンバーを追加",
+            "addMembersSuccess": "新しいメンバーのリクエストが正常に作成されました",
+            "editMember": "ポリシー更新 - メンバー権限を編集",
+            "editMembers": "ポリシー更新 - 複数メンバーを編集",
+            "editMemberSuccess": "メンバーロール更新リクエストが正常に作成されました",
+            "editMembersSuccess": "一括メンバーロール更新リクエストが正常に作成されました",
+            "removeMember": "ポリシー更新 - メンバーを削除",
+            "removeMembers": "ポリシー更新 - メンバーを削除",
+            "removeMemberSuccess": "メンバー削除リクエストが正常に作成されました"
+        }
+    },
+    "settings": {
+        "tabs": {
+            "general": "一般",
+            "voting": "投票",
+            "preferences": "環境設定",
+            "integrations": "連携"
+        },
+        "general": {
+            "validation": {
+                "displayNameRequired": "表示名は必須です",
+                "displayNameMax": "表示名は100文字未満である必要があります"
+            },
+            "proposalDescriptionTitle": "設定の更新 - テーマとロゴ",
+            "proposalSubmitted": "設定更新のリクエストを送信しました",
+            "treasuryNotFound": "トレジャリーが見つかりません",
+            "treasuryName": "トレジャリー名",
+            "treasuryNameDescription": "トレジャリーの名前です。アプリ全体で表示されます。",
+            "displayName": "表示名",
+            "displayNamePlaceholder": "表示名を入力",
+            "accountName": "アカウント名",
+            "logo": "ロゴ",
+            "logoDescription": "トレジャリーのロゴをアップロードしてください。SVG、PNG、またはJPG(256x256ピクセル)を推奨します。",
+            "treasuryLogoAlt": "トレジャリーロゴ",
+            "uploading": "アップロード中...",
+            "uploadLogo": "ロゴをアップロード",
+            "removeLogo": "ロゴを削除",
+            "logoUploaded": "ロゴが正常にアップロードされました",
+            "uploadError": "画像のアップロード中にエラーが発生しました。もう一度お試しください。",
+            "invalidLogo": "無効なロゴです。256x256ピクセルのPNG、JPG、またはSVGファイルをアップロードしてください",
+            "invalidImage": "無効な画像ファイルです。有効な画像をアップロードしてください。",
+            "fileReadError": "ファイルの読み込みエラーです。もう一度お試しください。",
+            "primaryColor": "メインカラー",
+            "primaryColorDescription": "トレジャリーのインターフェース要素のメインカラーを設定します。この色はライトモードとダークモードの両方で使われるため、ニュートラルな色を選ぶ際はコントラストに注意してください。",
+            "selectColorLabel": "色 {color} を選択"
+        },
+        "voting": {
+            "validation": {
+                "required": "投票期間は必須です",
+                "validNumber": "投票期間は有効な数字である必要があります",
+                "min": "投票期間は少なくとも1日必要です",
+                "max": "投票期間は1000日未満である必要があります",
+                "whole": "投票期間は整数の日数である必要があります"
+            },
+            "missingData": "必要なデータが不足しています",
+            "thresholdProposalTitle": "ポリシー更新 - 投票しきい値",
+            "thresholdProposalSummary": "{account}が投票しきい値を{oldValue}から{newValue}に変更するよう要求しました。",
+            "thresholdSubmitted": "投票しきい値更新のリクエストを送信しました",
+            "createProposalFailed": "提案の作成に失敗しました",
+            "durationProposalTitle": "ポリシー更新 - 投票期間",
+            "durationProposalSummary": "{account}が投票期間を{oldValue}から{newValue}に変更するよう要求しました。",
+            "durationSubmitted": "リクエストが正常に作成されました",
+            "pendingTitle": "アクティブな投票しきい値リクエスト",
+            "pendingBody": "競合を避けるため、続行する前に既存の保留中リクエストを完了または解決する必要があります。これらのリクエストは現在アクティブで、まず承認または却下する必要があります。",
+            "viewRequest": "リクエストを表示",
+            "thresholdHeading": "投票しきい値",
+            "thresholdDescriptionApprovers": "支払いやチーム関連のリクエストの承認に必要な票数を定義します。Approver(承認者)とGovernance(ガバナンス)で別々にしきい値を設定してください。",
+            "thresholdDescriptionGeneric": "リクエスト承認に必要な票数を定義します。各ロールの責任に応じてしきい値を設定してください。",
+            "membersWhoCanVote": "投票できるメンバー",
+            "votesRequired": "リクエスト承認に必要な票数",
+            "durationHeading": "投票期間",
+            "durationDescription": "提案が投票可能なまま残る期間(日数)です。この期間内に投票が完了しないと、決定は失効します。",
+            "durationApprovers": " この期間はGovernanceとApproverの両ロールに等しく適用されます。",
+            "durationGeneric": " この期間はすべてのトレジャリーロールに一貫して適用されます。",
+            "days": "日"
+        },
+        "preferences": {
+            "timeZone": "タイムゾーン",
+            "timeZoneDescription": "正確な日時表示のためにローカルタイムゾーンを設定してください。",
+            "timeFormat": "時刻形式",
+            "hour12": "12時間制 (1:00 PM)",
+            "hour24": "24時間制 (13:00)",
+            "autoTimezone": "現在地に基づいてタイムゾーンを自動設定",
+            "timezone": "タイムゾーン",
+            "loadingTimezones": "タイムゾーンを読み込み中...",
+            "selectTimezone": "タイムゾーンを選択",
+            "searchTimezones": "タイムゾーンを検索...",
+            "noTimezones": "タイムゾーンが見つかりません",
+            "save": "保存",
+            "savedToast": "環境設定が正常に保存されました",
+            "saveFailed": "環境設定の保存に失敗しました",
+            "loadFailed": "タイムゾーンの読み込みに失敗しました"
+        }
+    },
+    "addressBook": {
+        "emptyTitle": "最初の受取人を追加",
+        "emptyDescription": "頻繁に使用するアドレスを保存して、より速く、エラーのない支払いを実現します。連絡先は非公開で、チームのみが閲覧できます。",
+        "import": "インポート",
+        "addRecipient": "受取人を追加",
+        "recipientsHeading": "受取人",
+        "recipientsSelected": "{count, plural, =0 {受取人が選択されていません} other {# 人の受取人を選択中}}",
+        "sectionHeading": "受取人",
+        "privacyNote": "保存されたアドレスは非公開で、チームのみが閲覧できます。",
+        "searchPlaceholder": "名前で受取人を検索",
+        "searchPlaceholderShort": "検索",
+        "review": {
+            "header": "詳細を確認",
+            "youAreAdding": "追加対象:",
+            "newRecipients": "{count, plural, other {# 人の新しい受取人}}",
+            "onNetworks": "{count, plural, other {# 件のネットワーク}}上",
+            "recipients": "受取人",
+            "allDuplicates": "インポートされたすべての受取人はすでにアドレス帳に存在します。戻って別のリストをアップロードするか、このレビューから重複を削除してください。",
+            "someDuplicates": "合計{total}人中{duplicates}人が重複しています。続行すると新しい受取人のみがインポートされます。",
+            "duplicated": "重複",
+            "notePlaceholder": "この受取人を識別するためのメモを追加(例: 業務委託支払い、ベスティング配布)。",
+            "skipDuplicates": "重複をスキップして新しいもののみインポートします。",
+            "allDuplicatesTooltip": "インポートされたすべての受取人はすでにアドレス帳にあるため、新しくインポートするものはありません。",
+            "duplicateActionTooltip": "続行するには重複スキップを有効化するか、重複する受取人を削除してください。",
+            "adding": "追加中…",
+            "nothingNew": "新しくインポートするものはありません",
+            "addRecipientsButton": "{count, plural, other {受取人を追加}}"
+        },
+        "removeDialog": {
+            "title": "受取人を削除",
+            "bulk": "アドレス帳から<bold>{count, plural, other {# 人の受取人}}</bold>を削除します。いつでも再度追加できます。",
+            "single": "アドレス帳から<bold>{name}</bold>を削除します。この受取人はいつでも再度追加できます。"
+        },
+        "importFlow": {
+            "title": "受取人をインポート",
+            "description": "受取人アドレスのリストをアドレス帳にアップロードします。",
+            "foundSummary": "{networkCount, plural, other {# 件のネットワーク}}上で{count, plural, other {# 人の受取人}}を発見",
+            "uploadPrompt": "受取人データをアップロードまたは貼り付け",
+            "fixErrors": "続行するにはエラーを修正してください",
+            "continueReview": "確認に進む"
+        },
+        "form": {
+            "editRecipient": "受取人を編集",
+            "addRecipient": "受取人を追加",
+            "import": "インポート",
+            "recipientName": "受取人の名前",
+            "namePlaceholder": "Alice",
+            "recipientAddress": "受取人のアドレス",
+            "network": "ネットワーク",
+            "networkInfo": "このアドレスと互換性のあるネットワーク",
+            "enterAddressFirst": "先に受取人アドレスを入力してください",
+            "selectNetwork": "ネットワークを選択",
+            "selectNetworksTitle": "ネットワークを選択",
+            "searchNetworksPlaceholder": "ネットワークを検索…",
+            "done": "完了",
+            "edit": "編集",
+            "remove": "削除",
+            "incomplete": "未完了",
+            "addAnother": "別の受取人を追加",
+            "fillAllTooltip": "受取人を追加するにはすべての項目を入力する必要があります。",
+            "reviewDetails": "詳細を確認",
+            "reviewTooltip": "確認前にすべての受取人を完成させる必要があります。",
+            "invalidAddress": "無効なアドレス",
+            "noCompatibleNetworks": "このアドレスと互換性のあるネットワークはありません"
+        },
+        "parsing": {
+            "rowPrefix": "行 {row}: {message}",
+            "missingName": "受取人の名前がありません。名前を追加してください。",
+            "missingAddress": "受取人のアドレスがありません。ウォレットアドレスを追加してください。",
+            "invalidAddressFormat": "アドレス「{address}」は対応するどのネットワークでも有効な形式ではありません。",
+            "unknownNetwork": "不明なネットワーク「{network}」。対応ネットワーク: {available}。",
+            "incompatibleNetwork": "アドレス「{address}」は{network}と互換性がありません。互換性のあるネットワーク: {compatible}。",
+            "noDataFound": "データが見つかりません。受取人を次の形式で追加してください: 名前、アドレス、ネットワーク、メモ",
+            "headerColumnsNotFound": "ヘッダー行を検出しましたが、「Name」と「Address」の列が見つかりませんでした。これらの列名を使用するか、ヘッダー行を削除してください。",
+            "failedToParseCsv": "CSVデータの解析に失敗しました"
+        }
+    },
+    "payments": {
+        "validation": {
+            "recipientMin": "受取人は少なくとも2文字必要です",
+            "recipientMax": "受取人は128文字未満である必要があります",
+            "amountPositive": "金額は0より大きくなければなりません",
+            "recipientTokenSame": "受取人とトークンアドレスは同じであってはなりません"
+        },
+        "newPayment": "新しい支払い",
+        "reviewYourPayment": "支払いを確認",
+        "reviewButton": "支払いを確認",
+        "reviewButtonDisabled": "金額とアドレスを入力してください",
+        "comingSoon": "近日公開",
+        "bulkPayments": "一括支払い",
+        "summaryRecipients": "{count, plural, other {# 人の受取人}}へ",
+        "networkFee": "ネットワーク手数料",
+        "networkFeeInfo": "ネットワーク手数料情報",
+        "commentPlaceholder": "コメントを追加(任意)...",
+        "preparingRoute": "1Click送金ルートを準備中...",
+        "confirmSubmit": "確認してリクエストを送信",
+        "useDifferentAddress": "別のアドレスを使用",
+        "failed1ClickQuote": "1Click送金見積りの作成に失敗しました",
+        "paymentSubmitted": "支払い送信のリクエストを送信しました"
+    },
+    "bulkPayment": {
+        "comingSoonToast": "一括支払いは近日公開予定です!",
+        "submittingList": "一括支払いリストを送信中",
+        "submittingProposal": "提案を送信中",
+        "proposalSubmitted": "一括支払い提案が送信されました",
+        "submitListFailed": "支払いリストの送信に失敗しました",
+        "submitFailed": "一括支払いの送信に失敗しました",
+        "upload": {
+            "pleaseUploadCsv": "CSVファイルをアップロードしてください",
+            "fileSizeLimit": "ファイルサイズは1.5MB未満である必要があります",
+            "headerTitle": "一括支払いリクエスト",
+            "headerSubtitle": "1つの提案で複数の受取人に支払いを行います。",
+            "creditsUsed": "クレジットをすべて使い切りました",
+            "bulkPaymentsUsed": "一括支払い枠をすべて使い切りました",
+            "upgradeTrial": "プランをアップグレードして利用を続けてください",
+            "upgradePaid": "プランをアップグレードしてさらにアクセスを得るか、来月の上限リセットをお待ちください。",
+            "selectAsset": "資産を選択",
+            "disableTokenMessage": "これらのトークンの一括支払いは近日公開予定です。",
+            "providePaymentData": "支払いデータを提供",
+            "uploadFile": "ファイルをアップロード",
+            "provideData": "データを提供",
+            "chooseFile": "ファイルを選択",
+            "orDragDrop": "またはドラッグ&ドロップ",
+            "maxFileSize": "最大1ファイル、1.5MBまで、CSVファイルのみ",
+            "noFilePrompt": "アップロードするファイルがない場合は?",
+            "downloadTemplate": "テンプレートをダウンロード",
+            "requirements": "一括支払いの要件",
+            "maxTransactions": "1回のインポートで最大{max}件のトランザクション",
+            "singleTokenNetwork": "単一のトークンとネットワーク",
+            "limitsUsed": "上限をすべて使い切りました",
+            "selectAndProvide": "資産を選択し、支払いデータを提供してください",
+            "continueToReview": "確認に進む",
+            "selectTokenError": "トークンを選択してください",
+            "providePaymentDataError": "支払いデータを提供してください"
+        },
+        "editStep": {
+            "title": "支払いを編集",
+            "saveChanges": "変更を保存"
+        },
+        "parsing": {
+            "rowPrefix": "行 {row}: {message}",
+            "missingRecipientFirstColumn": "受取人アドレスがありません。最初の列にアドレスを追加してください。",
+            "invalidNearAddress": "アドレス「{address}」は有効なNEARアカウントではありません。",
+            "invalidChainAddress": "アドレス「{address}」は有効な{chain}アカウントではありません。",
+            "rowNeedsAmountRecipient": "各行にはカンマで区切られた金額と受取人が必要です。例: 100, alice.near",
+            "missingRecipientBeforeComma": "受取人アドレスがありません。カンマの前にアドレスを追加してください。",
+            "missingAmountAfterComma": "金額がありません。カンマの後に数字を追加してください。例: {recipient}, 100",
+            "invalidAmountNumber": "金額「{amountStr}」は有効な数字ではありません。数字と小数のみを使用してください(例: 100または100.50)。",
+            "amountGreaterThanZero": "金額は0より大きくなければなりません。「{amountStr}」が入力されました。",
+            "amountTooLarge": "金額「{amountStr}」が大きすぎます。より小さい数字を使用してください。",
+            "invalidAmountFallback": "無効な金額です。数字と小数のみを使用してください(例: 100または100.50)。",
+            "pleaseRemoveChars": "次の文字を削除してください: {chars}。数字、カンマ、ドットのみが使用可能です。",
+            "amountCannotBeEmpty": "金額は空にできません。",
+            "tokenMismatch": "「{provided}」が入力されましたが、上で{expected}が選択されています。トークンシンボルを削除するか、ドロップダウンから{suggested}を選択してください。",
+            "multipleTokenSymbols": "複数のトークンシンボル({symbols})が使用されています。ファイル全体で1種類のトークンのみを使用するか、トークンシンボルを削除して上の選択でトークンを決定してください。",
+            "noPaymentDataFound": "支払いデータが見つかりません。次の形式で支払いを追加してください: 受取人、金額",
+            "exceedsRecipientLimit": "{count}人の受取人がいますが、バッチあたりの上限は{limit}です。{excess, plural, other {# 人の受取人}}を削除するか、複数のバッチに分割してください。",
+            "noPaymentDataProvided": "支払いデータが提供されていません。次の形式で支払いを入力してください: 受取人、金額",
+            "headerColumnsNotFound": "ヘッダー行を検出しましたが、「Recipient」と「Amount」の列が見つかりませんでした。これらの列名を使用するか、ヘッダー行を削除してください。",
+            "failedToParseCsv": "CSVデータの解析に失敗しました",
+            "failedToParsePaste": "貼り付けデータの解析に失敗しました",
+            "failedToValidateAccount": "アカウントの検証に失敗しました",
+            "feeEstimationFailed": "この金額のネットワーク手数料を見積もれませんでした。確認してもう一度お試しください。",
+            "feeEstimationFailedRow": "行 {row} ({recipient}): この金額のネットワーク手数料を見積もれませんでした。確認してもう一度お試しください。"
+        },
+        "recipients": "受取人",
+        "insufficientTokens": "トークンが不足しています。リクエストを送信してから承認前に補充できます。",
+        "removeRecipient": "受取人を削除",
+        "removeRecipientConfirm": "<strong>{recipient}</strong>への支払いを削除してもよろしいですか?この操作は取り消せません。",
+        "remove": "削除",
+        "edit": "編集"
+    },
+    "bulkPaymentCredits": {
+        "title": "一括支払い",
+        "unlimited": "無制限",
+        "creditsPerPeriod": "{amount} / {period}",
+        "oneTimeTrial": "1回限りのトライアル",
+        "month": "月",
+        "moreFlexibility": "もっと柔軟な利用をお探しですか?",
+        "contactUs": "お問い合わせ"
+    },
+    "exchange": {
+        "validation": {
+            "amountPositive": "金額は0より大きくなければなりません"
+        },
+        "requestSubmitted": "交換リクエストを送信しました",
+        "heading": "交換",
+        "sell": "売却",
+        "receive": "受取",
+        "slippageTolerance": "スリッページ許容範囲",
+        "disabled": {
+            "differentTokens": "トークンは異なる必要があります",
+            "enterAmount": "交換する金額を入力してください"
+        },
+        "review": "交換を確認",
+        "poweredBy": "提供:",
+        "info": {
+            "priceDifference": "価格差",
+            "priceDifferenceTooltip": "受け取るUSD価値が、送るUSD価値と比べてどうかを示します。",
+            "estimatedTime": "予想時間",
+            "estimatedTimeValue": "{seconds}秒",
+            "estimatedTimeTooltip": "交換完了までのおおよその時間です。",
+            "minimumReceived": "最小受取額",
+            "minimumReceivedTooltip": "リクエストに設定されたスリッページ上限に基づき、この交換で受け取る最小額です。",
+            "depositAddress": "入金アドレス",
+            "depositAddressCopied": "入金アドレスをコピーしました",
+            "quoteExpires": "見積り有効期限",
+            "exchangeFee": "交換手数料",
+            "exchangeFeeTooltip": "ここで発生する0.70%の手数料は、取引を仲介するNEAR IntentsプロトコルのコストとTrezuウィジェット手数料を賄います。この金額は見積りレートに自動的に含まれています。"
+        },
+        "approveWithin24h": "このリクエストは24時間以内に承認してください。期限を過ぎると失効します。できるだけ早く確認することをおすすめします。",
+        "confirmSubmit": "確認してリクエストを送信",
+        "refreshingIn": "交換レートは{seconds}秒後に更新されます"
+    },
+    "vesting": {
+        "validation": {
+            "amountMin": "金額は3.5以上である必要があります",
+            "startBeforeEnd": "開始日は終了日より前である必要があります",
+            "cliffBetween": "クリフ日は次の範囲内である必要があります"
+        },
+        "stepTitles": {
+            "details": "詳細",
+            "settings": "設定",
+            "review": "確認"
+        },
+        "proposalTitle": "{address}のベスティングスケジュールを作成",
+        "scheduleSubmitted": "ベスティングスケジュール作成のリクエストを送信しました",
+        "heading": "新しいベスティングスケジュール",
+        "amount": "金額",
+        "startDate": "開始日",
+        "endDate": "終了日",
+        "noteOptional": "メモ(任意)",
+        "continue": "続ける",
+        "advancedSettings": "詳細設定",
+        "allowCancellation": "キャンセルを許可",
+        "allowCancellationDescription": "NEAR Foundationがいつでもロックアップをキャンセルできるようにします。キャンセル不可のロックアップはクリフ日と互換性がありません。",
+        "cliffDate": "クリフ日",
+        "allowEarn": "収益を許可",
+        "allowEarnDescription": "ロックアップの所有者が、ロックアップ内のすべてのトークンをステーキングすることを許可します(クリフ日より前でも可能)。",
+        "commentPlaceholder": "このベスティングスケジュールへのコメントを追加(任意)...",
+        "reviewRequest": "リクエストを確認",
+        "reviewHeading": "ベスティングスケジュールを確認",
+        "confirmSubmit": "確認してリクエストを送信",
+        "review": {
+            "recipient": "受取人",
+            "startDate": "開始日",
+            "endDate": "終了日",
+            "cliffDate": "クリフ日",
+            "cancelable": "キャンセル可能",
+            "allowEarn": "収益を許可",
+            "na": "該当なし"
+        }
+    },
+    "createTreasury": {
+        "validation": {
+            "nameMin": "トレジャリー名は少なくとも2文字必要です",
+            "nameMax": "トレジャリー名は64文字未満である必要があります",
+            "accountMin": "アカウント名は少なくとも2文字必要です",
+            "accountMax": "アカウント名は64文字未満である必要があります",
+            "accountChars": "アカウント名にはラテン文字、数字、ハイフンのみ使用できます",
+            "accountTaken": "このアカウント名はすでに使用されています"
+        },
+        "votingNote": "投票設定を変更するにはより多くのメンバーが必要です。投票を設定するには別のメンバーを追加してください。",
+        "minimumVoteNote": "最低1票の承認が必要です。",
+        "heading": "トレジャリーを作成",
+        "addMembers": "メンバーを追加",
+        "addMembersInfo": "今メンバーを追加・更新できます。後でいつでも編集可能です。",
+        "treasuryName": "トレジャリー名",
+        "treasuryNamePlaceholder": "My Treasury",
+        "accountName": "アカウント名",
+        "accountNameInfo": "これはあなたのアカウントの一意の名前です。トレジャリーURLで使用され、トランザクションで送金者を識別するために表示されます。短くて認識しやすい名前を選んでください。",
+        "accountPlaceholder": "my-treasury",
+        "continue": "続ける",
+        "votingThreshold": "投票しきい値",
+        "thresholdDescription": "リクエストの承認に必要な票数を設定:",
+        "financial": "Financial",
+        "financialDescription": "支払いと交換のリクエストを承認します。",
+        "governance": "Governance",
+        "governanceDescription": "設定、メンバー、投票設定を承認します。",
+        "confidential": "機密",
+        "public": "公開",
+        "anyone": "誰でも",
+        "teamOnly": "チームのみ",
+        "soon": "もうすぐ",
+        "publicDescription": "残高、アクティビティ、トランザクションはすべてブロックチェーン上で誰でも閲覧可能です。透明性のある組織や公開DAOに最適です。",
+        "balanceTransactions": "残高、トランザクション",
+        "membersVoting": "メンバー、投票",
+        "allFeatures": "すべての機能が利用可能",
+        "confidentialDescription": "残高、アクティビティ、送金はすべてブロックチェーン上で非公開です。チームのみがこの情報を閲覧できます。プライベート企業、ファミリーオフィス、財務プライバシーを求めるチームに最適です。",
+        "recentTransactionsExport": "最近のトランザクションのエクスポート",
+        "bulkPayment": "一括支払い",
+        "treasuryType": "トレジャリーの種類",
+        "treasuryTypeWarning": "トレジャリーごとに1回のみ選択でき、後から変更できません。",
+        "select": "選択",
+        "visibleOnChain": "オンチェーンで可視",
+        "featuresAvailable": "利用可能な機能",
+        "mostFeaturesSupported": "ほとんどの機能をサポート",
+        "reviewTreasury": "トレジャリーを確認",
+        "membersLabel": "メンバー",
+        "financialThreshold": "Financialしきい値",
+        "governanceThreshold": "Governanceしきい値",
+        "noDeploymentFee": "🎉 デプロイ手数料無料",
+        "noDeploymentFeeDescription": "新しいプロジェクトを支援するため、TREZUは1回限りのデプロイとネットワークストレージ手数料をすべて負担します。",
+        "createButton": "トレジャリーを作成",
+        "connectWalletCreate": "トレジャリー作成のためにウォレットを接続",
+        "unexpectedError": "予期しないエラーが発生しました",
+        "creationFailed": "トレジャリーの作成に失敗しました。もう一度お試しください。",
+        "stepTitles": {
+            "aboutYou": "あなたについて",
+            "details": "詳細",
+            "members": "メンバー",
+            "treasuryType": "トレジャリーの種類",
+            "review": "確認"
+        },
+        "steps": {
+            "creatingNear": "NEAR上にトレジャリーを作成中",
+            "registeringKey": "公開鍵を登録中",
+            "settingUpConfidential": "機密トランザクションを設定中",
+            "configuringMembers": "トレジャリーのメンバーを設定中",
+            "finalizingSetup": "セットアップを完了中"
+        }
+    },
+    "manageTreasuries": {
+        "warningOne": "少なくとも1つのトレジャリーは利用可能なままにする必要があります",
+        "warningOnePeriod": "少なくとも1つのトレジャリーは利用可能なままにする必要があります。",
+        "activeHeading": "アクティブなトレジャリー",
+        "activeDescription": "現在アカウント一覧に表示されているトレジャリーです。",
+        "activeEmpty": "アクティブなトレジャリーはありません。",
+        "hiddenHeading": "非表示のトレジャリー",
+        "hiddenDescription": "アカウント一覧から非表示にされているトレジャリーです。",
+        "removeGuestTitle": "ゲストトレジャリーを削除",
+        "removeDialog": "<bold>{name}</bold>を削除しようとしています。確認後、この操作は取り消せません。",
+        "tooltips": {
+            "removeFromList": "一覧から削除",
+            "viewTreasury": "トレジャリーを表示",
+            "hideFromList": "一覧から非表示",
+            "showInList": "一覧に表示"
+        }
+    },
+    "wallet": {
+        "proposal": {
+            "transfer": "外部dAppからの提案: {receiverId}にNEARを送金",
+            "functionCall": "外部dAppからの提案: {receiverId}で{methods}",
+            "unsupportedAction": "未対応のアクションタイプ「{type}」。TransferとFunctionCallアクションのみTrezu提案に変換できます。"
+        },
+        "loading": "読み込み中...",
+        "connectPrompt": "続行するにはNEARウォレットを接続してください。その後、代理として動作するトレジャリーを選択します。",
+        "connectWallet": "ウォレットを接続",
+        "cancel": "キャンセル",
+        "connectedAs": "<strong>{account}</strong>として接続中",
+        "loadingTreasuries": "トレジャリーを読み込み中...",
+        "selectSignIn": "サインインするトレジャリーを選択:",
+        "selectSignTx": "提案を作成するトレジャリーを選択:",
+        "notMember": "あなたはどのトレジャリーのメンバーでもありません。",
+        "actingAs": "代理として動作中:",
+        "signedBy": "{account}が署名",
+        "createsNProposals": "次のために{count, plural, other {# 件のTrezu提案}}を作成します:",
+        "proposalDescriptionLabel": "提案の説明(任意)",
+        "proposalDescriptionPlaceholder": "この提案を説明してください...",
+        "createProposal": "提案を作成",
+        "creatingProposal": "提案を作成中...",
+        "confirmInWallet": "ウォレットで確認してください",
+        "proposalSubmitted": "提案を送信しました",
+        "shareProposal": "提案が作成されました。下のリンクをトレジャリーメンバーと共有して投票してもらってください。",
+        "proposalLink": "{daoId} — 提案 #{id}",
+        "checking": "確認中...",
+        "proposalApprovedProceed": "提案が承認されました。続行してください",
+        "signedInSuccess": "正常にサインインしました",
+        "proposalCreatedSuccess": "提案が正常に作成されました",
+        "closeWindow": "このウィンドウを閉じることができます。",
+        "errorGeneric": "エラーが発生しました",
+        "tryAgain": "もう一度お試しください",
+        "errors": {
+            "parseTx": "トランザクションリクエストの解析に失敗しました。もう一度お試しください。",
+            "fetchTreasuries": "トレジャリーの取得に失敗しました。もう一度お試しください。",
+            "connectFailed": "ウォレットの接続に失敗しました",
+            "createProposalFailed": "提案の作成に失敗しました",
+            "stillPending": "提案はまだ承認待ちです。トレジャリーメンバーの投票をお待ちください。",
+            "wasStatus": "提案 #{id} は{status}でした",
+            "awaitIndex": "提案は承認されましたが、実行トランザクションがまだインデックスされていません。少し時間を置いてからもう一度お試しください。",
+            "checkStatusFailed": "提案ステータスの確認に失敗しました",
+            "userCancelled": "ユーザーがキャンセルしました",
+            "proposalWasStatus": "提案は{status}でした"
+        }
+    },
+    "telegram": {
+        "tagPill": "Telegram",
+        "invalidLinkTitle": "無効なリンク",
+        "invalidLinkDescription": "このTelegram接続リンクにはトークンがありません。Telegramで「トレジャリーを接続」を再度クリックして新しいリンクを生成してください。",
+        "successTitle": "正常に接続されました",
+        "successDescription": "トレジャリーがこのTelegramチャットにリンクされました。",
+        "successToast": "トレジャリーが正常に接続されました",
+        "goToApp": "アプリへ移動",
+        "linkExpiredTitle": "リンクが期限切れです",
+        "linkExpiredDescription": "このリンクは期限切れか、すでに使用されています。Telegramで以下のコマンドを入力して接続フローを再開してください。",
+        "commandCopied": "コマンドをコピーしました",
+        "copy": "コピー",
+        "unableToLoadTitle": "チャットを読み込めません",
+        "unableToLoadDescription": "現在チャットの詳細を読み込めません。Telegramから再試行してください。",
+        "signInTitle": "続行するにはサインインしてください",
+        "signInDescription": "まずNEARウォレットを接続し、次にこのTelegramチャットにリンクするトレジャリーを選択してください。",
+        "connectWallet": "ウォレットを接続",
+        "selectTreasuriesTitle": "トレジャリーを選択",
+        "selectTreasuriesDescription": "このTelegramチャットに接続するトレジャリーを選択してください。",
+        "telegramChat": "Telegramチャット",
+        "chatIdFallback": "チャット #{id}",
+        "failedToConnect": "トレジャリーの接続に失敗しました。もう一度お試しください。",
+        "relinking": "{count, plural, other {# 件の選択されたトレジャリーは別のTelegramチャットにリンクされています。接続するとチャットIDのリンクがこのチャットに変更されます。}}",
+        "alreadyConnected": "このチャットにはすでに接続されています",
+        "connectedToAnother": "別のチャットに接続されています",
+        "notMember": "あなたはどのトレジャリーのポリシーメンバーでもありません。",
+        "connecting": "接続中…",
+        "connect": "接続",
+        "settings": {
+            "title": "Telegram",
+            "connectedTo": "{chat}に接続中",
+            "chatNumber": "チャット #{id}",
+            "fallbackChat": "Telegramチャット",
+            "disconnect": "切断",
+            "connect": "接続",
+            "connectHeadline": "Telegramをトレジャリーに接続",
+            "connectDescription": "新規リクエスト、トレジャリーへの入金などの通知を受け取ります。",
+            "noTreasuryDescription": "トレジャリーをTelegramチャットにリンクします。",
+            "openSettingsHint": "連携を管理するにはトレジャリーから設定を開いてください。",
+            "disconnectedToast": "このトレジャリーのTelegram接続を切断しました",
+            "disconnectFailedToast": "Telegramの切断に失敗しました。もう一度お試しください。",
+            "telegramDisconnect": {
+                "title": "Telegramボットを切断",
+                "body": "切断すると、このトレジャリーの通知はボットで受け取れなくなります。いつでも再接続できます。",
+                "action": "切断"
+            }
+        },
+        "connectInstructions": {
+            "title": "TelegramアカウントをTrezuに接続",
+            "subtitle": "このトレジャリーの通知をTelegramで有効にするには、次の手順に従ってください。",
+            "step1": "{bot} をTelegramのグループまたはチャンネルに追加します。",
+            "step2": "Telegramで「トレジャリーを接続」をタップします（または案内に従ってボットの接続フローを使用します）。",
+            "step3": "Webでサインインし、認可して、このチャットに接続するトレジャリー（このトレジャリーを含む）を選択します。",
+            "doneHint": "ブラウザにトレジャリーが正常にリンクされたと表示されたら完了です。",
+            "copyBotTooltip": "ボットのハンドルをコピー",
+            "botCopiedToast": "ボットのハンドルをコピーしました",
+            "openInTelegram": "Telegramで{bot}を開く"
+        }
+    },
+    "systemStatus": {
+        "underMaintenance": "メンテナンス中",
+        "maintenanceMessage": "現在メンテナンスを実施しています。一部の機能が一時的に利用できない場合があります。しばらくしてから再度ご確認ください。"
+    },
+    "creditsQuota": {
+        "available": "{count} 利用可能",
+        "used": "{count} 使用済み",
+        "resetOn": "上限は{date}にリセットされます"
+    },
+    "approvalInfo": {
+        "infoText": "支払い関連リクエストの承認に必要な票数。投票設定で編集可能です。",
+        "thresholdPill": "しきい値 {required}/{total}",
+        "alertBody": "この支払いの実行には、トレジャリーメンバー<bold>{required}</bold>名の承認が必要です。"
+    },
+    "guestBadge": {
+        "title": "ゲスト",
+        "tooltip": "あなたはこのトレジャリーのゲストです。データの閲覧のみ可能です。"
+    },
+    "exportButton": {
+        "confidentialTooltip": "機密モードではエクスポートはまだ利用できません。この機能は近日公開予定です!"
+    },
+    "sponsoredActions": {
+        "titleExhausted": "スポンサー付きアクションを使い切りました",
+        "titleAlmost": "チームのスポンサー付きアクションがもうすぐなくなります",
+        "closeNotice": "通知を閉じる",
+        "teamUsage": "チーム使用量: 月あたり{total}アクション",
+        "available": "{count} 利用可能",
+        "used": "{count} 使用済み",
+        "exhaustedBody": "チームは月のスポンサー付きアクション上限に達しました。{date}以降に再開できますが、お問い合わせも可能です",
+        "almostBody": "TREZUは現在、リクエスト作成や投票などすべてのチームアクションのストレージコストをスポンサーしています。チームは月間スポンサー上限に近づいています。",
+        "contactUs": "お問い合わせ",
+        "nextMonthlyReset": "次の月次リセット",
+        "sidebarBody": "チームは月のスポンサー付きアクション上限に達しました。{date}以降に再開できます ⬇️"
+    },
+    "acceptTerms": {
+        "title": "続行するには利用規約に同意してください",
+        "privacyTitle": "Trezuでのプライバシー",
+        "privacyBody": "Trezuはノンカストディアル(非保管型)インターフェースです。プラットフォームの安全性と機能性を保ちながら、プライバシーを最優先します。",
+        "minimalTitle": "最小限のデータ",
+        "minimalBody": "インターフェースの運営と改善のために、公開ウォレットアドレス、IPアドレス、利用分析など限られた情報を収集します。",
+        "noCustodyTitle": "非保管",
+        "noCustodyBody": "秘密鍵、リカバリーフレーズ、デジタル資産には一切アクセスしません。",
+        "publicTitle": "公開記録",
+        "publicBody": "すべてのブロックチェーントランザクションは本質的に公開されており、当社が制御するものではないことにご注意ください。",
+        "responsibilityTitle": "あなたの責任",
+        "responsibilityBody": "ウォレットのアクティビティの監視と認証情報の保護は、すべてあなたの責任となります。",
+        "futureTitle": "今後のアップデート",
+        "futureBody": "今後の通知(メールやTelegramなど)にオプトインする場合、そのデータは情報提供のためだけに使用します。",
+        "agreement": "<terms>利用規約</terms>と<privacy>プライバシーポリシー</privacy>を読み、同意します",
+        "accepting": "同意中...",
+        "continue": "続ける"
+    },
+    "confidentialBanner": {
+        "label": "機密",
+        "description": "残高、アクティビティ、送金はチームのみが閲覧でき、公開ブロックチェーンには表示されません。"
+    },
+    "supportCenter": {
+        "title": "サポートセンター",
+        "resources": "リソース",
+        "support": "サポート",
+        "websiteTitle": "Trezuウェブサイト",
+        "websiteDescription": "Trezuの詳細を確認し、ブログを読みましょう。",
+        "demo": "Trezuデモ",
+        "demoTitle": "公開バージョンを探索",
+        "demoDescription": "ライブの公開アカウントを実際に見てみましょう。",
+        "confidentialDemoTitle": "機密バージョンを探索",
+        "confidentialDemoDescription": "ライブの機密アカウントを実際に見てみましょう。",
+        "videoTitle": "デモを見る",
+        "videoDescription": "Trezuの動作を示す短い動画をご覧ください。",
+        "xTitle": "Xでフォロー",
+        "xDescription": "最新リリースやインサイトの最新情報を入手しましょう。",
+        "statsTitle": "統計",
+        "statsDescription": "すべてのSputnik DAOで管理されている総資産を表示します。",
+        "docsTitle": "ドキュメント",
+        "docsDescription": "ドキュメントですべての機能について学びましょう。",
+        "productSupportTitle": "製品サポート",
+        "productSupportDescription": "サポートチームに問い合わせてヘルプを受けましょう。"
+    },
+    "progressModal": {
+        "titleCreating": "トレジャリーを作成中...",
+        "titleDone": "トレジャリーが作成されました",
+        "titleFailed": "トレジャリーの作成に失敗しました",
+        "viewTreasury": "トレジャリーを表示"
+    },
+    "memberValidation": {
+        "noManagePermission": "メンバーを管理する権限がありません",
+        "pendingRequest": "アクティブなリクエストがある間はメンバーを管理できません",
+        "rolesAnd": "{first}と{second}",
+        "rolesMany": "{list}、および{last}",
+        "cannotRemoveMember": "このメンバーは削除できません。{roles}{count, plural, other {ロール}}に割り当てられている唯一の人物です。",
+        "cannotRemoveMemberGov": "このメンバーは削除できません。{roles}{count, plural, other {ロール}}に割り当てられている唯一の人物で、これはチームメンバーの管理と投票設定に必要です。",
+        "cannotBulkRemove": "これらのメンバーは削除できません。{roles}{count, plural, other {ロール}}が空になってしまいます。",
+        "cannotBulkRemoveGov": "これらのメンバーは削除できません。{roles}{count, plural, other {ロール}}が空になってしまい、これはチームメンバーの管理と投票設定に必要です。",
+        "cannotRemoveRole": "このメンバーから{role}ロールを削除できません。このロールに割り当てられている唯一の人物です。",
+        "cannotRemoveRoleGov": "このメンバーから{role}ロールを削除できません。唯一の{role}メンバーであり、このロールがないとチームメンバーの管理や投票設定ができなくなります。"
+    },
+    "roleSelector": {
+        "setRole": "ロールを設定",
+        "allRoles": "すべてのロール",
+        "roles": {
+            "governance": {
+                "title": "Governance",
+                "description": "Governanceは、メンバー、権限、トレジャリーの外観など、チーム関連のトレジャリー設定の作成と投票ができます。"
+            },
+            "requestor": {
+                "title": "Requestor",
+                "description": "Requestorは、投票や承認権限なしで、支払い関連のトランザクションリクエストを作成できます。"
+            },
+            "financial": {
+                "title": "Financial",
+                "description": "Financialは、支払い関連のトランザクションリクエストに投票できますが、作成はできません。"
+            }
+        }
+    },
+    "memberInput": {
+        "creatorYou": "作成者(あなた)",
+        "memberAddress": "メンバーアドレス",
+        "addNewMember": "新しいメンバーを追加",
+        "validation": {
+            "rolesRequired": "少なくとも1つのロールが必要です",
+            "duplicateAddress": "アドレスはすでにメンバーです"
+        }
+    },
+    "recipientInput": {
+        "title": "宛先",
+        "placeholder": "受取人のアドレス"
+    },
+    "accountInput": {
+        "failedValidation": "アドレスの検証に失敗しました",
+        "invalidNearFormat": "無効なNEARアカウント形式",
+        "invalidChainAddress": "有効な{chain}アドレスを入力してください。",
+        "validating": "アドレスを検証中...",
+        "validAddress": "有効なアドレス",
+        "placeholderWithExample": "受取人のアドレス(例: {example})",
+        "placeholderNoExample": "受取人のアドレス",
+        "nearExample": "alice.near、0x...、または64文字の16進数",
+        "near": {
+            "required": "アドレスは必須です",
+            "length": "アドレスは2文字以上64文字以下である必要があります",
+            "missingTld": "名前付きアカウントは.near、.aurora、または.tgで終わる必要があります",
+            "invalidChars": "アドレスには小文字、数字、区切り文字(.、-、_)のみ使用できます",
+            "accountMissing": "アカウントはNEARブロックチェーン上に存在しません",
+            "verifyFailed": "アカウントの存在確認に失敗しました"
+        }
+    },
+    "csvUpload": {
+        "uploadFile": "ファイルをアップロード",
+        "provideData": "データを提供",
+        "chooseFile": "ファイルを選択",
+        "orDragDrop": "またはドラッグ&ドロップ",
+        "maxFileSize": "最大1ファイル、{maxSize}MBまで、CSVファイルのみ",
+        "noFilePrompt": "アップロードするファイルがない場合は?",
+        "downloadTemplate": "テンプレートをダウンロード"
+    },
+    "tokenSelect": {
+        "selectToken": "トークンを選択",
+        "searchPlaceholder": "トークンを検索...",
+        "noTokensFound": "トークンが見つかりません"
+    },
+    "filterOperations": {
+        "is": "次と一致",
+        "isNot": "次と一致しない",
+        "before": "より前",
+        "after": "より後",
+        "between": "範囲内",
+        "equal": "等しい",
+        "moreThan": "より大きい",
+        "lessThan": "より小さい",
+        "contains": "含む"
+    },
+    "copyButton": {
+        "copied": "クリップボードにコピーしました",
+        "failed": "コピーに失敗しました"
+    },
+    "recipientForm": {
+        "validation": {
+            "nameRequired": "名前は必須です",
+            "nameMax": "受取人は{max}文字未満である必要があります",
+            "addressRequired": "アドレスは必須です",
+            "networksRequired": "少なくとも1つのネットワークを選択してください"
+        }
+    },
+    "paymentForm": {
+        "validation": {
+            "recipientMin": "受取人は少なくとも2文字必要です",
+            "recipientMax": "受取人は128文字未満である必要があります",
+            "amountGreaterThanZero": "金額は0より大きくなければなりません",
+            "recipientSameAsToken": "受取人とトークンアドレスは同じであってはなりません",
+            "selectToken": "トークンを選択してください",
+            "recipientMax64": "受取人は64文字未満である必要があります",
+            "amountMinLockup": "金額は3.5以上である必要があります",
+            "startDateRequired": "開始日は必須です",
+            "endDateRequired": "終了日は必須です",
+            "cliffDateRequired": "クリフ日は必須です",
+            "startBeforeEnd": "開始日は終了日より前である必要があります",
+            "cliffBetween": "クリフ日は{start}から{end}の間である必要があります"
+        }
+    },
+    "exportToasts": {
+        "downloadFailed": "エクスポートのダウンロードに失敗しました",
+        "invalidDateRange": "無効な期間",
+        "invalidDateRangeDescription": "エクスポートに有効な期間を選択してください。",
+        "exportSuccess": "エクスポートに成功しました!",
+        "exportSuccessDescription": "{type}ファイルがダウンロードされました。詳細はエクスポート履歴を確認してください。",
+        "exportFailed": "エクスポートに失敗しました",
+        "exportFailedFallback": "データのエクスポートに失敗しました。もう一度お試しください。",
+        "noDownloadPermission": "ファイルをダウンロードする権限がありません。",
+        "noExportPermission": "エクスポートする権限がありません",
+        "quotaUsed": "上限をすべて使い切りました",
+        "exporting": "エクスポート中...",
+        "export": "エクスポート",
+        "columnSubmissionTime": "送信時刻",
+        "columnDateRange": "期間",
+        "columnGeneratedBy": "生成者",
+        "columnStatus": "ステータス",
+        "typeAll": "すべてのタイプ",
+        "typeSent": "送信済み",
+        "typeReceived": "受信済み",
+        "typeStakingRewards": "ステーキング報酬",
+        "allAssets": "すべての資産",
+        "upgradeTrial": "プランをアップグレードして利用を続けてください",
+        "upgradePaid": "プランをアップグレードしてさらにアクセスを得るか、来月の上限リセットをお待ちください。",
+        "selectDateRange": "期間を選択",
+        "noExportsTitle": "エクスポートはまだありません",
+        "noExportsDescription": "過去1ヶ月間のエクスポートファイルが生成されるとここに表示されます。",
+        "quotaTitle": "エクスポート上限",
+        "unlimited": "無制限",
+        "creditsPerMonth": "{total} / 月",
+        "requirementsTitle": "エクスポートの要件",
+        "exportFromPeriod": "次の期間のデータをエクスポートできます: {period}。",
+        "availableFor48Hours": "エクスポートしたファイルは48時間ダウンロード可能です。",
+        "moreFlexibility": "もっと柔軟な利用をお探しですか?",
+        "contactUs": "お問い合わせ",
+        "last1Year": "過去1年",
+        "last2Years": "過去2年",
+        "invalidEmail": "有効なメールアドレスを入力してください"
+    },
+    "proposalKinds": {
+        "Batch Payment Request": "一括支払いリクエスト",
+        "Payment Request": "支払いリクエスト",
+        "Confidential Request": "機密リクエスト",
+        "Exchange": "交換",
+        "Function Call": "関数呼び出し",
+        "Change Policy": "ポリシー変更",
+        "Update General Settings": "一般設定を更新",
+        "Earn NEAR": "NEARで収益",
+        "Unstake NEAR": "NEARをアンステーク",
+        "Vesting": "ベスティング",
+        "Withdraw Earnings": "収益を引き出す",
+        "Members": "メンバー",
+        "Upgrade": "アップグレード",
+        "Set Staking Contract": "ステーキングコントラクトを設定",
+        "Bounty": "バウンティ",
+        "Vote": "投票",
+        "Factory Info Update": "ファクトリー情報を更新",
+        "Unsupported": "未対応"
+    },
+    "paymentFormSection": {
+        "selectRecipient": "受取人を選択",
+        "searchByNameOrAddress": "名前またはアドレスで検索",
+        "restrictedRecipientTitle": "トランザクションは許可されていません",
+        "restrictedRecipientMessage": "このアドレスは現在、セキュリティチェックにより制限されています。このアドレスを許可すべきだとお考えの場合は、<link>ホワイトリスト追加をリクエスト</link>できます。",
+        "send": "送金",
+        "to": "宛先"
+    },
+    "recipientNetworkSelect": {
+        "label": "受取人のネットワーク",
+        "placeholder": "受取人のネットワークを選択",
+        "enterAddressFirst": "先に受取人アドレスを入力してください",
+        "noCompatibleNetwork": "このアドレスに一致するネットワークはありません",
+        "selectPlaceholder": "ネットワークを選択",
+        "title": "ネットワークを選択",
+        "available": "利用可能",
+        "fromAddressBook": "アドレス帳から",
+        "otherAvailable": "その他の利用可能",
+        "incompatible": "非互換",
+        "comingSoon": "近日公開",
+        "forMembersOnly": "メンバー限定",
+        "nearComName": "near.com",
+        "nearComDescription": "near.comとtrezuの内部ネットワーク"
+    },
+    "addressBookTable": {
+        "emptyTitle": "受取人はまだいません",
+        "emptyDescription": "より速く支払うために、このアドレス帳に受取人を追加してください。",
+        "selectAll": "すべての受取人を選択",
+        "selectEntry": "{name}を選択",
+        "recipient": "受取人",
+        "network": "ネットワーク",
+        "addedBy": "追加者",
+        "note": "メモ",
+        "added": "追加日",
+        "remove": "削除",
+        "send": "送金"
+    },
+    "publicDashboard": {
+        "updatesDaily": "毎日更新",
+        "noDataTitle": "データはまだありません",
+        "noDataDescription": "最初の日次スナップショットが計算されると統計が表示されます。",
+        "assetsSecured": "Sputnik DAOコントラクトで保護された資産",
+        "acrossDaos": "<bold>{count, plural, other {# 件のDAO}}</bold>にわたる",
+        "updatedOn": "{date}に更新",
+        "topAssets": "トップ20の資産",
+        "noAssetsTitle": "資産はまだありません",
+        "noAssetsDescription": "日次スナップショットが計算されるとトークンデータが表示されます。",
+        "tableToken": "トークン",
+        "tableTotalValue": "合計価値"
+    },
+    "transactionHashCell": {
+        "copyHash": "ハッシュをコピー",
+        "hashCopied": "ハッシュをコピーしました",
+        "openInExplorer": "エクスプローラーで開く"
+    },
+    "treasurySelector": {
+        "select": "トレジャリーを選択",
+        "connectWalletTooltip": "トレジャリーを表示するにはウォレットを接続してください",
+        "manageTreasuries": "トレジャリーを管理",
+        "createTreasury": "トレジャリーを作成",
+        "memberOf": "メンバーであるトレジャリー",
+        "guestTreasuries": "ゲストトレジャリー"
+    },
+    "selectModal": {
+        "searchByName": "名前で検索",
+        "noResults": "結果が見つかりません"
+    },
+    "selectList": {
+        "noResults": "結果が見つかりません"
+    },
+    "datePicker": {
+        "pickDate": "日付を選択",
+        "timezone": "タイムゾーン"
+    },
+    "datePresets": {
+        "today": "今日",
+        "yesterday": "昨日",
+        "last3Days": "過去3日間",
+        "last7Days": "過去7日間",
+        "last14Days": "過去14日間",
+        "lastMonth": "過去1ヶ月",
+        "last3Months": "過去3ヶ月",
+        "last6Months": "過去6ヶ月"
+    },
+    "input": {
+        "openSearch": "検索を開く"
+    },
+    "pagination": {
+        "previous": "前へ",
+        "next": "次へ"
+    },
+    "confidentialState": {
+        "title": "機密",
+        "description": "トレジャリーメンバーのみがアクセスできます。"
+    },
+    "exchangeRate": {
+        "rate": "レート",
+        "clickToReverse": "クリックでレートを反転"
+    },
+    "exchangeSettings": {
+        "title": "交換設定",
+        "slippageTolerance": "スリッページ許容範囲",
+        "custom": "カスタム",
+        "customPlaceholder": "例: 2%",
+        "slippageRange": "スリッページは0.01%から100%の間である必要があります",
+        "enterSlippage": "スリッページ許容範囲を入力してください",
+        "slippageHelp": "価格がこの割合以上変動した場合、資金を保護するためにトランザクションがキャンセルされます。",
+        "save": "保存"
+    },
+    "assetsPage": {
+        "title": "資産",
+        "noAssetsTitle": "資産はまだありません",
+        "noAssetsDescription": "始めるには、入金してトレジャリーに資産を追加してください。"
+    },
+    "newBadge": {
+        "label": "新着"
+    },
+    "numberBadge": {
+        "pendingRequests": "{count, plural, other {# 件の保留中リクエスト}}"
+    },
+    "balanceWithGraph": {
+        "allTokens": "すべてのトークン",
+        "deposit": "入金",
+        "send": "送金",
+        "exchange": "交換",
+        "chartNow": "現在",
+        "totalBalance": "総残高",
+        "excludedTokens": "除外トークン:",
+        "noPriceHistory": "価格履歴がありません。トークンを選択して残高変動を確認してください。",
+        "bucketAvailable": "利用可能",
+        "bucketLocked": "ロック",
+        "bucketEarning": "収益中",
+        "period": {
+            "1W": "1週",
+            "1M": "1ヶ月",
+            "3M": "3ヶ月",
+            "1Y": "1年"
+        }
+    },
+    "changePolicyExpanded": {
+        "proposalBond": "提案ボンド",
+        "proposalPeriod": "提案期間",
+        "bountyBond": "バウンティボンド",
+        "bountyForgivenessPeriod": "バウンティ免除期間",
+        "votesCount": "{count}票",
+        "weightKind": "ウェイト種別",
+        "quorum": "クォーラム",
+        "threshold": "しきい値",
+        "defaultThreshold": "デフォルトしきい値",
+        "roleThreshold": "{role}しきい値",
+        "member": "メンバー",
+        "members": "メンバー",
+        "permissions": "権限",
+        "oldPermissions": "旧権限",
+        "newPermissions": "新権限",
+        "category": "カテゴリ",
+        "transactionDetails": "トランザクションの詳細",
+        "addNewMember": "新しいメンバーを追加",
+        "addNewMembers": "新しいメンバーを追加",
+        "removeMember": "メンバーを削除",
+        "removeMembers": "メンバーを削除",
+        "updateMemberPermissions": "メンバー権限を更新",
+        "updateMembersPermissions": "複数メンバーの権限を更新",
+        "memberIndex": "メンバー {index}",
+        "membersCount": "{count}名のメンバー",
+        "collapseAll": "すべて折りたたむ",
+        "expandAll": "すべて展開",
+        "loadingHistorical": "過去のポリシーを読み込み中...",
+        "unableToDiff": "この提案の差分を計算できません。",
+        "noChangesCurrent": "変更は検出されませんでした - 提案されたポリシーは現在のポリシーと同一です。",
+        "noChangesHistorical": "変更は検出されませんでした - 提案されたポリシーは過去のポリシーと同一です。"
+    },
+    "balanceChart": {
+        "usdValue": "USD価値",
+        "tokenBalance": "トークン残高",
+        "emptyTitle": "まだ表示するものはありません",
+        "emptyDescription": "資産を追加してポートフォリオの追跡を開始してください。"
+    },
+    "user": {
+        "saveToAddressBook": "アドレス帳に保存",
+        "walletCopiedToast": "ウォレットアドレスをクリップボードにコピーしました",
+        "copyWalletAddress": "ウォレットアドレスをコピー"
+    },
+    "infoDisplay": {
+        "viewLess": "表示を減らす",
+        "viewAllDetails": "すべての詳細を表示"
+    },
+    "amountSummary": {
+        "defaultTitle": "送金合計"
+    },
+    "residency": {
+        "vestedToken": "ベスト済みトークン",
+        "staked": "ステーキング中",
+        "fungibleToken": "代替性トークン",
+        "intentsToken": "Intentsトークン",
+        "nativeToken": "ネイティブトークン"
+    },
+    "exchangeErrors": {
+        "noRoute": "交換が見つかりません。より少ない金額または別のトークンをお試しください。",
+        "amountTooLow": "金額がスワップに低すぎます。クロスチェーンスワップではネットワーク手数料を賄うために高い最小額が必要です。",
+        "insufficientBalance": "このスワップに対して残高が不足しています。",
+        "networkError": "ネットワークエラーです。接続を確認してもう一度お試しください。",
+        "fetchFailed": "見積りの取得に失敗しました"
+    },
+    "tokenSelectDialog": {
+        "selectToken": "トークンを選択",
+        "selectAsset": "資産を選択",
+        "selectNetworkFor": "{asset}のネットワークを選択",
+        "searchByName": "名前で検索",
+        "noTokensWithBalance": "残高のあるトークンが見つかりません",
+        "noTokensFound": "トークンが見つかりません",
+        "yourAssets": "あなたの資産",
+        "otherAssets": "その他の資産",
+        "networksWithAssets": "資産のあるネットワーク",
+        "supportedNetworks": "対応ネットワーク",
+        "comingSoon": "近日公開"
+    },
+    "intentsQuote": {
+        "initializing": "見積りサービスはまだ初期化中です。もう一度お試しください。",
+        "noRoute": "現在支払いルートを準備できません。再度お試しください。",
+        "fetchFailed": "現在支払いルートを準備できません。再度お試しください。",
+        "amountTooLow": "金額がネットワーク手数料を賄うのに低すぎます。より高い金額を入力してもう一度お試しください。",
+        "amountTooLowWithMin": "金額がネットワーク手数料を賄うのに低すぎます。少なくとも{min} {token}を入力してください。",
+        "networkFeeTooltip": "この手数料は選択したチェーン上でトランザクションを処理するために使用されます。"
+    },
+    "pageTours": {
+        "paymentsBulk": "一括作成が登場!複数のリクエストをわずか数ステップで作成できます。",
+        "paymentsPending": "承認待ちのリクエストはここで確認できます。",
+        "exchangeSettings": "ここで許容できる価格変動の幅を設定できます。",
+        "membersPending": "クリックして承認待ちのアクティブなリクエストを確認してください。",
+        "guestSaveIntro": "あなたはこのトレジャリーのゲストです。データの閲覧のみ可能です。",
+        "guestSaveAction": "このゲストトレジャリーをトレジャリー一覧に保存できます。",
+        "newFeatureRich": "新機能!🎉 頻繁に使用するアドレスを保存して、より速く、エラーのない支払いを実現します。連絡先は非公開で、チームのみが閲覧できます。",
+        "newFeatureCta": "試してみる"
+    },
+    "statusDate": {
+        "expires": "有効期限",
+        "created": "作成日",
+        "expired": "失効",
+        "removed": "削除済み"
+    },
+    "relativeTime": {
+        "justNow": "たった今",
+        "moments": "わずか前"
+    },
+    "amount": {
+        "network": "ネットワーク: {network}"
+    },
+    "activityLabels": {
+        "exchangePending": "交換保留中",
+        "exchangeRequest": "交換リクエスト",
+        "exchangeFulfillment": "交換完了",
+        "stakingRewards": "ステーキング報酬",
+        "proposalAction": "提案アクション",
+        "deposit": "{symbol}を入金",
+        "paymentSent": "支払い送信",
+        "transaction": "トランザクション",
+        "fallbackToken": "トークン",
+        "viaIntents": "NEAR Intents経由",
+        "from": "{account}から",
+        "to": "{account}へ",
+        "viewAll": "すべてのトランザクション履歴を表示",
+        "sentReceived": "送受信したトランザクション({duration})",
+        "unlimitedHistory": "無制限の履歴",
+        "oneYear": "1年",
+        "yearsCount": "{count}年",
+        "monthsCount": "{count}ヶ月",
+        "lastDuration": "過去{duration}"
+    },
+    "nearStore": {
+        "connectAndAcceptTerms": "続行するにはウォレットを接続して利用規約に同意してください。",
+        "transactionNotApproved": "ウォレットでトランザクションが承認されませんでした。",
+        "failedSubmitVote": "投票の送信に失敗しました",
+        "failedSubmitVotes": "投票の送信に失敗しました",
+        "viewRequest": "リクエストを表示",
+        "proposalRemoved": "提案が削除されました",
+        "voteSubmitted": "投票を送信しました",
+        "votesSubmitted": "投票を送信しました"
+    },
+    "tokenInput": {
+        "max": "MAX",
+        "insufficientTokens": "トークンが不足しています。リクエストを送信してから承認前に補充できます。",
+        "balance": "残高: {amount} {symbol}"
+    },
+    "createRequestButton": {
+        "idle": "リクエストを作成",
+        "noPermission": "リクエストを作成する権限がありません"
+    },
+    "address": {
+        "copied": "アドレスをクリップボードにコピーしました"
+    },
+    "memberAvatars": {
+        "membersWhoCanVote": "投票できるメンバー",
+        "moreMembers": "+{count, plural, other {# 名のメンバー}}"
+    },
+    "accountIdInput": {
+        "minLength": "アカウントIDは少なくとも2文字必要です",
+        "maxLength": "アカウントIDは64文字未満である必要があります",
+        "charset": "アカウントIDには小文字、数字、ドット、ハイフン、アンダースコアのみ使用でき、先頭または末尾に区切り文字を含めることはできません",
+        "doesNotExist": "アカウントIDが存在しません"
+    },
+    "addressBookMutations": {
+        "addedToast": "{count, plural, other {# 名の受取人を追加しました}}",
+        "addedSingleToast": "受取人を追加しました",
+        "addFailedToast": "受取人の追加に失敗しました",
+        "addSingleFailedToast": "受取人の追加に失敗しました",
+        "removedToast": "{count, plural, other {# 名の受取人を削除しました}}",
+        "removeFailedToast": "受取人の削除に失敗しました",
+        "exportFailedToast": "受取人のエクスポートに失敗しました"
+    },
+    "treasuryMutations": {
+        "savedToast": "トレジャリーを一覧に保存しました",
+        "saveFailedToast": "トレジャリーの保存に失敗しました",
+        "hiddenToast": "トレジャリーを一覧から非表示にしました",
+        "hideFailedToast": "トレジャリーの非表示に失敗しました",
+        "unhiddenToast": "トレジャリーが再び表示されます",
+        "unhideFailedToast": "トレジャリーの再表示に失敗しました",
+        "removedToast": "保存済み一覧からトレジャリーを削除しました",
+        "removeFailedToast": "保存済み一覧からトレジャリーの削除に失敗しました"
+    },
+    "assetsTable": {
+        "noAssetsFound": "資産が見つかりません。",
+        "assetDetails": "資産の詳細",
+        "coinPrice": "コイン価格",
+        "weight": "ウェイト",
+        "balance": "残高",
+        "lockedBalance": "ロック残高",
+        "totalBalance": "総残高",
+        "source": "ソース",
+        "balanceByInvestors": "{count, plural, other {投資家別}}残高",
+        "investors": "{count, plural, other {投資家}}",
+        "poolBreakdown": "プール内訳",
+        "unlockedToken": "アンロック済みトークン",
+        "lockupStakingPool": "ロックアップステーキングプール",
+        "exchange": "交換",
+        "send": "送金",
+        "details": "詳細",
+        "columnToken": "トークン",
+        "columnLocked": "ロック",
+        "columnUnlocked": "アンロック",
+        "columnTotalAllocated": "割り当て合計",
+        "columnAvailableToWithdraw": "出金可能",
+        "viewAvailable": "利用可能",
+        "viewLocked": "ロック",
+        "viewEarning": "収益中",
+        "fullAllocatedBalance": "割り当て残高の全額",
+        "partAllocatedBalance": "割り当て残高の一部",
+        "currentlyEarning": "({amount} {symbol})が現在収益中です。",
+        "willAppearHere": " 収益を停止するとここに表示されます。",
+        "seeInEarningTab": "収益タブで確認",
+        "seeInEarning": "収益で確認"
+    },
+    "earningDetails": {
+        "title": "収益の詳細",
+        "totalStaked": "ステーキング合計",
+        "earningOverview": "収益の概要",
+        "poolBreakdown": "プール内訳({count, plural, other {# プール}})",
+        "almostReady": "収益機能は間もなく利用可能になります!",
+        "finalizingFeature": "この機能を仕上げ中ですので、<br></br>まもなくトークンの収益を開始できます。",
+        "comingSoon": "近日公開",
+        "goToEarn": "収益へ移動",
+        "readyToWithdraw": "出金可能",
+        "unstaking": "アンステーキング中",
+        "overview": {
+            "staked": "ステーキング中",
+            "stakedInfo": "現在バリデータに委任され報酬を獲得しているトークン。",
+            "pendingRelease": "リリース待ち",
+            "pendingReleaseInfo": "アンステーキング済みですがアンボンディング期間中(通常2〜3日)のトークン。",
+            "availableForWithdraw": "出金可能",
+            "availableForWithdrawInfo": "アンボンディング期間を完了し出金可能なアンステーキング済みトークン。"
+        }
+    },
+    "lockupDetails": {
+        "title": "ロックアップの詳細",
+        "balance": "残高",
+        "reservedForStorage": "ストレージ用予約",
+        "reservedForStorageInfo": "ストレージ料金を支払うためにロックアップアカウントが予約しているNEAR。",
+        "tokenBreakdown": "トークン内訳",
+        "allocatedAmount": "割り当て金額",
+        "earned": "獲得済み",
+        "progress": "進捗",
+        "unlocked": "アンロック済み",
+        "locked": "ロック",
+        "schedule": "スケジュール",
+        "startDate": "開始日",
+        "endDate": "終了日",
+        "rounds": "ラウンド",
+        "releaseInterval": "リリース間隔",
+        "nextUnlockDate": "次のアンロック日",
+        "allEarning": "ロックアップからの{amount} {symbol}すべてが現在収益中です。",
+        "partEarning": "ロックアップの一部({amount} {symbol})が現在収益中です。",
+        "stopEarningFirst": "アンロック済みトークンを使用するには、まず収益を停止して引き出してください。",
+        "howGrantWorks": "あなたのグラントの仕組み",
+        "ftStep1": "特定の期間のグラントを受け取ります。一度に全額を受け取るのではなく、資産は時間をかけて少しずつ利用可能になります。",
+        "ftStep2": "次のリリース日が来ると、その分のトークンが自動的にアンロックされ、トレジャリー残高に移されます。",
+        "ftStep3": "残高に表示されると、すぐに支払い、送金、その他のトランザクションに使用できます。",
+        "nearStep1": "開始日と終了日が定められた期間のグラントを受け取ります。",
+        "nearStep2": "トークンがアンロックされると、自動的にトレジャリー残高で利用可能になります。",
+        "nearStep3": "アンロックされたトークンは、すぐに支払い、送金、その他のトランザクションに使用できます。",
+        "notAvailable": "該当なし",
+        "everyMonth": "毎月",
+        "everyQuarter": "四半期ごと",
+        "everyUnit": "{unit}ごと",
+        "everyMultiple": "{text}ごと",
+        "completed": "完了",
+        "unit": {
+            "year": "{count, plural, other {# 年}}",
+            "day": "{count, plural, other {# 日}}",
+            "hour": "{count, plural, other {# 時間}}",
+            "minute": "{count, plural, other {# 分}}",
+            "second": "{count, plural, other {# 秒}}"
+        }
+    },
+    "vestingDetails": {
+        "title": "ベスティングの詳細",
+        "availableToUse": "利用可能",
+        "vestingPeriod": "ベスティング期間",
+        "vestingPeriodDescription": "この期間中にトークンは毎日アンロックされます。",
+        "startDate": "開始日",
+        "endDate": "終了日",
+        "tokenBreakdown": "トークン内訳",
+        "originalVestedAmount": "元のベスト金額",
+        "reservedForStorage": "ストレージ用予約",
+        "reservedForStorageInfo": "ベスティングをアクティブに保ち、ストレージ料金を賄うために必要な少量のトークン。",
+        "percentVested": "{percent}% ベスト済み",
+        "vestedOf": "{vested} / {total} {symbol}",
+        "send": "送金"
+    },
+    "earningPoolDetails": {
+        "balance": "残高",
+        "apy": "APY",
+        "fee": "手数料",
+        "notAvailable": "該当なし",
+        "lockupStakingPool": "ロックアップステーキングプール",
+        "lockupAssetsNote": "このポジションのすべての資産はロックアップから来ています。収益を停止した後も、一部のトークンはまだロックされていて利用できない可能性があります。アンロックされる時期はロックアップスケジュールを確認してください。"
+    },
+    "onboardingQuestions": {
+        "stepTitle": "始めるためのいくつかの簡単な質問。",
+        "other": "その他",
+        "placeholders": {
+            "describeRole": "あなたの役割を説明してください(任意)",
+            "describeUseCase": "ユースケースを説明してください(任意)",
+            "networkName": "ネットワーク名を入力(任意)",
+            "currentChallenge": "現在の課題を入力(任意)",
+            "describeOther": "その他を説明(任意)"
+        },
+        "questions": {
+            "role": "あなたの役割を最もよく表すものは?",
+            "useCases": "Trezuを何に使う予定ですか?",
+            "teamSize": "トレジャリーを管理するのは何人ですか?",
+            "networks": "最もよく使うネットワークは?",
+            "multisigExperience": "マルチシグの経験は?",
+            "currentTools": "現在財務管理に使っているツールは?",
+            "monthlyVolume": "おおよその月間トランザクション量は?",
+            "biggestChallenges": "現在の最大の課題は?"
+        },
+        "options": {
+            "role": {
+                "founder": "創業者",
+                "co-founder": "共同創業者",
+                "cfo-finance-lead": "CFO / 財務責任者",
+                "operations-manager": "オペレーションマネージャー",
+                "treasury-manager": "トレジャリーマネージャー",
+                "other": "その他"
+            },
+            "useCases": {
+                "team-payroll-grants": "チームの給与とグラント",
+                "company-assets-management": "企業資産管理",
+                "dao-treasury-management": "DAOトレジャリー管理",
+                "investment-portfolio": "投資ポートフォリオ",
+                "operational-spending": "運営費の支出",
+                "other": "その他"
+            },
+            "teamSize": {
+                "just-me": "自分だけ",
+                "2-5-people": "2〜5人",
+                "6-15-people": "6〜15人",
+                "15-plus-people": "15人以上"
+            },
+            "networks": {
+                "near": "NEAR",
+                "bitcoin": "Bitcoin",
+                "ethereum": "Ethereum",
+                "solana": "Solana",
+                "arbitrum": "Arbitrum",
+                "base": "Base",
+                "optimism": "Optimism",
+                "polygon": "Polygon",
+                "gnosis": "Gnosis",
+                "avalanche": "Avalanche",
+                "bnb-chain": "BNB Chain",
+                "other": "その他"
+            },
+            "multisigExperience": {
+                "never-heard-of-it": "聞いたことがない",
+                "heard-about-it": "聞いたことはある",
+                "never-used-it": "使ったことがない",
+                "used-gnosis-safe-or-similar": "Gnosis Safeなどを使用したことがある",
+                "experienced": "経験豊富",
+                "looking-for-a-better-option": "より良い選択肢を探している"
+            },
+            "currentTools": {
+                "gnosis-safe": "Gnosis Safe",
+                "fireblocks": "Fireblocks",
+                "tholos": "Tholos",
+                "squads-multisig": "Squads Multisig",
+                "mpc-vault": "MPC Vault",
+                "other": "その他"
+            },
+            "monthlyVolume": {
+                "under-10k": "$10K未満",
+                "10k-100k": "$10K〜$100K",
+                "100k-1m": "$100K〜$1M",
+                "1m-plus": "$1M以上"
+            },
+            "biggestChallenges": {
+                "slow-approvals-and-signing": "承認と署名が遅い",
+                "lack-of-transparency-in-the-team": "チーム内の透明性の欠如",
+                "hard-to-track-spending-and-balances": "支出と残高の追跡が困難",
+                "security-and-access-control": "セキュリティとアクセス制御",
+                "no-good-web3-tool-yet": "まだ良いWeb3ツールがない",
+                "looking-for-crypto-earnings": "暗号資産の収益を求めている",
+                "other": "その他"
+            }
+        }
+    },
+    "onboarding": {
+        "tour": {
+            "addAssets": "入金してトレジャリーに資産を追加します。",
+            "makeRequests": "資産を送る必要があるときはいつでも支払いリクエストを作成できます。",
+            "exchangeAssets": "ここで資産を交換できます。",
+            "addMembers": "トレジャリーにメンバーを追加し、ロールを割り当てます。",
+            "newTreasury": "新しいトレジャリーをセットアップしますか?ここで数クリックで作成できます。",
+            "helpSupport": "必要なときにいつでもヘルプとサポートを受けられます。"
+        },
+        "tourCard": {
+            "close": "閉じる",
+            "stepProgress": "{current} / {total}",
+            "gotIt": "了解",
+            "done": "完了",
+            "next": "次へ"
+        },
+        "progress": {
+            "title": "クイックステップに従ってトレジャリーを探索",
+            "createTreasuryTitle": "トレジャリーアカウントを作成",
+            "createTreasuryDescription": "アカウントが正常にセットアップされました。素晴らしいスタートです!",
+            "addAssetsTitle": "資産を追加",
+            "addAssetsDescription": "資産を追加して動きを確認しましょう。",
+            "deposit": "入金",
+            "createPaymentTitle": "支払いリクエストを作成",
+            "createPaymentDescription": "支払いリクエストを作成してセットアップを完了しましょう。",
+            "send": "送金"
+        },
+        "welcome": {
+            "heading": "🎉 ようこそ!",
+            "subheading": "トレジャリーを簡単にツアーしましょう",
+            "body": "こんにちは!Trezuの準備ができました - 対応ネットワークから資産を追加してポートフォリオの構築を始めましょう。",
+            "progress": "{current} / {total}",
+            "next": "次へ",
+            "body2": "入金、リクエスト作成、新しいアカウントのセットアップ方法を確認しましょう。",
+            "noThanks": "結構です",
+            "letsGo": "始めましょう"
+        },
+        "congrats": {
+            "heading": "🎉 おめでとうございます!",
+            "body": "トレジャリーのセットアップが完了しました。資産の簡単な管理をお楽しみください。",
+            "letsGo": "始めましょう!"
+        },
+        "notifications": {
+            "title": "新機能 — 通知",
+            "body": "新しいリクエスト、保留中の投票、トレジャリーへの入金について最新の情報を入手 — Telegram ボットを接続するだけです。",
+            "tryIt": "試す",
+            "dismissAria": "閉じる"
+        },
+        "createBanner": {
+            "close": "閉じる",
+            "title": "Trezuを探索",
+            "description": "アカウントを作成して、Trezuのすべての機能と特典の権限をアンロックしましょう。",
+            "cta": "トレジャリーを作成"
+        },
+        "questionnaire": {
+            "continue": "続ける",
+            "skip": "スキップ"
+        },
+        "createPrompt": {
+            "title": "あと少しで完了です",
+            "description": "ウォレットは接続されていますが、まだトレジャリーを作成していません。Trezuを使い始めるためにアカウントを作成するか、{suffix}",
+            "suffixDemo": "デモをチェックしてください。",
+            "suffixExploring": "引き続き探索してください。",
+            "createCta": "トレジャリーを作成",
+            "viewDemo": "デモを見る",
+            "keepExploring": "引き続き探索"
+        },
+        "infoBox": {
+            "title": "Trezuをもっと活用",
+            "close": "閉じる",
+            "description": "他のユーザーがどのようにトレジャリーを使っているかを発見し、デモを試し、ドキュメントで機能を学びましょう。",
+            "demoTitle": "Trezuデモを探索",
+            "demoDescription": "ライブのデモアカウントを実際に見てみましょう。",
+            "docsTitle": "ドキュメント",
+            "docsDescription": "ドキュメントですべての機能について学びましょう。",
+            "videoTitle": "デモを見る",
+            "videoDescription": "Trezuの動作を示す短い動画をご覧ください。"
+        }
+    }
+}

@@ -23,6 +23,7 @@ import { type BridgeNetwork, useBridgeTokens } from "@/hooks/use-bridge-tokens";
 import { useTreasury } from "@/hooks/use-treasury";
 import Big from "@/lib/big";
 import { fetchDepositAddress } from "@/lib/bridge-api";
+import { buildSectionedOptions } from "@/lib/section-rules";
 import { formatBalance, formatSmartAmount } from "@/lib/utils";
 import { useThemeStore } from "@/stores/theme-store";
 import { SelectModal } from "./select-modal";
@@ -109,7 +110,7 @@ export function DepositModal({
             }),
         [t],
     );
-    const { treasuryId, isConfidential } = useTreasury();
+    const { treasuryId, isConfidential, isGuestTreasury } = useTreasury();
     const { theme } = useThemeStore();
     const {
         data: { tokens: treasuryAssets } = { tokens: STABLE_EMPTY_ARRAY },
@@ -193,6 +194,20 @@ export function DepositModal({
     }, [selectedAsset, selectedNetwork, bridgeAssets]);
 
     const networkSections = useMemo(() => {
+        if (isConfidential && isGuestTreasury) {
+            return buildSectionedOptions(filteredNetworks, [
+                {
+                    title: t("sections.available"),
+                    filter: (network) => network.id === NEAR_DIRECT_NETWORK_ID,
+                },
+                {
+                    title: t("sections.forMembersOnly"),
+                    filter: () => true,
+                    disabled: true,
+                },
+            ]);
+        }
+
         const withAssets = filteredNetworks
             .filter((network) => {
                 const balance = selectedNetworkBalances.get(network.id);
@@ -235,7 +250,13 @@ export function DepositModal({
                 options: supportedNetworks,
             },
         ];
-    }, [filteredNetworks, selectedNetworkBalances, t]);
+    }, [
+        filteredNetworks,
+        selectedNetworkBalances,
+        isConfidential,
+        isGuestTreasury,
+        t,
+    ]);
 
     useEffect(() => {
         if (!isOpen || !bridgeAssets.length) return;

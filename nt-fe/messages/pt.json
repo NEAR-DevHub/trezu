@@ -1,0 +1,2117 @@
+{
+    "common": {
+        "loading": "Carregando...",
+        "notAvailable": "N/D",
+        "connecting": "Conectando...",
+        "save": "Salvar",
+        "cancel": "Cancelar",
+        "submit": "Enviar",
+        "close": "Fechar",
+        "back": "Voltar",
+        "seeDemo": "Ver demonstração do Trezu",
+        "search": "Buscar",
+        "filter": "Filtrar",
+        "filterActive": "Filtro (ativo)",
+        "export": "Exportar",
+        "exporting": "Exportando",
+        "import": "Importar",
+        "remove": "Remover",
+        "removing": "Removendo...",
+        "edit": "Editar",
+        "continue": "Continuar",
+        "select": "Selecionar",
+        "all": "Todos",
+        "none": "Nenhum",
+        "retry": "Tentar novamente",
+        "tryAgain": "Por favor, tente novamente.",
+        "confirm": "Confirmar",
+        "next": "Próximo",
+        "previous": "Anterior",
+        "yes": "Sim",
+        "no": "Não",
+        "approve": "Aprovar",
+        "reject": "Rejeitar",
+        "copy": "Copiar",
+        "copied": "Copiado",
+        "viewAll": "Ver tudo",
+        "viewDetails": "Ver detalhes",
+        "noResults": "Nenhum resultado encontrado",
+        "add": "Adicionar"
+    },
+    "languageSwitcher": {
+        "label": "Idioma",
+        "select": "Selecionar idioma",
+        "english": "English",
+        "spanish": "Español",
+        "ukrainian": "Українська",
+        "hebrew": "עברית",
+        "german": "Deutsch",
+        "french": "Français",
+        "vietnamese": "Tiếng Việt",
+        "chinese": "中文",
+        "turkish": "Türkçe",
+        "indonesian": "Bahasa Indonesia",
+        "portuguese": "Português",
+        "japanese": "日本語",
+        "korean": "한국어"
+    },
+    "header": {
+        "toggleSidebar": "Alternar barra lateral",
+        "toggleTheme": "Alternar tema"
+    },
+    "nav": {
+        "dashboard": "Painel",
+        "requests": "Solicitações",
+        "payments": "Pagamentos",
+        "exchange": "Troca",
+        "addressBook": "Catálogo de endereços",
+        "members": "Membros",
+        "settings": "Configurações",
+        "helpSupport": "Ajuda e suporte",
+        "saveGuestTreasury": "Salve esta tesouraria de convidado na sua lista de tesourarias."
+    },
+    "signIn": {
+        "connect": "Conectar",
+        "wallet": "Carteira",
+        "termsOfService": "Termos de Serviço",
+        "privacyPolicy": "Política de Privacidade",
+        "disconnect": "Desconectar"
+    },
+    "auth": {
+        "noWallet": "Conecte sua carteira",
+        "noPermission": "Você não tem permissão para realizar esta ação",
+        "noVote": "Você já votou nesta proposta",
+        "noSponsoredTransactions": "Não há transações patrocinadas restantes"
+    },
+    "landing": {
+        "welcome": "Bem-vindo ao Trezu",
+        "chooseOption": "Escolha uma opção abaixo para começar.",
+        "newUserTitle": "Sou novo no Trezu",
+        "newUserDescription": "Já ouvi falar do Trezu, mas ainda não tenho uma tesouraria.",
+        "existingUserTitle": "Já uso o Trezu",
+        "existingUserDescription": "Tenho uma conta e gerencio uma tesouraria.",
+        "gradientTagline": "Segurança multisig multichain para gerenciar ativos digitais",
+        "waitlistTitle": "Entre na lista de espera do Trezu",
+        "waitlistSubmittedTitle": "Você está na lista 🎉",
+        "waitlistSubmittedDescription": "Obrigado! Avisaremos você assim que a criação de tesouraria ficar disponível.",
+        "waitlistDescription": "Atingimos o limite de tesourarias de hoje. Sem problemas — tente novamente mais tarde ou deixe seu contato para entrar na lista de espera. Avisaremos quando uma vaga abrir.",
+        "waitlistInputPlaceholder": "E-mail ou Telegram (ex.: @usuario)",
+        "waitlistPrivacyNote": "Usaremos isso apenas para notificá-lo",
+        "waitlistSubmit": "Entrar na lista de espera",
+        "waitlistSubmitFailed": "Falha ao enviar. Por favor, tente novamente.",
+        "welcomeAlt": "bem-vindo"
+    },
+    "blocked": {
+        "title": "Serviço não disponível no seu país",
+        "description": "Devido a restrições, este serviço não está disponível atualmente na sua região."
+    },
+    "notFound": {
+        "title": "Ops, esta página não existe mais...",
+        "description": "Parece que você seguiu um link que não funciona mais. Tente voltar ou retornar ao Painel.",
+        "backToDashboard": "Voltar ao Painel"
+    },
+    "treasuryInfo": {
+        "logoAlt": "Logotipo da tesouraria"
+    },
+    "dateInput": {
+        "placeholder": "dd/mm/aaaa"
+    },
+    "thresholdSlider": {
+        "warningSingleMember": "Um limite de 1 de {memberCount} significa que qualquer membro pode executar transações. Isso reduz a segurança.",
+        "infoBalanced": "Um limite de {currentThreshold} de {memberCount} oferece um bom equilíbrio entre segurança e flexibilidade operacional."
+    },
+    "intentsFee": {
+        "amountTooLowForFee": "{prefix}Valor muito baixo para a taxa de rede ({fee} {symbol}). Adicione pelo menos {addMore} {symbol}."
+    },
+    "metadata": {
+        "treasuryTitle": "Painel | Trezu",
+        "landingTitle": "Trezu | Gestão de tesouraria multichain",
+        "description": "Gerencie o capital da sua equipe em minutos a partir de um único painel sem nunca abrir mão das suas chaves.",
+        "ogTitle": "Trezu | Um multisig. Qualquer cripto. Controle total."
+    },
+    "pages": {
+        "dashboard": {
+            "title": "Painel",
+            "description": "Visão geral dos ativos e da atividade da sua tesouraria",
+            "descriptionLong": "Gerencie os ativos da sua tesouraria e acompanhe a atividade"
+        },
+        "activity": {
+            "title": "Transações recentes",
+            "descriptionDetails": "Detalhes da solicitação",
+            "descriptionList": "Transações recentes em todos os ativos"
+        },
+        "requests": {
+            "title": "Solicitações",
+            "description": "Visualize e gerencie todas as solicitações multisig pendentes",
+            "detailDescription": "Detalhes da solicitação",
+            "detailTitle": "Solicitação nº {id}"
+        },
+        "members": {
+            "title": "Membros",
+            "description": "Gerencie membros da equipe e permissões"
+        },
+        "settings": {
+            "title": "Configurações",
+            "description": "Ajuste as configurações do aplicativo"
+        },
+        "addressBook": {
+            "title": "Catálogo de endereços",
+            "description": "Gerencie seus destinatários salvos"
+        },
+        "payments": {
+            "title": "Pagamentos",
+            "description": "Envie e receba fundos com segurança"
+        },
+        "exchange": {
+            "title": "Troca",
+            "description": "Troque seus tokens de forma segura e eficiente"
+        },
+        "vesting": {
+            "title": "Vesting",
+            "description": "Crie cronogramas de vesting de forma rápida e fácil"
+        },
+        "earn": {
+            "title": "Ganhar",
+            "description": "Conecte sua tesouraria Trezu aos seus aplicativos Web3 favoritos.",
+            "howItWorks": "Como funciona",
+            "apps": {
+                "rhea": {
+                    "name": "Rhea",
+                    "description": "Conecte sua tesouraria à Rhea e comece a ganhar com os ativos que você já possui — sem transferências, sem atrito, recompensas contínuas sobre o que você já detém.",
+                    "goTo": "Ir para a Rhea",
+                    "logoAlt": "Logotipo da Rhea"
+                },
+                "intear": {
+                    "name": "IntearDEX",
+                    "description": "Sem bridge, sem mover fundos, sem etapas extras — use os ativos da sua tesouraria e comece a ganhar diretamente na plataforma.",
+                    "goTo": "Ir para o IntearDEX",
+                    "logoAlt": "Logotipo do IntearDEX"
+                },
+                "nearStaking": {
+                    "name": "NEAR Staking",
+                    "description": "Faça stake de NEAR pela sua tesouraria para ajudar a proteger a rede e receber recompensas de staking.",
+                    "goTo": "Ir para o NEAR Staking",
+                    "logoAlt": "NEAR"
+                }
+            }
+        },
+        "createTreasury": {
+            "title": "Criar tesouraria",
+            "description": "Configure uma nova tesouraria multisig para sua equipe"
+        },
+        "manageTreasuries": {
+            "title": "Gerenciar tesourarias",
+            "description": "Controle quais tesourarias aparecem na sua conta"
+        },
+        "stats": {
+            "title": "Estatísticas",
+            "description": "Ativos sob gestão em tempo real em todas as tesourarias de DAOs sputnik."
+        },
+        "telegram": {
+            "title": "Conectar tesouraria",
+            "description": "Vincule suas tesourarias a um chat do Telegram",
+            "metaTitle": "Trezu — Conectar Telegram",
+            "metaDescription": "Conecte sua tesouraria Trezu a um chat do Telegram"
+        },
+        "wallet": {
+            "title": "Trezu Wallet",
+            "description": "Assine propostas de tesouraria pelo Trezu"
+        }
+    },
+    "depositModal": {
+        "validation": {
+            "selectAsset": "Por favor, selecione um ativo",
+            "selectNetwork": "Por favor, selecione uma rede"
+        },
+        "sections": {
+            "supportedNetworks": "Redes suportadas",
+            "networksWithAssets": "Redes com ativos",
+            "yourAssets": "Seus ativos",
+            "otherAssets": "Outros ativos",
+            "available": "Disponível",
+            "forMembersOnly": "Apenas para membros"
+        },
+        "errors": {
+            "addressUnavailable": "Não foi possível obter o endereço de depósito para o ativo e a rede selecionados.",
+            "fetchFailed": "Falha ao obter o endereço de depósito. Por favor, tente novamente."
+        },
+        "title": "Depósito",
+        "subtitle": "Selecione o ativo e a rede para ver o endereço de depósito",
+        "assetLabel": "Ativo",
+        "networkLabel": "Rede",
+        "selectAsset": "Selecionar ativo",
+        "selectNetwork": "Selecionar rede",
+        "otherAssetName": "Outro",
+        "otherNetworkInfo": "Você pode depositar qualquer token não listado nos ativos, mas apenas pela rede NEAR.",
+        "depositAddressHeading": "Endereço de depósito",
+        "depositAddressSubtitle": "Sempre confira novamente seu endereço de depósito.",
+        "addressLabel": "Endereço",
+        "addressCopied": "Endereço copiado para a área de transferência",
+        "memoLabel": "Memo",
+        "memoCopied": "Memo copiado para a área de transferência",
+        "memoWarning": "Você <bold>deve</bold> incluir o memo ao enviar fundos para este endereço. Enviar sem o memo pode resultar em perda permanente de fundos.",
+        "onlyDeposit": "Deposite apenas <symbolTag>{symbol}</symbolTag> da rede <networkTag>{network}</networkTag>. Recomendamos começar com uma pequena transação de teste para garantir que tudo funcione corretamente antes de enviar o valor total.",
+        "minimumDeposit": "Depósito mínimo é <amountTag>{amount} {symbol}</amountTag>",
+        "searchByName": "Buscar por nome"
+    },
+    "assetDetails": {
+        "coinPrice": "Preço da moeda",
+        "weight": "Peso",
+        "source": "Origem",
+        "send": "Enviar",
+        "exchange": "Trocar",
+        "comingSoon": "Em breve",
+        "vesting": "Vesting",
+        "vestedPercent": "{percent}% liberado",
+        "frozen": "Congelado",
+        "frozenTooltip": "Tokens congelados estão bloqueados e não podem ser usados. Eles podem estar bloqueados por serem usados para armazenamento, staking ou ainda não terem sido liberados.",
+        "vested": "Liberado"
+    },
+    "activity": {
+        "filters": {
+            "createdDate": "Data de criação",
+            "token": "Token",
+            "from": "De",
+            "to": "Para"
+        },
+        "tabs": {
+            "all": "Todas",
+            "sent": "Enviadas",
+            "received": "Recebidas",
+            "stakingRewards": "Recompensas de staking",
+            "exchange": "Troca"
+        },
+        "searchPlaceholder": "Buscar por hash da transação",
+        "searchPlaceholderShort": "Hash da transação",
+        "fromPool": "do {pool}",
+        "table": {
+            "type": "TIPO",
+            "transaction": "TRANSAÇÃO",
+            "from": "DE",
+            "to": "PARA",
+            "transactionHash": "HASH DA TRANSAÇÃO",
+            "hashTooltip": "Identificador único (hash) desta transação"
+        },
+        "empty": {
+            "title": "Nenhuma transação encontrada",
+            "description": "Suas transações aparecerão aqui quando ocorrerem"
+        },
+        "emptyDashboard": {
+            "title": "Nada para mostrar ainda",
+            "description": "Suas transações e ações aparecerão aqui quando ocorrerem"
+        },
+        "recentTitle": "Transações recentes",
+        "details": {
+            "title": "Detalhes da transação",
+            "copyAddress": "Copiar endereço",
+            "addressCopied": "Endereço copiado para a área de transferência",
+            "sell": "Vender",
+            "receive": "Receber",
+            "pending": "Pendente",
+            "type": "Tipo",
+            "date": "Data",
+            "from": "De",
+            "to": "Para",
+            "method": "Método",
+            "contract": "Contrato",
+            "transaction": "Transação"
+        }
+    },
+    "export": {
+        "types": {
+            "csv": ".CSV",
+            "json": ".JSON",
+            "xlsx": ".XLSX"
+        },
+        "transactionTypes": {
+            "all": "Todos os tipos",
+            "sent": "Enviadas",
+            "received": "Recebidas",
+            "stakingRewards": "Recompensas de staking"
+        },
+        "validation": {
+            "invalidEmail": "Por favor, insira um e-mail válido"
+        },
+        "columns": {
+            "submissionTime": "Data de envio",
+            "dateRange": "Intervalo de datas",
+            "generatedBy": "Gerado por",
+            "status": "Status"
+        },
+        "status": {
+            "generating": "Gerando",
+            "expired": "Expirado",
+            "failed": "Falhou"
+        },
+        "noPermission": "Você não tem permissão para baixar o arquivo.",
+        "download": "Baixar",
+        "heading": "Exportar transações recentes",
+        "teamOnly": "A geração e o download de exportações estão disponíveis apenas para membros da equipe.",
+        "creditsUsed": "Você usou todos os seus créditos",
+        "exportsUsed": "Você usou todas as suas exportações",
+        "upgradePrompt": "Faça upgrade do seu plano para obter mais e continuar",
+        "resetPrompt": "Faça upgrade do seu plano para mais acesso ou aguarde até que seus limites sejam redefinidos no próximo mês.",
+        "tabs": {
+            "generate": "Gerar exportação",
+            "history": "Histórico"
+        },
+        "fields": {
+            "documentType": "Tipo de documento",
+            "timeRange": "Intervalo de tempo",
+            "selectDateRange": "Selecionar intervalo de datas",
+            "asset": "Ativo",
+            "allAssets": "Todos os ativos",
+            "transactionType": "Tipo de transação"
+        },
+        "buttons": {
+            "noPermissionExport": "Você não tem permissão para exportar",
+            "quotaExhausted": "Você usou toda a sua cota",
+            "exporting": "Exportando...",
+            "export": "Exportar"
+        },
+        "empty": {
+            "title": "Nenhuma exportação ainda",
+            "description": "Seus arquivos exportados do último mês aparecerão aqui assim que forem gerados."
+        },
+        "requirements": {
+            "heading": "Requisitos de exportação",
+            "canExportFrom": "Você pode exportar dados a partir de",
+            "availability": "Os arquivos exportados ficam disponíveis para download por 48 horas."
+        },
+        "quota": {
+            "heading": "Cota de exportação",
+            "unlimited": "Ilimitado",
+            "perMonth": "{count} / mês",
+            "flexibilityPrompt": "Procurando mais flexibilidade?",
+            "contactUs": "Fale conosco"
+        }
+    },
+    "requests": {
+        "filters": {
+            "proposalTypes": {
+                "Payments": "Pagamentos",
+                "Exchange": "Troca",
+                "Earn": "Ganhar",
+                "Vesting": "Vesting",
+                "Function Call": "Chamada de função",
+                "Change Policy": "Alterar política",
+                "Settings": "Configurações",
+                "Confidential": "Confidencial"
+            },
+            "voteStatus": {
+                "Approved": "Aprovado",
+                "Rejected": "Rejeitado",
+                "No Voted": "Não votado"
+            },
+            "requestsType": "Tipo de solicitação",
+            "createdDate": "Data de criação",
+            "recipient": "Destinatário",
+            "token": "Token",
+            "requester": "Solicitante",
+            "approver": "Aprovador",
+            "myVoteStatus": "Status do meu voto",
+            "all": "TODOS",
+            "amount": "Valor",
+            "from": "De",
+            "to": "Para",
+            "min": "Mín.",
+            "max": "Máx.",
+            "invalidDate": "Data inválida",
+            "operationIsNot": " não é",
+            "operationBefore": " antes",
+            "operationAfter": " depois",
+            "operationContains": " contém",
+            "searchByAddress": "Buscar por endereço",
+            "loadingMembers": "Carregando membros...",
+            "noMembersFound": "Nenhum membro encontrado. Pressione Enter para adicionar \"{query}\"",
+            "noMembersAvailable": "Nenhum membro disponível",
+            "reset": "Redefinir",
+            "clear": "Limpar",
+            "addFilter": "Adicionar filtro"
+        },
+        "tabs": {
+            "all": "Todas",
+            "pending": "Pendentes",
+            "executed": "Executadas",
+            "rejected": "Rejeitadas",
+            "expired": "Expiradas",
+            "failed": "Falharam"
+        },
+        "searchPlaceholder": "Buscar solicitação por nome ou ID",
+        "searchPlaceholderShort": "Buscar por nome ou ID",
+        "errorLoading": "Erro ao carregar propostas. Por favor, tente novamente.",
+        "empty": {
+            "title": "Crie sua primeira solicitação",
+            "description": "Solicitações de pagamentos, trocas e outras ações aparecerão aqui assim que forem criadas.",
+            "send": "Enviar",
+            "exchange": "Trocar"
+        },
+        "actions": {
+            "approve": "Aprovar",
+            "reject": "Rejeitar",
+            "deposit": "Depositar",
+            "viewRequest": "Ver solicitação"
+        },
+        "table": {
+            "selectAll": "Selecionar tudo",
+            "selectRow": "Selecionar linha",
+            "request": "Solicitação",
+            "transaction": "Transação",
+            "requester": "Solicitante",
+            "voting": "Votação",
+            "votingTooltip": "O primeiro número mostra as aprovações recebidas. O segundo número mostra as aprovações necessárias para executar.",
+            "status": "Status",
+            "notPending": "A proposta não está pendente.",
+            "noPermissionVote": "Você não tem permissão para votar nesta solicitação.",
+            "alreadyVoted": "Você já votou nesta solicitação.",
+            "noResults": "Nenhuma solicitação encontrada para seus filtros.",
+            "allCaughtUp": "Tudo em dia!",
+            "noPending": "Não há solicitações pendentes.",
+            "send": "Enviar",
+            "exchange": "Trocar",
+            "requestsSelected": "{count, plural, one {# solicitação selecionada} other {# solicitações selecionadas}}",
+            "bulkApproveDisabled": "Esta solicitação não pode ser aprovada porque a tesouraria tem saldo insuficiente."
+        },
+        "pending": {
+            "title": "Solicitações pendentes",
+            "viewAll": "Ver tudo",
+            "emptyTitle": "Tudo em dia!",
+            "emptyDescription": "Não há solicitações pendentes."
+        }
+    },
+    "proposals": {
+        "status": {
+            "pending": "Pendente",
+            "approved": "Aprovada",
+            "rejected": "Rejeitada",
+            "executed": "Executada",
+            "expired": "Expirada",
+            "failed": "Falhou",
+            "removed": "Removida",
+            "inProgress": "Em andamento"
+        },
+        "statusTooltip": {
+            "pending": "Esta solicitação ainda está pendente e não atingiu o número necessário de votos para execução.",
+            "executed": "Executada após {approved} de {required} membros aprovarem a solicitação.",
+            "rejected": "Rejeitada após {rejected} de {required} membros votarem para rejeitar a solicitação.",
+            "expired": "Expirada por não receber votos suficientes para ser executada.",
+            "failed": "A solicitação falhou ao ser concluída. Confira os detalhes da transação <link>aqui</link>.",
+            "failedPlain": "A solicitação falhou ao ser concluída. Confira os detalhes da transação aqui."
+        },
+        "voteModal": {
+            "confirmTitle": "Confirme seu voto",
+            "removeTitle": "Remover solicitação",
+            "bulkBody": "Você está prestes a {action} várias solicitações. Após o envio, esta decisão não pode ser alterada.",
+            "singleBody": "Você está prestes a {action} esta solicitação. Após confirmada, esta ação não pode ser desfeita.",
+            "actionApprove": "aprovar",
+            "actionReject": "rejeitar",
+            "actionRemove": "remover",
+            "insufficientBalance": "As solicitações <highlight>{ids}</highlight> não podem ser aprovadas devido a saldo insuficiente. Sua aprovação será aplicada apenas às solicitações restantes.",
+            "remove": "Remover",
+            "confirm": "Confirmar"
+        },
+        "expanded": {
+            "recipient": "Destinatário",
+            "amount": "Valor",
+            "networkFee": "Taxa de rede",
+            "notes": "Notas",
+            "sent": "Enviado",
+            "received": "Recebido",
+            "priceDifference": "Diferença de preço",
+            "priceDifferenceTooltip": "Mostra como o valor em USD que você recebe se compara ao valor em USD que você envia.",
+            "slippageTolerance": "Tolerância de slippage",
+            "estimatedTime": "Tempo estimado",
+            "seconds": "{count} segundos",
+            "description": "Descrição",
+            "methodName": "Nome do método",
+            "args": "Args",
+            "deposit": "Depósito",
+            "gas": "Gas",
+            "totalDeposit": "Depósito total",
+            "totalGas": "Gas total",
+            "receiverId": "ID do receptor",
+            "contractId": "ID do contrato",
+            "actionsCount": "{count, plural, one {# ação} other {# ações}}",
+            "functionCallsCount": "{count, plural, one {# chamada de função} other {# chamadas de função}}",
+            "showLess": "Mostrar menos",
+            "showMore": "Mostrar mais",
+            "stakingPool": "Pool de staking",
+            "validator": "Validador",
+            "action": "Ação",
+            "stake": "Fazer stake",
+            "unstake": "Desfazer stake",
+            "withdraw": "Retirar",
+            "lockupOwner": "Proprietário do lockup",
+            "lockupDuration": "Duração do lockup",
+            "cliff": "Cliff",
+            "releaseDuration": "Duração da liberação",
+            "vestingSchedule": "Cronograma de vesting",
+            "cancellable": "Cancelável",
+            "allowEarn": "Permitir staking",
+            "yes": "Sim",
+            "no": "Não",
+            "notSet": "Não definido",
+            "from": "De",
+            "to": "Para",
+            "paymentsCount": "{count, plural, one {# pagamento} other {# pagamentos}}",
+            "sourceWallet": "Carteira de origem",
+            "allNear": "Todo NEAR",
+            "startDate": "Data de início",
+            "endDate": "Data de término",
+            "cliffDate": "Data do cliff",
+            "allowCancellation": "Permitir cancelamento",
+            "allowStaking": "Permitir staking",
+            "loadingHistorical": "Carregando configuração histórica...",
+            "name": "Nome",
+            "purpose": "Finalidade",
+            "logo": "Logotipo",
+            "logoAlt": "Logotipo",
+            "primaryColor": "Cor primária",
+            "noChangesCurrent": "Nenhuma alteração detectada na configuração em comparação com o estado atual.",
+            "noChangesHistorical": "Nenhuma alteração detectada na configuração em comparação com o estado histórico.",
+            "method": "Método",
+            "arguments": "Argumentos",
+            "contract": "Contrato",
+            "actionNumber": "Ação {number}",
+            "actions": "Ações",
+            "collapseAll": "Recolher tudo",
+            "expandAll": "Expandir tudo",
+            "send": "Enviar",
+            "receive": "Receber",
+            "rate": "Taxa",
+            "priceSlippageLimit": "Limite de slippage de preço",
+            "slippageTooltip": "Este é o limite de slippage definido para esta solicitação. Se a taxa de mercado mudar além deste limite durante a execução, a solicitação falhará automaticamente.",
+            "estimatedTimeTooltip": "Tempo estimado para o swap ser executado após a confirmação da transação de depósito.",
+            "minReceive": "Receb. mín.",
+            "minimumReceived": "Mínimo recebido",
+            "minReceiveTooltip": "Este é o valor mínimo que você receberá desta troca, com base no limite de slippage definido para a solicitação.",
+            "depositAddress": "Endereço de depósito",
+            "depositAddressTooltip": "O endereço de depósito 1Click para onde os tokens serão enviados para a execução do swap multichain.",
+            "quoteSignature": "Assinatura da cotação",
+            "quoteSignatureTooltip": "A assinatura criptográfica da API 1Click que valida esta cotação.",
+            "quoteDeadline": "Prazo da cotação 1-Click",
+            "quoteDeadlineTooltip": "Horário em que o endereço de depósito se torna inativo e os fundos podem ser perdidos.",
+            "status": "Status",
+            "transactionLink": "Link da transação",
+            "viewTransaction": "Ver transação",
+            "recipientNumber": "Destinatário {number}",
+            "oopsTitle": "Ops! Algo deu errado",
+            "oopsDescription": "Não conseguimos encontrar dados para mostrar aqui.",
+            "totalAmount": "Valor total",
+            "recipients": "Destinatários",
+            "recipientsCount": "{count, plural, one {# destinatário} other {# destinatários}}",
+            "unsupportedProposal": "Tipo de proposta não suportado",
+            "requestDetails": "Detalhes da solicitação",
+            "linkCopied": "Link copiado para a área de transferência",
+            "copyLink": "Copiar link",
+            "openRequestPage": "Abrir página da solicitação",
+            "deleteRequest": "Excluir solicitação",
+            "unknownRecipients": "Destinatários desconhecidos",
+            "loadingConfig": "Carregando configuração...",
+            "historicalData": "Dados históricos...",
+            "generalUpdate": "Atualização geral",
+            "detailsUnavailable": "Detalhes indisponíveis",
+            "changesCount": "{count, plural, one {# Alteração} other {# Alterações}}",
+            "policyUpdate": "Atualização de política",
+            "noChangesDetected": "Nenhuma alteração detectada",
+            "loadingPolicy": "Carregando política...",
+            "roleChanges": "Alterações de função",
+            "policyParameters": "Parâmetros da política",
+            "defaultVotePolicy": "Política de voto padrão",
+            "policyRoleChanges": "Alterações de política e funções",
+            "membersAdded": "{count, plural, one {# membro adicionado} other {# membros adicionados}}",
+            "membersRemoved": "{count, plural, one {# membro removido} other {# membros removidos}}",
+            "membersUpdated": "{count, plural, one {# membro atualizado} other {# membros atualizados}}",
+            "rolesModified": "{count, plural, one {# função modificada} other {# funções modificadas}}",
+            "parametersChanged": "{count, plural, one {# parâmetro alterado} other {# parâmetros alterados}}",
+            "defaultVotePolicyPart": "política de voto padrão",
+            "onReceiver": "em {receiver}",
+            "toPrefix": "Para:",
+            "validatorPrefix": "Validador:",
+            "validatorSubtitle": "Validador: {address}",
+            "impactTitle": "Impacto da alteração da duração da votação",
+            "impactBody": "Você está prestes a atualizar a duração da votação. Isso afetará as seguintes solicitações existentes.",
+            "activeRequestsBullet": "{count, plural, one {# solicitação ficará ativa para votação após esta alteração, com datas de expiração atualizadas.} other {# solicitações ficarão ativas para votação após esta alteração, com datas de expiração atualizadas.}}",
+            "expiringRequestsBullet": "{count, plural, one {# solicitação será marcada como \"Expirada\" sob a nova duração de votação.} other {# solicitações serão marcadas como \"Expiradas\" sob a nova duração de votação.}}",
+            "remainActiveHeading": "Solicitações que permanecem ativas para votação com nova data de expiração",
+            "willExpireHeading": "Solicitações que serão marcadas como \"Expirada\"",
+            "tableRequest": "Solicitação",
+            "tableTransaction": "Transação",
+            "tableNewExpiry": "Nova expiração",
+            "expireInDays": "{count, plural, one {Expira em # dia} other {Expira em # dias}}",
+            "today": "Hoje",
+            "uponApproval": "Após aprovação",
+            "yesContinue": "Sim, continuar",
+            "transactionCreated": "Transação criada",
+            "voting": "Votação",
+            "approvalsReceived": "{received}/{required} aprovações recebidas",
+            "expiresAt": "Expira em",
+            "expiredAt": "Expirou em",
+            "exchangingTokens": "Trocando tokens",
+            "exchangingTokensBody": "Esta solicitação foi aprovada pela equipe. A troca de tokens está em andamento e pode levar algum tempo.",
+            "requestFailed": "Solicitação falhou",
+            "requestFailedBody": "A equipe aprovou esta solicitação, mas ela falhou devido a flutuações de taxa. Por favor, crie uma nova solicitação e tente novamente.",
+            "votingPeriod24h": "Período de votação: 24 horas",
+            "votingPeriod24hBody": "Esta solicitação de troca tem duração de votação de 24 horas. Aprove esta solicitação dentro deste prazo, ou ela expirará.",
+            "reject": "Rejeitar",
+            "approve": "Aprovar"
+        },
+        "insufficientBalance": {
+            "noAsset": "Esta solicitação não pode ser aprovada porque o token necessário não está disponível na tesouraria.",
+            "bond": "Esta solicitação não pode ser aprovada porque a tesouraria tem saldo insuficiente de <token>{symbol}</token>. Adicione <token>{amount} {symbol}</token> para cobrir os custos do bond da proposta.",
+            "continue": "Esta solicitação não pode ser aprovada porque a tesouraria tem saldo insuficiente de <token>{symbol}</token>. Adicione <token>{amount} {symbol}</token> para continuar.",
+            "modalTitle": "Saldo insuficiente de NEAR",
+            "modalBodyVote": "Você não tem NEAR suficiente na sua carteira para registrar este voto. Votar requer um saldo mínimo de <amount>{required} NEAR</amount>. Por favor, adicione NEAR à sua carteira e tente novamente.",
+            "modalBodyProposal": "Você não tem NEAR suficiente na sua carteira para criar esta solicitação. Criar uma solicitação requer um saldo mínimo de <amount>{required} NEAR</amount>. Por favor, adicione NEAR à sua carteira e tente novamente.",
+            "gotIt": "Entendi"
+        }
+    },
+    "members": {
+        "title": "Membros",
+        "description": "Gerencie membros da equipe e permissões",
+        "permissions": "Permissões",
+        "member": "Membro",
+        "activeMembers": "Membros ativos",
+        "noActiveMembers": "Nenhum membro ativo encontrado.",
+        "addNewMember": "Adicionar novo membro",
+        "membersSelected": "{count, plural, =0 {nenhum membro} one {# membro} other {# membros}} selecionado",
+        "remove": "Remover",
+        "edit": "Editar",
+        "requestorOnlyTooltip": "Você só pode adicionar a função de Solicitante para este membro, pois ele é responsável por criar solicitações de pagamento a partir do NEARN.",
+        "memberModal": {
+            "editRoles": "Editar funções",
+            "addNewMember": "Adicionar novo membro",
+            "validatingAddresses": "Validando endereços...",
+            "creatingProposal": "Criando proposta...",
+            "reviewRequest": "Revisar solicitação",
+            "noChanges": "Nenhuma alteração foi feita nas funções dos membros"
+        },
+        "previewModal": {
+            "title": "Revise sua solicitação",
+            "youAreEditing": "Você está editando",
+            "youAreAdding": "Você está adicionando",
+            "membersCount": "{count, plural, one {# membro} other {# membros}}",
+            "newMembersCount": "{count, plural, one {# novo membro} other {# novos membros}}",
+            "updatedMembers": "Membros atualizados",
+            "newMembers": "Novos membros",
+            "creatingProposal": "Criando proposta...",
+            "confirmSubmit": "Confirmar e enviar solicitação"
+        },
+        "removeDialog": {
+            "title": "Remover solicitação",
+            "nearnBody": "Após aprovado, {account} será removido permanentemente da tesouraria e todas as permissões associadas serão revogadas. Após a remoção, esta conta não poderá mais criar solicitações a partir do NEARN.",
+            "genericBody": "Após aprovada, esta ação removerá permanentemente <bold>{accounts}</bold> da tesouraria e revogará todas as permissões atribuídas.",
+            "creatingProposal": "Criando proposta..."
+        },
+        "validation": {
+            "accountIdRequired": "ID da conta é obrigatório",
+            "invalidNearAddress": "Endereço NEAR inválido.",
+            "atLeastOneRole": "Pelo menos uma função deve ser selecionada",
+            "atLeastOneMember": "Pelo menos um membro é obrigatório",
+            "alreadyAdded": "Este membro já foi adicionado acima",
+            "alreadyInTreasury": "Este membro já existe na tesouraria",
+            "cannotRemoveRoleAfter": "Você não pode remover a função {role} deste membro. Após todas as suas alterações, ele seria a única pessoa atribuída a esta função.",
+            "cannotRemoveRoleAfterGov": "Você não pode remover a função {role} deste membro. Após todas as suas alterações, ele seria o único membro {role}, e sem esta função você não poderá gerenciar membros da equipe nem configurar a votação."
+        },
+        "policy": {
+            "addMembers": "Atualizar política - Adicionar novos membros",
+            "addMembersSuccess": "Solicitação de novo membro criada com sucesso",
+            "editMember": "Atualizar política - Editar permissões de membro",
+            "editMembers": "Atualizar política - Editar vários membros",
+            "editMemberSuccess": "Solicitação de atualização de funções do membro criada com sucesso",
+            "editMembersSuccess": "Solicitação de atualização em massa de funções de membros criada com sucesso",
+            "removeMember": "Atualizar política - Remover membro",
+            "removeMembers": "Atualizar política - Remover membros",
+            "removeMemberSuccess": "Solicitação de remoção de membro criada com sucesso"
+        }
+    },
+    "settings": {
+        "tabs": {
+            "general": "Geral",
+            "voting": "Votação",
+            "preferences": "Preferências",
+            "integrations": "Integrações"
+        },
+        "general": {
+            "validation": {
+                "displayNameRequired": "O nome de exibição é obrigatório",
+                "displayNameMax": "O nome de exibição deve ter menos de 100 caracteres"
+            },
+            "proposalDescriptionTitle": "Atualizar configuração - Tema e logotipo",
+            "proposalSubmitted": "Solicitação para atualizar a configuração enviada",
+            "treasuryNotFound": "Tesouraria não encontrada",
+            "treasuryName": "Nome da tesouraria",
+            "treasuryNameDescription": "O nome da sua tesouraria. Será exibido em todo o aplicativo.",
+            "displayName": "Nome de exibição",
+            "displayNamePlaceholder": "Insira o nome de exibição",
+            "accountName": "Nome da conta",
+            "logo": "Logotipo",
+            "logoDescription": "Faça upload de um logotipo para sua tesouraria. Recomendado SVG, PNG ou JPG (256x256 px).",
+            "treasuryLogoAlt": "Logotipo da tesouraria",
+            "uploading": "Enviando...",
+            "uploadLogo": "Fazer upload do logotipo",
+            "removeLogo": "Remover logotipo",
+            "logoUploaded": "Logotipo enviado com sucesso",
+            "uploadError": "Ocorreu um erro ao enviar a imagem, por favor tente novamente.",
+            "invalidLogo": "Logotipo inválido. Por favor, envie um arquivo PNG, JPG ou SVG com exatamente 256x256 px",
+            "invalidImage": "Arquivo de imagem inválido. Por favor, envie uma imagem válida.",
+            "fileReadError": "Erro ao ler o arquivo. Por favor, tente novamente.",
+            "primaryColor": "Cor primária",
+            "primaryColorDescription": "Defina a cor primária para os elementos da interface da sua tesouraria. Esta cor será usada nos modos claro e escuro, então leve em conta o contraste ao escolher tons neutros.",
+            "selectColorLabel": "Selecionar cor {color}"
+        },
+        "voting": {
+            "validation": {
+                "required": "A duração do voto é obrigatória",
+                "validNumber": "A duração do voto deve ser um número válido",
+                "min": "A duração do voto deve ser de pelo menos 1 dia",
+                "max": "A duração do voto deve ser inferior a 1000 dias",
+                "whole": "A duração do voto deve ser em dias inteiros"
+            },
+            "missingData": "Dados obrigatórios ausentes",
+            "thresholdProposalTitle": "Atualizar política - Limites de votação",
+            "thresholdProposalSummary": "{account} solicitou alterar o limite de votação de {oldValue} para {newValue}.",
+            "thresholdSubmitted": "Solicitação para atualizar o limite de votação enviada",
+            "createProposalFailed": "Falha ao criar proposta",
+            "durationProposalTitle": "Atualizar política - Duração da votação",
+            "durationProposalSummary": "{account} solicitou alterar a duração da votação de {oldValue} para {newValue}.",
+            "durationSubmitted": "Solicitação criada com sucesso",
+            "pendingTitle": "Solicitação de limite de votação ativa",
+            "pendingBody": "Para evitar conflitos, você precisa concluir ou resolver as solicitações pendentes existentes antes de prosseguir. Estas solicitações estão atualmente ativas e devem ser aprovadas ou rejeitadas primeiro.",
+            "viewRequest": "Ver solicitação",
+            "thresholdHeading": "Limite de votação",
+            "thresholdDescriptionApprovers": "Defina quantos votos são necessários para aprovar solicitações de pagamento e relacionadas à equipe. Configure os limites separadamente para Aprovadores e Governança.",
+            "thresholdDescriptionGeneric": "Defina quantos votos são necessários para aprovar solicitações. Configure os limites para cada função com base em suas responsabilidades.",
+            "membersWhoCanVote": "Membros que podem votar",
+            "votesRequired": "Votos são necessários para aprovar solicitações",
+            "durationHeading": "Duração do voto",
+            "durationDescription": "O tempo (em dias) que uma proposta permanecerá aberta para votação. Se a votação não for concluída neste período, a decisão expira.",
+            "durationApprovers": " Esta duração se aplica igualmente às funções de Governança e Aprovadores.",
+            "durationGeneric": " Esta duração é a mesma para todas as funções da tesouraria.",
+            "days": "Dias"
+        },
+        "preferences": {
+            "timeZone": "Fuso horário",
+            "timeZoneDescription": "Defina seu fuso horário local para exibição precisa de data e hora.",
+            "timeFormat": "Formato de hora",
+            "hour12": "12 horas (1:00 PM)",
+            "hour24": "24 horas (13:00)",
+            "autoTimezone": "Definir fuso horário automaticamente usando sua localização",
+            "timezone": "Fuso horário",
+            "loadingTimezones": "Carregando fusos horários...",
+            "selectTimezone": "Selecionar fuso horário",
+            "searchTimezones": "Buscar fusos horários...",
+            "noTimezones": "Nenhum fuso horário encontrado",
+            "save": "Salvar",
+            "savedToast": "Preferências salvas com sucesso",
+            "saveFailed": "Falha ao salvar preferências",
+            "loadFailed": "Falha ao carregar fusos horários"
+        }
+    },
+    "addressBook": {
+        "emptyTitle": "Adicione seu primeiro destinatário",
+        "emptyDescription": "Salve endereços usados com frequência para pagamentos mais rápidos e sem erros. Seus contatos permanecem privados e visíveis apenas para sua equipe.",
+        "import": "Importar",
+        "addRecipient": "Adicionar destinatário",
+        "recipientsHeading": "Destinatários",
+        "recipientsSelected": "{count, plural, =0 {nenhum destinatário} one {# destinatário} other {# destinatários}} selecionado",
+        "sectionHeading": "Destinatários",
+        "privacyNote": "Os endereços salvos são privados e visíveis apenas para sua equipe.",
+        "searchPlaceholder": "Buscar destinatário por nome",
+        "searchPlaceholderShort": "Buscar",
+        "review": {
+            "header": "Revisar detalhes",
+            "youAreAdding": "Você está adicionando",
+            "newRecipients": "{count, plural, one {# novo destinatário} other {# novos destinatários}}",
+            "onNetworks": "em {count, plural, one {# rede} other {# redes}}",
+            "recipients": "Destinatários",
+            "allDuplicates": "Todos os destinatários importados já existem no seu catálogo de endereços. Volte para enviar uma lista diferente ou remova duplicatas desta revisão.",
+            "someDuplicates": "{duplicates} destinatários duplicados de {total} destinatários no total. Continue para importar apenas os novos destinatários.",
+            "duplicated": "Duplicado",
+            "notePlaceholder": "Adicione uma nota para ajudar a identificar este destinatário (ex.: pagamento de prestador, distribuição de vesting).",
+            "skipDuplicates": "Ignorar duplicatas e importar apenas os novos.",
+            "allDuplicatesTooltip": "Todos os destinatários importados já estão no seu catálogo de endereços, então não há nada novo para importar.",
+            "duplicateActionTooltip": "Ative o pulo de duplicatas ou remova destinatários duplicados para continuar.",
+            "adding": "Adicionando…",
+            "nothingNew": "Nada novo para importar",
+            "addRecipientsButton": "{count, plural, one {Adicionar destinatário} other {Adicionar destinatários}}"
+        },
+        "removeDialog": {
+            "title": "Remover destinatário",
+            "bulk": "Isso removerá <bold>{count, plural, one {# destinatário} other {# destinatários}}</bold> do seu catálogo de endereços. Você pode adicioná-los novamente a qualquer momento.",
+            "single": "Isso removerá <bold>{name}</bold> do seu catálogo de endereços. Você pode adicionar este destinatário novamente a qualquer momento."
+        },
+        "importFlow": {
+            "title": "Importar destinatários",
+            "description": "Faça upload de uma lista de endereços de destinatários para o seu catálogo de endereços.",
+            "foundSummary": "{count, plural, one {# destinatário encontrado} other {# destinatários encontrados}} em {networkCount, plural, one {# rede} other {# redes}}",
+            "uploadPrompt": "Faça upload ou cole os dados dos destinatários",
+            "fixErrors": "Corrija os erros para continuar",
+            "continueReview": "Continuar para revisão"
+        },
+        "form": {
+            "editRecipient": "Editar destinatário",
+            "addRecipient": "Adicionar destinatário",
+            "import": "Importar",
+            "recipientName": "Nome do destinatário",
+            "namePlaceholder": "Alice",
+            "recipientAddress": "Endereço do destinatário",
+            "network": "Rede",
+            "networkInfo": "Redes compatíveis com este endereço",
+            "enterAddressFirst": "Insira primeiro o endereço do destinatário",
+            "selectNetwork": "Selecionar rede",
+            "selectNetworksTitle": "Selecionar redes",
+            "searchNetworksPlaceholder": "Buscar redes…",
+            "done": "Concluído",
+            "edit": "Editar",
+            "remove": "Remover",
+            "incomplete": "Incompleto",
+            "addAnother": "Adicionar outro destinatário",
+            "fillAllTooltip": "Você deve preencher todos os campos para adicionar um destinatário.",
+            "reviewDetails": "Revisar detalhes",
+            "reviewTooltip": "Todos os destinatários devem estar completos antes de revisar.",
+            "invalidAddress": "Endereço inválido",
+            "noCompatibleNetworks": "Nenhuma rede compatível com este endereço"
+        },
+        "parsing": {
+            "rowPrefix": "Linha {row}: {message}",
+            "missingName": "Nome do destinatário ausente. Por favor, adicione um nome.",
+            "missingAddress": "Endereço do destinatário ausente. Por favor, adicione um endereço de carteira.",
+            "invalidAddressFormat": "O endereço \"{address}\" não está em um formato válido para nenhuma rede suportada.",
+            "unknownNetwork": "Rede desconhecida \"{network}\". As redes suportadas incluem: {available}.",
+            "incompatibleNetwork": "O endereço \"{address}\" não é compatível com {network}. Redes compatíveis: {compatible}.",
+            "noDataFound": "Nenhum dado encontrado. Por favor, adicione destinatários neste formato: Name, Address, Network, Note",
+            "headerColumnsNotFound": "Detectamos uma linha de cabeçalho, mas não conseguimos encontrar as colunas 'Name' e 'Address'. Por favor, use estes nomes de coluna ou remova a linha de cabeçalho.",
+            "failedToParseCsv": "Falha ao analisar dados CSV"
+        }
+    },
+    "payments": {
+        "validation": {
+            "recipientMin": "O destinatário deve ter pelo menos 2 caracteres",
+            "recipientMax": "O destinatário deve ter menos de 128 caracteres",
+            "amountPositive": "O valor deve ser maior que 0",
+            "recipientTokenSame": "O destinatário e o endereço do token não podem ser iguais"
+        },
+        "newPayment": "Novo pagamento",
+        "reviewYourPayment": "Revise seu pagamento",
+        "reviewButton": "Revisar pagamento",
+        "reviewButtonDisabled": "Insira o valor e o endereço",
+        "comingSoon": "Em breve",
+        "bulkPayments": "Pagamentos em massa",
+        "summaryRecipients": "para {count, plural, one {# destinatário} other {# destinatários}}",
+        "networkFee": "Taxa de rede",
+        "networkFeeInfo": "Informações sobre a taxa de rede",
+        "commentPlaceholder": "Adicionar um comentário (opcional)...",
+        "preparingRoute": "Preparando rota de transferência 1Click...",
+        "confirmSubmit": "Confirmar e enviar solicitação",
+        "useDifferentAddress": "Usar um endereço diferente",
+        "failed1ClickQuote": "Falha ao criar cotação de transferência 1Click",
+        "paymentSubmitted": "Solicitação de envio de pagamento enviada"
+    },
+    "bulkPayment": {
+        "comingSoonToast": "Pagamentos em massa estão chegando em breve!",
+        "submittingList": "Enviando lista de pagamentos em massa",
+        "submittingProposal": "Enviando proposta",
+        "proposalSubmitted": "Proposta de pagamento em massa enviada",
+        "submitListFailed": "Falha ao enviar lista de pagamentos",
+        "submitFailed": "Falha ao enviar pagamento em massa",
+        "upload": {
+            "pleaseUploadCsv": "Por favor, faça upload de um arquivo CSV",
+            "fileSizeLimit": "O tamanho do arquivo deve ser inferior a 1,5 MB",
+            "headerTitle": "Solicitações de pagamento em massa",
+            "headerSubtitle": "Pague vários destinatários com uma única proposta.",
+            "creditsUsed": "Você usou todos os seus créditos",
+            "bulkPaymentsUsed": "Você usou todos os seus pagamentos em massa",
+            "upgradeTrial": "Faça upgrade do seu plano para obter mais e continuar",
+            "upgradePaid": "Faça upgrade do seu plano para mais acesso ou aguarde até que seus limites sejam redefinidos no próximo mês.",
+            "selectAsset": "Selecionar ativo",
+            "disableTokenMessage": "Pagamentos em massa para estes tokens estão chegando em breve.",
+            "providePaymentData": "Forneça os dados de pagamento",
+            "uploadFile": "Enviar arquivo",
+            "provideData": "Fornecer dados",
+            "chooseFile": "Escolher arquivo",
+            "orDragDrop": "ou arraste e solte",
+            "maxFileSize": "máx. 1 arquivo de até 1,5 MB, somente arquivo CSV",
+            "noFilePrompt": "Não tem um arquivo para enviar?",
+            "downloadTemplate": "Baixar um modelo",
+            "requirements": "Requisitos de pagamento em massa",
+            "maxTransactions": "Máx. {max} transações por importação",
+            "singleTokenNetwork": "Token e rede únicos",
+            "limitsUsed": "Você usou todos os seus limites",
+            "selectAndProvide": "Selecione o ativo e forneça os dados de pagamento",
+            "continueToReview": "Continuar para revisão",
+            "selectTokenError": "Por favor, selecione um token",
+            "providePaymentDataError": "Por favor, forneça os dados de pagamento"
+        },
+        "editStep": {
+            "title": "Editar pagamento",
+            "saveChanges": "Salvar alterações"
+        },
+        "parsing": {
+            "rowPrefix": "Linha {row}: {message}",
+            "missingRecipientFirstColumn": "Endereço do destinatário ausente. Por favor, adicione um endereço na primeira coluna.",
+            "invalidNearAddress": "O endereço \"{address}\" não é uma conta NEAR válida.",
+            "invalidChainAddress": "O endereço \"{address}\" não é uma conta {chain} válida.",
+            "rowNeedsAmountRecipient": "Cada linha precisa do valor e do destinatário separados por uma vírgula. Exemplo: 100, alice.near",
+            "missingRecipientBeforeComma": "Endereço do destinatário ausente. Por favor, adicione um endereço antes da vírgula.",
+            "missingAmountAfterComma": "Valor ausente. Por favor, adicione um número após a vírgula. Exemplo: {recipient}, 100",
+            "invalidAmountNumber": "O valor \"{amountStr}\" não é um número válido. Por favor, use apenas números e decimais (ex.: 100 ou 100.50).",
+            "amountGreaterThanZero": "O valor deve ser maior que 0. Você inseriu \"{amountStr}\".",
+            "amountTooLarge": "O valor \"{amountStr}\" é muito grande. Por favor, use um número menor.",
+            "invalidAmountFallback": "Valor inválido. Por favor, use apenas números e decimais (ex.: 100 ou 100.50).",
+            "pleaseRemoveChars": "Por favor, remova estes caracteres: {chars}. Apenas números, vírgulas e pontos são permitidos.",
+            "amountCannotBeEmpty": "O valor não pode estar vazio.",
+            "tokenMismatch": "Você inseriu \"{provided}\", mas {expected} está selecionado acima. Remova o símbolo do token ou selecione {suggested} no menu suspenso.",
+            "multipleTokenSymbols": "Você está usando vários símbolos de token ({symbols}). Por favor, use apenas um tipo de token em todo o arquivo, ou remova os símbolos de token e deixe a seleção acima determinar o token.",
+            "noPaymentDataFound": "Nenhum dado de pagamento encontrado. Por favor, adicione seus pagamentos neste formato: recipient, amount",
+            "exceedsRecipientLimit": "Você tem {count} destinatários, mas o limite é {limit} por lote. Por favor, remova {excess, plural, one {# destinatário} other {# destinatários}} ou divida em vários lotes.",
+            "noPaymentDataProvided": "Nenhum dado de pagamento fornecido. Por favor, insira seus pagamentos neste formato: recipient, amount",
+            "headerColumnsNotFound": "Detectamos uma linha de cabeçalho, mas não conseguimos encontrar as colunas 'Recipient' e 'Amount'. Por favor, use estes nomes de coluna ou remova a linha de cabeçalho.",
+            "failedToParseCsv": "Falha ao analisar dados CSV",
+            "failedToParsePaste": "Falha ao analisar dados colados",
+            "failedToValidateAccount": "Falha ao validar a conta",
+            "feeEstimationFailed": "Não foi possível estimar a taxa de rede para este valor. Por favor, verifique e tente novamente.",
+            "feeEstimationFailedRow": "Linha {row} ({recipient}): Não foi possível estimar a taxa de rede para este valor. Por favor, verifique e tente novamente."
+        },
+        "recipients": "Destinatários",
+        "insufficientTokens": "Tokens insuficientes. Você pode enviar a solicitação e completar o saldo antes da aprovação.",
+        "removeRecipient": "Remover destinatário",
+        "removeRecipientConfirm": "Tem certeza de que deseja remover o pagamento para <strong>{recipient}</strong>? Esta ação não pode ser desfeita.",
+        "remove": "Remover",
+        "edit": "Editar"
+    },
+    "bulkPaymentCredits": {
+        "title": "Pagamentos em massa",
+        "unlimited": "Ilimitado",
+        "creditsPerPeriod": "{amount} / {period}",
+        "oneTimeTrial": "teste único",
+        "month": "mês",
+        "moreFlexibility": "Procurando mais flexibilidade?",
+        "contactUs": "Fale conosco"
+    },
+    "exchange": {
+        "validation": {
+            "amountPositive": "O valor deve ser maior que 0"
+        },
+        "requestSubmitted": "Solicitação de troca enviada",
+        "heading": "Troca",
+        "sell": "Vender",
+        "receive": "Receber",
+        "slippageTolerance": "Tolerância de slippage",
+        "disabled": {
+            "differentTokens": "Os tokens devem ser diferentes",
+            "enterAmount": "Insira um valor para trocar"
+        },
+        "review": "Revisar troca",
+        "poweredBy": "Desenvolvido por",
+        "info": {
+            "priceDifference": "Diferença de preço",
+            "priceDifferenceTooltip": "Mostra como o valor em USD que você recebe se compara ao valor em USD que você envia.",
+            "estimatedTime": "Tempo estimado",
+            "estimatedTimeValue": "{seconds} segundos",
+            "estimatedTimeTooltip": "Tempo aproximado para concluir a troca.",
+            "minimumReceived": "Mínimo recebido",
+            "minimumReceivedTooltip": "Este é o valor mínimo que você receberá desta troca, com base no limite de slippage definido para a solicitação.",
+            "depositAddress": "Endereço de depósito",
+            "depositAddressCopied": "Endereço de depósito copiado",
+            "quoteExpires": "A cotação expira",
+            "exchangeFee": "Taxa de troca",
+            "exchangeFeeTooltip": "A taxa de 0,70% incorrida aqui cobre os custos do protocolo NEAR Intents para facilitar sua negociação e a taxa do widget Trezu. Este valor é calculado automaticamente na sua taxa cotada."
+        },
+        "approveWithin24h": "Por favor, aprove esta solicitação em até 24 horas, caso contrário ela expirará. Recomendamos confirmar o quanto antes.",
+        "confirmSubmit": "Confirmar e enviar solicitação",
+        "refreshingIn": "A taxa de câmbio será atualizada em {seconds}s"
+    },
+    "vesting": {
+        "validation": {
+            "amountMin": "O valor deve ser maior ou igual a 3,5",
+            "startBeforeEnd": "A data de início deve ser anterior à data de término",
+            "cliffBetween": "A data do cliff deve estar entre"
+        },
+        "stepTitles": {
+            "details": "Detalhes",
+            "settings": "Configurações",
+            "review": "Revisar"
+        },
+        "proposalTitle": "Criar cronograma de vesting para {address}",
+        "scheduleSubmitted": "Solicitação para criar cronograma de vesting enviada",
+        "heading": "Novo cronograma de vesting",
+        "amount": "Valor",
+        "startDate": "Data de início",
+        "endDate": "Data de término",
+        "noteOptional": "Nota (opcional)",
+        "continue": "Continuar",
+        "advancedSettings": "Configurações avançadas",
+        "allowCancellation": "Permitir cancelamento",
+        "allowCancellationDescription": "Permite que a NEAR Foundation cancele o lockup a qualquer momento. Lockups não canceláveis não são compatíveis com datas de cliff.",
+        "cliffDate": "Data do cliff",
+        "allowEarn": "Permitir ganhos",
+        "allowEarnDescription": "Permite ao proprietário do lockup fazer staking do valor total dos tokens no lockup (mesmo antes da data do cliff).",
+        "commentPlaceholder": "Adicionar um comentário para este cronograma de vesting (opcional)...",
+        "reviewRequest": "Revisar solicitação",
+        "reviewHeading": "Revise seu cronograma de vesting",
+        "confirmSubmit": "Confirmar e enviar solicitação",
+        "review": {
+            "recipient": "Destinatário",
+            "startDate": "Data de início",
+            "endDate": "Data de término",
+            "cliffDate": "Data do cliff",
+            "cancelable": "Cancelável",
+            "allowEarn": "Permitir ganhos",
+            "na": "N/D"
+        }
+    },
+    "createTreasury": {
+        "validation": {
+            "nameMin": "O nome da tesouraria deve ter pelo menos 2 caracteres",
+            "nameMax": "O nome da tesouraria deve ter menos de 64 caracteres",
+            "accountMin": "O nome da conta deve ter pelo menos 2 caracteres",
+            "accountMax": "O nome da conta deve ter menos de 64 caracteres",
+            "accountChars": "O nome da conta pode conter apenas letras latinas, números e hifens",
+            "accountTaken": "Este nome de conta já está em uso"
+        },
+        "votingNote": "Você precisa de mais membros para modificar as configurações de votação. Adicione outro membro para configurar a votação.",
+        "minimumVoteNote": "É necessário no mínimo um voto de aprovação.",
+        "heading": "Criar uma tesouraria",
+        "addMembers": "Adicionar membros",
+        "addMembersInfo": "Você pode adicionar ou atualizar membros agora e editar isso depois a qualquer momento.",
+        "treasuryName": "Nome da tesouraria",
+        "treasuryNamePlaceholder": "Minha tesouraria",
+        "accountName": "Nome da conta",
+        "accountNameInfo": "Este é o nome único da sua conta. Será usado na URL da sua tesouraria e exibido nas transações para identificar quem enviou o pagamento. Escolha um nome curto e reconhecível para sua conta.",
+        "accountPlaceholder": "minha-tesouraria",
+        "continue": "Continuar",
+        "votingThreshold": "Limite de votação",
+        "thresholdDescription": "Defina quantos votos são necessários para aprovar solicitações:",
+        "financial": "Financeiro",
+        "financialDescription": "Aprovação de solicitações de pagamento e troca.",
+        "governance": "Governança",
+        "governanceDescription": "Aprovação de configurações, membros e configuração de votação.",
+        "confidential": "Confidencial",
+        "public": "Público",
+        "anyone": "Qualquer pessoa",
+        "teamOnly": "Apenas a equipe",
+        "soon": "Em breve",
+        "publicDescription": "Todos os saldos, atividades e transações são visíveis a qualquer pessoa na blockchain. Esta opção é melhor para organizações transparentes e DAOs públicos.",
+        "balanceTransactions": "Saldo, transações",
+        "membersVoting": "Membros, votação",
+        "allFeatures": "Todos os recursos disponíveis",
+        "confidentialDescription": "Todos os saldos, atividades e transferências privados na blockchain. Apenas sua equipe pode ver estas informações. Melhor para empresas privadas, family offices ou equipes que querem privacidade financeira.",
+        "recentTransactionsExport": "Exportação de transações recentes",
+        "bulkPayment": "Pagamento em massa",
+        "treasuryType": "Tipo de tesouraria",
+        "treasuryTypeWarning": "Você só pode selecionar uma vez por tesouraria e não pode alterá-la depois.",
+        "select": "Selecionar",
+        "visibleOnChain": "Visível na chain",
+        "featuresAvailable": "Recursos disponíveis",
+        "mostFeaturesSupported": "A maioria dos recursos é suportada",
+        "reviewTreasury": "Revisar tesouraria",
+        "membersLabel": "Membros",
+        "financialThreshold": "Limite financeiro",
+        "governanceThreshold": "Limite de governança",
+        "noDeploymentFee": "🎉 Sem taxa de implantação",
+        "noDeploymentFeeDescription": "Para apoiar novos projetos, a TREZU cobre todas as taxas únicas de implantação e armazenamento de rede.",
+        "createButton": "Criar tesouraria",
+        "connectWalletCreate": "Conecte a carteira para criar a tesouraria",
+        "unexpectedError": "Ocorreu um erro inesperado",
+        "creationFailed": "Falha ao criar tesouraria. Por favor, tente novamente.",
+        "stepTitles": {
+            "aboutYou": "Sobre você",
+            "details": "Detalhes",
+            "members": "Membros",
+            "treasuryType": "Tipo de tesouraria",
+            "review": "Revisar"
+        },
+        "steps": {
+            "creatingNear": "Criando sua tesouraria na NEAR",
+            "registeringKey": "Registrando chave pública",
+            "settingUpConfidential": "Configurando transações confidenciais",
+            "configuringMembers": "Configurando membros da tesouraria",
+            "finalizingSetup": "Finalizando configuração"
+        }
+    },
+    "manageTreasuries": {
+        "warningOne": "Pelo menos uma tesouraria deve permanecer disponível",
+        "warningOnePeriod": "Pelo menos uma tesouraria deve permanecer disponível.",
+        "activeHeading": "Tesourarias ativas",
+        "activeDescription": "Tesourarias atualmente visíveis na lista das suas contas.",
+        "activeEmpty": "Nenhuma tesouraria ativa.",
+        "hiddenHeading": "Tesourarias ocultas",
+        "hiddenDescription": "Tesourarias ocultas da lista das suas contas.",
+        "removeGuestTitle": "Remover tesouraria de convidado",
+        "removeDialog": "Você está prestes a remover <bold>{name}</bold>. Após confirmada, esta ação não pode ser desfeita.",
+        "tooltips": {
+            "removeFromList": "Remover da sua lista",
+            "viewTreasury": "Ver tesouraria",
+            "hideFromList": "Ocultar da sua lista",
+            "showInList": "Mostrar na sua lista"
+        }
+    },
+    "wallet": {
+        "proposal": {
+            "transfer": "Proposta de dApp externo: Transferir NEAR para {receiverId}",
+            "functionCall": "Proposta de dApp externo: {methods} em {receiverId}",
+            "unsupportedAction": "Tipo de ação não suportado \"{type}\". Apenas ações Transfer e FunctionCall podem ser convertidas em propostas Trezu."
+        },
+        "loading": "Carregando...",
+        "connectPrompt": "Conecte sua carteira NEAR para continuar. Em seguida, você selecionará uma tesouraria para agir em nome dela.",
+        "connectWallet": "Conectar carteira",
+        "cancel": "Cancelar",
+        "connectedAs": "Conectado como <strong>{account}</strong>",
+        "loadingTreasuries": "Carregando tesourarias...",
+        "selectSignIn": "Selecione uma tesouraria para fazer login como:",
+        "selectSignTx": "Selecione uma tesouraria para criar uma proposta:",
+        "notMember": "Você não é membro de nenhuma tesouraria.",
+        "actingAs": "Agindo como",
+        "signedBy": "Assinado por {account}",
+        "createsNProposals": "Isto criará {count, plural, one {uma proposta Trezu} other {# propostas Trezu}} para:",
+        "proposalDescriptionLabel": "Descrição da proposta (opcional)",
+        "proposalDescriptionPlaceholder": "Descreva esta proposta...",
+        "createProposal": "Criar proposta",
+        "creatingProposal": "Criando proposta...",
+        "confirmInWallet": "Por favor, confirme na sua carteira",
+        "proposalSubmitted": "Proposta enviada",
+        "shareProposal": "Sua proposta foi criada. Compartilhe o link abaixo com os membros da tesouraria para votarem.",
+        "proposalLink": "{daoId} — Proposta nº {id}",
+        "checking": "Verificando...",
+        "proposalApprovedProceed": "A proposta foi aprovada. Continuar",
+        "signedInSuccess": "Login realizado com sucesso",
+        "proposalCreatedSuccess": "Proposta criada com sucesso",
+        "closeWindow": "Você pode fechar esta janela.",
+        "errorGeneric": "Ocorreu um erro",
+        "tryAgain": "Tentar novamente",
+        "errors": {
+            "parseTx": "Falha ao analisar a solicitação de transação. Por favor, tente novamente.",
+            "fetchTreasuries": "Falha ao buscar suas tesourarias. Por favor, tente novamente.",
+            "connectFailed": "Falha ao conectar carteira",
+            "createProposalFailed": "Falha ao criar proposta",
+            "stillPending": "A proposta ainda está pendente de aprovação. Por favor, aguarde os membros da tesouraria votarem.",
+            "wasStatus": "Proposta nº {id} foi {status}",
+            "awaitIndex": "A proposta foi aprovada, mas a transação de execução ainda não foi indexada. Por favor, tente novamente em um momento.",
+            "checkStatusFailed": "Falha ao verificar o status da proposta",
+            "userCancelled": "Usuário cancelou",
+            "proposalWasStatus": "A proposta foi {status}"
+        }
+    },
+    "telegram": {
+        "tagPill": "Telegram",
+        "invalidLinkTitle": "Link inválido",
+        "invalidLinkDescription": "Este link de conexão do Telegram não tem token. Clique novamente em Conectar Tesouraria no Telegram para gerar um link novo.",
+        "successTitle": "Conectado com sucesso",
+        "successDescription": "As tesourarias foram vinculadas a este chat do Telegram.",
+        "successToast": "Tesourarias conectadas com sucesso",
+        "goToApp": "Ir para o app",
+        "linkExpiredTitle": "Link expirado",
+        "linkExpiredDescription": "Este link expirou ou já foi usado. No Telegram, digite o comando abaixo para reiniciar o fluxo de conexão.",
+        "commandCopied": "Comando copiado",
+        "copy": "Copiar",
+        "unableToLoadTitle": "Não foi possível carregar o chat",
+        "unableToLoadDescription": "Os detalhes do chat não puderam ser carregados agora. Por favor, tente novamente pelo Telegram.",
+        "signInTitle": "Faça login para continuar",
+        "signInDescription": "Conecte sua carteira NEAR primeiro e depois escolha quais tesourarias vincular a este chat do Telegram.",
+        "connectWallet": "Conectar carteira",
+        "selectTreasuriesTitle": "Selecionar tesourarias",
+        "selectTreasuriesDescription": "Escolha quais tesourarias conectar a este chat do Telegram.",
+        "telegramChat": "Chat do Telegram",
+        "chatIdFallback": "Chat nº {id}",
+        "failedToConnect": "Falha ao conectar tesourarias. Por favor, tente novamente.",
+        "relinking": "{count, plural, one {# tesouraria selecionada está vinculada a outro chat do Telegram. Conectar fará a reconexão e alterará o link do ID do chat para este chat.} other {# tesourarias selecionadas estão vinculadas a outros chats do Telegram. Conectar fará a reconexão e alterará os links de ID do chat para este chat.}}",
+        "alreadyConnected": "Já conectada a este chat",
+        "connectedToAnother": "Conectada a outro chat",
+        "notMember": "Você não é membro de nenhuma tesouraria.",
+        "connecting": "Conectando…",
+        "connect": "Conectar",
+        "settings": {
+            "title": "Telegram",
+            "connectedTo": "Conectado a {chat}",
+            "chatNumber": "Chat nº {id}",
+            "fallbackChat": "um chat do Telegram",
+            "disconnect": "Desconectar",
+            "connect": "Conectar",
+            "connectHeadline": "Conectar Telegram à tesouraria",
+            "connectDescription": "Receba avisos sobre novas solicitações, ativos recebidos na tesouraria e mais.",
+            "noTreasuryDescription": "Vincule suas tesourarias a um chat do Telegram.",
+            "openSettingsHint": "Abra as configurações em uma tesouraria para gerenciar integrações.",
+            "disconnectedToast": "Telegram desconectado para esta tesouraria",
+            "disconnectFailedToast": "Não foi possível desconectar o Telegram. Tente novamente.",
+            "telegramDisconnect": {
+                "title": "Desconectar bot do Telegram",
+                "body": "Se você desconectar, não receberá mais notificações no bot para esta tesouraria. Você pode reconectar a qualquer momento.",
+                "action": "Desconectar"
+            }
+        },
+        "connectInstructions": {
+            "title": "Conecte sua conta do Telegram ao Trezu",
+            "subtitle": "Siga estas etapas para ativar notificações desta tesouraria no Telegram.",
+            "step1": "Adicione {bot} ao seu grupo ou canal do Telegram.",
+            "step2": "No Telegram, toque em \"Conectar Tesouraria\" (ou use o fluxo de conexão do bot quando for solicitado).",
+            "step3": "Entre na web, autorize e selecione quais tesourarias conectar a este chat, incluindo esta.",
+            "doneHint": "Você termina quando o navegador mostrar que suas tesourarias foram vinculadas com sucesso.",
+            "copyBotTooltip": "Copiar usuário do bot",
+            "botCopiedToast": "Usuário do bot copiado",
+            "openInTelegram": "Abrir {bot} no Telegram"
+        }
+    },
+    "systemStatus": {
+        "underMaintenance": "Em manutenção",
+        "maintenanceMessage": "Estamos realizando manutenção no momento. Alguns recursos podem ficar temporariamente indisponíveis. Por favor, volte em breve."
+    },
+    "creditsQuota": {
+        "available": "{count} disponíveis",
+        "used": "{count} usados",
+        "resetOn": "O limite será redefinido em {date}"
+    },
+    "approvalInfo": {
+        "infoText": "Votos necessários para aprovar solicitações relacionadas a pagamentos. Editável nas configurações de votação.",
+        "thresholdPill": "Limite {required} de {total}",
+        "alertBody": "Este pagamento exigirá aprovação de <bold>{required}</bold> membros da tesouraria antes da execução."
+    },
+    "guestBadge": {
+        "title": "Convidado",
+        "tooltip": "Você é um convidado desta tesouraria. Você só pode ver os dados."
+    },
+    "exportButton": {
+        "confidentialTooltip": "A exportação ainda não está disponível no modo confidencial. Este recurso está chegando em breve!"
+    },
+    "sponsoredActions": {
+        "titleExhausted": "Ações patrocinadas usadas",
+        "titleAlmost": "Sua equipe está quase sem ações patrocinadas",
+        "closeNotice": "Fechar aviso",
+        "teamUsage": "Uso da equipe: {total} ações por mês",
+        "available": "{count} disponíveis",
+        "used": "{count} usadas",
+        "exhaustedBody": "Sua equipe atingiu o limite mensal de ações patrocinadas. Você pode continuar após {date} ou entre em contato conosco",
+        "almostBody": "A TREZU atualmente patrocina os custos de armazenamento de todas as ações da equipe, como criar solicitações e votar nelas. Sua equipe está perto de atingir o limite mensal patrocinado.",
+        "contactUs": "Fale conosco",
+        "nextMonthlyReset": "sua próxima redefinição mensal",
+        "sidebarBody": "Sua equipe atingiu o limite mensal de ações patrocinadas. Você pode continuar após {date} ou ⬇️"
+    },
+    "acceptTerms": {
+        "title": "Aceite os termos para continuar",
+        "privacyTitle": "Sua privacidade na Trezu",
+        "privacyBody": "A Trezu é uma interface não custodial. Priorizamos sua privacidade ao mesmo tempo em que garantimos que a plataforma permaneça segura e funcional.",
+        "minimalTitle": "Dados mínimos",
+        "minimalBody": "Coletamos informações limitadas, como endereços públicos de carteira, endereços IP e análises de uso, para operar e melhorar a Interface.",
+        "noCustodyTitle": "Sem custódia",
+        "noCustodyBody": "Nunca temos acesso às suas chaves privadas, frases de recuperação ou ativos digitais.",
+        "publicTitle": "Registros públicos",
+        "publicBody": "Lembre-se de que todas as transações em blockchain são inerentemente públicas e não são controladas por nós.",
+        "responsibilityTitle": "Sua responsabilidade",
+        "responsibilityBody": "Você é o único responsável por monitorar a atividade da sua carteira e proteger suas credenciais.",
+        "futureTitle": "Atualizações futuras",
+        "futureBody": "Se você optar por receber notificações futuras (como e-mail ou Telegram), usaremos esses dados apenas para mantê-lo informado.",
+        "agreement": "Eu li e concordo com os <terms>Termos de Serviço</terms> e a <privacy>Política de Privacidade</privacy>",
+        "accepting": "Aceitando...",
+        "continue": "Continuar"
+    },
+    "confidentialBanner": {
+        "label": "Confidencial",
+        "description": "Saldos, atividades e transferências são visíveis apenas para sua equipe — não para a blockchain pública."
+    },
+    "supportCenter": {
+        "title": "Central de suporte",
+        "resources": "Recursos",
+        "support": "Suporte",
+        "websiteTitle": "Site da Trezu",
+        "websiteDescription": "Saiba mais sobre a Trezu e leia nosso blog.",
+        "demo": "Demo da Trezu",
+        "demoTitle": "Explore a versão pública",
+        "demoDescription": "Veja uma conta pública ao vivo em ação.",
+        "confidentialDemoTitle": "Explore a versão confidencial",
+        "confidentialDemoDescription": "Explore uma conta confidencial ao vivo em ação.",
+        "videoTitle": "Assista à demonstração",
+        "videoDescription": "Assista a um vídeo curto mostrando como a Trezu funciona.",
+        "xTitle": "Siga-nos no X",
+        "xDescription": "Mantenha-se atualizado com nossos lançamentos e novidades.",
+        "statsTitle": "Estatísticas",
+        "statsDescription": "Veja o total de ativos sob gestão em todos os DAOs sputnik.",
+        "docsTitle": "Documentação",
+        "docsDescription": "Conheça todos os recursos na documentação.",
+        "productSupportTitle": "Suporte ao produto",
+        "productSupportDescription": "Entre em contato com nossa equipe de suporte para obter ajuda."
+    },
+    "progressModal": {
+        "titleCreating": "Criando tesouraria...",
+        "titleDone": "Tesouraria criada",
+        "titleFailed": "Falha na criação da tesouraria",
+        "viewTreasury": "Ver tesouraria"
+    },
+    "memberValidation": {
+        "noManagePermission": "Você não tem permissão para gerenciar membros",
+        "pendingRequest": "Você não pode gerenciar membros enquanto houver uma solicitação ativa",
+        "rolesAnd": "{first} e {second}",
+        "rolesMany": "{list} e {last}",
+        "cannotRemoveMember": "Não é possível remover este membro. Ele é a única pessoa atribuída à {count, plural, one {função} other {funções}} {roles}.",
+        "cannotRemoveMemberGov": "Não é possível remover este membro. Ele é a única pessoa atribuída à {count, plural, one {função {roles}, que é necessária} other {funções {roles}, que são necessárias}} para gerenciar membros da equipe e configurar a votação.",
+        "cannotBulkRemove": "Não é possível remover estes membros. Isso deixaria a {count, plural, one {função} other {funções}} {roles} vazia.",
+        "cannotBulkRemoveGov": "Não é possível remover estes membros. Isso deixaria a {count, plural, one {função {roles}, que é necessária} other {funções {roles}, que são necessárias}} vazia, necessária para gerenciar membros da equipe e configurar a votação.",
+        "cannotRemoveRole": "Você não pode remover a função {role} deste membro. Ele é a única pessoa atribuída a esta função.",
+        "cannotRemoveRoleGov": "Você não pode remover a função {role} deste membro. Ele é o único membro {role}, e sem esta função você não poderá gerenciar membros da equipe nem configurar a votação."
+    },
+    "roleSelector": {
+        "setRole": "Definir função",
+        "allRoles": "Todas as funções",
+        "roles": {
+            "governance": {
+                "title": "Governança",
+                "description": "A Governança pode criar e votar nas configurações da tesouraria relacionadas à equipe, incluindo membros, permissões e aparência da tesouraria."
+            },
+            "requestor": {
+                "title": "Solicitante",
+                "description": "O Solicitante pode criar solicitações de transação relacionadas a pagamentos, sem direitos de voto ou aprovação."
+            },
+            "financial": {
+                "title": "Financeiro",
+                "description": "O Financeiro pode votar em solicitações de transação relacionadas a pagamentos, mas não pode criá-las."
+            }
+        }
+    },
+    "memberInput": {
+        "creatorYou": "Criador (você)",
+        "memberAddress": "Endereço do membro",
+        "addNewMember": "Adicionar novo membro",
+        "validation": {
+            "rolesRequired": "Pelo menos uma função é obrigatória",
+            "duplicateAddress": "O endereço já é membro"
+        }
+    },
+    "recipientInput": {
+        "title": "Para",
+        "placeholder": "Endereço do destinatário"
+    },
+    "accountInput": {
+        "failedValidation": "Falha ao validar o endereço",
+        "invalidNearFormat": "Formato de conta NEAR inválido",
+        "invalidChainAddress": "Por favor, insira um endereço {chain} válido.",
+        "validating": "Validando endereço...",
+        "validAddress": "Endereço válido",
+        "placeholderWithExample": "Endereço do destinatário (ex.: {example})",
+        "placeholderNoExample": "Endereço do destinatário",
+        "nearExample": "alice.near, 0x... ou hex de 64 caracteres",
+        "near": {
+            "required": "O endereço é obrigatório",
+            "length": "O endereço deve ter entre 2 e 64 caracteres",
+            "missingTld": "Contas nomeadas devem terminar com .near, .aurora ou .tg",
+            "invalidChars": "O endereço só pode conter letras minúsculas, dígitos e separadores (., -, _)",
+            "accountMissing": "A conta não existe na blockchain NEAR",
+            "verifyFailed": "Falha ao verificar a existência da conta"
+        }
+    },
+    "csvUpload": {
+        "uploadFile": "Enviar arquivo",
+        "provideData": "Fornecer dados",
+        "chooseFile": "Escolher arquivo",
+        "orDragDrop": "ou arraste e solte",
+        "maxFileSize": "máx. 1 arquivo de até {maxSize} MB, somente arquivo CSV",
+        "noFilePrompt": "Não tem um arquivo para enviar?",
+        "downloadTemplate": "Baixar um modelo"
+    },
+    "tokenSelect": {
+        "selectToken": "Selecionar token",
+        "searchPlaceholder": "Buscar tokens...",
+        "noTokensFound": "Nenhum token encontrado"
+    },
+    "filterOperations": {
+        "is": "É",
+        "isNot": "Não é",
+        "before": "Antes",
+        "after": "Depois",
+        "between": "Entre",
+        "equal": "Igual",
+        "moreThan": "Mais que",
+        "lessThan": "Menos que",
+        "contains": "Contém"
+    },
+    "copyButton": {
+        "copied": "Copiado para a área de transferência",
+        "failed": "Falha ao copiar"
+    },
+    "recipientForm": {
+        "validation": {
+            "nameRequired": "O nome é obrigatório",
+            "nameMax": "O destinatário deve ter menos de {max} caracteres",
+            "addressRequired": "O endereço é obrigatório",
+            "networksRequired": "Selecione pelo menos uma rede"
+        }
+    },
+    "paymentForm": {
+        "validation": {
+            "recipientMin": "O destinatário deve ter pelo menos 2 caracteres",
+            "recipientMax": "O destinatário deve ter menos de 128 caracteres",
+            "amountGreaterThanZero": "O valor deve ser maior que 0",
+            "recipientSameAsToken": "O destinatário e o endereço do token não podem ser iguais",
+            "selectToken": "Por favor, selecione um token",
+            "recipientMax64": "O destinatário deve ter menos de 64 caracteres",
+            "amountMinLockup": "O valor deve ser maior ou igual a 3,5",
+            "startDateRequired": "A data de início é obrigatória",
+            "endDateRequired": "A data de término é obrigatória",
+            "cliffDateRequired": "A data do cliff é obrigatória",
+            "startBeforeEnd": "A data de início deve ser anterior à data de término",
+            "cliffBetween": "A data do cliff deve estar entre {start} e {end}"
+        }
+    },
+    "exportToasts": {
+        "downloadFailed": "Falha ao baixar a exportação",
+        "invalidDateRange": "Intervalo de datas inválido",
+        "invalidDateRangeDescription": "Por favor, selecione um intervalo de datas válido para a exportação.",
+        "exportSuccess": "Exportação bem-sucedida!",
+        "exportSuccessDescription": "Seu arquivo {type} foi baixado. Verifique seu histórico de exportações para mais detalhes.",
+        "exportFailed": "Exportação falhou",
+        "exportFailedFallback": "Falha ao exportar dados. Por favor, tente novamente.",
+        "noDownloadPermission": "Você não tem permissão para baixar o arquivo.",
+        "noExportPermission": "Você não tem permissão para exportar",
+        "quotaUsed": "Você usou toda a sua cota",
+        "exporting": "Exportando...",
+        "export": "Exportar",
+        "columnSubmissionTime": "Data de envio",
+        "columnDateRange": "Intervalo de datas",
+        "columnGeneratedBy": "Gerado por",
+        "columnStatus": "Status",
+        "typeAll": "Todos os tipos",
+        "typeSent": "Enviadas",
+        "typeReceived": "Recebidas",
+        "typeStakingRewards": "Recompensas de staking",
+        "allAssets": "Todos os ativos",
+        "upgradeTrial": "Faça upgrade do seu plano para obter mais e continuar",
+        "upgradePaid": "Faça upgrade do seu plano para mais acesso ou aguarde até que seus limites sejam redefinidos no próximo mês.",
+        "selectDateRange": "Selecionar intervalo de datas",
+        "noExportsTitle": "Nenhuma exportação ainda",
+        "noExportsDescription": "Seus arquivos exportados do último mês aparecerão aqui assim que forem gerados.",
+        "quotaTitle": "Cota de exportação",
+        "unlimited": "Ilimitado",
+        "creditsPerMonth": "{total} / mês",
+        "requirementsTitle": "Requisitos de exportação",
+        "exportFromPeriod": "Você pode exportar dados do {period}.",
+        "availableFor48Hours": "Os arquivos exportados ficam disponíveis para download por 48 horas.",
+        "moreFlexibility": "Procurando mais flexibilidade?",
+        "contactUs": "Fale conosco",
+        "last1Year": "Último 1 ano",
+        "last2Years": "Últimos 2 anos",
+        "invalidEmail": "Por favor, insira um e-mail válido"
+    },
+    "proposalKinds": {
+        "Batch Payment Request": "Solicitação de pagamento em lote",
+        "Payment Request": "Solicitação de pagamento",
+        "Confidential Request": "Solicitação confidencial",
+        "Exchange": "Troca",
+        "Function Call": "Chamada de função",
+        "Change Policy": "Alterar política",
+        "Update General Settings": "Atualizar configurações gerais",
+        "Earn NEAR": "Ganhar NEAR",
+        "Unstake NEAR": "Desfazer stake de NEAR",
+        "Vesting": "Vesting",
+        "Withdraw Earnings": "Retirar ganhos",
+        "Members": "Membros",
+        "Upgrade": "Atualizar",
+        "Set Staking Contract": "Definir contrato de staking",
+        "Bounty": "Recompensa",
+        "Vote": "Voto",
+        "Factory Info Update": "Atualização de informações da fábrica",
+        "Unsupported": "Não suportado"
+    },
+    "paymentFormSection": {
+        "selectRecipient": "Selecionar destinatário",
+        "searchByNameOrAddress": "Buscar por nome ou endereço",
+        "restrictedRecipientTitle": "Transação não permitida",
+        "restrictedRecipientMessage": "Este endereço está atualmente restrito devido a verificações de segurança. Se você acredita que este endereço deve ser permitido, pode <link>solicitar a inclusão na lista de permissões</link>.",
+        "send": "Enviar",
+        "to": "Para"
+    },
+    "recipientNetworkSelect": {
+        "label": "Rede do destinatário",
+        "placeholder": "Selecionar rede do destinatário",
+        "enterAddressFirst": "Insira primeiro o endereço do destinatário",
+        "noCompatibleNetwork": "Nenhuma rede corresponde a este endereço",
+        "selectPlaceholder": "Selecionar rede",
+        "title": "Selecionar rede",
+        "available": "Disponível",
+        "fromAddressBook": "Do catálogo de endereços",
+        "otherAvailable": "Outras disponíveis",
+        "incompatible": "Incompatível",
+        "comingSoon": "Em breve",
+        "forMembersOnly": "Apenas para membros",
+        "nearComName": "near.com",
+        "nearComDescription": "Rede interna para near.com e trezu"
+    },
+    "addressBookTable": {
+        "emptyTitle": "Nenhum destinatário ainda",
+        "emptyDescription": "Adicione destinatários a este catálogo de endereços para pagamentos mais rápidos.",
+        "selectAll": "Selecionar todos os destinatários",
+        "selectEntry": "Selecionar {name}",
+        "recipient": "Destinatário",
+        "network": "Rede",
+        "addedBy": "Adicionado por",
+        "note": "Nota",
+        "added": "Adicionado",
+        "remove": "Remover",
+        "send": "Enviar"
+    },
+    "publicDashboard": {
+        "updatesDaily": "Atualiza diariamente",
+        "noDataTitle": "Sem dados ainda",
+        "noDataDescription": "As estatísticas aparecerão após o primeiro snapshot diário ser computado.",
+        "assetsSecured": "Ativos protegidos com o contrato Sputnik DAO",
+        "acrossDaos": "Em <bold>{count, plural, one {# DAO} other {# DAOs}}</bold>",
+        "updatedOn": "Atualizado em {date}",
+        "topAssets": "Top 20 ativos",
+        "noAssetsTitle": "Nenhum ativo ainda",
+        "noAssetsDescription": "Os dados de tokens aparecerão assim que o snapshot diário for computado.",
+        "tableToken": "Token",
+        "tableTotalValue": "Valor total"
+    },
+    "transactionHashCell": {
+        "copyHash": "Copiar hash",
+        "hashCopied": "Hash copiado",
+        "openInExplorer": "Abrir no explorador"
+    },
+    "treasurySelector": {
+        "select": "Selecionar tesouraria",
+        "connectWalletTooltip": "Conecte a carteira para ver as tesourarias",
+        "manageTreasuries": "Gerenciar tesourarias",
+        "createTreasury": "Criar tesouraria",
+        "memberOf": "Membro de",
+        "guestTreasuries": "Tesourarias de convidado"
+    },
+    "selectModal": {
+        "searchByName": "Buscar por nome",
+        "noResults": "Nenhum resultado encontrado"
+    },
+    "selectList": {
+        "noResults": "Nenhum resultado encontrado"
+    },
+    "datePicker": {
+        "pickDate": "Escolher uma data",
+        "timezone": "Fuso horário"
+    },
+    "datePresets": {
+        "today": "Hoje",
+        "yesterday": "Ontem",
+        "last3Days": "Últimos 3 dias",
+        "last7Days": "Últimos 7 dias",
+        "last14Days": "Últimos 14 dias",
+        "lastMonth": "Último mês",
+        "last3Months": "Últimos 3 meses",
+        "last6Months": "Últimos 6 meses"
+    },
+    "input": {
+        "openSearch": "Abrir busca"
+    },
+    "pagination": {
+        "previous": "Anterior",
+        "next": "Próximo"
+    },
+    "confidentialState": {
+        "title": "Confidencial",
+        "description": "Apenas membros da tesouraria têm acesso."
+    },
+    "exchangeRate": {
+        "rate": "Taxa",
+        "clickToReverse": "Clique para inverter a taxa"
+    },
+    "exchangeSettings": {
+        "title": "Configurações de troca",
+        "slippageTolerance": "Tolerância de slippage",
+        "custom": "Personalizado",
+        "customPlaceholder": "ex: 2%",
+        "slippageRange": "O slippage deve estar entre 0,01% e 100%",
+        "enterSlippage": "Por favor, insira uma tolerância de slippage",
+        "slippageHelp": "Se o preço mudar mais que esta porcentagem, a transação será cancelada para proteger seus fundos.",
+        "save": "Salvar"
+    },
+    "assetsPage": {
+        "title": "Ativos",
+        "noAssetsTitle": "Nenhum ativo ainda",
+        "noAssetsDescription": "Para começar, adicione ativos à sua tesouraria fazendo um depósito."
+    },
+    "newBadge": {
+        "label": "Novo"
+    },
+    "numberBadge": {
+        "pendingRequests": "{count, plural, one {# solicitação pendente} other {# solicitações pendentes}}"
+    },
+    "balanceWithGraph": {
+        "allTokens": "Todos os tokens",
+        "deposit": "Depositar",
+        "send": "Enviar",
+        "exchange": "Trocar",
+        "chartNow": "Agora",
+        "totalBalance": "Saldo total",
+        "excludedTokens": "Tokens excluídos:",
+        "noPriceHistory": "Sem histórico de preços. Selecione um token para ver as variações de saldo dele.",
+        "bucketAvailable": "Disponível",
+        "bucketLocked": "Bloqueado",
+        "bucketEarning": "Rendendo",
+        "period": {
+            "1W": "1S",
+            "1M": "1M",
+            "3M": "3M",
+            "1Y": "1A"
+        }
+    },
+    "changePolicyExpanded": {
+        "proposalBond": "Bond da proposta",
+        "proposalPeriod": "Período da proposta",
+        "bountyBond": "Bond da recompensa",
+        "bountyForgivenessPeriod": "Período de perdão da recompensa",
+        "votesCount": "{count} votos",
+        "weightKind": "Tipo de peso",
+        "quorum": "Quórum",
+        "threshold": "Limite",
+        "defaultThreshold": "Limite padrão",
+        "roleThreshold": "Limite de {role}",
+        "member": "Membro",
+        "members": "Membros",
+        "permissions": "Permissões",
+        "oldPermissions": "Permissões antigas",
+        "newPermissions": "Novas permissões",
+        "category": "Categoria",
+        "transactionDetails": "Detalhes da transação",
+        "addNewMember": "Adicionar novo membro",
+        "addNewMembers": "Adicionar novos membros",
+        "removeMember": "Remover membro",
+        "removeMembers": "Remover membros",
+        "updateMemberPermissions": "Atualizar permissões do membro",
+        "updateMembersPermissions": "Atualizar permissões dos membros",
+        "memberIndex": "Membro {index}",
+        "membersCount": "{count} membros",
+        "collapseAll": "Recolher tudo",
+        "expandAll": "Expandir tudo",
+        "loadingHistorical": "Carregando política histórica...",
+        "unableToDiff": "Não é possível calcular as diferenças para esta proposta.",
+        "noChangesCurrent": "Nenhuma alteração detectada — a política proposta é idêntica à política atual.",
+        "noChangesHistorical": "Nenhuma alteração detectada — a política proposta é idêntica à política histórica."
+    },
+    "balanceChart": {
+        "usdValue": "Valor em USD",
+        "tokenBalance": "Saldo do token",
+        "emptyTitle": "Nada para mostrar ainda",
+        "emptyDescription": "Adicione ativos para começar a acompanhar seu portfólio."
+    },
+    "user": {
+        "saveToAddressBook": "Salvar no catálogo de endereços",
+        "walletCopiedToast": "Endereço da carteira copiado para a área de transferência",
+        "copyWalletAddress": "Copiar endereço da carteira"
+    },
+    "infoDisplay": {
+        "viewLess": "Ver menos",
+        "viewAllDetails": "Ver todos os detalhes"
+    },
+    "amountSummary": {
+        "defaultTitle": "Você está enviando um total de"
+    },
+    "residency": {
+        "vestedToken": "Token liberado",
+        "staked": "Em staking",
+        "fungibleToken": "Token fungível",
+        "intentsToken": "Token de Intents",
+        "nativeToken": "Token nativo"
+    },
+    "exchangeErrors": {
+        "noRoute": "Nenhuma troca encontrada. Tente um valor menor ou um token diferente.",
+        "amountTooLow": "Valor muito baixo para o swap. Swaps multichain exigem um mínimo maior para cobrir as taxas de rede.",
+        "insufficientBalance": "Saldo insuficiente para este swap.",
+        "networkError": "Erro de rede. Por favor, verifique sua conexão e tente novamente.",
+        "fetchFailed": "Falha ao obter cotação"
+    },
+    "tokenSelectDialog": {
+        "selectToken": "Selecionar token",
+        "selectAsset": "Selecionar ativo",
+        "selectNetworkFor": "Selecionar rede para {asset}",
+        "searchByName": "Buscar por nome",
+        "noTokensWithBalance": "Nenhum token com saldo encontrado",
+        "noTokensFound": "Nenhum token encontrado",
+        "yourAssets": "Seus ativos",
+        "otherAssets": "Outros ativos",
+        "networksWithAssets": "Redes com ativos",
+        "supportedNetworks": "Redes suportadas",
+        "comingSoon": "Em breve"
+    },
+    "intentsQuote": {
+        "initializing": "O serviço de cotação ainda está inicializando. Por favor, tente novamente.",
+        "noRoute": "Não foi possível preparar uma rota de pagamento agora. Por favor, tente novamente.",
+        "fetchFailed": "Não foi possível preparar uma rota de pagamento agora. Por favor, tente novamente.",
+        "amountTooLow": "O valor é muito baixo para cobrir as taxas de rede. Insira um valor maior e tente novamente.",
+        "amountTooLowWithMin": "O valor é muito baixo para cobrir as taxas de rede. Insira pelo menos {min} {token}.",
+        "networkFeeTooltip": "Esta taxa é usada para processar a transação na chain selecionada."
+    },
+    "pageTours": {
+        "paymentsBulk": "A criação em massa chegou! Crie várias solicitações em apenas alguns passos.",
+        "paymentsPending": "Veja aqui as solicitações que aguardam aprovação.",
+        "exchangeSettings": "Aqui você pode definir quanta variação de preço está disposto a aceitar.",
+        "membersPending": "Clique para ver solicitações ativas aguardando aprovação.",
+        "guestSaveIntro": "Você é um convidado desta tesouraria. Você só pode ver os dados.",
+        "guestSaveAction": "Você pode salvar esta tesouraria de convidado na sua lista de tesourarias.",
+        "newFeatureRich": "Novo! 🎉 Salve endereços usados com frequência para pagamentos mais rápidos e sem erros. Seus contatos permanecem privados e visíveis apenas para sua equipe.",
+        "newFeatureCta": "Experimente"
+    },
+    "statusDate": {
+        "expires": "Expira",
+        "created": "Criada",
+        "expired": "Expirou",
+        "removed": "Removida"
+    },
+    "relativeTime": {
+        "justNow": "Agora mesmo",
+        "moments": "instantes"
+    },
+    "amount": {
+        "network": "Rede: {network}"
+    },
+    "activityLabels": {
+        "exchangePending": "Troca pendente",
+        "exchangeRequest": "Solicitação de troca",
+        "exchangeFulfillment": "Conclusão da troca",
+        "stakingRewards": "Recompensas de staking",
+        "proposalAction": "Ação da proposta",
+        "deposit": "Depósito de {symbol}",
+        "paymentSent": "Pagamento enviado",
+        "transaction": "Transação",
+        "fallbackToken": "Token",
+        "viaIntents": "via NEAR Intents",
+        "from": "de {account}",
+        "to": "para {account}",
+        "viewAll": "Ver todo o seu histórico de transações",
+        "sentReceived": "Transações enviadas e recebidas ({duration})",
+        "unlimitedHistory": "histórico ilimitado",
+        "oneYear": "1 ano",
+        "yearsCount": "{count} anos",
+        "monthsCount": "{count} meses",
+        "lastDuration": "últimos {duration}"
+    },
+    "nearStore": {
+        "connectAndAcceptTerms": "Por favor, conecte a carteira e aceite os termos para continuar.",
+        "transactionNotApproved": "A transação não foi aprovada na sua carteira.",
+        "failedSubmitVote": "Falha ao enviar voto",
+        "failedSubmitVotes": "Falha ao enviar votos",
+        "viewRequest": "Ver solicitação",
+        "proposalRemoved": "Sua proposta foi removida",
+        "voteSubmitted": "Seu voto foi enviado",
+        "votesSubmitted": "Seus votos foram enviados"
+    },
+    "tokenInput": {
+        "max": "MAX",
+        "insufficientTokens": "Tokens insuficientes. Você pode enviar a solicitação e completar o saldo antes da aprovação.",
+        "balance": "Saldo: {amount} {symbol}"
+    },
+    "createRequestButton": {
+        "idle": "Criar solicitação",
+        "noPermission": "Você não tem permissão para criar uma solicitação"
+    },
+    "address": {
+        "copied": "Endereço copiado para a área de transferência"
+    },
+    "memberAvatars": {
+        "membersWhoCanVote": "Membros que podem votar",
+        "moreMembers": "+{count, plural, one {# membro} other {# membros}}"
+    },
+    "accountIdInput": {
+        "minLength": "O ID da conta deve ter pelo menos 2 caracteres",
+        "maxLength": "O ID da conta deve ter menos de 64 caracteres",
+        "charset": "O ID da conta deve conter apenas letras minúsculas, dígitos, pontos, hifens e underscores, sem separadores no início ou no final",
+        "doesNotExist": "O ID da conta não existe"
+    },
+    "addressBookMutations": {
+        "addedToast": "{count, plural, one {Destinatário adicionado} other {# destinatários adicionados}}",
+        "addedSingleToast": "Destinatário adicionado",
+        "addFailedToast": "Falha ao adicionar destinatários",
+        "addSingleFailedToast": "Falha ao adicionar destinatário",
+        "removedToast": "{count, plural, one {Destinatário removido} other {# destinatários removidos}}",
+        "removeFailedToast": "Falha ao remover destinatários",
+        "exportFailedToast": "Falha ao exportar destinatários"
+    },
+    "treasuryMutations": {
+        "savedToast": "Tesouraria salva na sua lista",
+        "saveFailedToast": "Falha ao salvar tesouraria",
+        "hiddenToast": "Tesouraria oculta da lista",
+        "hideFailedToast": "Falha ao ocultar tesouraria",
+        "unhiddenToast": "Tesouraria visível novamente",
+        "unhideFailedToast": "Falha ao reexibir tesouraria",
+        "removedToast": "Tesouraria removida da lista de salvas",
+        "removeFailedToast": "Falha ao remover tesouraria da lista de salvas"
+    },
+    "assetsTable": {
+        "noAssetsFound": "Nenhum ativo encontrado.",
+        "assetDetails": "Detalhes do ativo",
+        "coinPrice": "Preço da moeda",
+        "weight": "Peso",
+        "balance": "Saldo",
+        "lockedBalance": "Saldo bloqueado",
+        "totalBalance": "Saldo total",
+        "source": "Origem",
+        "balanceByInvestors": "Saldo por {count, plural, one {investidor} other {investidores}}",
+        "investors": "{count, plural, one {Investidor} other {Investidores}}",
+        "poolBreakdown": "Detalhamento do pool",
+        "unlockedToken": "Token desbloqueado",
+        "lockupStakingPool": "Pool de staking de lockup",
+        "exchange": "Trocar",
+        "send": "Enviar",
+        "details": "Detalhes",
+        "columnToken": "Token",
+        "columnLocked": "Bloqueado",
+        "columnUnlocked": "Desbloqueado",
+        "columnTotalAllocated": "Total alocado",
+        "columnAvailableToWithdraw": "Disponível para retirada",
+        "viewAvailable": "Disponível",
+        "viewLocked": "Bloqueado",
+        "viewEarning": "Rendendo",
+        "fullAllocatedBalance": "Seu saldo alocado total",
+        "partAllocatedBalance": "Parte do seu saldo alocado",
+        "currentlyEarning": "({amount} {symbol}) está rendendo no momento.",
+        "willAppearHere": " Aparecerá aqui assim que você parar de render.",
+        "seeInEarningTab": "Ver na aba Rendimentos",
+        "seeInEarning": "Ver em Rendimentos"
+    },
+    "earningDetails": {
+        "title": "Detalhes dos rendimentos",
+        "totalStaked": "Total em staking",
+        "earningOverview": "Visão geral dos rendimentos",
+        "poolBreakdown": "Detalhamento do pool ({count, plural, one {# pool} other {# pools}})",
+        "almostReady": "Os rendimentos estão quase prontos!",
+        "finalizingFeature": "Estamos finalizando este recurso<br></br>para que você possa começar a render tokens em breve.",
+        "comingSoon": "Em breve",
+        "goToEarn": "Ir para Ganhar",
+        "readyToWithdraw": "Pronto para retirada",
+        "unstaking": "Desfazendo stake",
+        "overview": {
+            "staked": "Em staking",
+            "stakedInfo": "Tokens atualmente delegados a validadores rendendo recompensas.",
+            "pendingRelease": "Liberação pendente",
+            "pendingReleaseInfo": "Tokens que tiveram o stake desfeito mas ainda estão no período de unbonding (geralmente 2-3 dias).",
+            "availableForWithdraw": "Disponível para retirada",
+            "availableForWithdrawInfo": "Tokens com stake desfeito que concluíram o período de unbonding e podem ser retirados."
+        }
+    },
+    "lockupDetails": {
+        "title": "Detalhes do lockup",
+        "balance": "Saldo",
+        "reservedForStorage": "Reservado para armazenamento",
+        "reservedForStorageInfo": "NEAR reservado pela conta de lockup para pagar os custos de armazenamento.",
+        "tokenBreakdown": "Detalhamento do token",
+        "allocatedAmount": "Valor alocado",
+        "earned": "Ganho",
+        "progress": "Progresso",
+        "unlocked": "Desbloqueado",
+        "locked": "Bloqueado",
+        "schedule": "Cronograma",
+        "startDate": "Data de início",
+        "endDate": "Data de término",
+        "rounds": "Rodadas",
+        "releaseInterval": "Intervalo de liberação",
+        "nextUnlockDate": "Próxima data de desbloqueio",
+        "allEarning": "Todos os {amount} {symbol} do seu lockup estão rendendo no momento.",
+        "partEarning": "Parte do seu lockup ({amount} {symbol}) está rendendo no momento.",
+        "stopEarningFirst": "Para usar tokens desbloqueados, pare de render primeiro e retire-os.",
+        "howGrantWorks": "Como sua concessão funciona",
+        "ftStep1": "Você recebe uma concessão por um período específico. Em vez de obter o valor total de uma vez, os ativos ficam disponíveis em partes ao longo do tempo.",
+        "ftStep2": "Quando chega a data da próxima liberação, essa parcela de tokens é automaticamente desbloqueada e movida para o saldo da sua tesouraria.",
+        "ftStep3": "Assim que aparecem no seu saldo, você pode usá-los imediatamente para pagamentos, transferências ou outras transações.",
+        "nearStep1": "Você recebe uma concessão por um período definido com data de início e término definidas.",
+        "nearStep2": "À medida que os tokens são desbloqueados, eles ficam automaticamente disponíveis no saldo da sua tesouraria.",
+        "nearStep3": "Você pode usar os tokens desbloqueados imediatamente para pagamentos, transferências ou outras transações.",
+        "notAvailable": "N/D",
+        "everyMonth": "Todo mês",
+        "everyQuarter": "Todo trimestre",
+        "everyUnit": "A cada {unit}",
+        "everyMultiple": "A cada {text}",
+        "completed": "Concluído",
+        "unit": {
+            "year": "{count, plural, one {# ano} other {# anos}}",
+            "day": "{count, plural, one {# dia} other {# dias}}",
+            "hour": "{count, plural, one {# hora} other {# horas}}",
+            "minute": "{count, plural, one {# minuto} other {# minutos}}",
+            "second": "{count, plural, one {# segundo} other {# segundos}}"
+        }
+    },
+    "vestingDetails": {
+        "title": "Detalhes do vesting",
+        "availableToUse": "Disponível para uso",
+        "vestingPeriod": "Período de vesting",
+        "vestingPeriodDescription": "Os tokens são desbloqueados diariamente durante este período.",
+        "startDate": "Data de início",
+        "endDate": "Data de término",
+        "tokenBreakdown": "Detalhamento do token",
+        "originalVestedAmount": "Valor original com vesting",
+        "reservedForStorage": "Reservado para armazenamento",
+        "reservedForStorageInfo": "Uma pequena quantidade de tokens necessária para manter o vesting ativo e cobrir os custos de armazenamento.",
+        "percentVested": "{percent}% liberado",
+        "vestedOf": "{vested} de {total} {symbol}",
+        "send": "Enviar"
+    },
+    "earningPoolDetails": {
+        "balance": "Saldo",
+        "apy": "APY",
+        "fee": "Taxa",
+        "notAvailable": "N/D",
+        "lockupStakingPool": "Pool de staking de lockup",
+        "lockupAssetsNote": "Todos os ativos nesta posição são do seu lockup. Após você parar de render, alguns tokens ainda podem ficar bloqueados e indisponíveis — verifique seu cronograma de lockup para ver quando eles são desbloqueados."
+    },
+    "onboardingQuestions": {
+        "stepTitle": "Algumas perguntas rápidas para começar.",
+        "other": "Outro",
+        "placeholders": {
+            "describeRole": "Descreva sua função (opcional)",
+            "describeUseCase": "Descreva seu caso de uso (opcional)",
+            "networkName": "Insira o nome da rede (opcional)",
+            "currentChallenge": "Insira seu desafio atual (opcional)",
+            "describeOther": "Descreva outro (opcional)"
+        },
+        "questions": {
+            "role": "O que melhor descreve sua função?",
+            "useCases": "Para que você planeja usar a Trezu?",
+            "teamSize": "Quantas pessoas vão gerenciar a tesouraria?",
+            "networks": "Quais redes você usa com mais frequência?",
+            "multisigExperience": "Qual é sua experiência com multisig?",
+            "currentTools": "Quais ferramentas você usa atualmente para gerenciar finanças?",
+            "monthlyVolume": "Volume mensal aproximado de transações?",
+            "biggestChallenges": "Qual é seu maior desafio no momento?"
+        },
+        "options": {
+            "role": {
+                "founder": "Fundador",
+                "co-founder": "Cofundador",
+                "cfo-finance-lead": "CFO / Líder financeiro",
+                "operations-manager": "Gerente de operações",
+                "treasury-manager": "Gerente de tesouraria",
+                "other": "Outro"
+            },
+            "useCases": {
+                "team-payroll-grants": "Folha de pagamento e concessões da equipe",
+                "company-assets-management": "Gestão de ativos da empresa",
+                "dao-treasury-management": "Gestão de tesouraria de DAO",
+                "investment-portfolio": "Portfólio de investimentos",
+                "operational-spending": "Gastos operacionais",
+                "other": "Outro"
+            },
+            "teamSize": {
+                "just-me": "Apenas eu",
+                "2-5-people": "2-5 pessoas",
+                "6-15-people": "6-15 pessoas",
+                "15-plus-people": "15+"
+            },
+            "networks": {
+                "near": "NEAR",
+                "bitcoin": "Bitcoin",
+                "ethereum": "Ethereum",
+                "solana": "Solana",
+                "arbitrum": "Arbitrum",
+                "base": "Base",
+                "optimism": "Optimism",
+                "polygon": "Polygon",
+                "gnosis": "Gnosis",
+                "avalanche": "Avalanche",
+                "bnb-chain": "BNB Chain",
+                "other": "Outro"
+            },
+            "multisigExperience": {
+                "never-heard-of-it": "Nunca ouvi falar",
+                "heard-about-it": "Já ouvi falar",
+                "never-used-it": "Nunca usei",
+                "used-gnosis-safe-or-similar": "Usei Gnosis Safe ou similar",
+                "experienced": "Experiente",
+                "looking-for-a-better-option": "Procurando uma opção melhor"
+            },
+            "currentTools": {
+                "gnosis-safe": "Gnosis Safe",
+                "fireblocks": "Fireblocks",
+                "tholos": "Tholos",
+                "squads-multisig": "Squads Multisig",
+                "mpc-vault": "MPC Vault",
+                "other": "Outro"
+            },
+            "monthlyVolume": {
+                "under-10k": "Menos de US$ 10 mil",
+                "10k-100k": "US$ 10 mil - US$ 100 mil",
+                "100k-1m": "US$ 100 mil - US$ 1 milhão",
+                "1m-plus": "US$ 1 milhão+"
+            },
+            "biggestChallenges": {
+                "slow-approvals-and-signing": "Aprovações e assinaturas lentas",
+                "lack-of-transparency-in-the-team": "Falta de transparência na equipe",
+                "hard-to-track-spending-and-balances": "Difícil acompanhar gastos e saldos",
+                "security-and-access-control": "Segurança e controle de acesso",
+                "no-good-web3-tool-yet": "Ainda não há uma boa ferramenta Web3",
+                "looking-for-crypto-earnings": "Estou em busca de rendimentos em cripto",
+                "other": "Outro"
+            }
+        }
+    },
+    "onboarding": {
+        "tour": {
+            "addAssets": "Adicione ativos à sua tesouraria fazendo um depósito.",
+            "makeRequests": "Faça solicitações de pagamento sempre que precisar enviar ativos.",
+            "exchangeAssets": "Aqui você pode trocar seus ativos.",
+            "addMembers": "Adicione membros à sua tesouraria e atribua funções a eles.",
+            "newTreasury": "Quer configurar uma nova tesouraria? Você pode fazer isso aqui em apenas alguns cliques.",
+            "helpSupport": "Obtenha ajuda e suporte sempre que precisar."
+        },
+        "tourCard": {
+            "close": "Fechar",
+            "stepProgress": "{current} de {total}",
+            "gotIt": "Entendi",
+            "done": "Concluído",
+            "next": "Próximo"
+        },
+        "progress": {
+            "title": "Siga passos rápidos para explorar a tesouraria",
+            "createTreasuryTitle": "Criar conta da tesouraria",
+            "createTreasuryDescription": "Você configurou sua conta com sucesso. Ótimo começo!",
+            "addAssetsTitle": "Adicione seus ativos",
+            "addAssetsDescription": "Comece adicionando ativos para vê-los em ação.",
+            "deposit": "Depositar",
+            "createPaymentTitle": "Crie uma solicitação de pagamento",
+            "createPaymentDescription": "Crie uma solicitação de pagamento para concluir sua configuração.",
+            "send": "Enviar"
+        },
+        "welcome": {
+            "heading": "🎉 Bem-vindo!",
+            "subheading": "Faça um tour rápido pela tesouraria",
+            "body": "Olá! Sua Trezu está pronta — comece a construir seu portfólio adicionando ativos das redes suportadas.",
+            "progress": "{current} de {total}",
+            "next": "Próximo",
+            "body2": "Veja como fazer um depósito, criar uma solicitação e configurar uma nova conta.",
+            "noThanks": "Não, obrigado",
+            "letsGo": "Vamos lá"
+        },
+        "congrats": {
+            "heading": "🎉 Parabéns!",
+            "body": "Você concluiu a configuração da sua tesouraria. Aproveite a gestão fácil dos seus ativos.",
+            "letsGo": "Vamos lá!"
+        },
+        "notifications": {
+            "title": "Novo — Notificações",
+            "body": "Mantenha-se informado sobre novas solicitações, votos pendentes e ativos recebidos na tesouraria — basta conectar o bot do Telegram.",
+            "tryIt": "Experimentar",
+            "dismissAria": "Dispensar"
+        },
+        "createBanner": {
+            "close": "Fechar",
+            "title": "Explore a Trezu",
+            "description": "Crie uma conta para desbloquear permissões a todos os recursos e benefícios da Trezu.",
+            "cta": "Criar tesouraria"
+        },
+        "questionnaire": {
+            "continue": "Continuar",
+            "skip": "Pular"
+        },
+        "createPrompt": {
+            "title": "Você está quase pronto",
+            "description": "Sua carteira está conectada, mas você ainda não criou uma tesouraria. Crie uma conta para começar a usar a Trezu, ou {suffix}",
+            "suffixDemo": "veja a demonstração.",
+            "suffixExploring": "continue explorando.",
+            "createCta": "Criar uma tesouraria",
+            "viewDemo": "Ver demonstração",
+            "keepExploring": "Continuar explorando"
+        },
+        "infoBox": {
+            "title": "Aproveite mais a Trezu",
+            "close": "Fechar",
+            "description": "Descubra como outros usam a tesouraria, experimente a demonstração e confira a documentação para conhecer os recursos.",
+            "demoTitle": "Explore a demonstração da Trezu",
+            "demoDescription": "Veja uma conta de demonstração ao vivo em ação.",
+            "docsTitle": "Documentação",
+            "docsDescription": "Conheça todos os recursos na documentação.",
+            "videoTitle": "Assista à demonstração",
+            "videoDescription": "Assista a um vídeo curto mostrando como a Trezu funciona."
+        }
+    }
+}

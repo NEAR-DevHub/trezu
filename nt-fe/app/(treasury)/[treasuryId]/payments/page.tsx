@@ -64,7 +64,7 @@ import {
     encodeToMarkdown,
     formatBalance,
     formatCurrency,
-    formatSmartAmount,
+    formatTokenDisplayAmount,
 } from "@/lib/utils";
 import { isIntentsCrossChainToken, isIntentsToken } from "@/lib/intents-fee";
 import { useIntentsFeeLabels } from "@/lib/intents-fee-labels";
@@ -303,7 +303,7 @@ function Step2({
                 handleBack={handleBack}
             >
                 <AmountSummary
-                    total={formatSmartAmount(totalAmountWithFees)}
+                    total={totalAmountWithFees}
                     totalUSD={estimatedUSDValue.toNumber()}
                     token={token}
                     showNetworkIcon={true}
@@ -336,7 +336,9 @@ function Step2({
                                 />
                                 <div className="flex flex-col gap-[3px] items-end">
                                     <p className="text-xs font-semibold text-wrap break-all">
-                                        {formatSmartAmount(recipientAmount)}{" "}
+                                        {formatTokenDisplayAmount(
+                                            recipientAmount,
+                                        )}{" "}
                                         {token.symbol}
                                     </p>
                                     <p className="text-xxs text-muted-foreground text-wrap break-all">
@@ -363,7 +365,9 @@ function Step2({
                                     </Tooltip>
                                 </div>
                                 <p>
-                                    {formatSmartAmount(displayNetworkFee)}{" "}
+                                    {formatTokenDisplayAmount(
+                                        displayNetworkFee,
+                                    )}{" "}
                                     {token.symbol}
                                 </p>
                             </div>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
+import { getLocaleDirection } from "@/i18n/config";
 import "../globals.css";
 import { AuthProvider } from "@/components/auth-provider";
 import { NearInitializer } from "@/components/near-initializer";
@@ -33,10 +34,12 @@ export default async function TelegramLayout({
 }>) {
     const locale = await getLocale();
     const messages = await getMessages();
+    const dir = getLocaleDirection(locale);
 
     return (
         <html
             lang={locale}
+            dir={dir}
             suppressHydrationWarning
             className={`${geistSans.variable} ${geistMono.variable}`}
         >

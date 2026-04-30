@@ -5,9 +5,14 @@ import type { Tour } from "nextstepjs";
 import { useTranslations } from "next-intl";
 import { useEffect, useCallback, useRef } from "react";
 import { useTreasury } from "@/hooks/use-treasury";
-import { useNear } from "@/stores/near-store";
 import { useResponsiveSidebar } from "@/stores/sidebar-store";
-import { useAddressBook } from "@/features/address-book";
+import {
+    EARN_ANNOUNCEMENT_TOUR_NAME,
+    FEATURE_DEFINITIONS,
+    hasSeenFeature,
+    useFeatureAnnouncementQueueSlot,
+    useFeatureAnnouncementsUnlocked,
+} from "@/features/onboarding/feature-announcement-queue";
 
 type PageTourKey =
     | "paymentsBulk"
@@ -15,8 +20,7 @@ type PageTourKey =
     | "exchangeSettings"
     | "membersPending"
     | "guestSaveIntro"
-    | "guestSaveAction"
-    | "newFeature";
+    | "guestSaveAction";
 
 function PageTourContent({ k }: { k: PageTourKey }) {
     const t = useTranslations("pageTours");
@@ -25,18 +29,8 @@ function PageTourContent({ k }: { k: PageTourKey }) {
 
 function PageTourContentRich({ k }: { k: "newFeature" }) {
     const t = useTranslations("pageTours");
-    return (
-        <>
-            {t.rich(`${k}Rich`, {
-                br: () => <br />,
-            })}
-        </>
-    );
+    return <>{t(`${k}Rich`)}</>;
 }
-
-export const FEATURE_VERSION = 1 as const;
-export const NEW_FEATURE_TOUR_NAME = `NEW_FEATURE_${FEATURE_VERSION}` as const;
-export const NEW_FEATURE_STORAGE_KEY = "new-feature-tour-shown" as const;
 
 // Tour names
 export const PAGE_TOUR_NAMES = {
@@ -45,7 +39,7 @@ export const PAGE_TOUR_NAMES = {
     EXCHANGE_SETTINGS: "exchange-settings",
     MEMBERS_PENDING: "members-pending",
     GUEST_SAVE: "guest-save",
-    NEW_FEATURE: NEW_FEATURE_TOUR_NAME,
+    EARN_ANNOUNCEMENT: EARN_ANNOUNCEMENT_TOUR_NAME,
 } as const;
 
 // Local storage keys
@@ -55,7 +49,6 @@ export const PAGE_TOUR_STORAGE_KEYS = {
     EXCHANGE_SETTINGS_SHOWN: "exchange-settings-tour-shown",
     MEMBERS_PENDING_SHOWN: "members-pending-tour-shown",
     GUEST_SAVE_SHOWN: "guest-save-tour-shown",
-    NEW_FEATURE_SHOWN: NEW_FEATURE_STORAGE_KEY,
 } as const;
 
 // Selector IDs
@@ -66,17 +59,14 @@ export const PAGE_TOUR_SELECTORS = {
     MEMBERS_PENDING_BTN: "#members-pending-btn",
     GUEST_BADGE: "#guest-badge",
     GUEST_SAVE_BTN: "#guest-save-btn",
-    ADDRESS_BOOK_NEW: "#address-book-new",
 } as const;
 
-export const NEW_FEATURE_ANNOUNCEMENT = {
-    version: FEATURE_VERSION,
-    tourName: NEW_FEATURE_TOUR_NAME,
-    storageKey: NEW_FEATURE_STORAGE_KEY,
-    selector: PAGE_TOUR_SELECTORS.ADDRESS_BOOK_NEW,
+export const EARN_ANNOUNCEMENT = {
+    tourName: EARN_ANNOUNCEMENT_TOUR_NAME,
+    selector: "#earn-new",
     ctaLabelKey: "newFeatureCta" as const,
     href: (treasuryId?: string | null) =>
-        treasuryId ? `/${treasuryId}/address-book` : "/address-book",
+        treasuryId ? `/${treasuryId}/earn` : "/earn",
     content: <PageTourContentRich k="newFeature" />,
 } as const;
 
@@ -157,12 +147,12 @@ export const GUEST_SAVE_TOUR: Tour = {
 };
 
 export const NEW_FEATURE_TOUR: Tour = {
-    tour: NEW_FEATURE_ANNOUNCEMENT.tourName,
+    tour: EARN_ANNOUNCEMENT.tourName,
     steps: [
         {
             ...defaultStepProps,
-            content: NEW_FEATURE_ANNOUNCEMENT.content,
-            selector: NEW_FEATURE_ANNOUNCEMENT.selector,
+            content: EARN_ANNOUNCEMENT.content,
+            selector: EARN_ANNOUNCEMENT.selector,
             side: "right",
         },
     ],
@@ -283,25 +273,41 @@ export function usePageTour(
 }
 
 export function useNewFeatureTour(enabled = true) {
-    const { accountId } = useNear();
-    const { data: addressBook } = useAddressBook();
+    const { currentTour } = useNextStep();
+    const hadActiveNewFeatureTour = useRef(false);
+    const featuresUnlocked = useFeatureAnnouncementsUnlocked();
+    const alreadySeen = hasSeenFeature("earn");
 
-    const welcomeDismissed =
-        typeof window !== "undefined" &&
-        localStorage.getItem("welcome-dismissed") === "true";
+    const queueSlot = useFeatureAnnouncementQueueSlot({
+        id: "feature-announcement-earn",
+        priority: 1,
+        eligible: enabled && featuresUnlocked && !alreadySeen,
+    });
+    const releaseQueueSlot = queueSlot.release;
 
-    return usePageTour(
-        NEW_FEATURE_ANNOUNCEMENT.tourName,
-        `${NEW_FEATURE_ANNOUNCEMENT.storageKey}:${accountId ?? "anonymous"}`,
+    const pageTour = usePageTour(
+        EARN_ANNOUNCEMENT.tourName,
+        FEATURE_DEFINITIONS.earn.storageKey,
         {
-            version: NEW_FEATURE_ANNOUNCEMENT.version,
-            enabled:
-                enabled &&
-                welcomeDismissed &&
-                addressBook &&
-                addressBook.length === 0,
+            version: FEATURE_DEFINITIONS.earn.version,
+            enabled: enabled && queueSlot.isActive,
         },
     );
+
+    useEffect(() => {
+        if (currentTour === EARN_ANNOUNCEMENT.tourName) {
+            hadActiveNewFeatureTour.current = true;
+            return;
+        }
+
+        if (!hadActiveNewFeatureTour.current) return;
+        hadActiveNewFeatureTour.current = false;
+        // Keep a short cooldown to avoid lower-priority announcement flash
+        // while route transitions (e.g. clicking "Try It" for Earn).
+        releaseQueueSlot(2000);
+    }, [currentTour, releaseQueueSlot]);
+
+    return pageTour;
 }
 
 /**
