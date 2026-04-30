@@ -281,6 +281,8 @@ pub fn decode_notification_content(
     frontend_base_url: &str,
 ) -> DecodedNotificationContent {
     let default_activity_link = format!("{frontend_base_url}/{dao_id}/dashboard/activity");
+    let exchange_activity_link =
+        format!("{frontend_base_url}/{dao_id}/dashboard/activity?tab=exchange");
     match event_type {
         "add_proposal" => {
             let counterparty = payload
@@ -313,7 +315,7 @@ pub fn decode_notification_content(
                 title,
                 subtitle,
                 action_link: format!("{frontend_base_url}/{dao_id}/requests"),
-                action_text: "Review Proposal".to_string(),
+                action_text: "View Proposals".to_string(),
             }
         }
         "payment" => {
@@ -420,8 +422,8 @@ pub fn decode_notification_content(
                 subtitle: format!(
                     "<b>DAO:</b> {dao_esc}\n{sent_display_esc} {sent_symbol_esc} -&gt; {recv_display_esc} {recv_symbol_esc}"
                 ),
-                action_link: default_activity_link,
-                action_text: "View Swap Details".to_string(),
+                action_link: exchange_activity_link,
+                action_text: "View Activity".to_string(),
             }
         }
         _ => DecodedNotificationContent {
@@ -607,7 +609,11 @@ mod tests {
             decoded.subtitle,
             "<b>DAO:</b> trezu-demo.sputnik-dao.near\n40 USDC -&gt; 0.00061982 BTC"
         );
-        assert_eq!(decoded.action_text, "View Swap Details");
+        assert_eq!(
+            decoded.action_link,
+            "https://app.trezu.app/trezu-demo.sputnik-dao.near/dashboard/activity?tab=exchange"
+        );
+        assert_eq!(decoded.action_text, "View Activity");
     }
 
     #[test]
@@ -637,7 +643,7 @@ mod tests {
             decoded.action_link,
             "https://app.trezu.app/yurtur-treasury.sputnik-dao.near/requests"
         );
-        assert_eq!(decoded.action_text, "Review Proposal");
+        assert_eq!(decoded.action_text, "View Proposals");
     }
 
     fn build_add_proposal_actions(args_json: &str) -> serde_json::Value {
