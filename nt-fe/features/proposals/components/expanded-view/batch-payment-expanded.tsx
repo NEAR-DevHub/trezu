@@ -151,53 +151,41 @@ function PaymentDisplay({
     );
 }
 
-interface BatchPaymentRequestExpandedProps {
-    data: BatchPaymentRequestData;
-    proposal: Proposal;
+interface BatchPaymentExpandedViewProps {
+    /** Resolved token id (e.g. `near` or contract id). */
+    tokenId: string;
+    /** Total amount across all recipients in smallest units. */
+    totalAmount: string;
+    /** Notes — rendered below the table when present. */
+    notes?: string;
+    /** Per-recipient rows. */
+    payments: BatchPayment[];
+    /**
+     * Optional batch id used by the public flow's per-row transaction-hash
+     * lookup. Confidential bulk passes `null` (no on-chain hash to link).
+     */
+    batchId?: string | null;
 }
 
-export function BatchPaymentRequestExpanded({
-    data,
-    proposal,
-}: BatchPaymentRequestExpandedProps) {
+/**
+ * Pure renderer shared by public and confidential bulk-payment expanded views.
+ * Public wrapper feeds it via `useBatchPayment`; confidential wrapper feeds
+ * it via `confidential_metadata.bulk.recipients`.
+ */
+export function BatchPaymentExpandedView({
+    tokenId,
+    totalAmount,
+    notes,
+    payments,
+    batchId,
+}: BatchPaymentExpandedViewProps) {
     const t = useTranslations("proposals.expanded");
     const tIntents = useTranslations("intentsQuote");
     const [expanded, setExpanded] = useState<number[]>([]);
 
-    // Check if we should auto-refetch
-    // Only refetch if proposal is Executed
-    const proposalStatus = getProposalStatus(proposal, {} as Policy);
-    const isExecuted = proposalStatus === "Executed";
-
-    // First fetch to check if there are pending payments
-    const {
-        data: batchData,
-        isLoading,
-        isError,
-    } = useBatchPayment(data.batchId);
-
-    // Determine if we should auto-refetch based on pending payments
-    const hasPendingPayments = batchData?.payments?.some(
-        (payment) => paymentStatusToText(payment.status) === "Pending",
-    );
-
-    // Second fetch with refetch interval if needed
-    const shouldAutoRefetch = isExecuted && hasPendingPayments;
-    const { data: liveBatchData } = useBatchPayment(
-        data.batchId,
-        shouldAutoRefetch ? 5000 : false, // 5 seconds when conditions are met
-    );
-
-    // Use live data if auto-refetching, otherwise use initial data
-    const activeBatchData = shouldAutoRefetch ? liveBatchData : batchData;
-
-    let tokenId = data.tokenId;
-    if (activeBatchData?.tokenId?.toLowerCase() === "native") {
-        tokenId = "near";
-    }
     const { data: tokenData } = useToken(tokenId);
 
-    const representativeRecipient = activeBatchData?.payments[0]?.recipient;
+    const representativeRecipient = payments[0]?.recipient;
     const {
         data: dynamicFeeData,
         isError: hasFeeError,
@@ -213,7 +201,124 @@ export function BatchPaymentRequestExpanded({
         destinationAddress: representativeRecipient,
     });
 
-    // Loading state
+    const hasFeeData =
+        isIntentsCrossChainToken &&
+        !hasFeeError &&
+        !!dynamicFeeData?.networkFee;
+    const totalNetworkFee = hasFeeData
+        ? Big(dynamicFeeData.networkFee).mul(payments.length)
+        : null;
+
+    const onExpandedChanged = (index: number) => {
+        setExpanded((prev) =>
+            prev.includes(index)
+                ? prev.filter((id) => id !== index)
+                : [...prev, index],
+        );
+    };
+
+    const isAllExpanded = expanded.length === payments.length;
+    const toggleAllExpanded = () => {
+        if (isAllExpanded) setExpanded([]);
+        else setExpanded(payments.map((_, index) => index));
+    };
+
+    const items: InfoItem[] = [
+        {
+            label: t("totalAmount"),
+            value: (
+                <Amount showNetwork amount={totalAmount} tokenId={tokenId} />
+            ),
+        },
+        ...(hasFeeData && totalNetworkFee
+            ? [
+                  {
+                      label: t("networkFee"),
+                      info: tIntents("networkFeeTooltip"),
+                      value: `${totalNetworkFee.toString()} ${tokenData?.symbol || ""}`.trim(),
+                  } satisfies InfoItem,
+              ]
+            : []),
+        {
+            label: t("recipients"),
+            value: (
+                <div className="flex gap-3 items-baseline">
+                    <p className="text-sm font-medium">
+                        {t("recipientsCount", { count: payments.length })}
+                    </p>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={toggleAllExpanded}
+                    >
+                        {isAllExpanded ? t("collapseAll") : t("expandAll")}
+                    </Button>
+                </div>
+            ),
+            afterValue: (
+                <div className="flex flex-col gap-1">
+                    {payments.map((payment, index) => (
+                        <PaymentDisplay
+                            tokenId={tokenId}
+                            number={index + 1}
+                            key={index}
+                            payment={payment}
+                            expanded={expanded.includes(index)}
+                            onExpandedClick={() => onExpandedChanged(index)}
+                            batchId={batchId ?? ""}
+                        />
+                    ))}
+                </div>
+            ),
+        },
+    ];
+
+    return (
+        <>
+            <InfoDisplay items={items} />
+            {notes && notes !== "" && (
+                <div className="flex justify-between gap-2 p-3 pt-0 mt-[-10px]">
+                    <p className="text-sm text-muted-foreground">
+                        {t("notes")}
+                    </p>
+                    <p className="text-sm font-medium">{notes}</p>
+                </div>
+            )}
+        </>
+    );
+}
+
+interface BatchPaymentRequestExpandedProps {
+    data: BatchPaymentRequestData;
+    proposal: Proposal;
+}
+
+export function BatchPaymentRequestExpanded({
+    data,
+    proposal,
+}: BatchPaymentRequestExpandedProps) {
+    const t = useTranslations("proposals.expanded");
+
+    const proposalStatus = getProposalStatus(proposal, {} as Policy);
+    const isExecuted = proposalStatus === "Executed";
+
+    const {
+        data: batchData,
+        isLoading,
+        isError,
+    } = useBatchPayment(data.batchId);
+
+    const hasPendingPayments = batchData?.payments?.some(
+        (payment) => paymentStatusToText(payment.status) === "Pending",
+    );
+
+    const shouldAutoRefetch = isExecuted && hasPendingPayments;
+    const { data: liveBatchData } = useBatchPayment(
+        data.batchId,
+        shouldAutoRefetch ? 5000 : false,
+    );
+    const activeBatchData = shouldAutoRefetch ? liveBatchData : batchData;
+
     if (isLoading) {
         return (
             <div className="space-y-6 py-4">
@@ -234,7 +339,6 @@ export function BatchPaymentRequestExpanded({
         );
     }
 
-    // Error state
     if (isError || !activeBatchData) {
         return (
             <EmptyState
@@ -245,99 +349,18 @@ export function BatchPaymentRequestExpanded({
         );
     }
 
-    const hasFeeData =
-        isIntentsCrossChainToken &&
-        !hasFeeError &&
-        !!dynamicFeeData?.networkFee;
-    const totalNetworkFee = hasFeeData
-        ? Big(dynamicFeeData.networkFee).mul(activeBatchData.payments.length)
-        : null;
-
-    const onExpandedChanged = (index: number) => {
-        setExpanded((prev) => {
-            if (prev.includes(index)) {
-                return prev.filter((id) => id !== index);
-            }
-            return [...prev, index];
-        });
-    };
-
-    const isAllExpanded = expanded.length === activeBatchData.payments.length;
-    const toggleAllExpanded = () => {
-        if (isAllExpanded) {
-            setExpanded([]);
-        } else {
-            setExpanded(activeBatchData.payments.map((_, index) => index));
-        }
-    };
-
-    const items: InfoItem[] = [
-        {
-            label: t("totalAmount"),
-            value: (
-                <Amount
-                    showNetwork
-                    amount={data.totalAmount}
-                    tokenId={tokenId}
-                />
-            ),
-        },
-        ...(hasFeeData && totalNetworkFee
-            ? [
-                  {
-                      label: t("networkFee"),
-                      info: tIntents("networkFeeTooltip"),
-                      value: `${totalNetworkFee.toString()} ${tokenData?.symbol || ""}`.trim(),
-                  } satisfies InfoItem,
-              ]
-            : []),
-        {
-            label: t("recipients"),
-            value: (
-                <div className="flex gap-3 items-baseline">
-                    <p className="text-sm font-medium">
-                        {t("recipientsCount", {
-                            count: activeBatchData.payments.length,
-                        })}
-                    </p>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={toggleAllExpanded}
-                    >
-                        {isAllExpanded ? t("collapseAll") : t("expandAll")}
-                    </Button>
-                </div>
-            ),
-            afterValue: (
-                <div className="flex flex-col gap-1">
-                    {activeBatchData.payments.map((payment, index) => (
-                        <PaymentDisplay
-                            tokenId={tokenId}
-                            number={index + 1}
-                            key={index}
-                            payment={payment}
-                            expanded={expanded.includes(index)}
-                            onExpandedClick={() => onExpandedChanged(index)}
-                            batchId={data.batchId}
-                        />
-                    ))}
-                </div>
-            ),
-        },
-    ];
+    let tokenId = data.tokenId;
+    if (activeBatchData.tokenId?.toLowerCase() === "native") {
+        tokenId = "near";
+    }
 
     return (
-        <>
-            <InfoDisplay items={items} />
-            {data.notes && data.notes !== "" && (
-                <div className="flex justify-between gap-2 p-3 pt-0 mt-[-10px]">
-                    <p className="text-sm text-muted-foreground">
-                        {t("notes")}
-                    </p>
-                    <p className="text-sm font-medium">{data.notes}</p>
-                </div>
-            )}
-        </>
+        <BatchPaymentExpandedView
+            tokenId={tokenId}
+            totalAmount={data.totalAmount}
+            notes={data.notes}
+            payments={activeBatchData.payments}
+            batchId={data.batchId}
+        />
     );
 }

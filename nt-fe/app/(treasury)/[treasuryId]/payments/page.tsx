@@ -156,41 +156,25 @@ function Step1({
             <div className="flex justify-between items-center">
                 <StepperHeader title={tPay("newPayment")} />
                 <div className="flex items-center gap-2">
-                    {isConfidential ? (
+                    <Link href={`/${treasuryId}/payments/bulk-payment`}>
                         <Button
-                            variant="outline"
+                            variant="ghost"
                             size={isMobile ? "icon" : "default"}
-                            className="flex items-center gap-2"
+                            className="flex items-center gap-2 border-2"
                             id="payments-bulk-btn"
-                            disabled
-                            tooltipContent={tPay("comingSoon")}
+                            onClick={() => {
+                                trackEvent("bulk-payments-click", {
+                                    source: "payments_page",
+                                    treasury_id: treasuryId ?? "",
+                                });
+                            }}
                         >
                             <ArrowDownToLine className="w-4 h-4" />
                             <span className="hidden md:block">
                                 {tPay("bulkPayments")}
                             </span>
                         </Button>
-                    ) : (
-                        <Link href={`/${treasuryId}/payments/bulk-payment`}>
-                            <Button
-                                variant="ghost"
-                                size={isMobile ? "icon" : "default"}
-                                className="flex items-center gap-2 border-2"
-                                id="payments-bulk-btn"
-                                onClick={() => {
-                                    trackEvent("bulk-payments-click", {
-                                        source: "payments_page",
-                                        treasury_id: treasuryId ?? "",
-                                    });
-                                }}
-                            >
-                                <ArrowDownToLine className="w-4 h-4" />
-                                <span className="hidden md:block">
-                                    {tPay("bulkPayments")}
-                                </span>
-                            </Button>
-                        </Link>
-                    )}
+                    </Link>
                     <PendingButton
                         id="payments-pending-btn"
                         types={["Payments"]}

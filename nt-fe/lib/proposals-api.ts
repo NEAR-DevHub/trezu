@@ -259,6 +259,18 @@ export interface Proposal {
         status?: string;
         correlation_id?: string;
         notes?: string;
+        /** Bulk-payment overlay (only set for bulk header proposals). */
+        bulk?: {
+            status: string;
+            bulk_account_id: string;
+            proposal_id?: number | null;
+            recipients: Array<{
+                payload_hash: string;
+                quote_metadata?: Record<string, unknown> | null;
+                status: string;
+                submit_result?: Record<string, unknown> | null;
+            }>;
+        };
     };
 }
 
