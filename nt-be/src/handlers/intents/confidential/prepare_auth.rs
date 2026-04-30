@@ -79,10 +79,10 @@ pub(crate) fn build_nonce(salt: &[u8; 4], deadline: &chrono::DateTime<chrono::Ut
 /// determines which MPC key signs.
 ///
 /// For DAO self-auth: `signer_id == signing_path == dao_id`.
-/// For bulk-payment-subaccount auth: `signer_id == sub`, `signing_path == dao_id`
-/// — the DAO's MPC key signs but the JWT is issued for the subaccount,
-/// which works because the DAO's pubkey is registered under the sub on
-/// intents.near (via the contract's `bootstrap()` call).
+/// For bulk-payment-subaccount auth: `signer_id == sub`, `signing_path == ""`
+/// — the DAO's MPC key still signs because `v1.signer` derives from the
+/// proposal predecessor (DAO) plus path, and the intents `bootstrap()` flow
+/// registers the DAO-derived pubkey for the subaccount on intents.near.
 ///
 /// Returns `(proposal, auth_payload_json)` — the proposal is ready to pass to
 /// `add_proposal`, and the auth payload is used later when authenticating with
@@ -185,7 +185,7 @@ pub(crate) async fn build_auth_proposal(
 }
 
 /// Thin wrapper: build an auth proposal for the DAO's bulk-payment subaccount.
-/// DAO signs (path = dao_id) but the JWT is issued for the sub.
+/// DAO signs as proposal predecessor (path = "") while the JWT is issued for the sub.
 pub(crate) async fn build_bulk_payment_auth_proposal(
     state: &Arc<AppState>,
     bulk_sub_id: &str,

@@ -42,14 +42,15 @@ pub fn compute_nep413_hash(payload: &Value) -> Option<String> {
     .map(|hash| hex::encode(hash.0))
 }
 
-/// Fetch the Ed25519 derived public key for a DAO's path from v1.signer.
+/// Fetch the Ed25519 derived public key for the provided account/path from v1.signer.
 pub(crate) async fn fetch_mpc_public_key(
     state: &Arc<AppState>,
-    dao_id: &str,
+    account_id: &str,
+    path: &str,
 ) -> Result<String, (StatusCode, String)> {
     let args = serde_json::json!({
-        "path": dao_id,
-        "predecessor": dao_id,
+        "path": path,
+        "predecessor": account_id,
         "domain_id": 1,
     });
 
@@ -57,7 +58,10 @@ pub(crate) async fn fetch_mpc_public_key(
         .cache
         .cached_contract_call(
             crate::utils::cache::CacheTier::LongTerm,
-            CacheKey::new("mpc-public-key").with(dao_id).build(),
+            CacheKey::new("mpc-public-key")
+                .with(account_id)
+                .with(path)
+                .build(),
             async move {
                 near_api::Contract(V1_SIGNER_CONTRACT_ID.into())
                     .call_function("derived_public_key", args)
@@ -371,7 +375,7 @@ pub async fn try_auto_submit_intent(
     };
 
     // Fetch the DAO's derived MPC public key from v1.signer
-    let mpc_public_key = match fetch_mpc_public_key(state, treasury_id).await {
+    let mpc_public_key = match fetch_mpc_public_key(state, treasury_id, treasury_id).await {
         Ok(key) => key,
         Err(e) => {
             log::error!(

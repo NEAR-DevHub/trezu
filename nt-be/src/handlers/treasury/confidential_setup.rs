@@ -39,7 +39,8 @@ pub async fn setup_confidential_treasury(
         send_progress(tx, "adding_public_key", "in_progress").await;
     }
 
-    let treasury_id_public_key = fetch_mpc_public_key(state, treasury_id.as_str()).await?;
+    let treasury_id_public_key =
+        fetch_mpc_public_key(state, treasury_id.as_str(), treasury_id.as_str()).await?;
 
     let public_key_args = json!({
         "public_key": treasury_id_public_key,

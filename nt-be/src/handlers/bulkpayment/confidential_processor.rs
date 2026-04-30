@@ -11,9 +11,6 @@
 //!    submit every recipient intent to 1Click in parallel and mark the
 //!    bulk row `completed`.
 //!
-//! Bootstrap status is cached very-long-term once `Ready` — sub state is
-//! immutable for that field after the first successful bootstrap.
-
 use std::sync::Arc;
 
 use near_api::{AccountId, Contract, NearGas, NearToken, types::json::Base64VecU8};
@@ -21,58 +18,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use crate::AppState;
-use crate::utils::cache::{CacheKey, CacheTier};
 
 const ACTIVATE_DEPOSIT: NearToken = NearToken::from_millinear(500); // 0.5 NEAR
 const PING_GAS: NearGas = NearGas::from_tgas(300);
-
-#[derive(Debug, Deserialize, Serialize)]
-pub enum BootstrapStatusView {
-    Pending,
-    InProgress,
-    Ready {
-        mpc_public_key: String,
-        dao_mpc_public_key: String,
-    },
-    Failed {
-        reason: serde_json::Value,
-    },
-}
-
-/// Cached fetch of the sub's MPC public key. Stored in long-lived cache
-/// because the sub's bootstrap result is immutable once `Ready`.
-async fn cached_sub_mpc_pubkey(
-    state: &Arc<AppState>,
-    sub_id: &AccountId,
-) -> Result<String, (axum::http::StatusCode, String)> {
-    let cache_key = CacheKey::new("bulk-sub-mpc-pubkey").with(sub_id).build();
-    state
-        .cache
-        .cached(CacheTier::VeryLongTerm, cache_key, async {
-            let result = Contract(sub_id.clone())
-                .call_function("get_bootstrap_status", ())
-                .read_only::<BootstrapStatusView>()
-                .fetch_from(&state.network)
-                .await
-                .map_err(|e| {
-                    (
-                        axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("get_bootstrap_status: {}", e),
-                    )
-                })?;
-
-            match result.data {
-                BootstrapStatusView::Ready { mpc_public_key, .. } => {
-                    Ok::<_, (axum::http::StatusCode, String)>(mpc_public_key)
-                }
-                _ => Err((
-                    axum::http::StatusCode::SERVICE_UNAVAILABLE,
-                    "sub bootstrap not Ready yet".to_string(),
-                )),
-            }
-        })
-        .await
-}
 
 // Strongly-typed mirror of the on-chain contract types. Kept in lockstep
 // with `contracts/confidential-bulk-payment/src/lib.rs`. Duplicating them
@@ -251,11 +199,6 @@ async fn activate_subaccount(
     sub_id: &AccountId,
     proposal_id: i64,
 ) -> Result<(), String> {
-    // Make sure sub finished bootstrap (cached). If not, defer to next tick.
-    cached_sub_mpc_pubkey(state, sub_id)
-        .await
-        .map_err(|(c, m)| format!("bootstrap not ready ({}): {}", c, m))?;
-
     Contract(sub_id.clone())
         .call_function(
             "activate",
@@ -314,9 +257,13 @@ async fn drive_signing(
     }
 
     // Done — only now do we submit recipient intents to 1Click.
-    let public_key = cached_sub_mpc_pubkey(state, sub_id)
-        .await
-        .map_err(|(c, m)| format!("sub pubkey ({}): {}", c, m))?;
+    let public_key = crate::handlers::relay::confidential::fetch_mpc_public_key(
+        state,
+        sub_id.as_ref(),
+        "",
+    )
+    .await
+    .map_err(|(c, m)| format!("sub pubkey ({}): {}", c, m))?;
 
     submit_done_activation(
         state,
