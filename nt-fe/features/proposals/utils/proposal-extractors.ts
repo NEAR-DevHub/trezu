@@ -785,6 +785,7 @@ export function extractConfidentialRequestData(
                 tokenId,
                 totalAmount,
                 recipients,
+                notes: meta.notes,
             },
         };
         title = "Confidential Bulk Payment";

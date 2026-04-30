@@ -48,6 +48,12 @@ interface UploadDataStepProps {
      * validation falls back to the selected token's own network.
      */
     destinationNetwork?: string;
+    /**
+     * Destination intents asset id (e.g. "nep141:arb-...omft.near") used for
+     * fee estimation in confidential bulk where source token chain differs
+     * from the recipient chain.
+     */
+    destinationAssetId?: string | null;
 }
 
 export function UploadDataStep({
@@ -57,6 +63,7 @@ export function UploadDataStep({
     isConfidential = false,
     networkSlot,
     destinationNetwork,
+    destinationAssetId,
 }: UploadDataStepProps) {
     const t = useTranslations("bulkPayment.upload");
     const parsingLabels = useBulkParsingLabels();
@@ -208,10 +215,17 @@ export function UploadDataStep({
                 return;
             }
 
-            if (activeTab === "paste") {
+            // Confidential bulk to NEAR.COM has no withdrawal fee — skip
+            // estimation entirely (the SDK can't price a destination-less
+            // transfer and would throw).
+            const skipFeeValidation = isConfidential && !destinationAssetId;
+
+            if (activeTab === "paste" && !skipFeeValidation) {
                 const feeValidationResult = await validateIntentsFeeCoverage(
                     result.payments,
-                    selectedToken,
+                    isConfidential && destinationAssetId
+                        ? { ...selectedToken, address: destinationAssetId }
+                        : selectedToken,
                     parsingLabels,
                 );
                 const feeErrors = feeValidationResult.payments

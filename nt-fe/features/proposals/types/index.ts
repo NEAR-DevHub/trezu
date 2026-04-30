@@ -245,6 +245,8 @@ export interface ConfidentialBulkData {
     tokenId: string;
     /** Sum of recipient amounts in smallest units. */
     totalAmount: string;
+    /** Notes for the proposal */
+    notes?: string;
     /** Per-recipient rows from the linked `confidential_intents` rows. */
     recipients: ConfidentialBulkRecipient[];
 }

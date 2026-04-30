@@ -21,8 +21,11 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::sync::Arc;
 
+use crate::handlers::subscription::plans::get_account_plan_info;
 use crate::handlers::treasury::confidential_setup::derive_bulk_subaccount_id;
 use crate::{AppState, auth::AuthUser};
+
+const MAX_RECIPIENTS_PER_BULK_PAYMENT: usize = 25;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -286,6 +289,55 @@ pub async fn bulk_payment_prepare(
         return Err((StatusCode::BAD_REQUEST, "payments must be non-empty".into()));
     }
 
+    if request.payments.len() > MAX_RECIPIENTS_PER_BULK_PAYMENT {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!(
+                "Maximum number of recipients per bulk payment is {}",
+                MAX_RECIPIENTS_PER_BULK_PAYMENT
+            ),
+        ));
+    }
+
+    let account_plan = get_account_plan_info(&state.db_pool, &request.dao_id)
+        .await
+        .map_err(|e| {
+            log::error!(
+                "Failed to fetch account plan info for {}: {}",
+                request.dao_id,
+                e
+            );
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to check subscription status: {}", e),
+            )
+        })?;
+
+    match &account_plan {
+        Some(plan) => {
+            if plan.batch_payment_credits <= 0 {
+                return Err((
+                    StatusCode::PAYMENT_REQUIRED,
+                    format!(
+                        "Insufficient batch payment credits. Your treasury has {} credits remaining. Please upgrade your plan or wait for the monthly reset.",
+                        plan.batch_payment_credits
+                    ),
+                ));
+            }
+            log::info!(
+                "Treasury {} has {} batch payment credits available",
+                request.dao_id,
+                plan.batch_payment_credits
+            );
+        }
+        None => {
+            log::warn!(
+                "Treasury {} not found in monitored accounts. Proceeding without credit check.",
+                request.dao_id
+            );
+        }
+    }
+
     let dao_account_id: near_api::AccountId = request
         .dao_id
         .parse()
@@ -490,6 +542,54 @@ pub async fn bulk_payment_prepare(
             format!("Failed to commit bulk-payment transaction: {}", e),
         )
     })?;
+
+    log::info!(
+        "Confidential bulk payment prepared for treasury {}. Decrementing credits...",
+        request.dao_id
+    );
+
+    let db_result = sqlx::query_as::<_, (i32,)>(
+        r#"
+        UPDATE monitored_accounts
+        SET batch_payment_credits = GREATEST(batch_payment_credits - 1, 0),
+            updated_at = NOW()
+        WHERE account_id = $1
+        RETURNING batch_payment_credits
+        "#,
+    )
+    .bind(&request.dao_id)
+    .fetch_optional(&state.db_pool)
+    .await;
+
+    match db_result {
+        Ok(Some((new_credits,))) => {
+            log::info!(
+                "Successfully decremented credits for treasury {}. New balance: {}",
+                request.dao_id,
+                new_credits
+            );
+        }
+        Ok(None) => {
+            log::warn!(
+                "Treasury {} not found in monitored_accounts, credits not decremented",
+                request.dao_id
+            );
+        }
+        Err(e) => {
+            log::error!(
+                "Failed to decrement batch payment credits for {}: {}",
+                request.dao_id,
+                e
+            );
+        }
+    }
+
+    crate::services::platform_metrics::record_event(
+        &state.db_pool,
+        &request.dao_id,
+        "batch_payments_used",
+    )
+    .await;
 
     Ok(Json(BulkPaymentPrepareResponse {
         bulk_account_id: sub_id_str,

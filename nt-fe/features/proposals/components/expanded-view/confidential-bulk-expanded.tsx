@@ -39,6 +39,7 @@ export function ConfidentialBulkExpanded({
             tokenId={data.tokenId}
             totalAmount={data.totalAmount}
             payments={payments}
+            notes={data.notes}
             batchId={null}
         />
     );

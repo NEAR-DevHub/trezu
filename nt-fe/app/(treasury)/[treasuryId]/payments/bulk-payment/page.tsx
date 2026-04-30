@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { PageComponentLayout } from "@/components/page-component-layout";
@@ -589,6 +589,9 @@ export default function BulkPaymentPage() {
                                 isConfidential
                                     ? destinationNetworkName
                                     : undefined
+                            }
+                            destinationAssetId={
+                                isConfidential ? destinationAssetId : undefined
                             }
                             networkSlot={
                                 isConfidential && selectedToken ? (
