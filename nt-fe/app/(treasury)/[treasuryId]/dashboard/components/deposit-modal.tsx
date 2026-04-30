@@ -765,6 +765,12 @@ export function DepositModal({
         );
     };
 
+    const isNearComNetwork = selectedNetwork?.id === NEAR_DIRECT_NETWORK_ID;
+    const showConfidentialDepositWarning = isConfidential && !isNearComNetwork;
+    const onlyDepositNetworkName = selectedNetwork
+        ? getNetworkDisplayName(selectedNetwork.name)
+        : "";
+
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
             <DialogContent className="sm:max-w-xl">
@@ -1049,24 +1055,19 @@ export function DepositModal({
                                     </div>
                                 </div>
 
-                                {/* Memo warning */}
-                                {depositInfo.memo && (
-                                    <div className="flex gap-2 items-start text-sm bg-destructive/10 text-destructive rounded-lg p-3">
-                                        <TriangleAlert className="h-4 w-4 shrink-0 mt-0.5" />
-                                        <span>
-                                            {t.rich("memoWarning", {
-                                                bold: (chunks) => (
-                                                    <span className="font-semibold">
-                                                        {chunks}
-                                                    </span>
-                                                ),
-                                            })}
-                                        </span>
-                                    </div>
-                                )}
-
-                                {/* Warning Messages with CircleCheck Icons */}
                                 <div className="space-y-2 mt-4">
+                                    {/* Confidential single-use warning — non-NEAR networks only */}
+                                    {showConfidentialDepositWarning && (
+                                        <div className="flex gap-2 items-start text-sm text-general-warning-foreground">
+                                            <TriangleAlert className="h-4 w-4 shrink-0 mt-0.5" />
+                                            <span>
+                                                {t(
+                                                    "depositAddressSubtitleConfidential",
+                                                )}
+                                            </span>
+                                        </div>
+                                    )}
+
                                     <div className="flex gap-2 items-start text-sm text-muted-foreground">
                                         <CircleCheck className="h-4 w-4 shrink-0 mt-0.5" />
                                         <span>
@@ -1074,11 +1075,7 @@ export function DepositModal({
                                                 symbol:
                                                     selectedNetwork?.symbol ??
                                                     "",
-                                                network: selectedNetwork
-                                                    ? getNetworkDisplayName(
-                                                          selectedNetwork.name,
-                                                      )
-                                                    : "",
+                                                network: onlyDepositNetworkName,
                                                 symbolTag: (chunks) => (
                                                     <span className="text-foreground">
                                                         {chunks}
@@ -1090,6 +1087,14 @@ export function DepositModal({
                                                     </span>
                                                 ),
                                             })}
+                                            {!showConfidentialDepositWarning && (
+                                                <>
+                                                    {" "}
+                                                    {t(
+                                                        "testTransactionRecommendation",
+                                                    )}
+                                                </>
+                                            )}
                                         </span>
                                     </div>
 
@@ -1119,6 +1124,22 @@ export function DepositModal({
                                         </div>
                                     )}
                                 </div>
+
+                                {/* Memo warning */}
+                                {depositInfo.memo && (
+                                    <div className="flex gap-2 items-start text-sm bg-destructive/10 text-destructive rounded-lg p-3">
+                                        <TriangleAlert className="h-4 w-4 shrink-0 mt-0.5" />
+                                        <span>
+                                            {t.rich("memoWarning", {
+                                                bold: (chunks) => (
+                                                    <span className="font-semibold">
+                                                        {chunks}
+                                                    </span>
+                                                ),
+                                            })}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         )}
 
