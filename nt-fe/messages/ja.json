@@ -172,7 +172,7 @@
         },
         "earn": {
             "title": "収益",
-            "description": "Trezuのトレジャリーを、よく使うWeb3アプリに接続できます。",
+            "description": "あなたのトレジャリーを下記のWeb3アプリに接続し、保有資産で収益を得始めましょう。",
             "howItWorks": "仕組み",
             "apps": {
                 "rhea": {
@@ -1216,7 +1216,6 @@
         "chatIdFallback": "チャット #{id}",
         "failedToConnect": "トレジャリーの接続に失敗しました。もう一度お試しください。",
         "relinking": "{count, plural, other {# 件の選択されたトレジャリーは別のTelegramチャットにリンクされています。接続するとチャットIDのリンクがこのチャットに変更されます。}}",
-        "alreadyConnected": "このチャットにはすでに接続されています",
         "connectedToAnother": "別のチャットに接続されています",
         "notMember": "あなたはどのトレジャリーのポリシーメンバーでもありません。",
         "connecting": "接続中…",

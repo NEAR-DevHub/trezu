@@ -172,7 +172,7 @@
         },
         "earn": {
             "title": "수익",
-            "description": "Trezu 트레저리를 즐겨 쓰는 Web3 앱에 연결하세요.",
+            "description": "트레저리를 아래 Web3 앱에 연결하고 보유 자산으로 수익을 창출하세요.",
             "howItWorks": "이용 방법",
             "apps": {
                 "rhea": {
@@ -1216,7 +1216,6 @@
         "chatIdFallback": "채팅 #{id}",
         "failedToConnect": "트레저리 연결에 실패했습니다. 다시 시도해 주세요.",
         "relinking": "{count, plural, other {선택한 트레저리 #개가 다른 Telegram 채팅에 연결되어 있습니다. 연결하면 다시 연결되며 채팅 ID 링크가 이 채팅으로 변경됩니다.}}",
-        "alreadyConnected": "이 채팅에 이미 연결됨",
         "connectedToAnother": "다른 채팅에 연결됨",
         "notMember": "어떤 트레저리의 정책 멤버도 아닙니다.",
         "connecting": "연결 중…",
