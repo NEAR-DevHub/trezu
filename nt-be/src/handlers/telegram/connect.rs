@@ -374,23 +374,40 @@ pub async fn disconnect_treasury(
         .await
         .map_err(|_| (StatusCode::FORBIDDEN, "Not a policy member".to_string()))?;
 
+    // Keep delete + remaining-count atomic so we never observe or act on
+    // partially-applied disconnect state.
+    let mut tx = state
+        .db_pool
+        .begin()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
     let disconnected_chat_id = sqlx::query_scalar::<_, i64>(
         "DELETE FROM telegram_treasury_connections WHERE dao_id = $1 RETURNING chat_id",
     )
     .bind(&body.dao_id)
-    .fetch_optional(&state.db_pool)
+    .fetch_optional(&mut *tx)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    if let Some(chat_id) = disconnected_chat_id {
+    let disconnect_state = if let Some(chat_id) = disconnected_chat_id {
         let remaining_connections = sqlx::query_scalar::<_, i64>(
             "SELECT COUNT(*) FROM telegram_treasury_connections WHERE chat_id = $1",
         )
         .bind(chat_id)
-        .fetch_one(&state.db_pool)
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        Some((chat_id, remaining_connections))
+    } else {
+        None
+    };
+
+    tx.commit()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    if let Some((chat_id, remaining_connections)) = disconnect_state {
         if remaining_connections > 0 {
             let msg = format!(
                 "✅ Disconnected {dao_id}.\nThis chat will continue receiving notifications for {remaining_connections} connected {}.",

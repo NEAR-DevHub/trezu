@@ -172,7 +172,7 @@
         },
         "earn": {
             "title": "收益",
-            "description": "将您的 Trezu 金库连接到您常用的 Web3 应用。",
+            "description": "将您的金库连接到下方的 Web3 应用，并开始通过您的资产赚取收益。",
             "howItWorks": "运作方式",
             "apps": {
                 "rhea": {

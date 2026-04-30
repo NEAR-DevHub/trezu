@@ -172,7 +172,7 @@
         },
         "earn": {
             "title": "収益",
-            "description": "Trezuのトレジャリーを、よく使うWeb3アプリに接続できます。",
+            "description": "あなたのトレジャリーを下記のWeb3アプリに接続し、保有資産で収益を得始めましょう。",
             "howItWorks": "仕組み",
             "apps": {
                 "rhea": {

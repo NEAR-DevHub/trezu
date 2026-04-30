@@ -172,7 +172,7 @@
         },
         "earn": {
             "title": "Earn",
-            "description": "Connect your Trezu treasury to your favourite Web3 applications.",
+            "description": "Connect your treasury to Web3 apps below and start earning on your assets.",
             "howItWorks": "How It Works",
             "apps": {
                 "rhea": {
