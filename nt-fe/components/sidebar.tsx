@@ -81,13 +81,13 @@ function NavLink({
                         : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                 )}
             >
-                <div className="flex gap-2 justify-between">
+                <div className="flex w-full min-w-0 items-center gap-2">
                     <div className="flex min-w-0 items-center gap-3">
                         <Icon className="size-5 shrink-0" />
                         {showLabels && <span>{label}</span>}
                     </div>
                     {showLabels && (showBadge || endAdornment) && (
-                        <div className="flex items-center gap-2">
+                        <div className="ml-auto flex shrink-0 items-center gap-2">
                             {showBadge && <NumberBadge number={badgeCount} />}
                             {endAdornment}
                         </div>

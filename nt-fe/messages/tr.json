@@ -172,7 +172,7 @@
         },
         "earn": {
             "title": "Kazan",
-            "description": "Trezu hazinenizi en sevdiğiniz Web3 uygulamalarına bağlayın.",
+            "description": "Hazinenizi aşağıdaki Web3 uygulamalarına bağlayın ve varlıklarınızdan getiri elde etmeye başlayın.",
             "howItWorks": "Nasıl çalışır",
             "apps": {
                 "rhea": {
@@ -1218,7 +1218,6 @@
         "chatIdFallback": "Sohbet #{id}",
         "failedToConnect": "Hazineler bağlanamadı. Lütfen tekrar deneyin.",
         "relinking": "{count, plural, one {# seçili hazine başka bir Telegram sohbetine bağlı. Bağlanmak yeniden bağlayacak ve sohbet kimliği bağlantısını bu sohbete değiştirecek.} other {# seçili hazine başka Telegram sohbetlerine bağlı. Bağlanmak yeniden bağlayacak ve sohbet kimliği bağlantılarını bu sohbete değiştirecek.}}",
-        "alreadyConnected": "Bu sohbete zaten bağlı",
         "connectedToAnother": "Başka bir sohbete bağlı",
         "notMember": "Hiçbir hazinenin politika üyesi değilsiniz.",
         "connecting": "Bağlanıyor…",

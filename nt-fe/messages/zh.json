@@ -172,7 +172,7 @@
         },
         "earn": {
             "title": "收益",
-            "description": "将您的 Trezu 金库连接到您常用的 Web3 应用。",
+            "description": "将您的金库连接到下方的 Web3 应用，并开始通过您的资产赚取收益。",
             "howItWorks": "运作方式",
             "apps": {
                 "rhea": {
@@ -1218,7 +1218,6 @@
         "chatIdFallback": "聊天 #{id}",
         "failedToConnect": "连接金库失败。请再试一次。",
         "relinking": "{count, plural, other {# 个所选金库当前已链接到其他 Telegram 聊天。连接将重新链接它们,并将其聊天 ID 更改为此聊天。}}",
-        "alreadyConnected": "已连接到此聊天",
         "connectedToAnother": "已连接到其他聊天",
         "notMember": "您不是任何金库的策略成员。",
         "connecting": "连接中…",

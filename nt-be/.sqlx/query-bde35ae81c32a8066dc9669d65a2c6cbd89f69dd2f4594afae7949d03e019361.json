@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                SELECT EXISTS(\n                    SELECT 1\n                    FROM balance_changes\n                    WHERE account_id = $1\n                      AND method_name = 'add_proposal'\n                      AND action_kind = 'FUNCTION_CALL'\n                      AND transaction_hashes[1] = $2\n                      AND amount <> 0\n                )\n                ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "exists",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "bde35ae81c32a8066dc9669d65a2c6cbd89f69dd2f4594afae7949d03e019361"
+}

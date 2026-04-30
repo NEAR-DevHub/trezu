@@ -172,7 +172,7 @@
         },
         "earn": {
             "title": "Pendapatan",
-            "description": "Hubungkan treasury Trezu Anda ke aplikasi Web3 favorit Anda.",
+            "description": "Hubungkan treasury Anda ke aplikasi Web3 di bawah ini dan mulai menghasilkan keuntungan dari aset Anda.",
             "howItWorks": "Cara kerja",
             "apps": {
                 "rhea": {
@@ -1218,7 +1218,6 @@
         "chatIdFallback": "Chat #{id}",
         "failedToConnect": "Gagal menghubungkan treasury. Silakan coba lagi.",
         "relinking": "{count, plural, other {# treasury yang dipilih ditautkan ke chat Telegram lain. Menghubungkan akan menautkan ulang dan mengubah tautan ID chat-nya ke chat ini.}}",
-        "alreadyConnected": "Sudah terhubung ke chat ini",
         "connectedToAnother": "Terhubung ke chat lain",
         "notMember": "Anda bukan anggota kebijakan dari treasury mana pun.",
         "connecting": "Menghubungkan…",

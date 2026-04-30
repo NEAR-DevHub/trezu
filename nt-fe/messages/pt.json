@@ -172,7 +172,7 @@
         },
         "earn": {
             "title": "Ganhar",
-            "description": "Conecte sua tesouraria Trezu aos seus aplicativos Web3 favoritos.",
+            "description": "Conecte sua tesouraria aos aplicativos Web3 abaixo e comece a gerar rendimentos com seus ativos.",
             "howItWorks": "Como funciona",
             "apps": {
                 "rhea": {
@@ -1218,7 +1218,6 @@
         "chatIdFallback": "Chat nº {id}",
         "failedToConnect": "Falha ao conectar tesourarias. Por favor, tente novamente.",
         "relinking": "{count, plural, one {# tesouraria selecionada está vinculada a outro chat do Telegram. Conectar fará a reconexão e alterará o link do ID do chat para este chat.} other {# tesourarias selecionadas estão vinculadas a outros chats do Telegram. Conectar fará a reconexão e alterará os links de ID do chat para este chat.}}",
-        "alreadyConnected": "Já conectada a este chat",
         "connectedToAnother": "Conectada a outro chat",
         "notMember": "Você não é membro de nenhuma tesouraria.",
         "connecting": "Conectando…",

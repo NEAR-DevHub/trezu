@@ -172,7 +172,7 @@
         },
         "earn": {
             "title": "Thu nhập",
-            "description": "Kết nối ngân quỹ Trezu của bạn với các ứng dụng Web3 yêu thích.",
+            "description": "Kết nối kho bạc của bạn với các ứng dụng Web3 bên dưới và bắt đầu tạo lợi nhuận từ tài sản của bạn.",
             "howItWorks": "Cách hoạt động",
             "apps": {
                 "rhea": {
@@ -1218,7 +1218,6 @@
         "chatIdFallback": "Trò chuyện #{id}",
         "failedToConnect": "Không thể kết nối các ngân quỹ. Vui lòng thử lại.",
         "relinking": "{count, plural, other {# ngân quỹ đã chọn được liên kết với các cuộc trò chuyện Telegram khác. Việc kết nối sẽ kết nối lại và thay đổi liên kết ID cuộc trò chuyện sang cuộc trò chuyện này.}}",
-        "alreadyConnected": "Đã kết nối với cuộc trò chuyện này",
         "connectedToAnother": "Đã kết nối với một cuộc trò chuyện khác",
         "notMember": "Bạn không phải là thành viên chính sách của bất kỳ ngân quỹ nào.",
         "connecting": "Đang kết nối…",

@@ -172,7 +172,7 @@
         },
         "earn": {
             "title": "Gains",
-            "description": "Connectez votre trésorerie Trezu à vos applications Web3 préférées.",
+            "description": "Connectez votre trésorerie aux applications Web3 ci-dessous et commencez à générer des rendements sur vos actifs.",
             "howItWorks": "Fonctionnement",
             "apps": {
                 "rhea": {
@@ -1218,7 +1218,6 @@
         "chatIdFallback": "Chat #{id}",
         "failedToConnect": "Échec de la connexion des trésoreries. Veuillez réessayer.",
         "relinking": "{count, plural, one {# trésorerie sélectionnée est liée à un autre chat Telegram. La connexion la reconnectera et changera son lien d'ID de chat vers ce chat.} other {# trésoreries sélectionnées sont liées à d'autres chats Telegram. La connexion les reconnectera et changera leurs liens d'ID de chat vers ce chat.}}",
-        "alreadyConnected": "Déjà connecté à ce chat",
         "connectedToAnother": "Connecté à un autre chat",
         "notMember": "Vous n'êtes membre de la politique d'aucune trésorerie.",
         "connecting": "Connexion…",
