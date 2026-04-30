@@ -1216,7 +1216,6 @@
         "chatIdFallback": "聊天 #{id}",
         "failedToConnect": "连接金库失败。请再试一次。",
         "relinking": "{count, plural, other {# 个所选金库当前已链接到其他 Telegram 聊天。连接将重新链接它们,并将其聊天 ID 更改为此聊天。}}",
-        "alreadyConnected": "已连接到此聊天",
         "connectedToAnother": "已连接到其他聊天",
         "notMember": "您不是任何金库的策略成员。",
         "connecting": "连接中…",

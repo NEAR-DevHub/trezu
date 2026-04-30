@@ -396,11 +396,6 @@ function ConnectPageInner() {
                                         </span>
                                     </span>
                                 </label>
-                                {alreadyHere && (
-                                    <span className="inline-flex shrink-0 whitespace-nowrap rounded-full bg-general-success-background-faded px-2.5 py-0.5 text-xs font-medium text-general-success-foreground">
-                                        {tTg("alreadyConnected")}
-                                    </span>
-                                )}
                                 {!alreadyHere && elsewhereStatus && (
                                     <span className="inline-flex shrink-0 whitespace-nowrap rounded-full bg-general-orange-background-faded px-2.5 py-0.5 text-xs font-medium text-general-orange-foreground">
                                         {tTg("connectedToAnother")}

@@ -243,6 +243,25 @@ pub async fn connect_treasuries(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     }
 
+    // Sync selected treasuries for this chat: remove any previously connected
+    // DAO in this chat that is not part of the current selection.
+    let removed_count = sqlx::query_scalar::<_, i64>(
+        r#"
+        WITH removed AS (
+            DELETE FROM telegram_treasury_connections
+            WHERE chat_id = $1
+              AND NOT (dao_id = ANY($2))
+            RETURNING 1
+        )
+        SELECT COUNT(*) FROM removed
+        "#,
+    )
+    .bind(chat_id)
+    .bind(&body.treasury_ids)
+    .fetch_one(&mut *tx)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
     sqlx::query!(
         "UPDATE telegram_connect_tokens SET used_at = now() WHERE token = $1",
         body.token,
@@ -258,10 +277,11 @@ pub async fn connect_treasuries(
     // Edit the original connect message with a success status (non-fatal)
     let n = body.treasury_ids.len();
     let msg = format!(
-        "✓ {} {} connected by {}",
+        "✅ Treasury connections updated by {}.\nSelected: {} {}\nRemoved: {}",
+        auth_user.account_id,
         n,
         if n == 1 { "treasury" } else { "treasuries" },
-        auth_user.account_id
+        removed_count
     );
     if let Some(message_id) = token_row.message_id {
         if let Err(e) = state
@@ -354,13 +374,69 @@ pub async fn disconnect_treasury(
         .await
         .map_err(|_| (StatusCode::FORBIDDEN, "Not a policy member".to_string()))?;
 
-    sqlx::query!(
-        "DELETE FROM telegram_treasury_connections WHERE dao_id = $1",
-        body.dao_id
+    let disconnected_chat_id = sqlx::query_scalar::<_, i64>(
+        "DELETE FROM telegram_treasury_connections WHERE dao_id = $1 RETURNING chat_id",
     )
-    .execute(&state.db_pool)
+    .bind(&body.dao_id)
+    .fetch_optional(&state.db_pool)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if let Some(chat_id) = disconnected_chat_id {
+        let remaining_connections = sqlx::query_scalar::<_, i64>(
+            "SELECT COUNT(*) FROM telegram_treasury_connections WHERE chat_id = $1",
+        )
+        .bind(chat_id)
+        .fetch_one(&state.db_pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        if remaining_connections > 0 {
+            let msg = format!(
+                "✅ Disconnected {dao_id}.\nThis chat will continue receiving notifications for {remaining_connections} connected {}.",
+                if remaining_connections == 1 {
+                    "treasury"
+                } else {
+                    "treasuries"
+                },
+                dao_id = body.dao_id
+            );
+            if let Err(e) = state
+                .telegram_client
+                .send_message_to_chat(chat_id, &msg)
+                .await
+            {
+                log::warn!(
+                    "[telegram] Failed to send disconnect status to chat {} for dao {}: {}",
+                    chat_id,
+                    body.dao_id,
+                    e
+                );
+            }
+        } else {
+            let msg = "✅ All treasuries disconnected.\nThis bot will now leave this chat.\nTo reconnect later, add the bot again and send /start.";
+
+            if let Err(e) = state
+                .telegram_client
+                .send_message_to_chat(chat_id, msg)
+                .await
+            {
+                log::warn!(
+                    "[telegram] Failed to send final disconnect message to chat {}: {}",
+                    chat_id,
+                    e
+                );
+            }
+
+            if let Err(e) = state.telegram_client.leave_chat(chat_id).await {
+                log::warn!(
+                    "[telegram] Failed to leave chat {} after removing last treasury: {}",
+                    chat_id,
+                    e
+                );
+            }
+        }
+    }
 
     Ok(StatusCode::NO_CONTENT)
 }

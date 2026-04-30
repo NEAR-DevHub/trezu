@@ -111,7 +111,7 @@ async fn handle_bot_added(state: &AppState, chat_id: i64, chat_title: Option<&st
 
     let prompt_text = if existing_connections > 0 {
         format!(
-            "This chat already has {} connected {}. Use the button below to review or update treasury connections.",
+            "✅ This chat has {} connected {}.\nUse the button below to review or update treasury connections.",
             existing_connections,
             if existing_connections == 1 {
                 "treasury"
@@ -120,7 +120,7 @@ async fn handle_bot_added(state: &AppState, chat_id: i64, chat_title: Option<&st
             }
         )
     } else {
-        "No treasuries are connected to this chat yet. Use the button below to connect one."
+        "✅ No treasuries are connected to this chat.\nUse the button below to connect one."
             .to_string()
     };
 

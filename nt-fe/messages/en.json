@@ -1216,7 +1216,6 @@
         "chatIdFallback": "Chat #{id}",
         "failedToConnect": "Failed to connect treasuries. Please try again.",
         "relinking": "{count, plural, one {# selected treasury is linked to another Telegram chat. Connecting will re-connect it and change its chat ID link to this chat.} other {# selected treasuries are linked to other Telegram chats. Connecting will re-connect them and change their chat ID links to this chat.}}",
-        "alreadyConnected": "Already connected to this chat",
         "connectedToAnother": "Connected to another chat",
         "notMember": "You are not a policy member of any treasuries.",
         "connecting": "Connecting…",

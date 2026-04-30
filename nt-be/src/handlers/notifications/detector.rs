@@ -6,6 +6,7 @@
 //! Only DAOs with at least one notification destination (currently: Telegram)
 //! produce notifications. Zero RPC calls — reads from the app DB only.
 
+use bigdecimal::Zero;
 use sqlx::PgPool;
 
 use super::payload_decoder::decode_add_proposal_payload;
@@ -91,6 +92,7 @@ struct BalanceChangeRow {
     actions: Option<serde_json::Value>,
     usd_value: Option<bigdecimal::BigDecimal>,
     block_height: i64,
+    transaction_hashes: Vec<String>,
 }
 
 async fn detect_balance_change_events(
@@ -103,7 +105,8 @@ async fn detect_balance_change_events(
     let rows: Vec<BalanceChangeRow> = sqlx::query_as(
         r#"
         SELECT bc.id, bc.account_id, bc.token_id, bc.amount, bc.counterparty,
-               bc.method_name, bc.action_kind, bc.actions, bc.usd_value, bc.block_height
+               bc.method_name, bc.action_kind, bc.actions, bc.usd_value, bc.block_height,
+               bc.transaction_hashes
         FROM balance_changes bc
         WHERE bc.id > $1
           AND bc.account_id IN (SELECT dao_id FROM telegram_treasury_connections)
@@ -145,6 +148,43 @@ async fn detect_balance_change_events(
         } else {
             "payment"
         };
+        let proposal_tx_hash = if is_proposal {
+            row.transaction_hashes
+                .first()
+                .cloned()
+                .filter(|hash| !hash.is_empty())
+        } else {
+            None
+        };
+
+        // For proposal transactions that fan out into multiple balance_changes rows,
+        // prefer the row with a non-zero amount (bond/gas debit) when present.
+        if is_proposal
+            && row.amount.is_zero()
+            && let Some(tx_hash) = proposal_tx_hash.as_deref()
+        {
+            let has_nonzero_sibling: bool = sqlx::query_scalar(
+                r#"
+                SELECT EXISTS(
+                    SELECT 1
+                    FROM balance_changes
+                    WHERE account_id = $1
+                      AND method_name = 'add_proposal'
+                      AND action_kind = 'FUNCTION_CALL'
+                      AND transaction_hashes[1] = $2
+                      AND amount <> 0
+                )
+                "#,
+            )
+            .bind(&row.account_id)
+            .bind(tx_hash)
+            .fetch_one(pool)
+            .await?;
+
+            if has_nonzero_sibling {
+                continue;
+            }
+        }
 
         let payload = if is_proposal {
             let decoded = decode_add_proposal_payload(row.actions.as_ref());
@@ -158,6 +198,7 @@ async fn detect_balance_change_events(
                 "block_height": row.block_height,
                 "description": decoded.description,
                 "proposal_kind": decoded.proposal_kind,
+                "tx_hash": proposal_tx_hash,
             })
         } else {
             serde_json::json!({
@@ -168,20 +209,63 @@ async fn detect_balance_change_events(
             })
         };
 
-        let rows_inserted = sqlx::query!(
-            r#"
-            INSERT INTO dao_notifications (dao_id, event_type, source_id, source_table, payload)
-            VALUES ($1, $2, $3, 'balance_changes', $4)
-            ON CONFLICT (source_table, source_id, dao_id, event_type) DO NOTHING
-            "#,
-            &row.account_id,
-            event_type,
-            row.id,
-            &payload,
-        )
-        .execute(pool)
-        .await?
-        .rows_affected();
+        let rows_inserted = if is_proposal {
+            if let Some(tx_hash) = proposal_tx_hash.as_deref() {
+                sqlx::query(
+                    r#"
+                    INSERT INTO dao_notifications (dao_id, event_type, source_id, source_table, payload)
+                    SELECT $1, $2, $3, 'balance_changes', $4
+                    WHERE NOT EXISTS (
+                        SELECT 1
+                        FROM dao_notifications n
+                        WHERE n.dao_id = $1
+                          AND n.event_type = $2
+                          AND n.source_table = 'balance_changes'
+                          AND n.payload->>'tx_hash' = $5
+                    )
+                    ON CONFLICT (source_table, source_id, dao_id, event_type) DO NOTHING
+                    "#,
+                )
+                .bind(&row.account_id)
+                .bind(event_type)
+                .bind(row.id)
+                .bind(&payload)
+                .bind(tx_hash)
+                .execute(pool)
+                .await?
+                .rows_affected()
+            } else {
+                sqlx::query(
+                    r#"
+                    INSERT INTO dao_notifications (dao_id, event_type, source_id, source_table, payload)
+                    VALUES ($1, $2, $3, 'balance_changes', $4)
+                    ON CONFLICT (source_table, source_id, dao_id, event_type) DO NOTHING
+                    "#,
+                )
+                .bind(&row.account_id)
+                .bind(event_type)
+                .bind(row.id)
+                .bind(&payload)
+                .execute(pool)
+                .await?
+                .rows_affected()
+            }
+        } else {
+            sqlx::query(
+                r#"
+                INSERT INTO dao_notifications (dao_id, event_type, source_id, source_table, payload)
+                VALUES ($1, $2, $3, 'balance_changes', $4)
+                ON CONFLICT (source_table, source_id, dao_id, event_type) DO NOTHING
+                "#,
+            )
+            .bind(&row.account_id)
+            .bind(event_type)
+            .bind(row.id)
+            .bind(&payload)
+            .execute(pool)
+            .await?
+            .rows_affected()
+        };
 
         inserted += rows_inserted as usize;
     }

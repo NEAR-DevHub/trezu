@@ -307,22 +307,25 @@ pub fn decode_notification_content(
                 .map(|n| n.replace("**", "").trim().to_string())
                 .filter(|n| !n.is_empty());
             let dao_esc = escape_telegram_html(dao_id);
-            let mut subtitle = format!("<b>DAO:</b> {dao_esc}");
+            let mut subtitle = format!(
+                "<b>DAO:</b> {dao_esc}\n<b>By:</b> {}",
+                escape_telegram_html(&submitter)
+            );
+
             if let Some(notes) = notes {
                 let notes_esc = escape_telegram_html(&notes);
                 subtitle.push_str(&format!("\n<b>Notes:</b> {notes_esc}"));
             }
 
             let kind_esc = escape_telegram_html(proposal_kind);
-            let submitter_esc = escape_telegram_html(&submitter);
-            let title = format!("New <b>{kind_esc}</b> proposal created by <b>{submitter_esc}</b>");
+            let title = format!("New <b>{kind_esc}</b> proposal");
 
             DecodedNotificationContent {
                 notification_type: proposal_kind.to_string(),
                 title,
                 subtitle,
                 action_link: format!("{frontend_base_url}/{dao_id}/requests"),
-                action_text: "View Proposals".to_string(),
+                action_text: "Review Proposal".to_string(),
             }
         }
         "payment" => {
@@ -407,12 +410,10 @@ pub fn decode_notification_content(
 
             let sent_meta = token_meta_for_id(sent_token, metadata_map);
             let recv_meta = token_meta_for_id(recv_token, metadata_map);
-            let sent_display = sent_meta
-                .and_then(|m| format_raw_amount(sent_amount, m.decimals))
-                .unwrap_or_else(|| sent_amount.to_string());
-            let recv_display = recv_meta
-                .and_then(|m| format_raw_amount(recv_amount, m.decimals))
-                .unwrap_or_else(|| recv_amount.to_string());
+            // detected_swaps stores human-readable amounts already; do not apply
+            // token decimals conversion again in notification rendering.
+            let sent_display = sent_amount.to_string();
+            let recv_display = recv_amount.to_string();
             let sent_symbol = sent_meta
                 .map(|m| m.symbol.as_str())
                 .unwrap_or_else(|| format_token_label(sent_token));
@@ -427,12 +428,12 @@ pub fn decode_notification_content(
             let dao_esc = escape_telegram_html(dao_id);
             DecodedNotificationContent {
                 notification_type: "Swap".to_string(),
-                title: format!("Swap completed for {dao_esc}"),
+                title: "Swap completed".to_string(),
                 subtitle: format!(
-                    "{sent_display_esc} {sent_symbol_esc} -&gt; {recv_display_esc} {recv_symbol_esc}"
+                    "<b>DAO:</b> {dao_esc}\n{sent_display_esc} {sent_symbol_esc} -&gt; {recv_display_esc} {recv_symbol_esc}"
                 ),
                 action_link: default_activity_link,
-                action_text: "View Activity".to_string(),
+                action_text: "View Swap Details".to_string(),
             }
         }
         _ => DecodedNotificationContent {
@@ -564,6 +565,64 @@ mod tests {
     }
 
     #[test]
+    fn decode_notification_content_swap_uses_human_amounts_without_rescaling() {
+        let payload = serde_json::json!({
+            "sent_token_id": "intents.near:nep141:usdc.near",
+            "sent_amount": "40",
+            "received_token_id": "intents.near:nep141:btc.omft.near",
+            "received_amount": "0.00061982"
+        });
+
+        let mut metadata = HashMap::new();
+        metadata.insert(
+            "intents.near:nep141:usdc.near".to_string(),
+            TokenMetadata {
+                token_id: "intents.near:nep141:usdc.near".to_string(),
+                name: "USDC".to_string(),
+                symbol: "USDC".to_string(),
+                decimals: 6,
+                icon: None,
+                price: Some(1.0),
+                price_updated_at: None,
+                network: None,
+                chain_name: None,
+                chain_icons: None,
+            },
+        );
+        metadata.insert(
+            "intents.near:nep141:btc.omft.near".to_string(),
+            TokenMetadata {
+                token_id: "intents.near:nep141:btc.omft.near".to_string(),
+                name: "BTC".to_string(),
+                symbol: "BTC".to_string(),
+                decimals: 8,
+                icon: None,
+                price: Some(60000.0),
+                price_updated_at: None,
+                network: None,
+                chain_name: None,
+                chain_icons: None,
+            },
+        );
+
+        let decoded = decode_notification_content(
+            "swap_fulfilled",
+            "trezu-demo.sputnik-dao.near",
+            &payload,
+            &metadata,
+            "https://app.trezu.app",
+        );
+
+        assert_eq!(decoded.notification_type, "Swap");
+        assert_eq!(decoded.title, "Swap completed");
+        assert_eq!(
+            decoded.subtitle,
+            "<b>DAO:</b> trezu-demo.sputnik-dao.near\n40 USDC -&gt; 0.00061982 BTC"
+        );
+        assert_eq!(decoded.action_text, "View Swap Details");
+    }
+
+    #[test]
     fn decode_notification_content_add_proposal_title_and_notes() {
         let payload = serde_json::json!({
             "counterparty": "yurtur.near",
@@ -579,19 +638,23 @@ mod tests {
             "https://app.trezu.app",
         );
 
-        assert_eq!(
-            decoded.title,
-            "New <b>Change Policy</b> proposal created by <b>yurtur.near</b>"
+        assert_eq!(decoded.title, "New <b>Change Policy</b> proposal");
+        assert!(
+            decoded
+                .subtitle
+                .contains("<b>DAO:</b> yurtur-treasury.sputnik-dao.near")
         );
-        assert_eq!(
-            decoded.subtitle,
-            "<b>DAO:</b> yurtur-treasury.sputnik-dao.near\n<b>Notes:</b> Must be executed before 2026-03-24T12:51:30.813Z"
+        assert!(decoded.subtitle.contains("<b>By:</b> yurtur.near"));
+        assert!(
+            decoded
+                .subtitle
+                .contains("<b>Notes:</b> Must be executed before 2026-03-24T12:51:30.813Z")
         );
         assert_eq!(
             decoded.action_link,
             "https://app.trezu.app/yurtur-treasury.sputnik-dao.near/requests"
         );
-        assert_eq!(decoded.action_text, "View Proposals");
+        assert_eq!(decoded.action_text, "Review Proposal");
     }
 
     fn build_add_proposal_actions(args_json: &str) -> serde_json::Value {

@@ -157,4 +157,26 @@ impl TelegramClient {
 
         Ok(())
     }
+
+    /// Ask the bot to leave a group/supergroup/channel chat.
+    ///
+    /// For private chats, Telegram does not allow bots to "leave" in the same way.
+    pub async fn leave_chat(
+        &self,
+        chat_id: i64,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let bot = match &self.bot {
+            Some(b) => b,
+            None => {
+                log::warn!(
+                    "Telegram bot not configured (TELEGRAM_BOT_TOKEN not set). leave_chat {} ignored.",
+                    chat_id
+                );
+                return Ok(());
+            }
+        };
+
+        bot.leave_chat(ChatId(chat_id)).await?;
+        Ok(())
+    }
 }

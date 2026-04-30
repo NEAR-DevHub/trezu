@@ -81,16 +81,19 @@ async fn insert_balance_change(
     token_id: &str,
     amount: i64,
     counterparty: &str,
+    tx_hash: Option<&str>,
     method_name: Option<&str>,
     action_kind: Option<&str>,
 ) -> i64 {
+    let tx_hashes: Vec<String> = tx_hash.map(|h| vec![h.to_string()]).unwrap_or_default();
+
     sqlx::query_scalar(
         r#"
         INSERT INTO balance_changes
             (account_id, block_height, block_timestamp, block_time, token_id, amount,
              balance_before, balance_after, counterparty, transaction_hashes,
              receipt_id, method_name, action_kind)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, '{}', '{}', $10, $11)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, '{}', $11, $12)
         RETURNING id
         "#,
     )
@@ -103,6 +106,7 @@ async fn insert_balance_change(
     .bind(if amount >= 0 { 0i64 } else { amount.abs() }) // balance_before
     .bind(if amount >= 0 { amount } else { 0i64 }) // balance_after
     .bind(counterparty)
+    .bind(tx_hashes)
     .bind(method_name)
     .bind(action_kind)
     .fetch_one(pool)
@@ -155,6 +159,7 @@ async fn test_detection_and_dispatch(pool: PgPool) {
         "near",
         0,
         "alice.near",
+        None,
         Some("add_proposal"),
         Some("FUNCTION_CALL"),
     )
@@ -167,6 +172,7 @@ async fn test_detection_and_dispatch(pool: PgPool) {
         "usdc.near",
         -50_000,
         "bob.near",
+        None,
         Some("ft_transfer"),
         Some("TRANSFER"),
     )
@@ -179,6 +185,7 @@ async fn test_detection_and_dispatch(pool: PgPool) {
         "near",
         -1_000_000,
         "carol.near",
+        None,
         Some("on_proposal_callback"),
         Some("FUNCTION_CALL"),
     )
@@ -191,6 +198,7 @@ async fn test_detection_and_dispatch(pool: PgPool) {
         "intents.near:nep141:usdc.near",
         100,
         "solver.near",
+        None,
         None,
         Some("TRANSFER"),
     )
@@ -266,6 +274,7 @@ async fn test_no_notification_for_unconnected_dao(pool: PgPool) {
         "near",
         0,
         "alice.near",
+        None,
         Some("add_proposal"),
         Some("FUNCTION_CALL"),
     )
@@ -299,6 +308,7 @@ async fn test_detection_is_idempotent(pool: PgPool) {
         "near",
         0,
         "alice.near",
+        None,
         Some("add_proposal"),
         Some("FUNCTION_CALL"),
     )
@@ -340,6 +350,7 @@ async fn test_dispatch_is_idempotent(pool: PgPool) {
         "near",
         0,
         "alice.near",
+        None,
         Some("add_proposal"),
         Some("FUNCTION_CALL"),
     )
@@ -394,6 +405,7 @@ async fn test_fresh_start_skips_history(pool: PgPool) {
         "near",
         0,
         "alice.near",
+        None,
         Some("add_proposal"),
         Some("FUNCTION_CALL"),
     )
@@ -425,6 +437,7 @@ async fn test_fresh_start_skips_history(pool: PgPool) {
         "near",
         0,
         "bob.near",
+        None,
         Some("add_proposal"),
         Some("FUNCTION_CALL"),
     )
@@ -462,6 +475,7 @@ async fn test_swap_inserted_between_cycles(pool: PgPool) {
         "intents.near:nep141:usdc.near",
         100,
         "solver.near",
+        None,
         None,
         Some("TRANSFER"),
     )
@@ -513,5 +527,77 @@ async fn test_swap_inserted_between_cycles(pool: PgPool) {
     assert_eq!(
         total_delivered.0, 1,
         "swap notification delivered exactly once"
+    );
+}
+
+/// add_proposal notifications are deduped by tx hash and prefer the non-zero row.
+#[sqlx::test]
+async fn test_add_proposal_dedupes_by_tx_hash(pool: PgPool) {
+    common::load_test_env();
+
+    insert_dao_with_telegram(&pool).await;
+    reset_cursors_to_start(&pool).await;
+
+    let tx_hash = "proposal-shared-tx-hash";
+
+    // Simulate the real fan-out shape: two zero rows + one non-zero row for the same tx.
+    let _zero_a = insert_balance_change(
+        &pool,
+        300,
+        "near",
+        0,
+        "frol.near",
+        Some(tx_hash),
+        Some("add_proposal"),
+        Some("FUNCTION_CALL"),
+    )
+    .await;
+    let chosen_nonzero = insert_balance_change(
+        &pool,
+        301,
+        "near",
+        -2_000_000,
+        "frol.near",
+        Some(tx_hash),
+        Some("add_proposal"),
+        Some("FUNCTION_CALL"),
+    )
+    .await;
+    let _zero_b = insert_balance_change(
+        &pool,
+        302,
+        "near",
+        0,
+        "frol.near",
+        Some(tx_hash),
+        Some("add_proposal"),
+        Some("FUNCTION_CALL"),
+    )
+    .await;
+
+    let detected = nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
+        .await
+        .expect("detection cycle");
+    assert_eq!(
+        detected, 1,
+        "one proposal notification expected per tx hash"
+    );
+
+    let row: (i64, serde_json::Value) = sqlx::query_as(
+        "SELECT source_id, payload FROM dao_notifications WHERE dao_id = $1 AND event_type = 'add_proposal'",
+    )
+    .bind(DAO_ID)
+    .fetch_one(&pool)
+    .await
+    .expect("fetch proposal notification");
+
+    assert_eq!(
+        row.0, chosen_nonzero,
+        "detector should choose the non-zero proposal row"
+    );
+    assert_eq!(
+        row.1.get("tx_hash").and_then(|v| v.as_str()),
+        Some(tx_hash),
+        "payload should carry tx hash used for dedupe"
     );
 }
