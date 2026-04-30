@@ -163,7 +163,7 @@ async fn detect_balance_change_events(
             && row.amount.is_zero()
             && let Some(tx_hash) = proposal_tx_hash.as_deref()
         {
-            let has_nonzero_sibling: bool = sqlx::query_scalar(
+            let has_nonzero_sibling: bool = sqlx::query_scalar!(
                 r#"
                 SELECT EXISTS(
                     SELECT 1
@@ -175,11 +175,12 @@ async fn detect_balance_change_events(
                       AND amount <> 0
                 )
                 "#,
+                &row.account_id,
+                tx_hash,
             )
-            .bind(&row.account_id)
-            .bind(tx_hash)
             .fetch_one(pool)
-            .await?;
+            .await?
+            .unwrap_or(false);
 
             if has_nonzero_sibling {
                 continue;
@@ -211,7 +212,7 @@ async fn detect_balance_change_events(
 
         let rows_inserted = if is_proposal {
             if let Some(tx_hash) = proposal_tx_hash.as_deref() {
-                sqlx::query(
+                sqlx::query!(
                     r#"
                     INSERT INTO dao_notifications (dao_id, event_type, source_id, source_table, payload)
                     SELECT $1, $2, $3, 'balance_changes', $4
@@ -225,43 +226,43 @@ async fn detect_balance_change_events(
                     )
                     ON CONFLICT (source_table, source_id, dao_id, event_type) DO NOTHING
                     "#,
+                    &row.account_id,
+                    event_type,
+                    row.id,
+                    &payload,
+                    tx_hash,
                 )
-                .bind(&row.account_id)
-                .bind(event_type)
-                .bind(row.id)
-                .bind(&payload)
-                .bind(tx_hash)
                 .execute(pool)
                 .await?
                 .rows_affected()
             } else {
-                sqlx::query(
+                sqlx::query!(
                     r#"
                     INSERT INTO dao_notifications (dao_id, event_type, source_id, source_table, payload)
                     VALUES ($1, $2, $3, 'balance_changes', $4)
                     ON CONFLICT (source_table, source_id, dao_id, event_type) DO NOTHING
                     "#,
+                    &row.account_id,
+                    event_type,
+                    row.id,
+                    &payload,
                 )
-                .bind(&row.account_id)
-                .bind(event_type)
-                .bind(row.id)
-                .bind(&payload)
                 .execute(pool)
                 .await?
                 .rows_affected()
             }
         } else {
-            sqlx::query(
+            sqlx::query!(
                 r#"
                 INSERT INTO dao_notifications (dao_id, event_type, source_id, source_table, payload)
                 VALUES ($1, $2, $3, 'balance_changes', $4)
                 ON CONFLICT (source_table, source_id, dao_id, event_type) DO NOTHING
                 "#,
+                &row.account_id,
+                event_type,
+                row.id,
+                &payload,
             )
-            .bind(&row.account_id)
-            .bind(event_type)
-            .bind(row.id)
-            .bind(&payload)
             .execute(pool)
             .await?
             .rows_affected()

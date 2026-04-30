@@ -10,7 +10,7 @@ use crate::handlers::{
     },
     proposals::scraper::{
         AssetExchangeInfo, BulkPayment, LockupInfo, PaymentInfo, PaymentProposalType, Proposal,
-        ProposalStatus, ProposalType, StakeDelegationInfo, extract_from_description,
+        ProposalStatus, ProposalType, StakeDelegationInfo,
     },
     token::metadata::TokenMetadata,
 };
@@ -299,23 +299,11 @@ pub fn decode_notification_content(
                     payload
                 );
             }
-            let description = payload
-                .get("description")
-                .and_then(|v| v.as_str())
-                .unwrap_or("");
-            let notes = extract_from_description(description, "Notes")
-                .map(|n| n.replace("**", "").trim().to_string())
-                .filter(|n| !n.is_empty());
             let dao_esc = escape_telegram_html(dao_id);
-            let mut subtitle = format!(
+            let subtitle = format!(
                 "<b>DAO:</b> {dao_esc}\n<b>By:</b> {}",
                 escape_telegram_html(&submitter)
             );
-
-            if let Some(notes) = notes {
-                let notes_esc = escape_telegram_html(&notes);
-                subtitle.push_str(&format!("\n<b>Notes:</b> {notes_esc}"));
-            }
 
             let kind_esc = escape_telegram_html(proposal_kind);
             let title = format!("New <b>{kind_esc}</b> proposal");
@@ -645,11 +633,6 @@ mod tests {
                 .contains("<b>DAO:</b> yurtur-treasury.sputnik-dao.near")
         );
         assert!(decoded.subtitle.contains("<b>By:</b> yurtur.near"));
-        assert!(
-            decoded
-                .subtitle
-                .contains("<b>Notes:</b> Must be executed before 2026-03-24T12:51:30.813Z")
-        );
         assert_eq!(
             decoded.action_link,
             "https://app.trezu.app/yurtur-treasury.sputnik-dao.near/requests"
