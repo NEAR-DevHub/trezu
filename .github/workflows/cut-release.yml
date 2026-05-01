@@ -120,4 +120,4 @@ jobs:
           gh release create "$BRANCH" \
             --title "v${VERSION}" \
             --target "$BRANCH" \
-            --notes "${{ steps.version.outputs.changelog }}"
+            --notes '${{ steps.version.outputs.changelog }}'
