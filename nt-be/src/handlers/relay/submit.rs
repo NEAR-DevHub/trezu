@@ -517,7 +517,7 @@ pub async fn relay_delegate_action(
                     // If this is a vote on a confidential_transfer proposal (v1.signer),
                     // try to extract the MPC signature and auto-submit the signed intent.
                     if request.proposal_type.as_deref() == Some("vote")
-                        && let Some(payload_hash) = confidential_payload_hash.clone()
+                        && let Some((payload_hash, proposal_id)) = confidential_payload_hash.clone()
                     {
                         tokio::spawn({
                             let state = state.clone();
@@ -528,6 +528,7 @@ pub async fn relay_delegate_action(
                                     &state,
                                     &treasury_id,
                                     &payload_hash,
+                                    proposal_id,
                                     &result_debug,
                                 )
                                 .await;
