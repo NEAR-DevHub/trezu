@@ -165,6 +165,13 @@ interface BatchPaymentExpandedViewProps {
      * lookup. Confidential bulk passes `null` (no on-chain hash to link).
      */
     batchId?: string | null;
+    /**
+     * Pre-computed total network fee in smallest units. Confidential bulk
+     * passes the sum of `(amountIn - minAmountOut)` from each recipient's
+     * stored 1Click quote — the actual fee the DAO already committed to.
+     * When provided, skips the live SDK estimate.
+     */
+    totalNetworkFeeOverride?: string | null;
 }
 
 /**
@@ -178,6 +185,7 @@ export function BatchPaymentExpandedView({
     notes,
     payments,
     batchId,
+    totalNetworkFeeOverride,
 }: BatchPaymentExpandedViewProps) {
     const t = useTranslations("proposals.expanded");
     const tIntents = useTranslations("intentsQuote");
@@ -186,28 +194,40 @@ export function BatchPaymentExpandedView({
     const { data: tokenData } = useToken(tokenId);
 
     const representativeRecipient = payments[0]?.recipient;
+    const skipLiveFee = totalNetworkFeeOverride != null;
     const {
         data: dynamicFeeData,
         isError: hasFeeError,
         isIntentsCrossChainToken,
     } = useIntentsWithdrawalFee({
-        token: tokenData
-            ? {
-                  address: tokenId,
-                  network: tokenData.network || "near",
-                  decimals: tokenData.decimals,
-              }
-            : null,
-        destinationAddress: representativeRecipient,
+        token:
+            !skipLiveFee && tokenData
+                ? {
+                      address: tokenId,
+                      network: tokenData.network || "near",
+                      decimals: tokenData.decimals,
+                  }
+                : null,
+        destinationAddress: skipLiveFee ? undefined : representativeRecipient,
     });
 
-    const hasFeeData =
+    const hasLiveFeeData =
+        !skipLiveFee &&
         isIntentsCrossChainToken &&
         !hasFeeError &&
         !!dynamicFeeData?.networkFee;
-    const totalNetworkFee = hasFeeData
-        ? Big(dynamicFeeData.networkFee).mul(payments.length)
-        : null;
+    // Confidential bulk passes a pre-summed override (smallest units, decoded
+    // to the token's display scale here). Public bulk falls back to the live
+    // SDK estimate × recipient count.
+    const totalNetworkFee = skipLiveFee
+        ? Big(totalNetworkFeeOverride).gt(0)
+            ? Big(totalNetworkFeeOverride).div(
+                  Big(10).pow(tokenData?.decimals ?? 0),
+              )
+            : null
+        : hasLiveFeeData
+          ? Big(dynamicFeeData.networkFee).mul(payments.length)
+          : null;
 
     const onExpandedChanged = (index: number) => {
         setExpanded((prev) =>
@@ -230,7 +250,7 @@ export function BatchPaymentExpandedView({
                 <Amount showNetwork amount={totalAmount} tokenId={tokenId} />
             ),
         },
-        ...(hasFeeData && totalNetworkFee
+        ...(totalNetworkFee
             ? [
                   {
                       label: t("networkFee"),
