@@ -16,7 +16,7 @@ const earnAppConfigs: {
     {
         id: "rhea",
         goToHref: "https://rhea.finance",
-        howItWorksHref: "https://www.youtube.com/watch?v=gcXBmtbsw34&t=3s",
+        howItWorksHref: "https://www.youtube.com/watch?v=gcXBmtbsw34",
     },
     {
         id: "intear",
