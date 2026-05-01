@@ -220,7 +220,15 @@ export function UploadDataStep({
             // transfer and would throw).
             const skipFeeValidation = isConfidential && !destinationAssetId;
 
-            if (activeTab === "paste" && !skipFeeValidation) {
+            // Confidential cross-chain pads each recipient amount by the
+            // estimated network fee at submit time, so coverage errors are
+            // not blocking — we just need the per-recipient fee for display
+            // and padding. Public bulk still treats coverage as a blocker
+            // (paste tab only, matching prior behavior).
+            const needsFeeEstimation =
+                !skipFeeValidation && (isConfidential || activeTab === "paste");
+
+            if (needsFeeEstimation) {
                 const feeValidationResult = await validateIntentsFeeCoverage(
                     result.payments,
                     isConfidential && destinationAssetId
@@ -228,20 +236,25 @@ export function UploadDataStep({
                         : selectedToken,
                     parsingLabels,
                 );
-                const feeErrors = feeValidationResult.payments
-                    .filter((payment) => !!payment.validationError)
-                    .map((payment) => ({
-                        row: payment.row || 0,
-                        message: payment.validationError!,
-                    }));
 
-                if (feeErrors.length > 0) {
-                    setDataErrors(feeErrors);
-                    return;
+                if (!isConfidential) {
+                    const feeErrors = feeValidationResult.payments
+                        .filter((payment) => !!payment.validationError)
+                        .map((payment) => ({
+                            row: payment.row || 0,
+                            message: payment.validationError!,
+                        }));
+
+                    if (feeErrors.length > 0) {
+                        setDataErrors(feeErrors);
+                        return;
+                    }
                 }
 
                 onContinue(
-                    feeValidationResult.payments,
+                    isConfidential
+                        ? result.payments
+                        : feeValidationResult.payments,
                     feeValidationResult.networkFee,
                 );
                 return;

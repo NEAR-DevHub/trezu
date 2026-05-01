@@ -203,9 +203,17 @@ export default function BulkPaymentPage() {
 
         const proposalBond = policy?.proposal_bond || "0";
 
+        // Pad each recipient amount by the estimated network fee so the BE
+        // can keep using EXACT_INPUT 1Click quotes — the sub will always
+        // hold enough to cover the withdrawal, and the recipient nets ~the
+        // user-typed amount. NEAR.COM (intra-Intents) leg has no fee.
+        const feePerRecipient = networkFeePerRecipient
+            ? Big(networkFeePerRecipient)
+            : Big(0);
         const payments = paymentData.map((p) => ({
             recipient: p.recipient,
             amount: Big(p.amount || "0")
+                .add(feePerRecipient)
                 .times(Big(10).pow(selectedToken.decimals))
                 .toFixed(0),
         }));

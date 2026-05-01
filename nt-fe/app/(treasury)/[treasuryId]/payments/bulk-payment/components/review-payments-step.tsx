@@ -124,7 +124,7 @@ export function ReviewPaymentsStep({
         return null;
     }
 
-    const totalAmount = paymentData.reduce(
+    const recipientsTotal = paymentData.reduce(
         (sum, item) => sum.add(Big(item.amount || "0")),
         Big(0),
     );
@@ -132,9 +132,18 @@ export function ReviewPaymentsStep({
     const hasValidationErrors = paymentData.some(
         (payment) => payment.validationError,
     );
-    const totalNetworkFee = networkFeePerRecipient
-        ? Big(networkFeePerRecipient).mul(paymentData.length)
+    const feePerRecipient = networkFeePerRecipient
+        ? Big(networkFeePerRecipient)
         : null;
+    const totalNetworkFee = feePerRecipient
+        ? feePerRecipient.mul(paymentData.length)
+        : null;
+    // Confidential bulk pads each leg by the estimated fee, so the DAO is
+    // actually charged recipients + fees. Roll fees into the headline total
+    // so the AmountSummary and balance check reflect reality.
+    const totalAmount = totalNetworkFee
+        ? recipientsTotal.add(totalNetworkFee)
+        : recipientsTotal;
 
     // Calculate total USD value and check insufficient balance
     let totalUSDValue = Big(0);
@@ -250,6 +259,18 @@ export function ReviewPaymentsStep({
                                     }
                                 }
 
+                                const paymentTotal = feePerRecipient
+                                    ? Big(payment.amount || "0").add(
+                                          feePerRecipient,
+                                      )
+                                    : Big(payment.amount || "0");
+                                const paymentTotalUSDValue =
+                                    selectedTokenData?.price
+                                        ? paymentTotal
+                                              .mul(selectedTokenData.price)
+                                              .toNumber()
+                                        : estimatedUSDValue;
+
                                 return (
                                     <div
                                         key={index}
@@ -329,17 +350,36 @@ export function ReviewPaymentsStep({
                                                                     iconSize="md"
                                                                 />
                                                                 <div className="text-right">
-                                                                    <div className="text-sm font-semibold whitespace-nowrap">
+                                                                    <div className="text-sm font-semibold whitespace-nowrap flex items-center gap-1 justify-end">
                                                                         {formatTokenDisplayAmount(
-                                                                            payment.amount,
+                                                                            paymentTotal,
                                                                         )}{" "}
                                                                         {
                                                                             selectedToken.symbol
                                                                         }
+                                                                        {feePerRecipient && (
+                                                                            <Tooltip
+                                                                                content={`${formatTokenDisplayAmount(
+                                                                                    payment.amount,
+                                                                                )} ${selectedToken.symbol} + ${formatTokenDisplayAmount(
+                                                                                    feePerRecipient,
+                                                                                )} ${selectedToken.symbol} ${tPay(
+                                                                                    "networkFee",
+                                                                                ).toLowerCase()}`}
+                                                                                side="top"
+                                                                            >
+                                                                                <Info
+                                                                                    className="size-3 shrink-0 text-muted-foreground"
+                                                                                    aria-label={tPay(
+                                                                                        "networkFeeInfo",
+                                                                                    )}
+                                                                                />
+                                                                            </Tooltip>
+                                                                        )}
                                                                     </div>
                                                                     <div className="text-xs text-muted-foreground whitespace-nowrap">
                                                                         ≈ $
-                                                                        {estimatedUSDValue.toFixed(
+                                                                        {paymentTotalUSDValue.toFixed(
                                                                             2,
                                                                         )}
                                                                     </div>
