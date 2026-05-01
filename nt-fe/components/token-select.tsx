@@ -106,11 +106,20 @@ export default function TokenSelect({
         showOnlyOwned: showOnlyOwnedAssets,
     });
 
+    const isSelectableNetwork = useCallback(
+        (network: MergedNetwork) =>
+            network.residency !== "Lockup" && !network.lockupInstanceId,
+        [],
+    );
+
     // Auto-select first available token on initial load.
     useEffect(() => {
         if (tokens.length > 0 && !selectedToken && !locked) {
-            const firstToken = tokens[0];
-            const firstNetwork = firstToken.networks[0];
+            const firstToken = tokens.find((token) =>
+                token.networks.some(isSelectableNetwork),
+            );
+            if (!firstToken) return;
+            const firstNetwork = firstToken.networks.find(isSelectableNetwork);
             if (!firstNetwork) return;
             setSelectedToken({
                 address: firstNetwork.id,
@@ -125,7 +134,7 @@ export default function TokenSelect({
                 minDepositAmount: firstNetwork.minDepositAmount,
             });
         }
-    }, [tokens, selectedToken, locked, setSelectedToken]);
+    }, [tokens, selectedToken, locked, setSelectedToken, isSelectableNetwork]);
 
     // Source-agnostic list for rendering/selecting.
     const filteredTokens = useMemo(() => {
@@ -141,8 +150,14 @@ export default function TokenSelect({
             );
 
         const applyNetworkFilter = (t: MergedToken): MergedToken | null => {
-            if (!filterTokens) return t;
-            const filtered = t.networks.filter((n) =>
+            const selectableNetworks = t.networks.filter(isSelectableNetwork);
+            if (selectableNetworks.length === 0) return null;
+
+            if (!filterTokens) {
+                return { ...t, networks: selectableNetworks };
+            }
+
+            const filtered = selectableNetworks.filter((n) =>
                 filterTokens({
                     address: n.id,
                     symbol: n.symbol,
@@ -164,7 +179,7 @@ export default function TokenSelect({
         }
 
         return filteredTokensList;
-    }, [tokens, search, filterTokens]);
+    }, [tokens, search, filterTokens, isSelectableNetwork]);
 
     const { yourAssets, otherAssets } = useMemo(() => {
         const yourAssetsFiltered = filteredTokens.filter(

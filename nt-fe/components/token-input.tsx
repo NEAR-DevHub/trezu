@@ -121,21 +121,31 @@ export function TokenInput<
         onlySupportedTokens: true,
     });
 
-    // Find the matching asset from useAssets to get fresh balance/price
-    const matchedAsset = useMemo(() => {
+    // Find matching non-lockup assets from useAssets to get fresh balance/price.
+    // Payments should use treasury-held spendable balances only, so FT lockup
+    // session rows are intentionally excluded here.
+    const matchedAssets = useMemo(() => {
         if (!assetsData?.tokens || !token?.address) return null;
-        return assetsData.tokens.find(
+        const matches = assetsData.tokens.filter(
             (t) =>
                 (t.contractId ?? t.id) === token.address &&
-                t.network === token.network,
+                t.network === token.network &&
+                !t.lockupInstanceId &&
+                t.residency !== "Lockup",
         );
+        return matches.length > 0 ? matches : null;
     }, [assetsData?.tokens, token?.address, token?.network]);
 
-    const tokenBalance = matchedAsset
-        ? availableBalance(matchedAsset.balance).toFixed(0)
+    const tokenBalance = matchedAssets
+        ? matchedAssets
+              .reduce(
+                  (sum, asset) => sum.add(availableBalance(asset.balance)),
+                  Big(0),
+              )
+              .toFixed(0)
         : token?.balance;
-    const tokenPrice = matchedAsset?.price ?? token?.price;
-    const tokenDecimals = matchedAsset?.decimals ?? token?.decimals;
+    const tokenPrice = matchedAssets?.[0]?.price ?? token?.price;
+    const tokenDecimals = matchedAssets?.[0]?.decimals ?? token?.decimals;
 
     const hasInsufficientBalance = useMemo(() => {
         if (!showInsufficientBalance) return false;

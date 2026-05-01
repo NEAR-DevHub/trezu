@@ -38,32 +38,43 @@ export function useProposalInsufficientBalance(
 
     const insufficientBalanceInfo = useMemo((): InsufficientBalanceInfo => {
         if (assets && requiredFunds) {
-            const token = assets.tokens.find(
+            const matchingAssets = assets.tokens.filter(
                 (t) =>
                     t.contractId === requiredFunds.tokenId ||
                     (requiredFunds.tokenId.toLowerCase() === "near" &&
                         t.contractId == null &&
                         t.residency === "Near"),
             );
-            if (!token) {
+            if (matchingAssets.length === 0) {
                 return {
                     hasInsufficientBalance: true,
                     type: "no-asset",
                 };
             }
 
+            const spendableAssets = matchingAssets.filter(
+                (asset) =>
+                    !asset.lockupInstanceId && asset.residency !== "Lockup",
+            );
+            const assetsToCheck =
+                spendableAssets.length > 0 ? spendableAssets : matchingAssets;
+            const primaryAsset = assetsToCheck[0];
+
             const requiredBig = Big(requiredFunds.amount || "0");
-            const availableBig = availableBalance(token.balance);
+            const availableBig = assetsToCheck.reduce(
+                (sum, asset) => sum.add(availableBalance(asset.balance)),
+                Big(0),
+            );
 
             if (requiredBig.gt(availableBig)) {
                 return {
                     hasInsufficientBalance: true,
-                    tokenSymbol: token.symbol,
+                    tokenSymbol: primaryAsset.symbol,
                     type: "balance",
-                    tokenNetwork: token.network,
+                    tokenNetwork: primaryAsset.network,
                     differenceDisplay: formatBalance(
                         requiredBig.sub(availableBig).toString(),
-                        token.decimals || 24,
+                        primaryAsset.decimals || 24,
                     ),
                 };
             }

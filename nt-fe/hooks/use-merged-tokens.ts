@@ -26,6 +26,7 @@ export interface MergedNetwork {
     balanceUSD?: number;
     price?: number;
     lockedBalance?: string;
+    lockupInstanceId?: string;
     minWithdrawalAmount?: string;
     minDepositAmount?: string;
 }
@@ -67,6 +68,7 @@ const mapTreasuryNetwork = (n: TreasuryNetwork): MergedNetwork => ({
     residency: n.residency,
     lockedBalance:
         n.balance.type === "Standard" ? n.balance.locked.toFixed(0) : undefined,
+    lockupInstanceId: n.lockupInstanceId,
     balance: n.availableBalanceRaw,
     balanceUSD: n.availableBalanceUSD,
     price: n.price,
@@ -95,6 +97,7 @@ const mapBridgeMatchedNetwork = (
         treasuryNetwork.balance.type === "Standard"
             ? treasuryNetwork.balance.locked.toFixed(0)
             : undefined,
+    lockupInstanceId: treasuryNetwork.lockupInstanceId,
     balance: treasuryNetwork.availableBalanceRaw,
     balanceUSD: treasuryNetwork.availableBalanceUSD,
     price: treasuryNetwork.price,
