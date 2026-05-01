@@ -259,18 +259,6 @@ export function ReviewPaymentsStep({
                                     }
                                 }
 
-                                const paymentTotal = feePerRecipient
-                                    ? Big(payment.amount || "0").add(
-                                          feePerRecipient,
-                                      )
-                                    : Big(payment.amount || "0");
-                                const paymentTotalUSDValue =
-                                    selectedTokenData?.price
-                                        ? paymentTotal
-                                              .mul(selectedTokenData.price)
-                                              .toNumber()
-                                        : estimatedUSDValue;
-
                                 return (
                                     <div
                                         key={index}
@@ -350,36 +338,17 @@ export function ReviewPaymentsStep({
                                                                     iconSize="md"
                                                                 />
                                                                 <div className="text-right">
-                                                                    <div className="text-sm font-semibold whitespace-nowrap flex items-center gap-1 justify-end">
+                                                                    <div className="text-sm font-semibold whitespace-nowrap">
                                                                         {formatTokenDisplayAmount(
-                                                                            paymentTotal,
+                                                                            payment.amount,
                                                                         )}{" "}
                                                                         {
                                                                             selectedToken.symbol
                                                                         }
-                                                                        {feePerRecipient && (
-                                                                            <Tooltip
-                                                                                content={`${formatTokenDisplayAmount(
-                                                                                    payment.amount,
-                                                                                )} ${selectedToken.symbol} + ${formatTokenDisplayAmount(
-                                                                                    feePerRecipient,
-                                                                                )} ${selectedToken.symbol} ${tPay(
-                                                                                    "networkFee",
-                                                                                ).toLowerCase()}`}
-                                                                                side="top"
-                                                                            >
-                                                                                <Info
-                                                                                    className="size-3 shrink-0 text-muted-foreground"
-                                                                                    aria-label={tPay(
-                                                                                        "networkFeeInfo",
-                                                                                    )}
-                                                                                />
-                                                                            </Tooltip>
-                                                                        )}
                                                                     </div>
                                                                     <div className="text-xs text-muted-foreground whitespace-nowrap">
                                                                         ≈ $
-                                                                        {paymentTotalUSDValue.toFixed(
+                                                                        {estimatedUSDValue.toFixed(
                                                                             2,
                                                                         )}
                                                                     </div>
