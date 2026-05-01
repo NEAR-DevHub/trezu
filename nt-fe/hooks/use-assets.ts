@@ -18,7 +18,9 @@ const isTokenValidByOptions = (
     }
     if (
         options?.onlySupportedTokens &&
-        (token.residency === "Lockup" || token.residency === "Staked")
+        (token.residency === "Lockup" ||
+            token.residency === "Staked" ||
+            token.lockupInstanceId)
     ) {
         return false;
     }
