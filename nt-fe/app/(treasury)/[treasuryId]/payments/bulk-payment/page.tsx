@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { PageComponentLayout } from "@/components/page-component-layout";
@@ -136,6 +136,8 @@ export default function BulkPaymentPage() {
         string | null
     >(null);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
+    const [isSubmittingProposal, setIsSubmittingProposal] = useState(false);
+    const isSubmittingProposalRef = useRef(false);
 
     const trackReviewStepEnter = (
         source: "upload_continue" | "edit_save" | "edit_cancel",
@@ -294,11 +296,16 @@ export default function BulkPaymentPage() {
 
     // Handle submission
     const onSubmit = async () => {
+        if (isSubmittingProposalRef.current) {
+            return;
+        }
         if (isConfidential) {
             return onSubmitConfidential();
         }
         if (!selectedTreasury || paymentData.length === 0 || !selectedToken)
             return;
+        isSubmittingProposalRef.current = true;
+        setIsSubmittingProposal(true);
 
         const totalAmount = paymentData.reduce(
             (sum, item) => sum.add(Big(item.amount || "0")),
@@ -554,6 +561,9 @@ export default function BulkPaymentPage() {
             toast.error(
                 error instanceof Error ? error.message : tBulk("submitFailed"),
             );
+        } finally {
+            isSubmittingProposalRef.current = false;
+            setIsSubmittingProposal(false);
         }
     };
 
@@ -644,6 +654,7 @@ export default function BulkPaymentPage() {
                             onEditPayment={handleEditPayment}
                             onPaymentDataChange={setPaymentData}
                             onSubmit={onSubmit}
+                            isSubmitting={isSubmittingProposal}
                         />
                     )}
                 </div>

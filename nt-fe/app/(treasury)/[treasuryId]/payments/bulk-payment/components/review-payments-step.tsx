@@ -39,6 +39,7 @@ interface ReviewPaymentsStepProps extends StepProps {
     onEditPayment: (index: number) => void;
     onPaymentDataChange: (data: BulkPaymentData[]) => void;
     onSubmit: () => void;
+    isSubmitting?: boolean;
 }
 
 export function ReviewPaymentsStep({
@@ -48,6 +49,7 @@ export function ReviewPaymentsStep({
     onEditPayment,
     onPaymentDataChange,
     onSubmit,
+    isSubmitting = false,
 }: ReviewPaymentsStepProps) {
     const tPay = useTranslations("payments");
     const tBulk = useTranslations("bulkPayment");
@@ -113,6 +115,7 @@ export function ReviewPaymentsStep({
     };
 
     const handleProceedClick = () => {
+        if (isSubmitting) return;
         trackEvent("bulk-payments-submit-click", {
             source: "bulk_payments_review_step",
             treasury_id: treasuryId ?? "",
@@ -441,9 +444,11 @@ export function ReviewPaymentsStep({
                     <CreateRequestButton
                         type="button"
                         onClick={handleProceedClick}
-                        disabled={hasValidationErrors}
+                        disabled={hasValidationErrors || isSubmitting}
+                        isSubmitting={isSubmitting}
                         permissions={[{ kind: "call", action: "AddProposal" }]}
                         idleMessage={tPay("confirmSubmit")}
+                        loadingMessage={tBulk("submittingProposal")}
                     />
                 )}
             </ReviewStep>

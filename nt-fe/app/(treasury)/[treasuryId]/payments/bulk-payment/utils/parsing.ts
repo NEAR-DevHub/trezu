@@ -3,6 +3,7 @@ import { MAX_RECIPIENTS_PER_BULK_PAYMENT } from "@/lib/bulk-payment-api";
 import {
     validateNearAddress,
     isValidNearAddressFormat,
+    type NearValidationErrorCode,
 } from "@/lib/near-validation";
 import { getBatchStorageDepositIsRegistered } from "@/lib/api";
 import {
@@ -58,6 +59,7 @@ export interface BulkParsingLabels {
     failedToParseCsv: string;
     failedToParsePaste: string;
     failedToValidateAccount: string;
+    nearValidationError: (errorCode: NearValidationErrorCode) => string;
     feeEstimationFailed: string;
     feeEstimationFailedRow: (row: number, recipient: string) => string;
     intentsFee: IntentsFeeLabels;
@@ -660,7 +662,10 @@ export function needsStorageDepositCheck(token: {
 export async function validateAccountsAndStorage(
     payments: BulkPaymentData[],
     selectedToken: { address: string; residency?: string; network?: string },
-    labels: Pick<BulkParsingLabels, "failedToValidateAccount">,
+    labels: Pick<
+        BulkParsingLabels,
+        "failedToValidateAccount" | "nearValidationError"
+    >,
 ): Promise<BulkPaymentData[]> {
     const isNear = isNearToken(selectedToken.network, selectedToken.residency);
 
@@ -674,9 +679,12 @@ export async function validateAccountsAndStorage(
                 }
 
                 try {
-                    const validationError = await validateNearAddress(
+                    const validationErrorCode = await validateNearAddress(
                         payment.recipient,
                     );
+                    const validationError = validationErrorCode
+                        ? labels.nearValidationError(validationErrorCode)
+                        : null;
 
                     return {
                         ...payment,

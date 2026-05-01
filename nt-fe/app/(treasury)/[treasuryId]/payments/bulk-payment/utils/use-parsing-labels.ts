@@ -1,11 +1,14 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { translateNearValidationError } from "@/lib/near-validation-i18n";
+import type { NearValidationErrorCode } from "@/lib/near-validation";
 import type { BulkParsingLabels } from "./parsing";
 import { useIntentsFeeLabels } from "@/lib/intents-fee-labels";
 
 export function useBulkParsingLabels(): BulkParsingLabels {
     const t = useTranslations("bulkPayment.parsing");
+    const tAccountInput = useTranslations("accountInput");
     const intentsFee = useIntentsFeeLabels();
     return {
         rowPrefix: (row, message) => t("rowPrefix", { row, message }),
@@ -38,6 +41,14 @@ export function useBulkParsingLabels(): BulkParsingLabels {
         failedToParseCsv: t("failedToParseCsv"),
         failedToParsePaste: t("failedToParsePaste"),
         failedToValidateAccount: t("failedToValidateAccount"),
+        nearValidationError: (errorCode: NearValidationErrorCode) =>
+            translateNearValidationError(
+                tAccountInput as unknown as ((key: string) => string) & {
+                    has: (key: string) => boolean;
+                },
+                errorCode,
+                t("failedToValidateAccount"),
+            ),
         feeEstimationFailed: t("feeEstimationFailed"),
         feeEstimationFailedRow: (row, recipient) =>
             t("feeEstimationFailedRow", { row, recipient }),
