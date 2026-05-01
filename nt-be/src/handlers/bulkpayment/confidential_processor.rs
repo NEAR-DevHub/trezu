@@ -257,13 +257,10 @@ async fn drive_signing(
     }
 
     // Done — only now do we submit recipient intents to 1Click.
-    let public_key = crate::handlers::relay::confidential::fetch_mpc_public_key(
-        state,
-        sub_id.as_ref(),
-        "",
-    )
-    .await
-    .map_err(|(c, m)| format!("sub pubkey ({}): {}", c, m))?;
+    let public_key =
+        crate::handlers::relay::confidential::fetch_mpc_public_key(state, sub_id.as_ref(), "")
+            .await
+            .map_err(|(c, m)| format!("sub pubkey ({}): {}", c, m))?;
 
     submit_done_activation(
         state,
