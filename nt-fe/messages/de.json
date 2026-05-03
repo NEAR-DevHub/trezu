@@ -656,7 +656,10 @@
             "votingPeriod24h": "Abstimmungszeitraum: 24 Stunden",
             "votingPeriod24hBody": "Diese Tauschanfrage hat eine Abstimmungsdauer von 24 Stunden. Genehmigen Sie diese Anfrage innerhalb dieser Zeit, andernfalls läuft sie ab.",
             "reject": "Ablehnen",
-            "approve": "Genehmigen"
+            "approve": "Genehmigen",
+            "destinationNetwork": "Zielnetzwerk",
+            "processingPayment": "Zahlung wird verarbeitet",
+            "processingPaymentBody": "Diese Zahlung wurde vom Team genehmigt und wird jetzt verarbeitet. Dies kann einige Zeit dauern."
         },
         "insufficientBalance": {
             "noAsset": "Diese Anfrage kann nicht genehmigt werden, da das erforderliche Token in der Treasury nicht verfügbar ist.",

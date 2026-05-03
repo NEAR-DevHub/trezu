@@ -656,7 +656,10 @@
             "votingPeriod24h": "Oylama süresi: 24 saat",
             "votingPeriod24hBody": "Bu takas talebinin 24 saatlik oylama süresi vardır. Bu süre içinde talebi onaylayın, aksi takdirde talebin süresi dolar.",
             "reject": "Reddet",
-            "approve": "Onayla"
+            "approve": "Onayla",
+            "destinationNetwork": "Hedef Ağ",
+            "processingPayment": "Ödeme İşleniyor",
+            "processingPaymentBody": "Bu ödeme ekip tarafından onaylandı ve şu anda işleniyor. Tamamlanması biraz zaman alabilir."
         },
         "insufficientBalance": {
             "noAsset": "Bu talep onaylanamaz çünkü gerekli token hazinede mevcut değil.",

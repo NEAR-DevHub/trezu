@@ -656,7 +656,10 @@
             "votingPeriod24h": "투표 기간: 24시간",
             "votingPeriod24hBody": "이 교환 요청의 투표 기간은 24시간입니다. 이 시간 내에 요청을 승인하지 않으면 요청이 만료됩니다.",
             "reject": "거부",
-            "approve": "승인"
+            "approve": "승인",
+            "destinationNetwork": "대상 네트워크",
+            "processingPayment": "결제 처리 중",
+            "processingPaymentBody": "이 결제는 팀에 의해 승인되었으며 현재 처리 중입니다. 완료되는 데 시간이 걸릴 수 있습니다."
         },
         "insufficientBalance": {
             "noAsset": "필요한 토큰이 트레저리에 없으므로 이 요청을 승인할 수 없습니다.",

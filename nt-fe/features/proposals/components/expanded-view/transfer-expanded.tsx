@@ -7,6 +7,12 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { useToken } from "@/hooks/use-treasury-queries";
 import { useIntentsWithdrawalFee } from "@/hooks/use-intents-withdrawal-fee";
+import { Address } from "@/components/address";
+import { useBridgeTokens } from "@/hooks/use-bridge-tokens";
+import { NetworkIconDisplay } from "@/components/token-display";
+import { NEAR_COM_ICON } from "@/constants/token";
+import { NEAR_COM_NETWORK_ID } from "@/constants/intents";
+import type { ChainIcons } from "@/lib/api";
 
 interface TransferExpandedProps {
     data: PaymentRequestData;
@@ -15,9 +21,20 @@ interface TransferExpandedProps {
 export function TransferExpanded({ data }: TransferExpandedProps) {
     const t = useTranslations("proposals.expanded");
     const tIntents = useTranslations("intentsQuote");
-    // Get token metadata to determine blockchain network
     const { data: tokenData } = useToken(data.tokenId);
-    const chainName = tokenData?.network || "near";
+    const tokenChainName = tokenData?.network || "near";
+    const shouldFetchDestinationNetworkMeta =
+        !!data.receiverNetwork &&
+        data.receiverNetwork !== tokenChainName &&
+        data.receiverNetwork !== NEAR_COM_NETWORK_ID;
+    const { data: bridgeAssets = [] } = useBridgeTokens(
+        shouldFetchDestinationNetworkMeta,
+    );
+
+    // For cross-chain intents payments use the destination network for the
+    // recipient profile link so the explorer link points to the right chain.
+    const recipientChainName = data.receiverNetwork ?? tokenChainName;
+
     const {
         data: dynamicFeeData,
         isError: hasFeeError,
@@ -26,7 +43,7 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
         token: tokenData
             ? {
                   address: data.tokenId,
-                  network: chainName,
+                  network: tokenChainName,
                   decimals: tokenData.decimals,
               }
             : null,
@@ -37,6 +54,40 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
         !hasFeeError &&
         !!dynamicFeeData?.networkFee;
 
+    const destinationNetworkMeta = (() => {
+        if (!data.receiverNetwork || data.receiverNetwork === tokenChainName) {
+            return null;
+        }
+        if (data.receiverNetwork === NEAR_COM_NETWORK_ID) {
+            return {
+                name: NEAR_COM_NETWORK_ID,
+                chainIcons: {
+                    dark: NEAR_COM_ICON,
+                    light: NEAR_COM_ICON,
+                } as ChainIcons,
+            };
+        }
+
+        for (const asset of bridgeAssets) {
+            const network = asset.networks.find(
+                (n) =>
+                    n.id === data.receiverNetwork ||
+                    n.name === data.receiverNetwork,
+            );
+            if (!network) continue;
+
+            return {
+                name: network.name,
+                chainIcons: network.chainIcons,
+            };
+        }
+
+        return {
+            name: data.receiverNetwork,
+            chainIcons: null,
+        };
+    })();
+
     const infoItems: InfoItem[] = [
         {
             label: t("recipient"),
@@ -44,7 +95,7 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
                 <User
                     accountId={data.receiver}
                     useAddressBook
-                    chainName={chainName}
+                    chainName={recipientChainName}
                     withHoverCard
                 />
             ),
@@ -60,6 +111,19 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
             ),
         },
     ];
+
+    if (destinationNetworkMeta) {
+        infoItems.push({
+            label: t("destinationNetwork"),
+            value: (
+                <NetworkIconDisplay
+                    chainIcons={destinationNetworkMeta.chainIcons}
+                    networkName={destinationNetworkMeta.name}
+                    networkNameClassName="font-normal capitalize"
+                />
+            ),
+        });
+    }
 
     if (hasFeeData) {
         infoItems.push({
@@ -86,5 +150,36 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
         infoItems.push({ label: t("notes"), value: content });
     }
 
-    return <InfoDisplay items={infoItems} />;
+    const expandableItems: InfoItem[] = [];
+
+    if (data.depositAddress) {
+        expandableItems.push({
+            label: t("depositAddress"),
+            value: <Address address={data.depositAddress} copyable={true} />,
+            info: t("depositAddressTooltip"),
+        });
+    }
+
+    if (data.quoteSignature) {
+        expandableItems.push({
+            label: t("quoteSignature"),
+            value: (
+                <Address
+                    address={data.quoteSignature}
+                    copyable={true}
+                    prefixLength={16}
+                />
+            ),
+            info: t("quoteSignatureTooltip"),
+        });
+    }
+
+    return (
+        <InfoDisplay
+            items={infoItems}
+            expandableItems={
+                expandableItems.length > 0 ? expandableItems : undefined
+            }
+        />
+    );
 }

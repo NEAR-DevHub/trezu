@@ -1,12 +1,11 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { ConnectorAction } from "@hot-labs/near-connect";
 import { ArrowDownToLine, Info } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useFormContext, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -15,6 +14,7 @@ import { AmountSummary } from "@/components/amount-summary";
 import { Button } from "@/components/button";
 import { PageCard } from "@/components/card";
 import { CreateRequestButton } from "@/components/create-request-button";
+import { TokenDisplay } from "@/components/token-display-with-network";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { PendingButton } from "@/components/pending-button";
 import {
@@ -27,7 +27,7 @@ import { Textarea } from "@/components/textarea";
 import { Tooltip } from "@/components/tooltip";
 import { type Token, tokenSchema } from "@/components/token-input";
 import { Form, FormField } from "@/components/ui/form";
-import { default_near_token } from "@/constants/token";
+import { default_near_token, NEAR_COM_ICON } from "@/constants/token";
 import { useAddressBook } from "@/features/address-book";
 import {
     PAGE_TOUR_NAMES,
@@ -38,24 +38,25 @@ import {
 import { type BridgeAsset, useBridgeTokens } from "@/hooks/use-bridge-tokens";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useTreasury } from "@/hooks/use-treasury";
-import {
-    useStorageDepositIsRegistered,
-    useToken,
-    useTreasuryPolicy,
-} from "@/hooks/use-treasury-queries";
+import { useToken, useTreasuryPolicy } from "@/hooks/use-treasury-queries";
 import { trackEvent } from "@/lib/analytics";
-import Big from "@/lib/big";
-import { getBlockchainType } from "@/lib/blockchain-utils";
-import { useNear } from "@/stores/near-store";
-import { buildIntentsTransferProposal } from "../exchange/utils/proposal-builder";
-import { buildConfidentialProposal } from "../../../../features/confidential/utils/proposal-builder";
 import { generateIntent, getIntentsQuote } from "@/lib/api";
 import type { IntentsQuoteResponse } from "@/lib/api";
+import Big from "@/lib/big";
+import { getBlockchainType } from "@/lib/blockchain-utils";
+import { buildIntentsTransferProposal } from "@/lib/near-proposal-builders";
+import {
+    isEthImplicitNearAddress,
+    isValidNearAddressFormat,
+} from "@/lib/near-validation";
+import { useNear } from "@/stores/near-store";
+import { buildConfidentialProposal } from "../../../../features/confidential/utils/proposal-builder";
 import { PaymentFormSection } from "./components/payment-form-section";
 import { Address } from "@/components/address";
 import {
     useIntentsQuote,
     buildIntentsQuoteRequest,
+    NEAR_COM_NETWORK_ID,
     type IntentsAmountMode,
 } from "@/hooks/use-intents-quote";
 import { parseTokenQueryParam } from "@/lib/token-query-param";
@@ -66,9 +67,19 @@ import {
     formatCurrency,
     formatTokenDisplayAmount,
 } from "@/lib/utils";
-import { isIntentsCrossChainToken, isIntentsToken } from "@/lib/intents-fee";
-import { useIntentsFeeLabels } from "@/lib/intents-fee-labels";
+import {
+    isIntentsCrossChainToken,
+    isIntentsToken,
+    isNearChainFtToken,
+    isNearChainNativeToken,
+} from "@/lib/intents-fee";
 import { FunctionCallKind, TransferKind } from "@/lib/proposals-api";
+import {
+    buildDirectTransferKind,
+    buildDirectFtStorageDepositTxs,
+    buildNativeNEARIntentsProposal,
+    buildNearFtIntentsProposal,
+} from "./utils/proposal-builder";
 
 function buildPaymentFormSchema(messages: {
     recipientMin: string;
@@ -90,7 +101,6 @@ function buildPaymentFormSchema(messages: {
                     message: messages.amountGreaterThanZero,
                 }),
             memo: z.string().optional(),
-            isRegistered: z.boolean().optional(),
             token: tokenSchema,
         })
         .superRefine((data, ctx) => {
@@ -222,6 +232,7 @@ interface Step2Props extends StepProps {
     liveQuote?: IntentsQuoteResponse | null;
     isLoadingLiveQuote?: boolean;
     isFetchingLiveQuote?: boolean;
+    isViaIntents?: boolean;
 }
 
 function Step2({
@@ -230,36 +241,41 @@ function Step2({
     liveQuote,
     isLoadingLiveQuote,
     isFetchingLiveQuote,
+    isViaIntents,
 }: Step2Props) {
     const tPay = useTranslations("payments");
     const tIntents = useTranslations("intentsQuote");
     const form = useFormContext<PaymentFormValues>();
-    const token = form.watch("token");
-    const address = form.watch("address");
-    const amount = form.watch("amount");
-    const { data: storageDepositData } = useStorageDepositIsRegistered(
-        address,
-        token.address,
-        token.residency === "Ft",
-    );
+    const [token, amount, address, destinationNetwork] = useWatch({
+        control: form.control,
+        name: ["token", "amount", "address", "destinationNetwork"],
+    }) as [PaymentFormValues["token"], string, string, string];
     const { data: tokenData } = useToken(token.address);
+    const { data: bridgeAssets = [] } = useBridgeTokens();
+
+    // Chain icons for the destination network (for the review token icon overlay)
+    const destinationChainIcons = useMemo(() => {
+        if (!destinationNetwork) {
+            return undefined;
+        }
+        if (destinationNetwork === NEAR_COM_NETWORK_ID) {
+            return {
+                dark: NEAR_COM_ICON,
+                light: NEAR_COM_ICON,
+            };
+        }
+        for (const asset of bridgeAssets) {
+            const network = asset.networks.find(
+                (n) => n.id === destinationNetwork,
+            );
+            if (network?.chainIcons) return network.chainIcons;
+        }
+        return undefined;
+    }, [bridgeAssets, destinationNetwork]);
     const { data: addressBook = [] } = useAddressBook();
     const contactName = addressBook.find(
         (e) => e.address.toLowerCase() === address?.toLowerCase(),
     )?.name;
-    const isSelectedTokenIntents = isIntentsToken(token);
-
-    useEffect(() => {
-        if (storageDepositData !== undefined) {
-            form.setValue("isRegistered", storageDepositData);
-        }
-    }, [storageDepositData, form]);
-
-    useEffect(() => {
-        form.setValue("proposalData" as any, liveQuote ?? null, {
-            shouldValidate: false,
-        });
-    }, [form, liveQuote]);
 
     const {
         totalAmountWithFees,
@@ -300,17 +316,19 @@ function Step2({
             };
         }
 
-        const recipient = enteredAmount;
-        const total = enteredAmount;
-
         return {
-            totalAmountWithFees: total,
-            recipientAmount: recipient,
+            totalAmountWithFees: enteredAmount,
+            recipientAmount: enteredAmount,
             displayNetworkFee: Big(0),
-            estimatedUSDValue: price ? total.mul(price) : Big(0),
-            recipientEstimatedUSDValue: price ? recipient.mul(price) : Big(0),
+            estimatedUSDValue: price ? enteredAmount.mul(price) : Big(0),
+            recipientEstimatedUSDValue: price
+                ? enteredAmount.mul(price)
+                : Big(0),
         };
     }, [amount, liveQuote, token.decimals, tokenData?.price]);
+
+    const isQuoteLoading =
+        isViaIntents && (isLoadingLiveQuote || isFetchingLiveQuote);
 
     return (
         <PageCard>
@@ -345,10 +363,14 @@ function Step2({
                                 />
                             </div>
                             <div className="flex items-center gap-5 min-w-fit">
-                                <img
-                                    src={token.icon}
-                                    alt={token.symbol}
-                                    className="size-5 rounded-full"
+                                <TokenDisplay
+                                    icon={token.icon}
+                                    symbol={token.symbol}
+                                    chainIcons={
+                                        destinationChainIcons ??
+                                        token.chainIcons ??
+                                        undefined
+                                    }
                                 />
                                 <div className="flex flex-col gap-[3px] items-end">
                                     <p className="text-xs font-semibold text-wrap break-all">
@@ -407,11 +429,7 @@ function Step2({
 
             <div className="rounded-lg border bg-card p-0 overflow-hidden">
                 <CreateRequestButton
-                    isSubmitting={
-                        form.formState.isSubmitting ||
-                        (isSelectedTokenIntents &&
-                            (isLoadingLiveQuote || isFetchingLiveQuote))
-                    }
+                    isSubmitting={form.formState.isSubmitting || isQuoteLoading}
                     type="submit"
                     className="w-full h-10 rounded-none"
                     permissions={[
@@ -419,15 +437,11 @@ function Step2({
                         { kind: "call", action: "AddProposal" },
                     ]}
                     idleMessage={
-                        isSelectedTokenIntents &&
-                        (isLoadingLiveQuote || isFetchingLiveQuote)
+                        isQuoteLoading
                             ? tPay("preparingRoute")
                             : tPay("confirmSubmit")
                     }
-                    disabled={
-                        isSelectedTokenIntents &&
-                        (isLoadingLiveQuote || isFetchingLiveQuote)
-                    }
+                    disabled={isQuoteLoading}
                 />
             </div>
         </PageCard>
@@ -435,6 +449,39 @@ function Step2({
 }
 
 type PaymentFormValues = z.infer<ReturnType<typeof buildPaymentFormSchema>>;
+
+type PaymentTokenClassification = {
+    isNearNativeToken: boolean;
+    isNearFtToken: boolean;
+    isNearComRoute: boolean;
+    intentsOriginAsset: string;
+    tokenForIntentsQuote: Token;
+};
+
+function classifyPaymentToken(
+    token: Token,
+    destinationNetwork?: string,
+): PaymentTokenClassification {
+    const isNearNativeToken = isNearChainNativeToken(token);
+    const isNearFtToken = isNearChainFtToken(token);
+    const isNearComRoute = destinationNetwork === NEAR_COM_NETWORK_ID;
+    const intentsOriginAsset = isNearNativeToken
+        ? "nep141:wrap.near"
+        : isNearFtToken
+          ? `nep141:${token.address}`
+          : token.address;
+
+    return {
+        isNearNativeToken,
+        isNearFtToken,
+        isNearComRoute,
+        intentsOriginAsset,
+        tokenForIntentsQuote:
+            intentsOriginAsset === token.address
+                ? token
+                : { ...token, address: intentsOriginAsset },
+    };
+}
 
 const STABLE_TOKEN_PRIORITY: Record<string, number> = {
     USDC: 2,
@@ -529,36 +576,16 @@ function buildIntentTransferDescription(
         proposal_action: "payment-transfer",
         notes,
         recipient: data.address,
+        destinationNetwork: data.destinationNetwork || undefined,
         depositAddress: quote?.quote.depositAddress,
         signature: quote?.signature,
-        timeEstimate: quote?.quote.timeEstimate
-            ? `${quote.quote.timeEstimate} seconds`
-            : undefined,
     });
 }
-
-const buildTransferProposal = (
-    data: PaymentFormValues,
-    parsedAmount: string,
-    isConfidential: boolean,
-): TransferKind => {
-    const isNEAR =
-        data.token.address === default_near_token(isConfidential).address;
-    return {
-        Transfer: {
-            token_id: isNEAR ? "" : data.token.address,
-            receiver_id: data.address,
-            amount: parsedAmount,
-            msg: null,
-        },
-    };
-};
 
 export default function PaymentsPage() {
     const t = useTranslations("pages.payments");
     const tPay = useTranslations("payments");
     const tValidation = useTranslations("paymentForm.validation");
-    const intentsFeeLabels = useIntentsFeeLabels();
     const paymentFormSchema = useMemo(
         () =>
             buildPaymentFormSchema({
@@ -575,6 +602,8 @@ export default function PaymentsPage() {
     const [step, setStep] = useState(0);
     const searchParams = useSearchParams();
     const autoSelectedTokenKeyRef = useRef<string | null>(null);
+    // Cached quote — avoids re-fetching between step 1 → step 2 → submit.
+    const quoteRef = useRef<IntentsQuoteResponse | null>(null);
     // "recipient" for typed amount (exact output), "total" for MAX (exact input).
     const [intentsAmountMode, setIntentsAmountMode] =
         useState<IntentsAmountMode>("recipient");
@@ -596,7 +625,6 @@ export default function PaymentsPage() {
         preferredNetworks.length > 0,
     );
 
-    // Parse token from query params
     const defaultToken = useMemo(() => {
         const fallbackToken = default_near_token(isConfidential);
         return parseTokenQueryParam(tokenParam, fallbackToken);
@@ -622,11 +650,6 @@ export default function PaymentsPage() {
     const defaultAddress = useMemo(() => {
         const addressParam = searchParams.get("address");
         return addressParam ? decodeURIComponent(addressParam) : "";
-    }, [searchParams]);
-
-    const defaultRecipientName = useMemo(() => {
-        const nameParam = searchParams.get("name");
-        return nameParam ? decodeURIComponent(nameParam) : "";
     }, [searchParams]);
 
     // Onboarding tours
@@ -663,8 +686,87 @@ export default function PaymentsPage() {
         name: ["token", "amount", "address", "destinationNetwork"],
     }) as [PaymentFormValues["token"], string, string, string];
 
-    // Resolve destination network from address-book entry networks when
-    // exactly one bridge network matches the preferred blockchain types.
+    // ── Token & routing classification (render-time) ──────────────────────────
+
+    const watchedTokenClassification = useMemo(
+        () => classifyPaymentToken(watchedToken, watchedDestinationNetwork),
+        [watchedToken, watchedDestinationNetwork],
+    );
+    const isWatchedNearNativeToken =
+        watchedTokenClassification.isNearNativeToken;
+    const isWatchedNearFtToken = watchedTokenClassification.isNearFtToken;
+
+    const normalizedWatchedAddress = watchedAddress.trim().toLowerCase();
+    const isWatchedEthImplicit = isEthImplicitNearAddress(
+        normalizedWatchedAddress,
+    );
+    const isWatchedNearRecipient =
+        isValidNearAddressFormat(normalizedWatchedAddress) &&
+        !isWatchedEthImplicit;
+    const isWatchedNearComRoute = watchedTokenClassification.isNearComRoute;
+
+    // True when we'll send via a direct Transfer (not through Intents).
+    const isWatchedDirectTransfer =
+        !isConfidential &&
+        !isWatchedNearComRoute &&
+        isWatchedNearRecipient &&
+        (isWatchedNearNativeToken || isWatchedNearFtToken);
+
+    // Token object to use for the 1Click quote. For native NEAR and NEAR FT we
+    // swap in the nep141: prefix so the hook enables and shows a fee preview.
+    const quoteToken = useMemo((): Token => {
+        if (isConfidential || isWatchedDirectTransfer) return watchedToken;
+        return watchedTokenClassification.tokenForIntentsQuote;
+    }, [
+        watchedToken,
+        isConfidential,
+        isWatchedDirectTransfer,
+        watchedTokenClassification,
+    ]);
+
+    // Whether this payment will go through the Intents protocol.
+    const isViaIntents = isIntentsToken(quoteToken);
+
+    const isCrossChainIntentsToken = isIntentsCrossChainToken(watchedToken);
+
+    // ── Live quote (drives step-1 fee preview & step-2 review) ───────────────
+
+    const {
+        quote: liveQuote,
+        isLoading: isLoadingLiveQuote,
+        isFetching: isFetchingLiveQuote,
+        isEnsuring: isEnsuringQuote,
+        isSyncPending: isQuoteSyncPending,
+        hasError: hasLiveQuoteError,
+        errorMessage: liveQuoteErrorMessage,
+        hasInvalidRecipientAddressError,
+        ensureBeforeReview,
+    } = useIntentsQuote({
+        treasuryId,
+        token: quoteToken,
+        amount: watchedAmount,
+        address: watchedAddress,
+        isConfidential,
+        proposalPeriod: policy?.proposal_period,
+        amountMode: intentsAmountMode,
+        destinationNetwork: watchedDestinationNetwork,
+        isPayment: true,
+    });
+
+    // Keep the quote ref in sync so onSubmit can use it without re-fetching.
+    useEffect(() => {
+        quoteRef.current = liveQuote ?? null;
+    }, [liveQuote]);
+
+    const isQuoteBusy =
+        isViaIntents &&
+        (isLoadingLiveQuote ||
+            isFetchingLiveQuote ||
+            isEnsuringQuote ||
+            isQuoteSyncPending);
+
+    // ── Destination network auto-wiring ───────────────────────────────────────
+
     const compatibleDestination = useMemo(() => {
         if (
             preferredBlockchainTypes.size === 0 ||
@@ -691,46 +793,18 @@ export default function PaymentsPage() {
         };
     }, [bridgeAssets, preferredBlockchainTypes, watchedToken]);
 
-    const isCrossChainIntentsToken = isIntentsCrossChainToken(watchedToken);
+    // ── Ensure quote is fresh before entering the review step ─────────────────
 
-    const isSelectedTokenIntents = isIntentsToken(watchedToken);
-
-    const {
-        quote: liveQuote,
-        isLoading: isLoadingLiveQuote,
-        isFetching: isFetchingLiveQuote,
-        isEnsuring: isEnsuringQuote,
-        isSyncPending: isQuoteSyncPending,
-        hasError: hasLiveQuoteError,
-        errorMessage: liveQuoteErrorMessage,
-        hasInvalidRecipientAddressError,
-        ensureBeforeReview,
-    } = useIntentsQuote({
-        treasuryId,
-        token: watchedToken,
-        amount: watchedAmount,
-        address: watchedAddress,
-        isConfidential,
-        proposalPeriod: policy?.proposal_period,
-        amountMode: intentsAmountMode,
-        destinationNetwork: watchedDestinationNetwork,
-        isPayment: true,
-    });
-    const isQuoteBusy =
-        isSelectedTokenIntents &&
-        (isLoadingLiveQuote ||
-            isFetchingLiveQuote ||
-            isEnsuringQuote ||
-            isQuoteSyncPending);
-
-    const ensureQuoteBeforeReview = async () => {
+    const ensureQuoteBeforeReview = useCallback(async (): Promise<boolean> => {
         const formValues = form.getValues();
-        const result = await ensureBeforeReview(formValues);
+        const result = await ensureBeforeReview({
+            token: quoteToken,
+            address: formValues.address,
+            amount: formValues.amount,
+        });
         if (result.ok) {
             if (result.quote) {
-                form.setValue("proposalData" as any, result.quote, {
-                    shouldValidate: false,
-                });
+                quoteRef.current = result.quote;
             }
             form.clearErrors("amount");
             return true;
@@ -746,15 +820,14 @@ export default function PaymentsPage() {
             }
         }
         return false;
-    };
+    }, [ensureBeforeReview, form, quoteToken]);
 
-    // Update token/address when query params change
+    // ── Effects ───────────────────────────────────────────────────────────────
+
     useEffect(() => {
         form.setValue("token", defaultToken);
     }, [defaultToken, form]);
 
-    // Auto-pick destination network when the address-book entry maps
-    // unambiguously to a single bridge network compatible with the token.
     useEffect(() => {
         if (!compatibleDestination) return;
         if (watchedDestinationNetwork) return;
@@ -768,9 +841,6 @@ export default function PaymentsPage() {
         );
     }, [compatibleDestination, form, watchedDestinationNetwork]);
 
-    // Commit the prefilled recipient address only once a destination network
-    // is selected — otherwise the address sits in a field that the UI has
-    // disabled behind "choose network first", producing a broken state.
     useEffect(() => {
         if (!defaultAddress) return;
         if (!watchedDestinationNetwork) return;
@@ -783,7 +853,6 @@ export default function PaymentsPage() {
     }, [defaultAddress, watchedDestinationNetwork, form]);
 
     useEffect(() => {
-        // Default mode: entered amount is what recipient gets.
         if (!isCrossChainIntentsToken) {
             setIntentsAmountMode("recipient");
         }
@@ -811,69 +880,61 @@ export default function PaymentsPage() {
         autoSelectedTokenKeyRef.current = autoSelectionKey;
     }, [autoSelectionKey, compatibleDefaultToken, form, tokenParam]);
 
+    // ── Submit ────────────────────────────────────────────────────────────────
+
     const onSubmit = async (data: PaymentFormValues) => {
         try {
-            const isNEAR = data.token.symbol === "NEAR";
             const proposalBond = policy?.proposal_bond || "0";
-            const gas = Big(255).mul(Big(10).pow(12)).toFixed(); // 255 Tgas for storage_deposit
+            const normalizedAddress = data.address.trim().toLowerCase();
+            const tokenClassification = classifyPaymentToken(
+                data.token,
+                data.destinationNetwork,
+            );
+            const { isNearNativeToken, isNearFtToken, isNearComRoute } =
+                tokenClassification;
 
-            const additionalTransactions: Array<{
-                receiverId: string;
-                actions: ConnectorAction[];
-            }> = [];
-            const isSubmittedTokenIntents = isIntentsToken(data.token);
+            const isEthImplicit = isEthImplicitNearAddress(normalizedAddress);
+            const isNearRecipient =
+                isValidNearAddressFormat(normalizedAddress) && !isEthImplicit;
 
-            const needsStorageDeposit =
-                !data.isRegistered && !isNEAR && !isSubmittedTokenIntents;
+            const shouldUseDirectTransfer =
+                !isConfidential &&
+                !isNearComRoute &&
+                isNearRecipient &&
+                (isNearNativeToken || isNearFtToken);
 
-            if (needsStorageDeposit) {
-                const depositInYocto = Big(0.00125)
-                    .mul(Big(10).pow(24))
-                    .toFixed();
-                additionalTransactions.push({
-                    receiverId: data.token.address,
-                    actions: [
-                        {
-                            type: "FunctionCall",
-                            params: {
-                                methodName: "storage_deposit",
-                                args: {
-                                    account_id: data.address,
-                                    registration_only: true,
-                                } as any,
-                                gas,
-                                deposit: depositInYocto,
-                            },
-                        } as ConnectorAction,
-                    ],
-                });
-            }
+            const shouldUseIntents = isConfidential
+                ? isIntentsToken(data.token)
+                : !shouldUseDirectTransfer;
 
             const parsedAmount = Big(data.amount)
                 .mul(Big(10).pow(data.token.decimals))
                 .toFixed();
 
-            let description = encodeToMarkdown({
-                notes: data.memo || "",
-            });
+            let description = encodeToMarkdown({ notes: data.memo || "" });
             let proposalKind: FunctionCallKind | TransferKind;
+            let additionalTransactions:
+                | Array<{ receiverId: string; actions: any[] }>
+                | undefined;
 
-            if (isSubmittedTokenIntents) {
-                const cachedQuote = form.getValues(
-                    "proposalData" as any,
-                ) as IntentsQuoteResponse | null;
+            if (shouldUseIntents) {
+                const tokenForQuote = tokenClassification.tokenForIntentsQuote;
+
+                // Use the cached quote from the live hook; fall back to a
+                // fresh fetch if the cache is empty (e.g. first load).
                 const quote =
-                    cachedQuote ??
+                    quoteRef.current ??
                     (await getIntentsQuote(
                         buildIntentsQuoteRequest(
                             treasuryId!,
-                            data.token,
-                            data.address,
+                            tokenForQuote,
+                            data.address.trim(),
                             parsedAmount,
                             isConfidential,
                             policy?.proposal_period,
                             intentsAmountMode,
                             data.destinationNetwork,
+                            true, // isPayment
                         ),
                         false,
                     ));
@@ -883,9 +944,6 @@ export default function PaymentsPage() {
                 }
 
                 if (isConfidential) {
-                    // Confidential path: generate intent + build v1.signer proposal
-                    // Pass the full quote (minus correlationId, already stored separately)
-                    // so the backend can persist it for displaying proposal details.
                     const { correlationId: _, ...quoteMetadata } =
                         quote as unknown as Record<string, unknown>;
                     const intentResponse = await generateIntent({
@@ -906,25 +964,58 @@ export default function PaymentsPage() {
                         .kind as FunctionCallKind;
                 } else {
                     description = buildIntentTransferDescription(data, quote);
-                    proposalKind = buildIntentsTransferProposal(
-                        data.token.address,
-                        quote.quote.depositAddress,
-                        quote.quote.amountIn,
-                    );
+                    const { depositAddress, amountIn } = quote.quote;
+
+                    let result;
+                    if (isIntentsToken(data.token)) {
+                        proposalKind = buildIntentsTransferProposal(
+                            data.token.address,
+                            depositAddress,
+                            amountIn,
+                        );
+                    } else if (isNearNativeToken) {
+                        result = await buildNativeNEARIntentsProposal({
+                            treasuryId: treasuryId!,
+                            depositAddress,
+                            amountIn,
+                        });
+                        proposalKind = result.kind;
+                        additionalTransactions = result.additionalTransactions;
+                    } else {
+                        result = await buildNearFtIntentsProposal({
+                            tokenAddress: data.token.address,
+                            depositAddress,
+                            amountIn,
+                        });
+                        proposalKind = result.kind;
+                        additionalTransactions = result.additionalTransactions;
+                    }
                 }
             } else {
-                proposalKind = buildTransferProposal(
-                    data,
+                // Direct NEAR or NEAR FT transfer
+                proposalKind = buildDirectTransferKind(
+                    normalizedAddress,
+                    data.token,
                     parsedAmount,
                     isConfidential,
                 );
+
+                if (isNearFtToken) {
+                    const storageTxs = await buildDirectFtStorageDepositTxs(
+                        normalizedAddress,
+                        data.token.address,
+                    );
+                    if (storageTxs.length > 0) {
+                        additionalTransactions = storageTxs;
+                    }
+                }
             }
 
             await createProposal(tPay("paymentSubmitted"), {
                 treasuryId: treasuryId!,
                 proposal: {
                     description,
-                    kind: proposalKind,
+                    kind: proposalKind!,
                 },
                 proposalBond,
                 additionalTransactions,
@@ -937,6 +1028,7 @@ export default function PaymentsPage() {
                         amount: data.amount,
                     });
                     form.reset();
+                    quoteRef.current = null;
                     setStep(0);
                     triggerPendingTour();
                 })
@@ -948,6 +1040,8 @@ export default function PaymentsPage() {
         }
     };
 
+    // ── Step configuration ────────────────────────────────────────────────────
+
     const steps = useMemo(
         () => [
             {
@@ -955,23 +1049,21 @@ export default function PaymentsPage() {
                 props: {
                     isFeeLoading: isQuoteBusy,
                     quoteErrorMessage:
-                        isSelectedTokenIntents && hasLiveQuoteError
+                        isViaIntents && hasLiveQuoteError
                             ? liveQuoteErrorMessage
                             : null,
                     hasRestrictedRecipientError:
-                        isSelectedTokenIntents &&
+                        isViaIntents &&
                         hasLiveQuoteError &&
                         hasInvalidRecipientAddressError,
                     ensureQuoteBeforeReview,
                     onAmountInput: () => {
                         if (isCrossChainIntentsToken) {
-                            // "recipient" => EXACT_OUTPUT quote mode.
                             setIntentsAmountMode("recipient");
                         }
                     },
                     onMaxSet: () => {
                         if (isCrossChainIntentsToken) {
-                            // "total" => EXACT_INPUT quote mode.
                             setIntentsAmountMode("total");
                         }
                     },
@@ -980,26 +1072,25 @@ export default function PaymentsPage() {
             {
                 component: Step2,
                 props: {
-                    showFeeBreakdown: isCrossChainIntentsToken,
+                    showFeeBreakdown: isViaIntents,
                     liveQuote,
                     isLoadingLiveQuote,
                     isFetchingLiveQuote,
+                    isViaIntents,
                 },
             },
         ],
         [
+            isQuoteBusy,
+            isViaIntents,
+            hasLiveQuoteError,
+            liveQuoteErrorMessage,
+            hasInvalidRecipientAddressError,
+            ensureQuoteBeforeReview,
+            isCrossChainIntentsToken,
             liveQuote,
             isLoadingLiveQuote,
             isFetchingLiveQuote,
-            isEnsuringQuote,
-            isQuoteSyncPending,
-            hasLiveQuoteError,
-            hasInvalidRecipientAddressError,
-            liveQuoteErrorMessage,
-            isSelectedTokenIntents,
-            isQuoteBusy,
-            ensureQuoteBeforeReview,
-            isCrossChainIntentsToken,
         ],
     );
 

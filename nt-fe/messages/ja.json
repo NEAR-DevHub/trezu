@@ -656,7 +656,10 @@
             "votingPeriod24h": "投票期間: 24時間",
             "votingPeriod24hBody": "この交換リクエストの投票期間は24時間です。この時間内に承認しないと、リクエストは期限切れとなります。",
             "reject": "却下",
-            "approve": "承認"
+            "approve": "承認",
+            "destinationNetwork": "送先ネットワーク",
+            "processingPayment": "支払い処理中",
+            "processingPaymentBody": "この支払いはチームによって承認され、現在処理中です。完了まで時間がかかる場合があります。"
         },
         "insufficientBalance": {
             "noAsset": "必要なトークンがトレジャリーにないため、このリクエストは承認できません。",

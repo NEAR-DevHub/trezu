@@ -8,16 +8,18 @@ import { Button } from "@/components/button";
 import { InputBlock } from "@/components/input-block";
 import { getNetworkDisplayName } from "@/components/token-display";
 import type { Token } from "@/components/token-input";
+import { NEAR_COM_NETWORK_ID } from "@/constants/intents";
 import { NEAR_COM_ICON } from "@/constants/token";
 import { useBridgeTokens } from "@/hooks/use-bridge-tokens";
 import { isValidAddress } from "@/lib/address-validation";
 import { getBlockchainType } from "@/lib/blockchain-utils";
-import { isValidNearAddressFormat } from "@/lib/near-validation";
+import {
+    isEthImplicitNearAddress,
+    isValidNearAddressFormat,
+} from "@/lib/near-validation";
 import { buildSectionedOptions, type SectionRule } from "@/lib/section-rules";
 import { cn } from "@/lib/utils";
 import { useThemeStore } from "@/stores/theme-store";
-
-export const NEAR_COM_NETWORK_ID = "near.com";
 
 export interface RecipientNetworkOption {
     id: string;
@@ -53,10 +55,17 @@ export type RecipientNetworkRuleOption = RecipientNetworkOption & {
 function isAddressCompatibleWithNetwork(
     address: string,
     networkName: string,
+    optionId: string,
 ): boolean {
     if (!address) return true;
     const blockchain = getBlockchainType(networkName);
     if (blockchain === "near") {
+        // ETH-format addresses (0x + 40 hex chars) are valid NEAR ETH-implicit
+        // accounts, but only the near.com (Intents) route can handle them.
+        // The raw "near" network entry stays visible but moves to incompatible.
+        if (isEthImplicitNearAddress(address)) {
+            return optionId === NEAR_COM_NETWORK_ID;
+        }
         // NEAR full check is async; sync format check is enough for sectioning.
         return isValidNearAddressFormat(address);
     }
@@ -171,6 +180,7 @@ export function RecipientNetworkSelect({
             isCompatible: isAddressCompatibleWithNetwork(
                 recipient,
                 option.networkName,
+                option.id,
             ),
         }));
     }, [availableOptions, recipient]);

@@ -50,6 +50,11 @@ export interface PaymentRequestData {
     receiver: string;
     notes?: string;
     url?: string;
+    /** Present when the payment was routed through the 1Click Intents protocol */
+    depositAddress?: string;
+    quoteSignature?: string;
+    /** Destination chain name (e.g. "ethereum", "bitcoin") for cross-chain payments */
+    receiverNetwork?: string;
 }
 
 export interface FunctionCallAction {

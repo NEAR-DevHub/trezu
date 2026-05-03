@@ -14,7 +14,7 @@ export type NearValidationErrorCode =
 
 const isHex64 = (str: string): boolean => /^[0-9a-fA-F]{64}$/.test(str);
 
-const isEthereumLike = (str: string): boolean =>
+export const isEthImplicitNearAddress = (str: string): boolean =>
     /^0x[0-9a-fA-F]{40}$/.test(str);
 
 function validateNearAddressFormat(
@@ -31,7 +31,7 @@ function validateNearAddressFormat(
     }
 
     if (isHex64(trimmed)) return null;
-    if (isEthereumLike(trimmed)) return null;
+    if (isEthImplicitNearAddress(trimmed)) return null;
 
     if (!trimmed.includes(".")) {
         return "missingTld";
@@ -62,7 +62,7 @@ export async function validateNearAddress(
 
     const trimmed = address.trim();
 
-    if (isHex64(trimmed) || isEthereumLike(trimmed)) {
+    if (isHex64(trimmed) || isEthImplicitNearAddress(trimmed)) {
         return null;
     }
 

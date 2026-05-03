@@ -656,7 +656,10 @@
             "votingPeriod24h": "תקופת הצבעה: 24 שעות",
             "votingPeriod24hBody": "לבקשת החלפה זו יש משך הצבעה של 24 שעות. אשר בקשה זו בתוך זמן זה, אחרת הבקשה תפוג.",
             "reject": "דחייה",
-            "approve": "אישור"
+            "approve": "אישור",
+            "destinationNetwork": "רשת יעד",
+            "processingPayment": "עיבוד תשלום",
+            "processingPaymentBody": "התשלום אושר על ידי הצוות ומעובד כעת. ייתכן שייקח קצת זמן להשלים."
         },
         "insufficientBalance": {
             "noAsset": "לא ניתן לאשר בקשה זו מכיוון שהטוקן הנדרש אינו זמין באוצר.",

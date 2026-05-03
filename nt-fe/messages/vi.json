@@ -656,7 +656,10 @@
             "votingPeriod24h": "Thời gian bỏ phiếu: 24 giờ",
             "votingPeriod24hBody": "Yêu cầu trao đổi này có thời gian bỏ phiếu 24 giờ. Hãy phê duyệt yêu cầu trong khoảng thời gian này, nếu không yêu cầu sẽ hết hạn.",
             "reject": "Từ chối",
-            "approve": "Phê duyệt"
+            "approve": "Phê duyệt",
+            "destinationNetwork": "Mạng đích",
+            "processingPayment": "Đang xử lý thanh toán",
+            "processingPaymentBody": "Khoản thanh toán này đã được nhóm phê duyệt và đang được xử lý. Có thể mất một chút thời gian để hoàn thành."
         },
         "insufficientBalance": {
             "noAsset": "Yêu cầu này không thể được phê duyệt vì token cần thiết không có sẵn trong ngân quỹ.",

@@ -656,7 +656,10 @@
             "votingPeriod24h": "Periode pemungutan suara: 24 jam",
             "votingPeriod24hBody": "Permintaan pertukaran ini memiliki durasi pemungutan suara 24 jam. Setujui permintaan ini dalam waktu ini, atau permintaan akan kedaluwarsa.",
             "reject": "Tolak",
-            "approve": "Setujui"
+            "approve": "Setujui",
+            "destinationNetwork": "Jaringan Tujuan",
+            "processingPayment": "Memproses Pembayaran",
+            "processingPaymentBody": "Pembayaran ini telah disetujui oleh tim dan sedang diproses. Mungkin memerlukan beberapa waktu."
         },
         "insufficientBalance": {
             "noAsset": "Permintaan ini tidak dapat disetujui karena token yang diperlukan tidak tersedia di treasury.",
