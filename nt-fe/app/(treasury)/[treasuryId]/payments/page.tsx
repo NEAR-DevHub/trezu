@@ -288,20 +288,13 @@ function Step2({
         const price = tokenData?.price ?? 0;
 
         if (liveQuote?.quote) {
-            const quotedTotal = Big(
-                formatBalance(
-                    liveQuote.quote.minAmountIn || "0",
-                    token.decimals,
-                    token.decimals,
-                ),
+            const divisor = Big(10).pow(token.decimals);
+            const quotedTotal = Big(liveQuote.quote.minAmountIn || "0").div(
+                divisor,
             );
             const quotedRecipient = Big(
-                formatBalance(
-                    liveQuote.quote.minAmountOut || "0",
-                    token.decimals,
-                    token.decimals,
-                ),
-            );
+                liveQuote.quote.minAmountOut || "0",
+            ).div(divisor);
             const quotedFee = quotedTotal.minus(quotedRecipient);
             const feeValue = quotedFee.gt(0) ? quotedFee : Big(0);
 
@@ -341,6 +334,7 @@ function Step2({
                     totalUSD={estimatedUSDValue.toNumber()}
                     token={token}
                     showNetworkIcon={true}
+                    preserveFormattedTotal={!!liveQuote?.quote}
                 >
                     <p>{tPay("summaryRecipients", { count: 1 })}</p>
                 </AmountSummary>
@@ -1079,7 +1073,7 @@ export default function PaymentsPage() {
                 component: Step2,
                 props: {
                     showFeeBreakdown: isViaIntents,
-                    liveQuote,
+                    liveQuote: liveQuote ?? quoteRef.current,
                     isLoadingLiveQuote,
                     isFetchingLiveQuote,
                     isViaIntents,

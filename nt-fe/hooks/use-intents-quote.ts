@@ -71,10 +71,9 @@ export function buildIntentsQuoteRequest(
     const destinationAsset = isNearComNetwork
         ? token.address
         : destinationNetwork!;
-    const normalizedRecipient =
-        isNearComNetwork && isEthImplicitNearAddress(address)
-            ? address.toLowerCase()
-            : address;
+    const normalizedRecipient = isEthImplicitNearAddress(address)
+        ? address.toLowerCase()
+        : address;
 
     return {
         daoId: treasuryId,
