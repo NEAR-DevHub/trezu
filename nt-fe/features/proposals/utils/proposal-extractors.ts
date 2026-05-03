@@ -184,7 +184,7 @@ export function extractPaymentRequestData(
     const receiverNetwork =
         destinationNetworkId === NEAR_COM_NETWORK_ID
             ? NEAR_COM_NETWORK_ID
-            : destinationNetworkName;
+            : destinationNetworkName || destinationNetworkId;
 
     return {
         tokenId,

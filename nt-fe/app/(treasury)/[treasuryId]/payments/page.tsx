@@ -577,6 +577,7 @@ function buildIntentTransferDescription(
         notes,
         recipient: data.address,
         destinationNetwork: data.destinationNetwork || undefined,
+        destinationNetworkName: data.destinationNetworkName || undefined,
         depositAddress: quote?.quote.depositAddress,
         signature: quote?.signature,
     });
@@ -685,8 +686,6 @@ export default function PaymentsPage() {
         control: form.control,
         name: ["token", "amount", "address", "destinationNetwork"],
     }) as [PaymentFormValues["token"], string, string, string];
-
-    // ── Token & routing classification (render-time) ──────────────────────────
 
     const watchedTokenClassification = useMemo(
         () => classifyPaymentToken(watchedToken, watchedDestinationNetwork),
@@ -885,7 +884,8 @@ export default function PaymentsPage() {
     const onSubmit = async (data: PaymentFormValues) => {
         try {
             const proposalBond = policy?.proposal_bond || "0";
-            const normalizedAddress = data.address.trim().toLowerCase();
+            const trimmedAddress = data.address.trim();
+            const normalizedNearAddress = trimmedAddress.toLowerCase();
             const tokenClassification = classifyPaymentToken(
                 data.token,
                 data.destinationNetwork,
@@ -893,9 +893,12 @@ export default function PaymentsPage() {
             const { isNearNativeToken, isNearFtToken, isNearComRoute } =
                 tokenClassification;
 
-            const isEthImplicit = isEthImplicitNearAddress(normalizedAddress);
+            const isEthImplicit = isEthImplicitNearAddress(
+                normalizedNearAddress,
+            );
             const isNearRecipient =
-                isValidNearAddressFormat(normalizedAddress) && !isEthImplicit;
+                isValidNearAddressFormat(normalizedNearAddress) &&
+                !isEthImplicit;
 
             const shouldUseDirectTransfer =
                 !isConfidential &&
@@ -928,7 +931,7 @@ export default function PaymentsPage() {
                         buildIntentsQuoteRequest(
                             treasuryId!,
                             tokenForQuote,
-                            data.address.trim(),
+                            trimmedAddress,
                             parsedAmount,
                             isConfidential,
                             policy?.proposal_period,
@@ -944,6 +947,9 @@ export default function PaymentsPage() {
                 }
 
                 if (isConfidential) {
+                    // Confidential path: generate intent + build v1.signer proposal
+                    // Pass the full quote (minus correlationId, already stored separately)
+                    // so the backend can persist it for displaying proposal details.
                     const { correlationId: _, ...quoteMetadata } =
                         quote as unknown as Record<string, unknown>;
                     const intentResponse = await generateIntent({
@@ -994,7 +1000,7 @@ export default function PaymentsPage() {
             } else {
                 // Direct NEAR or NEAR FT transfer
                 proposalKind = buildDirectTransferKind(
-                    normalizedAddress,
+                    trimmedAddress,
                     data.token,
                     parsedAmount,
                     isConfidential,
@@ -1002,7 +1008,7 @@ export default function PaymentsPage() {
 
                 if (isNearFtToken) {
                     const storageTxs = await buildDirectFtStorageDepositTxs(
-                        normalizedAddress,
+                        trimmedAddress,
                         data.token.address,
                     );
                     if (storageTxs.length > 0) {
