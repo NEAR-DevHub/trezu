@@ -44,6 +44,40 @@ export function isIntentsCrossChainToken(token: {
     );
 }
 
+export function isNearChainNativeToken(token: {
+    address?: string | null;
+    network?: string | null;
+    residency?: string | null;
+}): boolean {
+    const address = (token.address || "").toLowerCase();
+    const network = (token.network || "").toLowerCase();
+    const residency = (token.residency || "").toLowerCase();
+
+    return (
+        address === "near" &&
+        (!network || network === "near") &&
+        (!residency || residency === "near")
+    );
+}
+
+export function isNearChainFtToken(token: {
+    address?: string | null;
+    network?: string | null;
+    residency?: string | null;
+}): boolean {
+    const address = (token.address || "").toLowerCase();
+    const network = (token.network || "").toLowerCase();
+    const residency = (token.residency || "").toLowerCase();
+    const isNearNetwork = !network || network === "near";
+    const isNearStyleFtAddress =
+        !!address &&
+        address !== "near" &&
+        !address.startsWith("nep141:") &&
+        !address.startsWith("nep245:");
+
+    return isNearNetwork && (residency === "ft" || isNearStyleFtAddress);
+}
+
 function fromAmountRaw(rawAmount: bigint | string, decimals: number): Big {
     return Big(rawAmount.toString()).div(Big(10).pow(decimals));
 }

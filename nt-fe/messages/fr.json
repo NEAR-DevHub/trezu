@@ -656,7 +656,10 @@
             "votingPeriod24h": "Période de vote : 24 heures",
             "votingPeriod24hBody": "Cette demande d'échange a une durée de vote de 24 heures. Approuvez cette demande dans ce délai, sinon la demande expirera.",
             "reject": "Rejeter",
-            "approve": "Approuver"
+            "approve": "Approuver",
+            "destinationNetwork": "Réseau de destination",
+            "processingPayment": "Paiement en cours",
+            "processingPaymentBody": "Ce paiement a été approuvé par l'équipe et est maintenant en cours de traitement. Cela peut prendre un certain temps."
         },
         "insufficientBalance": {
             "noAsset": "Cette demande ne peut pas être approuvée car le token requis n'est pas disponible dans la trésorerie.",

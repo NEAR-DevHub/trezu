@@ -28,6 +28,7 @@ import { Policy } from "@/types/policy";
 import { getKindFromProposal } from "@/lib/config-utils";
 import { FunctionCallAction } from "@/lib/proposals-api";
 import { IntentsQuoteResponse } from "@/lib/api";
+import { NEAR_COM_NETWORK_ID } from "@/constants/intents";
 
 function extractFTTransferData(
     functionCall: FunctionCallKind["FunctionCall"],
@@ -165,12 +166,35 @@ export function extractPaymentRequestData(
         receiver = describedRecipient;
     }
 
+    // Intents routing metadata (only present on proposals created via 1Click)
+    const depositAddress =
+        decodeProposalDescription("depositAddress", proposal.description) ||
+        undefined;
+    const quoteSignature =
+        decodeProposalDescription("signature", proposal.description) ||
+        undefined;
+    const destinationNetworkId =
+        decodeProposalDescription("destinationNetwork", proposal.description) ||
+        undefined;
+    const destinationNetworkName =
+        decodeProposalDescription(
+            "destinationNetworkName",
+            proposal.description,
+        ) || undefined;
+    const receiverNetwork =
+        destinationNetworkId === NEAR_COM_NETWORK_ID
+            ? NEAR_COM_NETWORK_ID
+            : destinationNetworkName || destinationNetworkId;
+
     return {
         tokenId,
         amount,
         receiver,
         notes: title ? title : notes,
         url: url || "",
+        depositAddress,
+        quoteSignature,
+        receiverNetwork,
     };
 }
 

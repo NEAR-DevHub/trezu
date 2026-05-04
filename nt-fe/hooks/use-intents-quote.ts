@@ -4,10 +4,14 @@ import { useCallback, useMemo, useState } from "react";
 import { useDebounce } from "use-debounce";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
+import { NEAR_COM_NETWORK_ID } from "@/constants/intents";
 import { getAddressPattern } from "@/lib/address-validation";
 import Big from "@/lib/big";
 import { getBlockchainType } from "@/lib/blockchain-utils";
-import { isValidNearAddressFormat } from "@/lib/near-validation";
+import {
+    isEthImplicitNearAddress,
+    isValidNearAddressFormat,
+} from "@/lib/near-validation";
 import { getIntentsQuote, type IntentsQuoteResponse } from "@/lib/api";
 import { formatBalance, nanosToMs } from "@/lib/utils";
 import type { Token } from "@/components/token-input";
@@ -15,8 +19,7 @@ import { isIntentsToken } from "@/lib/intents-fee";
 
 export type IntentsAmountMode = "recipient" | "total";
 const MAX_FEE_TO_RECIPIENT_RATIO = Big(1);
-
-export const NEAR_COM_NETWORK_ID = "near.com";
+export { NEAR_COM_NETWORK_ID };
 
 function isAddressValidForToken(address: string, token: Token): boolean {
     if (!address) return false;
@@ -42,9 +45,15 @@ export function buildIntentsQuoteRequest(
         ? nanosToMs(proposalPeriod)
         : 24 * 60 * 60 * 1000;
 
+    // ORIGIN_CHAIN for native-NEAR/NEAR-FT tokens (funds arrive via ft_transfer
+    // on the NEAR blockchain).  INTENTS for Intents tokens (funds arrive via
+    // mt_transfer on intents.near).  Confidential always uses the confidential
+    // variant regardless of residency.
     const depositType = isConfidential
         ? ("CONFIDENTIAL_INTENTS" as const)
-        : ("INTENTS" as const);
+        : token.residency === "Intents"
+          ? ("INTENTS" as const)
+          : ("ORIGIN_CHAIN" as const);
 
     // Empty destinationNetwork = no explicit selection. Only near.com is
     // user-selectable today, so default to it.
@@ -62,6 +71,9 @@ export function buildIntentsQuoteRequest(
     const destinationAsset = isNearComNetwork
         ? token.address
         : destinationNetwork!;
+    const normalizedRecipient = isEthImplicitNearAddress(address)
+        ? address.toLowerCase()
+        : address;
 
     return {
         daoId: treasuryId,
@@ -73,7 +85,7 @@ export function buildIntentsQuoteRequest(
         amount: parsedAmount,
         refundTo: treasuryId,
         refundType: depositType,
-        recipient: address,
+        recipient: normalizedRecipient,
         recipientType,
         deadline: new Date(Date.now() + deadlineMs).toISOString(),
         quoteWaitingTimeMs: 0,

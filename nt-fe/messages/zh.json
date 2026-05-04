@@ -656,7 +656,10 @@
             "votingPeriod24h": "投票期:24 小时",
             "votingPeriod24hBody": "此兑换请求的投票时长为 24 小时。请在此时间内批准请求,否则该请求将过期。",
             "reject": "拒绝",
-            "approve": "批准"
+            "approve": "批准",
+            "destinationNetwork": "目标网络",
+            "processingPayment": "处理付款中",
+            "processingPaymentBody": "此付款已获团队批准，正在处理中，可能需要一些时间才能完成。"
         },
         "insufficientBalance": {
             "noAsset": "由于金库中没有所需代币,此请求无法被批准。",

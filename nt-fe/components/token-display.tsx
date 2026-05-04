@@ -1,6 +1,6 @@
 import { useTranslations } from "next-intl";
 import { ChainIcons, TreasuryAsset } from "@/lib/api";
-import { formatCurrency, formatSmartAmount } from "@/lib/utils";
+import { cn, formatCurrency, formatSmartAmount } from "@/lib/utils";
 import { useThemeStore } from "@/stores/theme-store";
 import Big from "@/lib/big";
 import { TokenDisplay as TokenWithNetworkDisplay } from "./token-display-with-network";
@@ -9,6 +9,7 @@ interface NetworkIconDisplayProps {
     chainIcons: ChainIcons | null;
     networkName: string;
     residency?: string;
+    networkNameClassName?: string;
 }
 
 const NETWORK_DISPLAY_NAMES: Record<string, string> = {
@@ -57,6 +58,7 @@ export const NetworkIconDisplay = ({
     chainIcons,
     networkName,
     residency,
+    networkNameClassName,
 }: NetworkIconDisplayProps) => {
     const { theme } = useThemeStore();
     const getResidencyLabel = useResidencyLabel();
@@ -83,7 +85,12 @@ export const NetworkIconDisplay = ({
                 </div>
             )}
             <div className="flex flex-col gap-0 items-baseline text-left">
-                <span className="font-semibold capitalize">
+                <span
+                    className={cn(
+                        "font-semibold capitalize",
+                        networkNameClassName,
+                    )}
+                >
                     {getNetworkDisplayName(networkName)}
                 </span>
                 {isNEAR && (
