@@ -26,6 +26,8 @@ const earnAppConfigs: {
     {
         id: "nearStaking",
         goToHref: "https://near-staking.trezu.org/",
+        howItWorksHref:
+            "https://youtube.com/shorts/kwIWddeMXRM?si=wxe2qrS3fkHxLJPN",
     },
 ];
 
