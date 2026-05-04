@@ -284,6 +284,10 @@ async fn detect_balance_change_events(
 struct DetectedSwapRow {
     id: i64,
     account_id: String,
+    solver_transaction_hash: String,
+    deposit_balance_change_id: Option<i64>,
+    fulfillment_balance_change_id: i64,
+    fulfillment_receipt_id: Option<String>,
     sent_token_id: Option<String>,
     sent_amount: Option<bigdecimal::BigDecimal>,
     received_token_id: String,
@@ -302,7 +306,9 @@ async fn detect_swap_events(
     // revisit them once the poller fills fulfillment_* in place.
     let rows: Vec<DetectedSwapRow> = sqlx::query_as(
         r#"
-        SELECT id, account_id, sent_token_id, sent_amount, received_token_id, received_amount
+        SELECT id, account_id, solver_transaction_hash, deposit_balance_change_id,
+               fulfillment_balance_change_id, fulfillment_receipt_id,
+               sent_token_id, sent_amount, received_token_id, received_amount
         FROM detected_swaps
         WHERE id > $1
           AND fulfillment_balance_change_id IS NOT NULL
@@ -324,6 +330,22 @@ async fn detect_swap_events(
     let batch_max_id = rows.iter().map(|r| r.id).max().unwrap_or(last_id);
 
     for row in &rows {
+        // Proposal-deposit synthetic rows are pre-seeded for quote context and can
+        // appear swap-like even when actual fulfillment has not happened yet.
+        // Notify only when they have a distinct fulfillment leg or an explicit
+        // fulfillment receipt recorded.
+        let is_synthetic_proposal_deposit =
+            row.solver_transaction_hash.starts_with("proposal-deposit-");
+        let has_same_deposit_and_fulfillment = row
+            .deposit_balance_change_id
+            .is_some_and(|deposit_id| deposit_id == row.fulfillment_balance_change_id);
+        if is_synthetic_proposal_deposit
+            && row.fulfillment_receipt_id.is_none()
+            && has_same_deposit_and_fulfillment
+        {
+            continue;
+        }
+
         let received = match &row.received_amount {
             Some(v) => v.to_string(),
             None => {
