@@ -154,11 +154,13 @@ function PaymentDisplay({
 interface BatchPaymentRequestExpandedProps {
     data: BatchPaymentRequestData;
     proposal: Proposal;
+    policy: Policy;
 }
 
 export function BatchPaymentRequestExpanded({
     data,
     proposal,
+    policy,
 }: BatchPaymentRequestExpandedProps) {
     const t = useTranslations("proposals.expanded");
     const tIntents = useTranslations("intentsQuote");
@@ -166,7 +168,7 @@ export function BatchPaymentRequestExpanded({
 
     // Check if we should auto-refetch
     // Only refetch if proposal is Executed
-    const proposalStatus = getProposalStatus(proposal, {} as Policy);
+    const proposalStatus = getProposalStatus(proposal, policy);
     const isExecuted = proposalStatus === "Executed";
 
     // First fetch to check if there are pending payments

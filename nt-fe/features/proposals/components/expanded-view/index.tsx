@@ -34,11 +34,13 @@ import { getProposalStatus } from "../../utils/proposal-utils";
 
 interface InternalExpandedViewProps {
     proposal: Proposal;
+    policy: Policy;
     treasuryId?: string;
 }
 
 function ExpandedViewInternal({
     proposal,
+    policy,
     treasuryId,
 }: InternalExpandedViewProps) {
     const t = useTranslations("proposals.expanded");
@@ -91,6 +93,7 @@ function ExpandedViewInternal({
                 <BatchPaymentRequestExpanded
                     data={batchPaymentRequestData}
                     proposal={proposal}
+                    policy={policy}
                 />
             );
         }
@@ -126,7 +129,7 @@ export function ExpandedView({
     const { treasuryId } = useTreasury();
     const { accountId } = useNear();
 
-    const component = ExpandedViewInternal({ proposal, treasuryId });
+    const component = ExpandedViewInternal({ proposal, policy, treasuryId });
     const requestUrl = `${window.location.origin}/${treasuryId}/requests/${proposal.id}`;
 
     const ownProposal =
