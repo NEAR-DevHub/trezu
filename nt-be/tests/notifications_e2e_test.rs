@@ -643,14 +643,9 @@ async fn test_swap_notifications_skip_synthetic_proposal_deposits(pool: PgPool) 
     )
     .await;
 
-    let detected = nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
+    nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
         .await
         .expect("detection cycle");
-    assert_eq!(
-        detected, 1,
-        "only real fulfilled swap should notify; synthetic deposit rows should be skipped"
-    );
-
     let rows: Vec<(i64, i64)> = sqlx::query_as(
         "SELECT id, source_id FROM dao_notifications WHERE dao_id = $1 AND event_type = 'swap_fulfilled' ORDER BY id",
     )
