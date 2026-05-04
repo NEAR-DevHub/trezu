@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT EXISTS (\n            SELECT 1\n            FROM balance_changes bc\n            WHERE bc.account_id = $1\n              AND bc.token_id LIKE 'intents.near:%'\n              AND bc.block_height > COALESCE(\n                  (SELECT MAX(ds.block_height) FROM detected_swaps ds WHERE ds.account_id = $1),\n                  0\n              )\n        ) AS \"exists!\"\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "exists!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "cd3f2b43da3ac6d41f60ae0272d1e2ca381c8852e3511099135bb4678a5c866c"
+}

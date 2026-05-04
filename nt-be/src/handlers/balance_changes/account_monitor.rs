@@ -385,7 +385,11 @@ pub async fn run_maintenance_cycle(
                             }
                         }
                         Err(e) => {
-                            log::error!("[maintenance] {}: Error detecting swaps: {}", account_id, e);
+                            log::error!(
+                                "[maintenance] {}: Error detecting swaps: {}",
+                                account_id,
+                                e
+                            );
                         }
                     }
                 }
