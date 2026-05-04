@@ -27,6 +27,7 @@ use sqlx::types::BigDecimal;
 use std::collections::HashSet;
 use std::error::Error;
 use std::str::FromStr;
+use std::time::Duration;
 
 /// Token ID prefix for NEAR Intents tokens
 const INTENTS_PREFIX: &str = "intents.near:";
@@ -125,13 +126,23 @@ pub async fn detect_swaps_from_api(
     api_key: Option<&str>,
     api_url: &str,
 ) -> Result<Vec<DetectedSwap>, Box<dyn Error + Send + Sync>> {
+    let client = Client::new();
+    detect_swaps_from_api_with_client(&client, pool, account_id, api_key, api_url).await
+}
+
+pub async fn detect_swaps_from_api_with_client(
+    client: &Client,
+    pool: &PgPool,
+    account_id: &str,
+    api_key: Option<&str>,
+    api_url: &str,
+) -> Result<Vec<DetectedSwap>, Box<dyn Error + Send + Sync>> {
     let Some(api_key) = api_key else {
         log::debug!("No INTENTS_EXPLORER_API_KEY configured, skipping API-based swap detection");
         return Ok(vec![]);
     };
 
     // Query the Intents Explorer API for successful transactions where this account is recipient
-    let client = Client::new();
     let url = format!(
         "{}/transactions?search={}&numberOfTransactions=1000&statuses=SUCCESS",
         api_url, account_id
@@ -140,6 +151,7 @@ pub async fn detect_swaps_from_api(
     let response = client
         .get(&url)
         .header("Authorization", format!("Bearer {}", api_key))
+        .timeout(Duration::from_secs(15))
         .send()
         .await?;
 
