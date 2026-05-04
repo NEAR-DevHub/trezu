@@ -82,7 +82,7 @@ services:
   - type: web
     name: near-treasury-backend-staging
     runtime: rust
-    plan: standard
+    plan: starter
     rootDir: nt-be
     branch: main
     buildCommand: unset DATABASE_URL && cargo build --release --bin nt-be
