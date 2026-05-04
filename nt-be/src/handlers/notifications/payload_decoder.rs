@@ -9,8 +9,8 @@ use crate::handlers::{
         escape_telegram_html, format_raw_amount, format_token_label, format_usd, token_meta_for_id,
     },
     proposals::scraper::{
-        AssetExchangeInfo, BulkPayment, LockupInfo, PaymentInfo, PaymentProposalType, Proposal,
-        ProposalStatus, ProposalType, StakeDelegationInfo,
+        extract_from_description, AssetExchangeInfo, BulkPayment, LockupInfo, PaymentInfo,
+        PaymentProposalType, Proposal, ProposalStatus, ProposalType, StakeDelegationInfo,
     },
     token::metadata::TokenMetadata,
 };
@@ -75,6 +75,13 @@ fn classify_proposal_kind(proposal_json: &Value) -> Option<String> {
     let bulk_contract_id: AccountId = BULK_PAYMENT_CONTRACT_ID.parse().ok()?;
     if BulkPayment::from_proposal_with_contract_id(&proposal, &bulk_contract_id).is_some() {
         return Some("Batch Payment".to_string());
+    }
+    let proposal_action = extract_from_description(&proposal.description, "proposalaction");
+    if proposal_action.as_deref() == Some("payment-transfer") {
+        return Some("Payment".to_string());
+    }
+    if proposal_action.as_deref() == Some("asset-exchange") {
+        return Some("Exchange".to_string());
     }
     if AssetExchangeInfo::from_proposal(&proposal).is_some() {
         return Some("Exchange".to_string());
@@ -686,5 +693,13 @@ mod tests {
         let actions = build_add_proposal_actions(args);
         let decoded = decode_add_proposal_payload(Some(&actions));
         assert_eq!(decoded.proposal_kind.as_deref(), Some("Exchange"));
+    }
+
+    #[test]
+    fn decode_payment_transfer_wrap_near_as_payment() {
+        let args = r#"{"proposal":{"description":"* Proposal Action: payment-transfer <br>* Notes: treasury payment via intents","kind":{"FunctionCall":{"receiver_id":"wrap.near","actions":[{"method_name":"near_deposit","args":"e30=","deposit":"1000000000000000000000000","gas":"10000000000000"},{"method_name":"ft_transfer","args":"eyJyZWNlaXZlcl9pZCI6ImFiYzEyMyIsImFtb3VudCI6IjEwMDAwMDAwMDAwMDAwMDAwMDAwMDAifQ==","deposit":"1","gas":"150000000000000"}]}}}}"#;
+        let actions = build_add_proposal_actions(args);
+        let decoded = decode_add_proposal_payload(Some(&actions));
+        assert_eq!(decoded.proposal_kind.as_deref(), Some("Payment"));
     }
 }
