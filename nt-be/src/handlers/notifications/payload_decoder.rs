@@ -9,8 +9,8 @@ use crate::handlers::{
         escape_telegram_html, format_raw_amount, format_token_label, format_usd, token_meta_for_id,
     },
     proposals::scraper::{
-        extract_from_description, AssetExchangeInfo, BulkPayment, LockupInfo, PaymentInfo,
-        PaymentProposalType, Proposal, ProposalStatus, ProposalType, StakeDelegationInfo,
+        AssetExchangeInfo, BulkPayment, LockupInfo, PaymentInfo, PaymentProposalType, Proposal,
+        ProposalStatus, ProposalType, StakeDelegationInfo, extract_from_description,
     },
     token::metadata::TokenMetadata,
 };
