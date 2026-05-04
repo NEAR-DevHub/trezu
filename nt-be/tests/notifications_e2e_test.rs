@@ -140,6 +140,41 @@ async fn insert_detected_swap(pool: &PgPool, fulfillment_bc_id: i64) -> i64 {
     .expect("insert detected_swap")
 }
 
+/// Insert a detected_swap row with configurable fields.
+async fn insert_detected_swap_custom(
+    pool: &PgPool,
+    solver_transaction_hash: &str,
+    deposit_bc_id: Option<i64>,
+    fulfillment_bc_id: i64,
+    fulfillment_receipt_id: Option<&str>,
+    sent_amount: &str,
+    received_amount: &str,
+) -> i64 {
+    sqlx::query_scalar(
+        r#"
+        INSERT INTO detected_swaps
+            (account_id, solver_transaction_hash, deposit_balance_change_id,
+             fulfillment_receipt_id, fulfillment_balance_change_id,
+             sent_token_id, sent_amount, received_token_id, received_amount, block_height)
+        VALUES ($1, $2, $3, $4, $5, $6, $7::numeric, $8, $9::numeric, $10)
+        RETURNING id
+        "#,
+    )
+    .bind(DAO_ID)
+    .bind(solver_transaction_hash)
+    .bind(deposit_bc_id)
+    .bind(fulfillment_receipt_id)
+    .bind(fulfillment_bc_id)
+    .bind("near")
+    .bind(sent_amount)
+    .bind("near")
+    .bind(received_amount)
+    .bind(300i64)
+    .fetch_one(pool)
+    .await
+    .expect("insert custom detected_swap")
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -527,6 +562,110 @@ async fn test_swap_inserted_between_cycles(pool: PgPool) {
     assert_eq!(
         total_delivered.0, 1,
         "swap notification delivered exactly once"
+    );
+}
+
+/// Synthetic proposal-deposit rows should not emit swap_fulfilled notifications
+/// unless they have a distinct fulfillment leg (or explicit fulfillment receipt).
+#[sqlx::test]
+async fn test_swap_notifications_skip_synthetic_proposal_deposits(pool: PgPool) {
+    common::load_test_env();
+
+    insert_dao_with_telegram(&pool).await;
+    reset_cursors_to_start(&pool).await;
+
+    // Two proposal deposits with identical amounts (can happen in parallel proposals)
+    let deposit_a = insert_balance_change(
+        &pool,
+        400,
+        "near",
+        -100_681_984_951_474_100,
+        "megha19.near",
+        None,
+        Some("on_proposal_callback"),
+        Some("FUNCTION_CALL"),
+    )
+    .await;
+    let deposit_b = insert_balance_change(
+        &pool,
+        401,
+        "near",
+        -100_681_984_951_474_100,
+        "megha19.near",
+        None,
+        Some("on_proposal_callback"),
+        Some("FUNCTION_CALL"),
+    )
+    .await;
+
+    // Synthetic rows: fulfillment points to the same deposit and no receipt.
+    let _synthetic_a = insert_detected_swap_custom(
+        &pool,
+        "proposal-deposit-synthetic-a",
+        Some(deposit_a),
+        deposit_a,
+        None,
+        "0.1006819849514741",
+        "0.1000",
+    )
+    .await;
+    let _synthetic_b = insert_detected_swap_custom(
+        &pool,
+        "proposal-deposit-synthetic-b",
+        Some(deposit_b),
+        deposit_b,
+        None,
+        "0.1006819849514741",
+        "0.1000",
+    )
+    .await;
+
+    // Real fulfillment row for only one of them.
+    let real_fulfillment_bc = insert_balance_change(
+        &pool,
+        402,
+        "near",
+        100_000_000_000_000_000,
+        "solver.near",
+        None,
+        None,
+        Some("TRANSFER"),
+    )
+    .await;
+    let real_swap = insert_detected_swap_custom(
+        &pool,
+        "real-solver-tx-hash",
+        Some(deposit_a),
+        real_fulfillment_bc,
+        Some("real-fulfillment-receipt"),
+        "0.1006819849514741",
+        "0.1000",
+    )
+    .await;
+
+    let detected = nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
+        .await
+        .expect("detection cycle");
+    assert_eq!(
+        detected, 1,
+        "only real fulfilled swap should notify; synthetic deposit rows should be skipped"
+    );
+
+    let rows: Vec<(i64, i64)> = sqlx::query_as(
+        "SELECT id, source_id FROM dao_notifications WHERE dao_id = $1 AND event_type = 'swap_fulfilled' ORDER BY id",
+    )
+    .bind(DAO_ID)
+    .fetch_all(&pool)
+    .await
+    .expect("fetch swap notifications");
+    assert_eq!(
+        rows.len(),
+        1,
+        "only one swap notification should be written"
+    );
+    assert_eq!(
+        rows[0].1, real_swap,
+        "notification should reference the real fulfilled detected_swap row"
     );
 }
 
