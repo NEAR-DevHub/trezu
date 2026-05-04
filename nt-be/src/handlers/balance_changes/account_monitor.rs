@@ -10,7 +10,7 @@ use super::gap_filler::{
 };
 use super::staking_rewards::{is_staking_token, track_and_fill_staking_rewards};
 use super::swap_detector::{
-    classify_proposal_swap_deposits, detect_swaps_from_api, store_detected_swaps,
+    classify_proposal_swap_deposits, detect_swaps_from_api_with_client, store_detected_swaps,
 };
 use super::token_discovery::{fetch_fastnear_ft_tokens, snapshot_intents_tokens};
 use super::transfer_hints::TransferHintService;
@@ -49,6 +49,34 @@ async fn get_effective_block_floor(
         (Some(c), Some(m)) => Some(c.max(m)),
         (c, m) => c.or(m),
     })
+}
+
+/// Return true when the account has new intents balance changes after the last
+/// detected swap block. This is used to avoid calling the Intents Explorer API
+/// for accounts with no recent intents activity.
+async fn has_new_intents_activity_since_last_swap(
+    pool: &PgPool,
+    account_id: &str,
+) -> Result<bool, sqlx::Error> {
+    let has_new = sqlx::query_scalar!(
+        r#"
+        SELECT EXISTS (
+            SELECT 1
+            FROM balance_changes bc
+            WHERE bc.account_id = $1
+              AND bc.token_id LIKE 'intents.near:%'
+              AND bc.block_height > COALESCE(
+                  (SELECT MAX(ds.block_height) FROM detected_swaps ds WHERE ds.account_id = $1),
+                  0
+              )
+        ) AS "exists!"
+        "#,
+        account_id
+    )
+    .fetch_one(pool)
+    .await?;
+
+    Ok(has_new)
 }
 
 /// Run one maintenance cycle for all enabled monitored accounts.
@@ -322,38 +350,61 @@ pub async fn run_maintenance_cycle(
                 _ => {}
             }
 
-            // 8. Detect and store swaps
-            match detect_swaps_from_api(
-                &app_state.db_pool,
-                account_id,
-                app_state.env_vars.intents_explorer_api_key.as_deref(),
-                &app_state.env_vars.intents_explorer_api_url,
-            )
-            .await
-            {
-                Ok(swaps) => {
-                    if !swaps.is_empty() {
-                        match store_detected_swaps(&app_state.db_pool, &swaps).await {
-                            Ok(inserted) if inserted > 0 => {
-                                log::info!(
-                                    "[maintenance] {}: Detected and stored {} new swaps",
-                                    account_id,
-                                    inserted
-                                );
+            // 8. Detect and store swaps only when there are new intents token
+            // changes after the last detected swap block.
+            match has_new_intents_activity_since_last_swap(&app_state.db_pool, account_id).await {
+                Ok(true) => {
+                    match detect_swaps_from_api_with_client(
+                        &app_state.http_client,
+                        &app_state.db_pool,
+                        account_id,
+                        app_state.env_vars.intents_explorer_api_key.as_deref(),
+                        &app_state.env_vars.intents_explorer_api_url,
+                    )
+                    .await
+                    {
+                        Ok(swaps) => {
+                            if !swaps.is_empty() {
+                                match store_detected_swaps(&app_state.db_pool, &swaps).await {
+                                    Ok(inserted) if inserted > 0 => {
+                                        log::info!(
+                                            "[maintenance] {}: Detected and stored {} new swaps",
+                                            account_id,
+                                            inserted
+                                        );
+                                    }
+                                    Err(e) => {
+                                        log::error!(
+                                            "[maintenance] {}: Error storing detected swaps: {}",
+                                            account_id,
+                                            e
+                                        );
+                                    }
+                                    _ => {}
+                                }
                             }
-                            Err(e) => {
-                                log::error!(
-                                    "[maintenance] {}: Error storing detected swaps: {}",
-                                    account_id,
-                                    e
-                                );
-                            }
-                            _ => {}
+                        }
+                        Err(e) => {
+                            log::error!(
+                                "[maintenance] {}: Error detecting swaps: {}",
+                                account_id,
+                                e
+                            );
                         }
                     }
                 }
+                Ok(false) => {
+                    log::debug!(
+                        "[maintenance] {}: Skipping swap detection (no new intents activity)",
+                        account_id
+                    );
+                }
                 Err(e) => {
-                    log::error!("[maintenance] {}: Error detecting swaps: {}", account_id, e);
+                    log::warn!(
+                        "[maintenance] {}: Could not check intents activity before swap detection: {}",
+                        account_id,
+                        e
+                    );
                 }
             }
 
