@@ -1115,6 +1115,10 @@
         "noDeploymentFeeDescription": "Zur Unterstützung neuer Projekte übernimmt TREZU alle einmaligen Bereitstellungs- und Netzwerkspeichergebühren.",
         "createButton": "Treasury erstellen",
         "connectWalletCreate": "Wallet verbinden, um Treasury zu erstellen",
+        "walletNotSupportedTitle": "Wallet wird noch nicht unterstützt",
+        "walletNotSupportedDescription": "{wallet} wird noch nicht unterstützt, aber wir arbeiten daran. Du kannst mit einer unterstützten NEAR-Wallet oder Ledger fortfahren.",
+        "connectNear": "NEAR verbinden",
+        "connectLedger": "Ledger verbinden",
         "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten",
         "creationFailed": "Erstellung der Treasury fehlgeschlagen. Bitte erneut versuchen.",
         "stepTitles": {

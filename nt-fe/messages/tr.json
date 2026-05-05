@@ -1115,6 +1115,10 @@
         "noDeploymentFeeDescription": "Yeni projeleri desteklemek için TREZU, tüm tek seferlik dağıtım ve ağ depolama ücretlerini karşılar.",
         "createButton": "Hazine Oluştur",
         "connectWalletCreate": "Hazine Oluşturmak İçin Cüzdan Bağla",
+        "walletNotSupportedTitle": "Cüzdan henüz desteklenmiyor",
+        "walletNotSupportedDescription": "{wallet} henüz desteklenmiyor, ancak bunun üzerinde çalışıyoruz. Desteklenen bir NEAR cüzdanı veya Ledger ile devam edebilirsiniz.",
+        "connectNear": "NEAR'a Bağlan",
+        "connectLedger": "Ledger'a Bağlan",
         "unexpectedError": "Beklenmedik bir hata oluştu",
         "creationFailed": "Hazine oluşturulamadı. Lütfen tekrar deneyin.",
         "stepTitles": {

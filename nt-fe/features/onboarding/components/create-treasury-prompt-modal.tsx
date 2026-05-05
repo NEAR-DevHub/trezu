@@ -35,7 +35,10 @@ export function CreateTreasuryPromptModal({
         : t("suffixExploring");
 
     const trackClick = (button: string) => {
-        trackEvent("create-treasury-prompt-clicked", { button, source });
+        trackEvent("onboarding_cta_clicked", {
+            cta: button,
+            source: source === "onboarding" ? "/" : "app",
+        });
     };
 
     return (

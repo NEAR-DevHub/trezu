@@ -110,7 +110,7 @@ function OnboardingChoiceCard({
             onClick={onClick}
             disabled={disabled}
             className={cn(
-                "group h-[246px] w-full max-w-[329px] rounded-xl border px-2 py-5 text-left transition-all duration-200 md:h-[452px] md:w-[310px] md:max-w-none md:p-6",
+                "group h-[246px] w-full max-w-[329px] rounded-xl border px-2 py-5 text-left transition-all duration-200 md:h-[320px] md:w-[320px] md:max-w-none md:p-6 lg:h-[360px] lg:w-[360px]",
                 "flex flex-col items-center justify-center gap-3 shadow-none md:gap-8",
                 active
                     ? "bg-onboarding-primary text-primary-foreground border-border hover:bg-onboarding-primary/95"
@@ -356,6 +356,7 @@ export function Content() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const existingUserConnectPendingRef = useRef(false);
+    const landingViewTrackedRef = useRef(false);
     const {
         accountId,
         connect,
@@ -431,9 +432,17 @@ export function Content() {
     ]);
 
     useEffect(() => {
+        if (landingViewTrackedRef.current) return;
+        landingViewTrackedRef.current = true;
+        trackEvent("onboarding_landing_viewed", {
+            source: "/",
+        });
+    }, []);
+
+    useEffect(() => {
         if (!existingUserConnectPendingRef.current || !accountId) return;
         existingUserConnectPendingRef.current = false;
-        trackEvent("wallet-connected", {
+        trackEvent("wallet_connection_completed", {
             source: "welcome-existing-user",
             account_id: accountId,
         });
@@ -459,9 +468,16 @@ export function Content() {
     const triggerWalletConnect = (path: "new_user" | "existing_user") => {
         if (authError) clearError();
         setOnboardingPath(path);
-        trackEvent("onboarding-path-selected", {
+        trackEvent("onboarding_path_selected", {
             path,
             user_type: path === "existing_user" ? "existing" : "new",
+        });
+        trackEvent("onboarding_cta_clicked", {
+            cta:
+                path === "existing_user"
+                    ? "choose_existing_user"
+                    : "choose_new_user",
+            source: "/",
         });
 
         if (path === "new_user") {
@@ -559,7 +575,7 @@ export function Content() {
                     </div>
 
                     <motion.div
-                        className="mx-auto mt-10 w-full max-w-[361px] rounded-2xl border border-border bg-card p-4 md:max-w-[676px] md:p-5"
+                        className="mx-auto mt-10 w-full max-w-[320px] rounded-2xl border border-border bg-card p-4 md:max-w-[704px] md:p-5 lg:max-w-[784px]"
                         initial={{ opacity: 0, y: 16 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{

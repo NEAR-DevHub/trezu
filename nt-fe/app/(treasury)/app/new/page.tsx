@@ -9,6 +9,7 @@ import {
     Minus,
     Plus,
     Shield,
+    Wallet,
     UsersRound,
     Vote,
 } from "lucide-react";
@@ -68,6 +69,90 @@ import {
 } from "@/components/ui/card";
 import { Pill } from "@/components/pill";
 import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/modal";
+
+type WalletOption = {
+    id:
+        | "near"
+        | "ledger"
+        | "passkey"
+        | "solana"
+        | "binance-web3"
+        | "phantom"
+        | "walletconnect"
+        | "stellar";
+    label: string;
+    imgSrc: string;
+    imageClassName?: string;
+    supported: boolean;
+};
+
+const WALLET_OPTIONS: WalletOption[] = [
+    { id: "near", label: "NEAR", imgSrc: "/near.com.svg", supported: true },
+    {
+        id: "ledger",
+        label: "Ledger",
+        imgSrc: "/wallets/ledger.svg",
+        supported: true,
+    },
+    {
+        id: "passkey",
+        label: "Passkey",
+        imgSrc: "/icons/passkey.svg",
+        supported: false,
+    },
+    {
+        id: "solana",
+        label: "Solana",
+        imgSrc: "https://near-intents.org/static/icons/network/solana.svg",
+        supported: false,
+        imageClassName: "p-1.5",
+    },
+    {
+        id: "binance-web3",
+        label: "Binance Web3",
+        imgSrc: "/icons/binance-web3.svg",
+        supported: false,
+    },
+    {
+        id: "phantom",
+        label: "Phantom",
+        imgSrc: "/icons/phantom.svg",
+        supported: false,
+    },
+    {
+        id: "walletconnect",
+        label: "WalletConnect",
+        imgSrc: "/icons/walletconnect.svg",
+        supported: false,
+    },
+    {
+        id: "stellar",
+        label: "Stellar",
+        imgSrc: "https://near-intents.org/static/icons/network/stellar_white.svg",
+        supported: false,
+        imageClassName: "p-1.5",
+    },
+];
+
+function WalletOptionIcon({
+    wallet,
+    size = "9",
+}: {
+    wallet: WalletOption;
+    size?: string;
+}) {
+    return (
+        <img
+            src={wallet.imgSrc}
+            alt={wallet.label}
+            className={cn(
+                `size-${size} rounded-full bg-black object-cover`,
+                wallet.imageClassName,
+            )}
+        />
+    );
+}
 
 function buildTreasuryFormSchema(messages: {
     nameMin: string;
@@ -160,7 +245,9 @@ function Step1({ handleNext, handleBack }: StepProps) {
             "details.accountName",
         ]);
         if (isValid && handleNext) {
-            trackEvent("treasury-creation-step-1-completed");
+            trackEvent("onboarding_step_completed", {
+                step_name: "details",
+            });
             handleNext();
         }
     };
@@ -343,7 +430,8 @@ function Step2({ handleBack, handleNext }: StepProps) {
         }
 
         if (isValid && handleNext) {
-            trackEvent("treasury-creation-step-2-completed", {
+            trackEvent("onboarding_step_completed", {
+                step_name: "members",
                 members_count: form.getValues("members").length,
             });
             handleNext();
@@ -520,7 +608,11 @@ export function Feature({
                 icon={pillIcon}
                 title={pillTitle}
                 variant={pillStyle}
-                className="shrink-0"
+                className={cn(
+                    "shrink-0",
+                    icon === "team" &&
+                        "bg-black text-white dark:bg-white dark:text-black [&_svg]:text-white dark:[&_svg]:text-black",
+                )}
             />
         </div>
     );
@@ -589,7 +681,8 @@ function Step3({ handleBack, handleNext }: StepProps) {
     const form = useFormContext<TreasuryFormValues>();
     const handleSelect = (type: "confidential" | "public") => {
         form.setValue("isConfidential", type === "confidential");
-        trackEvent("treasury-creation-step-3-completed", {
+        trackEvent("onboarding_step_completed", {
+            step_name: "treasury_type",
             treasury_type: type,
         });
         if (handleNext) {
@@ -693,6 +786,9 @@ function Step4({
     const { details } = form.watch();
     const { members } = form.watch();
     const { isConfidential } = form.watch();
+    const [showWalletSelector, setShowWalletSelector] = useState(false);
+    const [unsupportedWallet, setUnsupportedWallet] =
+        useState<WalletOption | null>(null);
 
     useEffect(() => {
         trackEvent("treasury-creation-step-4-viewed");
@@ -707,6 +803,133 @@ function Step4({
     const governanceThreshold = details.governanceThreshold;
     const financialThresholdVisual = `${financialThreshold}/${financialMembers}`;
     const governanceThresholdVisual = `${governanceThreshold}/${governanceMembers}`;
+    const closeUnsupportedWalletModal = () => {
+        trackEvent("onboarding_cta_clicked", {
+            cta: "unsupported_wallet_modal_close",
+            source: "/app/new",
+        });
+        setUnsupportedWallet(null);
+    };
+
+    const handleWalletChoice = (wallet: WalletOption) => {
+        trackEvent("onboarding_wallet_option_clicked", {
+            wallet_id: wallet.id,
+            is_supported: wallet.supported,
+            source: "/app/new",
+        });
+
+        if (wallet.supported) {
+            trackEvent("onboarding_cta_clicked", {
+                cta: `wallet_${wallet.id}`,
+                source: "/app/new",
+            });
+            setShowWalletSelector(false);
+            connectWallet();
+            return;
+        }
+
+        setUnsupportedWallet(wallet);
+        trackEvent("onboarding_wallet_unsupported_modal_shown", {
+            wallet_id: wallet.id,
+            wallet_name: wallet.label,
+            source: "/app/new",
+        });
+    };
+
+    if (showWalletSelector && !accountId) {
+        return (
+            <PageCard>
+                <StepperHeader
+                    title={tCreate("connectWalletCreate")}
+                    handleBack={() => setShowWalletSelector(false)}
+                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {WALLET_OPTIONS.map((wallet) => (
+                        <Button
+                            key={wallet.id}
+                            type="button"
+                            variant="secondary"
+                            className="h-15 justify-start gap-3 text-lg"
+                            onClick={() => handleWalletChoice(wallet)}
+                            disabled={isConnectingWallet}
+                        >
+                            <WalletOptionIcon wallet={wallet} />
+                            <div className="font-semibold">{wallet.label}</div>
+                        </Button>
+                    ))}
+                </div>
+                <Dialog
+                    open={Boolean(unsupportedWallet)}
+                    onOpenChange={(open) => {
+                        if (!open && unsupportedWallet)
+                            closeUnsupportedWalletModal();
+                    }}
+                >
+                    <DialogContent className="max-w-2xl">
+                        <DialogHeader className="border-b-0 pb-0">
+                            <DialogTitle className="sr-only">
+                                {tCreate("walletNotSupportedTitle")}
+                            </DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-5 text-center">
+                            <div className="mx-auto flex items-center justify-center">
+                                {unsupportedWallet ? (
+                                    <WalletOptionIcon
+                                        wallet={unsupportedWallet}
+                                        size="12"
+                                    />
+                                ) : (
+                                    <Wallet className="size-7" />
+                                )}
+                            </div>
+                            <div className="space-y-1">
+                                <h3 className="text-xl font-semibold">
+                                    {tCreate("walletNotSupportedTitle")}
+                                </h3>
+                                <p className="text-muted-foreground text-md">
+                                    {tCreate("walletNotSupportedDescription", {
+                                        wallet: unsupportedWallet?.label ?? "",
+                                    })}
+                                </p>
+                            </div>
+                            <div className="space-y-3">
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    className="w-full"
+                                    onClick={() =>
+                                        handleWalletChoice({
+                                            id: "near",
+                                            label: "NEAR",
+                                            imgSrc: "/near.com.svg",
+                                            supported: true,
+                                        })
+                                    }
+                                >
+                                    {tCreate("connectNear")}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    className="w-full"
+                                    onClick={() =>
+                                        handleWalletChoice({
+                                            id: "ledger",
+                                            label: "Ledger",
+                                            imgSrc: "/wallets/ledger.svg",
+                                            supported: true,
+                                        })
+                                    }
+                                >
+                                    {tCreate("connectLedger")}
+                                </Button>
+                            </div>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            </PageCard>
+        );
+    }
 
     return (
         <PageCard>
@@ -771,11 +994,7 @@ function Step4({
             </Alert>
 
             <InlineNextButton
-                text={
-                    accountId
-                        ? tCreate("createButton")
-                        : tCreate("connectWalletCreate")
-                }
+                text={tCreate("createButton")}
                 loading={
                     accountId ? form.formState.isSubmitting : isConnectingWallet
                 }
@@ -783,7 +1002,11 @@ function Step4({
                     accountId
                         ? undefined
                         : () => {
-                              connectWallet();
+                              trackEvent("onboarding_cta_clicked", {
+                                  cta: "connect_wallet_create",
+                                  source: "/app/new",
+                              });
+                              setShowWalletSelector(true);
                           }
                 }
             />
@@ -928,9 +1151,17 @@ export default function NewTreasuryPage() {
 
     const onSubmit = async (data: TreasuryFormValues) => {
         if (!accountId) {
+            trackEvent("onboarding_cta_clicked", {
+                cta: "connect_wallet_create",
+                source: "/app/new",
+            });
             await connect();
             return;
         }
+
+        trackEvent("onboarding_step_completed", {
+            step_name: "review",
+        });
 
         const governors = data.members
             .filter((m) => m.roles.includes("governance"))
@@ -980,6 +1211,10 @@ export default function NewTreasuryPage() {
                             request.governors.length +
                             request.financiers.length +
                             request.requestors.length,
+                    });
+                    trackEvent("onboarding_completed", {
+                        source: "/app/new",
+                        treasury_id: treasuryId,
                     });
                     queryClient.invalidateQueries({
                         queryKey: ["userTreasuries", accountId],
