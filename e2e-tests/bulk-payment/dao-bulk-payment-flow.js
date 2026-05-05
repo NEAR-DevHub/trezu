@@ -761,8 +761,8 @@ const nonMemberSubmitResponse = await apiRequest('/api/bulk-payment/submit-list'
 }, true);
 assert.equal(nonMemberSubmitResponse.success, false, 'Non-member submit must fail');
 assert.ok(
-  nonMemberSubmitResponse.error.includes('Not a DAO policy member'),
-  `Error should mention DAO membership requirement: ${nonMemberSubmitResponse.error}`
+  nonMemberSubmitResponse.error.includes("not allowed to perform 'AddProposal'"),
+  `Error should mention AddProposal policy requirement: ${nonMemberSubmitResponse.error}`
 );
 console.log(`✅ Non-member submit rejected as expected: ${nonMemberSubmitResponse.error}`);
 
