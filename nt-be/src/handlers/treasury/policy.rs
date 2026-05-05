@@ -18,14 +18,14 @@ pub struct GetTreasuryPolicyQuery {
     pub at_before: Option<U64>,
 }
 
-pub async fn get_treasury_policy(
-    State(state): State<Arc<AppState>>,
-    Query(params): Query<GetTreasuryPolicyQuery>,
-) -> Result<axum::Json<serde_json::Value>, (StatusCode, String)> {
-    let treasury_id = params.treasury_id.clone();
-    let at_before = params.at_before.map(|at| at.0).unwrap_or(0);
+pub async fn fetch_treasury_policy_cached(
+    state: &Arc<AppState>,
+    treasury_id: &AccountId,
+    at_before: Option<u64>,
+) -> Result<serde_json::Value, (StatusCode, String)> {
+    let at_before = at_before.unwrap_or(0);
     let cache_key = CacheKey::new("treasury-policy")
-        .with(&treasury_id)
+        .with(treasury_id)
         .with(at_before)
         .build();
 
@@ -35,7 +35,7 @@ pub async fn get_treasury_policy(
         &state.network
     };
     let state_clone = state.clone();
-    let result = state
+    state
         .cache
         .cached_contract_call(CacheTier::ShortTerm, cache_key, async move {
             let at = if at_before > 0 {
@@ -58,7 +58,16 @@ pub async fn get_treasury_policy(
                 .await
                 .map(|r| r.data)
         })
-        .await?;
+        .await
+}
+
+pub async fn get_treasury_policy(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<GetTreasuryPolicyQuery>,
+) -> Result<axum::Json<serde_json::Value>, (StatusCode, String)> {
+    let result =
+        fetch_treasury_policy_cached(&state, &params.treasury_id, params.at_before.map(|at| at.0))
+            .await?;
 
     Ok(axum::Json(result))
 }

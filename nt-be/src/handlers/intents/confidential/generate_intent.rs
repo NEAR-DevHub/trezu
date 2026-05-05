@@ -42,10 +42,7 @@ pub async fn generate_intent(
         .signer_id
         .strip_prefix("near:")
         .unwrap_or(&request.signer_id);
-    auth_user
-        .verify_dao_member(&state.db_pool, dao_id)
-        .await
-        .map_err(|e| (StatusCode::FORBIDDEN, format!("Not a DAO member: {}", e)))?;
+    auth_user.verify_can_add_proposal(&state, dao_id).await?;
 
     // Extract deposit_address from quote_metadata.quote.depositAddress
     let deposit_address = request

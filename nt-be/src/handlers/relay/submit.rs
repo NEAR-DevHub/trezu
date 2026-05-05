@@ -64,6 +64,78 @@ fn error_response(status: StatusCode, msg: String) -> (StatusCode, Json<RelayRes
     )
 }
 
+async fn verify_relay_access(
+    state: &Arc<AppState>,
+    auth_user: &AuthUser,
+    request: &RelayRequest,
+    signed_delegate_action: &SignedDelegateAction,
+) -> Result<(), (StatusCode, Json<RelayResponse>)> {
+    // Vote relays follow on-chain vote permissions (including Everyone roles),
+    if request.proposal_type.as_deref() == Some("vote") {
+        let mut requested_vote_actions = HashSet::new();
+        for action in &signed_delegate_action.delegate_action.actions {
+            if let Action::FunctionCall(function_call) = action.deref()
+                && function_call.method_name == "act_proposal"
+            {
+                let args = serde_json::from_slice::<Value>(&function_call.args).map_err(|e| {
+                    error_response(
+                        StatusCode::BAD_REQUEST,
+                        format!("Invalid act_proposal args: {}", e),
+                    )
+                })?;
+
+                let vote_action = args.get("action").and_then(Value::as_str).ok_or_else(|| {
+                    error_response(
+                        StatusCode::BAD_REQUEST,
+                        "Missing vote action in act_proposal args".to_string(),
+                    )
+                })?;
+
+                match vote_action {
+                    "VoteApprove" | "VoteReject" | "VoteRemove" => {
+                        requested_vote_actions.insert(vote_action.to_string());
+                    }
+                    _ => {
+                        return Err(error_response(
+                            StatusCode::BAD_REQUEST,
+                            format!("Unsupported vote action '{}'", vote_action),
+                        ));
+                    }
+                }
+            }
+        }
+
+        if requested_vote_actions.is_empty() {
+            return Err(error_response(
+                StatusCode::BAD_REQUEST,
+                "No vote actions found in delegate action".to_string(),
+            ));
+        }
+
+        let policy = auth_user
+            .fetch_dao_policy(state, request.treasury_id.as_str())
+            .await
+            .map_err(|(status, msg)| error_response(status, msg))?;
+
+        for vote_action in requested_vote_actions {
+            auth_user
+                .verify_can_perform_action_with_policy(
+                    &policy,
+                    request.treasury_id.as_str(),
+                    &vote_action,
+                )
+                .map_err(|(status, msg)| error_response(status, msg))?;
+        }
+
+        return Ok(());
+    }
+
+    auth_user
+        .verify_can_add_proposal(state, request.treasury_id.as_str())
+        .await
+        .map_err(|(status, msg)| error_response(status, msg))
+}
+
 const MAX_STORAGE_BYTES: u128 = 4000;
 const MAX_SPONSORING: NearToken = NearToken::from_millinear(1200);
 // We need to multiply the buffer by 25 because this is the bulk payment limit for single transaction
@@ -268,16 +340,6 @@ pub async fn relay_delegate_action(
     auth_user: AuthUser,
     Json(request): Json<RelayRequest>,
 ) -> Result<Json<RelayResponse>, (StatusCode, Json<RelayResponse>)> {
-    auth_user
-        .verify_dao_member(&state.db_pool, request.treasury_id.as_str())
-        .await
-        .map_err(|e| {
-            error_response(
-                StatusCode::FORBIDDEN,
-                format!("Not a DAO policy member: {}", e),
-            )
-        })?;
-
     // Step 1: Decode and deserialize SignedDelegateAction
     let signed_delegate_action =
         SignedDelegateAction::try_from_slice(&request.signed_delegate_action.0).map_err(|e| {
@@ -286,6 +348,8 @@ pub async fn relay_delegate_action(
                 format!("Invalid delegate action: {}", e),
             )
         })?;
+
+    verify_relay_access(&state, &auth_user, &request, &signed_delegate_action).await?;
 
     // Step 2: Verify sender_id matches authenticated user
     let sender_id = signed_delegate_action.delegate_action.sender_id.to_string();
