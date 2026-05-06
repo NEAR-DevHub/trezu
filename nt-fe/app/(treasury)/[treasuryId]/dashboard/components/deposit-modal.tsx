@@ -757,10 +757,8 @@ export function DepositModal({
     const onlyDepositNetworkName = selectedNetwork
         ? getNetworkDisplayName(selectedNetwork.name)
         : "";
-    const onlyDepositNetworkDisplayName =
-        onlyDepositNetworkName.toLowerCase() === "near.com"
-            ? "near.com"
-            : onlyDepositNetworkName;
+    const shouldCapitalizeOnlyDepositNetwork =
+        onlyDepositNetworkName.toLowerCase() !== "near.com";
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
@@ -1075,15 +1073,20 @@ export function DepositModal({
                                                 symbol:
                                                     selectedNetwork?.symbol ??
                                                     "",
-                                                network:
-                                                    onlyDepositNetworkDisplayName,
+                                                network: onlyDepositNetworkName,
                                                 symbolTag: (chunks) => (
                                                     <span className="text-foreground">
                                                         {chunks}
                                                     </span>
                                                 ),
                                                 networkTag: (chunks) => (
-                                                    <span className="text-foreground">
+                                                    <span
+                                                        className={`text-foreground ${
+                                                            shouldCapitalizeOnlyDepositNetwork
+                                                                ? "capitalize"
+                                                                : ""
+                                                        }`}
+                                                    >
                                                         {chunks}
                                                     </span>
                                                 ),
