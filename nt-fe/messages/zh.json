@@ -160,10 +160,12 @@
         },
         "payments": {
             "title": "付款",
-            "description": "安全地发送与接收资金"
+            "confidentialTitle": "机密付款",
+            "description": "安全可靠地发送资金。"
         },
         "exchange": {
             "title": "兑换",
+            "confidentialTitle": "机密兑换",
             "description": "安全高效地兑换您的代币"
         },
         "vesting": {
@@ -897,7 +899,7 @@
             "amountPositive": "金额必须大于 0",
             "recipientTokenSame": "收款人地址不能与代币地址相同"
         },
-        "newPayment": "新建付款",
+        "title": "付款",
         "reviewYourPayment": "审核您的付款",
         "reviewButton": "审核付款",
         "reviewButtonDisabled": "请输入金额和地址",
@@ -911,7 +913,8 @@
         "confirmSubmit": "确认并提交请求",
         "useDifferentAddress": "使用其他地址",
         "failed1ClickQuote": "创建 1Click 转账报价失败",
-        "paymentSubmitted": "发送付款的请求已提交"
+        "paymentSubmitted": "发送付款的请求已提交",
+        "confidentialTooltip": "收款人信息和请求金额完全保密。"
     },
     "bulkPayment": {
         "comingSoonToast": "批量付款功能即将推出!",
@@ -1025,7 +1028,8 @@
         },
         "approveWithin24h": "请在 24 小时内批准此请求,否则它将过期。建议尽快确认。",
         "confirmSubmit": "确认并提交请求",
-        "refreshingIn": "兑换汇率将在 {seconds} 秒后刷新"
+        "refreshingIn": "兑换汇率将在 {seconds} 秒后刷新",
+        "confidentialTooltip": "您发送和接收的金额完全保密。"
     },
     "vesting": {
         "validation": {
@@ -1535,7 +1539,8 @@
         "comingSoon": "即将推出",
         "forMembersOnly": "仅限成员",
         "nearComName": "near.com",
-        "nearComDescription": "near.com 与 trezu 的内部网络"
+        "nearComDescription": "near.com 与 trezu 的机密网络",
+        "nearDescription": "用于公开提现的网络"
     },
     "addressBookTable": {
         "emptyTitle": "暂无收款人",
@@ -1707,7 +1712,7 @@
         "vestedToken": "归属代币",
         "staked": "已质押",
         "fungibleToken": "同质化代币",
-        "intentsToken": "Intents 代币",
+        "intentsToken": "near.com",
         "nativeToken": "原生代币"
     },
     "exchangeErrors": {

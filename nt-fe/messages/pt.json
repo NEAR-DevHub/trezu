@@ -160,10 +160,12 @@
         },
         "payments": {
             "title": "Pagamentos",
-            "description": "Envie e receba fundos com segurança"
+            "confidentialTitle": "Pagamentos confidenciais",
+            "description": "Envie fundos com seguranca e protecao."
         },
         "exchange": {
             "title": "Troca",
+            "confidentialTitle": "Troca confidencial",
             "description": "Troque seus tokens de forma segura e eficiente"
         },
         "vesting": {
@@ -897,7 +899,7 @@
             "amountPositive": "O valor deve ser maior que 0",
             "recipientTokenSame": "O destinatário e o endereço do token não podem ser iguais"
         },
-        "newPayment": "Novo pagamento",
+        "title": "Pagamento",
         "reviewYourPayment": "Revise seu pagamento",
         "reviewButton": "Revisar pagamento",
         "reviewButtonDisabled": "Insira o valor e o endereço",
@@ -911,7 +913,8 @@
         "confirmSubmit": "Confirmar e enviar solicitação",
         "useDifferentAddress": "Usar um endereço diferente",
         "failed1ClickQuote": "Falha ao criar cotação de transferência 1Click",
-        "paymentSubmitted": "Solicitação de envio de pagamento enviada"
+        "paymentSubmitted": "Solicitação de envio de pagamento enviada",
+        "confidentialTooltip": "Os dados do destinatario e o valor solicitado sao totalmente confidenciais."
     },
     "bulkPayment": {
         "comingSoonToast": "Pagamentos em massa estão chegando em breve!",
@@ -1025,7 +1028,8 @@
         },
         "approveWithin24h": "Por favor, aprove esta solicitação em até 24 horas, caso contrário ela expirará. Recomendamos confirmar o quanto antes.",
         "confirmSubmit": "Confirmar e enviar solicitação",
-        "refreshingIn": "A taxa de câmbio será atualizada em {seconds}s"
+        "refreshingIn": "A taxa de câmbio será atualizada em {seconds}s",
+        "confidentialTooltip": "Os valores que voce envia e recebe sao totalmente confidenciais."
     },
     "vesting": {
         "validation": {
@@ -1535,7 +1539,8 @@
         "comingSoon": "Em breve",
         "forMembersOnly": "Apenas para membros",
         "nearComName": "near.com",
-        "nearComDescription": "Rede interna para near.com e trezu"
+        "nearComDescription": "Rede confidencial da near.com e trezu",
+        "nearDescription": "Rede para saque público"
     },
     "addressBookTable": {
         "emptyTitle": "Nenhum destinatário ainda",
@@ -1707,7 +1712,7 @@
         "vestedToken": "Token liberado",
         "staked": "Em staking",
         "fungibleToken": "Token fungível",
-        "intentsToken": "Token de Intents",
+        "intentsToken": "near.com",
         "nativeToken": "Token nativo"
     },
     "exchangeErrors": {

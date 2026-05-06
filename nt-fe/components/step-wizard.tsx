@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import type { ReactNode } from "react";
 import { Button } from "./button";
 import { ArrowLeftIcon, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -145,7 +146,7 @@ export function StepWizard({
 }
 
 interface HandleBackWithTitleProps {
-    title: string;
+    title: ReactNode;
     description?: string;
     handleBack?: () => void;
 }

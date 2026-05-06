@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowDown, ChevronRight, Loader2 } from "lucide-react";
+import { ArrowDown, ChevronRight, Loader2, Shield } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { trackEvent } from "@/lib/analytics";
@@ -23,6 +23,7 @@ import {
     StepWizard,
 } from "@/components/step-wizard";
 import { TokenInput, tokenSchema } from "@/components/token-input";
+import { Tooltip } from "@/components/tooltip";
 import { Form } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WarningAlert } from "@/components/warning-alert";
@@ -253,7 +254,22 @@ function Step1({ handleNext }: StepProps) {
     return (
         <PageCard className="relative">
             <div className="flex items-center justify-between gap-2">
-                <StepperHeader title={tEx("heading")} />
+                <StepperHeader
+                    title={
+                        isConfidential ? (
+                            <span className="inline-flex items-center gap-1.5">
+                                <span>{tEx("heading")}</span>
+                                <Tooltip content={tEx("confidentialTooltip")}>
+                                    <span className="inline-flex">
+                                        <Shield className="size-4 fill-foreground" />
+                                    </span>
+                                </Tooltip>
+                            </span>
+                        ) : (
+                            tEx("heading")
+                        )
+                    }
+                />
                 <div className="flex items-center gap-2">
                     <PendingButton
                         id="exchange-pending-btn"
@@ -700,6 +716,7 @@ export default function ExchangePage() {
         [tValidation],
     );
     const { treasuryId: selectedTreasury, isConfidential } = useTreasury();
+    const pageTitle = isConfidential ? t("confidentialTitle") : t("title");
     const { createProposal } = useNear();
     const { data: policy } = useTreasuryPolicy(selectedTreasury);
     const [step, setStep] = useState(0);
@@ -825,7 +842,7 @@ export default function ExchangePage() {
     };
 
     return (
-        <PageComponentLayout title={t("title")} description={t("description")}>
+        <PageComponentLayout title={pageTitle} description={t("description")}>
             <Form {...form}>
                 <form
                     onSubmit={(e) => {

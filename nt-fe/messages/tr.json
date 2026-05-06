@@ -159,11 +159,13 @@
             "description": "Kayıtlı alıcılarınızı yönetin"
         },
         "payments": {
-            "title": "Ödemeler",
-            "description": "Güvenle para gönderin ve alın"
+            "title": "Odemeler",
+            "confidentialTitle": "Gizli odemeler",
+            "description": "Fonlari guvenli ve emniyetli sekilde gonderin."
         },
         "exchange": {
             "title": "Takas",
+            "confidentialTitle": "Gizli takas",
             "description": "Tokenlerinizi güvenli ve verimli bir şekilde takas edin"
         },
         "vesting": {
@@ -897,7 +899,7 @@
             "amountPositive": "Miktar 0'dan büyük olmalıdır",
             "recipientTokenSame": "Alıcı ve token adresi aynı olamaz"
         },
-        "newPayment": "Yeni Ödeme",
+        "title": "Odeme",
         "reviewYourPayment": "Ödemenizi İnceleyin",
         "reviewButton": "Ödemeyi İncele",
         "reviewButtonDisabled": "Miktar ve adres girin",
@@ -911,7 +913,8 @@
         "confirmSubmit": "Onayla ve Talebi Gönder",
         "useDifferentAddress": "Farklı bir adres kullan",
         "failed1ClickQuote": "1Click transfer teklifi oluşturulamadı",
-        "paymentSubmitted": "Ödeme gönderme talebi gönderildi"
+        "paymentSubmitted": "Ödeme gönderme talebi gönderildi",
+        "confidentialTooltip": "Alici bilgileri ve talep edilen tutar tamamen gizlidir."
     },
     "bulkPayment": {
         "comingSoonToast": "Toplu ödemeler yakında geliyor!",
@@ -1025,7 +1028,8 @@
         },
         "approveWithin24h": "Lütfen bu talebi 24 saat içinde onaylayın, aksi takdirde süresi dolacaktır. Mümkün olan en kısa sürede onaylamanızı öneririz.",
         "confirmSubmit": "Onayla ve Talebi Gönder",
-        "refreshingIn": "Takas oranı {seconds}sn içinde yenilenecek"
+        "refreshingIn": "Takas oranı {seconds}sn içinde yenilenecek",
+        "confidentialTooltip": "Gonderdiginiz ve aldiginiz tutarlar tamamen gizlidir."
     },
     "vesting": {
         "validation": {
@@ -1535,7 +1539,8 @@
         "comingSoon": "Yakında",
         "forMembersOnly": "Yalnızca Üyelere Özel",
         "nearComName": "near.com",
-        "nearComDescription": "near.com ve trezu için Dahili Ağ"
+        "nearComDescription": "near.com ve trezu için gizli ağ",
+        "nearDescription": "Herkese açık para çekme ağı"
     },
     "addressBookTable": {
         "emptyTitle": "Henüz alıcı yok",
@@ -1707,7 +1712,7 @@
         "vestedToken": "Vested Token",
         "staked": "Stake Edildi",
         "fungibleToken": "Fungible Token",
-        "intentsToken": "Intents Token",
+        "intentsToken": "near.com",
         "nativeToken": "Native Token"
     },
     "exchangeErrors": {

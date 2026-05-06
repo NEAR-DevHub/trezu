@@ -160,10 +160,12 @@
         },
         "payments": {
             "title": "Paiements",
-            "description": "Envoyez et recevez des fonds en toute sécurité"
+            "confidentialTitle": "Paiements confidentiels",
+            "description": "Envoyez des fonds de facon sure et securisee."
         },
         "exchange": {
-            "title": "Échange",
+            "title": "Echange",
+            "confidentialTitle": "Echange confidentiel",
             "description": "Échangez vos tokens en toute sécurité et efficacité"
         },
         "vesting": {
@@ -897,7 +899,7 @@
             "amountPositive": "Le montant doit être supérieur à 0",
             "recipientTokenSame": "Le destinataire et l'adresse du token ne peuvent pas être identiques"
         },
-        "newPayment": "Nouveau paiement",
+        "title": "Paiement",
         "reviewYourPayment": "Vérifiez votre paiement",
         "reviewButton": "Vérifier le paiement",
         "reviewButtonDisabled": "Saisissez le montant et l'adresse",
@@ -911,7 +913,8 @@
         "confirmSubmit": "Confirmer et soumettre la demande",
         "useDifferentAddress": "Utiliser une adresse différente",
         "failed1ClickQuote": "Échec de la création du devis de transfert 1Click",
-        "paymentSubmitted": "Demande d'envoi de paiement soumise"
+        "paymentSubmitted": "Demande d'envoi de paiement soumise",
+        "confidentialTooltip": "Les informations du destinataire et le montant demande sont entierement confidentiels."
     },
     "bulkPayment": {
         "comingSoonToast": "Les paiements groupés arrivent bientôt !",
@@ -1025,7 +1028,8 @@
         },
         "approveWithin24h": "Veuillez approuver cette demande dans les 24 heures, sinon elle expirera. Nous recommandons de confirmer dès que possible.",
         "confirmSubmit": "Confirmer et soumettre la demande",
-        "refreshingIn": "Le taux d'échange sera actualisé dans {seconds} s"
+        "refreshingIn": "Le taux d'échange sera actualisé dans {seconds} s",
+        "confidentialTooltip": "Les montants que vous envoyez et recevez sont entierement confidentiels."
     },
     "vesting": {
         "validation": {
@@ -1535,7 +1539,8 @@
         "comingSoon": "Bientôt disponible",
         "forMembersOnly": "Réservé aux membres",
         "nearComName": "near.com",
-        "nearComDescription": "Réseau interne pour near.com et trezu"
+        "nearComDescription": "Réseau confidentiel pour near.com et trezu",
+        "nearDescription": "Réseau pour retrait public"
     },
     "addressBookTable": {
         "emptyTitle": "Aucun destinataire pour l'instant",
@@ -1707,7 +1712,7 @@
         "vestedToken": "Token acquis",
         "staked": "Staké",
         "fungibleToken": "Token fongible",
-        "intentsToken": "Token Intents",
+        "intentsToken": "near.com",
         "nativeToken": "Token natif"
     },
     "exchangeErrors": {

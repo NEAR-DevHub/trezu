@@ -160,10 +160,12 @@
         },
         "payments": {
             "title": "תשלומים",
-            "description": "שלח וקבל כספים באופן מאובטח"
+            "confidentialTitle": "תשלומים חסויים",
+            "description": "שלחו כספים בבטחה ובאופן מאובטח."
         },
         "exchange": {
             "title": "החלפה",
+            "confidentialTitle": "החלפה חסויה",
             "description": "החלף את הטוקנים שלך באופן מאובטח ויעיל"
         },
         "vesting": {
@@ -897,7 +899,7 @@
             "amountPositive": "הסכום חייב להיות גדול מ-0",
             "recipientTokenSame": "כתובת הנמען והטוקן אינן יכולות להיות זהות"
         },
-        "newPayment": "תשלום חדש",
+        "title": "תשלום",
         "reviewYourPayment": "סקור את התשלום שלך",
         "reviewButton": "סקור תשלום",
         "reviewButtonDisabled": "הזן סכום וכתובת",
@@ -911,7 +913,8 @@
         "confirmSubmit": "אשר ושלח בקשה",
         "useDifferentAddress": "השתמש בכתובת אחרת",
         "failed1ClickQuote": "יצירת ציטוט העברה של 1Click נכשלה",
-        "paymentSubmitted": "בקשה לשליחת תשלום נשלחה"
+        "paymentSubmitted": "בקשה לשליחת תשלום נשלחה",
+        "confidentialTooltip": "פרטי הנמען והסכום המבוקש חסויים לחלוטין."
     },
     "bulkPayment": {
         "comingSoonToast": "תשלומים בכמויות יגיעו בקרוב!",
@@ -1025,7 +1028,8 @@
         },
         "approveWithin24h": "אנא אשר בקשה זו בתוך 24 שעות, אחרת היא תפוג. אנו ממליצים לאשר בהקדם האפשרי.",
         "confirmSubmit": "אשר ושלח בקשה",
-        "refreshingIn": "שער ההחלפה יתרענן בעוד {seconds} שניות"
+        "refreshingIn": "שער ההחלפה יתרענן בעוד {seconds} שניות",
+        "confidentialTooltip": "הסכומים שאתם שולחים ומקבלים חסויים לחלוטין."
     },
     "vesting": {
         "validation": {
@@ -1535,7 +1539,8 @@
         "comingSoon": "בקרוב",
         "forMembersOnly": "לחברים בלבד",
         "nearComName": "near.com",
-        "nearComDescription": "רשת פנימית עבור near.com ו-Trezu"
+        "nearComDescription": "רשת סודית עבור near.com ו-Trezu",
+        "nearDescription": "רשת למשיכה ציבורית"
     },
     "addressBookTable": {
         "emptyTitle": "אין נמענים עדיין",
@@ -1707,7 +1712,7 @@
         "vestedToken": "טוקן שהובשל",
         "staked": "בסטייקינג",
         "fungibleToken": "טוקן סחיר",
-        "intentsToken": "טוקן Intents",
+        "intentsToken": "near.com",
         "nativeToken": "טוקן מקורי"
     },
     "exchangeErrors": {

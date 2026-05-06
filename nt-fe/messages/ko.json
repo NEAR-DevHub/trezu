@@ -160,10 +160,12 @@
         },
         "payments": {
             "title": "결제",
-            "description": "안전하게 자금을 송금하고 수신하세요"
+            "confidentialTitle": "기밀 결제",
+            "description": "자금을 안전하고 확실하게 보냅니다."
         },
         "exchange": {
             "title": "교환",
+            "confidentialTitle": "기밀 교환",
             "description": "토큰을 안전하고 효율적으로 교환하세요"
         },
         "vesting": {
@@ -897,7 +899,7 @@
             "amountPositive": "금액은 0보다 커야 합니다",
             "recipientTokenSame": "수신자와 토큰 주소는 같을 수 없습니다"
         },
-        "newPayment": "새 결제",
+        "title": "결제",
         "reviewYourPayment": "결제 검토",
         "reviewButton": "결제 검토",
         "reviewButtonDisabled": "금액과 주소를 입력하세요",
@@ -911,7 +913,8 @@
         "confirmSubmit": "확인 및 요청 제출",
         "useDifferentAddress": "다른 주소 사용",
         "failed1ClickQuote": "1Click 전송 견적 생성에 실패했습니다",
-        "paymentSubmitted": "결제 송금 요청이 제출되었습니다"
+        "paymentSubmitted": "결제 송금 요청이 제출되었습니다",
+        "confidentialTooltip": "수취인 정보와 요청 금액은 완전히 기밀입니다."
     },
     "bulkPayment": {
         "comingSoonToast": "일괄 결제는 곧 출시됩니다!",
@@ -1025,7 +1028,8 @@
         },
         "approveWithin24h": "24시간 이내에 이 요청을 승인해 주세요. 그렇지 않으면 만료됩니다. 가능한 한 빨리 확인하는 것을 권장합니다.",
         "confirmSubmit": "확인 및 요청 제출",
-        "refreshingIn": "환율은 {seconds}초 후에 새로 고침됩니다"
+        "refreshingIn": "환율은 {seconds}초 후에 새로 고침됩니다",
+        "confidentialTooltip": "보내는 금액과 받는 금액은 완전히 기밀입니다."
     },
     "vesting": {
         "validation": {
@@ -1535,7 +1539,8 @@
         "comingSoon": "곧 제공",
         "forMembersOnly": "회원 전용",
         "nearComName": "near.com",
-        "nearComDescription": "near.com 및 trezu용 내부 네트워크"
+        "nearComDescription": "near.com 및 trezu용 기밀 네트워크",
+        "nearDescription": "공개 출금을 위한 네트워크"
     },
     "addressBookTable": {
         "emptyTitle": "아직 수신자가 없습니다",
@@ -1707,7 +1712,7 @@
         "vestedToken": "베스팅된 토큰",
         "staked": "스테이킹됨",
         "fungibleToken": "대체 가능 토큰",
-        "intentsToken": "Intents 토큰",
+        "intentsToken": "near.com",
         "nativeToken": "네이티브 토큰"
     },
     "exchangeErrors": {

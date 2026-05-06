@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowDownToLine, Info } from "lucide-react";
+import { ArrowDownToLine, Info, Shield } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -164,7 +164,22 @@ function Step1({
     return (
         <PageCard>
             <div className="flex justify-between items-center">
-                <StepperHeader title={tPay("newPayment")} />
+                <StepperHeader
+                    title={
+                        isConfidential ? (
+                            <span className="inline-flex items-center gap-1.5">
+                                <span>{tPay("title")}</span>
+                                <Tooltip content={tPay("confidentialTooltip")}>
+                                    <span className="inline-flex">
+                                        <Shield className="size-4 fill-foreground" />
+                                    </span>
+                                </Tooltip>
+                            </span>
+                        ) : (
+                            tPay("title")
+                        )
+                    }
+                />
                 <div className="flex items-center gap-2">
                     {isConfidential ? (
                         <Button
@@ -592,6 +607,7 @@ export default function PaymentsPage() {
         [tValidation],
     );
     const { treasuryId, isConfidential } = useTreasury();
+    const pageTitle = isConfidential ? t("confidentialTitle") : t("title");
     const { createProposal } = useNear();
     const { data: policy } = useTreasuryPolicy(treasuryId);
     const [step, setStep] = useState(0);
@@ -1095,7 +1111,7 @@ export default function PaymentsPage() {
     );
 
     return (
-        <PageComponentLayout title={t("title")} description={t("description")}>
+        <PageComponentLayout title={pageTitle} description={t("description")}>
             <Form {...form}>
                 <form
                     onSubmit={form.handleSubmit(onSubmit)}
