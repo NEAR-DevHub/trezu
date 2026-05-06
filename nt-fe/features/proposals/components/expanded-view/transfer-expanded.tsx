@@ -1,4 +1,5 @@
 import { useTranslations } from "next-intl";
+import { useMemo } from "react";
 import { Amount } from "../amount";
 import { InfoDisplay, InfoItem } from "@/components/info-display";
 import { User } from "@/components/user";
@@ -6,13 +7,13 @@ import { PaymentRequestData } from "../../types/index";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { useToken } from "@/hooks/use-treasury-queries";
-import { useIntentsWithdrawalFee } from "@/hooks/use-intents-withdrawal-fee";
 import { Address } from "@/components/address";
-import { useBridgeTokens } from "@/hooks/use-bridge-tokens";
 import { NetworkIconDisplay } from "@/components/token-display";
 import { NEAR_COM_ICON } from "@/constants/token";
 import { NEAR_COM_NETWORK_ID } from "@/constants/intents";
 import type { ChainIcons } from "@/lib/api";
+import { Skeleton } from "@/components/ui/skeleton";
+import { formatTokenDisplayAmount } from "@/lib/utils";
 
 interface TransferExpandedProps {
     data: PaymentRequestData;
@@ -23,42 +24,35 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
     const tIntents = useTranslations("intentsQuote");
     const { data: tokenData } = useToken(data.tokenId);
     const tokenChainName = tokenData?.network || "near";
-    const shouldFetchDestinationNetworkMeta =
-        !!data.receiverNetwork &&
-        data.receiverNetwork !== tokenChainName &&
-        data.receiverNetwork !== NEAR_COM_NETWORK_ID;
-    const { data: bridgeAssets = [] } = useBridgeTokens(
-        shouldFetchDestinationNetworkMeta,
-    );
+    const shouldFetchDestinationToken =
+        !!data.destinationAssetId &&
+        data.destinationAssetId !== NEAR_COM_NETWORK_ID &&
+        data.destinationAssetId !== "near";
+    const { data: destinationTokenData, isLoading: isLoadingDestinationToken } =
+        useToken(
+            shouldFetchDestinationToken ? data.destinationAssetId : undefined,
+        );
 
-    // For cross-chain intents payments use the destination network for the
-    // recipient profile link so the explorer link points to the right chain.
-    const recipientChainName = data.receiverNetwork ?? tokenChainName;
+    // For cross-chain intents payments, prefer resolved destination token
+    // network for recipient links when destinationNetwork carries a token id.
+    const recipientChainName =
+        data.destinationAssetId === NEAR_COM_NETWORK_ID
+            ? "near"
+            : destinationTokenData?.network ||
+              (!shouldFetchDestinationToken
+                  ? data.destinationAssetId
+                  : undefined) ||
+              tokenChainName;
+    const hasFeeData = !!data.networkFee;
 
-    const {
-        data: dynamicFeeData,
-        isError: hasFeeError,
-        isIntentsCrossChainToken,
-    } = useIntentsWithdrawalFee({
-        token: tokenData
-            ? {
-                  address: data.tokenId,
-                  network: tokenChainName,
-                  decimals: tokenData.decimals,
-              }
-            : null,
-        destinationAddress: data.receiver,
-    });
-    const hasFeeData =
-        isIntentsCrossChainToken &&
-        !hasFeeError &&
-        !!dynamicFeeData?.networkFee;
-
-    const destinationNetworkMeta = (() => {
-        if (!data.receiverNetwork || data.receiverNetwork === tokenChainName) {
+    const destinationNetworkMeta = useMemo(() => {
+        if (
+            !data.destinationAssetId ||
+            data.destinationAssetId === tokenChainName
+        ) {
             return null;
         }
-        if (data.receiverNetwork === NEAR_COM_NETWORK_ID) {
+        if (data.destinationAssetId === NEAR_COM_NETWORK_ID) {
             return {
                 name: NEAR_COM_NETWORK_ID,
                 chainIcons: {
@@ -67,26 +61,24 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
                 } as ChainIcons,
             };
         }
-
-        for (const asset of bridgeAssets) {
-            const network = asset.networks.find(
-                (n) =>
-                    n.id === data.receiverNetwork ||
-                    n.name === data.receiverNetwork,
-            );
-            if (!network) continue;
-
+        if (shouldFetchDestinationToken && destinationTokenData?.network) {
             return {
-                name: network.name,
-                chainIcons: network.chainIcons,
+                name: destinationTokenData.network,
+                chainIcons: destinationTokenData.chainIcons ?? null,
             };
         }
-
-        return {
-            name: data.receiverNetwork,
-            chainIcons: null,
-        };
-    })();
+        return null;
+    }, [
+        data.destinationAssetId,
+        destinationTokenData?.network,
+        destinationTokenData?.chainIcons,
+        shouldFetchDestinationToken,
+        tokenChainName,
+    ]);
+    const shouldShowDestinationNetworkSkeleton =
+        shouldFetchDestinationToken &&
+        !destinationNetworkMeta &&
+        isLoadingDestinationToken;
 
     const infoItems: InfoItem[] = [
         {
@@ -112,13 +104,15 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
         },
     ];
 
-    if (destinationNetworkMeta) {
+    if (destinationNetworkMeta || shouldShowDestinationNetworkSkeleton) {
         infoItems.push({
             label: t("destinationNetwork"),
-            value: (
+            value: shouldShowDestinationNetworkSkeleton ? (
+                <Skeleton className="h-5 w-28" />
+            ) : (
                 <NetworkIconDisplay
-                    chainIcons={destinationNetworkMeta.chainIcons}
-                    networkName={destinationNetworkMeta.name}
+                    chainIcons={destinationNetworkMeta!.chainIcons}
+                    networkName={destinationNetworkMeta!.name}
                     networkNameClassName="font-normal capitalize"
                 />
             ),
@@ -129,7 +123,7 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
         infoItems.push({
             label: t("networkFee"),
             info: tIntents("networkFeeTooltip"),
-            value: `${dynamicFeeData.networkFee} ${tokenData?.symbol || ""}`.trim(),
+            value: `${formatTokenDisplayAmount(data.networkFee!)} ${tokenData?.symbol || ""}`.trim(),
         });
     }
 

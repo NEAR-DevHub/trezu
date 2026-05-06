@@ -53,8 +53,10 @@ export interface PaymentRequestData {
     /** Present when the payment was routed through the 1Click Intents protocol */
     depositAddress?: string;
     quoteSignature?: string;
-    /** Destination chain name (e.g. "ethereum", "bitcoin") for cross-chain payments */
-    receiverNetwork?: string;
+    /** Network fee in token units (not raw smallest units) */
+    networkFee?: string;
+    /** Destination id (e.g. "near.com", "near", "nep141:...omft.near") */
+    destinationAssetId?: string;
 }
 
 export interface FunctionCallAction {

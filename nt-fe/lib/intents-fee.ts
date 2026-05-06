@@ -2,6 +2,7 @@ import { IntentsSDK } from "@defuse-protocol/intents-sdk";
 import Big from "@/lib/big";
 import { validateAddress } from "@/lib/address-validation";
 import type { BlockchainType } from "@/lib/blockchain-utils";
+import { formatSmartAmount } from "@/lib/utils";
 
 const intentsSdk = new IntentsSDK({
     referral: "",
@@ -80,6 +81,22 @@ export function isNearChainFtToken(token: {
 
 function fromAmountRaw(rawAmount: bigint | string, decimals: number): Big {
     return Big(rawAmount.toString()).div(Big(10).pow(decimals));
+}
+
+export function computeQuoteNetworkFee(
+    args?: {
+        amountInFormatted?: string | null;
+        amountOutFormatted?: string | null;
+    } | null,
+): string | undefined {
+    try {
+        const fee = Big(args?.amountInFormatted || "0").minus(
+            Big(args?.amountOutFormatted || "0"),
+        );
+        return fee.gt(0) ? formatSmartAmount(fee.toString()) : undefined;
+    } catch {
+        return undefined;
+    }
 }
 
 export async function estimateIntentsNetworkFee(args: {

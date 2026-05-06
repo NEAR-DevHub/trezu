@@ -309,6 +309,7 @@ export function ProposalSidebar({
     const proposalType = getProposalUIKind(proposal);
     const isExchangeProposal = proposalType === "Exchange";
     const isPaymentProposal = proposalType === "Payment Request";
+    const isConfidentialRequest = proposalType === "Confidential Request";
     const isFailed = status === "Failed";
     const isExecuted = status === "Executed";
 
@@ -323,14 +324,23 @@ export function ProposalSidebar({
         }
     }
 
-    // Extract deposit address for exchange proposals and intents payment proposals
+    // Extract intents details for exchange/payment/confidential requests.
+    // Confidential metadata is backend-enriched and nested under mapped.data.
     let depositAddress: string | undefined;
-    if (isExchangeProposal || isPaymentProposal) {
+    let isConfidentialPayment = false;
+    if (isExchangeProposal || isPaymentProposal || isConfidentialRequest) {
         try {
-            const { data } = extractProposalData(proposal);
-            depositAddress = (data as any).depositAddress;
+            const { data } = extractProposalData(proposal, treasuryId);
+            if (isConfidentialRequest) {
+                const mapped = (data as any)?.mapped;
+                isConfidentialPayment = mapped?.type === "payment";
+                depositAddress = mapped?.data?.depositAddress;
+            } else {
+                depositAddress = (data as any)?.depositAddress;
+            }
         } catch (e) {}
     }
+    const isPaymentLikeProposal = isPaymentProposal || isConfidentialPayment;
 
     // Whether this proposal used the Intents protocol (has a deposit address)
     const isIntentsRouted = !!depositAddress;
@@ -502,12 +512,12 @@ export function ProposalSidebar({
                             message={
                                 <span>
                                     <strong>
-                                        {isPaymentProposal
+                                        {isPaymentLikeProposal
                                             ? t("processingPayment")
                                             : t("exchangingTokens")}
                                     </strong>
                                     <br />
-                                    {isPaymentProposal
+                                    {isPaymentLikeProposal
                                         ? t("processingPaymentBody")
                                         : t("exchangingTokensBody")}
                                 </span>

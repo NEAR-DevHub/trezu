@@ -68,6 +68,7 @@ import {
     formatTokenDisplayAmount,
 } from "@/lib/utils";
 import {
+    computeQuoteNetworkFee,
     isIntentsCrossChainToken,
     isIntentsToken,
     isNearChainFtToken,
@@ -228,7 +229,6 @@ function Step1({
 }
 
 interface Step2Props extends StepProps {
-    showFeeBreakdown: boolean;
     liveQuote?: IntentsQuoteResponse | null;
     isLoadingLiveQuote?: boolean;
     isFetchingLiveQuote?: boolean;
@@ -237,7 +237,6 @@ interface Step2Props extends StepProps {
 
 function Step2({
     handleBack,
-    showFeeBreakdown,
     liveQuote,
     isLoadingLiveQuote,
     isFetchingLiveQuote,
@@ -289,14 +288,24 @@ function Step2({
 
         if (liveQuote?.quote) {
             const divisor = Big(10).pow(token.decimals);
-            const quotedTotal = Big(liveQuote.quote.minAmountIn || "0").div(
-                divisor,
+            const quotedTotal = Big(
+                liveQuote.quote.amountInFormatted ||
+                    Big(liveQuote.quote.minAmountIn || "0")
+                        .div(divisor)
+                        .toString(),
             );
             const quotedRecipient = Big(
-                liveQuote.quote.minAmountOut || "0",
-            ).div(divisor);
-            const quotedFee = quotedTotal.minus(quotedRecipient);
-            const feeValue = quotedFee.gt(0) ? quotedFee : Big(0);
+                liveQuote.quote.amountOutFormatted ||
+                    Big(liveQuote.quote.minAmountOut || "0")
+                        .div(divisor)
+                        .toString(),
+            );
+            const feeValue = Big(
+                (computeQuoteNetworkFee(liveQuote.quote) || "0").replaceAll(
+                    ",",
+                    "",
+                ),
+            );
 
             return {
                 totalAmountWithFees: quotedTotal,
@@ -382,7 +391,7 @@ function Step2({
                                 </div>
                             </div>
                         </div>
-                        {showFeeBreakdown && displayNetworkFee.gt(0) && (
+                        {isViaIntents && displayNetworkFee.gt(0) && (
                             <div className="flex items-center justify-between gap-2 text-sm my-3">
                                 <div className="flex items-center gap-1 text-muted-foreground">
                                     <p>{tPay("networkFee")}</p>
@@ -565,13 +574,14 @@ function buildIntentTransferDescription(
     quote: Awaited<ReturnType<typeof getIntentsQuote>>,
 ): string {
     const notes = [data.memo?.trim()].filter(Boolean).join(" ");
+    const networkFee = computeQuoteNetworkFee(quote?.quote);
 
     return encodeToMarkdown({
         proposal_action: "payment-transfer",
         notes,
         recipient: data.address,
         destinationNetwork: data.destinationNetwork || undefined,
-        destinationNetworkName: data.destinationNetworkName || undefined,
+        networkFee,
         depositAddress: quote?.quote.depositAddress,
         signature: quote?.signature,
     });
@@ -1072,7 +1082,6 @@ export default function PaymentsPage() {
             {
                 component: Step2,
                 props: {
-                    showFeeBreakdown: isViaIntents,
                     liveQuote: liveQuote ?? quoteRef.current,
                     isLoadingLiveQuote,
                     isFetchingLiveQuote,
