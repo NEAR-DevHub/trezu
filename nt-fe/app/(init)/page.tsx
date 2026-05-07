@@ -470,14 +470,6 @@ export function Content() {
         setOnboardingPath(path);
         trackEvent("onboarding_path_selected", {
             path,
-            user_type: path === "existing_user" ? "existing" : "new",
-        });
-        trackEvent("onboarding_cta_clicked", {
-            cta:
-                path === "existing_user"
-                    ? "choose_existing_user"
-                    : "choose_new_user",
-            source: "/",
         });
 
         if (path === "new_user") {

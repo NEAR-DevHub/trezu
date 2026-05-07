@@ -69,7 +69,12 @@ import {
 } from "@/components/ui/card";
 import { Pill } from "@/components/pill";
 import { cn } from "@/lib/utils";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/modal";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/modal";
 
 type WalletOption = {
     id:
@@ -790,9 +795,6 @@ function Step4({
     const [unsupportedWallet, setUnsupportedWallet] =
         useState<WalletOption | null>(null);
 
-    useEffect(() => {
-        trackEvent("treasury-creation-step-4-viewed");
-    }, []);
     const financialMembers = members.filter((m: Member) =>
         m.roles.includes("financial"),
     ).length;
@@ -804,10 +806,6 @@ function Step4({
     const financialThresholdVisual = `${financialThreshold}/${financialMembers}`;
     const governanceThresholdVisual = `${governanceThreshold}/${governanceMembers}`;
     const closeUnsupportedWalletModal = () => {
-        trackEvent("onboarding_cta_clicked", {
-            cta: "unsupported_wallet_modal_close",
-            source: "/app/new",
-        });
         setUnsupportedWallet(null);
     };
 
@@ -819,21 +817,12 @@ function Step4({
         });
 
         if (wallet.supported) {
-            trackEvent("onboarding_cta_clicked", {
-                cta: `wallet_${wallet.id}`,
-                source: "/app/new",
-            });
             setShowWalletSelector(false);
             connectWallet();
             return;
         }
 
         setUnsupportedWallet(wallet);
-        trackEvent("onboarding_wallet_unsupported_modal_shown", {
-            wallet_id: wallet.id,
-            wallet_name: wallet.label,
-            source: "/app/new",
-        });
     };
 
     if (showWalletSelector && !accountId) {
@@ -1002,10 +991,6 @@ function Step4({
                     accountId
                         ? undefined
                         : () => {
-                              trackEvent("onboarding_cta_clicked", {
-                                  cta: "connect_wallet_create",
-                                  source: "/app/new",
-                              });
                               setShowWalletSelector(true);
                           }
                 }
@@ -1151,10 +1136,6 @@ export default function NewTreasuryPage() {
 
     const onSubmit = async (data: TreasuryFormValues) => {
         if (!accountId) {
-            trackEvent("onboarding_cta_clicked", {
-                cta: "connect_wallet_create",
-                source: "/app/new",
-            });
             await connect();
             return;
         }
@@ -1204,14 +1185,6 @@ export default function NewTreasuryPage() {
                         })),
                     );
                     setCreatedTreasuryId(treasuryId);
-                    trackEvent("treasury-created", {
-                        treasury_id: treasuryId,
-                        source: "/app/new",
-                        members_count:
-                            request.governors.length +
-                            request.financiers.length +
-                            request.requestors.length,
-                    });
                     trackEvent("onboarding_completed", {
                         source: "/app/new",
                         treasury_id: treasuryId,

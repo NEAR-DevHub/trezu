@@ -45,7 +45,6 @@ export function CreateTreasuryPromptModal({
         <Dialog
             open={open}
             onOpenChange={(nextOpen) => {
-                if (!nextOpen) trackClick("dismiss");
                 onOpenChange(nextOpen);
             }}
         >
@@ -62,7 +61,6 @@ export function CreateTreasuryPromptModal({
                     <Button
                         className="w-full"
                         onClick={() => {
-                            trackClick("create_treasury");
                             onCreateTreasury();
                         }}
                     >
