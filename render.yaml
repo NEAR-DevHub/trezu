@@ -133,4 +133,4 @@ databases:
 
   - name: database-staging
     plan: basic-1gb
-    diskSizeGB: 1
+    diskSizeGB: 5
