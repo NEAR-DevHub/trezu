@@ -160,10 +160,12 @@
         },
         "payments": {
             "title": "Zahlungen",
-            "description": "Senden und empfangen Sie Mittel sicher"
+            "confidentialTitle": "Vertrauliche Zahlungen",
+            "description": "Geld sicher und geschuetzt senden."
         },
         "exchange": {
-            "title": "Tauschen",
+            "title": "Tausch",
+            "confidentialTitle": "Vertraulicher Tausch",
             "description": "Tauschen Sie Ihre Token sicher und effizient"
         },
         "vesting": {
@@ -656,7 +658,10 @@
             "votingPeriod24h": "Abstimmungszeitraum: 24 Stunden",
             "votingPeriod24hBody": "Diese Tauschanfrage hat eine Abstimmungsdauer von 24 Stunden. Genehmigen Sie diese Anfrage innerhalb dieser Zeit, andernfalls läuft sie ab.",
             "reject": "Ablehnen",
-            "approve": "Genehmigen"
+            "approve": "Genehmigen",
+            "destinationNetwork": "Zielnetzwerk",
+            "processingPayment": "Zahlung wird verarbeitet",
+            "processingPaymentBody": "Diese Zahlung wurde vom Team genehmigt und wird jetzt verarbeitet. Dies kann einige Zeit dauern."
         },
         "insufficientBalance": {
             "noAsset": "Diese Anfrage kann nicht genehmigt werden, da das erforderliche Token in der Treasury nicht verfügbar ist.",
@@ -894,7 +899,7 @@
             "amountPositive": "Betrag muss größer als 0 sein",
             "recipientTokenSame": "Empfänger- und Token-Adresse dürfen nicht identisch sein"
         },
-        "newPayment": "Neue Zahlung",
+        "title": "Zahlung",
         "reviewYourPayment": "Überprüfen Sie Ihre Zahlung",
         "reviewButton": "Zahlung prüfen",
         "reviewButtonDisabled": "Betrag und Adresse eingeben",
@@ -908,7 +913,8 @@
         "confirmSubmit": "Anfrage bestätigen und absenden",
         "useDifferentAddress": "Andere Adresse verwenden",
         "failed1ClickQuote": "Erstellung des 1Click-Transfer-Angebots fehlgeschlagen",
-        "paymentSubmitted": "Anfrage zum Senden der Zahlung übermittelt"
+        "paymentSubmitted": "Anfrage zum Senden der Zahlung übermittelt",
+        "confidentialTooltip": "Empfaengerdaten und der angeforderte Betrag sind vollstaendig vertraulich."
     },
     "bulkPayment": {
         "comingSoonToast": "Sammelzahlungen kommen demnächst!",
@@ -1022,7 +1028,8 @@
         },
         "approveWithin24h": "Bitte genehmigen Sie diese Anfrage innerhalb von 24 Stunden, andernfalls läuft sie ab. Wir empfehlen, so bald wie möglich zu bestätigen.",
         "confirmSubmit": "Anfrage bestätigen und absenden",
-        "refreshingIn": "Wechselkurs wird in {seconds}s aktualisiert"
+        "refreshingIn": "Wechselkurs wird in {seconds}s aktualisiert",
+        "confidentialTooltip": "Die Betraege, die Sie senden und erhalten, sind vollstaendig vertraulich."
     },
     "vesting": {
         "validation": {
@@ -1536,7 +1543,8 @@
         "comingSoon": "Demnächst verfügbar",
         "forMembersOnly": "Nur für Mitglieder",
         "nearComName": "near.com",
-        "nearComDescription": "Internes Netzwerk für near.com und Trezu"
+        "nearComDescription": "Vertrauliches Netzwerk für near.com und Trezu",
+        "nearDescription": "Netzwerk für öffentliche Auszahlungen"
     },
     "addressBookTable": {
         "emptyTitle": "Noch keine Empfänger",
@@ -1708,7 +1716,7 @@
         "vestedToken": "Gevestetes Token",
         "staked": "Gestaked",
         "fungibleToken": "Fungibles Token",
-        "intentsToken": "Intents-Token",
+        "intentsToken": "near.com",
         "nativeToken": "Natives Token"
     },
     "exchangeErrors": {

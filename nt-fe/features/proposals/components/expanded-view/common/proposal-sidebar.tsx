@@ -308,6 +308,8 @@ export function ProposalSidebar({
     const isPending = status === "Pending";
     const proposalType = getProposalUIKind(proposal);
     const isExchangeProposal = proposalType === "Exchange";
+    const isPaymentProposal = proposalType === "Payment Request";
+    const isConfidentialRequest = proposalType === "Confidential Request";
     const isFailed = status === "Failed";
     const isExecuted = status === "Executed";
 
@@ -322,28 +324,40 @@ export function ProposalSidebar({
         }
     }
 
-    // Extract deposit address for exchange proposals
+    // Extract intents details for exchange/payment/confidential requests.
+    // Confidential metadata is backend-enriched and nested under mapped.data.
     let depositAddress: string | undefined;
-    if (isExchangeProposal) {
+    let isConfidentialPayment = false;
+    if (isExchangeProposal || isPaymentProposal || isConfidentialRequest) {
         try {
-            const { data } = extractProposalData(proposal);
-            depositAddress = (data as any).depositAddress;
+            const { data } = extractProposalData(proposal, treasuryId);
+            if (isConfidentialRequest) {
+                const mapped = (data as any)?.mapped;
+                isConfidentialPayment = mapped?.type === "payment";
+                depositAddress = mapped?.data?.depositAddress;
+            } else {
+                depositAddress = (data as any)?.depositAddress;
+            }
         } catch (e) {}
     }
+    const isPaymentLikeProposal = isPaymentProposal || isConfidentialPayment;
 
-    // Fetch transaction data for non-exchange proposals, or for failed exchange proposals
+    // Whether this proposal used the Intents protocol (has a deposit address)
+    const isIntentsRouted = !!depositAddress;
+
+    // Fetch transaction data for non-intents proposals, or for failed ones
     const { data: transaction } = useProposalTransaction(
         treasuryId,
         proposal,
         policy,
-        !isExchangeProposal || isFailed,
+        !isIntentsRouted || isFailed,
     );
 
-    // Fetch swap status for executed exchange proposals
+    // Fetch swap status for executed intents proposals (exchange or payment)
     const { data: swapStatus } = useSwapStatus(
         depositAddress || null,
         undefined,
-        isExchangeProposal && isExecuted && !!depositAddress,
+        isIntentsRouted && isExecuted && !!depositAddress,
     );
 
     const expiresAt = new Date(
@@ -458,8 +472,8 @@ export function ProposalSidebar({
             {/* Transaction Links */}
             {(isExecuted || isFailed) && (
                 <>
-                    {/* For exchange proposals, show intents explorer link */}
-                    {!isFailed && isExchangeProposal && depositAddress ? (
+                    {/* For intents-routed proposals (exchange or payment), show intents explorer link */}
+                    {!isFailed && isIntentsRouted && depositAddress ? (
                         <Link
                             href={`https://explorer.near-intents.org/transactions/${depositAddress}`}
                             target="_blank"
@@ -486,8 +500,8 @@ export function ProposalSidebar({
                 </>
             )}
 
-            {/* Exchange Swap Status - Show for executed exchange proposals */}
-            {isExecuted && isExchangeProposal && swapStatus && (
+            {/* Swap Status - Show for executed intents-routed proposals (exchange or payment) */}
+            {isExecuted && isIntentsRouted && swapStatus && (
                 <>
                     {(swapStatus.status === "KNOWN_DEPOSIT_TX" ||
                         swapStatus.status === "PENDING_DEPOSIT" ||
@@ -497,9 +511,15 @@ export function ProposalSidebar({
                             className="inline-flex"
                             message={
                                 <span>
-                                    <strong>{t("exchangingTokens")}</strong>
+                                    <strong>
+                                        {isPaymentLikeProposal
+                                            ? t("processingPayment")
+                                            : t("exchangingTokens")}
+                                    </strong>
                                     <br />
-                                    {t("exchangingTokensBody")}
+                                    {isPaymentLikeProposal
+                                        ? t("processingPaymentBody")
+                                        : t("exchangingTokensBody")}
                                 </span>
                             }
                         />
@@ -522,7 +542,7 @@ export function ProposalSidebar({
                 </>
             )}
 
-            {/* Exchange Proposal Short-Expiry Warning */}
+            {/* Short-Expiry Warning (exchange proposals only) */}
             {isPending && shortExpiryExchange && (
                 <InfoAlert
                     className="inline-flex"

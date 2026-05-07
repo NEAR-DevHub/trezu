@@ -13,7 +13,7 @@
 use super::balance::get_balance_change_at_block;
 use super::counterparty::ensure_ft_metadata;
 use super::swap_detector::{
-    classify_proposal_swap_deposits, detect_swaps_from_api, store_detected_swaps,
+    classify_proposal_swap_deposits, detect_swaps_from_api_with_client, store_detected_swaps,
 };
 use super::transfer_hints::tx_resolver::{TxActionInfo, resolve_receipt_block_height};
 use super::utils::block_timestamp_to_datetime;
@@ -539,6 +539,7 @@ pub async fn run_enrichment_cycle(
     intents_api_key: Option<&str>,
     intents_api_url: &str,
 ) -> Result<usize, Box<dyn std::error::Error>> {
+    let http_client = reqwest::Client::new();
     let consumer_name = "balance_enrichment";
     let cursor = get_cursor(app_pool, goldsky_pool, consumer_name).await?;
 
@@ -860,7 +861,15 @@ pub async fn run_enrichment_cycle(
         .filter(|a| matches!(monitored.get(a.as_str()), Some(false)))
         .collect();
     for account_id in &swap_candidates {
-        match detect_swaps_from_api(app_pool, account_id, intents_api_key, intents_api_url).await {
+        match detect_swaps_from_api_with_client(
+            &http_client,
+            app_pool,
+            account_id,
+            intents_api_key,
+            intents_api_url,
+        )
+        .await
+        {
             Ok(swaps) if !swaps.is_empty() => match store_detected_swaps(app_pool, &swaps).await {
                 Ok(inserted) if inserted > 0 => {
                     log::info!(

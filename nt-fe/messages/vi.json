@@ -159,11 +159,13 @@
             "description": "Quản lý người nhận đã lưu của bạn"
         },
         "payments": {
-            "title": "Thanh toán",
-            "description": "Gửi và nhận tiền một cách an toàn"
+            "title": "Thanh toan",
+            "confidentialTitle": "Thanh toan bao mat",
+            "description": "Gui tien an toan va bao mat."
         },
         "exchange": {
-            "title": "Trao đổi",
+            "title": "Hoan doi",
+            "confidentialTitle": "Hoan doi bao mat",
             "description": "Trao đổi token một cách an toàn và hiệu quả"
         },
         "vesting": {
@@ -656,7 +658,10 @@
             "votingPeriod24h": "Thời gian bỏ phiếu: 24 giờ",
             "votingPeriod24hBody": "Yêu cầu trao đổi này có thời gian bỏ phiếu 24 giờ. Hãy phê duyệt yêu cầu trong khoảng thời gian này, nếu không yêu cầu sẽ hết hạn.",
             "reject": "Từ chối",
-            "approve": "Phê duyệt"
+            "approve": "Phê duyệt",
+            "destinationNetwork": "Mạng đích",
+            "processingPayment": "Đang xử lý thanh toán",
+            "processingPaymentBody": "Khoản thanh toán này đã được nhóm phê duyệt và đang được xử lý. Có thể mất một chút thời gian để hoàn thành."
         },
         "insufficientBalance": {
             "noAsset": "Yêu cầu này không thể được phê duyệt vì token cần thiết không có sẵn trong ngân quỹ.",
@@ -894,7 +899,7 @@
             "amountPositive": "Số tiền phải lớn hơn 0",
             "recipientTokenSame": "Địa chỉ người nhận và token không thể giống nhau"
         },
-        "newPayment": "Thanh toán mới",
+        "title": "Thanh toan",
         "reviewYourPayment": "Xem lại thanh toán của bạn",
         "reviewButton": "Xem lại thanh toán",
         "reviewButtonDisabled": "Nhập số tiền và địa chỉ",
@@ -908,7 +913,8 @@
         "confirmSubmit": "Xác nhận và gửi yêu cầu",
         "useDifferentAddress": "Dùng một địa chỉ khác",
         "failed1ClickQuote": "Không thể tạo báo giá chuyển 1Click",
-        "paymentSubmitted": "Đã gửi yêu cầu thanh toán"
+        "paymentSubmitted": "Đã gửi yêu cầu thanh toán",
+        "confidentialTooltip": "Thong tin nguoi nhan va so tien yeu cau duoc bao mat hoan toan."
     },
     "bulkPayment": {
         "comingSoonToast": "Thanh toán hàng loạt sắp ra mắt!",
@@ -1022,7 +1028,8 @@
         },
         "approveWithin24h": "Vui lòng phê duyệt yêu cầu này trong vòng 24 giờ, nếu không nó sẽ hết hạn. Chúng tôi khuyên bạn xác nhận càng sớm càng tốt.",
         "confirmSubmit": "Xác nhận và gửi yêu cầu",
-        "refreshingIn": "Tỷ giá trao đổi sẽ làm mới trong {seconds}s"
+        "refreshingIn": "Tỷ giá trao đổi sẽ làm mới trong {seconds}s",
+        "confidentialTooltip": "So tien ban gui va nhan duoc bao mat hoan toan."
     },
     "vesting": {
         "validation": {
@@ -1536,7 +1543,8 @@
         "comingSoon": "Sắp ra mắt",
         "forMembersOnly": "Chỉ dành cho thành viên",
         "nearComName": "near.com",
-        "nearComDescription": "Mạng nội bộ cho near.com và trezu"
+        "nearComDescription": "Mạng bảo mật của near.com và trezu",
+        "nearDescription": "Mạng dành cho rút tiền công khai"
     },
     "addressBookTable": {
         "emptyTitle": "Chưa có người nhận nào",
@@ -1708,7 +1716,7 @@
         "vestedToken": "Token đã vesting",
         "staked": "Đã stake",
         "fungibleToken": "Token có thể thay thế",
-        "intentsToken": "Token Intents",
+        "intentsToken": "near.com",
         "nativeToken": "Token gốc"
     },
     "exchangeErrors": {

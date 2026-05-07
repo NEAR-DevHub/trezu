@@ -51,6 +51,7 @@ export default function BulkPaymentPage() {
     const router = useRouter();
     const queryClient = useQueryClient();
     const { treasuryId: selectedTreasury, isConfidential } = useTreasury();
+    const pageTitle = isConfidential ? t("confidentialTitle") : t("title");
     const { createProposal } = useNear();
     const { data: policy } = useTreasuryPolicy(selectedTreasury);
 
@@ -418,7 +419,7 @@ export default function BulkPaymentPage() {
         const payment = paymentData[editingIndex];
         return (
             <PageComponentLayout
-                title={t("title")}
+                title={pageTitle}
                 description={t("description")}
             >
                 <div className="w-full max-w-[600px] mx-auto">
@@ -437,7 +438,7 @@ export default function BulkPaymentPage() {
     }
 
     return (
-        <PageComponentLayout title={t("title")} description={t("description")}>
+        <PageComponentLayout title={pageTitle} description={t("description")}>
             <FormProvider {...form}>
                 <div
                     className={`w-full mx-auto ${step === 1 ? "max-w-3xl" : "max-w-7xl"}`}

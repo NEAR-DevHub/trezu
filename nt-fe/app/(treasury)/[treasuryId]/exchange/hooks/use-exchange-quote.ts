@@ -160,7 +160,7 @@ export function useExchangeQuote({
                         deadline: new Date(
                             Date.now() + 24 * 60 * 60 * 1000,
                         ).toISOString(), // 24 hours
-                        quoteWaitingTimeMs: 3000,
+                        quoteWaitingTimeMs: isDryRun ? 0 : 3000,
                     },
                     isDryRun,
                 );
@@ -200,6 +200,8 @@ export function useExchangeQuote({
         },
         enabled,
         refetchInterval,
+        staleTime: refetchInterval,
         refetchIntervalInBackground: false,
+        refetchOnWindowFocus: false,
     });
 }

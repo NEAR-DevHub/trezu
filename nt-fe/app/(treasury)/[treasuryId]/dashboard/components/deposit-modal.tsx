@@ -40,6 +40,7 @@ interface DepositModalProps {
 interface SelectOption {
     id: string;
     name: string;
+    description?: string;
     symbol?: string;
     icon: string;
     gradient?: string;
@@ -58,6 +59,7 @@ const assetSchema = z.object({
 const networkSchema = z.object({
     id: z.string(),
     name: z.string(),
+    description: z.string().optional(),
     symbol: z.string().optional(),
     icon: z.string(),
     gradient: z.string().optional(),
@@ -102,6 +104,7 @@ export function DepositModal({
     prefillNetworkId,
 }: DepositModalProps) {
     const t = useTranslations("depositModal");
+    const tRecipientNetwork = useTranslations("recipientNetworkSelect");
     const depositFormSchema = useMemo(
         () =>
             buildDepositFormSchema({
@@ -399,6 +402,9 @@ export function DepositModal({
         const nearDirectNetworkOption = (): SelectOption => ({
             id: NEAR_DIRECT_NETWORK_ID,
             name: "near.com",
+            description: isConfidential
+                ? tRecipientNetwork("nearComDescription")
+                : undefined,
             icon: NEAR_COM_ICON,
         });
 
@@ -525,13 +531,6 @@ export function DepositModal({
                 if (prefillNetwork) networkToSelect = prefillNetwork;
             }
 
-            if (!networkToSelect && isConfidential) {
-                networkToSelect =
-                    availableNetworks.find(
-                        (n) => n.id === NEAR_DIRECT_NETWORK_ID,
-                    ) || null;
-            }
-
             if (!networkToSelect && availableNetworks.length === 1) {
                 networkToSelect = availableNetworks[0];
             }
@@ -572,15 +571,9 @@ export function DepositModal({
                 networkBalancesByAsset.get(asset.id) || new Map(),
             );
 
-            const nearDirectNetwork = availableNetworks.find(
-                (n) => n.id === NEAR_DIRECT_NETWORK_ID,
-            );
-
-            // Auto-select network if only one is available, or near.com for confidential
+            // Auto-select network only when there is exactly one option.
             if (availableNetworks.length === 1) {
                 form.setValue("network", availableNetworks[0]);
-            } else if (isConfidential && nearDirectNetwork) {
-                form.setValue("network", nearDirectNetwork);
             } else if (
                 selectedNetwork &&
                 !availableNetworks.some((n) => n.id === selectedNetwork.id)
@@ -588,13 +581,7 @@ export function DepositModal({
                 form.setValue("network", null);
             }
         },
-        [
-            form,
-            assetNetworksMap,
-            selectedNetwork,
-            networkBalancesByAsset,
-            isConfidential,
-        ],
+        [form, assetNetworksMap, selectedNetwork, networkBalancesByAsset],
     );
 
     // Handle network selection
@@ -770,6 +757,8 @@ export function DepositModal({
     const onlyDepositNetworkName = selectedNetwork
         ? getNetworkDisplayName(selectedNetwork.name)
         : "";
+    const shouldCapitalizeOnlyDepositNetwork =
+        onlyDepositNetworkName.toLowerCase() !== "near.com";
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
@@ -907,11 +896,20 @@ export function DepositModal({
                                                                         </span>
                                                                     </div>
                                                                 )}
-                                                                <span className="text-foreground font-medium uppercase">
-                                                                    {getNetworkDisplayName(
-                                                                        selectedNetwork.name,
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-foreground font-medium uppercase">
+                                                                        {getNetworkDisplayName(
+                                                                            selectedNetwork.name,
+                                                                        )}
+                                                                    </span>
+                                                                    {selectedNetwork.description && (
+                                                                        <span className="text-xs text-muted-foreground font-normal">
+                                                                            {
+                                                                                selectedNetwork.description
+                                                                            }
+                                                                        </span>
                                                                     )}
-                                                                </span>
+                                                                </div>
                                                             </div>
                                                             <ChevronDown className="w-5 h-5" />
                                                         </div>
@@ -1082,7 +1080,13 @@ export function DepositModal({
                                                     </span>
                                                 ),
                                                 networkTag: (chunks) => (
-                                                    <span className="text-foreground capitalize">
+                                                    <span
+                                                        className={`text-foreground ${
+                                                            shouldCapitalizeOnlyDepositNetwork
+                                                                ? "capitalize"
+                                                                : ""
+                                                        }`}
+                                                    >
                                                         {chunks}
                                                     </span>
                                                 ),
@@ -1182,6 +1186,26 @@ export function DepositModal({
                             isLoading={isLoadingAssets}
                             fixNear
                             roundIcons={false}
+                            renderContent={(item) => {
+                                const option = item as SelectOption;
+                                return (
+                                    <div className="flex-1 text-left">
+                                        <div className="font-semibold uppercase">
+                                            {option.name || option.symbol}
+                                        </div>
+                                        {option.description && (
+                                            <div className="text-xs text-muted-foreground font-normal">
+                                                {option.description}
+                                            </div>
+                                        )}
+                                        {option.symbol && (
+                                            <div className="text-sm text-muted-foreground">
+                                                {option.symbol}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            }}
                             renderRight={(item) => {
                                 const networkBalance =
                                     selectedNetworkBalances.get(item.id);

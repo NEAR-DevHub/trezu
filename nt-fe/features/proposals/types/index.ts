@@ -50,6 +50,13 @@ export interface PaymentRequestData {
     receiver: string;
     notes?: string;
     url?: string;
+    /** Present when the payment was routed through the 1Click Intents protocol */
+    depositAddress?: string;
+    quoteSignature?: string;
+    /** Network fee in token units (not raw smallest units) */
+    networkFee?: string;
+    /** Destination id (e.g. "near.com", "near", "nep141:...omft.near") */
+    destinationAssetId?: string;
 }
 
 export interface FunctionCallAction {

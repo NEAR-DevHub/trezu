@@ -160,10 +160,12 @@
         },
         "payments": {
             "title": "Payments",
-            "description": "Send and receive funds securely"
+            "confidentialTitle": "Confidential Payments",
+            "description": "Send funds safely and securely."
         },
         "exchange": {
             "title": "Exchange",
+            "confidentialTitle": "Confidential Exchange",
             "description": "Exchange your tokens securely and efficiently"
         },
         "vesting": {
@@ -656,7 +658,10 @@
             "votingPeriod24h": "Voting period: 24 hours",
             "votingPeriod24hBody": "This exchange request has a 24-hour voting duration. Approve this request within this time, or the request will expire.",
             "reject": "Reject",
-            "approve": "Approve"
+            "approve": "Approve",
+            "destinationNetwork": "Destination Network",
+            "processingPayment": "Processing Payment",
+            "processingPaymentBody": "This payment has been approved by the team and is now being processed. It may take some time to complete."
         },
         "insufficientBalance": {
             "noAsset": "This request can't be approved because the required token is not available in the treasury.",
@@ -894,7 +899,7 @@
             "amountPositive": "Amount must be greater than 0",
             "recipientTokenSame": "Recipient and token address cannot be the same"
         },
-        "newPayment": "New Payment",
+        "title": "Payment",
         "reviewYourPayment": "Review Your Payment",
         "reviewButton": "Review Payment",
         "reviewButtonDisabled": "Enter amount and address",
@@ -908,7 +913,8 @@
         "confirmSubmit": "Confirm and Submit Request",
         "useDifferentAddress": "Use a different address",
         "failed1ClickQuote": "Failed to create 1Click transfer quote",
-        "paymentSubmitted": "Request to send payment submitted"
+        "paymentSubmitted": "Request to send payment submitted",
+        "confidentialTooltip": "Recipient details and the requested amount are fully confidential."
     },
     "bulkPayment": {
         "comingSoonToast": "Bulk payments are coming soon!",
@@ -1022,7 +1028,8 @@
         },
         "approveWithin24h": "Please approve this request within 24 hours, otherwise it will expire. We recommend confirming as soon as possible.",
         "confirmSubmit": "Confirm and Submit Request",
-        "refreshingIn": "Exchange rate will refresh in {seconds}s"
+        "refreshingIn": "Exchange rate will refresh in {seconds}s",
+        "confidentialTooltip": "The amounts you send and receive are completely confidential."
     },
     "vesting": {
         "validation": {
@@ -1536,7 +1543,8 @@
         "comingSoon": "Coming Soon",
         "forMembersOnly": "For Members Only",
         "nearComName": "near.com",
-        "nearComDescription": "Internal Network for near.com and trezu"
+        "nearComDescription": "Confidential network of near.com and trezu",
+        "nearDescription": "Network for public withdrawal"
     },
     "addressBookTable": {
         "emptyTitle": "No recipients yet",
@@ -1708,7 +1716,7 @@
         "vestedToken": "Vested Token",
         "staked": "Staked",
         "fungibleToken": "Fungible Token",
-        "intentsToken": "Intents Token",
+        "intentsToken": "near.com",
         "nativeToken": "Native Token"
     },
     "exchangeErrors": {

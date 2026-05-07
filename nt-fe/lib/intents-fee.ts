@@ -2,6 +2,7 @@ import { IntentsSDK } from "@defuse-protocol/intents-sdk";
 import Big from "@/lib/big";
 import { validateAddress } from "@/lib/address-validation";
 import type { BlockchainType } from "@/lib/blockchain-utils";
+import { formatSmartAmount } from "@/lib/utils";
 
 const intentsSdk = new IntentsSDK({
     referral: "",
@@ -44,8 +45,58 @@ export function isIntentsCrossChainToken(token: {
     );
 }
 
+export function isNearChainNativeToken(token: {
+    address?: string | null;
+    network?: string | null;
+    residency?: string | null;
+}): boolean {
+    const address = (token.address || "").toLowerCase();
+    const network = (token.network || "").toLowerCase();
+    const residency = (token.residency || "").toLowerCase();
+
+    return (
+        address === "near" &&
+        (!network || network === "near") &&
+        (!residency || residency === "near")
+    );
+}
+
+export function isNearChainFtToken(token: {
+    address?: string | null;
+    network?: string | null;
+    residency?: string | null;
+}): boolean {
+    const address = (token.address || "").toLowerCase();
+    const network = (token.network || "").toLowerCase();
+    const residency = (token.residency || "").toLowerCase();
+    const isNearNetwork = !network || network === "near";
+    const isNearStyleFtAddress =
+        !!address &&
+        address !== "near" &&
+        !address.startsWith("nep141:") &&
+        !address.startsWith("nep245:");
+
+    return isNearNetwork && (residency === "ft" || isNearStyleFtAddress);
+}
+
 function fromAmountRaw(rawAmount: bigint | string, decimals: number): Big {
     return Big(rawAmount.toString()).div(Big(10).pow(decimals));
+}
+
+export function computeQuoteNetworkFee(
+    args?: {
+        amountInFormatted?: string | null;
+        amountOutFormatted?: string | null;
+    } | null,
+): string | undefined {
+    try {
+        const fee = Big(args?.amountInFormatted || "0").minus(
+            Big(args?.amountOutFormatted || "0"),
+        );
+        return fee.gt(0) ? formatSmartAmount(fee.toString()) : undefined;
+    } catch {
+        return undefined;
+    }
 }
 
 export async function estimateIntentsNetworkFee(args: {

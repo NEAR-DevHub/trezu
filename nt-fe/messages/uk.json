@@ -160,10 +160,12 @@
         },
         "payments": {
             "title": "Платежі",
-            "description": "Безпечно надсилайте та отримуйте кошти"
+            "confidentialTitle": "Конфіденційні платежі",
+            "description": "Надсилайте кошти безпечно та надійно."
         },
         "exchange": {
             "title": "Обмін",
+            "confidentialTitle": "Конфіденційний обмін",
             "description": "Обмінюйте токени безпечно й ефективно"
         },
         "vesting": {
@@ -656,7 +658,10 @@
             "votingPeriod24h": "Період голосування: 24 години",
             "votingPeriod24hBody": "Цей запит на обмін має 24-годинний період голосування. Схваліть його за цей час, інакше запит спливе.",
             "reject": "Відхилити",
-            "approve": "Схвалити"
+            "approve": "Схвалити",
+            "destinationNetwork": "Мережа призначення",
+            "processingPayment": "Обробка платежу",
+            "processingPaymentBody": "Цей платіж затверджений командою та зараз обробляється. Це може зайняти деякий час."
         },
         "insufficientBalance": {
             "noAsset": "Цей запит не можна схвалити, бо потрібного токена немає у скарбниці.",
@@ -894,7 +899,7 @@
             "amountPositive": "Сума має бути більшою за 0",
             "recipientTokenSame": "Адреса отримувача й токена не можуть збігатись"
         },
-        "newPayment": "Новий платіж",
+        "title": "Платіж",
         "reviewYourPayment": "Перегляньте ваш платіж",
         "reviewButton": "Переглянути платіж",
         "reviewButtonDisabled": "Введіть суму та адресу",
@@ -908,7 +913,8 @@
         "confirmSubmit": "Підтвердити та надіслати запит",
         "useDifferentAddress": "Використайте іншу адресу",
         "failed1ClickQuote": "Не вдалось створити котирування 1Click",
-        "paymentSubmitted": "Запит на надсилання платежу подано"
+        "paymentSubmitted": "Запит на надсилання платежу подано",
+        "confidentialTooltip": "Дані отримувача та запитана сума повністю конфіденційні."
     },
     "bulkPayment": {
         "comingSoonToast": "Масові платежі незабаром!",
@@ -1022,7 +1028,8 @@
         },
         "approveWithin24h": "Схваліть цей запит протягом 24 годин, інакше він спливе. Рекомендуємо підтвердити якнайшвидше.",
         "confirmSubmit": "Підтвердити та надіслати запит",
-        "refreshingIn": "Курс оновиться через {seconds}с"
+        "refreshingIn": "Курс оновиться через {seconds}с",
+        "confidentialTooltip": "Суми, які ви надсилаєте та отримуєте, повністю конфіденційні."
     },
     "vesting": {
         "validation": {
@@ -1536,7 +1543,8 @@
         "comingSoon": "Скоро",
         "forMembersOnly": "Лише для учасників",
         "nearComName": "near.com",
-        "nearComDescription": "Внутрішня мережа для near.com і trezu"
+        "nearComDescription": "Конфіденційна мережа near.com і trezu",
+        "nearDescription": "Мережа для публічного виведення"
     },
     "addressBookTable": {
         "emptyTitle": "Ще немає одержувачів",
@@ -1708,7 +1716,7 @@
         "vestedToken": "Токен вестингу",
         "staked": "Застейковано",
         "fungibleToken": "Фандж. токен",
-        "intentsToken": "Токен Intents",
+        "intentsToken": "near.com",
         "nativeToken": "Нативний токен"
     },
     "exchangeErrors": {

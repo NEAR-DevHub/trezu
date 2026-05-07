@@ -94,11 +94,18 @@ function processFTTransferProposal(
     ) {
         return "Payment Request" as const;
     }
-    const proposalType =
-        decodeProposalDescription("proposal action", proposal.description) ===
-        "asset-exchange";
-    if (proposalType) {
+    const proposalAction = decodeProposalDescription(
+        "proposal action",
+        proposal.description,
+    );
+    if (proposalAction === "asset-exchange") {
         return "Exchange" as const;
+    }
+    // Payment proposals routed through Intents (native NEAR wrap+transfer or
+    // NEAR FT transfer to deposit address) must be classified before the
+    // generic near_deposit check below, which would otherwise catch them.
+    if (proposalAction === "payment-transfer") {
+        return "Payment Request" as const;
     }
 
     if (

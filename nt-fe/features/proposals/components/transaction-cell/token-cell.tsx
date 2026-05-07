@@ -37,12 +37,18 @@ export function TokenCell({
     );
     const { data: profile } = useProfile(data.receiver);
     const address = profile?.addressBookName ?? data.receiver;
+    const destinationAssetId =
+        "destinationAssetId" in data ? data.destinationAssetId : undefined;
 
     const subtitle = data.receiver ? (
         <>
             {effectivePrefix}
             {isUser ? (
-                <TooltipUser accountId={data.receiver} useAddressBook>
+                <TooltipUser
+                    accountId={data.receiver}
+                    useAddressBook
+                    chainName={destinationAssetId}
+                >
                     <span> {address}</span>
                 </TooltipUser>
             ) : (

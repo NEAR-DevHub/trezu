@@ -1,4 +1,5 @@
 import Big from "@/lib/big";
+import { isNearChainFtToken, isNearChainNativeToken } from "@/lib/intents-fee";
 
 /**
  * Checks if a token is native NEAR
@@ -6,7 +7,11 @@ import Big from "@/lib/big";
  * If residency is not provided, just check address
  */
 export function isNativeNEAR(address: string, residency?: string): boolean {
-    return address === "near" && (!residency || residency === "Near");
+    return isNearChainNativeToken({
+        address,
+        network: "near",
+        residency,
+    });
 }
 
 /**
@@ -15,7 +20,14 @@ export function isNativeNEAR(address: string, residency?: string): boolean {
  * If residency is not provided, just check address
  */
 export function isFTNEAR(address: string, residency?: string): boolean {
-    return address === "wrap.near" && (!residency || residency === "Ft");
+    return (
+        address === "wrap.near" &&
+        isNearChainFtToken({
+            address,
+            network: "near",
+            residency,
+        })
+    );
 }
 
 /**

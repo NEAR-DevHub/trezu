@@ -1,8 +1,10 @@
 use crate::AppState;
 use crate::auth::{AuthError, jwt::hash_token, verify_jwt};
+use crate::handlers::treasury::policy::fetch_treasury_policy_cached;
 use axum::http::StatusCode;
 use axum::{extract::FromRequestParts, http::request::Parts};
 use axum_extra::extract::CookieJar;
+use serde_json::Value;
 use std::sync::Arc;
 
 /// The name of the auth cookie
@@ -37,6 +39,117 @@ impl AuthUser {
         .map_err(|e| AuthError::DatabaseError(e.to_string()))?;
 
         member.map(|_| ()).ok_or(AuthError::NotDaoMember)
+    }
+
+    fn role_has_action_permission(role: &Value, action_name: &str) -> bool {
+        role.get("permissions")
+            .and_then(Value::as_array)
+            .map(|permissions| {
+                permissions.iter().any(|permission| {
+                    permission
+                        .as_str()
+                        .and_then(|permission| permission.split(':').nth(1))
+                        .map(|action| action == action_name || action == "*")
+                        .unwrap_or(false)
+                })
+            })
+            .unwrap_or(false)
+    }
+
+    fn role_applies_to_account(role: &Value, account_id: &str) -> bool {
+        let Some(kind) = role.get("kind") else {
+            return false;
+        };
+
+        if kind.as_str() == Some("Everyone") {
+            return true;
+        }
+
+        kind.get("Group")
+            .and_then(Value::as_array)
+            .map(|group| {
+                group
+                    .iter()
+                    .any(|member| member.as_str() == Some(account_id))
+            })
+            .unwrap_or(false)
+    }
+
+    fn policy_allows_action_for_account(
+        policy: &Value,
+        account_id: &str,
+        action_name: &str,
+    ) -> bool {
+        policy
+            .get("roles")
+            .and_then(Value::as_array)
+            .map(|roles| {
+                roles.iter().any(|role| {
+                    Self::role_has_action_permission(role, action_name)
+                        && Self::role_applies_to_account(role, account_id)
+                })
+            })
+            .unwrap_or(false)
+    }
+
+    pub async fn fetch_dao_policy(
+        &self,
+        state: &Arc<AppState>,
+        dao_id: &str,
+    ) -> Result<Value, (StatusCode, String)> {
+        let dao_account_id = dao_id.parse().map_err(|e| {
+            (
+                StatusCode::BAD_REQUEST,
+                format!("Invalid treasury account '{}': {}", dao_id, e),
+            )
+        })?;
+
+        let policy = fetch_treasury_policy_cached(state, &dao_account_id, None).await?;
+
+        Ok(policy)
+    }
+
+    pub fn verify_can_perform_action_with_policy(
+        &self,
+        policy: &Value,
+        dao_id: &str,
+        action_name: &str,
+    ) -> Result<(), (StatusCode, String)> {
+        if Self::policy_allows_action_for_account(policy, &self.account_id, action_name) {
+            Ok(())
+        } else {
+            Err((
+                StatusCode::FORBIDDEN,
+                format!(
+                    "Account '{}' is not allowed to perform '{}' for treasury '{}'",
+                    self.account_id, action_name, dao_id
+                ),
+            ))
+        }
+    }
+
+    /// Verify this user can perform a policy action according to on-chain roles.
+    ///
+    /// This honors `Everyone` roles and wildcard permissions (e.g. `*:*`).
+    pub async fn verify_can_perform_action(
+        &self,
+        state: &Arc<AppState>,
+        dao_id: &str,
+        action_name: &str,
+    ) -> Result<(), (StatusCode, String)> {
+        let policy = self.fetch_dao_policy(state, dao_id).await?;
+
+        self.verify_can_perform_action_with_policy(&policy, dao_id, action_name)
+    }
+
+    /// Verify this user can submit proposals according to on-chain policy.
+    pub async fn verify_can_add_proposal(
+        &self,
+        state: &Arc<AppState>,
+        dao_id: &str,
+    ) -> Result<(), (StatusCode, String)> {
+        self.verify_can_perform_action(state, dao_id, "AddProposal")
+            .await
     }
 
     pub async fn verify_member_if_confidential(

@@ -267,20 +267,23 @@ test("Confidential deposit — dashboard deposit modal flow", async ({
         page.getByText("Select asset and network to see deposit address"),
     ).toBeVisible();
 
-    // Deposit modal auto-select priority in UI is:
-    // prefill token -> owned USDC -> first "Your Assets" token by USD balance.
-    // In this sandbox scenario, Near is the first available owned asset.
+    // Deposit modal starts without a selected network when multiple
+    // destinations are available. Choose near.com (direct) explicitly.
+    const networkSelectButton = page.getByRole("button", {
+        name: /Select network/i,
+    });
+    await expect(networkSelectButton).toBeVisible({ timeout: 10_000 });
+    await networkSelectButton.click();
     await expect(
-        page.getByRole("button", { name: "near.com near.com" }),
-    ).toBeVisible({
-        timeout: 10_000,
-    });
+        page.getByRole("heading", { name: "Select Network" }),
+    ).toBeVisible({ timeout: 10_000 });
+    await page
+        .getByRole("button", { name: /near\.com/i })
+        .first()
+        .click();
 
-    // Confidential flow defaults the network to near.com (direct NEAR deposit).
-    // Address shown should be the treasury ID, no intents deposit-address call.
-    const nearDirectButton = page.getByRole("button", {
-        name: "near.com near.com",
-    });
+    // near.com (direct) shows treasury address and skips intents deposit-address call.
+    const nearDirectButton = page.getByRole("button", { name: /near\.com/i });
     await expect(nearDirectButton).toBeVisible({ timeout: 10_000 });
 
     await expect(
@@ -298,11 +301,12 @@ test("Confidential deposit — dashboard deposit modal flow", async ({
         page.getByRole("heading", { name: "Select Network" }),
     ).toBeVisible({ timeout: 10_000 });
     await page
-        .getByRole("button", { name: /Near Protocol Near Protocol/ })
+        .getByRole("button", { name: /Near Protocol/i })
+        .first()
         .click();
 
     await expect(
-        page.getByRole("button", { name: "Near Protocol Near Protocol" }),
+        page.getByRole("button", { name: /Near Protocol/i }),
     ).toBeVisible({ timeout: 10_000 });
 
     // Wait for deposit address section to appear

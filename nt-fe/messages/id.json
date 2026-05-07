@@ -160,10 +160,12 @@
         },
         "payments": {
             "title": "Pembayaran",
-            "description": "Kirim dan terima dana dengan aman"
+            "confidentialTitle": "Pembayaran rahasia",
+            "description": "Kirim dana dengan aman dan terlindungi."
         },
         "exchange": {
-            "title": "Tukar",
+            "title": "Penukaran",
+            "confidentialTitle": "Penukaran rahasia",
             "description": "Tukar token Anda dengan aman dan efisien"
         },
         "vesting": {
@@ -656,7 +658,10 @@
             "votingPeriod24h": "Periode pemungutan suara: 24 jam",
             "votingPeriod24hBody": "Permintaan pertukaran ini memiliki durasi pemungutan suara 24 jam. Setujui permintaan ini dalam waktu ini, atau permintaan akan kedaluwarsa.",
             "reject": "Tolak",
-            "approve": "Setujui"
+            "approve": "Setujui",
+            "destinationNetwork": "Jaringan Tujuan",
+            "processingPayment": "Memproses Pembayaran",
+            "processingPaymentBody": "Pembayaran ini telah disetujui oleh tim dan sedang diproses. Mungkin memerlukan beberapa waktu."
         },
         "insufficientBalance": {
             "noAsset": "Permintaan ini tidak dapat disetujui karena token yang diperlukan tidak tersedia di treasury.",
@@ -894,7 +899,7 @@
             "amountPositive": "Jumlah harus lebih besar dari 0",
             "recipientTokenSame": "Alamat penerima dan token tidak boleh sama"
         },
-        "newPayment": "Pembayaran Baru",
+        "title": "Pembayaran",
         "reviewYourPayment": "Tinjau Pembayaran Anda",
         "reviewButton": "Tinjau Pembayaran",
         "reviewButtonDisabled": "Masukkan jumlah dan alamat",
@@ -908,7 +913,8 @@
         "confirmSubmit": "Konfirmasi dan Kirim Permintaan",
         "useDifferentAddress": "Gunakan alamat berbeda",
         "failed1ClickQuote": "Gagal membuat kuotasi transfer 1Click",
-        "paymentSubmitted": "Permintaan untuk mengirim pembayaran telah dikirim"
+        "paymentSubmitted": "Permintaan untuk mengirim pembayaran telah dikirim",
+        "confidentialTooltip": "Detail penerima dan jumlah yang diminta sepenuhnya rahasia."
     },
     "bulkPayment": {
         "comingSoonToast": "Pembayaran massal akan segera hadir!",
@@ -1022,7 +1028,8 @@
         },
         "approveWithin24h": "Silakan setujui permintaan ini dalam 24 jam, jika tidak akan kedaluwarsa. Kami sarankan untuk mengonfirmasi sesegera mungkin.",
         "confirmSubmit": "Konfirmasi dan Kirim Permintaan",
-        "refreshingIn": "Nilai tukar akan diperbarui dalam {seconds}d"
+        "refreshingIn": "Nilai tukar akan diperbarui dalam {seconds}d",
+        "confidentialTooltip": "Jumlah yang Anda kirim dan terima sepenuhnya rahasia."
     },
     "vesting": {
         "validation": {
@@ -1536,7 +1543,8 @@
         "comingSoon": "Segera Hadir",
         "forMembersOnly": "Hanya untuk anggota",
         "nearComName": "near.com",
-        "nearComDescription": "Jaringan Internal untuk near.com dan trezu"
+        "nearComDescription": "Jaringan rahasia untuk near.com dan trezu",
+        "nearDescription": "Jaringan untuk penarikan publik"
     },
     "addressBookTable": {
         "emptyTitle": "Belum ada penerima",
@@ -1708,7 +1716,7 @@
         "vestedToken": "Token Tervesting",
         "staked": "Di-staking",
         "fungibleToken": "Token Fungible",
-        "intentsToken": "Token Intents",
+        "intentsToken": "near.com",
         "nativeToken": "Token Native"
     },
     "exchangeErrors": {

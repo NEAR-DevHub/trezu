@@ -160,10 +160,12 @@
         },
         "payments": {
             "title": "支払い",
-            "description": "資金を安全に送受信"
+            "confidentialTitle": "機密支払い",
+            "description": "資金を安全かつ確実に送金します。"
         },
         "exchange": {
             "title": "交換",
+            "confidentialTitle": "機密交換",
             "description": "トークンを安全かつ効率的に交換"
         },
         "vesting": {
@@ -656,7 +658,10 @@
             "votingPeriod24h": "投票期間: 24時間",
             "votingPeriod24hBody": "この交換リクエストの投票期間は24時間です。この時間内に承認しないと、リクエストは期限切れとなります。",
             "reject": "却下",
-            "approve": "承認"
+            "approve": "承認",
+            "destinationNetwork": "送先ネットワーク",
+            "processingPayment": "支払い処理中",
+            "processingPaymentBody": "この支払いはチームによって承認され、現在処理中です。完了まで時間がかかる場合があります。"
         },
         "insufficientBalance": {
             "noAsset": "必要なトークンがトレジャリーにないため、このリクエストは承認できません。",
@@ -894,7 +899,7 @@
             "amountPositive": "金額は0より大きくなければなりません",
             "recipientTokenSame": "受取人とトークンアドレスは同じであってはなりません"
         },
-        "newPayment": "新しい支払い",
+        "title": "支払い",
         "reviewYourPayment": "支払いを確認",
         "reviewButton": "支払いを確認",
         "reviewButtonDisabled": "金額とアドレスを入力してください",
@@ -908,7 +913,8 @@
         "confirmSubmit": "確認してリクエストを送信",
         "useDifferentAddress": "別のアドレスを使用",
         "failed1ClickQuote": "1Click送金見積りの作成に失敗しました",
-        "paymentSubmitted": "支払い送信のリクエストを送信しました"
+        "paymentSubmitted": "支払い送信のリクエストを送信しました",
+        "confidentialTooltip": "受取人の詳細と要求金額は完全に機密です。"
     },
     "bulkPayment": {
         "comingSoonToast": "一括支払いは近日公開予定です!",
@@ -1022,7 +1028,8 @@
         },
         "approveWithin24h": "このリクエストは24時間以内に承認してください。期限を過ぎると失効します。できるだけ早く確認することをおすすめします。",
         "confirmSubmit": "確認してリクエストを送信",
-        "refreshingIn": "交換レートは{seconds}秒後に更新されます"
+        "refreshingIn": "交換レートは{seconds}秒後に更新されます",
+        "confidentialTooltip": "送信額と受取額は完全に機密です。"
     },
     "vesting": {
         "validation": {
@@ -1536,7 +1543,8 @@
         "comingSoon": "近日公開",
         "forMembersOnly": "メンバー限定",
         "nearComName": "near.com",
-        "nearComDescription": "near.comとtrezuの内部ネットワーク"
+        "nearComDescription": "near.comとtrezuの機密ネットワーク",
+        "nearDescription": "公開出金用ネットワーク"
     },
     "addressBookTable": {
         "emptyTitle": "受取人はまだいません",
@@ -1708,7 +1716,7 @@
         "vestedToken": "ベスト済みトークン",
         "staked": "ステーキング中",
         "fungibleToken": "代替性トークン",
-        "intentsToken": "Intentsトークン",
+        "intentsToken": "near.com",
         "nativeToken": "ネイティブトークン"
     },
     "exchangeErrors": {

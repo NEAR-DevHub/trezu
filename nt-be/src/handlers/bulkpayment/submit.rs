@@ -149,20 +149,17 @@ pub async fn submit_list(
         ));
     }
 
-    // Step 2: Ensure the caller is a DAO policy member
-    if let Err(e) = auth_user
-        .verify_dao_member(&state.db_pool, &request.dao_contract_id)
+    // Step 2: Ensure the caller can submit proposals by DAO policy
+    if let Err((status, msg)) = auth_user
+        .verify_can_add_proposal(&state, &request.dao_contract_id)
         .await
     {
         return Err((
-            StatusCode::FORBIDDEN,
+            status,
             Json(SubmitListResponse {
                 success: false,
                 list_id: None,
-                error: Some(format!(
-                    "Only DAO policy members can submit bulk payment lists: {}",
-                    e
-                )),
+                error: Some(msg),
             }),
         ));
     }

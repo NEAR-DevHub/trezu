@@ -5,6 +5,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use std::time::Duration;
 
 use crate::{
     AppState,
@@ -64,20 +65,21 @@ pub async fn get_swap_status(
 
     let http_client = state.http_client.clone();
     let oneclick_jwt_token = state.env_vars.oneclick_jwt_token.clone();
+    let oneclick_api_url = state.env_vars.oneclick_api_url.clone();
 
     let result = state
         .cache
         .cached(CacheTier::ShortTerm, cache_key, async move {
             let mut url = format!(
-                "https://1click.chaindefuser.com/v0/status?depositAddress={}",
-                deposit_address
+                "{}/v0/status?depositAddress={}",
+                oneclick_api_url, deposit_address
             );
 
             if let Some(memo) = deposit_memo {
                 url.push_str(&format!("&depositMemo={}", memo));
             }
 
-            let mut request = http_client.get(&url);
+            let mut request = http_client.get(&url).timeout(Duration::from_secs(15));
 
             // Add JWT auth if available
             if let Some(jwt_token) = oneclick_jwt_token.as_ref() {

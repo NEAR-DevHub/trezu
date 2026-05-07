@@ -72,7 +72,7 @@ export function SelectListIcon({
                     src={icon}
                     alt={alt}
                     className={cn(
-                        "w-full h-full p-2 object-cover",
+                        "w-full h-full p-2 object-contain",
                         roundIcons && "rounded-full",
                         fixNear && alt === "NEAR" && "p-3",
                     )}

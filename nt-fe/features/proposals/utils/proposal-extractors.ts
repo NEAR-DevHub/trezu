@@ -28,6 +28,8 @@ import { Policy } from "@/types/policy";
 import { getKindFromProposal } from "@/lib/config-utils";
 import { FunctionCallAction } from "@/lib/proposals-api";
 import { IntentsQuoteResponse } from "@/lib/api";
+import { NEAR_COM_NETWORK_ID } from "@/constants/intents";
+import { computeQuoteNetworkFee } from "@/lib/intents-fee";
 
 function extractFTTransferData(
     functionCall: FunctionCallKind["FunctionCall"],
@@ -165,12 +167,29 @@ export function extractPaymentRequestData(
         receiver = describedRecipient;
     }
 
+    // Intents routing metadata (only present on proposals created via 1Click)
+    const depositAddress =
+        decodeProposalDescription("depositAddress", proposal.description) ||
+        undefined;
+    const quoteSignature =
+        decodeProposalDescription("signature", proposal.description) ||
+        undefined;
+    const networkFee =
+        decodeProposalDescription("networkFee", proposal.description) ||
+        undefined;
+    const destinationAssetId =
+        decodeProposalDescription("destinationNetwork", proposal.description) ||
+        undefined;
     return {
         tokenId,
         amount,
         receiver,
         notes: title ? title : notes,
         url: url || "",
+        depositAddress,
+        quoteSignature,
+        networkFee,
+        destinationAssetId,
     };
 }
 
@@ -784,6 +803,22 @@ export function extractConfidentialRequestData(
             };
             title = "Confidential Exchange";
         } else {
+            const destinationAsset = quoteRequest.destinationAsset;
+            const recipientType =
+                typeof quoteRequest.recipientType === "string"
+                    ? quoteRequest.recipientType
+                    : undefined;
+            const destinationAssetId =
+                destinationAsset &&
+                destinationAsset !== quoteRequest.originAsset
+                    ? destinationAsset
+                    : recipientType === "CONFIDENTIAL_INTENTS" ||
+                        recipientType === "INTENTS"
+                      ? NEAR_COM_NETWORK_ID
+                      : recipientType === "DESTINATION_CHAIN"
+                        ? "near"
+                        : undefined;
+            const networkFee = computeQuoteNetworkFee(quote);
             mapped = {
                 type: "payment",
                 data: {
@@ -791,6 +826,10 @@ export function extractConfidentialRequestData(
                     amount: quote.amountIn,
                     receiver: quoteRequest.recipient ?? "",
                     notes: meta?.notes ?? undefined,
+                    depositAddress: quote.depositAddress,
+                    quoteSignature: quoteResponse.signature,
+                    networkFee,
+                    destinationAssetId,
                 } as PaymentRequestData,
             };
             title = "Confidential Payment";

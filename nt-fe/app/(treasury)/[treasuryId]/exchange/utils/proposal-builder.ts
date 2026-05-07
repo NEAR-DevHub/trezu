@@ -1,8 +1,13 @@
 import { IntentsQuoteResponse } from "@/lib/api";
 import { Token } from "@/components/token-input";
+import { isNearChainFtToken } from "@/lib/intents-fee";
+import { FT_TRANSFER_GAS, STORAGE_DEPOSIT_GAS } from "@/lib/near-ft-gas";
+import {
+    buildIntentsTransferProposal,
+    buildNep141StorageDepositTx,
+} from "@/lib/near-proposal-builders";
 import { encodeToMarkdown, jsonToBase64 } from "@/lib/utils";
 import { getBatchStorageDepositIsRegistered } from "@/lib/api";
-import type { FunctionCallKind } from "@/lib/proposals-api";
 
 interface ProposalBuilderParams {
     proposalData: IntentsQuoteResponse;
@@ -47,30 +52,6 @@ interface ExchangeProposalResult {
     }>;
 }
 
-export function buildIntentsTransferProposal(
-    tokenAddress: string,
-    depositAddress: string,
-    amountIn: string,
-): FunctionCallKind {
-    return {
-        FunctionCall: {
-            receiver_id: "intents.near",
-            actions: [
-                {
-                    method_name: "mt_transfer",
-                    args: jsonToBase64({
-                        receiver_id: depositAddress,
-                        amount: amountIn,
-                        token_id: tokenAddress,
-                    }),
-                    deposit: "1",
-                    gas: "150000000000000",
-                },
-            ],
-        },
-    };
-}
-
 /**
  * Builds a proposal description with encoded metadata
  */
@@ -99,41 +80,10 @@ export function buildProposalDescription(
 }
 
 /**
- * Helper to create a storage deposit transaction
- */
-function createStorageDepositTransaction(
-    receiverId: string,
-    accountId: string,
-) {
-    return {
-        receiverId,
-        actions: [
-            {
-                type: "FunctionCall" as const,
-                params: {
-                    methodName: "storage_deposit",
-                    args: {
-                        account_id: accountId,
-                        registration_only: true,
-                    },
-                    gas: "10000000000000", // 10 TGas
-                    deposit: "1250000000000000000000", // 0.00125 NEAR for storage
-                },
-            },
-        ],
-    };
-}
-
-/**
  * Helper to check if a token is an FT token that requires storage deposit
  */
 function isFTToken(token: Token): boolean {
-    return (
-        token.residency === "ft" ||
-        (token.network === "near" &&
-            !token.address.startsWith("nep141:") &&
-            !token.address.startsWith("nep245:"))
-    );
+    return isNearChainFtToken(token);
 }
 
 /**
@@ -176,13 +126,13 @@ export async function buildNativeNEARProposal(
     // 1. Storage deposit for treasury account on wrap.near (only if not registered)
     if (!isTreasuryRegistered) {
         additionalTransactions.push(
-            createStorageDepositTransaction("wrap.near", treasuryId),
+            buildNep141StorageDepositTx("wrap.near", treasuryId),
         );
     }
 
     // 2. Storage deposit for deposit address on wrap.near (always needed)
     additionalTransactions.push(
-        createStorageDepositTransaction(
+        buildNep141StorageDepositTx(
             "wrap.near",
             proposalData.quote.depositAddress,
         ),
@@ -204,7 +154,7 @@ export async function buildNativeNEARProposal(
                             method_name: "near_deposit",
                             args: jsonToBase64({}),
                             deposit: amountInSmallestUnit,
-                            gas: "10000000000000", // 10 TGas
+                            gas: STORAGE_DEPOSIT_GAS, // 10 TGas
                         },
                         {
                             method_name: "ft_transfer",
@@ -213,7 +163,7 @@ export async function buildNativeNEARProposal(
                                 amount: amountInSmallestUnit,
                             }),
                             deposit: "1", // 1 yoctoNEAR for storage
-                            gas: "150000000000000", // 150 TGas
+                            gas: FT_TRANSFER_GAS, // 150 TGas
                         },
                     ],
                 },
@@ -269,7 +219,7 @@ export async function buildFungibleTokenProposal(
     if (isNearToken) {
         // For NEAR FT tokens: always add deposit address registration on sell token
         additionalTransactions.push(
-            createStorageDepositTransaction(
+            buildNep141StorageDepositTx(
                 sellToken.address,
                 proposalData.quote.depositAddress,
             ),
@@ -282,10 +232,7 @@ export async function buildFungibleTokenProposal(
             !isTreasuryRegisteredOnReceiveToken
         ) {
             additionalTransactions.push(
-                createStorageDepositTransaction(
-                    receiveToken.address,
-                    treasuryId,
-                ),
+                buildNep141StorageDepositTx(receiveToken.address, treasuryId),
             );
         }
 
@@ -309,7 +256,7 @@ export async function buildFungibleTokenProposal(
                                     amount: amountInSmallestUnit,
                                 }),
                                 deposit: "1", // 1 yoctoNEAR for storage
-                                gas: "150000000000000", // 150 TGas
+                                gas: FT_TRANSFER_GAS, // 150 TGas
                             },
                         ],
                     },
@@ -328,10 +275,7 @@ export async function buildFungibleTokenProposal(
             !isTreasuryRegisteredOnReceiveToken
         ) {
             additionalTransactions.push(
-                createStorageDepositTransaction(
-                    receiveToken.address,
-                    treasuryId,
-                ),
+                buildNep141StorageDepositTx(receiveToken.address, treasuryId),
             );
         }
 
@@ -384,7 +328,7 @@ export async function buildNEARDepositProposal(
     // Only add storage deposit if not registered
     if (!isTreasuryRegistered) {
         additionalTransactions.push(
-            createStorageDepositTransaction("wrap.near", treasuryId),
+            buildNep141StorageDepositTx("wrap.near", treasuryId),
         );
     }
 
@@ -404,7 +348,7 @@ export async function buildNEARDepositProposal(
                             method_name: "near_deposit",
                             args: jsonToBase64({}),
                             deposit: amountInSmallestUnit,
-                            gas: "10000000000000", // 10 TGas
+                            gas: STORAGE_DEPOSIT_GAS, // 10 TGas
                         },
                     ],
                 },
@@ -444,7 +388,7 @@ export function buildNEARWithdrawProposal(
                                 amount: amountInSmallestUnit,
                             }),
                             deposit: "1", // 1 yoctoNEAR for storage
-                            gas: "150000000000000", // 150 TGas
+                            gas: FT_TRANSFER_GAS, // 150 TGas
                         },
                     ],
                 },
