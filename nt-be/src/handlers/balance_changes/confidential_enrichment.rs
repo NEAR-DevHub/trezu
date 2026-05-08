@@ -34,10 +34,8 @@ static V1_SIGNER_PAYLOAD_HEX: Lazy<Regex> = Lazy::new(|| {
 /// Current payload format: `payload_v2: Some(Eddsa(BoundedVec { inner: [123, 162, ...] }))`.
 /// Bytes are decimal `u8` values. Hex-encoded by the caller.
 static V1_SIGNER_PAYLOAD_BYTES: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(
-        r#"payload_v2:\s*Some\(Eddsa\(BoundedVec\s*\{\s*inner:\s*\[(?P<bytes>[0-9,\s]+)\]"#,
-    )
-    .expect("payload bytes regex")
+    Regex::new(r#"payload_v2:\s*Some\(Eddsa\(BoundedVec\s*\{\s*inner:\s*\[(?P<bytes>[0-9,\s]+)\]"#)
+        .expect("payload bytes regex")
 });
 
 /// Extracted signal that a confidential sign call ran.
