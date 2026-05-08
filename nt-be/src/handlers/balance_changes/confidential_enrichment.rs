@@ -21,21 +21,20 @@ use sqlx::PgPool;
 
 use super::counterparty::{convert_raw_to_decimal, ensure_ft_metadata};
 
-/// Matches the DAO predecessor in v1.signer's `sign: …` log line.
-static V1_SIGNER_DAO: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r#"predecessor=AccountId\("(?P<dao>[^"]+)"\)"#).expect("dao regex"));
-
-/// Old payload format: `payload_v2: Some(Eddsa(Bytes("<hex>")))`.
-static V1_SIGNER_PAYLOAD_HEX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r#"payload_v2:\s*Some\(Eddsa\(Bytes\("(?P<hash>[0-9a-fA-F]+)"\)"#)
-        .expect("payload hex regex")
+/// Legacy payload form: `predecessor=AccountId("…") … payload_v2: Some(Eddsa(Bytes("<hex>")))`.
+static V1_SIGNER_HEX: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(
+        r#"predecessor=AccountId\("(?P<dao>[^"]+)"\).*payload_v2:\s*Some\(Eddsa\(Bytes\("(?P<hash>[0-9a-fA-F]+)"\)"#,
+    )
+    .expect("v1.signer hex sign-log regex is valid")
 });
 
-/// Current payload format: `payload_v2: Some(Eddsa(BoundedVec { inner: [123, 162, ...] }))`.
-/// Bytes are decimal `u8` values. Hex-encoded by the caller.
-static V1_SIGNER_PAYLOAD_BYTES: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r#"payload_v2:\s*Some\(Eddsa\(BoundedVec\s*\{\s*inner:\s*\[(?P<bytes>[0-9,\s]+)\]"#)
-        .expect("payload bytes regex")
+/// Current payload form: `predecessor=AccountId("…") … payload_v2: Some(Eddsa(BoundedVec { inner: [u8, …] }))`.
+static V1_SIGNER_BYTES: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(
+        r#"predecessor=AccountId\("(?P<dao>[^"]+)"\).*payload_v2:\s*Some\(Eddsa\(BoundedVec\s*\{\s*inner:\s*\[(?P<bytes>[0-9,\s]+)\]"#,
+    )
+    .expect("v1.signer bytes sign-log regex is valid")
 });
 
 /// Extracted signal that a confidential sign call ran.
@@ -67,23 +66,18 @@ pub fn extract_sign_call_from_logs(logs: &str) -> Option<ConfidentialSignCall> {
         if !line.starts_with("sign:") {
             continue;
         }
-        let dao = V1_SIGNER_DAO
-            .captures(line)
-            .and_then(|c| c.name("dao"))
-            .map(|m| m.as_str().to_string())?;
-
-        let hash = if let Some(cap) = V1_SIGNER_PAYLOAD_HEX.captures(line) {
-            cap.name("hash")?.as_str().to_ascii_lowercase()
-        } else if let Some(cap) = V1_SIGNER_PAYLOAD_BYTES.captures(line) {
-            decode_bounded_vec_bytes(cap.name("bytes")?.as_str())?
-        } else {
-            continue;
-        };
-
-        return Some(ConfidentialSignCall {
-            dao_id: dao,
-            payload_hash: hash,
-        });
+        if let Some(cap) = V1_SIGNER_HEX.captures(line) {
+            return Some(ConfidentialSignCall {
+                dao_id: cap.name("dao")?.as_str().to_string(),
+                payload_hash: cap.name("hash")?.as_str().to_ascii_lowercase(),
+            });
+        }
+        if let Some(cap) = V1_SIGNER_BYTES.captures(line) {
+            return Some(ConfidentialSignCall {
+                dao_id: cap.name("dao")?.as_str().to_string(),
+                payload_hash: decode_bounded_vec_bytes(cap.name("bytes")?.as_str())?,
+            });
+        }
     }
     None
 }
