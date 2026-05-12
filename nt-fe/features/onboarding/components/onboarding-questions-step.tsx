@@ -8,6 +8,7 @@ import z from "zod";
 import { type StepProps } from "@/components/step-wizard";
 import { useChains } from "@/features/address-book/chains";
 import { OnboardingQuestionnaireCard } from "./onboarding-questionnaire-card";
+import { NEAR_NETWORK_ID } from "@/constants/network-ids";
 
 const questionnaireAnswerSchema = z.object({
     selected: z.array(z.string()),
@@ -101,7 +102,7 @@ const TEAM_SIZE_OPTION_IDS = [
 ] as const;
 
 const NETWORK_OPTION_IDS = [
-    "near",
+    NEAR_NETWORK_ID,
     "bitcoin",
     "ethereum",
     "solana",
@@ -165,7 +166,7 @@ const MULTISIG_BEGINNER_EXPERIENCE_OPTIONS = new Set([
 ]);
 
 const NETWORK_OPTION_CHAIN_KEY: Record<string, string> = {
-    near: "near",
+    [NEAR_NETWORK_ID]: NEAR_NETWORK_ID,
     bitcoin: "bitcoin",
     ethereum: "eth",
     solana: "solana",
@@ -627,7 +628,8 @@ export function OnboardingQuestionsStep({
             ...option,
             iconDark: chain.iconDark,
             iconLight: chain.iconLight,
-            iconImageClassName: option.id === "near" ? "p-0.5" : "rounded-full",
+            iconImageClassName:
+                option.id === NEAR_NETWORK_ID ? "p-0.5" : "rounded-full",
         };
     });
 

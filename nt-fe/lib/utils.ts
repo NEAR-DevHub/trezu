@@ -1,4 +1,5 @@
 import Big from "@/lib/big";
+import { NEAR_NETWORK_ID } from "@/constants/network-ids";
 import { clsx, type ClassValue } from "clsx";
 import { format } from "date-fns";
 import { twMerge } from "tailwind-merge";
@@ -573,7 +574,7 @@ export const decodeProposalDescription = (key: string, description: string) => {
         }
     }
 
-    return null; // Return null if key not found
+    return undefined;
 };
 
 /** Convert a nanosecond timestamp/duration (string) to milliseconds. */
@@ -588,23 +589,27 @@ export function msToNanos(ms: number): string {
 
 /**
  * Returns a human-readable NEAR token type label based on the tokenId.
- * - "" or "near" → "Native Token"
- * - starts with "nep141:" or "nep245:" → "Intents Token"
- * - anything else (contract address) → "Fungible Token"
+ * - "" or "near" → "NEAR (Native Token)"
+ * - starts with "nep141:" or "nep245:" → "NEAR (near.com)" or "near.com"
+ * - anything else (contract address) → "NEAR (Fungible Token)"
  *
  * Returns null for non-NEAR networks so callers can fall back to the chain name.
  */
 export function getNearTokenTypeLabel(
     tokenId: string,
     network?: string,
+    options?: { expandNearComLabel?: boolean },
 ): string | null {
-    const resolvedNetwork = network?.toLowerCase() ?? "near";
-    if (resolvedNetwork !== "near") return null;
+    const resolvedNetwork = network?.toLowerCase() ?? NEAR_NETWORK_ID;
+    if (resolvedNetwork !== NEAR_NETWORK_ID) return null;
 
     const id = tokenId.toLowerCase();
-    if (id === "" || id === "near") return "NEAR (Native Token)";
-    if (id.startsWith("nep141:") || id.startsWith("nep245:"))
-        return "NEAR (near.com)";
+    if (id === "" || id === NEAR_NETWORK_ID) return "NEAR (Native Token)";
+    if (id.startsWith("nep141:") || id.startsWith("nep245:")) {
+        return options?.expandNearComLabel === false
+            ? "near.com"
+            : "NEAR (near.com)";
+    }
     return "NEAR (Fungible Token)";
 }
 

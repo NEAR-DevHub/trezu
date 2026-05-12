@@ -247,7 +247,8 @@
         "otherNetworkInfo": "您可以存入资产列表中未列出的任何代币,但仅限通过 NEAR 网络。",
         "depositAddressHeading": "存款地址",
         "depositAddressSubtitle": "请始终仔细核对您的存款地址。",
-        "depositAddressSubtitleConfidential": "该存款地址为一次性使用，仅在 3 天内有效。重复使用或在过期后使用可能导致交易失败或资金损失。",
+        "depositAddressSubtitleConfidential": "该存款地址为一次性使用，仅在 3 天内有效。重复使用或在过期后转账将导致资金永久丢失。",
+        "singleUseAcknowledgement": "我只会使用该地址一次",
         "addressLabel": "地址",
         "addressCopied": "地址已复制到剪贴板",
         "memoLabel": "Memo",
@@ -1538,7 +1539,6 @@
         "incompatible": "不兼容",
         "comingSoon": "即将推出",
         "forMembersOnly": "仅限成员",
-        "nearComName": "near.com",
         "nearComDescription": "near.com 与 trezu 的机密网络",
         "nearDescription": "用于公开提现的网络"
     },

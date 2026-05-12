@@ -6,8 +6,10 @@ import { useTranslations } from "next-intl";
 import { type ReactNode, useEffect } from "react";
 import { Button } from "@/components/button";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { Pill } from "@/components/pill";
 import { SignIn } from "@/components/sign-in";
 import { SystemStatusBanner } from "@/components/system-status-banner";
+import { isStaging } from "@/constants/features";
 import { ConfidentialBanner } from "@/features/confidential/components/confidential-banner";
 import { useSidebarStore } from "@/stores/sidebar-store";
 import { useThemeStore } from "@/stores/theme-store";
@@ -94,6 +96,15 @@ export function PageComponentLayout({
 
                 {!hideLogin && (
                     <div className="flex items-center gap-3">
+                        {isStaging && (
+                            <Pill
+                                title="Staging"
+                                icon={
+                                    <span className="size-1.5 rounded-full bg-general-orange-foreground" />
+                                }
+                                className="bg-general-orange-background-faded text-general-orange-foreground"
+                            />
+                        )}
                         <LanguageSwitcher />
                         <Button
                             variant="ghost"

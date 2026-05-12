@@ -16,6 +16,12 @@ import {
     DialogTitle,
 } from "@/components/modal";
 import { getNetworkDisplayName } from "@/components/token-display";
+import {
+    NEAR_NETWORK_ID,
+    NEAR_COM_DIRECT_NETWORK_ID,
+    NEAR_COM_NETWORK_NAME,
+} from "@/constants/network-ids";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { useAggregatedTokens, useAssets } from "@/hooks/use-assets";
 import { NEAR_COM_ICON } from "@/constants/token";
@@ -23,8 +29,9 @@ import { type BridgeNetwork, useBridgeTokens } from "@/hooks/use-bridge-tokens";
 import { useTreasury } from "@/hooks/use-treasury";
 import Big from "@/lib/big";
 import { fetchDepositAddress } from "@/lib/bridge-api";
+import { getNetworkDisplayCaseClass } from "@/lib/intents-network";
 import { buildSectionedOptions } from "@/lib/section-rules";
-import { formatBalance, formatSmartAmount } from "@/lib/utils";
+import { cn, formatBalance, formatSmartAmount } from "@/lib/utils";
 import { useThemeStore } from "@/stores/theme-store";
 import { SelectModal } from "./select-modal";
 
@@ -95,8 +102,6 @@ interface NetworkBalanceDisplay {
 
 const STABLE_EMPTY_ARRAY: never[] = [];
 
-const NEAR_DIRECT_NETWORK_ID = "near.com:direct";
-
 export function DepositModal({
     isOpen,
     onClose,
@@ -162,6 +167,8 @@ export function DepositModal({
         minDepositAmount: string | null;
     } | null>(null);
     const [isLoadingAddress, setIsLoadingAddress] = useState(false);
+    const [hasAcknowledgedSingleUse, setHasAcknowledgedSingleUse] =
+        useState(false);
 
     const selectedAsset = form.watch("asset");
     const selectedNetwork = form.watch("network");
@@ -201,7 +208,8 @@ export function DepositModal({
             return buildSectionedOptions(filteredNetworks, [
                 {
                     title: t("sections.available"),
-                    filter: (network) => network.id === NEAR_DIRECT_NETWORK_ID,
+                    filter: (network) =>
+                        network.id === NEAR_COM_DIRECT_NETWORK_ID,
                 },
                 {
                     title: t("sections.forMembersOnly"),
@@ -229,8 +237,8 @@ export function DepositModal({
                 return !balance || !Big(balance.amount).gt(0);
             })
             .sort((a, b) => {
-                if (a.id === NEAR_DIRECT_NETWORK_ID) return -1;
-                if (b.id === NEAR_DIRECT_NETWORK_ID) return 1;
+                if (a.id === NEAR_COM_DIRECT_NETWORK_ID) return -1;
+                if (b.id === NEAR_COM_DIRECT_NETWORK_ID) return 1;
                 return a.name.localeCompare(b.name);
             });
 
@@ -352,8 +360,8 @@ export function DepositModal({
 
                 const bridgeNetworkName = bridgeNetwork.name.toLowerCase();
                 const includeAllNearResidencies =
-                    assetId.toLowerCase() === "near" &&
-                    bridgeNetworkName === "near";
+                    assetId.toLowerCase() === NEAR_NETWORK_ID &&
+                    bridgeNetworkName === NEAR_NETWORK_ID;
 
                 const chainMatches = ownedAsset.networks.filter(
                     (network) =>
@@ -400,8 +408,8 @@ export function DepositModal({
         };
 
         const nearDirectNetworkOption = (): SelectOption => ({
-            id: NEAR_DIRECT_NETWORK_ID,
-            name: "near.com",
+            id: NEAR_COM_DIRECT_NETWORK_ID,
+            name: NEAR_COM_NETWORK_NAME,
             description: isConfidential
                 ? tRecipientNetwork("nearComDescription")
                 : undefined,
@@ -605,7 +613,7 @@ export function DepositModal({
             }
             const requestId = ++latestAddressRequestRef.current;
 
-            if (selectedNetwork.id === NEAR_DIRECT_NETWORK_ID) {
+            if (selectedNetwork.id === NEAR_COM_DIRECT_NETWORK_ID) {
                 if (requestId !== latestAddressRequestRef.current) return;
                 setDepositInfo({
                     address: treasuryId,
@@ -622,7 +630,7 @@ export function DepositModal({
                     selectedNetwork.chainId ?? selectedNetwork.id
                 )
                     .toLowerCase()
-                    .includes("near");
+                    .includes(NEAR_NETWORK_ID);
                 if (isNearNetwork) {
                     if (requestId !== latestAddressRequestRef.current) return;
                     setDepositInfo({
@@ -708,7 +716,7 @@ export function DepositModal({
             ""
         )
             .toLowerCase()
-            .includes("near");
+            .includes(NEAR_NETWORK_ID);
 
         if (isNearNetwork) {
             return <span>{address}</span>;
@@ -752,13 +760,21 @@ export function DepositModal({
         );
     };
 
-    const isNearComNetwork = selectedNetwork?.id === NEAR_DIRECT_NETWORK_ID;
-    const showConfidentialDepositWarning = isConfidential && !isNearComNetwork;
+    const isNearComSelected =
+        selectedNetwork?.id === NEAR_COM_DIRECT_NETWORK_ID;
+    const showConfidentialDepositWarning = isConfidential && !isNearComSelected;
     const onlyDepositNetworkName = selectedNetwork
         ? getNetworkDisplayName(selectedNetwork.name)
         : "";
-    const shouldCapitalizeOnlyDepositNetwork =
-        onlyDepositNetworkName.toLowerCase() !== "near.com";
+    const networkDisplayCaseClass = selectedNetwork
+        ? getNetworkDisplayCaseClass(selectedNetwork.name)
+        : "capitalize";
+    const shouldBlurConfidentialAddress =
+        showConfidentialDepositWarning && !hasAcknowledgedSingleUse;
+
+    useEffect(() => {
+        setHasAcknowledgedSingleUse(false);
+    }, [showConfidentialDepositWarning, depositInfo?.address]);
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
@@ -897,7 +913,15 @@ export function DepositModal({
                                                                     </div>
                                                                 )}
                                                                 <div className="flex flex-col">
-                                                                    <span className="text-foreground font-medium uppercase">
+                                                                    <span
+                                                                        className={cn(
+                                                                            "text-foreground font-medium",
+                                                                            getNetworkDisplayCaseClass(
+                                                                                selectedNetwork.name,
+                                                                                "uppercase",
+                                                                            ),
+                                                                        )}
+                                                                    >
                                                                         {getNetworkDisplayName(
                                                                             selectedNetwork.name,
                                                                         )}
@@ -984,8 +1008,46 @@ export function DepositModal({
                                     </p>
                                 </div>
 
-                                <div className="bg-muted rounded-lg p-2">
-                                    <div className="flex gap-3">
+                                <div className="bg-muted rounded-lg space-y-2 p-1.5">
+                                    {showConfidentialDepositWarning && (
+                                        <div className="rounded-md bg-general-warning/10 p-2">
+                                            <p className="text-sm text-general-warning-foreground">
+                                                {t(
+                                                    "depositAddressSubtitleConfidential",
+                                                )}
+                                            </p>
+                                            <label className="mt-2 flex items-center gap-2 text-sm text-general-unofficial-ghost-foreground">
+                                                <Checkbox
+                                                    checked={
+                                                        hasAcknowledgedSingleUse
+                                                    }
+                                                    onCheckedChange={(
+                                                        checked,
+                                                    ) =>
+                                                        setHasAcknowledgedSingleUse(
+                                                            checked === true,
+                                                        )
+                                                    }
+                                                    className="mt-0.5"
+                                                />
+                                                <span>
+                                                    {t(
+                                                        "singleUseAcknowledgement",
+                                                    )}
+                                                </span>
+                                            </label>
+                                        </div>
+                                    )}
+
+                                    <div
+                                        className={cn(
+                                            "flex items-start gap-3 rounded-lg",
+                                            showConfidentialDepositWarning &&
+                                                "bg-card p-1",
+                                            shouldBlurConfidentialAddress &&
+                                                "select-none blur-sm",
+                                        )}
+                                    >
                                         {/* QR Code */}
                                         <div className="shrink-0">
                                             <div className="w-24 h-24 sm:w-40 sm:h-40 rounded-lg flex items-center justify-center p-2">
@@ -1021,6 +1083,9 @@ export function DepositModal({
                                                     size="icon-sm"
                                                     className="shrink-0"
                                                     iconClassName="w-5 h-5 text-muted-foreground"
+                                                    disabled={
+                                                        shouldBlurConfidentialAddress
+                                                    }
                                                 />
                                             </div>
 
@@ -1054,18 +1119,6 @@ export function DepositModal({
                                 </div>
 
                                 <div className="space-y-2 mt-4">
-                                    {/* Confidential single-use warning — non-NEAR networks only */}
-                                    {showConfidentialDepositWarning && (
-                                        <div className="flex gap-2 items-start text-sm text-general-warning-foreground">
-                                            <TriangleAlert className="h-4 w-4 shrink-0 mt-0.5" />
-                                            <span>
-                                                {t(
-                                                    "depositAddressSubtitleConfidential",
-                                                )}
-                                            </span>
-                                        </div>
-                                    )}
-
                                     <div className="flex gap-2 items-start text-sm text-muted-foreground">
                                         <CircleCheck className="h-4 w-4 shrink-0 mt-0.5" />
                                         <span>
@@ -1081,11 +1134,10 @@ export function DepositModal({
                                                 ),
                                                 networkTag: (chunks) => (
                                                     <span
-                                                        className={`text-foreground ${
-                                                            shouldCapitalizeOnlyDepositNetwork
-                                                                ? "capitalize"
-                                                                : ""
-                                                        }`}
+                                                        className={cn(
+                                                            "text-foreground",
+                                                            networkDisplayCaseClass,
+                                                        )}
                                                     >
                                                         {chunks}
                                                     </span>
@@ -1190,7 +1242,15 @@ export function DepositModal({
                                 const option = item as SelectOption;
                                 return (
                                     <div className="flex-1 text-left">
-                                        <div className="font-semibold uppercase">
+                                        <div
+                                            className={cn(
+                                                "font-semibold",
+                                                getNetworkDisplayCaseClass(
+                                                    option.name,
+                                                    "uppercase",
+                                                ),
+                                            )}
+                                        >
                                             {option.name || option.symbol}
                                         </div>
                                         {option.description && (
