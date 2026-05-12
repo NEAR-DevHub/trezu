@@ -82,7 +82,7 @@ test("Start page shows onboarding choices when signed out", async ({
     ).toBeVisible();
 });
 
-test("Signed in + no treasuries + new user selection => redirects to /app/new", async ({
+test("Signed in + no treasuries + new user selection => redirects to /app/new?entry=new_user", async ({
     page,
 }) => {
     await setupStartPageMocks(page, {
@@ -106,7 +106,9 @@ test("Signed in + no treasuries + new user selection => redirects to /app/new", 
         })
         .click();
 
-    await expect(page).toHaveURL(/\/app\/new$/, { timeout: 15000 });
+    await expect(page).toHaveURL(/\/app\/new\?entry=new_user$/, {
+        timeout: 15000,
+    });
 });
 
 test("Signed in + has treasury => redirects to /{daoId}", async ({ page }) => {
