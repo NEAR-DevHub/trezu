@@ -16,6 +16,7 @@ import {
     DialogTitle,
 } from "@/components/modal";
 import { getNetworkDisplayName } from "@/components/token-display";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { useAggregatedTokens, useAssets } from "@/hooks/use-assets";
 import { NEAR_COM_ICON } from "@/constants/token";
@@ -24,7 +25,7 @@ import { useTreasury } from "@/hooks/use-treasury";
 import Big from "@/lib/big";
 import { fetchDepositAddress } from "@/lib/bridge-api";
 import { buildSectionedOptions } from "@/lib/section-rules";
-import { formatBalance, formatSmartAmount } from "@/lib/utils";
+import { cn, formatBalance, formatSmartAmount } from "@/lib/utils";
 import { useThemeStore } from "@/stores/theme-store";
 import { SelectModal } from "./select-modal";
 
@@ -162,6 +163,8 @@ export function DepositModal({
         minDepositAmount: string | null;
     } | null>(null);
     const [isLoadingAddress, setIsLoadingAddress] = useState(false);
+    const [hasAcknowledgedSingleUse, setHasAcknowledgedSingleUse] =
+        useState(false);
 
     const selectedAsset = form.watch("asset");
     const selectedNetwork = form.watch("network");
@@ -759,6 +762,12 @@ export function DepositModal({
         : "";
     const shouldCapitalizeOnlyDepositNetwork =
         onlyDepositNetworkName.toLowerCase() !== "near.com";
+    const shouldBlurConfidentialAddress =
+        showConfidentialDepositWarning && !hasAcknowledgedSingleUse;
+
+    useEffect(() => {
+        setHasAcknowledgedSingleUse(false);
+    }, [showConfidentialDepositWarning, depositInfo?.address]);
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
@@ -984,8 +993,46 @@ export function DepositModal({
                                     </p>
                                 </div>
 
-                                <div className="bg-muted rounded-lg p-2">
-                                    <div className="flex gap-3">
+                                <div className="bg-muted rounded-lg space-y-2 p-1.5">
+                                    {showConfidentialDepositWarning && (
+                                        <div className="rounded-md bg-general-warning/10 p-2">
+                                            <p className="text-sm text-general-warning-foreground">
+                                                {t(
+                                                    "depositAddressSubtitleConfidential",
+                                                )}
+                                            </p>
+                                            <label className="mt-2 flex items-center gap-2 text-sm text-general-unofficial-ghost-foreground">
+                                                <Checkbox
+                                                    checked={
+                                                        hasAcknowledgedSingleUse
+                                                    }
+                                                    onCheckedChange={(
+                                                        checked,
+                                                    ) =>
+                                                        setHasAcknowledgedSingleUse(
+                                                            checked === true,
+                                                        )
+                                                    }
+                                                    className="mt-0.5"
+                                                />
+                                                <span>
+                                                    {t(
+                                                        "singleUseAcknowledgement",
+                                                    )}
+                                                </span>
+                                            </label>
+                                        </div>
+                                    )}
+
+                                    <div
+                                        className={cn(
+                                            "flex items-start gap-3 rounded-lg",
+                                            showConfidentialDepositWarning &&
+                                                "bg-card p-1",
+                                            shouldBlurConfidentialAddress &&
+                                                "select-none blur-sm",
+                                        )}
+                                    >
                                         {/* QR Code */}
                                         <div className="shrink-0">
                                             <div className="w-24 h-24 sm:w-40 sm:h-40 rounded-lg flex items-center justify-center p-2">
@@ -1021,6 +1068,9 @@ export function DepositModal({
                                                     size="icon-sm"
                                                     className="shrink-0"
                                                     iconClassName="w-5 h-5 text-muted-foreground"
+                                                    disabled={
+                                                        shouldBlurConfidentialAddress
+                                                    }
                                                 />
                                             </div>
 
@@ -1054,18 +1104,6 @@ export function DepositModal({
                                 </div>
 
                                 <div className="space-y-2 mt-4">
-                                    {/* Confidential single-use warning — non-NEAR networks only */}
-                                    {showConfidentialDepositWarning && (
-                                        <div className="flex gap-2 items-start text-sm text-general-warning-foreground">
-                                            <TriangleAlert className="h-4 w-4 shrink-0 mt-0.5" />
-                                            <span>
-                                                {t(
-                                                    "depositAddressSubtitleConfidential",
-                                                )}
-                                            </span>
-                                        </div>
-                                    )}
-
                                     <div className="flex gap-2 items-start text-sm text-muted-foreground">
                                         <CircleCheck className="h-4 w-4 shrink-0 mt-0.5" />
                                         <span>
