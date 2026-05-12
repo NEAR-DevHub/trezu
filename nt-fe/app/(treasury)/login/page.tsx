@@ -6,6 +6,7 @@ import { useEffect, useMemo } from "react";
 import { ConnectWalletSelector } from "@/components/connect-wallet-selector";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { useTreasury } from "@/hooks/use-treasury";
+import { trackEvent } from "@/lib/analytics";
 import { useNear } from "@/stores/near-store";
 
 function sanitizeReturnTo(raw: string | null): string {
@@ -49,6 +50,10 @@ export default function LoginPage() {
         if (isLoading) return;
 
         if (preferredTreasuryId) {
+            trackEvent("existing_user_treasury_opened", {
+                source: "/login",
+                treasury_id: preferredTreasuryId,
+            });
             router.replace(`/${preferredTreasuryId}`);
         }
     }, [accountId, context, isLoading, preferredTreasuryId, returnTo, router]);

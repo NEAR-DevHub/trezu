@@ -130,6 +130,21 @@ Treasury creation flow successfully completes.
 
 ---
 
+### `existing_user_treasury_opened`
+
+Existing-user flow identified at least one treasury and navigates to it.
+
+
+| Property      | Type   | Description |
+| ------------- | ------ | ----------- |
+| `source`      | string | `"/login"` |
+| `treasury_id` | string | Existing treasury ID selected for redirect |
+
+
+**Source:** [nt-fe/app/(treasury)/login/page.tsx](../nt-fe/app/(treasury)/login/page.tsx)
+
+---
+
 ### `create-treasury-prompt-shown`
 
 Create treasury prompt modal is shown to eligible existing users with zero treasuries.
