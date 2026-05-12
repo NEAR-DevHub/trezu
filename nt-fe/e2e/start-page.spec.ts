@@ -67,6 +67,18 @@ async function setupStartPageMocks(
     });
 }
 
+async function gotoStartPageAndWaitForBootstrapRequests(page: Page) {
+    const authMeResponse = page.waitForResponse((response) =>
+        response.url().includes("/auth/me"),
+    );
+    const userTreasuriesResponse = page.waitForResponse((response) =>
+        response.url().includes("/user/treasuries"),
+    );
+
+    await page.goto("/");
+    await Promise.all([authMeResponse, userTreasuriesResponse]);
+}
+
 test("Start page shows onboarding choices when signed out", async ({
     page,
 }) => {
@@ -91,13 +103,7 @@ test("Signed in + no treasuries + new user selection => redirects to /app/new?en
         treasuries: [],
     });
 
-    await page.goto("/");
-    await page.waitForResponse((response) =>
-        response.url().includes("/auth/me"),
-    );
-    await page.waitForResponse((response) =>
-        response.url().includes("/user/treasuries"),
-    );
+    await gotoStartPageAndWaitForBootstrapRequests(page);
 
     // New flow: /app/new redirect happens after explicitly choosing new user.
     await page
@@ -127,13 +133,7 @@ test("Signed in + has treasury => redirects to /{daoId}", async ({ page }) => {
         ],
     });
 
-    await page.goto("/");
-    await page.waitForResponse((response) =>
-        response.url().includes("/auth/me"),
-    );
-    await page.waitForResponse((response) =>
-        response.url().includes("/user/treasuries"),
-    );
+    await gotoStartPageAndWaitForBootstrapRequests(page);
 
     await expect(page).toHaveURL(
         new RegExp(`/${daoId.replaceAll(".", "\\.")}$`),
@@ -150,13 +150,7 @@ test("Signed in + no treasuries + creation disabled => waitlist is shown", async
         treasuries: [],
     });
 
-    await page.goto("/");
-    await page.waitForResponse((response) =>
-        response.url().includes("/auth/me"),
-    );
-    await page.waitForResponse((response) =>
-        response.url().includes("/user/treasuries"),
-    );
+    await gotoStartPageAndWaitForBootstrapRequests(page);
 
     await expect(page).toHaveURL(/\/$/);
     await expect(
