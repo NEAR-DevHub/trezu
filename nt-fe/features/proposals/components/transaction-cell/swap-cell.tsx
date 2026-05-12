@@ -3,6 +3,7 @@ import { SwapRequestData } from "../../types/index";
 import { Amount } from "../amount";
 import { useSearchIntentsTokens } from "@/hooks/use-treasury-queries";
 import { TitleSubtitleCell } from "./title-subtitle-cell";
+import { WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
 
 interface SwapCellProps {
     data: SwapRequestData;
@@ -84,7 +85,7 @@ export function SwapCell(props: SwapCellProps) {
         case "exchange":
             title = <IntentsSwapCell {...props} />;
             break;
-        case "wrap.near":
+        case WRAP_NEAR_TOKEN_ID:
             title = <NearWrapSwapCell {...props} />;
             break;
         default:

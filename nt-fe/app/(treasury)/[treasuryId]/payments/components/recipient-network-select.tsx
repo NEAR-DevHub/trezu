@@ -8,7 +8,11 @@ import { Button } from "@/components/button";
 import { InputBlock } from "@/components/input-block";
 import { getNetworkDisplayName } from "@/components/token-display";
 import type { Token } from "@/components/token-input";
-import { NEAR_COM_NETWORK_ID } from "@/constants/intents";
+import { NEAR_NETWORK_ID, NEAR_COM_NETWORK_ID } from "@/constants/network-ids";
+import {
+    getNetworkDisplayCaseClass,
+    getLocalizedNetworkDisplayName,
+} from "@/lib/intents-network";
 import { NEAR_COM_ICON } from "@/constants/token";
 import { useBridgeTokens } from "@/hooks/use-bridge-tokens";
 import { useTreasury } from "@/hooks/use-treasury";
@@ -60,7 +64,7 @@ function isAddressCompatibleWithNetwork(
 ): boolean {
     if (!address) return true;
     const blockchain = getBlockchainType(networkName);
-    if (blockchain === "near") {
+    if (blockchain === NEAR_NETWORK_ID) {
         // ETH-format addresses (0x + 40 hex chars) are valid NEAR ETH-implicit
         // accounts, but only the near.com (Intents) route can handle them.
         // The raw "near" network entry stays visible but moves to incompatible.
@@ -92,14 +96,15 @@ function NetworkRow({
                 alt={`${option.name} network`}
                 className={cn(
                     "size-8",
-                    option.name.toLowerCase() === "near" && "p-1",
+                    option.networkName.toLowerCase() === NEAR_NETWORK_ID &&
+                        "p-1",
                 )}
             />
             <div className="flex flex-col items-start text-left">
                 <span
                     className={cn(
                         "text-base font-semibold",
-                        option.name !== "near.com" && "capitalize",
+                        getNetworkDisplayCaseClass(option.id),
                     )}
                 >
                     {option.name}
@@ -123,6 +128,7 @@ export function RecipientNetworkSelect({
     onNetworkChange,
 }: RecipientNetworkSelectProps) {
     const t = useTranslations("recipientNetworkSelect");
+    const tAddressBookTable = useTranslations("addressBookTable");
     const { isConfidential } = useTreasury();
     const { theme } = useThemeStore();
     const [open, setOpen] = useState(false);
@@ -134,12 +140,16 @@ export function RecipientNetworkSelect({
     const nearComOption: RecipientNetworkOption = useMemo(
         () => ({
             id: NEAR_COM_NETWORK_ID,
-            name: t("nearComName"),
+            name: getLocalizedNetworkDisplayName({
+                networkName: NEAR_COM_NETWORK_ID,
+                networkLabel: tAddressBookTable("network"),
+                fallbackName: "near.com",
+            }),
             description: isConfidential ? t("nearComDescription") : undefined,
             icon: NEAR_COM_ICON,
-            networkName: "near",
+            networkName: NEAR_NETWORK_ID,
         }),
-        [isConfidential, t],
+        [isConfidential, t, tAddressBookTable],
     );
 
     const tokenNetworkOptions = useMemo((): RecipientNetworkOption[] => {
@@ -160,7 +170,8 @@ export function RecipientNetworkSelect({
                 id: network.id,
                 name: getNetworkDisplayName(network.name),
                 description:
-                    isConfidential && getBlockchainType(network.name) === "near"
+                    isConfidential &&
+                    getBlockchainType(network.name) === NEAR_NETWORK_ID
                         ? t("nearDescription")
                         : undefined,
                 icon: iconUrl,

@@ -9,6 +9,7 @@ import { Address } from "@/components/address";
 import { Rate } from "@/components/rate";
 import { useToken, useSearchIntentsTokens } from "@/hooks/use-treasury-queries";
 import { FormattedDate } from "@/components/formatted-date";
+import { WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
 
 interface SwapExpandedProps {
     data: SwapRequestData;
@@ -246,7 +247,7 @@ export function SwapExpanded({ data }: SwapExpandedProps) {
     switch (data.source) {
         case "exchange":
             return <IntentsSwapExpanded data={data} />;
-        case "wrap.near":
+        case WRAP_NEAR_TOKEN_ID:
             return <NearWrapSwapExpanded data={data} />;
         default:
             return null;
