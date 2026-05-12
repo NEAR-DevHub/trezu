@@ -141,7 +141,7 @@ mod tests {
         let from = block_timestamp_to_datetime(0);
         let to = block_timestamp_to_datetime(500 * 1_000_000_000);
 
-        let response = check_completeness(&pool, "test.near", from, to)
+        let response = check_completeness(&pool, "test.near".try_into().unwrap(), from, to)
             .await
             .unwrap();
 
@@ -170,7 +170,7 @@ mod tests {
         let from = block_timestamp_to_datetime(0);
         let to = block_timestamp_to_datetime(400 * 1_000_000_000);
 
-        let response = check_completeness(&pool, "test.near", from, to)
+        let response = check_completeness(&pool, "test.near".try_into().unwrap(), from, to)
             .await
             .unwrap();
 
@@ -193,7 +193,7 @@ mod tests {
         let from = block_timestamp_to_datetime(250 * 1_000_000_000);
         let to = block_timestamp_to_datetime(450 * 1_000_000_000);
 
-        let response = check_completeness(&pool, "test.near", from, to)
+        let response = check_completeness(&pool, "test.near".try_into().unwrap(), from, to)
             .await
             .unwrap();
 
@@ -236,7 +236,7 @@ mod tests {
         let from = block_timestamp_to_datetime(0);
         let to = block_timestamp_to_datetime(300 * 1_000_000_000);
 
-        let response = check_completeness(&pool, "test.near", from, to)
+        let response = check_completeness(&pool, "test.near".try_into().unwrap(), from, to)
             .await
             .unwrap();
 
@@ -267,7 +267,7 @@ mod tests {
         let from = block_timestamp_to_datetime(500 * 1_000_000_000);
         let to = block_timestamp_to_datetime(600 * 1_000_000_000);
 
-        let response = check_completeness(&pool, "test.near", from, to)
+        let response = check_completeness(&pool, "test.near".try_into().unwrap(), from, to)
             .await
             .unwrap();
 

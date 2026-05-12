@@ -270,7 +270,7 @@ mod tests {
         };
 
         let auth_user = crate::auth::AuthUser {
-            account_id: "test.near".to_string(),
+            account_id: "test.near".parse().unwrap(),
         };
         let generate_result =
             generate_intent(State(state.clone()), auth_user, Json(generate_request)).await;

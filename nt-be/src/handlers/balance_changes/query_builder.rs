@@ -300,7 +300,7 @@ mod tests {
     #[test]
     fn test_build_where_conditions_basic() {
         let filters = BalanceChangeFilters {
-            account_id: "test.near".to_string(),
+            account_id: "test.near".parse().unwrap(),
             date_cutoff: None,
             start_date: None,
             end_date: None,
@@ -327,7 +327,7 @@ mod tests {
     #[test]
     fn test_build_where_conditions_with_filters() {
         let filters = BalanceChangeFilters {
-            account_id: "test.near".to_string(),
+            account_id: "test.near".parse().unwrap(),
             date_cutoff: Some(Utc::now()),
             start_date: None,
             end_date: None,
