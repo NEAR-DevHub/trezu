@@ -180,7 +180,7 @@ pub fn blockchain_lockup_builder(
     >,
 > {
     let postprocess = MultiQueryHandler::new((
-        AccountViewHandler::default(),
+        AccountViewHandler,
         CallResultHandler::<NearToken>::new(),
         CallResultHandler::<StakingPoolAccount>::new(),
     ));
