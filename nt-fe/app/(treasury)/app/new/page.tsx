@@ -9,7 +9,6 @@ import {
     Minus,
     Plus,
     Shield,
-    Wallet,
     UsersRound,
     Vote,
 } from "lucide-react";
@@ -69,95 +68,7 @@ import {
 } from "@/components/ui/card";
 import { Pill } from "@/components/pill";
 import { cn } from "@/lib/utils";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/modal";
-
-type WalletOption = {
-    id:
-        | "near"
-        | "ledger"
-        | "passkey"
-        | "solana"
-        | "binance-web3"
-        | "phantom"
-        | "walletconnect"
-        | "stellar";
-    label: string;
-    imgSrc: string;
-    imageClassName?: string;
-    supported: boolean;
-};
-
-const WALLET_OPTIONS: WalletOption[] = [
-    { id: "near", label: "NEAR", imgSrc: "/near.com.svg", supported: true },
-    {
-        id: "ledger",
-        label: "Ledger",
-        imgSrc: "/wallets/ledger.svg",
-        supported: true,
-    },
-    {
-        id: "passkey",
-        label: "Passkey",
-        imgSrc: "/icons/passkey.svg",
-        supported: false,
-    },
-    {
-        id: "solana",
-        label: "Solana",
-        imgSrc: "https://near-intents.org/static/icons/network/solana.svg",
-        supported: false,
-        imageClassName: "p-1.5",
-    },
-    {
-        id: "binance-web3",
-        label: "Binance Web3",
-        imgSrc: "/icons/binance-web3.svg",
-        supported: false,
-    },
-    {
-        id: "phantom",
-        label: "Phantom",
-        imgSrc: "/icons/phantom.svg",
-        supported: false,
-    },
-    {
-        id: "walletconnect",
-        label: "WalletConnect",
-        imgSrc: "/icons/walletconnect.svg",
-        supported: false,
-    },
-    {
-        id: "stellar",
-        label: "Stellar",
-        imgSrc: "https://near-intents.org/static/icons/network/stellar_white.svg",
-        supported: false,
-        imageClassName: "p-1.5",
-    },
-];
-
-function WalletOptionIcon({
-    wallet,
-    size = "9",
-}: {
-    wallet: WalletOption;
-    size?: string;
-}) {
-    return (
-        <img
-            src={wallet.imgSrc}
-            alt={wallet.label}
-            className={cn(
-                `size-${size} rounded-full bg-black object-cover`,
-                wallet.imageClassName,
-            )}
-        />
-    );
-}
+import { ConnectWalletSelector } from "@/components/connect-wallet-selector";
 
 function buildTreasuryFormSchema(messages: {
     nameMin: string;
@@ -792,8 +703,6 @@ function Step4({
     const { members } = form.watch();
     const { isConfidential } = form.watch();
     const [showWalletSelector, setShowWalletSelector] = useState(false);
-    const [unsupportedWallet, setUnsupportedWallet] =
-        useState<WalletOption | null>(null);
 
     const financialMembers = members.filter((m: Member) =>
         m.roles.includes("financial"),
@@ -805,118 +714,16 @@ function Step4({
     const governanceThreshold = details.governanceThreshold;
     const financialThresholdVisual = `${financialThreshold}/${financialMembers}`;
     const governanceThresholdVisual = `${governanceThreshold}/${governanceMembers}`;
-    const closeUnsupportedWalletModal = () => {
-        setUnsupportedWallet(null);
-    };
-
-    const handleWalletChoice = (wallet: WalletOption) => {
-        trackEvent("onboarding_wallet_option_clicked", {
-            wallet_id: wallet.id,
-            is_supported: wallet.supported,
-            source: "/app/new",
-        });
-
-        if (wallet.supported) {
-            setShowWalletSelector(false);
-            connectWallet();
-            return;
-        }
-
-        setUnsupportedWallet(wallet);
-    };
-
     if (showWalletSelector && !accountId) {
         return (
-            <PageCard>
-                <StepperHeader
-                    title={tCreate("connectWalletCreate")}
-                    handleBack={() => setShowWalletSelector(false)}
-                />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {WALLET_OPTIONS.map((wallet) => (
-                        <Button
-                            key={wallet.id}
-                            type="button"
-                            variant="secondary"
-                            className="h-15 justify-start gap-3 text-lg"
-                            onClick={() => handleWalletChoice(wallet)}
-                            disabled={isConnectingWallet}
-                        >
-                            <WalletOptionIcon wallet={wallet} />
-                            <div className="font-semibold">{wallet.label}</div>
-                        </Button>
-                    ))}
-                </div>
-                <Dialog
-                    open={Boolean(unsupportedWallet)}
-                    onOpenChange={(open) => {
-                        if (!open && unsupportedWallet)
-                            closeUnsupportedWalletModal();
-                    }}
-                >
-                    <DialogContent className="max-w-2xl">
-                        <DialogHeader className="border-b-0 pb-0">
-                            <DialogTitle className="sr-only">
-                                {tCreate("walletNotSupportedTitle")}
-                            </DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-5 text-center">
-                            <div className="mx-auto flex items-center justify-center">
-                                {unsupportedWallet ? (
-                                    <WalletOptionIcon
-                                        wallet={unsupportedWallet}
-                                        size="12"
-                                    />
-                                ) : (
-                                    <Wallet className="size-7" />
-                                )}
-                            </div>
-                            <div className="space-y-1">
-                                <h3 className="text-xl font-semibold">
-                                    {tCreate("walletNotSupportedTitle")}
-                                </h3>
-                                <p className="text-muted-foreground text-md">
-                                    {tCreate("walletNotSupportedDescription", {
-                                        wallet: unsupportedWallet?.label ?? "",
-                                    })}
-                                </p>
-                            </div>
-                            <div className="space-y-3">
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    className="w-full"
-                                    onClick={() =>
-                                        handleWalletChoice({
-                                            id: "near",
-                                            label: "NEAR",
-                                            imgSrc: "/near.com.svg",
-                                            supported: true,
-                                        })
-                                    }
-                                >
-                                    {tCreate("connectNear")}
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    className="w-full"
-                                    onClick={() =>
-                                        handleWalletChoice({
-                                            id: "ledger",
-                                            label: "Ledger",
-                                            imgSrc: "/wallets/ledger.svg",
-                                            supported: true,
-                                        })
-                                    }
-                                >
-                                    {tCreate("connectLedger")}
-                                </Button>
-                            </div>
-                        </div>
-                    </DialogContent>
-                </Dialog>
-            </PageCard>
+            <ConnectWalletSelector
+                title={tCreate("connectWalletCreate")}
+                source="/app/new"
+                connectFlow="new_user"
+                isConnectingWallet={isConnectingWallet}
+                onBack={() => setShowWalletSelector(false)}
+                onConnectSupported={connectWallet}
+            />
         );
     }
 
@@ -1089,7 +896,8 @@ export default function NewTreasuryPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const queryClient = useQueryClient();
-    const shouldSkipSurvey = searchParams.get("skipSurvey") === "1";
+    const isOnboardingSurveyFlow = searchParams.get("entry") === "new_user";
+    const shouldSkipSurvey = !isOnboardingSurveyFlow;
     const [step, setStep] = useState(0);
     const [resumeOnboardingFromBack, setResumeOnboardingFromBack] =
         useState(false);

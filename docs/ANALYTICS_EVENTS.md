@@ -78,7 +78,7 @@ User clicks a wallet option in the Review-step wallet selector.
 | -------------- | ------- | --------------------------------- |
 | `wallet_id`    | string  | Wallet key (e.g. `near`, `ledger`) |
 | `is_supported` | boolean | Whether wallet is currently supported |
-| `source`       | string  | `"/app/new"`                      |
+| `source`       | string  | Example values: `"/app/new"`, `"/login"` |
 
 
 **Source:** [nt-fe/app/(treasury)/app/new/page.tsx](../nt-fe/app/(treasury)/app/new/page.tsx)
@@ -92,7 +92,7 @@ Wallet auth flow successfully completed.
 
 | Property     | Type   | Description |
 | ------------ | ------ | ----------- |
-| `source`     | string | Example values: `"wallet-sign-in"`, `"wallet-sign-in-and-message"`, `"terms-accepted"`, `"welcome-existing-user"` |
+| `source`     | string | Example values: `"wallet-sign-in"`, `"wallet-sign-in-and-message"`, `"terms-accepted"` |
 | `account_id` | string | NEAR account ID when available |
 
 

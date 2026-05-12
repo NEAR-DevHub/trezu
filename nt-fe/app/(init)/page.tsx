@@ -355,11 +355,9 @@ export function Content() {
     const [contact, setContact] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
-    const existingUserConnectPendingRef = useRef(false);
     const landingViewTrackedRef = useRef(false);
     const {
         accountId,
-        connect,
         isInitializing,
         isAuthenticating,
         authError,
@@ -417,7 +415,7 @@ export function Content() {
             !isInitializing
         ) {
             if (onboardingPath === "new_user" && creationAvailable) {
-                router.push(`/app/new`);
+                router.push(`/app/new?entry=new_user`);
             }
         }
     }, [
@@ -438,15 +436,6 @@ export function Content() {
             source: "/",
         });
     }, []);
-
-    useEffect(() => {
-        if (!existingUserConnectPendingRef.current || !accountId) return;
-        existingUserConnectPendingRef.current = false;
-        trackEvent("wallet_connection_completed", {
-            source: "welcome-existing-user",
-            account_id: accountId,
-        });
-    }, [accountId]);
 
     const handleWhitelistSubmit = async () => {
         if (!contact.trim()) return;
@@ -473,23 +462,21 @@ export function Content() {
         });
 
         if (path === "new_user") {
-            router.push("/app/new");
+            router.push("/app/new?entry=new_user");
             return;
         }
 
-        if (accountId) {
-            if (!isLoading && treasuries.length > 0) {
-                router.push(`/${preferredTreasuryId}`);
-                return;
-            }
-            if (treasuries.length === 0) {
-                requestCreateTreasuryPromptOpen();
-            }
+        if (accountId && !isLoading && preferredTreasuryId) {
+            router.push(`/${preferredTreasuryId}`);
             return;
         }
 
-        existingUserConnectPendingRef.current = true;
-        connect();
+        if (accountId && !isLoading && treasuries.length === 0) {
+            requestCreateTreasuryPromptOpen();
+            return;
+        }
+
+        router.push("/login?context=existing_user");
     };
 
     if (isDecisionPending) {
