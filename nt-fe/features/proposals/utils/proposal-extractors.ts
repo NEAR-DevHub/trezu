@@ -28,7 +28,11 @@ import { Policy } from "@/types/policy";
 import { getKindFromProposal } from "@/lib/config-utils";
 import { FunctionCallAction } from "@/lib/proposals-api";
 import { IntentsQuoteResponse } from "@/lib/api";
-import { NEAR_COM_NETWORK_ID } from "@/constants/intents";
+import {
+    NEAR_COM_NETWORK_ID,
+    NEAR_NETWORK_ID,
+    WRAP_NEAR_TOKEN_ID,
+} from "@/constants/network-ids";
 import { computeQuoteNetworkFee } from "@/lib/intents-fee";
 
 function extractFTTransferData(
@@ -64,7 +68,9 @@ function extractFTTransferData(
                 (a) => a.method_name === "near_deposit",
             );
             return {
-                tokenId: hasNearDeposit ? "near" : functionCall.receiver_id,
+                tokenId: hasNearDeposit
+                    ? NEAR_NETWORK_ID
+                    : functionCall.receiver_id,
                 amount: args.amount || "0",
                 receiver: args.receiver_id || "",
             };
@@ -73,7 +79,7 @@ function extractFTTransferData(
         const args = decodeArgs(actionMTTransfer.args);
         if (args) {
             return {
-                tokenId: args.token_id || "near",
+                tokenId: args.token_id || NEAR_NETWORK_ID,
                 amount: args.amount || "0",
                 receiver: args.receiver_id || "",
             };
@@ -129,7 +135,7 @@ function extractFTTransferData(
 export function extractPaymentRequestData(
     proposal: Proposal,
 ): PaymentRequestData {
-    let tokenId = "near";
+    let tokenId = NEAR_NETWORK_ID;
     let amount = "0";
     let receiver = "";
     const proposalAction = decodeProposalDescription(
@@ -143,7 +149,7 @@ export function extractPaymentRequestData(
         tokenId =
             normalizedTokenId && normalizedTokenId.length > 0
                 ? normalizedTokenId
-                : "near";
+                : NEAR_NETWORK_ID;
         amount = transfer.amount;
         receiver = transfer.receiver_id;
     } else if ("FunctionCall" in proposal.kind) {
@@ -191,8 +197,8 @@ export function extractPaymentRequestData(
 
     // Plain native NEAR transfers without 1Click metadata should resolve to
     // NEAR network (not near.com route) in destination display.
-    if (!destinationAssetId && tokenId === "near" && !depositAddress) {
-        destinationAssetId = "near";
+    if (!destinationAssetId && tokenId === NEAR_NETWORK_ID && !depositAddress) {
+        destinationAssetId = NEAR_NETWORK_ID;
     }
     return {
         tokenId,
@@ -305,7 +311,7 @@ export function extractStakingData(proposal: Proposal): StakingData {
     );
 
     return {
-        tokenId: "near",
+        tokenId: NEAR_NETWORK_ID,
         amount: isFullAmount
             ? "0"
             : args?.amount || stakingAction?.deposit || withdrawAmount || "0",
@@ -334,7 +340,7 @@ export function extractVestingData(proposal: Proposal): VestingData {
 
     if (!firstAction || firstAction.method_name !== "create") {
         return {
-            tokenId: "near",
+            tokenId: NEAR_NETWORK_ID,
             amount: "0",
             receiver: "",
             vestingSchedule: null,
@@ -349,7 +355,7 @@ export function extractVestingData(proposal: Proposal): VestingData {
     const args = decodeArgs(firstAction.args);
     if (!args) {
         return {
-            tokenId: "near",
+            tokenId: NEAR_NETWORK_ID,
             amount: "0",
             receiver: "",
             vestingSchedule: null,
@@ -376,7 +382,7 @@ export function extractVestingData(proposal: Proposal): VestingData {
     const notes = decodeProposalDescription("notes", proposal.description);
 
     return {
-        tokenId: "near",
+        tokenId: NEAR_NETWORK_ID,
         amount: firstAction.deposit,
         receiver: recipient,
         vestingSchedule,
@@ -491,9 +497,9 @@ export function extractExchangeRequestData(
             (a) => a.method_name === "near_deposit",
         );
 
-        if (hasNearDeposit && functionCall.receiver_id === "wrap.near") {
+        if (hasNearDeposit && functionCall.receiver_id === WRAP_NEAR_TOKEN_ID) {
             // Native NEAR exchange: near -> other token
-            tokenIn = "near";
+            tokenIn = NEAR_NETWORK_ID;
         } else {
             // FT token or wNEAR exchange
             tokenIn = functionCall.receiver_id;
@@ -515,7 +521,7 @@ export function extractExchangeRequestData(
         amountIn,
         amountOut,
         destinationNetwork, // LEGACY: for old proposals
-        sourceNetwork: "near",
+        sourceNetwork: NEAR_NETWORK_ID,
         quoteSignature,
         depositAddress,
         timeEstimate: timeEstimate || undefined,
@@ -549,13 +555,13 @@ export function extractNearWrapSwapRequestData(
     const amount = isWrap ? action.deposit || "0" : args.amount || "0";
 
     return {
-        source: "wrap.near",
-        tokenIn: isWrap ? "near" : "wrap.near",
+        source: WRAP_NEAR_TOKEN_ID,
+        tokenIn: isWrap ? NEAR_NETWORK_ID : WRAP_NEAR_TOKEN_ID,
         amountIn: amount,
-        tokenOut: isWrap ? "wrap.near" : "near",
+        tokenOut: isWrap ? WRAP_NEAR_TOKEN_ID : NEAR_NETWORK_ID,
         amountOut: amount,
-        destinationNetwork: "near",
-        sourceNetwork: "near",
+        destinationNetwork: NEAR_NETWORK_ID,
+        sourceNetwork: NEAR_NETWORK_ID,
     };
 }
 
@@ -830,7 +836,7 @@ export function extractConfidentialRequestData(
                         recipientType === "INTENTS"
                       ? NEAR_COM_NETWORK_ID
                       : recipientType === "DESTINATION_CHAIN"
-                        ? "near"
+                        ? NEAR_NETWORK_ID
                         : undefined;
             const networkFee = computeQuoteNetworkFee(quote);
             mapped = {
@@ -905,7 +911,7 @@ export function extractProposalData(
 
                 // Check if this is a simple wrap/unwrap (no exchange)
                 const isSimpleWrapUnwrap =
-                    functionCall.receiver_id === "wrap.near" &&
+                    functionCall.receiver_id === WRAP_NEAR_TOKEN_ID &&
                     functionCall.actions.length === 1 &&
                     functionCall.actions.some(
                         (action) =>

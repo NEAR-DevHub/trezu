@@ -4,7 +4,7 @@ import { getNetworkDisplayName } from "@/components/token-display";
 import {
     getNetworkDisplayCaseClass,
     getLocalizedNetworkDisplayName,
-} from "@/constants/intents";
+} from "@/lib/intents-network";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/use-media-query";

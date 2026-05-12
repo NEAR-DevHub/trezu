@@ -12,11 +12,11 @@ import {
     getNetworkDisplayName,
     NetworkIconDisplay,
 } from "@/components/token-display";
+import { NEAR_NETWORK_ID, NEAR_COM_NETWORK_ID } from "@/constants/network-ids";
 import {
     getNearComChainIcons,
     isNearComPaymentRoute,
-    NEAR_COM_NETWORK_ID,
-} from "@/constants/intents";
+} from "@/lib/intents-network";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatTokenDisplayAmount, getNearTokenTypeLabel } from "@/lib/utils";
 import { Tooltip } from "@/components/tooltip";
@@ -29,7 +29,7 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
     const t = useTranslations("proposals.expanded");
     const tIntents = useTranslations("intentsQuote");
     const { data: tokenData } = useToken(data.tokenId);
-    const tokenChainName = tokenData?.network || "near";
+    const tokenChainName = tokenData?.network || NEAR_NETWORK_ID;
     const isNearComDestination = isNearComPaymentRoute(data);
 
     const shouldFetchDestinationToken =
@@ -42,7 +42,7 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
     // For cross-chain intents payments, prefer resolved destination token
     // network for recipient links when destinationNetwork carries a token id.
     const recipientChainName = isNearComDestination
-        ? "near"
+        ? NEAR_NETWORK_ID
         : destinationTokenData?.network ||
           (!shouldFetchDestinationToken
               ? data.destinationAssetId

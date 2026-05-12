@@ -4,10 +4,11 @@ import { useCallback, useMemo, useState } from "react";
 import { useDebounce } from "use-debounce";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
-import { isNearComNetwork, NEAR_COM_NETWORK_ID } from "@/constants/intents";
+import { NEAR_NETWORK_ID } from "@/constants/network-ids";
 import { getAddressPattern } from "@/lib/address-validation";
 import Big from "@/lib/big";
 import { getBlockchainType } from "@/lib/blockchain-utils";
+import { isNearComNetwork } from "@/lib/intents-network";
 import {
     isEthImplicitNearAddress,
     isValidNearAddressFormat,
@@ -19,12 +20,12 @@ import { isIntentsToken } from "@/lib/intents-fee";
 
 export type IntentsAmountMode = "recipient" | "total";
 const MAX_FEE_TO_RECIPIENT_RATIO = Big(1);
-export { NEAR_COM_NETWORK_ID };
 
 function isAddressValidForToken(address: string, token: Token): boolean {
     if (!address) return false;
     const blockchain = getBlockchainType(token.network);
-    if (blockchain === "near") return isValidNearAddressFormat(address);
+    if (blockchain === NEAR_NETWORK_ID)
+        return isValidNearAddressFormat(address);
     if (blockchain === "unknown") return true;
     const pattern = getAddressPattern(blockchain);
     return pattern ? pattern.test(address) : true;

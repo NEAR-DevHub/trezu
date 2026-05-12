@@ -64,6 +64,7 @@ import {
     isNEARWithdraw,
     isNEARWrapConversion,
 } from "./utils";
+import { WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
 import {
     buildFungibleTokenProposal,
     buildNativeNEARProposal,
@@ -100,7 +101,8 @@ function Step1({ handleNext }: StepProps) {
 
     // Check if sell token is wNEAR (FT NEAR with Ft residency, not Intents)
     const isSellTokenFTNEAR =
-        sellToken.address === "wrap.near" && sellToken.residency === "Ft";
+        sellToken.address === WRAP_NEAR_TOKEN_ID &&
+        sellToken.residency === "Ft";
 
     // Filter function for receive token
     const filterReceiveTokens = useCallback(

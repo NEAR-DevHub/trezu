@@ -12,6 +12,7 @@ import {
 import { useTreasury } from "@/hooks/use-treasury";
 import { NEAR_CHAIN_ICONS } from "@/constants/token";
 import type { ChainIcons } from "@/lib/api";
+import { NEAR_NETWORK_ID } from "@/constants/network-ids";
 
 export interface MergedNetwork {
     id: string;
@@ -61,7 +62,9 @@ const mapTreasuryNetwork = (n: TreasuryNetwork): MergedNetwork => ({
     symbol: n.symbol,
     chainIcons:
         n.chainIcons ||
-        (n.id === "near" && n.residency === "Near" ? NEAR_CHAIN_ICONS : null),
+        (n.id === NEAR_NETWORK_ID && n.residency === "Near"
+            ? NEAR_CHAIN_ICONS
+            : null),
     chainId: n.network,
     decimals: n.decimals,
     residency: n.residency,
@@ -83,7 +86,8 @@ const mapBridgeMatchedNetwork = (
     symbol: treasuryNetwork.symbol,
     chainIcons:
         treasuryNetwork.chainIcons ||
-        (treasuryNetwork.id === "near" && treasuryNetwork.residency === "Near"
+        (treasuryNetwork.id === NEAR_NETWORK_ID &&
+        treasuryNetwork.residency === "Near"
             ? NEAR_CHAIN_ICONS
             : bridgeNetwork.chainIcons),
     chainId: bridgeNetwork.chainId,

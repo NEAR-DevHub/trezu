@@ -5,8 +5,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { TokenDisplay } from "@/components/token-display-with-network";
 import { getNetworkDisplayName } from "@/components/token-display";
 import { Tooltip } from "@/components/tooltip";
-import { getLocalizedNetworkDisplayName } from "@/constants/intents";
+import { NEAR_NETWORK_ID } from "@/constants/network-ids";
 import { useToken } from "@/hooks/use-treasury-queries";
+import { getLocalizedNetworkDisplayName } from "@/lib/intents-network";
 import {
     formatBalance,
     formatCurrency,
@@ -43,21 +44,19 @@ function resolveAmountNetworkLabel({
 }): string | undefined {
     const normalizedTokenId = tokenId.trim().toLowerCase();
     const isNativeNearToken =
-        normalizedTokenId.length === 0 || normalizedTokenId === "near";
+        normalizedTokenId.length === 0 || normalizedTokenId === NEAR_NETWORK_ID;
     const resolvedNetwork = isNativeNearToken
-        ? "near"
+        ? NEAR_NETWORK_ID
         : (networkOverride ?? tokenNetwork);
 
     const nearTypeLabel = getNearTokenTypeLabel(
-        isNativeNearToken ? "near" : tokenId,
+        isNativeNearToken ? NEAR_NETWORK_ID : tokenId,
         resolvedNetwork,
+        { expandNearComLabel },
     );
 
     if (nearTypeLabel) {
-        return !expandNearComLabel &&
-            nearTypeLabel === "NEAR (near.com) Network"
-            ? "near.com"
-            : nearTypeLabel;
+        return nearTypeLabel;
     }
 
     if (!resolvedNetwork) {

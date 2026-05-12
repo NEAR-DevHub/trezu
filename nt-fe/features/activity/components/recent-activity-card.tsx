@@ -59,6 +59,7 @@ import Link from "next/link";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { StepperHeader } from "@/components/step-wizard";
 import { ConfidentialState } from "@/components/confidential-state";
+import { NEAR_NETWORK_ID } from "@/constants/network-ids";
 
 const ITEMS_ON_DASHBOARD = 10;
 const MAX_ITEMS = 100;
@@ -68,7 +69,10 @@ const columnHelper = createColumnHelper<GroupedActivity>();
 // Helper function to detect if an activity is a staking reward
 const isStakingReward = (activity: RecentActivityType): boolean => {
     // Must be NEAR token with positive amount
-    if (activity.tokenId !== "near" || parseFloat(activity.amount) <= 0) {
+    if (
+        activity.tokenId !== NEAR_NETWORK_ID ||
+        parseFloat(activity.amount) <= 0
+    ) {
         return false;
     }
 

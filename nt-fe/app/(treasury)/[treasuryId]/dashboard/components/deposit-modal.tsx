@@ -17,10 +17,10 @@ import {
 } from "@/components/modal";
 import { getNetworkDisplayName } from "@/components/token-display";
 import {
-    getNetworkDisplayCaseClass,
+    NEAR_NETWORK_ID,
     NEAR_COM_DIRECT_NETWORK_ID,
     NEAR_COM_NETWORK_NAME,
-} from "@/constants/intents";
+} from "@/constants/network-ids";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { useAggregatedTokens, useAssets } from "@/hooks/use-assets";
@@ -29,6 +29,7 @@ import { type BridgeNetwork, useBridgeTokens } from "@/hooks/use-bridge-tokens";
 import { useTreasury } from "@/hooks/use-treasury";
 import Big from "@/lib/big";
 import { fetchDepositAddress } from "@/lib/bridge-api";
+import { getNetworkDisplayCaseClass } from "@/lib/intents-network";
 import { buildSectionedOptions } from "@/lib/section-rules";
 import { cn, formatBalance, formatSmartAmount } from "@/lib/utils";
 import { useThemeStore } from "@/stores/theme-store";
@@ -359,8 +360,8 @@ export function DepositModal({
 
                 const bridgeNetworkName = bridgeNetwork.name.toLowerCase();
                 const includeAllNearResidencies =
-                    assetId.toLowerCase() === "near" &&
-                    bridgeNetworkName === "near";
+                    assetId.toLowerCase() === NEAR_NETWORK_ID &&
+                    bridgeNetworkName === NEAR_NETWORK_ID;
 
                 const chainMatches = ownedAsset.networks.filter(
                     (network) =>
@@ -629,7 +630,7 @@ export function DepositModal({
                     selectedNetwork.chainId ?? selectedNetwork.id
                 )
                     .toLowerCase()
-                    .includes("near");
+                    .includes(NEAR_NETWORK_ID);
                 if (isNearNetwork) {
                     if (requestId !== latestAddressRequestRef.current) return;
                     setDepositInfo({
@@ -715,7 +716,7 @@ export function DepositModal({
             ""
         )
             .toLowerCase()
-            .includes("near");
+            .includes(NEAR_NETWORK_ID);
 
         if (isNearNetwork) {
             return <span>{address}</span>;

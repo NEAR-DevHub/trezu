@@ -25,6 +25,7 @@ import { Proposal } from "@/lib/proposals-api";
 import { getProposalStatus } from "../../utils/proposal-utils";
 import { Policy } from "@/types/policy";
 import Big from "@/lib/big";
+import { NEAR_NETWORK_ID } from "@/constants/network-ids";
 
 interface PaymentDisplayProps {
     number: number;
@@ -61,7 +62,7 @@ function PaymentDisplay({
 
     // Get token metadata to determine blockchain network for recipient address
     const { data: tokenData } = useToken(tokenId);
-    const chainName = tokenData?.network || "near";
+    const chainName = tokenData?.network || NEAR_NETWORK_ID;
 
     // Transaction links are always NEAR (nearblocks)
     const nearBlocksUrl = transactionHash
@@ -74,7 +75,7 @@ function PaymentDisplay({
             value: (
                 <User
                     useAddressBook
-                    withName={chainName === "near"}
+                    withName={chainName === NEAR_NETWORK_ID}
                     accountId={payment.recipient}
                     chainName={chainName}
                 />
@@ -195,7 +196,7 @@ export function BatchPaymentRequestExpanded({
 
     let tokenId = data.tokenId;
     if (activeBatchData?.tokenId?.toLowerCase() === "native") {
-        tokenId = "near";
+        tokenId = NEAR_NETWORK_ID;
     }
     const { data: tokenData } = useToken(tokenId);
 
@@ -208,7 +209,7 @@ export function BatchPaymentRequestExpanded({
         token: tokenData
             ? {
                   address: tokenId,
-                  network: tokenData.network || "near",
+                  network: tokenData.network || NEAR_NETWORK_ID,
                   decimals: tokenData.decimals,
               }
             : null,

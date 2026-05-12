@@ -1,12 +1,10 @@
 import type { ChainIcons } from "@/lib/api";
 import { NEAR_COM_ICON } from "@/constants/token";
-
-export const NEAR_COM_NETWORK_ID = "near.com";
-// UI-only network id used to represent direct treasury deposits (no intents/bridge route).
-// Intentionally different from NEAR_COM_NETWORK_ID ("near.com"), which represents the intents route.
-export const NEAR_COM_DIRECT_NETWORK_ID = "near.com:direct";
-
-export const NEAR_COM_NETWORK_NAME = "near.com";
+import {
+    NEAR_COM_DIRECT_NETWORK_ID,
+    NEAR_COM_NETWORK_ID,
+    NEAR_COM_NETWORK_NAME,
+} from "@/constants/network-ids";
 
 export function isNearComNetwork(value?: string | null): boolean {
     const normalized = value?.toLowerCase();

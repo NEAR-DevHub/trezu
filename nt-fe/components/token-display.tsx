@@ -6,7 +6,8 @@ import Big from "@/lib/big";
 import {
     getNetworkDisplayCaseClass,
     getLocalizedNetworkDisplayName,
-} from "@/constants/intents";
+} from "@/lib/intents-network";
+import { NEAR_NETWORK_ID } from "@/constants/network-ids";
 import { TokenDisplay as TokenWithNetworkDisplay } from "./token-display-with-network";
 
 interface NetworkIconDisplayProps {
@@ -88,7 +89,7 @@ export const NetworkIconDisplay = ({
             : chainIcons.light
         : null;
 
-    const isNEAR = networkName.toLowerCase() === "near";
+    const isNEAR = networkName.toLowerCase() === NEAR_NETWORK_ID;
     const displayName = getLocalizedNetworkDisplayName({
         networkName,
         networkLabel: tAddressBookTable("network"),

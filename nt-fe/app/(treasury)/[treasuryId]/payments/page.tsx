@@ -56,10 +56,9 @@ import { Address } from "@/components/address";
 import {
     useIntentsQuote,
     buildIntentsQuoteRequest,
-    NEAR_COM_NETWORK_ID,
     type IntentsAmountMode,
 } from "@/hooks/use-intents-quote";
-import { getNearComChainIcons, isNearComNetwork } from "@/constants/intents";
+import { getNearComChainIcons, isNearComNetwork } from "@/lib/intents-network";
 import { parseTokenQueryParam } from "@/lib/token-query-param";
 import {
     cn,
