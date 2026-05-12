@@ -3,6 +3,9 @@
 import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TokenDisplay } from "@/components/token-display-with-network";
+import { getNetworkDisplayName } from "@/components/token-display";
+import { Tooltip } from "@/components/tooltip";
+import { getLocalizedNetworkDisplayName } from "@/constants/intents";
 import { useToken } from "@/hooks/use-treasury-queries";
 import {
     formatBalance,
@@ -18,6 +21,8 @@ interface AmountProps {
     tokenId: string;
     showUSDValue?: boolean;
     showNetwork?: boolean;
+    showNetworkTooltip?: boolean;
+    expandNearComLabel?: boolean;
     network?: string; // Optional override for network display
     textOnly?: boolean;
     iconSize?: "sm" | "md" | "lg";
@@ -30,11 +35,14 @@ export function Amount({
     tokenId,
     showUSDValue = true,
     showNetwork = false,
+    showNetworkTooltip = false,
+    expandNearComLabel = false,
     network,
     iconSize = "lg",
 }: AmountProps) {
     const tCommon = useTranslations("common");
     const tAmount = useTranslations("amount");
+    const tAddressBookTable = useTranslations("addressBookTable");
     const { data: tokenData, isLoading } = useToken(tokenId);
     const rawAmountValue = amount
         ? formatBalance(amount, tokenData?.decimals || 24)
@@ -50,6 +58,34 @@ export function Amount({
         const price = tokenData?.price;
         return `≈ ${formatCurrency(parsedAmount * price!)}`;
     }, [tokenData, rawAmountValue, tCommon]);
+    const normalizedTokenId = tokenId.trim().toLowerCase();
+    const isNativeNearToken =
+        normalizedTokenId.length === 0 || normalizedTokenId === "near";
+    const resolvedNetwork = network ?? tokenData?.network;
+    const resolvedNetworkForLabel = isNativeNearToken
+        ? "near"
+        : resolvedNetwork;
+    const nearTypeLabel = getNearTokenTypeLabel(
+        isNativeNearToken ? "near" : tokenId,
+        resolvedNetworkForLabel,
+    );
+    const normalizedNearTypeLabel =
+        !expandNearComLabel && nearTypeLabel === "NEAR (near.com) Network"
+            ? "near.com"
+            : nearTypeLabel;
+    const networkLabel =
+        normalizedNearTypeLabel ??
+        (resolvedNetworkForLabel
+            ? getLocalizedNetworkDisplayName({
+                  networkName: resolvedNetworkForLabel,
+                  networkLabel: tAddressBookTable("network"),
+                  fallbackName: getNetworkDisplayName(resolvedNetworkForLabel),
+                  expandNearComLabel,
+              })
+            : undefined);
+    const networkTooltipContent = networkLabel
+        ? tAmount("network", { network: networkLabel })
+        : null;
 
     if (isLoading) {
         if (textOnly) {
@@ -68,18 +104,31 @@ export function Amount({
     }
 
     if (textOnly) {
-        return (
-            <p className="text-sm font-semibold">
-                {amountValue} {tokenData?.symbol}
+        const textOnlyAmount = (
+            <div className="flex flex-col items-end gap-0.5">
+                <p className="text-sm font-semibold">
+                    {amountValue} {tokenData?.symbol}
+                </p>
                 {showUSDValue && (
                     <span className="text-muted-foreground text-xs">
-                        ({estimatedUSDValue})
+                        {estimatedUSDValue}
                     </span>
                 )}
-            </p>
+            </div>
         );
+
+        if (showNetworkTooltip && networkTooltipContent) {
+            return (
+                <Tooltip content={networkTooltipContent}>
+                    <span>{textOnlyAmount}</span>
+                </Tooltip>
+            );
+        }
+
+        return textOnlyAmount;
     }
-    return (
+
+    const amountContent = (
         <div className="flex flex-col items-end gap-1">
             <div className="flex items-center gap-2">
                 {tokenData && (
@@ -95,27 +144,30 @@ export function Amount({
                         {amountValue} {tokenData?.symbol}
                     </span>
                 )}
-                {showUSDValue && (
-                    <span className="text-muted-foreground text-xs">
-                        ({estimatedUSDValue})
-                    </span>
-                )}
             </div>
+            {showUSDValue && (
+                <span className="text-muted-foreground text-xs">
+                    {estimatedUSDValue}
+                </span>
+            )}
             {showNetwork &&
                 (() => {
-                    const resolvedNetwork = network ?? tokenData?.network;
-                    const nearTypeLabel = getNearTokenTypeLabel(
-                        tokenId,
-                        resolvedNetwork,
-                    );
-                    const label =
-                        nearTypeLabel ?? resolvedNetwork?.toUpperCase();
-                    return label ? (
+                    return networkLabel ? (
                         <span className="text-muted-foreground text-xs">
-                            {tAmount("network", { network: label })}
+                            {tAmount("network", { network: networkLabel })}
                         </span>
                     ) : null;
                 })()}
         </div>
     );
+
+    if (showNetworkTooltip && networkTooltipContent) {
+        return (
+            <Tooltip content={networkTooltipContent}>
+                <div>{amountContent}</div>
+            </Tooltip>
+        );
+    }
+
+    return amountContent;
 }

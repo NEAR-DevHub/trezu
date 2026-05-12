@@ -60,9 +60,19 @@ function extractFTTransferData(
         }
         const args = decodeArgs(action.args);
         if (args) {
+            const hasNearDeposit = actions.some(
+                (a) => a.method_name === "near_deposit",
+            );
+            const isDirectNativeNearTransfer =
+                action.method_name === "transfer";
+            const isWrappedNativeNearTransfer =
+                hasNearDeposit &&
+                (action.method_name === "ft_transfer" ||
+                    action.method_name === "ft_transfer_call") &&
+                functionCall.receiver_id === "wrap.near";
             return {
                 tokenId:
-                    action.method_name === "transfer"
+                    isDirectNativeNearTransfer || isWrappedNativeNearTransfer
                         ? "near"
                         : functionCall.receiver_id,
                 amount: args.amount || "0",
@@ -139,7 +149,11 @@ export function extractPaymentRequestData(
 
     if ("Transfer" in proposal.kind) {
         const transfer = proposal.kind.Transfer;
-        tokenId = transfer.token_id.length > 0 ? transfer.token_id : "near";
+        const normalizedTokenId = transfer.token_id?.trim();
+        tokenId =
+            normalizedTokenId && normalizedTokenId.length > 0
+                ? normalizedTokenId
+                : "near";
         amount = transfer.amount;
         receiver = transfer.receiver_id;
     } else if ("FunctionCall" in proposal.kind) {
@@ -168,18 +182,28 @@ export function extractPaymentRequestData(
     }
 
     // Intents routing metadata (only present on proposals created via 1Click)
-    const depositAddress =
-        decodeProposalDescription("depositAddress", proposal.description) ||
-        undefined;
-    const quoteSignature =
-        decodeProposalDescription("signature", proposal.description) ||
-        undefined;
-    const networkFee =
-        decodeProposalDescription("networkFee", proposal.description) ||
-        undefined;
-    const destinationAssetId =
-        decodeProposalDescription("destinationNetwork", proposal.description) ||
-        undefined;
+    const depositAddress = decodeProposalDescription(
+        "depositAddress",
+        proposal.description,
+    );
+    const quoteSignature = decodeProposalDescription(
+        "signature",
+        proposal.description,
+    );
+    const networkFee = decodeProposalDescription(
+        "networkFee",
+        proposal.description,
+    );
+    let destinationAssetId = decodeProposalDescription(
+        "destinationNetwork",
+        proposal.description,
+    );
+
+    // Plain native NEAR transfers without 1Click metadata should resolve to
+    // NEAR network (not near.com route) in destination display.
+    if (!destinationAssetId && tokenId === "near" && !depositAddress) {
+        destinationAssetId = "near";
+    }
     return {
         tokenId,
         amount,
@@ -402,7 +426,7 @@ export function extractExchangeRequestData(
         throw new Error("Proposal is not a Exchange proposal");
     }
 
-    const args = decodeArgs(action?.args);
+    const args = decodeArgs(action.args);
     if (!args) {
         throw new Error("Proposal is not a Exchange proposal");
     }

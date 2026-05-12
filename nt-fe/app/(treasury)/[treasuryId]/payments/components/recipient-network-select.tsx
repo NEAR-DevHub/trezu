@@ -8,7 +8,11 @@ import { Button } from "@/components/button";
 import { InputBlock } from "@/components/input-block";
 import { getNetworkDisplayName } from "@/components/token-display";
 import type { Token } from "@/components/token-input";
-import { NEAR_COM_NETWORK_ID } from "@/constants/intents";
+import {
+    getNetworkDisplayCaseClass,
+    getLocalizedNetworkDisplayName,
+    NEAR_COM_NETWORK_ID,
+} from "@/constants/intents";
 import { NEAR_COM_ICON } from "@/constants/token";
 import { useBridgeTokens } from "@/hooks/use-bridge-tokens";
 import { useTreasury } from "@/hooks/use-treasury";
@@ -99,7 +103,7 @@ function NetworkRow({
                 <span
                     className={cn(
                         "text-base font-semibold",
-                        option.name !== "near.com" && "capitalize",
+                        getNetworkDisplayCaseClass(option.id),
                     )}
                 >
                     {option.name}
@@ -123,6 +127,7 @@ export function RecipientNetworkSelect({
     onNetworkChange,
 }: RecipientNetworkSelectProps) {
     const t = useTranslations("recipientNetworkSelect");
+    const tAddressBookTable = useTranslations("addressBookTable");
     const { isConfidential } = useTreasury();
     const { theme } = useThemeStore();
     const [open, setOpen] = useState(false);
@@ -134,12 +139,16 @@ export function RecipientNetworkSelect({
     const nearComOption: RecipientNetworkOption = useMemo(
         () => ({
             id: NEAR_COM_NETWORK_ID,
-            name: t("nearComName"),
+            name: getLocalizedNetworkDisplayName({
+                networkName: NEAR_COM_NETWORK_ID,
+                networkLabel: tAddressBookTable("network"),
+                fallbackName: "near.com",
+            }),
             description: isConfidential ? t("nearComDescription") : undefined,
             icon: NEAR_COM_ICON,
             networkName: "near",
         }),
-        [isConfidential, t],
+        [isConfidential, t, tAddressBookTable],
     );
 
     const tokenNetworkOptions = useMemo((): RecipientNetworkOption[] => {

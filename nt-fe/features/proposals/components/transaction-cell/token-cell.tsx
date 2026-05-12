@@ -31,6 +31,8 @@ export function TokenCell({
             amount={data.amount}
             tokenId={data.tokenId}
             showUSDValue={false}
+            showNetworkTooltip
+            expandNearComLabel={"destinationAssetId" in data}
             iconSize="sm"
             textOnly={textOnly}
         />

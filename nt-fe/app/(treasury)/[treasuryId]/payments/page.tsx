@@ -27,7 +27,7 @@ import { Textarea } from "@/components/textarea";
 import { Tooltip } from "@/components/tooltip";
 import { type Token, tokenSchema } from "@/components/token-input";
 import { Form, FormField } from "@/components/ui/form";
-import { default_near_token, NEAR_COM_ICON } from "@/constants/token";
+import { default_near_token } from "@/constants/token";
 import { useAddressBook } from "@/features/address-book";
 import {
     PAGE_TOUR_NAMES,
@@ -59,6 +59,7 @@ import {
     NEAR_COM_NETWORK_ID,
     type IntentsAmountMode,
 } from "@/hooks/use-intents-quote";
+import { getNearComChainIcons, isNearComNetwork } from "@/constants/intents";
 import { parseTokenQueryParam } from "@/lib/token-query-param";
 import {
     cn,
@@ -272,11 +273,8 @@ function Step2({
         if (!destinationNetwork) {
             return undefined;
         }
-        if (destinationNetwork === NEAR_COM_NETWORK_ID) {
-            return {
-                dark: NEAR_COM_ICON,
-                light: NEAR_COM_ICON,
-            };
+        if (isNearComNetwork(destinationNetwork)) {
+            return getNearComChainIcons();
         }
         for (const asset of bridgeAssets) {
             const network = asset.networks.find(
@@ -482,7 +480,7 @@ function classifyPaymentToken(
 ): PaymentTokenClassification {
     const isNearNativeToken = isNearChainNativeToken(token);
     const isNearFtToken = isNearChainFtToken(token);
-    const isNearComRoute = destinationNetwork === NEAR_COM_NETWORK_ID;
+    const isNearComRoute = isNearComNetwork(destinationNetwork);
     const intentsOriginAsset = isNearNativeToken
         ? "nep141:wrap.near"
         : isNearFtToken

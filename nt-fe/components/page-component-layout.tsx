@@ -3,9 +3,10 @@
 import { ArrowLeft, Moon, PanelLeft, Sun } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { type ReactNode, useEffect } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Button } from "@/components/button";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { Pill } from "@/components/pill";
 import { SignIn } from "@/components/sign-in";
 import { SystemStatusBanner } from "@/components/system-status-banner";
 import { ConfidentialBanner } from "@/features/confidential/components/confidential-banner";
@@ -34,12 +35,24 @@ export function PageComponentLayout({
     const { toggleSidebar } = useSidebarStore();
     const { theme, toggleTheme } = useThemeStore();
     const tHeader = useTranslations("header");
+    const [showStagingTag, setShowStagingTag] = useState(
+        process.env.NEXT_PUBLIC_STAGING === "true",
+    );
 
     useEffect(() => {
         if (typeof window !== "undefined") {
             document.documentElement.classList.toggle("dark", theme === "dark");
         }
     }, [theme]);
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            setShowStagingTag(
+                process.env.NEXT_PUBLIC_STAGING === "true" ||
+                    window.location.hostname.includes("testenv.trezu"),
+            );
+        }
+    }, []);
 
     const router = useRouter();
 
@@ -94,6 +107,15 @@ export function PageComponentLayout({
 
                 {!hideLogin && (
                     <div className="flex items-center gap-3">
+                        {showStagingTag && (
+                            <Pill
+                                title="Staging"
+                                icon={
+                                    <span className="size-1.5 rounded-full bg-general-orange-foreground" />
+                                }
+                                className="bg-general-orange-background-faded text-general-orange-foreground"
+                            />
+                        )}
                         <LanguageSwitcher />
                         <Button
                             variant="ghost"

@@ -573,7 +573,7 @@ export const decodeProposalDescription = (key: string, description: string) => {
         }
     }
 
-    return null; // Return null if key not found
+    return undefined;
 };
 
 /** Convert a nanosecond timestamp/duration (string) to milliseconds. */
@@ -589,7 +589,7 @@ export function msToNanos(ms: number): string {
 /**
  * Returns a human-readable NEAR token type label based on the tokenId.
  * - "" or "near" → "Native Token"
- * - starts with "nep141:" or "nep245:" → "Intents Token"
+ * - starts with "nep141:" or "nep245:" → "near.com Network"
  * - anything else (contract address) → "Fungible Token"
  *
  * Returns null for non-NEAR networks so callers can fall back to the chain name.

@@ -8,12 +8,18 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { useToken } from "@/hooks/use-treasury-queries";
 import { Address } from "@/components/address";
-import { NetworkIconDisplay } from "@/components/token-display";
-import { NEAR_COM_ICON } from "@/constants/token";
-import { NEAR_COM_NETWORK_ID } from "@/constants/intents";
-import type { ChainIcons } from "@/lib/api";
+import {
+    getNetworkDisplayName,
+    NetworkIconDisplay,
+} from "@/components/token-display";
+import {
+    getNearComChainIcons,
+    isNearComPaymentRoute,
+    NEAR_COM_NETWORK_ID,
+} from "@/constants/intents";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatTokenDisplayAmount } from "@/lib/utils";
+import { formatTokenDisplayAmount, getNearTokenTypeLabel } from "@/lib/utils";
+import { Tooltip } from "@/components/tooltip";
 
 interface TransferExpandedProps {
     data: PaymentRequestData;
@@ -24,10 +30,10 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
     const tIntents = useTranslations("intentsQuote");
     const { data: tokenData } = useToken(data.tokenId);
     const tokenChainName = tokenData?.network || "near";
+    const isNearComDestination = isNearComPaymentRoute(data);
+
     const shouldFetchDestinationToken =
-        !!data.destinationAssetId &&
-        data.destinationAssetId !== NEAR_COM_NETWORK_ID &&
-        data.destinationAssetId !== "near";
+        !!data.destinationAssetId && !isNearComDestination;
     const { data: destinationTokenData, isLoading: isLoadingDestinationToken } =
         useToken(
             shouldFetchDestinationToken ? data.destinationAssetId : undefined,
@@ -35,30 +41,35 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
 
     // For cross-chain intents payments, prefer resolved destination token
     // network for recipient links when destinationNetwork carries a token id.
-    const recipientChainName =
-        data.destinationAssetId === NEAR_COM_NETWORK_ID
-            ? "near"
-            : destinationTokenData?.network ||
-              (!shouldFetchDestinationToken
-                  ? data.destinationAssetId
-                  : undefined) ||
-              tokenChainName;
+    const recipientChainName = isNearComDestination
+        ? "near"
+        : destinationTokenData?.network ||
+          (!shouldFetchDestinationToken
+              ? data.destinationAssetId
+              : undefined) ||
+          tokenChainName;
     const hasFeeData = !!data.networkFee;
+    const amountNetworkLabel =
+        getNearTokenTypeLabel(data.tokenId, tokenChainName) ??
+        getNetworkDisplayName(tokenChainName);
 
     const destinationNetworkMeta = useMemo(() => {
-        if (
-            !data.destinationAssetId ||
-            data.destinationAssetId === tokenChainName
-        ) {
-            return null;
-        }
-        if (data.destinationAssetId === NEAR_COM_NETWORK_ID) {
+        if (isNearComDestination) {
             return {
                 name: NEAR_COM_NETWORK_ID,
-                chainIcons: {
-                    dark: NEAR_COM_ICON,
-                    light: NEAR_COM_ICON,
-                } as ChainIcons,
+                chainIcons: getNearComChainIcons(),
+            };
+        }
+        if (!data.destinationAssetId) {
+            return {
+                name: tokenChainName,
+                chainIcons: tokenData?.chainIcons ?? null,
+            };
+        }
+        if (data.destinationAssetId === tokenChainName) {
+            return {
+                name: tokenChainName,
+                chainIcons: tokenData?.chainIcons ?? null,
             };
         }
         if (shouldFetchDestinationToken && destinationTokenData?.network) {
@@ -67,18 +78,21 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
                 chainIcons: destinationTokenData.chainIcons ?? null,
             };
         }
-        return null;
+        return {
+            name: data.destinationAssetId,
+            chainIcons: null,
+        };
     }, [
         data.destinationAssetId,
         destinationTokenData?.network,
         destinationTokenData?.chainIcons,
+        isNearComDestination,
         shouldFetchDestinationToken,
         tokenChainName,
+        tokenData?.chainIcons,
     ]);
     const shouldShowDestinationNetworkSkeleton =
-        shouldFetchDestinationToken &&
-        !destinationNetworkMeta &&
-        isLoadingDestinationToken;
+        shouldFetchDestinationToken && isLoadingDestinationToken;
 
     const infoItems: InfoItem[] = [
         {
@@ -95,29 +109,27 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
         {
             label: t("amount"),
             value: (
-                <Amount
-                    amount={data.amount}
-                    showNetwork
-                    tokenId={data.tokenId}
-                />
+                <Tooltip content={amountNetworkLabel}>
+                    <div>
+                        <Amount amount={data.amount} tokenId={data.tokenId} />
+                    </div>
+                </Tooltip>
             ),
         },
-    ];
-
-    if (destinationNetworkMeta || shouldShowDestinationNetworkSkeleton) {
-        infoItems.push({
+        {
             label: t("destinationNetwork"),
             value: shouldShowDestinationNetworkSkeleton ? (
                 <Skeleton className="h-5 w-28" />
             ) : (
                 <NetworkIconDisplay
-                    chainIcons={destinationNetworkMeta!.chainIcons}
-                    networkName={destinationNetworkMeta!.name}
-                    networkNameClassName="font-normal capitalize"
+                    chainIcons={destinationNetworkMeta.chainIcons}
+                    networkName={destinationNetworkMeta.name}
+                    networkNameClassName="font-normal"
+                    expandNearComLabel
                 />
             ),
-        });
-    }
+        },
+    ];
 
     if (hasFeeData) {
         infoItems.push({
