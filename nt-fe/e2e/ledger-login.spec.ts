@@ -404,12 +404,6 @@ test("Ledger login flow", async ({ page, context }) => {
     await page.getByText("ledger.com").click();
     await page.waitForTimeout(1500);
 
-    await page
-        .locator("iframe")
-        .contentFrame()
-        .getByRole("button", { name: "🔌 USB Wired Ledger connection" })
-        .click();
-
     // Wait for the iframe to load
     const iframe = page
         .frameLocator('iframe[sandbox*="allow-scripts"]')
