@@ -63,18 +63,8 @@ function extractFTTransferData(
             const hasNearDeposit = actions.some(
                 (a) => a.method_name === "near_deposit",
             );
-            const isDirectNativeNearTransfer =
-                action.method_name === "transfer";
-            const isWrappedNativeNearTransfer =
-                hasNearDeposit &&
-                (action.method_name === "ft_transfer" ||
-                    action.method_name === "ft_transfer_call") &&
-                functionCall.receiver_id === "wrap.near";
             return {
-                tokenId:
-                    isDirectNativeNearTransfer || isWrappedNativeNearTransfer
-                        ? "near"
-                        : functionCall.receiver_id,
+                tokenId: hasNearDeposit ? "near" : functionCall.receiver_id,
                 amount: args.amount || "0",
                 receiver: args.receiver_id || "",
             };
