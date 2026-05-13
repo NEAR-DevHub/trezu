@@ -14,6 +14,7 @@ import { Button } from "@/components/button";
 import Logo from "@/components/icons/logo";
 import { Input } from "@/components/input";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { LoadingScreen } from "@/components/loading-screen";
 import { NearInitializer } from "@/components/near-initializer";
 import { QueryProvider } from "@/components/query-provider";
 import { APP_ACTIVE_TREASURY, LANDING_PAGE } from "@/constants/config";
@@ -485,16 +486,7 @@ export function Content() {
     };
 
     if (isDecisionPending) {
-        return (
-            <div className="flex min-h-screen items-center justify-center bg-muted">
-                <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">
-                        {tCommon("loading")}
-                    </p>
-                </div>
-            </div>
-        );
+        return <LoadingScreen />;
     }
 
     if (showWhitelist) {

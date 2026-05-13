@@ -93,9 +93,16 @@ function IntentsSwapExpanded({ data }: SwapExpandedProps) {
     }
 
     if (data.timeEstimate) {
+        const estimatedSeconds = Number(data.timeEstimate);
         expandableItems.push({
             label: t("estimatedTime"),
-            value: <span>{data.timeEstimate}</span>,
+            value: (
+                <span>
+                    {Number.isFinite(estimatedSeconds)
+                        ? t("seconds", { count: estimatedSeconds })
+                        : data.timeEstimate}
+                </span>
+            ),
             info: t("estimatedTimeTooltip"),
         });
     }
@@ -192,9 +199,16 @@ function NearWrapSwapExpanded({ data }: SwapExpandedProps) {
     }
 
     if (data.timeEstimate) {
+        const estimatedSeconds = Number(data.timeEstimate);
         expandableItems.push({
             label: t("estimatedTime"),
-            value: <span>{data.timeEstimate}</span>,
+            value: (
+                <span>
+                    {Number.isFinite(estimatedSeconds)
+                        ? t("seconds", { count: estimatedSeconds })
+                        : data.timeEstimate}
+                </span>
+            ),
             info: t("estimatedTimeTooltip"),
         });
     }
