@@ -402,8 +402,14 @@ fn push_unique(values: &mut Vec<String>, value: String) {
 
 #[derive(Clone, Default)]
 struct MetadataLookupCandidates {
+    /// Full normalized candidate list derived from the caller input.
+    /// Used by generic checks (e.g. NearBlocks fallback candidate selection).
     all: Vec<String>,
+    /// Defuse-style identifiers (`nep141:*` / `nep245:*`).
+    /// Used for tokens.json and chaindefuser defuse-id matching.
     defuse: Vec<String>,
+    /// Contract/account identifiers without defuse prefixes where applicable.
+    /// Used for counterparties lookups and contract-address matching paths.
     contract: Vec<String>,
 }
 
@@ -584,7 +590,7 @@ pub async fn fetch_tokens_metadata(
 }
 
 /// Fetches token metadata with strict source priority:
-/// tokens.json -> counterparties -> Chaindefuser /api/tokens -> NearBlocks -> near/wrap.near canonical fallback.
+/// counterparties -> near/wrap.near canonical -> tokens.json -> Chaindefuser /api/tokens -> NearBlocks.
 pub async fn fetch_tokens_with_fallback(
     state: &Arc<AppState>,
     token_ids: &[String],
@@ -605,7 +611,7 @@ pub async fn fetch_tokens_with_fallback(
     let mut counterparties_lookup_ids: Vec<String> = Vec::new();
     for token_id in &unique_tokens {
         let candidates = build_metadata_lookup_candidates(token_id);
-        for c in &candidates.contract {
+        for c in &candidates.all {
             push_unique(&mut counterparties_lookup_ids, c.clone());
         }
         lookup_candidates.insert(token_id.clone(), candidates);
@@ -637,21 +643,12 @@ pub async fn fetch_tokens_with_fallback(
             .cloned()
             .unwrap_or_default();
         let contract_candidates = candidates.contract.clone();
+        let all_candidates = candidates.all.clone();
         let mut metadata: Option<TokenMetadata> = None;
 
-        // 1) tokens.json
-        for defuse_id in &candidates.defuse {
-            if let Some(meta) =
-                tokens_json_metadata_for_defuse(defuse_id, &contract_candidates, &token_id)
-            {
-                metadata = Some(meta);
-                break;
-            }
-        }
-
-        // 2) counterparties
+        // 1) counterparties
         if metadata.is_none() {
-            for candidate in &contract_candidates {
+            for candidate in &all_candidates {
                 if let Some(cp_meta) = counterparties_map.get(candidate) {
                     let mut resolved = cp_meta.clone();
                     resolved.token_id = token_id.clone();
@@ -661,7 +658,33 @@ pub async fn fetch_tokens_with_fallback(
             }
         }
 
-        // 3) chaindefuser /api/tokens (only when chain metadata is requested)
+        // 2) canonical near/wrap.near
+        if metadata.is_none() {
+            let stripped = token_id.strip_prefix("intents.near:").unwrap_or(&token_id);
+            if stripped.eq_ignore_ascii_case("near") {
+                let mut meta = TokenMetadata::create_near_metadata(None, None);
+                meta.token_id = token_id.clone();
+                metadata = Some(meta);
+            } else if stripped.eq_ignore_ascii_case("wrap.near") || stripped == "nep141:wrap.near" {
+                let mut meta = TokenMetadata::create_wrap_near_metadata(None, None);
+                meta.token_id = token_id.clone();
+                metadata = Some(meta);
+            }
+        }
+
+        // 3) tokens.json
+        if metadata.is_none() {
+            for defuse_id in &candidates.defuse {
+                if let Some(meta) =
+                    tokens_json_metadata_for_defuse(defuse_id, &contract_candidates, &token_id)
+                {
+                    metadata = Some(meta);
+                    break;
+                }
+            }
+        }
+
+        // 4) chaindefuser /api/tokens (only when chain metadata is requested)
         if include_chain_metadata {
             let mut chaindefuser_match: Option<ChaindefuserToken> = None;
             for defuse_id in &candidates.defuse {
@@ -690,7 +713,7 @@ pub async fn fetch_tokens_with_fallback(
             }
         }
 
-        // 4) NearBlocks (only for eligible near-like ids)
+        // 5) NearBlocks (only for eligible near-like ids)
         if metadata.is_none()
             && let Some(nearblocks_api_key) = state.env_vars.nearblocks_api_key.as_ref()
             && let Some(nearblocks_candidate) = nearblocks_lookup_candidate(&candidates.all)
@@ -704,19 +727,6 @@ pub async fn fetch_tokens_with_fallback(
         {
             near_meta.token_id = token_id.clone();
             metadata = Some(near_meta);
-        }
-
-        // 5) canonical near/wrap.near fallback only
-        if metadata.is_none() {
-            let stripped = token_id.strip_prefix("intents.near:").unwrap_or(&token_id);
-            if stripped.eq_ignore_ascii_case("near") {
-                metadata = Some(TokenMetadata::create_near_metadata(None, None));
-            } else if stripped.eq_ignore_ascii_case("wrap.near") || stripped == "nep141:wrap.near" {
-                metadata = Some(TokenMetadata::create_wrap_near_metadata(None, None));
-            }
-            if let Some(meta) = metadata.as_mut() {
-                meta.token_id = token_id.clone();
-            }
         }
 
         if let Some(meta) = metadata {
