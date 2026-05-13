@@ -1279,9 +1279,6 @@
         "title": "访客",
         "tooltip": "您是此金库的访客。您只能查看数据。"
     },
-    "exportButton": {
-        "confidentialTooltip": "导出功能在机密模式下尚不可用。此功能即将推出!"
-    },
     "sponsoredActions": {
         "titleExhausted": "赞助操作已用完",
         "titleAlmost": "您的团队即将用完赞助操作",

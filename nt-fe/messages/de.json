@@ -1279,9 +1279,6 @@
         "title": "Gast",
         "tooltip": "Sie sind Gast dieser Treasury. Sie können nur die Daten einsehen."
     },
-    "exportButton": {
-        "confidentialTooltip": "Export ist im vertraulichen Modus noch nicht verfügbar. Diese Funktion kommt demnächst!"
-    },
     "sponsoredActions": {
         "titleExhausted": "Gesponserte Aktionen verbraucht",
         "titleAlmost": "Ihrem Team gehen die gesponserten Aktionen fast aus",

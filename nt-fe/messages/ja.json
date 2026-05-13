@@ -1279,9 +1279,6 @@
         "title": "ゲスト",
         "tooltip": "あなたはこのトレジャリーのゲストです。データの閲覧のみ可能です。"
     },
-    "exportButton": {
-        "confidentialTooltip": "機密モードではエクスポートはまだ利用できません。この機能は近日公開予定です!"
-    },
     "sponsoredActions": {
         "titleExhausted": "スポンサー付きアクションを使い切りました",
         "titleAlmost": "チームのスポンサー付きアクションがもうすぐなくなります",

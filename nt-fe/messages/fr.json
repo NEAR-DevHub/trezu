@@ -1279,9 +1279,6 @@
         "title": "Invité",
         "tooltip": "Vous êtes un invité de cette trésorerie. Vous ne pouvez consulter que les données."
     },
-    "exportButton": {
-        "confidentialTooltip": "L'export n'est pas encore disponible en mode confidentiel. Cette fonctionnalité arrive bientôt !"
-    },
     "sponsoredActions": {
         "titleExhausted": "Actions sponsorisées utilisées",
         "titleAlmost": "Votre équipe est presque à court d'actions sponsorisées",

@@ -1279,9 +1279,6 @@
         "title": "Misafir",
         "tooltip": "Bu hazinenin misafirisiniz. Yalnızca verileri görüntüleyebilirsiniz."
     },
-    "exportButton": {
-        "confidentialTooltip": "Dışa aktarma henüz gizli modda kullanılamıyor. Bu özellik yakında geliyor!"
-    },
     "sponsoredActions": {
         "titleExhausted": "Sponsorlu Eylemler Kullanıldı",
         "titleAlmost": "Ekibinizin sponsorlu eylemleri neredeyse bitti",

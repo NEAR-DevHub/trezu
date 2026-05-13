@@ -1279,9 +1279,6 @@
         "title": "Khách",
         "tooltip": "Bạn là khách của ngân quỹ này. Bạn chỉ có thể xem dữ liệu."
     },
-    "exportButton": {
-        "confidentialTooltip": "Xuất chưa khả dụng ở chế độ bảo mật. Tính năng này sắp ra mắt!"
-    },
     "sponsoredActions": {
         "titleExhausted": "Đã sử dụng hết Hành động được tài trợ",
         "titleAlmost": "Đội của bạn sắp hết các hành động được tài trợ",

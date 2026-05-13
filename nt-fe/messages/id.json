@@ -1279,9 +1279,6 @@
         "title": "Tamu",
         "tooltip": "Anda adalah tamu treasury ini. Anda hanya dapat melihat data."
     },
-    "exportButton": {
-        "confidentialTooltip": "Ekspor belum tersedia dalam mode rahasia. Fitur ini akan segera hadir!"
-    },
     "sponsoredActions": {
         "titleExhausted": "Tindakan Tersponsor Terpakai",
         "titleAlmost": "Tim Anda hampir kehabisan tindakan tersponsor",
