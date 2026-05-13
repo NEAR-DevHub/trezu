@@ -31,7 +31,12 @@ import Big from "@/lib/big";
 import { fetchDepositAddress } from "@/lib/bridge-api";
 import { getNetworkDisplayCaseClass } from "@/lib/intents-network";
 import { buildSectionedOptions } from "@/lib/section-rules";
-import { cn, formatBalance, formatSmartAmount } from "@/lib/utils";
+import {
+    cn,
+    formatBalance,
+    formatSmartAmount,
+    normalizeNearAssetId,
+} from "@/lib/utils";
 import { useThemeStore } from "@/stores/theme-store";
 import { SelectModal } from "./select-modal";
 
@@ -340,21 +345,18 @@ export function DepositModal({
 
             if (!ownedAsset) return balances;
 
-            const normalizeContractId = (value?: string) =>
-                (value || "").replace(/^nep141:/, "");
-
             // Match each bridge network to treasury-held balances in priority order:
             // 1) exact contract-id match (after normalizing `nep141:` prefix),
             // 2) for NEAR token on NEAR network, aggregate all NEAR residencies,
             // 3) fallback for native chain entries without contractId by chain name.
             // Then sum matched balances into a single display amount per bridge network.
             for (const bridgeNetwork of bridgeNetworks) {
-                const normalizedBridgeId = normalizeContractId(
+                const normalizedBridgeId = normalizeNearAssetId(
                     bridgeNetwork.id,
                 );
                 const byContractId = ownedAsset.networks.filter(
                     (network) =>
-                        normalizeContractId(network.contractId) ===
+                        normalizeNearAssetId(network.contractId) ===
                         normalizedBridgeId,
                 );
 

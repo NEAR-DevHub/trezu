@@ -588,6 +588,19 @@ export function msToNanos(ms: number): string {
 }
 
 /**
+ * Normalize asset ids for NEAR FT comparisons.
+ *
+ * Some code paths use prefixed ids (e.g. "nep141:token.near") while others
+ * use bare contract ids ("token.near"). This helper makes those comparable.
+ */
+export function normalizeNearAssetId(value?: string | null): string {
+    const normalized = (value || "").trim().toLowerCase();
+    return normalized.startsWith("nep141:")
+        ? normalized.slice("nep141:".length)
+        : normalized;
+}
+
+/**
  * Returns a human-readable NEAR token type label based on the tokenId.
  * - "" or "near" → "NEAR (Native Token)"
  * - starts with "nep141:" or "nep245:" → "NEAR (near.com)" or "near.com"

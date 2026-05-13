@@ -13,6 +13,7 @@ import { useTreasury } from "@/hooks/use-treasury";
 import { NEAR_CHAIN_ICONS } from "@/constants/token";
 import type { ChainIcons } from "@/lib/api";
 import { NEAR_NETWORK_ID } from "@/constants/network-ids";
+import { normalizeNearAssetId } from "@/lib/utils";
 
 export interface MergedNetwork {
     id: string;
@@ -139,7 +140,7 @@ const toBridgeVariants = (
         bridgeNetwork.id.startsWith("nep141:")
     ) {
         variants.push({
-            id: bridgeNetwork.id.replace(/^nep141:/, ""),
+            id: normalizeNearAssetId(bridgeNetwork.id),
             name: bridgeNetwork.name,
             symbol: bridgeNetwork.symbol,
             chainIcons: bridgeNetwork.chainIcons,
@@ -199,7 +200,7 @@ const mergeOwnedTokenWithBridge = (
     );
 
     for (const bn of bridgeAsset.networks) {
-        const bridgeFtId = bn.id.replace(/^nep141:/, "");
+        const bridgeFtId = normalizeNearAssetId(bn.id);
         const includeFtDuplicate =
             !isConfidential &&
             bn.id.startsWith("nep141:") &&

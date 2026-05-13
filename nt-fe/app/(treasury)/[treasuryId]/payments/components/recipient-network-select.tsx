@@ -23,6 +23,7 @@ import {
     isValidNearAddressFormat,
 } from "@/lib/near-validation";
 import { buildSectionedOptions, type SectionRule } from "@/lib/section-rules";
+import { findBridgeAssetForTokenMatch } from "@/lib/bridge-asset-resolver";
 import { cn } from "@/lib/utils";
 import { useThemeStore } from "@/stores/theme-store";
 
@@ -60,17 +61,10 @@ export type RecipientNetworkRuleOption = RecipientNetworkOption & {
 function isAddressCompatibleWithNetwork(
     address: string,
     networkName: string,
-    optionId: string,
 ): boolean {
     if (!address) return true;
     const blockchain = getBlockchainType(networkName);
     if (blockchain === NEAR_NETWORK_ID) {
-        // ETH-format addresses (0x + 40 hex chars) are valid NEAR ETH-implicit
-        // accounts, but only the near.com (Intents) route can handle them.
-        // The raw "near" network entry stays visible but moves to incompatible.
-        if (isEthImplicitNearAddress(address)) {
-            return optionId === NEAR_COM_NETWORK_ID;
-        }
         // NEAR full check is async; sync format check is enough for sectioning.
         return isValidNearAddressFormat(address);
     }
@@ -152,15 +146,15 @@ export function RecipientNetworkSelect({
         [isConfidential, t, tAddressBookTable],
     );
 
+    const bridgeAssetMatch = useMemo(
+        () => findBridgeAssetForTokenMatch(bridgeAssets, token),
+        [bridgeAssets, token],
+    );
+
     const tokenNetworkOptions = useMemo((): RecipientNetworkOption[] => {
-        if (!token) return [];
+        if (!bridgeAssetMatch) return [];
 
-        const bridgeAsset = bridgeAssets.find(
-            (asset) => asset.id.toLowerCase() === token.symbol.toLowerCase(),
-        );
-        if (!bridgeAsset) return [];
-
-        return bridgeAsset.networks.map((network) => {
+        return bridgeAssetMatch.networks.map((network) => {
             const iconUrl = network.chainIcons
                 ? theme === "dark"
                     ? network.chainIcons.dark
@@ -178,7 +172,7 @@ export function RecipientNetworkSelect({
                 networkName: network.name,
             };
         });
-    }, [bridgeAssets, isConfidential, t, token, theme]);
+    }, [bridgeAssetMatch, isConfidential, t, theme]);
 
     const availableOptions = useMemo(
         () => [nearComOption, ...tokenNetworkOptions],
@@ -197,7 +191,6 @@ export function RecipientNetworkSelect({
             isCompatible: isAddressCompatibleWithNetwork(
                 recipient,
                 option.networkName,
-                option.id,
             ),
         }));
     }, [availableOptions, recipient]);

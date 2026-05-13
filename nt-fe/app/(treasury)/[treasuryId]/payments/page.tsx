@@ -67,6 +67,7 @@ import {
     formatCurrency,
     formatTokenDisplayAmount,
 } from "@/lib/utils";
+import { findBridgeAssetForToken } from "@/lib/bridge-asset-resolver";
 import {
     computeQuoteNetworkFee,
     isIntentsCrossChainToken,
@@ -792,10 +793,7 @@ export default function PaymentsPage() {
             return null;
         }
 
-        const bridgeAsset = bridgeAssets.find(
-            (asset) =>
-                asset.id.toLowerCase() === watchedToken.symbol.toLowerCase(),
-        );
+        const bridgeAsset = findBridgeAssetForToken(bridgeAssets, watchedToken);
         if (!bridgeAsset) return null;
 
         const matches = bridgeAsset.networks.filter((network) =>
