@@ -16,7 +16,9 @@ use crate::{
     constants::{
         NEAR_ICON, WRAP_NEAR_ICON,
         intents_chains::{ChainIcons, get_chain_metadata_by_name},
-        intents_tokens::{find_token_by_defuse_asset_id, find_token_by_defuse_asset_id_and_address},
+        intents_tokens::{
+            find_token_by_defuse_asset_id, find_token_by_defuse_asset_id_and_address,
+        },
     },
     utils::cache::{Cache, CacheKey, CacheTier},
 };
@@ -477,10 +479,12 @@ fn tokens_json_metadata_for_defuse(
         }
         if matched.is_none() && token.deployments.len() == 1 {
             match &token.deployments[0] {
-                crate::constants::intents_tokens::TokenDeployment::Fungible { chain_name, .. }
-                | crate::constants::intents_tokens::TokenDeployment::Native { chain_name, .. } => {
-                    matched = Some(chain_name.clone())
+                crate::constants::intents_tokens::TokenDeployment::Fungible {
+                    chain_name, ..
                 }
+                | crate::constants::intents_tokens::TokenDeployment::Native {
+                    chain_name, ..
+                } => matched = Some(chain_name.clone()),
             }
         }
         matched
@@ -1028,7 +1032,8 @@ mod tests {
     #[test]
     fn tokens_json_duplicate_defuse_id_resolves_by_address() {
         let defuse_id = "nep141:aaaaaa20d9e0e2461697782ef11675f668207961.factory.bridge.near";
-        let near_contract = vec!["aaaaaa20d9e0e2461697782ef11675f668207961.factory.bridge.near".to_string()];
+        let near_contract =
+            vec!["aaaaaa20d9e0e2461697782ef11675f668207961.factory.bridge.near".to_string()];
         let resolved = tokens_json_metadata_for_defuse(defuse_id, &near_contract, defuse_id)
             .expect("expected token resolution from tokens.json");
         assert_eq!(resolved.network.as_deref(), Some("near"));

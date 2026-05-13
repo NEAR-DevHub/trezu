@@ -15,7 +15,10 @@ const normalizeKey = (value?: string | null): string | null => {
     return normalized.length > 0 ? normalized : null;
 };
 
-function networkMatchesAddress(networkId: string, tokenAddress: string): boolean {
+function networkMatchesAddress(
+    networkId: string,
+    tokenAddress: string,
+): boolean {
     return (
         normalizeNearAssetId(networkId) === normalizeNearAssetId(tokenAddress)
     );
