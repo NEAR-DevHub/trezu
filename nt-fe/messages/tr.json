@@ -36,7 +36,9 @@
         "viewAll": "Tümünü Görüntüle",
         "viewDetails": "Ayrıntıları görüntüle",
         "noResults": "Sonuç bulunamadı",
-        "add": "Ekle"
+        "add": "Ekle",
+        "confidentialDataTooltip": "Finansal faaliyetleriniz gizli ve güvenlidir. Bu bilgilere yalnızca siz ve ekibiniz erişebilir.",
+        "confidentialAddressTooltip": "Varlıklar gizli bir adreste alınacaktır."
     },
     "languageSwitcher": {
         "label": "Dil",

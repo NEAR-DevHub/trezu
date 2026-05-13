@@ -36,7 +36,9 @@
         "viewAll": "הצג הכל",
         "viewDetails": "הצג פרטים",
         "noResults": "לא נמצאו תוצאות",
-        "add": "הוספה"
+        "add": "הוספה",
+        "confidentialDataTooltip": "הפעילות הפיננסית שלך פרטית ומאובטחת. רק את/ה והצוות שלך יכולים לגשת למידע הזה.",
+        "confidentialAddressTooltip": "הנכסים יתקבלו בכתובת חסויה."
     },
     "languageSwitcher": {
         "label": "שפה",

@@ -36,7 +36,9 @@
         "viewAll": "View All",
         "viewDetails": "View details",
         "noResults": "No results found",
-        "add": "Add"
+        "add": "Add",
+        "confidentialDataTooltip": "Your financial activity is private and secure. Only you and your team can access this information.",
+        "confidentialAddressTooltip": "Assets will be received on a confidential address."
     },
     "languageSwitcher": {
         "label": "Language",

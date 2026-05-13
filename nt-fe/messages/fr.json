@@ -36,7 +36,9 @@
         "viewAll": "Tout voir",
         "viewDetails": "Voir les détails",
         "noResults": "Aucun résultat trouvé",
-        "add": "Ajouter"
+        "add": "Ajouter",
+        "confidentialDataTooltip": "Votre activité financière est privée et sécurisée. Seuls vous et votre équipe pouvez accéder à ces informations.",
+        "confidentialAddressTooltip": "Les actifs seront reçus sur une adresse confidentielle."
     },
     "languageSwitcher": {
         "label": "Langue",

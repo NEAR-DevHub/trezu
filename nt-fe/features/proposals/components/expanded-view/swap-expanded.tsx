@@ -54,7 +54,7 @@ function IntentsSwapExpanded({ data }: SwapExpandedProps) {
             value: (
                 <Amount
                     amount={data.amountIn}
-                    showNetwork
+                    showNetworkTooltip
                     tokenId={finalTokenInId}
                 />
             ),
@@ -64,7 +64,7 @@ function IntentsSwapExpanded({ data }: SwapExpandedProps) {
             value: (
                 <Amount
                     amountWithDecimals={data.amountOut}
-                    showNetwork
+                    showNetworkTooltip
                     tokenId={finalTokenOutId}
                 />
             ),
@@ -105,7 +105,7 @@ function IntentsSwapExpanded({ data }: SwapExpandedProps) {
         value: (
             <Amount
                 amountWithDecimals={minimumReceived.toString()}
-                showNetwork
+                showNetworkTooltip
                 tokenId={finalTokenOutId}
             />
         ),
@@ -153,7 +153,7 @@ function NearWrapSwapExpanded({ data }: SwapExpandedProps) {
             value: (
                 <Amount
                     amount={data.amountIn}
-                    showNetwork
+                    showNetworkTooltip
                     tokenId={data.tokenIn}
                 />
             ),
@@ -163,7 +163,7 @@ function NearWrapSwapExpanded({ data }: SwapExpandedProps) {
             value: (
                 <Amount
                     amount={data.amountOut}
-                    showNetwork
+                    showNetworkTooltip
                     tokenId={data.tokenOut}
                 />
             ),
@@ -204,7 +204,7 @@ function NearWrapSwapExpanded({ data }: SwapExpandedProps) {
         value: (
             <Amount
                 amount={data.amountOut}
-                showNetwork
+                showNetworkTooltip
                 tokenId={data.tokenOut}
             />
         ),

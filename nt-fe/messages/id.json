@@ -36,7 +36,9 @@
         "viewAll": "Lihat Semua",
         "viewDetails": "Lihat detail",
         "noResults": "Tidak ada hasil ditemukan",
-        "add": "Tambah"
+        "add": "Tambah",
+        "confidentialDataTooltip": "Aktivitas keuangan Anda bersifat privat dan aman. Hanya Anda dan tim Anda yang dapat mengakses informasi ini.",
+        "confidentialAddressTooltip": "Aset akan diterima di alamat rahasia."
     },
     "languageSwitcher": {
         "label": "Bahasa",

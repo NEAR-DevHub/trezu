@@ -60,7 +60,13 @@ function formatFieldValue(
         field === "proposal_period" || field === "bounty_forgiveness_period";
 
     if (isAmountField) {
-        return <Amount amount={value} showNetwork tokenId={NEAR_NETWORK_ID} />;
+        return (
+            <Amount
+                amount={value}
+                showNetworkTooltip
+                tokenId={NEAR_NETWORK_ID}
+            />
+        );
     }
     if (isDurationField) {
         return <span>{formatNanosecondDuration(value)}</span>;

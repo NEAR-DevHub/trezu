@@ -42,6 +42,7 @@ export function IntentsSwapCell({ data, textOnly = false }: SwapCellProps) {
                 amount={data.amountIn}
                 tokenId={tokenInId}
                 showUSDValue={false}
+                showNetworkTooltip
                 iconSize="sm"
                 textOnly={textOnly}
             />
@@ -50,6 +51,7 @@ export function IntentsSwapCell({ data, textOnly = false }: SwapCellProps) {
                 amountWithDecimals={data.amountOut}
                 tokenId={tokenOutId}
                 showUSDValue={false}
+                showNetworkTooltip
                 iconSize="sm"
                 textOnly={textOnly}
             />
@@ -64,6 +66,7 @@ export function NearWrapSwapCell({ data, textOnly = false }: SwapCellProps) {
                 amount={data.amountIn}
                 tokenId={data.tokenIn}
                 showUSDValue={false}
+                showNetworkTooltip
                 iconSize="sm"
                 textOnly={textOnly}
             />
@@ -72,6 +75,7 @@ export function NearWrapSwapCell({ data, textOnly = false }: SwapCellProps) {
                 amount={data.amountOut}
                 tokenId={data.tokenOut}
                 showUSDValue={false}
+                showNetworkTooltip
                 iconSize="sm"
                 textOnly={textOnly}
             />

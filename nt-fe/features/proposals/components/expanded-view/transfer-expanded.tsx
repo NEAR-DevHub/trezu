@@ -8,18 +8,14 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { useToken } from "@/hooks/use-treasury-queries";
 import { Address } from "@/components/address";
-import {
-    getNetworkDisplayName,
-    NetworkIconDisplay,
-} from "@/components/token-display";
+import { NetworkIconDisplay } from "@/components/token-display";
 import { NEAR_NETWORK_ID, NEAR_COM_NETWORK_ID } from "@/constants/network-ids";
 import {
     getNearComChainIcons,
     isNearComPaymentRoute,
 } from "@/lib/intents-network";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatTokenDisplayAmount, getNearTokenTypeLabel } from "@/lib/utils";
-import { Tooltip } from "@/components/tooltip";
+import { formatTokenDisplayAmount } from "@/lib/utils";
 
 interface TransferExpandedProps {
     data: PaymentRequestData;
@@ -49,9 +45,6 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
               : undefined) ||
           tokenChainName;
     const hasFeeData = !!data.networkFee;
-    const amountNetworkLabel =
-        getNearTokenTypeLabel(data.tokenId, tokenChainName) ??
-        getNetworkDisplayName(tokenChainName);
 
     const destinationNetworkMeta = useMemo(() => {
         if (isNearComDestination) {
@@ -109,11 +102,11 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
         {
             label: t("amount"),
             value: (
-                <Tooltip content={amountNetworkLabel}>
-                    <div>
-                        <Amount amount={data.amount} tokenId={data.tokenId} />
-                    </div>
-                </Tooltip>
+                <Amount
+                    amount={data.amount}
+                    tokenId={data.tokenId}
+                    showNetworkTooltip
+                />
             ),
         },
         {

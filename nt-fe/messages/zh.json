@@ -36,7 +36,9 @@
         "viewAll": "查看全部",
         "viewDetails": "查看详情",
         "noResults": "未找到结果",
-        "add": "添加"
+        "add": "添加",
+        "confidentialDataTooltip": "您的财务活动是私密且安全的。只有您和您的团队可以访问这些信息。",
+        "confidentialAddressTooltip": "资产将接收到一个机密地址。"
     },
     "languageSwitcher": {
         "label": "语言",

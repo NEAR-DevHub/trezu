@@ -36,7 +36,9 @@
         "viewAll": "すべて表示",
         "viewDetails": "詳細を表示",
         "noResults": "結果が見つかりませんでした",
-        "add": "追加"
+        "add": "追加",
+        "confidentialDataTooltip": "あなたの財務活動はプライベートで安全です。この情報にアクセスできるのは、あなたとあなたのチームだけです。",
+        "confidentialAddressTooltip": "資産は機密アドレスで受け取られます。"
     },
     "languageSwitcher": {
         "label": "言語",

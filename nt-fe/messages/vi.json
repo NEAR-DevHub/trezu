@@ -36,7 +36,9 @@
         "viewAll": "Xem tất cả",
         "viewDetails": "Xem chi tiết",
         "noResults": "Không tìm thấy kết quả",
-        "add": "Thêm"
+        "add": "Thêm",
+        "confidentialDataTooltip": "Hoạt động tài chính của bạn là riêng tư và an toàn. Chỉ bạn và đội ngũ của bạn mới có thể truy cập thông tin này.",
+        "confidentialAddressTooltip": "Tài sản sẽ được nhận tại một địa chỉ bảo mật."
     },
     "languageSwitcher": {
         "label": "Ngôn ngữ",

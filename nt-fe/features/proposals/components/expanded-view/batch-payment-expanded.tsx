@@ -86,7 +86,7 @@ function PaymentDisplay({
             value: (
                 <Amount
                     amount={payment.amount.toString()}
-                    showNetwork
+                    showNetworkTooltip
                     tokenId={tokenId}
                 />
             ),
@@ -135,7 +135,7 @@ function PaymentDisplay({
                     <Amount
                         amount={payment.amount.toString()}
                         textOnly
-                        showNetwork
+                        showNetworkTooltip
                         tokenId={tokenId}
                         showUSDValue={false}
                     />
@@ -279,7 +279,7 @@ export function BatchPaymentRequestExpanded({
             label: t("totalAmount"),
             value: (
                 <Amount
-                    showNetwork
+                    showNetworkTooltip
                     amount={data.totalAmount}
                     tokenId={tokenId}
                 />
