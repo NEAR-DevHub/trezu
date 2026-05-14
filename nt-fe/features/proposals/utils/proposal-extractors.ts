@@ -849,10 +849,8 @@ export function extractConfidentialRequestData(
                 typeof quoteRequest.recipientType === "string"
                     ? quoteRequest.recipientType
                     : undefined;
-            const isValidNearRecipient = isValidNearAddressFormat(recipient);
             const isNearComIntentsRoute =
-                recipientType === "CONFIDENTIAL_INTENTS" &&
-                isValidNearRecipient;
+                recipientType === "CONFIDENTIAL_INTENTS";
             const destinationAssetId = isNearComIntentsRoute
                 ? NEAR_COM_NETWORK_ID
                 : destinationAsset;
