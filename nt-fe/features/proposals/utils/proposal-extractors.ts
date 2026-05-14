@@ -35,6 +35,24 @@ import {
 } from "@/constants/network-ids";
 import { computeQuoteNetworkFee } from "@/lib/intents-fee";
 
+function normalizeTimeEstimateSeconds(value?: string): string | undefined {
+    if (!value) return undefined;
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+
+    const legacyMatch = trimmed.match(/^(\d+(?:\.\d+)?)\s*seconds?$/i);
+    if (legacyMatch) {
+        return legacyMatch[1];
+    }
+
+    const parsed = Number(trimmed);
+    if (Number.isFinite(parsed)) {
+        return parsed.toString();
+    }
+
+    return undefined;
+}
+
 function extractFTTransferData(
     functionCall: FunctionCallKind["FunctionCall"],
     actions: FunctionCallAction[],
@@ -465,10 +483,11 @@ export function extractExchangeRequestData(
         "signature",
         proposal.description,
     );
-    const timeEstimate = decodeProposalDescription(
+    const timeEstimateRaw = decodeProposalDescription(
         "timeEstimate",
         proposal.description,
     );
+    const timeEstimate = normalizeTimeEstimateSeconds(timeEstimateRaw);
 
     // Determine tokenIn and depositAddress based on proposal structure:
     // 1. Native NEAR: ft_transfer from wrap.near WITH near_deposit action, tokenIn = near
@@ -524,7 +543,7 @@ export function extractExchangeRequestData(
         sourceNetwork: NEAR_NETWORK_ID,
         quoteSignature,
         depositAddress,
-        timeEstimate: timeEstimate || undefined,
+        timeEstimate,
         slippage: slippage || undefined,
         quoteDeadline: quoteDeadline || undefined,
     };

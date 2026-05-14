@@ -1,8 +1,9 @@
 import { useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
 import { Amount } from "../amount";
 import { InfoDisplay, InfoItem } from "@/components/info-display";
 import { SwapRequestData } from "../../types/index";
-import { formatBalance } from "@/lib/utils";
+import { formatDurationSeconds } from "@/lib/utils";
 import { useMemo } from "react";
 import Big from "@/lib/big";
 import { Address } from "@/components/address";
@@ -17,6 +18,7 @@ interface SwapExpandedProps {
 
 function IntentsSwapExpanded({ data }: SwapExpandedProps) {
     const t = useTranslations("proposals.expanded");
+    const locale = useLocale();
     // For new proposals: use token addresses from description
     // For old proposals: use search hook with symbols as fallback
     const hasAddresses = !!(data.tokenInAddress && data.tokenOutAddress);
@@ -93,9 +95,14 @@ function IntentsSwapExpanded({ data }: SwapExpandedProps) {
     }
 
     if (data.timeEstimate) {
+        const estimatedSeconds = Number(data.timeEstimate);
+        const formattedDuration = formatDurationSeconds(
+            estimatedSeconds,
+            locale,
+        );
         expandableItems.push({
             label: t("estimatedTime"),
-            value: <span>{data.timeEstimate}</span>,
+            value: <span>{formattedDuration}</span>,
             info: t("estimatedTimeTooltip"),
         });
     }
@@ -147,6 +154,7 @@ function IntentsSwapExpanded({ data }: SwapExpandedProps) {
 
 function NearWrapSwapExpanded({ data }: SwapExpandedProps) {
     const t = useTranslations("proposals.expanded");
+    const locale = useLocale();
     const infoItems: InfoItem[] = [
         {
             label: t("send"),
@@ -192,9 +200,14 @@ function NearWrapSwapExpanded({ data }: SwapExpandedProps) {
     }
 
     if (data.timeEstimate) {
+        const estimatedSeconds = Number(data.timeEstimate);
+        const formattedDuration = formatDurationSeconds(
+            estimatedSeconds,
+            locale,
+        );
         expandableItems.push({
             label: t("estimatedTime"),
-            value: <span>{data.timeEstimate}</span>,
+            value: <span>{formattedDuration}</span>,
             info: t("estimatedTimeTooltip"),
         });
     }

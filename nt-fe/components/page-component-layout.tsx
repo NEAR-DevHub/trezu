@@ -94,35 +94,24 @@ export function PageComponentLayout({
                     </div>
                 </div>
 
-                {!hideLogin && (
-                    <div className="flex items-center gap-3">
-                        {isStaging && (
-                            <Pill
-                                title="Staging"
-                                icon={
-                                    <span className="size-1.5 rounded-full bg-general-orange-foreground" />
-                                }
-                                className="bg-general-orange-background-faded text-general-orange-foreground"
-                            />
+                <div className="flex items-center gap-3">
+                    <LanguageSwitcher />
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={toggleTheme}
+                        aria-label={tHeader("toggleTheme")}
+                        className="h-9 w-9 hover:bg-muted text-muted-foreground hover:text-foreground"
+                    >
+                        {theme === "dark" ? (
+                            <Sun className="h-5 w-5" />
+                        ) : (
+                            <Moon className="h-5 w-5" />
                         )}
-                        <LanguageSwitcher />
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={toggleTheme}
-                            aria-label={tHeader("toggleTheme")}
-                            className="h-9 w-9 hover:bg-muted text-muted-foreground hover:text-foreground"
-                        >
-                            {theme === "dark" ? (
-                                <Sun className="h-5 w-5" />
-                            ) : (
-                                <Moon className="h-5 w-5" />
-                            )}
-                        </Button>
+                    </Button>
 
-                        <SignIn />
-                    </div>
-                )}
+                    {!hideLogin && <SignIn />}
+                </div>
             </header>
 
             <main className="flex-1 overflow-y-auto bg-page-bg p-4">

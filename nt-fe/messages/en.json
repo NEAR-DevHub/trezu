@@ -1123,6 +1123,10 @@
         "noDeploymentFeeDescription": "To support new projects, TREZU covers all one-time deployment and network storage fees.",
         "createButton": "Create Treasury",
         "connectWalletCreate": "Connect Wallet To Create Treasury",
+        "walletNotSupportedTitle": "Wallet not supported yet",
+        "walletNotSupportedDescription": "{wallet} is not supported yet, but we are working on it. You can continue using a supported NEAR wallet or Ledger.",
+        "connectNear": "Connect NEAR",
+        "connectLedger": "Connect Ledger",
         "unexpectedError": "An unexpected error occurred",
         "creationFailed": "Failed to create treasury. Please try again.",
         "stepTitles": {
@@ -1278,9 +1282,6 @@
     "guestBadge": {
         "title": "Guest",
         "tooltip": "You are a guest of this treasury. You can only view the data."
-    },
-    "exportButton": {
-        "confidentialTooltip": "Export is not available in confidential mode yet. This feature is coming soon!"
     },
     "sponsoredActions": {
         "titleExhausted": "Sponsored Actions Used",

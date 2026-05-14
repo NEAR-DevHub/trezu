@@ -644,3 +644,31 @@ export function formatNanosecondDuration(nanoseconds: string): string {
         return `${seconds} second${seconds !== 1 ? "s" : ""}`;
     }
 }
+
+/**
+ * Format seconds using Intl.DurationFormat.
+ * Returns null when input is invalid.
+ */
+export function formatDurationSeconds(
+    value: number | string | null | undefined,
+    locale: string,
+): string | null {
+    const seconds = Number(value);
+    if (!Number.isFinite(seconds)) return null;
+
+    const totalSeconds = Math.max(0, Math.floor(seconds));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const remainingSeconds = totalSeconds % 60;
+
+    const formatter = new (Intl as any).DurationFormat(locale, {
+        style: "long",
+    });
+    const duration: Record<string, number> = {};
+    if (hours > 0) duration.hours = hours;
+    if (minutes > 0) duration.minutes = minutes;
+    if (remainingSeconds > 0 || Object.keys(duration).length === 0) {
+        duration.seconds = remainingSeconds;
+    }
+    return formatter.format(duration);
+}
