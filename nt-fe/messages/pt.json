@@ -1123,6 +1123,10 @@
         "noDeploymentFeeDescription": "Para apoiar novos projetos, a TREZU cobre todas as taxas únicas de implantação e armazenamento de rede.",
         "createButton": "Criar tesouraria",
         "connectWalletCreate": "Conecte a carteira para criar a tesouraria",
+        "walletNotSupportedTitle": "Carteira ainda não suportada",
+        "walletNotSupportedDescription": "{wallet} ainda não é suportada, mas estamos trabalhando nisso. Você pode continuar usando uma carteira NEAR suportada ou Ledger.",
+        "connectNear": "Conectar NEAR",
+        "connectLedger": "Conectar Ledger",
         "unexpectedError": "Ocorreu um erro inesperado",
         "creationFailed": "Falha ao criar tesouraria. Por favor, tente novamente.",
         "stepTitles": {

@@ -1123,6 +1123,10 @@
         "noDeploymentFeeDescription": "Untuk mendukung proyek baru, TREZU menanggung semua biaya deployment dan penyimpanan jaringan satu kali.",
         "createButton": "Buat Treasury",
         "connectWalletCreate": "Hubungkan Dompet Untuk Membuat Treasury",
+        "walletNotSupportedTitle": "Dompet belum didukung",
+        "walletNotSupportedDescription": "{wallet} belum didukung, tetapi kami sedang mengerjakannya. Anda dapat melanjutkan dengan dompet NEAR yang didukung atau Ledger.",
+        "connectNear": "Hubungkan NEAR",
+        "connectLedger": "Hubungkan Ledger",
         "unexpectedError": "Terjadi kesalahan tak terduga",
         "creationFailed": "Gagal membuat treasury. Silakan coba lagi.",
         "stepTitles": {

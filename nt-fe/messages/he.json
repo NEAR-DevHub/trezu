@@ -1123,6 +1123,10 @@
         "noDeploymentFeeDescription": "כדי לתמוך בפרויקטים חדשים, TREZU מכסה את כל עמלות הפריסה החד-פעמיות ואחסון הרשת.",
         "createButton": "צור אוצר",
         "connectWalletCreate": "התחבר לארנק כדי ליצור אוצר",
+        "walletNotSupportedTitle": "הארנק עדיין לא נתמך",
+        "walletNotSupportedDescription": "{wallet} עדיין לא נתמך, אבל אנחנו עובדים על זה. אפשר להמשיך עם ארנק NEAR נתמך או Ledger.",
+        "connectNear": "חיבור ל-NEAR",
+        "connectLedger": "חיבור ל-Ledger",
         "unexpectedError": "אירעה שגיאה בלתי צפויה",
         "creationFailed": "יצירת האוצר נכשלה. אנא נסה שוב.",
         "stepTitles": {

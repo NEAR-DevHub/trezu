@@ -1123,6 +1123,10 @@
         "noDeploymentFeeDescription": "Para apoyar nuevos proyectos, TREZU cubre todas las comisiones únicas de despliegue y almacenamiento de red.",
         "createButton": "Crear tesorería",
         "connectWalletCreate": "Conecta la cartera para crear tesorería",
+        "walletNotSupportedTitle": "La wallet aún no es compatible",
+        "walletNotSupportedDescription": "{wallet} aún no es compatible, pero estamos trabajando en ello. Puedes continuar con una wallet NEAR compatible o Ledger.",
+        "connectNear": "Conectar NEAR",
+        "connectLedger": "Conectar Ledger",
         "unexpectedError": "Se produjo un error inesperado",
         "creationFailed": "Error al crear la tesorería. Inténtalo de nuevo.",
         "stepTitles": {
