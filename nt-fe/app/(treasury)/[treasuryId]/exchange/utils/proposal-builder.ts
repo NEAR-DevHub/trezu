@@ -73,7 +73,7 @@ export function buildProposalDescription(
         slippage: slippageTolerance.toString(),
         quoteDeadline: deadline,
         timeEstimate: proposalData.quote.timeEstimate
-            ? `${proposalData.quote.timeEstimate} seconds`
+            ? proposalData.quote.timeEstimate.toString()
             : undefined,
         depositAddress: proposalData.quote.depositAddress,
         signature: proposalData.signature,
