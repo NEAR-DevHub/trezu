@@ -34,6 +34,7 @@ import {
     WRAP_NEAR_TOKEN_ID,
 } from "@/constants/network-ids";
 import { computeQuoteNetworkFee } from "@/lib/intents-fee";
+import { isValidNearAddressFormat } from "@/lib/near-validation";
 
 function normalizeTimeEstimateSeconds(value?: string): string | undefined {
     if (!value) return undefined;
@@ -843,27 +844,25 @@ export function extractConfidentialRequestData(
             title = "Confidential Exchange";
         } else {
             const destinationAsset = quoteRequest.destinationAsset;
+            const recipient = quoteRequest.recipient ?? "";
             const recipientType =
                 typeof quoteRequest.recipientType === "string"
                     ? quoteRequest.recipientType
                     : undefined;
-            const destinationAssetId =
-                destinationAsset &&
-                destinationAsset !== quoteRequest.originAsset
-                    ? destinationAsset
-                    : recipientType === "CONFIDENTIAL_INTENTS" ||
-                        recipientType === "INTENTS"
-                      ? NEAR_COM_NETWORK_ID
-                      : recipientType === "DESTINATION_CHAIN"
-                        ? NEAR_NETWORK_ID
-                        : undefined;
+            const isValidNearRecipient = isValidNearAddressFormat(recipient);
+            const isNearComIntentsRoute =
+                recipientType === "CONFIDENTIAL_INTENTS" &&
+                isValidNearRecipient;
+            const destinationAssetId = isNearComIntentsRoute
+                ? NEAR_COM_NETWORK_ID
+                : destinationAsset;
             const networkFee = computeQuoteNetworkFee(quote);
             mapped = {
                 type: "payment",
                 data: {
                     tokenId: quoteRequest.originAsset,
                     amount: quote.amountIn,
-                    receiver: quoteRequest.recipient ?? "",
+                    receiver: recipient,
                     notes: meta?.notes ?? undefined,
                     depositAddress: quote.depositAddress,
                     quoteSignature: quoteResponse.signature,

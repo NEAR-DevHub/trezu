@@ -95,6 +95,15 @@ export function PageComponentLayout({
                 </div>
 
                 <div className="flex items-center gap-3">
+                    {isStaging && (
+                        <Pill
+                            title="Staging"
+                            icon={
+                                <span className="size-1.5 rounded-full bg-general-orange-foreground" />
+                            }
+                            className="bg-general-orange-background-faded text-general-orange-foreground"
+                        />
+                    )}
                     <LanguageSwitcher />
                     <Button
                         variant="ghost"
