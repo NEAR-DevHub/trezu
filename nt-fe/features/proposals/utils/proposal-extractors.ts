@@ -34,7 +34,6 @@ import {
     WRAP_NEAR_TOKEN_ID,
 } from "@/constants/network-ids";
 import { computeQuoteNetworkFee } from "@/lib/intents-fee";
-import { isValidNearAddressFormat } from "@/lib/near-validation";
 
 function normalizeTimeEstimateSeconds(value?: string): string | undefined {
     if (!value) return undefined;
