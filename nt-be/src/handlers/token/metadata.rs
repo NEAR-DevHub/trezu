@@ -85,7 +85,7 @@ impl TokenMetadata {
     pub fn create_wrap_near_metadata(price: Option<f64>, price_updated_at: Option<String>) -> Self {
         Self {
             token_id: "wrap.near".to_string(),
-            name: "Wrapped NEAR fungible token".to_string(),
+            name: "NEAR".to_string(),
             symbol: "NEAR".to_string(),
             decimals: 24,
             icon: Some(WRAP_NEAR_ICON.to_string()),

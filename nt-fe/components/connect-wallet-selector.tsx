@@ -104,8 +104,10 @@ interface ConnectWalletSelectorProps {
     connectFlow: "new_user" | "existing_user" | "within_treasury";
     isConnectingWallet?: boolean;
     onBack?: () => void;
-    onConnectSupported: () => Promise<void> | void;
+    onConnectSupported: (walletId?: string) => Promise<void> | void;
 }
+
+const LEDGER_WALLET_ID = "ledger";
 
 export function ConnectWalletSelector({
     title,
@@ -132,7 +134,9 @@ export function ConnectWalletSelector({
         });
 
         if (wallet.supported) {
-            onConnectSupported();
+            onConnectSupported(
+                wallet.id === LEDGER_WALLET_ID ? LEDGER_WALLET_ID : undefined,
+            );
             return;
         }
 
