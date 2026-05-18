@@ -109,7 +109,7 @@ interface NearStore {
 
     // Wallet actions
     init: () => Promise<NearConnector | undefined>;
-    connect: () => Promise<void>;
+    connect: (walletId?: string) => Promise<void>;
     disconnect: () => Promise<void>;
 
     // Auth actions
@@ -288,7 +288,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
         return newConnector;
     },
 
-    connect: async () => {
+    connect: async (walletId?: string) => {
         const { connector, init } = get();
         const newConnector = connector ?? (await init());
         if (!newConnector) {
@@ -309,6 +309,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
 
             // Sign the message with wallet
             await newConnector.connect({
+                walletId,
                 signMessageParams: {
                     message: LOGIN_MESSAGE,
                     recipient: LOGIN_RECIPIENT,
