@@ -421,6 +421,18 @@ async fn submit_done_activation(
     .await
     .map_err(|e| format!("mark-completed: {}", e))?;
 
+    // Pull the next 1Click history poll forward so the submitted intents enter
+    // the await-settlement fast tier (mirrors relay/confidential.rs submits).
+    if let Err(e) =
+        crate::handlers::intents::confidential::bronze::store::mark_confidential_history_activity_due(
+            &state.db_pool,
+            dao_id,
+        )
+        .await
+    {
+        tracing::warn!("cannot mark confidential history due for {}: {}", dao_id, e);
+    }
+
     tracing::info!("Bulk-payment {} for {} fully submitted", bulk_id, dao_id);
     Ok(())
 }
