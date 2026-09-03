@@ -5,7 +5,7 @@ use serde_json::json;
 use crate::{
     AppState,
     handlers::status::{
-        config::{self, RECOVER_AFTER_SUCCESSES},
+        config,
         fallbacks::{
             self, POST_TO_APP_CALLBACK_PREFIX, StatusIncident, admin_page_url, oh_dear_status_url,
         },
@@ -636,11 +636,14 @@ async fn apply_incident_healthy(
     };
 
     // Require consecutive successes before recovering (stops alert↔recover flaps).
-    if incident.consecutive_successes < RECOVER_AFTER_SUCCESSES {
+    // Explorer stays open through brief green blips (~15 min) so we do not
+    // emit fail/recover pairs every few minutes.
+    let recover_after = config::recover_after_successes(service);
+    if incident.consecutive_successes < recover_after {
         tracing::debug!(
             "[status-monitor] {service}/{check_name} healthy ({}/{} consecutive); holding incident open",
             incident.consecutive_successes,
-            RECOVER_AFTER_SUCCESSES
+            recover_after
         );
         return none;
     }
