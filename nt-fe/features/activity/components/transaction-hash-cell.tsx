@@ -23,6 +23,7 @@ interface TransactionHashCellProps {
     chainName?: string | null;
     depositAddress?: string | null;
     isConfidential?: boolean;
+    isExchange?: boolean;
 }
 
 /**
@@ -41,12 +42,17 @@ export function TransactionHashCell({
     chainName,
     depositAddress,
     isConfidential = false,
+    isExchange = false,
 }: TransactionHashCellProps) {
     const t = useTranslations("transactionHashCell");
     const needsReceiptSearch = !transactionHashes?.length && !depositAddress;
     const { data: transactionFromReceipt, isLoading } = useReceiptSearch(
         needsReceiptSearch ? receiptIds?.[0] : undefined,
     );
+
+    // The intents explorer's /mask/ URL no longer resolves confidential
+    // exchanges, so those rows show nothing.
+    if (isConfidential && isExchange) return null;
 
     const transactionHash = transactionHashes?.length
         ? transactionHashes[0]
