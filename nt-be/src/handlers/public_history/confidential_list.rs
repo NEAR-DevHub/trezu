@@ -17,8 +17,8 @@ use near_api::AccountId;
 use sqlx::{PgPool, QueryBuilder, Row};
 
 use crate::AppState;
-use crate::handlers::balance_changes::token_filter::push_token_match;
 use crate::handlers::intents::confidential::types::{ConfidentialTxType, bare_account};
+use crate::handlers::public_history::token_filter::push_token_match;
 use crate::handlers::token::{TokenMetadata, fetch_tokens_with_fallback};
 use crate::routes::{BalanceChangesQuery, EnrichedBalanceChange, SwapInfo};
 

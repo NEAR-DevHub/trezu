@@ -6,10 +6,10 @@ use near_api::{Contract, NetworkConfig, Reference};
 use sqlx::PgPool;
 use std::str::FromStr;
 
-use crate::handlers::balance_changes::counterparty::{
+use crate::services::counterparties::{
     convert_raw_to_decimal, ensure_ft_metadata, ensure_nep245_token_decimals,
 };
-use crate::handlers::balance_changes::utils::with_transport_retry;
+use crate::utils::transport::with_transport_retry;
 
 fn parse_nep245_asset_id(token_id: &str) -> Result<(&str, &str), String> {
     let contract_and_token = token_id.strip_prefix("nep245:").unwrap_or(token_id);

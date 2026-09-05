@@ -9,10 +9,12 @@
 //!
 //! Uses the near-api crate with FastNEAR archival RPC for historical queries.
 
+pub mod block_info;
 pub mod ft;
 pub mod intents;
 pub mod near;
 pub mod staking;
+pub mod token_discovery;
 
 use bigdecimal::BigDecimal;
 use near_api::NetworkConfig;

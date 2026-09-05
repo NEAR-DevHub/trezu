@@ -14,24 +14,17 @@ pub struct EnvVars {
     pub signer_key: SecretKey,
     pub signer_id: AccountId,
     pub bulk_payment_signer: SecretKey,
-    pub disable_balance_monitoring: bool,
     pub disable_treasury_creation: bool,
     pub disable_stats_generation: bool,
     pub disable_ft_lockup_scheduler: bool,
-    pub disable_balance_changes_usd_backfill: bool,
     pub disable_gold_ledger_usd_backfill: bool,
     /// Track only treasuries created through this app: skips the sputnik
     /// factory mirror and makes user-initiated registrations refresh-only.
     pub managed_treasuries_only: bool,
-    /// Single public read switch. True serves public activity, charts, and
-    /// asset balances from `gold_treasury_ledger_events`; false keeps the
-    /// legacy `balance_changes` paths.
-    pub unified_gold_ledger_reads: bool,
     /// Allowed absolute drift (in NEAR) between the bronze-derived native
     /// ledger head and the on-chain balance before verification fails. Drift
     /// within tolerance is absorbed by a hidden reconciliation rebase.
     pub public_native_verification_tolerance_near: f64,
-    pub monitor_interval_seconds: u64,
     pub telegram_bot_token: Option<String>,
     /// General notifications channel (user creation, treasury creation, etc.)
     pub telegram_chat_id: Option<String>,
@@ -42,8 +35,6 @@ pub struct EnvVars {
     pub defillama_api_base_url: String, // DeFiLlama API base URL (override for testing)
     pub nearblocks_api_key: Option<String>,
     // Transfer hints configuration (FastNear transfers-api)
-    pub transfer_hints_enabled: bool,
-    pub transfer_hints_base_url: Option<String>, // Override FastNear API URL for testing
     // 1click API configuration for asset exchange quotes
     pub oneclick_api_url: String,
     // Confidential intents API URL (defaults to 1click-test)
@@ -67,7 +58,6 @@ pub struct EnvVars {
     // Goldsky enrichment: Postgres (read-only Goldsky sink)
     pub goldsky_database_url: Option<String>,
     // Feature flags
-    pub disable_staking_rewards: bool,
     // Telegram bot webhook configuration
     pub telegram_webhook_secret: Option<String>,
     // Static API key guarding the internal analytics export endpoint
@@ -127,10 +117,6 @@ impl Default for EnvVars {
                 .expect("SIGNER_ID is not set")
                 .parse()
                 .unwrap(),
-            disable_balance_monitoring: std::env::var("DISABLE_BALANCE_MONITORING")
-                .unwrap_or_else(|_| "false".to_string())
-                .parse()
-                .unwrap_or(false),
             disable_treasury_creation: std::env::var("DISABLE_TREASURY_CREATION")
                 .unwrap_or_else(|_| "false".to_string())
                 .parse()
@@ -143,23 +129,11 @@ impl Default for EnvVars {
                 .unwrap_or_else(|_| "false".to_string())
                 .parse()
                 .unwrap_or(false),
-            disable_balance_changes_usd_backfill: std::env::var(
-                "DISABLE_BALANCE_CHANGES_USD_BACKFILL",
-            )
-            .unwrap_or_else(|_| "false".to_string())
-            .parse()
-            .unwrap_or(false),
             managed_treasuries_only: std::env::var("MANAGED_TREASURIES_ONLY")
                 .unwrap_or_else(|_| "false".to_string())
                 .parse()
                 .unwrap_or(false),
-            // DISABLE_GOLD_PUBLIC_USD_BACKFILL is the deployed legacy name.
             disable_gold_ledger_usd_backfill: std::env::var("DISABLE_GOLD_LEDGER_USD_BACKFILL")
-                .or_else(|_| std::env::var("DISABLE_GOLD_PUBLIC_USD_BACKFILL"))
-                .unwrap_or_else(|_| "false".to_string())
-                .parse()
-                .unwrap_or(false),
-            unified_gold_ledger_reads: std::env::var("UNIFIED_GOLD_LEDGER_READS")
                 .unwrap_or_else(|_| "false".to_string())
                 .parse()
                 .unwrap_or(false),
@@ -169,10 +143,6 @@ impl Default for EnvVars {
             .ok()
             .and_then(|value| value.parse().ok())
             .unwrap_or(0.1),
-            monitor_interval_seconds: std::env::var("MONITOR_INTERVAL_SECONDS")
-                .ok()
-                .and_then(|s| s.parse().ok())
-                .unwrap_or(30),
             coingecko_api_key: std::env::var("COINGECKO_API_KEY")
                 .ok()
                 .filter(|s| !s.is_empty()),
@@ -190,14 +160,6 @@ impl Default for EnvVars {
                 .ok()
                 .filter(|s| !s.is_empty()),
             nearblocks_api_key: std::env::var("NEARBLOCKS_API_KEY")
-                .ok()
-                .filter(|s| !s.is_empty()),
-            // Transfer hints configuration
-            transfer_hints_enabled: std::env::var("TRANSFER_HINTS_ENABLED")
-                .unwrap_or_else(|_| "true".to_string()) // Enabled by default
-                .parse()
-                .unwrap_or(true),
-            transfer_hints_base_url: std::env::var("TRANSFER_HINTS_BASE_URL")
                 .ok()
                 .filter(|s| !s.is_empty()),
             // 1click API configuration
@@ -251,10 +213,6 @@ impl Default for EnvVars {
             goldsky_database_url: std::env::var("GOLDSKY_DATABASE_URL")
                 .ok()
                 .filter(|s| !s.is_empty()),
-            disable_staking_rewards: std::env::var("DISABLE_STAKING_REWARDS")
-                .unwrap_or_else(|_| "false".to_string())
-                .parse()
-                .unwrap_or(false),
             telegram_webhook_secret: std::env::var("TELEGRAM_WEBHOOK_SECRET")
                 .ok()
                 .filter(|s| !s.is_empty()),

@@ -17,8 +17,8 @@ use near_api::types::json::U128;
 use near_api::{AccountId, Contract, NetworkConfig, Reference};
 use std::str::FromStr;
 
-use crate::handlers::balance_changes::counterparty::convert_raw_to_decimal;
-use crate::handlers::balance_changes::utils::with_transport_retry;
+use crate::services::counterparties::convert_raw_to_decimal;
+use crate::utils::transport::with_transport_retry;
 
 /// NEAR mainnet epoch length in blocks (~12 hours)
 pub const EPOCH_LENGTH_BLOCKS: u64 = 43_200;

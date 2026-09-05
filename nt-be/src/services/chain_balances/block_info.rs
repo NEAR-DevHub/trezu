@@ -2,8 +2,8 @@
 //!
 //! Functions to query block metadata including timestamps and receipt data via RPC.
 
-use crate::handlers::balance_changes::utils::with_transport_retry;
 use crate::utils::jsonrpc::create_rpc_client;
+use crate::utils::transport::with_transport_retry;
 use near_api::{Chain, NetworkConfig, Reference};
 use near_jsonrpc_client::methods;
 use near_primitives::types::{BlockId, BlockReference};

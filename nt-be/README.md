@@ -1,12 +1,18 @@
-# Treasury26 Backend - Balance Change APIs
+# Treasury26 Backend - Treasury History APIs
 
 ## Overview
 
-The Balance Change Collection system automatically tracks balance changes for NEAR accounts across multiple token types:
+Treasury activity, charts, and balances are served from the unified gold
+ledger (`gold_treasury_ledger_events`), one table covering both public
+(sputnik DAO) and confidential (intents) treasuries. Rows are projected from
+the medallion pipeline (bronze chain events → silver transfer legs/balance
+history → gold) and verified against on-chain / 1Click balances at projection
+time.
+
 - **NEAR** - Native NEAR token
-- **FT Tokens** - NEP-141 fungible tokens (automatically discovered from receipts)
+- **FT Tokens** - NEP-141 fungible tokens
 - **Intents Tokens** - Multi-token balances on intents.near (NEP-141 and NEP-245)
-- **Staking Rewards** - Exact block where staking rewards were earned
+- **Staking** - Staked balances observed per pool and shown as chart series
 
 ## Quick Start
 
@@ -32,208 +38,64 @@ curl -X POST http://localhost:3000/api/monitored-accounts \
   }'
 ```
 
-Or in JavaScript:
-```javascript
-fetch("/api/monitored-accounts", {
-  method: "POST",
-  headers: {"Content-Type": "application/json"},
-  body: JSON.stringify({
-    account_id: "webassemblymusic-treasury.sputnik-dao.near",
-    enabled: true
-  })
-})
-```
+### 2. Query Treasury Activity
 
-### 2. Query Balance Changes
-
-Get all balance changes for an account:
 ```bash
-curl "http://localhost:3000/api/balance-changes?account_id=webassemblymusic-treasury.sputnik-dao.near"
+# All activity for an account (newest first)
+curl "http://localhost:3000/api/balance-changes?accountId=webassemblymusic-treasury.sputnik-dao.near"
+
+# Filter by token
+curl "http://localhost:3000/api/balance-changes?accountId=webassemblymusic-treasury.sputnik-dao.near&tokenIds=near"
+
+# Paginate
+curl "http://localhost:3000/api/balance-changes?accountId=webassemblymusic-treasury.sputnik-dao.near&limit=50&offset=50"
 ```
-
-Filter by token:
-```bash
-curl "http://localhost:3000/api/balance-changes?account_id=webassemblymusic-treasury.sputnik-dao.near&token_id=near"
-```
-
-Paginate results:
-```bash
-curl "http://localhost:3000/api/balance-changes?account_id=webassemblymusic-treasury.sputnik-dao.near&page=1&limit=50"
-```
-
-Exclude snapshot records (get only actual transactions and staking rewards):
-```bash
-curl "http://localhost:3000/api/balance-changes?account_id=webassemblymusic-treasury.sputnik-dao.near&exclude_snapshots=true"
-```
-
-### 3. Query Staking Rewards
-
-Get staking rewards with exact block where they were earned:
-```bash
-curl "http://localhost:3000/api/balance-changes?account_id=your-account.near&token_id=staking:pool.near&exclude_snapshots=true"
-```
-
-Example staking reward response:
-```json
-{
-  "block_height": 182449384,
-  "block_time": "2026-01-24T00:19:08.761126Z",
-  "token_id": "staking:astro-stakers.poolv1.near",
-  "counterparty": "STAKING_REWARD",
-  "amount": "0.040456086036518156197191",
-  "balance_before": "1029.479523405233304042477556",
-  "balance_after": "1029.519979491269822198674747"
-}
-```
-
-## How It Works
-
-### Automatic Token Discovery
-
-Once an account is registered:
-
-1. **NEAR Token**: Automatically tracked from the start
-2. **FT Tokens**: Discovered from transaction receipts (e.g., when NEAR interacts with `token.near`)
-3. **Intents Tokens**: Discovered by querying `mt_tokens_for_owner` on `intents.near`
-
-### Monitoring Cycle
-
-The system runs periodic monitoring cycles that:
-- Fill gaps in balance history using binary search
-- Discover new tokens automatically
-- Track counterparty information for each change
-- Capture transaction hashes and receipt IDs
-
-### Balance Change Record
-
-Each balance change includes:
-- `block_height` - Block where the change occurred
-- `block_time` - Timestamp of the block
-- `token_id` - Token identifier (e.g., `near`, `usdc.near`, `intents.near:nep141:btc.omft.near`)
-- `balance_before` - Balance before the change
-- `balance_after` - Balance after the change
-- `amount` - Change amount (balance_after - balance_before)
-- `counterparty` - The other party in the transaction
-- `transaction_hashes` - Associated transaction hashes
-- `signer_id` - Transaction signer
-- `receiver_id` - Transaction receiver
 
 ## API Reference
-
-### Register Account
-
-**POST** `/api/monitored-accounts`
-
-Request body:
-```json
-{
-  "account_id": "account.near",
-  "enabled": true
-}
-```
 
 ### Get Balance Changes
 
 **GET** `/api/balance-changes`
 
-Query parameters:
-- `account_id` (required) - Account to query
-- `token_id` (optional) - Filter by specific token
-- `page` (optional) - Page number (default: 0)
-- `limit` (optional) - Results per page (default: 100)
-- `from_block` (optional) - Filter from block height
-- `to_block` (optional) - Filter to block height
-- `exclude_snapshots` (optional) - When `true`, excludes `SNAPSHOT` and `STAKING_SNAPSHOT` records
+Query parameters (camelCase):
+- `accountId` (required) - Account to query
+- `tokenIds` / `excludeTokenIds` (optional) - Comma-separated token filters
+- `transactionTypes` (optional) - `incoming`, `outgoing`, `exchange`
+- `startTime` / `endTime` (optional) - ISO 8601 range
+- `minAmount` / `maxAmount` (optional) - Decimal-adjusted, single-token filter only
+- `txHash` (optional) - Partial transaction-hash match
+- `fromAccounts` / `toAccounts` (+ `...Not` variants) (optional) - Counterparty filters
+- `limit` / `offset` (optional) - Pagination (default limit 100, max 1000)
+- `includeMetadata` / `includePrices` / `includeChainMetadata` (optional) - Enrichment flags
 
-Response:
-```json
-{
-  "changes": [
-    {
-      "block_height": 165324279,
-      "block_time": "2024-09-24T12:00:00Z",
-      "token_id": "intents.near:nep141:btc.omft.near",
-      "balance_before": "584253",
-      "balance_after": "564253",
-      "amount": "-20000",
-      "counterparty": "webassemblymusic-treasury.sputnik-dao.near",
-      "transaction_hashes": ["..."],
-      "signer_id": "petersalomonsen.near",
-      "receiver_id": "intents.near"
-    }
-  ],
-  "total": 1,
-  "page": 0,
-  "limit": 100
-}
-```
+Exchanges are returned as a single fulfillment row carrying the full swap
+(sent + received legs) in the `swap` object.
 
-### Check Balance History Completeness
+### Recent Activity (UI feed)
 
-**GET** `/api/balance-history/completeness`
+**GET** `/api/recent-activity` - Paginated feed with plan-limit windowing,
+token metadata, and USD values.
+**GET** `/api/recent-activity/senders` / `/api/recent-activity/recipients` -
+Distinct counterparty options for the feed's filter dropdowns.
 
-Check whether the balance history for an account is complete within a time range.
-Useful for verifying that an accounting export CSV has no missing data.
+### Charts and Exports
 
-Query parameters:
-- `accountId` (required) - Account to check
-- `from` (required) - Start of time range (ISO 8601, e.g. `2025-01-01T00:00:00Z`)
-- `to` (required) - End of time range (ISO 8601, e.g. `2025-12-31T23:59:59Z`)
-
-Example:
-```bash
-curl "http://localhost:3000/api/balance-history/completeness?accountId=your-account.near&from=2025-01-01T00:00:00Z&to=2025-12-31T23:59:59Z"
-```
-
-Response:
-```json
-{
-  "accountId": "your-account.near",
-  "from": "2025-01-01T00:00:00Z",
-  "to": "2025-12-31T23:59:59Z",
-  "tokens": [
-    {
-      "tokenId": "near",
-      "hasGaps": true,
-      "gapCount": 1,
-      "gaps": [
-        {
-          "startBlock": 180000000,
-          "endBlock": 180500000,
-          "startBlockTime": "2025-03-15T10:00:00Z",
-          "endBlockTime": "2025-03-15T14:30:00Z",
-          "balanceAfterPrevious": "5.0",
-          "balanceBeforeNext": "4.2"
-        }
-      ]
-    },
-    {
-      "tokenId": "usdt.tether-token.near",
-      "hasGaps": false,
-      "gapCount": 0,
-      "gaps": []
-    }
-  ]
-}
-```
-
-A gap indicates that `balanceAfterPrevious` (the balance after the record at `startBlock`) does not
-match `balanceBeforeNext` (the balance before the record at `endBlock`), meaning one or more
-balance changes are missing between those blocks.
+**GET** `/api/balance-history/chart` - Balance snapshots at
+hourly/daily/weekly/monthly intervals, with USD series and freshness metadata
+(`chartMeta.status`: `ok` / `stale` / `unavailable`).
+**GET** `/api/balance-history/export?format=csv|json|xlsx` - Accounting
+export; consumes an export credit and honors plan history limits.
 
 ## Development
 
 ### Run Tests
 
 ```bash
-# Run all tests
+# All tests (needs a local Postgres with migrations applied)
 cargo test
 
-# Run integration tests
-cargo test --test balance_collection_integration_test
-
-# Run specific test
-cargo test test_discover_intents_tokens_webassemblymusic_treasury -- --nocapture
+# One suite
+cargo test --test balance_history_apis_test
 ```
 
 ### Database Setup
@@ -250,19 +112,7 @@ Full path format: `intents.near:nep141:btc.omft.near`
 - Preserves the underlying FT contract for metadata queries
 - Format: `intents.near:{standard}:{ft_contract}`
 
-### Staking Tokens
-Full path format: `staking:pool.poolv1.near`
-- Format: `staking:{pool_contract}`
-- Records with `counterparty: STAKING_SNAPSHOT` are epoch boundary snapshots
-- Records with `counterparty: STAKING_REWARD` show exact block where reward was earned
-
-## Record Types
-
-| Token Type | Counterparty | Description |
-|------------|--------------|-------------|
-| `near` | account address | NEAR token transfer with counterparty |
-| `near` | `SNAPSHOT` | Initial balance snapshot (no transaction) |
-| `ft-contract.near` | account address | Fungible token transfer |
-| `intents.near:nep141:*` | account address | Intents token transfer |
-| `staking:pool.near` | `STAKING_SNAPSHOT` | Epoch boundary snapshot |
-| `staking:pool.near` | `STAKING_REWARD` | Exact block of staking reward |
+### Staking
+Staked balances appear in charts as `staking:{pool_contract}` series derived
+from staking observations; the activity feed shows only user-visible
+transfers.

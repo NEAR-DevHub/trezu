@@ -1,7 +1,8 @@
 /// End-to-end tests for the DAO notification system.
 ///
 /// Tests the full pipeline:
-///   balance_changes / detected_swaps → detection worker → dao_notifications → Telegram dispatcher → dao_notification_deliveries
+///   gold ledger / dao_proposals / confidential_intents → detection worker →
+///   dao_notifications → Telegram dispatcher → dao_notification_deliveries
 ///
 /// No real Telegram API calls are made — TelegramClient::default() has bot=None
 /// and silently succeeds on all send operations.
@@ -19,11 +20,9 @@ const CHAT_ID: i64 = 987654321;
 
 /// Simulate "cursor already existed at 0" so detection processes all rows in the DB.
 /// Without this, a fresh-DB test would seed the cursor to the latest row and skip everything.
+/// Only the ledger scan is cursor-driven; proposal detection rescans a window.
 async fn reset_cursors_to_start(pool: &PgPool) {
-    for consumer in &[
-        "notifications:balance_changes",
-        "notifications:detected_swaps",
-    ] {
+    for consumer in &["notifications:gold_ledger"] {
         sqlx::query(
             "INSERT INTO goldsky_cursors (consumer_name, last_processed_id, last_processed_block, updated_at)
              VALUES ($1, '0', 0, NOW())
@@ -51,12 +50,16 @@ async fn build_dispatch_state(pool: &PgPool) -> Arc<nt_be::AppState> {
 // Fixtures
 // ---------------------------------------------------------------------------
 
-async fn insert_dao_with_telegram(pool: &PgPool) {
-    sqlx::query("INSERT INTO monitored_accounts (account_id, enabled) VALUES ($1, true)")
+async fn insert_dao(pool: &PgPool) {
+    sqlx::query("INSERT INTO monitored_accounts (account_id, enabled) VALUES ($1, true) ON CONFLICT DO NOTHING")
         .bind(DAO_ID)
         .execute(pool)
         .await
         .expect("insert monitored_account");
+}
+
+async fn insert_dao_with_telegram(pool: &PgPool) {
+    insert_dao(pool).await;
 
     sqlx::query("INSERT INTO telegram_chats (chat_id, chat_title) VALUES ($1, $2)")
         .bind(CHAT_ID)
@@ -73,107 +76,115 @@ async fn insert_dao_with_telegram(pool: &PgPool) {
         .expect("insert telegram_treasury_connection");
 }
 
-/// Insert a balance_changes row with a given method_name and amount.
-/// Returns the inserted id.
-#[allow(clippy::too_many_arguments)]
-async fn insert_balance_change(
+/// Insert a `sent` (payment) gold ledger row. Returns the inserted id.
+async fn insert_ledger_payment(
     pool: &PgPool,
-    block_height: i64,
-    token_id: &str,
-    amount: i64,
-    counterparty: &str,
-    tx_hash: Option<&str>,
-    method_name: Option<&str>,
-    action_kind: Option<&str>,
+    gold_event_key: &str,
+    token_out: &str,
+    amount_out: &str,
+    recipient: &str,
+    event_time: chrono::DateTime<chrono::Utc>,
 ) -> i64 {
-    let tx_hashes: Vec<String> = tx_hash.map(|h| vec![h.to_string()]).unwrap_or_default();
-
     sqlx::query_scalar(
         r#"
-        INSERT INTO balance_changes
-            (account_id, block_height, block_timestamp, block_time, token_id, amount,
-             balance_before, balance_after, counterparty, transaction_hashes,
-             receipt_id, method_name, action_kind)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, '{}', $11, $12)
+        INSERT INTO gold_treasury_ledger_events
+            (gold_event_key, dao_id, source_kind, history_visible, transaction_type,
+             status, event_time, token_out, amount_out, recipient)
+        VALUES ($1, $2, 'public_silver_leg', true, 'sent', 'success', $3, $4, $5::numeric, $6)
         RETURNING id
         "#,
     )
+    .bind(gold_event_key)
     .bind(DAO_ID)
-    .bind(block_height)
-    .bind(1_000_000_000_000i64) // block_timestamp (positive, non-zero)
-    .bind(chrono::Utc::now()) // block_time
-    .bind(token_id)
-    .bind(amount)
-    .bind(if amount >= 0 { 0i64 } else { amount.abs() }) // balance_before
-    .bind(if amount >= 0 { amount } else { 0i64 }) // balance_after
-    .bind(counterparty)
-    .bind(tx_hashes)
-    .bind(method_name)
-    .bind(action_kind)
+    .bind(event_time)
+    .bind(token_out)
+    .bind(amount_out)
+    .bind(recipient)
     .fetch_one(pool)
     .await
-    .expect("insert balance_change")
+    .expect("insert ledger payment")
 }
 
-/// Insert a detected_swaps row. Returns the inserted id.
-async fn insert_detected_swap(pool: &PgPool, fulfillment_bc_id: i64) -> i64 {
-    sqlx::query_scalar(
-        r#"
-        INSERT INTO detected_swaps
-            (account_id, solver_transaction_hash, fulfillment_receipt_id,
-             fulfillment_balance_change_id, received_token_id, received_amount,
-             sent_token_id, sent_amount, block_height)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        RETURNING id
-        "#,
-    )
-    .bind(DAO_ID)
-    .bind("solver-tx-hash-abc")
-    .bind("fulfillment-receipt-id-abc")
-    .bind(fulfillment_bc_id)
-    .bind("intents.near:nep141:usdc.near")
-    .bind(bigdecimal::BigDecimal::from(100))
-    .bind("near")
-    .bind(bigdecimal::BigDecimal::from(5))
-    .bind(200i64) // block_height
-    .fetch_one(pool)
-    .await
-    .expect("insert detected_swap")
-}
-
-/// Insert a detected_swap row with configurable fields.
-async fn insert_detected_swap_custom(
+/// Insert a fulfilled `exchange` gold ledger row (both legs). Returns the id.
+async fn insert_ledger_exchange(
     pool: &PgPool,
-    solver_transaction_hash: &str,
-    deposit_bc_id: Option<i64>,
-    fulfillment_bc_id: i64,
-    fulfillment_receipt_id: Option<&str>,
+    gold_event_key: &str,
+    sent_token: &str,
     sent_amount: &str,
+    received_token: &str,
     received_amount: &str,
 ) -> i64 {
     sqlx::query_scalar(
         r#"
-        INSERT INTO detected_swaps
-            (account_id, solver_transaction_hash, deposit_balance_change_id,
-             fulfillment_receipt_id, fulfillment_balance_change_id,
-             sent_token_id, sent_amount, received_token_id, received_amount, block_height)
-        VALUES ($1, $2, $3, $4, $5, $6, $7::numeric, $8, $9::numeric, $10)
+        INSERT INTO gold_treasury_ledger_events
+            (gold_event_key, dao_id, source_kind, history_visible, transaction_type,
+             status, event_time, token_out, amount_out, token_in, amount_in)
+        VALUES ($1, $2, 'public_silver_leg', true, 'exchange', 'success', NOW(),
+                $3, $4::numeric, $5, $6::numeric)
+        RETURNING id
+        "#,
+    )
+    .bind(gold_event_key)
+    .bind(DAO_ID)
+    .bind(sent_token)
+    .bind(sent_amount)
+    .bind(received_token)
+    .bind(received_amount)
+    .fetch_one(pool)
+    .await
+    .expect("insert ledger exchange")
+}
+
+/// Insert a dao_proposals row as the linker would after seeing the creation
+/// receipt. Returns the inserted id.
+async fn insert_proposal(
+    pool: &PgPool,
+    proposal_id: i64,
+    proposer: &str,
+    description: &str,
+    created_at: chrono::DateTime<chrono::Utc>,
+) -> i64 {
+    sqlx::query_scalar(
+        r#"
+        INSERT INTO dao_proposals
+            (dao_id, proposal_id, status, proposal_kind, proposer, description,
+             proposal_created_at, proposal_creation_block_height,
+             proposal_creation_transaction_hash)
+        VALUES ($1, $2, 'in_progress',
+                '{"Transfer": {"receiver_id": "alice.near", "amount": "1", "token_id": "usdc.near"}}',
+                $3, $4, $5, 100, 'proposal-tx-hash')
         RETURNING id
         "#,
     )
     .bind(DAO_ID)
-    .bind(solver_transaction_hash)
-    .bind(deposit_bc_id)
-    .bind(fulfillment_receipt_id)
-    .bind(fulfillment_bc_id)
-    .bind("near")
-    .bind(sent_amount)
-    .bind("near")
-    .bind(received_amount)
-    .bind(300i64)
+    .bind(proposal_id)
+    .bind(proposer)
+    .bind(description)
+    .bind(created_at)
     .fetch_one(pool)
     .await
-    .expect("insert custom detected_swap")
+    .expect("insert dao_proposal")
+}
+
+/// Insert a confidential intent whose on-chain proposal has been linked.
+async fn insert_confidential_intent(pool: &PgPool, proposal_id: i64, notes: &str) -> i32 {
+    sqlx::query_scalar(
+        r#"
+        INSERT INTO confidential_intents
+            (dao_id, intent_payload, payload_hash, status, notes,
+             proposal_id, proposal_created_at, quote_metadata)
+        VALUES ($1, '{}', $2, 'pending', $3, $4, NOW(),
+                '{"quoteRequest": {"originAsset": "nep141:wrap.near", "destinationAsset": "nep141:wrap.near"}}')
+        RETURNING id
+        "#,
+    )
+    .bind(DAO_ID)
+    .bind(format!("payload-hash-{proposal_id}"))
+    .bind(notes)
+    .bind(proposal_id)
+    .fetch_one(pool)
+    .await
+    .expect("insert confidential intent")
 }
 
 // ---------------------------------------------------------------------------
@@ -188,58 +199,25 @@ async fn test_detection_and_dispatch(pool: PgPool) {
     insert_dao_with_telegram(&pool).await;
     reset_cursors_to_start(&pool).await;
 
+    let now = chrono::Utc::now();
+
     // add_proposal event
-    insert_balance_change(
+    insert_proposal(&pool, 1, "alice.near", "Pay Alice", now).await;
+
+    // Outgoing FT payment + outgoing NEAR payment
+    insert_ledger_payment(&pool, "pay-usdc", "usdc.near", "50", "bob.near", now).await;
+    insert_ledger_payment(&pool, "pay-near", "near", "1.5", "carol.near", now).await;
+
+    // Fulfilled exchange
+    insert_ledger_exchange(
         &pool,
-        100,
+        "swap-1",
         "near",
-        0,
-        "alice.near",
-        None,
-        Some("add_proposal"),
-        Some("FUNCTION_CALL"),
-    )
-    .await;
-
-    // Outgoing FT payment
-    insert_balance_change(
-        &pool,
-        101,
-        "usdc.near",
-        -50_000,
-        "bob.near",
-        None,
-        Some("ft_transfer"),
-        Some("TRANSFER"),
-    )
-    .await;
-
-    // Outgoing NEAR via proposal callback
-    insert_balance_change(
-        &pool,
-        102,
-        "near",
-        -1_000_000,
-        "carol.near",
-        None,
-        Some("on_proposal_callback"),
-        Some("FUNCTION_CALL"),
-    )
-    .await;
-
-    // Swap (needs a fulfillment balance_change row referenced by FK)
-    let fulfillment_bc_id = insert_balance_change(
-        &pool,
-        200,
+        "5",
         "intents.near:nep141:usdc.near",
-        100,
-        "solver.near",
-        None,
-        None,
-        Some("TRANSFER"),
+        "100",
     )
     .await;
-    insert_detected_swap(&pool, fulfillment_bc_id).await;
 
     // --- Run detection ---
     let detected = nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
@@ -259,11 +237,15 @@ async fn test_detection_and_dispatch(pool: PgPool) {
     .await
     .expect("query dao_notifications");
 
+    let event_types: Vec<&str> = notifications
+        .iter()
+        .map(|(event_type, _)| event_type.as_str())
+        .collect();
     assert_eq!(notifications.len(), 4);
-    assert_eq!(notifications[0].0, "add_proposal");
-    assert_eq!(notifications[1].0, "payment");
-    assert_eq!(notifications[2].0, "payment");
-    assert_eq!(notifications[3].0, "swap_fulfilled");
+    assert_eq!(
+        event_types,
+        vec!["payment", "payment", "swap_fulfilled", "add_proposal"]
+    );
 
     // --- Run dispatcher (TelegramClient::default() → no real API calls) ---
     let state = build_dispatch_state(&pool).await;
@@ -298,21 +280,17 @@ async fn test_no_notification_for_unconnected_dao(pool: PgPool) {
     common::load_test_env();
 
     // Insert monitored account but NO telegram connection
-    sqlx::query("INSERT INTO monitored_accounts (account_id, enabled) VALUES ($1, true)")
-        .bind(DAO_ID)
-        .execute(&pool)
-        .await
-        .expect("insert monitored_account");
+    insert_dao(&pool).await;
+    reset_cursors_to_start(&pool).await;
 
-    insert_balance_change(
+    insert_proposal(&pool, 1, "alice.near", "Pay Alice", chrono::Utc::now()).await;
+    insert_ledger_payment(
         &pool,
-        100,
-        "near",
-        0,
-        "alice.near",
-        None,
-        Some("add_proposal"),
-        Some("FUNCTION_CALL"),
+        "pay-1",
+        "usdc.near",
+        "50",
+        "bob.near",
+        chrono::Utc::now(),
     )
     .await;
 
@@ -338,24 +316,16 @@ async fn test_detection_is_idempotent(pool: PgPool) {
     insert_dao_with_telegram(&pool).await;
     reset_cursors_to_start(&pool).await;
 
-    insert_balance_change(
-        &pool,
-        100,
-        "near",
-        0,
-        "alice.near",
-        None,
-        Some("add_proposal"),
-        Some("FUNCTION_CALL"),
-    )
-    .await;
+    insert_proposal(&pool, 1, "alice.near", "Pay Alice", chrono::Utc::now()).await;
+    insert_confidential_intent(&pool, 7, "conf payout").await;
 
     // Run detection twice
     nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
         .await
         .expect("first detection cycle");
 
-    // Reset cursor to replay from start again
+    // Reset cursor to replay from start again (the confidential detector has
+    // no cursor at all — it rescans the recent window every cycle).
     reset_cursors_to_start(&pool).await;
 
     let second_run = nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
@@ -369,7 +339,204 @@ async fn test_detection_is_idempotent(pool: PgPool) {
         .fetch_one(&pool)
         .await
         .expect("count");
-    assert_eq!(count.0, 1, "still exactly one notification row");
+    assert_eq!(count.0, 2, "one public + one confidential proposal row");
+}
+
+/// A gold reprojection deletes and re-inserts rows with fresh ids. The stable
+/// source_key must prevent a second notification for the same event.
+#[sqlx::test]
+async fn test_reprojection_does_not_renotify(pool: PgPool) {
+    common::load_test_env();
+
+    insert_dao_with_telegram(&pool).await;
+    reset_cursors_to_start(&pool).await;
+
+    let first_id = insert_ledger_payment(
+        &pool,
+        "stable-key",
+        "usdc.near",
+        "50",
+        "bob.near",
+        chrono::Utc::now(),
+    )
+    .await;
+
+    let first = nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
+        .await
+        .expect("first detection");
+    assert_eq!(first, 1);
+
+    // Reproject: delete + re-insert the same event under a new row id.
+    sqlx::query("DELETE FROM gold_treasury_ledger_events WHERE id = $1")
+        .bind(first_id)
+        .execute(&pool)
+        .await
+        .expect("delete for reprojection");
+    let second_id = insert_ledger_payment(
+        &pool,
+        "stable-key",
+        "usdc.near",
+        "50",
+        "bob.near",
+        chrono::Utc::now(),
+    )
+    .await;
+    assert_ne!(first_id, second_id);
+
+    let second = nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
+        .await
+        .expect("second detection");
+    assert_eq!(second, 0, "same gold_event_key must not notify twice");
+}
+
+/// Ledger rows whose event_time is older than the notification window are
+/// skipped (a reprojection of deep history must not flood connected chats),
+/// and the cursor still advances past them.
+#[sqlx::test]
+async fn test_old_events_are_skipped(pool: PgPool) {
+    common::load_test_env();
+
+    insert_dao_with_telegram(&pool).await;
+    reset_cursors_to_start(&pool).await;
+
+    let old = chrono::Utc::now() - chrono::Duration::days(30);
+    insert_ledger_payment(&pool, "old-pay", "usdc.near", "50", "bob.near", old).await;
+
+    let detected = nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
+        .await
+        .expect("detection cycle");
+    assert_eq!(detected, 0, "historical events must not notify");
+
+    let cursor: (i64,) = sqlx::query_as(
+        "SELECT last_processed_block FROM goldsky_cursors WHERE consumer_name = 'notifications:gold_ledger'",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("cursor row");
+    assert!(cursor.0 > 0, "cursor advances over skipped historical rows");
+}
+
+/// Proposals discovered without creation facts (execution-side linking of old
+/// proposals) are not notifiable.
+#[sqlx::test]
+async fn test_proposal_without_creation_facts_is_skipped(pool: PgPool) {
+    common::load_test_env();
+
+    insert_dao_with_telegram(&pool).await;
+    reset_cursors_to_start(&pool).await;
+
+    sqlx::query(
+        "INSERT INTO dao_proposals (dao_id, proposal_id, status) VALUES ($1, 42, 'approved')",
+    )
+    .bind(DAO_ID)
+    .execute(&pool)
+    .await
+    .expect("insert creation-less proposal");
+
+    let detected = nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
+        .await
+        .expect("detection cycle");
+    assert_eq!(detected, 0);
+}
+
+/// NearBlocks ingests newest-to-oldest, so execution-side linking can insert
+/// the proposal row first and a later page fills in the creation facts. The
+/// windowed rescan must pick the row up once `proposal_created_at` lands —
+/// an id cursor would have moved past it forever.
+#[sqlx::test]
+async fn test_proposal_notifies_once_creation_facts_arrive_later(pool: PgPool) {
+    common::load_test_env();
+
+    insert_dao_with_telegram(&pool).await;
+    reset_cursors_to_start(&pool).await;
+
+    sqlx::query(
+        "INSERT INTO dao_proposals (dao_id, proposal_id, status) VALUES ($1, 77, 'in_progress')",
+    )
+    .bind(DAO_ID)
+    .execute(&pool)
+    .await
+    .expect("insert creation-less proposal");
+
+    let first = nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
+        .await
+        .expect("first detection cycle");
+    assert_eq!(first, 0, "no creation facts yet, nothing to notify");
+
+    // A later (older) NearBlocks page links the creation transaction.
+    sqlx::query(
+        "UPDATE dao_proposals
+         SET proposal_created_at = NOW() - INTERVAL '1 hour',
+             proposer = 'alice.near',
+             description = 'pay the vendor',
+             proposal_creation_block_height = 123,
+             proposal_creation_transaction_hash = 'creation-hash'
+         WHERE dao_id = $1 AND proposal_id = 77",
+    )
+    .bind(DAO_ID)
+    .execute(&pool)
+    .await
+    .expect("linker fills creation facts");
+
+    let second = nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
+        .await
+        .expect("second detection cycle");
+    assert_eq!(second, 1, "windowed rescan picks up the completed row");
+
+    // And the rescan stays idempotent afterwards.
+    let third = nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
+        .await
+        .expect("third detection cycle");
+    assert_eq!(third, 0, "source_key dedupe absorbs repeated scans");
+}
+
+/// The proposal payload carries proposer, title, and the classified kind.
+#[sqlx::test]
+async fn test_proposal_payload_contents(pool: PgPool) {
+    common::load_test_env();
+
+    insert_dao_with_telegram(&pool).await;
+    reset_cursors_to_start(&pool).await;
+
+    insert_proposal(
+        &pool,
+        5,
+        "frol.near",
+        "* Title: Pay Alice",
+        chrono::Utc::now(),
+    )
+    .await;
+
+    nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
+        .await
+        .expect("detection cycle");
+
+    let (source_key, payload): (String, serde_json::Value) = sqlx::query_as(
+        "SELECT source_key, payload FROM dao_notifications WHERE dao_id = $1 AND event_type = 'add_proposal'",
+    )
+    .bind(DAO_ID)
+    .fetch_one(&pool)
+    .await
+    .expect("fetch proposal notification");
+
+    assert_eq!(source_key, format!("{DAO_ID}:5"));
+    assert_eq!(
+        payload.get("counterparty").and_then(|v| v.as_str()),
+        Some("frol.near")
+    );
+    assert_eq!(
+        payload.get("description").and_then(|v| v.as_str()),
+        Some("* Title: Pay Alice")
+    );
+    assert_eq!(
+        payload.get("proposal_kind").and_then(|v| v.as_str()),
+        Some("Payment"),
+        "Transfer kind classifies as Payment"
+    );
+    assert_eq!(
+        payload.get("tx_hash").and_then(|v| v.as_str()),
+        Some("proposal-tx-hash")
+    );
 }
 
 /// Dispatch is idempotent — re-running does not send or record duplicates.
@@ -380,17 +547,7 @@ async fn test_dispatch_is_idempotent(pool: PgPool) {
     insert_dao_with_telegram(&pool).await;
     reset_cursors_to_start(&pool).await;
 
-    insert_balance_change(
-        &pool,
-        100,
-        "near",
-        0,
-        "alice.near",
-        None,
-        Some("add_proposal"),
-        Some("FUNCTION_CALL"),
-    )
-    .await;
+    insert_proposal(&pool, 1, "alice.near", "Pay Alice", chrono::Utc::now()).await;
 
     nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
         .await
@@ -434,16 +591,14 @@ async fn test_fresh_start_skips_history(pool: PgPool) {
 
     insert_dao_with_telegram(&pool).await;
 
-    // Insert a historical balance_change before the worker has ever run
-    insert_balance_change(
+    // Insert a historical payment before the worker has ever run
+    insert_ledger_payment(
         &pool,
-        100,
-        "near",
-        0,
-        "alice.near",
-        None,
-        Some("add_proposal"),
-        Some("FUNCTION_CALL"),
+        "pre-existing",
+        "usdc.near",
+        "50",
+        "bob.near",
+        chrono::Utc::now(),
     )
     .await;
 
@@ -459,7 +614,7 @@ async fn test_fresh_start_skips_history(pool: PgPool) {
 
     // Cursor is now persisted at the latest id
     let cursor: (i64,) = sqlx::query_as(
-        "SELECT last_processed_block FROM goldsky_cursors WHERE consumer_name = 'notifications:balance_changes'",
+        "SELECT last_processed_block FROM goldsky_cursors WHERE consumer_name = 'notifications:gold_ledger'",
     )
     .fetch_one(&pool)
     .await
@@ -467,15 +622,13 @@ async fn test_fresh_start_skips_history(pool: PgPool) {
     assert!(cursor.0 > 0, "cursor should be seeded to latest row id");
 
     // Insert a new event *after* the fresh-start seed
-    insert_balance_change(
+    insert_ledger_payment(
         &pool,
-        101,
-        "near",
-        0,
-        "bob.near",
-        None,
-        Some("add_proposal"),
-        Some("FUNCTION_CALL"),
+        "post-seed",
+        "usdc.near",
+        "25",
+        "dave.near",
+        chrono::Utc::now(),
     )
     .await;
 
@@ -486,13 +639,8 @@ async fn test_fresh_start_skips_history(pool: PgPool) {
     assert_eq!(second, 1, "only the post-seed event should be detected");
 }
 
-/// A swap inserted concurrently between two detection cycles is still picked up.
-///
-/// Simulates the real scenario: the balance_changes detection cursor advances past
-/// the fulfillment row, then the swap detection cursor (separate table) picks up the
-/// detected_swaps row that was written by the enrichment worker moments later.
-/// Both cycles run concurrently via tokio::join!, so the swap notification arrives
-/// in the *next* cycle at the latest.
+/// An exchange whose fulfillment arrives later (as a re-projected row) is
+/// picked up in the cycle after it lands.
 #[sqlx::test]
 async fn test_swap_inserted_between_cycles(pool: PgPool) {
     common::load_test_env();
@@ -504,19 +652,7 @@ async fn test_swap_inserted_between_cycles(pool: PgPool) {
     let base_url = "https://app.trezu.app";
     let state = build_dispatch_state(&pool).await;
 
-    // Cycle 1: only a balance change exists, no swap yet
-    let fulfillment_bc_id = insert_balance_change(
-        &pool,
-        100,
-        "intents.near:nep141:usdc.near",
-        100,
-        "solver.near",
-        None,
-        None,
-        Some("TRANSFER"),
-    )
-    .await;
-
+    // Cycle 1: nothing notifiable exists yet
     let (det1, _) = tokio::join!(
         nt_be::handlers::notifications::detector::run_detection_cycle(&pool),
         nt_be::handlers::notifications::telegram_dispatcher::run_telegram_dispatch_cycle(
@@ -529,8 +665,16 @@ async fn test_swap_inserted_between_cycles(pool: PgPool) {
         "no notifiable events yet"
     );
 
-    // The enrichment worker writes the detected_swap after the first cycle finishes
-    insert_detected_swap(&pool, fulfillment_bc_id).await;
+    // The gold projector writes the fulfilled exchange after the first cycle
+    insert_ledger_exchange(
+        &pool,
+        "swap-late",
+        "near",
+        "5",
+        "intents.near:nep141:usdc.near",
+        "100",
+    )
+    .await;
 
     // Cycle 2: swap now exists — detection picks it up, dispatcher sends it
     let (det2, _disp2) = tokio::join!(
@@ -566,173 +710,76 @@ async fn test_swap_inserted_between_cycles(pool: PgPool) {
     );
 }
 
-/// Synthetic proposal-deposit rows should not emit swap_fulfilled notifications
-/// unless they have a distinct fulfillment leg (or explicit fulfillment receipt).
+/// Hidden ledger rows (sponsor top-ups, wraps) never notify.
 #[sqlx::test]
-async fn test_swap_notifications_skip_synthetic_proposal_deposits(pool: PgPool) {
+async fn test_hidden_rows_do_not_notify(pool: PgPool) {
     common::load_test_env();
 
     insert_dao_with_telegram(&pool).await;
     reset_cursors_to_start(&pool).await;
 
-    // Two proposal deposits with identical amounts (can happen in parallel proposals)
-    let deposit_a = insert_balance_change(
-        &pool,
-        400,
-        "near",
-        -100_681_984_951_474_100,
-        "megha19.near",
-        None,
-        Some("on_proposal_callback"),
-        Some("FUNCTION_CALL"),
-    )
-    .await;
-    let deposit_b = insert_balance_change(
-        &pool,
-        401,
-        "near",
-        -100_681_984_951_474_100,
-        "megha19.near",
-        None,
-        Some("on_proposal_callback"),
-        Some("FUNCTION_CALL"),
-    )
-    .await;
-
-    // Synthetic rows: fulfillment points to the same deposit and no receipt.
-    let _synthetic_a = insert_detected_swap_custom(
-        &pool,
-        "proposal-deposit-synthetic-a",
-        Some(deposit_a),
-        deposit_a,
-        None,
-        "0.1006819849514741",
-        "0.1000",
-    )
-    .await;
-    let _synthetic_b = insert_detected_swap_custom(
-        &pool,
-        "proposal-deposit-synthetic-b",
-        Some(deposit_b),
-        deposit_b,
-        None,
-        "0.1006819849514741",
-        "0.1000",
-    )
-    .await;
-
-    // Real fulfillment row for only one of them.
-    let real_fulfillment_bc = insert_balance_change(
-        &pool,
-        402,
-        "near",
-        100_000_000_000_000_000,
-        "solver.near",
-        None,
-        None,
-        Some("TRANSFER"),
-    )
-    .await;
-    let real_swap = insert_detected_swap_custom(
-        &pool,
-        "real-solver-tx-hash",
-        Some(deposit_a),
-        real_fulfillment_bc,
-        Some("real-fulfillment-receipt"),
-        "0.1006819849514741",
-        "0.1000",
-    )
-    .await;
-
-    nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
-        .await
-        .expect("detection cycle");
-    let rows: Vec<(i64, i64)> = sqlx::query_as(
-        "SELECT id, source_id FROM dao_notifications WHERE dao_id = $1 AND event_type = 'swap_fulfilled' ORDER BY id",
+    sqlx::query(
+        r#"
+        INSERT INTO gold_treasury_ledger_events
+            (gold_event_key, dao_id, source_kind, history_visible, transaction_type,
+             status, event_time, token_out, amount_out, recipient)
+        VALUES ('hidden-1', $1, 'public_balance_ledger', false, 'sent', 'success', NOW(),
+                'near', 0.5, 'sponsor.trezu.near')
+        "#,
     )
     .bind(DAO_ID)
-    .fetch_all(&pool)
+    .execute(&pool)
     .await
-    .expect("fetch swap notifications");
-    assert_eq!(
-        rows.len(),
-        1,
-        "only one swap notification should be written"
-    );
-    assert_eq!(
-        rows[0].1, real_swap,
-        "notification should reference the real fulfilled detected_swap row"
-    );
-}
-
-/// add_proposal notifications are deduped by tx hash and prefer the non-zero row.
-#[sqlx::test]
-async fn test_add_proposal_dedupes_by_tx_hash(pool: PgPool) {
-    common::load_test_env();
-
-    insert_dao_with_telegram(&pool).await;
-    reset_cursors_to_start(&pool).await;
-
-    let tx_hash = "proposal-shared-tx-hash";
-
-    // Simulate the real fan-out shape: two zero rows + one non-zero row for the same tx.
-    let _zero_a = insert_balance_change(
-        &pool,
-        300,
-        "near",
-        0,
-        "frol.near",
-        Some(tx_hash),
-        Some("add_proposal"),
-        Some("FUNCTION_CALL"),
-    )
-    .await;
-    let chosen_nonzero = insert_balance_change(
-        &pool,
-        301,
-        "near",
-        -2_000_000,
-        "frol.near",
-        Some(tx_hash),
-        Some("add_proposal"),
-        Some("FUNCTION_CALL"),
-    )
-    .await;
-    let _zero_b = insert_balance_change(
-        &pool,
-        302,
-        "near",
-        0,
-        "frol.near",
-        Some(tx_hash),
-        Some("add_proposal"),
-        Some("FUNCTION_CALL"),
-    )
-    .await;
+    .expect("insert hidden row");
 
     let detected = nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
         .await
         .expect("detection cycle");
-    assert_eq!(
-        detected, 1,
-        "one proposal notification expected per tx hash"
-    );
+    assert_eq!(detected, 0, "hidden rows are not notifiable");
+}
 
-    let row: (i64, serde_json::Value) = sqlx::query_as(
-        "SELECT source_id, payload FROM dao_notifications WHERE dao_id = $1 AND event_type = 'add_proposal'",
+/// Confidential intents notify once their on-chain proposal is linked, with
+/// the payment/exchange kind derived from the stored quote.
+#[sqlx::test]
+async fn test_confidential_proposal_notification(pool: PgPool) {
+    common::load_test_env();
+
+    insert_dao_with_telegram(&pool).await;
+    reset_cursors_to_start(&pool).await;
+
+    // An intent without a linked proposal must not notify.
+    sqlx::query(
+        "INSERT INTO confidential_intents (dao_id, intent_payload, payload_hash, status)
+         VALUES ($1, '{}', 'unlinked-hash', 'pending')",
+    )
+    .bind(DAO_ID)
+    .execute(&pool)
+    .await
+    .expect("insert unlinked intent");
+
+    let intent_id = insert_confidential_intent(&pool, 3, "vendor payout").await;
+
+    let detected = nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
+        .await
+        .expect("detection cycle");
+    assert_eq!(detected, 1, "only the linked intent notifies");
+
+    let (source_key, payload): (String, serde_json::Value) = sqlx::query_as(
+        "SELECT source_key, payload FROM dao_notifications WHERE dao_id = $1 AND event_type = 'add_proposal'",
     )
     .bind(DAO_ID)
     .fetch_one(&pool)
     .await
-    .expect("fetch proposal notification");
+    .expect("fetch confidential notification");
 
+    assert_eq!(source_key, intent_id.to_string());
     assert_eq!(
-        row.0, chosen_nonzero,
-        "detector should choose the non-zero proposal row"
+        payload.get("description").and_then(|v| v.as_str()),
+        Some("vendor payout")
     );
     assert_eq!(
-        row.1.get("tx_hash").and_then(|v| v.as_str()),
-        Some(tx_hash),
-        "payload should carry tx hash used for dedupe"
+        payload.get("proposal_kind").and_then(|v| v.as_str()),
+        Some("Payment"),
+        "matching origin/destination assets classify as Payment"
     );
 }

@@ -20,45 +20,6 @@ fn erase(e: impl std::fmt::Display) -> BoxDynError {
 }
 
 /// Processes dirty accounts up to the current chain head.
-pub async fn account_maintenance(
-    _t: Tick,
-    state: Data<Arc<AppState>>,
-) -> Result<String, BoxDynError> {
-    use near_api::Chain;
-
-    let block = Chain::block()
-        .fetch_from(&state.network)
-        .await
-        .map_err(erase)?;
-    let up_to_block = block.header.height as i64;
-
-    crate::handlers::balance_changes::account_monitor::run_maintenance_cycle(&state, up_to_block)
-        .await
-        .map_err(erase)?;
-    Ok(format!("maintenance cycle done up to block {up_to_block}"))
-}
-
-/// Confidential treasuries: polls incoming deposits + solver fulfillments.
-pub async fn confidential_poll(
-    _t: Tick,
-    state: Data<Arc<AppState>>,
-) -> Result<String, BoxDynError> {
-    crate::handlers::balance_changes::confidential_monitor::run_confidential_poll_cycle(&state)
-        .await
-        .map_err(erase)?;
-    Ok("confidential poll cycle done".to_string())
-}
-
-/// Syncs historical + current token prices from DeFiLlama.
-pub async fn price_sync(_t: Tick, state: Data<Arc<AppState>>) -> Result<String, BoxDynError> {
-    let provider = crate::services::DeFiLlamaClient::with_base_url(
-        state.http_client.clone(),
-        state.env_vars.defillama_api_base_url.clone(),
-    );
-    let summary = crate::services::run_price_sync_cycle(&state.db_pool, &provider).await?;
-    Ok(summary)
-}
-
 /// Ordered gold USD enrichment:
 /// 1. fetch missing historical price buckets into `token_prices`;
 /// 2. fill NULL public USD amounts;
@@ -97,16 +58,6 @@ pub async fn gold_usd_enrichment(
             Ok(summary) => outcomes.push(format!("ledger=[{summary}]")),
             Err(error) => errors.push(format!("ledger USD fill failed: {error}")),
         }
-
-        // TODO(confidential-v2): remove with the dual-write.
-        let backfill = crate::services::GoldConfidentialUsdBackfill::new(
-            state.db_pool.clone(),
-            Arc::clone(&state.token_price_service),
-        );
-        match backfill.run().await {
-            Ok(summary) => outcomes.push(format!("confidential=[{summary}]")),
-            Err(error) => errors.push(format!("confidential USD fill failed: {error}")),
-        }
     }
 
     if errors.is_empty() {
@@ -121,19 +72,6 @@ pub async fn gold_usd_enrichment(
     }
 }
 
-/// Fills `balance_changes.usd_value` from the `token_prices` series.
-pub async fn balance_changes_usd_backfill(
-    _t: Tick,
-    state: Data<Arc<AppState>>,
-) -> Result<String, BoxDynError> {
-    let backfill = crate::services::BalanceChangesUsdBackfill::new(
-        state.db_pool.clone(),
-        Arc::clone(&state.token_price_service),
-    );
-    Ok(backfill.run().await?.to_string())
-}
-
-/// Ingests the Chaindefuser token registry into `tokens` + `token_prices`.
 pub async fn token_price_ingest(
     _t: Tick,
     state: Data<Arc<AppState>>,
@@ -423,32 +361,6 @@ pub async fn public_quote_status_refresh(
 }
 
 /// Hourly confidential balance snapshots (gold).
-pub async fn confidential_snapshots(
-    _t: Tick,
-    state: Data<Arc<AppState>>,
-) -> Result<String, BoxDynError> {
-    crate::handlers::intents::confidential::gold::snapshots::tick_confidential_balance_snapshot_cron(
-        &state,
-    )
-    .await
-    .map_err(erase)?;
-    Ok("snapshot tick done".to_string())
-}
-
-/// Daily gold reconciliation (also pushed once at startup).
-pub async fn confidential_gold_reconciliation(
-    _t: Tick,
-    state: Data<Arc<AppState>>,
-) -> Result<String, BoxDynError> {
-    crate::handlers::intents::confidential::gold::reconciliation_worker::run_reconciliation_pass(
-        &state,
-        "scheduled",
-    )
-    .await
-    .map_err(erase)?;
-    Ok("reconciliation pass done".to_string())
-}
-
 /// Queries the bulk payment contract and processes pending lists.
 pub async fn bulk_payment_payout(
     _t: Tick,
@@ -461,55 +373,6 @@ pub async fn bulk_payment_payout(
 
 /// Goldsky enrichment: drains full batches back-to-back within one task,
 /// preserving the old adaptive behavior (no idle wait while backlogged).
-pub async fn goldsky_enrichment(
-    _t: Tick,
-    state: Data<Arc<AppState>>,
-) -> Result<String, BoxDynError> {
-    const BATCH_SIZE: usize = 100;
-
-    let goldsky_pool = state
-        .goldsky_pool
-        .clone()
-        .ok_or_else(|| -> BoxDynError { "goldsky pool not configured".into() })?;
-    let intents_api_key = state.env_vars.intents_explorer_api_key.clone();
-    let intents_api_url = state.env_vars.intents_explorer_api_url.clone();
-
-    let mut total = 0usize;
-    loop {
-        let processed =
-            match crate::handlers::balance_changes::goldsky_enrichment::run_enrichment_cycle(
-                &goldsky_pool,
-                &state.db_pool,
-                &state.archival_network,
-                intents_api_key.as_deref(),
-                &intents_api_url,
-                Some(&state),
-            )
-            .await
-            {
-                Ok(processed) => processed,
-                Err(e) => {
-                    // Batches already processed are committed (the cycle advances
-                    // its cursor per batch), so log that progress and surface the
-                    // failure — the next tick resumes from the cursor. The cycle's
-                    // error is `Box<dyn Error>` (not Send+Sync), so it must be
-                    // stringified via `erase` to cross into a task error.
-                    tracing::warn!(
-                        outcomes_this_task = total,
-                        error = %e,
-                        "goldsky enrichment failed mid-drain"
-                    );
-                    return Err(erase(e));
-                }
-            };
-        total += processed;
-        if processed < BATCH_SIZE {
-            break;
-        }
-    }
-    Ok(format!("processed {total} outcomes"))
-}
-
 /// Resumes half-created treasuries (poll fallback; failures also push a
 /// task immediately via the creation Notify).
 pub async fn treasury_creation_sweeper(

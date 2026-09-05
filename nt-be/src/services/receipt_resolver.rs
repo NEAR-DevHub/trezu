@@ -289,3 +289,83 @@ async fn has_receipt(
         .iter()
         .any(|r| r.id.to_string() == target_receipt_id))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::utils::test_utils::init_test_state;
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_resolve_receipt_to_transaction() {
+        let state = init_test_state().await;
+
+        // Receipt 4k8fzeY5VkQmRsseapsPBA2mNReroXdjQVpvHkhWURt1 is part of
+        // transaction CpctEH17tQgvAT6kTPkCpWtSGtG4WFYS2Urjq9eNNhm5
+        // signed by petersalomonsen.near (who called act_proposal on the DAO), executed at block 178148635
+        let receipt_id = "4k8fzeY5VkQmRsseapsPBA2mNReroXdjQVpvHkhWURt1";
+        let block_height = 178148635;
+
+        let result =
+            resolve_receipt_to_transaction(&state.archival_network, receipt_id, block_height)
+                .await
+                .expect("Should resolve receipt to transaction");
+
+        assert_eq!(result.receipt_id, receipt_id, "Receipt ID should match");
+        assert_eq!(
+            result.transaction_hash, "CpctEH17tQgvAT6kTPkCpWtSGtG4WFYS2Urjq9eNNhm5",
+            "Should resolve to the correct originating transaction"
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_resolve_meta_transaction_receipt() {
+        let state = init_test_state().await;
+
+        // Receipt 2nLMJS4s43ou8sXjNL84y4Vxnnt5tRKK8nomsxthrwfi is a meta-transaction
+        // signed by treasury-factory.near (relayer) on behalf of olskik.near
+        let receipt_id = "2nLMJS4s43ou8sXjNL84y4Vxnnt5tRKK8nomsxthrwfi";
+        let block_height = 185258323;
+
+        let result =
+            resolve_receipt_to_transaction(&state.archival_network, receipt_id, block_height)
+                .await
+                .expect("Should resolve meta-transaction receipt");
+
+        assert_eq!(result.receipt_id, receipt_id);
+        assert_eq!(
+            result.signer_id, "treasury-factory.near",
+            "Signer should be the relayer (treasury-factory.near), not the user"
+        );
+        assert!(
+            !result.transaction_hash.is_empty(),
+            "Should resolve to a transaction hash"
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_resolve_data_receipt_wrap_near() {
+        let state = init_test_state().await;
+
+        // Receipt 5JeCG66x51314NzRXzky8kRqS5bXwBGWxJmLXFw4xieh is a Data receipt
+        // from wrap.near to testing-astradao.sputnik-dao.near at block 185175857.
+        // The actual action receipt (on_proposal_callback) was signed by megha19.near,
+        // originating from tx 3NV19q2Gnef1rAdeDa6HA6PxwXwJzv4aAm4s61rkSNCC at block 185175854.
+        let receipt_id = "5JeCG66x51314NzRXzky8kRqS5bXwBGWxJmLXFw4xieh";
+        let block_height = 185175857;
+
+        let result =
+            resolve_receipt_to_transaction(&state.archival_network, receipt_id, block_height)
+                .await
+                .expect("Should resolve data receipt");
+
+        assert_eq!(result.receipt_id, receipt_id);
+        assert_eq!(
+            result.signer_id, "megha19.near",
+            "Signer should be megha19.near who called act_proposal"
+        );
+        assert_eq!(
+            result.transaction_hash, "3NV19q2Gnef1rAdeDa6HA6PxwXwJzv4aAm4s61rkSNCC",
+            "Should resolve to the correct originating transaction"
+        );
+    }
+}

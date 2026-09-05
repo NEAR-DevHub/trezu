@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO dao_members (dao_id, account_id, is_policy_member, is_saved, is_hidden)\n            VALUES ($1, 'old-member.near', true, false, false)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c2dd132ef51cd283a440a1e6278fb8b736e2d36ee1b5d1f9b9531a00fe7a06ad"
+}

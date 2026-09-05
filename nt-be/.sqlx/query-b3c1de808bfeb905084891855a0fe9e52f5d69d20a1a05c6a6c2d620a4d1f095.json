@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO bronze_public_history_events\n            (account_id, source, source_event_key, block_height, block_timestamp, block_time,\n             affected_account_id, raw_payload)\n            VALUES ($1, 'nearblocks_receipt', 'find-block-height-test', $2, $3, $4, $1, '{}')\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int8",
+        "Numeric",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b3c1de808bfeb905084891855a0fe9e52f5d69d20a1a05c6a6c2d620a4d1f095"
+}

@@ -9,8 +9,8 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 use crate::AppState;
-use crate::handlers::balance_changes::confidential_list::is_confidential_dao;
 use crate::handlers::intents::confidential::bronze::api::fetch_history;
+use crate::handlers::public_history::confidential_list::is_confidential_dao;
 use crate::utils::cache::{CacheKey, CacheTier};
 use crate::utils::jsonrpc::{JsonRpcRequest, JsonRpcResponse};
 

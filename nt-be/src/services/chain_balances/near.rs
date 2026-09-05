@@ -7,8 +7,8 @@
 use near_api::{AccountId, NetworkConfig, Reference, Tokens};
 use std::str::FromStr;
 
-use crate::handlers::balance_changes::counterparty::convert_raw_to_decimal;
-use crate::handlers::balance_changes::utils::with_transport_retry;
+use crate::services::counterparties::convert_raw_to_decimal;
+use crate::utils::transport::with_transport_retry;
 
 /// Query NEAR native token balance at a specific block height, converted to human-readable format
 ///

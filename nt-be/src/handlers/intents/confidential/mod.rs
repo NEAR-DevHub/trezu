@@ -16,6 +16,7 @@ pub mod generate_intent;
 pub mod gold;
 pub mod history_refresh;
 pub mod prepare_auth;
+pub mod proposal_signals;
 pub mod types;
 
 pub use bronze::store::link_intent_to_history_event;
@@ -25,7 +26,7 @@ pub use bronze::{
 };
 pub use gold::{
     mark_gold_dirty_for_history_event, mark_gold_dirty_tx, project_confidential_gold_for_dao,
-    refresh_gold_metadata_for_intent, snapshot_confidential_dao_balances,
+    refresh_gold_metadata_for_intent,
 };
 pub use types::{ConfidentialTxType, HistoryStatus, accounts_equal, bare_account};
 

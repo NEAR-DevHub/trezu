@@ -13,22 +13,17 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use bigdecimal::{BigDecimal, ToPrimitive};
-use chrono::{DateTime, Months, NaiveDate, Utc};
+use chrono::{DateTime, Months, Utc};
 use near_account_id::AccountIdRef;
 use near_api::AccountId;
 use rust_xlsxwriter::{Color, Format, Workbook};
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool};
-use std::collections::HashMap;
 use std::sync::Arc;
 use urlencoding::encode;
 
 use crate::config::get_plan_config;
-use crate::handlers::balance_changes::query_builder::{
-    BalanceChangeFilters, FROM_ACCOUNT_EXPR, RELAYER_ACCOUNT, TO_ACCOUNT_EXPR, build_count_query,
-    build_where_conditions,
-};
-use crate::handlers::balance_changes::{confidential_list, confidential_list_legacy, public_list};
+use crate::handlers::public_history::{confidential_list, public_list};
 use crate::handlers::subscription::plans::get_account_plan_info;
 use crate::handlers::token::{TokenMetadata, fetch_tokens_with_fallback};
 use crate::routes::{
@@ -39,107 +34,13 @@ use crate::routes::{
 use crate::utils::serde::comma_separated;
 use crate::{AppState, auth::OptionalAuthUser};
 
-#[derive(Debug, Serialize, sqlx::FromRow)]
-#[serde(rename_all = "camelCase")]
-pub struct BalanceChangeRow {
-    pub id: i64,
-    pub account_id: String,
-    pub block_height: i64,
-    pub block_time: DateTime<Utc>,
-    pub token_id: String,
-    pub receipt_id: Vec<String>,
-    pub transaction_hashes: Vec<String>,
-    pub counterparty: Option<String>,
-    pub signer_id: Option<String>,
-    pub receiver_id: Option<String>,
-    pub amount: BigDecimal,
-    pub balance_before: BigDecimal,
-    pub balance_after: BigDecimal,
-    pub created_at: DateTime<Utc>,
-}
-
 // ============================================================================
 // Shared Helper Functions
 // ============================================================================
 
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum Interval {
-    Hourly,
-    Daily,
-    Weekly,
-    Monthly,
-}
-
-impl Interval {
-    /// Increments the given DateTime by one interval period
-    ///
-    /// For monthly intervals, this properly handles month boundaries by advancing
-    /// to the same day of the next month (e.g., Feb 1 -> Mar 1, not Feb 1 -> Mar 3).
-    /// If the day is invalid for the target month (e.g., Jan 31 -> Feb), it clamps
-    /// to the last valid day of the target month (e.g., Feb 28 or Feb 29).
-    pub fn increment(&self, datetime: DateTime<Utc>) -> DateTime<Utc> {
-        match self {
-            Interval::Hourly => datetime + chrono::Duration::hours(1),
-            Interval::Daily => datetime + chrono::Duration::days(1),
-            Interval::Weekly => datetime + chrono::Duration::weeks(1),
-            Interval::Monthly => datetime.checked_add_months(Months::new(1)).unwrap(),
-        }
-    }
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ChartRequest {
-    pub account_id: AccountId,
-    pub start_time: DateTime<Utc>,
-    pub end_time: DateTime<Utc>,
-    pub interval: Interval,
-    #[serde(default, deserialize_with = "comma_separated")]
-    pub token_ids: Option<Vec<String>>, // Comma-separated list, e.g., "near,wrap.near"
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct BalanceSnapshot {
-    pub timestamp: String,   // ISO 8601 format
-    pub balance: BigDecimal, // Decimal-adjusted balance
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub price_usd: Option<f64>, // USD price at timestamp (null if unavailable)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub value_usd: Option<f64>, // balance * price_usd (null if unavailable)
-}
-
-#[derive(Debug, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
-pub enum ChartStatus {
-    Ok,
-    Stale,
-    Unavailable,
-}
-
-/// Freshness of the data source backing a chart response.
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ChartMeta {
-    pub status: ChartStatus,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub last_snapshot_at: Option<DateTime<Utc>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub coverage_start: Option<DateTime<Utc>>,
-}
-
-/// Chart response with metadata
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ChartResponse {
-    #[serde(flatten)]
-    pub data: HashMap<String, Vec<BalanceSnapshot>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub last_synced_at: Option<DateTime<Utc>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub chart_meta: Option<ChartMeta>,
-}
+pub use crate::handlers::public_history::charts::models::{
+    BalanceSnapshot, ChartMeta, ChartRequest, ChartResponse, ChartStatus, Interval,
+};
 
 /// Chart API - returns balance snapshots at intervals
 ///
@@ -152,41 +53,13 @@ pub async fn get_balance_chart(
     user.verify_member_if_confidential(&state.db_pool, &params.account_id)
         .await?;
 
-    // Decide confidentiality independently from the balance-history read
-    // source. Public snapshot reads must return before the legacy/PublicGold
-    // resolver so the enabled path cannot fall through to `balance_changes`.
     let is_confidential =
         confidential_list::is_confidential_dao(&state.db_pool, params.account_id.as_str())
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    if is_confidential {
-        let response = if state.env_vars.unified_gold_ledger_reads {
-            crate::handlers::public_history::charts::chart::build_confidential_chart_response(
-                &state,
-                params.account_id.as_str(),
-                params.start_time,
-                params.end_time,
-                &params.interval,
-                params.token_ids.as_ref(),
-            )
-            .await?
-        } else {
-            crate::handlers::intents::confidential::gold::snapshots::build_confidential_snapshot_chart_response(
-                &state,
-                params.account_id.as_str(),
-                params.start_time,
-                params.end_time,
-                &params.interval,
-                params.token_ids.as_ref(),
-            )
-            .await?
-        };
-        return Ok(Json(response));
-    }
-
-    if state.env_vars.unified_gold_ledger_reads {
-        let response = crate::handlers::public_history::charts::chart::build_public_chart_response(
+    let response = if is_confidential {
+        crate::handlers::public_history::charts::chart::build_confidential_chart_response(
             &state,
             params.account_id.as_str(),
             params.start_time,
@@ -194,164 +67,20 @@ pub async fn get_balance_chart(
             &params.interval,
             params.token_ids.as_ref(),
         )
-        .await?;
-        return Ok(Json(response));
-    }
-
-    let read_source = resolve_balance_changes_read_source(&state, params.account_id.as_str())
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    debug_assert_ne!(read_source, BalanceChangesReadSource::Confidential);
-
-    let last_synced_at = sqlx::query_scalar::<_, Option<DateTime<Utc>>>(
-        "SELECT last_synced_at FROM monitored_accounts WHERE account_id = $1",
-    )
-    .bind(params.account_id.as_str())
-    .fetch_optional(&state.db_pool)
-    .await
-    .ok()
-    .flatten() // unwrap Option<Option<DateTime>> from fetch_optional
-    .flatten(); // unwrap Option<DateTime> from nullable column
-
-    // Load prior balances from the same source selected for the chart rows.
-    let prior_balances = match read_source {
-        BalanceChangesReadSource::Confidential => {
-            unreachable!("confidential charts return early above")
-        }
-        BalanceChangesReadSource::PublicGold => public_list::load_prior_balances(
-            &state.db_pool,
-            params.account_id.as_str(),
-            params.start_time,
-            params.token_ids.as_ref(),
-        )
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
-        BalanceChangesReadSource::Legacy => load_prior_balances(
-            &state.db_pool,
-            params.account_id.as_str(),
-            params.start_time,
-            params.token_ids.as_ref(),
-        )
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
-    };
-
-    // Compute interval timestamps up front so we can pass them to SQL for the
-    // sponsor totals query — one cumulative sum per chart point, no per-snapshot scanning.
-    let interval_timestamps: Vec<DateTime<Utc>> = {
-        let mut ts = params.start_time;
-        let mut out = Vec::new();
-        while ts < params.end_time {
-            out.push(ts);
-            ts = params.interval.increment(ts);
-        }
-        out
-    };
-
-    // For each interval timestamp, fetch the cumulative sponsored NEAR amount up to
-    // that point. We hide sponsor.trezu.near deposits and CreateAccount amounts from
-    // users, so the chart subtracts them to show the balance without our top-ups.
-    let sponsor_totals = load_sponsor_totals_per_interval(
-        &state.db_pool,
-        params.account_id.as_str(),
-        &interval_timestamps,
-    )
-    .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    let changes: Vec<BalanceChange> = if read_source != BalanceChangesReadSource::Legacy {
-        let query = BalanceChangesQuery {
-            account_id: params.account_id.clone(),
-            limit: None,
-            offset: None,
-            start_time: Some(params.start_time.to_rfc3339()),
-            end_time: Some(params.end_time.to_rfc3339()),
-            token_ids: params.token_ids.clone(),
-            exclude_token_ids: None,
-            transaction_types: None, // Include all transaction types for balance chart
-            min_amount: None,
-            max_amount: None,
-            tx_hash: None,
-            from_accounts: None,
-            from_accounts_not: None,
-            to_accounts: None,
-            to_accounts_not: None,
-            include_metadata: Some(false), // Chart doesn't need metadata
-            include_prices: Some(true),    // Chart needs prices for USD values
-            include_chain_metadata: Some(false), // Chart doesn't need chain metadata
-            exclude_near_dust: false,
-            exclude_swaps_from_direction: false, // Balance chart: include swaps
-        };
-
-        let enriched_changes = get_balance_changes_from_source(&state, &query, read_source)
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-        // Convert EnrichedBalanceChange back to BalanceChange for calculate_snapshots.
-        // IMPORTANT: restore the original staking token_id (staking:<pool>) instead of
-        // the display-transformed "near". The staking remapping in the selected-source adapter
-        // is for UI display only; mixing staking rows under "near" corrupts the snapshot
-        // logic because staking balance_after values (~0.001) are picked up instead of the
-        // real NEAR balance when staking block_heights are higher than real NEAR changes.
-        enriched_changes
-            .into_iter()
-            .map(|change| {
-                let token_id = if change.action_kind.as_deref() == Some("StakingReward") {
-                    // counterparty was set to the pool address by the remapping; reconstruct
-                    // the original staking:<pool> token_id so calculate_snapshots keeps these
-                    // in a separate series from real NEAR.
-                    if let Some(ref pool) = change.counterparty {
-                        format!("staking:{}", pool)
-                    } else {
-                        change.token_id
-                    }
-                } else {
-                    change.token_id
-                };
-                BalanceChange {
-                    block_height: change.block_height,
-                    block_time: change.block_time,
-                    token_id,
-                    token_symbol: None, // Not needed for chart calculations
-                    counterparty: change.counterparty.unwrap_or_default(),
-                    amount: change.amount,
-                    balance_before: change.balance_before,
-                    balance_after: change.balance_after,
-                    transaction_hashes: change.transaction_hashes,
-                    receipt_id: change.receipt_id,
-                }
-            })
-            .collect()
+        .await?
     } else {
-        load_legacy_chart_balance_changes(
-            &state.db_pool,
-            &params.account_id,
+        crate::handlers::public_history::charts::chart::build_public_chart_response(
+            &state,
+            params.account_id.as_str(),
             params.start_time,
             params.end_time,
+            &params.interval,
             params.token_ids.as_ref(),
         )
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        .await?
     };
 
-    // Calculate snapshots at each interval
-    let mut snapshots = calculate_snapshots(
-        changes,
-        prior_balances,
-        sponsor_totals,
-        interval_timestamps,
-        params.end_time,
-    );
-
-    // Enrich snapshots with price data
-    enrich_snapshots_with_prices(&mut snapshots, &state.price_service).await;
-
-    Ok(Json(ChartResponse {
-        data: snapshots,
-        last_synced_at,
-        chart_meta: None,
-    }))
+    Ok(Json(response))
 }
 
 #[derive(Debug, Deserialize)]
@@ -538,341 +267,6 @@ async fn handle_export(
     );
 
     Ok((filename, data, content_type))
-}
-
-// Helper functions
-
-#[derive(Debug)]
-#[allow(dead_code)]
-struct BalanceChange {
-    block_height: i64,
-    block_time: DateTime<Utc>,
-    token_id: String,
-    token_symbol: Option<String>,
-    counterparty: String,
-    amount: BigDecimal,
-    balance_before: BigDecimal,
-    balance_after: BigDecimal,
-    transaction_hashes: Vec<String>,
-    receipt_id: Vec<String>,
-}
-
-/// For each interval timestamp, return the cumulative sponsored NEAR amount up to that point.
-///
-/// We hide two categories from users:
-/// 1. `counterparty = 'sponsor.trezu.near'` — storage deposit top-ups
-/// 2. `action_kind = 'CreateAccount'` — account creation deposits
-///
-/// The timestamps are the chart interval points computed in the caller. One SQL query
-/// returns one row per timestamp with the cumulative SUM up to and including that moment.
-async fn load_sponsor_totals_per_interval(
-    pool: &PgPool,
-    account_id: &str,
-    interval_timestamps: &[DateTime<Utc>],
-) -> Result<HashMap<DateTime<Utc>, BigDecimal>, Box<dyn std::error::Error>> {
-    if interval_timestamps.is_empty() {
-        return Ok(HashMap::new());
-    }
-
-    let rows = sqlx::query!(
-        r#"
-        SELECT
-            t.ts as "ts!",
-            COALESCE(SUM(bc.amount), 0) as "cumulative_amount!"
-        FROM unnest($3::timestamptz[]) AS t(ts)
-        LEFT JOIN balance_changes bc
-            ON  bc.account_id = $2
-            AND bc.token_id = 'near'
-            AND bc.block_time <= t.ts
-            AND (bc.counterparty = $1 OR bc.action_kind = 'CreateAccount')
-        GROUP BY t.ts
-        "#,
-        RELAYER_ACCOUNT,
-        account_id,
-        interval_timestamps as &[DateTime<Utc>],
-    )
-    .fetch_all(pool)
-    .await?;
-
-    Ok(rows
-        .into_iter()
-        .map(|r| (r.ts, r.cumulative_amount))
-        .collect())
-}
-
-/// Load the most recent balance for each token before start_time
-///
-/// Note: This function contains intentionally duplicated SQL queries for compile-time safety.
-/// We use sqlx::query! macro which requires compile-time verification against the database schema.
-/// The alternative (runtime sqlx::query()) would lose type safety. If you edit one query, ensure
-/// you update the other. The compiler will catch mismatches in return types.
-async fn load_prior_balances(
-    pool: &PgPool,
-    account_id: &str,
-    start_time: DateTime<Utc>,
-    token_ids: Option<&Vec<String>>,
-) -> Result<HashMap<String, BigDecimal>, Box<dyn std::error::Error>> {
-    let result: HashMap<_, _> = if let Some(tokens) = token_ids {
-        sqlx::query!(
-            r#"
-            SELECT DISTINCT ON (token_id)
-                token_id as "token_id!",
-                balance_after as "balance!"
-            FROM balance_changes
-            WHERE account_id = $1
-              AND block_time < $2
-              AND token_id = ANY($3)
-            ORDER BY token_id, block_height DESC
-            "#,
-            account_id,
-            start_time,
-            tokens
-        )
-        .fetch_all(pool)
-        .await?
-        .into_iter()
-        .map(|row| (row.token_id, row.balance))
-        .collect()
-    } else {
-        sqlx::query!(
-            r#"
-            SELECT DISTINCT ON (token_id)
-                token_id as "token_id!",
-                balance_after as "balance!"
-            FROM balance_changes
-            WHERE account_id = $1
-              AND block_time < $2
-            ORDER BY token_id, block_height DESC
-            "#,
-            account_id,
-            start_time
-        )
-        .fetch_all(pool)
-        .await?
-        .into_iter()
-        .map(|row| (row.token_id, row.balance))
-        .collect()
-    };
-
-    Ok(result)
-}
-
-#[derive(Debug, FromRow)]
-struct LegacyChartBalanceChangeRow {
-    block_height: i64,
-    block_time: DateTime<Utc>,
-    token_id: String,
-    counterparty: String,
-    amount: BigDecimal,
-    balance_before: BigDecimal,
-    balance_after: BigDecimal,
-    transaction_hashes: Vec<String>,
-    receipt_id: Vec<String>,
-}
-
-async fn load_legacy_chart_balance_changes(
-    pool: &PgPool,
-    account_id: &AccountId,
-    start_time: DateTime<Utc>,
-    end_time: DateTime<Utc>,
-    token_ids: Option<&Vec<String>>,
-) -> Result<Vec<BalanceChange>, sqlx::Error> {
-    let filters = BalanceChangeFilters {
-        account_id: account_id.clone(),
-        date_cutoff: None,
-        start_date: Some(start_time),
-        end_date: Some(end_time),
-        token_ids: token_ids.cloned(),
-        exclude_token_ids: None,
-        transaction_types: None,
-        min_amount: None,
-        max_amount: None,
-        transaction_hash_query: None,
-        from_accounts: None,
-        from_accounts_not: None,
-        to_accounts: None,
-        to_accounts_not: None,
-        exclude_near_dust: false,
-        exclude_swaps_from_direction: false,
-    };
-    let (conditions, _) = build_where_conditions(&filters);
-    let query = format!(
-        r#"
-        SELECT
-            block_height,
-            block_time,
-            token_id,
-            COALESCE(counterparty, '') AS counterparty,
-            amount,
-            balance_before,
-            balance_after,
-            transaction_hashes,
-            receipt_id
-        FROM balance_changes
-        WHERE {}
-        ORDER BY block_height DESC
-        "#,
-        conditions.join(" AND ")
-    );
-
-    let mut query = sqlx::query_as::<_, LegacyChartBalanceChangeRow>(&query)
-        .bind(account_id.as_str())
-        .bind(start_time)
-        .bind(end_time);
-    if let Some(tokens) = token_ids {
-        query = query.bind(tokens);
-    }
-
-    let rows = query.fetch_all(pool).await?;
-    Ok(rows
-        .into_iter()
-        .map(|row| BalanceChange {
-            block_height: row.block_height,
-            block_time: row.block_time,
-            token_id: row.token_id,
-            token_symbol: None,
-            counterparty: row.counterparty,
-            amount: row.amount,
-            balance_before: row.balance_before,
-            balance_after: row.balance_after,
-            transaction_hashes: row.transaction_hashes,
-            receipt_id: row.receipt_id,
-        })
-        .collect())
-}
-
-/// Load balance changes from database
-///
-/// Note: This function contains intentionally duplicated SQL queries for compile-time safety.
-/// We use sqlx::query! macro which requires compile-time verification against the database schema.
-/// The alternative (runtime sqlx::query()) would lose type safety. If you edit one query, ensure
-/// Calculate balance snapshots at regular intervals.
-///
-/// For NEAR, each snapshot subtracts the precomputed cumulative sponsored amount
-/// for that interval point so the chart reflects the balance without our top-ups.
-fn calculate_snapshots(
-    changes: Vec<BalanceChange>,
-    prior_balances: HashMap<String, BigDecimal>,
-    sponsor_totals: HashMap<DateTime<Utc>, BigDecimal>,
-    interval_timestamps: Vec<DateTime<Utc>>,
-    end_time: DateTime<Utc>,
-) -> HashMap<String, Vec<BalanceSnapshot>> {
-    // Group changes by token
-    let mut by_token: HashMap<String, Vec<&BalanceChange>> = HashMap::new();
-    for change in &changes {
-        by_token
-            .entry(change.token_id.clone())
-            .or_default()
-            .push(change);
-    }
-
-    // Add tokens that have prior balances but no changes in this timeframe
-    for token_id in prior_balances.keys() {
-        by_token.entry(token_id.clone()).or_default();
-    }
-
-    let zero = BigDecimal::from(0);
-    let mut result: HashMap<String, Vec<BalanceSnapshot>> = HashMap::new();
-
-    for (token_id, token_changes) in by_token {
-        let mut snapshots = Vec::new();
-
-        // Get the starting balance for this token
-        let starting_balance = prior_balances
-            .get(&token_id)
-            .cloned()
-            .unwrap_or_else(|| zero.clone());
-
-        for &current_time in &interval_timestamps {
-            if current_time >= end_time {
-                break;
-            }
-
-            // Most recent balance_after at or before this interval point.
-            // Changes are sorted newest-first (block_height DESC), so `find` returns
-            // the most recent change at or before current_time.
-            let balance = token_changes
-                .iter()
-                .find(|c| c.block_time <= current_time)
-                .map(|c| c.balance_after.clone())
-                .unwrap_or_else(|| starting_balance.clone());
-
-            // For NEAR, subtract the precomputed cumulative sponsored amount so the
-            // chart shows the balance the user would have without our top-ups.
-            let balance = if token_id == "near" {
-                let sponsored = sponsor_totals.get(&current_time).unwrap_or(&zero).clone();
-                let adjusted = balance - sponsored;
-                adjusted.max(zero.clone())
-            } else {
-                balance
-            };
-
-            snapshots.push(BalanceSnapshot {
-                timestamp: current_time.to_rfc3339(),
-                balance,
-                price_usd: None,
-                value_usd: None,
-            });
-        }
-
-        result.insert(token_id, snapshots);
-    }
-
-    result
-}
-
-/// Enrich snapshots with USD price data
-async fn enrich_snapshots_with_prices<P: crate::services::PriceProvider>(
-    snapshots: &mut HashMap<String, Vec<BalanceSnapshot>>,
-    price_service: &crate::services::PriceLookupService<P>,
-) {
-    for (token_id, token_snapshots) in snapshots.iter_mut() {
-        // Parse timestamps once and collect unique dates
-        let parsed_dates: Vec<Option<NaiveDate>> = token_snapshots
-            .iter()
-            .map(|s| {
-                DateTime::parse_from_rfc3339(&s.timestamp)
-                    .ok()
-                    .map(|dt| dt.date_naive())
-            })
-            .collect();
-
-        let unique_dates: Vec<NaiveDate> = parsed_dates
-            .iter()
-            .filter_map(|d| *d)
-            .collect::<std::collections::HashSet<_>>()
-            .into_iter()
-            .collect();
-
-        if unique_dates.is_empty() {
-            continue;
-        }
-
-        // Batch fetch prices for all dates
-        let prices = match price_service
-            .get_prices_batch(token_id, &unique_dates)
-            .await
-        {
-            Ok(p) => p,
-            Err(e) => {
-                tracing::warn!("Failed to fetch prices for {}: {}", token_id, e);
-                continue;
-            }
-        };
-
-        // Enrich each snapshot with price data (reusing parsed dates)
-        for (snapshot, parsed_date) in token_snapshots.iter_mut().zip(parsed_dates.iter()) {
-            if let Some(date) = parsed_date
-                && let Some(&price) = prices.get(date)
-            {
-                snapshot.price_usd = Some(price);
-                // Calculate value_usd = balance * price
-                if let Some(balance_f64) = snapshot.balance.to_f64() {
-                    snapshot.value_usd = Some(balance_f64 * price);
-                }
-            }
-        }
-    }
 }
 
 /// Helper function to build BalanceChangesQuery for export
@@ -1732,11 +1126,8 @@ pub struct RecentActivity {
 /// them to whichever is later so the plan limit cannot be bypassed and the
 /// requested range is still honoured.
 ///
-/// `endDate` is not part of this helper: gold/confidential readers take the
-/// collapsed value as `start_time` and bind `endDate` separately, and the
-/// legacy `count_query` already binds `date_cutoff`, `start_date`, and
-/// `end_date` as distinct `>=` / `<=` params. Do not fold `end_date` in here
-/// or the legacy path will double-bind it.
+/// `endDate` is not part of this helper: the readers take the collapsed
+/// value as `start_time` and bind `endDate` separately.
 fn narrower_start_bound(
     date_cutoff: Option<DateTime<Utc>>,
     start_date: Option<DateTime<Utc>>,
@@ -1853,69 +1244,15 @@ pub async fn get_recent_activity(
         .as_deref()
         .map(|t| vec![t.to_string()]);
 
-    let filters = BalanceChangeFilters {
-        account_id: params.account_id.clone(),
+    // One lower time bound: the later of the plan cutoff and the caller's
+    // startDate.
+    let effective_start_str: Option<String> = narrower_start_bound(
         date_cutoff,
-        start_date: start_date
+        start_date
             .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
             .map(|dt| dt.with_timezone(&Utc)),
-        end_date: end_date
-            .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
-            .map(|dt| dt.with_timezone(&Utc)),
-        token_ids: token_ids.clone(),
-        exclude_token_ids: exclude_token_ids.clone(),
-        transaction_types: transaction_types_for_query.clone(),
-        min_amount: None,
-        max_amount: None,
-        transaction_hash_query: params.tx_hash.clone(),
-        from_accounts: params.from_account.clone(),
-        from_accounts_not: params.from_account_not.clone(),
-        to_accounts: params.to_account.clone(),
-        to_accounts_not: params.to_account_not.clone(),
-        exclude_near_dust: true,
-        exclude_swaps_from_direction: true, // Recent activity: exclude swaps from incoming/outgoing (separate tab)
-    };
-
-    // Gold/public readers: one lower bound. Legacy count_query below still
-    // binds cutoff + start_date separately (same max semantics).
-    let effective_start_str: Option<String> =
-        narrower_start_bound(filters.date_cutoff, filters.start_date).map(|dt| dt.to_rfc3339());
-
-    // Count query
-    let count_query_str = build_count_query(&filters);
-    let mut count_query = sqlx::query_scalar::<sqlx::Postgres, i64>(&count_query_str)
-        .bind(params.account_id.as_str());
-
-    // Bind date parameters in order
-    if let Some(ref cutoff) = filters.date_cutoff {
-        count_query = count_query.bind(cutoff);
-    }
-    if let Some(ref start) = filters.start_date {
-        count_query = count_query.bind(start);
-    }
-    if let Some(ref end) = filters.end_date {
-        count_query = count_query.bind(end);
-    }
-    if let Some(ref tokens) = filters.token_ids {
-        count_query = count_query.bind(tokens);
-    } else if let Some(ref exclude_tokens) = filters.exclude_token_ids {
-        count_query = count_query.bind(exclude_tokens);
-    }
-    if let Some(ref tx_hash_query) = filters.transaction_hash_query {
-        count_query = count_query.bind(format!("%{}%", tx_hash_query));
-    }
-    if let Some(ref from_accounts) = filters.from_accounts {
-        count_query = count_query.bind(from_accounts);
-    }
-    if let Some(ref from_accounts_not) = filters.from_accounts_not {
-        count_query = count_query.bind(from_accounts_not);
-    }
-    if let Some(ref to_accounts) = filters.to_accounts {
-        count_query = count_query.bind(to_accounts);
-    }
-    if let Some(ref to_accounts_not) = filters.to_accounts_not {
-        count_query = count_query.bind(to_accounts_not);
-    }
+    )
+    .map(|dt| dt.to_rfc3339());
 
     let source_count_query = BalanceChangesQuery {
         account_id: params.account_id.clone(),
@@ -1941,26 +1278,14 @@ pub async fn get_recent_activity(
     };
     let total: i64 = match read_source {
         BalanceChangesReadSource::Confidential => {
-            if state.env_vars.unified_gold_ledger_reads {
-                confidential_list::count_balance_change_legs(&state.db_pool, &source_count_query)
-                    .await
-                    .unwrap_or(0)
-            } else {
-                confidential_list_legacy::count_balance_change_legs(
-                    &state.db_pool,
-                    &source_count_query,
-                )
+            confidential_list::count_balance_change_legs(&state.db_pool, &source_count_query)
                 .await
                 .unwrap_or(0)
-            }
         }
         BalanceChangesReadSource::PublicGold => {
             public_list::count_balance_change_legs(&state.db_pool, &source_count_query)
                 .await
                 .unwrap_or(0)
-        }
-        BalanceChangesReadSource::Legacy => {
-            count_query.fetch_one(&state.db_pool).await.unwrap_or(0)
         }
     };
 
@@ -2040,124 +1365,6 @@ pub async fn get_recent_activity(
         }
     }
 
-    // Look up detected swaps for both fulfillment and deposit IDs on this page
-    let change_ids: Vec<i64> = enriched_changes.iter().map(|c| c.id).collect();
-
-    #[derive(Debug)]
-    struct SwapRecord {
-        fulfillment_balance_change_id: Option<i64>,
-        deposit_balance_change_id: Option<i64>,
-        sent_token_id: Option<String>,
-        sent_amount: Option<BigDecimal>,
-        received_token_id: String,
-        received_amount: Option<BigDecimal>,
-        solver_transaction_hash: String,
-    }
-
-    let swap_records = if !change_ids.is_empty() {
-        sqlx::query_as!(
-            SwapRecord,
-            r#"
-            SELECT
-                fulfillment_balance_change_id,
-                deposit_balance_change_id,
-                sent_token_id,
-                sent_amount,
-                received_token_id,
-                received_amount,
-                solver_transaction_hash
-            FROM detected_swaps
-            WHERE account_id = $1
-              AND (fulfillment_balance_change_id = ANY($2)
-                   OR deposit_balance_change_id = ANY($2))
-            "#,
-            params.account_id.as_str(),
-            &change_ids,
-        )
-        .fetch_all(&state.db_pool)
-        .await
-        .unwrap_or_default()
-    } else {
-        vec![]
-    };
-
-    // Build swap lookup map: balance_change_id -> (role, index into swap_records)
-    let mut swap_map: std::collections::HashMap<i64, (&str, usize)> =
-        std::collections::HashMap::new();
-    for (i, record) in swap_records.iter().enumerate() {
-        if let Some(fid) = record.fulfillment_balance_change_id {
-            swap_map.insert(fid, ("fulfillment", i));
-        }
-        if let Some(deposit_id) = record.deposit_balance_change_id {
-            swap_map.insert(deposit_id, ("deposit", i));
-        }
-    }
-
-    // Helper function to resolve metadata for a token_id
-    fn resolve_swap_metadata(
-        token_id: &str,
-        metadata_map: &std::collections::HashMap<String, TokenMetadata>,
-    ) -> TokenMetadata {
-        // Check if metadata exists in the map
-        if let Some(meta) = metadata_map.get(token_id) {
-            return meta.clone();
-        }
-
-        // Fallback: create a basic metadata object
-        let symbol = token_id
-            .split('.')
-            .next()
-            .unwrap_or("UNKNOWN")
-            .to_uppercase();
-        TokenMetadata {
-            token_id: token_id.to_string(),
-            name: symbol.clone(),
-            symbol,
-            decimals: 18,
-            icon: None,
-            price: None,
-            price_updated_at: None,
-            network: None,
-            chain_name: None,
-            chain_icons: None,
-        }
-    }
-
-    // Collect unique swap token IDs that are not already in enriched_changes
-    let mut swap_token_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
-    for record in &swap_records {
-        if let Some(ref sent_token_id) = record.sent_token_id {
-            swap_token_ids.insert(sent_token_id.clone());
-        }
-        swap_token_ids.insert(record.received_token_id.clone());
-    }
-
-    // Build metadata map from enriched changes (which already have metadata)
-    let mut metadata_map: std::collections::HashMap<String, TokenMetadata> =
-        std::collections::HashMap::new();
-    for change in &enriched_changes {
-        if let Some(ref meta) = change.token_metadata {
-            metadata_map.insert(change.token_id.clone(), meta.clone());
-        }
-    }
-
-    // Fetch chain metadata only for swap tokens that are missing it.
-    let swap_token_ids_vec: Vec<String> = swap_token_ids
-        .into_iter()
-        .filter(|token_id| {
-            metadata_map.get(token_id).is_none_or(|meta| {
-                meta.chain_icons.is_none() || meta.network.is_none() || meta.chain_name.is_none()
-            })
-        })
-        .collect();
-
-    if !swap_token_ids_vec.is_empty() {
-        let swap_metadata_with_chain =
-            fetch_tokens_with_fallback(&state, &swap_token_ids_vec, true, false).await;
-        // Override the metadata_map with chain-enriched versions
-        metadata_map.extend(swap_metadata_with_chain);
-    }
-
     // Convert enriched changes to RecentActivity format with swap info
     let activities: Vec<RecentActivity> = enriched_changes
         .into_iter()
@@ -2180,53 +1387,21 @@ pub async fn get_recent_activity(
                 }
             }
 
-            // Check if this change has swap info (as fulfillment or deposit leg).
-            // Public rows go through the detected_swaps join (`swap_map`).
-            // Confidential rows arrive with `change.swap` already populated by
-            // confidential_list (route-mod `SwapInfo`, no `swap_role`) — those
-            // are always the fulfillment side per the confidential exchange
-            // contract.
-            let swap = swap_map
-                .get(&change.id)
-                .map(|(role, idx)| {
-                    let s = &swap_records[*idx];
-                    let sent_token_metadata = s
-                        .sent_token_id
-                        .as_ref()
-                        .map(|id| resolve_swap_metadata(id, &metadata_map));
-                    let received_token_metadata =
-                        resolve_swap_metadata(&s.received_token_id, &metadata_map);
-
-                    SwapInfo {
-                        sent_token_id: s.sent_token_id.clone(),
-                        sent_amount: s.sent_amount.clone(),
-                        sent_token_metadata,
-                        received_token_id: s.received_token_id.clone(),
-                        received_amount: s.received_amount.clone(),
-                        received_token_metadata,
-                        solver_transaction_hash: s.solver_transaction_hash.clone(),
-                        swap_role: role.to_string(),
-                        sent_amount_usd: None,
-                        received_amount_usd: None,
-                    }
-                })
-                .or_else(|| {
-                    change.swap.as_ref().map(|s| SwapInfo {
-                        sent_token_id: s.sent_token_id.clone(),
-                        sent_amount: s.sent_amount.clone(),
-                        sent_token_metadata: s.sent_token_metadata.clone(),
-                        received_token_id: s.received_token_id.clone(),
-                        received_amount: s.received_amount.clone(),
-                        received_token_metadata: s.received_token_metadata.clone(),
-                        solver_transaction_hash: s.solver_transaction_hash.clone(),
-                        swap_role: "fulfillment".to_string(),
-                        sent_amount_usd: s.sent_amount_usd.as_ref().and_then(ToPrimitive::to_f64),
-                        received_amount_usd: s
-                            .received_amount_usd
-                            .as_ref()
-                            .and_then(ToPrimitive::to_f64),
-                    })
-                });
+            // Gold rows arrive with `change.swap` already populated by the
+            // list adapters (one Exchange Fulfillment row per swap, public and
+            // confidential alike).
+            let swap = change.swap.as_ref().map(|s| SwapInfo {
+                sent_token_id: s.sent_token_id.clone(),
+                sent_amount: s.sent_amount.clone(),
+                sent_token_metadata: s.sent_token_metadata.clone(),
+                received_token_id: s.received_token_id.clone(),
+                received_amount: s.received_amount.clone(),
+                received_token_metadata: s.received_token_metadata.clone(),
+                solver_transaction_hash: s.solver_transaction_hash.clone(),
+                swap_role: "fulfillment".to_string(),
+                sent_amount_usd: s.sent_amount_usd.as_ref().and_then(ToPrimitive::to_f64),
+                received_amount_usd: s.received_amount_usd.as_ref().and_then(ToPrimitive::to_f64),
+            });
 
             Some(RecentActivity {
                 id: change.id,
@@ -2267,6 +1442,51 @@ pub async fn get_recent_activity(
     }))
 }
 
+/// The activity feed's "from" party for one gold ledger row.
+const GOLD_FROM_ACCOUNT_EXPR: &str =
+    "CASE WHEN transaction_type::text = 'deposit' THEN counterparty ELSE dao_id END";
+/// The activity feed's "to" party for one gold ledger row.
+const GOLD_TO_ACCOUNT_EXPR: &str = "CASE WHEN transaction_type::text = 'deposit' THEN dao_id ELSE COALESCE(recipient, counterparty) END";
+
+/// Distinct sender/recipient options for the recent-activity filter
+/// dropdowns, read from the unified gold ledger (public and confidential DAOs
+/// alike). Honors the transactionType tab the same way the feed does:
+/// incoming/outgoing exclude exchanges (separate tab), and the staking tab has
+/// no counterparties.
+async fn fetch_activity_account_options(
+    pool: &PgPool,
+    account_id: &str,
+    transaction_type: Option<&str>,
+    account_expr: &str,
+) -> Result<Vec<String>, sqlx::Error> {
+    if transaction_type == Some("staking_rewards") {
+        return Ok(Vec::new());
+    }
+
+    let mut builder = sqlx::QueryBuilder::<sqlx::Postgres>::new(format!(
+        "SELECT DISTINCT {account_expr} AS account FROM gold_treasury_ledger_events WHERE dao_id = "
+    ));
+    builder.push_bind(account_id);
+    builder.push(" AND history_visible");
+
+    let types: Option<Vec<String>> = match transaction_type {
+        Some("incoming") => Some(vec!["deposit".to_string()]),
+        Some("outgoing") => Some(vec!["sent".to_string()]),
+        Some("exchange") => Some(vec!["exchange".to_string()]),
+        _ => None,
+    };
+    if let Some(types) = types {
+        builder.push(" AND transaction_type = ANY(");
+        builder.push_bind(types);
+        builder.push("::public_transaction_type[])");
+    }
+
+    builder.push(format!(
+        " AND {account_expr} IS NOT NULL ORDER BY account ASC"
+    ));
+    builder.build_query_scalar::<String>().fetch_all(pool).await
+}
+
 pub async fn get_recent_activity_senders(
     State(state): State<Arc<AppState>>,
     user: OptionalAuthUser,
@@ -2276,50 +1496,14 @@ pub async fn get_recent_activity_senders(
         .await
         .map_err(|(status, message)| (status, Json(serde_json::json!({ "error": message }))))?;
 
-    // Keep options endpoint unfiltered by date/token/hash/from, but honor transactionType tab.
-    let transaction_types_for_query = params
-        .transaction_type
-        .as_deref()
-        .map(|t| vec![t.to_string()]);
-
-    let filters = BalanceChangeFilters {
-        account_id: params.account_id.clone(),
-        date_cutoff: None,
-        start_date: None,
-        end_date: None,
-        token_ids: None,
-        exclude_token_ids: None,
-        transaction_types: transaction_types_for_query,
-        min_amount: None,
-        max_amount: None,
-        transaction_hash_query: None,
-        from_accounts: None,
-        from_accounts_not: None,
-        to_accounts: None,
-        to_accounts_not: None,
-        exclude_near_dust: true,
-        exclude_swaps_from_direction: true,
-    };
-
-    let (conditions, _) =
-        crate::handlers::balance_changes::query_builder::build_where_conditions(&filters);
-    let mut where_clause = conditions.join(" AND ");
-    where_clause.push_str(&format!(" AND ({}) IS NOT NULL", FROM_ACCOUNT_EXPR));
-    where_clause.push_str(&format!(" AND ({}) != 'STAKING_REWARD'", FROM_ACCOUNT_EXPR));
-
-    let query = format!(
-        "SELECT DISTINCT \
-            ({}) AS from_account \
-         FROM balance_changes \
-         WHERE {} \
-         ORDER BY from_account ASC",
-        FROM_ACCOUNT_EXPR, where_clause
-    );
-
-    let options_query =
-        sqlx::query_scalar::<sqlx::Postgres, String>(&query).bind(params.account_id.as_str());
-
-    let options = options_query.fetch_all(&state.db_pool).await.map_err(|e| {
+    let options = fetch_activity_account_options(
+        &state.db_pool,
+        params.account_id.as_str(),
+        params.transaction_type.as_deref(),
+        GOLD_FROM_ACCOUNT_EXPR,
+    )
+    .await
+    .map_err(|e| {
         tracing::error!("Failed to fetch recent activity senders: {}", e);
         (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -2342,50 +1526,14 @@ pub async fn get_recent_activity_recipients(
         .await
         .map_err(|(status, message)| (status, Json(serde_json::json!({ "error": message }))))?;
 
-    // Keep options endpoint unfiltered by date/token/hash/to, but honor transactionType tab.
-    let transaction_types_for_query = params
-        .transaction_type
-        .as_deref()
-        .map(|t| vec![t.to_string()]);
-
-    let filters = BalanceChangeFilters {
-        account_id: params.account_id.clone(),
-        date_cutoff: None,
-        start_date: None,
-        end_date: None,
-        token_ids: None,
-        exclude_token_ids: None,
-        transaction_types: transaction_types_for_query,
-        min_amount: None,
-        max_amount: None,
-        transaction_hash_query: None,
-        from_accounts: None,
-        from_accounts_not: None,
-        to_accounts: None,
-        to_accounts_not: None,
-        exclude_near_dust: true,
-        exclude_swaps_from_direction: true,
-    };
-
-    let (conditions, _) =
-        crate::handlers::balance_changes::query_builder::build_where_conditions(&filters);
-    let mut where_clause = conditions.join(" AND ");
-    where_clause.push_str(&format!(" AND ({}) IS NOT NULL", TO_ACCOUNT_EXPR));
-    where_clause.push_str(&format!(" AND ({}) != 'STAKING_REWARD'", TO_ACCOUNT_EXPR));
-
-    let query = format!(
-        "SELECT DISTINCT \
-            ({}) AS to_account \
-         FROM balance_changes \
-         WHERE {} \
-         ORDER BY to_account ASC",
-        TO_ACCOUNT_EXPR, where_clause
-    );
-
-    let options_query =
-        sqlx::query_scalar::<sqlx::Postgres, String>(&query).bind(params.account_id.as_str());
-
-    let options = options_query.fetch_all(&state.db_pool).await.map_err(|e| {
+    let options = fetch_activity_account_options(
+        &state.db_pool,
+        params.account_id.as_str(),
+        params.transaction_type.as_deref(),
+        GOLD_TO_ACCOUNT_EXPR,
+    )
+    .await
+    .map_err(|e| {
         tracing::error!("Failed to fetch recent activity recipients: {}", e);
         (
             StatusCode::INTERNAL_SERVER_ERROR,

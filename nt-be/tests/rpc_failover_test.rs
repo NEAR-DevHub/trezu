@@ -94,7 +94,7 @@ async fn no_failover_on_connection_error() {
     // (is_transport_error) WILL retry it at the application level.
     let err = result.unwrap_err();
     assert!(
-        nt_be::handlers::balance_changes::utils::is_transport_error(&err),
+        nt_be::utils::transport::is_transport_error(&err),
         "error should be transport-retryable by the creation loop, got: {err}"
     );
 }

@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use axum::http::StatusCode;
 use bigdecimal::{BigDecimal, ToPrimitive, Zero, num_traits::Signed};
-use chrono::{DateTime, NaiveDate, Utc};
+use chrono::{DateTime, Utc};
 
 use super::grid::{
     DAILY_BUCKET_LIMIT, SnapshotGridInterval, WEEKLY_BUCKET_LIMIT, bucket_count, requested_grid,
@@ -80,12 +80,12 @@ fn unavailable_response(readiness: &ChartReadiness) -> ChartResponse {
     }
 }
 
-/// Bucket-time USD prices for every (stored asset, bucket) pair: the stored
-/// 5-minute series first (same-day constrained), the daily EOD cache as the
-/// historical fallback.
+/// Bucket-time USD prices for every (stored asset, bucket) pair from the
+/// stored minute series: the nearest sample at or before each bucket. The
+/// chart's bucket grids match the shape the historical price backfill fills,
+/// so carry-forward here bridges sampling gaps, not missing history.
 struct BucketPrices {
-    minute_grid: HashMap<(String, DateTime<Utc>), BigDecimal>,
-    eod_by_asset: HashMap<String, HashMap<NaiveDate, f64>>,
+    grid: HashMap<(String, DateTime<Utc>), BigDecimal>,
 }
 
 /// Staking series are denominated in NEAR; price them from the native feed.
@@ -106,55 +106,27 @@ impl BucketPrices {
             .into_iter()
             .collect();
         let assets = assets.as_slice();
-        let minute_grid = match state
+        let grid = match state
             .token_price_service
-            .prices_at_same_day_grid(assets, buckets)
+            .prices_at_grid(assets, buckets)
             .await
         {
             Ok(grid) => grid,
             Err(error) => {
-                tracing::warn!(error = %error, "chart minute-price lookup failed");
+                tracing::warn!(error = %error, "chart price-grid lookup failed");
                 HashMap::new()
             }
         };
 
-        let dates = buckets
-            .iter()
-            .map(|bucket| bucket.date_naive())
-            .collect::<HashSet<_>>()
-            .into_iter()
-            .collect::<Vec<_>>();
-        let mut eod_by_asset = HashMap::new();
-        for asset in assets {
-            match state.price_service.get_prices_batch(asset, &dates).await {
-                Ok(prices) => {
-                    eod_by_asset.insert(asset.clone(), prices);
-                }
-                Err(error) => {
-                    tracing::warn!(asset, error = %error, "chart EOD-price lookup failed");
-                }
-            }
-        }
-
-        Self {
-            minute_grid,
-            eod_by_asset,
-        }
+        Self { grid }
     }
 
     fn price(&self, asset: &str, bucket: DateTime<Utc>) -> Option<f64> {
         let asset = price_asset(asset);
-        self.minute_grid
+        self.grid
             .get(&(asset.to_string(), bucket))
             .filter(|price| !price.is_negative())
             .and_then(ToPrimitive::to_f64)
-            .or_else(|| {
-                self.eod_by_asset
-                    .get(asset)
-                    .and_then(|prices| prices.get(&bucket.date_naive()))
-                    .filter(|price| price.is_finite() && **price >= 0.0)
-                    .copied()
-            })
     }
 }
 

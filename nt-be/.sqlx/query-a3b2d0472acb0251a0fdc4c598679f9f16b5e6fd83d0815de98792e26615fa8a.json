@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO export_history (\n                account_id,\n                generated_by,\n                file_url,\n                status,\n                created_at\n            )\n            VALUES\n                ('test-account.near', 'test-account.near', '/export/old1', 'completed', NOW() - INTERVAL '5 days'),\n                ('test-account.near', 'test-account.near', '/export/old2', 'completed', NOW() - INTERVAL '3 days'),\n                ('test-account.near', 'test-account.near', '/export/recent', 'completed', NOW() - INTERVAL '1 day'),\n                ('test-account.near', 'test-account.near', '/export/already-expired', 'expired', NOW() - INTERVAL '10 days')\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "a3b2d0472acb0251a0fdc4c598679f9f16b5e6fd83d0815de98792e26615fa8a"
+}

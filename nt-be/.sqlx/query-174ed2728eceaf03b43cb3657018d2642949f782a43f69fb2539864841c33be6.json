@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO daos (dao_id, is_dirty, source)\n            VALUES ($1, true, 'manual')\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "174ed2728eceaf03b43cb3657018d2642949f782a43f69fb2539864841c33be6"
+}

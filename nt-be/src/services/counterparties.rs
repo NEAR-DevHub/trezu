@@ -4,7 +4,7 @@
 //! for decimal conversion.
 
 use crate::constants::intents_tokens;
-use crate::handlers::balance_changes::utils::with_transport_retry;
+use crate::utils::transport::with_transport_retry;
 use near_api::types::ft::FungibleTokenMetadata;
 use near_api::{AccountId, Contract, NetworkConfig, Tokens};
 use sqlx::PgPool;

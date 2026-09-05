@@ -377,10 +377,9 @@ pub async fn search_receipt(
         .await
 }
 
-/// Resolve token price at execution time with fallback policy:
-/// - exact timestamp provider quote
-/// - cached daily EOD (same UTC day)
-/// - null (no price available or upstream failure)
+/// Resolve token price at execution time from the stored minute series
+/// (nearest sample at or before the timestamp); null when the token is
+/// unknown or the timestamp predates stored samples.
 #[tracing::instrument(
     level = "info",
     skip_all,
@@ -413,14 +412,15 @@ pub async fn get_token_price_at_timestamp(
         .cache
         .cached_json(CacheTier::LongTerm, cache_key, async move {
             match state_for_lookup
-                .price_service
-                .get_price_at_timestamp_or_eod(&token_id, timestamp)
+                .token_price_service
+                .price_at(&token_id, timestamp)
                 .await
             {
-                Ok(Some((price, source))) => {
+                Ok(Some(price)) => {
+                    use bigdecimal::ToPrimitive;
                     Ok::<_, (StatusCode, String)>(Some(TokenPriceAtTimestampResponse {
-                        price_usd: Some(price),
-                        source: source.to_string(),
+                        price_usd: price.to_f64(),
+                        source: "token_prices".to_string(),
                     }))
                 }
                 Ok(None) => Ok::<_, (StatusCode, String)>(None::<TokenPriceAtTimestampResponse>),

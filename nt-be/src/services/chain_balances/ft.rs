@@ -8,8 +8,8 @@ use near_api::{AccountId, Contract, NetworkConfig, Reference};
 use sqlx::PgPool;
 use std::str::FromStr;
 
-use crate::handlers::balance_changes::counterparty::{convert_raw_to_decimal, ensure_ft_metadata};
-use crate::handlers::balance_changes::utils::with_transport_retry;
+use crate::services::counterparties::{convert_raw_to_decimal, ensure_ft_metadata};
+use crate::utils::transport::with_transport_retry;
 
 /// Query fungible token balance at a specific block height
 ///

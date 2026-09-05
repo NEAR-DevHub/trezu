@@ -16,7 +16,6 @@ use crate::handlers::intents::confidential::gold::history_events::{
     CONFIDENTIAL_GOLD_RECONCILIATION_WORKERS, project_confidential_gold_for_dao,
     project_confidential_gold_for_dirty_daos, verify_confidential_ledger_heads,
 };
-use crate::handlers::intents::confidential::gold::snapshots::snapshot_confidential_dao_balances;
 
 pub const CONFIDENTIAL_HISTORY_SCHEDULER_TICK: Duration = Duration::from_secs(10);
 pub const CONFIDENTIAL_HISTORY_TRIGGER_LIMIT: u32 = 50;
@@ -461,10 +460,6 @@ async fn process_confidential_history_account(
             return HistoryCycleAccountResult::failed(account_id, error);
         }
     };
-
-    if forward.had_history_changes {
-        snapshot_confidential_dao_balances(state, account_ref.as_str()).await;
-    }
 
     let backfill =
         match backfill_confidential_history(state, account_ref, limit, BackfillMode::OnePage).await

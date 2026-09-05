@@ -13,10 +13,10 @@ use serde_json::Value;
 use sqlx::{PgPool, QueryBuilder, Row};
 
 use crate::AppState;
-use crate::handlers::balance_changes::token_filter::push_token_match;
 use crate::handlers::public_history::quotes::{
     proposal_quote_from_metadata, quote_destination_token_id,
 };
+use crate::handlers::public_history::token_filter::push_token_match;
 use crate::handlers::token::{TokenMetadata, fetch_tokens_with_fallback};
 use crate::routes::{BalanceChangesQuery, EnrichedBalanceChange, SwapInfo};
 

@@ -1,19 +1,38 @@
 //! DAO event detection worker.
 //!
-//! Scans `balance_changes` and `detected_swaps` for notable events and writes
-//! them to the generic `dao_notifications` queue.
+//! Scans the unified gold ledger (`gold_treasury_ledger_events`) for payments
+//! and fulfilled exchanges, `dao_proposals` for new public proposals, and
+//! `confidential_intents` for new confidential proposals, and writes them to
+//! the generic `dao_notifications` queue.
 //!
 //! Only DAOs with at least one notification destination (currently: Telegram)
 //! produce notifications. Zero RPC calls — reads from the app DB only.
+//!
+//! Gold ledger rows are deleted and re-inserted with fresh ids whenever a
+//! recompute window replays a DAO, so id cursors alone cannot dedupe: every
+//! insert dedupes on a stable `source_key` (`gold_event_key`,
+//! `{dao_id}:{proposal_id}`, `confidential_intents.id`), and events older
+//! than [`MAX_NOTIFIABLE_EVENT_AGE`] never notify — a full reprojection
+//! advances the ledger cursor without replaying history into connected chats.
+//!
+//! Proposal detection (public and confidential) uses no id cursor at all:
+//! NearBlocks ingests newest-to-oldest, so a proposal row can be created by
+//! execution-side linking first and only receive its creation facts from a
+//! later page. A windowed rescan of the last 24 hours picks the row up once
+//! `proposal_created_at` lands, and the unique `source_key` absorbs the
+//! repeated scans.
 
-use bigdecimal::Zero;
+use chrono::{Duration, Utc};
 use sqlx::PgPool;
 
-use super::payload_decoder::decode_add_proposal_payload;
+use super::payload_decoder::classify_proposal_kind;
 
-const CONSUMER_BC: &str = "notifications:balance_changes";
-const CONSUMER_SWAPS: &str = "notifications:detected_swaps";
+const CONSUMER_LEDGER: &str = "notifications:gold_ledger";
 const BATCH_SIZE: i64 = 100;
+
+/// Events whose on-chain time is older than this are skipped (cursor still
+/// advances). Guards reprojections and late backfills from flooding chats.
+const MAX_NOTIFIABLE_EVENT_AGE: Duration = Duration::hours(24);
 
 // ---------------------------------------------------------------------------
 // Cursor helpers (reuse goldsky_cursors table)
@@ -74,46 +93,81 @@ async fn update_cursor(
     Ok(())
 }
 
+async fn insert_notification(
+    pool: &PgPool,
+    dao_id: &str,
+    event_type: &str,
+    source_table: &str,
+    source_id: i64,
+    source_key: &str,
+    payload: &serde_json::Value,
+) -> Result<u64, sqlx::Error> {
+    Ok(sqlx::query!(
+        r#"
+        INSERT INTO dao_notifications (dao_id, event_type, source_id, source_table, source_key, payload)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        ON CONFLICT (source_table, source_key, dao_id, event_type) DO NOTHING
+        "#,
+        dao_id,
+        event_type,
+        source_id,
+        source_table,
+        source_key,
+        payload,
+    )
+    .execute(pool)
+    .await?
+    .rows_affected())
+}
+
 // ---------------------------------------------------------------------------
-// balance_changes detection
+// Gold ledger detection: payments + fulfilled exchanges
 // ---------------------------------------------------------------------------
 
 #[derive(sqlx::FromRow)]
-struct BalanceChangeRow {
+struct LedgerEventRow {
     id: i64,
-    account_id: String,
-    token_id: String,
-    amount: bigdecimal::BigDecimal,
+    gold_event_key: String,
+    dao_id: String,
+    transaction_type: String,
+    event_time: chrono::DateTime<Utc>,
+    token_in: Option<String>,
+    amount_in: Option<bigdecimal::BigDecimal>,
+    token_out: Option<String>,
+    amount_out: Option<bigdecimal::BigDecimal>,
+    amount_out_usd: Option<bigdecimal::BigDecimal>,
+    recipient: Option<String>,
     counterparty: Option<String>,
-    method_name: Option<String>,
-    action_kind: Option<String>,
-    actions: Option<serde_json::Value>,
-    usd_value: Option<bigdecimal::BigDecimal>,
-    block_height: i64,
-    transaction_hashes: Vec<String>,
 }
 
 #[tracing::instrument(
     level = "debug",
     skip_all,
-    fields(job = "notification_detection", step = "balance_changes")
+    fields(job = "notification_detection", step = "gold_ledger")
 )]
-async fn detect_balance_change_events(
+async fn detect_ledger_events(
     pool: &PgPool,
 ) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-    let last_id = get_cursor(pool, CONSUMER_BC, "balance_changes").await?;
+    let last_id = get_cursor(pool, CONSUMER_LEDGER, "gold_treasury_ledger_events").await?;
 
     // Only scan events for DAOs that have at least one notification destination
     // registered (currently: Telegram). This keeps dao_notifications small.
-    let rows: Vec<BalanceChangeRow> = sqlx::query_as(
+    // The recency guard is applied in Rust so the cursor still advances over
+    // reprojected historical rows instead of rescanning them forever.
+    let rows: Vec<LedgerEventRow> = sqlx::query_as(
         r#"
-        SELECT bc.id, bc.account_id, bc.token_id, bc.amount, bc.counterparty,
-               bc.method_name, bc.action_kind, bc.actions, bc.usd_value, bc.block_height,
-               bc.transaction_hashes
-        FROM balance_changes bc
-        WHERE bc.id > $1
-          AND bc.account_id IN (SELECT dao_id FROM telegram_treasury_connections)
-        ORDER BY bc.id ASC
+        SELECT gle.id, gle.gold_event_key, gle.dao_id,
+               gle.transaction_type::text AS transaction_type,
+               gle.event_time, gle.token_in, gle.amount_in,
+               gle.token_out, gle.amount_out, gle.amount_out_usd,
+               gle.recipient, gle.counterparty
+        FROM gold_treasury_ledger_events gle
+        WHERE gle.id > $1
+          AND gle.status = 'success'
+          AND gle.history_visible
+          AND gle.transaction_type IN ('sent', 'exchange')
+          AND gle.dao_id IN (SELECT dao_id FROM telegram_treasury_connections)
+        ORDER BY gle.id ASC
         LIMIT $2
         "#,
     )
@@ -126,291 +180,218 @@ async fn detect_balance_change_events(
         return Ok(0);
     }
 
+    let cutoff = Utc::now() - MAX_NOTIFIABLE_EVENT_AGE;
     let mut inserted = 0usize;
     let mut max_id = last_id;
 
     for row in &rows {
         max_id = max_id.max(row.id);
 
-        let method = row.method_name.as_deref().unwrap_or("");
-        let kind = row.action_kind.as_deref().unwrap_or("");
-
-        let is_proposal = method == "add_proposal";
-
-        let is_payment = row.amount < 0
-            && ((kind == "TRANSFER" && !row.token_id.eq_ignore_ascii_case("near"))
-                || (row.token_id.eq_ignore_ascii_case("near")
-                    && matches!(method, "on_proposal_callback" | "ft_transfer")));
-
-        if !is_proposal && !is_payment {
+        if row.event_time < cutoff {
             continue;
         }
 
-        let event_type = if is_proposal {
-            "add_proposal"
-        } else {
-            "payment"
-        };
-        let proposal_tx_hash = if is_proposal {
-            row.transaction_hashes
-                .first()
-                .cloned()
-                .filter(|hash| !hash.is_empty())
-        } else {
-            None
-        };
-
-        // For proposal transactions that fan out into multiple balance_changes rows,
-        // prefer the row with a non-zero amount (bond/gas debit) when present.
-        if is_proposal
-            && row.amount.is_zero()
-            && let Some(tx_hash) = proposal_tx_hash.as_deref()
-        {
-            let has_nonzero_sibling: bool = sqlx::query_scalar!(
-                r#"
-                SELECT EXISTS(
-                    SELECT 1
-                    FROM balance_changes
-                    WHERE account_id = $1
-                      AND method_name = 'add_proposal'
-                      AND action_kind = 'FUNCTION_CALL'
-                      AND transaction_hashes[1] = $2
-                      AND amount <> 0
+        let (event_type, payload) = match row.transaction_type.as_str() {
+            "sent" => {
+                let Some(amount_out) = row.amount_out.as_ref() else {
+                    continue;
+                };
+                (
+                    "payment",
+                    serde_json::json!({
+                        "token_id": row.token_out,
+                        "amount": amount_out.to_string(),
+                        "counterparty": row.recipient.as_deref().or(row.counterparty.as_deref()),
+                        "usd_value": row.amount_out_usd.as_ref().map(|v| v.to_string()),
+                    }),
                 )
-                "#,
-                &row.account_id,
-                tx_hash,
-            )
-            .fetch_one(pool)
-            .await?
-            .unwrap_or(false);
-
-            if has_nonzero_sibling {
-                continue;
             }
-        }
-
-        let payload = if is_proposal {
-            let decoded = decode_add_proposal_payload(row.actions.as_ref());
-            let submitter = decoded
-                .delegate_sender_id
-                .as_deref()
-                .or(row.counterparty.as_deref());
-
-            serde_json::json!({
-                "counterparty": submitter,
-                "block_height": row.block_height,
-                "description": decoded.description,
-                "proposal_kind": decoded.proposal_kind,
-                "tx_hash": proposal_tx_hash,
-            })
-        } else {
-            serde_json::json!({
-                "token_id": row.token_id,
-                "amount": row.amount.to_string(),
-                "counterparty": row.counterparty,
-                "usd_value": row.usd_value.as_ref().map(|v| v.to_string()),
-            })
-        };
-
-        let rows_inserted = if is_proposal {
-            if let Some(tx_hash) = proposal_tx_hash.as_deref() {
-                sqlx::query!(
-                    r#"
-                    INSERT INTO dao_notifications (dao_id, event_type, source_id, source_table, payload)
-                    SELECT $1, $2, $3, 'balance_changes', $4
-                    WHERE NOT EXISTS (
-                        SELECT 1
-                        FROM dao_notifications n
-                        WHERE n.dao_id = $1
-                          AND n.event_type = $2
-                          AND n.source_table = 'balance_changes'
-                          AND n.payload->>'tx_hash' = $5
-                    )
-                    ON CONFLICT (source_table, source_id, dao_id, event_type) DO NOTHING
-                    "#,
-                    &row.account_id,
-                    event_type,
-                    row.id,
-                    &payload,
-                    tx_hash,
+            "exchange" => {
+                // An exchange row carries both legs once fulfilled; a row
+                // missing its received leg is not notifiable (fulfillment
+                // arrives as a re-projected row with a fresh id, so there is
+                // no need to hold the cursor for it).
+                let (Some(token_in), Some(amount_in)) =
+                    (row.token_in.as_deref(), row.amount_in.as_ref())
+                else {
+                    continue;
+                };
+                (
+                    "swap_fulfilled",
+                    serde_json::json!({
+                        "sent_token_id": row.token_out,
+                        "sent_amount": row.amount_out.as_ref().map(|a| a.to_string()),
+                        "received_token_id": token_in,
+                        "received_amount": amount_in.to_string(),
+                    }),
                 )
-                .execute(pool)
-                .await?
-                .rows_affected()
-            } else {
-                sqlx::query!(
-                    r#"
-                    INSERT INTO dao_notifications (dao_id, event_type, source_id, source_table, payload)
-                    VALUES ($1, $2, $3, 'balance_changes', $4)
-                    ON CONFLICT (source_table, source_id, dao_id, event_type) DO NOTHING
-                    "#,
-                    &row.account_id,
-                    event_type,
-                    row.id,
-                    &payload,
-                )
-                .execute(pool)
-                .await?
-                .rows_affected()
             }
-        } else {
-            sqlx::query!(
-                r#"
-                INSERT INTO dao_notifications (dao_id, event_type, source_id, source_table, payload)
-                VALUES ($1, $2, $3, 'balance_changes', $4)
-                ON CONFLICT (source_table, source_id, dao_id, event_type) DO NOTHING
-                "#,
-                &row.account_id,
-                event_type,
-                row.id,
-                &payload,
-            )
-            .execute(pool)
-            .await?
-            .rows_affected()
+            _ => continue,
         };
 
-        inserted += rows_inserted as usize;
+        inserted += insert_notification(
+            pool,
+            &row.dao_id,
+            event_type,
+            "gold_treasury_ledger_events",
+            row.id,
+            &row.gold_event_key,
+            &payload,
+        )
+        .await? as usize;
     }
 
-    update_cursor(pool, CONSUMER_BC, max_id).await?;
+    update_cursor(pool, CONSUMER_LEDGER, max_id).await?;
 
     Ok(inserted)
 }
 
 // ---------------------------------------------------------------------------
-// detected_swaps detection
+// Public proposal detection (dao_proposals, written by the linker)
 // ---------------------------------------------------------------------------
 
 #[derive(sqlx::FromRow)]
-struct DetectedSwapRow {
+struct ProposalRow {
     id: i64,
-    account_id: String,
-    solver_transaction_hash: String,
-    deposit_balance_change_id: Option<i64>,
-    fulfillment_balance_change_id: i64,
-    fulfillment_receipt_id: Option<String>,
-    sent_token_id: Option<String>,
-    sent_amount: Option<bigdecimal::BigDecimal>,
-    received_token_id: String,
-    received_amount: Option<bigdecimal::BigDecimal>,
+    dao_id: String,
+    proposal_id: i64,
+    proposer: Option<String>,
+    description: Option<String>,
+    proposal_kind: Option<serde_json::Value>,
+    proposal_creation_block_height: Option<i64>,
+    proposal_creation_transaction_hash: Option<String>,
 }
 
 #[tracing::instrument(
     level = "debug",
     skip_all,
-    fields(job = "notification_detection", step = "swaps")
+    fields(job = "notification_detection", step = "dao_proposals")
 )]
-async fn detect_swap_events(
+async fn detect_public_proposal_events(
     pool: &PgPool,
 ) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-    let last_id = get_cursor(pool, CONSUMER_SWAPS, "detected_swaps").await?;
-
-    // Only emit notifications once the fulfillment leg is known. Confidential
-    // swaps pre-insert a detected_swaps row at the outgoing (deposit) step
-    // with a NULL fulfillment_balance_change_id; we must not notify for those
-    // yet — nor advance the cursor past them, otherwise we would never
-    // revisit them once the poller fills fulfillment_* in place.
-    let rows: Vec<DetectedSwapRow> = sqlx::query_as(
+    // Windowed scan, no id cursor: an execution-side page can insert the
+    // proposal row before its creation facts exist, and the linker fills
+    // `proposal_created_at` in place from a later page — an id cursor would
+    // have moved past the row and never notify. Rescanning the recency window
+    // is idempotent because the `{dao_id}:{proposal_id}` source_key dedupes.
+    let rows: Vec<ProposalRow> = sqlx::query_as(
         r#"
-        SELECT id, account_id, solver_transaction_hash, deposit_balance_change_id,
-               fulfillment_balance_change_id, fulfillment_receipt_id,
-               sent_token_id, sent_amount, received_token_id, received_amount
-        FROM detected_swaps
-        WHERE id > $1
-          AND fulfillment_balance_change_id IS NOT NULL
-          AND account_id IN (SELECT dao_id FROM telegram_treasury_connections)
-        ORDER BY id ASC
-        LIMIT $2
+        SELECT dp.id, dp.dao_id, dp.proposal_id, dp.proposer, dp.description,
+               dp.proposal_kind,
+               dp.proposal_creation_block_height, dp.proposal_creation_transaction_hash
+        FROM dao_proposals dp
+        WHERE dp.proposal_created_at > NOW() - INTERVAL '24 hours'
+          AND dp.dao_id IN (SELECT dao_id FROM telegram_treasury_connections)
+        ORDER BY dp.id ASC
         "#,
     )
-    .bind(last_id)
-    .bind(BATCH_SIZE)
     .fetch_all(pool)
     .await?;
 
-    if rows.is_empty() {
-        return Ok(0);
-    }
-
     let mut inserted = 0usize;
-    let batch_max_id = rows.iter().map(|r| r.id).max().unwrap_or(last_id);
-
     for row in &rows {
-        // Proposal-deposit synthetic rows are pre-seeded for quote context and can
-        // appear swap-like even when actual fulfillment has not happened yet.
-        // Notify only when they have a distinct fulfillment leg or an explicit
-        // fulfillment receipt recorded.
-        let is_synthetic_proposal_deposit =
-            row.solver_transaction_hash.starts_with("proposal-deposit-");
-        let has_same_deposit_and_fulfillment = row
-            .deposit_balance_change_id
-            .is_some_and(|deposit_id| deposit_id == row.fulfillment_balance_change_id);
-        if is_synthetic_proposal_deposit
-            && row.fulfillment_receipt_id.is_none()
-            && has_same_deposit_and_fulfillment
-        {
-            continue;
-        }
-
-        let received = match &row.received_amount {
-            Some(v) => v.to_string(),
-            None => {
-                tracing::warn!(
-                    "detected_swap id={} has fulfillment but NULL received_amount; skipping",
-                    row.id
-                );
-                continue;
-            }
-        };
-
+        let proposal_kind = row.proposal_kind.as_ref().and_then(|kind| {
+            classify_proposal_kind(&serde_json::json!({
+                "description": row.description.as_deref().unwrap_or_default(),
+                "kind": kind,
+            }))
+        });
         let payload = serde_json::json!({
-            "sent_token_id": row.sent_token_id,
-            "sent_amount": row.sent_amount.as_ref().map(|a| a.to_string()),
-            "received_token_id": row.received_token_id,
-            "received_amount": received,
+            "counterparty": row.proposer,
+            "block_height": row.proposal_creation_block_height,
+            "description": row.description,
+            "proposal_kind": proposal_kind,
+            "tx_hash": row.proposal_creation_transaction_hash,
         });
 
-        let rows_inserted = sqlx::query!(
-            r#"
-            INSERT INTO dao_notifications (dao_id, event_type, source_id, source_table, payload)
-            VALUES ($1, 'swap_fulfilled', $2, 'detected_swaps', $3)
-            ON CONFLICT (source_table, source_id, dao_id, event_type) DO NOTHING
-            "#,
-            &row.account_id,
+        inserted += insert_notification(
+            pool,
+            &row.dao_id,
+            "add_proposal",
+            "dao_proposals",
             row.id,
+            &format!("{}:{}", row.dao_id, row.proposal_id),
             &payload,
         )
-        .execute(pool)
-        .await?
-        .rows_affected();
-
-        inserted += rows_inserted as usize;
+        .await? as usize;
     }
 
-    // Advance the cursor only up to (min-unfulfilled-id - 1) within the scanned
-    // window, so pre-seeded rows that are still waiting for their fulfillment
-    // remain reachable in subsequent cycles.
-    let min_unfulfilled: Option<i64> = sqlx::query_scalar(
+    Ok(inserted)
+}
+
+// ---------------------------------------------------------------------------
+// Confidential proposal detection (confidential_intents)
+// ---------------------------------------------------------------------------
+
+#[derive(sqlx::FromRow)]
+struct ConfidentialIntentRow {
+    id: i32,
+    dao_id: String,
+    notes: Option<String>,
+    quote_metadata: Option<serde_json::Value>,
+}
+
+/// Label a confidential proposal from its stored 1Click quote: differing
+/// origin/destination assets mean an exchange, matching ones a payment.
+fn confidential_proposal_kind(quote_metadata: Option<&serde_json::Value>) -> &'static str {
+    let request = quote_metadata.and_then(|metadata| metadata.get("quoteRequest"));
+    let origin = request
+        .and_then(|request| request.get("originAsset"))
+        .and_then(|v| v.as_str());
+    let destination = request
+        .and_then(|request| request.get("destinationAsset"))
+        .and_then(|v| v.as_str());
+    match (origin, destination) {
+        (Some(origin), Some(destination)) if origin != destination => "Exchange",
+        (Some(_), Some(_)) => "Payment",
+        _ => "Confidential Request",
+    }
+}
+
+/// Confidential intents get `proposal_id`/`proposal_created_at` stamped in
+/// place when the on-chain `add_proposal` is linked, so an id cursor would
+/// permanently skip intents whose rows predate the stamp. Instead, the recent
+/// window is rescanned every cycle and the unique `source_key` makes the
+/// insert a no-op after the first time.
+#[tracing::instrument(
+    level = "debug",
+    skip_all,
+    fields(job = "notification_detection", step = "confidential_intents")
+)]
+async fn detect_confidential_proposal_events(
+    pool: &PgPool,
+) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    let rows: Vec<ConfidentialIntentRow> = sqlx::query_as(
         r#"
-        SELECT MIN(id) FROM detected_swaps
-        WHERE id > $1
-          AND id <= $2
-          AND fulfillment_balance_change_id IS NULL
+        SELECT ci.id, ci.dao_id, ci.notes, ci.quote_metadata
+        FROM confidential_intents ci
+        WHERE ci.proposal_id IS NOT NULL
+          AND ci.proposal_created_at > NOW() - INTERVAL '24 hours'
+          AND ci.dao_id IN (SELECT dao_id FROM telegram_treasury_connections)
+        ORDER BY ci.id ASC
         "#,
     )
-    .bind(last_id)
-    .bind(batch_max_id)
-    .fetch_one(pool)
+    .fetch_all(pool)
     .await?;
 
-    let new_cursor = match min_unfulfilled {
-        Some(min_id) => min_id - 1,
-        None => batch_max_id,
-    };
-    if new_cursor > last_id {
-        update_cursor(pool, CONSUMER_SWAPS, new_cursor).await?;
+    let mut inserted = 0usize;
+    for row in &rows {
+        let payload = serde_json::json!({
+            "description": row.notes,
+            "proposal_kind": confidential_proposal_kind(row.quote_metadata.as_ref()),
+        });
+
+        inserted += insert_notification(
+            pool,
+            &row.dao_id,
+            "add_proposal",
+            "confidential_intents",
+            i64::from(row.id),
+            &row.id.to_string(),
+            &payload,
+        )
+        .await? as usize;
     }
 
     Ok(inserted)
@@ -420,15 +401,37 @@ async fn detect_swap_events(
 // Public entry point
 // ---------------------------------------------------------------------------
 
-/// Scan `balance_changes` and `detected_swaps` for new events and write them
-/// to `dao_notifications`. Zero RPC calls — reads from the app DB only.
+/// Scan the gold ledger, `dao_proposals`, and `confidential_intents` for new
+/// events and write them to `dao_notifications`. Zero RPC calls — reads from
+/// the app DB only.
 ///
 /// Returns the total number of new notification rows inserted.
 #[tracing::instrument(level = "info", skip_all, fields(job = "notification_detection"))]
 pub async fn run_detection_cycle(
     pool: &PgPool,
 ) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-    let bc = detect_balance_change_events(pool).await?;
-    let sw = detect_swap_events(pool).await?;
-    Ok(bc + sw)
+    let ledger = detect_ledger_events(pool).await?;
+    let proposals = detect_public_proposal_events(pool).await?;
+    let confidential = detect_confidential_proposal_events(pool).await?;
+    Ok(ledger + proposals + confidential)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::confidential_proposal_kind;
+
+    #[test]
+    fn confidential_kind_distinguishes_exchange_from_payment() {
+        let exchange = serde_json::json!({
+            "quoteRequest": {"originAsset": "nep141:wrap.near", "destinationAsset": "nep141:btc.omft.near"}
+        });
+        assert_eq!(confidential_proposal_kind(Some(&exchange)), "Exchange");
+
+        let payment = serde_json::json!({
+            "quoteRequest": {"originAsset": "nep141:wrap.near", "destinationAsset": "nep141:wrap.near"}
+        });
+        assert_eq!(confidential_proposal_kind(Some(&payment)), "Payment");
+
+        assert_eq!(confidential_proposal_kind(None), "Confidential Request");
+    }
 }
