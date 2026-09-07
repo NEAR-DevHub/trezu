@@ -85,16 +85,11 @@ export function computeQuoteNetworkFee(
         amountOutFormatted?: string | null;
     } | null,
 ): string | undefined {
-    try {
-        const amountIn =
-            groupedDecimalOrNull(args?.amountInFormatted) ?? Big(0);
-        const amountOut =
-            groupedDecimalOrNull(args?.amountOutFormatted) ?? Big(0);
-        const fee = amountIn.minus(amountOut);
-        return fee.gt(0) ? fee.toFixed() : undefined;
-    } catch {
-        return undefined;
-    }
+    const amountIn = groupedDecimalOrNull(args?.amountInFormatted);
+    const amountOut = groupedDecimalOrNull(args?.amountOutFormatted);
+    if (!amountIn || !amountOut) return undefined;
+    const fee = amountIn.minus(amountOut);
+    return fee.gt(0) ? fee.toFixed() : undefined;
 }
 
 export async function estimateIntentsNetworkFee(args: {

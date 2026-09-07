@@ -174,6 +174,31 @@ describe("deriveQuoteFees", () => {
         expect(fees.totalNetworkFee.toString()).toBe("0.11");
     });
 
+    it("skips a leg when only one formatted side parses", () => {
+        const fees = deriveQuoteFees({
+            recipientQuotes: [
+                legQuote({
+                    amountInFormatted: "1,000.25",
+                    amountOutFormatted: "not-a-number",
+                }),
+                legQuote({
+                    amountInFormatted: "10.25",
+                    amountOutFormatted: "10.05",
+                }),
+            ],
+            headerQuote: legQuote({
+                amountInFormatted: "1,000",
+                amountOutFormatted: "corrupt",
+            }),
+        });
+
+        expect(fees.perRecipientFees.map((f) => f.toString())).toEqual([
+            "0",
+            "0.2",
+        ]);
+        expect(fees.totalNetworkFee.toString()).toBe("0.2");
+    });
+
     it("reports zero fees for pure intra-Intents transfers", () => {
         const fees = deriveQuoteFees(prepareResponse());
         expect(fees.totalNetworkFee.toString()).toBe("0");

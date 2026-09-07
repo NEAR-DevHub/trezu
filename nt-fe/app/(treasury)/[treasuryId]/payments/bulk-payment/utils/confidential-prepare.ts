@@ -74,9 +74,11 @@ export interface QuoteFees {
 }
 
 const legFee = (quote: BulkPaymentLegQuote) => {
-    const amountIn = groupedDecimalOrNull(quote.amountInFormatted) ?? Big(0);
-    const amountOut = groupedDecimalOrNull(quote.amountOutFormatted) ?? Big(0);
-    return amountIn.minus(amountOut);
+    const amountIn = groupedDecimalOrNull(quote.amountInFormatted);
+    const amountOut = groupedDecimalOrNull(quote.amountOutFormatted);
+    if (!amountIn || !amountOut) return Big(0);
+    const fee = amountIn.minus(amountOut);
+    return fee.gt(0) ? fee : Big(0);
 };
 
 /**

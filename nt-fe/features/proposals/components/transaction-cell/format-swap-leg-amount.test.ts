@@ -9,8 +9,17 @@ describe("formatSwapLegAmount", () => {
             formatSwapLegAmount({ amount: "1000000000" }, USDC_DECIMALS),
         ).toBe("1,000");
         expect(
+            formatSwapLegAmount({ amount: "999990000" }, USDC_DECIMALS),
+        ).toBe("999.99");
+        expect(
             formatSwapLegAmount({ amountWithDecimals: "1000" }, USDC_DECIMALS),
         ).toBe("1,000");
+        expect(
+            formatSwapLegAmount(
+                { amountWithDecimals: "999.99" },
+                USDC_DECIMALS,
+            ),
+        ).toBe("999.99");
     });
 
     it("accepts a grouped persisted decimal without showing an em dash", () => {
