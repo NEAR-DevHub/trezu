@@ -343,15 +343,8 @@ export function RecipientNetworkSelect({
                     </span>
                 </span>
                 {selectedOption && isNearComNetwork(selectedOption.id) && (
-                    <span className="inline-flex shrink-0 items-center gap-1.5 rounded-sm bg-foreground px-2.5 py-1.5">
-                        <img
-                            src={NEAR_COM_ICON}
-                            alt=""
-                            className="size-3.5 overflow-hidden rounded-full object-cover"
-                        />
-                        <span className="text-xs font-semibold text-[#00EC97]">
-                            {t("internalTag")}
-                        </span>
+                    <span className="inline-flex shrink-0 items-center rounded-sm border border-general-success-border bg-general-success-background-faded px-2.5 py-1.5 text-xs font-semibold text-general-success-foreground">
+                        {t("internalTag")}
                     </span>
                 )}
                 <Icon
