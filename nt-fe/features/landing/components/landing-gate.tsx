@@ -2,18 +2,31 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { LoadingScreen } from "@/components/loading-screen";
 import { useUserTreasuries } from "@/hooks/use-treasury-queries";
 import { resolveTreasuryHomeHref } from "@/lib/treasury-home";
 import { useNear } from "@/stores/near-store";
 import { useTreasuryStore } from "@/stores/treasury-store";
 
 /**
- * Sends a signed-in visitor from the marketing page to their last viewed
- * treasury (or `/create` when they have none). The session cookie lives on the
- * backend origin, so this can only be decided client-side after `checkAuth`;
- * anonymous visitors see the landing page immediately and are never blocked.
+ * Decides what a visitor of `/` sees: the marketing page, or a loading screen
+ * on the way to their last viewed treasury (`/create` when they have none).
+ *
+ * The session cookie lives on the backend origin, so being signed in can only
+ * be confirmed client-side after `checkAuth`. `hasSessionHint` is the server's
+ * best guess from our own hint cookie (see `lib/session-hint.ts`), and it is
+ * what keeps returning users off the marketing page from the very first paint
+ * until the redirect lands. Anonymous visitors carry no hint and see the
+ * landing page immediately; a stale hint costs them a loading screen until
+ * `checkAuth` resolves and clears it.
  */
-export function LandingRedirect() {
+export function LandingGate({
+    hasSessionHint,
+    children,
+}: {
+    hasSessionHint: boolean;
+    children: React.ReactNode;
+}) {
     const router = useRouter();
     const { accountId, isAuthenticated, isInitializing, checkAuth } = useNear();
     // Read the treasury list directly rather than through `useTreasury()`:
@@ -49,5 +62,10 @@ export function LandingRedirect() {
         treasuries,
     ]);
 
-    return null;
+    const authResolved = hasCheckedAuth && !isInitializing;
+    if (authResolved ? isAuthenticated : hasSessionHint) {
+        return <LoadingScreen />;
+    }
+
+    return <>{children}</>;
 }

@@ -36,6 +36,7 @@ import {
     type Vote as ProposalVote,
 } from "@/lib/proposals-api";
 import { reportError } from "@/lib/report-error";
+import { clearSessionHint, markSessionHint } from "@/lib/session-hint";
 import { clearSessionQueries } from "@/lib/session-query-cleanup";
 import {
     estimateProposalStorage,
@@ -352,6 +353,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
 
         // Handle wallet sign out - reset all auth state
         newConnector.on("wallet:signOut", () => {
+            clearSessionHint();
             set({
                 walletAccountId: null,
                 isAuthenticated: false,
@@ -438,6 +440,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
             // 4. Backend verifies the authorization and opens a session.
             const loginResponse = await authLogin({ accountId, authorization });
 
+            markSessionHint();
             set({
                 walletAccountId: accountId,
                 isAuthenticated: true,
@@ -492,6 +495,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
         }
 
         // Reset auth state
+        clearSessionHint();
         set({
             walletAccountId: null,
             isAuthenticated: false,
@@ -561,6 +565,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                     } catch {
                         // ignore logout errors
                     }
+                    clearSessionHint();
                     set({
                         isAuthenticated: false,
                         hasAcceptedTerms: false,
@@ -570,6 +575,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                     return;
                 }
 
+                markSessionHint();
                 set({
                     isAuthenticated: true,
                     hasAcceptedTerms: user.termsAccepted,
@@ -583,6 +589,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                     account_id: user.accountId,
                 });
             } else {
+                clearSessionHint();
                 set({
                     isAuthenticated: false,
                     hasAcceptedTerms: false,
@@ -591,6 +598,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                 });
             }
         } catch (error) {
+            clearSessionHint();
             set({
                 isAuthenticated: false,
                 hasAcceptedTerms: false,
