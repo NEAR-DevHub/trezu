@@ -37,7 +37,6 @@ import { useTreasury } from "@/hooks/use-treasury";
 import { useToken, useTokenBalance } from "@/hooks/use-treasury-queries";
 import {
     decimalFromBaseUnits,
-    decimalOrNull,
     groupedDecimalOrNull,
 } from "@/lib/amount-format";
 import { trackEvent } from "@/lib/analytics";
@@ -424,7 +423,8 @@ export function ReviewPaymentsStep({
                             index,
                             payment.amount,
                         );
-                        const recipientAmount = decimalOrNull(displayAmount);
+                        const recipientAmount =
+                            groupedDecimalOrNull(displayAmount);
                         const estimatedUSDValue =
                             selectedTokenData?.price && recipientAmount?.gt(0)
                                 ? recipientAmount.mul(selectedTokenData.price)

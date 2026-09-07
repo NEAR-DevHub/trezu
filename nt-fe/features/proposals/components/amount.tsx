@@ -11,7 +11,11 @@ import { getNetworkDisplayName } from "@/components/token-display";
 import { Tooltip } from "@/components/tooltip";
 import { NEAR_NETWORK_ID } from "@/constants/network-ids";
 import { useToken } from "@/hooks/use-treasury-queries";
-import { decimalFromBaseUnitsOrNull, decimalOrNull } from "@/lib/amount-format";
+import {
+    decimalFromBaseUnitsOrNull,
+    decimalOrNull,
+    groupedDecimalOrNull,
+} from "@/lib/amount-format";
 import { getLocalizedNetworkDisplayName } from "@/lib/intents-network";
 import {
     formatCurrencyWithSubCent,
@@ -111,7 +115,7 @@ export function Amount({
     const { data: tokenData, isLoading } = useToken(tokenId, tokenOpts);
     const amountDecimal = amount
         ? decimalFromBaseUnitsOrNull(amount, tokenData?.decimals || 24)
-        : decimalOrNull(amountWithDecimals);
+        : groupedDecimalOrNull(amountWithDecimals);
     const amountValue = amountDecimal
         ? formatTokenDisplayAmount(amountDecimal)
         : "—";
