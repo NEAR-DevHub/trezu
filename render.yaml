@@ -5,7 +5,7 @@ services:
     runtime: rust
     plan: standard
     rootDir: nt-be
-    branch: release-1.27.0
+    branch: release-1.27.1
     buildCommand: unset DATABASE_URL && cargo build --release --bin nt-be && cargo build --release --example mark_testing_daos
     startCommand: ./target/release/nt-be
     domains:
@@ -56,7 +56,7 @@ services:
     runtime: node
     plan: starter
     rootDir: nt-fe
-    branch: release-1.27.0
+    branch: release-1.27.1
     buildCommand: bun install && node ./node_modules/geoip-lite/scripts/updatedb.js license_key=$MAXMIND_LICENSE_KEY && bun run build && cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/
     startCommand: node .next/standalone/server.js
     domains:
@@ -65,6 +65,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: 24.19.0
       - key: NEXT_PUBLIC_SENTRY_ENVIRONMENT
         value: production
       - key: MAXMIND_LICENSE_KEY
@@ -160,27 +162,10 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: 24.19.0
       - key: NEXT_PUBLIC_SENTRY_ENVIRONMENT
         value: staging
-      - key: MAXMIND_LICENSE_KEY
-        sync: false
-      - key: NEXT_PUBLIC_BACKEND_API_BASE
-        sync: false
-    healthCheckPath: /
-
-  - type: web
-    name: near-treasury-frontend-staging-redesign
-    runtime: node
-    plan: starter
-    rootDir: nt-fe
-    branch: nearcom_redesign
-    buildCommand: bun install && node ./node_modules/geoip-lite/scripts/updatedb.js license_key=$MAXMIND_LICENSE_KEY && bun run build && cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/
-    startCommand: node .next/standalone/server.js
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: NEXT_PUBLIC_SENTRY_ENVIRONMENT
-        value: staging-redesign
       - key: MAXMIND_LICENSE_KEY
         sync: false
       - key: NEXT_PUBLIC_BACKEND_API_BASE
@@ -190,7 +175,7 @@ services:
 databases:
   - name: database
     plan: basic-1gb
-    diskSizeGB: 15
+    diskSizeGB: 25
 
   - name: database-staging
     plan: basic-1gb
