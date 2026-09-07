@@ -604,6 +604,33 @@
 
     --font-sans: var(--font-figtree), var(--font-sans);
 
+    /* Marketing landing ("/"). Fixed palette straight from the business.near.com
+       Figma file; it deliberately ignores the app theme so the page reads the
+       same in dark mode. PP Neue Montreal is the designed face — it's a
+       commercial font we don't bundle, so the stack falls through to Figtree
+       (and Geist Mono for the mono labels) unless the visitor has it installed. */
+    --color-landing-ink: #062017;
+    --color-landing-paper: #f4f5f5;
+    --color-landing-green: #00dc8d;
+    --color-landing-mist: #dde4e2;
+    --color-landing-grey: #5f6565;
+    --color-landing-grey-light: #a5a5a5;
+    --font-landing: "PP Neue Montreal", var(--font-figtree), var(--font-sans);
+    --font-landing-mono:
+        "PP Neue Montreal Mono", var(--font-geist-mono), var(--font-mono);
+    --animate-landing-marquee: landing-marquee 80s linear infinite;
+    --animate-landing-marquee-reverse: landing-marquee 80s linear infinite
+        reverse;
+
+    @keyframes landing-marquee {
+        from {
+            transform: translateX(0);
+        }
+        to {
+            transform: translateX(-50%);
+        }
+    }
+
     --radius-sm: calc(var(--radius) - 4px);
     --radius-md: calc(var(--radius) - 2px);
     --radius-lg: var(--radius);

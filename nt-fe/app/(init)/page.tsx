@@ -1,14 +1,13 @@
-import { AuthProvider } from "@/components/auth-provider";
 import { NearInitializer } from "@/components/near-initializer";
-import { TreasuryOnboardingPage } from "@/features/onboarding/components/create-treasury-entry";
+import { LandingPage } from "@/features/landing/components/landing-page";
+import { LandingRedirect } from "@/features/landing/components/landing-redirect";
 
 export default function Page() {
     return (
         <>
             <NearInitializer />
-            <AuthProvider>
-                <TreasuryOnboardingPage initialScreen="login" />
-            </AuthProvider>
+            <LandingRedirect />
+            <LandingPage />
         </>
     );
 }
