@@ -986,7 +986,7 @@
             "seeTreasury": "See treasury",
             "alreadyMemberTitle": "You're already a member",
             "alreadyMemberDescription": "No need to request access — you're already part of {treasury}.",
-            "goToTreasury": "Go to Treasury",
+            "goToTreasury": "Go to treasury",
             "invalidTitle": "Invite not found",
             "invalidDescription": "This invite link is invalid or no longer available.",
             "usedTitle": "Invite already used",
@@ -1009,8 +1009,8 @@
             "youAreAdding": "You are adding",
             "membersCount": "{count, plural, one {# member} other {# members}}",
             "newMembersCount": "{count, plural, one {# new member} other {# new members}}",
-            "updatedMembers": "Updated Members",
-            "newMembers": "New Members",
+            "updatedMembers": "Updated members",
+            "newMembers": "New members",
             "creatingProposal": "Creating proposal...",
             "confirmSubmit": "Confirm and submit request"
         },
@@ -2176,7 +2176,7 @@
         "guestSaveIntro": "You are a guest of this treasury. You can only view the data.",
         "guestSaveAction": "You can save this guest treasury to your treasuries list.",
         "newFeatureRich": "New! 🎉 Stake your assets with Earn and start earning rewards. Put your funds to work effortlessly.",
-        "newFeatureCta": "Try It",
+        "newFeatureCta": "Try it",
         "requestTemplates": "Your Custom Requests section is ready. Open it here to build your first request type."
     },
     "statusDate": {
@@ -2306,7 +2306,7 @@
         "almostReady": "Earn is almost ready!",
         "finalizingFeature": "We're finalizing this feature<br></br>so you can start earning tokens shortly.",
         "comingSoon": "Coming soon",
-        "goToEarn": "Go To Earn",
+        "goToEarn": "Go to earn",
         "readyToWithdraw": "Ready to withdraw",
         "unstaking": "Unstaking",
         "overview": {
@@ -2439,7 +2439,7 @@
         "notifications": {
             "title": "New - notifications",
             "body": "Stay informed on new requests, pending votes, and incoming treasury assets - just connect Telegram bot.",
-            "tryIt": "Try It",
+            "tryIt": "Try it",
             "dismissAria": "Dismiss"
         },
         "createBanner": {
