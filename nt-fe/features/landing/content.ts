@@ -25,7 +25,7 @@ export const PROOF_STATS = [
 
 export const CONFIDENTIAL_TAGS = [
     "Confidential receipts",
-    "Bulk payments",
+    "Bulk send",
     "Audit-ready exports",
 ] as const;
 
@@ -61,7 +61,7 @@ export const CONTROL_CARDS = [
     },
     {
         title: "Recipients",
-        body: "Named, verified addresses from your address book. No raw-hex paste mistakes.",
+        body: "Named, verified addresses from your contacts. No raw-hex paste mistakes.",
     },
     {
         title: "Audit log",
@@ -73,11 +73,11 @@ export const CONTROL_CARDS = [
 // from the page's own language so the list can expand.
 export const CAPABILITIES = [
     {
-        title: "Payments",
+        title: "Send",
         body: "Send to any address on any supported chain. Every payment carries your approval rules and settles with a confidential receipt.",
     },
     {
-        title: "Bulk payments",
+        title: "Bulk send",
         body: "Pay dozens of recipients in a single batch. One approval flow, one confidential receipt per payment.",
     },
     {
@@ -85,15 +85,15 @@ export const CAPABILITIES = [
         body: "Swap between 35+ chains from the treasury itself. No external bridges, no chain-by-chain ops overhead.",
     },
     {
-        title: "History and exports",
-        body: "Every movement in one record, exportable for your accountants, auditors and board pack.",
+        title: "History",
+        body: "Every movement in one record, ready for your accountants, auditors and board pack.",
     },
     {
         title: "Roles and thresholds",
         body: "Requestor, finance, governance. Set rules that match how your organisation already makes decisions.",
     },
     {
-        title: "Address book",
+        title: "Contacts",
         body: "Named, verified addresses for every counterparty. No raw-hex paste mistakes.",
     },
 ] as const;
@@ -213,7 +213,7 @@ export const PRICING_CELLS = [
 export const INCLUDED_FEATURES = [
     "Confidential treasuries",
     "Multichain, 180+ assets",
-    "Bulk payments",
+    "Bulk send",
     "Audit-ready exports",
     "Granular permissions",
     "Multi-treasury view",
