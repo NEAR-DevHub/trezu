@@ -58,7 +58,7 @@ export function isKeyboardOccluding(
 /** Hide the phone tab bar while a field is focused or the viewport is squeezed. */
 export function shouldHideBottomNavForKeyboard(args: {
     textEntryFocused: boolean;
-    visualOverlapPx: number;
+    keyboardOccluding: boolean;
 }): boolean {
-    return args.textEntryFocused || args.visualOverlapPx > KEYBOARD_OVERLAP_PX;
+    return args.textEntryFocused || args.keyboardOccluding;
 }

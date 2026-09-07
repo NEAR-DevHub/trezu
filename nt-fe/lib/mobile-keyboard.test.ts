@@ -41,19 +41,19 @@ describe("shouldHideBottomNavForKeyboard", () => {
         expect(
             shouldHideBottomNavForKeyboard({
                 textEntryFocused: true,
-                visualOverlapPx: 0,
+                keyboardOccluding: false,
             }),
         ).toBe(true);
         expect(
             shouldHideBottomNavForKeyboard({
                 textEntryFocused: false,
-                visualOverlapPx: 300,
+                keyboardOccluding: true,
             }),
         ).toBe(true);
         expect(
             shouldHideBottomNavForKeyboard({
                 textEntryFocused: false,
-                visualOverlapPx: 0,
+                keyboardOccluding: false,
             }),
         ).toBe(false);
     });

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
+    isKeyboardOccluding,
     isTextEntryElement,
     shouldHideBottomNavForKeyboard,
 } from "@/lib/mobile-keyboard";
@@ -9,24 +10,33 @@ import {
 /**
  * True while the virtual keyboard is up, or a text field is focused on a
  * phone (Android often resizes the layout instead of reporting overlap).
+ * Pass `enabled` so pages that never hide the tab bar skip the listeners.
  */
-export function useMobileKeyboardOpen(): boolean {
+export function useMobileKeyboardOpen(enabled = true): boolean {
     const [open, setOpen] = useState(false);
 
     useEffect(() => {
+        if (!enabled) {
+            setOpen(false);
+            return;
+        }
+
         let blurTimer = 0;
 
         const update = () => {
             const viewport = window.visualViewport;
-            const visualOverlapPx = viewport
-                ? window.innerHeight - viewport.height - viewport.offsetTop
-                : 0;
             setOpen(
                 shouldHideBottomNavForKeyboard({
                     textEntryFocused: isTextEntryElement(
                         document.activeElement,
                     ),
-                    visualOverlapPx,
+                    keyboardOccluding: viewport
+                        ? isKeyboardOccluding(
+                              window.innerHeight,
+                              viewport.height,
+                              viewport.offsetTop,
+                          )
+                        : false,
                 }),
             );
         };
@@ -54,7 +64,7 @@ export function useMobileKeyboardOpen(): boolean {
             window.visualViewport?.removeEventListener("resize", update);
             window.visualViewport?.removeEventListener("scroll", update);
         };
-    }, []);
+    }, [enabled]);
 
-    return open;
+    return enabled && open;
 }

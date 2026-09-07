@@ -33,7 +33,8 @@ export function MobileBottomNav() {
     const { treasuryId } = useTreasury();
     const sheet = useMobileShellStore((state) => state.sheet);
     const hideBottomNav = useMobileShellStore((state) => state.hideBottomNav);
-    const keyboardOpen = useMobileKeyboardOpen();
+    const onSendScreen = isSendScreen(pathname, treasuryId);
+    const keyboardOpen = useMobileKeyboardOpen(onSendScreen);
     const openSheet = useMobileShellStore((state) => state.openSheet);
     const closeSheet = useMobileShellStore((state) => state.closeSheet);
 
@@ -72,7 +73,7 @@ export function MobileBottomNav() {
         pathname?.startsWith(`/${treasuryId}/settings`) === true;
     const isMenuActive = sheet === "menu" || isMenuRoute;
 
-    if (hideBottomNav || (isSendScreen(pathname, treasuryId) && keyboardOpen)) {
+    if (hideBottomNav || (onSendScreen && keyboardOpen)) {
         return null;
     }
 
