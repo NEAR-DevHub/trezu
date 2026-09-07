@@ -15,6 +15,7 @@ import type {
     BulkPaymentPrepareRequest,
     BulkPaymentPrepareResponse,
 } from "@/lib/api";
+import { groupedDecimalOrNull } from "@/lib/amount-format";
 import Big from "@/lib/big";
 import { isEthImplicitNearAddress } from "@/lib/near-address-format";
 import { stripNearComAddressPrefix } from "@/lib/nearcom-address";
@@ -72,8 +73,11 @@ export interface QuoteFees {
     totalNetworkFee: Big;
 }
 
-const legFee = (quote: BulkPaymentLegQuote) =>
-    Big(quote.amountInFormatted).minus(Big(quote.amountOutFormatted));
+const legFee = (quote: BulkPaymentLegQuote) => {
+    const amountIn = groupedDecimalOrNull(quote.amountInFormatted) ?? Big(0);
+    const amountOut = groupedDecimalOrNull(quote.amountOutFormatted) ?? Big(0);
+    return amountIn.minus(amountOut);
+};
 
 /**
  * Real transfer fees locked in by the firm quotes: what each leg is charged

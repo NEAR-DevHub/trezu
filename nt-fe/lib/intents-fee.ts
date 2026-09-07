@@ -1,7 +1,7 @@
 import { IntentsSDK } from "@defuse-protocol/intents-sdk";
 import { NEAR_NETWORK_ID } from "@/constants/network-ids";
 import { validateAddress } from "@/lib/address-validation";
-import { formatTokenQuantity } from "@/lib/amount-format";
+import { formatTokenQuantity, groupedDecimalOrNull } from "@/lib/amount-format";
 import Big from "@/lib/big";
 import type { BlockchainType } from "@/lib/blockchain-utils";
 
@@ -86,9 +86,11 @@ export function computeQuoteNetworkFee(
     } | null,
 ): string | undefined {
     try {
-        const fee = Big(args?.amountInFormatted || "0").minus(
-            Big(args?.amountOutFormatted || "0"),
-        );
+        const amountIn =
+            groupedDecimalOrNull(args?.amountInFormatted) ?? Big(0);
+        const amountOut =
+            groupedDecimalOrNull(args?.amountOutFormatted) ?? Big(0);
+        const fee = amountIn.minus(amountOut);
         return fee.gt(0) ? fee.toFixed() : undefined;
     } catch {
         return undefined;

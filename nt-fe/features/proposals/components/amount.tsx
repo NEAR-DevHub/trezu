@@ -11,9 +11,9 @@ import { getNetworkDisplayName } from "@/components/token-display";
 import { Tooltip } from "@/components/tooltip";
 import { NEAR_NETWORK_ID } from "@/constants/network-ids";
 import { useToken } from "@/hooks/use-treasury-queries";
+import { decimalFromBaseUnitsOrNull, decimalOrNull } from "@/lib/amount-format";
 import { getLocalizedNetworkDisplayName } from "@/lib/intents-network";
 import {
-    formatBalance,
     formatCurrencyWithSubCent,
     formatTokenDisplayAmount,
     getNearTokenTypeLabel,
@@ -109,28 +109,24 @@ export function Amount({
             usdValue !== undefined);
     const tokenOpts = nearFt ? { nearFt: true } : undefined;
     const { data: tokenData, isLoading } = useToken(tokenId, tokenOpts);
-    const rawAmountValue = amount
-        ? formatBalance(amount, tokenData?.decimals || 24)
-        : amountWithDecimals || "0";
-    const amountValue = formatTokenDisplayAmount(rawAmountValue);
+    const amountDecimal = amount
+        ? decimalFromBaseUnitsOrNull(amount, tokenData?.decimals || 24)
+        : decimalOrNull(amountWithDecimals);
+    const amountValue = amountDecimal
+        ? formatTokenDisplayAmount(amountDecimal)
+        : "—";
     const estimatedUSDValue = useMemo(() => {
         if (usdValue !== undefined) {
             return `≈ ${formatCurrencyWithSubCent(usdValue)}`;
         }
 
-        const isPriceAvailable = tokenData?.price;
-        const parsedAmount = Number(rawAmountValue);
-        if (
-            !isPriceAvailable ||
-            !rawAmountValue ||
-            !Number.isFinite(parsedAmount)
-        ) {
+        const price = decimalOrNull(tokenData?.price);
+        if (!price || !amountDecimal) {
             return tCommon("notAvailable");
         }
 
-        const price = tokenData?.price;
-        return `≈ ${formatCurrencyWithSubCent(parsedAmount * price!)}`;
-    }, [usdTextOverride, tokenData, rawAmountValue, tCommon, usdValue]);
+        return `≈ ${formatCurrencyWithSubCent(amountDecimal.mul(price))}`;
+    }, [usdTextOverride, tokenData, amountDecimal, tCommon, usdValue]);
     // Masking keeps the token (icon, symbol, network) and hides only the figures,
     // so a request stays identifiable while balances are hidden.
     const displayAmount = isMasked ? BALANCE_MASK : amountValue;

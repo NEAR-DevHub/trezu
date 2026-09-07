@@ -19,6 +19,7 @@ import {
 } from "@/hooks/use-merged-tokens";
 import { useScrollOverflow } from "@/hooks/use-scroll-overflow";
 import { usePopularAssetsByActivity } from "@/hooks/use-treasury-queries";
+import { decimalFromBaseUnitsOrNull } from "@/lib/amount-format";
 import type { ChainIcons } from "@/lib/api";
 import Big from "@/lib/big";
 import {
@@ -749,16 +750,12 @@ export default function TokenSelect({
                                         return false;
                                     }
 
-                                    try {
-                                        return !Big(
-                                            formatBalance(
-                                                item.balance,
-                                                item.decimals,
-                                            ),
-                                        ).eq(0);
-                                    } catch {
-                                        return false;
-                                    }
+                                    return (
+                                        decimalFromBaseUnitsOrNull(
+                                            item.balance,
+                                            item.decimals,
+                                        )?.gt(0) ?? false
+                                    );
                                 };
 
                                 const isComingSoon = (item: MergedNetwork) =>
@@ -844,13 +841,9 @@ export default function TokenSelect({
                                             trailing={
                                                 hasBalance(item) ? (
                                                     <SelectorOptionBalance
-                                                        primary={formatSmartAmount(
-                                                            formatBalance(
-                                                                item.balance ??
-                                                                    "0",
-                                                                item.decimals ??
-                                                                    0,
-                                                            ),
+                                                        primary={formatBalance(
+                                                            item.balance ?? "0",
+                                                            item.decimals ?? 0,
                                                         )}
                                                         secondary={`≈${formatCurrencyWithSubCent(
                                                             item.balanceUSD ||

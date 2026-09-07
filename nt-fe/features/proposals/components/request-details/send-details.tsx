@@ -11,8 +11,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { NEAR_NETWORK_ID } from "@/constants/network-ids";
 import { useQuoteByDepositAddress } from "@/hooks/use-proposals";
 import { useToken } from "@/hooks/use-treasury-queries";
+import { decimalFromBaseUnitsOrNull, decimalOrNull } from "@/lib/amount-format";
 import {
-    formatBalance,
     formatCurrencyWithSubCent,
     formatTokenDisplayAmount,
 } from "@/lib/utils";
@@ -60,31 +60,36 @@ export function SendDetails({ data }: { data: PaymentRequestData }) {
         shouldLoadQuoteUsd,
     );
 
-    const rawAmount = formatBalance(data.amount, tokenData?.decimals ?? 24);
-    const amountNumber = Number(rawAmount);
+    const amountDecimal = decimalFromBaseUnitsOrNull(
+        data.amount,
+        tokenData?.decimals ?? 24,
+    );
     const displayAmount = isMasked
         ? BALANCE_MASK
-        : formatTokenDisplayAmount(rawAmount);
+        : amountDecimal
+          ? formatTokenDisplayAmount(amountDecimal)
+          : "—";
 
     // `usdValue: null` means the figure is deliberately withheld (confidential),
     // which is different from "we don't know it yet".
     const quoteUsd =
         data.quoteAmountInUsd ?? quoteByDepositAddress?.amountInUsd;
+    const tokenPrice = decimalOrNull(tokenData?.price);
     const totalUsd =
         data.usdValue === null
             ? null
             : quoteUsd && !Number.isNaN(Number(quoteUsd))
               ? Number(quoteUsd)
               : (data.usdValue ??
-                (tokenData?.price && Number.isFinite(amountNumber)
-                    ? tokenData.price * amountNumber
+                (tokenPrice && amountDecimal
+                    ? amountDecimal.mul(tokenPrice).toNumber()
                     : null));
     const unitUsd =
         data.usdValue === null
             ? null
             : (tokenData?.price ??
-              (totalUsd !== null && amountNumber > 0
-                  ? totalUsd / amountNumber
+              (totalUsd !== null && amountDecimal?.gt(0)
+                  ? totalUsd / amountDecimal.toNumber()
                   : null));
 
     return (

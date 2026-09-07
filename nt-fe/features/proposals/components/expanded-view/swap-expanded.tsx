@@ -9,7 +9,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
 import { useQuoteByDepositAddress } from "@/hooks/use-proposals";
 import { useSearchIntentsTokens, useToken } from "@/hooks/use-treasury-queries";
-import { decimalFromBaseUnitsOrNull, decimalOrNull } from "@/lib/amount-format";
+import {
+    decimalFromBaseUnitsOrNull,
+    decimalOrNull,
+    groupedDecimalOrNull,
+} from "@/lib/amount-format";
 import {
     calculateExchangeFeeAmount,
     EXCHANGE_FEE_PERCENTAGE,
@@ -85,7 +89,7 @@ function IntentsSwapExpanded({ data, isExecuted = false }: SwapExpandedProps) {
         useToken(finalTokenInId);
 
     const minimumReceived = useMemo(() => {
-        const amountOut = decimalOrNull(data.amountOut);
+        const amountOut = groupedDecimalOrNull(data.amountOut);
         const slippage = decimalOrNull(data.slippage ?? "0");
         if (!amountOut || !slippage) return null;
         return amountOut.minus(amountOut.mul(slippage).div(100));

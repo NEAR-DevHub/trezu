@@ -142,6 +142,24 @@ describe("deriveQuoteFees", () => {
         expect(fees.totalNetworkFee.toString()).toBe("0.4");
     });
 
+    it("accepts grouped 1Click formatted amounts without throwing", () => {
+        const fees = deriveQuoteFees({
+            recipientQuotes: [
+                legQuote({
+                    amountInFormatted: "1,000.25",
+                    amountOutFormatted: "1,000.05",
+                }),
+            ],
+            headerQuote: legQuote({
+                amountInFormatted: "1,000",
+                amountOutFormatted: "1,000",
+            }),
+        });
+
+        expect(fees.perRecipientFees.map((f) => f.toString())).toEqual(["0.2"]);
+        expect(fees.totalNetworkFee.toString()).toBe("0.2");
+    });
+
     it("includes a non-zero header-leg fee in the total", () => {
         const fees = deriveQuoteFees({
             recipientQuotes: [

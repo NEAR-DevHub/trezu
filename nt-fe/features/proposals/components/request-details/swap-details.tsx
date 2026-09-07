@@ -9,17 +9,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
 import { useQuoteByDepositAddress } from "@/hooks/use-proposals";
 import { useSearchIntentsTokens, useToken } from "@/hooks/use-treasury-queries";
-import Big from "@/lib/big";
+import { decimalOrNull } from "@/lib/amount-format";
+import type Big from "@/lib/big";
+import { EXCHANGE_FEE_PERCENTAGE } from "@/lib/exchange-fee";
 import {
-    calculateExchangeFeeAmount,
-    EXCHANGE_FEE_PERCENTAGE,
-} from "@/lib/exchange-fee";
-import {
-    formatBalance,
     formatCurrencyWithSubCent,
     formatTokenDisplayAmount,
 } from "@/lib/utils";
 import type { SwapRequestData } from "../../types/index";
+import { resolveSwapDetailAmounts } from "../../utils/swap-detail-amounts";
 import { useRequestDisplayContext } from "../expanded-view/common/request-display-context";
 import { DetailRow, DetailsCard } from "./primitives";
 
@@ -74,10 +72,14 @@ export function SwapDetails({ data }: { data: SwapRequestData }) {
         shouldLoadQuoteUsd,
     );
 
-    const amountIn = isWrapConversion
-        ? data.amountIn
-        : formatBalance(data.amountIn, tokenIn?.decimals ?? 24);
-    const amountOut = data.amountOut;
+    const { amountIn, amountOut, rate, minimumReceived, exchangeFee } =
+        resolveSwapDetailAmounts({
+            isWrapConversion,
+            amountInRaw: data.amountIn,
+            amountOutRaw: data.amountOut,
+            tokenInDecimals: tokenIn?.decimals ?? 24,
+            slippage: data.slippage,
+        });
 
     const usdIn = resolveUsd(data.amountInUsd, quote?.amountInUsd, {
         amount: amountIn,
@@ -88,9 +90,6 @@ export function SwapDetails({ data }: { data: SwapRequestData }) {
         price: tokenOut?.price,
     });
 
-    const rate = safeBig(amountIn)?.gt(0)
-        ? Big(amountOut).div(Big(amountIn))
-        : null;
     // A wrap is 1:1 by construction, so there is no market to differ from.
     const priceDifference =
         isWrapConversion || usdIn === null || usdOut === null || usdIn <= 0
@@ -99,11 +98,6 @@ export function SwapDetails({ data }: { data: SwapRequestData }) {
                   usd: usdOut - usdIn,
                   percent: ((usdOut - usdIn) / usdIn) * 100,
               };
-    const minimumReceived = data.slippage
-        ? Big(amountOut)
-              .mul(100 - Number(data.slippage))
-              .div(100)
-        : null;
 
     return (
         <>
@@ -164,14 +158,14 @@ export function SwapDetails({ data }: { data: SwapRequestData }) {
                         }
                     />
                 )}
-                {!isWrapConversion && (
+                {exchangeFee && (
                     <DetailRow
                         label={t("exchangeFee")}
                         info={tExchange("info.exchangeFeeTooltip")}
                         value={
                             tokenIn ? (
                                 `${EXCHANGE_FEE_PERCENTAGE}% / ${formatTokenDisplayAmount(
-                                    calculateExchangeFeeAmount(amountIn),
+                                    exchangeFee,
                                 )} ${tokenIn.symbol}`
                             ) : (
                                 <Skeleton className="h-5 w-24" />
@@ -191,7 +185,7 @@ function SwapSide({
     symbol,
     icon,
 }: {
-    amount: string;
+    amount: Big | null;
     usdValue: number | null;
     symbol: string | undefined;
     icon: string | undefined;
@@ -210,7 +204,9 @@ function SwapSide({
                     <span className="truncate text-2xl font-semibold leading-[1.2] tracking-[-0.48px]">
                         {isMasked
                             ? BALANCE_MASK
-                            : formatTokenDisplayAmount(amount)}
+                            : amount
+                              ? formatTokenDisplayAmount(amount)
+                              : "—"}
                     </span>
                     <span className="shrink-0 text-xl font-semibold leading-[1.2] tracking-[-0.4px] text-general-muted-foreground">
                         {symbol}
@@ -236,22 +232,14 @@ function SwapSide({
 function resolveUsd(
     fromProposal: number | null | undefined,
     fromQuote: string | null | undefined,
-    spot: { amount: string; price: number | undefined },
+    spot: { amount: Big | null; price: number | undefined },
 ): number | null {
     if (fromProposal != null) return fromProposal;
 
     const quoted = fromQuote ? Number(fromQuote) : Number.NaN;
     if (!Number.isNaN(quoted)) return quoted;
 
-    const amount = safeBig(spot.amount);
-    if (!spot.price || !amount) return null;
-    return amount.mul(spot.price).toNumber();
-}
-
-function safeBig(value: string) {
-    try {
-        return Big(value);
-    } catch {
-        return null;
-    }
+    const price = decimalOrNull(spot.price);
+    if (!spot.amount || !price) return null;
+    return spot.amount.mul(price).toNumber();
 }

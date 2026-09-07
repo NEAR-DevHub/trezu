@@ -90,11 +90,11 @@ export function decimalFromBaseUnitsOrNull(
 }
 
 /**
- * Read compatibility for values persisted by the legacy en-US formatter.
- * This intentionally accepts only canonical decimals or correctly grouped
- * comma thousands; localized input must never pass through this helper.
+ * Exact decimal, or en-US thousands grouping (`1,000`). Use for quote
+ * `*Formatted` fields and persisted description amounts. Never for
+ * localized user input — a comma can be a decimal there.
  */
-export function legacyGroupedDecimalOrNull(
+export function groupedDecimalOrNull(
     value: AmountValue | null | undefined,
 ): Big | null {
     const canonical = decimalOrNull(value);

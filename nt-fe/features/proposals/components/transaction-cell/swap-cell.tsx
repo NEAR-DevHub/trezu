@@ -34,13 +34,11 @@ type SwapLegAmount =
 function useSwapLeg(leg: { tokenId: string } & SwapLegAmount) {
     const isMasked = useIsBalanceMasked();
     const { data: token } = useToken(leg.tokenId);
-    const rawAmount =
-        leg.amount !== undefined
-            ? formatBalance(leg.amount, token?.decimals || 24)
-            : leg.amountWithDecimals;
     const displayAmount = isMasked
         ? BALANCE_MASK
-        : formatTokenDisplayAmount(rawAmount);
+        : leg.amount !== undefined
+          ? formatBalance(leg.amount, token?.decimals || 24)
+          : formatTokenDisplayAmount(leg.amountWithDecimals);
 
     return { token, label: `${displayAmount} ${token?.symbol ?? ""}`.trim() };
 }
