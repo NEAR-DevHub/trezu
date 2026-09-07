@@ -6,7 +6,8 @@ use axum::{
     extract::{Query, State},
     http::StatusCode,
 };
-use near_api::{AccountId, Contract, NearToken};
+use futures::{StreamExt, TryStreamExt};
+use near_api::{AccountId, Contract, NearToken, NetworkConfig};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -306,7 +307,7 @@ async fn fetch_staking_pools(
 
 /// Fetch balance from a single staking pool
 async fn fetch_staking_pool_balance(
-    state: &Arc<AppState>,
+    network: &NetworkConfig,
     account_id: &AccountId,
     pool_id: &AccountId,
 ) -> Result<StakingPoolAccountInfo, (StatusCode, String)> {
@@ -316,7 +317,7 @@ async fn fetch_staking_pool_balance(
             serde_json::json!({ "account_id": account_id.to_string() }),
         )
         .read_only::<StakingPoolAccount>()
-        .fetch_from(&state.network)
+        .fetch_from(network)
         .await
         .map_err(|e| {
             eprintln!(
@@ -366,54 +367,230 @@ pub async fn fetch_staking_balances(
                 .map(|pool_id| {
                     let state = state_clone.clone();
                     let account_id = account_id_clone.clone();
-                    async move { fetch_staking_pool_balance(&state, &account_id, &pool_id).await }
+                    async move {
+                        fetch_staking_pool_balance(&state.network, &account_id, &pool_id).await
+                    }
                 })
                 .collect();
 
             let results = futures::future::join_all(balance_futures).await;
 
-            // Aggregate results (with graceful degradation for individual pool failures)
-            let mut total_staked = NearToken::from_yoctonear(0);
-            let mut total_unstaked = NearToken::from_yoctonear(0);
-            let mut any_can_withdraw = false;
-            let mut pool_balances = Vec::new();
-
-            for result in results {
-                match result {
-                    Ok(pool_balance) => {
-                        // Skip pools with zero balance
-                        if pool_balance.staked_balance.as_yoctonear() == 0
-                            && pool_balance.unstaked_balance.as_yoctonear() == 0
-                        {
-                            continue;
-                        }
-                        total_staked = total_staked.saturating_add(pool_balance.staked_balance);
-                        total_unstaked =
-                            total_unstaked.saturating_add(pool_balance.unstaked_balance);
-                        if pool_balance.can_withdraw
-                            && pool_balance.unstaked_balance.as_yoctonear() > 0
-                        {
-                            any_can_withdraw = true;
-                        }
-                        pool_balances.push(pool_balance);
-                    }
-                    Err(e) => {
-                        eprintln!("Warning: Failed to fetch balance from pool: {:?}", e);
-                        // Continue with other pools (graceful degradation)
-                    }
+            // Preserve the live path's existing handling of individual pool failures.
+            let pool_balances = results.into_iter().filter_map(|result| match result {
+                Ok(balance) => Some(balance),
+                Err(e) => {
+                    eprintln!("Warning: Failed to fetch balance from pool: {:?}", e);
+                    None
                 }
-            }
-
-            if pool_balances.is_empty() {
-                return Ok::<_, (StatusCode, String)>(None);
-            }
-
-            Ok::<_, (StatusCode, String)>(Some(StakingBalance {
-                staked_balance: total_staked,
-                unstaked_balance: total_unstaked,
-                can_withdraw: any_can_withdraw,
-                pools: pool_balances,
-            }))
+            });
+            Ok::<_, (StatusCode, String)>(aggregate_staking_balances(pool_balances))
         })
         .await
+}
+
+/// Read current staking state for known pools without a history API dependency.
+/// A failed pool read must fail the ledger response instead of understating funds.
+pub(crate) async fn fetch_staking_balances_for_pools(
+    network: &NetworkConfig,
+    account_id: &AccountId,
+    pool_ids: &[String],
+) -> Result<Option<StakingBalance>, (StatusCode, String)> {
+    let mut pools = pool_ids
+        .iter()
+        .map(|pool_id| {
+            pool_id.parse::<AccountId>().map_err(|_| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Invalid staking pool account: {pool_id}"),
+                )
+            })
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    pools.sort();
+    pools.dedup();
+
+    let balances: Vec<_> =
+        futures::stream::iter(pools)
+            .map(|pool_id| async move {
+                fetch_staking_pool_balance(network, account_id, &pool_id).await
+            })
+            .buffered(8)
+            .try_collect()
+            .await?;
+    Ok(aggregate_staking_balances(balances))
+}
+
+fn aggregate_staking_balances(
+    balances: impl IntoIterator<Item = StakingPoolAccountInfo>,
+) -> Option<StakingBalance> {
+    let mut total_staked = NearToken::from_yoctonear(0);
+    let mut total_unstaked = NearToken::from_yoctonear(0);
+    let mut any_can_withdraw = false;
+    let mut pools = Vec::new();
+
+    for balance in balances {
+        if balance.staked_balance.is_zero() && balance.unstaked_balance.is_zero() {
+            continue;
+        }
+        total_staked = total_staked.saturating_add(balance.staked_balance);
+        total_unstaked = total_unstaked.saturating_add(balance.unstaked_balance);
+        any_can_withdraw |= balance.can_withdraw && !balance.unstaked_balance.is_zero();
+        pools.push(balance);
+    }
+
+    (!pools.is_empty()).then_some(StakingBalance {
+        staked_balance: total_staked,
+        unstaked_balance: total_unstaked,
+        can_withdraw: any_can_withdraw,
+        pools,
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use near_api::RPCEndpoint;
+    use serde_json::json;
+    use wiremock::{Mock, MockServer, ResponseTemplate, matchers::body_partial_json};
+
+    fn network(server: &MockServer) -> NetworkConfig {
+        NetworkConfig {
+            rpc_endpoints: vec![RPCEndpoint::new(server.uri().parse().unwrap()).with_retries(1)],
+            ..NetworkConfig::mainnet()
+        }
+    }
+
+    async fn mock_pool(server: &MockServer, pool: &str, staked: u128, unstaked: u128, ready: bool) {
+        let result = serde_json::to_vec(&json!({
+            "account_id": "test.sputnik-dao.near",
+            "staked_balance": NearToken::from_near(staked).as_yoctonear().to_string(),
+            "unstaked_balance": NearToken::from_near(unstaked).as_yoctonear().to_string(),
+            "can_withdraw": ready,
+        }))
+        .unwrap();
+        Mock::given(body_partial_json(json!({
+            "method": "query",
+            "params": { "account_id": pool, "method_name": "get_account" },
+        })))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "jsonrpc": "2.0",
+            "id": "dontcare",
+            "result": {
+                "result": result,
+                "logs": [],
+                "block_height": 123,
+                "block_hash": "11111111111111111111111111111111",
+            },
+        })))
+        .expect(1)
+        .mount(server)
+        .await;
+    }
+
+    #[tokio::test]
+    async fn known_pools_read_rpc_staking_and_withdrawal_state() {
+        let server = MockServer::start().await;
+        mock_pool(&server, "ready.poolv1.near", 2, 3, true).await;
+        mock_pool(&server, "pending.poolv1.near", 4, 5, false).await;
+        mock_pool(&server, "empty.poolv1.near", 0, 0, true).await;
+        let account = "test.sputnik-dao.near".parse().unwrap();
+        let balance = fetch_staking_balances_for_pools(
+            &network(&server),
+            &account,
+            &[
+                "ready.poolv1.near".into(),
+                "pending.poolv1.near".into(),
+                "empty.poolv1.near".into(),
+                "ready.poolv1.near".into(),
+            ],
+        )
+        .await
+        .unwrap()
+        .unwrap();
+        assert_eq!(balance.staked_balance, NearToken::from_near(6));
+        assert_eq!(balance.unstaked_balance, NearToken::from_near(8));
+        assert!(balance.can_withdraw);
+        assert_eq!(balance.pools.len(), 2);
+        assert_eq!(balance.pools[0].pool_id, "pending.poolv1.near");
+        assert!(!balance.pools[0].can_withdraw);
+        assert_eq!(balance.pools[0].unstaked_balance, NearToken::from_near(5));
+        assert!(balance.pools[1].can_withdraw);
+        assert_eq!(balance.pools[1].unstaked_balance, NearToken::from_near(3));
+
+        use base64::Engine;
+        for request in server.received_requests().await.unwrap() {
+            let body: serde_json::Value = serde_json::from_slice(&request.body).unwrap();
+            let args = base64::engine::general_purpose::STANDARD
+                .decode(body["params"]["args_base64"].as_str().unwrap())
+                .unwrap();
+            assert_eq!(
+                serde_json::from_slice::<serde_json::Value>(&args).unwrap(),
+                json!({"account_id": account.as_str()})
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn known_pools_fail_instead_of_returning_partial_balances() {
+        let server = MockServer::start().await;
+        mock_pool(&server, "a-ready.poolv1.near", 2, 3, true).await;
+        Mock::given(body_partial_json(json!({
+            "params": { "account_id": "z-failed.poolv1.near" },
+        })))
+        .respond_with(ResponseTemplate::new(500))
+        .mount(&server)
+        .await;
+        let account = "test.sputnik-dao.near".parse().unwrap();
+        let error = fetch_staking_balances_for_pools(
+            &network(&server),
+            &account,
+            &["a-ready.poolv1.near".into(), "z-failed.poolv1.near".into()],
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(error.0, StatusCode::INTERNAL_SERVER_ERROR);
+        assert!(error.1.contains("z-failed.poolv1.near"));
+    }
+
+    #[tokio::test]
+    async fn empty_and_invalid_pool_lists_do_not_need_rpc() {
+        let account = "test.sputnik-dao.near".parse().unwrap();
+        let network = NetworkConfig {
+            rpc_endpoints: vec![],
+            ..NetworkConfig::mainnet()
+        };
+        assert!(
+            fetch_staking_balances_for_pools(&network, &account, &[])
+                .await
+                .unwrap()
+                .is_none()
+        );
+        assert!(
+            fetch_staking_balances_for_pools(&network, &account, &["INVALID!".into()])
+                .await
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn withdrawal_requires_ready_unstaked_funds() {
+        let balance = aggregate_staking_balances([
+            StakingPoolAccountInfo {
+                pool_id: "pending.poolv1.near".into(),
+                staked_balance: NearToken::from_near(0),
+                unstaked_balance: NearToken::from_near(3),
+                can_withdraw: false,
+            },
+            StakingPoolAccountInfo {
+                pool_id: "staked.poolv1.near".into(),
+                staked_balance: NearToken::from_near(2),
+                unstaked_balance: NearToken::from_near(0),
+                can_withdraw: true,
+            },
+        ])
+        .unwrap();
+        assert!(!balance.can_withdraw);
+        assert_eq!(balance.unstaked_balance, NearToken::from_near(3));
+        assert!(aggregate_staking_balances([]).is_none());
+    }
 }

@@ -4,13 +4,14 @@ use std::collections::HashSet;
 /// Backing source for treasury balance reads (`/api/user/assets`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BalanceReadSource {
-    /// Live reads: FastNear discovery + RPC for public treasuries (with
-    /// verified ledger heads overriding), the 1Click API for confidential.
+    /// Live reads: FastNear FT balances + RPC for public treasuries, the
+    /// 1Click API for confidential. The backup switch that bypasses ledger
+    /// reads entirely.
     Live,
-    /// Ledger heads only. For public treasuries this is the backup switch
-    /// for FastNear history API outages (never-verified treasuries stay on
-    /// the live path); for confidential it is the default, with live 1Click
-    /// reads only for DAOs with no ledger rows yet.
+    /// Verified ledger heads (default). Public treasuries whose ledger was
+    /// never verified or has no rows yet fall back to the live path;
+    /// confidential DAOs with no ledger rows yet fall back to live 1Click
+    /// reads. Staking balances and lockups stay on RPC in this mode.
     Ledger,
 }
 
@@ -31,8 +32,9 @@ pub struct EnvVars {
     pub disable_stats_generation: bool,
     pub disable_ft_lockup_scheduler: bool,
     pub disable_gold_ledger_usd_backfill: bool,
-    /// `BALANCE_READ_SOURCE`: "live" (default) or "ledger". Public
-    /// treasuries only.
+    /// `BALANCE_READ_SOURCE`: "ledger" (default) or "live". Public
+    /// treasuries only; "live" is the backup switch that bypasses the
+    /// verified ledger.
     pub balance_read_source: BalanceReadSource,
     /// `CONFIDENTIAL_BALANCE_READ_SOURCE`: "ledger" (default) or "live".
     /// "live" is the backup switch that fetches confidential balances
@@ -158,8 +160,8 @@ impl Default for EnvVars {
                 .parse()
                 .unwrap_or(false),
             balance_read_source: match std::env::var("BALANCE_READ_SOURCE") {
-                Ok(value) if value.eq_ignore_ascii_case("ledger") => BalanceReadSource::Ledger,
-                _ => BalanceReadSource::Live,
+                Ok(value) if value.eq_ignore_ascii_case("live") => BalanceReadSource::Live,
+                _ => BalanceReadSource::Ledger,
             },
             confidential_balance_read_source: match std::env::var(
                 "CONFIDENTIAL_BALANCE_READ_SOURCE",
