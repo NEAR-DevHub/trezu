@@ -413,16 +413,10 @@ async fn submit_done_activation(
         }
     }
 
-    sqlx::query!(
-        "UPDATE confidential_bulk_payments SET status = 'completed', updated_at = NOW() WHERE id = $1",
-        bulk_id,
-    )
-    .execute(&state.db_pool)
-    .await
-    .map_err(|e| format!("mark-completed: {}", e))?;
-
     // Pull the next 1Click history poll forward so the submitted intents enter
     // the await-settlement fast tier (mirrors relay/confidential.rs submits).
+    // Before the completed update: if that update fails, the retry cycle finds
+    // no pending recipients and never reaches this point again.
     if let Err(e) =
         crate::handlers::intents::confidential::bronze::store::mark_confidential_history_activity_due(
             &state.db_pool,
@@ -432,6 +426,14 @@ async fn submit_done_activation(
     {
         tracing::warn!("cannot mark confidential history due for {}: {}", dao_id, e);
     }
+
+    sqlx::query!(
+        "UPDATE confidential_bulk_payments SET status = 'completed', updated_at = NOW() WHERE id = $1",
+        bulk_id,
+    )
+    .execute(&state.db_pool)
+    .await
+    .map_err(|e| format!("mark-completed: {}", e))?;
 
     tracing::info!("Bulk-payment {} for {} fully submitted", bulk_id, dao_id);
     Ok(())
