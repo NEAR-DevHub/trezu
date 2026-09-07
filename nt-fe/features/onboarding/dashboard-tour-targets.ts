@@ -61,7 +61,13 @@ export function helpSupportTourPointerPadding(
 /** Opens the surface that actually contains Help & Support. */
 export function prepareHelpSupportTour() {
     const { openSheet, closeSheet } = useMobileShellStore.getState();
-    const { setProfileMenuOpen } = useOnboardingStore.getState();
+    const { setProfileMenuOpen, setLockSelectOutside } =
+        useOnboardingStore.getState();
+
+    // Lock before opening. onStart re-affirms this, but the settle wait runs
+    // first — without the lock, an outside-click during that window snaps the
+    // menu/sheet shut before the spotlight paints.
+    setLockSelectOutside(true);
 
     if (isTourMobileViewport()) {
         setProfileMenuOpen(false);

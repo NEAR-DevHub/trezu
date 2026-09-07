@@ -7,6 +7,7 @@
  * a real DOM and belongs in the Playwright e2e.
  */
 import { describe, expect, it } from "bun:test";
+import { useOnboardingStore } from "@/stores/onboarding-store";
 import {
     DASHBOARD_TOUR_MENU_STEPS,
     DASHBOARD_TOUR_TREASURY_STEP,
@@ -17,6 +18,7 @@ import {
     helpSupportTourPointerPadding,
     helpSupportTourSelector,
     helpSupportTourStepSide,
+    prepareHelpSupportTour,
 } from "./dashboard-tour-targets";
 
 describe("dashboardTourSurface", () => {
@@ -95,5 +97,20 @@ describe("helpSupportTourPointerPadding", () => {
     it("leaves nextstepjs unpadded so only CSS can add x-axis hover pad", () => {
         expect(helpSupportTourPointerPadding(false)).toBe(0);
         expect(helpSupportTourPointerPadding(true)).toBe(0);
+    });
+});
+
+describe("prepareHelpSupportTour", () => {
+    it("locks the menu/sheet before the tour card starts", () => {
+        useOnboardingStore.setState({
+            lockSelectOutside: false,
+            profileMenuOpen: false,
+        });
+        prepareHelpSupportTour();
+        expect(useOnboardingStore.getState().lockSelectOutside).toBe(true);
+        useOnboardingStore.setState({
+            lockSelectOutside: false,
+            profileMenuOpen: false,
+        });
     });
 });

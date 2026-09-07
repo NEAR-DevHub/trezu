@@ -1249,6 +1249,10 @@ test.describe("Onboarding – Info box Help & Support tooltip", () => {
                 "Desktop card should sit to the right of Help & Support",
             ).toBeGreaterThan(targetBox.x);
         }
+
+        await page.mouse.click(8, 8);
+        await expect(target).toBeVisible();
+        await expect(tooltip).toBeVisible();
     });
 
     test("closing the info box on mobile opens the user menu on Help & Support", async ({
@@ -1298,6 +1302,10 @@ test.describe("Onboarding – Info box Help & Support tooltip", () => {
                 "Mobile card should stay on screen",
             ).toBeGreaterThanOrEqual(0);
         }
+
+        await page.mouse.click(8, 8);
+        await expect(target).toBeVisible();
+        await expect(tooltip).toBeVisible();
 
         await context.close();
     });

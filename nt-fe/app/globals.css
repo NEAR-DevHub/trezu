@@ -701,7 +701,8 @@ body[data-onboarding-tour="info-box-dismissed"] [data-name="nextstep-card"] {
 
 @media (max-width: 1023px) {
     /* Stretch the Help & Support tooltip to the sheet / screen width. */
-    body[data-onboarding-tour="info-box-dismissed"] [data-name="nextstep-card"] {
+    body[data-onboarding-tour="info-box-dismissed"]
+    [data-name="nextstep-card"] {
         left: 1rem !important;
         right: 1rem !important;
         width: auto !important;
@@ -709,7 +710,8 @@ body[data-onboarding-tour="info-box-dismissed"] [data-name="nextstep-card"] {
         transform: none !important;
     }
 
-    body[data-onboarding-tour="info-box-dismissed"] [data-onboarding-tour-card] {
+    body[data-onboarding-tour="info-box-dismissed"]
+        [data-onboarding-tour-card] {
         width: 100%;
         min-width: 0;
         max-width: none;

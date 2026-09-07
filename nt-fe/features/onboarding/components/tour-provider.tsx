@@ -26,8 +26,8 @@ function TourSession({ children }: { children: React.ReactNode }) {
             noInViewScroll
             onStart={(tourName) => {
                 setActiveOnboardingTour(tourName);
-                // Hold the treasury selector / profile menu open while those
-                // tours are pointing at a row inside them.
+                // Re-affirm the lock (prepareHelpSupportTour already sets it
+                // before settle, so an outside-click cannot close the menu).
                 setLockSelectOutside(
                     tourName === TOUR_NAMES.DASHBOARD ||
                         tourName === TOUR_NAMES.INFO_BOX_DISMISSED,

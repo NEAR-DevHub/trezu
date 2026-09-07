@@ -62,8 +62,7 @@ export function SidebarProfileMenu({
     const { data: profile } = useProfile(accountId);
     const { resolvedTheme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
-    const [isOpen, setLocalOpen] = useState(false);
-    const tourMenuOpen = useOnboardingStore((state) => state.profileMenuOpen);
+    const menuOpen = useOnboardingStore((state) => state.profileMenuOpen);
     const setProfileMenuOpen = useOnboardingStore(
         (state) => state.setProfileMenuOpen,
     );
@@ -72,10 +71,8 @@ export function SidebarProfileMenu({
     );
     const setIsOpen = (open: boolean) => {
         if (!open && lockSelectOutside) return;
-        setLocalOpen(open);
-        if (!open) setProfileMenuOpen(false);
+        setProfileMenuOpen(open);
     };
-    const menuOpen = isOpen || tourMenuOpen;
     // On touch, `Tooltip` falls back to a popover of its own, which would fire
     // alongside this menu on tap — and the menu already spells out the account.
     const isTouchDevice = useMediaQuery("(hover: none)");

@@ -734,7 +734,11 @@ export default function TokenSelect({
                 )}
                 {step === "network" && selectedAsset && (
                     <div className="mt-4 flex min-h-0 flex-1 flex-col sm:mt-0">
-                        <ScrollArea className={paymentSelectModalListClassName}>
+                        <PaymentSelectSearchRail scrolled={hasContentAbove} />
+                        <ScrollArea
+                            viewportRef={viewportRef}
+                            className={paymentSelectModalListClassName}
+                        >
                             {(() => {
                                 const hasBalance = (item: MergedNetwork) => {
                                     if (
