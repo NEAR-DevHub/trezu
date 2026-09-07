@@ -55,7 +55,11 @@ import {
     useBridgeScopedWarning,
     useScopedSlotWarning,
 } from "@/hooks/use-warnings";
-import { decimalFromBaseUnitsOrNull, decimalOrNull } from "@/lib/amount-format";
+import {
+    decimalFromBaseUnitsOrNull,
+    decimalOrNull,
+    groupedDecimalOrNull,
+} from "@/lib/amount-format";
 import { trackEvent } from "@/lib/analytics";
 import type { IntentsQuoteResponse } from "@/lib/api";
 import { generateIntent, getIntentsQuote } from "@/lib/api";
@@ -340,10 +344,10 @@ function Step2({
                         liveQuote.quote.amountIn || liveQuote.quote.minAmountIn,
                         token.decimals,
                     ) ??
-                    decimalOrNull(liveQuote.quote.amountInFormatted) ??
+                    groupedDecimalOrNull(liveQuote.quote.amountInFormatted) ??
                     Big(0);
                 const quotedRecipient =
-                    decimalOrNull(liveQuote.quote.amountOutFormatted) ??
+                    groupedDecimalOrNull(liveQuote.quote.amountOutFormatted) ??
                     decimalFromBaseUnitsOrNull(
                         liveQuote.quote.amountOut ||
                             liveQuote.quote.minAmountOut,
