@@ -8,7 +8,7 @@
         "submit": "Submit",
         "close": "Close",
         "back": "Back",
-        "seeDemo": "See Demo Near Business",
+        "seeDemo": "See demo Near Business",
         "search": "Search",
         "filter": "Filter",
         "filterActive": "Filter (active)",
@@ -36,7 +36,7 @@
         "reject": "Reject",
         "copy": "Copy",
         "copied": "Copied",
-        "viewAll": "View All",
+        "viewAll": "View all",
         "seeMore": "See more",
         "viewDetails": "View details",
         "noResults": "No results found",
@@ -46,8 +46,8 @@
     },
     "receiptPage": {
         "transactionConfirmation": "Transaction confirmation",
-        "copyLink": "Copy Link",
-        "printOrSavePdf": "Print or Save as PDF",
+        "copyLink": "Copy link",
+        "printOrSavePdf": "Print or save as PDF",
         "generateReceipt": "Generate PDF receipt",
         "generatedOn": "Generated on {date}",
         "receiptTitle": "Receipt #{proposalId} · Paid on <datePart>{date}</datePart>",
@@ -98,12 +98,12 @@
     },
     "signIn": {
         "copyAddress": "Copy address",
-        "myAccount": "My Account",
+        "myAccount": "My account",
         "connect": "Connect",
         "wallet": "Wallet",
         "termsOfService": "Terms of Service",
         "privacyPolicy": "Privacy Policy",
-        "disconnect": "Log Out",
+        "disconnect": "Log out",
         "signOut": "Sign out"
     },
     "auth": {
@@ -139,7 +139,7 @@
     "notFound": {
         "title": "Wooops, this page is gone...",
         "description": "It looks like you followed a link that no longer works. Try going back or return to the Dashboard.",
-        "backToDashboard": "Back to Dashboard"
+        "backToDashboard": "Back to dashboard"
     },
     "notMemberScreen": {
         "title": "You're not a member of this treasury",
@@ -174,7 +174,7 @@
             "descriptionList": "Recent transactions across all assets"
         },
         "apiDocs": {
-            "title": "API Documentation",
+            "title": "API documentation",
             "description": "Interactive documentation for the Near Business recent-activity API"
         },
         "requests": {
@@ -193,11 +193,11 @@
             "description": "Adjust your application settings"
         },
         "account": {
-            "title": "My Account",
+            "title": "My account",
             "description": "Manage your personal profile and settings"
         },
         "addressBook": {
-            "title": "Address Book",
+            "title": "Address book",
             "description": "Manage your saved recipients"
         },
         "payments": {
@@ -217,7 +217,7 @@
         "earn": {
             "title": "Earn",
             "description": "Connect your treasury to Web3 apps below and start earning on your assets.",
-            "howItWorks": "How It Works",
+            "howItWorks": "How it works",
             "apps": {
                 "rhea": {
                     "name": "Rhea",
@@ -243,7 +243,7 @@
             "title": "Create confidential treasury"
         },
         "manageTreasuries": {
-            "title": "Manage Treasuries",
+            "title": "Manage treasuries",
             "description": "Control which treasuries appear in your account"
         },
         "stats": {
@@ -251,13 +251,13 @@
             "description": "Real-time assets under management across all sputnik DAOs treasuries."
         },
         "telegram": {
-            "title": "Connect Treasury",
+            "title": "Connect treasury",
             "description": "Link your treasuries to a Telegram chat",
             "metaTitle": "Near Business — Connect Telegram",
             "metaDescription": "Connect your Near Business treasury to a Telegram chat"
         },
         "wallet": {
-            "title": "Near Business Wallet",
+            "title": "Near Business wallet",
             "description": "Sign treasury proposals via Near Business"
         }
     },
@@ -290,7 +290,7 @@
         "selectNetwork": "Select network",
         "otherAssetName": "Other",
         "otherNetworkInfo": "You can deposit any token not listed, but only via the NEAR network.",
-        "depositAddressHeading": "Deposit Address",
+        "depositAddressHeading": "Deposit address",
         "depositAddressSubtitle": "Always double-check your deposit address.",
         "publicAddressTitle": "Deposit address {symbol} on {network}",
         "publicAddressSubtitle": "Send only this token, on this network, to the address below.",
@@ -301,8 +301,8 @@
         "oneTimeSectionTitle": "One-time confidential deposit address",
         "oneTimeSectionSubtitle": "Use it only once, anything after the first deposit is lost.",
         "internalAddressTitle": "This is your internal confidential address",
-        "generateAddress": "Generate Address",
-        "showAddress": "Show Address",
+        "generateAddress": "Generate address",
+        "showAddress": "Show address",
         "copy": "Copy",
         "share": "Share",
         "linkCopied": "Link copied to clipboard",
@@ -350,7 +350,7 @@
             }
         },
         "transfer": {
-            "title": "Transfer to Treasury",
+            "title": "Transfer to treasury",
             "titleConfidential": "Transfer to near business",
             "waitingForPayment": "Waiting for payment",
             "expired": "Expired",
@@ -370,10 +370,10 @@
             "payWithTrezu": "Pay with near business",
             "payWithNearcom": "Pay with near.com",
             "payRequiresTreasury": "Sign in with a Near Business treasury to pay.",
-            "chooseTreasuryTitle": "Choose a Treasury",
+            "chooseTreasuryTitle": "Choose a treasury",
             "noMemberTreasuries": "You are not a member of any treasuries yet.",
             "createTreasury": "Create a treasury",
-            "copyLink": "Copy Link"
+            "copyLink": "Copy link"
         },
         "tabs": {
             "fromPublic": "From public",
@@ -561,14 +561,14 @@
         },
         "noPermission": "You don't have permission to download the file.",
         "download": "Download",
-        "heading": "Export Recent Transactions",
+        "heading": "Export recent transactions",
         "teamOnly": "Export generation and downloads are available to team members only.",
         "creditsUsed": "You've used all your credits",
         "exportsUsed": "You've used all your exports",
         "upgradePrompt": "Upgrade your plan to get more and keep going",
         "resetPrompt": "Upgrade your plan for more access, or wait until your limits reset next month.",
         "tabs": {
-            "generate": "Generate Export",
+            "generate": "Generate export",
             "history": "History"
         },
         "fields": {
@@ -590,16 +590,16 @@
             "description": "Your exported files from the last month will appear here once they're generated."
         },
         "requirements": {
-            "heading": "Export Requirements",
+            "heading": "Export requirements",
             "canExportFrom": "You can export data from the",
             "availability": "Exported files are available for download for 48 hours."
         },
         "quota": {
-            "heading": "Export Quota",
+            "heading": "Export quota",
             "unlimited": "Unlimited",
             "perMonth": "{count} / month",
             "flexibilityPrompt": "Looking for more flexibility?",
-            "contactUs": "Contact Us"
+            "contactUs": "Contact us"
         }
     },
     "requests": {
@@ -688,8 +688,8 @@
             "bulkApproveDisabled": "This request can't be approved because the treasury has insufficient balance."
         },
         "pending": {
-            "title": "Pending Requests",
-            "viewAll": "View All",
+            "title": "Pending requests",
+            "viewAll": "View all",
             "emptyTitle": "All caught up!",
             "emptyDescription": "There are no pending requests.",
             "emptyNeverTitle": "No recent requests yet.",
@@ -926,16 +926,16 @@
         "member": "Member",
         "activeMembers": "Active Members",
         "noActiveMembers": "No active members found.",
-        "addNewMember": "Add Member",
-        "addManually": "Add Manually",
-        "inviteMember": "Invite Member",
-        "wantsToJoin": "Wants To Join",
+        "addNewMember": "Add member",
+        "addManually": "Add manually",
+        "inviteMember": "Invite member",
+        "wantsToJoin": "Wants to join",
         "membersSelected": "{count, plural, =0 {no members} one {# member} other {# members}} selected",
         "remove": "Remove",
         "edit": "Edit",
         "requestorOnlyTooltip": "You can only add the Requestor role for this member, as they are responsible for creating payment requests from NEARN.",
         "invite": {
-            "title": "Invite Member",
+            "title": "Invite member",
             "howItWorks": {
                 "title": "How it works",
                 "generateTitle": "You generate link",
@@ -945,7 +945,7 @@
                 "voteTitle": "You send it to a vote",
                 "voteDescription": "Their details arrive pre-filled. You create the request, and the team votes."
             },
-            "generateLink": "Generate Invite Link",
+            "generateLink": "Generate invite link",
             "generating": "Generating...",
             "generateFailed": "Failed to generate invite link. Please try again.",
             "readyTitle": "Your invite link is ready",
@@ -953,13 +953,13 @@
             "onceTitle": "This link works once, for one person",
             "onceDescription": "Generate a new one for each member.",
             "yourLink": "Your invite link",
-            "copyLink": "Copy Link",
+            "copyLink": "Copy link",
             "linkCopied": "Invite link copied",
-            "generateNewLink": "Generate New Link",
-            "generatingNewLink": "Generating New Link"
+            "generateNewLink": "Generate new link",
+            "generatingNewLink": "Generating new link"
         },
         "joinRequests": {
-            "title": "Wants To Join",
+            "title": "Wants to join",
             "memberAddress": "Member address",
             "empty": "No pending join requests.",
             "setRolesRequired": "Set a role for each member",
@@ -969,7 +969,7 @@
         "join": {
             "metaTitle": "Join Treasury | Near Business",
             "metaDescription": "Ask to join a Near Business treasury via invite link",
-            "pageTitle": "Join Treasury",
+            "pageTitle": "Join treasury",
             "pageDescription": "Request to join a treasury",
             "treasuryFallback": "this treasury",
             "connectTitle": "Join the {treasury} treasury",
@@ -979,14 +979,14 @@
             "walletConnected": "Wallet connected",
             "nameLabel": "Your name (optional)",
             "namePlaceholder": "So the team recognize you",
-            "askJoin": "Ask Join",
+            "askJoin": "Ask to join",
             "submitting": "Submitting...",
             "successTitle": "You're almost in",
             "successDescription": "You'll be able to join once the team reviews\nyour request. Nothing more to do for now.",
-            "seeTreasury": "See Treasury",
+            "seeTreasury": "See treasury",
             "alreadyMemberTitle": "You're already a member",
             "alreadyMemberDescription": "No need to request access — you're already part of {treasury}.",
-            "goToTreasury": "Go to Treasury",
+            "goToTreasury": "Go to treasury",
             "invalidTitle": "Invite not found",
             "invalidDescription": "This invite link is invalid or no longer available.",
             "usedTitle": "Invite already used",
@@ -997,28 +997,28 @@
             "joinFailed": "Failed to submit join request. Please try again."
         },
         "memberModal": {
-            "editRoles": "Edit Roles",
-            "addNewMember": "Add Member",
+            "editRoles": "Edit roles",
+            "addNewMember": "Add member",
             "validatingAddresses": "Validating addresses...",
-            "reviewRequest": "Review Request",
+            "reviewRequest": "Review request",
             "noChanges": "No changes have been made to member roles"
         },
         "previewModal": {
-            "title": "Review Your Request",
+            "title": "Review your request",
             "youAreEditing": "You are editing",
             "youAreAdding": "You are adding",
             "membersCount": "{count, plural, one {# member} other {# members}}",
             "newMembersCount": "{count, plural, one {# new member} other {# new members}}",
-            "updatedMembers": "Updated Members",
-            "newMembers": "New Members",
-            "creatingProposal": "Creating Proposal...",
-            "confirmSubmit": "Confirm and Submit Request"
+            "updatedMembers": "Updated members",
+            "newMembers": "New members",
+            "creatingProposal": "Creating proposal...",
+            "confirmSubmit": "Confirm and submit request"
         },
         "removeDialog": {
-            "title": "Remove Request",
+            "title": "Remove request",
             "nearnBody": "Once approved, {account} will be permanently removed from the treasury and all associated permissions will be revoked. After removal, this account will no longer be able to create requests from NEARN.",
             "genericBody": "Once approved, this action will permanently remove <bold>{accounts}</bold> from the treasury and revoke all assigned permissions.",
-            "creatingProposal": "Creating Proposal..."
+            "creatingProposal": "Creating proposal..."
         },
         "validation": {
             "accountIdRequired": "Account ID is required",
@@ -1081,8 +1081,8 @@
             "logoDescription": "Upload a logo for your treasury. Recommended SVG, PNG, or JPG (256x256 px).",
             "treasuryLogoAlt": "Treasury logo",
             "uploading": "Uploading...",
-            "uploadLogo": "Upload Logo",
-            "removeLogo": "Remove Logo",
+            "uploadLogo": "Upload logo",
+            "removeLogo": "Remove logo",
             "logoUploaded": "Logo uploaded successfully",
             "uploadError": "Error occurred while uploading image, please try again.",
             "invalidLogo": "Invalid logo. Please upload a PNG, JPG, or SVG file that is exactly 256x256 px",
@@ -1091,7 +1091,7 @@
             "primaryColor": "Primary Color",
             "primaryColorDescription": "Set the primary color for your treasury's interface elements. This color will be used in both light and dark modes, so keep contrast in mind when choosing neutral shades.",
             "selectColorLabel": "Select color {color}",
-            "saveChanges": "Save Changes",
+            "saveChanges": "Save changes",
             "saving": "Saving...",
             "savedToast": "Your changes are saved.",
             "saveFailed": "Couldn't save your changes. Try again."
@@ -1112,9 +1112,9 @@
             "durationProposalTitle": "Update policy - Voting Duration",
             "durationProposalSummary": "{account} requested to change voting duration from {oldValue} to {newValue}.",
             "durationSubmitted": "Request created successfully",
-            "pendingTitle": "Active Voting Threshold Request",
+            "pendingTitle": "Active voting threshold request",
             "pendingBody": "To avoid conflicts, you need to complete or resolve the existing pending requests before proceeding. These requests are currently active and must be approved or rejected first.",
-            "viewRequest": "View Request",
+            "viewRequest": "View request",
             "thresholdHeading": "Voting Threshold",
             "thresholdDescriptionApprovers": "Define how many votes are required to approve payment and team-related requests. Configure thresholds separately for Approvers and Governance.",
             "thresholdDescriptionGeneric": "Define how many votes are required to approve requests. Configure thresholds for each role based on their responsibilities.",
@@ -1135,7 +1135,7 @@
             "autoTimezone": "Set timezone automatically using your location",
             "timezone": "Timezone",
             "loadingTimezones": "Loading timezones...",
-            "selectTimezone": "Select Timezone",
+            "selectTimezone": "Select timezone",
             "searchTimezones": "Search timezones...",
             "noTimezones": "No timezones found",
             "save": "Save",
@@ -1148,7 +1148,7 @@
         "emptyTitle": "Add your first recipient",
         "emptyDescription": "Save frequently used addresses for faster, error-free payouts. Your contacts stay private and visible only to your team.",
         "import": "Import",
-        "addRecipient": "Add Recipient",
+        "addRecipient": "Add recipient",
         "recipientsHeading": "Recipients",
         "recipientsSelected": "{count, plural, =0 {no recipients} one {# recipient} other {# recipients}} selected",
         "sectionHeading": "Recipients",
@@ -1169,25 +1169,25 @@
             "allDuplicatesTooltip": "All imported recipients are already in your address book, so there is nothing new to import.",
             "duplicateActionTooltip": "Enable duplicate skipping or remove duplicate recipients to continue.",
             "adding": "Adding…",
-            "nothingNew": "Nothing New to Import",
-            "addRecipientsButton": "{count, plural, one {Add Recipient} other {Add Recipients}}"
+            "nothingNew": "Nothing new to import",
+            "addRecipientsButton": "{count, plural, one {Add recipient} other {Add recipients}}"
         },
         "removeDialog": {
-            "title": "Remove Recipient",
+            "title": "Remove recipient",
             "bulk": "This will remove <bold>{count, plural, one {# recipient} other {# recipients}}</bold> from your address book. You can add them again anytime.",
             "single": "This will remove <bold>{name}</bold> from your address book. You can add this recipient again anytime."
         },
         "importFlow": {
-            "title": "Import Recipients",
+            "title": "Import recipients",
             "description": "Upload a list of recipient addresses to your address book.",
             "foundSummary": "Found {count, plural, one {# recipient} other {# recipients}} on {networkCount, plural, one {# network} other {# networks}}",
             "uploadPrompt": "Upload or paste recipient data",
             "fixErrors": "Fix errors to continue",
-            "continueReview": "Continue to Review"
+            "continueReview": "Continue to review"
         },
         "form": {
-            "editRecipient": "Edit Recipient",
-            "addRecipient": "Add Recipient",
+            "editRecipient": "Edit recipient",
+            "addRecipient": "Add recipient",
             "import": "Import",
             "recipientName": "Recipient Name",
             "namePlaceholder": "Alice",
@@ -1196,15 +1196,15 @@
             "networkInfo": "Networks compatible with this address",
             "enterAddressFirst": "Enter recipient address first",
             "selectNetwork": "Select network",
-            "selectNetworksTitle": "Select Networks",
+            "selectNetworksTitle": "Select networks",
             "searchNetworksPlaceholder": "Search networks…",
             "done": "Done",
             "edit": "Edit",
             "remove": "Remove",
             "incomplete": "Incomplete",
-            "addAnother": "Add Another Recipient",
+            "addAnother": "Add another recipient",
             "fillAllTooltip": "You must fill out all fields to add a recipient.",
-            "reviewDetails": "Review Details",
+            "reviewDetails": "Review details",
             "reviewTooltip": "All recipients must be complete before reviewing.",
             "invalidAddress": "Invalid address",
             "noCompatibleNetworks": "No compatible networks for this address"
@@ -1237,7 +1237,7 @@
         "comingSoon": "Coming soon",
         "bulkPayments": "Bulk send",
         "summaryRecipients": "to {count, plural, one {# recipient} other {# recipients}}",
-        "networkFee": "Network Fee",
+        "networkFee": "Network fee",
         "networkFeeInfo": "Network fee info",
         "destinationNetwork": "Destination network",
         "commentPlaceholder": "Add a comment",
@@ -1270,12 +1270,12 @@
             "bulkPaymentsUsed": "You've used all your bulk sends",
             "upgradeTrial": "Upgrade your plan to get more and keep going",
             "upgradePaid": "Upgrade your plan for more access, or wait until your limits reset next month.",
-            "selectAsset": "Select Asset",
+            "selectAsset": "Select asset",
             "disableTokenMessage": "Bulk send for these tokens is coming soon.",
-            "providePaymentData": "Provide Payment Data",
-            "uploadFile": "Upload File",
-            "provideData": "Provide Data",
-            "chooseFile": "Choose File",
+            "providePaymentData": "Provide payment data",
+            "uploadFile": "Upload file",
+            "provideData": "Provide data",
+            "chooseFile": "Choose file",
             "orDragDrop": "or drag and drop",
             "token": "Token",
             "destinationNetwork": "Destination network",
@@ -1295,7 +1295,7 @@
             "selectRecipientNetwork": "Please select a recipient network"
         },
         "editStep": {
-            "title": "Edit Payment",
+            "title": "Edit payment",
             "back": "Edit recipient",
             "saveChanges": "Save changes"
         },
@@ -1358,7 +1358,7 @@
         "oneTimeTrial": "one-time trial",
         "month": "month",
         "moreFlexibility": "Looking for more flexibility?",
-        "contactUs": "Contact Us"
+        "contactUs": "Contact us"
     },
     "exchange": {
         "validation": {
@@ -1388,7 +1388,7 @@
             "instant": "Instant",
             "minimumReceived": "Minimum Received",
             "minimumReceivedTooltip": "This is the minimum amount you'll receive from this exchange, based on the slippage limit set for the request.",
-            "depositAddress": "Deposit Address",
+            "depositAddress": "Deposit address",
             "depositAddressCopied": "Deposit address copied",
             "quoteExpires": "Quote Expires",
             "exchangeFee": "Exchange fee",
@@ -1412,7 +1412,7 @@
         },
         "proposalTitle": "Create vesting schedule for {address}",
         "scheduleSubmitted": "Request to create vesting schedule submitted",
-        "heading": "New Vesting Schedule",
+        "heading": "New vesting schedule",
         "amount": "Amount",
         "startDate": "Start Date",
         "endDate": "End Date",
@@ -1425,9 +1425,9 @@
         "allowEarn": "Allow Earn",
         "allowEarnDescription": "Allows the owner of the lockup to stake the full amount of tokens in the lockup (even before the cliff date).",
         "commentPlaceholder": "Add a comment for this vesting schedule (optional)...",
-        "reviewRequest": "Review Request",
+        "reviewRequest": "Review request",
         "reviewHeading": "Review Your Vesting Schedule",
-        "confirmSubmit": "Confirm and Submit Request",
+        "confirmSubmit": "Confirm and submit request",
         "review": {
             "recipient": "Recipient",
             "startDate": "Start Date",
@@ -1447,8 +1447,8 @@
         },
         "votingNote": "You need more members to modify voting settings. Add another member to configure voting.",
         "minimumVoteNote": "Minimum one approval vote required.",
-        "heading": "Create a Treasury",
-        "addMembers": "Add Members",
+        "heading": "Create a treasury",
+        "addMembers": "Add members",
         "addMembersInfo": "You can add or update members now and edit this later at any time.",
         "treasuryName": "Treasury Name",
         "accountPlaceholder": "my-treasury",
@@ -1460,7 +1460,7 @@
         "governance": "Governance",
         "governanceDescription": "Approving settings, members, and voting configuration.",
         "anyone": "Anyone",
-        "teamOnly": "Team Only",
+        "teamOnly": "Team only",
         "soon": "Soon",
         "publicDescription": "All balances, activities, and transactions are visible to anyone on the blockchain. This option is best for transparent organizations and public DAOs.",
         "balanceTransactions": "Balance, Transactions",
@@ -1475,13 +1475,13 @@
         "visibleOnChain": "Visible on chain",
         "featuresAvailable": "Features available",
         "mostFeaturesSupported": "Most features supported",
-        "reviewTreasury": "Review Treasury",
+        "reviewTreasury": "Review treasury",
         "membersLabel": "Members",
         "financialThreshold": "Financial Threshold",
         "governanceThreshold": "Governance Threshold",
         "noDeploymentFee": "🎉 No deployment fee",
         "noDeploymentFeeDescription": "To support new projects, Near Business covers all one-time deployment and network storage fees.",
-        "connectWalletCreate": "Connect Wallet To Create Treasury",
+        "connectWalletCreate": "Connect wallet to create treasury",
         "walletNotSupportedTitle": "{wallet} not supported yet",
         "walletNotSupportedDescription": "We'll add it later. In the meantime, sign in with NEAR, Ledger, or EVM Wallets - whichever you already have.",
         "connectNear": "Connect NEAR",
@@ -1489,7 +1489,7 @@
         "headerDescription": "Set up a multisig treasury for your team or yourself",
         "continueToWallet": "Continue to wallet",
         "alreadyHaveTreasuryLabel": "Already have a treasury?",
-        "signInLabel": "Sign In",
+        "signInLabel": "Sign in",
         "walletSelector": {
             "title": "Sign in or create a treasury",
             "subtitle": "Use a passkey for the easiest experience, or connect a wallet.",
@@ -1507,7 +1507,7 @@
                 "connectWalletBullet1": "Already use a crypto wallet",
                 "connectWalletBullet2": "Want to use a hardware wallet",
                 "connectWalletBullet3": "Don't have biometrics on your device",
-                "comingSoon": "Coming Soon",
+                "comingSoon": "Coming soon",
                 "passkeyTitle": "Passkey",
                 "passkeyDescription": "Sign in with Face ID, Touch ID, or your device passcode.",
                 "passkeyBullet1": "Are new to crypto wallets",
@@ -1549,12 +1549,12 @@
     "manageTreasuries": {
         "warningOne": "At least one treasury should remain available",
         "warningOnePeriod": "At least one treasury should remain available.",
-        "activeHeading": "Active Treasuries",
+        "activeHeading": "Active treasuries",
         "activeDescription": "Treasuries currently visible in your accounts list.",
         "activeEmpty": "No active treasuries.",
-        "hiddenHeading": "Hidden Treasuries",
+        "hiddenHeading": "Hidden treasuries",
         "hiddenDescription": "Treasuries hidden from your accounts list.",
-        "removeGuestTitle": "Remove Guest Treasury",
+        "removeGuestTitle": "Remove guest treasury",
         "removeDialog": "You are about to remove <bold>{name}</bold>. Once confirmed, this action cannot be undone.",
         "tooltips": {
             "removeFromList": "Remove from your list",
@@ -1571,7 +1571,7 @@
         },
         "loading": "Loading...",
         "connectPrompt": "Connect your NEAR wallet to continue. You will then select a treasury to act on behalf of.",
-        "connectWallet": "Connect Wallet",
+        "connectWallet": "Connect wallet",
         "cancel": "Cancel",
         "connectedAs": "Connected as <strong>{account}</strong>",
         "loadingTreasuries": "Loading treasuries...",
@@ -1583,14 +1583,14 @@
         "createsNProposals": "This will create {count, plural, one {a Near Business proposal} other {# Near Business proposals}} for:",
         "proposalDescriptionLabel": "Proposal description (optional)",
         "proposalDescriptionPlaceholder": "Describe this proposal...",
-        "createProposal": "Create Proposal",
+        "createProposal": "Create proposal",
         "creatingProposal": "Creating proposal...",
         "confirmInWallet": "Please confirm in your wallet",
-        "proposalSubmitted": "Proposal Submitted",
+        "proposalSubmitted": "Proposal submitted",
         "shareProposal": "Your proposal has been created. Share the link below with the treasury members to vote.",
         "proposalLink": "{daoId} — Proposal #{id}",
         "checking": "Checking...",
-        "proposalApprovedProceed": "The Proposal is Approved. Proceed",
+        "proposalApprovedProceed": "The proposal is approved. Proceed",
         "signedInSuccess": "Signed in successfully",
         "proposalCreatedSuccess": "Proposal created successfully",
         "closeWindow": "You can close this window.",
@@ -1616,7 +1616,7 @@
         "successTitle": "Connected successfully",
         "successDescription": "Treasuries were linked to this Telegram chat.",
         "successToast": "Treasuries connected successfully",
-        "goToApp": "Go to App",
+        "goToApp": "Go to app",
         "linkExpiredTitle": "Link expired",
         "linkExpiredDescription": "This link has expired or has already been used. In Telegram, type the command below to restart the connect flow.",
         "commandCopied": "Command copied",
@@ -1625,8 +1625,8 @@
         "unableToLoadDescription": "The chat details could not be loaded right now. Please retry from Telegram.",
         "signInTitle": "Sign in to continue",
         "signInDescription": "Connect your NEAR wallet first, then choose which treasuries to link to this Telegram chat.",
-        "connectWallet": "Connect Wallet",
-        "selectTreasuriesTitle": "Select Treasuries",
+        "connectWallet": "Connect wallet",
+        "selectTreasuriesTitle": "Select treasuries",
         "selectTreasuriesDescription": "Choose which treasuries to connect to this Telegram chat.",
         "telegramChat": "Telegram chat",
         "chatIdFallback": "Chat #{id}",
@@ -1650,7 +1650,7 @@
             "disconnectedToast": "Telegram disconnected for this treasury",
             "disconnectFailedToast": "Could not disconnect Telegram. Try again.",
             "telegramDisconnect": {
-                "title": "Disconnect Telegram Bot",
+                "title": "Disconnect Telegram bot",
                 "body": "If you disconnect, you will no longer receive notifications in the bot for this treasury. You can reconnect at any time.",
                 "action": "Disconnect"
             }
@@ -1682,7 +1682,7 @@
         "tooltip": "You are a guest of this treasury. You can only view the data."
     },
     "sponsoredActions": {
-        "titleExhausted": "Sponsored Actions Used",
+        "titleExhausted": "Sponsored actions used",
         "titleAlmost": "Your team is almost out of sponsored actions",
         "closeNotice": "Close notice",
         "teamUsage": "Team usage: {total} actions per month",
@@ -1690,12 +1690,12 @@
         "used": "{count} Used",
         "exhaustedBody": "Your team has reached the monthly sponsored actions. You can continue after {date} or contact us",
         "almostBody": "Near Business currently sponsors storage costs for all team actions, such as creating requests and voting on them. Your team is close to reaching the monthly sponsored limit.",
-        "contactUs": "Contact Us",
+        "contactUs": "Contact us",
         "nextMonthlyReset": "your next monthly reset",
         "sidebarBody": "Your team has reached the monthly sponsored actions. You can continue after {date} or ⬇️"
     },
     "acceptTerms": {
-        "firstTimeTitle": "Accept Terms to Continue",
+        "firstTimeTitle": "Accept terms to continue",
         "returningTitle": "We've updated our Terms",
         "returningEffectiveDate": "Effective May 21, 2026",
         "returningBody": "We've made updates to our Terms of Service and Privacy Policy. Please review them before continuing to use Near Business.",
@@ -1717,31 +1717,31 @@
         "continue": "Continue"
     },
     "supportCenter": {
-        "title": "Support Center",
+        "title": "Support center",
         "resources": "Resources",
         "support": "Support",
         "websiteTitle": "Near Business Website",
         "websiteDescription": "Read about Near Business and what's new.",
         "demo": "Near Business Demo",
-        "demoTitle": "Explore Public Version",
+        "demoTitle": "Explore public version",
         "demoDescription": "A real treasury anyone can view.",
-        "confidentialDemoTitle": "Explore Confidential Version",
+        "confidentialDemoTitle": "Explore confidential version",
         "confidentialDemoDescription": "How a private treasury looks in use.",
-        "videoTitle": "Watch the Demo",
+        "videoTitle": "Watch the demo",
         "videoDescription": "Short video — see Near Business end to end.",
-        "xTitle": "Follow Us on X",
+        "xTitle": "Follow us on X",
         "xDescription": "See what we're building, in real time.",
         "statsTitle": "Stats",
         "statsDescription": "See total assets managed across all treasuries.",
         "docsTitle": "Documentation",
         "docsDescription": "Guides for every feature, step by step.",
-        "productSupportTitle": "Product Support",
+        "productSupportTitle": "Product support",
         "productSupportDescription": "Reach our team for help."
     },
     "progressModal": {
         "titleCreating": "Creating treasury",
-        "titleDone": "Treasury Created",
-        "titleFailed": "Treasury Creation Failed"
+        "titleDone": "Treasury created",
+        "titleFailed": "Treasury creation failed"
     },
     "memberValidation": {
         "noManagePermission": "You don't have permission to manage members",
@@ -1774,7 +1774,7 @@
     "memberInput": {
         "creatorYou": "Creator (you)",
         "memberAddress": "Member Address",
-        "addNewMember": "Add Member",
+        "addNewMember": "Add member",
         "validation": {
             "rolesRequired": "At least one role is required",
             "duplicateAddress": "Address is already a member"
@@ -1803,9 +1803,9 @@
         }
     },
     "csvUpload": {
-        "uploadFile": "Upload File",
-        "provideData": "Provide Data",
-        "chooseFile": "Choose File",
+        "uploadFile": "Upload file",
+        "provideData": "Provide data",
+        "chooseFile": "Choose file",
         "orDragDrop": "or drag and drop",
         "maxFileSize": "max 1 file up to {maxSize} MB, CSV file only",
         "noFilePrompt": "Don't have a file to upload?",
@@ -1883,14 +1883,14 @@
         "selectDateRange": "Select date range",
         "noExportsTitle": "No exports yet",
         "noExportsDescription": "Your exported files from the last month will appear here once they're generated.",
-        "quotaTitle": "Export Quota",
+        "quotaTitle": "Export quota",
         "unlimited": "Unlimited",
         "creditsPerMonth": "{total} / month",
-        "requirementsTitle": "Export Requirements",
+        "requirementsTitle": "Export requirements",
         "exportFromPeriod": "You can export data from the {period}.",
         "availableFor48Hours": "Exported files are available for download for 48 hours.",
         "moreFlexibility": "Looking for more flexibility?",
-        "contactUs": "Contact Us",
+        "contactUs": "Contact us",
         "last1Year": "Last 1 year",
         "last2Years": "Last 2 years",
         "invalidEmail": "Please enter a valid email address"
@@ -1942,13 +1942,13 @@
         "enterAddressFirst": "Enter recipient address first",
         "noCompatibleNetwork": "No network matches this address",
         "selectPlaceholder": "Select network",
-        "title": "Select Network",
+        "title": "Select network",
         "available": "Available",
-        "fromAddressBook": "From Address Book",
-        "otherAvailable": "Other Available",
+        "fromAddressBook": "From address book",
+        "otherAvailable": "Other available",
         "incompatible": "Incompatible",
-        "comingSoon": "Coming Soon",
-        "forMembersOnly": "For Members Only",
+        "comingSoon": "Coming soon",
+        "forMembersOnly": "For members only",
         "nearComDescription": "Network for near business and near.com",
         "internalTag": "Internal"
     },
@@ -1959,7 +1959,7 @@
         "selectEntry": "Select {name}",
         "recipient": "Recipient",
         "network": "Network",
-        "addedBy": "Added By",
+        "addedBy": "Added by",
         "note": "Note",
         "added": "Added",
         "remove": "Remove",
@@ -1986,10 +1986,10 @@
     "treasurySelector": {
         "select": "Select treasury",
         "connectWalletTooltip": "Connect wallet to view treasuries",
-        "manageTreasuries": "Manage Treasuries",
-        "createTreasury": "Create Treasury",
-        "memberOf": "Member Of",
-        "guestTreasuries": "Guest Treasuries"
+        "manageTreasuries": "Manage treasuries",
+        "createTreasury": "Create treasury",
+        "memberOf": "Member of",
+        "guestTreasuries": "Guest treasuries"
     },
     "selectModal": {
         "searchByName": "Search by name",
@@ -2125,8 +2125,8 @@
         "copyWalletAddress": "Copy wallet address"
     },
     "infoDisplay": {
-        "viewLess": "View Less",
-        "viewAllDetails": "View All Details"
+        "viewLess": "View less",
+        "viewAllDetails": "View all details"
     },
     "amountSummary": {
         "defaultTitle": "You are sending a total of"
@@ -2176,7 +2176,7 @@
         "guestSaveIntro": "You are a guest of this treasury. You can only view the data.",
         "guestSaveAction": "You can save this guest treasury to your treasuries list.",
         "newFeatureRich": "New! 🎉 Stake your assets with Earn and start earning rewards. Put your funds to work effortlessly.",
-        "newFeatureCta": "Try It",
+        "newFeatureCta": "Try it",
         "requestTemplates": "Your Custom Requests section is ready. Open it here to build your first request type."
     },
     "statusDate": {
@@ -2231,10 +2231,10 @@
         "balanceLabel": "Balance"
     },
     "createRequestButton": {
-        "idle": "Create Request",
+        "idle": "Create request",
         "noPermission": "You don't have permission to create a request",
         "paused": "Temporarily paused",
-        "brieflyUnavailable": "Briefly Unavailable"
+        "brieflyUnavailable": "Briefly unavailable"
     },
     "address": {
         "copied": "Address copied to clipboard"
@@ -2299,14 +2299,14 @@
         "seeInEarning": "See in Earning"
     },
     "earningDetails": {
-        "title": "Earning Details",
+        "title": "Earning details",
         "totalStaked": "Total Staked",
         "earningOverview": "Earning Overview",
         "poolBreakdown": "Pool Breakdown ({count, plural, one {# pool} other {# pools}})",
         "almostReady": "Earn is almost ready!",
         "finalizingFeature": "We're finalizing this feature<br></br>so you can start earning tokens shortly.",
         "comingSoon": "Coming soon",
-        "goToEarn": "Go To Earn",
+        "goToEarn": "Go to earn",
         "readyToWithdraw": "Ready to withdraw",
         "unstaking": "Unstaking",
         "overview": {
@@ -2319,7 +2319,7 @@
         }
     },
     "lockupDetails": {
-        "title": "Lockup Details",
+        "title": "Lockup details",
         "balance": "Balance",
         "reservedForStorage": "Reserved For Storage",
         "reservedForStorageInfo": "NEAR reserved by the lockup account to pay storage costs.",
@@ -2334,7 +2334,7 @@
         "endDate": "End Date",
         "rounds": "Rounds",
         "releaseInterval": "Release Interval",
-        "nextUnlockDate": "Next Unlock Date",
+        "nextUnlockDate": "Next unlock date",
         "allEarning": "All {amount} {symbol} from your lockup is earning right now.",
         "partEarning": "Part of your lockup ({amount} {symbol}) is earning right now.",
         "stopEarningFirst": "To use unlocked tokens, stop earning first and withdraw them.",
@@ -2360,7 +2360,7 @@
         }
     },
     "vestingDetails": {
-        "title": "Vesting Details",
+        "title": "Vesting details",
         "availableToUse": "Available To Use",
         "vestingPeriod": "Vesting Period",
         "vestingPeriodDescription": "Tokens unlock daily during this period.",
@@ -2395,7 +2395,7 @@
         "tourCard": {
             "close": "Close",
             "stepProgress": "{current} of {total}",
-            "gotIt": "Got It",
+            "gotIt": "Got it",
             "done": "Done",
             "next": "Next",
             "back": "Back"
@@ -2437,16 +2437,16 @@
             "letsGo": "Let's go!"
         },
         "notifications": {
-            "title": "New - Notifications",
+            "title": "New - notifications",
             "body": "Stay informed on new requests, pending votes, and incoming treasury assets - just connect Telegram bot.",
-            "tryIt": "Try It",
+            "tryIt": "Try it",
             "dismissAria": "Dismiss"
         },
         "createBanner": {
             "close": "Close",
             "title": "Explore Near Business",
             "description": "Create an account to unlock permissions to all features and benefits of Near Business.",
-            "cta": "Create Treasury"
+            "cta": "Create treasury"
         },
         "pendingJoinBanner": {
             "title": "Your request to join is pending",
@@ -2547,7 +2547,7 @@
         "pageDescription": "Build reusable templates for custom request types.",
         "loading": "Loading…",
         "back": "Back",
-        "howItWorks": "How It Works",
+        "howItWorks": "How it works",
         "toastDeleted": "Template deleted",
         "errDelete": "Failed to delete template",
         "deleteDialog": {
@@ -2568,28 +2568,28 @@
         "index": {
             "emptyTitle": "Create your first template",
             "emptyDescription": "Make a template for requests you send often. Your team reuses it in one click.",
-            "createTemplate": "Create Template",
+            "createTemplate": "Create template",
             "heading": "Templates",
-            "addNew": "Add New",
-            "createRequest": "Create Request",
+            "addNew": "Add new",
+            "createRequest": "Create request",
             "actions": "Template actions",
             "edit": "Edit",
-            "pin": "Pin to the Sidebar",
-            "unpin": "Unpin Template",
+            "pin": "Pin to the sidebar",
+            "unpin": "Unpin template",
             "delete": "Delete",
             "errPin": "Could not update pin"
         },
         "create": {
-            "title": "New Template",
-            "submit": "Create Template",
+            "title": "New template",
+            "submit": "Create template",
             "submitting": "Creating…",
             "toastCreated": "Template created",
             "errCreate": "Failed to create template"
         },
         "edit": {
-            "title": "Edit Template",
-            "submit": "Save Changes",
-            "deleteButton": "Delete Template",
+            "title": "Edit template",
+            "submit": "Save changes",
+            "deleteButton": "Delete template",
             "toastSaved": "Template saved",
             "errSave": "Failed to save template",
             "notFound": "Template not found."
@@ -2600,7 +2600,7 @@
             "proposalFiled": "Request filed"
         },
         "developer": {
-            "title": "Custom Requests",
+            "title": "Custom requests",
             "description": "Build your own request types when you need more than payments and exchange. Add the fields you need and your members can submit them like any other request.",
             "enable": "Enable",
             "disable": "Disable",
@@ -2624,7 +2624,7 @@
             "otherInputsDescription": "Inputs used only inside a composed value (not a direct member-input argument), plus any you add manually. Most templates have none."
         },
         "fields": {
-            "addField": "Add Field",
+            "addField": "Add field",
             "inputHeading": "Input {number}",
             "remove": "Remove",
             "nameLabel": "Name",
@@ -2653,7 +2653,7 @@
             "json": "JSON"
         },
         "args": {
-            "addArgument": "Add Argument",
+            "addArgument": "Add argument",
             "argumentHeading": "Argument {number}",
             "remove": "Remove",
             "argumentNameLabel": "Argument name",
@@ -2666,12 +2666,12 @@
             "stringValuePlaceholder": "text or '{{field}}'",
             "insertField": "+ field",
             "keyPlaceholder": "key",
-            "addKey": "Add Key",
-            "addItem": "Add Item"
+            "addKey": "Add key",
+            "addItem": "Add item"
         },
         "form": {
             "selectPlaceholder": "Choose an option",
-            "fileProposal": "File Proposal"
+            "fileProposal": "File proposal"
         },
         "collapsePinned": "Collapse pinned templates",
         "expandPinned": "Expand pinned templates",
@@ -2689,14 +2689,14 @@
         }
     },
     "account": {
-        "personalSettings": "Personal Settings",
-        "uploadAvatar": "Upload Avatar",
-        "removeAvatar": "Remove Avatar",
+        "personalSettings": "Personal settings",
+        "uploadAvatar": "Upload avatar",
+        "removeAvatar": "Remove avatar",
         "uploading": "Uploading...",
         "displayName": "Display Name",
         "displayNamePlaceholder": "Enter display name",
-        "myWallet": "My Wallet",
-        "saveChanges": "Save Changes",
+        "myWallet": "My wallet",
+        "saveChanges": "Save changes",
         "saving": "Saving...",
         "saveSuccess": "Your changes are saved.",
         "saveError": "Couldn't save your changes. Try again.",
@@ -2707,30 +2707,30 @@
         "signInRequired": "Connect your wallet to manage your account."
     },
     "moveAssets": {
-        "title": "Move Assets",
+        "title": "Move assets",
         "description": "Move assets from public chain to your Confidential treasury.",
         "submitted": "Move request submitted",
         "banner": {
             "title": "<amount></amount> landed on your public balance",
             "description": "Someone sent it over the wrong network. Move it here to make it confidential.",
-            "moveAssets": "Move Assets",
-            "viewRequest": "View Request"
+            "moveAssets": "Move assets",
+            "viewRequest": "View request"
         },
         "list": {
             "title": "The funds that need to move",
             "token": "Token",
-            "moveAssets": "Move Assets",
+            "moveAssets": "Move assets",
             "emptyTitle": "Nothing to move",
             "emptyDescription": "Your public balance is empty. Funds sent to the public account will show up here.",
-            "viewRequest": "View Request"
+            "viewRequest": "View request"
         },
         "form": {
-            "title": "To Confidential",
-            "review": "Review Moving",
+            "title": "To confidential",
+            "review": "Review moving",
             "reviewDisabled": "Enter amount"
         },
         "review": {
-            "title": "Review Your Moving",
+            "title": "Review your moving",
             "youMove": "You move"
         },
         "errors": {

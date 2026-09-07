@@ -590,7 +590,7 @@ test.describe("Onboarding – Dashboard Tour highlights and arrows", () => {
             ".bg-popover-foreground.text-popover",
         );
         await expect(stepFiveCard).toBeVisible({ timeout: 5000 });
-        await stepFiveCard.getByText("Got It", { exact: true }).click();
+        await stepFiveCard.getByText("Got it", { exact: true }).click();
 
         // Tour should close
         await expect(
@@ -1168,7 +1168,7 @@ test.describe.skip("Onboarding – Full flow with scroll prerequisite", () => {
             ".bg-popover-foreground.text-popover",
         );
         await expect(stepFiveCard).toBeVisible({ timeout: 5000 });
-        await stepFiveCard.getByText("Got It", { exact: true }).click();
+        await stepFiveCard.getByText("Got it", { exact: true }).click();
 
         // Tour should close
         await expect(
