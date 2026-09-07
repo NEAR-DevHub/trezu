@@ -520,6 +520,195 @@ async fn load_confidential_ledger_balances(
     Ok(Some(balances))
 }
 
+/// Raw balance inputs for the public assets build, sourced from the verified
+/// ledger's head balances instead of live FastNear/RPC reads.
+struct PublicLedgerInputs {
+    ft_balances: Vec<(String, U128)>,
+    intents_balances: Vec<(String, String)>,
+    near_balance: Option<TokenBalanceResponse>,
+    staking_balance: Option<StakingBalance>,
+}
+
+/// Ledger head balances partitioned by residency, keyed the same way
+/// `apply_ledger_balances` resolves them: `near`, `staking:<pool>`,
+/// `intents.near:<token>` / bare `nep245:` for intents, anything else FT.
+struct PublicLedgerHeads {
+    near: Option<BigDecimal>,
+    staking: Vec<(String, BigDecimal)>,
+    intents: Vec<(String, BigDecimal)>,
+    ft: Vec<(String, BigDecimal)>,
+}
+
+impl PublicLedgerHeads {
+    fn partition(ledger: HashMap<String, BigDecimal>) -> Self {
+        let mut heads = Self {
+            near: None,
+            staking: Vec::new(),
+            intents: Vec::new(),
+            ft: Vec::new(),
+        };
+        for (asset, value) in ledger {
+            // Yocto-scale negatives are ledger drift, not holdings.
+            if value.sign() == bigdecimal::num_bigint::Sign::Minus {
+                continue;
+            }
+            if asset == "near" {
+                heads.near = Some(value);
+            } else if let Some(pool_id) = asset.strip_prefix("staking:") {
+                heads.staking.push((pool_id.to_string(), value));
+            } else if let Some(token_id) = asset.strip_prefix("intents.near:") {
+                heads.intents.push((token_id.to_string(), value));
+            } else if asset.starts_with("nep245:") {
+                heads.intents.push((asset, value));
+            } else {
+                heads.ft.push((asset, value));
+            }
+        }
+        heads
+    }
+
+    /// Token ids whose metadata is needed for raw-unit conversion.
+    fn metadata_ids(&self) -> Vec<String> {
+        self.ft
+            .iter()
+            .map(|(contract_id, _)| contract_id.clone())
+            .chain(
+                self.intents
+                    .iter()
+                    .map(|(token_id, _)| format!("intents.near:{token_id}")),
+            )
+            .collect()
+    }
+
+    fn into_inputs(
+        self,
+        account: &AccountId,
+        metadata_map: &HashMap<String, TokenMetadataResponse>,
+    ) -> PublicLedgerInputs {
+        use crate::handlers::public_history::silver::models::decimal_denominator;
+        use crate::handlers::user::staking::StakingPoolAccountInfo;
+
+        let to_raw = |value: &BigDecimal, decimals: u8| -> Option<u128> {
+            (value * decimal_denominator(i32::from(decimals)))
+                .with_scale(0)
+                .to_u128()
+                .filter(|raw| *raw > 0)
+        };
+
+        let mut ft_balances = Vec::with_capacity(self.ft.len());
+        for (contract_id, value) in self.ft {
+            let Some(metadata) = metadata_map.get(&contract_id) else {
+                tracing::warn!("{account} no metadata for ledger asset {contract_id}, skipping");
+                continue;
+            };
+            let Some(raw) = to_raw(&value, metadata.decimals) else {
+                continue;
+            };
+            ft_balances.push((contract_id, U128::from(raw)));
+        }
+
+        let mut intents_balances = Vec::with_capacity(self.intents.len());
+        for (token_id, value) in self.intents {
+            let decimals = if is_near_or_wrap_near(&token_id) {
+                NEAR_DECIMALS
+            } else if let Some(metadata) = metadata_map.get(&format!("intents.near:{token_id}")) {
+                metadata.decimals
+            } else {
+                tracing::warn!("{account} no metadata for ledger asset {token_id}, skipping");
+                continue;
+            };
+            let Some(raw) = to_raw(&value, decimals) else {
+                continue;
+            };
+            intents_balances.push((token_id, raw.to_string()));
+        }
+
+        let near_balance = self.near.and_then(|value| {
+            let raw = to_raw(&value, NEAR_DECIMALS)
+                .filter(|raw| *raw >= MIN_NEAR_DISPLAY_BALANCE.as_yoctonear())?;
+            Some(TokenBalanceResponse {
+                account_id: account.to_string(),
+                token_id: "near".to_string(),
+                balance: raw.into(),
+                locked_balance: None,
+                decimals: NEAR_DECIMALS,
+            })
+        });
+
+        // The ledger tracks each pool's total; the staked/unstaked split is
+        // a live-only detail, so heads are shown as staked.
+        let mut total_staked = NearToken::from_yoctonear(0);
+        let mut pools = Vec::with_capacity(self.staking.len());
+        for (pool_id, value) in self.staking {
+            let Some(raw) = to_raw(&value, NEAR_DECIMALS) else {
+                continue;
+            };
+            let staked = NearToken::from_yoctonear(raw);
+            total_staked = total_staked.saturating_add(staked);
+            pools.push(StakingPoolAccountInfo {
+                pool_id,
+                staked_balance: staked,
+                unstaked_balance: NearToken::from_yoctonear(0),
+                can_withdraw: false,
+            });
+        }
+        let staking_balance = (!pools.is_empty()).then(|| StakingBalance {
+            staked_balance: total_staked,
+            unstaked_balance: NearToken::from_yoctonear(0),
+            can_withdraw: false,
+            pools,
+        });
+
+        PublicLedgerInputs {
+            ft_balances,
+            intents_balances,
+            near_balance,
+            staking_balance,
+        }
+    }
+}
+
+/// Backup path for FastNear history-API outages (`BALANCE_READ_SOURCE=ledger`):
+/// NEAR/FT/intents/staking balances from `gold_treasury_ledger_events` heads.
+/// Returns `None` for treasuries whose ledger was never verified or has no
+/// rows yet — those stay on the live path. Lockups are not ledger-tracked;
+/// the caller keeps their RPC reads.
+async fn load_public_ledger_inputs(
+    state: &Arc<AppState>,
+    account: &AccountId,
+) -> Result<Option<PublicLedgerInputs>, (StatusCode, String)> {
+    use crate::handlers::public_history::charts::repository::load_chart_readiness;
+    use crate::handlers::public_history::public_list;
+
+    let readiness = load_chart_readiness(&state.db_pool, account.as_str())
+        .await
+        .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?;
+    if !readiness.verification_passed {
+        return Ok(None);
+    }
+
+    let ledger = public_list::load_prior_balances(
+        &state.db_pool,
+        account.as_str(),
+        chrono::Utc::now(),
+        None,
+    )
+    .await
+    .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?;
+    if ledger.is_empty() {
+        return Ok(None);
+    }
+
+    let heads = PublicLedgerHeads::partition(ledger);
+    let metadata_ids = heads.metadata_ids();
+    let metadata_map = if metadata_ids.is_empty() {
+        HashMap::new()
+    } else {
+        fetch_tokens_metadata_enriched(state, &metadata_ids, false).await
+    };
+    Ok(Some(heads.into_inputs(account, &metadata_map)))
+}
+
 /// Fetch NEAR balance for an account
 /// User-owned spendable NEAR: chain total minus whichever is larger of the
 /// storage lock and the sponsor-fronted NEAR (`monitored_accounts.paid_near`),
@@ -662,11 +851,26 @@ pub async fn compute_user_assets(
     let staking_balance: Option<StakingBalance>;
     let ft_lockup_positions;
 
+    let public_ledger_inputs = if matches!(scope, AssetsScope::Public)
+        && state.env_vars.balance_read_source == crate::utils::env::BalanceReadSource::Ledger
+    {
+        load_public_ledger_inputs(state, account).await?
+    } else {
+        None
+    };
+
     if scope.is_confidential() {
         // The unified ledger is authoritative once rows exist — its heads were
         // verified against 1Click at projection time. Live 1Click reads remain
-        // for DAOs with no ledger rows yet.
-        let ledger_balances = load_confidential_ledger_balances(state, account).await?;
+        // for DAOs with no ledger rows yet, and for everyone under the
+        // `CONFIDENTIAL_BALANCE_READ_SOURCE=live` backup switch.
+        let ledger_balances = if state.env_vars.confidential_balance_read_source
+            == crate::utils::env::BalanceReadSource::Live
+        {
+            None
+        } else {
+            load_confidential_ledger_balances(state, account).await?
+        };
         intents_balances = match ledger_balances {
             Some(ledger_balances) => ledger_balances,
             None => fetch_confidential_balances(state, account).await?.balances,
@@ -676,6 +880,19 @@ pub async fn compute_user_assets(
         lockup_balance = None;
         staking_balance = None;
         ft_lockup_positions = Vec::new();
+    } else if let Some(inputs) = public_ledger_inputs {
+        intents_balances = inputs.intents_balances;
+        ref_tokens_with_balances = inputs.ft_balances;
+        near_balance = inputs.near_balance;
+        staking_balance = inputs.staking_balance;
+        // Lockups aren't ledger-tracked; their reads are RPC-only (no
+        // FastNear), so they stay live in ledger mode.
+        let (lockup, ft_lockups) = tokio::try_join!(
+            fetch_lockup_balance_of_account(state, account),
+            fetch_ft_lockup_positions(state, account)
+        )?;
+        lockup_balance = lockup;
+        ft_lockup_positions = ft_lockups;
     } else {
         let ref_data_future = async {
             let tokens_future = fetch_whitelisted_tokens(state);
@@ -1174,8 +1391,139 @@ pub async fn get_confidential_public_assets(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::str::FromStr;
 
     const NEAR: u128 = 1_000_000_000_000_000_000_000_000;
+
+    fn decimal(value: &str) -> BigDecimal {
+        BigDecimal::from_str(value).unwrap()
+    }
+
+    fn metadata(token_id: &str, decimals: u8) -> TokenMetadataResponse {
+        TokenMetadataResponse {
+            token_id: token_id.to_string(),
+            name: token_id.to_string(),
+            symbol: token_id.to_string(),
+            decimals,
+            icon: None,
+            price: None,
+            price_updated_at: None,
+            network: None,
+            chain_name: None,
+            chain_icons: None,
+        }
+    }
+
+    #[test]
+    fn ledger_heads_partition_by_asset_key() {
+        let heads = PublicLedgerHeads::partition(HashMap::from([
+            ("near".to_string(), decimal("10")),
+            ("staking:pool.poolv1.near".to_string(), decimal("5")),
+            (
+                "intents.near:nep141:usdc.near".to_string(),
+                decimal("100.5"),
+            ),
+            ("nep245:v2_1.omni.hot.tg:56_1".to_string(), decimal("2")),
+            ("usdt.tether-token.near".to_string(), decimal("42")),
+            ("drift.token.near".to_string(), decimal("-0.000001")),
+        ]));
+
+        assert_eq!(heads.near, Some(decimal("10")));
+        assert_eq!(
+            heads.staking,
+            vec![("pool.poolv1.near".to_string(), decimal("5"))]
+        );
+        let mut intents = heads.intents.clone();
+        intents.sort();
+        assert_eq!(
+            intents,
+            vec![
+                ("nep141:usdc.near".to_string(), decimal("100.5")),
+                ("nep245:v2_1.omni.hot.tg:56_1".to_string(), decimal("2")),
+            ]
+        );
+        // The negative drift head is dropped entirely.
+        assert_eq!(
+            heads.ft,
+            vec![("usdt.tether-token.near".to_string(), decimal("42"))]
+        );
+
+        let mut metadata_ids = heads.metadata_ids();
+        metadata_ids.sort();
+        assert_eq!(
+            metadata_ids,
+            vec![
+                "intents.near:nep141:usdc.near".to_string(),
+                "intents.near:nep245:v2_1.omni.hot.tg:56_1".to_string(),
+                "usdt.tether-token.near".to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn ledger_inputs_scale_to_raw_units() {
+        let account: AccountId = "test.sputnik-dao.near".parse().unwrap();
+        let metadata_map = HashMap::from([
+            (
+                "usdt.tether-token.near".to_string(),
+                metadata("usdt.tether-token.near", 6),
+            ),
+            (
+                "intents.near:nep141:usdc.near".to_string(),
+                metadata("nep141:usdc.near", 6),
+            ),
+        ]);
+
+        let heads = PublicLedgerHeads::partition(HashMap::from([
+            ("near".to_string(), decimal("2.5")),
+            ("staking:pool.poolv1.near".to_string(), decimal("3")),
+            ("staking:other.poolv1.near".to_string(), decimal("1")),
+            (
+                "intents.near:nep141:usdc.near".to_string(),
+                decimal("100.5"),
+            ),
+            ("intents.near:nep141:wrap.near".to_string(), decimal("1")),
+            ("usdt.tether-token.near".to_string(), decimal("42")),
+            ("no-metadata.near".to_string(), decimal("7")),
+        ]));
+        let inputs = heads.into_inputs(&account, &metadata_map);
+
+        assert_eq!(
+            inputs.ft_balances,
+            vec![("usdt.tether-token.near".to_string(), U128::from(42_000_000))]
+        );
+
+        let mut intents = inputs.intents_balances.clone();
+        intents.sort();
+        assert_eq!(
+            intents,
+            vec![
+                ("nep141:usdc.near".to_string(), "100500000".to_string()),
+                // wrap.near needs no metadata entry: NEAR decimals apply.
+                ("nep141:wrap.near".to_string(), NEAR.to_string()),
+            ]
+        );
+
+        let near_balance = inputs.near_balance.expect("near balance");
+        assert_eq!(near_balance.balance, U128::from(5 * NEAR / 2));
+        assert_eq!(near_balance.decimals, NEAR_DECIMALS);
+
+        let staking = inputs.staking_balance.expect("staking balance");
+        assert_eq!(staking.staked_balance.as_yoctonear(), 4 * NEAR);
+        assert_eq!(staking.unstaked_balance.as_yoctonear(), 0);
+        assert_eq!(staking.pools.len(), 2);
+    }
+
+    #[test]
+    fn ledger_near_below_display_minimum_is_dropped() {
+        let account: AccountId = "test.sputnik-dao.near".parse().unwrap();
+        let heads = PublicLedgerHeads::partition(HashMap::from([(
+            "near".to_string(),
+            decimal("0.0005"),
+        )]));
+        let inputs = heads.into_inputs(&account, &HashMap::new());
+        assert!(inputs.near_balance.is_none());
+    }
 
     fn token(residency: TokenResidency, lockup_instance_id: Option<&str>) -> SimplifiedToken {
         SimplifiedToken {

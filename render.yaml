@@ -43,6 +43,10 @@ services:
         sync: false
       - key: ANALYTICS_USERS
         sync: false
+      - key: BALANCE_READ_SOURCE
+        sync: false
+      - key: CONFIDENTIAL_BALANCE_READ_SOURCE
+        sync: false
     healthCheckPath: /api/health
     maxShutdownDelaySeconds: 90
 
@@ -136,6 +140,10 @@ services:
       - key: ANALYTICS_API_KEY
         sync: false
       - key: ANALYTICS_USERS
+        sync: false
+      - key: BALANCE_READ_SOURCE
+        sync: false
+      - key: CONFIDENTIAL_BALANCE_READ_SOURCE
         sync: false
     healthCheckPath: /api/health
     maxShutdownDelaySeconds: 90
