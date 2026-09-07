@@ -38,3 +38,24 @@ export function PaymentSelectModalContent({
         </DialogContent>
     );
 }
+
+/** Search row: full-bleed hairline appears once the list scrolls underneath. */
+export function PaymentSelectSearchRail({
+    scrolled,
+    children,
+}: {
+    scrolled: boolean;
+    children?: React.ReactNode;
+}) {
+    return (
+        <div
+            className={cn(
+                "-mx-4 shrink-0 border-b border-transparent",
+                children && "px-4 pb-4",
+                scrolled && "border-general-border",
+            )}
+        >
+            {children}
+        </div>
+    );
+}

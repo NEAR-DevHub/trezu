@@ -20,38 +20,63 @@ export function dashboardTourSurface(stepIndex: number): DashboardTourSurface {
 
 export type DashboardTourSide = "bottom" | "right" | "top-left" | "top-right";
 
-export type HelpSupportTourSide = "bottom-right" | "right";
+export type HelpSupportTourSide = "bottom" | "right";
 
-export const HELP_SUPPORT_DESKTOP_SELECTOR = "#help-support-link";
-export const HELP_SUPPORT_MOBILE_SELECTOR =
-    "[data-testid='mobile-user-trigger']";
+export const HELP_SUPPORT_SELECTOR = "#help-support-link";
 
-/** Profile control: sidebar account row on desktop, header avatar on phones. */
+/** The Help & Support row inside the open user menu / sheet. */
 export function helpSupportTourSelector(
-    mobile = isTourMobileViewport(),
+    _mobile = isTourMobileViewport(),
 ): string {
-    return mobile
-        ? HELP_SUPPORT_MOBILE_SELECTOR
-        : HELP_SUPPORT_DESKTOP_SELECTOR;
+    return HELP_SUPPORT_SELECTOR;
 }
 
 /**
- * Desktop: sit to the right of the sidebar account row.
- * Mobile: hang below the top-right header avatar, right-aligned so the card
- * grows left into the screen instead of clipping off the edge or flipping
- * above the header.
+ * Desktop: sit to the right of the row in the profile popover.
+ * Mobile: sit below the row in the user sheet.
  */
 export function helpSupportTourStepSide(
     mobile = isTourMobileViewport(),
 ): HelpSupportTourSide {
-    return mobile ? "bottom-right" : "right";
+    return mobile ? "bottom" : "right";
 }
 
-/** Tight to the header avatar on phones; keep the default rail gap on desktop. */
+/** Small gap under the row on phones; keep the default on desktop. */
 export function helpSupportTourCardOffset(
     mobile = isTourMobileViewport(),
 ): number {
     return mobile ? 6 : 25;
+}
+
+/**
+ * nextstepjs only pads every side at once. Horizontal hover pad on phones
+ * is applied in CSS so the y-axis stays flush to the row.
+ */
+export function helpSupportTourPointerPadding(
+    _mobile = isTourMobileViewport(),
+): number {
+    return 0;
+}
+
+/** Opens the surface that actually contains Help & Support. */
+export function prepareHelpSupportTour() {
+    const { openSheet, closeSheet } = useMobileShellStore.getState();
+    const { setProfileMenuOpen, setLockSelectOutside } =
+        useOnboardingStore.getState();
+
+    // Lock before opening. onStart re-affirms this, but the settle wait runs
+    // first — without the lock, an outside-click during that window snaps the
+    // menu/sheet shut before the spotlight paints.
+    setLockSelectOutside(true);
+
+    if (isTourMobileViewport()) {
+        setProfileMenuOpen(false);
+        openSheet("user");
+        return;
+    }
+
+    closeSheet();
+    setProfileMenuOpen(true);
 }
 
 /**
@@ -80,22 +105,37 @@ export function isTourMobileViewport() {
 
 const CREATE_TREASURY_TARGET_ID = "dashboard-step5-create-treasury";
 const CREATE_TREASURY_TARGET_ATTR = "data-tour-create-treasury";
+const HELP_SUPPORT_TARGET_ID = "help-support-link";
+const HELP_SUPPORT_TARGET_ATTR = "data-tour-help-support";
 
 /**
- * The desktop dropdown and the mobile sheet each render a Create Treasury row,
- * so the tour ID is moved onto whichever one is currently rendered — a
- * duplicated ID would leave `querySelector` pointing at the hidden copy.
+ * Several tour targets exist on both the desktop rail and a mobile surface.
+ * The ID is moved onto whichever copy currently has a painted box — a
+ * duplicated or hidden ID would leave `querySelector` pointing at the
+ * `display: none` sidebar.
  */
-function markVisibleCreateTreasuryTarget() {
-    const rows = document.querySelectorAll(`[${CREATE_TREASURY_TARGET_ATTR}]`);
-    for (const row of rows) {
-        row.removeAttribute("id");
+function markVisibleTourTarget(attr: string, id: string) {
+    if (typeof document === "undefined") return;
+
+    const nodes = document.querySelectorAll(`[${attr}]`);
+    for (const node of nodes) {
+        node.removeAttribute("id");
     }
-    // The open portal is last in the DOM when both surfaces are mounted.
-    const target = Array.from(rows)
-        .filter((row) => row.getClientRects().length > 0)
+    const target = Array.from(nodes)
+        .filter((node) => node.getClientRects().length > 0)
         .at(-1);
-    target?.setAttribute("id", CREATE_TREASURY_TARGET_ID);
+    target?.setAttribute("id", id);
+}
+
+function markVisibleCreateTreasuryTarget() {
+    markVisibleTourTarget(
+        CREATE_TREASURY_TARGET_ATTR,
+        CREATE_TREASURY_TARGET_ID,
+    );
+}
+
+function markVisibleHelpSupportTarget() {
+    markVisibleTourTarget(HELP_SUPPORT_TARGET_ATTR, HELP_SUPPORT_TARGET_ID);
 }
 
 /** Rounded rect signature, or "" when the target is missing or unrendered. */
@@ -128,6 +168,7 @@ export function waitForSettledTourTarget(selector?: string) {
 
         const tick = () => {
             markVisibleCreateTreasuryTarget();
+            markVisibleHelpSupportTarget();
 
             const geometry = targetGeometry(selector);
             settledFrames =
@@ -182,4 +223,5 @@ export function applyDashboardTourStep(
 export function closeDashboardTourSurfaces() {
     useMobileShellStore.getState().closeSheet();
     useOnboardingStore.getState().setTreasurySelectorOpen(false);
+    useOnboardingStore.getState().setProfileMenuOpen(false);
 }

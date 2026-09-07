@@ -353,12 +353,6 @@ export default function BulkPaymentPage() {
                             `/${selectedTreasury}/requests?tab=InProgress`,
                         ),
                 },
-                classNames: {
-                    toast: "!grid !grid-cols-[auto_1fr] !items-start !gap-x-3 !gap-y-1 !p-4",
-                    actionButton:
-                        "!col-start-2 !row-start-2 !m-0 !h-auto !justify-start !bg-transparent !p-0 !text-sm !font-normal !text-white hover:!bg-transparent !border-0 !shadow-none",
-                    title: "!border-0 !p-0 !pr-0 !text-white",
-                },
             });
 
             await queryClient.invalidateQueries({
@@ -433,9 +427,6 @@ export default function BulkPaymentPage() {
                 />,
                 {
                     duration: Infinity,
-                    classNames: {
-                        toast: "!p-3",
-                    },
                 },
             );
 
@@ -541,9 +532,6 @@ export default function BulkPaymentPage() {
                 {
                     id: loadingToastId,
                     duration: Infinity,
-                    classNames: {
-                        toast: "!p-3",
-                    },
                 },
             );
 
@@ -579,12 +567,6 @@ export default function BulkPaymentPage() {
                         router.push(
                             `/${selectedTreasury}/requests?tab=InProgress`,
                         ),
-                },
-                classNames: {
-                    toast: "!grid !grid-cols-[auto_1fr] !items-start !gap-x-3 !gap-y-1 !p-4",
-                    actionButton:
-                        "!col-start-2 !row-start-2 !m-0 !h-auto !justify-start !bg-transparent !p-0 !text-sm !font-normal !text-white hover:!bg-transparent !border-0 !shadow-none",
-                    title: "!border-0 !p-0 !pr-0 !text-white",
                 },
             });
 
@@ -638,13 +620,12 @@ export default function BulkPaymentPage() {
         return (
             <PageComponentLayout
                 title={pageTitle}
-                backButton={handleCancelEdit}
                 hideMobileShellControls
                 hideTitle
+                reserveHeaderSpace
             >
                 <div className="w-full max-w-lg mx-auto min-w-0">
                     <EditPaymentStep
-                        handleBack={handleCancelEdit}
                         payment={payment}
                         paymentIndex={editingIndex}
                         selectedToken={selectedToken}

@@ -1297,7 +1297,7 @@
         "editStep": {
             "title": "Edit Payment",
             "back": "Edit recipient",
-            "saveChanges": "Save Changes"
+            "saveChanges": "Save changes"
         },
         "parsing": {
             "rowPrefix": "Row {row}: {message}",

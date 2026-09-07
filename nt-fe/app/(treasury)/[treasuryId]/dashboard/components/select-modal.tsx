@@ -7,7 +7,10 @@ import { Button } from "@/components/button";
 import { Icon } from "@/components/icon";
 import { Input } from "@/components/input";
 import { Dialog, DialogHeader, DialogTitle } from "@/components/modal";
-import { PaymentSelectModalContent } from "@/components/payment-select-modal-content";
+import {
+    PaymentSelectModalContent,
+    PaymentSelectSearchRail,
+} from "@/components/payment-select-modal-content";
 import { PopularTokenTiles } from "@/components/popular-token-tiles";
 import {
     getSelectOptionLabels,
@@ -21,6 +24,7 @@ import {
 } from "@/components/selector-field";
 import { SelectorOptionRow } from "@/components/selector-option-row";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useScrollOverflow } from "@/hooks/use-scroll-overflow";
 
 export interface SelectOption extends SelectListItem {}
 
@@ -95,6 +99,7 @@ export function SelectModal({
 }: SelectModalProps) {
     const t = useTranslations("selectModal");
     const [searchQuery, setSearchQuery] = useState("");
+    const { viewportRef, hasContentAbove } = useScrollOverflow();
     const effectiveSearchPlaceholder = searchPlaceholder ?? t("searchByName");
     const normalizedQuery = searchQuery.toLowerCase();
 
@@ -205,20 +210,27 @@ export function SelectModal({
                     </div>
                 </DialogHeader>
 
-                <div className="mt-4 flex min-h-0 flex-1 flex-col space-y-4 sm:mt-0">
-                    <Input
-                        type="text"
-                        search
-                        placeholder={effectiveSearchPlaceholder}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        inputClassName={paymentSelectModalSearchInputClassName}
-                    />
+                <div className="mt-4 flex min-h-0 flex-1 flex-col sm:mt-0">
+                    <PaymentSelectSearchRail scrolled={hasContentAbove}>
+                        <Input
+                            type="text"
+                            search
+                            placeholder={effectiveSearchPlaceholder}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            inputClassName={
+                                paymentSelectModalSearchInputClassName
+                            }
+                        />
+                    </PaymentSelectSearchRail>
 
                     {isLoading ? (
                         <SelectListSkeleton />
                     ) : (
-                        <ScrollArea className={paymentSelectModalListClassName}>
+                        <ScrollArea
+                            viewportRef={viewportRef}
+                            className={paymentSelectModalListClassName}
+                        >
                             {sections?.length ? (
                                 filteredSections.length > 0 ? (
                                     filteredSections.map((section) => {

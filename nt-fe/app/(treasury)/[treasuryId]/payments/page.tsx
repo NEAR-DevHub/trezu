@@ -1472,7 +1472,7 @@ export default function PaymentsPage() {
             <Button
                 variant="secondary"
                 size="icon"
-                className="size-10 rounded-xl bg-muted text-muted-foreground hover:bg-muted hover:text-foreground lg:h-9 lg:w-auto lg:rounded-md lg:bg-muted-foreground/10 lg:px-3 lg:text-sm lg:font-bold lg:leading-3.5 lg:text-general-secondary-foreground lg:hover:bg-muted-foreground/20"
+                className="size-10 rounded-md bg-muted text-muted-foreground hover:bg-muted hover:text-foreground lg:h-9 lg:w-auto lg:bg-muted-foreground/10 lg:px-3 lg:text-sm lg:font-bold lg:leading-3.5 lg:text-general-secondary-foreground lg:hover:bg-muted-foreground/20"
                 id="payments-bulk-btn"
                 aria-label={tPay("bulkPayments")}
                 onClick={() => {

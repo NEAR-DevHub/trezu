@@ -35,6 +35,7 @@ import { useProfile } from "@/hooks/use-treasury-queries";
 import { resolveProfileImageUrl } from "@/lib/profile-image";
 import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
+import { useOnboardingStore } from "@/stores/onboarding-store";
 
 interface SidebarProfileMenuProps {
     /** Collapsed rail — the trigger reduces to the avatar chip alone. */
@@ -61,7 +62,17 @@ export function SidebarProfileMenu({
     const { data: profile } = useProfile(accountId);
     const { resolvedTheme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
-    const [isOpen, setIsOpen] = useState(false);
+    const menuOpen = useOnboardingStore((state) => state.profileMenuOpen);
+    const setProfileMenuOpen = useOnboardingStore(
+        (state) => state.setProfileMenuOpen,
+    );
+    const lockSelectOutside = useOnboardingStore(
+        (state) => state.lockSelectOutside,
+    );
+    const setIsOpen = (open: boolean) => {
+        if (!open && lockSelectOutside) return;
+        setProfileMenuOpen(open);
+    };
     // On touch, `Tooltip` falls back to a popover of its own, which would fire
     // alongside this menu on tap — and the menu already spells out the account.
     const isTouchDevice = useMediaQuery("(hover: none)");
@@ -96,11 +107,10 @@ export function SidebarProfileMenu({
     const trigger = isReduced ? (
         <button
             type="button"
-            id="help-support-link"
             aria-label={accountId}
             className={cn(
                 "mx-auto flex size-11 cursor-pointer items-center justify-center rounded-2xl border border-transparent bg-gray-900 transition-colors duration-200 hover:bg-gray-950",
-                isOpen && "bg-gray-950",
+                menuOpen && "bg-gray-950",
             )}
         >
             {avatar}
@@ -108,10 +118,9 @@ export function SidebarProfileMenu({
     ) : (
         <button
             type="button"
-            id="help-support-link"
             className={cn(
                 "group flex w-full cursor-pointer items-center gap-3 rounded-2xl border border-transparent bg-gray-900 p-3.5 transition-colors duration-200 hover:bg-gray-950",
-                isOpen && "bg-gray-950",
+                menuOpen && "bg-gray-950",
             )}
         >
             {avatar}
@@ -129,14 +138,14 @@ export function SidebarProfileMenu({
                 icon={ArrowUp01Icon}
                 className={cn(
                     "shrink-0 text-gray-500 transition-transform duration-150 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white",
-                    isOpen && "rotate-180",
+                    menuOpen && "rotate-180",
                 )}
             />
         </button>
     );
 
     return (
-        <Popover open={isOpen} onOpenChange={setIsOpen} modal={false}>
+        <Popover open={menuOpen} onOpenChange={setIsOpen} modal={false}>
             {isReduced ? (
                 <Tooltip
                     content={accountId}
@@ -203,6 +212,7 @@ export function SidebarProfileMenu({
                 <div className="flex flex-col">
                     <button
                         type="button"
+                        data-tour-help-support=""
                         className={accountMenuItemClass}
                         onClick={() => {
                             close();

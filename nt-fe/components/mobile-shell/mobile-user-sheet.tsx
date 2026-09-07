@@ -21,9 +21,10 @@ import { SupportCenterModal } from "@/components/support-center-modal";
 import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from "@/constants/config";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useProfile } from "@/hooks/use-treasury-queries";
-import { isEnabledLocale, localeFlags, type Locale } from "@/i18n/config";
+import { isEnabledLocale, type Locale, localeFlags } from "@/i18n/config";
 import { useMobileShellStore } from "@/stores/mobile-shell-store";
 import { useNear } from "@/stores/near-store";
+import { useOnboardingStore } from "@/stores/onboarding-store";
 
 const rowClass =
     "flex w-full items-center gap-3 py-3 text-left text-[15px] font-medium text-muted-foreground";
@@ -52,6 +53,9 @@ export function MobileUserSheet() {
     const sheet = useMobileShellStore((state) => state.sheet);
     const openSheet = useMobileShellStore((state) => state.openSheet);
     const closeSheet = useMobileShellStore((state) => state.closeSheet);
+    const lockSelectOutside = useOnboardingStore(
+        (state) => state.lockSelectOutside,
+    );
 
     useEffect(() => {
         const root = document.documentElement;
@@ -78,6 +82,7 @@ export function MobileUserSheet() {
             <Dialog
                 open={sheet === "user"}
                 onOpenChange={(open) => {
+                    if (!open && lockSelectOutside) return;
                     if (!open) closeSheet();
                 }}
             >
@@ -154,6 +159,7 @@ export function MobileUserSheet() {
                     <div className="flex flex-col">
                         <button
                             type="button"
+                            data-tour-help-support=""
                             className={rowClass}
                             onClick={() => {
                                 closeSheet();

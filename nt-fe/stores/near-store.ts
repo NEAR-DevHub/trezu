@@ -41,7 +41,6 @@ import {
     estimateProposalStorage,
     estimateVoteStorage,
 } from "@/lib/sputnik-storage";
-import { cn } from "@/lib/utils";
 import { isUserRejection } from "@/lib/wallet-errors";
 import {
     DIRECT_TRIGGER_WALLET_IDS,
@@ -899,12 +898,6 @@ export const useNear = () => {
                             `/${params.treasuryId}/requests?tab=InProgress`,
                         ),
                 },
-                classNames: {
-                    toast: "!grid !grid-cols-[auto_1fr] !items-start !gap-x-3 !gap-y-1 !p-4",
-                    actionButton:
-                        "!col-start-2 !row-start-2 !m-0 !h-auto !justify-start !bg-transparent !p-0 !text-sm !font-normal !text-white hover:!bg-transparent !border-0 !shadow-none",
-                    title: "!border-0 !p-0 !pr-0 !text-white",
-                },
             });
         }
     };
@@ -941,16 +934,6 @@ export const useNear = () => {
         toast.success(text, {
             duration: 10000,
             action: toastAction,
-            classNames: {
-                toast: toastAction
-                    ? "!grid !grid-cols-[auto_1fr] !items-start !gap-x-3 !gap-y-1 !p-4"
-                    : "!p-4",
-                actionButton: cn(
-                    !toastAction ? "!hidden" : "",
-                    "!col-start-2 !row-start-2 !m-0 !h-auto !justify-start !bg-transparent !p-0 !text-sm !font-normal !text-white hover:!bg-transparent !border-0 !shadow-none",
-                ),
-                title: "!border-0 !p-0 !pr-0 !text-white",
-            },
         });
 
         // Trigger invalidations (UI updates happen as queries refetch)
