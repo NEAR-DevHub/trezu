@@ -1,7 +1,8 @@
 /// End-to-end tests for the DAO notification system.
 ///
 /// Tests the full pipeline:
-///   gold ledger / dao_proposals / confidential_intents → detection worker →
+///   gold ledger rows → inline emitter (projection-time) → dao_notifications
+///   dao_proposals / confidential_intents → detection worker → dao_notifications
 ///   dao_notifications → Telegram dispatcher → dao_notification_deliveries
 ///
 /// No real Telegram API calls are made — TelegramClient::default() has bot=None
@@ -18,22 +19,18 @@ use std::sync::Arc;
 const DAO_ID: &str = "test-notif-dao.sputnik-dao.near";
 const CHAT_ID: i64 = 987654321;
 
-/// Simulate "cursor already existed at 0" so detection processes all rows in the DB.
-/// Without this, a fresh-DB test would seed the cursor to the latest row and skip everything.
-/// Only the ledger scan is cursor-driven; proposal detection rescans a window.
-async fn reset_cursors_to_start(pool: &PgPool) {
-    for consumer in &["notifications:gold_ledger"] {
-        sqlx::query(
-            "INSERT INTO goldsky_cursors (consumer_name, last_processed_id, last_processed_block, updated_at)
-             VALUES ($1, '0', 0, NOW())
-             ON CONFLICT (consumer_name) DO UPDATE SET
-               last_processed_id = '0', last_processed_block = 0, updated_at = NOW()",
-        )
-        .bind(consumer)
-        .execute(pool)
-        .await
-        .expect("reset cursor");
-    }
+/// Run the inline emitter for one gold ledger row the way a projector would:
+/// inside a transaction, right after the row upsert.
+async fn emit_for_key(pool: &PgPool, gold_event_key: &str) -> u64 {
+    let mut tx = pool.begin().await.expect("begin emit tx");
+    let inserted = nt_be::handlers::notifications::emitter::emit_gold_ledger_notification(
+        &mut tx,
+        gold_event_key,
+    )
+    .await
+    .expect("emit gold ledger notification");
+    tx.commit().await.expect("commit emit tx");
+    inserted
 }
 
 async fn build_dispatch_state(pool: &PgPool) -> Arc<nt_be::AppState> {
@@ -191,13 +188,13 @@ async fn insert_confidential_intent(pool: &PgPool, proposal_id: i64, notes: &str
 // Tests
 // ---------------------------------------------------------------------------
 
-/// Full happy-path: detection writes dao_notifications, dispatcher records deliveries.
+/// Full happy-path: the emitter queues ledger events at projection time,
+/// detection queues the proposal, dispatcher records deliveries.
 #[sqlx::test]
-async fn test_detection_and_dispatch(pool: PgPool) {
+async fn test_emission_detection_and_dispatch(pool: PgPool) {
     common::load_test_env();
 
     insert_dao_with_telegram(&pool).await;
-    reset_cursors_to_start(&pool).await;
 
     let now = chrono::Utc::now();
 
@@ -219,15 +216,16 @@ async fn test_detection_and_dispatch(pool: PgPool) {
     )
     .await;
 
-    // --- Run detection ---
+    // --- Emit ledger events (as the projectors would), then run detection ---
+    assert_eq!(emit_for_key(&pool, "pay-usdc").await, 1);
+    assert_eq!(emit_for_key(&pool, "pay-near").await, 1);
+    assert_eq!(emit_for_key(&pool, "swap-1").await, 1);
+
     let detected = nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
         .await
         .expect("detection cycle");
 
-    assert_eq!(
-        detected, 4,
-        "should detect add_proposal + 2 payments + 1 swap"
-    );
+    assert_eq!(detected, 1, "detection covers the add_proposal event");
 
     let notifications: Vec<(String, String)> = sqlx::query_as(
         "SELECT event_type, dao_id FROM dao_notifications WHERE dao_id = $1 ORDER BY id",
@@ -245,6 +243,36 @@ async fn test_detection_and_dispatch(pool: PgPool) {
     assert_eq!(
         event_types,
         vec!["payment", "payment", "swap_fulfilled", "add_proposal"]
+    );
+
+    let (payment_payload,): (serde_json::Value,) =
+        sqlx::query_as("SELECT payload FROM dao_notifications WHERE source_key = 'pay-usdc'")
+            .fetch_one(&pool)
+            .await
+            .expect("payment payload");
+    assert_eq!(
+        payment_payload,
+        serde_json::json!({
+            "token_id": "usdc.near",
+            "amount": "50",
+            "counterparty": "bob.near",
+            "usd_value": null,
+        })
+    );
+
+    let (swap_payload,): (serde_json::Value,) =
+        sqlx::query_as("SELECT payload FROM dao_notifications WHERE source_key = 'swap-1'")
+            .fetch_one(&pool)
+            .await
+            .expect("swap payload");
+    assert_eq!(
+        swap_payload,
+        serde_json::json!({
+            "sent_token_id": "near",
+            "sent_amount": "5",
+            "received_token_id": "intents.near:nep141:usdc.near",
+            "received_amount": "100",
+        })
     );
 
     // --- Run dispatcher (TelegramClient::default() → no real API calls) ---
@@ -281,7 +309,6 @@ async fn test_no_notification_for_unconnected_dao(pool: PgPool) {
 
     // Insert monitored account but NO telegram connection
     insert_dao(&pool).await;
-    reset_cursors_to_start(&pool).await;
 
     insert_proposal(&pool, 1, "alice.near", "Pay Alice", chrono::Utc::now()).await;
     insert_ledger_payment(
@@ -293,6 +320,12 @@ async fn test_no_notification_for_unconnected_dao(pool: PgPool) {
         chrono::Utc::now(),
     )
     .await;
+
+    assert_eq!(
+        emit_for_key(&pool, "pay-1").await,
+        0,
+        "emitter skips unconnected DAOs"
+    );
 
     let detected = nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
         .await
@@ -314,19 +347,15 @@ async fn test_detection_is_idempotent(pool: PgPool) {
     common::load_test_env();
 
     insert_dao_with_telegram(&pool).await;
-    reset_cursors_to_start(&pool).await;
 
     insert_proposal(&pool, 1, "alice.near", "Pay Alice", chrono::Utc::now()).await;
     insert_confidential_intent(&pool, 7, "conf payout").await;
 
-    // Run detection twice
+    // Run detection twice — proposal detection rescans the recent window
+    // every cycle, so the second run replays the same rows.
     nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
         .await
         .expect("first detection cycle");
-
-    // Reset cursor to replay from start again (the confidential detector has
-    // no cursor at all — it rescans the recent window every cycle).
-    reset_cursors_to_start(&pool).await;
 
     let second_run = nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
         .await
@@ -342,14 +371,14 @@ async fn test_detection_is_idempotent(pool: PgPool) {
     assert_eq!(count.0, 2, "one public + one confidential proposal row");
 }
 
-/// A gold reprojection deletes and re-inserts rows with fresh ids. The stable
-/// source_key must prevent a second notification for the same event.
+/// A gold reprojection deletes and re-inserts rows with fresh ids, and the
+/// projector re-emits for the re-inserted row. The stable source_key must
+/// prevent a second notification for the same event.
 #[sqlx::test]
 async fn test_reprojection_does_not_renotify(pool: PgPool) {
     common::load_test_env();
 
     insert_dao_with_telegram(&pool).await;
-    reset_cursors_to_start(&pool).await;
 
     let first_id = insert_ledger_payment(
         &pool,
@@ -360,11 +389,7 @@ async fn test_reprojection_does_not_renotify(pool: PgPool) {
         chrono::Utc::now(),
     )
     .await;
-
-    let first = nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
-        .await
-        .expect("first detection");
-    assert_eq!(first, 1);
+    assert_eq!(emit_for_key(&pool, "stable-key").await, 1);
 
     // Reproject: delete + re-insert the same event under a new row id.
     sqlx::query("DELETE FROM gold_treasury_ledger_events WHERE id = $1")
@@ -383,37 +408,29 @@ async fn test_reprojection_does_not_renotify(pool: PgPool) {
     .await;
     assert_ne!(first_id, second_id);
 
-    let second = nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
-        .await
-        .expect("second detection");
-    assert_eq!(second, 0, "same gold_event_key must not notify twice");
+    assert_eq!(
+        emit_for_key(&pool, "stable-key").await,
+        0,
+        "same gold_event_key must not notify twice"
+    );
 }
 
-/// Ledger rows whose event_time is older than the notification window are
-/// skipped (a reprojection of deep history must not flood connected chats),
-/// and the cursor still advances past them.
+/// Ledger rows whose event_time is older than the notification window never
+/// notify — a reprojection of deep history must not flood connected chats.
 #[sqlx::test]
 async fn test_old_events_are_skipped(pool: PgPool) {
     common::load_test_env();
 
     insert_dao_with_telegram(&pool).await;
-    reset_cursors_to_start(&pool).await;
 
     let old = chrono::Utc::now() - chrono::Duration::days(30);
     insert_ledger_payment(&pool, "old-pay", "usdc.near", "50", "bob.near", old).await;
 
-    let detected = nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
-        .await
-        .expect("detection cycle");
-    assert_eq!(detected, 0, "historical events must not notify");
-
-    let cursor: (i64,) = sqlx::query_as(
-        "SELECT last_processed_block FROM goldsky_cursors WHERE consumer_name = 'notifications:gold_ledger'",
-    )
-    .fetch_one(&pool)
-    .await
-    .expect("cursor row");
-    assert!(cursor.0 > 0, "cursor advances over skipped historical rows");
+    assert_eq!(
+        emit_for_key(&pool, "old-pay").await,
+        0,
+        "historical events must not notify"
+    );
 }
 
 /// Proposals discovered without creation facts (execution-side linking of old
@@ -423,7 +440,6 @@ async fn test_proposal_without_creation_facts_is_skipped(pool: PgPool) {
     common::load_test_env();
 
     insert_dao_with_telegram(&pool).await;
-    reset_cursors_to_start(&pool).await;
 
     sqlx::query(
         "INSERT INTO dao_proposals (dao_id, proposal_id, status) VALUES ($1, 42, 'approved')",
@@ -448,7 +464,6 @@ async fn test_proposal_notifies_once_creation_facts_arrive_later(pool: PgPool) {
     common::load_test_env();
 
     insert_dao_with_telegram(&pool).await;
-    reset_cursors_to_start(&pool).await;
 
     sqlx::query(
         "INSERT INTO dao_proposals (dao_id, proposal_id, status) VALUES ($1, 77, 'in_progress')",
@@ -496,7 +511,6 @@ async fn test_proposal_payload_contents(pool: PgPool) {
     common::load_test_env();
 
     insert_dao_with_telegram(&pool).await;
-    reset_cursors_to_start(&pool).await;
 
     insert_proposal(
         &pool,
@@ -545,7 +559,6 @@ async fn test_dispatch_is_idempotent(pool: PgPool) {
     common::load_test_env();
 
     insert_dao_with_telegram(&pool).await;
-    reset_cursors_to_start(&pool).await;
 
     insert_proposal(&pool, 1, "alice.near", "Pay Alice", chrono::Utc::now()).await;
 
@@ -582,132 +595,81 @@ async fn test_dispatch_is_idempotent(pool: PgPool) {
     assert_eq!(count.0, 1);
 }
 
-/// On fresh start (no cursor row), the detector seeds from the latest existing
-/// row and does NOT produce notifications for pre-existing history.
-/// Only events that arrive *after* the first run are notified.
+/// The production sequence that broke the old cursor-based detector: a
+/// pending exchange row is later fulfilled by an in-place upsert on the same
+/// gold_event_key (same row id). The projection-time emitter must skip the
+/// pending write and notify exactly once on the fulfilled one.
 #[sqlx::test]
-async fn test_fresh_start_skips_history(pool: PgPool) {
+async fn test_pending_exchange_fulfilled_in_place_notifies(pool: PgPool) {
     common::load_test_env();
 
     insert_dao_with_telegram(&pool).await;
 
-    // Insert a historical payment before the worker has ever run
-    insert_ledger_payment(
-        &pool,
-        "pre-existing",
-        "usdc.near",
-        "50",
-        "bob.near",
-        chrono::Utc::now(),
+    // Outgoing leg lands first: exchange row with no received leg, pending.
+    let pending_id: i64 = sqlx::query_scalar(
+        r#"
+        INSERT INTO gold_treasury_ledger_events
+            (gold_event_key, dao_id, source_kind, history_visible, transaction_type,
+             status, event_time, token_out, amount_out)
+        VALUES ('swap-late', $1, 'public_silver_leg', true, 'exchange', 'pending', NOW(),
+                'near', 5)
+        RETURNING id
+        "#,
     )
-    .await;
-
-    // First run — no cursor exists yet. Should seed to latest id and detect 0.
-    let first = nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
-        .await
-        .expect("first detection cycle");
+    .bind(DAO_ID)
+    .fetch_one(&pool)
+    .await
+    .expect("insert pending exchange");
 
     assert_eq!(
-        first, 0,
-        "pre-existing history must be skipped on fresh start"
+        emit_for_key(&pool, "swap-late").await,
+        0,
+        "half-leg pending exchange is not notifiable"
     );
 
-    // Cursor is now persisted at the latest id
-    let cursor: (i64,) = sqlx::query_as(
-        "SELECT last_processed_block FROM goldsky_cursors WHERE consumer_name = 'notifications:gold_ledger'",
+    // Received leg lands: the projector upserts the same key in place.
+    sqlx::query(
+        r#"
+        UPDATE gold_treasury_ledger_events
+        SET status = 'success',
+            token_in = 'intents.near:nep141:usdc.near',
+            amount_in = 100
+        WHERE gold_event_key = 'swap-late'
+        "#,
+    )
+    .execute(&pool)
+    .await
+    .expect("fulfill exchange in place");
+
+    assert_eq!(
+        emit_for_key(&pool, "swap-late").await,
+        1,
+        "in-place fulfillment must notify"
+    );
+
+    let (event_type, source_id): (String, i64) = sqlx::query_as(
+        "SELECT event_type, source_id FROM dao_notifications WHERE source_key = 'swap-late'",
     )
     .fetch_one(&pool)
     .await
-    .expect("cursor must exist after first run");
-    assert!(cursor.0 > 0, "cursor should be seeded to latest row id");
+    .expect("fetch swap notification");
+    assert_eq!(event_type, "swap_fulfilled");
+    assert_eq!(
+        source_id, pending_id,
+        "row was updated in place, not re-inserted"
+    );
 
-    // Insert a new event *after* the fresh-start seed
-    insert_ledger_payment(
-        &pool,
-        "post-seed",
-        "usdc.near",
-        "25",
-        "dave.near",
-        chrono::Utc::now(),
-    )
-    .await;
-
-    let second = nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
-        .await
-        .expect("second detection cycle");
-
-    assert_eq!(second, 1, "only the post-seed event should be detected");
-}
-
-/// An exchange whose fulfillment arrives later (as a re-projected row) is
-/// picked up in the cycle after it lands.
-#[sqlx::test]
-async fn test_swap_inserted_between_cycles(pool: PgPool) {
-    common::load_test_env();
-
-    insert_dao_with_telegram(&pool).await;
-    reset_cursors_to_start(&pool).await;
-
-    let tg = nt_be::utils::telegram::TelegramClient::default();
-    let base_url = "https://app.trezu.app";
+    // Delivery happens exactly once.
     let state = build_dispatch_state(&pool).await;
-
-    // Cycle 1: nothing notifiable exists yet
-    let (det1, _) = tokio::join!(
-        nt_be::handlers::notifications::detector::run_detection_cycle(&pool),
-        nt_be::handlers::notifications::telegram_dispatcher::run_telegram_dispatch_cycle(
-            &state, &tg, base_url,
-        ),
-    );
-    assert_eq!(
-        det1.expect("cycle 1 detection"),
-        0,
-        "no notifiable events yet"
-    );
-
-    // The gold projector writes the fulfilled exchange after the first cycle
-    insert_ledger_exchange(
-        &pool,
-        "swap-late",
-        "near",
-        "5",
-        "intents.near:nep141:usdc.near",
-        "100",
+    let tg = nt_be::utils::telegram::TelegramClient::default();
+    let sent = nt_be::handlers::notifications::telegram_dispatcher::run_telegram_dispatch_cycle(
+        &state,
+        &tg,
+        "https://app.trezu.app",
     )
-    .await;
-
-    // Cycle 2: swap now exists — detection picks it up, dispatcher sends it
-    let (det2, _disp2) = tokio::join!(
-        nt_be::handlers::notifications::detector::run_detection_cycle(&pool),
-        nt_be::handlers::notifications::telegram_dispatcher::run_telegram_dispatch_cycle(
-            &state, &tg, base_url,
-        ),
-    );
-
-    assert_eq!(
-        det2.expect("cycle 2 detection"),
-        1,
-        "swap_fulfilled detected in cycle 2"
-    );
-    // Dispatcher in cycle 2 may or may not have seen the new notification depending on
-    // join! ordering — run a third dispatch to guarantee delivery is recorded.
-    let _final_sent =
-        nt_be::handlers::notifications::telegram_dispatcher::run_telegram_dispatch_cycle(
-            &state, &tg, base_url,
-        )
-        .await
-        .expect("final dispatch");
-
-    let total_delivered: (i64,) =
-        sqlx::query_as("SELECT COUNT(*) FROM dao_notification_deliveries")
-            .fetch_one(&pool)
-            .await
-            .expect("count deliveries");
-
-    assert_eq!(
-        total_delivered.0, 1,
-        "swap notification delivered exactly once"
-    );
+    .await
+    .expect("dispatch cycle");
+    assert_eq!(sent, 1, "swap notification delivered exactly once");
 }
 
 /// Hidden ledger rows (sponsor top-ups, wraps) never notify.
@@ -716,7 +678,6 @@ async fn test_hidden_rows_do_not_notify(pool: PgPool) {
     common::load_test_env();
 
     insert_dao_with_telegram(&pool).await;
-    reset_cursors_to_start(&pool).await;
 
     sqlx::query(
         r#"
@@ -732,10 +693,11 @@ async fn test_hidden_rows_do_not_notify(pool: PgPool) {
     .await
     .expect("insert hidden row");
 
-    let detected = nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
-        .await
-        .expect("detection cycle");
-    assert_eq!(detected, 0, "hidden rows are not notifiable");
+    assert_eq!(
+        emit_for_key(&pool, "hidden-1").await,
+        0,
+        "hidden rows are not notifiable"
+    );
 }
 
 /// Confidential intents notify once their on-chain proposal is linked, with
@@ -745,7 +707,6 @@ async fn test_confidential_proposal_notification(pool: PgPool) {
     common::load_test_env();
 
     insert_dao_with_telegram(&pool).await;
-    reset_cursors_to_start(&pool).await;
 
     // An intent without a linked proposal must not notify.
     sqlx::query(

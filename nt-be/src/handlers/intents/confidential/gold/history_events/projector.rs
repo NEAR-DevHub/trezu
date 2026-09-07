@@ -6,7 +6,7 @@ use futures::StreamExt;
 use near_account_id::AccountIdRef;
 use sqlx::PgPool;
 
-use super::convert::bronze_to_gold;
+use super::convert::{bronze_to_gold, confidential_gold_event_key};
 use super::models::{ConfidentialDepositCorrectionIndex, DaoProjectionStats, ProjectionCycleStats};
 use super::repository::{
     clear_balance_check_errors, clear_projection_error, delete_stale_gold_rows,
@@ -18,6 +18,8 @@ use crate::AppState;
 use crate::constants::intents_tokens::get_defuse_tokens_map;
 use crate::handlers::intents::confidential::balances::fetch_confidential_balances;
 use crate::handlers::intents::confidential::gold::cursors::clear_gold_dirty_if_not_advanced;
+use crate::handlers::intents::confidential::types::ConfidentialTxType;
+use crate::handlers::notifications::emitter::emit_gold_ledger_notification;
 
 /// Env flag (default ON) gating the confidential deposit-amount correction.
 /// Set `CORRECT_CONFIDENTIAL_DEPOSIT_AMOUNTS=false` to revert to raw 1Click
@@ -108,6 +110,13 @@ pub async fn project_confidential_gold_for_dao(
             Ok(Some(projected)) => {
                 preserve_ids.insert(projected.history_event_id);
                 upsert_projection(&mut tx, &projected).await?;
+                if !matches!(projected.transaction_type, ConfidentialTxType::Deposit) {
+                    emit_gold_ledger_notification(
+                        &mut tx,
+                        &confidential_gold_event_key(projected.history_event_id),
+                    )
+                    .await?;
+                }
                 stats.rows_projected += 1;
             }
             Ok(None) => {
