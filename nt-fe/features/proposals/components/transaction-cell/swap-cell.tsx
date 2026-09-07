@@ -5,8 +5,11 @@ import { Icon } from "@/components/icon";
 import { SwapTokenPair } from "@/components/token-pair";
 import { WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
 import { useSearchIntentsTokens, useToken } from "@/hooks/use-treasury-queries";
-import { formatBalance, formatTokenDisplayAmount } from "@/lib/utils";
 import type { SwapRequestData } from "../../types/index";
+import {
+    formatSwapLegAmount,
+    type SwapLegAmount,
+} from "./format-swap-leg-amount";
 import { TitleSubtitleCell } from "./title-subtitle-cell";
 
 interface SwapCellProps {
@@ -20,27 +23,13 @@ interface SwapCellProps {
     inline?: boolean;
 }
 
-/**
- * The amount of one leg, in exactly one of the two shapes a swap proposal
- * stores: `amount` is the raw on-chain integer and needs the token's decimals
- * applied, `amountWithDecimals` is already scaled. The union keeps a caller
- * from passing both (which shape wins?) or neither (a silent zero).
- */
-type SwapLegAmount =
-    | { amount: string; amountWithDecimals?: never }
-    | { amountWithDecimals: string; amount?: never };
-
 /** One leg of a swap: its token metadata plus a formatted "1,234.00 USDC". */
 function useSwapLeg(leg: { tokenId: string } & SwapLegAmount) {
     const isMasked = useIsBalanceMasked();
     const { data: token } = useToken(leg.tokenId);
-    const rawAmount =
-        leg.amount !== undefined
-            ? formatBalance(leg.amount, token?.decimals || 24)
-            : leg.amountWithDecimals;
     const displayAmount = isMasked
         ? BALANCE_MASK
-        : formatTokenDisplayAmount(rawAmount);
+        : formatSwapLegAmount(leg, token?.decimals || 24);
 
     return { token, label: `${displayAmount} ${token?.symbol ?? ""}`.trim() };
 }

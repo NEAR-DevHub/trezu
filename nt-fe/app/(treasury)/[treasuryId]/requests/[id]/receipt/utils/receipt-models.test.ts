@@ -27,7 +27,7 @@ describe("buildReceiptAmountModel", () => {
         expect(result.rateLabel).toBeNull();
     });
 
-    it("falls back to exact receipt values when quote displays are malformed", () => {
+    it("reads grouped quote formatted amounts and falls back when they are invalid", () => {
         const quote = {
             amountInFormatted: "1,234.56",
             amountOutFormatted: "not-a-number",
@@ -40,7 +40,7 @@ describe("buildReceiptAmountModel", () => {
             quote,
             sourceToken: {
                 ...invalidToken,
-                amountDecimal: "1234.56",
+                amountDecimal: "999",
                 amountUsd: undefined,
                 tokenPrice: 1,
             },

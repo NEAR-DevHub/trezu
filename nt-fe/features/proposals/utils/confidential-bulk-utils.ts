@@ -1,3 +1,4 @@
+import { groupedDecimalOrNull } from "@/lib/amount-format";
 import Big from "@/lib/big";
 import { NEAR_COM_NETWORK_ID } from "@/constants/network-ids";
 
@@ -65,15 +66,12 @@ export function sumConfidentialBulkNetworkFee(
     for (const recipient of recipients) {
         const { amountInFormatted, amountOutFormatted } =
             mapConfidentialBulkRecipientPayment(recipient.quoteMetadata);
-        try {
-            const legFee = Big(amountInFormatted || "0").minus(
-                Big(amountOutFormatted || "0"),
-            );
-            if (legFee.gt(0)) {
-                total = total.add(legFee);
-            }
-        } catch {
-            // Ignore malformed quote amounts for a single leg.
+        const amountIn = groupedDecimalOrNull(amountInFormatted);
+        const amountOut = groupedDecimalOrNull(amountOutFormatted);
+        if (!amountIn || !amountOut) continue;
+        const legFee = amountIn.minus(amountOut);
+        if (legFee.gt(0)) {
+            total = total.add(legFee);
         }
     }
     return total;

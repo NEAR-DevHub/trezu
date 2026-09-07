@@ -35,7 +35,10 @@ import { NEAR_COM_NETWORK_ID } from "@/constants/network-ids";
 import { useTokenCatalog } from "@/hooks/use-bridge-tokens";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useToken, useTokenBalance } from "@/hooks/use-treasury-queries";
-import { decimalFromBaseUnits, decimalOrNull } from "@/lib/amount-format";
+import {
+    decimalFromBaseUnits,
+    groupedDecimalOrNull,
+} from "@/lib/amount-format";
 import { trackEvent } from "@/lib/analytics";
 import Big from "@/lib/big";
 import {
@@ -313,10 +316,9 @@ export function ReviewPaymentsStep({
     // Confidential: Total = header quote amountIn (what the DAO is charged) —
     // same field request details uses. Fallback while quotes load: typed sum
     // (+ estimated fee for public / pre-quote).
-    const quotedTotalAmount = confidentialPrepare?.quotes
-        ?.headerAmountInFormatted
-        ? Big(confidentialPrepare.quotes.headerAmountInFormatted)
-        : null;
+    const quotedTotalAmount = groupedDecimalOrNull(
+        confidentialPrepare?.quotes?.headerAmountInFormatted,
+    );
     const totalAmount =
         quotedTotalAmount ??
         (totalNetworkFee
@@ -421,7 +423,8 @@ export function ReviewPaymentsStep({
                             index,
                             payment.amount,
                         );
-                        const recipientAmount = decimalOrNull(displayAmount);
+                        const recipientAmount =
+                            groupedDecimalOrNull(displayAmount);
                         const estimatedUSDValue =
                             selectedTokenData?.price && recipientAmount?.gt(0)
                                 ? recipientAmount.mul(selectedTokenData.price)

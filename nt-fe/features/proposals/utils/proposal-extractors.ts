@@ -7,7 +7,7 @@ import {
 import { NEAR_TOKEN_DECIMALS } from "@/constants/token";
 import {
     decimalFromBaseUnitsOrNull,
-    legacyGroupedDecimalOrNull,
+    groupedDecimalOrNull,
 } from "@/lib/amount-format";
 import type { IntentsQuoteResponse } from "@/lib/api";
 import { getKindFromProposal } from "@/lib/config-utils";
@@ -226,7 +226,7 @@ export function extractPaymentRequestData(
         "signature",
         proposal.description,
     );
-    const networkFee = legacyGroupedDecimalOrNull(
+    const networkFee = groupedDecimalOrNull(
         decodeProposalDescription("networkFee", proposal.description),
     )?.toFixed();
     let destinationAssetId = decodeProposalDescription(

@@ -15,9 +15,9 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { NEAR_NETWORK_ID } from "@/constants/network-ids";
 import { useToken } from "@/hooks/use-treasury-queries";
+import { decimalFromBaseUnitsOrNull, decimalOrNull } from "@/lib/amount-format";
 import {
     cn,
-    formatBalance,
     formatCurrencyWithSubCent,
     formatTokenDisplayAmount,
 } from "@/lib/utils";
@@ -62,15 +62,15 @@ export function BulkDetails({ data }: { data: ConfidentialBulkData }) {
     // through that token's decimals, icon and price rather than the origin's.
     const { data: amountToken } = useToken(amountTokenId);
 
-    const totalAmount = formatBalance(
+    const totalAmount = decimalFromBaseUnitsOrNull(
         data.totalAmount,
         tokenData?.decimals ?? 24,
     );
-    const totalNumber = Number(totalAmount);
     const unitUsd = tokenData?.price ?? null;
+    const tokenPrice = decimalOrNull(tokenData?.price);
     const totalUsd =
-        unitUsd !== null && Number.isFinite(totalNumber)
-            ? unitUsd * totalNumber
+        tokenPrice && totalAmount
+            ? totalAmount.mul(tokenPrice).toNumber()
             : null;
 
     // The fee the DAO committed to at prepare time, summed across the legs —
@@ -93,7 +93,9 @@ export function BulkDetails({ data }: { data: ConfidentialBulkData }) {
                         <span className="text-lg font-semibold leading-6">
                             {isMasked
                                 ? BALANCE_MASK
-                                : formatTokenDisplayAmount(totalAmount)}
+                                : totalAmount
+                                  ? formatTokenDisplayAmount(totalAmount)
+                                  : "—"}
                         </span>
                         <span className="text-base font-medium leading-[1.2] text-general-muted-foreground">
                             {tokenData?.symbol}
@@ -185,10 +187,7 @@ function RecipientList({
                         number={index + 1}
                         accountId={leg.recipient}
                         chainName={chainName}
-                        amount={formatBalance(
-                            leg.amountOut,
-                            token?.decimals ?? 24,
-                        )}
+                        amountRaw={leg.amountOut}
                         token={token}
                         open={openRecipients.includes(index)}
                         onOpenChange={(open) =>
@@ -209,7 +208,7 @@ function Recipient({
     number,
     accountId,
     chainName,
-    amount,
+    amountRaw,
     token,
     open,
     onOpenChange,
@@ -217,22 +216,28 @@ function Recipient({
     number: number;
     accountId: string;
     chainName: string;
-    amount: string;
+    amountRaw: string;
     token: TokenData;
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
     const t = useTranslations("proposals.expanded");
     const isMasked = useIsBalanceMasked();
+    const amountDecimal = decimalFromBaseUnitsOrNull(
+        amountRaw,
+        token?.decimals ?? 24,
+    );
+    const tokenPrice = decimalOrNull(token?.price);
 
     const displayAmount = isMasked
         ? BALANCE_MASK
-        : formatTokenDisplayAmount(amount);
+        : amountDecimal
+          ? formatTokenDisplayAmount(amountDecimal)
+          : "—";
     const amountLabel = `${displayAmount} ${token?.symbol ?? ""}`.trim();
-    const amountNumber = Number(amount);
     const usd =
-        token?.price && Number.isFinite(amountNumber)
-            ? token.price * amountNumber
+        amountDecimal && tokenPrice
+            ? amountDecimal.mul(tokenPrice).toNumber()
             : null;
 
     return (

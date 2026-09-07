@@ -11,7 +11,7 @@ import {
     formatRawTokenQuantity,
     formatTokenQuantity,
     formatUnitPrice,
-    legacyGroupedDecimalOrNull,
+    groupedDecimalOrNull,
     quantizeFiatAmount,
     quantizeTokenAmount,
 } from "./amount-format";
@@ -61,15 +61,15 @@ describe("exact amount conversion", () => {
         expect(decimalFromBaseUnitsOrNull("bad", 24)).toBeNull();
     });
 
-    it("normalizes only valid legacy comma-grouped decimals", () => {
-        expect(legacyGroupedDecimalOrNull("1,234.56")?.toFixed()).toBe(
-            "1234.56",
-        );
-        expect(legacyGroupedDecimalOrNull("1234.56")?.toFixed()).toBe(
-            "1234.56",
-        );
-        expect(legacyGroupedDecimalOrNull("12,34.56")).toBeNull();
-        expect(legacyGroupedDecimalOrNull("1.234,56")).toBeNull();
+    it("normalizes only valid en-US comma-grouped decimals", () => {
+        expect(groupedDecimalOrNull("1,234.56")?.toFixed()).toBe("1234.56");
+        expect(groupedDecimalOrNull("1234.56")?.toFixed()).toBe("1234.56");
+        expect(groupedDecimalOrNull("1000")?.toFixed()).toBe("1000");
+        expect(groupedDecimalOrNull("1,000")?.toFixed()).toBe("1000");
+        expect(groupedDecimalOrNull("1,000.01")?.toFixed()).toBe("1000.01");
+        expect(groupedDecimalOrNull("12,34.56")).toBeNull();
+        expect(groupedDecimalOrNull("1.234,56")).toBeNull();
+        expect(groupedDecimalOrNull("not-a-number")).toBeNull();
     });
 });
 
