@@ -180,7 +180,7 @@ export const COMPARISON_ROWS = [
         nearBusiness: "None",
         enterprise: "Annual contracts",
     },
-    { label: "Setup time", nearBusiness: "Yes", enterprise: "Weeks" },
+    { label: "Setup time", nearBusiness: "Minutes", enterprise: "Weeks" },
 ] as const;
 
 export const PRICING_CELLS = [
