@@ -232,8 +232,8 @@ function MarqueeRow({ reverse = false }: { reverse?: boolean }) {
     return (
         <div
             className={cn(
-                // The row is fixed at the tallest mark so both rows sit on the
-                // design's 65px baseline pitch whatever the list holds.
+                // The row is fixed at 30px, the tallest mark, so both rows sit
+                // on the same baseline pitch without cropping anything.
                 "flex h-[30px] w-max items-center",
                 reverse
                     ? "animate-landing-marquee-reverse"
