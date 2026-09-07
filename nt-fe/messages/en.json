@@ -257,7 +257,7 @@
             "metaDescription": "Connect your Near Business treasury to a Telegram chat"
         },
         "wallet": {
-            "title": "Near Business Wallet",
+            "title": "Near Business wallet",
             "description": "Sign treasury proposals via Near Business"
         }
     },
@@ -561,7 +561,7 @@
         },
         "noPermission": "You don't have permission to download the file.",
         "download": "Download",
-        "heading": "Export Recent Transactions",
+        "heading": "Export recent transactions",
         "teamOnly": "Export generation and downloads are available to team members only.",
         "creditsUsed": "You've used all your credits",
         "exportsUsed": "You've used all your exports",
@@ -1148,7 +1148,7 @@
         "emptyTitle": "Add your first recipient",
         "emptyDescription": "Save frequently used addresses for faster, error-free payouts. Your contacts stay private and visible only to your team.",
         "import": "Import",
-        "addRecipient": "Add Recipient",
+        "addRecipient": "Add recipient",
         "recipientsHeading": "Recipients",
         "recipientsSelected": "{count, plural, =0 {no recipients} one {# recipient} other {# recipients}} selected",
         "sectionHeading": "Recipients",
@@ -1412,7 +1412,7 @@
         },
         "proposalTitle": "Create vesting schedule for {address}",
         "scheduleSubmitted": "Request to create vesting schedule submitted",
-        "heading": "New Vesting Schedule",
+        "heading": "New vesting schedule",
         "amount": "Amount",
         "startDate": "Start Date",
         "endDate": "End Date",
@@ -1425,7 +1425,7 @@
         "allowEarn": "Allow Earn",
         "allowEarnDescription": "Allows the owner of the lockup to stake the full amount of tokens in the lockup (even before the cliff date).",
         "commentPlaceholder": "Add a comment for this vesting schedule (optional)...",
-        "reviewRequest": "Review Request",
+        "reviewRequest": "Review request",
         "reviewHeading": "Review Your Vesting Schedule",
         "confirmSubmit": "Confirm and submit request",
         "review": {
@@ -1723,7 +1723,7 @@
         "websiteTitle": "Near Business Website",
         "websiteDescription": "Read about Near Business and what's new.",
         "demo": "Near Business Demo",
-            "demoTitle": "Explore public version",
+        "demoTitle": "Explore public version",
         "demoDescription": "A real treasury anyone can view.",
         "confidentialDemoTitle": "Explore confidential version",
         "confidentialDemoDescription": "How a private treasury looks in use.",
@@ -1803,8 +1803,8 @@
         }
     },
     "csvUpload": {
-        "uploadFile": "Upload File",
-        "provideData": "Provide Data",
+        "uploadFile": "Upload file",
+        "provideData": "Provide data",
         "chooseFile": "Choose file",
         "orDragDrop": "or drag and drop",
         "maxFileSize": "max 1 file up to {maxSize} MB, CSV file only",
@@ -2437,7 +2437,7 @@
             "letsGo": "Let's go!"
         },
         "notifications": {
-            "title": "New - Notifications",
+            "title": "New - notifications",
             "body": "Stay informed on new requests, pending votes, and incoming treasury assets - just connect Telegram bot.",
             "tryIt": "Try It",
             "dismissAria": "Dismiss"
@@ -2547,7 +2547,7 @@
         "pageDescription": "Build reusable templates for custom request types.",
         "loading": "Loading…",
         "back": "Back",
-        "howItWorks": "How It Works",
+        "howItWorks": "How it works",
         "toastDeleted": "Template deleted",
         "errDelete": "Failed to delete template",
         "deleteDialog": {
