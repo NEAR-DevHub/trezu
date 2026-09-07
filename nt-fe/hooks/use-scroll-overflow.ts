@@ -1,14 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { measureScrollOverflow } from "@/lib/scroll-overflow";
+import {
+    measureScrollOverflow,
+    watchScrollOverflow,
+} from "@/lib/scroll-overflow";
 
 /**
  * Tracks whether a scrollport is hiding content above/below — the same
  * overflow hairline request details uses on its side-sheet header.
  *
  * `viewportRef` is a callback ref so it rebinds when the list mounts
- * (e.g. after a loading skeleton).
+ * (e.g. after a loading skeleton). Mutations also re-measure when children
+ * swap in place (empty → fetched list) without remounting.
  */
 export function useScrollOverflow() {
     const [viewport, setViewport] = useState<HTMLDivElement | null>(null);
@@ -32,17 +36,7 @@ export function useScrollOverflow() {
             );
         };
 
-        measure();
-        viewport.addEventListener("scroll", measure, { passive: true });
-        const observer = new ResizeObserver(measure);
-        observer.observe(viewport);
-        const content = viewport.firstElementChild;
-        if (content) observer.observe(content);
-
-        return () => {
-            viewport.removeEventListener("scroll", measure);
-            observer.disconnect();
-        };
+        return watchScrollOverflow(viewport, measure);
     }, [viewport]);
 
     return { viewportRef: setViewport, hasContentAbove, hasContentBelow };

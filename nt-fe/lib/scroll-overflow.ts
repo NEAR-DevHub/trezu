@@ -14,3 +14,36 @@ export function measureScrollOverflow(viewport: {
             OVERFLOW_SLACK_PX,
     };
 }
+
+/**
+ * Re-runs `measure` on scroll, box resize, and in-place child swaps
+ * (skeleton / empty list → fetched rows) so overflow hairlines update
+ * without waiting for the next user scroll.
+ */
+export function watchScrollOverflow(
+    viewport: HTMLElement,
+    measure: () => void,
+): () => void {
+    const resizeObserver = new ResizeObserver(measure);
+    const observeSizes = () => {
+        resizeObserver.disconnect();
+        resizeObserver.observe(viewport);
+        const content = viewport.firstElementChild;
+        if (content) resizeObserver.observe(content);
+    };
+
+    measure();
+    observeSizes();
+    viewport.addEventListener("scroll", measure, { passive: true });
+    const mutationObserver = new MutationObserver(() => {
+        observeSizes();
+        measure();
+    });
+    mutationObserver.observe(viewport, { childList: true, subtree: true });
+
+    return () => {
+        viewport.removeEventListener("scroll", measure);
+        resizeObserver.disconnect();
+        mutationObserver.disconnect();
+    };
+}
