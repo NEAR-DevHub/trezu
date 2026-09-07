@@ -2,9 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useTreasury } from "@/hooks/use-treasury";
+import { useUserTreasuries } from "@/hooks/use-treasury-queries";
 import { resolveTreasuryHomeHref } from "@/lib/treasury-home";
 import { useNear } from "@/stores/near-store";
+import { useTreasuryStore } from "@/stores/treasury-store";
 
 /**
  * Sends a signed-in visitor from the marketing page to their last viewed
@@ -15,7 +16,11 @@ import { useNear } from "@/stores/near-store";
 export function LandingRedirect() {
     const router = useRouter();
     const { accountId, isAuthenticated, isInitializing, checkAuth } = useNear();
-    const { isLoading, lastTreasuryId, memberTreasuries } = useTreasury();
+    // Read the treasury list directly rather than through `useTreasury()`:
+    // that hook resolves its treasury from `useParams()`, which has nothing to
+    // resolve here, and it includes treasuries the user hid from selectors.
+    const { data: treasuries = [], isLoading } = useUserTreasuries(accountId);
+    const lastTreasuryId = useTreasuryStore((state) => state.lastTreasuryId);
     const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
 
     useEffect(() => {
@@ -32,9 +37,7 @@ export function LandingRedirect() {
             return;
         }
         if (isLoading) return;
-        router.replace(
-            resolveTreasuryHomeHref(memberTreasuries, lastTreasuryId),
-        );
+        router.replace(resolveTreasuryHomeHref(treasuries, lastTreasuryId));
     }, [
         accountId,
         hasCheckedAuth,
@@ -42,8 +45,8 @@ export function LandingRedirect() {
         isInitializing,
         isLoading,
         lastTreasuryId,
-        memberTreasuries,
         router,
+        treasuries,
     ]);
 
     return null;
