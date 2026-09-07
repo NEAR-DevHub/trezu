@@ -42,4 +42,4 @@ export const paymentSelectModalListClassName =
 
 /** Search field in token / network select modals. */
 export const paymentSelectModalSearchInputClassName =
-    "rounded-xl border border-general-border bg-card! hover:bg-card! focus-visible:border-general-border focus-visible:ring-0";
+    "rounded-lg border border-general-border bg-card! hover:bg-card! focus-visible:border-general-border focus-visible:ring-0";

@@ -258,6 +258,7 @@
     --general-destructive-border: rgb(255, 228, 230);
     --general-destructive-foreground: rgb(220, 38, 38);
     --general-error-icon: rgb(255, 32, 86);
+    --general-error-foreground: rgb(236, 0, 63);
     --general-info-background-faded: rgba(239, 246, 255);
     --general-info-border: rgb(191, 219, 254);
     --general-info-foreground: rgb(29, 78, 216);
@@ -385,6 +386,7 @@
     --general-destructive-border: rgb(127, 29, 29);
     --general-destructive-foreground: rgb(220, 38, 38);
     --general-error-icon: rgb(255, 32, 86);
+    --general-error-foreground: rgb(236, 0, 63);
     --general-orange-background: rgb(124, 45, 18);
     --general-orange-background-faded: rgb(67, 20, 7);
     --general-orange-border: rgb(124, 45, 18);
@@ -488,6 +490,7 @@
     --general-success-border: rgb(213, 255, 240);
     --general-success-foreground: rgb(0, 150, 96);
     --general-error-icon: rgb(255, 32, 86);
+    --general-error-foreground: rgb(236, 0, 63);
 }
 
 @theme inline {
@@ -528,6 +531,7 @@
         --general-destructive-foreground
     );
     --color-general-error-icon: var(--general-error-icon);
+    --color-general-error-foreground: var(--general-error-foreground);
     --color-general-info-background-faded: var(--general-info-background-faded);
     --color-general-info-border: var(--general-info-border);
     --color-general-info-foreground: var(--general-info-foreground);
@@ -682,45 +686,148 @@ input[type="number"] {
     }
 }
 
-/* Dashboard tour owns the dimming while a mobile sheet is open, so hide the
-   sheet overlay and let nextstepjs spotlight the target. */
-body[data-onboarding-tour="dashboard"] [data-slot="dialog-overlay"] {
+/* Dashboard / Help & Support tours own the dimming while a mobile sheet is
+   open, so hide the sheet overlay and let nextstepjs spotlight the target. */
+body[data-onboarding-tour="dashboard"] [data-slot="dialog-overlay"],
+body[data-onboarding-tour="info-box-dismissed"] [data-slot="dialog-overlay"] {
     opacity: 0 !important;
     pointer-events: none !important;
 }
 
-/* nextstepjs sets the card wrapper to max-width: 100% of the spotlight. The
-   mobile header avatar is 36px, so without this the tooltip is clipped to a
-   sliver beside the chip. */
+/* nextstepjs sets the card wrapper to max-width: 100% of the spotlight. */
 body[data-onboarding-tour="info-box-dismissed"] [data-name="nextstep-card"] {
     max-width: none !important;
 }
 
 @media (max-width: 1023px) {
-    /* Hang the card below the top-right header avatar. The old bottom-pin
-       assumed a sidebar footer target and clipped the card off the top. */
-    body[data-onboarding-tour="info-box-dismissed"]
-    [data-name="nextstep-overlay"] {
-        overflow: visible !important;
-    }
-
-    body[data-onboarding-tour="info-box-dismissed"]
-        [data-name="nextstep-card"] {
-        top: 100% !important;
-        right: 0 !important;
-        bottom: auto !important;
-        left: auto !important;
-        margin-top: 6px !important;
+    /* Stretch the Help & Support tooltip to the sheet / screen width. */
+    body[data-onboarding-tour="info-box-dismissed"] [data-name="nextstep-card"] {
+        left: 1rem !important;
+        right: 1rem !important;
+        width: auto !important;
+        max-width: none !important;
         transform: none !important;
-        max-width: min(280px, calc(100vw - 1rem)) !important;
     }
 
+    body[data-onboarding-tour="info-box-dismissed"] [data-onboarding-tour-card] {
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+    }
+
+    /* Inset the Help & Support label from the highlight on the x-axis only. */
+    body[data-onboarding-tour="info-box-dismissed"] #help-support-link {
+        padding-inline: 0.75rem;
+    }
+}
+
+/* App toast chrome — always the dark card, regardless of page theme. */
+[data-sonner-toaster] {
+    --card-card: #171717;
+    /* Toast chrome is always the dark card; title/action stay light. */
+    --general-foreground: #fff;
+    font-family: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+}
+
+[data-sonner-toast].toaster-toast {
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 0.75rem;
+    row-gap: 0.25rem;
+    box-sizing: border-box;
+    width: var(--width, 22.25rem);
+    border: 0 !important;
+    border-radius: 1rem !important;
+    background: var(--card-card, #171717) !important;
+    padding: 1rem !important;
+    box-shadow: none;
+    color: var(--general-foreground, #fff);
+}
+
+[data-sonner-toast] [data-icon].toaster-icon {
+    display: flex !important;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    margin: 0 !important;
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+[data-sonner-toast] [data-content].toaster-content {
+    display: block;
+    flex: 1 1 0;
+    min-width: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+[data-sonner-toast] [data-title].toaster-title {
+    margin: 0 !important;
+    border: 0 !important;
+    padding: 0 !important;
+    color: var(--general-foreground, #fff);
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+[data-sonner-toast] [data-description].toaster-description {
+    margin: 0 !important;
+    padding: 0 !important;
+    color: var(--general-foreground, #fff);
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.2;
+    opacity: 0.72;
+}
+
+[data-sonner-toast] [data-button].toaster-action {
+    box-sizing: border-box;
+    flex: 1 0 100%;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    padding: 0 0 0 calc(1.25rem + 0.75rem) !important;
+    box-shadow: none !important;
+    color: var(--general-foreground, #fff) !important;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: left !important;
+    opacity: 0.72;
+}
+
+@media (max-width: 1023px) {
     /* Gleap's launcher and AI chatbar sit at the viewport bottom by default
        and cover the mobile Menu tab. Lift them above the bottom nav. */
     .bb-feedback-button,
     .bb-feedback-button--bottomleft,
     .gleap-chatbar {
         bottom: calc(5rem + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    /* Toasts span the screen width and sit at the top center. */
+    [data-sonner-toaster][data-x-position="center"] {
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        --width: 100%;
+        --offset-left: 0px;
+        --offset-right: 0px;
+        --mobile-offset-left: 0px;
+        --mobile-offset-right: 0px;
+    }
+
+    [data-sonner-toaster][data-x-position="center"] [data-sonner-toast] {
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
     }
 }
 

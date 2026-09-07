@@ -73,6 +73,11 @@ interface PageComponentLayoutProps {
      */
     hideTitle?: boolean;
     /**
+     * Keeps the mobile header row height when there is no back control, so
+     * inner steps (e.g. edit recipient) do not jump up under the status bar.
+     */
+    reserveHeaderSpace?: boolean;
+    /**
      * Pins the page to the viewport height on every breakpoint. A short viewport
      * that can't fit the content scrolls the whole page, header included.
      */
@@ -99,6 +104,7 @@ export function PageComponentLayout({
     hideHeader = false,
     hideHeaderOnMobile = false,
     hideTitle = false,
+    reserveHeaderSpace = false,
     fitViewport = false,
     logo,
     mainClassName,
@@ -127,7 +133,7 @@ export function PageComponentLayout({
     });
     // On small screens, keep the back slot when the control is hidden so the
     // stacked title does not jump. Large screens leave the title flush left.
-    const reserveBackSlot = Boolean(backButton);
+    const reserveBackSlot = Boolean(backButton) || reserveHeaderSpace;
     const showMobileChromeRow =
         stackedInnerHeader && (showBack || !!headerActions || reserveBackSlot);
 

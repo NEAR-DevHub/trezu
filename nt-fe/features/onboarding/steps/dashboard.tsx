@@ -12,9 +12,11 @@ import { features } from "@/constants/features";
 import {
     DASHBOARD_TOUR_SELECTOR_RETRY,
     helpSupportTourCardOffset,
+    helpSupportTourPointerPadding,
     helpSupportTourSelector,
     helpSupportTourStepSide,
     isTourMobileViewport,
+    prepareHelpSupportTour,
     waitForSettledTourTarget,
 } from "@/features/onboarding/dashboard-tour-targets";
 import {
@@ -148,7 +150,7 @@ export const INFO_BOX_TOUR: Tour = {
             showControls: false,
             showSkip: false,
             pointerPadding: 0,
-            pointerRadius: 16,
+            pointerRadius: 8,
             ...DASHBOARD_TOUR_SELECTOR_RETRY,
         },
     ],
@@ -233,12 +235,9 @@ function FloatingTooltip({
 
 /**
  * Starts the Help & Support spotlight after the dashboard info box is closed.
- *
- * The target is the visible profile control: the sidebar account row on large
- * screens, the header avatar on small ones. The desktop sidebar is
- * `display: none` below `lg`, so opening it on a phone would start the tour
- * overlay against a hidden node — the card never appears and the screen
- * stays blocked.
+ * Opens the user menu first so the tooltip can land on that row — the desktop
+ * sidebar is `display: none` below `lg`, so pointing at the rail would start
+ * the overlay against a hidden node.
  */
 export function scheduleHelpSupportTour(
     startNextStep: (tourName: string) => void,
@@ -253,18 +252,10 @@ export function scheduleHelpSupportTour(
         step.side = helpSupportTourStepSide(mobile);
         step.selector = helpSupportTourSelector(mobile);
         step.cardOffset = helpSupportTourCardOffset(mobile);
+        step.pointerPadding = helpSupportTourPointerPadding(mobile);
     }
 
-    // The info box sits below the fold on phones. Bring the header avatar
-    // back into view first, otherwise nextstepjs measures a scrolled
-    // document Y and flips `bottom-right` to `top-right` — the card then
-    // clips against the top of the screen.
-    if (mobile && step?.selector) {
-        document.querySelector(step.selector)?.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-        });
-    }
+    prepareHelpSupportTour();
 
     void waitForSettledTourTarget(step?.selector).then(() => {
         startNextStep(TOUR_NAMES.INFO_BOX_DISMISSED);

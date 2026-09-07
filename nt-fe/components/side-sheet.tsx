@@ -17,6 +17,7 @@ import {
     DialogPortal,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { measureScrollOverflow } from "@/lib/scroll-overflow";
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/stores/ui-store";
 
@@ -178,15 +179,7 @@ function SideSheetBody({
         const content = contentRef.current;
         if (!viewport || !content) return;
 
-        const measure = () =>
-            report({
-                hasContentAbove: viewport.scrollTop > 1,
-                hasContentBelow:
-                    viewport.scrollHeight -
-                        viewport.scrollTop -
-                        viewport.clientHeight >
-                    1,
-            });
+        const measure = () => report(measureScrollOverflow(viewport));
 
         measure();
         viewport.addEventListener("scroll", measure, { passive: true });

@@ -12,9 +12,9 @@ import {
     DASHBOARD_TOUR_TREASURY_STEP,
     dashboardTourStepSide,
     dashboardTourSurface,
-    HELP_SUPPORT_DESKTOP_SELECTOR,
-    HELP_SUPPORT_MOBILE_SELECTOR,
+    HELP_SUPPORT_SELECTOR,
     helpSupportTourCardOffset,
+    helpSupportTourPointerPadding,
     helpSupportTourSelector,
     helpSupportTourStepSide,
 } from "./dashboard-tour-targets";
@@ -65,38 +65,35 @@ describe("dashboardTourStepSide", () => {
 });
 
 describe("helpSupportTourSelector", () => {
-    it("targets the sidebar account row on large screens", () => {
-        expect(helpSupportTourSelector(false)).toBe(
-            HELP_SUPPORT_DESKTOP_SELECTOR,
-        );
-    });
-
-    it("targets the header avatar on small screens, not the hidden sidebar", () => {
-        expect(helpSupportTourSelector(true)).toBe(
-            HELP_SUPPORT_MOBILE_SELECTOR,
-        );
-        expect(helpSupportTourSelector(true)).not.toBe(
-            HELP_SUPPORT_DESKTOP_SELECTOR,
-        );
+    it("targets the Help & Support row on every screen", () => {
+        expect(helpSupportTourSelector(false)).toBe(HELP_SUPPORT_SELECTOR);
+        expect(helpSupportTourSelector(true)).toBe(HELP_SUPPORT_SELECTOR);
     });
 });
 
 describe("helpSupportTourStepSide", () => {
-    it("sits beside the sidebar account row on large screens", () => {
+    it("sits beside the Help & Support row on large screens", () => {
         expect(helpSupportTourStepSide(false)).toBe("right");
     });
 
-    it("hangs below the header avatar, right-aligned, on small screens", () => {
-        expect(helpSupportTourStepSide(true)).toBe("bottom-right");
+    it("sits below the Help & Support row in the user sheet on small screens", () => {
+        expect(helpSupportTourStepSide(true)).toBe("bottom");
     });
 });
 
 describe("helpSupportTourCardOffset", () => {
-    it("keeps the default gap beside the sidebar on large screens", () => {
+    it("keeps the default gap beside the row on large screens", () => {
         expect(helpSupportTourCardOffset(false)).toBe(25);
     });
 
-    it("sits tight under the header avatar on small screens", () => {
+    it("sits tight under the row on small screens", () => {
         expect(helpSupportTourCardOffset(true)).toBe(6);
+    });
+});
+
+describe("helpSupportTourPointerPadding", () => {
+    it("leaves nextstepjs unpadded so only CSS can add x-axis hover pad", () => {
+        expect(helpSupportTourPointerPadding(false)).toBe(0);
+        expect(helpSupportTourPointerPadding(true)).toBe(0);
     });
 });

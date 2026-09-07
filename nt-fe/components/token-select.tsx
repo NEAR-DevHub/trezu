@@ -17,6 +17,7 @@ import {
     type MergedToken,
     useMergedTokens,
 } from "@/hooks/use-merged-tokens";
+import { useScrollOverflow } from "@/hooks/use-scroll-overflow";
 import { usePopularAssetsByActivity } from "@/hooks/use-treasury-queries";
 import type { ChainIcons } from "@/lib/api";
 import Big from "@/lib/big";
@@ -36,7 +37,10 @@ import {
 import { Button } from "./button";
 import { Input } from "./input";
 import { Dialog, DialogHeader, DialogTitle, DialogTrigger } from "./modal";
-import { PaymentSelectModalContent } from "./payment-select-modal-content";
+import {
+    PaymentSelectModalContent,
+    PaymentSelectSearchRail,
+} from "./payment-select-modal-content";
 import { PopularTokenTiles } from "./popular-token-tiles";
 import { SelectListIcon } from "./select-list";
 import {
@@ -190,6 +194,7 @@ export default function TokenSelect({
         null,
     );
     const [step, setStep] = useState<"token" | "network">("token");
+    const { viewportRef, hasContentAbove } = useScrollOverflow();
     const { data: popularAssets = [] } = usePopularAssetsByActivity(
         showPopularAssets && open && step === "token",
     );
@@ -641,16 +646,18 @@ export default function TokenSelect({
                     </div>
                 </DialogHeader>
                 {step === "token" && (
-                    <div className="mt-4 flex min-h-0 flex-1 flex-col space-y-4 sm:mt-0">
-                        <Input
-                            placeholder={t("searchByName")}
-                            search
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            inputClassName={
-                                paymentSelectModalSearchInputClassName
-                            }
-                        />
+                    <div className="mt-4 flex min-h-0 flex-1 flex-col sm:mt-0">
+                        <PaymentSelectSearchRail scrolled={hasContentAbove}>
+                            <Input
+                                placeholder={t("searchByName")}
+                                search
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                inputClassName={
+                                    paymentSelectModalSearchInputClassName
+                                }
+                            />
+                        </PaymentSelectSearchRail>
                         {isLoading ? (
                             <div className="space-y-1 animate-pulse">
                                 {TOKEN_SKELETON_IDS.map((skeletonId) => (
@@ -668,6 +675,7 @@ export default function TokenSelect({
                             </div>
                         ) : (
                             <ScrollArea
+                                viewportRef={viewportRef}
                                 className={paymentSelectModalListClassName}
                             >
                                 {showPopularAssets &&

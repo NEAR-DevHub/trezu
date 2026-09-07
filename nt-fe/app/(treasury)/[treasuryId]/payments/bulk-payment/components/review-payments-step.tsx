@@ -716,11 +716,13 @@ export function ReviewPaymentsStep({
                 <DialogContent
                     className={cn(
                         mobileInsetSheetClassName,
-                        "gap-2 max-sm:gap-4 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:max-w-md!",
+                        "gap-4 max-sm:gap-4 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:max-w-md!",
                     )}
                 >
-                    <DialogHeader className="mx-0 border-0 px-0 pb-0 [&>div]:min-w-0 [&>div]:flex-1">
-                        <DialogTitle className="min-w-0 text-left text-xl font-bold leading-[1.2] tracking-[-0.4px]">
+                    {/* Close sits alone in the title bar; heading + copy are centered below. */}
+                    <DialogHeader className="mx-0 border-0 px-0 pb-0" />
+                    <div className="flex flex-col items-center gap-2 text-center">
+                        <DialogTitle className="text-xl font-bold leading-[1.2] tracking-[-0.4px]">
                             {recipientToRemove
                                 ? tBulk("removeRecipient", {
                                       recipient: formatShortAddress(
@@ -736,15 +738,16 @@ export function ReviewPaymentsStep({
                                   })
                                 : null}
                         </DialogTitle>
-                    </DialogHeader>
-                    <DialogDescription className="text-sm font-medium text-general-secondary-foreground">
-                        {tBulk("removeRecipientConfirm")}
-                    </DialogDescription>
+                        <DialogDescription className="text-sm font-medium text-general-secondary-foreground">
+                            {tBulk("removeRecipientConfirm")}
+                        </DialogDescription>
+                    </div>
                     <DialogFooter className="mx-0 px-0 pt-0">
                         <Button
                             type="button"
                             variant="destructive"
-                            className="w-full"
+                            size="xl"
+                            className="w-full rounded-2xl bg-general-error-foreground hover:bg-general-error-foreground/90 dark:bg-general-error-foreground"
                             disabled={isSubmitting}
                             onClick={() =>
                                 recipientToRemove &&
