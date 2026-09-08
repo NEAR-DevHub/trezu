@@ -1111,12 +1111,10 @@ mod tests {
     #[sqlx::test]
     async fn disabled_gate_ignores_invite_codes(pool: PgPool) {
         let state = invite_state(pool.clone(), InviteGate::default());
-        let (status, body) = post_create(
-            &state,
-            &issue_auth_cookie(&pool, &state, CREATOR).await,
-            None,
-        )
-        .await;
-        assert_eq!(status, StatusCode::OK, "body: {body}");
+        let cookie = issue_auth_cookie(&pool, &state, CREATOR).await;
+        for code in [None, Some("anything")] {
+            let (status, body) = post_create(&state, &cookie, code).await;
+            assert_eq!(status, StatusCode::OK, "code {code:?} body: {body}");
+        }
     }
 }
