@@ -443,6 +443,8 @@ export function AssetsTable({ aggregatedTokens }: Props) {
     );
 }
 
+const SKELETON_ROWS = ["a", "b", "c"];
+
 const SKELETON_HEAD_CLASS =
     "h-auto px-3 py-2.5 font-medium text-gray-500 text-sm/5 normal-case dark:text-gray-400";
 
@@ -493,14 +495,10 @@ export function AssetsTableSkeleton({
                         <TableHead className="hidden w-14 p-0 sm:table-cell sm:w-16" />
                     </TableRow>
                 </TableHeader>
-                <TableBody
-                    className={
-                        overlay ? TABLE_CARD_FILL_CLASS : TABLE_CARD_CLASS
-                    }
-                >
-                    {Array.from({ length: 3 }).map((_, idx) => (
+                <TableBody className={overlay ? undefined : TABLE_CARD_CLASS}>
+                    {SKELETON_ROWS.map((row, idx) => (
                         <TableRow
-                            key={`skeleton-row-${idx}`}
+                            key={row}
                             className={cn(
                                 "border-0 hover:bg-transparent",
                                 overlay &&
@@ -546,10 +544,8 @@ export function AssetsTableSkeleton({
                 </TableBody>
             </Table>
             {overlay ? (
-                <div className="pointer-events-none absolute inset-x-0 top-10 bottom-0 overflow-hidden rounded-lg border border-gray-200 px-6 dark:border-white/5">
-                    <div className="flex h-full items-center justify-center">
-                        {overlay}
-                    </div>
+                <div className="pointer-events-none absolute inset-x-0 top-10 bottom-0 flex items-center justify-center px-6">
+                    <div className="pointer-events-auto">{overlay}</div>
                 </div>
             ) : null}
         </div>
