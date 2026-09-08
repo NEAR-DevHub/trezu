@@ -1030,14 +1030,14 @@
         },
         "policy": {
             "addMembers": "Perbarui Kebijakan - Tambah Anggota Baru",
-            "addMembersSuccess": "Permintaan anggota baru berhasil dibuat",
+            "addMembersSuccess": "Permintaan tambah anggota dibuat",
             "editMember": "Perbarui Kebijakan - Ubah Izin Anggota",
             "editMembers": "Perbarui Kebijakan - Ubah Beberapa Anggota",
-            "editMemberSuccess": "Permintaan pembaruan peran anggota berhasil dibuat",
-            "editMembersSuccess": "Permintaan pembaruan peran anggota massal berhasil dibuat",
+            "editMemberSuccess": "Permintaan edit anggota dibuat",
+            "editMembersSuccess": "Permintaan edit beberapa anggota dibuat",
             "removeMember": "Perbarui Kebijakan - Hapus Anggota",
             "removeMembers": "Perbarui Kebijakan - Hapus Anggota",
-            "removeMemberSuccess": "Permintaan penghapusan anggota berhasil dibuat",
+            "removeMemberSuccess": "Permintaan hapus anggota dibuat",
             "createProposalFailed": "Gagal membuat permintaan anggota. Silakan coba lagi."
         },
         "infoSection": {
@@ -1097,11 +1097,11 @@
             "missingData": "Data yang diperlukan hilang",
             "thresholdProposalTitle": "Perbarui kebijakan - Ambang Pemungutan Suara",
             "thresholdProposalSummary": "{account} meminta untuk mengubah ambang pemungutan suara dari {oldValue} menjadi {newValue}.",
-            "thresholdSubmitted": "Permintaan untuk memperbarui ambang pemungutan suara telah dikirim",
+            "thresholdSubmitted": "Permintaan ambang voting dibuat",
             "createProposalFailed": "Gagal membuat usulan",
             "durationProposalTitle": "Perbarui kebijakan - Durasi Pemungutan Suara",
             "durationProposalSummary": "{account} meminta untuk mengubah durasi pemungutan suara dari {oldValue} menjadi {newValue}.",
-            "durationSubmitted": "Permintaan berhasil dibuat",
+            "durationSubmitted": "Permintaan durasi voting dibuat",
             "viewRequest": "Lihat permintaan",
             "membersWhoCanVote": "Anggota yang dapat memilih",
             "durationHeading": "Durasi Voting",
@@ -1216,7 +1216,7 @@
         "confirmSubmit": "Konfirmasi dan Kirim Permintaan",
         "useDifferentAddress": "Gunakan alamat berbeda",
         "failed1ClickQuote": "Gagal membuat kuotasi transfer 1Click",
-        "paymentSubmitted": "Permintaan untuk mengirim pembayaran telah dikirim",
+        "paymentSubmitted": "Permintaan kirim dibuat",
         "confidentialTooltip": "Detail penerima dan jumlah yang diminta sepenuhnya rahasia.",
         "destinationNetwork": "Jaringan tujuan",
         "selectRecipientPlaceholder": "Pilih penerima",
@@ -1228,7 +1228,7 @@
         "comingSoonToast": "Kiriman massal akan segera hadir!",
         "submittingList": "Mengirim daftar kiriman massal",
         "submittingProposal": "Mengirim usulan",
-        "proposalSubmitted": "Proposal kiriman massal dikirim",
+        "proposalSubmitted": "Permintaan kirim massal dibuat",
         "submitListFailed": "Gagal mengirim daftar pembayaran",
         "submitFailed": "Gagal mengirim kiriman massal",
         "quoteFetchFailed": "Tidak dapat mengambil biaya transfer. Silakan coba lagi.",
@@ -1317,7 +1317,7 @@
         "awaitingTitle": "Menunggu persetujuan",
         "awaitingDescription": "Permintaan aktivasi telah dibuat. Setelah cukup anggota treasuri menyetujuinya, kunci akses massal rahasia didaftarkan dan kiriman massal terbuka otomatis.",
         "awaitingHint": "Tidak ada tindakan lain setelah persetujuan — halaman ini diperbarui otomatis.",
-        "proposalCreated": "Permintaan aktivasi dibuat — menunggu persetujuan anggota",
+        "proposalCreated": "Permintaan aktivasi dibuat",
         "activationFailed": "Gagal memulai aktivasi kiriman massal",
         "errorTitle": "Tidak dapat memuat status aktivasi",
         "noPermissionNote": "Anda tidak memiliki izin untuk memulai aktivasi. Minta anggota treasuri dengan izin proposal untuk mengaktifkan kiriman massal.",
@@ -1336,7 +1336,7 @@
         "validation": {
             "amountPositive": "Jumlah harus lebih besar dari 0"
         },
-        "requestSubmitted": "Permintaan pertukaran telah dikirim",
+        "requestSubmitted": "Permintaan swap dibuat",
         "heading": "Tukar",
         "sell": "Jual",
         "receive": "Terima",
@@ -1383,7 +1383,7 @@
             "review": "Tinjau"
         },
         "proposalTitle": "Buat jadwal vesting untuk {address}",
-        "scheduleSubmitted": "Permintaan untuk membuat jadwal vesting telah dikirim",
+        "scheduleSubmitted": "Permintaan vesting dibuat",
         "heading": "Jadwal Vesting Baru",
         "amount": "Jumlah",
         "startDate": "Tanggal Mulai",
@@ -2556,7 +2556,7 @@
         "fill": {
             "noTemplate": "Tidak ada templat yang ditemukan untuk “{slug}”.",
             "invalidManifest": "Manifest templat ini tidak valid:",
-            "proposalFiled": "Permintaan diajukan"
+            "proposalFiled": "Permintaan kustom dibuat"
         },
         "visual": {
             "detailsTitle": "Detail",
@@ -2668,7 +2668,7 @@
     "moveAssets": {
         "title": "Pindahkan Aset",
         "description": "Pindahkan aset dari rantai publik ke treasury Rahasia Anda.",
-        "submitted": "Permintaan pemindahan dikirim",
+        "submitted": "Permintaan pemindahan dibuat",
         "banner": {
             "title": "<amount></amount> masuk ke saldo publik Anda",
             "description": "Seseorang mengirimnya lewat jaringan yang salah. Pindahkan ke sini agar menjadi rahasia.",

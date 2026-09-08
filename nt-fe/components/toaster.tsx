@@ -45,7 +45,7 @@ export function Toaster() {
             richColors={false}
             closeButton={false}
             offset={isMobile ? 12 : 24}
-            mobileOffset={{ top: 12, left: 0, right: 0 }}
+            mobileOffset={{ top: 12, left: 16, right: 16 }}
             toastOptions={{
                 unstyled: false,
                 classNames: {
@@ -63,7 +63,7 @@ export function Toaster() {
                 success: (
                     <Icon
                         icon={CheckIcon}
-                        className="size-5 p-0.5 rounded-full bg-general-success-foreground stroke-3 text-[#171717] shrink-0"
+                        className="size-[1.09375rem] rounded-full bg-general-success-foreground stroke-3 text-[#171717] shrink-0"
                     />
                 ),
                 error: <ErrorIcon />,

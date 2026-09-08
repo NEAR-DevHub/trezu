@@ -1030,14 +1030,14 @@
         },
         "policy": {
             "addMembers": "עדכון מדיניות - הוספת חברים חדשים",
-            "addMembersSuccess": "בקשת חבר חדש נוצרה בהצלחה",
+            "addMembersSuccess": "בקשת הוספת חברים נוצרה",
             "editMember": "עדכון מדיניות - עריכת הרשאות חבר",
             "editMembers": "עדכון מדיניות - עריכת חברים מרובים",
-            "editMemberSuccess": "בקשת עדכון תפקידי חבר נוצרה בהצלחה",
-            "editMembersSuccess": "בקשת עדכון תפקידי חברים בכמויות נוצרה בהצלחה",
+            "editMemberSuccess": "בקשת עריכת חבר נוצרה",
+            "editMembersSuccess": "בקשת עריכת חברים נוצרה",
             "removeMember": "עדכון מדיניות - הסרת חבר",
             "removeMembers": "עדכון מדיניות - הסרת חברים",
-            "removeMemberSuccess": "בקשת הסרת חבר נוצרה בהצלחה",
+            "removeMemberSuccess": "בקשת הסרת חבר נוצרה",
             "createProposalFailed": "יצירת בקשת החבר נכשלה. נסה שוב."
         },
         "infoSection": {
@@ -1097,11 +1097,11 @@
             "missingData": "חסרים נתונים נדרשים",
             "thresholdProposalTitle": "עדכון מדיניות - ספי הצבעה",
             "thresholdProposalSummary": "{account} ביקש לשנות את סף ההצבעה מ-{oldValue} ל-{newValue}.",
-            "thresholdSubmitted": "בקשה לעדכון סף הצבעה נשלחה",
+            "thresholdSubmitted": "בקשת סף הצבעה נוצרה",
             "createProposalFailed": "יצירת ההצעה נכשלה",
             "durationProposalTitle": "עדכון מדיניות - משך הצבעה",
             "durationProposalSummary": "{account} ביקש לשנות את משך ההצבעה מ-{oldValue} ל-{newValue}.",
-            "durationSubmitted": "הבקשה נוצרה בהצלחה",
+            "durationSubmitted": "בקשת משך הצבעה נוצרה",
             "viewRequest": "הצגת הבקשה",
             "membersWhoCanVote": "חברים שיכולים להצביע",
             "durationHeading": "משך ההצבעה",
@@ -1216,7 +1216,7 @@
         "confirmSubmit": "אשר ושלח בקשה",
         "useDifferentAddress": "השתמש בכתובת אחרת",
         "failed1ClickQuote": "יצירת ציטוט העברה של 1Click נכשלה",
-        "paymentSubmitted": "בקשה לשליחת תשלום נשלחה",
+        "paymentSubmitted": "בקשת שליחה נוצרה",
         "confidentialTooltip": "פרטי הנמען והסכום המבוקש חסויים לחלוטין.",
         "destinationNetwork": "רשת יעד",
         "selectRecipientPlaceholder": "בחר נמען",
@@ -1228,7 +1228,7 @@
         "comingSoonToast": "שליחה מרובה תגיע בקרוב!",
         "submittingList": "שולח את רשימת השליחה המרובה",
         "submittingProposal": "שולח הצעה",
-        "proposalSubmitted": "בקשת שליחה מרובה נשלחה",
+        "proposalSubmitted": "בקשת שליחה מרובה נוצרה",
         "submitListFailed": "שליחת רשימת התשלומים נכשלה",
         "submitFailed": "שליחת השליחה המרובה נכשלה",
         "quoteFetchFailed": "לא ניתן היה לקבל את עמלות ההעברה. נסו שוב.",
@@ -1317,7 +1317,7 @@
         "awaitingTitle": "ממתין לאישורים",
         "awaitingDescription": "בקשת ההפעלה נוצרה. לאחר שדי חברי אוצר יאשרו אותה, מפתח הגישה המרובה החסוי יירשם והשליחה המרובה תיפתח אוטומטית.",
         "awaitingHint": "לא נדרשת פעולה נוספת לאחר האישור — הדף מתעדכן אוטומטית.",
-        "proposalCreated": "בקשת ההפעלה נוצרה — ממתין לאישורי חברים",
+        "proposalCreated": "בקשת הפעלה נוצרה",
         "activationFailed": "הפעלת השליחה המרובה נכשלה",
         "errorTitle": "לא ניתן לטעון את סטטוס ההפעלה",
         "noPermissionNote": "אין לך הרשאה להתחיל בהפעלה. בקשו מחבר אוצר עם הרשאות הצעה להפעיל שליחה מרובה.",
@@ -1336,7 +1336,7 @@
         "validation": {
             "amountPositive": "הסכום חייב להיות גדול מ-0"
         },
-        "requestSubmitted": "בקשת החלפה נשלחה",
+        "requestSubmitted": "בקשת החלפה נוצרה",
         "heading": "החלפה",
         "sell": "מכירה",
         "receive": "קבלה",
@@ -1383,7 +1383,7 @@
             "review": "סקירה"
         },
         "proposalTitle": "צור לוח זמנים להבשלה עבור {address}",
-        "scheduleSubmitted": "בקשה ליצירת לוח זמנים להבשלה נשלחה",
+        "scheduleSubmitted": "בקשת הבשלה נוצרה",
         "heading": "לוח זמנים חדש להבשלה",
         "amount": "סכום",
         "startDate": "תאריך התחלה",
@@ -2556,7 +2556,7 @@
         "fill": {
             "noTemplate": "לא נמצאה תבנית עבור ״{slug}״.",
             "invalidManifest": "המניפסט של תבנית זו אינו תקין:",
-            "proposalFiled": "הבקשה הוגשה"
+            "proposalFiled": "בקשה מותאמת נוצרה"
         },
         "visual": {
             "detailsTitle": "פרטים",
@@ -2668,7 +2668,7 @@
     "moveAssets": {
         "title": "העברת נכסים",
         "description": "העבר נכסים מהרשת הציבורית לאוצר הסודי שלך.",
-        "submitted": "בקשת ההעברה נשלחה",
+        "submitted": "בקשת העברה נוצרה",
         "banner": {
             "title": "<amount></amount> הגיעו ליתרה הציבורית שלך",
             "description": "מישהו שלח אותם ברשת הלא נכונה. העבר אותם לכאן כדי להפוך אותם לסודיים.",

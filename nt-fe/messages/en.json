@@ -1028,14 +1028,14 @@
         },
         "policy": {
             "addMembers": "Update Policy - Add New Members",
-            "addMembersSuccess": "New member request created successfully",
+            "addMembersSuccess": "Add members request created",
             "editMember": "Update Policy - Edit Member Permissions",
             "editMembers": "Update Policy - Edit Multiple Members",
-            "editMemberSuccess": "Member roles update request created successfully",
-            "editMembersSuccess": "Bulk member roles update request created successfully",
+            "editMemberSuccess": "Edit member request created",
+            "editMembersSuccess": "Edit members request created",
             "removeMember": "Update Policy - Remove Member",
             "removeMembers": "Update Policy - Remove Members",
-            "removeMemberSuccess": "Member removal request created successfully",
+            "removeMemberSuccess": "Remove member request created",
             "createProposalFailed": "Failed to create member request. Please try again."
         },
         "infoSection": {
@@ -1095,11 +1095,11 @@
             "missingData": "Missing required data",
             "thresholdProposalTitle": "Update policy - Voting Thresholds",
             "thresholdProposalSummary": "{account} requested to change voting threshold from {oldValue} to {newValue}.",
-            "thresholdSubmitted": "Request to update voting threshold submitted",
+            "thresholdSubmitted": "Voting threshold request created",
             "createProposalFailed": "Failed to create proposal",
             "durationProposalTitle": "Update policy - Voting Duration",
             "durationProposalSummary": "{account} requested to change voting duration from {oldValue} to {newValue}.",
-            "durationSubmitted": "Request created successfully",
+            "durationSubmitted": "Vote duration request created",
             "viewRequest": "View request",
             "membersWhoCanVote": "Members who can vote",
             "durationHeading": "Voting Duration",
@@ -1215,7 +1215,7 @@
         "confirmSubmit": "Create request",
         "useDifferentAddress": "Use a different address",
         "failed1ClickQuote": "Failed to create 1Click transfer quote",
-        "paymentSubmitted": "Request to send payment submitted",
+        "paymentSubmitted": "Send request created",
         "confidentialTooltip": "Recipient details and the requested amount are fully confidential.",
         "selectRecipientPlaceholder": "Select recipient",
         "tokenLabel": "Token",
@@ -1226,7 +1226,7 @@
         "comingSoonToast": "Bulk send is coming soon!",
         "submittingList": "Submitting bulk send list",
         "submittingProposal": "Submitting proposal",
-        "proposalSubmitted": "Bulk send proposal submitted",
+        "proposalSubmitted": "Bulk send request created",
         "submitListFailed": "Failed to submit payment list",
         "submitFailed": "Failed to submit bulk send",
         "quoteFetchFailed": "Couldn't fetch transfer fees. Please try again.",
@@ -1315,7 +1315,7 @@
         "awaitingTitle": "Waiting for approvals",
         "awaitingDescription": "The activation request has been created. Once enough treasury members approve it, the confidential bulk access key is registered and bulk send unlocks automatically.",
         "awaitingHint": "No further action needed after approval — this page updates automatically.",
-        "proposalCreated": "Activation request created — waiting for member approvals",
+        "proposalCreated": "Activation request created",
         "activationFailed": "Failed to start bulk send activation",
         "errorTitle": "Couldn't load activation status",
         "noPermissionNote": "You don't have permission to start activation. Ask a treasury member with proposal permissions to activate bulk send.",
@@ -1334,7 +1334,7 @@
         "validation": {
             "amountPositive": "Amount must be greater than 0"
         },
-        "requestSubmitted": "Exchange request submitted",
+        "requestSubmitted": "Swap request created",
         "heading": "Swap",
         "sell": "Sell",
         "receive": "Receive",
@@ -1381,7 +1381,7 @@
             "review": "Review"
         },
         "proposalTitle": "Create vesting schedule for {address}",
-        "scheduleSubmitted": "Request to create vesting schedule submitted",
+        "scheduleSubmitted": "Vesting request created",
         "heading": "New vesting schedule",
         "amount": "Amount",
         "startDate": "Start Date",
@@ -2554,7 +2554,7 @@
         "fill": {
             "noTemplate": "No template found for “{slug}”.",
             "invalidManifest": "This template’s manifest is invalid:",
-            "proposalFiled": "Request filed"
+            "proposalFiled": "Custom request created"
         },
         "visual": {
             "detailsTitle": "Details",
@@ -2666,7 +2666,7 @@
     "moveAssets": {
         "title": "Move assets",
         "description": "Move assets from public chain to your Confidential treasury.",
-        "submitted": "Move request submitted",
+        "submitted": "Move request created",
         "banner": {
             "title": "<amount></amount> landed on your public balance",
             "description": "Someone sent it over the wrong network. Move it here to make it confidential.",
