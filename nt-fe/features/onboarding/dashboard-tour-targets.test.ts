@@ -84,9 +84,8 @@ describe("helpSupportTourStepSide", () => {
 });
 
 describe("helpSupportTourCardOffset", () => {
-    it("uses the same gap as Create Treasury on every screen", () => {
-        expect(helpSupportTourCardOffset(false)).toBe(10);
-        expect(helpSupportTourCardOffset(true)).toBe(10);
+    it("uses the same gap as Create Treasury", () => {
+        expect(helpSupportTourCardOffset()).toBe(10);
     });
 });
 

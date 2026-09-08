@@ -41,13 +41,11 @@ export function helpSupportTourStepSide(
     return mobile ? "bottom" : "right";
 }
 
-/**
- * Same gap as Create Treasury. nextstepjs parks a 1.5rem caret
- * `cardOffset - 2` px outside the card.
- */
-export function helpSupportTourCardOffset(
-    _mobile = isTourMobileViewport(),
-): number {
+/** Same 10px gap as Create Treasury on every viewport. */
+export function helpSupportTourCardOffset(): number {
+    // why 10: nextstepjs parks a 1.5rem caret `cardOffset - 2` px
+    // outside the card. 10 matches Create Treasury and avoids a
+    // per-viewport branch that used to open a 25px hole on phones.
     return 10;
 }
 

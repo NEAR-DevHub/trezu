@@ -23,25 +23,27 @@ export const WALLET_ADDRESS_INPUT_PROPS = {
 
 /**
  * iOS will not raise the keyboard if the first focus lands on a read-only
- * field. Unlock first; if focus already happened, ask the caller to focus
- * again after the attribute flips.
+ * field. Unlock first; if this is still the first focus on the input, ask
+ * the caller to focus again after the attribute flips.
  */
-export function walletAddressAutofillUnlock(wasReadOnly: boolean): {
+export function walletAddressAutofillUnlock(isFirstFocus: boolean): {
     readOnly: false;
     refocus: boolean;
 } {
-    return { readOnly: false, refocus: wasReadOnly };
+    return { readOnly: false, refocus: isFirstFocus };
 }
 
 /** iOS skips Contact AutoFill on read-only fields; clear it before typing. */
 export function useWalletAddressAutofillGuard(
     onFocus?: FocusEventHandler<HTMLInputElement>,
 ) {
-    const readOnlyRef = useRef(true);
     const [readOnly, setReadOnly] = useState(true);
+    // pointerdown unlocks the attribute so the upcoming focus can land
+    // editable. First-focus still refocuses — iOS may have already focused
+    // the field while it was read-only (no keyboard).
+    const pendingFirstFocusRef = useRef(true);
 
     const unlock = () => {
-        readOnlyRef.current = false;
         setReadOnly(false);
     };
 
@@ -53,8 +55,10 @@ export function useWalletAddressAutofillGuard(
         }) satisfies PointerEventHandler<HTMLInputElement>,
         onFocus: ((event) => {
             const { refocus } = walletAddressAutofillUnlock(
-                readOnlyRef.current,
+                pendingFirstFocusRef.current &&
+                    document.activeElement === event.currentTarget,
             );
+            pendingFirstFocusRef.current = false;
             unlock();
             if (refocus) {
                 const el = event.currentTarget;
