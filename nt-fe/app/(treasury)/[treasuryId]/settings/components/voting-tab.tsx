@@ -63,9 +63,11 @@ const proposalKinds = [
  * Which "these members approve …" line a role's card gets. Roles are treasury
  * data, so anything outside the two canonical ids falls back to a generic line.
  */
-function roleDescriptionId(roleName: string): string {
+function roleDescriptionId(
+    roleName: string,
+): "financial" | "governance" | "generic" {
     const id = normalizeRoleId(roleName).toLowerCase();
-    if (id === "financial" || id === "approvers") return "financial";
+    if (id === "financial") return "financial";
     if (id === "governance") return "governance";
     return "generic";
 }
