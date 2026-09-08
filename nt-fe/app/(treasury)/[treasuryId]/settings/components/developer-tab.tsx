@@ -1,5 +1,4 @@
 "use client";
-import { Icon } from "@/components/icon";
 import { CodeIcon } from "@hugeicons/core-free-icons";
 import { useTranslations } from "next-intl";
 import { useNextStep } from "nextstepjs";
@@ -7,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/button";
 import { PageCard } from "@/components/card";
+import { Icon } from "@/components/icon";
 import {
     PAGE_TOUR_STORAGE_KEYS,
     REQUEST_TEMPLATES_TOUR_NAME,

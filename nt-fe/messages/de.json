@@ -152,10 +152,6 @@
     "dateInput": {
         "placeholder": "tt.mm.jjjj"
     },
-    "thresholdSlider": {
-        "warningSingleMember": "Ein Schwellenwert von 1 von {memberCount} bedeutet, dass jedes einzelne Mitglied Transaktionen ausführen kann. Dies verringert die Sicherheit.",
-        "infoBalanced": "Ein Schwellenwert von {currentThreshold} von {memberCount} bietet ein gutes Gleichgewicht zwischen Sicherheit und operativer Flexibilität."
-    },
     "metadata": {
         "treasuryTitle": "Dashboard | Near Business",
         "landingTitle": "Near Business | Cross-Chain Treasury Management",
@@ -189,8 +185,7 @@
             "description": "Teammitglieder und Berechtigungen verwalten"
         },
         "settings": {
-            "title": "Einstellungen",
-            "description": "Passen Sie Ihre App-Einstellungen an"
+            "title": "Einstellungen"
         },
         "addressBook": {
             "title": "Adressbuch",
@@ -1061,10 +1056,7 @@
     "settings": {
         "tabs": {
             "general": "Allgemein",
-            "voting": "Abstimmung",
-            "preferences": "Präferenzen",
-            "integrations": "Integrationen",
-            "developer": "Entwickler"
+            "voting": "Abstimmung"
         },
         "general": {
             "validation": {
@@ -1076,27 +1068,23 @@
             "treasuryNotFound": "Treasury nicht gefunden",
             "treasuryName": "Treasury-Name",
             "treasuryNameDescription": "Der Name Ihrer Treasury. Er wird in der gesamten App angezeigt.",
-            "displayName": "Anzeigename",
             "displayNamePlaceholder": "Anzeigenamen eingeben",
-            "accountName": "Kontoname",
             "logo": "Logo",
             "logoDescription": "Laden Sie ein Logo für Ihre Treasury hoch. Empfohlen sind SVG, PNG oder JPG (256x256 px).",
-            "treasuryLogoAlt": "Treasury-Logo",
             "uploading": "Wird hochgeladen...",
-            "uploadLogo": "Logo hochladen",
-            "removeLogo": "Logo entfernen",
+            "removeLogo": "Entfernen",
             "logoUploaded": "Logo erfolgreich hochgeladen",
             "uploadError": "Beim Hochladen des Bildes ist ein Fehler aufgetreten. Bitte erneut versuchen.",
             "invalidLogo": "Ungültiges Logo. Bitte laden Sie eine PNG-, JPG- oder SVG-Datei hoch, die genau 256x256 px groß ist",
             "invalidImage": "Ungültige Bilddatei. Bitte laden Sie ein gültiges Bild hoch.",
             "fileReadError": "Fehler beim Lesen der Datei. Bitte erneut versuchen.",
             "primaryColor": "Primärfarbe",
-            "primaryColorDescription": "Legen Sie die Primärfarbe für die Oberflächenelemente Ihrer Treasury fest. Diese Farbe wird sowohl im hellen als auch im dunklen Modus verwendet, achten Sie daher beim Wählen neutraler Töne auf den Kontrast.",
+            "primaryColorDescription": "Lege die Primärfarbe für die Oberflächenelemente deiner Treasury fest.",
             "selectColorLabel": "Farbe {color} auswählen",
-            "saveChanges": "Änderungen speichern",
-            "saving": "Speichern...",
             "savedToast": "Deine Änderungen wurden gespeichert.",
-            "saveFailed": "Änderungen konnten nicht gespeichert werden. Bitte erneut versuchen."
+            "saveFailed": "Änderungen konnten nicht gespeichert werden. Bitte erneut versuchen.",
+            "save": "Speichern",
+            "edit": "Bearbeiten"
         },
         "voting": {
             "validation": {
@@ -1114,19 +1102,18 @@
             "durationProposalTitle": "Richtlinie aktualisieren - Abstimmungsdauer",
             "durationProposalSummary": "{account} hat beantragt, die Abstimmungsdauer von {oldValue} auf {newValue} zu ändern.",
             "durationSubmitted": "Anfrage erfolgreich erstellt",
-            "pendingTitle": "Aktive Anfrage zum Abstimmungsschwellenwert",
-            "pendingBody": "Um Konflikte zu vermeiden, müssen Sie die bestehenden ausstehenden Anfragen abschließen oder lösen, bevor Sie fortfahren. Diese Anfragen sind derzeit aktiv und müssen zuerst genehmigt oder abgelehnt werden.",
-            "viewRequest": "Anfrage anzeigen",
-            "thresholdHeading": "Abstimmungsschwellenwert",
-            "thresholdDescriptionApprovers": "Legen Sie fest, wie viele Stimmen zur Genehmigung von Zahlungs- und teambezogenen Anfragen erforderlich sind. Konfigurieren Sie die Schwellenwerte für Genehmiger und Governance separat.",
-            "thresholdDescriptionGeneric": "Legen Sie fest, wie viele Stimmen zur Genehmigung von Anfragen erforderlich sind. Konfigurieren Sie Schwellenwerte für jede Rolle basierend auf deren Verantwortlichkeiten.",
+            "viewRequest": "Anfrage ansehen",
             "membersWhoCanVote": "Mitglieder, die abstimmen können",
-            "votesRequired": "Stimmen sind zur Genehmigung von Anfragen erforderlich",
             "durationHeading": "Abstimmungsdauer",
-            "durationDescription": "Die Zeit (in Tagen), die ein Vorschlag zur Abstimmung offen bleibt. Wird die Abstimmung nicht innerhalb dieses Zeitraums abgeschlossen, läuft die Entscheidung ab.",
-            "durationApprovers": " Diese Dauer gilt gleichermaßen für Governance- und Genehmiger-Rollen.",
-            "durationGeneric": " Diese Dauer ist für alle Treasury-Rollen einheitlich.",
-            "days": "Tage"
+            "durationDescription": "Wie lange eine Anfrage offen bleibt, bevor sie abläuft. Danach ist sie weg.",
+            "days": "Tage",
+            "roleThresholdTitle": "Schwelle für {role}",
+            "roleDescription": {
+                "financial": "Diese Mitglieder genehmigen Sende- und Swap-Anfragen.",
+                "governance": "Diese Mitglieder genehmigen Änderungen an Mitgliedern und Regeln.",
+                "generic": "Diese Mitglieder genehmigen Anfragen für diese Rolle."
+            },
+            "pendingAlert": "{count, plural, one {# Einstellungsanfrage benötigt Aufmerksamkeit} other {# Einstellungsanfragen benötigen Aufmerksamkeit}}"
         },
         "preferences": {
             "timeZone": "Zeitzone",
@@ -2729,5 +2716,9 @@
             "exceedsBalance": "Betrag übersteigt das öffentliche Guthaben",
             "failed": "Verschiebungsanfrage konnte nicht vorbereitet werden. Bitte erneut versuchen."
         }
+    },
+    "thresholdStepper": {
+        "decrease": "Schwelle verringern",
+        "increase": "Schwelle erhöhen"
     }
 }

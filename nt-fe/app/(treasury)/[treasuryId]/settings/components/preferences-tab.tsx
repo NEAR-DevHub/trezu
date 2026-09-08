@@ -1,8 +1,14 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
-import { PageCard } from "@/components/card";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
 import { Button } from "@/components/button";
+import { PageCard } from "@/components/card";
+import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import {
     Select,
@@ -12,12 +18,6 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Form, FormField, FormControl, FormItem } from "@/components/ui/form";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import { getTimezones, type Timezone } from "@/lib/api";
 import { TimezonePicker } from "./timezone-picker";
 

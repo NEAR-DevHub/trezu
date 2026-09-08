@@ -1,11 +1,11 @@
 "use client";
 
-import { Icon } from "@/components/icon";
 import { ArrowDown01Icon, CheckIcon } from "@hugeicons/core-free-icons";
-import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/button";
 import { HighlightedText } from "@/components/highlighted-text";
+import { Icon } from "@/components/icon";
 import { Input } from "@/components/input";
 import {
     Popover,

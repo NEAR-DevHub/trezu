@@ -152,10 +152,6 @@
     "dateInput": {
         "placeholder": "mm/dd/yyyy"
     },
-    "thresholdSlider": {
-        "warningSingleMember": "A 1-of-{memberCount} threshold means any single member can execute transactions. This reduces security.",
-        "infoBalanced": "A {currentThreshold}-of-{memberCount} threshold provides a good balance between security and operational flexibility."
-    },
     "metadata": {
         "treasuryTitle": "Dashboard | Near Business",
         "landingTitle": "Near Business | Cross-chain Treasury Management",
@@ -189,8 +185,7 @@
             "description": "Manage team members and permissions"
         },
         "settings": {
-            "title": "Settings",
-            "description": "Adjust your application settings"
+            "title": "Settings"
         },
         "account": {
             "title": "My account",
@@ -1059,10 +1054,7 @@
     "settings": {
         "tabs": {
             "general": "General",
-            "voting": "Voting",
-            "preferences": "Preferences",
-            "integrations": "Integrations",
-            "developer": "Developer"
+            "voting": "Voting"
         },
         "general": {
             "validation": {
@@ -1074,27 +1066,23 @@
             "treasuryNotFound": "Treasury not found",
             "treasuryName": "Treasury Name",
             "treasuryNameDescription": "The name of your treasury. This will be displayed across the app.",
-            "displayName": "Display Name",
             "displayNamePlaceholder": "Enter display name",
-            "accountName": "Account Name",
             "logo": "Logo",
             "logoDescription": "Upload a logo for your treasury. Recommended SVG, PNG, or JPG (256x256 px).",
-            "treasuryLogoAlt": "Treasury logo",
             "uploading": "Uploading...",
-            "uploadLogo": "Upload logo",
-            "removeLogo": "Remove logo",
+            "removeLogo": "Remove",
             "logoUploaded": "Logo uploaded successfully",
             "uploadError": "Error occurred while uploading image, please try again.",
             "invalidLogo": "Invalid logo. Please upload a PNG, JPG, or SVG file that is exactly 256x256 px",
             "invalidImage": "Invalid image file. Please upload a valid image.",
             "fileReadError": "Error reading file. Please try again.",
             "primaryColor": "Primary Color",
-            "primaryColorDescription": "Set the primary color for your treasury's interface elements. This color will be used in both light and dark modes, so keep contrast in mind when choosing neutral shades.",
+            "primaryColorDescription": "Set the primary color for your treasury's interface elements.",
             "selectColorLabel": "Select color {color}",
-            "saveChanges": "Save changes",
-            "saving": "Saving...",
             "savedToast": "Your changes are saved.",
-            "saveFailed": "Couldn't save your changes. Try again."
+            "saveFailed": "Couldn't save your changes. Try again.",
+            "save": "Save",
+            "edit": "Edit"
         },
         "voting": {
             "validation": {
@@ -1112,19 +1100,18 @@
             "durationProposalTitle": "Update policy - Voting Duration",
             "durationProposalSummary": "{account} requested to change voting duration from {oldValue} to {newValue}.",
             "durationSubmitted": "Request created successfully",
-            "pendingTitle": "Active voting threshold request",
-            "pendingBody": "To avoid conflicts, you need to complete or resolve the existing pending requests before proceeding. These requests are currently active and must be approved or rejected first.",
             "viewRequest": "View request",
-            "thresholdHeading": "Voting Threshold",
-            "thresholdDescriptionApprovers": "Define how many votes are required to approve payment and team-related requests. Configure thresholds separately for Approvers and Governance.",
-            "thresholdDescriptionGeneric": "Define how many votes are required to approve requests. Configure thresholds for each role based on their responsibilities.",
             "membersWhoCanVote": "Members who can vote",
-            "votesRequired": "Votes are required to approve requests",
-            "durationHeading": "Vote Duration",
-            "durationDescription": "The length of time (in days) a proposal will remain open for voting. If voting is not completed within this period, the decision expires.",
-            "durationApprovers": " This duration applies equally to both Governance and Approver roles.",
-            "durationGeneric": " This duration is consistent across all treasury roles.",
-            "days": "Days"
+            "durationHeading": "Voting Duration",
+            "durationDescription": "How long a request stays open before it expires. After that, it's gone.",
+            "days": "Days",
+            "roleThresholdTitle": "{role} Threshold",
+            "roleDescription": {
+                "financial": "These members approve send and swap requests.",
+                "governance": "These members approve changes to members and rules.",
+                "generic": "These members approve requests for this role."
+            },
+            "pendingAlert": "{count, plural, =1 {# settings request needs attention} other {# settings requests need attention}}"
         },
         "preferences": {
             "timeZone": "Time Zone",
@@ -2727,5 +2714,9 @@
             "exceedsBalance": "Amount exceeds the public balance",
             "failed": "Could not prepare the move request. Please try again."
         }
+    },
+    "thresholdStepper": {
+        "decrease": "Decrease threshold",
+        "increase": "Increase threshold"
     }
 }

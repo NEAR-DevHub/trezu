@@ -1,13 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { User } from "@/components/user";
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover";
+import { useEffect, useRef, useState } from "react";
+import { ProfileAvatarChip } from "@/components/profile-avatar-chip";
+import { ScrollContainer } from "@/components/scroll-container";
 import {
     Dialog,
     DialogContent,
@@ -15,10 +12,49 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import { ScrollContainer } from "@/components/scroll-container";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { TooltipUser, User } from "@/components/user";
+import { NEAR_NETWORK_ID } from "@/constants/network-ids";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { useProfile } from "@/hooks/use-treasury-queries";
+import { getExplorerAddressUrl } from "@/lib/blockchain-utils";
+import { resolveProfileImageUrl } from "@/lib/profile-image";
 import { cn } from "@/lib/utils";
+
+/**
+ * One member of the role, as the design's 36px squircle. `User` would render
+ * the round avatar, so the chip is composed here and re-wrapped in the same
+ * tooltip and explorer link the round avatar carried.
+ */
+function MemberAvatar({ accountId }: { accountId: string }) {
+    const { data: profile } = useProfile(accountId);
+    const explorerUrl = getExplorerAddressUrl(NEAR_NETWORK_ID, accountId);
+    const chip = (
+        <ProfileAvatarChip
+            variant="large"
+            imageUrl={resolveProfileImageUrl(profile?.image)}
+            name={profile?.name ?? accountId}
+            className="rounded-lg border border-card"
+        />
+    );
+
+    return (
+        <TooltipUser accountId={accountId} triggerProps={{ asChild: false }}>
+            {explorerUrl ? (
+                <Link href={explorerUrl} target="_blank" className="flex">
+                    {chip}
+                </Link>
+            ) : (
+                chip
+            )}
+        </TooltipUser>
+    );
+}
 
 interface MemberAvatarsWithOverflowProps {
     members: string[];
@@ -43,12 +79,12 @@ export function MemberAvatarsWithOverflow({
             if (!containerRef.current) return;
 
             const containerWidth = containerRef.current.offsetWidth;
-            // Avatar size is 40px (size-10), with -8px overlap (-ml-2)
-            // So each avatar takes up 32px (40 - 8) of space
+            // Avatar size is 36px (size-9), with -9px overlap
+            // So each avatar takes up 27px (36 - 9) of space
             // Reserve ~120px for the "+X members" button
-            const avatarWidth = 32;
+            const avatarWidth = 27;
             const buttonWidth = 120;
-            const firstAvatarWidth = 40; // First avatar has no negative margin
+            const firstAvatarWidth = 36; // First avatar has no negative margin
 
             const availableWidth = containerWidth - buttonWidth;
             const calculatedCount =
@@ -132,14 +168,8 @@ export function MemberAvatarsWithOverflow({
         >
             {/* Visible member avatars */}
             {visibleMembers.map((member) => (
-                <div key={member} className="-ml-2 first:ml-0">
-                    <User
-                        accountId={member}
-                        variant="avatar"
-                        size="lg"
-                        withLink={true}
-                        withHoverCard={true}
-                    />
+                <div key={member} className="-ml-[9px] first:ml-0">
+                    <MemberAvatar accountId={member} />
                 </div>
             ))}
 

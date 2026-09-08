@@ -1,10 +1,10 @@
 "use client";
 
-import { Icon } from "@/components/icon";
 import { DatabaseIcon } from "@hugeicons/core-free-icons";
-import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useEffect, useMemo, useState } from "react";
 import { BALANCE_MASK, useIsBalanceMasked } from "@/components/balance-mask";
+import { Icon } from "@/components/icon";
 import { useAssets } from "@/hooks/use-assets";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Skeleton } from "./ui/skeleton";
@@ -36,6 +36,7 @@ export function TreasuryLogo({
     isConfidential: _isConfidential,
     alt,
     imageClassName,
+    fallbackIcon = DatabaseIcon,
     fallbackClassName,
     fallbackIconClassName,
 }: {
@@ -43,6 +44,7 @@ export function TreasuryLogo({
     isConfidential?: boolean;
     alt?: string;
     imageClassName?: string;
+    fallbackIcon?: typeof DatabaseIcon;
     fallbackClassName?: string;
     fallbackIconClassName?: string;
 }) {
@@ -77,7 +79,7 @@ export function TreasuryLogo({
                     )}
                 >
                     <Icon
-                        icon={DatabaseIcon}
+                        icon={fallbackIcon}
                         className={cn(
                             "text-muted-foreground",
                             fallbackIconClassName,

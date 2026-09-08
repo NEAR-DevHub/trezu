@@ -152,10 +152,6 @@
     "dateInput": {
         "placeholder": "jj/mm/aaaa"
     },
-    "thresholdSlider": {
-        "warningSingleMember": "Un seuil de 1 sur {memberCount} signifie qu'un seul membre peut exécuter des transactions. Cela réduit la sécurité.",
-        "infoBalanced": "Un seuil de {currentThreshold} sur {memberCount} offre un bon équilibre entre sécurité et flexibilité opérationnelle."
-    },
     "metadata": {
         "treasuryTitle": "Tableau de bord | Near Business",
         "landingTitle": "Near Business | Gestion de trésorerie multi-chaînes",
@@ -189,8 +185,7 @@
             "description": "Gérez les membres de l'équipe et les autorisations"
         },
         "settings": {
-            "title": "Paramètres",
-            "description": "Ajustez les paramètres de votre application"
+            "title": "Paramètres"
         },
         "addressBook": {
             "title": "Carnet d'adresses",
@@ -1061,10 +1056,7 @@
     "settings": {
         "tabs": {
             "general": "Général",
-            "voting": "Vote",
-            "preferences": "Préférences",
-            "integrations": "Intégrations",
-            "developer": "Développeur"
+            "voting": "Vote"
         },
         "general": {
             "validation": {
@@ -1076,27 +1068,23 @@
             "treasuryNotFound": "Trésorerie introuvable",
             "treasuryName": "Nom de la trésorerie",
             "treasuryNameDescription": "Le nom de votre trésorerie. Il sera affiché dans toute l'application.",
-            "displayName": "Nom d'affichage",
             "displayNamePlaceholder": "Saisir le nom d'affichage",
-            "accountName": "Nom du compte",
             "logo": "Logo",
             "logoDescription": "Téléchargez un logo pour votre trésorerie. SVG, PNG ou JPG recommandés (256x256 px).",
-            "treasuryLogoAlt": "Logo de la trésorerie",
             "uploading": "Téléchargement...",
-            "uploadLogo": "Télécharger le logo",
-            "removeLogo": "Supprimer le logo",
+            "removeLogo": "Supprimer",
             "logoUploaded": "Logo téléchargé avec succès",
             "uploadError": "Une erreur s'est produite lors du téléchargement de l'image, veuillez réessayer.",
             "invalidLogo": "Logo invalide. Veuillez télécharger un fichier PNG, JPG ou SVG d'exactement 256x256 px",
             "invalidImage": "Fichier image invalide. Veuillez télécharger une image valide.",
             "fileReadError": "Erreur de lecture du fichier. Veuillez réessayer.",
             "primaryColor": "Couleur principale",
-            "primaryColorDescription": "Définissez la couleur principale des éléments d'interface de votre trésorerie. Cette couleur sera utilisée en mode clair et sombre, gardez donc le contraste à l'esprit lors du choix de teintes neutres.",
+            "primaryColorDescription": "Définissez la couleur principale des éléments d'interface de votre trésorerie.",
             "selectColorLabel": "Sélectionner la couleur {color}",
-            "saveChanges": "Enregistrer les modifications",
-            "saving": "Enregistrement...",
             "savedToast": "Vos modifications ont été enregistrées.",
-            "saveFailed": "Impossible d'enregistrer vos modifications. Réessayez."
+            "saveFailed": "Impossible d'enregistrer vos modifications. Réessayez.",
+            "save": "Enregistrer",
+            "edit": "Modifier"
         },
         "voting": {
             "validation": {
@@ -1114,19 +1102,18 @@
             "durationProposalTitle": "Mettre à jour la politique - Durée de vote",
             "durationProposalSummary": "{account} a demandé de modifier la durée de vote de {oldValue} à {newValue}.",
             "durationSubmitted": "Demande créée avec succès",
-            "pendingTitle": "Demande active de seuil de vote",
-            "pendingBody": "Pour éviter les conflits, vous devez terminer ou résoudre les demandes en attente existantes avant de continuer. Ces demandes sont actuellement actives et doivent d'abord être approuvées ou rejetées.",
             "viewRequest": "Voir la demande",
-            "thresholdHeading": "Seuil de vote",
-            "thresholdDescriptionApprovers": "Définissez combien de votes sont requis pour approuver les demandes liées aux paiements et à l'équipe. Configurez les seuils séparément pour les Approbateurs et la Gouvernance.",
-            "thresholdDescriptionGeneric": "Définissez combien de votes sont requis pour approuver les demandes. Configurez les seuils pour chaque rôle en fonction de leurs responsabilités.",
             "membersWhoCanVote": "Membres qui peuvent voter",
-            "votesRequired": "Votes requis pour approuver les demandes",
-            "durationHeading": "Durée de vote",
-            "durationDescription": "La durée (en jours) pendant laquelle une proposition restera ouverte au vote. Si le vote n'est pas terminé dans ce délai, la décision expire.",
-            "durationApprovers": " Cette durée s'applique également aux rôles Gouvernance et Approbateur.",
-            "durationGeneric": " Cette durée est cohérente pour tous les rôles de la trésorerie.",
-            "days": "Jours"
+            "durationHeading": "Durée du vote",
+            "durationDescription": "Combien de temps une demande reste ouverte avant d'expirer. Ensuite, elle disparaît.",
+            "days": "Jours",
+            "roleThresholdTitle": "Seuil {role}",
+            "roleDescription": {
+                "financial": "Ces membres approuvent les demandes d'envoi et d'échange.",
+                "governance": "Ces membres approuvent les modifications des membres et des règles.",
+                "generic": "Ces membres approuvent les demandes de ce rôle."
+            },
+            "pendingAlert": "{count, plural, one {# demande de réglages nécessite votre attention} other {# demandes de réglages nécessitent votre attention}}"
         },
         "preferences": {
             "timeZone": "Fuseau horaire",
@@ -2729,5 +2716,9 @@
             "exceedsBalance": "Le montant dépasse le solde public",
             "failed": "Impossible de préparer la demande de déplacement. Veuillez réessayer."
         }
+    },
+    "thresholdStepper": {
+        "decrease": "Diminuer le seuil",
+        "increase": "Augmenter le seuil"
     }
 }

@@ -152,10 +152,6 @@
     "dateInput": {
         "placeholder": "gg.aa.yyyy"
     },
-    "thresholdSlider": {
-        "warningSingleMember": "{memberCount} üyeden 1'lik bir eşik, herhangi bir üyenin tek başına işlem gerçekleştirebileceği anlamına gelir. Bu güvenliği azaltır.",
-        "infoBalanced": "{memberCount} üyeden {currentThreshold}'lik bir eşik, güvenlik ile operasyonel esneklik arasında iyi bir denge sağlar."
-    },
     "metadata": {
         "treasuryTitle": "Panel | Near Business",
         "landingTitle": "Near Business | Zincirler Arası Hazine Yönetimi",
@@ -189,8 +185,7 @@
             "description": "Ekip üyelerini ve izinleri yönetin"
         },
         "settings": {
-            "title": "Ayarlar",
-            "description": "Uygulama ayarlarınızı düzenleyin"
+            "title": "Ayarlar"
         },
         "addressBook": {
             "title": "Adres Defteri",
@@ -1061,10 +1056,7 @@
     "settings": {
         "tabs": {
             "general": "Genel",
-            "voting": "Oylama",
-            "preferences": "Tercihler",
-            "integrations": "Entegrasyonlar",
-            "developer": "Geliştirici"
+            "voting": "Oylama"
         },
         "general": {
             "validation": {
@@ -1076,27 +1068,23 @@
             "treasuryNotFound": "Hazine bulunamadı",
             "treasuryName": "Hazine Adı",
             "treasuryNameDescription": "Hazinenizin adı. Bu, uygulama genelinde görüntülenecek.",
-            "displayName": "Görünen Ad",
             "displayNamePlaceholder": "Görünen adı girin",
-            "accountName": "Hesap Adı",
             "logo": "Logo",
             "logoDescription": "Hazineniz için bir logo yükleyin. Önerilen SVG, PNG veya JPG (256x256 px).",
-            "treasuryLogoAlt": "Hazine logosu",
             "uploading": "Yükleniyor...",
-            "uploadLogo": "Logo Yükle",
-            "removeLogo": "Logoyu Kaldır",
+            "removeLogo": "Kaldır",
             "logoUploaded": "Logo başarıyla yüklendi",
             "uploadError": "Resim yüklenirken hata oluştu, lütfen tekrar deneyin.",
             "invalidLogo": "Geçersiz logo. Lütfen tam olarak 256x256 px boyutunda bir PNG, JPG veya SVG dosyası yükleyin",
             "invalidImage": "Geçersiz resim dosyası. Lütfen geçerli bir resim yükleyin.",
             "fileReadError": "Dosya okunurken hata oluştu. Lütfen tekrar deneyin.",
             "primaryColor": "Birincil Renk",
-            "primaryColorDescription": "Hazinenizin arayüz öğeleri için birincil rengi ayarlayın. Bu renk hem açık hem de karanlık modlarda kullanılacak, bu nedenle nötr tonlar seçerken kontrastı göz önünde bulundurun.",
+            "primaryColorDescription": "Hazinenizin arayüz öğeleri için ana rengi belirleyin.",
             "selectColorLabel": "{color} rengini seç",
-            "saveChanges": "Değişiklikleri kaydet",
-            "saving": "Kaydediliyor...",
             "savedToast": "Değişiklikleriniz kaydedildi.",
-            "saveFailed": "Değişiklikler kaydedilemedi. Tekrar deneyin."
+            "saveFailed": "Değişiklikler kaydedilemedi. Tekrar deneyin.",
+            "save": "Kaydet",
+            "edit": "Düzenle"
         },
         "voting": {
             "validation": {
@@ -1114,19 +1102,18 @@
             "durationProposalTitle": "Politikayı Güncelle - Oylama Süresi",
             "durationProposalSummary": "{account} oylama süresini {oldValue} yerine {newValue} olarak değiştirmeyi talep etti.",
             "durationSubmitted": "Talep başarıyla oluşturuldu",
-            "pendingTitle": "Aktif Oylama Eşiği Talebi",
-            "pendingBody": "Çakışmaları önlemek için, devam etmeden önce mevcut bekleyen talepleri tamamlamanız veya çözmeniz gerekir. Bu talepler şu anda aktif ve önce onaylanmalı veya reddedilmelidir.",
-            "viewRequest": "Talebi Görüntüle",
-            "thresholdHeading": "Oylama Eşiği",
-            "thresholdDescriptionApprovers": "Ödeme ve ekiple ilgili taleplerin onaylanması için kaç oy gerektiğini tanımlayın. Onaylayanlar ve Yönetişim için eşikleri ayrı yapılandırın.",
-            "thresholdDescriptionGeneric": "Taleplerin onaylanması için kaç oy gerektiğini tanımlayın. Sorumluluklarına göre her rol için eşikleri yapılandırın.",
+            "viewRequest": "Talebi görüntüle",
             "membersWhoCanVote": "Oy kullanabilen üyeler",
-            "votesRequired": "Talepleri onaylamak için oy gereklidir",
             "durationHeading": "Oylama Süresi",
-            "durationDescription": "Bir önerinin oylama için açık kalacağı süre (gün cinsinden). Bu süre içinde oylama tamamlanmazsa karar süresi dolar.",
-            "durationApprovers": " Bu süre hem Yönetişim hem de Onaylayan rolleri için eşit olarak geçerlidir.",
-            "durationGeneric": " Bu süre tüm hazine rolleri arasında tutarlıdır.",
-            "days": "Gün"
+            "durationDescription": "Bir talebin süresi dolmadan önce ne kadar açık kalacağı. Sonrasında kaybolur.",
+            "days": "Gün",
+            "roleThresholdTitle": "{role} Eşiği",
+            "roleDescription": {
+                "financial": "Bu üyeler gönderme ve takas taleplerini onaylar.",
+                "governance": "Bu üyeler üye ve kural değişikliklerini onaylar.",
+                "generic": "Bu üyeler bu role ait talepleri onaylar."
+            },
+            "pendingAlert": "{count, plural, one {# ayar talebi ilgilenilmeyi bekliyor} other {# ayar talebi ilgilenilmeyi bekliyor}}"
         },
         "preferences": {
             "timeZone": "Saat Dilimi",
@@ -2729,5 +2716,9 @@
             "exceedsBalance": "Tutar herkese açık bakiyeyi aşıyor",
             "failed": "Taşıma isteği hazırlanamadı. Lütfen tekrar deneyin."
         }
+    },
+    "thresholdStepper": {
+        "decrease": "Eşiği azalt",
+        "increase": "Eşiği artır"
     }
 }

@@ -152,10 +152,6 @@
     "dateInput": {
         "placeholder": "dd/mm/aaaa"
     },
-    "thresholdSlider": {
-        "warningSingleMember": "Um limite de 1 de {memberCount} significa que qualquer membro pode executar transações. Isso reduz a segurança.",
-        "infoBalanced": "Um limite de {currentThreshold} de {memberCount} oferece um bom equilíbrio entre segurança e flexibilidade operacional."
-    },
     "metadata": {
         "treasuryTitle": "Painel | Near Business",
         "landingTitle": "Near Business | Gestão de tesouraria multichain",
@@ -189,8 +185,7 @@
             "description": "Gerencie membros da equipe e permissões"
         },
         "settings": {
-            "title": "Configurações",
-            "description": "Ajuste as configurações do aplicativo"
+            "title": "Configurações"
         },
         "addressBook": {
             "title": "Catálogo de endereços",
@@ -1061,10 +1056,7 @@
     "settings": {
         "tabs": {
             "general": "Geral",
-            "voting": "Votação",
-            "preferences": "Preferências",
-            "integrations": "Integrações",
-            "developer": "Desenvolvedor"
+            "voting": "Votação"
         },
         "general": {
             "validation": {
@@ -1076,27 +1068,23 @@
             "treasuryNotFound": "Tesouraria não encontrada",
             "treasuryName": "Nome da tesouraria",
             "treasuryNameDescription": "O nome da sua tesouraria. Será exibido em todo o aplicativo.",
-            "displayName": "Nome de exibição",
             "displayNamePlaceholder": "Insira o nome de exibição",
-            "accountName": "Nome da conta",
             "logo": "Logotipo",
             "logoDescription": "Faça upload de um logotipo para sua tesouraria. Recomendado SVG, PNG ou JPG (256x256 px).",
-            "treasuryLogoAlt": "Logotipo da tesouraria",
             "uploading": "Enviando...",
-            "uploadLogo": "Fazer upload do logotipo",
-            "removeLogo": "Remover logotipo",
+            "removeLogo": "Remover",
             "logoUploaded": "Logotipo enviado com sucesso",
             "uploadError": "Ocorreu um erro ao enviar a imagem, por favor tente novamente.",
             "invalidLogo": "Logotipo inválido. Por favor, envie um arquivo PNG, JPG ou SVG com exatamente 256x256 px",
             "invalidImage": "Arquivo de imagem inválido. Por favor, envie uma imagem válida.",
             "fileReadError": "Erro ao ler o arquivo. Por favor, tente novamente.",
             "primaryColor": "Cor primária",
-            "primaryColorDescription": "Defina a cor primária para os elementos da interface da sua tesouraria. Esta cor será usada nos modos claro e escuro, então leve em conta o contraste ao escolher tons neutros.",
+            "primaryColorDescription": "Defina a cor principal dos elementos de interface da sua tesouraria.",
             "selectColorLabel": "Selecionar cor {color}",
-            "saveChanges": "Salvar alterações",
-            "saving": "Salvando...",
             "savedToast": "Suas alterações foram salvas.",
-            "saveFailed": "Não foi possível salvar as alterações. Tente novamente."
+            "saveFailed": "Não foi possível salvar as alterações. Tente novamente.",
+            "save": "Salvar",
+            "edit": "Editar"
         },
         "voting": {
             "validation": {
@@ -1114,19 +1102,18 @@
             "durationProposalTitle": "Atualizar política - Duração da votação",
             "durationProposalSummary": "{account} solicitou alterar a duração da votação de {oldValue} para {newValue}.",
             "durationSubmitted": "Solicitação criada com sucesso",
-            "pendingTitle": "Solicitação de limite de votação ativa",
-            "pendingBody": "Para evitar conflitos, você precisa concluir ou resolver as solicitações pendentes existentes antes de prosseguir. Estas solicitações estão atualmente ativas e devem ser aprovadas ou rejeitadas primeiro.",
             "viewRequest": "Ver solicitação",
-            "thresholdHeading": "Limite de votação",
-            "thresholdDescriptionApprovers": "Defina quantos votos são necessários para aprovar solicitações de pagamento e relacionadas à equipe. Configure os limites separadamente para Aprovadores e Governança.",
-            "thresholdDescriptionGeneric": "Defina quantos votos são necessários para aprovar solicitações. Configure os limites para cada função com base em suas responsabilidades.",
             "membersWhoCanVote": "Membros que podem votar",
-            "votesRequired": "Votos são necessários para aprovar solicitações",
-            "durationHeading": "Duração do voto",
-            "durationDescription": "O tempo (em dias) que uma proposta permanecerá aberta para votação. Se a votação não for concluída neste período, a decisão expira.",
-            "durationApprovers": " Esta duração se aplica igualmente às funções de Governança e Aprovadores.",
-            "durationGeneric": " Esta duração é a mesma para todas as funções da tesouraria.",
-            "days": "Dias"
+            "durationHeading": "Duração da votação",
+            "durationDescription": "Por quanto tempo uma solicitação fica aberta antes de expirar. Depois disso, ela some.",
+            "days": "Dias",
+            "roleThresholdTitle": "Limite de {role}",
+            "roleDescription": {
+                "financial": "Estes membros aprovam solicitações de envio e troca.",
+                "governance": "Estes membros aprovam alterações de membros e regras.",
+                "generic": "Estes membros aprovam solicitações desta função."
+            },
+            "pendingAlert": "{count, plural, one {# solicitação de configurações precisa de atenção} other {# solicitações de configurações precisam de atenção}}"
         },
         "preferences": {
             "timeZone": "Fuso horário",
@@ -2729,5 +2716,9 @@
             "exceedsBalance": "O valor excede o saldo público",
             "failed": "Não foi possível preparar o pedido de movimentação. Tente novamente."
         }
+    },
+    "thresholdStepper": {
+        "decrease": "Diminuir o limite",
+        "increase": "Aumentar o limite"
     }
 }

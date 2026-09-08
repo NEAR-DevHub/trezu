@@ -1,24 +1,29 @@
 "use client";
 
-import { Icon } from "@/components/icon";
-import { LoaderCircleIcon } from "@hugeicons/core-free-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
+import {
+    Coins01Icon,
+    LoaderCircleIcon,
+    PaletteIcon,
+} from "@hugeicons/core-free-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import { trackEvent } from "@/lib/analytics";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/button";
 import { PageCard } from "@/components/card";
+import { Icon } from "@/components/icon";
 import { Input } from "@/components/input";
 import { TreasuryLogo } from "@/components/treasury-info";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
-import { Label } from "@/components/ui/label";
 import { useTreasury } from "@/hooks/use-treasury";
+import { trackEvent } from "@/lib/analytics";
 import { updateTreasurySettings } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
+import { disabledActionClasses } from "./button-styles";
 
 const COLOR_OPTIONS = [
     "#000000", // black (appears as white in dark mode)
@@ -43,10 +48,46 @@ const COLOR_OPTIONS = [
 
 type GeneralFormValues = {
     displayName: string;
-    accountName: string;
     primaryColor: string;
     logo: string | null;
 };
+
+/** Tile + glyph that leads every settings section; callers own the surface. */
+function SectionIcon({
+    icon,
+    className,
+}: {
+    icon: typeof Coins01Icon;
+    className?: string;
+}) {
+    return (
+        <div
+            className={cn(
+                "flex size-10 shrink-0 items-center justify-center",
+                className,
+            )}
+        >
+            <Icon icon={icon} className="size-[18px]" />
+        </div>
+    );
+}
+
+function SectionText({
+    title,
+    description,
+}: {
+    title: string;
+    description: string;
+}) {
+    return (
+        <div className="flex flex-col gap-1">
+            <h3 className="text-base font-semibold leading-[1.2]">{title}</h3>
+            <p className="text-sm font-medium leading-[1.5] text-general-secondary-foreground">
+                {description}
+            </p>
+        </div>
+    );
+}
 
 export function GeneralTab() {
     const t = useTranslations("settings.general");
@@ -58,7 +99,6 @@ export function GeneralTab() {
                     .string()
                     .min(1, t("validation.displayNameRequired"))
                     .max(100, t("validation.displayNameMax")),
-                accountName: z.string(),
                 primaryColor: z.string(),
                 logo: z.string().nullable(),
             }),
@@ -69,7 +109,8 @@ export function GeneralTab() {
     const queryClient = useQueryClient();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploadingImage, setUploadingImage] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [savingName, setSavingName] = useState(false);
+    const [savingColor, setSavingColor] = useState(false);
 
     // Any DAO member (not guest / Everyone-only). Backend enforces membership.
     const canEdit = Boolean(accountId && !isGuestTreasury);
@@ -78,7 +119,6 @@ export function GeneralTab() {
         resolver: zodResolver(generalSchema),
         defaultValues: {
             displayName: "",
-            accountName: "",
             primaryColor: "",
             logo: null,
         },
@@ -87,33 +127,35 @@ export function GeneralTab() {
     // Update form when treasury data loads
     useEffect(() => {
         if (config) {
-            const treasuryData = {
+            form.reset({
                 displayName: config?.name || "",
-                accountName: treasuryId || "",
                 primaryColor: config.metadata?.primaryColor || "",
                 logo: config.metadata?.flagLogo || null,
-            };
-            form.reset(treasuryData);
+            });
         }
-    }, [config, treasuryId, form]);
+    }, [config, form]);
 
-    const onSubmit = async (data: GeneralFormValues) => {
+    /**
+     * Each section saves on its own, so a patch is merged over the current form
+     * values — the backend always takes the full settings triple.
+     */
+    const persist = async (patch: Partial<GeneralFormValues>) => {
         if (!treasuryId || !config) {
             toast.error(t("treasuryNotFound"));
-            return;
+            return false;
         }
         if (!canEdit) {
             toast.error(tAuth("noPermission"));
-            return;
+            return false;
         }
 
-        setIsSubmitting(true);
+        const values = { ...form.getValues(), ...patch };
         try {
             await updateTreasurySettings({
                 treasuryId,
-                displayName: data.displayName.trim(),
-                flagLogo: data.logo?.trim() || null,
-                primaryColor: data.primaryColor.trim() || null,
+                displayName: values.displayName.trim(),
+                flagLogo: values.logo?.trim() || null,
+                primaryColor: values.primaryColor.trim() || null,
             });
 
             await Promise.all([
@@ -123,21 +165,32 @@ export function GeneralTab() {
                 queryClient.invalidateQueries({ queryKey: ["userTreasuries"] }),
             ]);
 
-            form.reset(data);
+            form.reset(values);
             toast.success(t("savedToast"));
             trackEvent("treasury-settings-updated", {
                 treasury_id: treasuryId ?? "",
             });
+            return true;
         } catch (error) {
             console.error("Error saving treasury settings:", error);
             toast.error(t("saveFailed"));
-        } finally {
-            setIsSubmitting(false);
+            return false;
         }
     };
 
-    const handleColorChange = (color: string) => {
-        form.setValue("primaryColor", color, { shouldDirty: true });
+    const handleSaveName = async (event: React.FormEvent) => {
+        event.preventDefault();
+        if (!(await form.trigger("displayName"))) return;
+
+        setSavingName(true);
+        await persist({});
+        setSavingName(false);
+    };
+
+    const handleSaveColor = async () => {
+        setSavingColor(true);
+        await persist({});
+        setSavingColor(false);
     };
 
     const uploadImageToServer = async (file: File) => {
@@ -154,7 +207,7 @@ export function GeneralTab() {
             if (result.cid) {
                 const imageUrl = `https://ipfs.near.social/ipfs/${result.cid}`;
                 form.setValue("logo", imageUrl, { shouldDirty: true });
-                toast.success(t("logoUploaded"));
+                await persist({ logo: imageUrl });
             } else {
                 toast.error(t("uploadError"));
             }
@@ -203,33 +256,37 @@ export function GeneralTab() {
         }
     };
 
-    const handleUploadClick = () => {
-        fileInputRef.current?.click();
+    const handleRemoveLogo = async () => {
+        setUploadingImage(true);
+        form.setValue("logo", null, { shouldDirty: true });
+        await persist({ logo: null });
+        setUploadingImage(false);
     };
+
+    const logo = form.watch("logo");
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <PageCard>
-                    <div>
-                        <h3 className="text-lg font-semibold">
-                            {t("treasuryName")}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                            {t("treasuryNameDescription")}
-                        </p>
-                    </div>
-
-                    <div className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="displayName"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="display-name">
-                                            {t("displayName")}
-                                        </Label>
+            <div className="flex flex-col gap-5">
+                <PageCard className="flex-row gap-3">
+                    <SectionIcon
+                        icon={Coins01Icon}
+                        className="rounded-full bg-general-bg-primary text-green-500"
+                    />
+                    <div className="flex min-w-0 flex-1 flex-col gap-4">
+                        <SectionText
+                            title={t("treasuryName")}
+                            description={t("treasuryNameDescription")}
+                        />
+                        <form
+                            onSubmit={handleSaveName}
+                            className="flex items-center gap-2"
+                        >
+                            <FormField
+                                control={form.control}
+                                name="displayName"
+                                render={({ field }) => (
+                                    <FormItem className="min-w-0 flex-1">
                                         <FormControl>
                                             <Input
                                                 id="display-name"
@@ -238,207 +295,188 @@ export function GeneralTab() {
                                                 placeholder={t(
                                                     "displayNamePlaceholder",
                                                 )}
+                                                inputClassName="h-10 rounded-lg"
                                                 disabled={!canEdit}
                                             />
                                         </FormControl>
-                                        {form.formState.errors.displayName && (
-                                            <p className="text-sm text-destructive">
-                                                {
-                                                    form.formState.errors
-                                                        .displayName.message
-                                                }
-                                            </p>
-                                        )}
-                                    </div>
-                                </FormItem>
-                            )}
-                        />
+                                    </FormItem>
+                                )}
+                            />
+                            <Button
+                                type="submit"
+                                className={cn(
+                                    "h-10 px-4 text-sm leading-none",
+                                    disabledActionClasses,
+                                )}
+                                disabled={
+                                    savingName ||
+                                    !form.formState.dirtyFields.displayName ||
+                                    !canEdit
+                                }
+                            >
+                                {savingName && (
+                                    <Icon
+                                        icon={LoaderCircleIcon}
+                                        className="animate-spin"
+                                    />
+                                )}
+                                {t("save")}
+                            </Button>
+                        </form>
+                        {form.formState.errors.displayName && (
+                            <p className="text-sm text-destructive">
+                                {form.formState.errors.displayName.message}
+                            </p>
+                        )}
+                    </div>
+                </PageCard>
 
+                <PageCard className="flex-row gap-3">
+                    {/* The uploaded logo takes over the tile; the green coins
+                        squircle is only the empty state. */}
+                    <TreasuryLogo
+                        logo={logo}
+                        fallbackIcon={Coins01Icon}
+                        imageClassName="size-10 shrink-0 rounded-lg object-cover"
+                        fallbackClassName="size-10 shrink-0 rounded-lg bg-green-700"
+                        fallbackIconClassName="size-[18px] text-white"
+                    />
+                    <div className="flex min-w-0 flex-1 flex-col gap-4">
+                        <SectionText
+                            title={t("logo")}
+                            description={t("logoDescription")}
+                        />
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/png, image/jpeg, image/svg+xml"
+                            onChange={handleImageChange}
+                            className="hidden"
+                            disabled={!canEdit}
+                        />
+                        <div className="flex items-center gap-2">
+                            <Button
+                                type="button"
+                                variant="neutral"
+                                className="h-10 px-4 text-sm leading-none"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={uploadingImage || !canEdit}
+                            >
+                                {uploadingImage && (
+                                    <Icon
+                                        icon={LoaderCircleIcon}
+                                        className="animate-spin"
+                                    />
+                                )}
+                                {uploadingImage ? t("uploading") : t("edit")}
+                            </Button>
+                            {logo && (
+                                <Button
+                                    type="button"
+                                    variant="neutral"
+                                    className="h-10 px-4 text-sm leading-none"
+                                    onClick={handleRemoveLogo}
+                                    disabled={uploadingImage || !canEdit}
+                                >
+                                    {t("removeLogo")}
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                </PageCard>
+
+                <PageCard className="flex-row gap-3">
+                    <SectionIcon
+                        icon={PaletteIcon}
+                        className="rounded-full bg-general-bg-primary text-green-500"
+                    />
+                    <div className="flex min-w-0 flex-1 flex-col gap-4">
+                        <SectionText
+                            title={t("primaryColor")}
+                            description={t("primaryColorDescription")}
+                        />
                         <FormField
                             control={form.control}
-                            name="accountName"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="account-name">
-                                            {t("accountName")}
-                                        </Label>
-                                        <FormControl>
-                                            <Input
-                                                id="account-name"
-                                                clearable={false}
-                                                {...field}
-                                                disabled={true}
-                                            />
-                                        </FormControl>
-                                    </div>
-                                </FormItem>
-                            )}
+                            name="primaryColor"
+                            render={({ field }) => {
+                                // Unset color uses theme default (black / reverse in dark),
+                                // same as the first swatch — show it as selected.
+                                const selectedColor =
+                                    field.value || COLOR_OPTIONS[0];
+
+                                return (
+                                    <FormItem>
+                                        <div className="flex flex-wrap gap-[11px] py-1">
+                                            {COLOR_OPTIONS.map((color) => (
+                                                <button
+                                                    key={color}
+                                                    type="button"
+                                                    onClick={() =>
+                                                        form.setValue(
+                                                            "primaryColor",
+                                                            color,
+                                                            {
+                                                                shouldDirty: true,
+                                                            },
+                                                        )
+                                                    }
+                                                    disabled={!canEdit}
+                                                    className={`size-7 cursor-pointer rounded-full transition-all hover:scale-110 disabled:cursor-not-allowed disabled:opacity-50 ${
+                                                        selectedColor === color
+                                                            ? "ring-2 ring-general-bg-primary ring-offset-2 ring-offset-card"
+                                                            : ""
+                                                    } ${color === "#000000" ? "bg-black dark:bg-white" : ""}`}
+                                                    style={
+                                                        color === "#000000"
+                                                            ? {}
+                                                            : {
+                                                                  backgroundColor:
+                                                                      color,
+                                                              }
+                                                    }
+                                                    aria-label={t(
+                                                        "selectColorLabel",
+                                                        { color },
+                                                    )}
+                                                />
+                                            ))}
+                                        </div>
+                                    </FormItem>
+                                );
+                            }}
                         />
-                    </div>
-                </PageCard>
-
-                <PageCard>
-                    <div>
-                        <h3 className="text-lg font-semibold">{t("logo")}</h3>
-                        <p className="text-sm text-muted-foreground">
-                            {t("logoDescription")}
-                        </p>
-                    </div>
-                    <FormField
-                        control={form.control}
-                        name="logo"
-                        render={({ field }) => (
-                            <FormItem>
-                                <div className="flex items-center gap-4">
-                                    <div className="flex h-16 w-16 items-center justify-center rounded-lg">
-                                        <TreasuryLogo
-                                            logo={field.value}
-                                            alt={t("treasuryLogoAlt")}
-                                            imageClassName="h-full w-full rounded-lg"
-                                            fallbackClassName="bg-muted rounded-full size-auto p-2.5"
-                                            fallbackIconClassName="h-8 w-8 shrink-0 text-muted-foreground"
-                                        />
-                                    </div>
-                                    <input
-                                        ref={fileInputRef}
-                                        type="file"
-                                        accept="image/png, image/jpeg, image/svg+xml"
-                                        onChange={handleImageChange}
-                                        className="hidden"
-                                        disabled={!canEdit}
+                        <div className="flex items-center">
+                            <Button
+                                type="button"
+                                className={cn(
+                                    "h-10 px-4 text-sm leading-none",
+                                    disabledActionClasses,
+                                )}
+                                onClick={handleSaveColor}
+                                disabled={
+                                    savingColor ||
+                                    !form.formState.dirtyFields.primaryColor ||
+                                    !canEdit
+                                }
+                            >
+                                {savingColor && (
+                                    <Icon
+                                        icon={LoaderCircleIcon}
+                                        className="animate-spin"
                                     />
-                                    <div className="flex gap-2">
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={handleUploadClick}
-                                            disabled={
-                                                uploadingImage || !canEdit
-                                            }
-                                        >
-                                            {uploadingImage ? (
-                                                <>
-                                                    <Icon
-                                                        icon={LoaderCircleIcon}
-                                                        className="mr-2 animate-spin"
-                                                    />
-                                                    {t("uploading")}
-                                                </>
-                                            ) : (
-                                                t("uploadLogo")
-                                            )}
-                                        </Button>
-                                        {field.value && (
-                                            <Button
-                                                type="button"
-                                                variant="link"
-                                                onClick={() => {
-                                                    field.onChange("");
-                                                    form.setValue("logo", "", {
-                                                        shouldDirty: true,
-                                                    });
-                                                }}
-                                                disabled={
-                                                    uploadingImage || !canEdit
-                                                }
-                                            >
-                                                {t("removeLogo")}
-                                            </Button>
-                                        )}
-                                    </div>
-                                </div>
-                            </FormItem>
-                        )}
-                    />
-                </PageCard>
-
-                <PageCard>
-                    <div>
-                        <h3 className="text-lg font-semibold">
-                            {t("primaryColor")}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                            {t("primaryColorDescription")}
-                        </p>
+                                )}
+                                {t("save")}
+                            </Button>
+                        </div>
                     </div>
-
-                    <FormField
-                        control={form.control}
-                        name="primaryColor"
-                        render={({ field }) => {
-                            // Unset color uses theme default (black / reverse in dark),
-                            // same as the first swatch — show it as selected.
-                            const selectedColor =
-                                field.value || COLOR_OPTIONS[0];
-
-                            return (
-                                <FormItem>
-                                    <div className="flex flex-wrap gap-2">
-                                        {COLOR_OPTIONS.map((color) => (
-                                            <button
-                                                key={color}
-                                                type="button"
-                                                onClick={() =>
-                                                    handleColorChange(color)
-                                                }
-                                                disabled={!canEdit}
-                                                className={`h-8 w-8 rounded-full transition-all hover:scale-110 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
-                                                    selectedColor === color
-                                                        ? "ring-2 ring-offset-2 ring-offset-background ring-primary"
-                                                        : ""
-                                                } ${color === "#000000" ? "bg-black dark:bg-white" : ""}`}
-                                                style={
-                                                    color === "#000000"
-                                                        ? {}
-                                                        : {
-                                                              backgroundColor:
-                                                                  color,
-                                                          }
-                                                }
-                                                aria-label={t(
-                                                    "selectColorLabel",
-                                                    {
-                                                        color,
-                                                    },
-                                                )}
-                                            />
-                                        ))}
-                                    </div>
-                                </FormItem>
-                            );
-                        }}
-                    />
                 </PageCard>
 
-                <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={
-                        isSubmitting ||
-                        uploadingImage ||
-                        !form.formState.isDirty ||
-                        !canEdit
-                    }
-                >
-                    {isSubmitting ? (
-                        <>
-                            <Icon
-                                icon={LoaderCircleIcon}
-                                className="mr-2 animate-spin"
-                            />
-                            {t("saving")}
-                        </>
-                    ) : (
-                        t("saveChanges")
-                    )}
-                </Button>
                 {!canEdit && (
-                    <p className="text-sm text-muted-foreground text-center">
+                    <p className="text-center text-sm text-muted-foreground">
                         {accountId ? tAuth("noPermission") : tAuth("noWallet")}
                     </p>
                 )}
-            </form>
+            </div>
         </Form>
     );
 }
