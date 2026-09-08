@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import {
     isKeyboardOccluding,
-    isTextEntryElement,
     shouldHideBottomNavForKeyboard,
 } from "@/lib/mobile-keyboard";
 
@@ -28,9 +27,6 @@ export function useMobileKeyboardOpen(enabled = true): boolean {
             const viewport = window.visualViewport;
             setOpen(
                 shouldHideBottomNavForKeyboard({
-                    textEntryFocused: isTextEntryElement(
-                        document.activeElement,
-                    ),
                     keyboardOccluding: viewport
                         ? isKeyboardOccluding(
                               window.innerHeight,

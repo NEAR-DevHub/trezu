@@ -63,9 +63,7 @@ export function isKeyboardOccluding(
  * reflows the page and makes iOS drop the keyboard.
  */
 export function shouldHideBottomNavForKeyboard(args: {
-    textEntryFocused: boolean;
     keyboardOccluding: boolean;
 }): boolean {
-    void args.textEntryFocused;
     return args.keyboardOccluding;
 }
