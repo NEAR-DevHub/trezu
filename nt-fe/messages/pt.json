@@ -136,6 +136,11 @@
         "title": "Serviço não disponível no seu país",
         "description": "Devido a restrições, este serviço não está disponível atualmente na sua região."
     },
+    "inviteRequired": {
+        "title": "Vamos configurar a sua tesouraria juntos",
+        "description": "As novas tesourarias começam com uma breve chamada com a nossa equipa. Marque uma abaixo.",
+        "cta": "Marcar uma demo"
+    },
     "notFound": {
         "title": "Ops, esta página não existe mais...",
         "description": "Parece que você seguiu um link que não funciona mais. Tente voltar ou retornar ao Painel.",

@@ -39,6 +39,10 @@ const MAX_CREATION_ATTEMPTS: u32 = 4;
 /// Cap on the exponential backoff between creation attempts.
 const MAX_CREATION_RETRY_BACKOFF_MS: u64 = 4_000;
 
+/// Stable error code returned (HTTP 403) when the deployment is invite-only
+/// and the request carries no accepted invite code.
+pub const INVITE_REQUIRED_ERROR: &str = "INVITE_REQUIRED";
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateTreasuryRequest {
@@ -51,6 +55,9 @@ pub struct CreateTreasuryRequest {
     pub requestors: Vec<AccountId>,
     #[serde(default)]
     pub is_confidential: bool,
+    /// Required when the backend runs invite-only (`INVITE_ONLY_ENABLED`).
+    #[serde(default)]
+    pub invite_code: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -279,6 +286,22 @@ pub async fn create_treasury_stream(
             Json(json!({
                 "error": "You must be a member of the treasury you are creating",
                 "message": "The authenticated account must appear in the treasury's requestors, governors, or financiers",
+            })),
+        ));
+    }
+
+    // Invite-only deployments reject before any creation work or stream is
+    // started. The code itself is never echoed or logged.
+    if !state
+        .env_vars
+        .invite_gate
+        .accepts(payload.invite_code.as_deref())
+    {
+        return Err((
+            StatusCode::FORBIDDEN,
+            Json(json!({
+                "error": INVITE_REQUIRED_ERROR,
+                "message": "Treasury creation is invite-only. A valid invite code is required.",
             })),
         ));
     }
@@ -894,6 +917,7 @@ mod tests {
             financiers: vec!["alice.near".parse().expect("valid account")],
             requestors: vec!["carol.near".parse().expect("valid account")],
             is_confidential: true,
+            invite_code: None,
         };
 
         let members = collect_payload_members(&payload);
@@ -914,6 +938,7 @@ mod tests {
             financiers: vec!["bob.near".parse().expect("valid account")],
             requestors: vec!["carol.near".parse().expect("valid account")],
             is_confidential: true,
+            invite_code: None,
         };
 
         // Members of the treasury may trigger the signer-funded creation.
@@ -955,5 +980,143 @@ mod tests {
             !message.contains("[TESTING]"),
             "non-testing message should not include testing label"
         );
+    }
+
+    use crate::routes::create_routes;
+    use crate::utils::env::InviteGate;
+    use crate::utils::test_utils::{build_test_state, issue_auth_cookie, send};
+    use sqlx::PgPool;
+    use std::sync::Arc;
+
+    const CREATOR: &str = "creator.near";
+
+    fn creation_payload(invite_code: Option<&str>) -> serde_json::Value {
+        let mut payload = json!({
+            "name": "Invite Test",
+            "accountId": "invite-test.sputnik-dao.near",
+            "paymentThreshold": 1,
+            "governanceThreshold": 1,
+            "governors": [CREATOR],
+            "financiers": [CREATOR],
+            "requestors": [CREATOR],
+            "isConfidential": true,
+        });
+        if let Some(code) = invite_code {
+            payload["inviteCode"] = json!(code);
+        }
+        payload
+    }
+
+    /// State with the invite gate configured and creation switched off, so a
+    /// request that passes the gate returns a terminal SSE error instead of
+    /// touching the chain.
+    fn invite_state(pool: PgPool, gate: InviteGate) -> Arc<AppState> {
+        let mut state = build_test_state(pool);
+        state.env_vars.invite_gate = gate;
+        state.env_vars.disable_treasury_creation = true;
+        Arc::new(state)
+    }
+
+    async fn creation_started_rows(pool: &PgPool) -> i64 {
+        sqlx::query_scalar("SELECT COUNT(*) FROM incomplete_treasury_creations")
+            .fetch_one(pool)
+            .await
+            .expect("count creation rows")
+    }
+
+    /// One session per test: JWTs minted in the same second share a hash.
+    async fn post_create(
+        state: &Arc<AppState>,
+        cookie: &str,
+        invite_code: Option<&str>,
+    ) -> (StatusCode, String) {
+        send(
+            create_routes(state.clone()),
+            "POST",
+            "/api/treasury/create-stream".to_string(),
+            cookie,
+            Some(creation_payload(invite_code)),
+        )
+        .await
+    }
+
+    #[sqlx::test]
+    async fn invite_only_rejects_missing_and_wrong_codes_before_any_work(pool: PgPool) {
+        let state = invite_state(
+            pool.clone(),
+            InviteGate {
+                enabled: true,
+                codes: ["alpha".to_string()].into_iter().collect(),
+            },
+        );
+
+        let cookie = issue_auth_cookie(&pool, &state, CREATOR).await;
+        for code in [None, Some("wrong"), Some("ALPHA")] {
+            let (status, body) = post_create(&state, &cookie, code).await;
+            assert_eq!(status, StatusCode::FORBIDDEN, "code {code:?} body: {body}");
+            let body: Value = serde_json::from_str(&body).expect("json error body");
+            assert_eq!(body["error"], INVITE_REQUIRED_ERROR);
+            assert!(
+                !body.to_string().contains("alpha"),
+                "configured codes must never be echoed"
+            );
+        }
+        assert_eq!(
+            creation_started_rows(&pool).await,
+            0,
+            "denied requests must not record a creation"
+        );
+    }
+
+    #[sqlx::test]
+    async fn invite_only_with_empty_list_rejects_everything(pool: PgPool) {
+        let state = invite_state(
+            pool.clone(),
+            InviteGate {
+                enabled: true,
+                codes: Default::default(),
+            },
+        );
+        let (status, body) = post_create(
+            &state,
+            &issue_auth_cookie(&pool, &state, CREATOR).await,
+            Some("alpha"),
+        )
+        .await;
+        assert_eq!(status, StatusCode::FORBIDDEN, "body: {body}");
+    }
+
+    #[sqlx::test]
+    async fn valid_invite_code_passes_the_gate(pool: PgPool) {
+        let state = invite_state(
+            pool.clone(),
+            InviteGate {
+                enabled: true,
+                codes: ["alpha".to_string()].into_iter().collect(),
+            },
+        );
+        let (status, body) = post_create(
+            &state,
+            &issue_auth_cookie(&pool, &state, CREATOR).await,
+            Some("alpha"),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "body: {body}");
+        assert!(
+            body.contains("Treasury creation disabled"),
+            "the stream should have started and hit the creation kill-switch: {body}"
+        );
+    }
+
+    #[sqlx::test]
+    async fn disabled_gate_ignores_invite_codes(pool: PgPool) {
+        let state = invite_state(pool.clone(), InviteGate::default());
+        let (status, body) = post_create(
+            &state,
+            &issue_auth_cookie(&pool, &state, CREATOR).await,
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "body: {body}");
     }
 }

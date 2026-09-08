@@ -83,6 +83,37 @@ pub struct EnvVars {
     /// Fine-scoped GitHub token with read access to the private
     /// `defuse-frontend-monorepos` repo (near.com catalog watch).
     pub nearcom_catalog_github_token: Option<String>,
+    /// Invite-only treasury creation (`INVITE_ONLY_ENABLED` + `INVITE_CODES`).
+    pub invite_gate: InviteGate,
+}
+
+/// Static invite-code gate for treasury creation. Codes are reusable,
+/// case-sensitive, and live only in deployment config — never log or return
+/// them. When enabled with an empty list nothing can be created.
+#[derive(Clone, Debug, Default)]
+pub struct InviteGate {
+    pub enabled: bool,
+    pub codes: HashSet<String>,
+}
+
+impl InviteGate {
+    pub fn from_env() -> Self {
+        Self {
+            enabled: std::env::var("INVITE_ONLY_ENABLED")
+                .unwrap_or_else(|_| "false".to_string())
+                .parse()
+                .unwrap_or(false),
+            codes: parse_csv_set("INVITE_CODES"),
+        }
+    }
+
+    /// Whether a creation request carrying `code` may proceed.
+    pub fn accepts(&self, code: Option<&str>) -> bool {
+        if !self.enabled {
+            return true;
+        }
+        code.is_some_and(|code| self.codes.contains(code))
+    }
 }
 
 fn parse_csv_set(key: &str) -> HashSet<String> {
@@ -278,6 +309,41 @@ impl Default for EnvVars {
             nearcom_catalog_github_token: std::env::var("NEARCOM_CATALOG_GITHUB_TOKEN")
                 .ok()
                 .filter(|s| !s.is_empty()),
+            invite_gate: InviteGate::from_env(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn gate(enabled: bool, codes: &[&str]) -> InviteGate {
+        InviteGate {
+            enabled,
+            codes: codes.iter().map(|c| c.to_string()).collect(),
+        }
+    }
+
+    #[test]
+    fn disabled_gate_accepts_everything() {
+        assert!(gate(false, &[]).accepts(None));
+        assert!(gate(false, &[]).accepts(Some("anything")));
+    }
+
+    #[test]
+    fn enabled_gate_requires_exact_configured_code() {
+        let gate = gate(true, &["alpha", "Beta-2"]);
+        assert!(gate.accepts(Some("alpha")));
+        assert!(gate.accepts(Some("Beta-2")));
+        assert!(!gate.accepts(Some("beta-2")), "codes are case-sensitive");
+        assert!(!gate.accepts(Some("")));
+        assert!(!gate.accepts(None));
+    }
+
+    #[test]
+    fn enabled_gate_with_no_codes_rejects_all() {
+        assert!(!gate(true, &[]).accepts(Some("alpha")));
+        assert!(!gate(true, &[]).accepts(None));
     }
 }

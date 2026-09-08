@@ -267,7 +267,14 @@ fn is_sensitive_header(key: &str) -> bool {
 fn is_sensitive_json_key(key: &str) -> bool {
     matches!(
         normalize_key(key).as_str(),
-        "accesstoken" | "refreshtoken" | "token" | "jwt" | "secret" | "apikey" | "authorization"
+        "accesstoken"
+            | "refreshtoken"
+            | "token"
+            | "jwt"
+            | "secret"
+            | "apikey"
+            | "authorization"
+            | "invitecode"
     )
 }
 
@@ -556,7 +563,9 @@ mod tests {
             "nested": {
                 "apiKey": "key",
                 "tokenId": "nep141:wrap.near"
-            }
+            },
+            "inviteCode": "alpha",
+            "invite_code": "alpha"
         });
 
         let sanitized = sanitize_sensitive_json_value(&value);
@@ -565,6 +574,8 @@ mod tests {
         assert_eq!(sanitized["refreshToken"], REDACTED);
         assert_eq!(sanitized["nested"]["apiKey"], REDACTED);
         assert_eq!(sanitized["nested"]["tokenId"], "nep141:wrap.near");
+        assert_eq!(sanitized["inviteCode"], REDACTED);
+        assert_eq!(sanitized["invite_code"], REDACTED);
     }
 
     #[test]

@@ -136,6 +136,11 @@
         "title": "Dịch vụ không khả dụng tại quốc gia của bạn",
         "description": "Do các hạn chế, dịch vụ này hiện không khả dụng tại khu vực của bạn."
     },
+    "inviteRequired": {
+        "title": "Hãy cùng thiết lập kho bạc của bạn",
+        "description": "Kho bạc mới sẽ bắt đầu bằng một cuộc gọi ngắn với đội ngũ của chúng tôi. Đặt lịch bên dưới.",
+        "cta": "Đặt lịch demo"
+    },
     "notFound": {
         "title": "Rất tiếc, trang này không còn nữa...",
         "description": "Có vẻ như bạn đã đi theo một liên kết không còn hoạt động. Hãy thử quay lại hoặc trở về Bảng điều khiển.",

@@ -207,6 +207,8 @@ pub async fn claim_stale_pending(
                 financiers,
                 requestors,
                 is_confidential: row.try_get("is_confidential")?,
+                // The sweeper resumes work the gate already admitted.
+                invite_code: None,
             },
             attempts: row.try_get("attempts")?,
         });

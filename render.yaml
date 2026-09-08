@@ -45,6 +45,10 @@ services:
         sync: false
       - key: ANALYTICS_USERS
         sync: false
+      - key: INVITE_ONLY_ENABLED
+        sync: false
+      - key: INVITE_CODES
+        sync: false
     healthCheckPath: /api/health
     maxShutdownDelaySeconds: 90
 
@@ -70,6 +74,12 @@ services:
         sync: false
       - key: NEXT_PUBLIC_BACKEND_API_BASE
         value: https://api.business.near.com
+      - key: INVITE_ONLY_ENABLED
+        sync: false
+      - key: INVITE_CODES
+        sync: false
+      - key: EARLY_ACCESS_LANDING_URL
+        sync: false
     healthCheckPath: /
 
   # Staging Backend Service (Rust/Axum)
@@ -116,6 +126,10 @@ services:
         sync: false
       - key: ANALYTICS_USERS
         sync: false
+      - key: INVITE_ONLY_ENABLED
+        sync: false
+      - key: INVITE_CODES
+        sync: false
     healthCheckPath: /api/health
     maxShutdownDelaySeconds: 90
 
@@ -138,6 +152,12 @@ services:
       - key: MAXMIND_LICENSE_KEY
         sync: false
       - key: NEXT_PUBLIC_BACKEND_API_BASE
+        sync: false
+      - key: INVITE_ONLY_ENABLED
+        sync: false
+      - key: INVITE_CODES
+        sync: false
+      - key: EARLY_ACCESS_LANDING_URL
         sync: false
     healthCheckPath: /
 

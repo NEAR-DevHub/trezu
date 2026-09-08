@@ -136,6 +136,11 @@
         "title": "Hizmet ülkenizde kullanılamıyor",
         "description": "Kısıtlamalar nedeniyle bu hizmet şu anda bölgenizde kullanılamamaktadır."
     },
+    "inviteRequired": {
+        "title": "Hazinenizi birlikte kuralım",
+        "description": "Yeni hazineler önce ekibimizle kısa bir görüşmeden geçer. Aşağıdan bir görüşme ayarlayın.",
+        "cta": "Demo ayarla"
+    },
     "notFound": {
         "title": "Hay aksi, bu sayfa kaybolmuş...",
         "description": "Görünüşe göre artık çalışmayan bir bağlantıyı takip ettiniz. Geri dönmeyi veya Panel'e dönmeyi deneyin.",
