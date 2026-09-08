@@ -81,9 +81,10 @@ export function MemberAvatarsWithOverflow({
             const containerWidth = containerRef.current.offsetWidth;
             // Avatar size is 36px (size-9), with -9px overlap
             // So each avatar takes up 27px (36 - 9) of space
-            // Reserve ~120px for the "+X members" button
             const avatarWidth = 27;
-            const buttonWidth = 120;
+            // Phones show the overflow as one more tile in the stack; larger
+            // screens spell it out as a "+X members" button beside the stack.
+            const buttonWidth = isMobile ? avatarWidth : 120;
             const firstAvatarWidth = 36; // First avatar has no negative margin
 
             const availableWidth = containerWidth - buttonWidth;
@@ -110,7 +111,7 @@ export function MemberAvatarsWithOverflow({
         return () => {
             resizeObserver.disconnect();
         };
-    }, [members.length]);
+    }, [members.length, isMobile]);
 
     const visibleMembers = members
         .sort((a, b) => a.localeCompare(b))
@@ -181,6 +182,7 @@ export function MemberAvatarsWithOverflow({
                         <Popover open={open} onOpenChange={setOpen}>
                             <PopoverTrigger asChild>
                                 <button
+                                    type="button"
                                     className="ml-2 text-sm text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
                                     onMouseEnter={() => setOpen(true)}
                                     onMouseLeave={() => setOpen(false)}
@@ -205,10 +207,14 @@ export function MemberAvatarsWithOverflow({
                     {isMobile && (
                         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                             <DialogTrigger asChild>
-                                <button className="ml-2 text-sm text-muted-foreground hover:text-foreground transition-colors focus:outline-none">
-                                    {t("moreMembers", {
+                                <button
+                                    type="button"
+                                    aria-label={t("moreMembers", {
                                         count: remainingCount,
                                     })}
+                                    className="-ml-[9px] flex size-9 shrink-0 items-center justify-center rounded-lg border border-card bg-general-bg-secondary text-base font-medium leading-[1.2] text-general-foreground focus:outline-none"
+                                >
+                                    +{remainingCount}
                                 </button>
                             </DialogTrigger>
                             <DialogContent
@@ -224,6 +230,7 @@ export function MemberAvatarsWithOverflow({
                                             </span>
                                         </span>
                                         <button
+                                            type="button"
                                             onClick={() => setDialogOpen(false)}
                                             className="text-muted-foreground hover:text-foreground"
                                         >
