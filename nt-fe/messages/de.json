@@ -1031,14 +1031,14 @@
         },
         "policy": {
             "addMembers": "Richtlinie aktualisieren - Neue Mitglieder hinzufügen",
-            "addMembersSuccess": "Anfrage für neues Mitglied erfolgreich erstellt",
+            "addMembersSuccess": "Mitglieder-Hinzufügen-Anfrage erstellt",
             "editMember": "Richtlinie aktualisieren - Mitgliederberechtigungen bearbeiten",
             "editMembers": "Richtlinie aktualisieren - Mehrere Mitglieder bearbeiten",
-            "editMemberSuccess": "Anfrage zur Aktualisierung der Mitgliederrollen erfolgreich erstellt",
-            "editMembersSuccess": "Sammelanfrage zur Aktualisierung der Mitgliederrollen erfolgreich erstellt",
+            "editMemberSuccess": "Mitglied-Bearbeiten-Anfrage erstellt",
+            "editMembersSuccess": "Mitglieder-Bearbeiten-Anfrage erstellt",
             "removeMember": "Richtlinie aktualisieren - Mitglied entfernen",
             "removeMembers": "Richtlinie aktualisieren - Mitglieder entfernen",
-            "removeMemberSuccess": "Anfrage zur Mitgliederentfernung erfolgreich erstellt",
+            "removeMemberSuccess": "Mitglied-Entfernen-Anfrage erstellt",
             "createProposalFailed": "Mitgliederanfrage konnte nicht erstellt werden. Bitte versuche es erneut."
         },
         "activeMembersCount": "{count, plural, one {# aktives Mitglied} other {# aktive Mitglieder}}"
@@ -1087,11 +1087,11 @@
             "missingData": "Erforderliche Daten fehlen",
             "thresholdProposalTitle": "Richtlinie aktualisieren - Abstimmungsschwellenwerte",
             "thresholdProposalSummary": "{account} hat beantragt, den Abstimmungsschwellenwert von {oldValue} auf {newValue} zu ändern.",
-            "thresholdSubmitted": "Anfrage zur Aktualisierung des Abstimmungsschwellenwerts übermittelt",
+            "thresholdSubmitted": "Abstimmungsschwellen-Anfrage erstellt",
             "createProposalFailed": "Erstellung des Vorschlags fehlgeschlagen",
             "durationProposalTitle": "Richtlinie aktualisieren - Abstimmungsdauer",
             "durationProposalSummary": "{account} hat beantragt, die Abstimmungsdauer von {oldValue} auf {newValue} zu ändern.",
-            "durationSubmitted": "Anfrage erfolgreich erstellt",
+            "durationSubmitted": "Abstimmungsdauer-Anfrage erstellt",
             "viewRequest": "Anfrage ansehen",
             "membersWhoCanVote": "Mitglieder, die abstimmen können",
             "durationHeading": "Abstimmungsdauer",
@@ -1206,7 +1206,7 @@
         "confirmSubmit": "Anfrage bestätigen und absenden",
         "useDifferentAddress": "Andere Adresse verwenden",
         "failed1ClickQuote": "Erstellung des 1Click-Transfer-Angebots fehlgeschlagen",
-        "paymentSubmitted": "Anfrage zum Senden der Zahlung übermittelt",
+        "paymentSubmitted": "Sendeanfrage erstellt",
         "confidentialTooltip": "Empfaengerdaten und der angeforderte Betrag sind vollstaendig vertraulich.",
         "destinationNetwork": "Zielnetzwerk",
         "selectRecipientPlaceholder": "Empfänger auswählen",
@@ -1218,7 +1218,7 @@
         "comingSoonToast": "Sammelsendungen kommen demnächst!",
         "submittingList": "Sammelsendungsliste wird übermittelt",
         "submittingProposal": "Vorschlag wird übermittelt",
-        "proposalSubmitted": "Sammelsendungsantrag übermittelt",
+        "proposalSubmitted": "Sammelsendeanfrage erstellt",
         "submitListFailed": "Übermittlung der Zahlungsliste fehlgeschlagen",
         "submitFailed": "Sammelsendung konnte nicht übermittelt werden",
         "quoteFetchFailed": "Überweisungsgebühren konnten nicht abgerufen werden. Bitte versuchen Sie es erneut.",
@@ -1307,7 +1307,7 @@
         "awaitingTitle": "Warten auf Genehmigungen",
         "awaitingDescription": "Der Aktivierungsantrag wurde erstellt. Sobald genug Treasury-Mitglieder zustimmen, wird der vertrauliche Sammelzugriffsschlüssel registriert und Sammelsendungen werden automatisch freigeschaltet.",
         "awaitingHint": "Nach der Genehmigung ist nichts weiter nötig — diese Seite aktualisiert sich automatisch.",
-        "proposalCreated": "Aktivierungsanfrage erstellt — warten auf Genehmigungen",
+        "proposalCreated": "Aktivierungsanfrage erstellt",
         "activationFailed": "Aktivierung der Sammelsendung fehlgeschlagen",
         "errorTitle": "Aktivierungsstatus konnte nicht geladen werden",
         "noPermissionNote": "Sie haben keine Berechtigung, die Aktivierung zu starten. Bitten Sie ein Treasury-Mitglied mit Antragsrechten, Sammelsendungen zu aktivieren.",
@@ -1326,7 +1326,7 @@
         "validation": {
             "amountPositive": "Betrag muss größer als 0 sein"
         },
-        "requestSubmitted": "Tauschanfrage übermittelt",
+        "requestSubmitted": "Swap-Anfrage erstellt",
         "heading": "Tauschen",
         "sell": "Verkaufen",
         "receive": "Empfangen",
@@ -1373,7 +1373,7 @@
             "review": "Prüfung"
         },
         "proposalTitle": "Vesting-Plan für {address} erstellen",
-        "scheduleSubmitted": "Anfrage zur Erstellung des Vesting-Plans übermittelt",
+        "scheduleSubmitted": "Vesting-Anfrage erstellt",
         "heading": "Neuer Vesting-Plan",
         "amount": "Betrag",
         "startDate": "Startdatum",
@@ -2549,7 +2549,7 @@
         "fill": {
             "noTemplate": "Keine Vorlage für „{slug}“ gefunden.",
             "invalidManifest": "Das Manifest dieser Vorlage ist ungültig:",
-            "proposalFiled": "Antrag eingereicht"
+            "proposalFiled": "Benutzerdefinierte Anfrage erstellt"
         },
         "visual": {
             "detailsTitle": "Details",
@@ -2661,7 +2661,7 @@
     "moveAssets": {
         "title": "Assets verschieben",
         "description": "Assets von der öffentlichen Chain in Ihre vertrauliche Treasury verschieben.",
-        "submitted": "Verschiebungsanfrage eingereicht",
+        "submitted": "Verschiebungsanfrage erstellt",
         "banner": {
             "title": "<amount></amount> ist auf Ihrem öffentlichen Guthaben eingegangen",
             "description": "Jemand hat es über das falsche Netzwerk gesendet. Verschieben Sie es hierher, um es vertraulich zu machen.",

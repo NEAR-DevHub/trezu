@@ -1031,14 +1031,14 @@
         },
         "policy": {
             "addMembers": "Cập nhật chính sách - Thêm thành viên mới",
-            "addMembersSuccess": "Đã tạo thành công yêu cầu thêm thành viên mới",
+            "addMembersSuccess": "Đã tạo yêu cầu thêm thành viên",
             "editMember": "Cập nhật chính sách - Chỉnh sửa quyền thành viên",
             "editMembers": "Cập nhật chính sách - Chỉnh sửa nhiều thành viên",
-            "editMemberSuccess": "Đã tạo thành công yêu cầu cập nhật vai trò thành viên",
-            "editMembersSuccess": "Đã tạo thành công yêu cầu cập nhật vai trò hàng loạt",
+            "editMemberSuccess": "Đã tạo yêu cầu sửa thành viên",
+            "editMembersSuccess": "Đã tạo yêu cầu sửa nhiều thành viên",
             "removeMember": "Cập nhật chính sách - Xóa thành viên",
             "removeMembers": "Cập nhật chính sách - Xóa các thành viên",
-            "removeMemberSuccess": "Đã tạo thành công yêu cầu xóa thành viên",
+            "removeMemberSuccess": "Đã tạo yêu cầu xóa thành viên",
             "createProposalFailed": "Không thể tạo yêu cầu thành viên. Vui lòng thử lại."
         },
         "activeMembersCount": "{count, plural, other {# thành viên đang hoạt động}}"
@@ -1087,11 +1087,11 @@
             "missingData": "Thiếu dữ liệu bắt buộc",
             "thresholdProposalTitle": "Cập nhật chính sách - Ngưỡng bỏ phiếu",
             "thresholdProposalSummary": "{account} đã yêu cầu thay đổi ngưỡng bỏ phiếu từ {oldValue} thành {newValue}.",
-            "thresholdSubmitted": "Đã gửi yêu cầu cập nhật ngưỡng bỏ phiếu",
+            "thresholdSubmitted": "Đã tạo yêu cầu ngưỡng bỏ phiếu",
             "createProposalFailed": "Không thể tạo đề xuất",
             "durationProposalTitle": "Cập nhật chính sách - Thời gian bỏ phiếu",
             "durationProposalSummary": "{account} đã yêu cầu thay đổi thời gian bỏ phiếu từ {oldValue} thành {newValue}.",
-            "durationSubmitted": "Đã tạo yêu cầu thành công",
+            "durationSubmitted": "Đã tạo yêu cầu thời hạn bỏ phiếu",
             "viewRequest": "Xem yêu cầu",
             "membersWhoCanVote": "Thành viên có thể bỏ phiếu",
             "durationHeading": "Thời hạn bỏ phiếu",
@@ -1206,7 +1206,7 @@
         "confirmSubmit": "Xác nhận và gửi yêu cầu",
         "useDifferentAddress": "Dùng một địa chỉ khác",
         "failed1ClickQuote": "Không thể tạo báo giá chuyển 1Click",
-        "paymentSubmitted": "Đã gửi yêu cầu thanh toán",
+        "paymentSubmitted": "Đã tạo yêu cầu gửi",
         "confidentialTooltip": "Thong tin nguoi nhan va so tien yeu cau duoc bao mat hoan toan.",
         "destinationNetwork": "Mạng đích",
         "selectRecipientPlaceholder": "Chọn người nhận",
@@ -1218,7 +1218,7 @@
         "comingSoonToast": "Gửi hàng loạt sắp ra mắt!",
         "submittingList": "Đang gửi danh sách gửi hàng loạt",
         "submittingProposal": "Đang gửi đề xuất",
-        "proposalSubmitted": "Đã gửi đề xuất gửi hàng loạt",
+        "proposalSubmitted": "Đã tạo yêu cầu gửi hàng loạt",
         "submitListFailed": "Không thể gửi danh sách thanh toán",
         "submitFailed": "Không gửi được gửi hàng loạt",
         "quoteFetchFailed": "Không thể lấy phí chuyển khoản. Vui lòng thử lại.",
@@ -1309,7 +1309,7 @@
         "validation": {
             "amountPositive": "Số tiền phải lớn hơn 0"
         },
-        "requestSubmitted": "Đã gửi yêu cầu trao đổi",
+        "requestSubmitted": "Đã tạo yêu cầu hoán đổi",
         "heading": "Trao đổi",
         "sell": "Bán",
         "receive": "Nhận",
@@ -1356,7 +1356,7 @@
             "review": "Xem lại"
         },
         "proposalTitle": "Tạo lịch vesting cho {address}",
-        "scheduleSubmitted": "Đã gửi yêu cầu tạo lịch vesting",
+        "scheduleSubmitted": "Đã tạo yêu cầu vesting",
         "heading": "Lịch vesting mới",
         "amount": "Số tiền",
         "startDate": "Ngày bắt đầu",
@@ -2532,7 +2532,7 @@
         "fill": {
             "noTemplate": "Không tìm thấy mẫu cho “{slug}”.",
             "invalidManifest": "Manifest của mẫu này không hợp lệ:",
-            "proposalFiled": "Đã nộp yêu cầu"
+            "proposalFiled": "Đã tạo yêu cầu tùy chỉnh"
         },
         "visual": {
             "detailsTitle": "Chi tiết",
@@ -2634,7 +2634,7 @@
         "awaitingTitle": "Đang chờ phê duyệt",
         "awaitingDescription": "Yêu cầu kích hoạt đã được tạo. Khi đủ thành viên kho bạc phê duyệt, khóa truy cập hàng loạt bảo mật sẽ được đăng ký và gửi hàng loạt sẽ tự động mở khóa.",
         "awaitingHint": "Không cần thao tác thêm sau khi phê duyệt — trang này tự động cập nhật.",
-        "proposalCreated": "Đã tạo yêu cầu kích hoạt — đang chờ thành viên phê duyệt",
+        "proposalCreated": "Đã tạo yêu cầu kích hoạt",
         "activationFailed": "Không bắt đầu được kích hoạt gửi hàng loạt",
         "errorTitle": "Không thể tải trạng thái kích hoạt",
         "noPermissionNote": "Bạn không có quyền bắt đầu kích hoạt. Hãy nhờ thành viên kho bạc có quyền đề xuất kích hoạt gửi hàng loạt.",
@@ -2661,7 +2661,7 @@
     "moveAssets": {
         "title": "Chuyển tài sản",
         "description": "Chuyển tài sản từ chuỗi công khai sang kho bạc Bảo mật của bạn.",
-        "submitted": "Đã gửi yêu cầu chuyển",
+        "submitted": "Đã tạo yêu cầu chuyển",
         "banner": {
             "title": "<amount></amount> đã vào số dư công khai của bạn",
             "description": "Ai đó đã gửi qua nhầm mạng. Chuyển vào đây để bảo mật.",
