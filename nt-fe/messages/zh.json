@@ -1030,14 +1030,14 @@
         },
         "policy": {
             "addMembers": "更新策略 - 添加新成员",
-            "addMembersSuccess": "新成员请求已成功创建",
+            "addMembersSuccess": "已创建添加成员请求",
             "editMember": "更新策略 - 编辑成员权限",
             "editMembers": "更新策略 - 编辑多个成员",
-            "editMemberSuccess": "成员角色更新请求已成功创建",
-            "editMembersSuccess": "批量成员角色更新请求已成功创建",
+            "editMemberSuccess": "已创建编辑成员请求",
+            "editMembersSuccess": "已创建批量编辑成员请求",
             "removeMember": "更新策略 - 移除成员",
             "removeMembers": "更新策略 - 移除成员",
-            "removeMemberSuccess": "成员移除请求已成功创建",
+            "removeMemberSuccess": "已创建移除成员请求",
             "createProposalFailed": "创建成员请求失败。请重试。"
         },
         "infoSection": {
@@ -1097,11 +1097,11 @@
             "missingData": "缺少必要数据",
             "thresholdProposalTitle": "更新策略 - 投票阈值",
             "thresholdProposalSummary": "{account} 请求将投票阈值从 {oldValue} 更改为 {newValue}。",
-            "thresholdSubmitted": "更新投票阈值的请求已提交",
+            "thresholdSubmitted": "已创建投票阈值请求",
             "createProposalFailed": "创建提案失败",
             "durationProposalTitle": "更新策略 - 投票时长",
             "durationProposalSummary": "{account} 请求将投票时长从 {oldValue} 更改为 {newValue}。",
-            "durationSubmitted": "请求已成功创建",
+            "durationSubmitted": "已创建投票时长请求",
             "viewRequest": "查看请求",
             "membersWhoCanVote": "可投票的成员",
             "durationHeading": "投票时长",
@@ -1216,7 +1216,7 @@
         "confirmSubmit": "确认并提交请求",
         "useDifferentAddress": "使用其他地址",
         "failed1ClickQuote": "创建 1Click 转账报价失败",
-        "paymentSubmitted": "发送付款的请求已提交",
+        "paymentSubmitted": "已创建发送请求",
         "confidentialTooltip": "收款人信息和请求金额完全保密。",
         "destinationNetwork": "目标网络",
         "selectRecipientPlaceholder": "选择收款人",
@@ -1228,7 +1228,7 @@
         "comingSoonToast": "批量发送功能即将推出!",
         "submittingList": "正在提交批量发送列表",
         "submittingProposal": "正在提交提案",
-        "proposalSubmitted": "批量发送提案已提交",
+        "proposalSubmitted": "已创建批量发送请求",
         "submitListFailed": "提交付款列表失败",
         "submitFailed": "提交批量发送失败",
         "quoteFetchFailed": "无法获取转账费用，请重试。",
@@ -1319,7 +1319,7 @@
         "validation": {
             "amountPositive": "金额必须大于 0"
         },
-        "requestSubmitted": "兑换请求已提交",
+        "requestSubmitted": "已创建兑换请求",
         "heading": "兑换",
         "sell": "卖出",
         "receive": "接收",
@@ -1366,7 +1366,7 @@
             "review": "审核"
         },
         "proposalTitle": "为 {address} 创建归属计划",
-        "scheduleSubmitted": "创建归属计划的请求已提交",
+        "scheduleSubmitted": "已创建归属请求",
         "heading": "新建归属计划",
         "amount": "金额",
         "startDate": "开始日期",
@@ -2539,7 +2539,7 @@
         "fill": {
             "noTemplate": "未找到与“{slug}”对应的模板。",
             "invalidManifest": "此模板的清单无效：",
-            "proposalFiled": "请求已提交"
+            "proposalFiled": "已创建自定义请求"
         },
         "visual": {
             "detailsTitle": "详情",
@@ -2641,7 +2641,7 @@
         "awaitingTitle": "等待批准",
         "awaitingDescription": "激活请求已创建。足够多的金库成员批准后，将注册保密批量访问密钥，批量发送将自动解锁。",
         "awaitingHint": "批准后无需进一步操作——此页面会自动更新。",
-        "proposalCreated": "已创建激活请求——等待成员批准",
+        "proposalCreated": "已创建激活请求",
         "activationFailed": "未能启动批量发送激活",
         "errorTitle": "无法加载激活状态",
         "noPermissionNote": "您没有权限开始激活。请让拥有提案权限的金库成员启用批量发送。",
@@ -2668,7 +2668,7 @@
     "moveAssets": {
         "title": "转移资产",
         "description": "将资产从公开链转移到您的机密金库。",
-        "submitted": "转移请求已提交",
+        "submitted": "已创建转移请求",
         "banner": {
             "title": "<amount></amount> 已到达您的公开余额",
             "description": "有人通过错误的网络发送了资金。将其转移到此处以使其机密化。",

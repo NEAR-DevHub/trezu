@@ -1030,14 +1030,14 @@
         },
         "policy": {
             "addMembers": "ポリシー更新 - 新しいメンバーを追加",
-            "addMembersSuccess": "新しいメンバーのリクエストが正常に作成されました",
+            "addMembersSuccess": "メンバー追加リクエストを作成しました",
             "editMember": "ポリシー更新 - メンバー権限を編集",
             "editMembers": "ポリシー更新 - 複数メンバーを編集",
-            "editMemberSuccess": "メンバーロール更新リクエストが正常に作成されました",
-            "editMembersSuccess": "一括メンバーロール更新リクエストが正常に作成されました",
+            "editMemberSuccess": "メンバー編集リクエストを作成しました",
+            "editMembersSuccess": "メンバー一括編集リクエストを作成しました",
             "removeMember": "ポリシー更新 - メンバーを削除",
             "removeMembers": "ポリシー更新 - メンバーを削除",
-            "removeMemberSuccess": "メンバー削除リクエストが正常に作成されました",
+            "removeMemberSuccess": "メンバー削除リクエストを作成しました",
             "createProposalFailed": "メンバーリクエストの作成に失敗しました。もう一度お試しください。"
         },
         "infoSection": {
@@ -1097,11 +1097,11 @@
             "missingData": "必要なデータが不足しています",
             "thresholdProposalTitle": "ポリシー更新 - 投票しきい値",
             "thresholdProposalSummary": "{account}が投票しきい値を{oldValue}から{newValue}に変更するよう要求しました。",
-            "thresholdSubmitted": "投票しきい値更新のリクエストを送信しました",
+            "thresholdSubmitted": "投票閾値リクエストを作成しました",
             "createProposalFailed": "提案の作成に失敗しました",
             "durationProposalTitle": "ポリシー更新 - 投票期間",
             "durationProposalSummary": "{account}が投票期間を{oldValue}から{newValue}に変更するよう要求しました。",
-            "durationSubmitted": "リクエストが正常に作成されました",
+            "durationSubmitted": "投票期間リクエストを作成しました",
             "viewRequest": "リクエストを表示",
             "membersWhoCanVote": "投票できるメンバー",
             "durationHeading": "投票期間",
@@ -1216,7 +1216,7 @@
         "confirmSubmit": "確認してリクエストを送信",
         "useDifferentAddress": "別のアドレスを使用",
         "failed1ClickQuote": "1Click送金見積りの作成に失敗しました",
-        "paymentSubmitted": "支払い送信のリクエストを送信しました",
+        "paymentSubmitted": "送金リクエストを作成しました",
         "confidentialTooltip": "受取人の詳細と要求金額は完全に機密です。",
         "destinationNetwork": "送信先ネットワーク",
         "selectRecipientPlaceholder": "受取人を選択",
@@ -1228,7 +1228,7 @@
         "comingSoonToast": "一括送金は近日公開予定です!",
         "submittingList": "一括送金リストを送信中",
         "submittingProposal": "提案を送信中",
-        "proposalSubmitted": "一括送金の提案を送信しました",
+        "proposalSubmitted": "一括送金リクエストを作成しました",
         "submitListFailed": "支払いリストの送信に失敗しました",
         "submitFailed": "一括送金の送信に失敗しました",
         "quoteFetchFailed": "送金手数料を取得できませんでした。もう一度お試しください。",
@@ -1317,7 +1317,7 @@
         "awaitingTitle": "承認待ち",
         "awaitingDescription": "有効化リクエストが作成されました。十分なトレジャリーメンバーが承認すると、機密の一括アクセスキーが登録され、一括送金が自動的に有効になります。",
         "awaitingHint": "承認後の操作は不要です — このページは自動的に更新されます。",
-        "proposalCreated": "有効化リクエストを作成しました — メンバーの承認待ちです",
+        "proposalCreated": "有効化リクエストを作成しました",
         "activationFailed": "一括送金の有効化を開始できませんでした",
         "errorTitle": "アクティベーション状況を読み込めませんでした",
         "noPermissionNote": "有効化を開始する権限がありません。提案権限を持つトレジャリーメンバーに一括送金の有効化を依頼してください。",
@@ -1336,7 +1336,7 @@
         "validation": {
             "amountPositive": "金額は0より大きくなければなりません"
         },
-        "requestSubmitted": "交換リクエストを送信しました",
+        "requestSubmitted": "スワップリクエストを作成しました",
         "heading": "交換",
         "sell": "売却",
         "receive": "受取",
@@ -1383,7 +1383,7 @@
             "review": "確認"
         },
         "proposalTitle": "{address}のベスティングスケジュールを作成",
-        "scheduleSubmitted": "ベスティングスケジュール作成のリクエストを送信しました",
+        "scheduleSubmitted": "ベスティングリクエストを作成しました",
         "heading": "新しいベスティングスケジュール",
         "amount": "金額",
         "startDate": "開始日",
@@ -2556,7 +2556,7 @@
         "fill": {
             "noTemplate": "「{slug}」に対応するテンプレートが見つかりません。",
             "invalidManifest": "このテンプレートのマニフェストは無効です:",
-            "proposalFiled": "リクエストを提出しました"
+            "proposalFiled": "カスタムリクエストを作成しました"
         },
         "visual": {
             "detailsTitle": "詳細",
@@ -2668,7 +2668,7 @@
     "moveAssets": {
         "title": "資産を移動",
         "description": "パブリックチェーンから機密トレジャリーへ資産を移動します。",
-        "submitted": "移動リクエストを送信しました",
+        "submitted": "移動リクエストを作成しました",
         "banner": {
             "title": "<amount></amount> がパブリック残高に着金しました",
             "description": "誰かが誤ったネットワークで送金しました。ここに移動して機密化してください。",

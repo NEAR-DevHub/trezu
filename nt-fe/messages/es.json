@@ -1030,14 +1030,14 @@
         },
         "policy": {
             "addMembers": "Actualizar política - Añadir nuevos miembros",
-            "addMembersSuccess": "Solicitud de nuevo miembro creada correctamente",
+            "addMembersSuccess": "Solicitud de añadir miembros creada",
             "editMember": "Actualizar política - Editar permisos del miembro",
             "editMembers": "Actualizar política - Editar varios miembros",
-            "editMemberSuccess": "Solicitud de actualización de roles creada correctamente",
-            "editMembersSuccess": "Solicitud masiva de actualización de roles creada correctamente",
+            "editMemberSuccess": "Solicitud de editar miembro creada",
+            "editMembersSuccess": "Solicitud de editar miembros creada",
             "removeMember": "Actualizar política - Eliminar miembro",
             "removeMembers": "Actualizar política - Eliminar miembros",
-            "removeMemberSuccess": "Solicitud de eliminación de miembro creada correctamente",
+            "removeMemberSuccess": "Solicitud de eliminar miembro creada",
             "createProposalFailed": "No se pudo crear la solicitud de miembro. Inténtalo de nuevo."
         },
         "infoSection": {
@@ -1097,11 +1097,11 @@
             "missingData": "Faltan datos obligatorios",
             "thresholdProposalTitle": "Actualizar política - Umbrales de votación",
             "thresholdProposalSummary": "{account} solicitó cambiar el umbral de votación de {oldValue} a {newValue}.",
-            "thresholdSubmitted": "Solicitud para actualizar el umbral de votación enviada",
+            "thresholdSubmitted": "Solicitud de umbral de votación creada",
             "createProposalFailed": "No se pudo crear la propuesta",
             "durationProposalTitle": "Actualizar política - Duración de votación",
             "durationProposalSummary": "{account} solicitó cambiar la duración de votación de {oldValue} a {newValue}.",
-            "durationSubmitted": "Solicitud creada correctamente",
+            "durationSubmitted": "Solicitud de duración de voto creada",
             "viewRequest": "Ver solicitud",
             "membersWhoCanVote": "Miembros que pueden votar",
             "durationHeading": "Duración de la votación",
@@ -1216,7 +1216,7 @@
         "confirmSubmit": "Confirmar y enviar solicitud",
         "useDifferentAddress": "Usa una dirección diferente",
         "failed1ClickQuote": "No se pudo crear la cotización de transferencia 1Click",
-        "paymentSubmitted": "Solicitud de envío de pago enviada",
+        "paymentSubmitted": "Solicitud de envío creada",
         "confidentialTooltip": "Los datos del destinatario y el importe solicitado son totalmente confidenciales.",
         "destinationNetwork": "Red de destino",
         "selectRecipientPlaceholder": "Seleccionar destinatario",
@@ -1228,7 +1228,7 @@
         "comingSoonToast": "¡El envío masivo estará disponible pronto!",
         "submittingList": "Enviando lista de envío masivo",
         "submittingProposal": "Enviando la propuesta",
-        "proposalSubmitted": "Solicitud de envío masivo enviada",
+        "proposalSubmitted": "Solicitud de envío masivo creada",
         "submitListFailed": "No se pudo enviar la lista de pagos",
         "submitFailed": "Error al enviar el envío masivo",
         "quoteFetchFailed": "No se pudieron obtener las comisiones de transferencia. Inténtalo de nuevo.",
@@ -1317,7 +1317,7 @@
         "awaitingTitle": "Esperando aprobaciones",
         "awaitingDescription": "Se ha creado la solicitud de activación. Cuando suficientes miembros de la tesorería la aprueben, se registra la clave de acceso masivo confidencial y el envío masivo se desbloquea automáticamente.",
         "awaitingHint": "No se requiere ninguna acción tras la aprobación — esta página se actualiza automáticamente.",
-        "proposalCreated": "Solicitud de activación creada — esperando aprobaciones",
+        "proposalCreated": "Solicitud de activación creada",
         "activationFailed": "Error al iniciar la activación del envío masivo",
         "errorTitle": "No se pudo cargar el estado de activación",
         "noPermissionNote": "No tienes permiso para iniciar la activación. Pide a un miembro de la tesorería con permisos de solicitud que active el envío masivo.",
@@ -1336,7 +1336,7 @@
         "validation": {
             "amountPositive": "El importe debe ser mayor que 0"
         },
-        "requestSubmitted": "Solicitud de intercambio enviada",
+        "requestSubmitted": "Solicitud de intercambio creada",
         "heading": "Intercambio",
         "sell": "Vender",
         "receive": "Recibir",
@@ -1383,7 +1383,7 @@
             "review": "Revisar"
         },
         "proposalTitle": "Crear plan de vesting para {address}",
-        "scheduleSubmitted": "Solicitud para crear plan de vesting enviada",
+        "scheduleSubmitted": "Solicitud de vesting creada",
         "heading": "Nuevo plan de vesting",
         "amount": "Importe",
         "startDate": "Fecha de inicio",
@@ -2556,7 +2556,7 @@
         "fill": {
             "noTemplate": "No se encontró ninguna plantilla para “{slug}”.",
             "invalidManifest": "El manifiesto de esta plantilla no es válido:",
-            "proposalFiled": "Solicitud presentada"
+            "proposalFiled": "Solicitud personalizada creada"
         },
         "visual": {
             "detailsTitle": "Detalles",
@@ -2668,7 +2668,7 @@
     "moveAssets": {
         "title": "Mover activos",
         "description": "Mueve activos de la cadena pública a tu tesorería confidencial.",
-        "submitted": "Solicitud de traslado enviada",
+        "submitted": "Solicitud de movimiento creada",
         "banner": {
             "title": "<amount></amount> llegaron a tu saldo público",
             "description": "Alguien los envió por la red equivocada. Muévelos aquí para hacerlos confidenciales.",

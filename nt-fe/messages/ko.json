@@ -1030,14 +1030,14 @@
         },
         "policy": {
             "addMembers": "정책 업데이트 - 새 멤버 추가",
-            "addMembersSuccess": "새 멤버 요청이 성공적으로 생성되었습니다",
+            "addMembersSuccess": "멤버 추가 요청이 생성되었습니다",
             "editMember": "정책 업데이트 - 멤버 권한 편집",
             "editMembers": "정책 업데이트 - 여러 멤버 편집",
-            "editMemberSuccess": "멤버 역할 업데이트 요청이 성공적으로 생성되었습니다",
-            "editMembersSuccess": "일괄 멤버 역할 업데이트 요청이 성공적으로 생성되었습니다",
+            "editMemberSuccess": "멤버 수정 요청이 생성되었습니다",
+            "editMembersSuccess": "멤버 일괄 수정 요청이 생성되었습니다",
             "removeMember": "정책 업데이트 - 멤버 제거",
             "removeMembers": "정책 업데이트 - 멤버 제거",
-            "removeMemberSuccess": "멤버 제거 요청이 성공적으로 생성되었습니다",
+            "removeMemberSuccess": "멤버 제거 요청이 생성되었습니다",
             "createProposalFailed": "멤버 요청 생성에 실패했습니다. 다시 시도해 주세요."
         },
         "infoSection": {
@@ -1097,11 +1097,11 @@
             "missingData": "필수 데이터 누락",
             "thresholdProposalTitle": "정책 업데이트 - 투표 임계값",
             "thresholdProposalSummary": "{account}이(가) 투표 임계값을 {oldValue}에서 {newValue}(으)로 변경하도록 요청했습니다.",
-            "thresholdSubmitted": "투표 임계값 업데이트 요청이 제출되었습니다",
+            "thresholdSubmitted": "투표 임계값 요청이 생성되었습니다",
             "createProposalFailed": "제안 생성에 실패했습니다",
             "durationProposalTitle": "정책 업데이트 - 투표 기간",
             "durationProposalSummary": "{account}이(가) 투표 기간을 {oldValue}에서 {newValue}(으)로 변경하도록 요청했습니다.",
-            "durationSubmitted": "요청이 성공적으로 생성되었습니다",
+            "durationSubmitted": "투표 기간 요청이 생성되었습니다",
             "viewRequest": "요청 보기",
             "membersWhoCanVote": "투표할 수 있는 멤버",
             "durationHeading": "투표 기간",
@@ -1216,7 +1216,7 @@
         "confirmSubmit": "확인 및 요청 제출",
         "useDifferentAddress": "다른 주소 사용",
         "failed1ClickQuote": "1Click 전송 견적 생성에 실패했습니다",
-        "paymentSubmitted": "결제 송금 요청이 제출되었습니다",
+        "paymentSubmitted": "보내기 요청이 생성되었습니다",
         "confidentialTooltip": "수취인 정보와 요청 금액은 완전히 기밀입니다.",
         "destinationNetwork": "대상 네트워크",
         "selectRecipientPlaceholder": "수신자 선택",
@@ -1228,7 +1228,7 @@
         "comingSoonToast": "일괄 전송은 곧 출시됩니다!",
         "submittingList": "일괄 전송 목록 제출 중",
         "submittingProposal": "제안 제출 중",
-        "proposalSubmitted": "일괄 전송 제안이 제출되었습니다",
+        "proposalSubmitted": "일괄 전송 요청이 생성되었습니다",
         "submitListFailed": "결제 목록 제출에 실패했습니다",
         "submitFailed": "일괄 전송 제출에 실패했습니다",
         "quoteFetchFailed": "이체 수수료를 가져오지 못했습니다. 다시 시도해 주세요.",
@@ -1317,7 +1317,7 @@
         "awaitingTitle": "승인 대기 중",
         "awaitingDescription": "활성화 요청이 생성되었습니다. 충분한 트레저리 멤버가 승인하면 기밀 일괄 액세스 키가 등록되고 일괄 전송이 자동으로 잠금 해제됩니다.",
         "awaitingHint": "승인 후 추가 작업이 필요 없습니다 — 이 페이지는 자동으로 갱신됩니다.",
-        "proposalCreated": "활성화 요청 생성됨 — 구성원 승인 대기 중",
+        "proposalCreated": "활성화 요청이 생성되었습니다",
         "activationFailed": "일괄 전송 활성화 시작에 실패했습니다",
         "errorTitle": "활성화 상태를 불러올 수 없습니다",
         "noPermissionNote": "활성화를 시작할 권한이 없습니다. 제안 권한이 있는 트레저리 멤버에게 일괄 전송 활성화를 요청하세요.",
@@ -1336,7 +1336,7 @@
         "validation": {
             "amountPositive": "금액은 0보다 커야 합니다"
         },
-        "requestSubmitted": "교환 요청이 제출되었습니다",
+        "requestSubmitted": "스왑 요청이 생성되었습니다",
         "heading": "교환",
         "sell": "판매",
         "receive": "수신",
@@ -1383,7 +1383,7 @@
             "review": "검토"
         },
         "proposalTitle": "{address}에 대한 베스팅 일정 생성",
-        "scheduleSubmitted": "베스팅 일정 생성 요청이 제출되었습니다",
+        "scheduleSubmitted": "베스팅 요청이 생성되었습니다",
         "heading": "새 베스팅 일정",
         "amount": "금액",
         "startDate": "시작 날짜",
@@ -2556,7 +2556,7 @@
         "fill": {
             "noTemplate": "“{slug}”에 해당하는 템플릿을 찾을 수 없습니다.",
             "invalidManifest": "이 템플릿의 매니페스트가 유효하지 않습니다:",
-            "proposalFiled": "요청이 제출되었습니다"
+            "proposalFiled": "맞춤 요청이 생성되었습니다"
         },
         "visual": {
             "detailsTitle": "세부 정보",
@@ -2668,7 +2668,7 @@
     "moveAssets": {
         "title": "자산 이동",
         "description": "퍼블릭 체인의 자산을 기밀 트레저리로 이동합니다.",
-        "submitted": "이동 요청이 제출되었습니다",
+        "submitted": "이동 요청이 생성되었습니다",
         "banner": {
             "title": "<amount></amount>이(가) 퍼블릭 잔액에 입금되었습니다",
             "description": "누군가 잘못된 네트워크로 보냈습니다. 여기로 이동하여 기밀로 전환하세요.",

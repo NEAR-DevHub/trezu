@@ -47,7 +47,7 @@ describe("isInsideDialog", () => {
         expect(
             isInsideDialog({
                 closest: (selector: string) =>
-                    selector.includes("[role=\"dialog\"]")
+                    selector.includes('[role="dialog"]')
                         ? { role: "dialog" }
                         : null,
             }),
